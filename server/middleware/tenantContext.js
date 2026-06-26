@@ -94,7 +94,7 @@ import { setContextProvider } from '../utils/logger.js';
 setContextProvider(() => ({
   tenantId: getCurrentTenantId(),
   userId: getCurrentUserId(),
-  requestId: getCurrentRequestId()
+  requestId: getCurrentRequestId(),
 }));
 
 // ============================================================================
@@ -125,7 +125,7 @@ const metrics = {
     if (legacyMetrics.recordTiming) {
       legacyMetrics.recordTiming(name, duration, labels);
     }
-  }
+  },
 };
 
 // ============================================================================
@@ -158,24 +158,29 @@ const shouldUseLiveContextFallback = (req) => {
   const path = String(req.originalUrl || req.path || '').toLowerCase();
   const method = String(req.method || 'GET').toUpperCase();
 
-  if ([
-    '/api/telemetry',
-    '/api/status',
-    '/api/v1/sovereign-health',
-    '/api/v1/boardroom/health',
-    '/api/auth/discover',
-    '/api/auth/refresh-token',
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/wilsy-ai/entitlements'
-  ].some(route => path.includes(route))) {
+  if (
+    [
+      '/api/telemetry',
+      '/api/status',
+      '/api/v1/sovereign-health',
+      '/api/v1/boardroom/health',
+      '/api/auth/discover',
+      '/api/auth/refresh-token',
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/wilsy-ai/entitlements',
+    ].some((route) => path.includes(route))
+  ) {
     return true;
   }
 
-  if ([
-    '/api/forensics/merkle-auditor/run',
-    '/api/forensics/validate-chain'
-  ].some(route => path.includes(route))) {
+  if (
+    [
+      '/api/forensics/merkle-auditor/run',
+      '/api/forensics/validate-chain',
+      '/api/crm/command/sync',
+    ].some((route) => path.includes(route))
+  ) {
     return true;
   }
 
@@ -219,8 +224,11 @@ const shouldUseLiveContextFallback = (req) => {
     '/api/forensics/verify-chain',
     '/api/forensics/blockchain-verify',
     '/api/forensics/merkle-auditor/status',
-    '/api/forensics/merkle-auditor/anchors'
-  ].some(route => path.includes(route));
+    '/api/forensics/merkle-auditor/anchors',
+    '/api/crm/live',
+    '/api/crm/command/status',
+    '/api/crm/command/search',
+  ].some((route) => path.includes(route));
 };
 
 /**
@@ -236,7 +244,12 @@ const shouldUseLiveContextFallback = (req) => {
 const runDegradedTenantContext = (req, res, next, context) => {
   const tenantId = context.tenantId || TENANT_CONSTANTS.DEFAULT_TENANT;
   const userId = context.userId || TENANT_CONSTANTS.ANONYMOUS_USER;
-  const contextSeal = generateContextSeal(tenantId, userId, context.traceId, context.contextTimestamp);
+  const contextSeal = generateContextSeal(
+    tenantId,
+    userId,
+    context.traceId,
+    context.contextTimestamp
+  );
 
   req.db = null;
   req.tenantId = tenantId;
@@ -246,16 +259,19 @@ const runDegradedTenantContext = (req, res, next, context) => {
   res.setHeader('X-Wilsy-Context-Seal', contextSeal);
   res.setHeader('X-Wilsy-Context-Status', 'DEGRADED_NO_DB');
 
-  return tenantStorage.run({
-    tenantId,
-    userId,
-    requestId: context.traceId,
-    contextSeal,
-    contextTimestamp: context.contextTimestamp,
-    startTime: context.startFetch,
-    db: null,
-    degraded: true
-  }, () => next());
+  return tenantStorage.run(
+    {
+      tenantId,
+      userId,
+      requestId: context.traceId,
+      contextSeal,
+      contextTimestamp: context.contextTimestamp,
+      startTime: context.startFetch,
+      db: null,
+      degraded: true,
+    },
+    () => next()
+  );
 };
 
 /**
@@ -289,10 +305,13 @@ export const verifyContextSeal = (tenantId, userId, traceId, timestamp, provided
 export const runWithContext = async (context, fn) => {
   const tenantId = context.tenantId || TENANT_CONSTANTS.DEFAULT_TENANT;
   const userId = context.userId || TENANT_CONSTANTS.ANONYMOUS_USER;
-  const traceId = context.requestId || context.traceId || `TRC-SYS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const traceId =
+    context.requestId ||
+    context.traceId ||
+    `TRC-SYS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
   const timestamp = Date.now();
 
-  const db = context.db || await useDatabase(tenantId);
+  const db = context.db || (await useDatabase(tenantId));
   const contextSeal = generateContextSeal(tenantId, userId, traceId, timestamp);
 
   return tenantStorage.run(
@@ -333,10 +352,11 @@ export const tenantContext = async (req, res, next) => {
   }
 
   // 🔗 UNIFIED TRACE CORRELATION
-  const traceId = req.headers['x-trace-id'] ||
-                  req.headers['x-request-id'] ||
-                  req.traceId ||
-                  `TRC-REQ-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const traceId =
+    req.headers['x-trace-id'] ||
+    req.headers['x-request-id'] ||
+    req.traceId ||
+    `TRC-REQ-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
   req.traceId = traceId;
 
@@ -359,26 +379,34 @@ export const tenantContext = async (req, res, next) => {
         userId: TENANT_CONSTANTS.ANONYMOUS_USER,
         traceId,
         contextTimestamp,
-        startFetch
+        startFetch,
       });
     }
 
     // 📊 LOG AUTH CONTEXT INITIALIZATION (sovereign counter)
-    metrics.increment('telemetry_events_total', 1, { tenantId: req.tenantId, eventType: 'AUTH_CONTEXT_INIT' });
-
-    return tenantStorage.run({
+    metrics.increment('telemetry_events_total', 1, {
       tenantId: req.tenantId,
-      userId: TENANT_CONSTANTS.ANONYMOUS_USER,
-      requestId: traceId,
-      startTime: startFetch,
-      db: req.db
-    }, () => next());
+      eventType: 'AUTH_CONTEXT_INIT',
+    });
+
+    return tenantStorage.run(
+      {
+        tenantId: req.tenantId,
+        userId: TENANT_CONSTANTS.ANONYMOUS_USER,
+        requestId: traceId,
+        startTime: startFetch,
+        db: req.db,
+      },
+      () => next()
+    );
   }
 
   // 🏛️ TENANT DISCOVERY
-  let incomingTenantId = req.headers['x-tenant-id'] || req.headers['X-Tenant-ID'] ||
-                 req.body?.tenantId ||
-                 req.query.tenantId;
+  let incomingTenantId =
+    req.headers['x-tenant-id'] ||
+    req.headers['X-Tenant-ID'] ||
+    req.body?.tenantId ||
+    req.query.tenantId;
 
   // 🔥 MARS PROTOCOL FIX: Intercept unanchored/GLOBAL_ROOT headers immediately
   let tenantId = incomingTenantId;
@@ -394,7 +422,7 @@ export const tenantContext = async (req, res, next) => {
       userId,
       traceId,
       contextTimestamp,
-      startFetch
+      startFetch,
     });
   }
 
@@ -404,23 +432,32 @@ export const tenantContext = async (req, res, next) => {
       // Wrap useDatabase to prevent a thrown exception from skipping our fallback logic
       db = await useDatabase(tenantId);
     } catch (shardErr) {
-      console.warn(chalk.yellow(`[SYSTEM] ⚠️ Shard Exception for ${tenantId}: ${shardErr.message}. Forcing Sovereign Root fallback.`));
+      console.warn(
+        chalk.yellow(
+          `[SYSTEM] ⚠️ Shard Exception for ${tenantId}: ${shardErr.message}. Forcing Sovereign Root fallback.`
+        )
+      );
       db = null; // Let the fallback handle it
     }
 
     if (!db) {
-      console.warn(chalk.yellow(`[SYSTEM] ⚠️ Shard Link Failed: ${tenantId}. Re-anchoring to Sovereign Root.`));
+      console.warn(
+        chalk.yellow(`[SYSTEM] ⚠️ Shard Link Failed: ${tenantId}. Re-anchoring to Sovereign Root.`)
+      );
       req.db = await useDatabase(TENANT_CONSTANTS.DEFAULT_TENANT);
       req.tenantId = TENANT_CONSTANTS.DEFAULT_TENANT;
 
       // 📊 LOG RECOVERY ROUTING (sovereign counter)
-      metrics.increment('telemetry_integrity_failures_total', 1, { tenantId: 'GLOBAL_ROOT', type: 'TENANT_ROUTING_RECOVERY' });
+      metrics.increment('telemetry_integrity_failures_total', 1, {
+        tenantId: 'GLOBAL_ROOT',
+        type: 'TENANT_ROUTING_RECOVERY',
+      });
 
-      broadcastTelemetry("GLOBAL_ROOT", "AUDIT_EVENT", "TENANT_RECOVERY_ROUTING", "TenantContext", {
+      broadcastTelemetry('GLOBAL_ROOT', 'AUDIT_EVENT', 'TENANT_RECOVERY_ROUTING', 'TenantContext', {
         traceId,
         attemptedTenant: tenantId,
         fallbackTenant: TENANT_CONSTANTS.DEFAULT_TENANT,
-        severity: 'ELEVATED'
+        severity: 'ELEVATED',
       });
     } else {
       req.db = db;
@@ -430,7 +467,9 @@ export const tenantContext = async (req, res, next) => {
     // ⚖️ COMPLIANCE OVERLAYS & POPIA REDACTION
     let complianceFlags = { POPIA: 'POPIA_CLEAN', GDPR: 'COMPLIANT' };
     if (TENANT_CONSTANTS.POPIA_STRICT_MODE && req.body && Object.keys(req.body).length > 0) {
-      const redacted = cryptoCore.redact ? cryptoCore.redact(req.body) : { data: req.body, metadata: { complianceStatus: 'BYPASSED' } };
+      const redacted = cryptoCore.redact
+        ? cryptoCore.redact(req.body)
+        : { data: req.body, metadata: { complianceStatus: 'BYPASSED' } };
       req.body = redacted.data;
       complianceFlags.POPIA = redacted.metadata.complianceStatus;
     }
@@ -440,7 +479,11 @@ export const tenantContext = async (req, res, next) => {
     // 🔬 SEAL PARITY DIAGNOSTICS
     const clientSeal = req.headers['x-client-seal'];
     if (process.env.NODE_ENV === 'development' && clientSeal && clientSeal !== contextSeal) {
-      console.warn(chalk.magenta(`[SEAL-PARITY-WARNING] Mismatch Detected. Client: ${clientSeal} | Engine: ${contextSeal}`));
+      console.warn(
+        chalk.magenta(
+          `[SEAL-PARITY-WARNING] Mismatch Detected. Client: ${clientSeal} | Engine: ${contextSeal}`
+        )
+      );
     }
 
     // 🛰️ OBSERVABILITY HEADERS
@@ -455,7 +498,7 @@ export const tenantContext = async (req, res, next) => {
       contextSeal,
       contextTimestamp,
       startTime: startFetch,
-      db: req.db
+      db: req.db,
     };
 
     // ⏱️ RECORD CONTEXT INITIALIZATION LATENCY
@@ -465,7 +508,7 @@ export const tenantContext = async (req, res, next) => {
     // 📡 HIGH-RES SLA TELEMETRY ANCHOR WITH BOARDROOM OVERLAYS
     const breakerState = global.circuitBreakerState || 'CLOSED_OPTIMAL';
 
-    broadcastTelemetry(req.tenantId, "SYSTEM_EVENT", "TENANT_CONTEXT_INIT", "TenantContext", {
+    broadcastTelemetry(req.tenantId, 'SYSTEM_EVENT', 'TENANT_CONTEXT_INIT', 'TenantContext', {
       traceId,
       userId,
       route: req.path,
@@ -475,20 +518,19 @@ export const tenantContext = async (req, res, next) => {
       boardroomOverlays: {
         breakerState,
         slaStatus: latencyMs < 50 ? 'MET' : 'DEGRADED',
-        anomalyIndex: 0
-      }
+        anomalyIndex: 0,
+      },
     });
 
     // 🧊 COLD STORAGE ARCHIVE HOOK
-    broadcastTelemetry("GLOBAL_ROOT", "AUDIT_EVENT", "COLD_STORAGE_ARCHIVE", "TenantContext", {
+    broadcastTelemetry('GLOBAL_ROOT', 'AUDIT_EVENT', 'COLD_STORAGE_ARCHIVE', 'TenantContext', {
       traceId,
       seal: contextSeal,
       tenantId: req.tenantId,
-      timestamp: contextTimestamp
+      timestamp: contextTimestamp,
     });
 
     return tenantStorage.run(store, () => next());
-
   } catch (error) {
     console.error(chalk.bgRed(`[CONTEXT-FRACTURE] 🚨 ${error.message}`));
     const latencyMs = Number((performance.now() - startFetch).toFixed(2));
@@ -499,26 +541,30 @@ export const tenantContext = async (req, res, next) => {
         userId,
         traceId,
         contextTimestamp,
-        startFetch
+        startFetch,
       });
     }
 
     // 📊 LOG PANIC FRACTURE (sovereign counter)
-    metrics.increment('system_errors_total', 1, { tenantId: 'GLOBAL_ROOT', severity: 'CRITICAL', type: 'CONTEXT_FRACTURE' });
+    metrics.increment('system_errors_total', 1, {
+      tenantId: 'GLOBAL_ROOT',
+      severity: 'CRITICAL',
+      type: 'CONTEXT_FRACTURE',
+    });
 
     // 📡 CRITICAL PANIC ESCALATION
-    broadcastTelemetry("GLOBAL_ROOT", "SYSTEM_EVENT", "DB_PANIC", "TenantContext", {
+    broadcastTelemetry('GLOBAL_ROOT', 'SYSTEM_EVENT', 'DB_PANIC', 'TenantContext', {
       traceId,
       attemptedTenant: incomingTenantId || 'UNKNOWN',
       error: error.message,
       latencyMs,
-      severity: 'CRITICAL'
+      severity: 'CRITICAL',
     });
 
     return res.status(503).json({
       success: false,
-      message: "QUANTUM_LINK_RESTORING",
-      traceId
+      message: 'QUANTUM_LINK_RESTORING',
+      traceId,
     });
   }
 };

@@ -213,13 +213,19 @@ export const buildWilsyCrmHeaders = (options = {}) => {
     'Content-Type': 'application/json',
     [WILSY_CRM_COMMAND_HEADERS.tenantId]: tenantId,
     [WILSY_CRM_COMMAND_HEADERS.wilsyTenantId]: tenantId,
+    'X-Tenant-ID': tenantId,
+    'X-Tenant-Id': tenantId,
+    'X-Wilsy-Tenant-Id': tenantId,
     [WILSY_CRM_COMMAND_HEADERS.client]: 'wilsy-crm-command-client',
     [WILSY_CRM_COMMAND_HEADERS.command]: options.command || 'crm.command',
     [WILSY_CRM_COMMAND_HEADERS.requestId]: requestId,
     [WILSY_CRM_COMMAND_HEADERS.traceId]: options.traceId || requestId
   };
 
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+    headers.authorization = `Bearer ${token}`;
+  }
 
   return headers;
 };
@@ -397,6 +403,7 @@ export const wilsyCrmFetchJson = async (path, options = {}) => {
 
   const url = `${getWilsyCrmApiBaseUrl()}${path}`;
   const response = await fetch(url, {
+      credentials: 'include',
     method: options.method || 'GET',
     headers: buildWilsyCrmHeaders(options),
     body: options.body === undefined ? undefined : JSON.stringify(options.body),

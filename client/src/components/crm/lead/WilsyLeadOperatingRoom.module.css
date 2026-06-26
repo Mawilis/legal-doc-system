@@ -1652,6 +1652,7 @@
 }
 
 .leadOperatingRoom[data-wilsy-lead-skin="crm_revenue_pulse"] .appHeader,
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_NEBULA_COMMAND"] .appHeader,
 .leadOperatingRoom[data-wilsy-lead-skin="NEBULA"] .appHeader {
   box-shadow: 0 24px 80px rgba(34, 197, 94, 0.09);
 }
@@ -4943,5 +4944,2187 @@
     height: auto !important;
     min-height: 28rem !important;
     max-height: none !important;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R84A - LIVE PIPELINE VISION SURFACE
+   Wilson's dark Leads command vision: live KPI cards, grid-attached command
+   toolbar, DB-only rows, owner initials, status pills and score rings.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+  --r84-bg: #080d18;
+  --r84-panel: #111827;
+  --r84-panel-2: #151d2c;
+  --r84-line: rgba(139, 153, 206, 0.22);
+  --r84-line-strong: rgba(148, 136, 255, 0.36);
+  --r84-text: rgba(250, 252, 255, 0.97);
+  --r84-muted: rgba(210, 218, 242, 0.64);
+  --r84-purple: #7c61ff;
+  --r84-blue: #60a5fa;
+  --r84-green: #63e88f;
+  --r84-cyan: #67e8f9;
+  --r84-gold: #f6cf55;
+  --r84-orange: #f59e0b;
+  --r84-red: #fb7185;
+  --r83a-stage-height: clamp(27rem, calc(100dvh - 29rem), 37.5rem);
+  padding: 0.9rem 1.05rem 1.25rem !important;
+  gap: 1rem !important;
+  background:
+    radial-gradient(circle at 12% -8%, rgba(124, 97, 255, 0.16), transparent 32%),
+    radial-gradient(circle at 88% 2%, rgba(103, 232, 249, 0.11), transparent 28%),
+    linear-gradient(135deg, #070b14 0%, #101624 54%, #070b13 100%) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .appHeader {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+  min-height: 7.4rem !important;
+  grid-template-columns: minmax(20rem, 0.76fr) minmax(36rem, 1.24fr) !important;
+  padding: 0.25rem 0 0 !important;
+  border: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock small,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock small,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock small {
+  color: color-mix(in srgb, var(--r84-purple) 76%, var(--r84-cyan)) !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.16em !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock strong {
+  color: var(--r84-text) !important;
+  font-size: clamp(3rem, 4.1vw, 4.7rem) !important;
+  line-height: 0.88 !important;
+  letter-spacing: -0.055em !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock em {
+  color: var(--r84-muted) !important;
+  max-width: 48rem !important;
+  font-size: 0.98rem !important;
+  line-height: 1.38 !important;
+  text-transform: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities .leadIconButton {
+  width: 3.35rem !important;
+  height: 3.35rem !important;
+  min-width: 3.35rem !important;
+  min-height: 3.35rem !important;
+  border-radius: 0.9rem !important;
+  border-color: var(--r84-line) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015)), #121829 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadSearch,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .headerSearch {
+  width: clamp(21rem, 24vw, 27rem) !important;
+  min-width: min(21rem, 100%) !important;
+  height: 3.35rem !important;
+  min-height: 3.35rem !important;
+  max-height: 3.35rem !important;
+  border-radius: 0.95rem !important;
+  border-color: var(--r84-line) !important;
+  background: #101726 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] {
+  width: clamp(16rem, 20vw, 21rem) !important;
+  min-width: min(16rem, 100%) !important;
+  max-width: 21rem !important;
+  height: 3.75rem !important;
+  min-height: 3.75rem !important;
+  max-height: 3.75rem !important;
+  border-radius: 1rem !important;
+  border-color: var(--r84-line-strong) !important;
+  background: linear-gradient(180deg, rgba(124, 97, 255, 0.11), rgba(255,255,255,0.025)), #12182a !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-active-lead-tab="records"] .leadModuleViewBar {
+  display: none !important;
+}
+
+.leadVisionMetricDeck {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.leadVisionMetricDeck article {
+  min-width: 0;
+  min-height: 7.45rem;
+  border: 1px solid var(--r84-line-strong);
+  border-radius: 0.95rem;
+  background:
+    radial-gradient(circle at 95% 18%, rgba(124, 97, 255, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.014)),
+    #111827;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.65rem 0.85rem;
+  padding: 1.05rem;
+  overflow: hidden;
+}
+
+.leadVisionMetricDeck article[data-tone="blue"] {
+  border-color: color-mix(in srgb, var(--r84-blue) 42%, var(--r84-line));
+}
+
+.leadVisionMetricDeck article[data-tone="green"] {
+  border-color: color-mix(in srgb, var(--r84-green) 42%, var(--r84-line));
+}
+
+.leadVisionMetricDeck article[data-tone="cyan"] {
+  border-color: color-mix(in srgb, var(--r84-cyan) 42%, var(--r84-line));
+}
+
+.leadVisionMetricDeck article[data-tone="gold"] {
+  border-color: color-mix(in srgb, var(--r84-gold) 46%, var(--r84-line));
+}
+
+.leadVisionMetricIcon {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  color: var(--r84-purple);
+}
+
+.leadVisionMetricDeck article[data-tone="blue"] .leadVisionMetricIcon {
+  color: var(--r84-blue);
+}
+
+.leadVisionMetricDeck article[data-tone="green"] .leadVisionMetricIcon {
+  color: var(--r84-green);
+}
+
+.leadVisionMetricDeck article[data-tone="cyan"] .leadVisionMetricIcon {
+  color: var(--r84-cyan);
+}
+
+.leadVisionMetricDeck article[data-tone="gold"] .leadVisionMetricIcon {
+  color: var(--r84-gold);
+}
+
+.leadVisionMetricCopy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.leadVisionMetricCopy small {
+  color: var(--r84-text);
+  font-size: 0.83rem;
+  font-weight: 850;
+}
+
+.leadVisionMetricCopy strong {
+  color: var(--r84-text);
+  font-size: clamp(1.35rem, 1.6vw, 1.72rem);
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadVisionMetricCopy em,
+.leadVisionMetricDeck article > b {
+  color: var(--r84-muted);
+  font-size: 0.74rem;
+  font-style: normal;
+  line-height: 1.25;
+}
+
+.leadVisionMetricDeck article > b {
+  grid-column: 2;
+  color: var(--r84-green);
+  font-weight: 820;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadRecordsPanel {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto !important;
+}
+
+.leadRecordsCommandBar {
+  min-height: 4.75rem;
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(18rem, 1fr) auto auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--r84-line);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)), #121a2a;
+}
+
+.leadRecordsTabs,
+.leadRecordsActions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.leadRecordsTabs {
+  overflow-x: auto;
+}
+
+.leadRecordsTabs button,
+.leadRecordsActions > button,
+.leadRecordsActions .leadSortButton,
+.leadRecordsActions .leadMoreButton,
+.leadRecordsCommandBar .leadViewButton {
+  min-height: 2.6rem !important;
+  border-radius: 0.65rem !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--r84-muted) !important;
+  box-shadow: none !important;
+  padding: 0.58rem 0.72rem !important;
+  white-space: nowrap !important;
+}
+
+.leadRecordsCommandBar .leadViewButton,
+.leadRecordsTabs button[data-active="true"],
+.leadRecordsActions button[data-active="true"] {
+  border-color: color-mix(in srgb, var(--r84-purple) 48%, var(--r84-line)) !important;
+  background: color-mix(in srgb, var(--r84-purple) 18%, transparent) !important;
+  color: var(--r84-text) !important;
+}
+
+.leadRecordsCommandBar .leadCreateDock {
+  justify-self: end;
+}
+
+.leadRecordsCommandBar .leadCreateButton,
+.leadRecordsCommandBar .leadCreateMenuButton {
+  min-height: 2.75rem !important;
+  border-color: color-mix(in srgb, var(--r84-purple) 66%, transparent) !important;
+  background: linear-gradient(135deg, #5b45d6, #6d55ec) !important;
+  color: #ffffff !important;
+}
+
+.leadRecordsCommandBar .leadCreateButton {
+  min-width: 8.7rem;
+}
+
+.leadRecordsHeader {
+  min-height: 3.35rem !important;
+  padding: 0.62rem 1rem !important;
+  background: #111827 !important;
+}
+
+.leadRecordsHeader div {
+  gap: 0.45rem !important;
+}
+
+.leadRecordsHeader button {
+  min-height: 2.2rem !important;
+}
+
+.leadRecordsTable th:nth-child(1),
+.leadRecordsTable td:nth-child(1) {
+  width: 3.2rem;
+}
+
+.leadRecordsTable th:nth-child(2),
+.leadRecordsTable td:nth-child(2) {
+  width: 16%;
+}
+
+.leadRecordsTable th:nth-child(3),
+.leadRecordsTable td:nth-child(3) {
+  width: 14%;
+}
+
+.leadRecordsTable th:nth-child(4),
+.leadRecordsTable td:nth-child(4) {
+  width: 18%;
+}
+
+.leadRecordsTable th:nth-child(5),
+.leadRecordsTable td:nth-child(5) {
+  width: 13%;
+}
+
+.leadRecordsTable th:nth-child(6),
+.leadRecordsTable td:nth-child(6) {
+  width: 15%;
+}
+
+.leadRecordsTable th:nth-child(7),
+.leadRecordsTable td:nth-child(7) {
+  width: 10%;
+}
+
+.leadRecordsTable th:nth-child(8),
+.leadRecordsTable td:nth-child(8) {
+  width: 6rem;
+  text-align: center !important;
+}
+
+.leadRecordsTable th:nth-child(9),
+.leadRecordsTable td:nth-child(9) {
+  width: 3.2rem;
+  text-align: center !important;
+}
+
+.leadNameCell strong {
+  color: var(--r84-text) !important;
+  font-size: 0.82rem !important;
+}
+
+.leadNameCell em {
+  color: var(--r84-muted) !important;
+  font-size: 0.74rem !important;
+}
+
+.leadPhoneCell,
+.leadOwnerCell {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 100%;
+}
+
+.leadPhoneCell a {
+  color: rgba(222, 227, 244, 0.9) !important;
+}
+
+.leadPhoneCell svg {
+  color: var(--r84-blue);
+  flex: 0 0 auto;
+}
+
+.leadOwnerCell b {
+  width: 1.65rem;
+  height: 1.65rem;
+  min-width: 1.65rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--r84-gold) 34%, transparent);
+  background: linear-gradient(135deg, rgba(246, 207, 85, 0.22), rgba(103, 232, 249, 0.1));
+  color: var(--r84-text);
+  font-size: 0.64rem;
+  font-weight: 900;
+}
+
+.leadOwnerCell em {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(222, 227, 244, 0.88);
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadStagePill {
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border-radius: 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--r84-blue) 34%, transparent);
+  background: color-mix(in srgb, var(--r84-blue) 12%, transparent);
+  color: #7bb8ff;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 820;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadStagePill[data-tone="qualified"] {
+  border-color: color-mix(in srgb, var(--r84-green) 38%, transparent);
+  background: color-mix(in srgb, var(--r84-green) 12%, transparent);
+  color: var(--r84-green);
+}
+
+.leadStagePill[data-tone="contacted"] {
+  border-color: color-mix(in srgb, var(--r84-purple) 42%, transparent);
+  background: color-mix(in srgb, var(--r84-purple) 14%, transparent);
+  color: #b59cff;
+}
+
+.leadStagePill[data-tone="proposal"] {
+  border-color: color-mix(in srgb, var(--r84-orange) 42%, transparent);
+  background: color-mix(in srgb, var(--r84-orange) 12%, transparent);
+  color: var(--r84-orange);
+}
+
+.leadStagePill[data-tone="failed"] {
+  border-color: color-mix(in srgb, var(--r84-red) 42%, transparent);
+  background: color-mix(in srgb, var(--r84-red) 12%, transparent);
+  color: var(--r84-red);
+}
+
+.leadScoreOrb {
+  width: 2rem;
+  height: 2rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--r84-green) 60%, transparent);
+  color: var(--r84-green);
+  background: rgba(99, 232, 143, 0.08);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.leadScoreOrb[data-score-band="READY"] {
+  border-color: color-mix(in srgb, var(--r84-gold) 60%, transparent);
+  color: var(--r84-gold);
+  background: rgba(246, 207, 85, 0.08);
+}
+
+.leadScoreOrb[data-score-band="VERIFY"] {
+  border-color: color-mix(in srgb, var(--r84-orange) 58%, transparent);
+  color: var(--r84-orange);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.leadScoreOrb[data-score-band="SOURCE GAP"] {
+  border-color: color-mix(in srgb, var(--r84-red) 58%, transparent);
+  color: var(--r84-red);
+  background: rgba(251, 113, 133, 0.08);
+}
+
+@media (max-width: 1420px) {
+  .leadVisionMetricDeck {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .leadRecordsCommandBar {
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  }
+
+  .leadRecordsActions,
+  .leadRecordsCommandBar .leadCreateDock {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 980px) {
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar,
+  .leadRecordsCommandBar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+    justify-content: flex-start !important;
+  }
+
+  .leadVisionMetricDeck {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R84B - VISION PARITY COMPOSITION LOCK
+   One coherent first viewport: compact header, top-right command cluster,
+   KPI row, full-width list toolbar, then filter rail + records grid.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+  --r83a-filter-width: 250px;
+  --r83a-closed-filter-width: 46px;
+  --r83a-stage-height: clamp(31rem, calc(100dvh - 26rem), 38rem);
+  padding: 0.85rem 1rem 1rem !important;
+  gap: 0.75rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+  min-height: 6.7rem !important;
+  grid-template-columns: minmax(29rem, 1fr) auto !important;
+  align-items: start !important;
+  gap: 1rem !important;
+  padding: 0 0 0.25rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock {
+  padding-top: 0.2rem !important;
+  gap: 0.2rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock strong {
+  font-size: clamp(2.55rem, 3.25vw, 3.35rem) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock em {
+  max-width: 42rem !important;
+  font-size: 0.86rem !important;
+  line-height: 1.28 !important;
+  font-weight: 650 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  align-items: start !important;
+  gap: 0.55rem !important;
+  padding-top: 0.15rem !important;
+  max-width: 52rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities .leadIconButton {
+  width: 3rem !important;
+  height: 3rem !important;
+  min-width: 3rem !important;
+  min-height: 3rem !important;
+  border-radius: 0.75rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadSearch,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .headerSearch {
+  order: 3 !important;
+  width: 19.5rem !important;
+  min-width: 19.5rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  max-height: 3rem !important;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 3.05rem !important;
+  gap: 0.55rem !important;
+  border-radius: 0.75rem !important;
+  padding: 0.45rem 0.55rem 0.45rem 0.75rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadSearch input,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .headerSearch input {
+  font-size: 0.85rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadSearch kbd,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .headerSearch kbd {
+  width: 2.75rem !important;
+  min-width: 2.75rem !important;
+  height: 2.25rem !important;
+  border-radius: 0.55rem !important;
+  font-size: 0.72rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] {
+  order: 2 !important;
+  width: 15.5rem !important;
+  min-width: 15.5rem !important;
+  max-width: 15.5rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  max-height: 3rem !important;
+  grid-template-columns: 1.35rem minmax(0, 1fr) 1rem !important;
+  gap: 0.65rem !important;
+  padding: 0 0.85rem !important;
+  border-radius: 0.75rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] small,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] em {
+  font-size: 0.58rem !important;
+  letter-spacing: 0.08em !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] strong {
+  font-size: 0.82rem !important;
+  line-height: 1.02 !important;
+}
+
+.leadVisionMetricDeck {
+  gap: 0.75rem !important;
+  margin: 0 0 0.75rem !important;
+}
+
+.leadVisionMetricDeck article {
+  min-height: 6.25rem !important;
+  border-radius: 0.75rem !important;
+  grid-template-columns: 1.55rem minmax(0, 1fr) !important;
+  gap: 0.45rem 0.65rem !important;
+  padding: 0.85rem !important;
+}
+
+.leadVisionMetricIcon {
+  width: 1.55rem !important;
+  height: 1.55rem !important;
+}
+
+.leadVisionMetricCopy small {
+  font-size: 0.72rem !important;
+}
+
+.leadVisionMetricCopy strong {
+  font-size: clamp(1.18rem, 1.32vw, 1.45rem) !important;
+}
+
+.leadVisionMetricCopy em,
+.leadVisionMetricDeck article > b {
+  font-size: 0.66rem !important;
+}
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+  grid-template-columns: var(--r83a-filter-width) minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  height: var(--r83a-stage-height) !important;
+  min-height: var(--r83a-stage-height) !important;
+  max-height: var(--r83a-stage-height) !important;
+  border-radius: 0.85rem !important;
+}
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: var(--r83a-closed-filter-width) minmax(0, 1fr) !important;
+}
+
+.leadRecordsCommandBar {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  min-height: 4rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(9rem, 13rem) minmax(18rem, 1fr) auto auto !important;
+  gap: 0.55rem !important;
+  padding: 0.58rem 0.75rem !important;
+  border-bottom: 1px solid var(--r84-line) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)), #111827 !important;
+}
+
+.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"],
+.leadFilterRailCollapsed {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  height: calc(var(--r83a-stage-height) - 4rem) !important;
+  min-height: calc(var(--r83a-stage-height) - 4rem) !important;
+  max-height: calc(var(--r83a-stage-height) - 4rem) !important;
+}
+
+.leadRecordsPanel {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  height: calc(var(--r83a-stage-height) - 4rem) !important;
+  min-height: calc(var(--r83a-stage-height) - 4rem) !important;
+  max-height: calc(var(--r83a-stage-height) - 4rem) !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+}
+
+.leadRecordsHeader {
+  display: none !important;
+}
+
+.leadRecordsCommandBar .leadViewButton,
+.leadRecordsTabs button,
+.leadRecordsActions > button,
+.leadRecordsActions .leadSortButton,
+.leadRecordsActions .leadMoreButton {
+  min-height: 2.45rem !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 0.62rem !important;
+  font-size: 0.78rem !important;
+}
+
+.leadRecordsCommandBar .leadViewButton {
+  min-width: 0 !important;
+}
+
+.leadRecordsTabs {
+  gap: 0.32rem !important;
+}
+
+.leadRecordsTabs button {
+  min-width: 5.8rem !important;
+}
+
+.leadRecordsActions {
+  gap: 0.35rem !important;
+}
+
+.leadRecordsCommandBar .leadCreateButton,
+.leadRecordsCommandBar .leadCreateMenuButton {
+  min-height: 2.45rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.leadRecordsCommandBar .leadCreateButton {
+  min-width: 7.6rem !important;
+}
+
+.leadRecordsCommandBar .leadCreateDock {
+  align-self: center !important;
+}
+
+.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  width: var(--r83a-filter-width) !important;
+  min-width: var(--r83a-filter-width) !important;
+  max-width: var(--r83a-filter-width) !important;
+  padding: 0.78rem 0.86rem !important;
+}
+
+.leadFilterSearch {
+  margin: 0.55rem 0 0.62rem !important;
+}
+
+.leadFilterRailHeader strong {
+  font-size: 0.82rem !important;
+}
+
+.leadFilterRailHeader em {
+  font-size: 0.66rem !important;
+}
+
+.leadRecordsTable th {
+  height: 2.55rem !important;
+  font-size: 0.68rem !important;
+}
+
+.leadRecordsTable td {
+  height: 2.85rem !important;
+  font-size: 0.72rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow section,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRealEmptyState {
+  min-height: 3.4rem !important;
+  height: 3.4rem !important;
+  margin: 0 !important;
+  padding: 0 0.78rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRealEmptyState strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow strong {
+  font-size: 0.78rem !important;
+  line-height: 1.1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRealEmptyState em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow em {
+  font-size: 0.72rem !important;
+}
+
+@media (max-width: 1440px) {
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+    justify-content: flex-start !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .leadRecordsCommandBar,
+  .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"],
+  .leadFilterRailCollapsed,
+  .leadRecordsPanel {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .leadRecordsCommandBar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R84C - LEADS VIEWPORT FORENSIC SEAL
+   Exact operating-system posture: left-aligned header, compact utility rail,
+   connected list toolbar, flush filter/table join, and live-record footer.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+  --r83a-filter-width: 15.25rem;
+  --r83a-closed-filter-width: 3.2rem;
+  --r84c-toolbar-height: 3.4rem;
+  --r84c-workspace-height: clamp(22rem, calc(100dvh - 26.2rem), 30.25rem);
+  width: 100% !important;
+  height: min(100%, calc(100dvh - 0.9rem)) !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 0.9rem) !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  align-content: stretch !important;
+  padding: 0.72rem 0.95rem 0.8rem !important;
+  gap: 0.62rem !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .appHeader {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+  min-height: 4.55rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(22rem, 1fr) minmax(42rem, auto) !important;
+  align-items: start !important;
+  gap: 1rem !important;
+  padding: 0 0 0.12rem !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock {
+  justify-items: start !important;
+  align-items: start !important;
+  text-align: left !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0.14rem !important;
+  max-width: 38rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock small,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock small,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock small {
+  color: #8192ff !important;
+  font-size: 0.62rem !important;
+  line-height: 1 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock strong {
+  font-size: clamp(2.15rem, 2.75vw, 3rem) !important;
+  line-height: 0.96 !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock em {
+  max-width: 36rem !important;
+  color: rgba(206, 211, 229, 0.74) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.32 !important;
+  font-weight: 560 !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+  width: fit-content !important;
+  max-width: 100% !important;
+  justify-self: end !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  align-items: flex-start !important;
+  gap: 0.48rem !important;
+  padding: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities .leadIconButton {
+  order: 1 !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  border-radius: 0.7rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] {
+  order: 2 !important;
+  width: 14.8rem !important;
+  min-width: 14.8rem !important;
+  max-width: 14.8rem !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  max-height: 2.75rem !important;
+  grid-template-columns: 1.2rem minmax(0, 1fr) 0.9rem !important;
+  gap: 0.58rem !important;
+  padding: 0 0.78rem !important;
+  border-radius: 0.7rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadSearch,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .headerSearch {
+  order: 3 !important;
+  width: 18rem !important;
+  min-width: 18rem !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  max-height: 2.75rem !important;
+  grid-template-columns: 1.35rem minmax(0, 1fr) 2.7rem !important;
+  padding: 0.35rem 0.45rem 0.35rem 0.7rem !important;
+  border-radius: 0.7rem !important;
+}
+
+.leadTabbedShell {
+  min-height: 0 !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: stretch !important;
+  gap: 0.62rem !important;
+  overflow: hidden !important;
+}
+
+.leadVisionMetricDeck {
+  margin: 0 !important;
+  gap: 0.62rem !important;
+}
+
+.leadVisionMetricDeck article {
+  min-height: 5.35rem !important;
+  padding: 0.78rem 0.84rem !important;
+  border-radius: 0.75rem !important;
+}
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: var(--r84c-workspace-height) !important;
+  min-height: 0 !important;
+  max-height: var(--r84c-workspace-height) !important;
+  display: grid !important;
+  grid-template-columns: var(--r83a-filter-width) minmax(0, 1fr) !important;
+  grid-template-rows: var(--r84c-toolbar-height) minmax(0, 1fr) !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+  align-self: stretch !important;
+  border-radius: 0.82rem !important;
+  border: 1px solid rgba(126, 111, 179, 0.58) !important;
+  background: #101725 !important;
+  overflow: hidden !important;
+}
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: var(--r83a-closed-filter-width) minmax(0, 1fr) !important;
+}
+
+.leadRecordsCommandBar {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  min-height: var(--r84c-toolbar-height) !important;
+  height: var(--r84c-toolbar-height) !important;
+  display: grid !important;
+  grid-template-columns: minmax(8.2rem, 10rem) minmax(18rem, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  padding: 0.46rem 0.64rem !important;
+  border-bottom: 1px solid rgba(126, 111, 179, 0.42) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)), #121a2a !important;
+}
+
+.leadRecordsCommandBar .leadViewCluster {
+  grid-area: auto !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  justify-self: start !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+}
+
+.leadRecordsCommandBar .leadRecordsTabs {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  justify-self: start !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+
+.leadRecordsCommandBar .leadRecordsActions {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  min-width: max-content !important;
+}
+
+.leadRecordsCommandBar .leadCreateDock {
+  grid-column: 4 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  align-self: center !important;
+  min-width: max-content !important;
+}
+
+.leadRecordsCommandBar .leadViewButton,
+.leadRecordsCommandBar .leadRecordsTabs button,
+.leadRecordsCommandBar .leadRecordsActions > button,
+.leadRecordsCommandBar .leadRecordsActions .leadSortButton,
+.leadRecordsCommandBar .leadRecordsActions .leadMoreButton {
+  min-height: 2.2rem !important;
+  height: 2.2rem !important;
+  border-radius: 0.5rem !important;
+  padding: 0.42rem 0.56rem !important;
+  font-size: 0.76rem !important;
+  letter-spacing: 0 !important;
+}
+
+.leadRecordsCommandBar .leadViewButton {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.leadRecordsCommandBar .leadViewButton span em {
+  display: none !important;
+}
+
+.leadRecordsCommandBar .leadRecordsTabs button {
+  min-width: 5.45rem !important;
+}
+
+.leadRecordsCommandBar .leadCreateButton,
+.leadRecordsCommandBar .leadCreateMenuButton {
+  min-height: 2.2rem !important;
+  height: 2.2rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.leadRecordsCommandBar .leadCreateButton {
+  min-width: 7.55rem !important;
+}
+
+.leadRecordsCommandBar .leadCreateMenuButton {
+  width: 2.25rem !important;
+  min-width: 2.25rem !important;
+}
+
+.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"],
+.leadFilterRailCollapsed {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  width: var(--r83a-filter-width) !important;
+  min-width: 0 !important;
+  max-width: var(--r83a-filter-width) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-top: 0 !important;
+  border-right: 1px solid rgba(126, 111, 179, 0.42) !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+
+.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  padding: 0.72rem 0.78rem !important;
+}
+
+.leadFilterRailCollapsed {
+  width: var(--r83a-closed-filter-width) !important;
+  max-width: var(--r83a-closed-filter-width) !important;
+  padding: 0.6rem 0.44rem !important;
+}
+
+.leadRecordsPanel {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  background: #101725 !important;
+  overflow: hidden !important;
+}
+
+.leadRecordsPanel .leadBulkActionBar {
+  min-height: 2.35rem !important;
+  padding: 0.4rem 0.8rem !important;
+}
+
+.leadRecordsHeader {
+  display: none !important;
+}
+
+.leadRecordsTableFrame {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+  scrollbar-gutter: stable !important;
+}
+
+.leadRecordsTable {
+  min-width: 62rem !important;
+}
+
+.leadRecordsTable th {
+  height: 2.45rem !important;
+  padding: 0 0.7rem !important;
+  font-size: 0.68rem !important;
+}
+
+.leadRecordsTable td {
+  height: 2.62rem !important;
+  padding: 0 0.7rem !important;
+  font-size: 0.7rem !important;
+}
+
+.leadRecordsWorkspace[data-wilsy-lead-row-count="0"] .leadRecordsTableFrame {
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow td {
+  height: 5.4rem !important;
+  min-height: 5.4rem !important;
+  padding: 0.75rem 1.05rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow section,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRealEmptyState {
+  height: auto !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0.35rem !important;
+  align-content: center !important;
+  justify-items: start !important;
+  text-align: left !important;
+  padding: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRealEmptyState strong,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow strong {
+  font-size: 0.86rem !important;
+  line-height: 1.12 !important;
+  white-space: normal !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRealEmptyState em,
+.leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadEmptyRow em {
+  font-size: 0.76rem !important;
+  line-height: 1.3 !important;
+  white-space: normal !important;
+}
+
+.leadRecordsFooter[data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER"] {
+  min-height: 2.55rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.8rem !important;
+  padding: 0.44rem 0.72rem 0.44rem 0.88rem !important;
+  border-top: 1px solid rgba(126, 111, 179, 0.42) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.028)), #111827 !important;
+  overflow: hidden !important;
+}
+
+.leadFooterRecordRange {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.5rem !important;
+  color: rgba(209, 214, 232, 0.78) !important;
+}
+
+.leadFooterRecordRange strong {
+  color: rgba(236, 239, 250, 0.9) !important;
+  font-size: 0.7rem !important;
+  font-weight: 720 !important;
+  white-space: nowrap !important;
+}
+
+.leadFooterRecordRange em {
+  color: rgba(169, 177, 202, 0.7) !important;
+  font-size: 0.66rem !important;
+  font-style: normal !important;
+  white-space: nowrap !important;
+}
+
+.leadFooterPagination {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.32rem !important;
+  min-width: max-content !important;
+}
+
+.leadFooterPagination button,
+.leadFooterPagination b,
+.leadFooterPagination span {
+  min-width: 1.72rem !important;
+  height: 1.72rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0.38rem !important;
+  border: 1px solid rgba(126, 111, 179, 0.35) !important;
+  background: rgba(16, 23, 37, 0.82) !important;
+  color: rgba(226, 231, 245, 0.82) !important;
+  font-size: 0.68rem !important;
+  font-weight: 720 !important;
+}
+
+.leadFooterPagination button:disabled {
+  opacity: 0.48 !important;
+}
+
+.leadFooterPagination b {
+  border-color: rgba(139, 110, 255, 0.72) !important;
+  background: linear-gradient(135deg, rgba(93, 74, 217, 0.92), rgba(125, 92, 255, 0.86)) !important;
+  color: #ffffff !important;
+}
+
+.leadFooterPagination span {
+  width: auto !important;
+  min-width: 4.9rem !important;
+  padding: 0 0.52rem !important;
+}
+
+@media (max-width: 1440px) {
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+    grid-template-columns: minmax(18rem, 1fr) minmax(34rem, auto) !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadHeaderUtilities {
+    justify-content: flex-end !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadSearch,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .headerSearch {
+    width: 15rem !important;
+    min-width: 15rem !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] [data-wilsy-global-theme-authority-control="command-center"] {
+    width: 13.5rem !important;
+    min-width: 13.5rem !important;
+    max-width: 13.5rem !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+    height: auto !important;
+    max-height: none !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R84D - GAP ERADICATION + DYNAMIC FOOTER PAGINATION
+   Overrides the older R75C workspace card rule at equal/higher specificity.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+  --r83a-filter-width: 15.75rem;
+  --r83a-closed-filter-width: 3rem;
+  --r84c-toolbar-height: 3.25rem;
+  --r84c-workspace-height: clamp(24rem, calc(100dvh - 25.4rem), 32rem);
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: var(--r84c-workspace-height) !important;
+  max-height: var(--r84c-workspace-height) !important;
+  display: grid !important;
+  grid-template-columns: var(--r83a-filter-width) minmax(0, 1fr) !important;
+  grid-template-rows: var(--r84c-toolbar-height) minmax(0, 1fr) !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  align-items: stretch !important;
+  border-radius: 0.82rem !important;
+  border: 1px solid rgba(126, 111, 179, 0.58) !important;
+  background: #101725 !important;
+  overflow: hidden !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28) !important;
+  contain: layout paint !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: var(--r83a-closed-filter-width) minmax(0, 1fr) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: var(--r84c-toolbar-height) !important;
+  min-height: var(--r84c-toolbar-height) !important;
+  max-height: var(--r84c-toolbar-height) !important;
+  display: grid !important;
+  grid-template-columns: minmax(10.8rem, 12.4rem) minmax(24rem, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 0.42rem !important;
+  padding: 0.34rem 0.6rem !important;
+  border-bottom: 1px solid rgba(126, 111, 179, 0.48) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)), #121a2a !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar button,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadSortButton,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadMoreButton {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.4rem !important;
+  min-height: 2.2rem !important;
+  height: 2.2rem !important;
+  max-height: 2.2rem !important;
+  padding: 0.36rem 0.58rem !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar button span {
+  display: inline !important;
+  min-width: 0 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewButton span {
+  display: grid !important;
+  gap: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadRecordsTabs {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.42rem !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadRecordsTabs button {
+  min-width: 5.6rem !important;
+  width: auto !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadRecordsActions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.38rem !important;
+  min-width: max-content !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadCreateDock {
+  min-width: max-content !important;
+  justify-self: end !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadCreateButton {
+  min-width: 8.8rem !important;
+  justify-content: flex-start !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadCreateMenuButton {
+  width: 2.35rem !important;
+  min-width: 2.35rem !important;
+  padding: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"],
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFilterRailCollapsed {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  align-self: stretch !important;
+  margin: 0 !important;
+  border-top: 0 !important;
+  border-right: 1px solid rgba(126, 111, 179, 0.48) !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #101725 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  padding: 0.72rem 0.74rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsPanel {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  align-self: stretch !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  background: #101725 !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsTableFrame {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsFooter[data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER"] {
+  min-height: 2.55rem !important;
+  height: 2.55rem !important;
+  max-height: 2.55rem !important;
+  flex: 0 0 2.55rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.85rem !important;
+  padding: 0.42rem 0.68rem 0.42rem 0.85rem !important;
+  border-top: 1px solid rgba(126, 111, 179, 0.48) !important;
+  background: #111827 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPagination button,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPagination span,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPageSize select {
+  min-width: 1.72rem !important;
+  height: 1.72rem !important;
+  border-radius: 0.38rem !important;
+  border: 1px solid rgba(126, 111, 179, 0.36) !important;
+  background: rgba(16, 23, 37, 0.84) !important;
+  color: rgba(226, 231, 245, 0.88) !important;
+  font-size: 0.68rem !important;
+  font-weight: 760 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPagination button[aria-current="page"] {
+  border-color: rgba(139, 110, 255, 0.74) !important;
+  background: linear-gradient(135deg, rgba(93, 74, 217, 0.94), rgba(125, 92, 255, 0.88)) !important;
+  color: #ffffff !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPagination span[data-wilsy-pagination-ellipsis="true"] {
+  min-width: 1.45rem !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPageSize {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadFooterPageSize select {
+  min-width: 5.4rem !important;
+  padding: 0 1.42rem 0 0.58rem !important;
+  appearance: none !important;
+  outline: 0 !important;
+}
+
+@media (max-width: 1320px) {
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+    grid-template-columns: var(--r83a-filter-width) minmax(0, 1fr) !important;
+    grid-template-rows: var(--r84c-toolbar-height) minmax(0, 1fr) !important;
+    height: var(--r84c-workspace-height) !important;
+    max-height: var(--r84c-workspace-height) !important;
+    overflow: hidden !important;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R84E - BOTTOM GAP ELIMINATION
+   The lead screen has two visible rows: header and operating workspace.
+   The records footer is pinned to the bottom of the records panel.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+  height: min(100%, calc(100dvh - 0.9rem)) !important;
+  max-height: calc(100dvh - 0.9rem) !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: stretch !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .appHeader {
+  grid-row: 1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabbedShell {
+  grid-row: 2 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
+  height: 100% !important;
+  max-height: 100% !important;
+  align-self: stretch !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsPanel {
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadBulkActionBar {
+  grid-row: 1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsTableFrame {
+  grid-row: 2 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsFooter[data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER"] {
+  grid-row: 3 !important;
+  align-self: end !important;
+}
+
+@media (max-width: 1180px) {
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R84F - DROPDOWN ALIGNMENT + SEVEN-STAGE TAB CONTAINMENT
+   Fixes the list-view menu clipping, adds header breathing room, and keeps
+   Pipeline/Proof/Sources inside independent OS work areas.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+  min-height: 5rem !important;
+  padding-top: 0.42rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock {
+  padding-top: 0.18rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadDropdownWrap,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster {
+  overflow: visible !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu {
+  left: 0 !important;
+  right: auto !important;
+  top: calc(100% + 0.48rem) !important;
+  width: min(20.5rem, calc(100vw - 2rem)) !important;
+  max-width: min(20.5rem, calc(100vw - 2rem)) !important;
+  max-height: min(24rem, calc(100dvh - 14rem)) !important;
+  padding: 0.42rem !important;
+  z-index: 900 !important;
+  border-radius: 0.72rem !important;
+  overflow: auto !important;
+  background: rgba(18, 9, 38, 0.98) !important;
+  border-color: rgba(142, 111, 255, 0.48) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button {
+  width: 100% !important;
+  min-height: 2.7rem !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: start !important;
+  align-content: center !important;
+  gap: 0.12rem !important;
+  padding: 0.56rem 0.68rem !important;
+  border-radius: 0.5rem !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button span,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button em {
+  max-width: 100% !important;
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button span {
+  color: rgba(255, 255, 255, 0.96) !important;
+  font-size: 0.82rem !important;
+  font-weight: 860 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button em {
+  color: rgba(199, 164, 232, 0.82) !important;
+  font-size: 0.7rem !important;
+  font-style: normal !important;
+  font-weight: 680 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"]:not([data-wilsy-active-lead-tab="records"]) .leadTabbedShell {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"]:not([data-wilsy-active-lead-tab="records"]) .leadTabSurface {
+  grid-row: 1 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  align-content: stretch !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="pipeline"] .leadJourneyBoard {
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="pipeline"] .leadJourneyLanes {
+  min-height: 0 !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(13.75rem, 1fr) !important;
+  grid-template-columns: none !important;
+  gap: 0.72rem !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-inline: contain !important;
+  scrollbar-gutter: stable !important;
+  padding: 0.04rem 0.2rem 0.45rem 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="pipeline"] .leadJourneyLanes article {
+  min-height: 0 !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="pipeline"] .leadLaneRecords {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  padding-right: 0.12rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="proof"] .leadProofGrid,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="signals"] .leadSignalGrid,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="sources"] .leadSourcesGrid {
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="signals"] {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="proof"] .leadProofGrid {
+  display: grid !important;
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 0.92fr) minmax(8rem, 0.45fr) !important;
+  gap: 0.72rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="proof"] .leadProofLedger {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="sources"] .leadSourcesGrid {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="proof"] .telemetryPanel,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="proof"] .complianceTabs,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="proof"] .leadProofLedger .ledgerPanel,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="signals"] .leadQueuePanel,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="signals"] .leadActionDock,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="sources"] .sourcePanel,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabSurface[data-lead-tab="sources"] .leadSourceMatrix {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+/* ========================================================================
+   WILSY OS R84G - LIVE SETUP DRAWER COMMAND FABRIC
+   Makes Setup read like an operating control plane, not a static menu.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .drawerWide[data-wilsy-setup-live="CRM_COMMAND_FABRIC"] {
+  left: clamp(7.25rem, 7.5vw, 9.25rem) !important;
+  right: clamp(1rem, 2vw, 1.75rem) !important;
+  top: clamp(1rem, 2.1vh, 1.55rem) !important;
+  bottom: clamp(1rem, 2.1vh, 1.55rem) !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 0.78rem !important;
+  padding: clamp(0.82rem, 1.2vw, 1.08rem) !important;
+  overflow: hidden !important;
+  border-radius: 1.05rem !important;
+  border-color: rgba(143, 121, 255, 0.42) !important;
+  background:
+    radial-gradient(circle at 78% 0%, rgba(66, 153, 225, 0.12), transparent 28%),
+    linear-gradient(145deg, rgba(11, 16, 29, 0.99), rgba(8, 11, 20, 0.985) 60%, rgba(13, 8, 24, 0.99)) !important;
+  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.64), inset 0 0 0 1px rgba(255, 255, 255, 0.035) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupDrawerHeader {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 0.72rem !important;
+  min-height: 3.55rem !important;
+  padding: 0.12rem 0.08rem 0.28rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupTitleLock {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.52rem !important;
+  white-space: normal !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupTitleLock small {
+  flex: 0 0 auto !important;
+  color: rgba(229, 211, 151, 0.96) !important;
+  font-size: clamp(0.74rem, 0.9vw, 0.86rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupTitleLock strong {
+  min-width: 0 !important;
+  color: rgba(255, 255, 255, 0.97) !important;
+  font-size: clamp(1.15rem, 1.55vw, 1.65rem) !important;
+  font-weight: 920 !important;
+  letter-spacing: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveRail {
+  height: 2.7rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0 0.8rem !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(93, 244, 156, 0.34) !important;
+  background: rgba(13, 35, 25, 0.62) !important;
+  color: rgba(153, 255, 190, 0.96) !important;
+  font-size: 0.68rem !important;
+  font-weight: 920 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveRail[data-status="gap"] {
+  border-color: rgba(251, 191, 36, 0.42) !important;
+  background: rgba(55, 38, 10, 0.58) !important;
+  color: rgba(250, 224, 143, 0.96) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveRail[data-status="waiting"] {
+  border-color: rgba(148, 163, 184, 0.34) !important;
+  background: rgba(15, 23, 42, 0.62) !important;
+  color: rgba(203, 213, 225, 0.9) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveRail i {
+  width: 0.5rem !important;
+  height: 0.5rem !important;
+  border-radius: 999px !important;
+  background: currentColor !important;
+  box-shadow: 0 0 1rem currentColor !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupDrawerHeader > button {
+  min-width: 6rem !important;
+  height: 2.85rem !important;
+  min-height: 2.85rem !important;
+  border-radius: 0.86rem !important;
+  border-color: rgba(168, 85, 247, 0.42) !important;
+  background: rgba(30, 16, 52, 0.86) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  font-weight: 900 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.62rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary article {
+  min-width: 0 !important;
+  min-height: 5.6rem !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 0.18rem !important;
+  padding: 0.78rem 0.88rem !important;
+  border-radius: 0.82rem !important;
+  border: 1px solid rgba(143, 121, 255, 0.28) !important;
+  background: linear-gradient(135deg, rgba(22, 29, 47, 0.88), rgba(16, 19, 34, 0.78)) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary article[data-status="live"] {
+  border-color: rgba(93, 244, 156, 0.34) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary article[data-status="gap"] {
+  border-color: rgba(251, 191, 36, 0.38) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary small,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupHeader em,
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip {
+  color: rgba(199, 164, 232, 0.88) !important;
+  font-size: 0.66rem !important;
+  font-weight: 860 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary strong {
+  min-width: 0 !important;
+  color: rgba(255, 255, 255, 0.98) !important;
+  font-size: clamp(1.05rem, 1.2vw, 1.38rem) !important;
+  font-weight: 930 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary em {
+  min-width: 0 !important;
+  color: rgba(203, 213, 225, 0.74) !important;
+  font-size: 0.72rem !important;
+  font-style: normal !important;
+  font-weight: 660 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGrid {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(20rem, 1fr)) !important;
+  gap: 0.74rem !important;
+  align-content: start !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  padding: 0.02rem 0.24rem 0.1rem 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupCard {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  gap: 0.58rem !important;
+  padding: 0.78rem !important;
+  border-radius: 0.9rem !important;
+  border: 1px solid rgba(143, 121, 255, 0.26) !important;
+  background: rgba(8, 13, 24, 0.72) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupCard[data-status="live"] {
+  border-color: rgba(93, 244, 156, 0.26) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupCard[data-status="locked"] {
+  border-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupCard[data-status="gap"] {
+  border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupHeader {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.8rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupHeader span {
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.54rem !important;
+  color: rgba(238, 242, 255, 0.94) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupHeader svg {
+  flex: 0 0 auto !important;
+  color: rgba(167, 139, 250, 0.96) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGroupHeader strong {
+  min-width: 0 !important;
+  font-size: 0.92rem !important;
+  font-weight: 900 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupActionStack {
+  min-height: 0 !important;
+  display: grid !important;
+  gap: 0.48rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 4.55rem !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(4.5rem, auto) auto !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 0.68rem !important;
+  padding: 0.64rem 0.72rem !important;
+  border-radius: 0.72rem !important;
+  border-color: rgba(143, 121, 255, 0.22) !important;
+  background: linear-gradient(135deg, rgba(19, 26, 42, 0.92), rgba(15, 17, 32, 0.88)) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  text-align: left !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  border-color: rgba(167, 139, 250, 0.54) !important;
+  background: linear-gradient(135deg, rgba(29, 36, 57, 0.98), rgba(24, 21, 43, 0.94)) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.58 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton > span {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.16rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton strong {
+  min-width: 0 !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton em {
+  min-width: 0 !important;
+  color: rgba(203, 213, 225, 0.66) !important;
+  font-size: 0.69rem !important;
+  font-style: normal !important;
+  font-weight: 640 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton b {
+  min-width: 0 !important;
+  max-width: 10.5rem !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.78rem !important;
+  font-weight: 860 !important;
+  text-align: right !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip {
+  min-width: 4.65rem !important;
+  height: 1.72rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(148, 163, 184, 0.26) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  font-style: normal !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip[data-status="live"] {
+  border-color: rgba(93, 244, 156, 0.4) !important;
+  background: rgba(11, 46, 27, 0.68) !important;
+  color: rgba(153, 255, 190, 0.96) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip[data-status="gap"] {
+  border-color: rgba(251, 191, 36, 0.42) !important;
+  background: rgba(55, 38, 10, 0.68) !important;
+  color: rgba(250, 224, 143, 0.96) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip[data-status="locked"],
+.leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip[data-status="waiting"] {
+  color: rgba(203, 213, 225, 0.78) !important;
+}
+
+@media (max-width: 1180px) {
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .drawerWide[data-wilsy-setup-live="CRM_COMMAND_FABRIC"] {
+    left: 0.72rem !important;
+    right: 0.72rem !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupDrawerHeader {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveRail {
+    display: none !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupGrid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupLiveSummary {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupControlButton {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .setupStatusChip {
+    display: none !important;
   }
 }

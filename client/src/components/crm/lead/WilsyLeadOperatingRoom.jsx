@@ -40,6 +40,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Star,
   SplitSquareHorizontal,
   SlidersHorizontal,
   Upload,
@@ -119,6 +120,8 @@ const LEAD_SORT_OPTIONS = Object.freeze([
   { id: 'recent', label: 'Last activity' }
 ]);
 
+const LEAD_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50, 100]);
+
 const LEAD_FILTER_GROUPS = Object.freeze([
   {
     title: 'System Defined Filters',
@@ -143,31 +146,45 @@ const LEAD_JOURNEY_LANES = Object.freeze([
     action: 'Verify source'
   },
   {
+    id: 'contact',
+    label: 'Contact',
+    headline: 'Reach',
+    aliases: ['ATTEMPTED TO CONTACT', 'NOT CONTACTED', 'CONTACT IN FUTURE', 'CONTACTED', 'CALL BACK'],
+    action: 'Start conversation'
+  },
+  {
     id: 'qualify',
     label: 'Qualify',
     headline: 'Fit',
-    aliases: ['CONTACTED', 'QUALIFIED', 'QUALIFICATION', 'SALES QUALIFIED', 'WARM'],
+    aliases: ['PRE QUALIFIED', 'PRE-QUALIFIED', 'QUALIFIED', 'QUALIFICATION', 'SALES QUALIFIED', 'WARM'],
     action: 'Confirm authority'
   },
   {
-    id: 'engage',
-    label: 'Engage',
-    headline: 'Conversation',
-    aliases: ['DISCOVERY', 'NEEDS ANALYSIS', 'DEMO', 'PRESENTATION', 'MEETING'],
-    action: 'Schedule next step'
+    id: 'discover',
+    label: 'Discover',
+    headline: 'Needs',
+    aliases: ['DISCOVERY', 'NEEDS ANALYSIS', 'REQUIREMENTS', 'DEMO', 'MEETING', 'PRESENTATION'],
+    action: 'Map demand'
   },
   {
-    id: 'prove',
-    label: 'Prove',
-    headline: 'Evidence',
-    aliases: ['COMPLIANCE', 'PROPOSAL', 'NEGOTIATION', 'REVIEW'],
-    action: 'Seal proof'
+    id: 'propose',
+    label: 'Propose',
+    headline: 'Offer',
+    aliases: ['VALUE PROPOSITION', 'PROPOSAL', 'PRICE QUOTE', 'QUOTE', 'OFFER'],
+    action: 'Send proposal'
+  },
+  {
+    id: 'negotiate',
+    label: 'Negotiate',
+    headline: 'Commit',
+    aliases: ['NEGOTIATION', 'REVIEW', 'DECISION MAKER', 'CONTRACT', 'LEGAL'],
+    action: 'Resolve blockers'
   },
   {
     id: 'convert',
     label: 'Convert',
     headline: 'Outcome',
-    aliases: ['CONVERTED', 'WON', 'LOST', 'CLOSED', 'DISQUALIFIED'],
+    aliases: ['CONVERTED', 'WON', 'LOST', 'CLOSED', 'DISQUALIFIED', 'JUNK', 'NOT QUALIFIED'],
     action: 'Record outcome'
   }
 ]);
@@ -313,7 +330,7 @@ function resolveLeadValue(record = {}, field = '') {
     phone: record.phone || record.mobile || record.primaryPhone,
     provenanceHash: getProvenanceHash(record),
     complianceStatus: getComplianceStatus(record),
-    owner: record.owner || record.ownerName || record.assignedTo,
+    owner: resolveLeadOwnerLabel(record),
     lastActivity: record.lastActivity || record.updatedAt || record.createdAt
   };
 
@@ -340,7 +357,7 @@ function resolveLeadRecordId(record = {}, index = 0) {
  * @collaboration Keeps source channels tied to backend payload fields only.
  */
 function resolveLeadSource(record = {}) {
-  return String(record.source || record.sourceSystem || record.connector || record.origin || record.campaign || 'Backend CRM').trim();
+  return String(record.source || record.sourceSystem || record.connector || record.origin || record.campaign || '—').trim();
 }
 
 /**
@@ -352,6 +369,71 @@ function resolveLeadSource(record = {}) {
  */
 function resolveLeadStage(record = {}) {
   return String(record.stage || record.pipelineStage || record.status || record.leadStatus || record.rating || 'Unstaged').trim() || 'Unstaged';
+}
+
+/**
+ * @function resolveLeadOwnerLabel
+ * @description Resolves a human-readable owner label from flexible Lead owner fields.
+ * @param {Object} record - Lead record.
+ * @returns {string} Owner label.
+ * @collaboration Shows owner assignment only when the live backend payload provides it.
+ */
+function resolveLeadOwnerLabel(record = {}) {
+  const owner = record.owner || record.ownerName || record.assignedTo || record.assignee || record.createdBy || record.user;
+
+  if (typeof owner === 'string') return owner.trim() || '—';
+  if (owner && typeof owner === 'object') {
+    return String(owner.name || owner.fullName || owner.email || owner.username || '—').trim() || '—';
+  }
+
+  return '—';
+}
+
+/**
+ * @function resolveLeadOwnerInitials
+ * @description Builds owner initials for the compact owner chip.
+ * @param {string} ownerLabel - Owner label.
+ * @returns {string} Owner initials.
+ * @collaboration Creates avatar-like affordance from real owner text without image placeholders.
+ */
+function resolveLeadOwnerInitials(ownerLabel = '') {
+  const cleanLabel = String(ownerLabel || '').trim();
+  if (!isKnownLeadValue(cleanLabel)) return '—';
+
+  return cleanLabel
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(part => part.charAt(0).toUpperCase())
+    .join('');
+}
+
+/**
+ * @function resolveLeadStageTone
+ * @description Classifies a lead stage for status-pill styling.
+ * @param {string} stage - Lead stage.
+ * @returns {string} Stage tone.
+ * @collaboration Keeps row status visual language derived from the actual Lead status.
+ */
+function resolveLeadStageTone(stage = '') {
+  const normalizedStage = String(stage || '').toUpperCase();
+
+  if (/QUALIFIED|CONVERTED|WON|VERIFIED/.test(normalizedStage)) return 'qualified';
+  if (/PROPOSAL|NEGOTIATION|REVIEW/.test(normalizedStage)) return 'proposal';
+  if (/CONTACTED|DISCOVERY|MEETING|DEMO|NURTUR/.test(normalizedStage)) return 'contacted';
+  if (/FAILED|LOST|DISQUALIFIED|REJECTED/.test(normalizedStage)) return 'failed';
+
+  return 'new';
+}
+
+/**
+ * @function resolveLeadSubtitle
+ * @description Resolves secondary row text for the Lead name cell.
+ * @param {Object} record - Lead record.
+ * @returns {string} Secondary row text.
+ * @collaboration Uses live title/role fields when available and falls back to the live stage only.
+ */
+function resolveLeadSubtitle(record = {}) {
+  return String(record.title || record.jobTitle || record.position || record.roleTitle || resolveLeadStage(record) || '—').trim() || '—';
 }
 
 /**
@@ -466,6 +548,8 @@ function buildLeadSourceChannels(routeRegistry = [], leads = []) {
 
   const sourceCounts = leads.reduce((map, record) => {
     const source = resolveLeadSource(record);
+    if (!isKnownLeadValue(source)) return map;
+
     map.set(source, (map.get(source) || 0) + 1);
     return map;
   }, new Map());
@@ -628,6 +712,352 @@ function buildLeadOperatingMetrics({
       icon: Fingerprint
     }
   ];
+}
+
+/**
+ * @function buildLeadVisionMetrics
+ * @description Builds the live KPI strip for the Leads pipeline vision UI.
+ * @param {Object} input - KPI input packet.
+ * @returns {Array<Object>} Vision metric cards.
+ * @collaboration Matches Wilson's visual target without hardcoded row, owner or revenue placeholders.
+ */
+function buildLeadVisionMetrics({
+  leads = [],
+  filteredLeads = [],
+  complianceMetrics = {}
+} = {}) {
+  const leadCount = leads.length;
+  const scoreTotal = leads.reduce((total, record) => total + resolveLeadPriorityScore(record), 0);
+  const averageScore = leadCount ? Math.round(scoreTotal / leadCount) : 0;
+  const qualifiedLeads = leads.filter(record => /QUALIFIED|CONVERTED|WON|VERIFIED/.test(resolveLeadStage(record).toUpperCase())).length;
+  const convertedLeads = leads.filter(record => /CONVERTED|WON/.test(resolveLeadStage(record).toUpperCase())).length;
+  const priorityReady = leads.filter(record => resolveLeadPriorityScore(record) >= 52).length;
+  const conversionRate = leadCount ? Number(((convertedLeads / leadCount) * 100).toFixed(1)) : 0;
+  const pipelineHealth = !leadCount
+    ? 'Awaiting live data'
+    : averageScore >= 78
+      ? 'Excellent'
+      : averageScore >= 52
+        ? 'Healthy'
+        : averageScore >= 24
+          ? 'Developing'
+          : 'Needs source';
+  const pipelineProgress = leadCount ? Math.round((priorityReady / Math.max(1, leadCount)) * 100) : 0;
+
+  return [
+    {
+      id: 'health',
+      label: 'Pipeline Health',
+      value: pipelineHealth,
+      detail: leadCount ? `${pipelineProgress}% ready by source signal` : 'Connect live Lead rows',
+      trend: complianceMetrics.failed ? `${complianceMetrics.failed} failed gates` : `${filteredLeads.length} visible`,
+      icon: Activity,
+      tone: 'violet'
+    },
+    {
+      id: 'open',
+      label: 'Open Leads',
+      value: String(leadCount),
+      detail: filteredLeads.length === leadCount ? 'All rows visible' : `${filteredLeads.length} in current view`,
+      trend: priorityReady ? `${priorityReady} priority ready` : 'No priority rows yet',
+      icon: List,
+      tone: 'blue'
+    },
+    {
+      id: 'qualified',
+      label: 'Qualified',
+      value: String(qualifiedLeads),
+      detail: leadCount ? `${Math.round((qualifiedLeads / Math.max(1, leadCount)) * 100)}% of live rows` : 'No qualification signal',
+      trend: `${complianceMetrics.verified || 0} verified`,
+      icon: CheckCircle2,
+      tone: 'green'
+    },
+    {
+      id: 'conversion',
+      label: 'Conversion Rate',
+      value: `${conversionRate}%`,
+      detail: leadCount ? `${convertedLeads} converted from live rows` : 'No conversion signal',
+      trend: leadCount ? 'Live DB derived' : 'Waiting for records',
+      icon: Filter,
+      tone: 'cyan'
+    },
+    {
+      id: 'score',
+      label: 'Avg. Lead Score',
+      value: String(averageScore),
+      detail: leadCount ? 'Source completeness score' : 'No score yet',
+      trend: averageScore >= 52 ? 'Actionable' : 'Needs enrichment',
+      icon: Star,
+      tone: 'gold'
+    }
+  ];
+}
+
+/**
+ * @function buildLeadPaginationModel
+ * @description Builds dynamic list-view pagination for backend-sized Lead result sets.
+ * @param {Object} input - Pagination input packet.
+ * @returns {Object} Pagination model.
+ * @collaboration Keeps the Leads footer scalable instead of a static visual placeholder.
+ */
+function buildLeadPaginationModel({
+  totalRecords = 0,
+  currentPage = 1,
+  pageSize = 20
+} = {}) {
+  const safePageSize = LEAD_PAGE_SIZE_OPTIONS.includes(Number(pageSize)) ? Number(pageSize) : 20;
+  const totalPages = Math.max(1, Math.ceil(Number(totalRecords || 0) / safePageSize));
+  const normalizedPage = Math.min(Math.max(1, Number(currentPage || 1)), totalPages);
+  const startIndex = totalRecords ? (normalizedPage - 1) * safePageSize : 0;
+  const endIndex = totalRecords ? Math.min(startIndex + safePageSize, totalRecords) : 0;
+  const compactPages = totalPages <= 5
+    ? Array.from({ length: totalPages }, (_, index) => index + 1)
+    : normalizedPage <= 3
+      ? [1, 2, 3, 'ellipsis-end', totalPages]
+      : normalizedPage >= totalPages - 2
+        ? [1, 'ellipsis-start', totalPages - 2, totalPages - 1, totalPages]
+        : [1, 'ellipsis-start', normalizedPage - 1, normalizedPage, normalizedPage + 1, 'ellipsis-end', totalPages];
+
+  return {
+    currentPage: normalizedPage,
+    pageSize: safePageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    startRecord: totalRecords ? startIndex + 1 : 0,
+    endRecord: endIndex,
+    pageItems: compactPages
+  };
+}
+
+/**
+ * @function buildLeadSetupOperatingModel
+ * @description Builds the CRM Setup drawer from live Lead records, sync telemetry, role gates and source registry state.
+ * @param {Object} input - Live setup state input.
+ * @returns {Object} Setup summary and operating control groups.
+ * @collaboration Turns Setup from a static menu into a source-backed Wilsy OS command surface.
+ */
+function buildLeadSetupOperatingModel({
+  leads = [],
+  filteredLeads = [],
+  activeListView = LEAD_LIST_VIEWS[0],
+  complianceMetrics = {},
+  routeRegistry = [],
+  sourceChannels = [],
+  liveSources = 0,
+  totalSources = 0,
+  rootHash = 'UNSEALED',
+  role = 'SALES_REP',
+  tenantId = 'MASTER',
+  syncStatus = 'SOURCE_READY_UPSTREAM',
+  isSyncing = false,
+  selectedFilterCount = 0,
+  totalFilterOptions = 0,
+  pageSize = 20,
+  totalPages = 1
+} = {}) {
+  const leadCount = Array.isArray(leads) ? leads.length : 0;
+  const visibleCount = Array.isArray(filteredLeads) ? filteredLeads.length : 0;
+  const registry = Array.isArray(routeRegistry) ? routeRegistry : [];
+  const channels = Array.isArray(sourceChannels) ? sourceChannels : [];
+  const routeTotal = Number(totalSources || registry.length || channels.length || 0);
+  const routeLive = Number(liveSources || registry.filter(route => route?.connected).length || 0);
+  const rootSealed = isKnownLeadValue(rootHash);
+  const rootLabel = rootSealed ? String(rootHash).slice(0, 12) : 'UNSEALED';
+  const setupUnlocked = canUseLeadAction(role, 'setup');
+  const importUnlocked = canUseLeadAction(role, 'import');
+  const exportUnlocked = canUseLeadAction(role, 'export');
+  const createUnlocked = canUseLeadAction(role, 'create');
+  const syncUnlocked = canUseLeadAction(role, 'sync');
+  const sourceStatus = isSyncing
+    ? 'syncing'
+    : routeTotal
+      ? (routeLive === routeTotal ? 'live' : routeLive ? 'gap' : 'waiting')
+      : 'waiting';
+  const complianceStatus = complianceMetrics.failed
+    ? 'gap'
+    : complianceMetrics.total
+      ? 'live'
+      : 'waiting';
+  const authorityStatus = setupUnlocked ? 'live' : 'locked';
+  const selectedViewLabel = activeListView?.label || 'All Leads';
+
+  return {
+    summary: [
+      {
+        label: 'Live Lead Rows',
+        value: String(leadCount),
+        detail: `${visibleCount} visible through ${selectedViewLabel}`,
+        status: leadCount ? 'live' : 'waiting'
+      },
+      {
+        label: 'Source Routes',
+        value: routeTotal ? `${routeLive}/${routeTotal}` : '0/0',
+        detail: syncStatus || 'SOURCE_READY_UPSTREAM',
+        status: sourceStatus
+      },
+      {
+        label: 'Root Seal',
+        value: rootLabel,
+        detail: rootSealed ? 'Command fabric hash active' : 'Awaiting backend seal',
+        status: rootSealed ? 'live' : 'waiting'
+      },
+      {
+        label: 'Role Gate',
+        value: role,
+        detail: `${tenantId} tenant authority`,
+        status: authorityStatus
+      }
+    ],
+    groups: [
+      {
+        title: 'General',
+        icon: UserRoundCog,
+        status: leadCount ? 'live' : 'waiting',
+        items: [
+          {
+            label: 'Personal Settings',
+            value: role,
+            detail: `${tenantId} operator context`,
+            status: 'live',
+            action: 'command'
+          },
+          {
+            label: 'Users',
+            value: setupUnlocked ? 'Admin' : 'View only',
+            detail: setupUnlocked ? 'Tenant user controls unlocked' : 'Tenant user controls role-locked',
+            status: authorityStatus,
+            action: 'command',
+            disabled: !setupUnlocked
+          },
+          {
+            label: 'Company Settings',
+            value: tenantId,
+            detail: `${leadCount} backend lead row${leadCount === 1 ? '' : 's'} in scope`,
+            status: 'live',
+            action: 'command'
+          }
+        ]
+      },
+      {
+        title: 'Security Control',
+        icon: ShieldCheck,
+        status: complianceStatus,
+        items: [
+          {
+            label: 'Profiles',
+            value: role,
+            detail: createUnlocked ? 'Create gate open' : 'Create gate locked',
+            status: createUnlocked ? 'live' : 'locked',
+            action: 'command'
+          },
+          {
+            label: 'Roles and Sharing',
+            value: syncUnlocked ? 'Sync enabled' : 'Sync locked',
+            detail: `${selectedFilterCount}/${totalFilterOptions} filters active`,
+            status: syncUnlocked ? 'live' : 'locked',
+            action: 'sync',
+            disabled: !syncUnlocked || isSyncing
+          },
+          {
+            label: 'Compliance Settings',
+            value: `${complianceMetrics.verified || 0}/${complianceMetrics.total || 0}`,
+            detail: complianceMetrics.failed ? `${complianceMetrics.failed} failed gate${complianceMetrics.failed === 1 ? '' : 's'}` : `${complianceMetrics.pending || 0} awaiting audit`,
+            status: complianceStatus,
+            action: 'proof'
+          }
+        ]
+      },
+      {
+        title: 'Customization',
+        icon: SlidersHorizontal,
+        status: 'live',
+        items: [
+          {
+            label: 'Modules and Fields',
+            value: `${REQUIRED_LEAD_FIELDS.length}/${LEAD_COLUMNS.length}`,
+            detail: 'Required fields and table columns bound to Lead records',
+            status: 'live',
+            action: 'records'
+          },
+          {
+            label: 'Lead Layouts',
+            value: `${LEAD_TOP_APP_TABS.length} tabs`,
+            detail: `${LEAD_LIST_VIEWS.length} saved views and ${pageSize}/page density`,
+            status: 'live',
+            action: 'records'
+          },
+          {
+            label: 'Workflow Rules',
+            value: `${LEAD_JOURNEY_LANES.length} stages`,
+            detail: `${totalPages} live page${totalPages === 1 ? '' : 's'} in current result set`,
+            status: 'live',
+            action: 'pipeline'
+          }
+        ]
+      },
+      {
+        title: 'Data Administration',
+        icon: Database,
+        status: sourceStatus,
+        items: [
+          {
+            label: 'Import',
+            value: importUnlocked ? 'Enabled' : 'Locked',
+            detail: `${routeTotal ? `${routeLive}/${routeTotal}` : '0/0'} source routes reporting`,
+            status: importUnlocked ? sourceStatus : 'locked',
+            action: 'sync',
+            disabled: !importUnlocked || isSyncing
+          },
+          {
+            label: 'Export',
+            value: exportUnlocked ? `${visibleCount} scoped` : 'Locked',
+            detail: exportUnlocked ? `Current list view: ${selectedViewLabel}` : 'Manager authority required',
+            status: exportUnlocked ? 'live' : 'locked',
+            action: 'records',
+            disabled: !exportUnlocked
+          },
+          {
+            label: 'Data Backup',
+            value: rootLabel,
+            detail: rootSealed ? 'Root hash available from command fabric' : 'Run source sync to seal telemetry',
+            status: rootSealed ? 'live' : 'waiting',
+            action: 'sync',
+            disabled: isSyncing
+          }
+        ]
+      },
+      {
+        title: 'Developer Hub',
+        icon: Command,
+        status: sourceStatus,
+        items: [
+          {
+            label: 'Command API',
+            value: '/api/crm/command',
+            detail: `Sync status: ${syncStatus || 'SOURCE_READY_UPSTREAM'}`,
+            status: sourceStatus,
+            action: 'sync',
+            disabled: isSyncing
+          },
+          {
+            label: 'Live Leads API',
+            value: '/api/crm/live/leads',
+            detail: `${leadCount} normalized Lead record${leadCount === 1 ? '' : 's'} in dashboard snapshot`,
+            status: leadCount ? 'live' : 'waiting',
+            action: 'records'
+          },
+          {
+            label: 'Source Registry',
+            value: routeTotal ? `${routeLive}/${routeTotal}` : `${channels.length} channels`,
+            detail: registry.length ? 'Backend model registry connected' : 'Awaiting command sync registry',
+            status: sourceStatus,
+            action: 'sources'
+          }
+        ]
+      }
+    ]
+  };
 }
 
 /**
@@ -808,7 +1238,7 @@ export default function WilsyLeadOperatingRoom({
   const [commandOpen, setCommandOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [coreToolsOpen, setCoreToolsOpen] = useState(false);
-  const [draft, setDraft] = useState(() => createEmptyLeadDraft(user));
+  const [draft, setDraft] = useState(() => createEmptyLeadDraft({}));
   const [saveStatus, setSaveStatus] = useState('');
   const [syncStatus, setSyncStatus] = useState('SOURCE_READY_UPSTREAM');
   const [syncTelemetry, setSyncTelemetry] = useState(null);
@@ -816,6 +1246,8 @@ export default function WilsyLeadOperatingRoom({
   const [selectedLeadId, setSelectedLeadId] = useState('');
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [openRowActionId, setOpenRowActionId] = useState('');
+  const [currentLeadPage, setCurrentLeadPage] = useState(1);
+  const [leadPageSize, setLeadPageSize] = useState(20);
   const hasAutoHydratedTelemetryRef = useRef(false);
   const leadThemeOptions = useMemo(() => resolveCrmThemeEngineOptions(), []);
   const activeLeadThemeOption = useMemo(() => ({
@@ -851,12 +1283,23 @@ export default function WilsyLeadOperatingRoom({
 
     return sortLeadRecords(matchedLeads, sortMode);
   }, [activeFilter, activeListViewId, leads, searchTerm, sortMode]);
+  const leadPagination = useMemo(() => buildLeadPaginationModel({
+    totalRecords: filteredLeads.length,
+    currentPage: currentLeadPage,
+    pageSize: leadPageSize
+  }), [currentLeadPage, filteredLeads.length, leadPageSize]);
+  const paginatedLeads = useMemo(() => (
+    filteredLeads.slice(leadPagination.startIndex, leadPagination.endIndex)
+  ), [filteredLeads, leadPagination.endIndex, leadPagination.startIndex]);
 
   const sourcePosture = leads.length ? 'Sources connected' : 'Ready for source connection';
   const routeRegistry = Array.isArray(syncTelemetry?.registry) ? syncTelemetry.registry : [];
   const liveSources = syncTelemetry?.liveSources ?? routeRegistry.filter(route => route.connected).length;
   const totalSources = syncTelemetry?.totalSources ?? routeRegistry.length;
   const rootHash = syncTelemetry?.rootHashShort || syncTelemetry?.rootHash || 'UNSEALED';
+  const totalLeadFilterOptions = useMemo(() => (
+    LEAD_FILTER_OPERATING_SECTIONS.reduce((sum, section) => sum + section.options.length, 0)
+  ), []);
   const journeyLanes = useMemo(() => buildLeadJourneyLanes(filteredLeads), [filteredLeads]);
   const sourceChannels = useMemo(() => buildLeadSourceChannels(routeRegistry, leads), [routeRegistry, leads]);
   const selectedLead = useMemo(() => {
@@ -871,6 +1314,54 @@ export default function WilsyLeadOperatingRoom({
     totalSources,
     rootHash
   }), [complianceMetrics, filteredLeads, leads, liveSources, rootHash, totalSources]);
+  const visionMetrics = useMemo(() => buildLeadVisionMetrics({
+    leads,
+    filteredLeads,
+    complianceMetrics
+  }), [complianceMetrics, filteredLeads, leads]);
+  const setupOperatingModel = useMemo(() => buildLeadSetupOperatingModel({
+    leads,
+    filteredLeads,
+    activeListView,
+    complianceMetrics,
+    routeRegistry,
+    sourceChannels,
+    liveSources,
+    totalSources,
+    rootHash,
+    role,
+    tenantId,
+    syncStatus,
+    isSyncing,
+    selectedFilterCount: selectedLeadFilterOptions.size,
+    totalFilterOptions: totalLeadFilterOptions,
+    pageSize: leadPagination.pageSize,
+    totalPages: leadPagination.totalPages
+  }), [
+    activeListView,
+    complianceMetrics,
+    filteredLeads,
+    isSyncing,
+    leadPagination.pageSize,
+    leadPagination.totalPages,
+    leads,
+    liveSources,
+    role,
+    rootHash,
+    routeRegistry,
+    selectedLeadFilterOptions.size,
+    sourceChannels,
+    syncStatus,
+    tenantId,
+    totalLeadFilterOptions,
+    totalSources
+  ]);
+
+  useEffect(() => {
+    if (currentLeadPage !== leadPagination.currentPage) {
+      setCurrentLeadPage(leadPagination.currentPage);
+    }
+  }, [currentLeadPage, leadPagination.currentPage]);
 
   useEffect(() => {
     if (!filteredLeads.length) {
@@ -935,6 +1426,7 @@ export default function WilsyLeadOperatingRoom({
    * @collaboration Keeps search source-backed.
    */
   function handleSearchChange(query) {
+    setCurrentLeadPage(1);
     if (typeof onSearch === 'function') {
       onSearch(query);
     }
@@ -977,6 +1469,7 @@ export default function WilsyLeadOperatingRoom({
     const nextView = resolveLeadListView(listViewId);
     setActiveListViewId(nextView.id);
     setActiveFilter(nextView.filter || 'ALL');
+    setCurrentLeadPage(1);
     setViewMenuOpen(false);
     setOpenRowActionId('');
   }
@@ -1003,7 +1496,7 @@ export default function WilsyLeadOperatingRoom({
    * @collaboration Mirrors enterprise CRM list-view behavior while keeping actions explicit.
    */
   function handleToggleAllLeadSelection() {
-    const visibleIds = filteredLeads.map((record, index) => resolveLeadRecordId(record, index));
+    const visibleIds = paginatedLeads.map((record, index) => resolveLeadRecordId(record, leadPagination.startIndex + index));
     const allSelected = visibleIds.length > 0 && visibleIds.every(recordId => selectedRowIds.includes(recordId));
 
     if (allSelected) {
@@ -1015,6 +1508,51 @@ export default function WilsyLeadOperatingRoom({
   }
 
   /**
+   * @function handleLeadPageChange
+   * @description Moves the Lead records table to a bounded page.
+   * @param {number} page - Requested page number.
+   * @returns {void}
+   * @collaboration Gives the Leads footer working OS pagination for live backend scaling.
+   */
+  function handleLeadPageChange(page) {
+    setCurrentLeadPage(Math.min(Math.max(1, Number(page || 1)), leadPagination.totalPages));
+  }
+
+  /**
+   * @function handleLeadPageSizeChange
+   * @description Updates Lead records page size and resets to the first page.
+   * @param {string|number} value - Requested page size.
+   * @returns {void}
+   * @collaboration Keeps row density operator-controlled without hardcoded table volume.
+   */
+  function handleLeadPageSizeChange(value) {
+    const nextPageSize = LEAD_PAGE_SIZE_OPTIONS.includes(Number(value)) ? Number(value) : 20;
+    setLeadPageSize(nextPageSize);
+    setCurrentLeadPage(1);
+  }
+
+    /**
+   * @function resetLeadDraftForPrivacy
+   * @description Clears Create Lead draft fields before closing, saving, or leaving the Lead create surface.
+   * @param {string} nextMode - Next Lead surface mode.
+   * @returns {void}
+   * @collaboration Protects private form text while keeping Lead records DB-backed.
+   */
+  function resetLeadDraftForPrivacy(nextMode = 'list') {
+    setDraft(createEmptyLeadDraft({}));
+    setSaveStatus('');
+    setCreateMenuOpen(false);
+    setMode(nextMode);
+  }
+
+  useEffect(() => {
+    if (mode !== 'create') {
+      setDraft(createEmptyLeadDraft({}));
+      setSaveStatus('');
+    }
+  }, [mode]);
+
+/**
    * @function handleSaveLead
    * @description Saves a valid Lead draft through backend command fabric.
    * @param {boolean} createAnother - Whether to reset the draft after save.
@@ -1042,14 +1580,49 @@ export default function WilsyLeadOperatingRoom({
       setSaveStatus('Lead saved through backend command fabric.');
 
       if (createAnother) {
-        setDraft(createEmptyLeadDraft(user));
+        resetLeadDraftForPrivacy('create');
         return;
       }
 
-      setMode('list');
+      resetLeadDraftForPrivacy('list');
     } catch (error) {
-      setSaveStatus(error?.message || 'Backend rejected the Lead payload.');
+      setSaveStatus(error?.message || error?.response?.data?.message || 'Backend rejected the Lead payload.');
     }
+  }
+
+  /**
+   * @function handleSetupControlAction
+   * @description Routes Setup drawer controls into existing live Lead operating surfaces.
+   * @param {string} action - Setup action key.
+   * @returns {Promise<void>|void} Routed action.
+   * @collaboration Keeps Setup buttons from becoming static placeholders.
+   */
+  function handleSetupControlAction(action = 'records') {
+    if (action === 'sync') {
+      return handleSourceSync();
+    }
+
+    if (action === 'command') {
+      setSetupOpen(false);
+      setCommandOpen(true);
+      return undefined;
+    }
+
+    if (action === 'create') {
+      setSetupOpen(false);
+      setMode('create');
+      return undefined;
+    }
+
+    if (['records', 'pipeline', 'proof', 'sources', 'signals'].includes(action)) {
+      setActiveTopTab(action);
+      setSetupOpen(false);
+      return undefined;
+    }
+
+    setActiveTopTab('records');
+    setSetupOpen(false);
+    return undefined;
   }
 
   /**
@@ -1150,18 +1723,18 @@ export default function WilsyLeadOperatingRoom({
         data-wilsy-lead-appbar="sovereign-header-command-bridge"
         data-wilsy-lead-topbar={WILSY_LEAD_TABBED_APP_BAR_VERSION}
       >
-        <section className={[styles.headerPrimaryRow, styles.leadModuleTopBar].join(' ')}>
+        <section className={[styles.headerPrimaryRow, styles.leadModuleTopBar, styles.leadHeaderPrimary].join(' ')}>
           <section className={[styles.headerIdentity, styles.leadModuleTitleBlock].join(' ')}>
             <small>Sales Pipeline</small>
             <strong>{mode === 'create' ? 'Create Lead' : 'Leads'}</strong>
-            <em>Sales workspace · source records monitored</em>
+            <em>Manage pipeline, qualify demand, and track every live revenue opportunity.</em>
           </section>
 
           <section
-            className={[styles.headerThemeDock, styles.leadModuleUtilities].join(' ')}
+            className={[styles.headerThemeDock, styles.leadModuleUtilities, styles.leadHeaderUtilities].join(' ')}
             data-wilsy-header-theme-dock="theme-engine-authority"
           >
-            <label className={styles.headerSearch}>
+            <label className={[styles.headerSearch, styles.leadSearch].join(' ')}>
               <Search size={18} />
               <input
                 value={searchTerm}
@@ -1297,7 +1870,7 @@ export default function WilsyLeadOperatingRoom({
             </button>
 
             <div className={styles.leadDropdownWrap}>
-              <button type="button" onClick={() => setSortMenuOpen(previous => !previous)}>
+              <button type="button" className={styles.leadSortButton} onClick={() => setSortMenuOpen(previous => !previous)}>
                 <Filter size={18} />
                 <span>Sort</span>
                 <ChevronDown size={15} />
@@ -1311,6 +1884,7 @@ export default function WilsyLeadOperatingRoom({
                       data-active={option.id === activeSort.id ? 'true' : 'false'}
                       onClick={() => {
                         setSortMode(option.id);
+                        setCurrentLeadPage(1);
                         setSortMenuOpen(false);
                       }}
                     >
@@ -1321,7 +1895,7 @@ export default function WilsyLeadOperatingRoom({
               ) : null}
             </div>
 
-            <button type="button" onClick={() => setSplitView(previous => !previous)} data-active={splitView ? 'true' : 'false'}>
+            <button type="button" className={styles.leadSplitButton} onClick={() => setSplitView(previous => !previous)} data-active={splitView ? 'true' : 'false'}>
               <SplitSquareHorizontal size={18} />
               <span>{splitView ? 'Single' : 'Split'}</span>
             </button>
@@ -1329,7 +1903,7 @@ export default function WilsyLeadOperatingRoom({
             <div className={styles.leadCreateDock}>
               <button
                 type="button"
-                className={styles.headerPrimaryAction}
+                className={[styles.headerPrimaryAction, styles.leadCreateButton].join(' ')}
                 onClick={() => setMode('create')}
                 disabled={!canUseLeadAction(role, 'create')}
               >
@@ -1355,7 +1929,7 @@ export default function WilsyLeadOperatingRoom({
             </div>
 
             <div className={styles.headerMoreDock}>
-              <button type="button" onClick={() => setMoreMenuOpen(previous => !previous)}>
+              <button type="button" className={styles.leadMoreButton} onClick={() => setMoreMenuOpen(previous => !previous)}>
                 <MoreHorizontal size={18} />
                 <span>More</span>
               </button>
@@ -1412,6 +1986,36 @@ export default function WilsyLeadOperatingRoom({
   }
 
   /**
+   * @function renderLeadVisionMetricDeck
+   * @description Renders the live KPI strip from Wilson's Leads UI vision.
+   * @returns {JSX.Element} Vision KPI deck.
+   * @collaboration Gives the page premium command presence while staying live-DB-only.
+   */
+  function renderLeadVisionMetricDeck() {
+    return (
+      <section className={styles.leadVisionMetricDeck} data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED">
+        {visionMetrics.map(metric => {
+          const MetricIcon = metric.icon || Activity;
+
+          return (
+            <article key={metric.id} data-tone={metric.tone}>
+              <span className={styles.leadVisionMetricIcon}>
+                <MetricIcon size={18} />
+              </span>
+              <span className={styles.leadVisionMetricCopy}>
+                <small>{metric.label}</small>
+                <strong>{metric.value}</strong>
+                <em>{metric.detail}</em>
+              </span>
+              <b>{metric.trend}</b>
+            </article>
+          );
+        })}
+      </section>
+    );
+  }
+
+  /**
    * @function renderLeadQueue
    * @description Renders the active operator work queue from filtered leads.
    * @returns {JSX.Element} Lead queue.
@@ -1427,7 +2031,10 @@ export default function WilsyLeadOperatingRoom({
             <small>Operator Queue</small>
             <strong>Priority Leads</strong>
           </span>
-          <button type="button" onClick={() => setActiveFilter('ALL')}>
+          <button type="button" onClick={() => {
+            setActiveFilter('ALL');
+            setCurrentLeadPage(1);
+          }}>
             <Filter size={15} />
             {activeFilter}
           </button>
@@ -1745,13 +2352,167 @@ export default function WilsyLeadOperatingRoom({
   }
 
   /**
+   * @function renderLeadRecordsCommandBar
+   * @description Renders the records-table command bar with view, tab, filter, sort and create actions.
+   * @returns {JSX.Element} Records command bar.
+   * @collaboration Places the working controls inside the Lead grid shell from Wilson's vision mock.
+   */
+  function renderLeadRecordsCommandBar() {
+    const activeSort = LEAD_SORT_OPTIONS.find(option => option.id === sortMode) || LEAD_SORT_OPTIONS[0];
+
+    return (
+      <section className={styles.leadRecordsCommandBar} data-wilsy-lead-grid-toolbar="R84A-VISION-COMMAND-BAR">
+        <section className={styles.leadViewCluster}>
+          <div className={styles.leadDropdownWrap}>
+            <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
+              <SlidersHorizontal size={18} />
+              <span>
+                <strong>{activeListView.label}</strong>
+                <em>{activeListView.detail}</em>
+              </span>
+              <ChevronDown size={16} />
+            </button>
+
+            {viewMenuOpen ? (
+              <section className={styles.leadDropdownMenu} aria-label="Lead list views">
+                {LEAD_LIST_VIEWS.map(view => (
+                  <button
+                    key={view.id}
+                    type="button"
+                    data-active={view.id === activeListView.id ? 'true' : 'false'}
+                    onClick={() => handleSelectLeadListView(view.id)}
+                  >
+                    <span>{view.label}</span>
+                    <em>{view.detail}</em>
+                  </button>
+                ))}
+                <button type="button" onClick={() => setCommandOpen(true)}>
+                  <Plus size={14} />
+                  <span>New Custom View</span>
+                </button>
+              </section>
+            ) : null}
+          </div>
+        </section>
+
+        <nav className={styles.leadRecordsTabs} aria-label="Lead records tabs">
+          {LEAD_TOP_APP_TABS.map(tab => {
+            const TabIcon = tab.icon;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                data-active={activeTopTab === tab.id ? 'true' : 'false'}
+                onClick={() => setActiveTopTab(tab.id)}
+              >
+                <TabIcon size={16} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <section className={styles.leadRecordsActions}>
+          <button
+            type="button"
+            onClick={() => setFilterPanelOpen(previous => !previous)}
+            data-active={filterPanelOpen ? 'true' : 'false'}
+          >
+            <SlidersHorizontal size={18} />
+            <span>Filter</span>
+          </button>
+
+          <div className={styles.leadDropdownWrap}>
+            <button type="button" className={styles.leadSortButton} onClick={() => setSortMenuOpen(previous => !previous)}>
+              <Filter size={18} />
+              <span>Sort</span>
+              <ChevronDown size={15} />
+            </button>
+            {sortMenuOpen ? (
+              <section className={styles.leadDropdownMenu} aria-label="Lead sort options">
+                {LEAD_SORT_OPTIONS.map(option => (
+                  <button
+                    key={option.id}
+                    type="button"
+                      data-active={option.id === activeSort.id ? 'true' : 'false'}
+                      onClick={() => {
+                        setSortMode(option.id);
+                        setCurrentLeadPage(1);
+                        setSortMenuOpen(false);
+                      }}
+                  >
+                    <span>{option.label}</span>
+                  </button>
+                ))}
+              </section>
+            ) : null}
+          </div>
+
+          <button type="button" className={styles.leadSplitButton} onClick={() => setSplitView(previous => !previous)} data-active={splitView ? 'true' : 'false'}>
+            <SplitSquareHorizontal size={18} />
+            <span>{splitView ? 'Single' : 'Split'}</span>
+          </button>
+
+          <div className={styles.headerMoreDock}>
+            <button type="button" className={styles.leadMoreButton} onClick={() => setMoreMenuOpen(previous => !previous)}>
+              <MoreHorizontal size={18} />
+            </button>
+
+            {moreMenuOpen ? (
+              <section className={styles.headerMoreMenu} aria-label="Lead more actions">
+                <button type="button" disabled={!selectedRowIds.length}><ClipboardList size={15} />Mass Update</button>
+                <button type="button" disabled={!selectedRowIds.length}><Mail size={15} />Mass Email</button>
+                <button type="button" disabled={!selectedRowIds.length}><CheckCircle2 size={15} />Approve Leads</button>
+                <button type="button" disabled={!canUseLeadAction(role, 'bulk')}><UserRoundCog size={15} />Change Owner</button>
+                <button type="button" disabled={!canUseLeadAction(role, 'import')}><FileInput size={15} />Import Notes</button>
+                <button type="button" disabled={!canUseLeadAction(role, 'export')}><Download size={15} />Export Leads</button>
+                <button type="button" onClick={() => setCommandOpen(true)}><Command size={15} />Command Center</button>
+                <button type="button"><Sparkles size={15} />Wilsy AI Services</button>
+              </section>
+            ) : null}
+          </div>
+        </section>
+
+        <div className={styles.leadCreateDock}>
+          <button
+            type="button"
+            className={[styles.headerPrimaryAction, styles.leadCreateButton].join(' ')}
+            onClick={() => setMode('create')}
+            disabled={!canUseLeadAction(role, 'create')}
+          >
+            <Plus size={18} />
+            <span>Create Lead</span>
+          </button>
+          <button
+            type="button"
+            className={styles.leadCreateMenuButton}
+            onClick={() => setCreateMenuOpen(previous => !previous)}
+            disabled={!canUseLeadAction(role, 'create')}
+            title="Create options"
+          >
+            <ChevronDown size={16} />
+          </button>
+          {createMenuOpen ? (
+            <section className={styles.leadDropdownMenu} aria-label="Create Lead options">
+              <button type="button" onClick={() => setMode('create')}><Plus size={14} />Create Lead</button>
+              <button type="button" disabled={!canUseLeadAction(role, 'import')}><Upload size={14} />Import Leads</button>
+              <button type="button" disabled={!canUseLeadAction(role, 'import')}><FileInput size={14} />Import Notes</button>
+            </section>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
+  /**
    * @function renderLeadRecordsTable
    * @description Renders the records-first Lead module grid with row and mass actions.
    * @returns {JSX.Element} Lead records workspace.
    * @collaboration Replaces the continuous card runway with an operating CRM list view.
    */
   function renderLeadRecordsTable() {
-    const visibleIds = filteredLeads.map((record, index) => resolveLeadRecordId(record, index));
+    const visibleIds = paginatedLeads.map((record, index) => resolveLeadRecordId(record, leadPagination.startIndex + index));
     const allRowsSelected = visibleIds.length > 0 && visibleIds.every(recordId => selectedRowIds.includes(recordId));
     const activeSort = LEAD_SORT_OPTIONS.find(option => option.id === sortMode) || LEAD_SORT_OPTIONS[0];
 
@@ -1759,9 +2520,12 @@ export default function WilsyLeadOperatingRoom({
       <section className={styles.leadRecordsWorkspace}
         data-wilsy-filter-state={filterPanelOpen ? 'open' : 'closed'}
         data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"
+        data-wilsy-lead-row-count={filteredLeads.length}
+        data-wilsy-lead-page-count={leadPagination.totalPages}
         data-wilsy-real-data-contract="LIVE_BACKEND_ONLY"
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
         data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW" data-wilsy-lead-records="tabbed-list-view">
+        {renderLeadRecordsCommandBar()}
         {renderLeadFilterRail()}
 
         <section className={styles.leadRecordsPanel}>
@@ -1810,17 +2574,18 @@ export default function WilsyLeadOperatingRoom({
                   <th>Company</th>
                   <th>Email</th>
                   <th>Phone</th>
-                  <th>Lead Source</th>
-                  <th>Score</th>
-                  <th>Compliance</th>
                   <th>Owner</th>
+                  <th>Status</th>
+                  <th>Score</th>
                   <th aria-label="Row actions" />
                 </tr>
               </thead>
               <tbody>
-                {filteredLeads.length ? filteredLeads.map((record, index) => {
-                  const recordId = resolveLeadRecordId(record, index);
-                  const complianceStatus = getComplianceStatus(record);
+                {filteredLeads.length ? paginatedLeads.map((record, index) => {
+                  const sourceIndex = leadPagination.startIndex + index;
+                  const recordId = resolveLeadRecordId(record, sourceIndex);
+                  const stage = resolveLeadStage(record);
+                  const ownerLabel = resolveLeadOwnerLabel(record);
                   const priorityScore = resolveLeadPriorityScore(record);
                   const emailHref = resolveLeadContactHref(record, 'email');
                   const phoneHref = resolveLeadContactHref(record, 'phone');
@@ -1838,7 +2603,7 @@ export default function WilsyLeadOperatingRoom({
                       <td>
                         <button type="button" className={styles.leadNameCell} onClick={() => setSelectedLeadId(recordId)}>
                           <strong>{resolveLeadValue(record, 'name')}</strong>
-                          <em>{resolveLeadStage(record)}</em>
+                          <em>{resolveLeadSubtitle(record)}</em>
                         </button>
                       </td>
                       <td>{resolveLeadValue(record, 'company')}</td>
@@ -1846,18 +2611,27 @@ export default function WilsyLeadOperatingRoom({
                         {emailHref ? <a href={emailHref}>{resolveLeadValue(record, 'email')}</a> : resolveLeadValue(record, 'email')}
                       </td>
                       <td>
-                        {phoneHref ? <a href={phoneHref}>{resolveLeadValue(record, 'phone')}</a> : resolveLeadValue(record, 'phone')}
-                      </td>
-                      <td>{resolveLeadSource(record)}</td>
-                      <td>
-                        <span className={styles.leadScorePill}>{resolveLeadPriorityBand(priorityScore)} · {priorityScore}</span>
-                      </td>
-                      <td>
-                        <span className={styles[`status${complianceStatus}`] || styles.statusPENDING}>
-                          {complianceStatus}
+                        <span className={styles.leadPhoneCell}>
+                          {phoneHref ? <a href={phoneHref}>{resolveLeadValue(record, 'phone')}</a> : resolveLeadValue(record, 'phone')}
+                          {phoneHref ? <Phone size={14} /> : null}
                         </span>
                       </td>
-                      <td>{resolveLeadValue(record, 'owner')}</td>
+                      <td>
+                        <span className={styles.leadOwnerCell}>
+                          <b>{resolveLeadOwnerInitials(ownerLabel)}</b>
+                          <em>{ownerLabel}</em>
+                        </span>
+                      </td>
+                      <td>
+                        <span className={styles.leadStagePill} data-tone={resolveLeadStageTone(stage)}>
+                          {stage}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={styles.leadScoreOrb} data-score-band={resolveLeadPriorityBand(priorityScore)}>
+                          {priorityScore}
+                        </span>
+                      </td>
                       <td className={styles.leadRowActionsCell}>
                         <button type="button" onClick={() => setOpenRowActionId(openRowActionId === recordId ? '' : recordId)} title="Record actions">
                           <MoreHorizontal size={17} />
@@ -1881,7 +2655,7 @@ export default function WilsyLeadOperatingRoom({
                   className={styles.leadEmptyRow}
                   data-wilsy-real-data-empty-state="LIVE_BACKEND_EMPTY"
                 >
-                  <td colSpan={10}>
+                  <td colSpan={9}>
                     <section className={styles.leadRealEmptyState}>
                       <strong>No live leads returned yet</strong>
                       <em>Verified backend Lead records will appear here after source sync or lead creation.</em>
@@ -1893,9 +2667,42 @@ export default function WilsyLeadOperatingRoom({
             </table>
           </div>
 
-          <footer className={styles.leadRecordsFooter}>
-            <span>Live Records  {filteredLeads.length}</span>
-            <strong>{filteredLeads.length ? `1 to ${filteredLeads.length}` : '0 to 0'}</strong>
+          <footer className={styles.leadRecordsFooter} data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER">
+            <span className={styles.leadFooterRecordRange}>
+              <strong>{filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} leads` : 'Showing 0 live leads'}</strong>
+              <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : 'Live backend rows only'}</em>
+            </span>
+            <nav className={styles.leadFooterPagination} aria-label="Lead records pagination">
+              <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="First page" onClick={() => handleLeadPageChange(1)}>|&lt;</button>
+              <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="Previous page" onClick={() => handleLeadPageChange(leadPagination.currentPage - 1)}>&lt;</button>
+              {leadPagination.pageItems.map(item => (
+                typeof item === 'number' ? (
+                  <button
+                    key={item}
+                    type="button"
+                    aria-current={item === leadPagination.currentPage ? 'page' : undefined}
+                    onClick={() => handleLeadPageChange(item)}
+                  >
+                    {item}
+                  </button>
+                ) : (
+                  <span key={item} data-wilsy-pagination-ellipsis="true">...</span>
+                )
+              ))}
+              <button type="button" disabled={leadPagination.currentPage >= leadPagination.totalPages} aria-label="Next page" onClick={() => handleLeadPageChange(leadPagination.currentPage + 1)}>&gt;</button>
+              <button type="button" disabled={leadPagination.currentPage >= leadPagination.totalPages} aria-label="Last page" onClick={() => handleLeadPageChange(leadPagination.totalPages)}>&gt;|</button>
+              <label className={styles.leadFooterPageSize}>
+                <select
+                  value={leadPagination.pageSize}
+                  onChange={event => handleLeadPageSizeChange(event.target.value)}
+                  aria-label="Lead records per page"
+                >
+                  {LEAD_PAGE_SIZE_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option} / page</option>
+                  ))}
+                </select>
+              </label>
+            </nav>
           </footer>
         </section>
       </section>
@@ -2016,6 +2823,7 @@ export default function WilsyLeadOperatingRoom({
         data-wilsy-lead-os-canvas={WILSY_LEAD_TABBED_APP_BAR_VERSION}
         data-wilsy-lead-split-view={splitView ? 'true' : 'false'}
       >
+        {activeTopTab === 'records' ? renderLeadVisionMetricDeck() : null}
         {renderLeadTabContent()}
       </section>
     );
@@ -2131,7 +2939,10 @@ export default function WilsyLeadOperatingRoom({
             key={view}
             type="button"
             className={activeFilter === view ? styles.complianceTabActive : styles.complianceTab}
-            onClick={() => setActiveFilter(view)}
+            onClick={() => {
+              setActiveFilter(view);
+              setCurrentLeadPage(1);
+            }}
           >
             {view}<span>{counts[view]}</span>
           </button>
@@ -2327,7 +3138,7 @@ export default function WilsyLeadOperatingRoom({
         <header className={styles.createHeader}>
           <span><small>Focused Create</small><strong>Create Verified Lead</strong><em>Capture, enrich, schedule and prove the Lead source from one workspace.</em></span>
           <div>
-            <button type="button" onClick={() => setMode('list')}>Cancel</button>
+            <button type="button" onClick={() => resetLeadDraftForPrivacy('list')}>Cancel</button>
             <button type="button" disabled={!canUseLeadAction(role, 'create')} onClick={() => handleSaveLead(true)}>Save and New</button>
             <button type="button" className={styles.saveButton} disabled={!canUseLeadAction(role, 'create')} onClick={() => handleSaveLead(false)}>Save</button>
           </div>
@@ -2428,18 +3239,71 @@ export default function WilsyLeadOperatingRoom({
   function renderSetupDrawer() {
     if (!setupOpen) return null;
 
-    const groups = [
-      { title: 'General', items: ['Personal Settings', 'Users', 'Company Settings'] },
-      { title: 'Security Control', items: ['Profiles', 'Roles and Sharing', 'Compliance Settings'] },
-      { title: 'Customization', items: ['Modules and Fields', 'Lead Layouts', 'Workflow Rules'] },
-      { title: 'Data Administration', items: ['Import', 'Export', 'Data Backup'] },
-      { title: 'Developer Hub', items: ['APIs and SDKs', 'Extensions', 'Catalyst Solutions'] }
-    ];
+    const liveStatus = setupOperatingModel.summary.find(item => item.label === 'Source Routes')?.status || 'waiting';
 
     return (
-      <section className={styles.drawerWide} aria-label="Lead setup workspace">
-        <header><span><small>Setup</small><strong>CRM Operating Controls</strong></span><button type="button" onClick={() => setSetupOpen(false)}>Close</button></header>
-        <div className={styles.setupGrid}>{groups.map(group => <article key={group.title}><strong>{group.title}</strong>{group.items.map(item => <button key={item} type="button">{item}</button>)}</article>)}</div>
+      <section
+        className={styles.drawerWide}
+        aria-label="Lead setup workspace"
+        data-wilsy-setup-live="CRM_COMMAND_FABRIC"
+        data-wilsy-setup-status={liveStatus}
+      >
+        <header className={styles.setupDrawerHeader}>
+          <span className={styles.setupTitleLock}>
+            <small>Setup</small>
+            <strong>CRM Operating Controls</strong>
+          </span>
+          <span className={styles.setupLiveRail} data-status={liveStatus}>
+            <i aria-hidden="true" />
+            {isSyncing ? 'SYNCING LIVE BACKEND' : 'LIVE BACKEND'}
+          </span>
+          <button type="button" onClick={() => setSetupOpen(false)}>Close</button>
+        </header>
+        <div className={styles.setupLiveSummary} aria-label="Live setup telemetry">
+          {setupOperatingModel.summary.map(item => (
+            <article key={item.label} data-status={item.status}>
+              <small>{item.label}</small>
+              <strong>{item.value}</strong>
+              <em>{item.detail}</em>
+            </article>
+          ))}
+        </div>
+        <div className={styles.setupGrid}>
+          {setupOperatingModel.groups.map(group => {
+            const GroupIcon = group.icon || Command;
+
+            return (
+              <article key={group.title} className={styles.setupGroupCard} data-status={group.status}>
+                <header className={styles.setupGroupHeader}>
+                  <span>
+                    <GroupIcon size={18} />
+                    <strong>{group.title}</strong>
+                  </span>
+                  <em>{group.status}</em>
+                </header>
+                <div className={styles.setupActionStack}>
+                  {group.items.map(item => (
+                    <button
+                      key={`${group.title}-${item.label}`}
+                      type="button"
+                      className={styles.setupControlButton}
+                      data-status={item.status}
+                      disabled={Boolean(item.disabled)}
+                      onClick={() => handleSetupControlAction(item.action)}
+                    >
+                      <span>
+                        <strong>{item.label}</strong>
+                        <em>{item.detail}</em>
+                      </span>
+                      <b>{item.value}</b>
+                      <i className={styles.setupStatusChip} data-status={item.status}>{item.status}</i>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </section>
     );
   }
@@ -2452,6 +3316,8 @@ export default function WilsyLeadOperatingRoom({
       data-wilsy-lead-header-bridge-version={WILSY_LEAD_HEADER_BRIDGE_VERSION}
       data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"
       data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"
+      data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"
+      data-wilsy-active-lead-tab={activeTopTab}
       data-wilsy-lead-skin={themeRuntime?.themeId || 'crm_revenue_pulse'}
       data-wilsy-theme-engine-source="global-command-center"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}
