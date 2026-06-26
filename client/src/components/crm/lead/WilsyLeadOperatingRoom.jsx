@@ -1739,8 +1739,10 @@ export default function WilsyLeadOperatingRoom({
 
     return (
       <section className={styles.leadRecordsWorkspace}
+        data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"
+        data-wilsy-real-data-contract="LIVE_BACKEND_ONLY"
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
-        data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE" data-wilsy-lead-records="tabbed-list-view">
+        data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW" data-wilsy-lead-records="tabbed-list-view">
         {renderLeadFilterRail()}
 
         <section className={styles.leadRecordsPanel}>
@@ -1858,6 +1860,7 @@ export default function WilsyLeadOperatingRoom({
                 }) : (
                 <tr
                   className={styles.leadEmptyRow}
+                  data-wilsy-real-data-empty-state="R81A-LIVE-BACKEND-EMPTY"
                   data-wilsy-real-data-empty-state="R80D-NO-FAKE-DATA"
                 >
                   <td colSpan={99}>

@@ -4995,7 +4995,7 @@
    clean records table, calm dark depth, and no giant empty-state cockpit.
    ======================================================================== */
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
   --r80c-bg: #101522;
   --r80c-panel: #121826;
   --r80c-panel-soft: #151c2d;
@@ -5027,7 +5027,7 @@
   overflow: hidden !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
   width: 15.75rem !important;
   min-width: 15.75rem !important;
   max-width: 15.75rem !important;
@@ -5047,17 +5047,17 @@
   gap: 0.82rem !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
   display: none !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterRailHeader {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterRailHeader {
   min-height: 2.25rem !important;
   padding: 0 !important;
   align-items: center !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterRailHeader strong {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterRailHeader strong {
   color: var(--r80c-text) !important;
   font-size: 0.9rem !important;
   line-height: 1.12 !important;
@@ -5065,11 +5065,11 @@
   letter-spacing: -0.012em !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterRailHeader em {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterRailHeader em {
   display: none !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterRailHeader button {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterRailHeader button {
   width: 1.85rem !important;
   min-width: 1.85rem !important;
   height: 1.85rem !important;
@@ -5081,7 +5081,7 @@
   box-shadow: none !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterSearch {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterSearch {
   height: 2.65rem !important;
   min-height: 2.65rem !important;
   padding: 0 0.78rem !important;
@@ -5091,21 +5091,21 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.035) !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterSearch input {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterSearch input {
   font-size: 0.8rem !important;
   font-weight: 700 !important;
   color: var(--r80c-text) !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterSearch input::placeholder {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterSearch input::placeholder {
   color: rgba(216,222,244,0.48) !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterRailMeta {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterRailMeta {
   display: none !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] [data-wilsy-independent-scroll="lead-filter-options"] {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] [data-wilsy-independent-scroll="lead-filter-options"] {
   height: 100% !important;
   min-height: 0 !important;
   overflow-y: auto !important;
@@ -5114,25 +5114,25 @@
   gap: 0.7rem !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterSectionHeader {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterSectionHeader {
   min-height: 1.8rem !important;
   grid-template-columns: 0.8rem minmax(0, 1fr) !important;
   gap: 0.44rem !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterSectionHeader span {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterSectionHeader span {
   font-size: 0.7rem !important;
   opacity: 0.76 !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterSectionHeader strong {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterSectionHeader strong {
   font-size: 0.76rem !important;
   font-weight: 820 !important;
   color: rgba(248,250,255,0.86) !important;
   letter-spacing: -0.005em !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterOption {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterOption {
   min-height: 1.85rem !important;
   padding: 0.22rem 0.18rem !important;
   grid-template-columns: 0.9rem minmax(0, 1fr) !important;
@@ -5140,7 +5140,7 @@
   border-radius: 0.5rem !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterOption span {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterOption span {
   width: 0.8rem !important;
   height: 0.8rem !important;
   border-radius: 0.22rem !important;
@@ -5149,14 +5149,14 @@
   background: transparent !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] .leadFilterOption em {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] .leadFilterOption em {
   font-size: 0.74rem !important;
   line-height: 1.12 !important;
   font-weight: 680 !important;
   color: rgba(220,226,244,0.72) !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] > :not([data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]) {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > :not([data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]) {
   min-width: 0 !important;
   width: 100% !important;
   height: 100% !important;
@@ -5166,19 +5166,19 @@
   overflow: hidden !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] table {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] table {
   width: 100% !important;
   min-width: 66rem !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] thead {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] thead {
   background: #111827 !important;
   border-bottom: 1px solid var(--r80c-line) !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] th {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] th {
   height: 3.25rem !important;
   padding: 0 0.95rem !important;
   color: rgba(228,232,250,0.82) !important;
@@ -5192,7 +5192,7 @@
   border-bottom: 1px solid var(--r80c-line) !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] td {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] td {
   height: 3.15rem !important;
   padding: 0 0.95rem !important;
   color: rgba(222,227,244,0.84) !important;
@@ -5205,21 +5205,21 @@
   vertical-align: middle !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] tbody tr {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] tbody tr {
   background: transparent !important;
   transition: background 160ms ease, box-shadow 160ms ease !important;
 }
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] tbody tr:hover {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] tbody tr:hover {
   background: rgba(124, 97, 255, 0.08) !important;
 }
 
 @media (max-width: 1180px) {
-  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] {
+  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
     grid-template-columns: 1fr !important;
   }
 
-  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
@@ -5236,7 +5236,7 @@
    returned, WILSY OS shows a real empty state rather than fake CRM records.
    ======================================================================== */
 
-[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80D-REAL-DATA-SURFACE"] {
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
   grid-template-columns: 15.75rem minmax(0, 1fr) !important;
 }
 
@@ -5281,4 +5281,426 @@
   font-style: normal;
   font-weight: 620;
   line-height: 1.45;
+}
+
+
+/* ========================================================================
+   WILSY OS R81A - LEADS LIST-VIEW PARITY RESET
+   Production reset: remove the cockpit/banner treatment and compose Leads as
+   a clean CRM list view. Data remains live-backend-only.
+   ======================================================================== */
+
+[class*="leadOperatingRoom"] {
+  --r81a-page-bg: #0d1220;
+  --r81a-shell: #111827;
+  --r81a-shell-soft: #141c2b;
+  --r81a-table: #111827;
+  --r81a-table-head: #151d2c;
+  --r81a-line: rgba(154, 166, 206, 0.18);
+  --r81a-line-strong: rgba(164, 177, 218, 0.28);
+  --r81a-text: rgba(248, 250, 255, 0.96);
+  --r81a-soft: rgba(220, 226, 244, 0.72);
+  --r81a-muted: rgba(184, 193, 222, 0.56);
+  --r81a-blue: #6d7cff;
+  --r81a-purple: #7962ff;
+  --r81a-green: #65e68e;
+  --r81a-gold: #e7c86f;
+}
+
+/* Remove the giant purple banner treatment. */
+[class*="leadOperatingRoom"] [class*="appHeader"],
+[class*="leadOperatingRoom"] [class*="AppHeader"],
+[class*="leadOperatingRoom"] [class*="leadAppHeader"] {
+  min-height: auto !important;
+  margin: 0 !important;
+  padding: clamp(1.7rem, 2.4vw, 2.6rem) clamp(1.7rem, 2.4vw, 2.6rem) 1.25rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadHeaderPrimary"] {
+  display: grid !important;
+  grid-template-columns: minmax(20rem, 1fr) auto !important;
+  gap: clamp(1.4rem, 2.2vw, 2.8rem) !important;
+  align-items: start !important;
+  padding: 0 !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadHeaderUtilities"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.72rem !important;
+  flex-wrap: nowrap !important;
+  max-width: 100% !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadIconButton"] {
+  width: 3.05rem !important;
+  height: 3.05rem !important;
+  min-width: 3.05rem !important;
+  min-height: 3.05rem !important;
+  border-radius: 0.78rem !important;
+  border: 1px solid var(--r81a-line) !important;
+  background: rgba(255,255,255,0.035) !important;
+  color: var(--r81a-text) !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] {
+  width: clamp(13rem, 17vw, 17rem) !important;
+  min-width: 13rem !important;
+  max-width: 17rem !important;
+  height: 3.15rem !important;
+  min-height: 3.15rem !important;
+  max-height: 3.15rem !important;
+  border-radius: 0.82rem !important;
+  grid-template-columns: 1.35rem minmax(0, 1fr) 1rem !important;
+  gap: 0.68rem !important;
+  padding: 0 0.9rem !important;
+  border: 1px solid var(--r81a-line) !important;
+  background: rgba(255,255,255,0.038) !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] small {
+  font-size: 0.63rem !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: var(--r81a-soft) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] strong {
+  font-size: 0.8rem !important;
+  line-height: 1.05 !important;
+  color: var(--r81a-text) !important;
+  letter-spacing: -0.01em !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] em {
+  display: none !important;
+}
+
+/* Search must be one compact control, not a foreign dark block. */
+[class*="leadOperatingRoom"] [class*="leadSearch"],
+[class*="leadOperatingRoom"] [class*="headerSearch"],
+[class*="leadOperatingRoom"] [class*="commandSearch"] {
+  width: clamp(16rem, 21vw, 22rem) !important;
+  min-width: 16rem !important;
+  max-width: 22rem !important;
+  height: 3.15rem !important;
+  min-height: 3.15rem !important;
+  max-height: 3.15rem !important;
+  display: grid !important;
+  grid-template-columns: 1.35rem minmax(0, 1fr) 3.35rem !important;
+  gap: 0.7rem !important;
+  align-items: center !important;
+  padding: 0 0.62rem 0 0.9rem !important;
+  border-radius: 0.82rem !important;
+  border: 1px solid var(--r81a-line) !important;
+  background: rgba(255,255,255,0.038) !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadSearch"] input,
+[class*="leadOperatingRoom"] [class*="headerSearch"] input,
+[class*="leadOperatingRoom"] [class*="commandSearch"] input {
+  color: var(--r81a-text) !important;
+  font-size: 0.82rem !important;
+  font-weight: 680 !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadSearch"] input::placeholder,
+[class*="leadOperatingRoom"] [class*="headerSearch"] input::placeholder,
+[class*="leadOperatingRoom"] [class*="commandSearch"] input::placeholder {
+  color: rgba(220,226,244,0.54) !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadSearch"] kbd,
+[class*="leadOperatingRoom"] [class*="headerSearch"] kbd,
+[class*="leadOperatingRoom"] [class*="commandSearch"] kbd {
+  width: 2.8rem !important;
+  min-width: 2.8rem !important;
+  height: 2.25rem !important;
+  border-radius: 0.55rem !important;
+  color: var(--r81a-text) !important;
+  background: rgba(4, 8, 16, 0.56) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* Calm command deck: no oversized stitched banner. */
+[class*="leadOperatingRoom"] [class*="leadCommand"],
+[class*="leadOperatingRoom"] [class*="commandDeck"],
+[class*="leadOperatingRoom"] [class*="CommandDeck"] {
+  border-radius: 1.05rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Final list-view workbench. */
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
+  display: grid !important;
+  grid-template-columns: 15.25rem minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-height: 33.5rem !important;
+  padding: 0 !important;
+  border-radius: 1.05rem !important;
+  border: 1px solid var(--r81a-line-strong) !important;
+  background: var(--r81a-shell) !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.26) !important;
+  overflow: hidden !important;
+}
+
+/* Left filter: quiet support surface, not a purple card. */
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] > [data-wilsy-lead-filter-operating-system],
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > [data-wilsy-lead-filter-operating-system] {
+  width: 15.25rem !important;
+  min-width: 15.25rem !important;
+  max-width: 15.25rem !important;
+  min-height: 33.5rem !important;
+  height: auto !important;
+  max-height: none !important;
+  resize: none !important;
+  padding: 0.95rem !important;
+  border: 0 !important;
+  border-right: 1px solid var(--r81a-line) !important;
+  border-radius: 0 !important;
+  background: #101725 !important;
+  box-shadow: none !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 0.78rem !important;
+  overflow: hidden !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] > [data-wilsy-lead-filter-operating-system]::after,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > [data-wilsy-lead-filter-operating-system]::after {
+  display: none !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterRailHeader"] {
+  min-height: 2rem !important;
+  padding: 0 !important;
+  align-items: center !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterRailHeader"] strong {
+  color: var(--r81a-text) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.1 !important;
+  font-weight: 820 !important;
+  letter-spacing: -0.01em !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterRailHeader"] em,
+[class*="leadOperatingRoom"] [class*="leadFilterRailMeta"] {
+  display: none !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterRailHeader"] button {
+  width: 1.7rem !important;
+  height: 1.7rem !important;
+  min-width: 1.7rem !important;
+  min-height: 1.7rem !important;
+  border-radius: 0.48rem !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(220,226,244,0.64) !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterSearch"] {
+  height: 2.5rem !important;
+  min-height: 2.5rem !important;
+  padding: 0 0.72rem !important;
+  gap: 0.55rem !important;
+  border-radius: 0.62rem !important;
+  border: 1px solid rgba(154,166,206,0.22) !important;
+  background: #0d1421 !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterSearch"] input {
+  color: var(--r81a-text) !important;
+  font-size: 0.78rem !important;
+  font-weight: 640 !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterSearch"] input::placeholder {
+  color: rgba(220,226,244,0.46) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-independent-scroll="lead-filter-options"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0.02rem 0.2rem 0.2rem 0 !important;
+  gap: 0.6rem !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterSectionHeader"] {
+  min-height: 1.6rem !important;
+  grid-template-columns: 0.7rem minmax(0, 1fr) !important;
+  gap: 0.38rem !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterSectionHeader"] strong {
+  font-size: 0.72rem !important;
+  font-weight: 760 !important;
+  color: rgba(248,250,255,0.82) !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterOption"] {
+  min-height: 1.7rem !important;
+  padding: 0.18rem 0.12rem !important;
+  grid-template-columns: 0.82rem minmax(0, 1fr) !important;
+  gap: 0.46rem !important;
+  border-radius: 0.42rem !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterOption"] span {
+  width: 0.72rem !important;
+  height: 0.72rem !important;
+  border-radius: 0.18rem !important;
+  border-width: 1.35px !important;
+  border-color: rgba(184,193,222,0.44) !important;
+  background: transparent !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadFilterOption"] em {
+  color: rgba(220,226,244,0.70) !important;
+  font-size: 0.7rem !important;
+  line-height: 1.1 !important;
+  font-weight: 620 !important;
+}
+
+/* Table: real backend rows only. */
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] > :not([data-wilsy-lead-filter-operating-system]),
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > :not([data-wilsy-lead-filter-operating-system]) {
+  min-width: 0 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  background: var(--r81a-table) !important;
+  overflow: hidden !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] table,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] table {
+  width: 100% !important;
+  min-width: 62rem !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] thead,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] thead {
+  background: var(--r81a-table-head) !important;
+  border-bottom: 1px solid var(--r81a-line) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] th,
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] td,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] th,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] td {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  border-bottom: 1px solid rgba(154,166,206,0.12) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] th,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] th {
+  height: 3rem !important;
+  padding: 0 0.86rem !important;
+  color: rgba(226,232,250,0.82) !important;
+  font-size: 0.72rem !important;
+  font-weight: 780 !important;
+  letter-spacing: 0.004em !important;
+  text-align: left !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] td,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] td {
+  height: 3rem !important;
+  padding: 0 0.86rem !important;
+  color: rgba(222,227,244,0.84) !important;
+  font-size: 0.74rem !important;
+  font-weight: 610 !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] tbody tr:hover,
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] tbody tr:hover {
+  background: rgba(109,124,255,0.07) !important;
+}
+
+/* Real empty state: honest, compact, no fake rows. */
+[class*="leadOperatingRoom"] [data-wilsy-real-data-empty-state="R81A-LIVE-BACKEND-EMPTY"],
+[class*="leadOperatingRoom"] [data-wilsy-real-data-empty-state="R80D-NO-FAKE-DATA"] {
+  display: table-row !important;
+  background: transparent !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-real-data-empty-state="R81A-LIVE-BACKEND-EMPTY"] td,
+[class*="leadOperatingRoom"] [data-wilsy-real-data-empty-state="R80D-NO-FAKE-DATA"] td {
+  height: 15rem !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.leadRealEmptyState {
+  min-height: 13.5rem !important;
+  margin: 0.9rem !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 0.38rem !important;
+  text-align: center !important;
+  border-radius: 0.95rem !important;
+  border: 1px dashed rgba(154,166,206,0.20) !important;
+  background: rgba(255,255,255,0.018) !important;
+}
+
+.leadRealEmptyState strong {
+  color: var(--r81a-text) !important;
+  font-size: 0.95rem !important;
+  font-weight: 820 !important;
+}
+
+.leadRealEmptyState em {
+  max-width: 32rem !important;
+  color: var(--r81a-muted) !important;
+  font-size: 0.78rem !important;
+  font-style: normal !important;
+  line-height: 1.42 !important;
+}
+
+@media (max-width: 1180px) {
+  [class*="leadOperatingRoom"] [class*="leadHeaderPrimary"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="leadOperatingRoom"] [class*="leadHeaderUtilities"] {
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  [class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
+  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="leadOperatingRoom"] [data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] > [data-wilsy-lead-filter-operating-system],
+  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] > [data-wilsy-lead-filter-operating-system] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 16rem !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--r81a-line) !important;
+  }
 }
