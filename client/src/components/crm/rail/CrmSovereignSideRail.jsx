@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Crown, Search } from 'lucide-react';
+import { Crown, Search } from 'lucide-react';
 import wilsyLogo from '../../../assets/logo/wilsy.jpeg';
 import styles from './CrmSovereignSideRail.module.css';
 
@@ -399,8 +399,9 @@ export default function CrmSovereignSideRail({
           type="button"
           className={styles.kineticToggle}
           onClick={toggleExplicitState}
-          aria-label={railState === RAIL_STATES.EXPANDED ? 'Collapse CRM navigation rail' : 'Expand CRM navigation rail'}
-          title="Toggle CRM rail · Cmd+\\"
+          aria-label={railState === RAIL_STATES.EXPANDED ? 'Close sidebar' : 'Open sidebar'}
+          title={railState === RAIL_STATES.EXPANDED ? 'Close sidebar' : 'Open sidebar'}
+          data-tooltip={railState === RAIL_STATES.EXPANDED ? 'Close sidebar' : 'Open sidebar'}
         >
           <span
             className={styles.togglePanelGlyph}

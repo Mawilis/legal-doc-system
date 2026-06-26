@@ -1016,7 +1016,7 @@ export default function WilsyLeadOperatingRoom({
           <section className={[styles.headerIdentity, styles.leadModuleTitleBlock].join(' ')}>
             <small>Sales Pipeline</small>
             <strong>{mode === 'create' ? 'Create Lead' : 'Leads'}</strong>
-            <em>{tenantLabel} · Sales workspace · source records monitored</em>
+            <em>Sales workspace · source records monitored</em>
           </section>
 
           <section
