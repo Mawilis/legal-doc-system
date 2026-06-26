@@ -919,3 +919,25 @@
     grid-template-columns: 1fr;
   }
 }
+/* ========================================================================
+   WILSY OS R78B - CRM UNIFIED VISUAL CONTRACT
+   Accounts consumes the same CRM shell visual contract as rail, Leads and
+   Contacts. Customer-facing chrome uses business language.
+   ======================================================================== */
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] {
+  --crm-shell-accent: #24df75;
+  --crm-shell-cyan: #41d7ff;
+  --crm-shell-gold: #e5d38c;
+  --account-accent: var(--crm-shell-accent);
+  --account-cyan: var(--crm-shell-cyan);
+  --account-gold: var(--crm-shell-gold);
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountAppHeader {
+  border-color: color-mix(in srgb, var(--crm-shell-accent) 34%, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountFilterRail header button {
+  cursor: default !important;
+}

@@ -3824,3 +3824,25 @@
     grid-template-columns: 1fr !important;
   }
 }
+/* ========================================================================
+   WILSY OS R78B - CRM UNIFIED VISUAL CONTRACT
+   Leads consumes the same CRM shell visual contract as rail, Contacts and
+   Accounts. Internal theme-engine labels stay out of customer-facing chrome.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] {
+  --crm-shell-accent: #24df75;
+  --crm-shell-cyan: #41d7ff;
+  --crm-shell-gold: #e5d38c;
+  --lead-accent: var(--crm-shell-accent);
+  --lead-cyan: var(--crm-shell-cyan);
+  --lead-gold: var(--crm-shell-gold);
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .appHeader {
+  border-color: color-mix(in srgb, var(--crm-shell-accent) 34%, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .leadFilterRail header button {
+  cursor: default !important;
+}

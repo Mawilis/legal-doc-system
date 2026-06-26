@@ -937,3 +937,25 @@
 .contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTabSurface {
   min-height: calc(100vh - 286px) !important;
 }
+/* ========================================================================
+   WILSY OS R78B - CRM UNIFIED VISUAL CONTRACT
+   Contacts consumes the same CRM shell visual contract as rail, Leads and
+   Accounts. Customer-facing chrome uses business language.
+   ======================================================================== */
+
+.contactOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] {
+  --crm-shell-accent: #24df75;
+  --crm-shell-cyan: #41d7ff;
+  --crm-shell-gold: #e5d38c;
+  --contact-accent: var(--crm-shell-accent);
+  --contact-cyan: var(--crm-shell-cyan);
+  --contact-gold: var(--crm-shell-gold);
+}
+
+.contactOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .contactAppHeader {
+  border-color: color-mix(in srgb, var(--crm-shell-accent) 34%, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.contactOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .contactFilterRail header button {
+  cursor: default !important;
+}

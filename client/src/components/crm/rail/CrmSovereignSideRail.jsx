@@ -109,13 +109,15 @@ function resolveTenantName(tenantConfig = {}) {
  * @collaboration Keeps master tenant boundary visible without hardcoding local UI state.
  */
 function resolveTenantMode(tenantConfig = {}) {
-  return String(
+  const rawMode = String(
     tenantConfig?.tenantId
       || tenantConfig?.id
       || tenantConfig?.tenantKey
       || tenantConfig?.mode
-      || 'MASTER'
+      || 'Business Workspace'
   );
+
+  return ['MASTER', 'ROOT', 'SUPER_ADMIN'].includes(rawMode.toUpperCase()) ? 'Business Workspace' : rawMode;
 }
 
 /**
@@ -128,7 +130,7 @@ function resolveTenantMode(tenantConfig = {}) {
 function resolveOperatorProfile(user = {}) {
   return {
     name: String(user?.name || user?.fullName || user?.email || 'Wilson Khanyezi'),
-    role: String(user?.role || user?.accountRole || user?.profile?.role || 'SUPER_ADMIN').toUpperCase(),
+    role: String(user?.role || user?.accountRole || user?.profile?.role || 'Workspace Admin').replace(/_/g, ' '),
     avatarUrl: user?.avatarUrl || user?.avatar || user?.photoUrl || ''
   };
 }
@@ -400,7 +402,17 @@ export default function CrmSovereignSideRail({
           aria-label={railState === RAIL_STATES.EXPANDED ? 'Collapse CRM navigation rail' : 'Expand CRM navigation rail'}
           title="Toggle CRM rail · Cmd+\\"
         >
-          {railState === RAIL_STATES.EXPANDED ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+          <span
+            className={styles.togglePanelGlyph}
+            data-expanded={railState === RAIL_STATES.EXPANDED ? 'true' : 'false'}
+            aria-hidden="true"
+          >
+            <i />
+            <b />
+          </span>
+          <span className={styles.toggleAssistive}>
+            {railState === RAIL_STATES.EXPANDED ? 'Collapse navigation' : 'Expand navigation'}
+          </span>
         </button>
 
         <div className={styles.railTop}>

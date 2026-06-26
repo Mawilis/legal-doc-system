@@ -714,7 +714,7 @@ export default function WilsyLeadOperatingRoom({
     return sortLeadRecords(matchedLeads, sortMode);
   }, [activeFilter, activeListViewId, leads, searchTerm, sortMode]);
 
-  const sourcePosture = leads.length ? 'SOURCE_LIVE' : 'SOURCE_READY_EMPTY';
+  const sourcePosture = leads.length ? 'Sources connected' : 'Ready for source connection';
   const routeRegistry = Array.isArray(syncTelemetry?.registry) ? syncTelemetry.registry : [];
   const liveSources = syncTelemetry?.liveSources ?? routeRegistry.filter(route => route.connected).length;
   const totalSources = syncTelemetry?.totalSources ?? routeRegistry.length;
@@ -1014,9 +1014,9 @@ export default function WilsyLeadOperatingRoom({
       >
         <section className={[styles.headerPrimaryRow, styles.leadModuleTopBar].join(' ')}>
           <section className={[styles.headerIdentity, styles.leadModuleTitleBlock].join(' ')}>
-            <small>Leads Engine // Platform Skin: {activeLeadThemeOption?.id || 'WILSY_NEBULA_COMMAND'}</small>
+            <small>Sales Pipeline</small>
             <strong>{mode === 'create' ? 'Create Lead' : 'Leads'}</strong>
-            <em>{tenantId} · {role} · {syncStatus}</em>
+            <em>{tenantLabel} · Sales workspace · source records monitored</em>
           </section>
 
           <section
@@ -1121,7 +1121,7 @@ export default function WilsyLeadOperatingRoom({
             <article>
               <small>Theme Authority</small>
               <strong>{activeLeadThemeOption?.label || 'NEBULA'}</strong>
-              <em>{activeLeadThemeOption?.source || 'wilsyOperatingSkins'}</em>
+              <em>CRM theme library</em>
             </article>
           </section>
 
@@ -2249,6 +2249,7 @@ export default function WilsyLeadOperatingRoom({
       data-wilsy-lead-operating-room={WILSY_LEAD_OPERATING_ROOM_VERSION}
       data-wilsy-lead-header-bridge-version={WILSY_LEAD_HEADER_BRIDGE_VERSION}
       data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"
+      data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"
       data-wilsy-lead-skin={activeLeadThemeOption?.id || 'WILSY_NEBULA_COMMAND'}
       data-wilsy-theme-engine-source="wilsyOperatingSkins"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}

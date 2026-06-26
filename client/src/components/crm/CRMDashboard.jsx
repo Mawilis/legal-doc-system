@@ -761,7 +761,7 @@ function buildOperatorIdentity(user = {}) {
     displayName,
     firstName,
     surname,
-    roleLabel: safeText(source.roleLabel || source.role || source.accountRole || source.profile?.role, 'SUPER_ADMIN').toUpperCase(),
+    roleLabel: safeText(source.roleLabel || source.role || source.accountRole || source.profile?.role, 'Workspace Admin').toUpperCase(),
     email: safeText(source.email || source.primaryEmail || source.username, 'wilsonkhanyezi@gmail.com'),
     avatar: resolveImageSource(source.avatar || source.avatarUrl || source.profileImage || source.photoURL || source.profile?.avatar),
     initials: buildInitials(displayName),
@@ -792,7 +792,7 @@ function normalizeBackendOperatorProfile(payload = {}, fallback = {}) {
 
   const roleLabel = safeText(
     candidate.roleLabel || candidate.role || candidate.accountRole || candidate.permissions?.role || candidate.accessRole,
-    fallback.roleLabel || 'SUPER_ADMIN'
+    fallback.roleLabel || 'Workspace Admin'
   ).toUpperCase();
 
   const email = safeText(candidate.email || candidate.primaryEmail || candidate.username, fallback.email || 'wilsonkhanyezi@gmail.com');

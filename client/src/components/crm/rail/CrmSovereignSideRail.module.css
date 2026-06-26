@@ -409,3 +409,90 @@
     min-height: auto;
   }
 }
+/* ========================================================================
+   WILSY OS R78B - CRM RAIL / MODULE VISUAL CONTRACT
+   Modern rail toggle, theme-aligned navigation surface, and product-grade
+   CRM shell continuity with Leads, Contacts, and Accounts modules.
+   ======================================================================== */
+
+.railShell {
+  --crm-shell-accent: #24df75;
+  --crm-shell-cyan: #41d7ff;
+  --crm-shell-gold: #e5d38c;
+  --crm-shell-panel: rgba(7, 18, 13, 0.94);
+  --crm-shell-line: rgba(112, 255, 184, 0.24);
+  --crm-shell-line-strong: rgba(112, 255, 184, 0.38);
+  --crm-shell-text: rgba(245, 255, 250, 0.98);
+  --crm-shell-muted: rgba(202, 222, 213, 0.68);
+}
+
+.kineticToggle {
+  width: 46px !important;
+  height: 46px !important;
+  right: -23px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--crm-shell-line-strong) !important;
+  background:
+    radial-gradient(circle at 24% 20%, rgba(216, 255, 156, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(4, 14, 9, 0.96) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 14px 34px rgba(0, 0, 0, 0.45),
+    0 0 28px rgba(36, 223, 117, 0.18) !important;
+  color: var(--crm-shell-text) !important;
+}
+
+.kineticToggle:hover {
+  transform: translateY(-50%) scale(1.04) !important;
+  border-color: color-mix(in srgb, var(--crm-shell-accent) 66%, white 6%) !important;
+}
+
+.togglePanelGlyph {
+  width: 21px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  position: relative;
+  display: inline-block;
+}
+
+.togglePanelGlyph i,
+.togglePanelGlyph b {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  display: block;
+  border-radius: 999px;
+  content: "";
+}
+
+.togglePanelGlyph i {
+  left: 5px;
+  width: 2px;
+  background: currentColor;
+  opacity: 0.72;
+}
+
+.togglePanelGlyph b {
+  right: 4px;
+  width: 6px;
+  border: 1.5px solid currentColor;
+  border-left: 0;
+  opacity: 0.9;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.togglePanelGlyph[data-expanded="true"] b {
+  transform: translateX(-4px);
+  opacity: 0.72;
+}
+
+.toggleAssistive {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}

@@ -480,7 +480,7 @@ export default function WilsyContactOperatingRoom({
             <small>Filter Contacts by</small>
             <strong>Relationship Signals</strong>
           </span>
-          <button type="button" onClick={() => setFilterRailOpen(false)} aria-label="Collapse contact filters">
+          <button type="button" onClick={(event) => event.currentTarget.blur()} aria-label="Filter options">
             <MoreHorizontal size={17} />
           </button>
         </header>
@@ -826,6 +826,7 @@ export default function WilsyContactOperatingRoom({
   return (
     <section
       className={styles.contactOperatingRoom}
+      data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"
       data-wilsy-contact-operating-room="R76C-CONTACTS-OPERATING-ROOM"
       data-wilsy-contact-module="relationship-intelligence"
       data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"
@@ -833,9 +834,9 @@ export default function WilsyContactOperatingRoom({
       <header className={styles.contactAppHeader}>
         <section className={styles.contactHeaderPrimary}>
           <span className={styles.contactTitleBlock}>
-            <small>Contacts Engine // Relationship Intelligence</small>
+            <small>Customer Relationships</small>
             <strong>Contacts</strong>
-            <em>{tenantLabel} · {role} · CONSENT_LIVE · SOURCE_PROOF</em>
+            <em>{tenantLabel} · Relationship workspace · consent and source records monitored</em>
           </span>
 
           <section className={styles.contactHeaderUtilities}>
@@ -956,7 +957,7 @@ export default function WilsyContactOperatingRoom({
             <article>
               <small>Source Routes</small>
               <strong>{Number(sourcePosture.connected || 0)}/{Number(sourcePosture.total || connectors.length || 0)}</strong>
-              <em>CONTACT_SOURCE_POSTURE</em>
+              <em>Source readiness</em>
             </article>
             <article>
               <small>Relationship Root</small>

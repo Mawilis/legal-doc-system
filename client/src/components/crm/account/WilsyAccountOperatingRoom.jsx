@@ -475,7 +475,7 @@ export default function WilsyAccountOperatingRoom({
             <small>Filter Accounts by</small>
             <strong>Authority Signals</strong>
           </span>
-          <button type="button" onClick={() => setFilterRailOpen(false)} aria-label="Collapse account filters">
+          <button type="button" onClick={(event) => event.currentTarget.blur()} aria-label="Filter options">
             <MoreHorizontal size={17} />
           </button>
         </header>
@@ -824,6 +824,7 @@ export default function WilsyAccountOperatingRoom({
   return (
     <section
       className={styles.accountOperatingRoom}
+      data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"
       data-wilsy-account-operating-room="R77A-ACCOUNTS-OPERATING-ROOM"
       data-wilsy-account-module="organization-intelligence"
       data-wilsy-account-canvas-parity="LEADS_CONTACTS_FULL_CANVAS"
@@ -831,9 +832,9 @@ export default function WilsyAccountOperatingRoom({
       <header className={styles.accountAppHeader}>
         <section className={styles.accountHeaderPrimary}>
           <span className={styles.accountTitleBlock}>
-            <small>Accounts Engine // Organization Intelligence</small>
+            <small>Customer Accounts</small>
             <strong>Accounts</strong>
-            <em>{tenantLabel} · {role} · ACCOUNT_GRAPH_LIVE · SOURCE_PROOF</em>
+            <em>{tenantLabel} · Account workspace · ownership and source records monitored</em>
           </span>
 
           <section className={styles.accountHeaderUtilities}>
@@ -954,7 +955,7 @@ export default function WilsyAccountOperatingRoom({
             <article>
               <small>Source Routes</small>
               <strong>{Number(sourcePosture.connected || 0)}/{Number(sourcePosture.total || connectors.length || 0)}</strong>
-              <em>ACCOUNT_SOURCE_POSTURE</em>
+              <em>Source readiness</em>
             </article>
             <article>
               <small>Organization Root</small>
