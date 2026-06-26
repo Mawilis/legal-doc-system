@@ -640,6 +640,63 @@ function buildCalendarDays() {
   return Array.from({ length: 35 }, (_, index) => index + 1);
 }
 
+
+/**
+ * @function resolveCrmGlobalThemeAuthorityLabel
+ * @description Resolves a business-facing label for the active Command Center operating skin.
+ * @param {Object} themeRuntime - Active CRM/global theme runtime packet.
+ * @returns {string} Business-facing theme label.
+ * @collaboration R79B Command Center theme authority, CRM module chrome, 26-skin global registry.
+ */
+function resolveCrmGlobalThemeAuthorityLabel(themeRuntime = {}) {
+  const rawLabel = themeRuntime.label
+    || themeRuntime.name
+    || themeRuntime.title
+    || themeRuntime.displayName
+    || themeRuntime.themeLabel
+    || themeRuntime.skinLabel
+    || themeRuntime.themeId
+    || 'Command Center Theme';
+
+  return String(rawLabel)
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+/**
+ * @function resolveCrmGlobalThemeAuthorityMode
+ * @description Resolves a business-facing mode label for the active global theme runtime.
+ * @param {Object} themeRuntime - Active CRM/global theme runtime packet.
+ * @returns {string} Business-facing mode label.
+ * @collaboration R79B Day/Night/Auto command mode, Command Center runtime, CRM module chrome.
+ */
+function resolveCrmGlobalThemeAuthorityMode(themeRuntime = {}) {
+  const rawMode = themeRuntime.resolvedMode || themeRuntime.effectiveMode || themeRuntime.mode || 'night';
+  const normalized = String(rawMode).replace(/[-_]+/g, ' ').trim();
+
+  return normalized ? normalized.replace(/\b\w/g, letter => letter.toUpperCase()) : 'Night';
+}
+
+/**
+ * @function openCrmGlobalThemeAuthorityFallback
+ * @description Opens the global theme authority through the CRM/Command Center event bridge when no direct handler is provided.
+ * @returns {void}
+ * @collaboration R79B module theme authority button, Account Command Center, global skin governance.
+ */
+function openCrmGlobalThemeAuthorityFallback() {
+  if (typeof window === 'undefined') return;
+
+  window.dispatchEvent(new CustomEvent('wilsy:crm:open-command-center', {
+    detail: {
+      panel: 'preferences',
+      section: 'theme-authority',
+      source: 'CRM_GLOBAL_THEME_AUTHORITY'
+    }
+  }));
+}
+
 /**
  * @function WilsyLeadOperatingRoom
  * @description Renders the production Lead operating room with contextual command strip and skin-aware density.
@@ -655,16 +712,20 @@ export default function WilsyLeadOperatingRoom({
   onSaveLead,
   tenantConfig = {},
   user = {},
-  loading = false
+  loading = false,
+  themeRuntime = {},
+  onOpenThemeAuthority = openCrmGlobalThemeAuthorityFallback
 }) {
   const role = resolveLeadRole(user, tenantConfig);
+  const globalThemeAuthorityLabel = resolveCrmGlobalThemeAuthorityLabel(themeRuntime);
+  const globalThemeAuthorityMode = resolveCrmGlobalThemeAuthorityMode(themeRuntime);
   const tenantId = resolveTenantId(tenantConfig, user);
   const [mode, setMode] = useState('list');
   const [activeTopTab, setActiveTopTab] = useState('records');
   const [activeListViewId, setActiveListViewId] = useState('ALL_LEADS');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [sortMode, setSortMode] = useState('priority');
-  const [leadSkin, setLeadSkin] = useState('WILSY_NEBULA_COMMAND');
+  const [leadSkin, setLeadSkin] = useState('crm_revenue_pulse');
   const [splitView, setSplitView] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(true);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
@@ -686,7 +747,13 @@ export default function WilsyLeadOperatingRoom({
   const [openRowActionId, setOpenRowActionId] = useState('');
   const hasAutoHydratedTelemetryRef = useRef(false);
   const leadThemeOptions = useMemo(() => resolveCrmThemeEngineOptions(), []);
-  const activeLeadThemeOption = leadThemeOptions.find(option => option.id === leadSkin) || leadThemeOptions[0];
+  const activeLeadThemeOption = useMemo(() => ({
+    id: themeRuntime?.themeId || leadSkin || 'crm_revenue_pulse',
+    label: globalThemeAuthorityLabel,
+    className: '',
+    cssVars: themeRuntime?.cssVars || undefined,
+    source: 'global-command-center'
+  }), [globalThemeAuthorityLabel, leadSkin, themeRuntime]);
   const activeListView = useMemo(() => resolveLeadListView(activeListViewId), [activeListViewId]);
 
 
@@ -1047,17 +1114,22 @@ export default function WilsyLeadOperatingRoom({
             </button>
 
             <div className={styles.leadDropdownWrap}>
-              <button type="button" className={styles.leadUtilityButton} onClick={() => setThemeMenuOpen(previous => !previous)}>
-                <Sparkles size={17} />
-                <span>Theme Authority</span>
-                <ChevronDown size={15} />
-              </button>
-              {themeMenuOpen ? (
-                <section className={[styles.leadDropdownMenu, styles.leadThemeDropdown].join(' ')} aria-label="Theme Authority">
-                  {renderSkinSwitcher()}
-                </section>
-              ) : null}
-            </div>
+                <button
+                  type="button"
+                  className={styles.leadUtilityButton}
+                  onClick={onOpenThemeAuthority}
+                  aria-label={`Open global theme authority: ${globalThemeAuthorityLabel}`}
+                  data-wilsy-global-theme-authority-control="command-center"
+                >
+                  <Sparkles size={17} />
+                  <span>
+                    <small>Theme Authority</small>
+                    <strong>{globalThemeAuthorityLabel}</strong>
+                    <em>{globalThemeAuthorityMode}</em>
+                  </span>
+                  <ChevronDown size={15} />
+                </button>
+              </div>
           </section>
         </section>
 
@@ -1120,8 +1192,8 @@ export default function WilsyLeadOperatingRoom({
             </article>
             <article>
               <small>Theme Authority</small>
-              <strong>{activeLeadThemeOption?.label || 'NEBULA'}</strong>
-              <em>CRM theme library</em>
+                <strong>{globalThemeAuthorityLabel}</strong>
+                <em>{globalThemeAuthorityMode} · Command Center global skin</em>
             </article>
           </section>
 
@@ -2250,8 +2322,8 @@ export default function WilsyLeadOperatingRoom({
       data-wilsy-lead-header-bridge-version={WILSY_LEAD_HEADER_BRIDGE_VERSION}
       data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"
       data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"
-      data-wilsy-lead-skin={activeLeadThemeOption?.id || 'WILSY_NEBULA_COMMAND'}
-      data-wilsy-theme-engine-source="wilsyOperatingSkins"
+      data-wilsy-lead-skin={themeRuntime?.themeId || 'crm_revenue_pulse'}
+      data-wilsy-theme-engine-source="global-command-center"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}
     >
       {renderHeader()}

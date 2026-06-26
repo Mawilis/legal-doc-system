@@ -959,3 +959,26 @@
 .contactOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .contactFilterRail header button {
   cursor: default !important;
 }
+/* ========================================================================
+   WILSY OS R79B - GLOBAL COMMAND CENTER THEME AUTHORITY
+   Contacts inherits active 26-skin Command Center runtime through CRM CSS vars.
+   ======================================================================== */
+
+.contactOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] {
+  --contact-accent: var(--crm-cyan, var(--crm-tenant-secondary, #24df75));
+  --contact-cyan: var(--crm-cyan, #41d7ff);
+  --contact-gold: var(--crm-gold-strong, var(--crm-gold, #e5d38c));
+  --contact-text: var(--crm-text, rgba(245, 255, 250, 0.98));
+  --contact-muted: var(--crm-muted, rgba(202, 222, 213, 0.66));
+  --contact-panel: var(--crm-panel, rgba(7, 18, 13, 0.92));
+  --contact-panel-strong: var(--crm-card, rgba(12, 26, 19, 0.96));
+  --contact-line: color-mix(in srgb, var(--contact-accent) 24%, rgba(255,255,255,0.08));
+}
+
+.contactOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .contactThemeAuthority em {
+  color: var(--contact-muted);
+  font-size: 0.66rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

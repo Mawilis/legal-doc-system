@@ -331,6 +331,63 @@ function buildContactMetrics({
   ];
 }
 
+
+/**
+ * @function resolveCrmGlobalThemeAuthorityLabel
+ * @description Resolves a business-facing label for the active Command Center operating skin.
+ * @param {Object} themeRuntime - Active CRM/global theme runtime packet.
+ * @returns {string} Business-facing theme label.
+ * @collaboration R79B Command Center theme authority, CRM module chrome, 26-skin global registry.
+ */
+function resolveCrmGlobalThemeAuthorityLabel(themeRuntime = {}) {
+  const rawLabel = themeRuntime.label
+    || themeRuntime.name
+    || themeRuntime.title
+    || themeRuntime.displayName
+    || themeRuntime.themeLabel
+    || themeRuntime.skinLabel
+    || themeRuntime.themeId
+    || 'Command Center Theme';
+
+  return String(rawLabel)
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+/**
+ * @function resolveCrmGlobalThemeAuthorityMode
+ * @description Resolves a business-facing mode label for the active global theme runtime.
+ * @param {Object} themeRuntime - Active CRM/global theme runtime packet.
+ * @returns {string} Business-facing mode label.
+ * @collaboration R79B Day/Night/Auto command mode, Command Center runtime, CRM module chrome.
+ */
+function resolveCrmGlobalThemeAuthorityMode(themeRuntime = {}) {
+  const rawMode = themeRuntime.resolvedMode || themeRuntime.effectiveMode || themeRuntime.mode || 'night';
+  const normalized = String(rawMode).replace(/[-_]+/g, ' ').trim();
+
+  return normalized ? normalized.replace(/\b\w/g, letter => letter.toUpperCase()) : 'Night';
+}
+
+/**
+ * @function openCrmGlobalThemeAuthorityFallback
+ * @description Opens the global theme authority through the CRM/Command Center event bridge when no direct handler is provided.
+ * @returns {void}
+ * @collaboration R79B module theme authority button, Account Command Center, global skin governance.
+ */
+function openCrmGlobalThemeAuthorityFallback() {
+  if (typeof window === 'undefined') return;
+
+  window.dispatchEvent(new CustomEvent('wilsy:crm:open-command-center', {
+    detail: {
+      panel: 'preferences',
+      section: 'theme-authority',
+      source: 'CRM_GLOBAL_THEME_AUTHORITY'
+    }
+  }));
+}
+
 /**
  * @function WilsyContactOperatingRoom
  * @description Renders the sovereign Contacts operating room for relationship intelligence, consent posture and source proof.
@@ -347,10 +404,12 @@ export default function WilsyContactOperatingRoom({
   sourcePosture = {},
   sourceErrors = [],
   loading = false,
+  themeRuntime = {},
   tenantConfig = {},
   user = {},
   onRefresh = () => {},
   onCreate = () => {},
+  onOpenThemeAuthority = openCrmGlobalThemeAuthorityFallback,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTopTab, setActiveTopTab] = useState('records');
@@ -366,6 +425,8 @@ export default function WilsyContactOperatingRoom({
   const activeSort = CONTACT_SORT_OPTIONS.find(option => option.id === sortMode) || CONTACT_SORT_OPTIONS[0];
   const tenantLabel = tenantConfig?.legalName || tenantConfig?.name || tenantConfig?.tenantName || 'Wilsy OS Root';
   const role = String(user?.role || user?.accountRole || tenantConfig?.role || 'RELATIONSHIP_OPERATOR').toUpperCase();
+  const globalThemeAuthorityLabel = resolveCrmGlobalThemeAuthorityLabel(themeRuntime);
+  const globalThemeAuthorityMode = resolveCrmGlobalThemeAuthorityMode(themeRuntime);
 
   const filteredContacts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -849,11 +910,18 @@ export default function WilsyContactOperatingRoom({
             <button type="button" className={styles.contactIconButton} aria-label="Contact settings">
               <SlidersHorizontal size={18} />
             </button>
-            <button type="button" className={styles.contactThemeAuthority}>
+            <button
+              type="button"
+              className={styles.contactThemeAuthority}
+              onClick={onOpenThemeAuthority}
+              aria-label={`Open global theme authority: ${globalThemeAuthorityLabel}`}
+              data-wilsy-global-theme-authority-control="command-center"
+            >
               <Sparkles size={17} />
               <span>
-                <small>Theme</small>
-                <strong>Authority</strong>
+                <small>Theme Authority</small>
+                <strong>{globalThemeAuthorityLabel}</strong>
+                <em>{globalThemeAuthorityMode}</em>
               </span>
               <ChevronDown size={15} />
             </button>

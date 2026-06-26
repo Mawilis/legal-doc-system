@@ -941,3 +941,26 @@
 .accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountFilterRail header button {
   cursor: default !important;
 }
+/* ========================================================================
+   WILSY OS R79B - GLOBAL COMMAND CENTER THEME AUTHORITY
+   Accounts inherits active 26-skin Command Center runtime through CRM CSS vars.
+   ======================================================================== */
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] {
+  --account-accent: var(--crm-cyan, var(--crm-tenant-secondary, #24df75));
+  --account-cyan: var(--crm-cyan, #41d7ff);
+  --account-gold: var(--crm-gold-strong, var(--crm-gold, #e5d38c));
+  --account-text: var(--crm-text, rgba(245, 255, 250, 0.98));
+  --account-muted: var(--crm-muted, rgba(202, 222, 213, 0.66));
+  --account-panel: var(--crm-panel, rgba(7, 18, 13, 0.92));
+  --account-panel-strong: var(--crm-card, rgba(12, 26, 19, 0.96));
+  --account-line: color-mix(in srgb, var(--account-accent) 24%, rgba(255,255,255,0.08));
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority em {
+  color: var(--account-muted);
+  font-size: 0.66rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

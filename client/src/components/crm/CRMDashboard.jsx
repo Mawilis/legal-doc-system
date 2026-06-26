@@ -1685,8 +1685,10 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 leads={Array.isArray(snapshot?.leads) ? snapshot.leads : []}
                 searchTerm={searchTerm}
                 loading={loading}
+                themeRuntime={themeRuntime}
                 tenantConfig={tenantConfig}
                 user={user}
+                onOpenThemeAuthority={() => setAccountSettingsOpen(true)}
                 onSearch={(queryValue) => {
                   setSearchTerm(queryValue);
 
@@ -2003,8 +2005,10 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 sourcePosture={snapshot.sourcePosture || {}}
                 sourceErrors={sourceErrors}
                 loading={loading}
+                themeRuntime={themeRuntime}
                 tenantConfig={tenantConfig}
                 user={user}
+                onOpenThemeAuthority={() => setAccountSettingsOpen(true)}
                 onRefresh={refreshSources}
                 onCreate={() => openCreateFlow('contacts')}
               />
@@ -2018,8 +2022,10 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 sourcePosture={snapshot.sourcePosture || {}}
                 sourceErrors={sourceErrors}
                 loading={loading}
+                themeRuntime={themeRuntime}
                 tenantConfig={tenantConfig}
                 user={user}
+                onOpenThemeAuthority={() => setAccountSettingsOpen(true)}
                 onRefresh={refreshSources}
                 onCreate={() => openCreateFlow('accounts')}
               />

@@ -828,7 +828,7 @@
 
 /* ========================================================================
    WILSY OS R66E - THEME ENGINE BRIDGE + COCKPIT LAYOUT LOCK
-   The Lead cockpit now consumes the shared wilsyOperatingSkins registry.
+   The Lead cockpit now consumes the shared Command Center global skin runtime.
    This section fixes viewport rhythm without touching the CRM side rail.
    ======================================================================== */
 
@@ -875,15 +875,15 @@
   letter-spacing: 0.18em;
 }
 
-.leadOperatingRoom[data-wilsy-theme-engine-source="wilsyOperatingSkins"] {
+.leadOperatingRoom[data-wilsy-theme-engine-source="global-command-center"] {
   --theme-engine-bridge: 1;
 }
 
-.leadOperatingRoom[data-wilsy-theme-engine-source="wilsyOperatingSkins"] .appHeader {
+.leadOperatingRoom[data-wilsy-theme-engine-source="global-command-center"] .appHeader {
   border-color: color-mix(in srgb, var(--lead-border) 72%, transparent);
 }
 
-.leadOperatingRoom[data-wilsy-theme-engine-source="wilsyOperatingSkins"] .skinActive {
+.leadOperatingRoom[data-wilsy-theme-engine-source="global-command-center"] .skinActive {
   box-shadow:
     0 10px 26px rgba(34, 197, 94, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.08) inset;
@@ -1190,7 +1190,7 @@
    ======================================================================== */
 
 .leadOperatingRoom[data-wilsy-theme-bridge-version="R67A-CRM-THEME-ENGINE-AUTHORITY-BRIDGE"] {
-  --lead-authority-bridge: "wilsyOperatingSkins";
+  --lead-authority-bridge: "global-command-center";
 }
 
 .leadOperatingRoom[data-wilsy-theme-bridge-version] {
@@ -1218,7 +1218,7 @@
   background: rgba(255, 255, 255, 0.86);
 }
 
-.leadOperatingRoom[data-wilsy-lead-skin="WILSY_NEBULA_COMMAND"] .skinActive,
+.leadOperatingRoom[data-wilsy-lead-skin="crm_revenue_pulse"] .skinActive,
 .leadOperatingRoom[data-wilsy-lead-skin="WILSY_GOLD"] .skinActive,
 .leadOperatingRoom[data-wilsy-lead-skin="GOLD"] .skinActive {
   box-shadow:
@@ -1651,7 +1651,7 @@
   box-shadow: 0 24px 80px rgba(103, 232, 249, 0.08);
 }
 
-.leadOperatingRoom[data-wilsy-lead-skin="WILSY_NEBULA_COMMAND"] .appHeader,
+.leadOperatingRoom[data-wilsy-lead-skin="crm_revenue_pulse"] .appHeader,
 .leadOperatingRoom[data-wilsy-lead-skin="NEBULA"] .appHeader {
   box-shadow: 0 24px 80px rgba(34, 197, 94, 0.09);
 }
@@ -3845,4 +3845,31 @@
 
 .leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .leadFilterRail header button {
   cursor: default !important;
+}
+/* ========================================================================
+   WILSY OS R79B - GLOBAL COMMAND CENTER THEME AUTHORITY
+   Leads inherits active 26-skin Command Center runtime through CRM CSS vars.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-theme-engine-source="global-command-center"] {
+  --lead-accent: var(--crm-cyan, var(--crm-tenant-secondary, #24df75));
+  --lead-cyan: var(--crm-cyan, #41d7ff);
+  --lead-gold: var(--crm-gold-strong, var(--crm-gold, #e5d38c));
+  --lead-text: var(--crm-text, rgba(245, 255, 250, 0.98));
+  --lead-muted: var(--crm-muted, rgba(202, 222, 213, 0.66));
+  --lead-module-panel: var(--crm-panel, rgba(7, 18, 13, 0.92));
+  --lead-card-strong: var(--crm-card, rgba(12, 26, 19, 0.96));
+  --lead-module-line: color-mix(in srgb, var(--lead-accent) 24%, rgba(255,255,255,0.08));
+}
+
+.leadOperatingRoom[data-wilsy-theme-engine-source="global-command-center"] .leadUtilityButton em {
+  color: var(--lead-muted);
+  font-size: 0.66rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.leadOperatingRoom[data-wilsy-theme-engine-source="global-command-center"] .leadThemeDropdown {
+  display: none !important;
 }
