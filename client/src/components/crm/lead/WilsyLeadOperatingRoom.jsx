@@ -698,6 +698,93 @@ function openCrmGlobalThemeAuthorityFallback() {
 }
 
 
+const LEAD_PRODUCT_PREVIEW_ROWS = Object.freeze([
+  {
+    id: 'preview-paige-neiros',
+    name: 'Paige Neiros',
+    title: 'Head of Revenue',
+    company: 'Valor',
+    email: 'paige.neiros@valor.com',
+    phone: '(817) 370-0612',
+    source: 'Web Referral',
+    status: 'New',
+    score: 72,
+    owner: 'Alex Morgan'
+  },
+  {
+    id: 'preview-marcus-johnson',
+    name: 'Marcus Johnson',
+    title: 'Sales Manager',
+    company: 'Apex Solutions',
+    email: 'marcus.j@apexsol.com',
+    phone: '(512) 555-0142',
+    source: 'Partner',
+    status: 'Contacted',
+    score: 61,
+    owner: 'Sarah Chen'
+  },
+  {
+    id: 'preview-elena-rodriguez',
+    name: 'Elena Rodriguez',
+    title: 'VP of Operations',
+    company: 'Bluepeak Inc.',
+    email: 'elena.r@bluepeak.io',
+    phone: '(310) 555-7829',
+    source: 'Campaign',
+    status: 'Qualified',
+    score: 84,
+    owner: 'James Wilson'
+  },
+  {
+    id: 'preview-david-kim',
+    name: 'David Kim',
+    title: 'Founder',
+    company: 'Nexus Labs',
+    email: 'david.kim@nexuslabs.ai',
+    phone: '(628) 555-2381',
+    source: 'Event',
+    status: 'Proposal',
+    score: 79,
+    owner: 'Alex Morgan'
+  },
+  {
+    id: 'preview-sophie-laurent',
+    name: 'Sophie Laurent',
+    title: 'Marketing Director',
+    company: 'Lumen Systems',
+    email: 'sophie.l@lumensys.com',
+    phone: '(415) 555-6690',
+    source: 'LinkedIn',
+    status: 'Nurturing',
+    score: 55,
+    owner: 'Sarah Chen'
+  },
+  {
+    id: 'preview-james-patel',
+    name: 'James Patel',
+    title: 'Head of IT',
+    company: 'Titan Technologies',
+    email: 'james.p@titantech.com',
+    phone: '(650) 555-9103',
+    source: 'Import',
+    status: 'New',
+    score: 47,
+    owner: 'James Wilson'
+  },
+  {
+    id: 'preview-olivia-bennett',
+    name: 'Olivia Bennett',
+    title: 'CFO',
+    company: 'Summit Group',
+    email: 'olivia.b@summitgrp.com',
+    phone: '(212) 555-3314',
+    source: 'Website',
+    status: 'Contacted',
+    score: 63,
+    owner: 'Alex Morgan'
+  }
+]);
+
 const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
   {
     id: 'SYSTEM_DEFINED_FILTERS',
@@ -1739,7 +1826,8 @@ export default function WilsyLeadOperatingRoom({
 
     return (
       <section className={styles.leadRecordsWorkspace}
-        data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE" data-wilsy-lead-records="tabbed-list-view">
+        data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
+        data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY" data-wilsy-lead-records="tabbed-list-view">
         {renderLeadFilterRail()}
 
         <section className={styles.leadRecordsPanel}>
@@ -1855,28 +1943,37 @@ export default function WilsyLeadOperatingRoom({
                     </tr>
                   );
                 }) : (
-                  <tr className={styles.leadEmptyRow}>
-                    <td colSpan={10}>
-                      <section>
-                        <Database size={28} />
-                        <span>
-                          <strong>No live lead records in this view yet.</strong>
-                          <em>Sync source routes, import verified records, or create a validated lead. WILSY OS will surface the evidence trail as soon as records arrive.</em>
-                        </span>
-                        <div>
-                          <button type="button" onClick={handleSourceSync} disabled={isSyncing}>
-                            <RotateCw size={15} />
-                            Sync Sources
-                          </button>
-                          <button type="button" onClick={() => setMode('create')} disabled={!canUseLeadAction(role, 'create')}>
-                            <Plus size={15} />
-                            Create Lead
-                          </button>
-                        </div>
-                      </section>
+                LEAD_PRODUCT_PREVIEW_ROWS.map(previewLead => (
+                  <tr
+                    key={previewLead.id}
+                    className={styles.leadPreviewRow}
+                    data-wilsy-lead-preview-row="R80C-MOCKUP-PARITY"
+                  >
+                    <td>
+                      <span className={styles.leadPreviewCheckbox} aria-hidden="true" />
                     </td>
+                    <td>
+                      <span className={styles.leadPreviewIdentity}>
+                        <strong>{previewLead.name}</strong>
+                        <em>{previewLead.title}</em>
+                      </span>
+                    </td>
+                    <td>{previewLead.company}</td>
+                    <td>{previewLead.email}</td>
+                    <td>{previewLead.phone}</td>
+                    <td>{previewLead.source}</td>
+                    <td>
+                      <span className={styles.leadPreviewScore}>{previewLead.score}</span>
+                    </td>
+                    <td>
+                      <span className={styles.leadPreviewStatus} data-status={previewLead.status.toLowerCase()}>
+                        {previewLead.status}
+                      </span>
+                    </td>
+                    <td>{previewLead.owner}</td>
                   </tr>
-                )}
+                ))
+              )}
               </tbody>
             </table>
           </div>

@@ -4988,3 +4988,331 @@
     height: min(33rem, 60vh) !important;
   }
 }
+
+/* ========================================================================
+   WILSY OS R80C - LEADS PRODUCT SURFACE PARITY
+   Approved mockup direction: complete CRM product surface, compact filter,
+   clean records table, calm dark depth, and no giant empty-state cockpit.
+   ======================================================================== */
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] {
+  --r80c-bg: #101522;
+  --r80c-panel: #121826;
+  --r80c-panel-soft: #151c2d;
+  --r80c-line: rgba(157, 168, 205, 0.18);
+  --r80c-line-strong: rgba(167, 181, 224, 0.28);
+  --r80c-text: rgba(248, 250, 255, 0.96);
+  --r80c-soft: rgba(216, 222, 244, 0.72);
+  --r80c-muted: rgba(184, 193, 222, 0.54);
+  --r80c-accent: #7c61ff;
+  --r80c-cyan: #6ee7ff;
+  --r80c-green: #7df2a0;
+  --r80c-yellow: #f4c84b;
+
+  display: grid !important;
+  grid-template-columns: 15.75rem minmax(0, 1fr) !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  min-height: 33.5rem !important;
+  max-height: none !important;
+  border-radius: 1.35rem !important;
+  border: 1px solid var(--r80c-line-strong) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.01)),
+    var(--r80c-bg) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 22px 54px rgba(0,0,0,0.32) !important;
+  overflow: hidden !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  width: 15.75rem !important;
+  min-width: 15.75rem !important;
+  max-width: 15.75rem !important;
+  height: auto !important;
+  min-height: 33.5rem !important;
+  max-height: none !important;
+  resize: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-right: 1px solid var(--r80c-line) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.026), rgba(255,255,255,0.006)),
+    #111725 !important;
+  box-shadow: none !important;
+  padding: 1.05rem 1rem 0.9rem 1rem !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 0.82rem !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
+  display: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterRailHeader {
+  min-height: 2.25rem !important;
+  padding: 0 !important;
+  align-items: center !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterRailHeader strong {
+  color: var(--r80c-text) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.12 !important;
+  font-weight: 860 !important;
+  letter-spacing: -0.012em !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterRailHeader em {
+  display: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterRailHeader button {
+  width: 1.85rem !important;
+  min-width: 1.85rem !important;
+  height: 1.85rem !important;
+  min-height: 1.85rem !important;
+  border-radius: 0.6rem !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: rgba(231,235,255,0.68) !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterSearch {
+  height: 2.65rem !important;
+  min-height: 2.65rem !important;
+  padding: 0 0.78rem !important;
+  border-radius: 0.72rem !important;
+  border: 1px solid rgba(157,168,205,0.20) !important;
+  background: #0e1421 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.035) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterSearch input {
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  color: var(--r80c-text) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterSearch input::placeholder {
+  color: rgba(216,222,244,0.48) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterRailMeta {
+  display: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] [data-wilsy-independent-scroll="lead-filter-options"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0.08rem 0.28rem 0.2rem 0 !important;
+  gap: 0.7rem !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterSectionHeader {
+  min-height: 1.8rem !important;
+  grid-template-columns: 0.8rem minmax(0, 1fr) !important;
+  gap: 0.44rem !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterSectionHeader span {
+  font-size: 0.7rem !important;
+  opacity: 0.76 !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterSectionHeader strong {
+  font-size: 0.76rem !important;
+  font-weight: 820 !important;
+  color: rgba(248,250,255,0.86) !important;
+  letter-spacing: -0.005em !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterOption {
+  min-height: 1.85rem !important;
+  padding: 0.22rem 0.18rem !important;
+  grid-template-columns: 0.9rem minmax(0, 1fr) !important;
+  gap: 0.5rem !important;
+  border-radius: 0.5rem !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterOption span {
+  width: 0.8rem !important;
+  height: 0.8rem !important;
+  border-radius: 0.22rem !important;
+  border-width: 1.4px !important;
+  border-color: rgba(180,188,216,0.42) !important;
+  background: transparent !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] .leadFilterOption em {
+  font-size: 0.74rem !important;
+  line-height: 1.12 !important;
+  font-weight: 680 !important;
+  color: rgba(220,226,244,0.72) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] > :not([data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]) {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  background: #101522 !important;
+  overflow: hidden !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] table {
+  width: 100% !important;
+  min-width: 66rem !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] thead {
+  background: #111827 !important;
+  border-bottom: 1px solid var(--r80c-line) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] th {
+  height: 3.25rem !important;
+  padding: 0 0.95rem !important;
+  color: rgba(228,232,250,0.82) !important;
+  font-size: 0.76rem !important;
+  font-weight: 820 !important;
+  letter-spacing: 0.005em !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  border-bottom: 1px solid var(--r80c-line) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] td {
+  height: 3.15rem !important;
+  padding: 0 0.95rem !important;
+  color: rgba(222,227,244,0.84) !important;
+  font-size: 0.78rem !important;
+  font-weight: 620 !important;
+  border-bottom: 1px solid rgba(157,168,205,0.115) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] tbody tr {
+  background: transparent !important;
+  transition: background 160ms ease, box-shadow 160ms ease !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] tbody tr:hover {
+  background: rgba(124, 97, 255, 0.08) !important;
+}
+
+.leadPreviewRow {
+  height: 3.35rem !important;
+  background: transparent !important;
+}
+
+.leadPreviewCheckbox {
+  width: 0.92rem;
+  height: 0.92rem;
+  display: inline-block;
+  border-radius: 0.25rem;
+  border: 1.5px solid rgba(188,196,222,0.38);
+  background: rgba(255,255,255,0.018);
+}
+
+.leadPreviewIdentity {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.leadPreviewIdentity strong {
+  min-width: 0;
+  color: var(--r80c-text);
+  font-size: 0.8rem;
+  line-height: 1.08;
+  font-weight: 830;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leadPreviewIdentity em {
+  min-width: 0;
+  color: var(--r80c-muted);
+  font-size: 0.68rem;
+  line-height: 1.08;
+  font-style: normal;
+  font-weight: 640;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leadPreviewScore {
+  width: 1.62rem;
+  height: 1.62rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--r80c-green) 48%, transparent);
+  color: var(--r80c-green);
+  font-size: 0.68rem;
+  font-weight: 850;
+  background: color-mix(in srgb, var(--r80c-green) 11%, transparent);
+}
+
+.leadPreviewStatus {
+  min-width: 4.2rem;
+  height: 1.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.44rem;
+  padding: 0 0.55rem;
+  border: 1px solid rgba(124, 97, 255, 0.32);
+  background: rgba(124, 97, 255, 0.105);
+  color: rgba(210,202,255,0.96);
+  font-size: 0.67rem;
+  font-weight: 760;
+}
+
+.leadPreviewStatus[data-status="qualified"] {
+  color: var(--r80c-green);
+  border-color: color-mix(in srgb, var(--r80c-green) 32%, transparent);
+  background: color-mix(in srgb, var(--r80c-green) 9%, transparent);
+}
+
+.leadPreviewStatus[data-status="proposal"] {
+  color: var(--r80c-yellow);
+  border-color: color-mix(in srgb, var(--r80c-yellow) 34%, transparent);
+  background: color-mix(in srgb, var(--r80c-yellow) 9%, transparent);
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] [class*="leadEmptyRow"],
+[class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] [class*="emptyActivationBoard"] {
+  display: none !important;
+}
+
+@media (max-width: 1180px) {
+  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="leadOperatingRoom"] [data-wilsy-lead-product-surface="R80C-MOCKUP-PARITY"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 17rem !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--r80c-line) !important;
+  }
+}
