@@ -1195,3 +1195,34 @@
   color: #f8fbff !important;
   opacity: 1 !important;
 }
+
+/* ========================================================================
+   WILSY OS R79F - THEME AUTHORITY PROPORTION SEAL
+   Accounts Theme Authority follows the same command-pill width discipline.
+   ======================================================================== */
+
+[class*="accountOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"],
+[class*="accountOperatingRoom"] [class*="accountThemeAuthority"][data-wilsy-global-theme-authority-control="command-center"] {
+  flex: 0 1 min(26.5rem, 38vw) !important;
+  width: clamp(20rem, 30vw, 26.5rem) !important;
+  min-width: min(20rem, 100%) !important;
+  max-width: min(26.5rem, 38vw) !important;
+  height: 7.2rem !important;
+  min-height: 7.2rem !important;
+  max-height: 7.2rem !important;
+  display: grid !important;
+  grid-template-columns: 2rem minmax(0, 1fr) 1.25rem !important;
+  gap: 1.05rem !important;
+  align-items: center !important;
+  padding: 0 1.35rem !important;
+  border-radius: 1.75rem !important;
+  text-align: left !important;
+  overflow: hidden !important;
+}
+
+[class*="accountOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] > span {
+  display: grid !important;
+  gap: 0.2rem !important;
+  min-width: 0 !important;
+  line-height: 1.02 !important;
+}

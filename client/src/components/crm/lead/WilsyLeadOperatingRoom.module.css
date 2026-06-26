@@ -4338,3 +4338,71 @@
     min-width: min(100%, 20rem) !important;
   }
 }
+
+/* ========================================================================
+   WILSY OS R79F - THEME AUTHORITY PROPORTION SEAL
+   Theme Authority is a command pill, not a banner. It is capped to a
+   production command proportion relative to the neighbouring icon pills.
+   ======================================================================== */
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"],
+[class*="leadOperatingRoom"] [class*="leadUtilityButton"][data-wilsy-global-theme-authority-control="command-center"] {
+  flex: 0 1 min(26.5rem, 38vw) !important;
+  width: clamp(20rem, 30vw, 26.5rem) !important;
+  min-width: min(20rem, 100%) !important;
+  max-width: min(26.5rem, 38vw) !important;
+  height: 7.2rem !important;
+  min-height: 7.2rem !important;
+  max-height: 7.2rem !important;
+  display: grid !important;
+  grid-template-columns: 2rem minmax(0, 1fr) 1.25rem !important;
+  gap: 1.05rem !important;
+  align-items: center !important;
+  padding: 0 1.35rem !important;
+  border-radius: 1.75rem !important;
+  text-align: left !important;
+  overflow: hidden !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] > span {
+  display: grid !important;
+  grid-template-rows: min-content min-content min-content !important;
+  gap: 0.2rem !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  line-height: 1.02 !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] small,
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] strong,
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] em {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] small {
+  font-size: 0.74rem !important;
+  letter-spacing: 0.18em !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] strong {
+  font-size: clamp(1.16rem, 1.25vw, 1.42rem) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -0.025em !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] em {
+  font-size: 0.78rem !important;
+  letter-spacing: 0.18em !important;
+}
+
+@media (max-width: 1180px) {
+  [class*="leadOperatingRoom"] [data-wilsy-global-theme-authority-control="command-center"] {
+    width: min(100%, 24rem) !important;
+    max-width: 24rem !important;
+  }
+}
