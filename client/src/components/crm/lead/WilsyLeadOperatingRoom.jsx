@@ -1631,7 +1631,25 @@ export default function WilsyLeadOperatingRoom({
    * @collaboration Keeps filters organized beside the records table instead of scattering cards down the page.
    */
   function renderLeadFilterRail() {
-    if (!filterPanelOpen) return null;
+    if (!filterPanelOpen) {
+      return (
+        <aside
+          className={styles.leadFilterRailCollapsed}
+          data-wilsy-filter-restore="R81B-FILTER-RESTORE"
+          aria-label="Lead filters collapsed"
+        >
+          <button
+            type="button"
+            onClick={() => setFilterPanelOpen(true)}
+            aria-label="Show Lead filters"
+            title="Show filters"
+          >
+            <SlidersHorizontal size={17} />
+            <span>Show filters</span>
+          </button>
+        </aside>
+      );
+    }
 
     const normalizedFilterQuery = leadFilterQuery.trim().toLowerCase();
     const visibleFilterSections = LEAD_FILTER_OPERATING_SECTIONS
@@ -1739,6 +1757,7 @@ export default function WilsyLeadOperatingRoom({
 
     return (
       <section className={styles.leadRecordsWorkspace}
+        data-wilsy-filter-state={filterPanelOpen ? 'open' : 'closed'}
         data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"
         data-wilsy-real-data-contract="LIVE_BACKEND_ONLY"
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
@@ -1861,7 +1880,6 @@ export default function WilsyLeadOperatingRoom({
                 <tr
                   className={styles.leadEmptyRow}
                   data-wilsy-real-data-empty-state="R81A-LIVE-BACKEND-EMPTY"
-                  data-wilsy-real-data-empty-state="R80D-NO-FAKE-DATA"
                 >
                   <td colSpan={99}>
                     <section className={styles.leadRealEmptyState}>
