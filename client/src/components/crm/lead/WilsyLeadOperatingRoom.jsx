@@ -697,6 +697,75 @@ function openCrmGlobalThemeAuthorityFallback() {
   }));
 }
 
+
+const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
+  {
+    id: 'SYSTEM_DEFINED_FILTERS',
+    title: 'System Defined Filters',
+    options: [
+      { id: 'activities', label: 'Activities', detail: 'Leads with activity history' },
+      { id: 'campaigns', label: 'Campaigns', detail: 'Campaign-attributed leads' },
+      { id: 'latest_email_status', label: 'Latest Email Status', detail: 'Email engagement state' },
+      { id: 'record_action', label: 'Record Action', detail: 'Actionable CRM records' },
+      { id: 'related_records_action', label: 'Related Records Action', detail: 'Linked record action signals' },
+      { id: 'touched_records', label: 'Touched Records', detail: 'Recently engaged leads' },
+      { id: 'untouched_records', label: 'Untouched Records', detail: 'No recent engagement' }
+    ]
+  },
+  {
+    id: 'FILTER_BY_FIELDS_PRIMARY',
+    title: 'Filter By Fields',
+    options: [
+      { id: 'annual_revenue', label: 'Annual Revenue', detail: 'Revenue size band' },
+      { id: 'city', label: 'City', detail: 'City or operating region' },
+      { id: 'company', label: 'Company', detail: 'Company or organization' },
+      { id: 'converted_account', label: 'Converted Account', detail: 'Converted account status' },
+      { id: 'converted_contact', label: 'Converted Contact', detail: 'Converted contact status' },
+      { id: 'converted_deal', label: 'Converted Deal', detail: 'Converted opportunity status' },
+      { id: 'country', label: 'Country', detail: 'Country or jurisdiction' },
+      { id: 'created_by', label: 'Created By', detail: 'Creator identity' },
+      { id: 'created_time', label: 'Created Time', detail: 'Creation window' },
+      { id: 'email', label: 'Email', detail: 'Email availability' },
+      { id: 'email_opt_out', label: 'Email Opt Out', detail: 'Marketing consent posture' },
+      { id: 'fax', label: 'Fax', detail: 'Fax number availability' },
+      { id: 'first_name', label: 'First Name', detail: 'First-name field' },
+      { id: 'industry', label: 'Industry', detail: 'Industry classification' },
+      { id: 'last_activity_time', label: 'Last Activity Time', detail: 'Most recent engagement time' },
+      { id: 'last_name', label: 'Last Name', detail: 'Last-name field' },
+      { id: 'lead_conversion_time', label: 'Lead Conversion Time', detail: 'Conversion date and time' },
+      { id: 'lead_name', label: 'Lead Name', detail: 'Lead identity' },
+      { id: 'lead_owner', label: 'Lead Owner', detail: 'Assigned owner' },
+      { id: 'lead_source', label: 'Lead Source', detail: 'Source channel' },
+      { id: 'lead_status', label: 'Lead Status', detail: 'Lead stage' },
+      { id: 'mobile', label: 'Mobile', detail: 'Mobile number availability' },
+      { id: 'modified_by', label: 'Modified By', detail: 'Last modifier' },
+      { id: 'modified_time', label: 'Modified Time', detail: 'Last modified time' },
+      { id: 'employees', label: 'No. of Employees', detail: 'Company headcount' },
+      { id: 'phone', label: 'Phone', detail: 'Phone number availability' },
+      { id: 'rating', label: 'Rating', detail: 'Lead rating' },
+      { id: 'salutation', label: 'Salutation', detail: 'Formal salutation' },
+      { id: 'title', label: 'Title', detail: 'Job title' },
+      { id: 'twitter', label: 'Twitter', detail: 'Social profile' },
+      { id: 'unsubscribed_mode', label: 'Unsubscribed Mode', detail: 'Unsubscribe channel' },
+      { id: 'unsubscribed_time', label: 'Unsubscribed Time', detail: 'Unsubscribe timestamp' },
+      { id: 'website', label: 'Website', detail: 'Website availability' },
+      { id: 'zip_code', label: 'Zip Code', detail: 'Postal code' }
+    ]
+  },
+  {
+    id: 'FILTER_BY_RELATED_MODULES',
+    title: 'Filter By Related Modules',
+    options: [
+      { id: 'calls', label: 'Calls', detail: 'Call-linked leads' },
+      { id: 'emails', label: 'Emails', detail: 'Email-linked leads' },
+      { id: 'invitees', label: 'Invitees (Invited Meetings)', detail: 'Meeting invitees' },
+      { id: 'meetings', label: 'Meetings', detail: 'Meeting-linked leads' },
+      { id: 'notes', label: 'Notes', detail: 'Note-linked leads' },
+      { id: 'tasks', label: 'Tasks', detail: 'Task-linked leads' }
+    ]
+  }
+]);
+
 /**
  * @function WilsyLeadOperatingRoom
  * @description Renders the production Lead operating room with contextual command strip and skin-aware density.
@@ -724,6 +793,8 @@ export default function WilsyLeadOperatingRoom({
   const [activeTopTab, setActiveTopTab] = useState('records');
   const [activeListViewId, setActiveListViewId] = useState('ALL_LEADS');
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [leadFilterQuery, setLeadFilterQuery] = useState('');
+  const [selectedLeadFilterOptions, setSelectedLeadFilterOptions] = useState(() => new Set());
   const [sortMode, setSortMode] = useState('priority');
   const [leadSkin, setLeadSkin] = useState('crm_revenue_pulse');
   const [splitView, setSplitView] = useState(false);
@@ -1562,49 +1633,94 @@ export default function WilsyLeadOperatingRoom({
   function renderLeadFilterRail() {
     if (!filterPanelOpen) return null;
 
-    const mappedFilters = {
-      'Touched Records': 'ALL_LEADS',
-      'Untouched Records': 'UNTOUCHED',
-      'Verified Provenance': 'VERIFIED_LEADS',
-      'Missing Root Seal': 'SOURCE_GAPS',
-      'Source Gap': 'SOURCE_GAPS'
-    };
+    const normalizedFilterQuery = leadFilterQuery.trim().toLowerCase();
+    const visibleFilterSections = LEAD_FILTER_OPERATING_SECTIONS
+      .map(section => ({
+        ...section,
+        options: section.options.filter(option => {
+          const searchable = [section.title, option.label, option.detail].join(' ').toLowerCase();
+
+          return !normalizedFilterQuery || searchable.includes(normalizedFilterQuery);
+        })
+      }))
+      .filter(section => section.options.length > 0);
+    const selectedFilterCount = selectedLeadFilterOptions.size;
 
     return (
-      <aside className={styles.leadFilterRail} aria-label="Lead filters">
-        <header>
-          <strong>Filter Leads by</strong>
-          <button type="button" onClick={() => setFilterPanelOpen(false)} title="Close filters">
-            <MoreHorizontal size={16} />
+      <aside
+        className={styles.leadFilterRail}
+        data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"
+        aria-label="Lead filters"
+      >
+        <header className={styles.leadFilterRailHeader}>
+          <span>
+            <small>Filter Leads by</small>
+            <strong>Operating criteria</strong>
+          </span>
+          <button
+            type="button"
+            aria-label="Collapse Lead filters"
+            onClick={() => setFilterPanelOpen(false)}
+          >
+            ‹‹
           </button>
         </header>
 
         <label className={styles.leadFilterSearch}>
-          <Search size={16} />
-          <input value="" readOnly placeholder="Search filters" aria-label="Search Lead filters" />
+          <Search size={18} aria-hidden="true" />
+          <input
+            value={leadFilterQuery}
+            onChange={event => setLeadFilterQuery(event.target.value)}
+            placeholder="Search filters..."
+            aria-label="Search Lead filters"
+          />
         </label>
 
-        {LEAD_FILTER_GROUPS.map(group => (
-          <section key={group.title} className={styles.leadFilterGroup}>
-            <strong>{group.title}</strong>
-            {group.options.map(option => {
-              const mappedView = mappedFilters[option];
-              const isSelected = mappedView ? activeListView.id === mappedView : false;
+        <div className={styles.leadFilterRailMeta} aria-live="polite">
+          <strong>{selectedFilterCount}</strong>
+          <span>{selectedFilterCount === 1 ? 'filter selected' : 'filters selected'}</span>
+        </div>
 
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  data-selected={isSelected ? 'true' : 'false'}
-                  onClick={() => (mappedView ? handleSelectLeadListView(mappedView) : setCommandOpen(true))}
-                >
-                  <span aria-hidden="true" />
-                  <em>{option}</em>
-                </button>
-              );
-            })}
-          </section>
-        ))}
+        <div className={styles.leadFilterScroll} data-wilsy-independent-scroll="lead-filter-options">
+          {visibleFilterSections.length ? visibleFilterSections.map(section => (
+            <section key={section.id} className={styles.leadFilterSection}>
+              <header className={styles.leadFilterSectionHeader}>
+                <span aria-hidden="true">▾</span>
+                <strong>{section.title}</strong>
+              </header>
+
+              <div className={styles.leadFilterOptionStack}>
+                {section.options.map(option => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={styles.leadFilterOption}
+                    data-selected={selectedLeadFilterOptions.has(option.id) ? 'true' : 'false'}
+                    onClick={() => setSelectedLeadFilterOptions(previous => {
+                      const nextSelection = new Set(previous);
+
+                      if (nextSelection.has(option.id)) {
+                        nextSelection.delete(option.id);
+                      } else {
+                        nextSelection.add(option.id);
+                      }
+
+                      return nextSelection;
+                    })}
+                  >
+                    <span aria-hidden="true" />
+                    <em>{option.label}</em>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )) : (
+            <section className={styles.leadFilterEmptyState}>
+              <strong>No matching filters</strong>
+              <em>Try a field, module, owner, status or activity term.</em>
+            </section>
+          )}
+        </div>
       </aside>
     );
   }
