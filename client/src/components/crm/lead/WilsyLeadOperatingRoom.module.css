@@ -4408,289 +4408,101 @@
 }
 
 /* ========================================================================
-   WILSY OS R81B - LEADS FILTER RESTORE PRODUCT SHELL
-   Final repair contract: the filter never disappears without a restore rail,
-   the filter panel is internally scrollable and non-overlapping, and the
-   records workbench behaves like a clean CRM list view using backend data.
+   WILSY OS R83A - LEADS DB-ONLY PRODUCT SHELL
+   Final contract: backend rows only, no hardcoded personal data, bounded
+   filter rail, internal filter scrolling, compact empty row, clean CRM table.
    ======================================================================== */
 
 .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] {
-  --r81b-page: #0b101b;
-  --r81b-shell: #111827;
-  --r81b-shell-soft: #151d2b;
-  --r81b-rail: #101725;
-  --r81b-line: rgba(154, 166, 206, 0.18);
-  --r81b-line-strong: rgba(164, 177, 218, 0.28);
-  --r81b-text: rgba(248, 250, 255, 0.96);
-  --r81b-soft: rgba(220, 226, 244, 0.72);
-  --r81b-muted: rgba(184, 193, 222, 0.55);
-  --r81b-accent: var(--lead-accent, #7c61ff);
-  --r81b-cyan: #6ee7ff;
-
-  gap: 1rem !important;
-  padding: 1.15rem 1.35rem 1.35rem !important;
-  background:
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--r81b-accent) 10%, transparent), transparent 30%),
-    linear-gradient(180deg, #0f1524, var(--r81b-page)) !important;
+  --r83a-stage-height: clamp(30rem, calc(100dvh - 22.5rem), 39rem);
+  --r83a-filter-width: clamp(16.75rem, 18vw, 19.25rem);
+  --r83a-closed-filter-width: 3rem;
+  --r83a-surface: #101827;
+  --r83a-surface-soft: #141c2b;
+  --r83a-filter: #101725;
+  --r83a-line: rgba(154, 166, 206, 0.18);
+  --r83a-line-strong: rgba(164, 177, 218, 0.28);
+  --r83a-text: rgba(248, 250, 255, 0.96);
+  --r83a-soft: rgba(220, 226, 244, 0.72);
+  --r83a-muted: rgba(184, 193, 222, 0.55);
+  --r83a-accent: var(--lead-accent, #7c61ff);
+  --r83a-cyan: #6ee7ff;
 }
 
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .appHeader[data-wilsy-lead-appbar="sovereign-header-command-bridge"] {
-  min-height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: visible !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTopBar {
-  min-height: 4.25rem !important;
+/* Product lower workspace: one clean list-view surface. */
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
   display: grid !important;
-  grid-template-columns: minmax(20rem, 1fr) auto !important;
-  gap: 1.2rem !important;
-  align-items: center !important;
-  padding: 0.45rem 0.15rem 1.05rem !important;
-  border: 0 !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTitleBlock {
-  min-height: 0 !important;
-  gap: 0.25rem !important;
-  align-content: center !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTitleBlock small {
-  color: var(--r81b-cyan) !important;
-  font-size: 0.72rem !important;
-  font-weight: 850 !important;
-  letter-spacing: 0.14em !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTitleBlock strong {
-  color: var(--r81b-text) !important;
-  font-size: clamp(2.35rem, 3.1vw, 3.65rem) !important;
-  line-height: 0.92 !important;
-  letter-spacing: -0.07em !important;
-  text-shadow: none !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTitleBlock em {
-  color: var(--r81b-soft) !important;
-  font-size: 0.88rem !important;
-  line-height: 1.35 !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleUtilities {
-  display: grid !important;
-  grid-template-columns: repeat(3, 3rem) minmax(13rem, 16rem) minmax(16rem, 21rem) !important;
-  gap: 0.65rem !important;
-  align-items: center !important;
-  justify-content: end !important;
-  width: auto !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadIconButton,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] [data-wilsy-global-theme-authority-control="command-center"],
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerSearch {
-  min-height: 3rem !important;
-  height: 3rem !important;
-  border-radius: 0.8rem !important;
-  border: 1px solid var(--r81b-line) !important;
-  background: rgba(255, 255, 255, 0.035) !important;
-  box-shadow: none !important;
-  color: var(--r81b-text) !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadIconButton {
-  width: 3rem !important;
-  min-width: 3rem !important;
-  padding: 0 !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] [data-wilsy-global-theme-authority-control="command-center"] {
-  width: 100% !important;
-  min-width: 13rem !important;
-  max-width: 16rem !important;
-  display: grid !important;
-  grid-template-columns: 1.25rem minmax(0, 1fr) 1rem !important;
-  gap: 0.62rem !important;
-  padding: 0 0.85rem !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] [data-wilsy-global-theme-authority-control="command-center"] small {
-  color: var(--r81b-soft) !important;
-  font-size: 0.62rem !important;
-  font-weight: 720 !important;
-  letter-spacing: 0 !important;
-  text-transform: none !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] [data-wilsy-global-theme-authority-control="command-center"] strong {
-  color: var(--r81b-text) !important;
-  font-size: 0.8rem !important;
-  line-height: 1.05 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] [data-wilsy-global-theme-authority-control="command-center"] em {
-  display: none !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerSearch {
-  width: 100% !important;
-  min-width: 16rem !important;
-  max-width: 21rem !important;
-  display: grid !important;
-  grid-template-columns: 1.2rem minmax(0, 1fr) 2.75rem !important;
-  gap: 0.65rem !important;
-  padding: 0 0.55rem 0 0.85rem !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerSearch input {
-  color: var(--r81b-text) !important;
-  font-size: 0.82rem !important;
-  font-weight: 680 !important;
-  letter-spacing: 0 !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerSearch kbd {
-  height: 2.1rem !important;
-  min-width: 2.5rem !important;
-  display: grid !important;
-  place-items: center !important;
-  padding: 0 !important;
-  border-radius: 0.55rem !important;
-  background: rgba(4, 8, 16, 0.6) !important;
-  color: var(--r81b-text) !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleViewBar {
-  display: grid !important;
-  grid-template-columns: minmax(13rem, 18rem) minmax(24rem, 1fr) auto !important;
-  grid-template-areas: "views tabs toolbar" !important;
-  gap: 0.65rem !important;
-  align-items: center !important;
-  padding: 0.82rem 0.95rem !important;
-  border: 1px solid var(--r81b-line-strong) !important;
-  border-radius: 1rem 1rem 0 0 !important;
-  background: rgba(17, 24, 39, 0.92) !important;
-  box-shadow: none !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerInvestorStrip {
-  display: none !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTabs {
-  grid-area: tabs !important;
-  gap: 0.25rem !important;
-  overflow: hidden !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTabs button,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleToolbar > button,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleToolbar > .leadDropdownWrap > button,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleToolbar .headerMoreDock > button,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadViewButton,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadViewMoreButton {
-  min-height: 2.45rem !important;
-  height: 2.45rem !important;
-  border-radius: 0.68rem !important;
-  border: 1px solid transparent !important;
-  background: transparent !important;
-  color: var(--r81b-soft) !important;
-  font-size: 0.82rem !important;
-  font-weight: 760 !important;
-  box-shadow: none !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTabs button[data-active="true"],
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleToolbar button[data-active="true"],
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadViewButton {
-  color: var(--r81b-text) !important;
-  border-color: color-mix(in srgb, var(--r81b-accent) 38%, transparent) !important;
-  background: color-mix(in srgb, var(--r81b-accent) 12%, transparent) !important;
-}
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerPrimaryAction,
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadCreateMenuButton {
-  background: color-mix(in srgb, var(--r81b-accent) 24%, #121a2b) !important;
-  color: var(--r81b-text) !important;
-  border-color: color-mix(in srgb, var(--r81b-accent) 42%, transparent) !important;
-}
-
-.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] {
-  display: grid !important;
-  grid-template-columns: 15.5rem minmax(0, 1fr) !important;
-  gap: 0 !important;
+  grid-template-columns: var(--r83a-filter-width) minmax(0, 1fr) !important;
   align-items: stretch !important;
-  min-height: 38rem !important;
+  gap: 0 !important;
+  height: var(--r83a-stage-height) !important;
+  min-height: var(--r83a-stage-height) !important;
+  max-height: var(--r83a-stage-height) !important;
   margin: 0 !important;
   padding: 0 !important;
-  border: 1px solid var(--r81b-line-strong) !important;
-  border-top: 0 !important;
-  border-radius: 0 0 1rem 1rem !important;
-  background: var(--r81b-shell) !important;
+  border: 1px solid var(--r83a-line-strong) !important;
+  border-radius: 1rem !important;
+  background: var(--r83a-surface) !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.24) !important;
   overflow: hidden !important;
-  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.24) !important;
+  contain: layout paint !important;
 }
 
-.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"][data-wilsy-filter-state="closed"] {
-  grid-template-columns: 3rem minmax(0, 1fr) !important;
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: var(--r83a-closed-filter-width) minmax(0, 1fr) !important;
 }
 
+/* Collapsed filter: visible restore rail, never a dead state. */
 .leadFilterRailCollapsed {
-  min-width: 0 !important;
-  width: 3rem !important;
-  height: 100% !important;
-  min-height: 38rem !important;
+  width: var(--r83a-closed-filter-width) !important;
+  min-width: var(--r83a-closed-filter-width) !important;
+  max-width: var(--r83a-closed-filter-width) !important;
+  height: var(--r83a-stage-height) !important;
+  min-height: var(--r83a-stage-height) !important;
+  max-height: var(--r83a-stage-height) !important;
   display: grid !important;
   align-content: start !important;
   justify-items: center !important;
-  padding: 0.75rem 0.35rem !important;
-  border-right: 1px solid var(--r81b-line) !important;
-  background: var(--r81b-rail) !important;
-  position: relative !important;
-  z-index: 2 !important;
+  padding: 0.72rem 0.34rem !important;
+  border-right: 1px solid var(--r83a-line) !important;
+  background: var(--r83a-filter) !important;
+  overflow: visible !important;
+  box-shadow: none !important;
 }
 
 .leadFilterRailCollapsed button {
-  width: 2.25rem !important;
-  height: 2.25rem !important;
-  min-width: 2.25rem !important;
-  min-height: 2.25rem !important;
+  width: 2.18rem !important;
+  min-width: 2.18rem !important;
+  height: 2.18rem !important;
+  min-height: 2.18rem !important;
   display: grid !important;
   place-items: center !important;
-  border-radius: 0.65rem !important;
-  border: 1px solid var(--r81b-line) !important;
-  background: rgba(255, 255, 255, 0.035) !important;
-  color: var(--r81b-soft) !important;
+  border-radius: 0.62rem !important;
+  border: 1px solid var(--r83a-line) !important;
+  background: rgba(255,255,255,0.035) !important;
+  color: var(--r83a-soft) !important;
+  box-shadow: none !important;
   cursor: pointer !important;
   position: relative !important;
 }
 
 .leadFilterRailCollapsed button:hover {
-  color: var(--r81b-text) !important;
-  border-color: color-mix(in srgb, var(--r81b-accent) 42%, transparent) !important;
-  background: color-mix(in srgb, var(--r81b-accent) 12%, transparent) !important;
+  color: var(--r83a-text) !important;
+  border-color: color-mix(in srgb, var(--r83a-accent) 42%, transparent) !important;
+  background: color-mix(in srgb, var(--r83a-accent) 12%, transparent) !important;
 }
 
 .leadFilterRailCollapsed button span {
   position: absolute !important;
-  left: calc(100% + 0.55rem) !important;
+  left: calc(100% + 0.6rem) !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  min-width: 6.5rem !important;
-  padding: 0.42rem 0.55rem !important;
+  min-width: 6.8rem !important;
+  padding: 0.42rem 0.58rem !important;
   border-radius: 0.5rem !important;
-  border: 1px solid var(--r81b-line) !important;
+  border: 1px solid var(--r83a-line) !important;
   background: rgba(10, 15, 26, 0.98) !important;
-  color: var(--r81b-text) !important;
+  color: var(--r83a-text) !important;
   font-size: 0.72rem !important;
   font-weight: 760 !important;
   white-space: nowrap !important;
@@ -4704,519 +4516,14 @@
   opacity: 1 !important;
 }
 
+/* Open filter: bounded scroll container. */
 .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
-  width: 15.5rem !important;
-  min-width: 15.5rem !important;
-  max-width: 15.5rem !important;
-  height: 100% !important;
-  min-height: 38rem !important;
-  max-height: none !important;
-  resize: none !important;
-  position: relative !important;
-  top: auto !important;
-  align-self: stretch !important;
-  display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) !important;
-  gap: 0.75rem !important;
-  padding: 0.95rem !important;
-  border: 0 !important;
-  border-right: 1px solid var(--r81b-line) !important;
-  border-radius: 0 !important;
-  background: var(--r81b-rail) !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-}
-
-.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
-  display: none !important;
-}
-
-.leadFilterRailHeader {
-  min-height: 2rem !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 0.55rem !important;
-}
-
-.leadFilterRailHeader span {
-  min-width: 0 !important;
-  display: grid !important;
-  gap: 0.1rem !important;
-}
-
-.leadFilterRailHeader small {
-  display: none !important;
-}
-
-.leadFilterRailHeader strong {
-  color: var(--r81b-text) !important;
-  font-size: 0.88rem !important;
-  line-height: 1.12 !important;
-  font-weight: 820 !important;
-  letter-spacing: -0.01em !important;
-}
-
-.leadFilterRailHeader button {
-  width: 1.75rem !important;
-  min-width: 1.75rem !important;
-  height: 1.75rem !important;
-  min-height: 1.75rem !important;
-  border-radius: 0.48rem !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--r81b-muted) !important;
-}
-
-.leadFilterSearch {
-  height: 2.45rem !important;
-  min-height: 2.45rem !important;
-  display: grid !important;
-  grid-template-columns: 1.1rem minmax(0, 1fr) !important;
-  gap: 0.55rem !important;
-  align-items: center !important;
-  padding: 0 0.7rem !important;
-  border-radius: 0.62rem !important;
-  border: 1px solid var(--r81b-line) !important;
-  background: #0d1421 !important;
-  color: var(--r81b-soft) !important;
-  box-shadow: none !important;
-}
-
-.leadFilterSearch input {
-  min-width: 0 !important;
-  width: 100% !important;
-  border: 0 !important;
-  outline: 0 !important;
-  background: transparent !important;
-  color: var(--r81b-text) !important;
-  font-size: 0.78rem !important;
-  font-weight: 650 !important;
-  letter-spacing: 0 !important;
-}
-
-.leadFilterSearch input::placeholder {
-  color: rgba(220, 226, 244, 0.45) !important;
-}
-
-.leadFilterRailMeta {
-  display: none !important;
-}
-
-.leadFilterScroll {
-  min-height: 0 !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  display: grid !important;
-  align-content: start !important;
-  gap: 0.65rem !important;
-  padding: 0.05rem 0.22rem 0.2rem 0 !important;
-  scrollbar-width: thin !important;
-}
-
-.leadFilterSection {
-  min-width: 0 !important;
-  display: grid !important;
-  gap: 0.35rem !important;
-}
-
-.leadFilterSectionHeader {
-  min-height: 1.55rem !important;
-  display: grid !important;
-  grid-template-columns: 0.65rem minmax(0, 1fr) !important;
-  gap: 0.36rem !important;
-  align-items: center !important;
-}
-
-.leadFilterSectionHeader span {
-  color: var(--r81b-soft) !important;
-  font-size: 0.62rem !important;
-  line-height: 1 !important;
-}
-
-.leadFilterSectionHeader strong {
-  min-width: 0 !important;
-  color: rgba(248, 250, 255, 0.84) !important;
-  font-size: 0.72rem !important;
-  font-weight: 780 !important;
-  line-height: 1.1 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.leadFilterOptionStack {
-  min-width: 0 !important;
-  display: grid !important;
-  gap: 0.18rem !important;
-}
-
-.leadFilterOption {
-  min-width: 0 !important;
-  width: 100% !important;
-  min-height: 1.85rem !important;
-  height: auto !important;
-  display: grid !important;
-  grid-template-columns: 0.9rem minmax(0, 1fr) !important;
-  gap: 0.5rem !important;
-  align-items: center !important;
-  justify-content: stretch !important;
-  padding: 0.22rem 0.15rem !important;
-  border-radius: 0.45rem !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: rgba(220, 226, 244, 0.72) !important;
-  text-align: left !important;
-  box-shadow: none !important;
-}
-
-.leadFilterOption:hover,
-.leadFilterOption[data-selected="true"] {
-  background: color-mix(in srgb, var(--r81b-accent) 10%, transparent) !important;
-  color: var(--r81b-text) !important;
-}
-
-.leadFilterOption span {
-  width: 0.78rem !important;
-  height: 0.78rem !important;
-  min-width: 0.78rem !important;
-  border-radius: 0.2rem !important;
-  border: 1.4px solid rgba(184, 193, 222, 0.42) !important;
-  background: transparent !important;
-}
-
-.leadFilterOption em {
-  min-width: 0 !important;
-  color: inherit !important;
-  font-style: normal !important;
-  font-size: 0.72rem !important;
-  line-height: 1.18 !important;
-  font-weight: 650 !important;
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  overflow-wrap: anywhere !important;
-}
-
-.leadRecordsPanel {
-  min-width: 0 !important;
-  min-height: 38rem !important;
-  height: 100% !important;
-  display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: var(--r81b-shell) !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-}
-
-.leadRecordsHeader {
-  min-height: 4.1rem !important;
-  padding: 0.9rem 1.15rem !important;
-  border-bottom: 1px solid var(--r81b-line) !important;
-  background: var(--r81b-shell-soft) !important;
-}
-
-.leadRecordsHeader small {
-  color: var(--r81b-cyan) !important;
-  font-size: 0.68rem !important;
-  font-weight: 850 !important;
-  letter-spacing: 0.14em !important;
-}
-
-.leadRecordsHeader strong {
-  color: var(--r81b-text) !important;
-  font-size: 1.05rem !important;
-  font-weight: 850 !important;
-}
-
-.leadRecordsHeader em {
-  color: var(--r81b-muted) !important;
-  font-size: 0.78rem !important;
-}
-
-.leadRecordsHeader button,
-.leadBulkActionBar button {
-  min-height: 2.35rem !important;
-  border-radius: 0.65rem !important;
-  border: 1px solid color-mix(in srgb, var(--r81b-accent) 36%, transparent) !important;
-  background: color-mix(in srgb, var(--r81b-accent) 14%, #101827) !important;
-  color: var(--r81b-text) !important;
-  box-shadow: none !important;
-}
-
-.leadRecordsTableFrame {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  overflow: auto !important;
-  background: var(--r81b-shell) !important;
-}
-
-.leadRecordsTable {
-  width: 100% !important;
-  min-width: 62rem !important;
-  border-collapse: collapse !important;
-  table-layout: fixed !important;
-}
-
-.leadRecordsTable th {
-  height: 3rem !important;
-  padding: 0 0.85rem !important;
-  color: rgba(226, 232, 250, 0.84) !important;
-  background: #151d2c !important;
-  border-bottom: 1px solid var(--r81b-line) !important;
-  font-size: 0.72rem !important;
-  font-weight: 780 !important;
-  text-align: left !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.leadRecordsTable td {
-  height: 3rem !important;
-  padding: 0 0.85rem !important;
-  color: rgba(222, 227, 244, 0.84) !important;
-  border-bottom: 1px solid rgba(154, 166, 206, 0.12) !important;
-  font-size: 0.74rem !important;
-  font-weight: 610 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.leadRecordsTable tbody tr:hover {
-  background: rgba(109, 124, 255, 0.07) !important;
-}
-
-.leadEmptyRow td {
-  height: 20rem !important;
-  padding: 0 !important;
-  border-bottom: 0 !important;
-}
-
-.leadRealEmptyState,
-.leadEmptyRow section {
-  min-height: 17rem !important;
-  margin: 0.95rem !important;
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  place-items: center !important;
-  gap: 0.4rem !important;
-  text-align: center !important;
-  border-radius: 0.95rem !important;
-  border: 1px dashed rgba(154, 166, 206, 0.22) !important;
-  background: rgba(255, 255, 255, 0.018) !important;
-}
-
-.leadRealEmptyState strong,
-.leadEmptyRow strong {
-  color: var(--r81b-text) !important;
-  font-size: 0.98rem !important;
-  font-weight: 820 !important;
-}
-
-.leadRealEmptyState em,
-.leadEmptyRow em {
-  max-width: 34rem !important;
-  color: var(--r81b-muted) !important;
-  font-size: 0.8rem !important;
-  font-style: normal !important;
-  line-height: 1.42 !important;
-}
-
-.leadRecordsFooter {
-  min-height: 2.75rem !important;
-  padding: 0.65rem 1.05rem !important;
-  border-top: 1px solid var(--r81b-line) !important;
-  background: var(--r81b-shell-soft) !important;
-}
-
-@media (max-width: 1320px) {
-  .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleTopBar,
-  .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleViewBar {
-    grid-template-columns: 1fr !important;
-    grid-template-areas:
-      "views"
-      "tabs"
-      "toolbar" !important;
-  }
-
-  .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .leadModuleUtilities {
-    grid-template-columns: repeat(3, 3rem) minmax(13rem, 16rem) !important;
-    justify-content: start !important;
-  }
-
-  .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] .headerSearch {
-    grid-column: 1 / -1 !important;
-    max-width: none !important;
-  }
-
-  .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"] {
-    grid-template-columns: 1fr !important;
-  }
-
-  .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    min-height: 17rem !important;
-    border-right: 0 !important;
-    border-bottom: 1px solid var(--r81b-line) !important;
-  }
-
-  .leadFilterRailCollapsed {
-    width: 100% !important;
-    min-height: 3rem !important;
-    border-right: 0 !important;
-    border-bottom: 1px solid var(--r81b-line) !important;
-    justify-items: start !important;
-    padding: 0.4rem 0.75rem !important;
-  }
-
-  .leadFilterRailCollapsed button {
-    width: auto !important;
-    padding: 0 0.75rem !important;
-    display: inline-flex !important;
-    gap: 0.5rem !important;
-  }
-
-  .leadFilterRailCollapsed button span {
-    position: static !important;
-    opacity: 1 !important;
-    transform: none !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-}
-
-/* ========================================================================
-   WILSY OS R82A - LEADS FILTER SCROLL PRODUCT RESET
-   Final lower-workspace contract. The filter is a bounded internal-scroll
-   panel, the records table owns the remaining surface, the empty state is
-   compact and real, and no fake CRM rows are introduced.
-   ======================================================================== */
-
-.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] {
-  --r82a-stage-height: clamp(29rem, calc(100dvh - 23.5rem), 35rem);
-  --r82a-filter-width: clamp(16.5rem, 18vw, 19rem);
-  --r82a-closed-filter-width: 3rem;
-  --r82a-surface: #101827;
-  --r82a-surface-soft: #141c2b;
-  --r82a-filter: #101725;
-  --r82a-line: rgba(154, 166, 206, 0.18);
-  --r82a-line-strong: rgba(164, 177, 218, 0.28);
-  --r82a-text: rgba(248, 250, 255, 0.96);
-  --r82a-soft: rgba(220, 226, 244, 0.72);
-  --r82a-muted: rgba(184, 193, 222, 0.55);
-  --r82a-accent: var(--lead-accent, #7c61ff);
-  --r82a-cyan: #6ee7ff;
-}
-
-/* Lower workspace: one bounded CRM list-view surface. */
-.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
-.leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
-.leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"],
-.leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
-  display: grid !important;
-  grid-template-columns: var(--r82a-filter-width) minmax(0, 1fr) !important;
-  align-items: stretch !important;
-  gap: 0 !important;
-  height: var(--r82a-stage-height) !important;
-  min-height: var(--r82a-stage-height) !important;
-  max-height: var(--r82a-stage-height) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 1px solid var(--r82a-line-strong) !important;
-  border-radius: 1rem !important;
-  background: var(--r82a-surface) !important;
-  box-shadow: 0 18px 44px rgba(0,0,0,0.24) !important;
-  overflow: hidden !important;
-  contain: layout paint !important;
-}
-
-.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"][data-wilsy-filter-state="closed"],
-.leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"][data-wilsy-filter-state="closed"],
-.leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"][data-wilsy-filter-state="closed"],
-.leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"][data-wilsy-filter-state="closed"] {
-  grid-template-columns: var(--r82a-closed-filter-width) minmax(0, 1fr) !important;
-}
-
-/* Closed filter: visible restore affordance, never dead space. */
-.leadFilterRailCollapsed {
-  width: var(--r82a-closed-filter-width) !important;
-  min-width: var(--r82a-closed-filter-width) !important;
-  max-width: var(--r82a-closed-filter-width) !important;
-  height: var(--r82a-stage-height) !important;
-  min-height: var(--r82a-stage-height) !important;
-  max-height: var(--r82a-stage-height) !important;
-  display: grid !important;
-  align-content: start !important;
-  justify-items: center !important;
-  padding: 0.72rem 0.34rem !important;
-  border-right: 1px solid var(--r82a-line) !important;
-  background: var(--r82a-filter) !important;
-  overflow: hidden !important;
-  box-shadow: none !important;
-}
-
-.leadFilterRailCollapsed button {
-  width: 2.18rem !important;
-  min-width: 2.18rem !important;
-  height: 2.18rem !important;
-  min-height: 2.18rem !important;
-  display: grid !important;
-  place-items: center !important;
-  border-radius: 0.62rem !important;
-  border: 1px solid var(--r82a-line) !important;
-  background: rgba(255,255,255,0.035) !important;
-  color: var(--r82a-soft) !important;
-  box-shadow: none !important;
-  cursor: pointer !important;
-}
-
-.leadFilterRailCollapsed button:hover {
-  color: var(--r82a-text) !important;
-  border-color: color-mix(in srgb, var(--r82a-accent) 42%, transparent) !important;
-  background: color-mix(in srgb, var(--r82a-accent) 12%, transparent) !important;
-}
-
-.leadFilterRailCollapsed button span {
-  position: absolute !important;
-  left: calc(100% + 0.6rem) !important;
-  top: 0.75rem !important;
-  min-width: 6.8rem !important;
-  padding: 0.42rem 0.58rem !important;
-  border-radius: 0.5rem !important;
-  border: 1px solid var(--r82a-line) !important;
-  background: rgba(10, 15, 26, 0.98) !important;
-  color: var(--r82a-text) !important;
-  font-size: 0.72rem !important;
-  font-weight: 760 !important;
-  white-space: nowrap !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.28) !important;
-}
-
-.leadFilterRailCollapsed button:hover span {
-  opacity: 1 !important;
-}
-
-/* Open filter: bounded shell. Header/search remain fixed; options scroll. */
-.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
-  width: var(--r82a-filter-width) !important;
-  min-width: var(--r82a-filter-width) !important;
-  max-width: var(--r82a-filter-width) !important;
-  height: var(--r82a-stage-height) !important;
-  min-height: var(--r82a-stage-height) !important;
-  max-height: var(--r82a-stage-height) !important;
+  width: var(--r83a-filter-width) !important;
+  min-width: var(--r83a-filter-width) !important;
+  max-width: var(--r83a-filter-width) !important;
+  height: var(--r83a-stage-height) !important;
+  min-height: var(--r83a-stage-height) !important;
+  max-height: var(--r83a-stage-height) !important;
   display: flex !important;
   flex-direction: column !important;
   align-self: stretch !important;
@@ -5227,9 +4534,9 @@
   box-sizing: border-box !important;
   padding: 0.95rem !important;
   border: 0 !important;
-  border-right: 1px solid var(--r82a-line) !important;
+  border-right: 1px solid var(--r83a-line) !important;
   border-radius: 0 !important;
-  background: var(--r82a-filter) !important;
+  background: var(--r83a-filter) !important;
   box-shadow: none !important;
   z-index: 2 !important;
 }
@@ -5242,7 +4549,7 @@
   bottom: 0.75rem !important;
   width: 0.18rem !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--r82a-accent) 55%, transparent), rgba(255,255,255,0.08)) !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--r83a-accent) 55%, transparent), rgba(255,255,255,0.08)) !important;
   opacity: 0.5 !important;
   pointer-events: none !important;
 }
@@ -5269,7 +4576,7 @@
 }
 
 .leadFilterRailHeader strong {
-  color: var(--r82a-text) !important;
+  color: var(--r83a-text) !important;
   font-size: 0.9rem !important;
   line-height: 1.08 !important;
   font-weight: 840 !important;
@@ -5279,7 +4586,7 @@
 
 .leadFilterRailHeader em {
   display: block !important;
-  color: var(--r82a-muted) !important;
+  color: var(--r83a-muted) !important;
   font-size: 0.72rem !important;
   line-height: 1.08 !important;
   font-style: normal !important;
@@ -5292,9 +4599,9 @@
   height: 1.85rem !important;
   min-height: 1.85rem !important;
   border-radius: 0.5rem !important;
-  border: 1px solid var(--r82a-line) !important;
+  border: 1px solid var(--r83a-line) !important;
   background: rgba(255,255,255,0.035) !important;
-  color: var(--r82a-muted) !important;
+  color: var(--r83a-muted) !important;
   box-shadow: none !important;
   cursor: pointer !important;
 }
@@ -5313,7 +4620,7 @@
   border-radius: 0.62rem !important;
   border: 1px solid rgba(154,166,206,0.20) !important;
   background: #0d1421 !important;
-  color: var(--r82a-soft) !important;
+  color: var(--r83a-soft) !important;
   box-shadow: none !important;
   overflow: hidden !important;
 }
@@ -5321,7 +4628,7 @@
 .leadFilterSearch input {
   min-width: 0 !important;
   width: 100% !important;
-  color: var(--r82a-text) !important;
+  color: var(--r83a-text) !important;
   font-size: 0.78rem !important;
   font-weight: 660 !important;
   letter-spacing: 0 !important;
@@ -5338,13 +4645,13 @@
   display: none !important;
 }
 
-/* This is the important part: independent filter option scroll. */
+/* The actual independent scroll container. */
 .leadFilterScroll,
 [data-wilsy-independent-scroll="lead-filter-options"] {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   height: auto !important;
-  max-height: calc(var(--r82a-stage-height) - 7.3rem) !important;
+  max-height: calc(var(--r83a-stage-height) - 7.3rem) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
@@ -5371,7 +4678,7 @@
 .leadFilterScroll::-webkit-scrollbar-thumb,
 [data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar-thumb {
   border-radius: 999px !important;
-  background: color-mix(in srgb, var(--r82a-accent) 54%, rgba(255,255,255,0.10)) !important;
+  background: color-mix(in srgb, var(--r83a-accent) 54%, rgba(255,255,255,0.10)) !important;
 }
 
 .leadFilterSection {
@@ -5389,7 +4696,7 @@
 }
 
 .leadFilterSectionHeader span {
-  color: var(--r82a-soft) !important;
+  color: var(--r83a-soft) !important;
   font-size: 0.58rem !important;
   line-height: 1 !important;
 }
@@ -5430,8 +4737,8 @@
 
 .leadFilterOption:hover,
 .leadFilterOption[data-selected="true"] {
-  background: color-mix(in srgb, var(--r82a-accent) 10%, transparent) !important;
-  color: var(--r82a-text) !important;
+  background: color-mix(in srgb, var(--r83a-accent) 10%, transparent) !important;
+  color: var(--r83a-text) !important;
 }
 
 .leadFilterOption span {
@@ -5455,18 +4762,18 @@
   overflow-wrap: anywhere !important;
 }
 
-/* Records side: table owns the remaining surface, no clipped empty board. */
+/* Records side: DB table owns the dominant surface. */
 .leadRecordsPanel {
   min-width: 0 !important;
-  height: var(--r82a-stage-height) !important;
-  min-height: var(--r82a-stage-height) !important;
-  max-height: var(--r82a-stage-height) !important;
+  height: var(--r83a-stage-height) !important;
+  min-height: var(--r83a-stage-height) !important;
+  max-height: var(--r83a-stage-height) !important;
   display: grid !important;
   grid-template-rows: auto auto minmax(0, 1fr) auto !important;
   align-self: stretch !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: var(--r82a-surface) !important;
+  background: var(--r83a-surface) !important;
   box-shadow: none !important;
   overflow: hidden !important;
 }
@@ -5474,25 +4781,25 @@
 .leadRecordsHeader {
   min-height: 4rem !important;
   padding: 0.86rem 1.05rem !important;
-  border-bottom: 1px solid var(--r82a-line) !important;
-  background: var(--r82a-surface-soft) !important;
+  border-bottom: 1px solid var(--r83a-line) !important;
+  background: var(--r83a-surface-soft) !important;
 }
 
 .leadRecordsHeader small {
-  color: var(--r82a-cyan) !important;
+  color: var(--r83a-cyan) !important;
   font-size: 0.68rem !important;
   font-weight: 850 !important;
   letter-spacing: 0.14em !important;
 }
 
 .leadRecordsHeader strong {
-  color: var(--r82a-text) !important;
+  color: var(--r83a-text) !important;
   font-size: 1.04rem !important;
   font-weight: 850 !important;
 }
 
 .leadRecordsHeader em {
-  color: var(--r82a-muted) !important;
+  color: var(--r83a-muted) !important;
   font-size: 0.78rem !important;
 }
 
@@ -5500,9 +4807,9 @@
 .leadBulkActionBar button {
   min-height: 2.35rem !important;
   border-radius: 0.65rem !important;
-  border: 1px solid color-mix(in srgb, var(--r82a-accent) 34%, transparent) !important;
-  background: color-mix(in srgb, var(--r82a-accent) 12%, #101827) !important;
-  color: var(--r82a-text) !important;
+  border: 1px solid color-mix(in srgb, var(--r83a-accent) 34%, transparent) !important;
+  background: color-mix(in srgb, var(--r83a-accent) 12%, #101827) !important;
+  color: var(--r83a-text) !important;
   box-shadow: none !important;
 }
 
@@ -5510,7 +4817,7 @@
   min-width: 0 !important;
   min-height: 0 !important;
   overflow: auto !important;
-  background: var(--r82a-surface) !important;
+  background: var(--r83a-surface) !important;
 }
 
 .leadRecordsTable {
@@ -5525,13 +4832,16 @@
   padding: 0 0.78rem !important;
   color: rgba(226,232,250,0.84) !important;
   background: #151d2c !important;
-  border-bottom: 1px solid var(--r82a-line) !important;
+  border-bottom: 1px solid var(--r83a-line) !important;
   font-size: 0.72rem !important;
   font-weight: 780 !important;
   text-align: left !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1 !important;
 }
 
 .leadRecordsTable td {
@@ -5551,63 +4861,66 @@
 }
 
 .leadEmptyRow td {
-  height: calc(var(--r82a-stage-height) - 9rem) !important;
-  min-height: calc(var(--r82a-stage-height) - 9rem) !important;
-  padding: 0 !important;
-  border-bottom: 0 !important;
+  height: 3.4rem !important;
+  min-height: 3.4rem !important;
+  padding: 0.7rem 0.78rem !important;
+  border-bottom: 1px solid rgba(154,166,206,0.12) !important;
   overflow: visible !important;
 }
 
 .leadRealEmptyState,
 .leadEmptyRow section {
-  min-height: calc(var(--r82a-stage-height) - 11rem) !important;
-  width: calc(100% - 1.5rem) !important;
-  margin: 0.75rem !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
   display: grid !important;
-  place-items: center !important;
-  gap: 0.38rem !important;
-  text-align: center !important;
-  border-radius: 0.9rem !important;
-  border: 1px dashed rgba(154,166,206,0.22) !important;
-  background: rgba(255,255,255,0.018) !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  justify-content: start !important;
+  gap: 1rem !important;
+  text-align: left !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
   overflow: hidden !important;
+  box-shadow: none !important;
 }
 
 .leadRealEmptyState strong,
 .leadEmptyRow strong {
-  max-width: 34rem !important;
-  color: var(--r82a-text) !important;
-  font-size: 0.98rem !important;
+  max-width: none !important;
+  color: var(--r83a-text) !important;
+  font-size: 0.82rem !important;
   font-weight: 820 !important;
-  white-space: normal !important;
+  white-space: nowrap !important;
 }
 
 .leadRealEmptyState em,
 .leadEmptyRow em {
-  max-width: 44rem !important;
-  color: var(--r82a-muted) !important;
-  font-size: 0.8rem !important;
+  max-width: none !important;
+  color: var(--r83a-muted) !important;
+  font-size: 0.78rem !important;
   font-style: normal !important;
-  line-height: 1.42 !important;
-  white-space: normal !important;
+  line-height: 1.32 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .leadRecordsFooter {
   min-height: 2.6rem !important;
   padding: 0.58rem 0.95rem !important;
-  border-top: 1px solid var(--r82a-line) !important;
-  background: var(--r82a-surface-soft) !important;
+  border-top: 1px solid var(--r83a-line) !important;
+  background: var(--r83a-surface-soft) !important;
 }
 
 @media (max-width: 1320px) {
   .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] {
-    --r82a-stage-height: 34rem;
+    --r83a-stage-height: 34rem;
   }
 
-  .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
-  .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
-  .leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"],
-  .leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
+  .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"] {
     grid-template-columns: 1fr !important;
     height: auto !important;
     min-height: 0 !important;
@@ -5623,7 +4936,7 @@
     min-height: 24rem !important;
     max-height: 24rem !important;
     border-right: 0 !important;
-    border-bottom: 1px solid var(--r82a-line) !important;
+    border-bottom: 1px solid var(--r83a-line) !important;
   }
 
   .leadRecordsPanel {

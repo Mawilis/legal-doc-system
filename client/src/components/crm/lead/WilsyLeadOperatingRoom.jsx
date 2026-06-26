@@ -1635,12 +1635,12 @@ export default function WilsyLeadOperatingRoom({
       return (
         <aside
           className={styles.leadFilterRailCollapsed}
-          data-wilsy-filter-restore="R81B-FILTER-RESTORE"
+          data-wilsy-filter-restore="R83A-FILTER-RESTORE"
           aria-label="Lead filters collapsed"
         >
           <button
             type="button"
-            onClick={() => setFilterPanelOpen(true)}
+            onClick={() => setFilterPanelOpen(previous => !previous)}
             aria-label="Show Lead filters"
             title="Show filters"
           >
@@ -1758,7 +1758,7 @@ export default function WilsyLeadOperatingRoom({
     return (
       <section className={styles.leadRecordsWorkspace}
         data-wilsy-filter-state={filterPanelOpen ? 'open' : 'closed'}
-        data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"
+        data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"
         data-wilsy-real-data-contract="LIVE_BACKEND_ONLY"
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
         data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW" data-wilsy-lead-records="tabbed-list-view">
@@ -1879,12 +1879,12 @@ export default function WilsyLeadOperatingRoom({
                 }) : (
                 <tr
                   className={styles.leadEmptyRow}
-                  data-wilsy-real-data-empty-state="R81A-LIVE-BACKEND-EMPTY"
+                  data-wilsy-real-data-empty-state="LIVE_BACKEND_EMPTY"
                 >
-                  <td colSpan={99}>
+                  <td colSpan={10}>
                     <section className={styles.leadRealEmptyState}>
                       <strong>No live leads returned yet</strong>
-                      <em>WILSY OS will display verified backend Lead records here after source sync or record creation.</em>
+                      <em>Verified backend Lead records will appear here after source sync or lead creation.</em>
                     </section>
                   </td>
                 </tr>
