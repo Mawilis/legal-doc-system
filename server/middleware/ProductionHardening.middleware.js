@@ -7,6 +7,73 @@ import metrics from '../utils/metrics.js';
 import logger from '../utils/logger.js';
 import chalk from 'chalk';
 
+const WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION = 'R86F-CRM-COMMAND-HARDENING-AUTH-DEFERRED';
+
+/**
+ * @function isWilsyCrmCommandHardeningContinuationRoute
+ * @description Detects CRM command mutation routes that must be authenticated downstream rather than blocked by generic hardening heuristics.
+ * @param {object} req - Express request.
+ * @returns {boolean} True when request is a CRM command mutation route.
+ * @collaboration CRM Lead/Contact saves, ProductionHardening, tenantContext, authenticated command routes.
+ */
+function isWilsyCrmCommandHardeningContinuationRoute(req = {}) {
+  const method = String(req.method || 'GET').toUpperCase();
+  const path = String(req.originalUrl || req.path || req.url || '').toLowerCase();
+
+  return (
+    ['POST', 'PUT', 'PATCH'].includes(method) &&
+    (path.includes('/api/crm/command/leads') || path.includes('/api/crm/command/contacts'))
+  );
+}
+
+/**
+ * @function hasWilsyCrmCommandAuthorityEnvelope
+ * @description Checks that a CRM command mutation carries auth and tenant evidence before generic hardening can defer to route policy.
+ * @param {object} req - Express request.
+ * @returns {boolean} True when auth and tenant envelopes are present.
+ * @collaboration Does not authorize the request; it only permits downstream auth/tenant policy to make the final decision.
+ */
+function hasWilsyCrmCommandAuthorityEnvelope(req = {}) {
+  const headers = req.headers || {};
+  const hasAuthorization = Boolean(
+    req.user ||
+    String(headers.authorization || '')
+      .toLowerCase()
+      .startsWith('bearer ') ||
+    String(headers.Authorization || '')
+      .toLowerCase()
+      .startsWith('bearer ') ||
+    req.cookies?.token
+  );
+
+  const hasTenant = Boolean(
+    req.tenantId ||
+    req.tenant?.id ||
+    req.tenant?.tenantId ||
+    headers['x-tenant-id'] ||
+    headers['x-tenantid'] ||
+    headers['x-wilsy-tenant-id'] ||
+    req.body?.tenantId ||
+    req.body?.tenant_id ||
+    req.query?.tenantId
+  );
+
+  return hasAuthorization && hasTenant;
+}
+
+/**
+ * @function shouldContinueWilsyCrmCommandAfterHardening
+ * @description Determines whether ProductionHardening should defer CRM command saves to downstream authenticated route policy instead of returning 403.
+ * @param {object} req - Express request.
+ * @returns {boolean} True when continuation is safe.
+ * @collaboration Fixes false-positive Lead/Contact save 403 while preserving authentication and tenant authority downstream.
+ */
+function shouldContinueWilsyCrmCommandAfterHardening(req = {}) {
+  return (
+    isWilsyCrmCommandHardeningContinuationRoute(req) && hasWilsyCrmCommandAuthorityEnvelope(req)
+  );
+}
+
 /**
  * @function sortKeys
  * @description Recursively sorts object keys to produce a deterministic JSON representation,
@@ -224,6 +291,31 @@ export const integrityShield = async (req, res, next) => {
     );
 
     if (!isBusinessArtifactStrike || !businessArtifactHeadersPresent) {
+      if (shouldContinueWilsyCrmCommandAfterHardening(req)) {
+        req.wilsyCrmCommandHardeningContinuation = {
+          authority: WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION,
+
+          route: req.originalUrl || req.path || req.url,
+
+          method: req.method,
+
+          tenantId:
+            req.tenantId ||
+            req.headers?.['x-tenant-id'] ||
+            req.body?.tenantId ||
+            'UNRESOLVED_TENANT',
+
+          continuedAt: new Date().toISOString(),
+        };
+
+        res.setHeader(
+          'X-Wilsy-Crm-Hardening-Continuation',
+          WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION
+        );
+
+        return next();
+      }
+
       return res.status(403).json({
         error: 'INTEGRITY_VIOLATION',
         code: 'SEC-403-HDR',

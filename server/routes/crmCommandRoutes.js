@@ -3223,6 +3223,133 @@ async function handleWilsyCrmCommandLeadCreate(req, res, next) {
 }
 
 /**
+ * @function resolveWilsyCrmContactCreatePayload
+ * @description Normalizes real CRM Contact command payloads without creating synthetic records.
+ * @param {object} req - Express request.
+ * @returns {object} Normalized contact payload.
+ * @collaboration Contact save route, DB-backed CRM command fabric, POPIA-safe relationship records.
+ */
+function resolveWilsyCrmContactCreatePayload(req = {}) {
+  const body = req.body || {};
+  const payload = body.contact || body.record || body;
+
+  return {
+    ...payload,
+    tenantId: getWilsyCrmTenantId(req),
+    name:
+      payload.name ||
+      payload.contactName ||
+      payload.fullName ||
+      [payload.firstName, payload.lastName].filter(Boolean).join(' ') ||
+      '',
+    email: payload.email || payload.primaryEmail || payload.contactEmail || '',
+    phone: payload.phone || payload.mobile || payload.mobileNumber || payload.workPhone || '',
+    accountName:
+      payload.accountName ||
+      payload.company ||
+      payload.companyName ||
+      payload.organization ||
+      payload.account?.name ||
+      '',
+    source:
+      payload.source ||
+      payload.sourceSystem ||
+      payload.connector ||
+      payload.origin ||
+      'CRM_COMMAND',
+    status: payload.status || payload.contactStatus || payload.lifecycleStage || 'ACTIVE',
+    owner:
+      payload.owner ||
+      payload.ownerName ||
+      payload.assignedTo ||
+      req.user?.email ||
+      req.user?.id ||
+      req.headers['x-wilsy-operator'] ||
+      'SYSTEM',
+    createdBy: payload.createdBy || req.user?.id || req.user?.email || 'SYSTEM',
+    updatedBy: payload.updatedBy || req.user?.id || req.user?.email || 'SYSTEM',
+  };
+}
+
+/**
+ * @function hasWilsyCrmContactSourcePayload
+ * @description Confirms a Contact create command contains real relationship data.
+ * @param {object} payload - Contact payload.
+ * @returns {boolean} True when payload contains real contact evidence.
+ * @collaboration Prevents empty clicks from becoming fake CRM Contact rows.
+ */
+function hasWilsyCrmContactSourcePayload(payload = {}) {
+  return Boolean(
+    payload.name ||
+    payload.email ||
+    payload.phone ||
+    payload.accountName ||
+    payload.company ||
+    payload.companyName
+  );
+}
+
+/**
+ * @function handleWilsyCrmCommandContactCreate
+ * @description Creates a CRM contact only when the backend CRMContact model is registered and a real payload is supplied.
+ * @param {object} req - Express request.
+ * @param {object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {Promise<void>} Response completion.
+ * @collaboration Gives Contacts the same DB-backed command save authority as Leads without fake rows.
+ */
+async function handleWilsyCrmCommandContactCreate(req, res, next) {
+  try {
+    const tenantId = getWilsyCrmTenantId(req);
+    const ContactModel = getWilsyCrmModel('CRMContact');
+
+    if (!ContactModel) {
+      res.status(503).json({
+        ok: false,
+        route: '/api/crm/command/contacts',
+        tenantId,
+        sourceStatus: 'MODEL_NOT_REGISTERED',
+        modelName: 'CRMContact',
+        message: 'CRMContact model is not registered in the active backend runtime.',
+      });
+      return;
+    }
+
+    const payload = resolveWilsyCrmContactCreatePayload(req);
+
+    if (!hasWilsyCrmContactSourcePayload(payload)) {
+      res.status(422).json({
+        ok: false,
+        route: '/api/crm/command/contacts',
+        tenantId,
+        sourceStatus: 'SOURCE_PAYLOAD_REQUIRED',
+        message:
+          'Contact create requires name, email, phone, accountName, company, or companyName.',
+      });
+      return;
+    }
+
+    const contact = await ContactModel.create({
+      ...payload,
+      tenantId,
+    });
+
+    res.status(201).json({
+      ok: true,
+      route: '/api/crm/command/contacts',
+      tenantId,
+      sourceStatus: 'DB_PERSISTED',
+      modelName: 'CRMContact',
+      contact,
+      record: contact,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * @function handleWilsyCrmCommandStatus
  * @description Returns CRM command fabric route posture.
  * @param {object} req - Express request.
@@ -3251,5 +3378,6 @@ router.get('/status', handleWilsyCrmCommandStatus);
 router.get('/search', handleWilsyCrmCommandSearch);
 router.post('/sync', handleWilsyCrmCommandSync);
 router.post('/leads', handleWilsyCrmCommandLeadCreate);
+router.post('/contacts', handleWilsyCrmCommandContactCreate);
 
 export default router;
