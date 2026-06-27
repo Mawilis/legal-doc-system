@@ -532,16 +532,38 @@ export default function WilsyContactOperatingRoom({
    * @collaboration R76C Contacts filtering, Zoho parity, Wilsy relationship intelligence.
    */
   function renderFilterRail() {
-    if (!filterRailOpen) return null;
+    if (!filterRailOpen) {
+      return (
+        <aside
+          className={styles.contactFilterRailCollapsed}
+          data-wilsy-contact-filter-restore="R85A-FILTER-RESTORE"
+          aria-label="Contact filters collapsed"
+        >
+          <button
+            type="button"
+            onClick={() => setFilterRailOpen(previous => !previous)}
+            aria-label="Show Contact filters"
+            title="Show filters"
+          >
+            <Filter size={17} />
+            <span>Show filters</span>
+          </button>
+        </aside>
+      );
+    }
 
     return (
-      <aside className={styles.contactFilterRail} aria-label="Contact filters">
+      <aside
+        className={styles.contactFilterRail}
+        data-wilsy-contact-filter-operating-system="R85A-INDEPENDENT-SCROLL"
+        aria-label="Contact filters"
+      >
         <header>
           <span>
             <small>Filter Contacts by</small>
             <strong>Relationship Signals</strong>
           </span>
-          <button type="button" onClick={(event) => event.currentTarget.blur()} aria-label="Filter options">
+          <button type="button" onClick={() => setFilterRailOpen(false)} aria-label="Collapse Contact filters" title="Collapse filters">
             <MoreHorizontal size={17} />
           </button>
         </header>
@@ -556,17 +578,22 @@ export default function WilsyContactOperatingRoom({
           />
         </label>
 
-        {CONTACT_FILTER_GROUPS.map(group => (
-          <section key={group.id} className={styles.contactFilterGroup}>
-            <strong>{group.label}</strong>
-            {group.options.map(option => (
-              <button key={option} type="button">
-                <span aria-hidden="true" />
-                <em>{option}</em>
-              </button>
-            ))}
-          </section>
-        ))}
+        <div
+          className={styles.contactFilterScroll}
+          data-wilsy-independent-scroll="contact-filter-options"
+        >
+          {CONTACT_FILTER_GROUPS.map(group => (
+            <section key={group.id} className={styles.contactFilterGroup}>
+              <strong>{group.label}</strong>
+              {group.options.map(option => (
+                <button key={option} type="button">
+                  <span aria-hidden="true" />
+                  <em>{option}</em>
+                </button>
+              ))}
+            </section>
+          ))}
+        </div>
       </aside>
     );
   }
@@ -579,7 +606,13 @@ export default function WilsyContactOperatingRoom({
    */
   function renderRecordsTab() {
     return (
-      <section className={styles.contactRecordsWorkspace} data-wilsy-contact-records="relationship-list-view">
+      <section
+        className={styles.contactRecordsWorkspace}
+        data-wilsy-contact-records="relationship-list-view"
+        data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"
+        data-wilsy-filter-state={filterRailOpen ? 'open' : 'closed'}
+        data-wilsy-contact-row-count={filteredContacts.length}
+      >
         {renderFilterRail()}
 
         <section className={styles.contactRecordsPanel}>
@@ -592,7 +625,7 @@ export default function WilsyContactOperatingRoom({
 
             <div>
               {!filterRailOpen ? (
-                <button type="button" onClick={() => setFilterRailOpen(true)}>
+                <button type="button" onClick={() => setFilterRailOpen(previous => !previous)}>
                   <Filter size={15} />
                   Filters
                 </button>
