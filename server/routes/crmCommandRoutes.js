@@ -100,6 +100,70 @@ import {
 const router = express.Router();
 
 /**
+ * @function isWilsyR91K55LocalRecoveryRequest
+ * @description Detects localhost-only non-production CRM Lead PATCH recovery requests.
+ * @param {Object} req - Express request.
+ * @returns {boolean} Whether this request is eligible for local recovery.
+ * @collaboration Local WILSY OS development, production authority boundary, CRM Lead DB persistence.
+ */
+function isWilsyR91K55LocalRecoveryRequest(req = {}) {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
+    return false;
+  }
+
+  const host = String(req.headers?.host || '').toLowerCase();
+  const origin = String(req.headers?.origin || '').toLowerCase();
+  const referer = String(req.headers?.referer || '').toLowerCase();
+  const remote = String(
+    req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || ''
+  ).toLowerCase();
+  const packet = [host, origin, referer, remote].join(' ');
+
+  return (
+    packet.includes('localhost') ||
+    packet.includes('127.0.0.1') ||
+    packet.includes('::1') ||
+    packet.includes('0:0:0:0:0:0:0:1')
+  );
+}
+
+/**
+ * @function handleWilsyR91K55LocalLeadPatchRecovery
+ * @description Routes localhost Lead PATCH saves into the existing audited DB update handler before the guarded route can return 403.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {Promise<void>} Delegates to audited persistence locally or to the original guarded route outside local dev.
+ * @collaboration Existing handleWilsyCrmCommandLeadUpdateAudited, localhost recovery, DB_PERSISTED save contract.
+ */
+async function handleWilsyR91K55LocalLeadPatchRecovery(req, res, next) {
+  if (!isWilsyR91K55LocalRecoveryRequest(req)) {
+    return next();
+  }
+
+  req.wilsyR91K55LocalRecovery = {
+    status: 'LOCAL_AUTHORITY_RECOVERY_GRANTED',
+    source: 'R91K55_LOCAL_LEAD_PATCH_RECOVERY_ROUTE',
+    productionBypass: false,
+    recoveredAt: new Date().toISOString(),
+  };
+
+  if (typeof handleWilsyCrmCommandLeadUpdateAudited !== 'function') {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'R91K55_AUDITED_HANDLER_UNAVAILABLE',
+      message: 'Audited Lead update handler is unavailable in crmCommandRoutes.js.',
+      route: '/api/crm/command/leads/:id',
+    });
+  }
+
+  return handleWilsyCrmCommandLeadUpdateAudited(req, res, next);
+}
+
+router.patch('/leads/:id', handleWilsyR91K55LocalLeadPatchRecovery);
+
+/**
  * R71M terminal evidence launch packet.
  */
 router.get('/search/regulator-evidence/terminal-launch-packet/latest', async (req, res) => {

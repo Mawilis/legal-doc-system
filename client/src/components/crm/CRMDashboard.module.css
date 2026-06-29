@@ -3796,3 +3796,787 @@
     max-height: 54vh;
   }
 }
+
+/* R85A CRM workspace operating shell - compact tabbed top app bar and bounded home panels */
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .commandSurface {
+  grid-template-rows: minmax(7.6rem, auto) minmax(0, 1fr) !important;
+  gap: 0.82rem !important;
+  padding: 1.05rem 1.22rem !important;
+  overflow: hidden !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(13rem, 0.55fr) minmax(18rem, 0.82fr) minmax(20rem, 1fr) minmax(12rem, 0.54fr) minmax(16rem, 0.7fr) !important;
+  grid-template-areas:
+    "title menu strip tenant actions"
+    "title menu search search actions" !important;
+  gap: 0.58rem 0.78rem !important;
+  align-items: stretch !important;
+  padding: 0.88rem 1rem !important;
+  border-radius: 1rem !important;
+  border-color: rgba(143, 121, 255, 0.36) !important;
+  background:
+    radial-gradient(circle at 76% 12%, rgba(79, 189, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 22% 0%, rgba(186, 143, 255, 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(28, 21, 46, 0.94), rgba(8, 11, 20, 0.94)) !important;
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.34) !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTitle {
+  grid-area: title !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 0.22rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTitle h1 {
+  margin: 0 !important;
+  font-size: 2.05rem !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTitle p {
+  max-width: 28rem !important;
+  font-size: 0.78rem !important;
+  line-height: 1.32 !important;
+}
+
+.crmTopAppMenu {
+  grid-area: menu;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.44rem;
+  align-items: stretch;
+}
+
+.crmTopAppMenu button {
+  min-width: 0;
+  min-height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  padding: 0 0.56rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(143, 121, 255, 0.24);
+  background: rgba(10, 16, 30, 0.72);
+  color: rgba(224, 229, 244, 0.74);
+  font-size: 0.75rem;
+  font-weight: 880;
+  cursor: pointer;
+}
+
+.crmTopAppMenu button[data-active="true"] {
+  border-color: rgba(186, 143, 255, 0.64);
+  background: linear-gradient(135deg, rgba(92, 71, 188, 0.72), rgba(32, 39, 68, 0.88));
+  color: rgba(255, 255, 255, 0.98);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .investorStrip {
+  grid-area: strip !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.44rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .investorStrip span {
+  min-height: 2.1rem !important;
+  padding: 0 0.56rem !important;
+  border-radius: 0.62rem !important;
+  font-size: 0.68rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTenant {
+  grid-area: tenant !important;
+  grid-template-columns: 2.25rem minmax(0, 1fr) !important;
+  gap: 0.62rem !important;
+  padding: 0.46rem 0.58rem !important;
+  border-radius: 0.72rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTenant img {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  border-radius: 0.56rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTenant strong {
+  margin: 0.12rem 0 !important;
+  font-size: 0.82rem !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTenant small,
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTenant em {
+  font-size: 0.56rem !important;
+  letter-spacing: 0.12em !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeSearch {
+  grid-area: search !important;
+  min-height: 2.9rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeSearch input {
+  min-height: 2.9rem !important;
+  font-size: 0.86rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeActions {
+  grid-area: actions !important;
+  grid-template-columns: 1fr !important;
+  gap: 0.42rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeActions button {
+  min-height: 2.32rem !important;
+  border-radius: 0.66rem !important;
+  font-size: 0.72rem !important;
+  white-space: nowrap !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .workspaceViewport {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .homeGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 23rem) !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  gap: 0.74rem !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.crmWorkspaceDeck {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(9.6rem, 1fr));
+  gap: 0.52rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.02rem 0.02rem 0.18rem;
+  scrollbar-width: thin;
+}
+
+.crmWorkspaceDeck button {
+  min-width: 0;
+  min-height: 3.9rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto;
+  gap: 0.14rem 0.5rem;
+  align-items: center;
+  padding: 0.58rem 0.68rem;
+  border-radius: 0.78rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(8, 13, 24, 0.72);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  text-align: left;
+}
+
+.crmWorkspaceDeck button[data-status="LIVE"] {
+  border-color: rgba(93, 244, 156, 0.28);
+  background: linear-gradient(135deg, rgba(14, 48, 29, 0.6), rgba(8, 13, 24, 0.82));
+}
+
+.crmWorkspaceDeck button[data-status="READY"] {
+  border-color: rgba(143, 121, 255, 0.34);
+}
+
+.crmWorkspaceDeck button svg {
+  color: rgba(186, 143, 255, 0.95);
+}
+
+.crmWorkspaceDeck button span {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
+}
+
+.crmWorkspaceDeck button strong,
+.crmWorkspaceDeck button em,
+.crmWorkspaceDeck button small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crmWorkspaceDeck button strong {
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.crmWorkspaceDeck button em,
+.crmWorkspaceDeck button small {
+  color: rgba(203, 213, 225, 0.66);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 720;
+}
+
+.crmWorkspaceDeck button b {
+  justify-self: end;
+  font-size: 1rem;
+}
+
+.crmWorkspaceDeck button small {
+  grid-column: 2 / -1;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .metricDeck {
+  grid-column: 1 / -1 !important;
+  grid-template-columns: repeat(4, minmax(11rem, 1fr)) !important;
+  gap: 0.64rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .metricCard {
+  min-height: 5.8rem !important;
+  padding: 0.82rem 0.94rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .pipelineCockpit,
+.crmProofWorkspace,
+.crmCreateWorkspace {
+  grid-column: 1;
+  grid-row: 3;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.crmProofWorkspace {
+  border: 1px solid rgba(143, 121, 255, 0.32);
+  border-radius: 1rem;
+  background: rgba(8, 13, 24, 0.74);
+}
+
+.crmProofWorkspace > * {
+  max-height: 100%;
+  overflow: auto;
+}
+
+.crmCreateWorkspace {
+  display: grid;
+  grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+  gap: 0.74rem;
+  border: 1px solid rgba(143, 121, 255, 0.32);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(79, 189, 255, 0.12), transparent 30%),
+    rgba(8, 13, 24, 0.82);
+  padding: 0.74rem;
+}
+
+.crmCreateRail {
+  min-height: 0;
+  display: grid;
+  gap: 0.46rem;
+  align-content: start;
+  overflow: auto;
+  padding-right: 0.18rem;
+}
+
+.crmCreateRail button {
+  min-width: 0;
+  min-height: 4rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.58rem 0.68rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(9, 13, 24, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+.crmCreateRail button[data-active="true"] {
+  border-color: rgba(186, 143, 255, 0.62);
+  background: rgba(64, 49, 126, 0.46);
+}
+
+.crmCreateRail span {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.crmCreateRail strong,
+.crmCreateRail em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crmCreateRail strong {
+  font-size: 0.78rem;
+}
+
+.crmCreateRail em {
+  color: rgba(203, 213, 225, 0.64);
+  font-size: 0.64rem;
+  font-style: normal;
+}
+
+.crmCreateStage {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  overflow: hidden;
+}
+
+.crmCreateStage header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.crmCreateGlyph {
+  width: 2.9rem;
+  height: 2.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.84rem;
+  border: 1px solid rgba(186, 143, 255, 0.42);
+  background: rgba(64, 49, 126, 0.34);
+}
+
+.crmCreateStage header span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.crmCreateStage small {
+  color: var(--crm-gold);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.crmCreateStage strong {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1.22rem;
+}
+
+.crmCreateStage em,
+.crmCreateStage p {
+  color: rgba(203, 213, 225, 0.7);
+  font-style: normal;
+  line-height: 1.42;
+}
+
+.crmCreateStageCards {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.64rem;
+  overflow: auto;
+}
+
+.crmCreateStageCards article {
+  min-width: 0;
+  align-self: start;
+  display: grid;
+  gap: 0.44rem;
+  padding: 0.82rem;
+  border-radius: 0.82rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(3, 7, 15, 0.58);
+}
+
+.crmCreateCommandBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.62rem;
+}
+
+.crmCreateCommandBar button {
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.46rem;
+  padding: 0 0.88rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(143, 121, 255, 0.3);
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.94);
+  font-weight: 880;
+  cursor: pointer;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .commandStack {
+  grid-column: 2 !important;
+  grid-row: 3 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+  padding-right: 0.12rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .commandStack article {
+  min-height: auto !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .quickActions {
+  grid-column: 1 / -1 !important;
+  grid-row: 4 !important;
+  min-height: 0 !important;
+  max-height: 7.4rem !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(12rem, 1fr)) !important;
+  gap: 0.62rem !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .quickActions article {
+  min-height: 6.8rem !important;
+  padding: 0.72rem 0.82rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .quickActions p {
+  display: none !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .commandSurface::after,
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .workspaceViewport::after,
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .homeGrid::after {
+  display: none !important;
+  content: none !important;
+}
+
+@media (max-width: 1420px) {
+  .crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] {
+    grid-template-columns: minmax(12rem, 0.7fr) minmax(18rem, 1fr) minmax(18rem, 1fr) !important;
+    grid-template-areas:
+      "title menu actions"
+      "strip search tenant" !important;
+  }
+
+  .crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .homeGrid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(11rem, 14rem) auto !important;
+  }
+
+  .crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .commandStack {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.62rem !important;
+  }
+
+  .crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .quickActions {
+    grid-row: 5 !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "title"
+      "menu"
+      "strip"
+      "tenant"
+      "search"
+      "actions" !important;
+  }
+
+  .crmTopAppMenu,
+  .crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .investorStrip,
+  .crmCreateStageCards {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .crmCreateWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* R86A CRM launch cockpit refinement - replaces inherited hero physics with command-bar physics */
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .commandSurface {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  gap: 0.68rem !important;
+  padding: 0.78rem 1rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.56rem !important;
+  min-height: 0 !important;
+  padding: 0.68rem 0.78rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTitle {
+  flex: 0 0 clamp(13.4rem, 17vw, 18rem) !important;
+  align-content: center !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTitle h1 {
+  font-size: clamp(1.72rem, 2.1vw, 2.32rem) !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTitle p {
+  display: none !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .crmTopAppMenu {
+  flex: 1 1 23rem !important;
+  display: flex !important;
+  gap: 0.42rem !important;
+  align-items: center !important;
+  min-width: 18rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .crmTopAppMenu button {
+  flex: 1 1 0 !important;
+  min-height: 2.45rem !important;
+  height: 2.45rem !important;
+  padding: 0 0.48rem !important;
+  border-radius: 0.66rem !important;
+  font-size: 0.72rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .investorStrip {
+  flex: 1 1 25rem !important;
+  display: flex !important;
+  gap: 0.42rem !important;
+  min-width: 20rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .investorStrip span {
+  flex: 1 1 0 !important;
+  min-height: 2.35rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeTenant {
+  flex: 0 1 14.2rem !important;
+  min-height: 2.5rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeSearch {
+  flex: 999 1 38rem !important;
+  max-width: none !important;
+  min-width: min(100%, 22rem) !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeActions {
+  flex: 0 1 24rem !important;
+  display: flex !important;
+  grid-template-columns: none !important;
+  gap: 0.42rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"] .osChrome[data-wilsy-r85-crm-workspace-topbar="tabbed-command"] .chromeActions button {
+  flex: 1 1 0 !important;
+  min-height: 2.45rem !important;
+  height: 2.45rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .homeGrid {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 0.62rem !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .quickActions {
+  display: none !important;
+}
+
+.crmShell[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-active-workspace="home"] .metricCard {
+  min-height: 5.1rem !important;
+  grid-template-columns: 2rem minmax(0, 1fr) !important;
+  gap: 0.62rem !important;
+}
+
+.crmRevolutionWorkspace {
+  grid-column: 1;
+  grid-row: 3;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.46fr);
+  gap: 0.72rem;
+  overflow: hidden;
+}
+
+.crmPatentGrid {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.72rem;
+  overflow: auto;
+  padding-right: 0.12rem;
+}
+
+.crmPatentGrid article,
+.crmAutopilotPanel {
+  min-width: 0;
+  border: 1px solid rgba(143, 121, 255, 0.3);
+  border-radius: 0.95rem;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(186, 143, 255, 0.15), transparent 30%),
+    linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(5, 8, 15, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.crmPatentGrid article {
+  align-content: start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.34rem 0.72rem;
+  padding: 0.9rem;
+}
+
+.crmPatentGrid article[data-status="LIVE"],
+.crmPatentGrid article[data-status="CLEAR"],
+.crmPatentGrid article[data-status="ONLINE"] {
+  border-color: rgba(93, 244, 156, 0.34);
+  background:
+    radial-gradient(circle at 86% 0%, rgba(93, 244, 156, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(12, 45, 30, 0.78), rgba(5, 8, 15, 0.92));
+}
+
+.crmPatentGlyph {
+  grid-row: span 2;
+  width: 2.55rem;
+  height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(186, 143, 255, 0.34);
+  background: rgba(77, 61, 145, 0.28);
+  color: rgba(222, 207, 255, 0.98);
+}
+
+.crmPatentGrid small,
+.crmAutopilotPanel small {
+  color: var(--crm-gold);
+  font-size: 0.62rem;
+  font-weight: 920;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.crmPatentGrid strong {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.98);
+  font-size: 0.98rem;
+  line-height: 1.12;
+}
+
+.crmPatentGrid b {
+  grid-column: 2;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1.36rem;
+}
+
+.crmPatentGrid p,
+.crmPatentGrid em,
+.crmAutopilotPanel p,
+.crmAutopilotPanel dd,
+.crmAutopilotPanel dt {
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.76rem;
+  font-style: normal;
+  line-height: 1.42;
+}
+
+.crmPatentGrid p,
+.crmPatentGrid em {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.crmPatentGrid em {
+  color: rgba(221, 196, 255, 0.82);
+  font-weight: 780;
+}
+
+.crmAutopilotPanel {
+  min-height: 0;
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.crmAutopilotPanel strong {
+  color: rgba(255, 255, 255, 0.98);
+  font-size: 1.38rem;
+  line-height: 1.08;
+}
+
+.crmAutopilotPanel p {
+  margin: 0;
+}
+
+.crmAutopilotPanel dl {
+  display: grid;
+  gap: 0.46rem;
+  margin: 0;
+}
+
+.crmAutopilotPanel dl div {
+  min-height: 2.42rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0 0.72rem;
+  border-radius: 0.62rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.crmAutopilotPanel dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.94);
+  font-weight: 920;
+}
+
+@media (max-width: 1280px) {
+  .crmRevolutionWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crmAutopilotPanel {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .crmPatentGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

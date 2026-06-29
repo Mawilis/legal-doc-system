@@ -78,6 +78,26 @@ const WILSY_R62I_CRM_CLEAN_INLINE_COMMAND_FABRIC = 'R62I-CRM-CLEAN-INLINE-COMMAN
 const CRM_INTERNAL_DIAGNOSTIC_ID = 'CRM-COMMAND-CENTER';
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+/**
+ * @function resolveR88FCrmCommandTenantId
+ * @description Resolves CRM command tenant authority without falling back to raw MASTER when tenant context has a sealed root tenant.
+ * @param {Object} tenantConfig - Tenant config.
+ * @param {Object} user - User profile.
+ * @returns {string} Tenant id.
+ * @collaboration Lead persistence, command search, sealed tenant context.
+ */
+function resolveR88FCrmCommandTenantId(tenantConfig = {}, user = {}) {
+  return String(
+    tenantConfig?.tenantId
+    || tenantConfig?.id
+    || tenantConfig?.tenantKey
+    || user?.tenantId
+    || user?.tenant?.tenantId
+    || user?.tenant?.id
+    || 'wilsy-sovereign-root'
+  ).trim() || 'wilsy-sovereign-root';
+}
+
 const CRM_ENDPOINTS = Object.freeze({
   leads: '/api/crm/live/leads',
   contacts: '/api/crm/live/contacts',
@@ -124,6 +144,85 @@ const CRM_WORKSPACES = Object.freeze([
   { id: 'connectors', label: 'Connectors', icon: Network, group: 'Control' }
 ]);
 
+const CRM_HOME_TABS = Object.freeze([
+  { id: 'operate', label: 'Operate', icon: Command },
+  { id: 'pipeline', label: 'Pipeline', icon: Target },
+  { id: 'create', label: 'Create', icon: Plus },
+  { id: 'proof', label: 'Proof', icon: Shield }
+]);
+
+const CRM_TENANT_COMMAND_ROLE_TOKENS = Object.freeze([
+  'FOUNDER',
+  'CEO',
+  'OWNER',
+  'SUPER_ADMIN',
+  'TENANT_OWNER',
+  'TENANT_ADMIN',
+  'ADMIN',
+  'WORKSPACE_ADMIN',
+  'CRM_ADMIN',
+  'DEVELOPER',
+  'ROOT',
+  'SOVEREIGN_ROOT'
+]);
+
+const CRM_TEAM_COMMAND_ROLE_TOKENS = Object.freeze([
+  'SALES_MANAGER',
+  'CRM_MANAGER',
+  'REVOPS',
+  'REVENUE_OPERATIONS',
+  'TEAM_LEAD',
+  'MANAGER',
+  'COMMERCIAL_MANAGER'
+]);
+
+const CRM_EMPLOYEE_ROLE_WORKSPACES = Object.freeze({
+  SALES_CONSULTANT: ['home', 'leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings'],
+  SALES_REP: ['home', 'leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings'],
+  SDR: ['home', 'leads', 'contacts', 'tasks', 'meetings'],
+  BDR: ['home', 'leads', 'contacts', 'tasks', 'meetings'],
+  ACCOUNT_EXECUTIVE: ['home', 'leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings'],
+  ACCOUNT_MANAGER: ['home', 'contacts', 'accounts', 'deals', 'tasks', 'meetings'],
+  CUSTOMER_SUCCESS: ['home', 'contacts', 'accounts', 'tasks', 'meetings'],
+  SUPPORT_AGENT: ['home', 'contacts', 'accounts', 'tasks', 'meetings'],
+  USER: ['home', 'leads', 'contacts', 'tasks', 'meetings'],
+  EMPLOYEE: ['home', 'leads', 'contacts', 'tasks', 'meetings']
+});
+
+const CRM_EMPLOYEE_DAILY_WORKSPACE_CARDS = Object.freeze([
+  { id: 'tasks', label: 'My Open Tasks', icon: CheckSquare, columns: ['Subject', 'Due Date', 'Status'] },
+  { id: 'meetings', label: 'My Meetings', icon: CalendarDays, columns: ['Title', 'From', 'To'] },
+  { id: 'leads', label: "Today's Leads", icon: Database, columns: ['Lead', 'Company', 'Status'] },
+  { id: 'deals', label: 'My Deals Closing This Month', icon: Target, columns: ['Deal', 'Stage', 'Value'] }
+]);
+
+const CRM_DISRUPTION_FEATURES = Object.freeze([
+  {
+    id: 'proofgraph',
+    label: 'ProofGraph Revenue Memory',
+    icon: Fingerprint,
+    patentSignal: 'Every commercial move linked to evidence anchors'
+  },
+  {
+    id: 'twin',
+    label: 'Autonomous Revenue Twin',
+    icon: Activity,
+    patentSignal: 'Live source posture controls forecast confidence'
+  },
+  {
+    id: 'judge',
+    label: 'Source Route Judge',
+    icon: Shield,
+    patentSignal: 'Bad records gated before pipeline contamination'
+  },
+  {
+    id: 'autopilot',
+    label: 'Governed Next Action Autopilot',
+    icon: Sparkles,
+    patentSignal: 'AI action allowed only when provenance is strong'
+  }
+]);
+
 const CRM_RECORD_COLUMNS = Object.freeze({
   leads: ['Name', 'Company', 'Email', 'Phone', 'Source'],
   contacts: ['Name', 'Company', 'Email', 'Phone', 'Source'],
@@ -137,53 +236,59 @@ const CRM_RECORD_COLUMNS = Object.freeze({
 
 const PIPELINE_STAGE_RULES = Object.freeze([
   {
-    stage: 'Prospecting',
-    aliases: ['Lead Generation'],
+    stage: 'Intake',
+    headline: 'Capture',
+    aliases: ['Prospecting', 'Lead Generation', 'Capture', 'New', 'NEW'],
     probability: 10,
     lane: 'primary',
     tone: 'blue',
-    clause: 'ICP fit and POPIA lead consent basis',
+    clause: 'Source, identity and consent basis captured',
     proof: 'Lead source receipt'
   },
   {
-    stage: 'Lead Qualification',
-    aliases: ['Qualification', 'Sales Qualified'],
+    stage: 'Contact',
+    headline: 'Reach',
+    aliases: ['Contacted', 'CONTACTED', 'Open', 'OPEN', 'Engage', 'Conversation'],
     probability: 25,
     lane: 'primary',
     tone: 'cyan',
+    clause: 'First touch, intent and response path recorded',
+    proof: 'Engagement marker'
+  },
+  {
+    stage: 'Qualify',
+    headline: 'Fit',
+    aliases: ['Lead Qualification', 'Qualification', 'Sales Qualified', 'Qualified', 'QUALIFIED', 'Fit'],
+    probability: 40,
+    lane: 'primary',
+    tone: 'violet',
     clause: 'BANT, authority and FICA identity posture',
     proof: 'Buyer authority marker'
   },
   {
-    stage: 'Needs Analysis',
-    aliases: ['Discovery', 'Needs Assessment'],
-    probability: 40,
+    stage: 'Discover',
+    headline: 'Needs',
+    aliases: ['Needs Analysis', 'Discovery', 'Needs Assessment', 'Needs'],
+    probability: 55,
     lane: 'primary',
-    tone: 'violet',
+    tone: 'teal',
     clause: 'Pain, goals and buying criteria documented',
     proof: 'Discovery receipt'
   },
   {
-    stage: 'Demo / Presentation',
-    aliases: ['Demo', 'Presentation', 'Solution Fit', 'Proof of Concept'],
-    probability: 55,
-    lane: 'primary',
-    tone: 'teal',
-    clause: 'Solution fit and value case evidence',
-    proof: 'Demo outcome proof'
-  },
-  {
-    stage: 'Proposal',
-    aliases: ['Offer', 'Commercial Proposal'],
+    stage: 'Propose',
+    headline: 'Offer',
+    aliases: ['Demo / Presentation', 'Demo', 'Presentation', 'Solution Fit', 'Proof of Concept', 'Proposal', 'Offer', 'Commercial Proposal'],
     probability: 70,
     lane: 'primary',
     tone: 'gold',
-    clause: 'Pricing, scope and implementation terms',
+    clause: 'Solution fit, pricing and value case evidence',
     proof: 'Offer pack hash'
   },
   {
-    stage: 'Negotiation',
-    aliases: ['Negotiation and Commitment', 'Commitment'],
+    stage: 'Negotiate',
+    headline: 'Commit',
+    aliases: ['Negotiation', 'Negotiation and Commitment', 'Commitment'],
     probability: 85,
     lane: 'primary',
     tone: 'amber',
@@ -191,8 +296,9 @@ const PIPELINE_STAGE_RULES = Object.freeze([
     proof: 'Clause variance log'
   },
   {
-    stage: 'Closed Won / Lost',
-    aliases: ['Closed', 'Closed Won', 'Closed Lost', 'Won', 'Lost'],
+    stage: 'Convert',
+    headline: 'Outcome',
+    aliases: ['Closed Won / Lost', 'Closed', 'Closed Won', 'Closed Lost', 'Won', 'Lost', 'Convert', 'Outcome'],
     probability: 100,
     lane: 'primary',
     tone: 'green',
@@ -735,6 +841,398 @@ function buildPipelineStages(deals = []) {
  */
 function buildPipelineTotal(stages = []) {
   return stages.reduce((sum, stage) => sum + toNumber(stage.weightedValue), 0);
+}
+
+/**
+ * @function buildCrmWorkspaceTelemetry
+ * @description Builds compact workspace cards from live CRM collections.
+ * @param {Object} snapshot - CRM snapshot.
+ * @param {Array<Object>} workspaces - Allowed CRM workspaces.
+ * @returns {Array<Object>} Workspace telemetry cards.
+ * @collaboration Converts the CRM home from a long promotional page into an operating-system module launcher.
+ */
+function buildCrmWorkspaceTelemetry(snapshot = createEmptySnapshot(), workspaces = CRM_WORKSPACES) {
+  const posture = snapshot.sourcePosture || {};
+  const connectedRoutes = toNumber(posture.connected);
+  const totalRoutes = toNumber(posture.total);
+
+  return workspaces
+    .filter(workspace => workspace.id !== 'home')
+    .map(workspace => {
+      const records = Array.isArray(snapshot[workspace.id]) ? snapshot[workspace.id] : [];
+      const routeReady = workspace.id === 'connectors'
+        ? connectedRoutes > 0
+        : totalRoutes > 0 && connectedRoutes === totalRoutes;
+
+      return {
+        ...workspace,
+        count: records.length,
+        status: records.length ? 'LIVE' : (routeReady ? 'READY' : 'GATED'),
+        detail: workspace.id === 'leads'
+          ? 'Intake to Convert'
+          : workspace.id === 'deals'
+            ? 'Pipeline stages aligned'
+            : workspace.id === 'evidence'
+              ? 'Proof anchors'
+              : `${workspace.group} workspace`,
+        source: routeReady ? `${connectedRoutes}/${Math.max(totalRoutes, connectedRoutes)} routes` : 'Source waiting'
+      };
+    });
+}
+
+/**
+ * @function buildCrmCreateWorkspaceRail
+ * @description Builds create-workspace module rail entries from live CRM state.
+ * @param {Object} snapshot - CRM snapshot.
+ * @param {Array<Object>} workspaces - Allowed CRM workspaces.
+ * @returns {Array<Object>} Create workspace rail entries.
+ * @collaboration Keeps create actions module-aware without inventing records or disconnected forms.
+ */
+function buildCrmCreateWorkspaceRail(snapshot = createEmptySnapshot(), workspaces = CRM_WORKSPACES) {
+  return buildCrmWorkspaceTelemetry(snapshot, workspaces)
+    .filter(workspace => ['leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings', 'evidence'].includes(workspace.id))
+    .map(workspace => ({
+      ...workspace,
+      actionLabel: workspace.id === 'leads'
+        ? 'Open Lead intake'
+        : `Open ${workspace.label}`,
+      readiness: workspace.count ? 'Source rows returned' : 'Ready for live creation'
+    }));
+}
+
+/**
+ * @function buildCrmDisruptionFeatures
+ * @description Builds live invention-grade CRM intelligence cards from source posture.
+ * @param {Object} snapshot - CRM snapshot.
+ * @param {Array<Object>} primaryStages - Primary pipeline stages.
+ * @param {number} readinessScore - Governance readiness score.
+ * @returns {Array<Object>} Disruption feature cards.
+ * @collaboration Gives Wilsy CRM a defensible operating thesis beyond ordinary record management.
+ */
+function buildCrmDisruptionFeatures(snapshot = createEmptySnapshot(), primaryStages = [], readinessScore = 0) {
+  const connected = toNumber(snapshot.sourcePosture?.connected);
+  const total = Math.max(1, toNumber(snapshot.sourcePosture?.total));
+  const weightedPipeline = buildPipelineTotal(primaryStages);
+  const proofAnchors = Array.isArray(snapshot.evidence) ? snapshot.evidence.length : 0;
+  const liveLeadCount = Array.isArray(snapshot.leads) ? snapshot.leads.length : 0;
+  const dealCount = Array.isArray(snapshot.deals) ? snapshot.deals.length : 0;
+
+  return CRM_DISRUPTION_FEATURES.map(feature => {
+    if (feature.id === 'proofgraph') {
+      return {
+        ...feature,
+        status: proofAnchors ? 'LIVE' : 'ARMED',
+        metric: `${proofAnchors} anchors`,
+        detail: proofAnchors ? 'Evidence anchors are available for commercial proof.' : 'Proof memory is armed and waiting for evidence anchors.'
+      };
+    }
+
+    if (feature.id === 'twin') {
+      return {
+        ...feature,
+        status: dealCount ? 'SIMULATING' : 'READY',
+        metric: formatMoney(weightedPipeline),
+        detail: dealCount ? `${dealCount} deal rows feed the weighted twin.` : 'Revenue twin is ready for source deals.'
+      };
+    }
+
+    if (feature.id === 'judge') {
+      return {
+        ...feature,
+        status: connected === total ? 'CLEAR' : 'GATED',
+        metric: `${connected}/${total}`,
+        detail: connected === total ? 'All source routes clear the operating gate.' : 'Source route judge is holding incomplete routes.'
+      };
+    }
+
+    return {
+      ...feature,
+      status: readinessScore >= 70 ? 'ONLINE' : 'CONTROLLED',
+      metric: `${readinessScore}%`,
+      detail: liveLeadCount ? `${liveLeadCount} live lead rows can receive governed next actions.` : 'Autopilot stays controlled until live lead rows arrive.'
+    };
+  });
+}
+
+/**
+ * @function normalizeCrmRoleToken
+ * @description Normalizes CRM role names into stable permission tokens.
+ * @param {*} value - Candidate role value.
+ * @returns {string} Normalized role token.
+ * @collaboration Keeps founder, admin, manager and employee workspaces consistent across auth providers.
+ */
+function normalizeCrmRoleToken(value) {
+  return String(value || '')
+    .trim()
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+}
+
+/**
+ * @function collectCrmRoleTokens
+ * @description Extracts all role/profile signals from user, tenant and operator packets.
+ * @param {Object} user - User packet.
+ * @param {Object} tenantConfig - Tenant packet.
+ * @param {Object} operatorIdentity - Operator identity packet.
+ * @returns {Array<string>} Role tokens.
+ * @collaboration Makes permissions data-driven instead of hardcoded to one local founder account.
+ */
+function collectCrmRoleTokens(user = {}, tenantConfig = {}, operatorIdentity = {}) {
+  const candidateValues = [
+    user?.role,
+    user?.roleLabel,
+    user?.accountRole,
+    user?.profile?.role,
+    user?.profile?.roleLabel,
+    user?.permissions?.role,
+    user?.crmRole,
+    user?.departmentRole,
+    tenantConfig?.role,
+    tenantConfig?.operatorRole,
+    tenantConfig?.crmRole,
+    operatorIdentity?.roleLabel
+  ];
+
+  const arrayValues = [
+    user?.roles,
+    user?.roleTokens,
+    user?.permissions?.roles,
+    user?.profile?.roles,
+    tenantConfig?.roles,
+    tenantConfig?.crmRoles
+  ].flatMap(value => Array.isArray(value) ? value : []);
+
+  return [...candidateValues, ...arrayValues]
+    .map(normalizeCrmRoleToken)
+    .filter(Boolean);
+}
+
+/**
+ * @function collectCrmOperatorKeys
+ * @description Builds stable operator ownership keys for employee-scoped CRM rows.
+ * @param {Object} user - User packet.
+ * @param {Object} operatorIdentity - Operator identity packet.
+ * @returns {Array<string>} Ownership keys.
+ * @collaboration Lets sales consultants see their own work without exposing tenant-wide rows.
+ */
+function collectCrmOperatorKeys(user = {}, operatorIdentity = {}) {
+  const keys = [
+    user?._id,
+    user?.id,
+    user?.userId,
+    user?.email,
+    user?.primaryEmail,
+    user?.username,
+    user?.displayName,
+    user?.fullName,
+    user?.name,
+    operatorIdentity?.email,
+    operatorIdentity?.displayName,
+    operatorIdentity?.firstName && operatorIdentity?.surname
+      ? `${operatorIdentity.firstName} ${operatorIdentity.surname}`
+      : '',
+    operatorIdentity?.initials
+  ];
+
+  return [...new Set(
+    keys
+      .map(value => String(value || '').trim().toLowerCase())
+      .filter(value => value && value !== '—' && value !== 'undefined' && value !== 'null')
+  )];
+}
+
+/**
+ * @function resolveCrmPermissionProfile
+ * @description Resolves tenant, team or owned CRM workspace permissions.
+ * @param {Object} user - User packet.
+ * @param {Object} tenantConfig - Tenant packet.
+ * @param {Object} operatorIdentity - Operator identity packet.
+ * @returns {Object} CRM permission profile.
+ * @collaboration Enforces separate founder/developer command cockpit and employee daily workspace behavior.
+ */
+function resolveCrmPermissionProfile(user = {}, tenantConfig = {}, operatorIdentity = {}) {
+  const roleTokens = collectCrmRoleTokens(user, tenantConfig, operatorIdentity);
+  const hasTenantCommand = roleTokens.some(token => CRM_TENANT_COMMAND_ROLE_TOKENS.includes(token));
+  const hasTeamCommand = roleTokens.some(token => CRM_TEAM_COMMAND_ROLE_TOKENS.includes(token));
+  const employeeToken = roleTokens.find(token => CRM_EMPLOYEE_ROLE_WORKSPACES[token]);
+  const allowedWorkspaceIds = hasTenantCommand
+    ? CRM_WORKSPACES.map(workspace => workspace.id)
+    : hasTeamCommand
+      ? ['home', 'leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings', 'evidence']
+      : CRM_EMPLOYEE_ROLE_WORKSPACES[employeeToken] || CRM_EMPLOYEE_ROLE_WORKSPACES.EMPLOYEE;
+
+  const allowedHomeTabIds = hasTenantCommand
+    ? CRM_HOME_TABS.map(tab => tab.id)
+    : hasTeamCommand
+      ? ['operate', 'pipeline', 'create']
+      : ['operate', 'create'];
+
+  const sourceLabels = allowedWorkspaceIds
+    .filter(id => CRM_ENDPOINTS[id])
+    .map(id => CRM_WORKSPACES.find(workspace => workspace.id === id)?.label)
+    .filter(Boolean);
+
+  return {
+    roleTokens,
+    roleLabel: roleTokens[0] || normalizeCrmRoleToken(operatorIdentity?.roleLabel) || 'EMPLOYEE',
+    scope: hasTenantCommand ? 'tenant' : (hasTeamCommand ? 'team' : 'owned'),
+    accessLabel: hasTenantCommand ? 'Tenant Command' : (hasTeamCommand ? 'Team Workspace' : 'My Workspace'),
+    canSeeTenantWideData: hasTenantCommand,
+    canSeeTeamData: hasTeamCommand || hasTenantCommand,
+    includePrivilegedSearch: hasTenantCommand,
+    allowedWorkspaceIds,
+    allowedHomeTabIds,
+    sourceLabels,
+    ownerKeys: collectCrmOperatorKeys(user, operatorIdentity)
+  };
+}
+
+/**
+ * @function collectCrmRecordOwnershipValues
+ * @description Extracts likely owner/assignee fields from a normalized CRM record.
+ * @param {Object} record - Normalized CRM record.
+ * @returns {Array<string>} Ownership field values.
+ * @collaboration Supports row-level UI scoping without depending on one backend schema spelling.
+ */
+function collectCrmRecordOwnershipValues(record = {}) {
+  const raw = record.raw || record;
+  const candidates = [
+    record.owner,
+    raw.owner,
+    raw.ownerName,
+    raw.ownerId,
+    raw.ownerEmail,
+    raw.assignedTo,
+    raw.assignee,
+    raw.assignedUserId,
+    raw.createdBy,
+    raw.createdById,
+    raw.createdByEmail,
+    raw.updatedBy,
+    raw.userId,
+    raw.operatorId,
+    raw.salesOwner,
+    raw.accountOwner,
+    raw.relationshipOwner,
+    raw?.owner?.id,
+    raw?.owner?.email,
+    raw?.owner?.name,
+    raw?.assignedTo?.id,
+    raw?.assignedTo?.email,
+    raw?.assignedTo?.name,
+    raw?.createdBy?.id,
+    raw?.createdBy?.email,
+    raw?.createdBy?.name
+  ];
+
+  return candidates
+    .flatMap(value => Array.isArray(value) ? value : [value])
+    .map(value => {
+      if (value && typeof value === 'object') {
+        return [value.id, value._id, value.email, value.name, value.displayName, value.fullName]
+          .filter(Boolean)
+          .join(' ');
+      }
+      return String(value || '');
+    })
+    .map(value => value.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * @function recordBelongsToCrmOperator
+ * @description Checks if a CRM row belongs to the current operator or their permitted scope.
+ * @param {Object} record - Normalized CRM record.
+ * @param {Object} permissionProfile - CRM permission profile.
+ * @returns {boolean} Whether the row can be shown.
+ * @collaboration Prevents non-admin CRM views from leaking tenant-wide records in the client surface.
+ */
+function recordBelongsToCrmOperator(record = {}, permissionProfile = {}) {
+  if (permissionProfile.canSeeTenantWideData) return true;
+  const ownerKeys = permissionProfile.ownerKeys || [];
+  if (!ownerKeys.length) return false;
+
+  const ownershipValues = collectCrmRecordOwnershipValues(record);
+  return ownershipValues.some(value => ownerKeys.some(key => value === key || value.includes(key)));
+}
+
+/**
+ * @function scopeCrmSourcePosture
+ * @description Filters source posture totals to the visible workspace routes.
+ * @param {Object} posture - Full source posture.
+ * @param {Object} permissionProfile - CRM permission profile.
+ * @returns {Object} Scoped source posture.
+ * @collaboration Keeps source route counters honest for employee workspaces.
+ */
+function scopeCrmSourcePosture(posture = {}, permissionProfile = {}) {
+  const allowedRouteIds = new Set((permissionProfile.allowedWorkspaceIds || []).filter(id => CRM_ENDPOINTS[id]));
+  const allSources = Array.isArray(posture.sources) ? posture.sources : [];
+  const scopedSources = allSources.filter(source => allowedRouteIds.has(source.id));
+  const sourceCount = scopedSources.length || allowedRouteIds.size || toNumber(posture.total);
+  const connectedCount = scopedSources.length
+    ? scopedSources.filter(source => source.routeLive || source.status === 'live').length
+    : Math.min(toNumber(posture.connected), sourceCount);
+
+  return {
+    ...posture,
+    sources: scopedSources,
+    sourceGaps: Array.isArray(posture.sourceGaps)
+      ? posture.sourceGaps.filter(source => allowedRouteIds.has(source.id))
+      : [],
+    errors: Array.isArray(posture.errors)
+      ? posture.errors.filter(error => allowedRouteIds.has(error.collection))
+      : [],
+    connected: connectedCount,
+    total: sourceCount || Object.keys(CRM_ENDPOINTS).length
+  };
+}
+
+/**
+ * @function scopeCrmSnapshotForOperator
+ * @description Applies workspace and row-level permission scope to the CRM snapshot.
+ * @param {Object} snapshot - Full CRM snapshot.
+ * @param {Object} permissionProfile - CRM permission profile.
+ * @returns {Object} Scoped CRM snapshot.
+ * @collaboration Gives employees their own workspace while preserving founder/developer command authority.
+ */
+function scopeCrmSnapshotForOperator(snapshot = createEmptySnapshot(), permissionProfile = {}) {
+  if (permissionProfile.canSeeTenantWideData) return snapshot;
+
+  const allowedWorkspaceIds = new Set(permissionProfile.allowedWorkspaceIds || []);
+  const scoped = createEmptySnapshot();
+
+  Object.keys(CRM_ENDPOINTS).forEach(collection => {
+    if (!allowedWorkspaceIds.has(collection)) {
+      scoped[collection] = [];
+      return;
+    }
+
+    const records = Array.isArray(snapshot[collection]) ? snapshot[collection] : [];
+    scoped[collection] = records.filter(record => recordBelongsToCrmOperator(record, permissionProfile));
+  });
+
+  scoped.sourcePosture = scopeCrmSourcePosture(snapshot.sourcePosture || {}, permissionProfile);
+  return scoped;
+}
+
+/**
+ * @function buildCrmDailyWorkspaceCards
+ * @description Builds Zoho-inspired but Wilsy-governed employee home cards from scoped data.
+ * @param {Object} snapshot - Scoped CRM snapshot.
+ * @returns {Array<Object>} Daily work cards.
+ * @collaboration Turns employee CRM Home into personal duties instead of tenant-wide founder telemetry.
+ */
+function buildCrmDailyWorkspaceCards(snapshot = createEmptySnapshot()) {
+  return CRM_EMPLOYEE_DAILY_WORKSPACE_CARDS.map(card => {
+    const rows = Array.isArray(snapshot[card.id]) ? snapshot[card.id] : [];
+    return {
+      ...card,
+      rows: rows.slice(0, 6),
+      total: rows.length
+    };
+  });
 }
 
 /**
@@ -1296,9 +1794,17 @@ function SovereignSearchCommandOverlay({ isOpen, query, searchState, styles, onC
  * @collaboration Coordinates CRM frontend search, mounted CRM live/intelligence APIs, tenant-aware service posture, account command center controls, and Wilsy OS production guard discipline.
  */
 function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
+  const searchPermissionProfile = useMemo(
+    () => resolveCrmPermissionProfile(user, tenantConfig, buildOperatorIdentity(user)),
+    [user, tenantConfig]
+  );
+
   useEffect(() => {
     return installCrmSearchOutcomeRuntime({
       tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+      allowedSourceLabels: searchPermissionProfile.sourceLabels,
+      includePrivilegedSources: searchPermissionProfile.includePrivilegedSearch,
+      accessScope: searchPermissionProfile.scope,
     });
   }, [
     tenantConfig?.tenantId,
@@ -1306,6 +1812,9 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
     tenantConfig?.tenantKey,
     user?.tenantId,
     user?.tenant?.id,
+    searchPermissionProfile.sourceLabels,
+    searchPermissionProfile.includePrivilegedSearch,
+    searchPermissionProfile.scope,
   ]);
   /* WILSY R73B: Sovereign search runtime state. */
   const [sovereignSearchQuery, setSovereignSearchQuery] = useState('');
@@ -1392,6 +1901,8 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
 
   const tenantRuntime = useTenants() || {};
   const [activeWorkspace, setActiveWorkspace] = useState('home');
+  const [activeHomeTab, setActiveHomeTab] = useState('operate');
+  const [createWorkspaceModule, setCreateWorkspaceModule] = useState('leads');
   const [searchTerm, setSearchTerm] = useState('');
   const [crmRailEngineStateR65A, setCrmRailEngineStateR65A] = useState('EXPANDED');
 
@@ -1485,10 +1996,50 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
 
 
   const { snapshot, loading } = useCrmSnapshot(tenantIdentity.tenantId, refreshSignal);
+  const crmPermissionProfile = useMemo(
+    () => resolveCrmPermissionProfile(user, tenantConfig, operatorIdentity),
+    [operatorIdentity, tenantConfig, user]
+  );
+  const visibleCrmWorkspaces = useMemo(
+    () => CRM_WORKSPACES.filter(workspace => crmPermissionProfile.allowedWorkspaceIds.includes(workspace.id)),
+    [crmPermissionProfile.allowedWorkspaceIds]
+  );
+  const visibleHomeTabs = useMemo(
+    () => CRM_HOME_TABS.filter(tab => crmPermissionProfile.allowedHomeTabIds.includes(tab.id)),
+    [crmPermissionProfile.allowedHomeTabIds]
+  );
+  const operatingSnapshot = useMemo(
+    () => scopeCrmSnapshotForOperator(snapshot, crmPermissionProfile),
+    [crmPermissionProfile, snapshot]
+  );
+  const dailyWorkspaceCards = useMemo(
+    () => buildCrmDailyWorkspaceCards(operatingSnapshot),
+    [operatingSnapshot]
+  );
 
-  const readinessScore = useMemo(() => calculateReadinessScore(snapshot), [snapshot]);
-  const pipelineStages = useMemo(() => buildPipelineStages(snapshot.deals), [snapshot.deals]);
+  useEffect(() => {
+    if (!visibleCrmWorkspaces.some(workspace => workspace.id === activeWorkspace)) {
+      setActiveWorkspace('home');
+    }
+  }, [activeWorkspace, visibleCrmWorkspaces]);
+
+  useEffect(() => {
+    if (!visibleHomeTabs.some(tab => tab.id === activeHomeTab)) {
+      setActiveHomeTab(visibleHomeTabs[0]?.id || 'operate');
+    }
+  }, [activeHomeTab, visibleHomeTabs]);
+
+  const readinessScore = useMemo(() => calculateReadinessScore(operatingSnapshot), [operatingSnapshot]);
+  const pipelineStages = useMemo(() => buildPipelineStages(operatingSnapshot.deals), [operatingSnapshot.deals]);
   const weightedPipeline = useMemo(() => buildPipelineTotal(pipelineStages.filter(stage => stage.lane === 'primary')), [pipelineStages]);
+  const workspaceTelemetry = useMemo(
+    () => buildCrmWorkspaceTelemetry(operatingSnapshot, visibleCrmWorkspaces),
+    [operatingSnapshot, visibleCrmWorkspaces]
+  );
+  const createWorkspaceRail = useMemo(
+    () => buildCrmCreateWorkspaceRail(operatingSnapshot, visibleCrmWorkspaces),
+    [operatingSnapshot, visibleCrmWorkspaces]
+  );
 
   const primaryPipelineStages = useMemo(
     () => pipelineStages.filter(stage => stage.lane === 'primary'),
@@ -1500,16 +2051,27 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
     [pipelineStages]
   );
 
-  const workspaceMeta = useMemo(
-    () => CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace) || CRM_WORKSPACES[0],
-    [activeWorkspace]
+  const disruptionFeatures = useMemo(
+    () => buildCrmDisruptionFeatures(operatingSnapshot, primaryPipelineStages, readinessScore),
+    [primaryPipelineStages, readinessScore, operatingSnapshot]
   );
 
-  const sourceErrors = snapshot.sourcePosture.errors || [];
-  const rootHashStatus = snapshot.sourcePosture.rootHashShort ? `Root ${snapshot.sourcePosture.rootHashShort}` : (snapshot.evidence.length ? `${snapshot.evidence.length} receipt anchor${snapshot.evidence.length === 1 ? '' : 's'}` : 'Root hash pending');
+  const workspaceMeta = useMemo(
+    () => visibleCrmWorkspaces.find(workspace => workspace.id === activeWorkspace) || visibleCrmWorkspaces[0] || CRM_WORKSPACES[0],
+    [activeWorkspace, visibleCrmWorkspaces]
+  );
+
+  const createWorkspaceMeta = useMemo(
+    () => createWorkspaceRail.find(workspace => workspace.id === createWorkspaceModule) || createWorkspaceRail[0] || null,
+    [createWorkspaceModule, createWorkspaceRail]
+  );
+  const ActiveCreateIcon = createWorkspaceMeta?.icon || Database;
+
+  const sourceErrors = operatingSnapshot.sourcePosture.errors || [];
+  const rootHashStatus = operatingSnapshot.sourcePosture.rootHashShort ? `Root ${operatingSnapshot.sourcePosture.rootHashShort}` : (operatingSnapshot.evidence.length ? `${operatingSnapshot.evidence.length} receipt anchor${operatingSnapshot.evidence.length === 1 ? '' : 's'}` : 'Root hash pending');
 
   const activeRecords = useMemo(() => {
-    const collection = snapshot[activeWorkspace];
+    const collection = operatingSnapshot[activeWorkspace];
     if (!Array.isArray(collection)) return [];
     const query = searchTerm.trim().toLowerCase();
     if (!query) return collection;
@@ -1523,25 +2085,37 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
       record.stage,
       record.source
     ].some(value => String(value || '').toLowerCase().includes(query)));
-  }, [activeWorkspace, snapshot, searchTerm]);
+  }, [activeWorkspace, operatingSnapshot, searchTerm]);
 
   const refreshSources = useCallback(() => {
     setRefreshSignal(value => value + 1);
   }, []);
 
   const openCreateFlow = useCallback((workspace = 'leads') => {
-    setActiveWorkspace(workspace);
+    const allowedWorkspace = crmPermissionProfile.allowedWorkspaceIds.includes(workspace)
+      ? workspace
+      : (createWorkspaceRail[0]?.id || 'leads');
+
+    setCreateWorkspaceModule(allowedWorkspace);
+
+    if (allowedWorkspace === 'leads') {
+      setActiveWorkspace('leads');
+    } else {
+      setActiveWorkspace('home');
+      setActiveHomeTab('create');
+    }
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('wilsy:crm:create-record', {
         detail: {
-          workspace,
+          workspace: allowedWorkspace,
           tenantId: tenantIdentity.tenantId,
+          accessScope: crmPermissionProfile.scope,
           source: 'CRMDashboard'
         }
       }));
     }
-  }, [tenantIdentity.tenantId]);
+  }, [createWorkspaceRail, crmPermissionProfile.allowedWorkspaceIds, crmPermissionProfile.scope, tenantIdentity.tenantId]);
 
   return (
     <div
@@ -1553,28 +2127,56 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
       data-wilsy-theme={themeRuntime.themeId}
       data-wilsy-mode={themeRuntime.effectiveMode}
       data-wilsy-resolved-mode={themeRuntime.resolvedMode}
+      data-wilsy-crm-access-scope={crmPermissionProfile.scope}
       style={crmThemeVars}
     >
 
       <CrmSovereignSideRail
-        workspaces={CRM_WORKSPACES}
+        workspaces={visibleCrmWorkspaces}
         activeWorkspace={activeWorkspace}
-        snapshot={snapshot}
+        snapshot={operatingSnapshot}
         tenantConfig={tenantConfig}
         user={user}
-        onWorkspaceSelect={(workspaceId) => setActiveWorkspace(workspaceId)}
+        onWorkspaceSelect={(workspaceId) => {
+          if (crmPermissionProfile.allowedWorkspaceIds.includes(workspaceId)) {
+            setActiveWorkspace(workspaceId);
+          }
+        }}
         onRailStateChange={setCrmRailEngineStateR65A}
       />
 
       <section className={styles.commandSurface}>
         {activeWorkspace === 'home' ? (
-        <header data-wilsy-r76e-home-command-hero="home-only" className={styles.osChrome}>
+        <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={styles.osChrome}>
           <div className={styles.chromeTitle}>
-            <small><Home size={13} /> {workspaceMeta.label}</small>
-            <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy OS CRM Command Center">
-                    <span className={styles.crmOneLineTitleText}>Wilsy&nbsp;OS&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span>&nbsp;Command&nbsp;Center</span>
-                  </h1>
-            <p>Sovereign sales intelligence. Source-led pipeline. Compliance proof.</p>
+            <small><Home size={13} /> CRM Workspace</small>
+            <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy CRM Workspace">
+              <span className={styles.crmOneLineTitleText}>Wilsy&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span></span>
+            </h1>
+            <p>Source-led pipeline. Live modules. Compliance proof.</p>
+          </div>
+
+          <nav className={styles.crmTopAppMenu} aria-label="CRM command menu">
+            {visibleHomeTabs.map(tab => {
+              const TabIcon = tab.icon;
+              return (
+                <button
+                  type="button"
+                  key={tab.id}
+                  data-active={activeHomeTab === tab.id ? 'true' : 'false'}
+                  onClick={() => setActiveHomeTab(tab.id)}
+                >
+                  <TabIcon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className={styles.investorStrip} aria-label="Investor telemetry">
+            <span><LockKeyhole size={16} /> {rootHashStatus}</span>
+            <span><Network size={16} /> {operatingSnapshot.sourcePosture.connected}/{operatingSnapshot.sourcePosture.total} source routes</span>
+            <span><Shield size={16} /> {readinessScore}% readiness</span>
           </div>
 
           <div className={styles.chromeTenant}>
@@ -1589,17 +2191,11 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
             <span>
               <small>Tenant Identity</small>
               <strong>{tenantIdentity.name}</strong>
-              <em>Live tenant boundary</em>
+              <em>{crmPermissionProfile.accessLabel}</em>
             </span>
           </div>
 
-          <div className={styles.investorStrip} aria-label="Investor telemetry">
-            <span><LockKeyhole size={16} /> {rootHashStatus}</span>
-            <span><Network size={16} /> {snapshot.sourcePosture.connected}/{snapshot.sourcePosture.total} source routes</span>
-            <span><Shield size={16} /> {readinessScore}% governance readiness</span>
-          </div>
-
-                    <label className={styles.chromeSearch}>
+          <label className={styles.chromeSearch}>
             <Search size={19} />
             <input
               value={searchTerm}
@@ -1640,7 +2236,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   setSovereignSearchOpen(false);
                 }
               }}
-              placeholder="Search pipeline, accounts, evidence"
+              placeholder={crmPermissionProfile.canSeeTenantWideData ? 'Search pipeline, accounts, evidence' : 'Search my leads, tasks, meetings'}
               aria-label="Global CRM search"
               data-wilsy-r73b-search-input="true"
               data-wilsy-r74c-search-results-driver="true"
@@ -1659,7 +2255,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
           <div className={styles.chromeActions}>
             <button type="button" onClick={() => setAccountSettingsOpen(true)}>
               <Command size={18} />
-              Command Center
+              Command
             </button>
             <button type="button" onClick={() => {
                   syncCrmCommandFabric({
@@ -1667,9 +2263,9 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                     activeModule: 'leads',
                     reason: 'TOP_RAIL_LIVE_SYNC'
                   }).catch(() => {});
-                }}>
+            }}>
               <RefreshCcw size={18} className={loading ? styles.spin : ''} />
-              Live Sync
+              Sync
             </button>
             <button type="button" className={styles.primaryAction} onClick={() => openCreateFlow('leads')}>
               <Plus size={18} />
@@ -1682,7 +2278,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
         <main className={styles.workspaceViewport}>
           {activeWorkspace === 'leads' ? (
               <WilsyLeadOperatingRoom
-                leads={Array.isArray(snapshot?.leads) ? snapshot.leads : []}
+                leads={Array.isArray(operatingSnapshot?.leads) ? operatingSnapshot.leads : []}
                 searchTerm={searchTerm}
                 loading={loading}
                 themeRuntime={themeRuntime}
@@ -1705,24 +2301,46 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   activeModule: 'leads',
                   reason: 'R66B_LEAD_INGESTION_VALIDATION_SYNC'
                 })}
-                onSaveLead={(leadPayload) => createCrmCommandLead({
-                  tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
-                  lead: leadPayload
-                }).then(() => syncCrmCommandFabric({
-                  tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
-                  activeModule: 'leads',
-                  reason: 'R66B_LEAD_INGESTION_VALIDATION_SAVE'
-                }).catch(() => {}))}
+                onSaveLead={async (leadPayload) => {
+                  const commandTenantId = resolveR88FCrmCommandTenantId(tenantConfig, user);
+                  const createResponse = await createCrmCommandLead({
+                    tenantId: commandTenantId,
+                    lead: leadPayload
+                  });
+
+                  await syncCrmCommandFabric({
+                    tenantId: commandTenantId,
+                    activeModule: 'leads',
+                    reason: 'R88F_LEAD_PERSISTENCE_TRUTH_SAVE'
+                  }).catch(() => {});
+
+                  return createResponse;
+                }}
               />
             ) : activeWorkspace === 'home' ? (
             <section className={styles.homeGrid}>
-              <div data-wilsy-r72f-terminal-evidence-dashboard-wire="true">
-                <TerminalEvidenceCockpitPanel
-                  tenantId={tenantConfig?.tenantId || 'MASTER'}
-                  operator="CRM_DASHBOARD"
-                  autoFetch
-                />
-              </div>
+              <section className={styles.crmWorkspaceDeck} aria-label="CRM module workspaces">
+                {workspaceTelemetry.map(workspace => {
+                  const WorkspaceIcon = workspace.icon;
+                  return (
+                    <button
+                      type="button"
+                      key={workspace.id}
+                      data-status={workspace.status}
+                      data-active={activeWorkspace === workspace.id ? 'true' : 'false'}
+                      onClick={() => setActiveWorkspace(workspace.id)}
+                    >
+                      <WorkspaceIcon size={18} />
+                      <span>
+                        <strong>{workspace.label}</strong>
+                        <em>{workspace.detail}</em>
+                      </span>
+                      <b>{workspace.count}</b>
+                      <small>{workspace.source}</small>
+                    </button>
+                  );
+                })}
+              </section>
 
               <section className={styles.metricDeck} aria-label="CRM posture">
                 <article className={styles.metricCard}>
@@ -1765,6 +2383,123 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   <div className={styles.metricBar}><i style={{ width: `${snapshot.evidence.length ? 100 : 0}%` }} /></div>
                 </article>
               </section>
+              {activeHomeTab === 'proof' ? (
+                <section className={styles.crmProofWorkspace} data-wilsy-r85-crm-proof-workspace="bounded">
+                  <TerminalEvidenceCockpitPanel
+                    tenantId={tenantConfig?.tenantId || 'MASTER'}
+                    operator="CRM_DASHBOARD"
+                    autoFetch
+                  />
+                </section>
+              ) : activeHomeTab === 'create' ? (
+                <section className={styles.crmCreateWorkspace} aria-label="CRM create workspace">
+                  <aside className={styles.crmCreateRail} aria-label="Create workspace modules">
+                    {createWorkspaceRail.map(workspace => {
+                      const WorkspaceIcon = workspace.icon;
+                      return (
+                        <button
+                          type="button"
+                          key={workspace.id}
+                          data-active={createWorkspaceModule === workspace.id ? 'true' : 'false'}
+                          onClick={() => setCreateWorkspaceModule(workspace.id)}
+                        >
+                          <WorkspaceIcon size={17} />
+                          <span>
+                            <strong>{workspace.label}</strong>
+                            <em>{workspace.readiness}</em>
+                          </span>
+                          <b>{workspace.count}</b>
+                        </button>
+                      );
+                    })}
+                  </aside>
+
+                  <div className={styles.crmCreateStage}>
+                    <header>
+                      <span className={styles.crmCreateGlyph}><ActiveCreateIcon size={22} /></span>
+                      <span>
+                        <small>Create Workspace</small>
+                        <strong>{createWorkspaceMeta?.label || 'CRM Record'}</strong>
+                        <em>{createWorkspaceMeta?.detail || 'Live CRM module creation'}</em>
+                      </span>
+                    </header>
+
+                    <div className={styles.crmCreateStageCards}>
+                      <article>
+                        <small>Backend posture</small>
+                        <strong>{snapshot.sourcePosture.connected}/{snapshot.sourcePosture.total} routes</strong>
+                        <p>{sourceErrors.length ? `${sourceErrors.length} source gaps require attention.` : 'Source routes are ready for governed creation.'}</p>
+                      </article>
+                      <article>
+                        <small>Pipeline authority</small>
+                        <strong>{primaryPipelineStages.length} stages</strong>
+                        <p>Intake, Contact, Qualify, Discover, Propose, Negotiate and Convert are shared across CRM and Leads.</p>
+                      </article>
+                      <article>
+                        <small>Selected module</small>
+                        <strong>{createWorkspaceMeta?.status || 'READY'}</strong>
+                        <p>{createWorkspaceMeta?.readiness || 'Choose a module from the create rail.'}</p>
+                      </article>
+                    </div>
+
+                    <div className={styles.crmCreateCommandBar}>
+                      <button
+                        type="button"
+                        className={styles.primaryAction}
+                        onClick={() => {
+                          if ((createWorkspaceModule || 'leads') === 'leads') {
+                            openCreateFlow('leads');
+                            return;
+                          }
+
+                          setActiveWorkspace(createWorkspaceModule || 'leads');
+                        }}
+                      >
+                        <Plus size={16} />
+                        {createWorkspaceMeta?.actionLabel || 'Open create'}
+                      </button>
+                      <button type="button" onClick={() => setActiveWorkspace(createWorkspaceModule || 'leads')}>
+                        Open {createWorkspaceMeta?.label || 'Module'}
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              ) : activeHomeTab === 'operate' ? (
+                <section className={styles.crmRevolutionWorkspace} aria-label="Wilsy CRM disruption engine">
+                  <div className={styles.crmPatentGrid}>
+                    {disruptionFeatures.map(feature => {
+                      const FeatureIcon = feature.icon;
+                      return (
+                        <article key={feature.id} data-status={feature.status}>
+                          <span className={styles.crmPatentGlyph}><FeatureIcon size={19} /></span>
+                          <small>Patent Candidate</small>
+                          <strong>{feature.label}</strong>
+                          <b>{feature.metric}</b>
+                          <p>{feature.detail}</p>
+                          <em>{feature.patentSignal}</em>
+                        </article>
+                      );
+                    })}
+                  </div>
+
+                  <aside className={styles.crmAutopilotPanel}>
+                    <span className={styles.crmCreateGlyph}><Zap size={22} /></span>
+                    <small>Wilsy OS Command Intelligence</small>
+                    <strong>{readinessScore >= 70 ? 'Governed revenue intelligence online' : 'Revenue intelligence controlled'}</strong>
+                    <p>
+                      The CRM is not just storing rows. It is measuring whether each module is source-backed, proof-aware,
+                      and safe enough for AI-assisted next action.
+                    </p>
+                    <dl>
+                      <div><dt>Lead intake</dt><dd>{snapshot.leads.length}</dd></div>
+                      <div><dt>Deal motion</dt><dd>{snapshot.deals.length}</dd></div>
+                      <div><dt>Evidence</dt><dd>{snapshot.evidence.length}</dd></div>
+                      <div><dt>Routes</dt><dd>{snapshot.sourcePosture.connected}/{snapshot.sourcePosture.total}</dd></div>
+                    </dl>
+                  </aside>
+                </section>
+              ) : (
               <section className={styles.pipelineCockpit}>
                 <div className={styles.sectionHeader}>
                   <span>
@@ -1851,6 +2586,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   ))}
                 </div>
               </section>
+              )}
               <aside className={styles.commandStack} aria-label="Wilsy OS right intelligence stack">
                 <article className={styles.rightIntelCard}>
                   <div className={styles.rightIntelHeader}>

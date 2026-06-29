@@ -1,4 +1,199 @@
 /* eslint-disable */
+import { openWilsyLeadCommandCapsule as openWilsyLeadCommandCapsuleNative } from './WilsyLeadCommandCapsule';
+import { openWilsyLeadEditSurface } from './WilsyLeadEditSurface';
+/**
+ * @function readWilsyR91KOwnerWrapperPath
+ * @description Reads nested owner evidence paths for the Owner table wrapper without mutating Lead data.
+ * @param {Object} record - Lead row record.
+ * @param {string} path - Dot path to read.
+ * @returns {unknown} Owner evidence value.
+ * @collaboration Records table Owner column, existing resolveLeadOwnerLabel, Lead Edit owner resolver contract.
+ */
+function readWilsyR91KOwnerWrapperPath(record = {}, path = '') {
+  return String(path || '')
+    .split('.')
+    .filter(Boolean)
+    .reduce((cursor, segment) => {
+      if (!cursor || typeof cursor !== 'object') {
+        return undefined;
+      }
+
+      return Object.prototype.hasOwnProperty.call(cursor, segment) ? cursor[segment] : undefined;
+    }, record);
+}
+
+/**
+ * @function normalizeWilsyR91KOwnerWrapperValue
+ * @description Normalizes owner evidence into a visible table label without exposing broken dash placeholders.
+ * @param {unknown} value - Candidate owner value.
+ * @returns {string} Human-readable owner label or an empty string.
+ * @collaboration Records table Owner column, backend assignment evidence, Wilsy CRM owner display.
+ */
+function normalizeWilsyR91KOwnerWrapperValue(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = String(value || '').trim();
+
+    if (!text || text === '-' || text === '—' || /^null$/i.test(text) || /^undefined$/i.test(text)) {
+      return '';
+    }
+
+    if (/^[a-f0-9]{24}$/i.test(text)) {
+      return '';
+    }
+
+    return text;
+  }
+
+  if (typeof value === 'object') {
+    const firstName = normalizeWilsyR91KOwnerWrapperValue(value.firstName || value.givenName || '');
+    const lastName = normalizeWilsyR91KOwnerWrapperValue(value.lastName || value.familyName || '');
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+    return normalizeWilsyR91KOwnerWrapperValue(
+      value.wilsyResolvedOwnerLabel ||
+      value.ownerName ||
+      value.ownerLabel ||
+      value.ownerDisplayName ||
+      value.displayName ||
+      value.fullName ||
+      fullName ||
+      value.name ||
+      value.label ||
+      value.email ||
+      value.username ||
+      ''
+    );
+  }
+
+  return '';
+}
+
+/**
+ * @function resolveWilsyR91KOwnerTableDisplay
+ * @description Resolves Owner column display from all known backend owner fields before falling back to the existing resolver and then Unassigned.
+ * @param {Object} record - Lead row record.
+ * @param {Function} fallbackResolver - Existing resolveLeadOwnerLabel implementation.
+ * @returns {string} Owner table display label.
+ * @collaboration Records table Owner column, Lead Edit owner resolver, source-backed CRM row rendering.
+ */
+function resolveWilsyR91KOwnerTableDisplay(record = {}, fallbackResolver = null) {
+  const ownerEvidencePaths = [
+    'wilsyResolvedOwnerLabel',
+    'ownerName',
+    'ownerLabel',
+    'ownerDisplayName',
+    'displayOwner',
+    'assignedToName',
+    'assignedOwnerName',
+    'assigneeName',
+    'createdByName',
+    'updatedByName',
+    'salesOwnerName',
+    'accountOwnerName',
+    'owner',
+    'assignedTo',
+    'assignedOwner',
+    'createdBy',
+    'updatedBy',
+    'owner.name',
+    'owner.fullName',
+    'owner.displayName',
+    'owner.label',
+    'owner.email',
+    'assignedTo.name',
+    'assignedTo.fullName',
+    'assignedTo.displayName',
+    'assignedTo.label',
+    'assignedTo.email',
+    'assignedOwner.name',
+    'assignedOwner.fullName',
+    'assignedOwner.displayName',
+    'assignedOwner.label',
+    'assignedOwner.email',
+    'raw.wilsyResolvedOwnerLabel',
+    'raw.ownerName',
+    'raw.ownerLabel',
+    'raw.ownerDisplayName',
+    'raw.displayOwner',
+    'raw.assignedToName',
+    'raw.assignedOwnerName',
+    'raw.assigneeName',
+    'raw.createdByName',
+    'raw.updatedByName',
+    'raw.owner',
+    'raw.assignedTo',
+    'raw.assignedOwner',
+    'raw.owner.name',
+    'raw.owner.fullName',
+    'raw.owner.displayName',
+    'raw.owner.label',
+    'raw.owner.email',
+    'raw.assignedTo.name',
+    'raw.assignedTo.fullName',
+    'raw.assignedTo.displayName',
+    'raw.assignedTo.label',
+    'raw.assignedTo.email'
+  ];
+
+  for (const path of ownerEvidencePaths) {
+    const label = normalizeWilsyR91KOwnerWrapperValue(readWilsyR91KOwnerWrapperPath(record, path));
+
+    if (label) {
+      return label;
+    }
+  }
+
+  if (typeof fallbackResolver === 'function') {
+    const fallbackLabel = normalizeWilsyR91KOwnerWrapperValue(fallbackResolver(record));
+
+    if (fallbackLabel) {
+      return fallbackLabel;
+    }
+  }
+
+  return 'Unassigned';
+}
+
+/**
+ * @function canUseLeadAdministrativeCrud
+ * @description Resolves whether the current operator can use selected-row Lead CRUD controls.
+ * @param {string} role - Current operator role.
+ * @param {string} action - Requested Lead action.
+ * @returns {boolean} Whether selected-row CRUD should be enabled.
+ * @collaboration Selected Lead action bar, row action menu, command capsule authority posture.
+ */
+function canUseLeadAdministrativeCrud(role = 'operator', action = 'edit') {
+  const normalizedRole = String(role || '').trim().toLowerCase();
+  const elevatedRoles = new Set(['founder', 'owner', 'admin', 'superadmin', 'super_admin', 'master', 'system', 'operator']);
+
+  if (typeof canUseLeadAction === 'function' && canUseLeadAction(role, action)) {
+    return true;
+  }
+
+  if (typeof canUseLeadAction === 'function' && canUseLeadAction(role, 'bulk')) {
+    return true;
+  }
+
+  return elevatedRoles.has(normalizedRole);
+}
+
+/**
+ * @function resolveLeadCrudAuthorityReason
+ * @description Explains selected-row Lead CRUD authority when a control is role-gated.
+ * @param {string} role - Current operator role.
+ * @returns {string} Human-readable authority reason.
+ * @collaboration Selected Lead action bar, row action menu, operator trust copy.
+ */
+function resolveLeadCrudAuthorityReason(role = 'operator') {
+  return canUseLeadAdministrativeCrud(role)
+    ? 'Lead CRUD authority available for this operator.'
+    : 'Lead CRUD authority requires Founder, Admin, Master, owner, or assigned operator authority.';
+}
+
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - LEAD OPERATING ROOM [R68B-TABBED-MODULE-OPERATING-SYSTEM]                                                 ║
@@ -49,6 +244,61 @@ import {
 } from 'lucide-react';
 import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } from '../theme/wilsyCrmThemeEngineBridge.js';
 import styles from './WilsyLeadOperatingRoom.module.css';
+
+/**
+ * @function openWilsyLeadCommandCapsule
+ * @description Routes Edit actions to the real DB-persisted Lead Edit Surface while preserving the native command capsule for non-Edit actions.
+ * @param {Object} params - Lead command launch parameters.
+ * @returns {void} Opens the correct Lead command surface.
+ * @collaboration WilsyLeadOperatingRoom, WilsyLeadEditSurface, WilsyLeadCommandCapsule, DB_PERSISTED Lead save flow.
+ */
+function openWilsyLeadCommandCapsule(params = {}) {
+  const normalizedMode = String(params?.mode || '').trim().toLowerCase();
+  const normalizedLabel = String(params?.label || '').trim().toLowerCase();
+  const isEditAction = normalizedMode === 'edit' || normalizedLabel === 'edit lead' || normalizedLabel === 'edit';
+
+  if (isEditAction) {
+    const record = params?.record && typeof params.record === 'object' ? params.record : {};
+    const recordId = String(
+      params?.recordId ||
+      params?.leadId ||
+      params?.recordIds?.[0] ||
+      record?._id ||
+      record?.id ||
+      record?.leadId ||
+      record?.recordId ||
+      ''
+    ).trim();
+
+    const recordIds = Array.isArray(params?.recordIds) && params.recordIds.length
+      ? params.recordIds.filter(Boolean)
+      : [recordId].filter(Boolean);
+
+    const tenantId = String(
+      params?.tenantId ||
+      params?.tenant ||
+      record?.tenantId ||
+      record?.tenant ||
+      'MASTER'
+    ).trim();
+
+    openWilsyLeadEditSurface({
+      ...params,
+      record,
+      lead: record,
+      recordId,
+      leadId: recordId,
+      recordIds,
+      tenantId,
+      tenant: tenantId,
+      wilsyEditRouter: 'R91K54_EDIT_DIRECT_TO_REAL_EDIT_SURFACE'
+    });
+    return;
+  }
+
+  openWilsyLeadCommandCapsuleNative(params);
+}
+
 
 const WILSY_LEAD_OPERATING_ROOM_VERSION = 'R68B-TABBED-MODULE-OPERATING-SYSTEM';
 const WILSY_LEAD_HEADER_BRIDGE_VERSION = 'R67D-SOVEREIGN-HEADER-COMMAND-BRIDGE';
@@ -330,7 +580,7 @@ function resolveLeadValue(record = {}, field = '') {
     phone: record.phone || record.mobile || record.primaryPhone,
     provenanceHash: getProvenanceHash(record),
     complianceStatus: getComplianceStatus(record),
-    owner: resolveLeadOwnerLabel(record),
+    owner: resolveWilsyR91KOwnerTableDisplay(record, resolveLeadOwnerLabel),
     lastActivity: record.lastActivity || record.updatedAt || record.createdAt
   };
 
@@ -1716,6 +1966,28 @@ export default function WilsyLeadOperatingRoom({
       ? `${complianceMetrics.verified}/${complianceMetrics.total} verified`
       : 'No records yet';
     const activeSort = LEAD_SORT_OPTIONS.find(option => option.id === sortMode) || LEAD_SORT_OPTIONS[0];
+    const selectedLeadRecords = selectedRowIds
+      .map((recordId) => {
+        const normalizedRecordId = String(recordId || '');
+
+        if (!normalizedRecordId) {
+          return null;
+        }
+
+        const pageRecord = paginatedLeads.find((record, index) => (
+          resolveLeadRecordId(record, leadPagination.startIndex + index) === normalizedRecordId
+        ));
+
+        if (pageRecord) {
+          return pageRecord;
+        }
+
+        return filteredLeads.find((record, index) => (
+          resolveLeadRecordId(record, index) === normalizedRecordId
+        )) || selectedLead || null;
+      })
+      .filter(Boolean);
+
 
     return (
       <header
@@ -2504,6 +2776,163 @@ export default function WilsyLeadOperatingRoom({
       </section>
     );
   }
+  /**
+   * @function handleLeadMassEmail
+   * @description Opens the governed Mass Email command capsule for the selected Lead rows.
+   * @returns {void}
+   * @collaboration Selected-row CRUD bar, Wilsy Lead command capsule, backend-governed Lead communication workflow.
+   */
+  function handleLeadMassEmail() {
+    const recordIds = Array.isArray(selectedRowIds) ? selectedRowIds.filter(Boolean) : [];
+    const record = resolveSelectedLeadActionRecord(selectedRowIds[0], 0) || {};
+    const recordId = recordIds[0] || resolveLeadRecordId(record, 0);
+
+    openWilsyLeadCommandCapsule({
+      mode: 'email',
+      label: 'Mass Email',
+      record,
+      recordId,
+      recordIds,
+      tenantId
+    });
+  }
+  /**
+   * @function openLeadCrudPanel
+   * @description Opens the dedicated R91K Lead command capsule for View, Proof Trail, Edit, Delete Selected, Change Owner, Mass Update, and Mass Email actions.
+   * @param {string} modeKey - Requested lead action key.
+   * @param {Object} record - Lead record context.
+   * @param {string} recordId - Lead record identifier.
+   * @param {Array<string>} recordIds - Selected Lead record identifiers.
+   * @returns {void} Opens the governed Lead command capsule.
+   * @collaboration R91K.14B direct button route, WilsyLeadCommandCapsule, selected-row action bar, row action menu.
+   */
+  function openLeadCrudPanel(modeKey, record = null, recordId = '', recordIds = []) {
+    const normalizedLeadAction = String(modeKey || 'view').trim();
+    const selectedRecordIds = Array.isArray(recordIds) && recordIds.length
+      ? recordIds.filter(Boolean)
+      : (Array.isArray(selectedRowIds) ? selectedRowIds.filter(Boolean) : []);
+
+    const resolvedRecord = record || resolveSelectedLeadActionRecord(selectedRowIds[0], 0) || {};
+    const resolvedRecordId = recordId || selectedRecordIds[0] || resolveLeadRecordId(resolvedRecord, 0);
+
+    const actionLabels = {
+      view: 'View Lead',
+      proof: 'Proof Trail',
+      edit: 'Edit Lead',
+      delete: 'Delete Selected',
+      deleteSelected: 'Delete Selected',
+      deleteLead: 'Delete Lead',
+      changeOwner: 'Change Owner',
+      owner: 'Change Owner',
+      massUpdate: 'Mass Update',
+      email: 'Mass Email',
+      massEmail: 'Mass Email'
+    };
+
+    const actionModes = {
+      view: 'view',
+      proof: 'proof',
+      edit: 'edit',
+      delete: 'delete',
+      deleteSelected: 'delete',
+      deleteLead: 'delete',
+      changeOwner: 'changeOwner',
+      owner: 'changeOwner',
+      massUpdate: 'massUpdate',
+      email: 'email',
+      massEmail: 'email'
+    };
+
+    const mode = actionModes[normalizedLeadAction] || normalizedLeadAction || 'view';
+    const label = actionLabels[normalizedLeadAction] || actionLabels[mode] || 'View Lead';
+
+    openWilsyLeadCommandCapsule({
+      mode,
+      label,
+      record: resolvedRecord,
+      recordId: resolvedRecordId,
+      recordIds: selectedRecordIds.length ? selectedRecordIds : [resolvedRecordId].filter(Boolean),
+      tenantId
+    });
+  }
+
+  /**
+   * @function openLeadCrudPanelWithAuthority
+   * @description Opens authority-gated Lead CRUD actions while allowing View and Proof Trail without mutation authority.
+   * @param {string} modeKey - Requested lead action key.
+   * @param {Object} record - Lead record context.
+   * @param {string} recordId - Lead record identifier.
+   * @param {Array<string>} recordIds - Selected Lead record identifiers.
+   * @returns {void} Opens the Lead command capsule when allowed.
+   * @collaboration R91K.14B direct button route, selected-row CRUD authority, backend final authority posture.
+   */
+  function openLeadCrudPanelWithAuthority(modeKey, record = null, recordId = '', recordIds = []) {
+    const normalizedMode = String(modeKey || 'view').trim();
+
+    if (['edit', 'delete', 'deleteSelected', 'deleteLead', 'changeOwner', 'owner', 'massUpdate'].includes(normalizedMode)
+      && !canUseLeadAdministrativeCrud(role, normalizedMode)) {
+      openLeadCrudPanel('proof', record, recordId, recordIds);
+      return;
+    }
+
+    openLeadCrudPanel(normalizedMode, record, recordId, recordIds);
+  }
+  /**
+   * @function resolveSelectedLeadActionIds
+   * @description Resolves selected Lead identifiers for selected-row command buttons without relying on stale render-local variables.
+   * @returns {Array<string>} Selected Lead record identifiers.
+   * @collaboration Selected-row CRUD bar, command capsule routing, restored Leads records table.
+   */
+  function resolveSelectedLeadActionIds() {
+    return Array.isArray(selectedRowIds) ? selectedRowIds.filter(Boolean) : [];
+  }
+
+  /**
+   * @function resolveSelectedLeadActionRecord
+   * @description Resolves the selected Lead record for selected-row command buttons without using the stale selectedLeadRecords binding.
+   * @param {string} recordId - Selected Lead record identifier.
+   * @param {number} fallbackIndex - Fallback row index.
+   * @returns {Object} Selected Lead record context.
+   * @collaboration Selected-row CRUD bar, Wilsy Lead command capsule, lead record identity resolver.
+   */
+  function resolveSelectedLeadActionRecord(recordId = '', fallbackIndex = 0) {
+    const normalizedRecordId = String(recordId || '').trim();
+
+    const candidateGroups = [
+      typeof paginatedLeads !== 'undefined' ? paginatedLeads : [],
+      typeof filteredLeads !== 'undefined' ? filteredLeads : [],
+      typeof leadRows !== 'undefined' ? leadRows : [],
+      typeof leads !== 'undefined' ? leads : [],
+      typeof normalizedLeads !== 'undefined' ? normalizedLeads : [],
+      typeof liveLeads !== 'undefined' ? liveLeads : []
+    ];
+
+    for (const candidateGroup of candidateGroups) {
+      if (!Array.isArray(candidateGroup)) {
+        continue;
+      }
+
+      const matchedRecord = candidateGroup.find((record, index) => (
+        resolveLeadRecordId(record, index) === normalizedRecordId
+        || String(record?.id || record?._id || record?.leadId || record?.recordId || '').trim() === normalizedRecordId
+      ));
+
+      if (matchedRecord) {
+        return matchedRecord;
+      }
+    }
+
+    if (typeof selectedLead !== 'undefined' && selectedLead) {
+      return selectedLead;
+    }
+
+    const fallbackGroup = candidateGroups.find((candidateGroup) => Array.isArray(candidateGroup) && candidateGroup.length) || [];
+
+    return fallbackGroup[fallbackIndex] || {};
+  }
+
+
+
 
   /**
    * @function renderLeadRecordsTable
@@ -2551,9 +2980,62 @@ export default function WilsyLeadOperatingRoom({
           {selectedRowIds.length ? (
             <section className={styles.leadBulkActionBar} aria-label="Lead mass actions">
               <strong>{selectedRowIds.length} selected</strong>
-              <button type="button"><Mail size={14} />Mass Email</button>
-              <button type="button"><ClipboardList size={14} />Mass Update</button>
-              <button type="button"><UserRoundCog size={14} />Change Owner</button>
+              <button
+                type="button"
+                disabled={selectedRowIds.length !== 1}
+                onClick={() => openLeadCrudPanel('view', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], [selectedRowIds[0]])}
+              >
+                View
+              </button>
+              <button
+                type="button"
+                disabled={selectedRowIds.length !== 1 || !canUseLeadAdministrativeCrud(role, 'edit')}
+                aria-disabled={selectedRowIds.length !== 1 || !canUseLeadAdministrativeCrud(role, 'edit')}
+                title={resolveLeadCrudAuthorityReason(role)}
+                onClick={() => openLeadCrudPanelWithAuthority('edit', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], [selectedRowIds[0]])}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                disabled={selectedRowIds.length !== 1}
+                onClick={() => openLeadCrudPanel('proof', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], [selectedRowIds[0]])}
+              >
+                Proof Trail
+              </button>
+              <button type="button" onClick={() => openLeadCrudPanel('email', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], selectedRowIds)}>
+                <Mail size={14} />
+                Mass Email
+              </button>
+              <button
+                type="button"
+                disabled={!selectedRowIds.length || !canUseLeadAdministrativeCrud(role, 'massUpdate')}
+                aria-disabled={!selectedRowIds.length || !canUseLeadAdministrativeCrud(role, 'massUpdate')}
+                title={resolveLeadCrudAuthorityReason(role)}
+                onClick={() => openLeadCrudPanelWithAuthority('massUpdate', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], selectedRowIds)}
+              >
+                <ClipboardList size={14} />
+                Mass Update
+              </button>
+              <button
+                type="button"
+                disabled={!selectedRowIds.length || !canUseLeadAdministrativeCrud(role, 'changeOwner')}
+                aria-disabled={!selectedRowIds.length || !canUseLeadAdministrativeCrud(role, 'changeOwner')}
+                title={resolveLeadCrudAuthorityReason(role)}
+                onClick={() => openLeadCrudPanelWithAuthority('changeOwner', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], selectedRowIds)}
+              >
+                <UserRoundCog size={14} />
+                Change Owner
+              </button>
+              <button
+                type="button"
+                disabled={!selectedRowIds.length || !canUseLeadAdministrativeCrud(role, 'delete')}
+                aria-disabled={!selectedRowIds.length || !canUseLeadAdministrativeCrud(role, 'delete')}
+                title={resolveLeadCrudAuthorityReason(role)}
+                onClick={() => openLeadCrudPanelWithAuthority('deleteSelected', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], selectedRowIds)}
+              >
+                Delete Selected
+              </button>
               <button type="button" onClick={() => setSelectedRowIds([])}>Clear</button>
             </section>
           ) : null}
@@ -2585,7 +3067,7 @@ export default function WilsyLeadOperatingRoom({
                   const sourceIndex = leadPagination.startIndex + index;
                   const recordId = resolveLeadRecordId(record, sourceIndex);
                   const stage = resolveLeadStage(record);
-                  const ownerLabel = resolveLeadOwnerLabel(record);
+                  const ownerLabel = resolveWilsyR91KOwnerTableDisplay(record, resolveLeadOwnerLabel);
                   const priorityScore = resolveLeadPriorityScore(record);
                   const emailHref = resolveLeadContactHref(record, 'email');
                   const phoneHref = resolveLeadContactHref(record, 'phone');

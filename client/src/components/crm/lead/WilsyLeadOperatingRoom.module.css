@@ -7128,3 +7128,1133 @@
     display: none !important;
   }
 }
+
+/* R85A Lead create free-text typeahead - editable fields with live suggestions */
+.typeaheadField {
+  position: relative;
+  min-width: 0;
+}
+
+.formGrid .typeaheadField input {
+  padding-right: 2.3rem;
+}
+
+.typeaheadField[data-open="true"] input {
+  border-color: rgba(186, 143, 255, 0.78);
+  background:
+    linear-gradient(135deg, rgba(186, 143, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(5, 9, 18, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(186, 143, 255, 0.28),
+    0 16px 42px rgba(0, 0, 0, 0.24);
+}
+
+.leadCreateTypeaheadMenu {
+  position: absolute;
+  top: calc(100% + 0.36rem);
+  left: 0;
+  right: 0;
+  z-index: 130;
+  display: grid;
+  gap: 0.26rem;
+  max-height: 13rem;
+  padding: 0.45rem;
+  overflow: auto;
+  border-radius: 0.86rem;
+  border: 1px solid rgba(186, 143, 255, 0.42);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(186, 143, 255, 0.12), transparent 32%),
+    rgba(10, 7, 24, 0.98);
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.46),
+    0 0 0 1px rgba(255, 255, 255, 0.045);
+}
+
+.leadCreateTypeaheadMenu button {
+  width: 100%;
+  min-height: 2.32rem;
+  justify-content: flex-start;
+  padding: 0 0.72rem;
+  border-radius: 0.62rem;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.78rem;
+  font-weight: 820;
+  text-align: left;
+  cursor: pointer;
+}
+
+.leadCreateTypeaheadMenu button:hover,
+.leadCreateTypeaheadMenu button[aria-selected="true"] {
+  border-color: rgba(220, 196, 255, 0.34);
+  background: rgba(125, 92, 255, 0.22);
+  color: rgba(255, 255, 255, 0.98);
+}
+
+/* ==========================================================================
+   WILSY OS R87A - LEAD ROW ACTION MENU FLOATING LAYER
+   Purpose: prevent the three-dot row menu from being clipped by the records table scroll container.
+   ========================================================================== */
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell],
+.leadRecordsPanel,
+.leadRecordsTableFrame,
+.leadRecordsTable,
+.leadRecordsTable tbody,
+.leadRecordsTable tr,
+.leadRecordsTable td {
+  overflow: visible;
+}
+
+.leadRecordsTableFrame {
+  isolation: isolate;
+}
+
+.leadRowActionMenu,
+.rowActionMenu,
+.leadActionMenu,
+.recordActionMenu,
+.actionMenu,
+.moreMenu,
+.contextMenu,
+.dropdownMenu,
+[data-wilsy-lead-row-menu],
+[data-wilsy-record-action-menu] {
+  z-index: 9999;
+  position: absolute;
+  inset-inline-end: 0;
+  transform: translateX(-0.5rem);
+  min-width: 12rem;
+  max-width: min(18rem, calc(100vw - 2rem));
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.leadRowActionCell,
+.rowActionCell,
+.actionCell,
+.moreActionCell,
+[data-wilsy-lead-row-action-cell] {
+  position: relative;
+  overflow: visible;
+  z-index: 10;
+}
+
+.leadRowActionCell:focus-within,
+.rowActionCell:focus-within,
+.actionCell:focus-within,
+.moreActionCell:focus-within,
+[data-wilsy-lead-row-action-cell]:focus-within {
+  z-index: 10000;
+}
+
+.leadScorePill,
+.scorePill,
+[data-wilsy-lead-score] {
+  white-space: nowrap;
+}
+
+.leadScorePill::after,
+.scorePill::after,
+[data-wilsy-lead-score]::after {
+  content: " source completeness";
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+  margin-left: 0.35rem;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   WILSY OS R87D - SURGICAL LEAD SCORE AND ROW MENU SEAL
+   Purpose: show score as source completeness percent and prevent row action menu clipping.
+   ========================================================================== */
+
+.leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell],
+.leadRecordsPanel,
+.leadRecordsTableFrame,
+.leadRecordsTable,
+.leadRecordsTable tbody,
+.leadRecordsTable tr,
+.leadRecordsTable td,
+.leadRowActionsCell {
+  overflow: visible !important;
+}
+
+.leadRecordsTableFrame {
+  isolation: isolate;
+  contain: none !important;
+}
+
+.leadRowActionsCell {
+  position: relative !important;
+  z-index: 30;
+  isolation: isolate;
+}
+
+.leadRowActionsCell:focus-within {
+  z-index: 2147483000 !important;
+}
+
+.leadRowActionMenu {
+  position: absolute !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: auto !important;
+  top: auto !important;
+  bottom: calc(100% + 0.55rem) !important;
+  transform: none !important;
+  z-index: 2147483000 !important;
+  min-width: 14.5rem;
+  max-width: min(18rem, calc(100vw - 2rem));
+  overflow: visible !important;
+  pointer-events: auto;
+}
+
+.leadScoreOrb {
+  min-width: 3.35rem;
+  width: auto;
+  padding-inline: 0.55rem;
+  white-space: nowrap;
+}
+
+.leadScoreOrb::after {
+  content: "%";
+}
+
+/* ==========================================================================
+   WILSY OS R88G - SOURCE PERCENT SINGLE-LINE SEAL
+   Purpose: prevent the Lead score percent suffix from wrapping under the number.
+   ========================================================================== */
+
+.leadScoreOrb {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 0.12rem !important;
+  min-width: 4.25rem !important;
+  width: auto !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  text-wrap: nowrap !important;
+}
+
+.leadScoreOrb::after {
+  display: inline !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+/* ==========================================================================
+   WILSY OS R89B - LEAD CRUD ACTION SURFACE
+   Purpose: visible, wired Lead CRUD drawers for row and mass actions.
+   ========================================================================== */
+
+.leadCrudDrawer {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 2147483100;
+  width: min(31rem, calc(100vw - 2rem));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--lead-accent, #7cf5a5) 42%, transparent);
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--lead-module-panel, #08111d) 96%, #020617 4%);
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.45);
+  overflow: auto;
+}
+
+.leadCrudDrawer header,
+.leadCrudDrawer footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.leadCrudDrawer header span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.leadCrudDrawer header small,
+.leadCrudDrawer header em,
+.leadCrudProofGrid small,
+.leadCrudForm span {
+  color: var(--lead-muted, #9ca3af);
+  font-style: normal;
+}
+
+.leadCrudDrawer header strong {
+  color: var(--lead-text, #f8fafc);
+  font-size: 1.1rem;
+}
+
+.leadCrudProofGrid {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.leadCrudProofGrid article {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--lead-module-line, #334155) 75%, transparent);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--lead-module-card, #0f172a) 88%, transparent);
+}
+
+.leadCrudProofGrid strong {
+  color: var(--lead-text, #f8fafc);
+  overflow-wrap: anywhere;
+}
+
+.leadCrudForm {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.leadCrudForm label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.leadCrudForm input {
+  width: 100%;
+  min-height: 2.55rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--lead-module-line, #334155) 80%, transparent);
+  border-radius: 0.75rem;
+  color: var(--lead-text, #f8fafc);
+  background: rgba(2, 6, 23, 0.48);
+}
+
+.leadCrudDanger {
+  padding: 0.9rem;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 0.9rem;
+  background: rgba(127, 29, 29, 0.16);
+}
+
+.leadCrudDanger strong {
+  color: #fecaca;
+}
+
+.leadCrudDanger p,
+.leadCrudStatus {
+  margin: 0;
+  color: var(--lead-muted, #9ca3af);
+}
+
+.leadCrudDrawer footer button,
+.leadBulkActionBar button {
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   WILSY OS R90A - LEAD CRUD AUTHORITY COMPLETION
+   Purpose: role-locked CRUD controls remain visible, explained, and non-decorative.
+   ========================================================================== */
+
+.leadBulkActionBar button:disabled,
+.leadRowActionMenu button:disabled,
+.leadCrudDrawer button:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.48 !important;
+  border-style: dashed !important;
+  filter: grayscale(0.25);
+}
+
+.leadBulkActionBar button:disabled:hover,
+.leadRowActionMenu button:disabled:hover,
+.leadCrudDrawer button:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.leadCrudStatus {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--lead-accent, #7cf5a5) 35%, transparent);
+  border-radius: 0.85rem;
+  background: rgba(124, 245, 165, 0.08);
+  color: var(--lead-text, #f8fafc);
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   WILSY OS R91B - AUDITABLE CRUD ACTION RESPONSE
+   Purpose: protected controls remain clickable for a visible authority/audit response.
+   ========================================================================== */
+
+.leadBulkActionBar button[aria-disabled="true"],
+.leadRowActionMenu button[aria-disabled="true"] {
+  cursor: pointer !important;
+  opacity: 0.72 !important;
+  border-style: dashed !important;
+  filter: saturate(0.75);
+}
+
+.leadBulkActionBar button[aria-disabled="true"]::after,
+.leadRowActionMenu button[aria-disabled="true"]::after {
+  content: " 🔒";
+  font-size: 0.82em;
+}
+
+.leadCrudStatus {
+  overflow-wrap: anywhere;
+  letter-spacing: 0.01em;
+}
+
+.leadCrudProofGrid article:first-child strong {
+  color: var(--lead-accent, #7cf5a5);
+}
+
+/* ==========================================================================
+   WILSY OS R91F.1 - LEAD VIEW / PROOF DRAWER VISIBILITY HARDENING
+   Purpose: ensure local View and Proof Trail drawers stay above CRM chrome.
+   ========================================================================== */
+
+:global([class*="leadCrud"][role="dialog"]),
+:global([class*="LeadCrud"][role="dialog"]),
+:global([class*="leadCrudDrawer"]),
+:global([class*="leadCrudPanel"]),
+:global([class*="leadCrudModal"]),
+:global([class*="leadCrudAction"]) {
+  z-index: 2147483000 !important;
+}
+
+:global([class*="leadCrudBackdrop"]),
+:global([class*="LeadCrudBackdrop"]) {
+  z-index: 2147482999 !important;
+}
+
+/* ==========================================================================
+   WILSY OS R91H.1 - SOVEREIGN LEAD INTELLIGENCE CAPSULE SKIN
+   Purpose: upgrade R91G.1 working DOM overlay into a premium command capsule
+   without injecting risky JSX/HTML templates.
+   ========================================================================== */
+
+:global(#wilsy-r91g1-lead-inspection-overlay) {
+  display: grid !important;
+  grid-template-columns: minmax(300px, 0.38fr) minmax(720px, 0.62fr) !important;
+  background:
+    radial-gradient(circle at 17% 18%, rgba(127, 90, 240, 0.30), transparent 34%),
+    radial-gradient(circle at 76% 14%, rgba(0, 255, 148, 0.18), transparent 32%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.76), rgba(5, 9, 22, 0.94)) !important;
+  backdrop-filter: blur(20px) saturate(1.18) !important;
+  color: #f8fafc !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay)::before {
+  content: "SOVEREIGN LEAD INTELLIGENCE";
+  grid-column: 1;
+  position: relative;
+  display: grid;
+  place-items: end start;
+  min-height: 100vh;
+  padding: 42px;
+  border-right: 1px solid rgba(125, 245, 165, 0.30);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(125, 245, 165, 0.18), transparent 34%),
+    radial-gradient(circle at 44% 42%, rgba(127, 90, 240, 0.13), transparent 42%),
+    linear-gradient(180deg, rgba(9, 14, 30, 0.50), rgba(4, 8, 18, 0.92));
+  color: rgba(232, 220, 167, 0.78);
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.26em;
+  line-height: 1.7;
+  text-transform: uppercase;
+  box-shadow: inset -60px 0 110px rgba(0, 0, 0, 0.22);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay)::after {
+  content: "SEALED REQUEST • ROLE DECISION • AUDIT RECEIPT • PROOF TRAIL";
+  position: fixed;
+  left: 42px;
+  bottom: 92px;
+  max-width: 260px;
+  color: rgba(203, 213, 225, 0.46);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 1.8;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside) {
+  grid-column: 2 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 100vh !important;
+  padding: 34px !important;
+  border-left: 1px solid rgba(125, 245, 165, 0.34) !important;
+  background:
+    radial-gradient(circle at 22% 0%, rgba(125, 245, 165, 0.10), transparent 34%),
+    radial-gradient(circle at 86% 16%, rgba(127, 90, 240, 0.12), transparent 32%),
+    linear-gradient(160deg, rgba(8, 13, 30, 0.985), rgba(4, 8, 18, 0.995)) !important;
+  box-shadow: -42px 0 130px rgba(0, 0, 0, 0.62) !important;
+  color: #f8fafc !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside)::before {
+  content: "GOVERNED REVENUE COMMAND CAPSULE";
+  display: inline-flex;
+  margin-bottom: 18px;
+  border: 1px solid rgba(125, 245, 165, 0.28);
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: rgba(6, 78, 59, 0.22);
+  color: #d1fae5;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside > header) {
+  position: relative !important;
+  margin-bottom: 28px !important;
+  padding-bottom: 24px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.20) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside > header > div)::after {
+  content: "AI operating verdict: source-backed evidence is active. Missing fields are exposed as governance gaps, not hidden behind cosmetic CRM polish.";
+  display: block;
+  max-width: 760px;
+  margin-top: 18px;
+  border: 1px solid rgba(125, 245, 165, 0.24);
+  border-radius: 24px;
+  padding: 16px 18px;
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.13), rgba(127, 90, 240, 0.10)),
+    rgba(15, 23, 42, 0.74);
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay h3) {
+  margin: 10px 0 8px !important;
+  color: #ffffff !important;
+  font-size: clamp(2.1rem, 3.8vw, 4.6rem) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.065em !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay small) {
+  color: #e8dca7 !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.18em !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay p) {
+  max-width: 760px !important;
+  color: rgba(226, 232, 240, 0.76) !important;
+  font-size: 1.04rem !important;
+  line-height: 1.62 !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay button) {
+  border: 1px solid rgba(125, 245, 165, 0.42) !important;
+  border-radius: 999px !important;
+  padding: 13px 20px !important;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(5, 46, 22, 0.62)) !important;
+  color: #f8fafc !important;
+  font-weight: 950 !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay section) {
+  gap: 14px !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay article) {
+  position: relative !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  border-radius: 24px !important;
+  padding: 18px !important;
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.80), rgba(8, 13, 30, 0.78)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 22px 60px rgba(0, 0, 0, 0.18) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay article)::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px 0 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(125, 245, 165, 0.48), transparent);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay article strong) {
+  color: #f8fafc !important;
+  font-size: 1.08rem !important;
+  line-height: 1.42 !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay footer) {
+  margin-top: 26px !important;
+  padding-top: 20px !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.20) !important;
+  color: rgba(203, 213, 225, 0.76) !important;
+  font-size: 0.86rem !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay footer)::after {
+  content: " • R91H.1 sovereign capsule skin";
+  color: rgba(125, 245, 165, 0.72);
+  font-weight: 850;
+}
+
+@media (max-width: 1020px) {
+  :global(#wilsy-r91g1-lead-inspection-overlay) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :global(#wilsy-r91g1-lead-inspection-overlay)::before,
+  :global(#wilsy-r91g1-lead-inspection-overlay)::after {
+    display: none !important;
+  }
+
+  :global(#wilsy-r91g1-lead-inspection-overlay > aside) {
+    grid-column: 1 !important;
+  }
+}
+
+/* ==========================================================================
+   WILSY OS R91I - EXECUTABLE LEAD COMMAND CAPSULE
+   Purpose: proof must explain all evidence; pending compliance must expose
+   executable next-best actions.
+   ========================================================================== */
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleUpgrade) {
+  margin-top: 24px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iOperatingPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iEditPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofPanel) {
+  margin-top: 18px;
+  border: 1px solid rgba(125, 245, 165, 0.26);
+  border-radius: 28px;
+  padding: 20px;
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(127, 90, 240, 0.08)),
+    rgba(15, 23, 42, 0.74);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iOperatingPanel h4),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iEditPanel h4),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofPanel h4) {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 1.28rem;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofGrid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofGrid) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 46vh;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleCard) {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  padding: 14px;
+  background: rgba(3, 7, 18, 0.55);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iTone-sealed) {
+  border-color: rgba(125, 245, 165, 0.40);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iTone-warning) {
+  border-color: rgba(251, 191, 36, 0.46);
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.10), rgba(15, 23, 42, 0.72));
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleCard small) {
+  display: block;
+  margin-bottom: 8px;
+  color: #e8dca7;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleCard strong) {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #f8fafc;
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iActionBar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iPrimaryAction) {
+  border: 1px solid rgba(125, 245, 165, 0.48) !important;
+  border-radius: 999px !important;
+  padding: 12px 18px !important;
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.92), rgba(6, 78, 59, 0.88)) !important;
+  color: #ecfdf5 !important;
+  font-weight: 950 !important;
+  cursor: pointer !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iPrimaryAction:disabled) {
+  opacity: 0.68;
+  cursor: progress !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iActionStatus) {
+  margin: 0 !important;
+  color: rgba(226, 232, 240, 0.78) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iEditForm) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iEditField) {
+  display: grid;
+  gap: 8px;
+  color: #e8dca7;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iEditField input) {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  padding: 12px 13px;
+  background: rgba(3, 7, 18, 0.72);
+  color: #f8fafc;
+  font-size: 0.96rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+@media (max-width: 1020px) {
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleGrid),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91iProofGrid),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91iEditForm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   WILSY OS R91J - LEAD ACTION RECEIPTS AND EXECUTABLE EDIT
+   Purpose: Edit must edit, Proof must prove, Pending must execute.
+   ========================================================================== */
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jLeadCommandUpgrade) {
+  margin-top: 24px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jOperatingPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jEditPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditPanel) {
+  margin-top: 18px;
+  border: 1px solid rgba(125, 245, 165, 0.28);
+  border-radius: 28px;
+  padding: 20px;
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(127, 90, 240, 0.08)),
+    rgba(15, 23, 42, 0.76);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jOperatingPanel h4),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jEditPanel h4),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofPanel h4),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditPanel h4) {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 1.28rem;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jCommandGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditLedger) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofGrid) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 48vh;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditLedger) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jLeadCard) {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  padding: 14px;
+  background: rgba(3, 7, 18, 0.58);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jTone-sealed) {
+  border-color: rgba(125, 245, 165, 0.42);
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jTone-warning) {
+  border-color: rgba(251, 191, 36, 0.48);
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.11), rgba(15, 23, 42, 0.74));
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jLeadCard small) {
+  display: block;
+  margin-bottom: 8px;
+  color: #e8dca7;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jLeadCard strong) {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #f8fafc;
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jPrimaryAction) {
+  margin-top: 12px;
+  border: 1px solid rgba(125, 245, 165, 0.48) !important;
+  border-radius: 999px !important;
+  padding: 12px 18px !important;
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.94), rgba(6, 78, 59, 0.88)) !important;
+  color: #ecfdf5 !important;
+  font-weight: 950 !important;
+  cursor: pointer !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jPrimaryAction:disabled) {
+  opacity: 0.68;
+  cursor: progress !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jActionStatus) {
+  margin-top: 12px !important;
+  color: rgba(226, 232, 240, 0.78) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jEditForm) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jEditField) {
+  display: grid;
+  gap: 8px;
+  color: #e8dca7;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jEditField input) {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.30);
+  border-radius: 16px;
+  padding: 12px 13px;
+  background: rgba(3, 7, 18, 0.72);
+  color: #f8fafc;
+  font-size: 0.96rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+@media (max-width: 1020px) {
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91jCommandGrid),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91jProofGrid),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditLedger),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91jEditForm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   WILSY OS R91K - EPITOME LEAD COMMAND CAPSULE MARKER
+   The visual system is now mounted by WilsyLeadCommandCapsule.js so the
+   CRUD/proof/action engine is not trapped inside legacy JSX render paths.
+   ========================================================================== */
+
+/* R91K.12C LEFT RAIL VIEWPORT CONTAINMENT */
+:global([data-r91k-lead-command-capsule] aside),
+:global([data-wilsy-lead-command-capsule] aside),
+:global([class*="LeadCommandCapsule"] aside),
+:global([class*="leadCommandCapsule"] aside),
+:global([class*="LeadCommand"] [class*="Rail"]),
+:global([class*="LeadCommand"] [class*="rail"]),
+:global([class*="leadCommand"] [class*="Rail"]),
+:global([class*="leadCommand"] [class*="rail"]) {
+  align-self: start !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  max-height: calc(100vh - 96px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  position: sticky !important;
+  top: 24px !important;
+}
+
+:global([data-r91k-lead-command-capsule] aside *),
+:global([data-wilsy-lead-command-capsule] aside *),
+:global([class*="LeadCommandCapsule"] aside *),
+:global([class*="leadCommandCapsule"] aside *),
+:global([class*="LeadCommand"] [class*="Rail"] *),
+:global([class*="LeadCommand"] [class*="rail"] *),
+:global([class*="leadCommand"] [class*="Rail"] *),
+:global([class*="leadCommand"] [class*="rail"] *) {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+:global([data-r91k-lead-command-capsule] aside > *:last-child),
+:global([data-wilsy-lead-command-capsule] aside > *:last-child),
+:global([class*="LeadCommandCapsule"] aside > *:last-child),
+:global([class*="leadCommandCapsule"] aside > *:last-child),
+:global([class*="LeadCommand"] [class*="Rail"] > *:last-child),
+:global([class*="LeadCommand"] [class*="rail"] > *:last-child),
+:global([class*="leadCommand"] [class*="Rail"] > *:last-child),
+:global([class*="leadCommand"] [class*="rail"] > *:last-child) {
+  border-top: 1px solid rgba(148, 163, 184, 0.22) !important;
+  margin-top: auto !important;
+  max-height: clamp(76px, 14vh, 150px) !important;
+  opacity: 0.72 !important;
+  overflow: hidden !important;
+  padding-top: 14px !important;
+}
+
+@media (max-height: 820px) {
+  :global([data-r91k-lead-command-capsule] aside > *:last-child),
+  :global([data-wilsy-lead-command-capsule] aside > *:last-child),
+  :global([class*="LeadCommandCapsule"] aside > *:last-child),
+  :global([class*="leadCommandCapsule"] aside > *:last-child),
+  :global([class*="LeadCommand"] [class*="Rail"] > *:last-child),
+  :global([class*="LeadCommand"] [class*="rail"] > *:last-child),
+  :global([class*="leadCommand"] [class*="Rail"] > *:last-child),
+  :global([class*="leadCommand"] [class*="rail"] > *:last-child) {
+    display: none !important;
+  }
+}
+
+/* R91K.18A VIEWPOINT WORKSPACE CSS
+   Objective: make the Lead Command scroll workspace the main Viewpoint.
+   Scope: only #wilsy-r91g1-lead-inspection-overlay and existing r91i/r91j capsule grids.
+   Guard: no CRM shell, no Founder rail, no route, no backend mutation.
+*/
+
+:global(#wilsy-r91g1-lead-inspection-overlay) {
+  grid-template-columns: clamp(160px, 12vw, 230px) minmax(0, 1fr) !important;
+  gap: clamp(14px, 1.4vw, 30px) !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+  padding: clamp(10px, 1vw, 18px) !important;
+  width: 100vw !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay)::before {
+  min-height: calc(100dvh - 2rem) !important;
+  padding: clamp(18px, 1.4vw, 28px) !important;
+  width: 100% !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay)::after {
+  display: none !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside) {
+  display: block !important;
+  height: calc(100dvh - clamp(20px, 2vw, 36px)) !important;
+  max-height: calc(100dvh - clamp(20px, 2vw, 36px)) !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: clamp(18px, 1.6vw, 34px) !important;
+  scrollbar-gutter: stable !important;
+  width: 100% !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside > header) {
+  min-height: 0 !important;
+  margin-bottom: clamp(14px, 1.2vw, 24px) !important;
+  max-height: clamp(190px, 25dvh, 300px) !important;
+  overflow: hidden !important;
+  padding-bottom: clamp(10px, 0.9vw, 18px) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay > aside > header > div)::after {
+  max-width: min(100%, 1180px) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay h3) {
+  font-size: clamp(46px, 6vw, 108px) !important;
+  letter-spacing: -0.075em !important;
+  line-height: 0.86 !important;
+  margin: 0 0 clamp(10px, 1vw, 18px) !important;
+  max-width: min(100%, 1320px) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay p) {
+  max-width: min(100%, 1360px) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay section) {
+  width: 100% !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleUpgrade),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jLeadCommandUpgrade) {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iOperatingPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iEditPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jOperatingPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jEditPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofPanel),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditPanel) {
+  margin-top: clamp(14px, 1vw, 20px) !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jCommandGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jAuditLedger) {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
+  gap: clamp(14px, 1vw, 20px) !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  width: 100% !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iProofGrid),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jProofGrid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay article) {
+  min-height: clamp(112px, 13dvh, 190px) !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  padding: clamp(16px, 1.2vw, 24px) !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay article strong) {
+  line-height: 1.22 !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+:global(#wilsy-r91g1-lead-inspection-overlay .r91iActionBar),
+:global(#wilsy-r91g1-lead-inspection-overlay .r91jActionStatus) {
+  max-width: 100% !important;
+}
+
+@media (min-width: 1600px) {
+  :global(#wilsy-r91g1-lead-inspection-overlay) {
+    grid-template-columns: clamp(170px, 10vw, 240px) minmax(0, 1fr) !important;
+  }
+
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91iCapsuleGrid),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91jCommandGrid) {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+  }
+
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91iProofGrid),
+  :global(#wilsy-r91g1-lead-inspection-overlay .r91jProofGrid) {
+    grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1120px) {
+  :global(#wilsy-r91g1-lead-inspection-overlay) {
+    display: block !important;
+    overflow: auto !important;
+  }
+
+  :global(#wilsy-r91g1-lead-inspection-overlay)::before,
+  :global(#wilsy-r91g1-lead-inspection-overlay)::after {
+    display: none !important;
+  }
+
+  :global(#wilsy-r91g1-lead-inspection-overlay > aside) {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
