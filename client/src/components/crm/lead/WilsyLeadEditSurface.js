@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { sha3_512 } from 'js-sha3';
 
 import {
   WILSY_LEAD_STATUS_OPTIONS,
@@ -22,6 +23,131 @@ import {
   WILSY_LEAD_INDUSTRY_OPTIONS,
   normalizeWilsyLeadIndustryValue,
 } from '../../../data/wilsyLeadIndustryOptions';
+
+
+const WILSY_R91K62_SIGNED_LEAD_PATCH_MARKER = 'R91K62_SIGNED_LEAD_PATCH';
+
+/**
+ * @function createWilsyR91K62LeadEditTraceSeed
+ * @description Creates a browser-safe trace seed for signed Lead PATCH requests without exposing secrets.
+ * @collaboration WilsyLeadEditSurface, sovereign shield request reconstruction, DB_PERSISTED Lead save path.
+ */
+function createWilsyR91K62LeadEditTraceSeed(prefix = 'TRC-WILSY-LEAD-EDIT') {
+  const randomPart = Math.random().toString(36).slice(2).toUpperCase();
+  return `${prefix}-${Date.now()}-${randomPart}`;
+}
+
+/**
+ * @function shouldWilsyR91K62SignLeadPatch
+ * @description Detects the governed CRM Lead PATCH route that must carry a SHA3-512 forensic request seal.
+ * @collaboration WilsyLeadEditSurface fetch signer, tenantContext fetch bridge, CRM command route.
+ */
+function shouldWilsyR91K62SignLeadPatch(url = '', init = {}) {
+  const method = String(init?.method || 'GET').toUpperCase();
+  return method === 'PATCH' && String(url).includes('/api/crm/command/leads/');
+}
+
+/**
+ * @function buildWilsyR91K62LeadPatchSealHeaders
+ * @description Builds the exact frontend forensic headers expected by the sovereign request-seal verifier.
+ * @collaboration js-sha3 parity contract, sovereignClient reconstruction, CRM Lead DB_PERSISTED route.
+ */
+function buildWilsyR91K62LeadPatchSealHeaders(bodyString = '') {
+  const traceId = createWilsyR91K62LeadEditTraceSeed();
+  const timestamp = new Date().toISOString();
+  const nonce = createWilsyR91K62LeadEditTraceSeed('NONCE-WILSY-LEAD-EDIT');
+  const canonicalBodyString = normalizeWilsyR91K63LeadSealPayloadString(bodyString);
+  const reconstruction = `${traceId}|${timestamp}|${canonicalBodyString}|${nonce}`;
+  const requestSeal = sha3_512(reconstruction).toUpperCase();
+
+  return {
+    traceId,
+    timestamp,
+    nonce,
+    requestSeal
+  };
+}
+
+/**
+ * @function stableWilsyR91K63LeadSealStringify
+ * @description Reconstructs the Lead PATCH body using deterministic sorted-key JSON so the browser seal matches backend shield reconstruction.
+ * @collaboration R91K62 signed Lead PATCH signer, sovereign shield payload reconstruction, DB_PERSISTED Lead save route.
+ */
+function stableWilsyR91K63LeadSealStringify(value) {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableWilsyR91K63LeadSealStringify(entry)).join(',')}]`;
+  }
+
+  return `{${Object.keys(value)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableWilsyR91K63LeadSealStringify(value[key])}`)
+    .join(',')}}`;
+}
+
+/**
+ * @function normalizeWilsyR91K63LeadSealPayloadString
+ * @description Converts outgoing Lead PATCH JSON into the canonical payload string used for SHA3-512 request-seal hashing.
+ * @collaboration Browser fetch signer, Express parsed request body, forensic mismatch recovery.
+ */
+function normalizeWilsyR91K63LeadSealPayloadString(bodyString = '') {
+  try {
+    return stableWilsyR91K63LeadSealStringify(JSON.parse(bodyString));
+  } catch (error) {
+    return bodyString;
+  }
+}
+
+/**
+ * @function installWilsyR91K62LeadPatchFetchSigner
+ * @description Installs a module-scoped fetch signer that signs only CRM Lead PATCH requests with the exact body string being sent.
+ * @collaboration tenantContext protected API headers, backend forensic shield, WilsyLeadEditSurface Save governed edit flow.
+ */
+function installWilsyR91K62LeadPatchFetchSigner() {
+  if (typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+  if (window.__wilsyR91K62LeadPatchFetchSignerInstalled) return;
+
+  const originalFetch = window.fetch.bind(window);
+  window.__wilsyR91K62LeadPatchFetchSignerInstalled = true;
+
+  window.fetch = (input, init = {}) => {
+    const url = typeof input === 'string' ? input : input?.url || '';
+    const bodyString = typeof init?.body === 'string' ? init.body : '';
+
+    if (!shouldWilsyR91K62SignLeadPatch(url, init) || !bodyString) {
+      return originalFetch(input, init);
+    }
+
+    const headers = new Headers(
+      init.headers
+      || (typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined)
+      || {}
+    );
+
+    const sealContract = buildWilsyR91K62LeadPatchSealHeaders(bodyString);
+
+    headers.set('X-Request-ID', sealContract.traceId);
+    headers.set('X-Trace-ID', sealContract.traceId);
+    headers.set('X-Correlation-ID', sealContract.traceId);
+    headers.set('X-Forensic-Timestamp', sealContract.timestamp);
+    headers.set('X-Cryptographic-Nonce', sealContract.nonce);
+    headers.set('X-Request-Seal', sealContract.requestSeal);
+    headers.set('X-Request-Proof', sealContract.requestSeal);
+    headers.set('X-Quantum-Verified', 'true');
+    headers.set('X-Wilsy-Lead-Edit-Seal', WILSY_R91K62_SIGNED_LEAD_PATCH_MARKER);
+
+    return originalFetch(input, {
+      ...init,
+      headers
+    });
+  };
+}
+
+installWilsyR91K62LeadPatchFetchSigner();
+
 
 /**
  * @function normalizeWilsyLeadEditDbGatewayText
@@ -1510,7 +1636,6 @@ function buildWilsyLeadEditHeaders(tenantId = '', operatorContext = {}) {
 
   if (operatorContext.role) {
     headers['X-Wilsy-Operator-Role'] = operatorContext.role;
-    headers['X-Operator-Role'] = operatorContext.role;
   }
 
   if (operatorContext.email) {
