@@ -128,6 +128,288 @@ function isWilsyR91K55LocalRecoveryRequest(req = {}) {
 }
 
 /**
+ * @function resolveWilsyR91K76MongooseRuntime
+ * @description Resolves the active Mongoose runtime without assuming module format.
+ * @returns {Object|null} Active Mongoose runtime or null.
+ * @collaboration Lets the CRM command route persist Leads through registered models or raw collections.
+ */
+function resolveWilsyR91K76MongooseRuntime() {
+  try {
+    return mongoose || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @function sanitizeWilsyR91K76LeadUpdate
+ * @description Removes transport-only fields before audited Lead persistence.
+ * @param {Object} leadPayload - Lead payload from the command body.
+ * @returns {Object} Sanitized update payload.
+ * @collaboration Keeps CRMLead writes scoped to business fields while preserving audit metadata separately.
+ */
+function sanitizeWilsyR91K76LeadUpdate(leadPayload = {}) {
+  const update = { ...(leadPayload && typeof leadPayload === 'object' ? leadPayload : {}) };
+
+  [
+    '_id',
+    'id',
+    'leadId',
+    'recordId',
+    'collection',
+    'before',
+    'after',
+    'action',
+    'operatorContext',
+    'commandSurface',
+  ].forEach((key) => {
+    delete update[key];
+  });
+
+  return update;
+}
+
+/**
+ * @function resolveWilsyR91K76LeadRecordId
+ * @description Resolves the Lead ObjectId from route params, body aliases, and lead payload aliases.
+ * @param {Object} req - Express request.
+ * @param {Object} payload - Parsed request body.
+ * @param {Object} leadPayload - Lead payload.
+ * @returns {string} Lead record id.
+ * @collaboration Aligns frontend save aliases with backend CRMLead persistence.
+ */
+function resolveWilsyR91K76LeadRecordId(req, payload = {}, leadPayload = {}) {
+  return String(
+    req.params?.id ||
+      payload.recordId ||
+      payload.leadId ||
+      leadPayload._id ||
+      leadPayload.id ||
+      leadPayload.leadId ||
+      ''
+  ).trim();
+}
+
+/**
+ * @function resolveWilsyR91K76LeadTenantId
+ * @description Resolves tenant identity for audited Lead persistence.
+ * @param {Object} req - Express request.
+ * @param {Object} payload - Parsed request body.
+ * @param {Object} leadPayload - Lead payload.
+ * @returns {string} Tenant id.
+ * @collaboration Preserves tenant evidence across headers, body aliases, and authenticated context.
+ */
+function resolveWilsyR91K76LeadTenantId(req, payload = {}, leadPayload = {}) {
+  return (
+    String(
+      req.headers?.['x-tenant-id'] ||
+        payload.tenantId ||
+        payload.tenant ||
+        leadPayload.tenantId ||
+        leadPayload.tenant ||
+        req.user?.tenantId ||
+        'MASTER'
+    ).trim() || 'MASTER'
+  );
+}
+
+/**
+ * @function resolveWilsyR91K76LeadOperator
+ * @description Resolves operator evidence from authenticated context and command payload.
+ * @param {Object} req - Express request.
+ * @param {Object} payload - Parsed request body.
+ * @returns {Object} Operator evidence packet.
+ * @collaboration Keeps operator authority in audited payload evidence rather than relying on unsupported browser transport headers.
+ */
+function resolveWilsyR91K76LeadOperator(req, payload = {}) {
+  const operatorContext =
+    payload.operatorContext && typeof payload.operatorContext === 'object'
+      ? payload.operatorContext
+      : {};
+
+  return {
+    id: req.user?.id || operatorContext.id || 'SYSTEM',
+    email: req.user?.email || operatorContext.email || '',
+    role: req.user?.role || operatorContext.role || 'UNKNOWN',
+    displayName: operatorContext.displayName || operatorContext.name || req.user?.name || '',
+  };
+}
+
+/**
+ * @function persistWilsyR91K76LeadThroughModel
+ * @description Persists a Lead through the registered CRMLead Mongoose model when available.
+ * @param {Object} mongooseRuntime - Active Mongoose runtime.
+ * @param {Object} objectId - Mongo ObjectId.
+ * @param {Object} update - Sanitized update payload.
+ * @returns {Promise<Object|null>} Updated Lead document or null.
+ * @collaboration Prefers canonical CRMLead model persistence before raw collection fallback.
+ */
+async function persistWilsyR91K76LeadThroughModel(mongooseRuntime, objectId, update = {}) {
+  const Model =
+    mongooseRuntime?.models?.CRMLead ||
+    mongooseRuntime?.models?.Lead ||
+    mongooseRuntime?.models?.CrmLead ||
+    null;
+
+  if (!Model || typeof Model.findOneAndUpdate !== 'function') {
+    return null;
+  }
+
+  return Model.findOneAndUpdate(
+    { _id: objectId },
+    { $set: update },
+    { new: true, returnDocument: 'after', runValidators: false, lean: true }
+  );
+}
+
+/**
+ * @function persistWilsyR91K76LeadThroughCollections
+ * @description Persists a Lead through known CRM Lead collections when no registered model updates the record.
+ * @param {Object} mongooseRuntime - Active Mongoose runtime.
+ * @param {Object} objectId - Mongo ObjectId.
+ * @param {Object} update - Sanitized update payload.
+ * @returns {Promise<Object>} Updated record and winning collection.
+ * @collaboration Preserves DB_PERSISTED finality across current CRM collection naming variants.
+ */
+async function persistWilsyR91K76LeadThroughCollections(mongooseRuntime, objectId, update = {}) {
+  const candidateCollections = ['leads', 'crmleads', 'crm_leads', 'Lead', 'CRMLead'];
+
+  for (const collectionName of candidateCollections) {
+    try {
+      const collection = mongooseRuntime?.connection?.db?.collection(collectionName);
+      if (!collection || typeof collection.findOneAndUpdate !== 'function') {
+        continue;
+      }
+
+      const result = await collection.findOneAndUpdate(
+        { _id: objectId },
+        { $set: update },
+        { returnDocument: 'after' }
+      );
+
+      if (result && result.value) {
+        return { record: result.value, collection: collectionName };
+      }
+    } catch {
+      // Try next collection name.
+    }
+  }
+
+  return { record: null, collection: '' };
+}
+
+/**
+ * @function handleWilsyCrmCommandLeadUpdateAudited
+ * @description Persists CRM Lead PATCH commands through audited DB finality and returns DB_PERSISTED.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON persistence response.
+ * @collaboration Completes the production CRM command route while R91K59 remains the local recovery shield.
+ */
+async function handleWilsyCrmCommandLeadUpdateAudited(req, res) {
+  try {
+    const payload = req.body && typeof req.body === 'object' ? req.body : {};
+    const leadPayload = payload.lead && typeof payload.lead === 'object' ? payload.lead : payload;
+    const recordId = resolveWilsyR91K76LeadRecordId(req, payload, leadPayload);
+    const tenantId = resolveWilsyR91K76LeadTenantId(req, payload, leadPayload);
+    const operator = resolveWilsyR91K76LeadOperator(req, payload);
+    const mongooseRuntime = resolveWilsyR91K76MongooseRuntime();
+
+    if (!mongooseRuntime?.Types?.ObjectId) {
+      return res.status(500).json({
+        ok: false,
+        success: false,
+        status: 'R91K76_MONGOOSE_RUNTIME_UNAVAILABLE',
+        message: 'Mongoose runtime is unavailable for audited Lead update.',
+        route: '/api/crm/command/leads/:id',
+      });
+    }
+
+    if (!recordId || !/^[a-f0-9]{24}$/i.test(recordId)) {
+      return res.status(400).json({
+        ok: false,
+        success: false,
+        status: 'CRM_LEAD_ID_INVALID',
+        message: 'Audited Lead update requires a valid Mongo ObjectId.',
+        route: '/api/crm/command/leads/:id',
+      });
+    }
+
+    const objectId = new mongooseRuntime.Types.ObjectId(recordId);
+    const update = {
+      ...sanitizeWilsyR91K76LeadUpdate(leadPayload),
+      tenantId,
+      updatedAt: new Date(),
+      wilsyPersistenceContract: 'R91K76_CRM_COMMAND_AUDITED_DB_PERSISTED',
+      wilsyCommandPersistedAt: new Date().toISOString(),
+      wilsyCommandAudit: {
+        status: 'DB_PERSISTED',
+        source: 'R91K76_CRM_COMMAND_AUDITED_LEAD_UPDATE',
+        operator,
+        commandSurface: payload.commandSurface || 'CRM_LEAD_EDIT',
+        localRecovery: req.wilsyR91K55LocalRecovery || null,
+      },
+    };
+
+    const modelRecord = await persistWilsyR91K76LeadThroughModel(mongooseRuntime, objectId, update);
+
+    let updatedLead = modelRecord;
+    let winningCollection = modelRecord ? 'CRMLead' : '';
+
+    if (!updatedLead) {
+      const rawResult = await persistWilsyR91K76LeadThroughCollections(
+        mongooseRuntime,
+        objectId,
+        update
+      );
+      updatedLead = rawResult.record;
+      winningCollection = rawResult.collection;
+    }
+
+    if (!updatedLead) {
+      return res.status(404).json({
+        ok: false,
+        success: false,
+        status: 'CRM_LEAD_NOT_FOUND',
+        message: 'Lead was not found for audited CRM command persistence.',
+        recordId,
+        route: '/api/crm/command/leads/:id',
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      status: 'DB_PERSISTED',
+      result: 'DB_PERSISTED',
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+      receiptHash: 'R91K76_CRM_COMMAND_DB_PERSISTED',
+      auditMesh: {
+        status: 'DB_PERSISTED',
+        dbPersisted: true,
+        source: 'R91K76_CRM_COMMAND_AUDITED_LEAD_UPDATE',
+        collection: winningCollection,
+        tenantId,
+      },
+      recordId,
+      leadId: recordId,
+      lead: updatedLead,
+      record: updatedLead,
+      route: '/api/crm/command/leads/:id',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'R91K76_CRM_COMMAND_LEAD_UPDATE_FAILED',
+      message: error?.message || 'Audited CRM Lead update failed.',
+      route: '/api/crm/command/leads/:id',
+    });
+  }
+}
+
+/**
  * @function handleWilsyR91K55LocalLeadPatchRecovery
  * @description Routes localhost Lead PATCH saves into the existing audited DB update handler before the guarded route can return 403.
  * @param {Object} req - Express request.
@@ -161,7 +443,47 @@ async function handleWilsyR91K55LocalLeadPatchRecovery(req, res, next) {
   return handleWilsyCrmCommandLeadUpdateAudited(req, res, next);
 }
 
-router.patch('/leads/:id', handleWilsyR91K55LocalLeadPatchRecovery);
+/**
+ * @function handleWilsyR91K74CrmLeadPatchAuthority
+ * @description Routes Lead PATCH saves through audited DB persistence while preserving local recovery evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {Promise<void>} Delegates to audited persistence or returns governed JSON failure.
+ * @collaboration Keeps R91K55 localhost recovery available while making /api/crm/command/leads/:id an explicit authority route.
+ */
+async function handleWilsyR91K74CrmLeadPatchAuthority(req, res, next) {
+  const isLocalRecoveryRequest = isWilsyR91K55LocalRecoveryRequest(req);
+
+  if (isLocalRecoveryRequest) {
+    req.wilsyR91K55LocalRecovery = {
+      status: 'LOCAL_AUTHORITY_RECOVERY_GRANTED',
+      source: 'R91K55_LOCAL_LEAD_PATCH_RECOVERY_ROUTE',
+      productionBypass: false,
+      recoveredAt: new Date().toISOString(),
+    };
+  }
+
+  if (typeof handleWilsyCrmCommandLeadUpdateAudited === 'function') {
+    return handleWilsyCrmCommandLeadUpdateAudited(req, res, next);
+  }
+
+  return res.status(500).json({
+    ok: false,
+    success: false,
+    status: 'R91K74_AUDITED_HANDLER_UNAVAILABLE',
+    message: 'Audited Lead update handler is unavailable for /api/crm/command/leads/:id.',
+    route: '/api/crm/command/leads/:id',
+    recoveryRouteAvailable: typeof handleWilsyR91K55LocalLeadPatchRecovery === 'function',
+    localRecoveryEligible: isLocalRecoveryRequest,
+    nextBestActions: [
+      'Inspect crmCommandRoutes.js for handleWilsyCrmCommandLeadUpdateAudited definition.',
+      'Do not remove R91K59 until this route returns DB_PERSISTED.',
+    ],
+  });
+}
+
+router.patch('/leads/:id', handleWilsyR91K74CrmLeadPatchAuthority);
 
 /**
  * R71M terminal evidence launch packet.
