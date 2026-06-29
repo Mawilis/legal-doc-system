@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { sha3_512 } from 'js-sha3';
 import { openWilsyLeadCommandCapsule as openWilsyLeadCommandCapsuleNative } from './WilsyLeadCommandCapsule';
 import { openWilsyLeadEditSurface } from './WilsyLeadEditSurface';
 /**
@@ -3609,12 +3610,495 @@ export default function WilsyLeadOperatingRoom({
   }
 
   /**
+   * @function normalizeWilsyR91K85AddressText
+   * @description Normalizes address command input before local intelligence suggestions are built.
+   * @param {unknown} value - Candidate address text.
+   * @returns {string} Normalized address text.
+   * @collaboration Powers the Create Lead sovereign address command without exposing provider keys.
+   */
+  function normalizeWilsyR91K85AddressText(value = '') {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * @function resolveWilsyR91K85AddressCountry
+   * @description Resolves a safe country value for address intelligence metadata.
+   * @param {Object} draftPayload - Current Lead draft.
+   * @returns {string} Country label.
+   * @collaboration Keeps address capture South Africa-ready while allowing global CRM records.
+   */
+  function resolveWilsyR91K85AddressCountry(draftPayload = {}) {
+    const candidate = normalizeWilsyR91K85AddressText(
+      draftPayload.country ||
+      draftPayload.addressCountry ||
+      draftPayload.billingCountry ||
+      ''
+    );
+
+    return candidate || 'South Africa';
+  }
+
+  /**
+   * @function resolveWilsyR91K85AddressPostalCode
+   * @description Extracts a likely postal code from address text or draft aliases.
+   * @param {string} query - Address search query.
+   * @param {Object} draftPayload - Current Lead draft.
+   * @returns {string} Postal code candidate.
+   * @collaboration Gives Create Lead instant normalized address posture before provider verification.
+   */
+  function resolveWilsyR91K85AddressPostalCode(query = '', draftPayload = {}) {
+    const direct = normalizeWilsyR91K85AddressText(
+      draftPayload.zipCode ||
+      draftPayload.postalCode ||
+      draftPayload.postcode ||
+      ''
+    );
+
+    if (direct) {
+      return direct;
+    }
+
+    const match = String(query || '').match(/\b\d{4,6}\b/);
+
+    return match ? match[0] : '';
+  }
+
+  /**
+   * @function buildWilsyR91K85AddressSuggestion
+   * @description Builds one backend-ready address intelligence suggestion packet.
+   * @param {Object} params - Suggestion parameters.
+   * @returns {Object} Address suggestion packet.
+   * @collaboration Makes Create Lead address selection auditable before provider routes are activated.
+   */
+  function buildWilsyR91K85AddressSuggestion(params = {}) {
+    const query = normalizeWilsyR91K85AddressText(params.query);
+    const draftPayload = params.draft || {};
+    const parts = query.split(',').map(part => normalizeWilsyR91K85AddressText(part)).filter(Boolean);
+    const street = normalizeWilsyR91K85AddressText(params.street || draftPayload.street || parts[0] || query);
+    const city = normalizeWilsyR91K85AddressText(params.city || draftPayload.city || parts[1] || '');
+    const state = normalizeWilsyR91K85AddressText(params.state || draftPayload.state || parts[2] || '');
+    const country = normalizeWilsyR91K85AddressText(params.country || resolveWilsyR91K85AddressCountry(draftPayload));
+    const postalCode = normalizeWilsyR91K85AddressText(params.postalCode || resolveWilsyR91K85AddressPostalCode(query, draftPayload));
+    const formattedAddress = [street, city, state, postalCode, country].filter(Boolean).join(', ');
+    const confidence = params.confidence || (street && city && country ? 82 : street && country ? 64 : 38);
+
+    return {
+      id: params.id || `wilsy-address-${String(params.rank || 1)}-${formattedAddress.length}`,
+      label: params.label || 'Sovereign address candidate',
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+      latitude: params.latitude || '',
+      longitude: params.longitude || '',
+      formattedAddress,
+      provider: params.provider || 'WILSY_LOCAL_INTELLIGENCE',
+      providerId: params.providerId || `LOCAL-${confidence}-${formattedAddress.length}`,
+      confidence,
+      verificationStatus: params.verificationStatus || (confidence >= 80 ? 'LOCAL_READY_FOR_PROVIDER_VERIFY' : 'MANUAL_REVIEW_REQUIRED'),
+      territory: params.territory || [city, state, country].filter(Boolean).join(' · '),
+      duplicatePosture: params.duplicatePosture || 'Duplicate check queued on save',
+      receipt: params.receipt || `ADDR-R91K85-${confidence}-${formattedAddress.length}`,
+    };
+  }
+
+  /**
+   * @function buildWilsyR91K85AddressSuggestions
+   * @description Builds local address suggestions while backend provider proxy routes are offline.
+   * @param {Object} params - Suggestion build parameters.
+   * @returns {Array<Object>} Address suggestions.
+   * @collaboration Gives Wilsy OS autocomplete-grade UX without leaking Google, Mapbox, Loqate, or HERE keys.
+   */
+  function buildWilsyR91K85AddressSuggestions(params = {}) {
+    const draftPayload = params.draft || {};
+    const query = normalizeWilsyR91K85AddressText(
+      params.query ||
+      draftPayload.addressSearch ||
+      draftPayload.formattedAddress ||
+      draftPayload.street ||
+      ''
+    );
+
+    if (query.length < 3 && !draftPayload.street) {
+      return [];
+    }
+
+    const primary = buildWilsyR91K85AddressSuggestion({
+      id: 'wilsy-r91k85-primary-address',
+      label: 'Primary address candidate',
+      query,
+      draft: draftPayload,
+      rank: 1,
+      confidence: query.includes(',') ? 86 : 68,
+    });
+
+    const territory = buildWilsyR91K85AddressSuggestion({
+      id: 'wilsy-r91k85-territory-address',
+      label: 'Territory routing candidate',
+      query,
+      draft: {
+        ...draftPayload,
+        street: draftPayload.street || primary.street,
+        city: draftPayload.city || primary.city,
+        state: draftPayload.state || primary.state,
+        zipCode: draftPayload.zipCode || primary.postalCode,
+        country: draftPayload.country || primary.country,
+      },
+      rank: 2,
+      confidence: primary.city ? 78 : 58,
+      provider: 'WILSY_TERRITORY_ROUTER',
+      verificationStatus: primary.city ? 'ROUTING_READY' : 'CITY_REQUIRED_FOR_ROUTING',
+      territory: primary.territory || 'Territory pending city',
+      receipt: `ADDR-R91K85-TERRITORY-${primary.formattedAddress.length}`,
+    });
+
+    return [primary, territory].filter((suggestion, index, list) => (
+      suggestion.formattedAddress &&
+      list.findIndex(item => item.formattedAddress === suggestion.formattedAddress && item.provider === suggestion.provider) === index
+    ));
+  }
+
+  /**
+   * @function formatWilsyR91K102AddressProviderLabel
+   * @description Converts address provider codes into Wilsy OS business-facing labels.
+   * @param {string} provider - Provider code.
+   * @returns {string} Business-facing provider label.
+   * @collaboration Keeps Create Lead address intelligence clean for tenant operators.
+   */
+  function formatWilsyR91K102AddressProviderLabel(provider = '') {
+    const normalizedProvider = normalizeWilsyR91K85AddressText(provider).toUpperCase();
+
+    if (normalizedProvider.includes('MAPBOX')) {
+      return 'Mapbox Address Intelligence';
+    }
+
+    if (normalizedProvider.includes('GOOGLE')) {
+      return 'Google Places Intelligence';
+    }
+
+    if (normalizedProvider.includes('LOQATE')) {
+      return 'Loqate Address Verification';
+    }
+
+    if (normalizedProvider.includes('HERE')) {
+      return 'HERE Address Intelligence';
+    }
+
+    if (normalizedProvider.includes('OPENSTREETMAP') || normalizedProvider.includes('NOMINATIM')) {
+      return 'OpenStreetMap emergency fallback';
+    }
+
+    if (normalizedProvider.includes('WILSY')) {
+      return 'Wilsy OS address intelligence';
+    }
+
+    return 'Wilsy OS address intelligence';
+  }
+
+  /**
+   * @function formatWilsyR91K102AddressStatusLabel
+   * @description Converts address status codes into business English.
+   * @param {string} status - Address status code.
+   * @returns {string} Business-facing status label.
+   * @collaboration Removes raw integration codes from the Create Lead user interface.
+   */
+  function formatWilsyR91K102AddressStatusLabel(status = '') {
+    const normalizedStatus = normalizeWilsyR91K85AddressText(status).toUpperCase();
+
+    if (normalizedStatus.includes('LIVE_PROVIDER_SUGGESTED')) {
+      return 'Verified provider suggestion';
+    }
+
+    if (normalizedStatus.includes('ADDRESS_PROVIDER_LIVE')) {
+      return 'Live address intelligence active';
+    }
+
+    if (normalizedStatus.includes('LIVE_PROVIDER_LOOKUP_RUNNING')) {
+      return 'Searching verified address providers';
+    }
+
+    if (normalizedStatus.includes('MANUAL_REVIEW_REQUIRED')) {
+      return 'Manual review pending';
+    }
+
+    if (normalizedStatus.includes('AWAITING_ADDRESS_INPUT') || normalizedStatus.includes('QUERY_TOO_SHORT')) {
+      return 'Ready for address search';
+    }
+
+    if (normalizedStatus.includes('ADDRESS_PROVIDER_EMPTY')) {
+      return 'No verified match returned yet';
+    }
+
+    if (normalizedStatus.includes('ADDRESS_PROVIDER_UNREACHABLE')) {
+      return 'Address provider temporarily unavailable';
+    }
+
+    if (normalizedStatus.includes('ROUTING_READY')) {
+      return 'Territory routing ready';
+    }
+
+    return 'Address evidence captured';
+  }
+
+  /**
+   * @function formatWilsyR91K102AddressConfidenceLabel
+   * @description Formats provider confidence for business users.
+   * @param {number|string} confidence - Confidence score.
+   * @returns {string} Business-facing confidence label.
+   * @collaboration Shows match quality without exposing raw system language.
+   */
+  function formatWilsyR91K102AddressConfidenceLabel(confidence = 0) {
+    const numericConfidence = Number(confidence || 0);
+
+    if (!numericConfidence) {
+      return 'Confidence pending';
+    }
+
+    return `${numericConfidence}% match confidence`;
+  }
+
+  /**
+   * @function formatWilsyR91K102AddressReceiptLabel
+   * @description Formats evidence receipts for business-facing address selection.
+   * @param {string} receipt - Provider evidence receipt.
+   * @returns {string} Business-facing receipt label.
+   * @collaboration Preserves forensic proof while keeping the UI readable.
+   */
+  function formatWilsyR91K102AddressReceiptLabel(receipt = '') {
+    const normalizedReceipt = normalizeWilsyR91K85AddressText(receipt);
+
+    if (!normalizedReceipt) {
+      return 'Evidence receipt pending';
+    }
+
+    return `Evidence receipt ${normalizedReceipt}`;
+  }
+
+  /**
+   * @function buildWilsyR91K85AddressVerificationPacket
+   * @description Summarizes the selected address verification posture in business-facing language.
+   * @param {Object} draftPayload - Current Lead draft payload.
+   * @returns {Object} Business-facing address verification packet.
+   * @collaboration Create Lead address intelligence, provider evidence, tenant operator experience.
+   */
+  function buildWilsyR91K85AddressVerificationPacket(draftPayload = {}) {
+    const status = normalizeWilsyR91K85AddressText(draftPayload.addressVerificationStatus || '');
+    const provider = normalizeWilsyR91K85AddressText(draftPayload.addressSourceProvider || 'WILSY_LOCAL_INTELLIGENCE');
+    const confidence = Number(draftPayload.addressConfidence || 0);
+    const receipt = normalizeWilsyR91K85AddressText(draftPayload.addressEvidenceReceipt || '');
+
+    return {
+      status: formatWilsyR91K102AddressStatusLabel(status || (draftPayload.street ? 'MANUAL_REVIEW_REQUIRED' : 'AWAITING_ADDRESS_INPUT')),
+      provider: formatWilsyR91K102AddressProviderLabel(provider),
+      confidenceLabel: formatWilsyR91K102AddressConfidenceLabel(confidence),
+      receipt: formatWilsyR91K102AddressReceiptLabel(receipt),
+    };
+  }
+
+  /**
+   * @function createWilsyR91K88AddressTraceSeed
+   * @description Creates a browser-safe trace seed for signed Address Provider requests.
+   * @param {string} prefix - Trace prefix.
+   * @returns {string} Trace seed.
+   * @collaboration Address provider proxy, institutional integrity shield, CRM Create Lead intelligence.
+   */
+  function createWilsyR91K88AddressTraceSeed(prefix = 'TRC-WILSY-ADDRESS') {
+    const randomPart = Math.random().toString(36).slice(2).toUpperCase();
+
+    return `${prefix}-${Date.now()}-${randomPart}`;
+  }
+
+  /**
+   * @function stableWilsyR91K88AddressSealStringify
+   * @description Builds deterministic sorted-key JSON for signed address provider payloads.
+   * @param {unknown} value - Value to stringify.
+   * @returns {string} Canonical JSON fragment.
+   * @collaboration Matches the signed Lead PATCH payload strategy for address lookup.
+   */
+  function stableWilsyR91K88AddressSealStringify(value) {
+    if (value === null || typeof value !== 'object') {
+      return JSON.stringify(value);
+    }
+
+    if (Array.isArray(value)) {
+      return `[${value.map((entry) => stableWilsyR91K88AddressSealStringify(entry)).join(',')}]`;
+    }
+
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableWilsyR91K88AddressSealStringify(value[key])}`)
+      .join(',')}}`;
+  }
+
+  /**
+   * @function normalizeWilsyR91K88AddressSealPayloadString
+   * @description Normalizes outgoing address provider JSON before SHA3-512 signing.
+   * @param {string} bodyString - Outgoing JSON body string.
+   * @returns {string} Canonical body string.
+   * @collaboration Prevents integrity shield mismatch on signed address lookup requests.
+   */
+  function normalizeWilsyR91K88AddressSealPayloadString(bodyString = '') {
+    try {
+      return stableWilsyR91K88AddressSealStringify(JSON.parse(bodyString));
+    } catch {
+      return bodyString;
+    }
+  }
+
+  /**
+   * @function buildWilsyR91K88AddressSealHeaders
+   * @description Builds institutional integrity headers for Address Provider proxy requests.
+   * @param {string} bodyString - Exact outgoing request body.
+   * @returns {Object} Signed header packet.
+   * @collaboration Allows /api/crm/command/address/suggest to pass the same shield as Lead Save.
+   */
+  function buildWilsyR91K88AddressSealHeaders(bodyString = '') {
+    const traceId = createWilsyR91K88AddressTraceSeed();
+    const timestamp = new Date().toISOString();
+    const nonce = createWilsyR91K88AddressTraceSeed('NONCE-WILSY-ADDRESS');
+    const canonicalBodyString = normalizeWilsyR91K88AddressSealPayloadString(bodyString);
+    const reconstruction = `${traceId}|${timestamp}|${canonicalBodyString}|${nonce}`;
+    const requestSeal = sha3_512(reconstruction).toUpperCase();
+
+    return {
+      traceId,
+      timestamp,
+      nonce,
+      requestSeal,
+    };
+  }
+
+    /**
+   * @function requestWilsyR91K87AddressSuggestions
+   * @description Requests live address suggestions through the signed Wilsy backend provider proxy.
+   * @param {string} value - Address search text.
+   * @returns {Promise<void>} Updates draft address suggestion state.
+   * @collaboration Signed address provider command, integrity shield, Create Lead address intelligence.
+   */
+  async function requestWilsyR91K87AddressSuggestions(value = '') {
+    const query = normalizeWilsyR91K85AddressText(value);
+
+    if (query.length < 3) {
+      updateDraftField('addressSuggestions', []);
+      updateDraftField('addressVerificationStatus', 'QUERY_TOO_SHORT');
+      updateDraftField('addressSourceProvider', 'WILSY_ADDRESS_PROVIDER_PROXY');
+      updateDraftField('addressConfidence', 0);
+      updateDraftField('addressEvidenceReceipt', 'Type at least three characters for live address search.');
+      return;
+    }
+
+    updateDraftField('addressSuggestions', []);
+    updateDraftField('addressVerificationStatus', 'LIVE_PROVIDER_LOOKUP_RUNNING');
+    updateDraftField('addressSourceProvider', 'WILSY_ADDRESS_PROVIDER_PROXY');
+    updateDraftField('addressConfidence', 0);
+    updateDraftField('addressEvidenceReceipt', 'Signed provider lookup running through Wilsy backend.');
+
+    try {
+      const bodyPayload = {
+        q: query,
+        query,
+        country: draft.country || 'ZA',
+        countryCode: draft.countryCode || 'ZA',
+        commandSurface: 'R91K91_SIGNED_ADDRESS_PROVIDER_COMMAND',
+      };
+      const bodyString = JSON.stringify(bodyPayload);
+      const sealContract = buildWilsyR91K88AddressSealHeaders(bodyString);
+
+      const response = await fetch('/api/crm/command/address/suggest', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Tenant-Id': tenantId || 'MASTER',
+          'X-Wilsy-Command-Surface': 'R91K91_SIGNED_ADDRESS_PROVIDER_COMMAND',
+          'X-Request-ID': sealContract.traceId,
+          'X-Trace-ID': sealContract.traceId,
+          'X-Correlation-ID': sealContract.traceId,
+          'X-Forensic-Timestamp': sealContract.timestamp,
+          'X-Cryptographic-Nonce': sealContract.nonce,
+          'X-Request-Seal': sealContract.requestSeal,
+          'X-Request-Proof': sealContract.requestSeal,
+          'X-Quantum-Verified': 'true',
+          'X-Wilsy-Address-Command-Seal': 'R91K91_SIGNED_ADDRESS_PROVIDER_COMMAND',
+        },
+        body: bodyString,
+      });
+
+      const body = await response.json().catch(() => ({}));
+      const suggestions = Array.isArray(body.suggestions) ? body.suggestions : [];
+      const firstSuggestion = suggestions[0] || {};
+
+      if (!response.ok) {
+        updateDraftField('addressSuggestions', []);
+        updateDraftField('addressSourceProvider', body.provider || 'WILSY_ADDRESS_PROVIDER_PROXY');
+        updateDraftField('addressVerificationStatus', body.code || body.error || `HTTP_${response.status}`);
+        updateDraftField('addressConfidence', 0);
+        updateDraftField('addressEvidenceReceipt', body.message || `Signed address provider failed with HTTP ${response.status}.`);
+        return;
+      }
+
+      updateDraftField('addressSuggestions', suggestions);
+      updateDraftField('addressSourceProvider', body.provider || firstSuggestion.provider || 'WILSY_ADDRESS_PROVIDER_PROXY');
+      updateDraftField('addressVerificationStatus', body.sourceStatus || firstSuggestion.verificationStatus || 'ADDRESS_PROVIDER_EMPTY');
+      updateDraftField('addressConfidence', firstSuggestion.confidence || 0);
+      updateDraftField('addressEvidenceReceipt', body.rootHashShort || body.message || 'Signed address provider response received.');
+    } catch (error) {
+      updateDraftField('addressSuggestions', []);
+      updateDraftField('addressVerificationStatus', 'ADDRESS_PROVIDER_UNREACHABLE');
+      updateDraftField('addressSourceProvider', 'WILSY_ADDRESS_PROVIDER_PROXY');
+      updateDraftField('addressConfidence', 0);
+      updateDraftField('addressEvidenceReceipt', error?.message || 'Signed address provider lookup failed.');
+    }
+  }
+
+  /**
+   * @function resolveWilsyR91K92AddressEmptyStateMessage
+   * @description Resolves the address intelligence empty-state message in business English.
+   * @param {Object} draftPayload - Current Lead draft payload.
+   * @param {string} searchText - Current address search text.
+   * @returns {string} Operator-facing address intelligence message.
+   * @collaboration Wilsy OS address intelligence, provider fallback posture, manual evidence capture.
+   */
+  function resolveWilsyR91K92AddressEmptyStateMessage(draftPayload = {}, searchText = '') {
+    const normalizedSearch = normalizeWilsyR91K85AddressText(searchText);
+    const status = normalizeWilsyR91K85AddressText(draftPayload.addressVerificationStatus);
+
+    if (normalizedSearch.length < 3) {
+      return 'Start typing to search verified address intelligence through Wilsy OS.';
+    }
+
+    if (status === 'LIVE_PROVIDER_LOOKUP_RUNNING') {
+      return 'Searching verified address providers through Wilsy OS.';
+    }
+
+    if (status === 'ADDRESS_PROVIDER_EMPTY') {
+      return 'No verified match returned yet. Continue typing or use manual address capture with evidence.';
+    }
+
+    if (status === 'ADDRESS_PROVIDER_UNREACHABLE') {
+      return 'Address intelligence is temporarily unavailable. Manual address capture remains available with evidence.';
+    }
+
+    return 'Wilsy OS address intelligence is active. Verified suggestions will appear here.';
+  }
+
+  /**
    * @function renderCreateMode
    * @description Renders the focused Create Lead surface.
    * @returns {JSX.Element} Create Lead surface.
    * @collaboration Captures verified lead payloads for backend command fabric.
    */
   function renderCreateMode() {
+    const addressSearchText = normalizeWilsyR91K85AddressText(
+      draft.addressSearch ||
+      draft.formattedAddress ||
+      draft.street ||
+      ''
+    );
+    const addressSuggestions = Array.isArray(draft.addressSuggestions) ? draft.addressSuggestions : [];
+    const addressVerificationPacket = buildWilsyR91K85AddressVerificationPacket(draft);
+
     return (
       <section className={styles.createSurface}>
         <header className={styles.createHeader}>
@@ -3644,15 +4128,85 @@ export default function WilsyLeadOperatingRoom({
               <label><span>Employees</span><input value={draft.employees} onChange={event => updateDraftField('employees', event.target.value)} /></label>
             </div>
 
-            <h3>Address Information</h3>
-            <div className={styles.formGrid}>
-              <label className={styles.wideField}><span>Street</span><input value={draft.street} onChange={event => updateDraftField('street', event.target.value)} /></label>
-              <label><span>City</span><input value={draft.city} onChange={event => updateDraftField('city', event.target.value)} /></label>
-              <label><span>State</span><input value={draft.state} onChange={event => updateDraftField('state', event.target.value)} /></label>
-              <label><span>Zip Code</span><input value={draft.zipCode} onChange={event => updateDraftField('zipCode', event.target.value)} /></label>
-              <label><span>Country</span><input value={draft.country} onChange={event => updateDraftField('country', event.target.value)} /></label>
-            </div>
+            <h3>Address Intelligence</h3>
+            <section className={styles.addressCommandDeck} aria-label="Wilsy OS address intelligence command">
+              <label className={styles.addressCommandSearch}>
+                <span>Wilsy OS Address Intelligence</span>
+                <input
+                  value={draft.addressSearch || draft.formattedAddress || draft.street || ''}
+                  placeholder="Search company, building, street, suburb, city, postal code..."
+                  onChange={event => {
+                    const value = event.target.value;
+                    updateDraftField('addressSearch', value);
+                    updateDraftField('street', value);
+                    updateDraftField('addressVerificationStatus', value ? 'MANUAL_REVIEW_REQUIRED' : 'AWAITING_ADDRESS_INPUT');
+                    updateDraftField('addressSourceProvider', 'WILSY_ADDRESS_PROVIDER_PROXY');
+                    updateDraftField('addressConfidence', 0);
+                    requestWilsyR91K87AddressSuggestions(value);
+                  }}
+                />
+              </label>
 
+              <div className={styles.addressEvidenceStrip}>
+                <span>{addressVerificationPacket.status}</span>
+                <span>{addressVerificationPacket.provider}</span>
+                <span>{addressVerificationPacket.confidenceLabel}</span>
+                <span>{addressVerificationPacket.receipt}</span>
+              </div>
+
+              {addressSuggestions.length ? (
+                <div className={styles.addressSuggestionRail}>
+                  {addressSuggestions.map(suggestion => (
+                    <button
+                      type="button"
+                      key={suggestion.id}
+                      className={styles.addressSuggestionCard}
+                      onClick={() => {
+                        updateDraftField('addressSearch', suggestion.formattedAddress);
+                        updateDraftField('street', suggestion.street);
+                        updateDraftField('city', suggestion.city);
+                        updateDraftField('state', suggestion.state);
+                        updateDraftField('zipCode', suggestion.postalCode);
+                        updateDraftField('country', suggestion.country);
+                        updateDraftField('latitude', suggestion.latitude);
+                        updateDraftField('longitude', suggestion.longitude);
+                        updateDraftField('formattedAddress', suggestion.formattedAddress);
+                        updateDraftField('addressProviderId', suggestion.providerId);
+                        updateDraftField('addressSourceProvider', suggestion.provider);
+                        updateDraftField('addressConfidence', suggestion.confidence);
+                        updateDraftField('addressVerificationStatus', suggestion.verificationStatus);
+                        updateDraftField('addressTerritory', suggestion.territory);
+                        updateDraftField('addressDuplicatePosture', suggestion.duplicatePosture);
+                        updateDraftField('addressEvidenceReceipt', suggestion.receipt);
+                        updateDraftField('addressSuggestions', []);
+                        /* R91K102B_ADDRESS_SELECTION_AUTO_CLOSE */
+                      }}
+                    >
+                      <small>{suggestion.label}</small>
+                      <strong>{suggestion.formattedAddress}</strong>
+                      <span>{formatWilsyR91K102AddressProviderLabel(suggestion.provider)} · {formatWilsyR91K102AddressConfidenceLabel(suggestion.confidence)} · {formatWilsyR91K102AddressStatusLabel(suggestion.verificationStatus)}</span>
+                      <em>{suggestion.territory || 'Territory pending'}</em>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.addressManualFallback}>
+                  Type at least three characters to search live address providers through Wilsy backend.
+                </div>
+              )}
+            </section>
+
+            <h3>Address Fields</h3>
+            <div className={styles.formGrid}>
+              <label className={styles.wideField}><span>Street</span><input value={draft.street || ''} onChange={event => updateDraftField('street', event.target.value)} /></label>
+              <label><span>City</span><input value={draft.city || ''} onChange={event => updateDraftField('city', event.target.value)} /></label>
+              <label><span>State / Province</span><input value={draft.state || ''} onChange={event => updateDraftField('state', event.target.value)} /></label>
+              <label><span>Postal Code</span><input value={draft.zipCode || ''} onChange={event => updateDraftField('zipCode', event.target.value)} /></label>
+              <label><span>Country</span><input value={draft.country || ''} onChange={event => updateDraftField('country', event.target.value)} /></label>
+              <input type="hidden" value={draft.formattedAddress || ''} readOnly />
+              <input type="hidden" value={draft.addressProviderId || ''} readOnly />
+              <input type="hidden" value={draft.addressEvidenceReceipt || ''} readOnly />
+            </div>
             <h3>Description Information</h3>
             <label className={styles.descriptionField}><span>Description / Notes</span><textarea value={draft.description} onChange={event => updateDraftField('description', event.target.value)} /></label>
           </section>

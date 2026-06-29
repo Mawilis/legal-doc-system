@@ -100,6 +100,243 @@ import {
 const router = express.Router();
 
 /**
+ * @function resolveWilsyR91K115SourceGuideBaseUrl
+ * @description Resolves an internal base URL for pulling the live Source Posture Guide into AI command surfaces.
+ * @param {Object} req - Express request.
+ * @returns {string} Internal API base URL.
+ * @collaboration Source Posture Guide, Wilsy AI command constraints, backend route enrichment.
+ */
+function resolveWilsyR91K115SourceGuideBaseUrl(req = {}) {
+  const configuredBase = String(
+    process.env.WILSY_INTERNAL_API_BASE_URL || process.env.WILSY_API_INTERNAL_BASE_URL || ''
+  ).trim();
+
+  if (configuredBase) {
+    return configuredBase.replace(/\/+$/, '');
+  }
+
+  const forwardedProto = String(req.headers?.['x-forwarded-proto'] || '')
+    .split(',')[0]
+    .trim();
+  const protocol = forwardedProto || req.protocol || 'http';
+  const host = String(
+    req.headers?.host || process.env.WILSY_INTERNAL_HOST || `127.0.0.1:${process.env.PORT || 5050}`
+  ).trim();
+
+  return `${protocol}://${host}`;
+}
+
+/**
+ * @function resolveWilsyR91K115BridgeTenantId
+ * @description Resolves tenant id for the Source Posture Guide bridge without trusting client-only context.
+ * @param {Object} req - Express request.
+ * @returns {string} Tenant id.
+ * @collaboration Tenant-scoped source guide, CRM command fabric, Wilsy AI recommendations.
+ */
+function resolveWilsyR91K115BridgeTenantId(req = {}) {
+  return (
+    String(
+      req.tenantId ||
+        req.headers?.['x-tenant-id'] ||
+        req.headers?.['x-wilsy-tenant-id'] ||
+        req.query?.tenantId ||
+        req.body?.tenantId ||
+        'MASTER'
+    ).trim() || 'MASTER'
+  );
+}
+
+/**
+ * @function shouldWilsyR91K115BridgeSourceGuide
+ * @description Determines whether a route response should be constrained by Source Posture Guide truth.
+ * @param {Object} req - Express request.
+ * @returns {boolean} True when response should be enriched.
+ * @collaboration AI-safe recommendations, CRM command search, CRM intelligence outputs.
+ */
+function shouldWilsyR91K115BridgeSourceGuide(req = {}) {
+  const routePath = String(req.path || req.originalUrl || '').toLowerCase();
+  const method = String(req.method || 'GET').toUpperCase();
+
+  if (method === 'OPTIONS') {
+    return false;
+  }
+
+  return (
+    ['/search', '/sync', '/status', '/boardroom', '/intelligence', '/catalog'].some((fragment) =>
+      routePath.includes(fragment)
+    ) || method === 'GET'
+  );
+}
+
+/**
+ * @function fetchWilsyR91K115SourceGuide
+ * @description Fetches the live Source Posture Guide so command and intelligence surfaces inherit the same truth layer as CRM telemetry.
+ * @param {Object} req - Express request.
+ * @returns {Promise<Object|null>} Source guide or null.
+ * @collaboration Source Posture Guide, Wilsy AI directives, route-surface constraints.
+ */
+async function fetchWilsyR91K115SourceGuide(req = {}) {
+  if (typeof fetch !== 'function') {
+    return null;
+  }
+
+  const tenantId = resolveWilsyR91K115BridgeTenantId(req);
+  const baseUrl = resolveWilsyR91K115SourceGuideBaseUrl(req);
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), 2500) : null;
+
+  try {
+    const response = await fetch(`${baseUrl}/api/crm/live/source-guide`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'X-Tenant-Id': tenantId,
+        'X-Wilsy-Source-Guide-Bridge': 'R91K115B_AI_COMMAND_SOURCE_GUIDE_BRIDGE',
+      },
+      signal: controller?.signal,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = await response.json();
+    return payload?.guide || null;
+  } catch (error) {
+    return null;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+/**
+ * @function buildWilsyR91K115AiConstraintPacket
+ * @description Builds the AI-safe constraint packet carried by command and intelligence responses.
+ * @param {Object|null} guide - Source Posture Guide.
+ * @param {string} surface - Response surface name.
+ * @returns {Object} Constraint packet.
+ * @collaboration Wilsy AI recommendation safety, Source Posture Guide, investor-grade evidence posture.
+ */
+function buildWilsyR91K115AiConstraintPacket(guide = null, surface = 'CRM_AI_SURFACE') {
+  if (!guide) {
+    return {
+      bridgeVersion: 'R91K115B_AI_COMMAND_SOURCE_GUIDE_BRIDGE',
+      surface,
+      sourceGuideStatus: 'SOURCE_GUIDE_UNAVAILABLE',
+      recommendationPolicy: 'DO_NOT_EXPAND_BEYOND_LOCAL_RESPONSE',
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  return {
+    bridgeVersion: 'R91K115B_AI_COMMAND_SOURCE_GUIDE_BRIDGE',
+    surface,
+    sourceGuideStatus: 'SOURCE_GUIDE_ATTACHED',
+    recommendationPolicy: 'CONSTRAIN_RECOMMENDATIONS_TO_SOURCE_GUIDE',
+    readinessScore: guide.readinessScore,
+    postureGrade: guide.postureGrade,
+    aiOperatingMode: guide.aiOperatingMode,
+    routeSurfaceRoutes: guide.routeSurface?.crmRelatedRoutes || 0,
+    dataDensityStatus: guide.dataDensityHealth?.status || 'UNKNOWN',
+    evidenceStatus: guide.evidenceHealth?.status || 'UNKNOWN',
+    connectorStatus: guide.connectorHealth?.status || 'UNKNOWN',
+    sourceGuideRootHash: guide.rootHash || null,
+    sourceGuideRootHashShort: guide.rootHashShort || null,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * @function attachWilsyR91K115SourceGuide
+ * @description Attaches source-guide constraints to a JSON response before it leaves an AI or command route.
+ * @param {*} body - Original response body.
+ * @param {Object} req - Express request.
+ * @param {string} surface - Surface label.
+ * @returns {Promise<*>} Enriched response body.
+ * @collaboration CRM command search, Wilsy AI recommendations, Source Posture Guide constraints.
+ */
+async function attachWilsyR91K115SourceGuide(body, req = {}, surface = 'CRM_AI_SURFACE') {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return body;
+  }
+
+  if (
+    body.sourceGuide ||
+    body.aiRecommendationConstraints?.sourceGuideStatus === 'SOURCE_GUIDE_ATTACHED'
+  ) {
+    return body;
+  }
+
+  const guide = await fetchWilsyR91K115SourceGuide(req);
+  const constraintPacket = buildWilsyR91K115AiConstraintPacket(guide, surface);
+  const guideNextBestActions = Array.isArray(guide?.nextBestActions) ? guide.nextBestActions : [];
+  const originalNextBestActions = Array.isArray(body.nextBestActions) ? body.nextBestActions : [];
+  const guideDirectives = Array.isArray(guide?.wilsyAiDirectives) ? guide.wilsyAiDirectives : [];
+
+  return {
+    ...body,
+    sourceGuide: guide,
+    sourceGuideStatus: constraintPacket.sourceGuideStatus,
+    aiRecommendationConstraints: constraintPacket,
+    wilsyAiDirectives: guideDirectives,
+    nextBestActions: originalNextBestActions.length
+      ? [...originalNextBestActions, ...guideNextBestActions]
+      : guideNextBestActions,
+    readinessScore: guide?.readinessScore ?? body.readinessScore,
+    postureGrade: guide?.postureGrade ?? body.postureGrade,
+    aiOperatingMode: guide?.aiOperatingMode ?? body.aiOperatingMode,
+    routeSurface: guide?.routeSurface || body.routeSurface,
+    sourcePosture: guide?.sourcePosture || body.sourcePosture,
+    sourceGuideReceipt: guide
+      ? {
+          rootHash: guide.rootHash || null,
+          rootHashShort: guide.rootHashShort || null,
+          algorithmVersion: guide.algorithmVersion || null,
+          generatedAt: guide.generatedAt || null,
+        }
+      : null,
+  };
+}
+
+/**
+ * @function wilsyR91K115SourceGuideResponseBridge
+ * @description Wraps route JSON responses so Wilsy AI and command surfaces carry live source truth.
+ * @param {string} surface - Response surface label.
+ * @returns {Function} Express middleware.
+ * @collaboration Source Posture Guide, CRM command fabric, CRM intelligence fabric, Wilsy AI directives.
+ */
+function wilsyR91K115SourceGuideResponseBridge(surface = 'CRM_AI_SURFACE') {
+  return (req, res, next) => {
+    if (!shouldWilsyR91K115BridgeSourceGuide(req)) {
+      next();
+      return;
+    }
+
+    const originalJson = res.json.bind(res);
+    let sent = false;
+
+    res.json = (body) => {
+      if (sent) {
+        return originalJson(body);
+      }
+
+      sent = true;
+      attachWilsyR91K115SourceGuide(body, req, surface)
+        .then((enrichedBody) => originalJson(enrichedBody))
+        .catch(() => originalJson(body));
+
+      return res;
+    };
+
+    next();
+  };
+}
+
+router.use(wilsyR91K115SourceGuideResponseBridge('CRM_COMMAND_FABRIC'));
+
+/**
  * @function isWilsyR91K55LocalRecoveryRequest
  * @description Detects localhost-only non-production CRM Lead PATCH recovery requests.
  * @param {Object} req - Express request.
@@ -3759,6 +3996,724 @@ function handleWilsyCrmCommandStatus(req, res) {
     generatedAt: new Date().toISOString(),
   });
 }
+
+const WILSY_R91K87_ADDRESS_PROVIDER_VERSION = 'R91K87-LIVE-ADDRESS-PROVIDER-COMMAND';
+
+/**
+ * @function normalizeWilsyR91K87AddressText
+ * @description Normalizes address provider input and provider output values.
+ * @param {unknown} value - Candidate text.
+ * @returns {string} Normalized text.
+ * @collaboration Address provider proxy, CRM Create Lead command, tenant-safe address capture.
+ */
+function normalizeWilsyR91K87AddressText(value = '') {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * @function resolveWilsyR91K87AddressCountry
+ * @description Resolves an address search country bias without exposing provider keys.
+ * @param {object} req - Express request.
+ * @returns {object} Country bias packet.
+ * @collaboration Supports South Africa-first CRM capture while allowing tenant supplied country hints.
+ */
+function resolveWilsyR91K87AddressCountry(req = {}) {
+  const rawCountry = normalizeWilsyR91K87AddressText(
+    req.query?.country ||
+      req.query?.countryCode ||
+      req.body?.country ||
+      req.body?.countryCode ||
+      req.body?.addressCountry ||
+      req.headers?.['x-wilsy-address-country'] ||
+      'ZA'
+  );
+  const upper = rawCountry.toUpperCase();
+
+  if (upper === 'SOUTH AFRICA' || upper === 'ZAF') {
+    return { iso2: 'ZA', iso3: 'ZAF', label: 'South Africa' };
+  }
+
+  return {
+    iso2: upper.length === 2 ? upper : 'ZA',
+    iso3: upper.length === 3 ? upper : 'ZAF',
+    label: rawCountry || 'South Africa',
+  };
+}
+
+/**
+ * @function resolveWilsyR91K87ProviderPolicy
+ * @description Resolves the active address provider from server environment and available keys.
+ * @returns {object} Provider policy.
+ * @collaboration Keeps Google, Mapbox, Loqate, HERE, and Nominatim access behind Wilsy backend authority.
+ */
+function resolveWilsyR91K87ProviderPolicy() {
+  const requested = normalizeWilsyR91K87AddressText(
+    process.env.WILSY_ADDRESS_PROVIDER || ''
+  ).toUpperCase();
+  const keys = {
+    google: process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+    mapbox: process.env.MAPBOX_ACCESS_TOKEN || '',
+    loqate: process.env.LOQATE_API_KEY || process.env.LOQATE_KEY || '',
+    here: process.env.HERE_API_KEY || '',
+  };
+
+  if (requested === 'GOOGLE' && keys.google) return { provider: 'GOOGLE_PLACES', key: keys.google };
+  if (requested === 'MAPBOX' && keys.mapbox)
+    return { provider: 'MAPBOX_SEARCH_BOX', key: keys.mapbox };
+  if (requested === 'LOQATE' && keys.loqate)
+    return { provider: 'LOQATE_ADDRESS_CAPTURE', key: keys.loqate };
+  if (requested === 'HERE' && keys.here) return { provider: 'HERE_AUTOCOMPLETE', key: keys.here };
+  if (requested === 'NOMINATIM' || requested === 'OPENSTREETMAP')
+    return { provider: 'OPENSTREETMAP_NOMINATIM', key: '' };
+
+  if (keys.google) return { provider: 'GOOGLE_PLACES', key: keys.google };
+  if (keys.mapbox) return { provider: 'MAPBOX_SEARCH_BOX', key: keys.mapbox };
+  if (keys.loqate) return { provider: 'LOQATE_ADDRESS_CAPTURE', key: keys.loqate };
+  if (keys.here) return { provider: 'HERE_AUTOCOMPLETE', key: keys.here };
+
+  return { provider: 'OPENSTREETMAP_NOMINATIM', key: '' };
+}
+
+/**
+ * @function fetchWilsyR91K87Json
+ * @description Fetches provider JSON with timeout governance.
+ * @param {string} url - Provider URL.
+ * @param {object} options - Fetch options.
+ * @returns {Promise<object>} Provider JSON.
+ * @collaboration Gives address autocomplete live provider reach without adding frontend secrets.
+ */
+async function fetchWilsyR91K87Json(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6500);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        providerStatus: `HTTP_${response.status}`,
+        body,
+      };
+    }
+
+    return {
+      ok: true,
+      providerStatus: 'PROVIDER_RESPONSE_OK',
+      body,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * @function buildWilsyR91K87AddressSuggestion
+ * @description Builds one Wilsy normalized address suggestion.
+ * @param {object} params - Suggestion parameters.
+ * @returns {object} Normalized suggestion.
+ * @collaboration Aligns provider payloads with CRM address fields, territory posture, and evidence metadata.
+ */
+function buildWilsyR91K87AddressSuggestion(params = {}) {
+  const street = normalizeWilsyR91K87AddressText(params.street || params.label || '');
+  const city = normalizeWilsyR91K87AddressText(params.city || '');
+  const state = normalizeWilsyR91K87AddressText(params.state || '');
+  const postalCode = normalizeWilsyR91K87AddressText(params.postalCode || '');
+  const country = normalizeWilsyR91K87AddressText(params.country || 'South Africa');
+  const formattedAddress = normalizeWilsyR91K87AddressText(
+    params.formattedAddress || [street, city, state, postalCode, country].filter(Boolean).join(', ')
+  );
+  const confidence = Math.max(1, Math.min(99, Number(params.confidence || 72)));
+
+  return {
+    id: normalizeWilsyR91K87AddressText(params.id || params.providerId || formattedAddress),
+    label: normalizeWilsyR91K87AddressText(params.label || formattedAddress),
+    street,
+    city,
+    state,
+    postalCode,
+    country,
+    latitude: params.latitude || '',
+    longitude: params.longitude || '',
+    formattedAddress,
+    provider: normalizeWilsyR91K87AddressText(params.provider || 'WILSY_ADDRESS_PROVIDER'),
+    providerId: normalizeWilsyR91K87AddressText(params.providerId || params.id || ''),
+    confidence,
+    verificationStatus: normalizeWilsyR91K87AddressText(
+      params.verificationStatus || 'PROVIDER_SUGGESTED'
+    ),
+    territory: normalizeWilsyR91K87AddressText(
+      params.territory || [city, state, country].filter(Boolean).join(' · ')
+    ),
+    duplicatePosture: normalizeWilsyR91K87AddressText(
+      params.duplicatePosture || 'Duplicate check queued on save'
+    ),
+    receipt: normalizeWilsyR91K87AddressText(
+      params.receipt || `ADDR-R91K87-${confidence}-${formattedAddress.length}`
+    ),
+    raw: params.raw || null,
+  };
+}
+
+/**
+ * @function parseWilsyR91K87NominatimSuggestions
+ * @description Converts OpenStreetMap Nominatim search results into Wilsy address suggestions.
+ * @param {Array<object>} items - Provider results.
+ * @returns {Array<object>} Suggestions.
+ * @collaboration Gives Wilsy OS a real no-key live provider fallback for local development.
+ */
+function parseWilsyR91K87NominatimSuggestions(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .slice(0, 7)
+    .map((item, index) => {
+      const address = item.address || {};
+      const street = [
+        address.house_number,
+        address.road ||
+          address.pedestrian ||
+          address.footway ||
+          address.neighbourhood ||
+          address.suburb,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        address.suburb ||
+        address.county ||
+        '';
+      const state = address.state || address.province || address.region || '';
+      const confidence = Math.round(
+        Math.min(94, Math.max(54, Number(item.importance || 0.5) * 100))
+      );
+
+      return buildWilsyR91K87AddressSuggestion({
+        id: `nominatim-${item.place_id || index}`,
+        providerId: String(item.place_id || ''),
+        label: item.name || item.display_name || street,
+        street: street || item.display_name || '',
+        city,
+        state,
+        postalCode: address.postcode || '',
+        country: address.country || 'South Africa',
+        latitude: item.lat || '',
+        longitude: item.lon || '',
+        formattedAddress: item.display_name || '',
+        provider: 'OPENSTREETMAP_NOMINATIM',
+        confidence,
+        verificationStatus: 'LIVE_PROVIDER_SUGGESTED',
+        raw: item,
+      });
+    })
+    .filter((item) => item.formattedAddress || item.street);
+}
+
+/**
+ * @function requestWilsyR91K87NominatimSuggestions
+ * @description Requests real address suggestions from OpenStreetMap Nominatim.
+ * @param {string} query - Search query.
+ * @param {object} country - Country bias.
+ * @returns {Promise<Array<object>>} Suggestions.
+ * @collaboration Local-dev real address lookup without browser keys or paid provider dependency.
+ */
+async function requestWilsyR91K87NominatimSuggestions(query = '', country = {}) {
+  const url = new URL('https://nominatim.openstreetmap.org/search');
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('addressdetails', '1');
+  url.searchParams.set('limit', '7');
+  url.searchParams.set('q', query);
+
+  if (country.iso2) {
+    url.searchParams.set('countrycodes', country.iso2.toLowerCase());
+  }
+
+  const result = await fetchWilsyR91K87Json(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+      'Accept-Language': 'en',
+      'User-Agent': 'WilsyOS/2.1 CRM Address Command local-dev',
+    },
+  });
+
+  return result.ok ? parseWilsyR91K87NominatimSuggestions(result.body) : [];
+}
+
+/**
+ * @function requestWilsyR91K87GoogleSuggestions
+ * @description Requests Google Places autocomplete suggestions when a backend key is configured.
+ * @param {string} query - Search query.
+ * @param {string} key - Server-side provider key.
+ * @param {object} country - Country bias.
+ * @returns {Promise<Array<object>>} Suggestions.
+ * @collaboration Keeps Google Places access server-side and provider-neutral.
+ */
+async function requestWilsyR91K87GoogleSuggestions(query = '', key = '', country = {}) {
+  const result = await fetchWilsyR91K87Json(
+    'https://places.googleapis.com/v1/places:autocomplete',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text',
+      },
+      body: JSON.stringify({
+        input: query,
+        languageCode: 'en',
+        regionCode: country.iso2 || 'ZA',
+      }),
+    }
+  );
+
+  const suggestions = result.body?.suggestions || [];
+
+  return suggestions
+    .map((entry, index) => {
+      const prediction = entry.placePrediction || {};
+      const text = prediction.text?.text || '';
+
+      return buildWilsyR91K87AddressSuggestion({
+        id: `google-${prediction.placeId || index}`,
+        providerId: prediction.placeId || '',
+        label: text,
+        street: text,
+        country: country.label || 'South Africa',
+        formattedAddress: text,
+        provider: 'GOOGLE_PLACES',
+        confidence: 88,
+        verificationStatus: 'GOOGLE_PLACE_PREDICTION',
+        raw: prediction,
+      });
+    })
+    .filter((item) => item.formattedAddress);
+}
+
+/**
+ * @function requestWilsyR91K87MapboxSuggestions
+ * @description Requests Mapbox Search Box suggestions when a backend token is configured.
+ * @param {string} query - Search query.
+ * @param {string} key - Server-side provider key.
+ * @param {object} country - Country bias.
+ * @returns {Promise<Array<object>>} Suggestions.
+ * @collaboration Keeps Mapbox sessions backend-governed.
+ */
+async function requestWilsyR91K87MapboxSuggestions(query = '', key = '', country = {}) {
+  const url = new URL('https://api.mapbox.com/search/searchbox/v1/suggest');
+  url.searchParams.set('q', query);
+  url.searchParams.set('access_token', key);
+  url.searchParams.set('session_token', `wilsy-r91k87-${Date.now()}`);
+  url.searchParams.set('limit', '7');
+  url.searchParams.set('language', 'en');
+
+  if (country.iso2) {
+    url.searchParams.set('country', country.iso2);
+  }
+
+  const result = await fetchWilsyR91K87Json(url.toString(), {
+    headers: { Accept: 'application/json' },
+  });
+
+  const suggestions = result.body?.suggestions || [];
+
+  return suggestions
+    .map((item, index) =>
+      buildWilsyR91K87AddressSuggestion({
+        id: `mapbox-${item.mapbox_id || index}`,
+        providerId: item.mapbox_id || '',
+        label: item.name || item.full_address || '',
+        street: item.full_address || item.name || '',
+        city: item.context?.place?.name || item.context?.locality?.name || '',
+        state: item.context?.region?.name || '',
+        postalCode: item.context?.postcode?.name || '',
+        country: item.context?.country?.name || country.label || 'South Africa',
+        formattedAddress:
+          item.full_address || [item.name, item.place_formatted].filter(Boolean).join(', '),
+        provider: 'MAPBOX_SEARCH_BOX',
+        confidence: 86,
+        verificationStatus: 'MAPBOX_SUGGESTED',
+        raw: item,
+      })
+    )
+    .filter((item) => item.formattedAddress);
+}
+
+/**
+ * @function requestWilsyR91K87LoqateSuggestions
+ * @description Requests Loqate Address Capture suggestions when a backend key is configured.
+ * @param {string} query - Search query.
+ * @param {string} key - Server-side provider key.
+ * @param {object} country - Country bias.
+ * @returns {Promise<Array<object>>} Suggestions.
+ * @collaboration Keeps Loqate Find behind Wilsy backend provider policy.
+ */
+async function requestWilsyR91K87LoqateSuggestions(query = '', key = '', country = {}) {
+  const url = new URL('https://api.addressy.com/Capture/Interactive/Find/v1.10/json3.ws');
+  url.searchParams.set('Key', key);
+  url.searchParams.set('Text', query);
+  url.searchParams.set('Limit', '7');
+  url.searchParams.set('Countries', country.iso3 || 'ZAF');
+
+  const result = await fetchWilsyR91K87Json(url.toString(), {
+    headers: { Accept: 'application/json' },
+  });
+
+  const items = result.body?.Items || [];
+
+  return items
+    .map((item, index) =>
+      buildWilsyR91K87AddressSuggestion({
+        id: `loqate-${item.Id || index}`,
+        providerId: item.Id || '',
+        label: item.Text || '',
+        street: [item.Text, item.Description].filter(Boolean).join(', '),
+        country: country.label || 'South Africa',
+        formattedAddress: [item.Text, item.Description].filter(Boolean).join(', '),
+        provider: 'LOQATE_ADDRESS_CAPTURE',
+        confidence: item.Type === 'Address' ? 90 : 78,
+        verificationStatus:
+          item.Type === 'Address' ? 'LOQATE_ADDRESS_SUGGESTED' : 'LOQATE_CONTAINER_SUGGESTED',
+        raw: item,
+      })
+    )
+    .filter((item) => item.formattedAddress);
+}
+
+/**
+ * @function requestWilsyR91K87HereSuggestions
+ * @description Requests HERE autocomplete suggestions when a backend key is configured.
+ * @param {string} query - Search query.
+ * @param {string} key - Server-side provider key.
+ * @param {object} country - Country bias.
+ * @returns {Promise<Array<object>>} Suggestions.
+ * @collaboration Keeps HERE geocoding and search credentials behind the CRM backend.
+ */
+async function requestWilsyR91K87HereSuggestions(query = '', key = '', country = {}) {
+  const url = new URL('https://autocomplete.search.hereapi.com/v1/autocomplete');
+  url.searchParams.set('q', query);
+  url.searchParams.set('limit', '7');
+  url.searchParams.set('apiKey', key);
+
+  if (country.iso3) {
+    url.searchParams.set('in', `countryCode:${country.iso3}`);
+  }
+
+  const result = await fetchWilsyR91K87Json(url.toString(), {
+    headers: { Accept: 'application/json' },
+  });
+
+  const items = result.body?.items || [];
+
+  return items
+    .map((item, index) => {
+      const address = item.address || {};
+
+      return buildWilsyR91K87AddressSuggestion({
+        id: `here-${item.id || index}`,
+        providerId: item.id || '',
+        label: item.title || '',
+        street: address.label || item.title || '',
+        city: address.city || address.district || '',
+        state: address.state || address.county || '',
+        postalCode: address.postalCode || '',
+        country: address.countryName || country.label || 'South Africa',
+        latitude: item.position?.lat || '',
+        longitude: item.position?.lng || '',
+        formattedAddress: address.label || item.title || '',
+        provider: 'HERE_AUTOCOMPLETE',
+        confidence: 86,
+        verificationStatus: 'HERE_SUGGESTED',
+        raw: item,
+      });
+    })
+    .filter((item) => item.formattedAddress);
+}
+
+/**
+ * @function requestWilsyR91K87ProviderSuggestions
+ * @description Dispatches address suggestions to the configured backend provider.
+ * @param {string} query - Address query.
+ * @param {object} policy - Provider policy.
+ * @param {object} country - Country bias.
+ * @returns {Promise<Array<object>>} Suggestions.
+ * @collaboration One sovereign provider gateway for Google, Mapbox, Loqate, HERE, and Nominatim.
+ */
+async function requestWilsyR91K87ProviderSuggestions(query = '', policy = {}, country = {}) {
+  if (policy.provider === 'GOOGLE_PLACES' && policy.key) {
+    return requestWilsyR91K87GoogleSuggestions(query, policy.key, country);
+  }
+
+  if (policy.provider === 'MAPBOX_SEARCH_BOX' && policy.key) {
+    return requestWilsyR91K87MapboxSuggestions(query, policy.key, country);
+  }
+
+  if (policy.provider === 'LOQATE_ADDRESS_CAPTURE' && policy.key) {
+    return requestWilsyR91K87LoqateSuggestions(query, policy.key, country);
+  }
+
+  if (policy.provider === 'HERE_AUTOCOMPLETE' && policy.key) {
+    return requestWilsyR91K87HereSuggestions(query, policy.key, country);
+  }
+
+  return requestWilsyR91K87NominatimSuggestions(query, country);
+}
+
+/**
+ * @function titleCaseWilsyR91K92AddressQuery
+ * @description Converts address queries into provider-friendly title case.
+ * @param {string} value - Address query.
+ * @returns {string} Title-cased address query.
+ * @collaboration Improves OpenStreetMap and provider matching without changing browser secrets.
+ */
+function titleCaseWilsyR91K92AddressQuery(value = '') {
+  return normalizeWilsyR91K87AddressText(value)
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+/**
+ * @function buildWilsyR91K92AddressQueryVariants
+ * @description Builds expanded address provider search variants when exact lookup returns empty.
+ * @param {string} query - Original operator query.
+ * @param {object} country - Country bias packet.
+ * @returns {Array<string>} Provider search variants.
+ * @collaboration Gives Create Lead real autocomplete resilience for partial streets, uppercase input, and house-number ambiguity.
+ */
+function buildWilsyR91K92AddressQueryVariants(query = '', country = {}) {
+  const normalized = normalizeWilsyR91K87AddressText(query);
+  const titleQuery = titleCaseWilsyR91K92AddressQuery(normalized);
+  const countryLabel = normalizeWilsyR91K87AddressText(
+    country.label === 'ZA' ? 'South Africa' : country.label || 'South Africa'
+  );
+  const withoutLeadingNumber = normalizeWilsyR91K87AddressText(
+    titleQuery.replace(/^\d+[A-Za-z]?\s+/, '')
+  );
+
+  return [
+    normalized,
+    titleQuery,
+    `${titleQuery}, ${countryLabel}`,
+    withoutLeadingNumber,
+    `${withoutLeadingNumber}, ${countryLabel}`,
+    `${withoutLeadingNumber} Avenue, ${countryLabel}`,
+    `${withoutLeadingNumber} Place, ${countryLabel}`,
+    `${withoutLeadingNumber} Road, ${countryLabel}`,
+    `${withoutLeadingNumber} Street, ${countryLabel}`,
+    `${withoutLeadingNumber} Brewery, ${countryLabel}`,
+  ].filter((value, index, list) => value && value.length >= 3 && list.indexOf(value) === index);
+}
+
+/**
+ * @function dedupeWilsyR91K92AddressSuggestions
+ * @description Deduplicates provider address suggestions while preserving ranking.
+ * @param {Array<object>} suggestions - Address suggestions.
+ * @returns {Array<object>} Deduplicated suggestions.
+ * @collaboration Prevents repeated Old Castle variants from cluttering the Create Lead command rail.
+ */
+function dedupeWilsyR91K92AddressSuggestions(suggestions = []) {
+  const seen = new Set();
+
+  return (Array.isArray(suggestions) ? suggestions : []).filter((suggestion) => {
+    const key = [
+      suggestion.provider,
+      suggestion.providerId,
+      suggestion.formattedAddress,
+      suggestion.latitude,
+      suggestion.longitude,
+    ]
+      .filter(Boolean)
+      .join('|')
+      .toLowerCase();
+
+    if (!key || seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * @function requestWilsyR91K92ProviderSuggestionsWithFallback
+ * @description Requests address suggestions through the configured provider and expands empty Nominatim searches.
+ * @param {string} query - Operator address query.
+ * @param {object} policy - Provider policy.
+ * @param {object} country - Country bias packet.
+ * @returns {Promise<object>} Suggestions, variants, and fallback posture.
+ * @collaboration Upgrades Create Lead from exact-query lookup to resilient autocomplete-grade provider search.
+ */
+async function requestWilsyR91K92ProviderSuggestionsWithFallback(
+  query = '',
+  policy = {},
+  country = {}
+) {
+  const shouldExpand =
+    policy.provider === 'OPENSTREETMAP_NOMINATIM' ||
+    policy.provider === 'WILSY_ADDRESS_PROVIDER_PROXY' ||
+    !policy.key;
+
+  const variants = shouldExpand ? buildWilsyR91K92AddressQueryVariants(query, country) : [query];
+
+  const merged = [];
+  const usedVariants = [];
+
+  for (const variant of variants.slice(0, shouldExpand ? 8 : 1)) {
+    const batch = await requestWilsyR91K87ProviderSuggestions(variant, policy, country);
+    usedVariants.push(variant);
+    merged.push(...batch);
+
+    if (dedupeWilsyR91K92AddressSuggestions(merged).length >= 7) {
+      break;
+    }
+  }
+
+  const suggestions = dedupeWilsyR91K92AddressSuggestions(merged).slice(0, 7);
+
+  return {
+    suggestions,
+    variants: usedVariants,
+    fallbackApplied: usedVariants.length > 1,
+  };
+}
+
+/**
+ * @function handleWilsyR91K87AddressSuggest
+ * @description Returns live address suggestions through a server-side provider proxy.
+ * @param {object} req - Express request.
+ * @param {object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {Promise<void>} Response completion.
+ * @collaboration Powers Create Lead address intelligence without exposing provider credentials to the browser.
+ */
+async function handleWilsyR91K87AddressSuggest(req, res, next) {
+  try {
+    const tenantId = getWilsyCrmTenantId(req);
+    const query = normalizeWilsyR91K87AddressText(
+      req.query?.q ||
+        req.query?.query ||
+        req.body?.q ||
+        req.body?.query ||
+        req.body?.addressSearch ||
+        ''
+    );
+    const country = resolveWilsyR91K87AddressCountry(req);
+    const policy = resolveWilsyR91K87ProviderPolicy();
+
+    if (query.length < 3) {
+      res.status(200).json({
+        ok: true,
+        version: WILSY_R91K87_ADDRESS_PROVIDER_VERSION,
+        tenantId,
+        provider: policy.provider,
+        sourceStatus: 'QUERY_TOO_SHORT',
+        suggestions: [],
+        message: 'Type at least three characters for live address search.',
+        generatedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const addressSearchResult = await requestWilsyR91K92ProviderSuggestionsWithFallback(
+      query,
+      policy,
+      country
+    );
+    const suggestions = addressSearchResult.suggestions;
+    const packet = {
+      ok: true,
+      version: WILSY_R91K87_ADDRESS_PROVIDER_VERSION,
+      tenantId,
+      provider: policy.provider,
+      sourceStatus: suggestions.length ? 'ADDRESS_PROVIDER_LIVE' : 'ADDRESS_PROVIDER_EMPTY',
+      suggestions,
+      count: suggestions.length,
+      query,
+      country,
+      searchVariants: addressSearchResult.variants,
+      fallbackApplied: addressSearchResult.fallbackApplied,
+      message: suggestions.length
+        ? 'Live address suggestions returned by backend provider proxy.'
+        : 'No live provider suggestions returned. Keep manual fallback visible.',
+      generatedAt: new Date().toISOString(),
+    };
+    const rootHash = buildWilsyCrmCommandRootHash(packet);
+
+    res.status(200).json({
+      ...packet,
+      rootHash,
+      rootHashShort: rootHash.slice(0, 12),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * @function handleWilsyR91K87AddressResolve
+ * @description Normalizes a selected address suggestion into CRM field payload shape.
+ * @param {object} req - Express request.
+ * @param {object} res - Express response.
+ * @returns {void} Response completion.
+ * @collaboration Prepares provider-selected address packets for Create Lead persistence.
+ */
+function handleWilsyR91K87AddressResolve(req, res) {
+  const tenantId = getWilsyCrmTenantId(req);
+  const suggestion = req.body?.suggestion || req.body || {};
+  const normalized = buildWilsyR91K87AddressSuggestion({
+    ...suggestion,
+    provider: suggestion.provider || 'WILSY_ADDRESS_PROVIDER_PROXY',
+    verificationStatus: suggestion.verificationStatus || 'ADDRESS_SELECTED_FOR_CRM_CREATE',
+  });
+
+  res.status(200).json({
+    ok: true,
+    version: WILSY_R91K87_ADDRESS_PROVIDER_VERSION,
+    tenantId,
+    status: 'ADDRESS_RESOLVED',
+    address: normalized,
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * @function handleWilsyR91K87AddressVerify
+ * @description Returns current verification posture for an address packet.
+ * @param {object} req - Express request.
+ * @param {object} res - Express response.
+ * @returns {void} Response completion.
+ * @collaboration Gives Create Lead a provider-neutral verification endpoint before paid validation providers are configured.
+ */
+function handleWilsyR91K87AddressVerify(req, res) {
+  const tenantId = getWilsyCrmTenantId(req);
+  const address = req.body?.address || req.body || {};
+  const hasCoreAddress = Boolean(address.street || address.formattedAddress || address.label);
+
+  res.status(200).json({
+    ok: true,
+    version: WILSY_R91K87_ADDRESS_PROVIDER_VERSION,
+    tenantId,
+    status: hasCoreAddress ? 'ADDRESS_VERIFICATION_READY' : 'ADDRESS_REQUIRED',
+    verificationStatus: hasCoreAddress ? 'PROVIDER_OR_MANUAL_REVIEW_READY' : 'ADDRESS_REQUIRED',
+    confidence: hasCoreAddress ? Number(address.confidence || 70) : 0,
+    address,
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+router.get('/address/suggest', handleWilsyR91K87AddressSuggest);
+router.post('/address/suggest', handleWilsyR91K87AddressSuggest);
+router.post('/address/resolve', handleWilsyR91K87AddressResolve);
+router.post('/address/verify', handleWilsyR91K87AddressVerify);
 
 router.get('/status', handleWilsyCrmCommandStatus);
 router.get('/search', handleWilsyCrmCommandSearch);

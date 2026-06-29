@@ -110,6 +110,8 @@ const CRM_ENDPOINTS = Object.freeze({
 });
 
 const CRM_SOURCE_POSTURE_ENDPOINT = '/api/crm/live/source-posture';
+const CRM_ROUTE_SURFACE_ENDPOINT = '/api/crm/live/route-surface';
+const CRM_SOURCE_GUIDE_ENDPOINT = '/api/crm/live/source-guide';
 
 const USER_PROFILE_ENDPOINTS = Object.freeze([
   import.meta.env.VITE_USER_PROFILE_URL,
@@ -701,6 +703,87 @@ async function fetchCrmCollection(collection, tenantId, signal) {
  * @param {AbortSignal} signal - Abort signal.
  * @returns {Promise<Object|null>} Source posture.
  * @collaboration Powers Root Hash and source-route counters from the live backend.
+ */
+
+/**
+ * @function fetchCrmRouteSurface
+ * @description Fetches dynamic CRM route-surface telemetry from the live backend registry.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal.
+ * @returns {Promise<Object|null>} Dynamic route-surface payload.
+ * @collaboration CRM header telemetry, production route registry, no-placeholder readiness posture.
+ */
+
+/**
+ * @function fetchCrmSourceGuide
+ * @description Fetches backend Source Posture Guide telemetry for readiness, Wilsy AI mode, and operator actions.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal.
+ * @returns {Promise<Object|null>} Source guide payload or null.
+ * @collaboration CRM dashboard readiness, Source Posture Guide, Wilsy AI operating directives.
+ */
+async function fetchCrmSourceGuide(tenantId, signal) {
+  const response = await fetch(CRM_SOURCE_GUIDE_ENDPOINT, {
+    headers: { 'X-Tenant-Id': tenantId },
+    signal
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+/**
+ * @function fetchCrmRouteSurface
+ * @description Fetches dynamic CRM route-surface telemetry for header route truth and Source Posture Guide enrichment.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal for cancelling route-surface fetches.
+ * @returns {Promise<Object|null>} Route-surface payload or null when unavailable.
+ * @collaboration CRM header telemetry, dynamic route registry, Source Posture Guide readiness.
+ */
+async function fetchCrmRouteSurface(tenantId, signal) {
+  const response = await fetch(CRM_ROUTE_SURFACE_ENDPOINT, {
+    headers: { 'X-Tenant-Id': tenantId },
+    signal
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+
+/**
+ * @function resolveWilsyR91K110RouteSurfaceLabel
+ * @description Resolves the CRM header route-surface label from dynamic backend route telemetry.
+ * @param {Object} sourcePosture - Source posture payload.
+ * @returns {string} Header-safe route-surface label.
+ * @collaboration CRM header telemetry, dynamic route registry, production no-placeholder posture.
+ */
+function resolveWilsyR91K110RouteSurfaceLabel(sourcePosture = {}) {
+  const routeSurfaceCount = toNumber(sourcePosture?.routeSurface?.crmRelatedRoutes);
+
+  if (routeSurfaceCount > 0) {
+    return `${routeSurfaceCount} CRM routes`;
+  }
+
+  const connectedSources = toNumber(sourcePosture.connected);
+  const totalSources = toNumber(sourcePosture.total);
+
+  return `${connectedSources}/${Math.max(totalSources, connectedSources)} CRM sources`;
+}
+
+/**
+ * @function fetchCrmSourcePosture
+ * @description Fetches live CRM source-posture telemetry for the active tenant.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal for cancelling source-posture fetches.
+ * @returns {Promise<Object|null>} Source posture payload or null when unavailable.
+ * @collaboration CRM live source telemetry, route-surface enrichment, production header truth.
  */
 async function fetchCrmSourcePosture(tenantId, signal) {
   try {
@@ -1434,6 +1517,49 @@ function getRecordCellValue(record, column) {
   return safeText(valueMap[key], '—');
 }
 
+
+/**
+ * @function resolveWilsyR91K114ReadinessScore
+ * @description Resolves CRM readiness from the backend Source Posture Guide before falling back to local snapshot math.
+ * @param {Object} snapshot - CRM operating snapshot.
+ * @returns {number} Readiness percentage.
+ * @collaboration CRM header telemetry, backend Source Posture Guide, Wilsy AI truth layer.
+ */
+function resolveWilsyR91K114ReadinessScore(snapshot = {}) {
+  const guideScore = toNumber(
+    snapshot?.sourceGuide?.readinessScore ||
+      snapshot?.sourcePosture?.sourceGuide?.readinessScore
+  );
+
+  if (guideScore > 0) {
+    return guideScore;
+  }
+
+  return toNumber(snapshot?.readinessScore);
+}
+
+/**
+ * @function resolveWilsyR91K114ReadinessNarrative
+ * @description Builds a readiness narrative from the backend Source Posture Guide.
+ * @param {Object} snapshot - CRM operating snapshot.
+ * @param {number} readinessScore - Active readiness score.
+ * @returns {string} Readiness narrative.
+ * @collaboration CRM metric deck, Source Posture Guide, Wilsy AI operating mode.
+ */
+function resolveWilsyR91K114ReadinessNarrative(snapshot = {}, readinessScore = 0) {
+  const guide = snapshot?.sourceGuide || snapshot?.sourcePosture?.sourceGuide || null;
+
+  if (guide?.postureGrade && guide?.aiOperatingMode) {
+    return `${guide.postureGrade} · ${guide.aiOperatingMode}`;
+  }
+
+  if (guide?.postureGrade) {
+    return guide.postureGrade;
+  }
+
+  return readinessScore ? 'Source posture improving' : 'Connect sources to lift readiness';
+}
+
 /**
  * @function useCrmSnapshot
  * @description Loads source-led CRM collections for the active tenant.
@@ -1464,11 +1590,59 @@ function useCrmSnapshot(tenantId, refreshSignal) {
 
     Promise.all(collections.map(collection => fetchCrmCollection(collection, tenantId, controller.signal)))
       .then(async results => {
-        const backendPosture = await fetchCrmSourcePosture(tenantId, controller.signal);
-        const enrichedResults = backendPosture && results.length
-          ? results.map((result, index) => index === 0 ? { ...result, sourcePosture: backendPosture } : result)
+        const [
+          backendPosture,
+          routeSurfacePayload,
+          sourceGuidePayload
+        ] = await Promise.all([
+          fetchCrmSourcePosture(tenantId, controller.signal).catch(() => null),
+          typeof fetchCrmRouteSurface === 'function'
+            ? fetchCrmRouteSurface(tenantId, controller.signal).catch(() => null)
+            : Promise.resolve(null),
+          fetchCrmSourceGuide(tenantId, controller.signal).catch(() => null)
+        ]);
+        const sourceGuide = sourceGuidePayload?.guide || null;
+        const routeSurface = routeSurfacePayload?.routeSurface || sourceGuide?.routeSurface || null;
+        const guideSourcePosture = sourceGuide?.sourcePosture || null;
+        const enrichedPosture = backendPosture
+          ? { ...backendPosture, routeSurface, sourceGuide }
+          : guideSourcePosture
+            ? {
+              ...guideSourcePosture,
+              connectedRoutes: guideSourcePosture.connectedRoutes,
+              totalRoutes: guideSourcePosture.totalRoutes,
+              sourceGaps: guideSourcePosture.sourceGaps || [],
+              routeSurface,
+              sourceGuide
+            }
+            : routeSurface
+              ? { connectedRoutes: 0, totalRoutes: 0, sourceGaps: [], sources: [], routeSurface, sourceGuide }
+              : sourceGuide
+                ? { connectedRoutes: 0, totalRoutes: 0, sourceGaps: [], sources: [], sourceGuide }
+                : null;
+        const enrichedResults = enrichedPosture && results.length
+          ? results.map((result, index) => index === 0 ? { ...result, sourcePosture: enrichedPosture } : result)
           : results;
-        setState({ snapshot: buildCrmSnapshot(enrichedResults), loading: false, error: null });
+        const hydratedSnapshot = buildCrmSnapshot(enrichedResults);
+        const sourceGuideReadiness = toNumber(sourceGuide?.readinessScore);
+        const hydratedSourcePosture = {
+          ...(hydratedSnapshot.sourcePosture || {}),
+          routeSurface: routeSurface || hydratedSnapshot.sourcePosture?.routeSurface || null,
+          sourceGuide
+        };
+
+        setState({
+          snapshot: {
+            ...hydratedSnapshot,
+            sourcePosture: hydratedSourcePosture,
+            sourceGuide,
+            readinessScore: sourceGuideReadiness || toNumber(hydratedSnapshot.readinessScore),
+            readinessPostureGrade: sourceGuide?.postureGrade || null,
+            aiOperatingMode: sourceGuide?.aiOperatingMode || null
+          },
+          loading: false,
+          error: null
+        });
       })
       .catch(error => {
         const snapshot = createEmptySnapshot();
@@ -2029,7 +2203,8 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
     }
   }, [activeHomeTab, visibleHomeTabs]);
 
-  const readinessScore = useMemo(() => calculateReadinessScore(operatingSnapshot), [operatingSnapshot]);
+  const readinessScore = resolveWilsyR91K114ReadinessScore(operatingSnapshot);
+  const readinessNarrative = resolveWilsyR91K114ReadinessNarrative(operatingSnapshot, readinessScore);
   const pipelineStages = useMemo(() => buildPipelineStages(operatingSnapshot.deals), [operatingSnapshot.deals]);
   const weightedPipeline = useMemo(() => buildPipelineTotal(pipelineStages.filter(stage => stage.lane === 'primary')), [pipelineStages]);
   const workspaceTelemetry = useMemo(
@@ -2174,8 +2349,8 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
           </nav>
 
           <div className={styles.investorStrip} aria-label="Investor telemetry">
-            <span><LockKeyhole size={16} /> {rootHashStatus}</span>
-            <span><Network size={16} /> {operatingSnapshot.sourcePosture.connected}/{operatingSnapshot.sourcePosture.total} source routes</span>
+            <span title={rootHashStatus}><LockKeyhole size={16} /> {String(rootHashStatus || '').toLowerCase().includes('root') ? 'Root sealed' : 'Root pending'}</span>
+            <span><Network size={16} /> {resolveWilsyR91K110RouteSurfaceLabel(operatingSnapshot.sourcePosture)}</span>
             <span><Shield size={16} /> {readinessScore}% readiness</span>
           </div>
 
@@ -2358,7 +2533,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   <span>
                     <small>Readiness Score</small>
                     <strong>{readinessScore}%</strong>
-                    <em>{readinessScore ? 'Source posture improving' : 'Connect sources to lift readiness'}</em>
+                    <em>{readinessNarrative}</em>
                   </span>
                   <div className={styles.metricBar}><i style={{ width: `${readinessScore}%` }} /></div>
                 </article>

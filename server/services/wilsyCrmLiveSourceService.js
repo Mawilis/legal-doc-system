@@ -503,3 +503,9 @@ export {
   getTenantId,
   listCrmCollection,
 };
+
+export {
+  SOURCE_DEFINITIONS as WILSY_CRM_LIVE_SOURCE_DEFINITIONS,
+  getAllowedCollections as getWilsyCrmLiveAllowedCollections,
+  listCollectionRecords as listWilsyCrmLiveCollectionRecords,
+};

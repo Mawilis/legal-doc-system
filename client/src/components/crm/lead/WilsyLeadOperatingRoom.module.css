@@ -8258,3 +8258,148 @@
     overflow: visible !important;
   }
 }
+
+
+.addressCommandDeck {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  margin: 8px 0 18px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.94));
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
+}
+
+.addressCommandSearch {
+  display: grid;
+  gap: 8px;
+}
+
+.addressCommandSearch span {
+  color: #38bdf8;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.addressCommandSearch input {
+  width: 100%;
+  min-height: 56px;
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.42);
+  color: #f8fafc;
+  padding: 0 18px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.addressCommandSearch input:focus {
+  border-color: rgba(147, 197, 253, 0.95);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.addressEvidenceStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.addressEvidenceStrip span {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.addressSuggestionRail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.addressSuggestionCard {
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  min-height: 132px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  background: linear-gradient(135deg, rgba(4, 120, 87, 0.18), rgba(15, 23, 42, 0.82));
+  color: #ecfdf5;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.addressSuggestionCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(134, 239, 172, 0.68);
+}
+
+.addressSuggestionCard small {
+  color: #67e8f9;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.addressSuggestionCard strong {
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.addressSuggestionCard span,
+.addressSuggestionCard em {
+  color: #a7f3d0;
+  font-size: 0.76rem;
+  font-style: normal;
+}
+
+.addressManualFallback {
+  border: 1px dashed rgba(148, 163, 184, 0.34);
+  border-radius: 16px;
+  padding: 14px;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.56);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 900px) {
+  .addressSuggestionRail {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* R91K102B - Wilsy OS address intelligence business polish */
+.addressSuggestionRail {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.addressSuggestionCard {
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.addressSuggestionCard:hover {
+  transform: translateY(-2px);
+}
+
+.addressEvidenceStrip span {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.addressManualFallback {
+  font-weight: 600;
+}
