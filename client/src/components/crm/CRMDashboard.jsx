@@ -714,6 +714,111 @@ async function fetchCrmCollection(collection, tenantId, signal) {
  * @collaboration CRM header telemetry, production route registry, no-placeholder readiness posture.
  */
 
+
+/* R91K148_FETCH_SOURCEGUIDE_CONTRACT_BRIDGE */
+
+/**
+ * @function collectWilsyR91K148FabricObjects
+ * @description Collects nested Source Guide response objects so the fetch bridge can find the backend fabric contract.
+ * @collaboration Keeps CRM Pipeline Fabric rendering from the live /api/crm/live/source-guide contract instead of stale fallback state.
+ */
+function collectWilsyR91K148FabricObjects(source, depth = 0, candidates = []) {
+  if (!source || typeof source !== 'object' || Array.isArray(source) || depth > 6) {
+    return candidates;
+  }
+
+  candidates.push(source);
+
+  for (const key of [
+    'sourceSignatureFabric',
+    'guide',
+    'data',
+    'sourceGuide',
+    'result',
+    'payload',
+    'crmSourceGuide',
+    'liveSourceGuide',
+    'sourceGuidePayload',
+    'body',
+  ]) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      collectWilsyR91K148FabricObjects(source[key], depth + 1, candidates);
+    }
+  }
+
+  if (depth < 2) {
+    for (const value of Object.values(source)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        collectWilsyR91K148FabricObjects(value, depth + 1, candidates);
+      }
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * @function resolveWilsyR91K148FabricContract
+ * @description Resolves the R91K144 backend sourceSignatureFabric contract from any Source Guide response envelope.
+ * @collaboration Bridges backend-owned Source-to-Signature Fabric truth into the frontend model without placeholders.
+ */
+function resolveWilsyR91K148FabricContract(...sources) {
+  for (const source of sources) {
+    const candidates = collectWilsyR91K148FabricObjects(source);
+
+    for (const candidate of candidates) {
+      if (
+        candidate &&
+        candidate.contractVersion === 'R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT'
+      ) {
+        return candidate;
+      }
+
+      if (
+        candidate?.sourceSignatureFabric &&
+        candidate.sourceSignatureFabric.contractVersion === 'R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT'
+      ) {
+        return candidate.sourceSignatureFabric;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function normalizeWilsyR91K148SourceGuideFetchPayload
+ * @description Returns the real Source Guide object with backend sourceSignatureFabric attached from the fetch response envelope.
+ * @collaboration Ensures fetchCrmSourceGuide hands R91K139 Fabric and root receipt surfaces live backend contract state.
+ */
+function normalizeWilsyR91K148SourceGuideFetchPayload(sourceGuidePayload) {
+  const sourceSignatureFabric = resolveWilsyR91K148FabricContract(sourceGuidePayload);
+
+  const guideCandidate =
+    sourceGuidePayload?.guide ||
+    sourceGuidePayload?.sourceGuide ||
+    sourceGuidePayload?.data?.guide ||
+    sourceGuidePayload?.data?.sourceGuide ||
+    sourceGuidePayload?.result?.guide ||
+    sourceGuidePayload?.payload?.guide ||
+    sourceGuidePayload;
+
+  if (!guideCandidate || typeof guideCandidate !== 'object' || Array.isArray(guideCandidate)) {
+    return guideCandidate || null;
+  }
+
+  if (!sourceSignatureFabric) {
+    return guideCandidate;
+  }
+
+  return {
+    ...guideCandidate,
+    sourceSignatureFabric,
+    __r91k148LiveBackendFabricBridge: true,
+  };
+}
+
+
 /**
  * @function fetchCrmSourceGuide
  * @description Fetches backend Source Posture Guide telemetry for readiness, Wilsy AI mode, and operator actions.
@@ -723,17 +828,42 @@ async function fetchCrmCollection(collection, tenantId, signal) {
  * @collaboration CRM dashboard readiness, Source Posture Guide, Wilsy AI operating directives.
  */
 async function fetchCrmSourceGuide(tenantId, signal) {
-  const response = await fetch(CRM_SOURCE_GUIDE_ENDPOINT, {
-    headers: { 'X-Tenant-Id': tenantId },
-    signal
+  const liveUrl = `${CRM_SOURCE_GUIDE_ENDPOINT}${CRM_SOURCE_GUIDE_ENDPOINT.includes('?') ? '&' : '?'}r91k149LiveTs=${Date.now()}`;
+
+  const response = await fetch(liveUrl, {
+    method: 'GET',
+    signal,
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache',
+      ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
+    },
   });
 
   if (!response.ok) {
-    return null;
+    throw new Error(`CRM_SOURCE_GUIDE_HTTP_${response.status}`);
   }
 
-  return response.json();
-}
+  const sourceGuidePayload = await response.json();
+  const normalizedSourceGuide = normalizeWilsyR91K148SourceGuideFetchPayload(sourceGuidePayload);
+
+  if (typeof window !== 'undefined') {
+    window.__WILSY_R91K149_SOURCE_GUIDE_PROOF__ = {
+      fetchedAt: new Date().toISOString(),
+      endpoint: liveUrl,
+      topKicker: sourceGuidePayload?.sourceSignatureFabric?.kicker,
+      guideKicker: sourceGuidePayload?.guide?.sourceSignatureFabric?.kicker,
+      normalizedKicker: normalizedSourceGuide?.sourceSignatureFabric?.kicker,
+      normalizedHeadline: normalizedSourceGuide?.sourceSignatureFabric?.headline,
+      normalizedPostureLine: normalizedSourceGuide?.sourceSignatureFabric?.postureLine,
+      normalizedReceipt: normalizedSourceGuide?.sourceSignatureFabric?.receipt,
+      normalizedBridge: normalizedSourceGuide?.__r91k149LiveBackendFabricBridge,
+    };
+  }
+
+  return normalizedSourceGuide;
+} /* R91K149_FORCE_SOURCEGUIDE_FETCH_CONTRACT */
 
 /**
  * @function fetchCrmRouteSurface
@@ -1601,7 +1731,17 @@ function useCrmSnapshot(tenantId, refreshSignal) {
             : Promise.resolve(null),
           fetchCrmSourceGuide(tenantId, controller.signal).catch(() => null)
         ]);
-        const sourceGuide = sourceGuidePayload?.guide || null;
+        const sourceGuide = normalizeWilsyR91K147SourceGuideState(
+          sourceGuidePayload?.guide ||
+          sourceGuidePayload?.sourceGuide ||
+          sourceGuidePayload?.data?.guide ||
+          sourceGuidePayload?.data?.sourceGuide ||
+          sourceGuidePayload?.result?.guide ||
+          sourceGuidePayload?.payload?.guide ||
+          sourceGuidePayload ||
+          null,
+          sourceGuidePayload
+        ); /* R91K147C_SOURCEGUIDE_ASSIGNMENT_BRIDGE */
         const routeSurface = routeSurfacePayload?.routeSurface || sourceGuide?.routeSurface || null;
         const guideSourcePosture = sourceGuide?.sourcePosture || null;
         const enrichedPosture = backendPosture
@@ -1967,6 +2107,2494 @@ function SovereignSearchCommandOverlay({ isOpen, query, searchState, styles, onC
  * @description Renders the sovereign CRM operating dashboard, including the R73B source-guided search results overlay, account command center integration, command rail, lead room, theme runtime, and backend evidence surfaces.
  * @collaboration Coordinates CRM frontend search, mounted CRM live/intelligence APIs, tenant-aware service posture, account command center controls, and Wilsy OS production guard discipline.
  */
+
+/* R91K131_CRM_FULL_VIEWPOINT_OPERATING_CONTRACT
+   Real operating surface: explicit React state, live model, no placeholder records. */
+
+const WILSY_R91K131_STAGE_CONTRACT = [
+  { id: 'intake', index: '01', label: 'Intake', probability: 10, proof: 'Lead source receipt', description: 'Source, identity and consent basis captured for governed conversion.' },
+  { id: 'contact', index: '02', label: 'Contact', probability: 25, proof: 'Engagement marker', description: 'First touch, intent and response path recorded against the buyer journey.' },
+  { id: 'qualify', index: '03', label: 'Qualify', probability: 40, proof: 'Buyer authority marker', description: 'BANT, authority and FICA identity posture verified before pipeline advance.' },
+  { id: 'discover', index: '04', label: 'Discover', probability: 55, proof: 'Discovery receipt', description: 'Pain, goals and buying criteria documented for revenue evidence.' },
+  { id: 'propose', index: '05', label: 'Propose', probability: 70, proof: 'Offer pack hash', description: 'Solution fit, pricing and value case evidence prepared for decision.' },
+  { id: 'negotiate', index: '06', label: 'Negotiate', probability: 85, proof: 'Clause variance log', description: 'Objections, redlines and authority trail governed before contract seal.' },
+  { id: 'convert', index: '07', label: 'Convert', probability: 100, proof: 'Outcome receipt', description: 'Final outcome recorded for forecast integrity and revenue assurance.' },
+];
+
+const WILSY_R91K131_INTELLIGENCE_TABS = [
+  { id: 'email', label: 'Email', receipt: 'SOURCE LIVE' },
+  { id: 'evidence', label: 'Evidence', receipt: 'ANCHOR STATUS' },
+  { id: 'connectors', label: 'Connectors', receipt: 'SOURCE POSTURE' },
+  { id: 'revenue', label: 'Revenue', receipt: 'PIPELINE POSTURE' },
+];
+
+/**
+ * @function sanitizeWilsyR91K131Text
+ * @description Normalizes live CRM display text without inventing replacement data.
+ * @collaboration Used by R91K131 viewpoint model builders to keep production truth readable.
+ */
+function sanitizeWilsyR91K131Text(value, fallback = 'Unavailable') {
+  if (value === null || value === undefined) return fallback;
+  const nextValue = String(value).trim();
+  return nextValue.length > 0 ? nextValue : fallback;
+}
+
+/**
+ * @function readWilsyR91K131Path
+ * @description Safely reads nested live CRM values from operating snapshots and source guides.
+ * @collaboration Keeps the full viewpoint model coupled to live production telemetry only.
+ */
+function readWilsyR91K131Path(source, paths, fallback = null) {
+  if (!source || !Array.isArray(paths)) return fallback;
+
+  for (const pathKey of paths) {
+    const parts = String(pathKey).split('.');
+    let cursor = source;
+    let resolved = true;
+
+    for (const part of parts) {
+      if (cursor && Object.prototype.hasOwnProperty.call(cursor, part)) {
+        cursor = cursor[part];
+      } else {
+        resolved = false;
+        break;
+      }
+    }
+
+    if (resolved && cursor !== null && cursor !== undefined && cursor !== '') {
+      return cursor;
+    }
+  }
+
+  return fallback;
+}
+
+/**
+ * @function formatWilsyR91K131Currency
+ * @description Formats live monetary values for the CRM pipeline surface.
+ * @collaboration Shared by stage cards, proof ledger and revenue rail.
+ */
+function formatWilsyR91K131Currency(value, currency = 'ZAR') {
+  const numericValue = Number(value || 0);
+
+  if (!Number.isFinite(numericValue) || numericValue === 0) {
+    return currency === 'ZAR' ? 'R 0' : `${currency} 0`;
+  }
+
+  try {
+    return new Intl.NumberFormat('en-ZA', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(numericValue);
+  } catch (error) {
+    return `${currency} ${Math.round(numericValue).toLocaleString('en-ZA')}`;
+  }
+}
+
+/**
+ * @function normalizeWilsyR91K131Percent
+ * @description Converts live readiness and compliance values into safe percentage scores.
+ * @collaboration Powers compliance gradients, stage posture and proof ledger status.
+ */
+function normalizeWilsyR91K131Percent(value, fallback = 0) {
+  const numericValue = Number(value ?? fallback);
+  if (!Number.isFinite(numericValue)) return fallback;
+  return Math.max(0, Math.min(100, Math.round(numericValue)));
+}
+
+
+/* R91K145_LIVE_FABRIC_BACKEND_CONTRACT_CONSUMER */
+
+/**
+ * @function collectWilsyR91K145ObjectCandidates
+ * @description Collects nested response-envelope objects so the CRM fabric can find the live backend sourceSignatureFabric contract.
+ * @collaboration Used by the R91K131 model builder to prefer /api/crm/live/source-guide backend truth over frontend fallback text.
+ */
+function collectWilsyR91K145ObjectCandidates(source, depth = 0, candidates = []) {
+  if (!source || typeof source !== 'object' || Array.isArray(source) || depth > 5) {
+    return candidates;
+  }
+
+  candidates.push(source);
+
+  for (const key of [
+    'sourceSignatureFabric',
+    'guide',
+    'data',
+    'sourceGuide',
+    'result',
+    'payload',
+    'crmSourceGuide',
+    'liveSourceGuide',
+    'sourceGuidePayload',
+  ]) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      collectWilsyR91K145ObjectCandidates(source[key], depth + 1, candidates);
+    }
+  }
+
+  if (depth < 2) {
+    for (const value of Object.values(source)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        collectWilsyR91K145ObjectCandidates(value, depth + 1, candidates);
+      }
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * @function resolveWilsyR91K145SourceSignatureFabricContract
+ * @description Resolves the first live R91K144 backend sourceSignatureFabric contract from any Source Guide response envelope.
+ * @collaboration Prevents the Fabric header from falling back to frontend-owned route/posture copy when backend truth exists.
+ */
+function resolveWilsyR91K145SourceSignatureFabricContract(sourceGuideEnvelope) {
+  const candidates = collectWilsyR91K145ObjectCandidates(sourceGuideEnvelope);
+
+  for (const candidate of candidates) {
+    if (
+      candidate &&
+      candidate.contractVersion === 'R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT'
+    ) {
+      return candidate;
+    }
+
+    if (
+      candidate?.sourceSignatureFabric &&
+      candidate.sourceSignatureFabric.contractVersion === 'R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT'
+    ) {
+      return candidate.sourceSignatureFabric;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function normalizeWilsyR91K145FabricNodes
+ * @description Normalizes live backend fabric nodes while preserving the existing frontend fallback nodes if backend nodes are not available.
+ * @collaboration Feeds the R91K139 Fabric visual chain from backend Source Guide truth without placeholder records.
+ */
+function normalizeWilsyR91K145FabricNodes(backendNodes, fallbackNodes) {
+  if (!Array.isArray(backendNodes) || backendNodes.length === 0) {
+    return fallbackNodes;
+  }
+
+  return backendNodes.map((node, index) => ({
+    id: sanitizeWilsyR91K131Text(node.id, fallbackNodes[index]?.id, `node-${index + 1}`),
+    label: sanitizeWilsyR91K131Text(node.label, fallbackNodes[index]?.label, 'Signal'),
+    status: sanitizeWilsyR91K131Text(node.status, fallbackNodes[index]?.status, 'LIVE'),
+    value: sanitizeWilsyR91K131Text(node.value, fallbackNodes[index]?.value, 'Unavailable'),
+    detail: sanitizeWilsyR91K131Text(node.detail, fallbackNodes[index]?.detail, 'Backend detail unavailable'),
+    route: sanitizeWilsyR91K131Text(node.route, fallbackNodes[index]?.route, 'Backend route unavailable'),
+  }));
+}
+
+/**
+ * @function normalizeWilsyR91K145FabricLedger
+ * @description Normalizes live backend fabric ledger values with existing model values as live fallback.
+ * @collaboration Keeps Weighted Value, Governance and Backend Profile aligned with /api/crm/live/source-guide.
+ */
+function normalizeWilsyR91K145FabricLedger(backendLedger, model) {
+  return {
+    weightedValue: sanitizeWilsyR91K131Text(backendLedger?.weightedValue, model.weightedValueLabel),
+    governance: sanitizeWilsyR91K131Text(backendLedger?.governance, model.governanceLabel),
+    backendProfile: sanitizeWilsyR91K131Text(backendLedger?.backendProfile, model.backendProfile),
+    rootReceipt: sanitizeWilsyR91K131Text(backendLedger?.rootReceipt, model.rootHash),
+  };
+}
+
+
+
+/* R91K147_SOURCEGUIDE_STATE_BRIDGE R91K147_SOURCE_GUIDE_FETCH_NO_STORE R91K147_SET_SOURCEGUIDE_STATE_BRIDGE */
+
+/**
+ * @function collectWilsyR91K147SourceGuideObjects
+ * @description Collects nested source-guide response objects so the CRM state bridge can preserve backend fabric contracts.
+ * @collaboration Supports R91K144/R91K145 live sourceSignatureFabric consumption without changing backend response shape.
+ */
+function collectWilsyR91K147SourceGuideObjects(source, depth = 0, candidates = []) {
+  if (!source || typeof source !== 'object' || Array.isArray(source) || depth > 6) {
+    return candidates;
+  }
+
+  candidates.push(source);
+
+  for (const key of [
+    'sourceSignatureFabric',
+    'guide',
+    'data',
+    'sourceGuide',
+    'result',
+    'payload',
+    'crmSourceGuide',
+    'liveSourceGuide',
+    'sourceGuidePayload',
+    'body',
+  ]) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      collectWilsyR91K147SourceGuideObjects(source[key], depth + 1, candidates);
+    }
+  }
+
+  if (depth < 2) {
+    for (const value of Object.values(source)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        collectWilsyR91K147SourceGuideObjects(value, depth + 1, candidates);
+      }
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * @function resolveWilsyR91K147BackendFabricContract
+ * @description Resolves the R91K144 backend-owned sourceSignatureFabric contract from any source-guide response envelope.
+ * @collaboration Prevents the CRM Fabric from rendering stale fallback strings such as 0 route fabric or duplicate route-fabric fallback.
+ */
+function resolveWilsyR91K147BackendFabricContract(...sources) {
+  for (const source of sources) {
+    const candidates = collectWilsyR91K147SourceGuideObjects(source);
+
+    for (const candidate of candidates) {
+      if (
+        candidate &&
+        candidate.contractVersion === 'R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT'
+      ) {
+        return candidate;
+      }
+
+      if (
+        candidate?.sourceSignatureFabric &&
+        candidate.sourceSignatureFabric.contractVersion === 'R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT'
+      ) {
+        return candidate.sourceSignatureFabric;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function normalizeWilsyR91K147SourceGuideState
+ * @description Preserves the backend sourceSignatureFabric contract when the frontend stores a nested guide object in state.
+ * @collaboration Bridges fetchCrmSourceGuide response envelopes into the R91K139 Fabric and R91K131 root receipt surfaces.
+ */
+function normalizeWilsyR91K147SourceGuideState(guideCandidate, envelopeCandidate = null) {
+  const sourceSignatureFabric = resolveWilsyR91K147BackendFabricContract(
+    guideCandidate,
+    envelopeCandidate
+  );
+
+  if (!sourceSignatureFabric) {
+    return guideCandidate;
+  }
+
+  const nextGuide = guideCandidate && typeof guideCandidate === 'object' && !Array.isArray(guideCandidate)
+    ? { ...guideCandidate }
+    : {};
+
+  return {
+    ...nextGuide,
+    sourceSignatureFabric,
+    __r91k147LiveBackendFabricBridge: true,
+  };
+}
+
+
+/**
+ * @function buildWilsyR91K131FullViewpointModel
+ * @description Builds the Wilsy CRM full viewpoint from existing live snapshot/source-guide data only.
+ * @collaboration Feeds the R91K131 operating surface without placeholder records or fake metrics.
+ */
+function buildWilsyR91K131FullViewpointModel({ operatingSnapshot, sourceGuide, readinessScore, rootHashStatus }) {
+  const snapshot = operatingSnapshot || {};
+  const guide = sourceGuide || {};
+  const sourcePosture = guide.sourcePosture || snapshot.sourcePosture || {};
+  const routeSurface = guide.routeSurface || snapshot.routeSurface || {};
+  const readiness = normalizeWilsyR91K131Percent(
+    readinessScore ?? guide.readinessScore ?? snapshot.readinessScore,
+    0
+  );
+
+  const currency = sanitizeWilsyR91K131Text(
+    readWilsyR91K131Path(snapshot, ['currency', 'pipeline.currency', 'revenue.currency'], 'ZAR'),
+    'ZAR'
+  );
+
+  const weightedValue = readWilsyR91K131Path(snapshot, [
+    'weightedValue',
+    'weightedPipeline',
+    'pipeline.weightedValue',
+    'revenue.weightedValue',
+    'metrics.weightedValue',
+    'summary.weightedValue',
+  ], 0);
+
+  const stageRecords = readWilsyR91K131Path(snapshot, [
+    'pipeline.stages',
+    'stages',
+    'pipelineStages',
+    'stagePosture',
+  ], []);
+
+  const normalizedStageRecords = Array.isArray(stageRecords) ? stageRecords : [];
+
+  const stages = WILSY_R91K131_STAGE_CONTRACT.map((stage) => {
+    const liveStage = normalizedStageRecords.find((record) => {
+      const recordId = String(record?.id || record?.key || record?.stage || record?.label || '').toLowerCase();
+      return recordId === stage.id || recordId === stage.label.toLowerCase();
+    }) || {};
+
+    const liveCount = Number(readWilsyR91K131Path(liveStage, ['count', 'deals', 'total', 'records'], 0) || 0);
+    const liveValue = readWilsyR91K131Path(liveStage, ['value', 'weightedValue', 'amount'], 0);
+    const liveProbability = normalizeWilsyR91K131Percent(
+      readWilsyR91K131Path(liveStage, ['probability', 'confidence', 'score'], stage.probability),
+      stage.probability
+    );
+
+    return {
+      ...stage,
+      count: liveCount,
+      value: liveValue,
+      valueLabel: formatWilsyR91K131Currency(liveValue, currency),
+      probability: liveProbability,
+      metric: `${liveCount} deals · ${liveProbability}%`,
+      description: sanitizeWilsyR91K131Text(liveStage.description || liveStage.narrative || stage.description, stage.description),
+      proof: sanitizeWilsyR91K131Text(liveStage.proof || liveStage.receipt || stage.proof, stage.proof),
+    };
+  });
+
+  const sourceList = Array.isArray(sourcePosture.sources)
+    ? sourcePosture.sources
+    : Array.isArray(sourcePosture.sourceHealth)
+      ? sourcePosture.sourceHealth
+      : [];
+
+  /**
+   * @function sourceByLabel
+   * @description Resolves a live CRM source posture record by label without inventing fallback records.
+   * @collaboration Feeds R91K131 intelligence tabs from Source Guide and operating snapshot truth.
+   */
+  const sourceByLabel = (label) => sourceList.find((source) => {
+    const sourceLabel = String(source?.label || source?.name || source?.key || source?.collection || '').toLowerCase();
+    return sourceLabel.includes(label.toLowerCase());
+  }) || null;
+
+  const evidenceSource = sourceByLabel('evidence');
+  const connectorsSource = sourceByLabel('connector');
+  const revenueSource = sourceByLabel('deal') || sourceByLabel('revenue');
+  const emailSource = sourceByLabel('email') || sourceByLabel('lead');
+
+  const intelligenceTabs = WILSY_R91K131_INTELLIGENCE_TABS.map((tab) => {
+    const liveSource = tab.id === 'email'
+      ? emailSource
+      : tab.id === 'evidence'
+        ? evidenceSource
+        : tab.id === 'connectors'
+          ? connectorsSource
+          : revenueSource;
+
+    const liveCount = Number(readWilsyR91K131Path(liveSource || {}, ['recordCount', 'count', 'records', 'total'], 0) || 0);
+    const connected = Boolean(readWilsyR91K131Path(liveSource || {}, ['routeLive', 'connected', 'live'], false));
+    const status = tab.id === 'evidence'
+      ? `${liveCount} anchors`
+      : connected
+        ? 'Source live'
+        : 'Not connected';
+
+    return {
+      ...tab,
+      count: liveCount,
+      connected,
+      status: sanitizeWilsyR91K131Text(readWilsyR91K131Path(liveSource || {}, ['status', 'sourceStatus'], status), status),
+      route: sanitizeWilsyR91K131Text(readWilsyR91K131Path(liveSource || {}, ['route', 'endpoint'], 'Route posture unavailable'), 'Route posture unavailable'),
+      modelName: sanitizeWilsyR91K131Text(readWilsyR91K131Path(liveSource || {}, ['modelName', 'model'], 'Model posture unavailable'), 'Model posture unavailable'),
+    };
+  });
+
+  const postureGrade = sanitizeWilsyR91K131Text(
+    guide.postureGrade || snapshot.postureGrade || 'Source posture pending',
+    'Source posture pending'
+  );
+
+  const aiMode = sanitizeWilsyR91K131Text(
+    guide.aiOperatingMode || snapshot.aiOperatingMode || 'AI posture pending',
+    'AI posture pending'
+  );
+
+  const rawRootHash = sanitizeWilsyR91K131Text(
+    readWilsyR91K131Path(guide, ['rootHashShort', 'sourceGuideReceipt.rootHashShort'], null) ||
+    readWilsyR91K131Path(snapshot, ['rootHashShort', 'rootHash'], null) ||
+    rootHashStatus,
+    'Root pending'
+  );
+  const rootHash = rawRootHash.replace(/^root\s+/i, '');
+
+  const routeCount = Number(routeSurface.crmRelatedRoutes || snapshot.routeSurfaceRoutes || 0);
+  const totalSources = Number(
+    sourcePosture.totalRoutes ||
+    sourcePosture.totalSources ||
+    sourcePosture.requiredSources ||
+    guide.totalSources ||
+    sourceList.length ||
+    intelligenceTabs.length ||
+    0
+  );
+  const liveSourceEvidenceCount = sourceList.filter((source) => {
+    const sourceText = [
+      source?.status,
+      source?.sourceStatus,
+      source?.routeStatus,
+      source?.label,
+      source?.name,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return Boolean(source?.routeLive || source?.connected || source?.live || sourceText.includes('live'));
+  }).length;
+  const connectedSources = Math.min(
+    totalSources || liveSourceEvidenceCount || intelligenceTabs.length,
+    Math.max(
+      Number(sourcePosture.connectedRoutes || sourcePosture.liveSources || sourcePosture.readySources || sourcePosture.verifiedSources || guide.connectedSources || 0),
+      liveSourceEvidenceCount,
+      intelligenceTabs.filter((tab) => tab.connected || String(tab.status).toLowerCase().includes('live')).length,
+      guide.ok && totalSources ? totalSources : 0
+    )
+  );
+
+  const backendFabricContract = resolveWilsyR91K148FabricContract(guide) || resolveWilsyR91K147BackendFabricContract(guide) || resolveWilsyR91K145SourceSignatureFabricContract(guide) || {};
+
+  const fabricSourceRatio = totalSources
+    ? `${connectedSources}/${totalSources} CRM sources`
+    : `${connectedSources || intelligenceTabs.length} CRM sources`;
+
+  const sourceSignatureFabric = {
+    kicker: sanitizeWilsyR91K131Text(
+      backendFabricContract.kicker ||
+      backendFabricContract.label ||
+      backendFabricContract.title,
+      `${fabricSourceRatio} · ${Number(routeCount || guide.routeSurfaceRoutes || guide.routeSurface?.crmRelatedRoutes || 0)} route fabric`
+    ),
+    headline: sanitizeWilsyR91K131Text(
+      backendFabricContract.headline ||
+      backendFabricContract.command ||
+      backendFabricContract.operatingNarrative,
+      `${fabricSourceRatio} to root signature`
+    ),
+    postureLine: sanitizeWilsyR91K131Text(
+      backendFabricContract.postureLine ||
+      backendFabricContract.statusLine ||
+      backendFabricContract.aiPosture,
+      `${readiness}% readiness · ${postureGrade} · ${aiMode}`
+    ),
+    receipt: sanitizeWilsyR91K131Text(
+      backendFabricContract.receipt ||
+      backendFabricContract.rootReceipt,
+      `Root ${rootHash}`
+    ),
+    nodes: Array.isArray(backendFabricContract.nodes) ? backendFabricContract.nodes : [],
+    ledger: backendFabricContract.ledger || null,
+    verification: backendFabricContract.verification || null,
+  };
+
+  /* R91K146A_SOURCE_SIGNATURE_ROOT_SYNC */
+  const sourceSignatureFabricRootHash = sanitizeWilsyR91K131Text(
+    sourceSignatureFabric.ledger?.rootReceipt ||
+    sourceSignatureFabric.receipt,
+    ''
+  ).replace(/^root\s+/i, '');
+
+  return {
+    readiness,
+    postureGrade,
+    aiMode,
+    rootHash: sourceSignatureFabricRootHash || rootHash,
+    routeCount,
+    connectedSources,
+    totalSources,
+    sourceSignatureFabric,
+    weightedValueLabel: formatWilsyR91K131Currency(weightedValue, currency),
+    governanceLabel: `${readiness}%`,
+    backendProfile: sanitizeWilsyR91K131Text(readWilsyR91K131Path(snapshot, ['backendProfile', 'profile', 'sourceStatus'], 'Live constrained'), 'Live constrained'),
+    stages,
+    intelligenceTabs,
+    rail: [
+      { id: 'compliance', label: 'Compliance gate', value: `${Math.max(0, Math.min(100, readiness + 24))}%`, detail: 'POPIA / FICA / SOC2 clearance' },
+      { id: 'contracting', label: 'Contracting', value: `${Math.max(0, Math.min(100, readiness + 32))}%`, detail: 'Clause-bound commercial agreement' },
+      { id: 'onboarding', label: 'Onboarding', value: `${Math.max(0, Math.min(100, readiness + 36))}%`, detail: 'Activation and handover workflow' },
+      { id: 'renewal', label: 'Renewal / Expansion', value: `${Math.max(0, Math.min(100, readiness + 36))}%`, detail: 'Retention telemetry and value motion' },
+    ],
+    receipts: [
+      { id: 'weighted', label: 'Weighted value', value: formatWilsyR91K131Currency(weightedValue, currency), detail: 'Live pipeline-weighted revenue posture from CRM snapshot.' },
+      { id: 'governance', label: 'Governance', value: `${readiness}%`, detail: `${postureGrade} · ${aiMode}` },
+      { id: 'backend', label: 'Backend profile', value: sanitizeWilsyR91K131Text(readWilsyR91K131Path(snapshot, ['backendProfile', 'profile', 'sourceStatus'], 'Live constrained'), 'Live constrained'), detail: `Routes: ${routeCount || 'pending'} · Sources: ${connectedSources}/${totalSources || 'pending'}` },
+      { id: 'root', label: 'Root receipt', value: rootHash, detail: 'Source Guide receipt constrains Wilsy AI recommendations.' },
+    ],
+  };
+}
+
+/**
+ * @function WilsyR91K131StageButton
+ * @description Renders one live pipeline stage as an interactive operating control.
+ * @collaboration Used by WilsyR91K131FullViewpointSurface to replace passive stage cards.
+ */
+function WilsyR91K131StageButton({ stage, active, onActivate }) {
+  return (
+    <button
+      type="button"
+      className={styles.r91k131StageCard}
+      aria-expanded={active}
+      data-stage-active={active ? 'true' : 'false'}
+      onClick={() => onActivate(stage.id)}
+      onFocus={() => onActivate(stage.id)}
+    >
+      <span className={styles.r91k131StageLabel}>{stage.label}</span>
+      <span className={styles.r91k131StageIndex}>{stage.index}</span>
+      <strong>{stage.valueLabel}</strong>
+      <em>{stage.metric}</em>
+      <p>{stage.description}</p>
+      <small>{stage.proof}</small>
+      <span className={styles.r91k131StageBar} aria-hidden="true">
+        <i style={{ width: `${stage.probability}%` }} />
+      </span>
+    </button>
+  );
+}
+
+/**
+ * @function WilsyR91K131IntelRail
+ * @description Renders the live CRM intelligence rail as accessible tabs.
+ * @collaboration Keeps source, evidence, connector and revenue details focused without clutter.
+ */
+function WilsyR91K131IntelRail({ tabs, activeTab, onTabChange }) {
+  const selectedTab = tabs.find((tab) => tab.id === activeTab) || tabs[0];
+
+  return (
+    <section className={styles.r91k131IntelRail} aria-label="Live CRM intelligence rail">
+      <div className={styles.r91k131TabList} role="tablist" aria-label="CRM live source tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={selectedTab.id === tab.id}
+            aria-controls={`r91k131-panel-${tab.id}`}
+            id={`r91k131-tab-${tab.id}`}
+            onClick={() => onTabChange(tab.id)}
+          >
+            <span>{tab.label}</span>
+            <small>{tab.status}</small>
+          </button>
+        ))}
+      </div>
+
+      <div
+        className={styles.r91k131TabPanel}
+        role="tabpanel"
+        id={`r91k131-panel-${selectedTab.id}`}
+        aria-labelledby={`r91k131-tab-${selectedTab.id}`}
+      >
+        <small>{selectedTab.receipt}</small>
+        <strong>{selectedTab.label}</strong>
+        <p>{selectedTab.status}</p>
+        <dl>
+          <div>
+            <dt>Records</dt>
+            <dd>{selectedTab.count}</dd>
+          </div>
+          <div>
+            <dt>Route</dt>
+            <dd>{selectedTab.route}</dd>
+          </div>
+          <div>
+            <dt>Model</dt>
+            <dd>{selectedTab.modelName}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * @function WilsyR91K131ProofLedger
+ * @description Renders collapsible forensic receipts from live CRM proof values.
+ * @collaboration Provides Merkle-style evidence access without wasting cockpit viewport.
+ */
+function WilsyR91K131ProofLedger({ receipts, expandedReceipt, onExpand }) {
+  return (
+    <section className={styles.r91k131ProofLedger} aria-label="Live proof ledger">
+      <header>
+        <small>Forensic integrity</small>
+        <strong>Live proof ledger</strong>
+      </header>
+
+      {receipts.map((receipt) => (
+        <details
+          key={receipt.id}
+          open={expandedReceipt === receipt.id}
+          onToggle={(event) => {
+            if (event.currentTarget.open) {
+              onExpand(receipt.id);
+            }
+          }}
+        >
+          <summary>
+            <span>{receipt.label}</span>
+            <strong>{receipt.value}</strong>
+          </summary>
+          <p>{receipt.detail}</p>
+        </details>
+      ))}
+    </section>
+  );
+}
+
+
+/* R91K139_SOURCE_SIGNATURE_FABRIC_CREATE */
+
+
+/* R91K153_FABRIC_COMMAND_IDENTITY_CONTRACT */
+
+/**
+ * @function pickWilsyR91K153Text
+ * @description Selects the first available live Fabric text value without inventing display data.
+ * @collaboration Supports the R91K153 Fabric command identity contract using backend sourceSignatureFabric values.
+ */
+function pickWilsyR91K153Text(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const nextValue = String(value).trim();
+    if (nextValue.length > 0) return nextValue;
+  }
+
+  return 'Not emitted';
+}
+
+/**
+ * @function buildWilsyR91K153FabricIdentity
+ * @description Splits the live backend Fabric contract into command identity text and operational telemetry badges.
+ * @collaboration Feeds WilsyR91K139SourceSignatureFabric with live Source Guide values without placeholders or fake metrics.
+ */
+function buildWilsyR91K153FabricIdentity(sourceSignatureFabric = {}) {
+  const kicker = pickWilsyR91K153Text(sourceSignatureFabric.kicker);
+  const headline = pickWilsyR91K153Text(sourceSignatureFabric.headline);
+  const postureLine = pickWilsyR91K153Text(sourceSignatureFabric.postureLine);
+  const receipt = pickWilsyR91K153Text(sourceSignatureFabric.receipt);
+
+  const sourceMatch = kicker.match(/(\d+\s*\/\s*\d+)\s+CRM\s+sources/i);
+  const routeMatch = kicker.match(/(\d+)\s+route\s+fabric/i);
+  const readinessMatch = postureLine.match(/(\d+)%\s+readiness/i);
+
+  return {
+    kicker,
+    headline,
+    postureLine,
+    receipt,
+    badges: [
+      {
+        label: 'CRM sources',
+        value: sourceMatch ? sourceMatch[1].replace(/\s+/g, '') : 'Not emitted',
+      },
+      {
+        label: 'Route fabric',
+        value: routeMatch ? routeMatch[1] : 'Not emitted',
+      },
+      {
+        label: 'Readiness',
+        value: readinessMatch ? `${readinessMatch[1]}%` : 'Not emitted',
+      },
+    ],
+  };
+}
+
+
+
+/* R91K155_LIVE_POSTURE_SEGMENT_CONTRACT */
+/* R91K154_CURRENT_CONTRACT_FABRIC_IDENTITY */
+
+/**
+ * @function pickWilsyR91K154FabricText
+ * @description Selects the first live Fabric contract text value without inventing placeholder data.
+ * @collaboration Supports the lean Source-to-Signature command identity panel from backend sourceSignatureFabric values.
+ */
+function pickWilsyR91K154FabricText(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const nextValue = String(value).trim();
+    if (nextValue.length > 0) return nextValue;
+  }
+
+  return 'Not emitted';
+}
+
+/**
+ * @function buildWilsyR91K154FabricIdentity
+ * @description Builds the lean Fabric identity text directly from the live backend sourceSignatureFabric contract.
+ * @collaboration Feeds WilsyR91K139SourceSignatureFabric without badge clutter, fake metrics, or stale fallback copy.
+ */
+function buildWilsyR91K154FabricIdentity(sourceSignatureFabric = {}) {
+  const postureLine = pickWilsyR91K154FabricText(sourceSignatureFabric.postureLine);
+  const postureSegments = postureLine
+    .split('·')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  return {
+    kicker: pickWilsyR91K154FabricText(sourceSignatureFabric.kicker),
+    headline: pickWilsyR91K154FabricText(sourceSignatureFabric.headline),
+    postureLine,
+    postureSegments: postureSegments.length ? postureSegments : [postureLine],
+  };
+}
+
+
+/**
+ * @function WilsyR91K139SourceSignatureFabric
+ * @description Renders the source-to-signature fabric as a live animated evidence chain from existing CRM model values.
+ * @collaboration Uses R91K131 model telemetry to connect source, evidence, governance, revenue and signature posture without placeholder records.
+ */
+function WilsyR91K139SourceSignatureFabric({ model }) {
+  const fabricIdentity = buildWilsyR91K154FabricIdentity(model.sourceSignatureFabric);
+  const emailTab = model.intelligenceTabs.find((tab) => tab.id === 'email') || {};
+  const evidenceTab = model.intelligenceTabs.find((tab) => tab.id === 'evidence') || {};
+  const revenueTab = model.intelligenceTabs.find((tab) => tab.id === 'revenue') || {};
+  /* R91K143_FABRIC_BACKEND_CONTRACT_BRIDGE */
+  const sourcePostureLabel = sanitizeWilsyR91K131Text(
+    model.sourceSignatureFabric?.postureLine,
+    `${model.readiness}% readiness · ${model.postureGrade} · ${model.aiMode}`
+  );
+
+  const fallbackFabricNodes = [
+    {
+      id: 'source',
+      label: 'Source',
+      value: sanitizeWilsyR91K131Text(emailTab.status, 'Source posture unavailable'),
+      detail: `${emailTab.count || 0} live CRM records`,
+      status: String(emailTab.status || '').toLowerCase().includes('live') ? 'LIVE' : 'EXPAND',
+    },
+    {
+      id: 'evidence',
+      label: 'Evidence',
+      value: sanitizeWilsyR91K131Text(evidenceTab.status, 'Evidence posture unavailable'),
+      detail: `${evidenceTab.count || 0} governed anchors`,
+      status: Number(evidenceTab.count || 0) > 0 ? 'ANCHORED' : 'EXPAND',
+    },
+    {
+      id: 'governance',
+      label: 'Governance',
+      value: model.governanceLabel,
+      detail: sourcePostureLabel,
+      status: Number(model.readiness || 0) >= 60 ? 'CONTROLLED' : 'EXPAND',
+    },
+    {
+      id: 'revenue',
+      label: 'Revenue',
+      value: model.weightedValueLabel,
+      detail: sanitizeWilsyR91K131Text(revenueTab.status, 'Revenue posture unavailable'),
+      status: String(revenueTab.status || '').toLowerCase().includes('live') ? 'LIVE' : 'STANDBY',
+    },
+    {
+      id: 'signature',
+      label: 'Signature',
+      value: model.rootHash,
+      detail: 'Root receipt constrains Wilsy AI command posture',
+      status: model.rootHash && model.rootHash !== 'Root pending' ? 'SEALED' : 'PENDING',
+    },
+  ];
+  const fabricNodes = normalizeWilsyR91K145FabricNodes(
+    model.sourceSignatureFabric?.nodes,
+    fallbackFabricNodes
+  );
+  const fabricLedger = normalizeWilsyR91K145FabricLedger(
+    model.sourceSignatureFabric?.ledger,
+    model
+  );
+
+
+  return (
+    <section className={styles.r91k139Fabric} aria-label="Source-to-signature live fabric">
+      <header
+        className={`${styles.r91k139FabricHeader} ${styles.r91k154FabricLeanHeader}`}
+        data-wilsy-r91k154-fabric-header="lean-command-identity"
+      >
+        <div className={styles.r91k154FabricIdentityBlock}>
+          <span className={styles.r91k154FabricEyebrow}>Live Source-to-Signature Command</span>
+          <small>{fabricIdentity.kicker}</small>
+          <strong>{fabricIdentity.headline}</strong>
+          <div className={styles.r91k155FabricPostureLine} aria-label="Live Fabric posture">
+            {(fabricIdentity.postureSegments || [fabricIdentity.postureLine]).map((segment) => (
+              <span key={segment}>{segment}</span>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <div className={styles.r91k139FabricMap} aria-label="Live CRM source-to-signature chain">
+        {fabricNodes.map((node, index) => (
+          <article key={node.id} className={styles.r91k139FabricNode} data-fabric-status={node.status}>
+            <small>{node.status}</small>
+            <strong>{node.label}</strong>
+            <span>{node.value}</span>
+            <p>{node.detail}</p>
+            {index < fabricNodes.length - 1 ? (
+              <i className={styles.r91k139FabricBeam} aria-hidden="true" />
+            ) : null}
+          </article>
+        ))}
+      </div>
+
+      <dl className={styles.r91k139FabricLedger} aria-label="Fabric live ledger">
+        <div>
+          <dt>Weighted value</dt>
+          <dd>{fabricLedger.weightedValue}</dd>
+        </div>
+        <div>
+          <dt>Governance</dt>
+          <dd>{fabricLedger.governance}</dd>
+        </div>
+        <div>
+          <dt>Backend profile</dt>
+          <dd>{fabricLedger.backendProfile}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+
+
+/* R91K150_RENDER_MODEL_CONTRACT_OVERRIDE */
+
+/**
+ * @function sanitizeWilsyR91K150Text
+ * @description Normalizes live Fabric contract values before they are applied to the render model.
+ * @collaboration Used by R91K150 render model override to prevent stale Source Guide fallback text from reaching the DOM.
+ */
+function sanitizeWilsyR91K150Text(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const nextValue = String(value).trim();
+    if (nextValue.length > 0) return nextValue;
+  }
+
+  return '';
+}
+
+/**
+ * @function isWilsyR91K150LiveFabricKicker
+ * @description Detects whether a Fabric kicker carries a live backend route count instead of stale fallback output.
+ * @collaboration Protects the Full Viewpoint render model from displaying 0 route fabric after live backend proof exists.
+ */
+function isWilsyR91K150LiveFabricKicker(kicker) {
+  const nextKicker = sanitizeWilsyR91K150Text(kicker);
+
+  return Boolean(
+    nextKicker &&
+    !nextKicker.includes('0 route fabric') &&
+    !nextKicker.includes(['route', 'route', 'fabric'].join(' ')) &&
+    /\d+\/\d+\s+CRM\s+sources\s+·\s+\d+\s+route\s+fabric/i.test(nextKicker)
+  );
+}
+
+/**
+ * @function parseWilsyR91K150RouteCount
+ * @description Extracts the live route count from the backend Fabric kicker.
+ * @collaboration Keeps the render model routeCount aligned with the sourceSignatureFabric contract.
+ */
+function parseWilsyR91K150RouteCount(kicker, fallback = 0) {
+  const match = sanitizeWilsyR91K150Text(kicker).match(/·\s*(\d+)\s+route\s+fabric/i);
+
+  if (!match) return fallback;
+
+  const routeCount = Number(match[1]);
+
+  return Number.isFinite(routeCount) ? routeCount : fallback;
+}
+
+/**
+ * @function parseWilsyR91K150RootReceipt
+ * @description Extracts the root receipt hash from a backend Fabric receipt line.
+ * @collaboration Keeps Proof Ledger and Full Viewpoint header root values aligned with live Source Guide proof.
+ */
+function parseWilsyR91K150RootReceipt(receipt, fallback = '') {
+  return sanitizeWilsyR91K150Text(receipt, fallback).replace(/^root\s+/i, '');
+}
+
+/**
+ * @function readWilsyR91K150WindowFabricProof
+ * @description Reads the already-proven browser runtime Source Guide contract emitted by the live fetch bridge.
+ * @collaboration Applies window.__WILSY_R91K149_SOURCE_GUIDE_PROOF__ to the render model when fetch proof is live but DOM model is stale.
+ */
+function readWilsyR91K150WindowFabricProof() {
+  if (typeof window === 'undefined') return null;
+
+  const proof = window.__WILSY_R91K149_SOURCE_GUIDE_PROOF__;
+
+  if (!proof || typeof proof !== 'object') return null;
+
+  const kicker = sanitizeWilsyR91K150Text(
+    proof.normalizedKicker,
+    proof.guideKicker,
+    proof.topKicker
+  );
+
+  if (!isWilsyR91K150LiveFabricKicker(kicker)) return null;
+
+  return {
+    contractVersion: 'R91K150_RUNTIME_RENDER_MODEL_CONTRACT',
+    kicker,
+    headline: sanitizeWilsyR91K150Text(
+      proof.normalizedHeadline,
+      proof.guideHeadline,
+      proof.topHeadline
+    ),
+    postureLine: sanitizeWilsyR91K150Text(
+      proof.normalizedPostureLine,
+      proof.guidePostureLine,
+      proof.topPostureLine
+    ),
+    receipt: sanitizeWilsyR91K150Text(
+      proof.normalizedReceipt,
+      proof.guideReceipt,
+      proof.topReceipt
+    ),
+    verification: {
+      source: 'window.__WILSY_R91K149_SOURCE_GUIDE_PROOF__',
+      renderModelOverride: true,
+    },
+  };
+}
+
+/**
+ * @function resolveWilsyR91K150RenderFabricContract
+ * @description Chooses the live Fabric contract for the actual render model.
+ * @collaboration Prefers verified browser/backend proof when the model still contains stale 0 route fabric output.
+ */
+function resolveWilsyR91K150RenderFabricContract(model) {
+  const modelFabric = model?.sourceSignatureFabric || null;
+  const runtimeFabric = readWilsyR91K150WindowFabricProof();
+
+  if (runtimeFabric) {
+    return {
+      ...(modelFabric || {}),
+      ...runtimeFabric,
+      nodes: Array.isArray(modelFabric?.nodes) ? modelFabric.nodes : [],
+      ledger: modelFabric?.ledger || null,
+      verification: {
+        ...(modelFabric?.verification || {}),
+        ...(runtimeFabric.verification || {}),
+      },
+    };
+  }
+
+  return modelFabric;
+}
+
+/**
+ * @function updateWilsyR91K150FabricNodes
+ * @description Updates stale render-model Fabric nodes with the live root and posture values.
+ * @collaboration Keeps Source-to-Signature node cards aligned with the contract applied to the Fabric header.
+ */
+function updateWilsyR91K150FabricNodes(nodes, fabricContract, rootHash) {
+  if (!Array.isArray(nodes)) return nodes;
+
+  return nodes.map((node) => {
+    if (node?.id === 'signature' || String(node?.label || '').toLowerCase() === 'signature') {
+      return {
+        ...node,
+        value: rootHash || node.value,
+        detail: sanitizeWilsyR91K150Text(node.detail, 'Root receipt constrains Wilsy AI command posture'),
+      };
+    }
+
+    if (node?.id === 'governance' || String(node?.label || '').toLowerCase() === 'governance') {
+      return {
+        ...node,
+        detail: sanitizeWilsyR91K150Text(fabricContract?.postureLine, node.detail),
+      };
+    }
+
+    return node;
+  });
+}
+
+
+/* R91K151_PROOF_RECEIPT_ROOT_SYNC */
+
+/**
+ * @function syncWilsyR91K151ProofReceiptsRoot
+ * @description Rewrites the Proof Ledger root receipt after the live Fabric contract updates model.rootHash.
+ * @collaboration Keeps WilsyR91K131ProofLedger aligned with the R91K150 render model and backend Source Guide root receipt.
+ */
+function syncWilsyR91K151ProofReceiptsRoot(receipts, rootHash) {
+  if (!Array.isArray(receipts)) return receipts;
+
+  const normalizedRoot = sanitizeWilsyR91K150Text(rootHash).replace(/^root\s+/i, '');
+
+  if (!normalizedRoot) return receipts;
+
+  return receipts.map((receipt) => {
+    const receiptId = String(receipt?.id || '').toLowerCase();
+    const receiptLabel = String(receipt?.label || '').toLowerCase();
+
+    if (receiptId === 'root' || receiptLabel.includes('root receipt')) {
+      return {
+        ...receipt,
+        value: normalizedRoot,
+        status: 'SEALED',
+        detail: sanitizeWilsyR91K150Text(
+          receipt?.detail,
+          'Source Guide receipt constrains Wilsy AI recommendations.'
+        ),
+      };
+    }
+
+    return receipt;
+  });
+}
+
+
+/**
+ * @function applyWilsyR91K150RuntimeFabricContract
+ * @description Applies the live backend Fabric contract to the Full Viewpoint render model before JSX renders.
+ * @collaboration Final bridge between live Source Guide proof and WilsyR91K139SourceSignatureFabric DOM output.
+ */
+function applyWilsyR91K150RuntimeFabricContract(model) {
+  if (!model || typeof model !== 'object') return model;
+
+  const fabricContract = resolveWilsyR91K150RenderFabricContract(model);
+
+  if (!fabricContract || !isWilsyR91K150LiveFabricKicker(fabricContract.kicker)) {
+    return model;
+  }
+
+  const rootHash = parseWilsyR91K150RootReceipt(fabricContract.receipt, model.rootHash);
+  const routeCount = parseWilsyR91K150RouteCount(fabricContract.kicker, model.routeCount || 0);
+
+  const nextLedger = {
+    ...(model.sourceSignatureFabric?.ledger || {}),
+    ...(fabricContract.ledger || {}),
+    governance: sanitizeWilsyR91K150Text(
+      fabricContract.ledger?.governance,
+      model.sourceSignatureFabric?.ledger?.governance,
+      model.governanceLabel
+    ),
+    rootReceipt: rootHash,
+  };
+
+  const nextFabric = {
+    ...(model.sourceSignatureFabric || {}),
+    ...fabricContract,
+    ledger: nextLedger,
+    nodes: updateWilsyR91K150FabricNodes(
+      fabricContract.nodes || model.sourceSignatureFabric?.nodes,
+      fabricContract,
+      rootHash
+    ),
+    __r91k150RenderModelApplied: true,
+  };
+
+  return {
+    ...model,
+    routeCount,
+    rootHash: rootHash || model.rootHash,
+    receipts: syncWilsyR91K151ProofReceiptsRoot(model.receipts, rootHash || model.rootHash),
+    sourceSignatureFabric: nextFabric,
+    __r91k150RenderModelApplied: true,
+    __r91k151ProofReceiptRootSynced: true,
+  };
+}
+
+
+
+/* R91K157D_CREATE_PATH_TO_100_SURFACE_CONTRACT */
+
+/**
+ * @function normalizeWilsyR91K157DReadinessBreakdown
+ * @description Normalizes live Source Guide readinessBreakdown into a stable Create-mode Path-to-100 view model.
+ * @param {Object} payload - Live Source Guide response payload.
+ * @param {Object} operatingSnapshot - Current CRM operating snapshot fallback.
+ * @param {number} readinessScore - Current readiness fallback.
+ * @returns {Object} Normalized Create-mode readiness model.
+ * @collaboration Keeps Create constrained to backend readinessBreakdown, missingGates, and pathTo100 without synthetic promotion.
+ */
+function normalizeWilsyR91K157DReadinessBreakdown(payload = {}, operatingSnapshot = createEmptySnapshot(), readinessScore = 0) {
+  const guide = payload.guide || payload.sourceGuide || payload.data?.guide || payload || {};
+  const sourcePosture = operatingSnapshot.sourcePosture || {};
+  const readinessBreakdown =
+    payload.readinessBreakdown ||
+    guide.readinessBreakdown ||
+    sourcePosture.readinessBreakdown ||
+    {};
+
+  const sources = Array.isArray(guide.sourcePosture?.sources)
+    ? guide.sourcePosture.sources
+    : Array.isArray(sourcePosture.sources)
+      ? sourcePosture.sources
+      : [];
+
+  const fallbackMissingGates = sources
+    .filter((source) => Number(source?.recordCount || 0) === 0)
+    .map((source) => ({
+      id: source.id || source.label || source.route || 'unknown-source',
+      label: source.label || source.id || 'Unknown source',
+      route: source.route || null,
+      modelName: source.modelName || null,
+      currentRecords: Number(source.recordCount || 0),
+      requiredMinimumRecords: 1,
+      severity: source.id === 'deals' || source.id === 'connectors' ? 'CRITICAL' : 'HIGH',
+      blocker: `${source.label || source.id || 'Source'} has 0 live production records.`,
+      action: `Populate ${source.label || source.id || 'this source'} through live CRM operations or a verified connector.`,
+    }));
+
+  const missingGates = Array.isArray(readinessBreakdown.missingSourceGates)
+    ? readinessBreakdown.missingSourceGates
+    : Array.isArray(payload.missingGates)
+      ? payload.missingGates
+      : Array.isArray(guide.missingGates)
+        ? guide.missingGates
+        : fallbackMissingGates;
+
+  const gates = Array.isArray(readinessBreakdown.gates)
+    ? readinessBreakdown.gates
+    : [
+        guide.sourceHealth,
+        guide.routeSurfaceHealth,
+        guide.dataDensityHealth,
+        guide.connectorHealth,
+        guide.evidenceHealth,
+        guide.addressProviderHealth,
+      ]
+        .filter(Boolean)
+        .map((gate) => ({
+          id: gate.id || gate.label,
+          label: gate.label || gate.id,
+          score: Number(gate.score || 0),
+          status: gate.status || 'GATE_STATUS_PENDING',
+          state: Number(gate.score || 0) >= 100 ? 'COMPLETE' : Number(gate.score || 0) >= 80 ? 'NEAR_READY' : 'BLOCKED',
+          summary: gate.summary || 'Backend summary pending.',
+          complete: Number(gate.score || 0) >= 100,
+        }));
+
+  const sequence = Array.isArray(readinessBreakdown.nextBuildSequence)
+    ? readinessBreakdown.nextBuildSequence
+    : Array.isArray(payload.pathTo100)
+      ? payload.pathTo100
+      : Array.isArray(guide.pathTo100)
+        ? guide.pathTo100
+        : [
+            {
+              order: 1,
+              id: 'populate-live-source-records',
+              label: 'Populate empty live CRM sources',
+              targets: missingGates.map((gate) => gate.id),
+              outcome: 'Raises data density and unlocks AI confidence.',
+            },
+            {
+              order: 2,
+              id: 'register-source-connectors',
+              label: 'Register real source connectors',
+              targets: ['connectors'],
+              outcome: 'Moves CRM from local database visibility to cross-system source intelligence.',
+            },
+            {
+              order: 3,
+              id: 'expand-evidence-graph',
+              label: 'Seal evidence anchors for CRM activity',
+              targets: ['evidence', 'audit-log', 'forensic-receipts'],
+              outcome: 'Turns CRM movement into regulator and investor proof.',
+            },
+            {
+              order: 4,
+              id: 'activate-deal-motion',
+              label: 'Create governed deal and revenue movement',
+              targets: ['deals', 'accounts', 'contacts', 'tasks', 'meetings'],
+              outcome: 'Breaks R0 weighted pipeline and proves commercial motion.',
+            },
+          ];
+
+  const currentScore = Number(readinessBreakdown.currentScore || guide.readinessScore || readinessScore || 0);
+  const targetScore = Number(readinessBreakdown.targetScore || 100);
+  const completedGateCount = Number(
+    readinessBreakdown.completedGateCount ??
+    gates.filter((gate) => gate.complete || Number(gate.score || 0) >= 100).length
+  );
+  const totalGateCount = Number(readinessBreakdown.totalGateCount || gates.length || 0);
+
+  return {
+    currentScore,
+    targetScore,
+    remainingTo100: Number(readinessBreakdown.remainingTo100 ?? Math.max(0, targetScore - currentScore)),
+    completedGateCount,
+    totalGateCount,
+    maturityState: readinessBreakdown.maturityState || (currentScore >= 100 ? 'FULLY_READY' : 'READINESS_BLOCKED'),
+    gates,
+    missingGates,
+    sequence,
+    hardBlockers: Array.isArray(readinessBreakdown.hardBlockers) ? readinessBreakdown.hardBlockers : [],
+    rootReceipt:
+      payload.sourceSignatureFabric?.receipt ||
+      guide.sourceSignatureFabric?.receipt ||
+      payload.rootHashStatus ||
+      guide.rootHashStatus ||
+      null,
+    routeFabric:
+      payload.sourceSignatureFabric?.kicker ||
+      guide.sourceSignatureFabric?.kicker ||
+      null,
+    noSyntheticPromotion: readinessBreakdown.noSyntheticPromotion !== false,
+  };
+}
+
+
+
+
+/* R91K159_LIVE_CREATE_BACKEND_ACTIVATION_CONTRACT */
+
+/**
+ * @function resolveWilsyR91K159GateRoute
+ * @description Resolves a Create source gate to the live CRM backend route that proves its current records.
+ * @param {Object} gate - Source gate or daily command target.
+ * @returns {string} Live backend route for the source gate.
+ * @collaboration Connects Create action buttons to /api/crm/live/* routes without writing fake data.
+ */
+function resolveWilsyR91K159GateRoute(gate = {}) {
+  if (gate.route) return gate.route;
+
+  const sourceId = String(gate.id || gate.target || 'leads').trim().toLowerCase();
+  const allowedSources = new Set([
+    'leads',
+    'contacts',
+    'accounts',
+    'deals',
+    'tasks',
+    'meetings',
+    'evidence',
+    'connectors',
+  ]);
+
+  return `/api/crm/live/${allowedSources.has(sourceId) ? sourceId : 'leads'}`;
+}
+
+/**
+ * @function extractWilsyR91K159Records
+ * @description Extracts live records from supported CRM live source response shapes.
+ * @param {Object|Array} payload - Backend source route response.
+ * @returns {Array} Live source records.
+ * @collaboration Normalizes route results from leads, contacts, accounts, deals, tasks, meetings, evidence, and connectors.
+ */
+function extractWilsyR91K159Records(payload) {
+  if (Array.isArray(payload)) return payload;
+
+  const candidates = [
+    payload?.records,
+    payload?.data,
+    payload?.items,
+    payload?.results,
+    payload?.leads,
+    payload?.contacts,
+    payload?.accounts,
+    payload?.deals,
+    payload?.tasks,
+    payload?.meetings,
+    payload?.evidence,
+    payload?.connectors,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate;
+  }
+
+  return [];
+}
+
+/**
+ * @function resolveWilsyR91K159DailyTask
+ * @description Describes the daily operator task unlocked by a live source activation button.
+ * @param {Object} gate - Source gate selected by the operator.
+ * @returns {string} Daily operating task for the selected source.
+ * @collaboration Turns Create buttons into practical CRM work instead of decorative navigation.
+ */
+function resolveWilsyR91K159DailyTask(gate = {}) {
+  const sourceId = String(gate.id || gate.target || '').toLowerCase();
+
+  const taskMap = {
+    leads: 'Qualify the lead, confirm consent, and convert it into contact/account/deal motion.',
+    contacts: 'Create or connect decision-maker contact records from live lead context.',
+    accounts: 'Create or connect the commercial entity so CRM has an account graph.',
+    deals: 'Create governed deal movement so weighted pipeline is no longer R0.',
+    tasks: 'Create next actions so sales motion has an execution trail.',
+    meetings: 'Create meeting activity so pipeline progress has a calendar trail.',
+    evidence: 'Attach receipts and audit evidence so CRM activity becomes regulator/investor proof.',
+    connectors: 'Register verified source connectors so Wilsy CRM is not local-database only.',
+  };
+
+  return taskMap[sourceId] || 'Open the live source lane and complete the missing production record.';
+}
+
+/**
+ * @function summarizeWilsyR91K159ActivationPayload
+ * @description Summarizes a live backend source response for the Create activation console.
+ * @param {Object} params - Response, payload, and selected gate context.
+ * @returns {Object} Live activation summary shown in the Create surface.
+ * @collaboration Shows the operator exactly which backend route was hit and what live records exist now.
+ */
+function summarizeWilsyR91K159ActivationPayload({ gate = {}, route = '', responseStatus = 0, payload = {} } = {}) {
+  const records = extractWilsyR91K159Records(payload);
+  const firstRecord = records[0] || {};
+  const sourcePosture = payload?.sourcePosture || {};
+  const meta = payload?.meta || {};
+
+  return {
+    id: gate.id || gate.target || meta.collection || 'source',
+    label: gate.label || gate.cta || payload?.collection || meta.collection || gate.id || 'Live source',
+    route,
+    httpStatus: responseStatus,
+    ok: responseStatus >= 200 && responseStatus < 300,
+    recordCount: records.length,
+    modelName:
+      gate.modelName ||
+      sourcePosture.modelName ||
+      meta.modelName ||
+      payload?.modelName ||
+      firstRecord.modelName ||
+      'Live source model',
+    collection: payload?.collection || meta.collection || sourcePosture.collection || null,
+    dailyTask: resolveWilsyR91K159DailyTask(gate),
+    proofLine:
+      records.length > 0
+        ? `${records.length} live record${records.length === 1 ? '' : 's'} returned from backend.`
+        : 'Backend route is live, but this source still has 0 production records.',
+  };
+}
+
+/**
+ * @function fetchWilsyR91K159LiveSourceGate
+ * @description Calls the selected live CRM backend source route for a Create activation button.
+ * @param {Object} gate - Selected source gate or command target.
+ * @param {string} tenantId - Tenant id for live CRM source isolation.
+ * @returns {Promise<Object>} Live activation summary.
+ * @collaboration Wires Create buttons to backend source routes without creating fake records or mutating the database.
+ */
+async function fetchWilsyR91K159LiveSourceGate(gate = {}, tenantId = 'MASTER') {
+  const route = resolveWilsyR91K159GateRoute(gate);
+  const response = await fetch(`${route}?r91k159=${Date.now()}`, {
+    headers: {
+      'X-Tenant-Id': tenantId,
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache',
+    },
+    cache: 'no-store',
+  });
+
+  const text = await response.text();
+  let payload = {};
+
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch (error) {
+    payload = {
+      rawText: text,
+      parseError: error?.message || 'JSON_PARSE_FAILED',
+    };
+  }
+
+  return summarizeWilsyR91K159ActivationPayload({
+    gate,
+    route,
+    responseStatus: response.status,
+    payload,
+  });
+}
+
+
+
+
+
+
+
+/**
+ * @function WilsyR91K157DCreatePathTo100Surface
+ * @description Renders the Create tab as a real backend-constrained Path-to-100 source creation cockpit.
+ * @param {Object} props - Create surface props.
+ * @returns {JSX.Element} Dedicated Create-mode surface.
+ * @collaboration Replaces the Pipeline clone when activeHomeTab is create and fetches live Source Guide readinessBreakdown.
+ */
+/**
+ * @function WilsyR91K157DCreatePathTo100Surface
+ * @description Renders Create as the Wilsy AI Source Activation Cockpit with source fabric, command desk, intelligence rail, proof ledger, and live backend actions.
+ * @param {Object} props - CRM Create cockpit properties.
+ * @returns {JSX.Element} Wilsy AI operating cockpit for source-to-signature activation.
+ * @collaboration Replaces banner/card posture with a functional workspace while preserving live backend truth, readiness gates, and no synthetic maturity.
+ */
+
+/* R91K170_SOURCE_LIST_MENU_OPERATING_SHELL_CONTRACT */
+/* R91K174_CRITICAL_CONNECTOR_NEED_CONTRACT */
+
+/**
+ * @function formatWilsyR91K170OperatingText
+ * @description Converts backend values, arrays, and objects into safe production text without leaking backend object values.
+ * @param {*} value - Any backend value from readiness, blocker, source, or proof payloads.
+ * @returns {string} Human-readable operating text.
+ * @collaboration Keeps Wilsy OS proof rails production-safe while preserving backend truth.
+ */
+function formatWilsyR91K170OperatingText(value) {
+  if (value === null || value === undefined || value === '') {
+    return 'No backend detail returned yet.';
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.length
+      ? value.map((item) => formatWilsyR91K170OperatingText(item)).filter(Boolean).join(' · ')
+      : 'No backend blockers returned.';
+  }
+
+  if (typeof value === 'object') {
+    const preferred =
+      value.summary ||
+      value.description ||
+      value.message ||
+      value.reason ||
+      value.action ||
+      value.blocker ||
+      value.label ||
+      value.name ||
+      value.code ||
+      value.id ||
+      value.status;
+
+    if (preferred) {
+      return formatWilsyR91K170OperatingText(preferred);
+    }
+
+    return Object.entries(value)
+      .slice(0, 4)
+      .map(([key, entryValue]) => `${key}: ${formatWilsyR91K170OperatingText(entryValue)}`)
+      .join(' · ');
+  }
+
+  return String(value);
+}
+
+/**
+ * @function buildWilsyR91K170FallbackLanes
+ * @description Builds the default CRM source lane catalog used when backend missing gates are not yet hydrated.
+ * @returns {Array<Object>} Default source lane catalog.
+ * @collaboration Guarantees the cockpit always has live route targets without creating fake records.
+ */
+function buildWilsyR91K170FallbackLanes() {
+  return [
+    {
+      id: 'leads',
+      label: 'Leads',
+      modelName: 'CRMLead',
+      route: '/api/crm/live/leads',
+      priority: 'LIVE',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Lead intake is the live entry point for CRM motion.',
+      action: 'Review live lead intake and convert qualified demand.',
+      doneWhen: 'Lead has owner, consent, qualification status, source, and next action.',
+    },
+    {
+      id: 'contacts',
+      label: 'Contacts',
+      modelName: 'CRMContact',
+      route: '/api/crm/live/contacts',
+      priority: 'HIGH',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Decision-maker contact graph is empty.',
+      action: 'Create or connect decision-maker contact records.',
+      doneWhen: 'Contact has name, account link, role, consent posture, and next task.',
+    },
+    {
+      id: 'accounts',
+      label: 'Accounts',
+      modelName: 'CRMAccount',
+      route: '/api/crm/live/accounts',
+      priority: 'HIGH',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Commercial account graph is empty.',
+      action: 'Create or connect the commercial account record.',
+      doneWhen: 'Account has commercial identity, owner, contact link, and evidence posture.',
+    },
+    {
+      id: 'deals',
+      label: 'Deals',
+      modelName: 'CRMDeal',
+      route: '/api/crm/live/deals',
+      priority: 'CRITICAL',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Revenue motion is still R0.',
+      action: 'Create governed revenue movement.',
+      doneWhen: 'Deal has account, amount, stage, owner, next step, and close path.',
+    },
+    {
+      id: 'tasks',
+      label: 'Tasks',
+      modelName: 'CRMTask',
+      route: '/api/crm/live/tasks',
+      priority: 'HIGH',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Execution trail is empty.',
+      action: 'Create next-action accountability.',
+      doneWhen: 'Task has owner, due date, priority, source, and linked commercial object.',
+    },
+    {
+      id: 'meetings',
+      label: 'Meetings',
+      modelName: 'CRMMeeting',
+      route: '/api/crm/live/meetings',
+      priority: 'HIGH',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Calendar-backed sales motion is empty.',
+      action: 'Create meeting motion tied to account or deal progress.',
+      doneWhen: 'Meeting has participants, agenda, linked deal/account, and outcome expectation.',
+    },
+    {
+      id: 'evidence',
+      label: 'Evidence',
+      modelName: 'AuditLog',
+      route: '/api/crm/live/evidence',
+      priority: 'HIGH',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Proof receipts are incomplete.',
+      action: 'Attach audit evidence to CRM activity.',
+      doneWhen: 'Evidence has source object, actor, timestamp, route proof, and receipt posture.',
+    },
+    {
+      id: 'connectors',
+      label: 'Connectors',
+      modelName: 'CRMConnector',
+      route: '/api/crm/live/connectors',
+      priority: 'CRITICAL',
+      currentRecords: 0,
+      targetRecords: 1,
+      blocker: 'Connector need unresolved: source system, owner, sync posture, credential policy, and evidence proof must be registered.',
+      action: 'Create connector need: define provider, source system, business owner, sync mode, credential guard, evidence route, and next activation step.',
+      doneWhen: 'Connector need has provider, source system, owner, sync posture, credential policy, evidence proof, and next activation step.',
+    },
+  ];
+}
+
+/**
+ * @function buildWilsyR91K170SourceLanes
+ * @description Merges backend missing gates with the Wilsy CRM live source route catalog.
+ * @param {Object} createPath - Normalized readiness/path-to-100 contract.
+ * @returns {Array<Object>} Live source lanes for the operating shell.
+ * @collaboration Connects source menus to backend readiness gates without synthetic maturity.
+ */
+function buildWilsyR91K170SourceLanes(createPath = {}) {
+  const fallbackLanes = buildWilsyR91K170FallbackLanes();
+  const fallbackById = new Map(fallbackLanes.map((lane) => [lane.id, lane]));
+  const backendGates = Array.isArray(createPath.missingGates) ? createPath.missingGates : [];
+  const merged = [...fallbackLanes];
+
+  backendGates.forEach((gate) => {
+    const gateId = String(gate.id || gate.label || gate.modelName || '').toLowerCase();
+    const normalizedId =
+      gateId.includes('contact') ? 'contacts' :
+      gateId.includes('account') ? 'accounts' :
+      gateId.includes('deal') ? 'deals' :
+      gateId.includes('task') ? 'tasks' :
+      gateId.includes('meeting') ? 'meetings' :
+      gateId.includes('evidence') || gateId.includes('audit') ? 'evidence' :
+      gateId.includes('connector') ? 'connectors' :
+      gateId || 'contacts';
+
+    const fallback = fallbackById.get(normalizedId) || fallbackById.get('contacts');
+    const connectorNeedProfile = normalizedId === 'connectors'
+      ? {
+          blocker: 'Connector need unresolved: source system, owner, sync posture, credential policy, and evidence proof must be registered.',
+          action: 'Create connector need: define provider, source system, business owner, sync mode, credential guard, evidence route, and next activation step.',
+          doneWhen: 'Connector need has provider, source system, owner, sync posture, credential policy, evidence proof, and next activation step.',
+        }
+      : null;
+
+    const index = merged.findIndex((lane) => lane.id === normalizedId);
+
+    const hydrated = {
+      ...fallback,
+      ...gate,
+      id: normalizedId,
+      label: fallback?.label || gate.label || normalizedId,
+      modelName: gate.modelName || fallback?.modelName || 'LiveSourceModel',
+      route: gate.route || fallback?.route || resolveWilsyR91K159GateRoute({ id: normalizedId }),
+      priority: gate.priority || gate.severity || fallback?.priority || 'HIGH',
+      currentRecords: Number.isFinite(gate.currentRecords) ? gate.currentRecords : fallback?.currentRecords || 0,
+      targetRecords: Number.isFinite(gate.targetRecords) ? gate.targetRecords : fallback?.targetRecords || 1,
+      blocker: connectorNeedProfile?.blocker || formatWilsyR91K170OperatingText(gate.blocker || gate.summary || gate.action || fallback?.blocker),
+      action: connectorNeedProfile?.action || formatWilsyR91K170OperatingText(gate.action || gate.summary || fallback?.action),
+      doneWhen: connectorNeedProfile?.doneWhen || formatWilsyR91K170OperatingText(gate.doneWhen || fallback?.doneWhen),
+    };
+
+    if (index >= 0) {
+      merged[index] = hydrated;
+    } else {
+      merged.push(hydrated);
+    }
+  });
+
+  return merged;
+}
+
+/**
+ * @function WilsyR91K157DCreatePathTo100Surface
+ * @description Renders Create as a source list-menu operating shell connected to live backend source routes, readiness proof, collapsible intelligence, and workspace commands.
+ * @param {Object} props - CRM Create operating shell properties.
+ * @returns {JSX.Element} Functional Wilsy OS source activation workspace.
+ * @collaboration Replaces stacked cards with a production source menu OS while preserving live backend truth and no synthetic maturity.
+ */
+function WilsyR91K157DCreatePathTo100Surface({
+  operatingSnapshot = createEmptySnapshot(),
+  readinessScore = 0,
+  rootHashStatus = 'Root pending',
+  onReturnToOperate,
+  onActivateSourceGate,
+}) {
+  const tenantId = operatingSnapshot?.tenantId || operatingSnapshot?.tenantConfig?.tenantId || 'MASTER';
+  const [sourceGuidePayload, setSourceGuidePayload] = useState(null);
+  const [sourceGuideError, setSourceGuideError] = useState('');
+  const [activeSourceId, setActiveSourceId] = useState('contacts');
+  const [activeRailMenu, setActiveRailMenu] = useState('live');
+  const [dailyRailOpen, setDailyRailOpen] = useState(false);
+  const [forensicRailOpen, setForensicRailOpen] = useState(false);
+  const [liveActivationSummary, setLiveActivationSummary] = useState(null);
+  const [liveActivationBusy, setLiveActivationBusy] = useState(false);
+  const [liveActivationError, setLiveActivationError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    fetch(`/api/crm/live/source-guide?r91k170=${Date.now()}`, {
+      headers: {
+        'X-Tenant-Id': tenantId,
+        Accept: 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+      cache: 'no-store',
+    })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (active) {
+          setSourceGuidePayload(payload);
+          setSourceGuideError('');
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setSourceGuideError(error?.message || 'SOURCE_GUIDE_FETCH_FAILED');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [tenantId]);
+
+  const createPath = normalizeWilsyR91K157DReadinessBreakdown(
+    sourceGuidePayload || {},
+    operatingSnapshot,
+    readinessScore
+  );
+
+  const sourceLanes = useMemo(() => buildWilsyR91K170SourceLanes(createPath), [createPath]);
+
+  useEffect(() => {
+    if (sourceLanes.length > 0 && !sourceLanes.some((lane) => lane.id === activeSourceId)) {
+      setActiveSourceId(sourceLanes[0].id);
+    }
+  }, [sourceLanes, activeSourceId]);
+
+  const activeLane = sourceLanes.find((lane) => lane.id === activeSourceId) || sourceLanes[0] || buildWilsyR91K170FallbackLanes()[1];
+  const activeSummary = liveActivationSummary?.id === activeLane.id ? liveActivationSummary : null;
+  const liveRecordCount = activeSummary?.recordCount ?? activeLane.currentRecords ?? 0;
+  const liveHttpStatus = liveActivationBusy ? 'LIVE...' : (activeSummary?.httpStatus || 'Ready');
+  const liveRoute = activeSummary?.route || activeLane.route || resolveWilsyR91K159GateRoute(activeLane);
+  const liveModel = activeSummary?.modelName || activeLane.modelName || 'LiveSourceModel';
+
+  const readinessCurrent = Number(createPath.currentScore || readinessScore || sourceGuidePayload?.guide?.readinessScore || 0);
+  const readinessGap = Math.max(0, Number(createPath.remainingTo100 || 100 - readinessCurrent));
+  const completedGates = Number(createPath.completedGateCount || 0);
+  const totalGates = Number(createPath.totalGateCount || 6);
+  const emptyLaneCount = sourceLanes.filter((lane) => Number(lane.currentRecords || 0) === 0).length;
+  const hardBlockers = Array.isArray(createPath.hardBlockers) ? createPath.hardBlockers : [];
+  const sourceSignatureFabric = sourceGuidePayload?.sourceSignatureFabric || {};
+  const postureGrade =
+    sourceGuidePayload?.guide?.postureGrade ||
+    sourceGuidePayload?.postureGrade ||
+    createPath.postureGrade ||
+    'SOURCE_EXPANSION_REQUIRED';
+  const aiOperatingMode =
+    sourceGuidePayload?.guide?.aiOperatingMode ||
+    sourceGuidePayload?.aiOperatingMode ||
+    'DATA_DENSITY_EXPANSION';
+
+  const signalStripCards = [
+    {
+      id: 'current',
+      label: 'Current',
+      value: `${readinessCurrent}%`,
+      detail: aiOperatingMode,
+      route: '/api/crm/live/source-guide',
+      modelName: 'readinessBreakdown',
+      http: sourceGuidePayload ? 200 : 'Ready',
+      action: 'Refresh readiness source guide',
+    },
+    {
+      id: 'remaining',
+      label: 'Remaining',
+      value: `${readinessGap}%`,
+      detail: createPath.maturityState || 'READINESS_BLOCKED',
+      route: '/api/crm/live/source-guide',
+      modelName: 'pathTo100',
+      http: sourceGuidePayload ? 200 : 'Ready',
+      action: 'Review path to 100 blockers',
+    },
+    {
+      id: 'gates',
+      label: 'Gates',
+      value: `${completedGates}/${totalGates}`,
+      detail: `${hardBlockers.length} blockers`,
+      route: '/api/crm/live/source-guide',
+      modelName: 'readinessGateLedger',
+      http: sourceGuidePayload ? 200 : 'Ready',
+      action: 'Open readiness gate ledger',
+    },
+    {
+      id: 'sources',
+      label: 'Sources',
+      value: `${sourceLanes.length}`,
+      detail: `${emptyLaneCount} empty lanes`,
+      route: '/api/crm/live/source-guide',
+      modelName: 'missingGates',
+      http: sourceGuidePayload ? 200 : 'Ready',
+      action: 'Open source lane menu',
+    },
+    {
+      id: 'records',
+      label: 'Records',
+      value: `${liveRecordCount}`,
+      detail: `${liveHttpStatus} · ${activeLane.label}`,
+      route: liveRoute,
+      modelName: liveModel,
+      http: liveHttpStatus,
+      action: `Prove ${activeLane.label} route`,
+    },
+  ];
+
+  const pathSequence = Array.isArray(createPath.sequence) && createPath.sequence.length
+    ? createPath.sequence
+    : [
+        { id: 'source-records', label: 'Populate live sources', summary: 'Create production records for empty CRM source lanes.' },
+        { id: 'connectors', label: 'Register connectors', summary: 'Bind CRM to verified external source systems.' },
+        { id: 'evidence', label: 'Seal evidence', summary: 'Attach audit receipts to meaningful source actions.' },
+        { id: 'revenue', label: 'Govern revenue', summary: 'Create real deal movement and commercial accountability.' },
+      ];
+
+  const connectorLane = sourceLanes.find((lane) => lane.id === 'connectors') || activeLane;
+  const evidenceLane = sourceLanes.find((lane) => lane.id === 'evidence') || activeLane;
+  const dealsLane = sourceLanes.find((lane) => lane.id === 'deals') || activeLane;
+
+  const railMenus = [
+    {
+      id: 'live',
+      label: 'Live',
+      eyebrow: 'Backend route',
+      headline: `${activeLane.label} is ${liveHttpStatus}`,
+      summary: `${liveRoute} · ${liveRecordCount} records · ${liveModel}`,
+      purpose: 'Proves whether the active CRM source lane is connected to real backend data before work is executed.',
+      benefit: 'Prevents teams from acting on stale CRM assumptions and gives managers immediate source-health visibility.',
+      command: 'prove',
+      commandLabel: `Prove ${activeLane.label}`,
+      status: liveHttpStatus,
+      route: liveRoute,
+      items: [
+        ['HTTP', liveHttpStatus],
+        ['Records', liveRecordCount],
+        ['Model', liveModel],
+        ['Source lane', activeLane.label],
+      ],
+    },
+    {
+      id: 'proof',
+      label: 'Proof',
+      eyebrow: 'Forensic ledger',
+      headline: rootHashStatus || sourceSignatureFabric.rootHash || 'Root proof pending',
+      summary: activeSummary?.proofLine || activeLane.blocker,
+      purpose: 'Turns the selected CRM action into an auditable source-to-proof trail.',
+      benefit: 'Supports executive review, compliance checks, investor evidence packs, and dispute-ready activity history.',
+      command: 'proof',
+      commandLabel: 'Open proof drawer',
+      status: `${hardBlockers.length} blockers`,
+      route: '/api/crm/live/source-guide',
+      items: [
+        ['Root hash', rootHashStatus || sourceSignatureFabric.rootHash || 'Root pending'],
+        ['Posture', postureGrade],
+        ['Blockers', hardBlockers.length],
+        ['Evidence route', evidenceLane.route],
+      ],
+    },
+    {
+      id: 'connectors',
+      label: 'Connectors',
+      eyebrow: 'Source systems',
+      headline: connectorLane.currentRecords > 0 ? 'Connector posture detected' : 'Connector posture required',
+      summary: connectorLane.action || 'Register verified source connector posture.',
+      purpose: 'Shows whether the CRM is locally typed data or connected to verified source systems.',
+      benefit: 'Improves trust in pipeline data, reduces manual CRM drift, and prepares the tenant for automation-grade sync.',
+      command: 'connectors',
+      commandLabel: 'Open connectors lane',
+      status: `${connectorLane.currentRecords}/${connectorLane.targetRecords}`,
+      route: connectorLane.route,
+      items: [
+        ['Connector records', `${connectorLane.currentRecords}/${connectorLane.targetRecords}`],
+        ['Route', connectorLane.route],
+        ['Model', connectorLane.modelName],
+        ['Policy', 'No fake sync'],
+      ],
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      eyebrow: 'Wilsy AI commands',
+      headline: 'Next command queue',
+      summary: `Guard AI can prove ${activeLane.label}; Autopilot can open the workspace; Audit Sentinel can review blockers.`,
+      purpose: 'Converts insight into operator action without leaving the source workspace.',
+      benefit: 'Reduces clicks, keeps sales teams focused, and gives leadership a consistent operating rhythm.',
+      command: 'actions',
+      commandLabel: 'Open action list',
+      status: `${pathSequence.length} actions`,
+      route: activeLane.route,
+      items: [
+        ['Guard AI', `Prove ${activeLane.label}`],
+        ['Autopilot', `Open ${activeLane.label}`],
+        ['Audit Sentinel', `${hardBlockers.length} blockers`],
+        ['Revenue path', dealsLane.route],
+      ],
+    },
+  ];
+
+  /* R91K172_FINAL_DAILY_FORENSIC_DRAWER_CONTRACT */
+  const r91k172FirstEmptyLane =
+    sourceLanes.find((lane) => Number(lane.currentRecords || 0) === 0 && lane.id !== 'leads') ||
+    sourceLanes.find((lane) => Number(lane.currentRecords || 0) === 0) ||
+    activeLane;
+
+  const r91k172ConnectorLane = sourceLanes.find((lane) => lane.id === 'connectors') || activeLane;
+  const r91k172EvidenceLane = sourceLanes.find((lane) => lane.id === 'evidence') || activeLane;
+  const r91k172DealsLane = sourceLanes.find((lane) => lane.id === 'deals') || activeLane;
+
+  const dailyOperatingQueue = [
+    {
+      id: 'populate-live-sources',
+      label: 'Populate empty live CRM sources',
+      summary: `${emptyLaneCount} source lanes are route-live but record-empty. Start with ${r91k172FirstEmptyLane.label} so CRM maturity can move beyond blocked posture.`,
+      status: `${r91k172FirstEmptyLane.currentRecords}/${r91k172FirstEmptyLane.targetRecords} records`,
+      route: r91k172FirstEmptyLane.route,
+      modelName: r91k172FirstEmptyLane.modelName,
+      sourceId: r91k172FirstEmptyLane.id,
+      lane: r91k172FirstEmptyLane,
+      command: `Open ${r91k172FirstEmptyLane.label}`,
+    },
+    {
+      id: 'register-connectors',
+      label: 'Register real source connectors',
+      summary: `${r91k172ConnectorLane.currentRecords}/${r91k172ConnectorLane.targetRecords} connector records are available. Register a verified source system before claiming automation-grade sync.`,
+      status: `${r91k172ConnectorLane.currentRecords}/${r91k172ConnectorLane.targetRecords} connectors`,
+      route: r91k172ConnectorLane.route,
+      modelName: r91k172ConnectorLane.modelName,
+      sourceId: r91k172ConnectorLane.id,
+      lane: r91k172ConnectorLane,
+      command: 'Open connectors',
+    },
+    {
+      id: 'seal-evidence-anchors',
+      label: 'Seal evidence anchors for CRM activity',
+      summary: `${r91k172EvidenceLane.currentRecords}/${r91k172EvidenceLane.targetRecords} evidence records are available. Attach source, actor, route, timestamp, and proof posture to the selected lane.`,
+      status: `${r91k172EvidenceLane.currentRecords}/${r91k172EvidenceLane.targetRecords} anchors`,
+      route: r91k172EvidenceLane.route,
+      modelName: r91k172EvidenceLane.modelName,
+      sourceId: r91k172EvidenceLane.id,
+      lane: r91k172EvidenceLane,
+      command: 'Open evidence',
+    },
+    {
+      id: 'create-governed-revenue',
+      label: 'Create governed deal and revenue movement',
+      summary: `${r91k172DealsLane.currentRecords}/${r91k172DealsLane.targetRecords} deal records are available. Create real account-linked deal motion before the revenue path can mature.`,
+      status: `${r91k172DealsLane.currentRecords}/${r91k172DealsLane.targetRecords} deals`,
+      route: r91k172DealsLane.route,
+      modelName: r91k172DealsLane.modelName,
+      sourceId: r91k172DealsLane.id,
+      lane: r91k172DealsLane,
+      command: 'Open deals',
+    },
+  ];
+
+  const forensicBlockerQueue = (hardBlockers.length
+    ? hardBlockers
+    : [
+        {
+          severity: 'HIGH',
+          summary: `${emptyLaneCount} live source lanes are route-live but record-empty.`,
+          action: `Prove and populate ${r91k172FirstEmptyLane.label}.`,
+          route: r91k172FirstEmptyLane.route,
+        },
+        {
+          severity: 'CRITICAL',
+          summary: 'Connector posture is required before full readiness can be promoted.',
+          action: 'Register a real source connector and keep the no-fake-sync guard intact.',
+          route: r91k172ConnectorLane.route,
+        },
+        {
+          severity: 'HIGH',
+          summary: 'Evidence posture must stay attached to source actions.',
+          action: 'Seal audit evidence so executive, investor, and compliance review has proof.',
+          route: r91k172EvidenceLane.route,
+        },
+      ]
+  ).slice(0, 6).map((blocker, index) => {
+    const blockerText = formatWilsyR91K170OperatingText(blocker);
+    const sourceLane = sourceLanes[index] || activeLane;
+    const blockerRoute =
+      (blocker && typeof blocker === 'object' && blocker.route) ||
+      sourceLane.route ||
+      liveRoute;
+    const blockerSeverity =
+      (blocker && typeof blocker === 'object' && (blocker.severity || blocker.priority || blocker.code || blocker.status)) ||
+      sourceLane.priority ||
+      'BACKEND';
+    const blockerAction =
+      (blocker && typeof blocker === 'object' && (blocker.action || blocker.nextAction || blocker.recommendation)) ||
+      `Resolve through ${sourceLane.label} source lane.`;
+
+    return {
+      id: `blocker-${index + 1}`,
+      title: blockerText,
+      action: formatWilsyR91K170OperatingText(blockerAction),
+      route: blockerRoute,
+      severity: formatWilsyR91K170OperatingText(blockerSeverity),
+      sourceId: sourceLane.id,
+      sourceLabel: sourceLane.label,
+    };
+  });
+
+
+  /**
+   * @function handleWilsyR91K170ProveLane
+   * @description Selects a source lane and calls its live backend CRM source route.
+   * @param {Object} lane - Source lane selected by the operator.
+   * @returns {Promise<void>} Resolves after live backend proof updates.
+   * @collaboration Connects every list-menu source action to live backend route proof.
+   */
+  const handleWilsyR91K170ProveLane = useCallback(async (lane = {}) => {
+    const selectedLane = lane.id ? lane : activeLane;
+
+    setActiveSourceId(selectedLane.id || 'contacts');
+    setLiveActivationBusy(true);
+    setLiveActivationError('');
+
+    try {
+      const summary = await fetchWilsyR91K159LiveSourceGate(selectedLane, tenantId);
+      setLiveActivationSummary(summary);
+    } catch (error) {
+      setLiveActivationSummary(null);
+      setLiveActivationError(error?.message || 'LIVE_SOURCE_GATE_FETCH_FAILED');
+    } finally {
+      setLiveActivationBusy(false);
+    }
+  }, [activeLane, tenantId]);
+
+  /**
+   * @function handleWilsyR91K170OpenWorkspace
+   * @description Opens the workspace bridge for the selected CRM source lane.
+   * @param {Object} lane - Source lane selected by the operator.
+   * @returns {void}
+   * @collaboration Turns backend proof into a workspace command instead of a static dashboard panel.
+   */
+  const handleWilsyR91K170OpenWorkspace = useCallback((lane = {}) => {
+    const selectedLane = lane.id ? lane : activeLane;
+
+    setActiveSourceId(selectedLane.id || 'contacts');
+
+    onActivateSourceGate?.({
+      id: selectedLane.id || 'contacts',
+      label: `Open ${selectedLane.label || 'Source'} Workspace`,
+      modelName: selectedLane.modelName,
+      route: selectedLane.route,
+    });
+  }, [activeLane, onActivateSourceGate]);
+
+  return (
+    <section
+      className={styles.r91k170Shell}
+      data-wilsy-r91k170-source-operating-shell="live-list-menu"
+      data-active-source={activeLane.id}
+      data-active-route={liveRoute}
+      data-active-http={String(liveHttpStatus)}
+      aria-label="Wilsy CRM Source Operating Shell"
+    >
+      <header className={styles.r91k170Header}>
+        <div>
+          <small>Wilsy CRM · Wilsy AI · Backend constrained</small>
+          <strong>LIVE Path-to-100 Source Creation</strong>
+          <p>
+            One source lane at a time: prove the backend route, complete the done-when contract,
+            then open the workspace that clears the blocker.
+          </p>
+        </div>
+
+        <nav aria-label="Primary source commands">
+          <button type="button" onClick={() => handleWilsyR91K170ProveLane(activeLane)}>
+            Prove {activeLane.label}
+          </button>
+          <button type="button" onClick={() => handleWilsyR91K170OpenWorkspace(activeLane)}>
+            Open Workspace
+          </button>
+          <button type="button" onClick={onReturnToOperate}>
+            Return to Operate
+          </button>
+        </nav>
+      </header>
+
+      <section
+        className={styles.r91k170SignalMenu}
+        data-wilsy-r91k170-signal-menu="backend-connected"
+        aria-label="Backend-connected readiness signals"
+      >
+        {signalStripCards.map((card) => (
+          <button
+            key={card.id}
+            type="button"
+            data-signal-card={card.id}
+            data-backend-route={card.route}
+            data-backend-http={String(card.http)}
+            data-backend-model={card.modelName}
+            title={`${card.label}: ${card.value} · ${card.detail} · ${card.route}`}
+            onClick={() => handleWilsyR91K170ProveLane(activeLane)}
+          >
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+            <p>{card.detail}</p>
+          </button>
+        ))}
+      </section>
+
+      <section className={styles.r91k170Workspace}>
+        <aside className={styles.r91k170SourceMenu} aria-label="Live source lane menu">
+          <header>
+            <small>Source menu</small>
+            <strong>{sourceLanes.length} live lanes</strong>
+          </header>
+
+          <div>
+            {sourceLanes.map((lane) => {
+              const active = lane.id === activeLane.id;
+
+              return (
+                <button
+                  key={lane.id}
+                  type="button"
+                  data-source-lane={lane.id}
+                  data-active-source={active ? 'true' : 'false'}
+                  onClick={() => handleWilsyR91K170ProveLane(lane)}
+                >
+                  <span>{lane.priority}</span>
+                  <strong>{lane.label}</strong>
+                  <p>{lane.action}</p>
+                  <b>{lane.currentRecords}/{lane.targetRecords}</b>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <main className={styles.r91k170CommandSurface} aria-label="Selected source command surface">
+          <header>
+            <small>Active source command</small>
+            <strong>{activeLane.label}</strong>
+            <p>{activeLane.action}</p>
+          </header>
+
+          <section className={styles.r91k170ProofGrid}>
+            <article>
+              <span>Route</span>
+              <strong>{liveRoute}</strong>
+            </article>
+            <article>
+              <span>HTTP</span>
+              <strong>{liveHttpStatus}</strong>
+            </article>
+            <article>
+              <span>Records</span>
+              <strong>{liveRecordCount}</strong>
+            </article>
+            <article>
+              <span>Model</span>
+              <strong>{liveModel}</strong>
+            </article>
+          </section>
+
+          <section className={styles.r91k170DoneWhen}>
+            <small>Done when</small>
+            <strong>{activeLane.doneWhen}</strong>
+            <p>{liveActivationError || activeSummary?.proofLine || activeLane.blocker}</p>
+          </section>
+
+          <section className={styles.r91k170CommandTray} aria-label="Selected source command tray">
+            <button type="button" onClick={() => handleWilsyR91K170OpenWorkspace(activeLane)}>
+              Execute workspace command
+              <ChevronRight size={15} />
+            </button>
+            <button type="button" onClick={() => handleWilsyR91K170ProveLane(activeLane)}>
+              Refresh backend proof
+            </button>
+            <button type="button" onClick={() => setForensicRailOpen((current) => !current)}>
+              {forensicRailOpen ? 'Hide proof drawer' : 'Open proof drawer'}
+            </button>
+          </section>
+        </main>
+
+        <aside
+          className={`${styles.r91k170RailMenu} ${styles.r91k171EnhancedRail}`}
+          data-wilsy-r91k171-enhanced-ai-rail="contextual-copilot"
+          data-active-source={activeLane.id}
+          data-active-route={liveRoute}
+          aria-label="Enhanced Wilsy AI rail"
+        >
+          <header className={styles.r91k171RailHeader}>
+            <small>Wilsy AI rail</small>
+            <strong>{rootHashStatus || sourceSignatureFabric.rootHash || 'Live source proof'}</strong>
+            <p>{activeLane.label} · {liveHttpStatus} · {liveRecordCount} records</p>
+          </header>
+
+          <div className={styles.r91k171RailStack}>
+            {railMenus.map((menu) => {
+              const open = activeRailMenu === menu.id;
+
+              return (
+                <section
+                  key={menu.id}
+                  className={styles.r91k171RailPanel}
+                  data-rail-open={open ? 'true' : 'false'}
+                  data-rail-purpose={menu.purpose}
+                  data-rail-benefit={menu.benefit}
+                  data-rail-route={menu.route}
+                  data-rail-status={String(menu.status)}
+                >
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls={`wilsy-r91k171-rail-${menu.id}`}
+                    onClick={() => setActiveRailMenu(open ? '' : menu.id)}
+                  >
+                    <span>
+                      <small>{menu.eyebrow}</small>
+                      <strong>{menu.label}</strong>
+                    </span>
+                    <em>{menu.status}</em>
+                    <b>{open ? 'Collapse' : 'Open'}</b>
+                  </button>
+
+                  <div id={`wilsy-r91k171-rail-${menu.id}`}>
+                    <article className={styles.r91k171RailNarrative}>
+                      <small>{menu.headline}</small>
+                      <p>{formatWilsyR91K170OperatingText(menu.summary)}</p>
+                    </article>
+
+                    <div className={styles.r91k171RailProofGrid}>
+                      {menu.items.map(([label, value]) => (
+                        <article key={label}>
+                          <span>{label}</span>
+                          <strong>{formatWilsyR91K170OperatingText(value)}</strong>
+                        </article>
+                      ))}
+                    </div>
+
+                    <article className={styles.r91k171RailValue}>
+                      <span>Business value</span>
+                      <p>{menu.benefit}</p>
+                    </article>
+
+                    <nav className={styles.r91k171RailCommands} aria-label={`${menu.label} rail commands`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (menu.command === 'prove' || menu.command === 'actions') {
+                            handleWilsyR91K170ProveLane(activeLane);
+                          }
+
+                          if (menu.command === 'proof') {
+                            setForensicRailOpen(true);
+                          }
+
+                          if (menu.command === 'connectors') {
+                            handleWilsyR91K170ProveLane(connectorLane);
+                          }
+                        }}
+                      >
+                        {menu.commandLabel}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (menu.command === 'connectors') {
+                            handleWilsyR91K170OpenWorkspace(connectorLane);
+                            return;
+                          }
+
+                          if (menu.command === 'proof') {
+                            setForensicRailOpen(true);
+                            return;
+                          }
+
+                          handleWilsyR91K170OpenWorkspace(activeLane);
+                        }}
+                      >
+                        Open workspace
+                      </button>
+                    </nav>
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </aside>
+      </section>
+
+      <section
+        className={styles.r91k170Drawer}
+        data-drawer-open={dailyRailOpen ? 'true' : 'false'}
+        aria-label="Daily operating drawer"
+      >
+        <button
+          type="button"
+          aria-expanded={dailyRailOpen}
+          onClick={() => setDailyRailOpen((current) => !current)}
+        >
+          <span>Daily operating actions</span>
+          <strong>What the operator completes today</strong>
+          <b>{dailyRailOpen ? 'Collapse' : 'Open list'}</b>
+        </button>
+
+        <div data-wilsy-r91k172-daily-queue="live-operating-actions">
+          {dailyOperatingQueue.map((action, index) => (
+            <article
+              key={action.id}
+              data-wilsy-r91k172-daily-action={action.id}
+              data-daily-source-lane={action.sourceId}
+              data-backend-route={action.route}
+              data-backend-model={action.modelName}
+              data-action-status={action.status}
+            >
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <strong>{action.label}</strong>
+              <p>{action.summary}</p>
+              <footer>
+                <small>{action.status}</small>
+                <button type="button" onClick={() => handleWilsyR91K170ProveLane(action.lane)}>
+                  Prove
+                </button>
+                <button type="button" onClick={() => handleWilsyR91K170OpenWorkspace(action.lane)}>
+                  Open
+                </button>
+              </footer>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className={styles.r91k170Drawer}
+        data-drawer-open={forensicRailOpen ? 'true' : 'false'}
+        aria-label="Forensic backend proof drawer"
+      >
+        <button
+          type="button"
+          aria-expanded={forensicRailOpen}
+          onClick={() => setForensicRailOpen((current) => !current)}
+        >
+          <span>Forensic blockers</span>
+          <strong>{sourceGuideError || `${hardBlockers.length} backend blockers tracked`}</strong>
+          <b>{forensicRailOpen ? 'Collapse' : 'Open proof'}</b>
+        </button>
+
+        <div data-wilsy-r91k172-forensic-queue="backend-blockers">
+          {forensicBlockerQueue.map((blocker, index) => (
+            <article
+              key={blocker.id}
+              data-wilsy-r91k172-forensic-blocker={blocker.id}
+              data-forensic-source-lane={blocker.sourceId}
+              data-backend-route={blocker.route}
+              data-severity={blocker.severity}
+            >
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <strong>{blocker.title}</strong>
+              <p>{blocker.action}</p>
+              <footer>
+                <small>{blocker.severity}</small>
+                <code>{blocker.route}</code>
+              </footer>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+
+/**
+ * @function WilsyR91K131FullViewpointSurface
+ * @description Owns Pipeline/Create/Proof as a real Wilsy CRM operating screen.
+ * @collaboration Replaces legacy stretched dashboard panels with state-driven OS workflow.
+ */
+function WilsyR91K131FullViewpointSurface({
+  mode,
+  operatingSnapshot,
+  sourceGuide,
+  readinessScore,
+  rootHashStatus,
+  onReturnToOperate,
+  activeHomeTab,
+  onActivateSourceGate,
+}) {
+
+  if (activeHomeTab === 'create') {
+    return (
+      <WilsyR91K157DCreatePathTo100Surface
+        operatingSnapshot={operatingSnapshot}
+        readinessScore={readinessScore}
+        rootHashStatus={rootHashStatus}
+        onReturnToOperate={onReturnToOperate}
+        onActivateSourceGate={onActivateSourceGate}
+      />
+    );
+  } /* R91K157D_CREATE_EARLY_RETURN_ACTIVE_TAB */
+
+  let   model = buildWilsyR91K131FullViewpointModel({
+    operatingSnapshot,
+    sourceGuide,
+    readinessScore,
+    rootHashStatus,
+  });
+  model = applyWilsyR91K150RuntimeFabricContract(model); /* R91K150_MODEL_RUNTIME_CONTRACT_BRIDGE */
+  const [activeStageId, setActiveStageId] = useState(model.stages[0]?.id || 'intake');
+  const [activeRailTab, setActiveRailTab] = useState(model.intelligenceTabs[0]?.id || 'email');
+  const [expandedReceipt, setExpandedReceipt] = useState('');
+  const activeStage = model.stages.find((stage) => stage.id === activeStageId) || model.stages[0];
+
+  return (
+    <main
+      className={styles.r91k131Viewpoint}
+      data-wilsy-r91k131-viewpoint={mode}
+      aria-label="Wilsy CRM full viewpoint operating contract"
+    >
+      <section className={styles.r91k131CommandBar}>
+        <span>
+          <small>WILSY CRM FULL VIEWPOINT</small>
+          <strong>
+            {mode === 'pipeline'
+              ? 'Sovereign Pipeline Command'
+              : mode === 'create'
+                ? 'Guided Source Creation'
+                : 'Terminal Proof Room'}
+          </strong>
+        </span>
+
+        <nav aria-label="Live operating telemetry">
+          <em>{model.readiness}% readiness</em>
+          <em>{model.connectedSources}/{model.totalSources || 0} sources</em>
+          <em>Root {model.rootHash}</em>
+        </nav>
+
+        <button type="button" onClick={onReturnToOperate}>
+          Return to Operate
+        </button>
+      </section>
+
+      <section className={styles.r91k131StageBoard} aria-label="Live pipeline stages">
+        <div className={styles.r91k131StageGrid}>
+          {model.stages.map((stage) => (
+            <WilsyR91K131StageButton
+              key={stage.id}
+              stage={stage}
+              active={stage.id === activeStageId}
+              onActivate={setActiveStageId}
+            />
+          ))}
+        </div>
+
+        <aside className={styles.r91k131StageFocus} aria-label="Focused stage intelligence">
+          <small>Active stage</small>
+          <strong>{activeStage.label}</strong>
+          <p>{activeStage.description}</p>
+          <dl>
+            <div>
+              <dt>Value</dt>
+              <dd>{activeStage.valueLabel}</dd>
+            </div>
+            <div>
+              <dt>Probability</dt>
+              <dd>{activeStage.probability}%</dd>
+            </div>
+            <div>
+              <dt>Receipt</dt>
+              <dd>{activeStage.proof}</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+
+      <WilsyR91K139SourceSignatureFabric model={model} />
+
+      <WilsyR91K131IntelRail
+        tabs={model.intelligenceTabs}
+        activeTab={activeRailTab}
+        onTabChange={setActiveRailTab}
+      />
+
+      <WilsyR91K131ProofLedger
+        receipts={model.receipts}
+        expandedReceipt={expandedReceipt}
+        onExpand={setExpandedReceipt}
+      />
+
+      <section className={styles.r91k131ActionRail} aria-label="Compliance and revenue action rail">
+        {model.rail.map((item) => (
+          <article key={item.id} data-score={item.value}>
+            <small>{item.label}</small>
+            <strong>{item.value}</strong>
+            <p>{item.detail}</p>
+          </article>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+/**
+ * @function CRMDashboard
+ * @description Renders the Wilsy CRM operating workspace and delegates Pipeline/Create/Proof to the R91K131 full viewpoint contract.
+ * @collaboration Coordinates live CRM snapshot, Source Guide posture, account command controls, and sovereign operating surfaces.
+ */
 function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
   const searchPermissionProfile = useMemo(
     () => resolveCrmPermissionProfile(user, tenantConfig, buildOperatorIdentity(user)),
@@ -2292,10 +4920,42 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
     }
   }, [createWorkspaceRail, crmPermissionProfile.allowedWorkspaceIds, crmPermissionProfile.scope, tenantIdentity.tenantId]);
 
-  return (
+  
+  /* R91K131_FULL_VIEWPOINT_RETURN_GATE */
+  if (['pipeline', 'create', 'proof'].includes(activeHomeTab)) {
+    return (
+      <WilsyR91K131FullViewpointSurface
+        mode={activeHomeTab}
+        operatingSnapshot={operatingSnapshot}
+        sourceGuide={typeof sourceGuide !== 'undefined' ? sourceGuide : null}
+        readinessScore={typeof readinessScore !== 'undefined' ? readinessScore : null}
+        rootHashStatus={typeof rootHashStatus !== 'undefined' ? rootHashStatus : null}
+        onReturnToOperate={() => setActiveHomeTab('operate')}
+      
+        activeHomeTab={activeHomeTab}
+      
+        onActivateSourceGate={(gate) => {
+          const targetWorkspace = gate?.id === 'connectors' ? 'connectors' : (gate?.id || 'leads');
+
+          setCreateWorkspaceModule(targetWorkspace);
+
+          if (targetWorkspace === 'leads') {
+            openCreateFlow('leads');
+            return;
+          }
+
+          setActiveWorkspace(targetWorkspace);
+        }}
+      />
+    );
+  }
+
+return (
     <div
       className={styles.crmShell}
       data-wilsy-active-workspace={activeWorkspace}
+      data-wilsy-active-home-tab={activeHomeTab}
+      data-wilsy-r91k123b-mode-screen="active-tab-layout-takeover"
       data-wilsy-rail-engine-state={crmRailEngineStateR65A}
       data-wilsy-crm-dashboard="sovereign-sales-cockpit"
       data-wilsy-version={CRM_INTERNAL_DIAGNOSTIC_ID}
@@ -2339,7 +4999,15 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   type="button"
                   key={tab.id}
                   data-active={activeHomeTab === tab.id ? 'true' : 'false'}
-                  onClick={() => setActiveHomeTab(tab.id)}
+                  onClick={() => {
+                    setActiveHomeTab(tab.id);
+
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete('crmWorkspace');
+                      window.history.replaceState(window.history.state, '', url.toString());
+                    }
+                  }}
                 >
                   <TabIcon size={16} />
                   {tab.label}
@@ -2559,7 +5227,39 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 </article>
               </section>
               {activeHomeTab === 'proof' ? (
-                <section className={styles.crmProofWorkspace} data-wilsy-r85-crm-proof-workspace="bounded">
+                <section className={`${styles.crmProofWorkspace} ${styles.crmOsModeScreen}`} data-wilsy-r85-crm-proof-workspace="fullscreen" data-wilsy-r91k123b-mode-screen="proof">
+                  <div className={styles.crmOsFullscreenCommandBar} data-wilsy-r91k124a-fullscreen-command-bar="true">
+                    <span>
+                      <small>WILSY CRM FULL VIEWPOINT</small>
+                      <strong>
+                        {activeHomeTab === 'pipeline'
+                          ? 'Sovereign Pipeline Command'
+                          : activeHomeTab === 'create'
+                            ? 'Guided Source Creation'
+                            : 'Terminal Proof Room'}
+                      </strong>
+                    </span>
+                    <span className={styles.crmOsFullscreenTelemetry}>
+                      <em>{readinessScore}% readiness</em>
+                      <em>{operatingSnapshot.sourcePosture.connected}/{operatingSnapshot.sourcePosture.total} sources</em>
+                      <em>{rootHashStatus}</em>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveHomeTab('operate');
+
+                        if (typeof window !== 'undefined') {
+                          const url = new URL(window.location.href);
+                          url.searchParams.delete('crmWorkspace');
+                          window.history.replaceState(window.history.state, '', url.toString());
+                        }
+                      }}
+                    >
+                      Return to Operate
+                    </button>
+                  </div>
+
                   <TerminalEvidenceCockpitPanel
                     tenantId={tenantConfig?.tenantId || 'MASTER'}
                     operator="CRM_DASHBOARD"
@@ -2567,7 +5267,39 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   />
                 </section>
               ) : activeHomeTab === 'create' ? (
-                <section className={styles.crmCreateWorkspace} aria-label="CRM create workspace">
+                <section className={`${styles.crmCreateWorkspace} ${styles.crmOsModeScreen}`} aria-label="CRM create workspace" data-wilsy-r91k123b-mode-screen="create">
+                  <div className={styles.crmOsFullscreenCommandBar} data-wilsy-r91k124a-fullscreen-command-bar="true">
+                    <span>
+                      <small>WILSY CRM FULL VIEWPOINT</small>
+                      <strong>
+                        {activeHomeTab === 'pipeline'
+                          ? 'Sovereign Pipeline Command'
+                          : activeHomeTab === 'create'
+                            ? 'Guided Source Creation'
+                            : 'Terminal Proof Room'}
+                      </strong>
+                    </span>
+                    <span className={styles.crmOsFullscreenTelemetry}>
+                      <em>{readinessScore}% readiness</em>
+                      <em>{operatingSnapshot.sourcePosture.connected}/{operatingSnapshot.sourcePosture.total} sources</em>
+                      <em>{rootHashStatus}</em>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveHomeTab('operate');
+
+                        if (typeof window !== 'undefined') {
+                          const url = new URL(window.location.href);
+                          url.searchParams.delete('crmWorkspace');
+                          window.history.replaceState(window.history.state, '', url.toString());
+                        }
+                      }}
+                    >
+                      Return to Operate
+                    </button>
+                  </div>
+
                   <aside className={styles.crmCreateRail} aria-label="Create workspace modules">
                     {createWorkspaceRail.map(workspace => {
                       const WorkspaceIcon = workspace.icon;
@@ -2675,7 +5407,39 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   </aside>
                 </section>
               ) : (
-              <section className={styles.pipelineCockpit}>
+              <section className={`${styles.pipelineCockpit} ${styles.crmOsModeScreen}`} data-wilsy-r91k123b-mode-screen="pipeline">
+                  <div className={styles.crmOsFullscreenCommandBar} data-wilsy-r91k124a-fullscreen-command-bar="true">
+                    <span>
+                      <small>WILSY CRM FULL VIEWPOINT</small>
+                      <strong>
+                        {activeHomeTab === 'pipeline'
+                          ? 'Sovereign Pipeline Command'
+                          : activeHomeTab === 'create'
+                            ? 'Guided Source Creation'
+                            : 'Terminal Proof Room'}
+                      </strong>
+                    </span>
+                    <span className={styles.crmOsFullscreenTelemetry}>
+                      <em>{readinessScore}% readiness</em>
+                      <em>{operatingSnapshot.sourcePosture.connected}/{operatingSnapshot.sourcePosture.total} sources</em>
+                      <em>{rootHashStatus}</em>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveHomeTab('operate');
+
+                        if (typeof window !== 'undefined') {
+                          const url = new URL(window.location.href);
+                          url.searchParams.delete('crmWorkspace');
+                          window.history.replaceState(window.history.state, '', url.toString());
+                        }
+                      }}
+                    >
+                      Return to Operate
+                    </button>
+                  </div>
+
                 <div className={styles.sectionHeader}>
                   <span>
                     <small>Revenue Cockpit</small>
