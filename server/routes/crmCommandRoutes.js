@@ -492,11 +492,15 @@ async function persistWilsyR91K76LeadThroughModel(mongooseRuntime, objectId, upd
     return null;
   }
 
-  return Model.findOneAndUpdate(
-    { _id: objectId },
-    { $set: update },
-    { new: true, returnDocument: 'after', runValidators: false, lean: true }
-  );
+  try {
+    return await Model.findOneAndUpdate(
+      { _id: objectId },
+      { $set: update },
+      { new: true, returnDocument: 'after', runValidators: false, lean: true }
+    );
+  } catch {
+    return null;
+  }
 }
 
 /**
