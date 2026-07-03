@@ -1016,13 +1016,34 @@ function buildLeadOperatingMetrics({
 function buildLeadVisionMetrics({
   leads = [],
   filteredLeads = [],
-  complianceMetrics = {}
+  complianceMetrics = {},
+  operatingCopy = LEAD_OPERATING_COPY
 } = {}) {
   const leadCount = leads.length;
   const scoreTotal = leads.reduce((total, record) => total + resolveLeadPriorityScore(record), 0);
   const averageScore = leadCount ? Math.round(scoreTotal / leadCount) : 0;
-  const qualifiedLeads = leads.filter(record => /QUALIFIED|CONVERTED|WON|VERIFIED/.test(resolveLeadStage(record).toUpperCase())).length;
-  const convertedLeads = leads.filter(record => /CONVERTED|WON/.test(resolveLeadStage(record).toUpperCase())).length;
+  const visionCopy = operatingCopy || LEAD_OPERATING_COPY;
+  const visionRecordSingular = visionCopy.recordSingular || 'lead';
+  const visionRecordPlural = visionCopy.recordPlural || 'leads';
+  const visionIsMeetingOperatingCopy = String(visionCopy.heroEyebrow || visionCopy.title || visionRecordPlural || '').toUpperCase().includes('MEETING');
+  const qualifiedLeads = leads.filter(record => {
+    const stage = resolveLeadStage(record).toUpperCase();
+
+    if (visionIsMeetingOperatingCopy) {
+      return resolveLeadPriorityScore(record) >= 52 || /READY|SCHEDULED|CONFIRMED|VERIFIED/.test(stage);
+    }
+
+    return /QUALIFIED|CONVERTED|WON|VERIFIED/.test(stage);
+  }).length;
+  const convertedLeads = leads.filter(record => {
+    const stage = resolveLeadStage(record).toUpperCase();
+
+    if (visionIsMeetingOperatingCopy) {
+      return resolveLeadPriorityScore(record) >= 52 || /READY|SCHEDULED|CONFIRMED|VERIFIED/.test(stage);
+    }
+
+    return /CONVERTED|WON/.test(stage);
+  }).length;
   const priorityReady = leads.filter(record => resolveLeadPriorityScore(record) >= 52).length;
   const conversionRate = leadCount ? Number(((convertedLeads / leadCount) * 100).toFixed(1)) : 0;
   const pipelineHealth = !leadCount
@@ -1035,49 +1056,62 @@ function buildLeadVisionMetrics({
           ? 'Developing'
           : 'Needs source';
   const pipelineProgress = leadCount ? Math.round((priorityReady / Math.max(1, leadCount)) * 100) : 0;
+  const visionPipelineHealthLabel = visionCopy.pipelineHealthLabel || 'Pipeline Health';
+  const visionOpenRecordsLabel = visionCopy.openRecordsLabel || 'Open Leads';
+  const visionQualifiedLabel = visionCopy.qualifiedLabel || 'Qualified';
+  const visionConversionLabel = visionCopy.conversionLabel || 'Conversion Rate';
+  const visionAverageScoreLabel = visionCopy.averageScoreLabel || 'Avg. Lead Score';
+  const visionReadinessSignalLabel = visionIsMeetingOperatingCopy ? 'meeting readiness' : 'source signal';
+  const visionVisibleRecordLabel = visionIsMeetingOperatingCopy ? 'meeting rows visible' : 'visible';
+  const visionPriorityReadyLabel = visionIsMeetingOperatingCopy ? 'calendar ready' : 'priority ready';
+  const visionConversionDetailLabel = visionIsMeetingOperatingCopy ? 'ready from live meetings' : 'converted from live rows';
+  const visionConversionEmptyLabel = visionIsMeetingOperatingCopy ? 'No readiness signal' : 'No conversion signal';
+  const visionQualificationEmptyLabel = visionIsMeetingOperatingCopy ? 'No readiness signal' : 'No qualification signal';
+  const visionConversionTrendLabel = visionIsMeetingOperatingCopy ? 'Live meeting DB derived' : 'Live DB derived';
+  const visionAverageScoreDetailLabel = visionIsMeetingOperatingCopy ? 'Meeting readiness score' : 'Source completeness score';
 
   return [
     {
       id: 'health',
-      label: 'Pipeline Health',
+      label: visionPipelineHealthLabel,
       value: pipelineHealth,
-      detail: leadCount ? `${pipelineProgress}% ready by source signal` : 'Connect live Lead rows',
-      trend: complianceMetrics.failed ? `${complianceMetrics.failed} failed gates` : `${filteredLeads.length} visible`,
+      detail: leadCount ? `${pipelineProgress}% ready by ${visionReadinessSignalLabel}` : `Connect live ${visionRecordSingular[0].toUpperCase()}${visionRecordSingular.slice(1)} rows`,
+      trend: complianceMetrics.failed ? `${complianceMetrics.failed} failed gates` : `${filteredLeads.length} ${visionVisibleRecordLabel}`,
       icon: Activity,
       tone: 'violet'
     },
     {
       id: 'open',
-      label: 'Open Leads',
+      label: visionOpenRecordsLabel,
       value: String(leadCount),
-      detail: filteredLeads.length === leadCount ? 'All rows visible' : `${filteredLeads.length} in current view`,
-      trend: priorityReady ? `${priorityReady} priority ready` : 'No priority rows yet',
+      detail: filteredLeads.length === leadCount ? `All ${visionRecordSingular} rows visible` : `${filteredLeads.length} in current view`,
+      trend: priorityReady ? `${priorityReady} ${visionPriorityReadyLabel}` : `No ${visionRecordSingular} rows yet`,
       icon: List,
       tone: 'blue'
     },
     {
       id: 'qualified',
-      label: 'Qualified',
+      label: visionQualifiedLabel,
       value: String(qualifiedLeads),
-      detail: leadCount ? `${Math.round((qualifiedLeads / Math.max(1, leadCount)) * 100)}% of live rows` : 'No qualification signal',
+      detail: leadCount ? `${Math.round((qualifiedLeads / Math.max(1, leadCount)) * 100)}% of live ${visionRecordPlural}` : visionQualificationEmptyLabel,
       trend: `${complianceMetrics.verified || 0} verified`,
       icon: CheckCircle2,
       tone: 'green'
     },
     {
       id: 'conversion',
-      label: 'Conversion Rate',
+      label: visionConversionLabel,
       value: `${conversionRate}%`,
-      detail: leadCount ? `${convertedLeads} converted from live rows` : 'No conversion signal',
-      trend: leadCount ? 'Live DB derived' : 'Waiting for records',
+      detail: leadCount ? `${convertedLeads} ${visionConversionDetailLabel}` : visionConversionEmptyLabel,
+      trend: leadCount ? visionConversionTrendLabel : `Waiting for ${visionRecordPlural}`,
       icon: Filter,
       tone: 'cyan'
     },
     {
       id: 'score',
-      label: 'Avg. Lead Score',
+      label: visionAverageScoreLabel,
       value: String(averageScore),
-      detail: leadCount ? 'Source completeness score' : 'No score yet',
+      detail: leadCount ? visionAverageScoreDetailLabel : 'No score yet',
       trend: averageScore >= 52 ? 'Actionable' : 'Needs enrichment',
       icon: Star,
       tone: 'gold'
@@ -1758,7 +1792,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   const visionMetrics = useMemo(() => buildLeadVisionMetrics({
     leads,
     filteredLeads,
-    complianceMetrics
+    complianceMetrics,
+    operatingCopy: leadOperatingCopy
   }), [complianceMetrics, filteredLeads, leads]);
   const setupOperatingModel = useMemo(() => buildLeadSetupOperatingModel({
     leads,
