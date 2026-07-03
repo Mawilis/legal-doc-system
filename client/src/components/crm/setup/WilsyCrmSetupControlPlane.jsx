@@ -1366,7 +1366,22 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
-  /* WILSY_P60K5L6_SCREEN2_RAIL_WORKSPACE */
+  /* WILSY_P60K5L8B_CONTROL_AWARE_WORKSPACE */
+  const screenTwoControlLabel =
+    activeControl.title ||
+    activeControl.label ||
+    activeControl.name ||
+    activeControl.id ||
+    'Control';
+  const screenTwoControlFingerprint = String(screenTwoControlLabel).trim().toLowerCase();
+  const screenTwoIsExposureControl =
+    screenTwoControlFingerprint.includes('exposure') ||
+    screenTwoControlFingerprint.includes('field') ||
+    screenTwoControlFingerprint.includes('surface');
+  const screenTwoIsDelegationControl =
+    screenTwoControlFingerprint.includes('delegation') ||
+    screenTwoControlFingerprint.includes('delegate') ||
+    screenTwoControlFingerprint.includes('authority');
   const screenTwoSourceIntelligence = screenTwoSourceLive ? screenTwoSourceSurface?.sourceIntelligence || {} : {};
   const screenTwoSourceSummary =
     screenTwoSourceIntelligence.sourceSummary ||
@@ -1384,16 +1399,18 @@ export default function WilsyCrmSetupControlPlane() {
 
     return Boolean(label) && !status.includes('EMPTY');
   }).length;
-  const screenTwoInvestorVerdict = screenTwoSourceLive
-    ? (screenTwoAttentionSurfaceCount > 0
-        ? 'Exposure signals found. Resolve attention surfaces before staging.'
-        : 'Source graph resolved. Evidence can move toward staged review.')
-    : (screenTwoSourceBusy
-        ? 'Resolving live source graph.'
-        : 'Static control mode. Source graph standby.');
   const screenTwoInvestorAction = stagedReview
     ? 'Open packet'
-    : (screenTwoAttentionSurfaceCount > 0 ? 'Review exposure' : 'Stage review');
+    : (screenTwoIsDelegationControl
+        ? 'Confirm delegation'
+        : (screenTwoIsExposureControl && screenTwoAttentionSurfaceCount > 0 ? 'Review exposure' : 'Stage review'));
+  const screenTwoInvestorVerdict = stagedReview
+    ? String(screenTwoControlLabel) + ' has an active packet path. Continue through Packet Console.'
+    : (screenTwoIsDelegationControl
+        ? 'Confirm tenant authority, delegation boundary, owner accountability, and release permission.'
+        : (screenTwoIsExposureControl && screenTwoAttentionSurfaceCount > 0
+            ? 'Exposure signals found. Resolve attention surfaces before staging.'
+            : 'Control posture is ready. Stage the review when evidence is acceptable.'));
   const screenTwoSourcePulseLabel = screenTwoSourceLive
     ? 'Live source graph'
     : (screenTwoSourceBusy ? 'Resolving graph' : 'Standby graph');
@@ -1406,18 +1423,24 @@ export default function WilsyCrmSetupControlPlane() {
     ' attention · ' +
     String(screenTwoWorkItems.length || 0) +
     ' queue actions';
+  const screenTwoWorkspaceBrief =
+    String(screenTwoOwner) +
+    ' · ' +
+    String(screenTwoRisk) +
+    ' · ' +
+    String(screenTwoState);
   const screenTwoWorkspaceRail = [
     {
       id: 'queue',
-      label: 'Queue',
+      label: 'Runway',
       metric: String(screenTwoWorkItems.length || 0),
-      detail: 'Action sequence',
+      detail: String(screenTwoControlLabel) + ' actions',
     },
     {
       id: 'surfaces',
-      label: 'Surfaces',
+      label: screenTwoIsDelegationControl ? 'Authority' : 'Evidence',
       metric: String(screenTwoLiveSurfaceCount) + '/' + String(screenTwoAffectedSurfaces.length || 1),
-      detail: 'Exposure map',
+      detail: screenTwoIsDelegationControl ? 'Delegation map' : 'Source map',
     },
     {
       id: 'posture',
@@ -2938,7 +2961,7 @@ export default function WilsyCrmSetupControlPlane() {
                 <section className={styles.screenTwoOperatingWorkspace} aria-label="Screen Two operating workspace">
                   <aside className={styles.screenTwoCommandRail} aria-label="Screen Two command rail">
                     <div className={styles.screenTwoRailPrime}>
-                      <span>Control Workspace</span>
+                      <span>{screenTwoControlLabel}</span>
                       <strong>{screenTwoInvestorAction}</strong>
                       <small>{screenTwoMatrixProofLine}</small>
                     </div>
@@ -2963,18 +2986,24 @@ export default function WilsyCrmSetupControlPlane() {
                   <main className={styles.screenTwoWorkspaceSurface} aria-label="Interactive Screen Two workspace">
                     <header className={styles.screenTwoWorkspaceHeader}>
                       <div>
-                        <span>{screenTwoActiveWorkspace.label}</span>
-                        <strong>{screenTwoInvestorVerdict}</strong>
+                        <span>{screenTwoActiveWorkspace.label} Workspace</span>
+                        <strong>{screenTwoControlLabel}</strong>
                       </div>
-                      <p>{screenTwoSourcePulseLabel} · {screenTwoSourceSummary}</p>
+                      <p>{screenTwoInvestorVerdict}</p>
                     </header>
+
+                    <div className={styles.screenTwoWorkspaceStatusBar}>
+                      <span>{screenTwoSourcePulseLabel}</span>
+                      <strong>{screenTwoWorkspaceBrief}</strong>
+                      <small>{screenTwoSourceSummary}</small>
+                    </div>
 
                     {screenTwoWorkspaceMode === 'queue' ? (
                       <div className={styles.screenTwoWorkspaceQueue}>
                         {screenTwoWorkItems.map((item, index) => (
                           <button type="button" key={item.id || item.title || item.label || index}>
                             <span>{String(index + 1).padStart(2, '0')}</span>
-                            <strong>{item.title || item.label || item.task || 'Control action'}</strong>
+                            <strong>{item.title || item.label || item.task || screenTwoControlLabel}</strong>
                             <small>{item.evidence || item.detail || item.reason || item.owner || screenTwoOwner}</small>
                           </button>
                         ))}
@@ -2995,6 +3024,10 @@ export default function WilsyCrmSetupControlPlane() {
 
                     {screenTwoWorkspaceMode === 'posture' ? (
                       <div className={styles.screenTwoWorkspacePosture}>
+                        <article>
+                          <span>Control</span>
+                          <strong>{screenTwoControlLabel}</strong>
+                        </article>
                         <article>
                           <span>Risk</span>
                           <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
@@ -3017,9 +3050,9 @@ export default function WilsyCrmSetupControlPlane() {
                     {screenTwoWorkspaceMode === 'packet' ? (
                       <div className={styles.screenTwoWorkspacePacket}>
                         <article>
-                          <span>Packet Path</span>
+                          <span>Packet Command</span>
                           <strong>{screenTwoInvestorAction}</strong>
-                          <p>{stagedReview ? 'Packet workflow is active. Continue through the Packet Console controls.' : 'Review exposure, confirm authority posture, then stage the packet from the command bar.'}</p>
+                          <p>{stagedReview ? 'Packet workflow is active. Continue through Packet Console.' : 'Use the Stage review command after confirming this control surface.'}</p>
                         </article>
                         <article>
                           <span>Evidence Readiness</span>

@@ -7457,3 +7457,93 @@ button.packetRevealNode {
     grid-template-columns: 1fr;
   }
 }
+
+/* WILSY_P60K5L8B_CONTROL_AWARE_WORKSPACE
+   Control-aware refinement.
+   Fixes stale exposure copy appearing while another setup control is selected. */
+
+.screenTwoWorkspaceSurface {
+  grid-template-rows: auto auto 1fr;
+}
+
+.screenTwoWorkspaceHeader {
+  grid-template-columns: minmax(260px, 0.38fr) minmax(0, 1fr);
+  align-items: center;
+}
+
+.screenTwoWorkspaceHeader strong {
+  font-size: clamp(1.34rem, 2vw, 2rem);
+}
+
+.screenTwoWorkspaceHeader p {
+  align-self: center;
+  margin: 0;
+  min-height: 54px;
+}
+
+.screenTwoWorkspaceStatusBar {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.26fr) minmax(180px, 0.32fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(0, 209, 255, 0.15);
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, rgba(0, 209, 255, 0.05), rgba(0, 255, 148, 0.025)),
+    rgba(255, 255, 255, 0.018);
+}
+
+.screenTwoWorkspaceStatusBar span {
+  color: rgba(188, 244, 255, 0.72);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.screenTwoWorkspaceStatusBar strong {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.screenTwoWorkspaceStatusBar small {
+  color: rgba(255, 239, 185, 0.82);
+  font-size: 0.64rem;
+  font-weight: 820;
+  letter-spacing: 0.06em;
+  line-height: 1.26;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoRailPrime span,
+.screenTwoRailPrime strong,
+.screenTwoWorkspaceQueue button strong,
+.screenTwoWorkspaceQueue button small,
+.screenTwoWorkspaceSurfaces strong,
+.screenTwoWorkspaceSurfaces small,
+.screenTwoWorkspacePosture strong,
+.screenTwoWorkspacePacket strong,
+.screenTwoWorkspacePacket p {
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkspacePosture {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.screenTwoWorkspacePosture article:last-child {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1080px) {
+  .screenTwoWorkspaceStatusBar,
+  .screenTwoWorkspacePosture {
+    grid-template-columns: 1fr;
+  }
+}
