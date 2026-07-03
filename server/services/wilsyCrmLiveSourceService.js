@@ -261,18 +261,95 @@ function getPossibleModel(definition) {
  * @returns {Promise<Array<Object>>} Records.
  * @collaboration Pulls actual DB data while avoiding broad cross-tenant queries except MASTER fallback.
  */
+
+const WILSY_R91K179E24_LIVE_QUERY_TIMEOUT_MS = 1750;
+
+/**
+ * @function withWilsyR91K179E24LiveTimeout
+ * @description Bounds one live CRM source lookup so a slow model or collection cannot freeze the whole route response.
+ * @param {Promise<*>} promise - Query or source inspection promise.
+ * @param {string} label - Operational label for timeout evidence.
+ * @param {*} fallbackValue - Value returned when the operation does not settle in time.
+ * @returns {Promise<*>} Bounded operation result.
+ * @collaboration Protects CRM live routes, source posture, operator records rail and investor evidence from hanging DB/model lookups.
+ */
+function withWilsyR91K179E24LiveTimeout(promise, label, fallbackValue) {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve({
+        __wilsyTimedOut: true,
+        label,
+        timeoutMs: WILSY_R91K179E24_LIVE_QUERY_TIMEOUT_MS,
+        fallbackValue,
+      });
+    }, WILSY_R91K179E24_LIVE_QUERY_TIMEOUT_MS);
+  });
+
+  return Promise.race([Promise.resolve(promise), timeoutPromise]).then((result) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    return result && result.__wilsyTimedOut ? result.fallbackValue : result;
+  });
+}
+
+/**
+ * @function buildWilsyR91K179E24TimedOutSource
+ * @description Builds a source-honest timeout posture packet for one CRM source.
+ * @param {string} collection - CRM source id.
+ * @returns {Object} Route-live but query-timeout source posture.
+ * @collaboration Keeps Wilsy AI and CRM records rail honest when a source query times out instead of blocking the whole route.
+ */
+function buildWilsyR91K179E24TimedOutSource(collection) {
+  const definition = SOURCE_DEFINITIONS[collection] || {};
+
+  return {
+    id: collection,
+    label: definition.label || collection,
+    route: `/api/crm/live/${collection}`,
+    routeLive: true,
+    dataSource: 'query-timeout',
+    modelName: null,
+    recordCount: 0,
+    status: 'timeout',
+    timeoutMs: WILSY_R91K179E24_LIVE_QUERY_TIMEOUT_MS,
+  };
+}
+
+/**
+ * @function queryModelRecords
+ * @description Queries matching Mongoose model records with tenant-aware candidates and a bounded live-route timeout.
+ * @param {Object} model - Mongoose model used for CRM source lookup.
+ * @param {string} tenantId - Active tenant id.
+ * @param {number} limit - Maximum records to return.
+ * @returns {Promise<Array<Object>>} Records discovered from the model or an empty timeout-safe result.
+ * @collaboration Pulls actual DB data while preventing slow model queries from freezing CRM live routes, source posture and records rail responses.
+ */
 async function queryModelRecords(model, tenantId, limit) {
   const queries = buildTenantQueries(tenantId);
 
   for (const query of queries) {
     try {
-      const records = await model
+      let modelQuery = model
         .find(query)
-        .sort({ updatedAt: -1, createdAt: -1 })
+        .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
         .limit(limit)
         .lean();
-      if (Array.isArray(records) && records.length) return records.map(sanitizeDocument);
-    } catch (error) {
+
+      if (typeof modelQuery.maxTimeMS === 'function') {
+        modelQuery = modelQuery.maxTimeMS(WILSY_R91K179E24_LIVE_QUERY_TIMEOUT_MS);
+      }
+
+      const records = await withWilsyR91K179E24LiveTimeout(
+        typeof modelQuery.exec === 'function' ? modelQuery.exec() : modelQuery,
+        `model:${model.modelName || model.collection?.name || 'unknown'}:${tenantId}`,
+        []
+      );
+
+      if (Array.isArray(records) && records.length > 0) {
+        return records;
+      }
+    } catch {
       // Continue to the next tenant query candidate.
     }
   }
@@ -294,7 +371,11 @@ async function getRawCollection(definition) {
   if (!db || typeof db.listCollections !== 'function') return null;
 
   try {
-    const collectionInfos = await db.listCollections().toArray();
+    const collectionInfos = await withWilsyR91K179E24LiveTimeout(
+      db.listCollections().toArray(),
+      'crm-live:listCollections',
+      []
+    );
     const names = collectionInfos.map((info) => info.name);
 
     for (const collectionName of definition.collectionNames) {
@@ -321,14 +402,23 @@ async function queryRawCollectionRecords(collection, tenantId, limit) {
 
   for (const query of queries) {
     try {
-      const records = await collection
+      const cursor = collection
         .find(query)
-        .sort({ updatedAt: -1, createdAt: -1 })
+        .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
         .limit(limit)
-        .toArray();
-      if (Array.isArray(records) && records.length) return records.map(sanitizeDocument);
-    } catch (error) {
-      // Continue to next query candidate.
+        .maxTimeMS(WILSY_R91K179E24_LIVE_QUERY_TIMEOUT_MS);
+
+      const records = await withWilsyR91K179E24LiveTimeout(
+        cursor.toArray(),
+        `collection:${collection.collectionName || collection.namespace || 'unknown'}:${tenantId}`,
+        []
+      );
+
+      if (Array.isArray(records) && records.length > 0) {
+        return records;
+      }
+    } catch {
+      // Continue to the next tenant query candidate.
     }
   }
 
@@ -430,7 +520,13 @@ async function buildSourcePosture(req) {
   const tenantId = getTenantId(req);
   const collections = getAllowedCollections();
   const sources = await Promise.all(
-    collections.map((collection) => inspectCollectionSource(collection, tenantId))
+    collections.map((collection) =>
+      withWilsyR91K179E24LiveTimeout(
+        inspectCollectionSource(collection, tenantId),
+        `source-posture:${collection}:${tenantId}`,
+        buildWilsyR91K179E24TimedOutSource(collection)
+      )
+    )
   );
   const connectedRoutes = sources.filter((source) => source.routeLive).length;
   const sourceGaps = sources.filter(

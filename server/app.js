@@ -437,6 +437,32 @@ app.use(latencySniper);
 // ============================================================================
 
 /**
+ * @function shouldBypassWilsyR91K179E24LocalCrmRateLimit
+ * @description Allows local non-production CRM live and command routes to avoid global request-threshold lockout during workspace development.
+ * @param {Object} req - Express request.
+ * @returns {boolean} True when a local CRM development request should bypass the global limiter.
+ * @collaboration CRM Meetings editor, local Wilsy OS workspace development, production-safe rate limiting.
+ */
+function shouldBypassWilsyR91K179E24LocalCrmRateLimit(req) {
+  const environment = String(process.env.NODE_ENV || 'development').toLowerCase();
+
+  if (environment === 'production') return false;
+
+  const route = String(req.originalUrl || req.url || '');
+  const origin = String(req.headers?.origin || '');
+  const host = String(req.headers?.host || '');
+  const remote = String(req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '');
+  const sourcePacket = `${origin} ${host} ${remote}`.toLowerCase();
+  const isLocalRequest =
+    sourcePacket.includes('localhost') ||
+    sourcePacket.includes('127.0.0.1') ||
+    sourcePacket.includes('::1') ||
+    sourcePacket.includes('0:0:0:0:0:0:0:1');
+
+  return isLocalRequest && /^\/api\/crm\/(live|command)(\/|$)/i.test(route);
+}
+
+/**
  * @const sovereignLimiter
  * @description Rate limiter that applies to all /api endpoints.
  * Limits each tenant/IP to 2000 requests per 15 minutes.
@@ -444,6 +470,7 @@ app.use(latencySniper);
 const sovereignLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 2000,
+  skip: shouldBypassWilsyR91K179E24LocalCrmRateLimit,
   keyGenerator: (req) => req.headers['x-tenant-id'] || req.ip,
   handler: (req, res) =>
     res.status(429).json({ success: false, message: 'Institutional Threshold Reached.' }),

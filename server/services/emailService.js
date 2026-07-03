@@ -44,9 +44,9 @@ const EMAIL_CONFIG = {
         secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      }
+          pass: process.env.SMTP_PASS,
+        },
+      },
     },
     {
       name: 'sendgrid',
@@ -54,27 +54,27 @@ const EMAIL_CONFIG = {
       priority: 2,
       config: {
         apiKey: process.env.SENDGRID_API_KEY,
-        from: process.env.SENDGRID_FROM
-      }
-    }
+        from: process.env.SENDGRID_FROM,
+      },
+    },
   ],
 
   rateLimits: {
     perEmail: { windowMs: 60 * 60 * 1000, max: 20 }, // Elevated for boardroom strikes
-    perDomain: { windowMs: 60 * 60 * 1000, max: 100 }
+    perDomain: { windowMs: 60 * 60 * 1000, max: 100 },
   },
 
   defaultHeaders: {
     'X-Mailer': 'Wilsy OS Sovereign Mailer v15.3',
     'X-Priority': '1', // High priority strikes
-    'X-Institutional-Finality': 'true'
+    'X-Institutional-Finality': 'true',
   },
 
   retry: {
     maxAttempts: 3,
     baseDelay: 1000,
-    maxDelay: 10000
-  }
+    maxDelay: 10000,
+  },
 };
 
 // ============================================================================
@@ -103,7 +103,7 @@ class SMTPProvider {
         success: true,
         provider: 'smtp',
         messageId: result.messageId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       logger.error(`[EMAIL-SMTP] ❌ Error: ${error.message}`);
@@ -113,10 +113,17 @@ class SMTPProvider {
 }
 
 class SendGridProvider {
-  constructor(config) { this.config = config; this.name = 'sendgrid'; }
+  constructor(config) {
+    this.config = config;
+    this.name = 'sendgrid';
+  }
   async send(mailOptions) {
     logger.info(`[EMAIL-SG] 📡 SendGrid Dispatch to ${mailOptions.to}`);
-    return { success: true, provider: 'sendgrid', messageId: `sg_${crypto.randomBytes(16).toString('hex')}` };
+    return {
+      success: true,
+      provider: 'sendgrid',
+      messageId: `sg_${crypto.randomBytes(16).toString('hex')}`,
+    };
   }
 }
 
@@ -124,9 +131,15 @@ class SendGridProvider {
 // PROVIDER FACTORY
 // ============================================================================
 
+/**
+ * @function createProviders
+ * @description Creates enabled email provider instances in priority order.
+ * @returns {Array<Object>} Prioritized email providers.
+ * @collaboration SMTPProvider, SendGridProvider, EmailService dispatch.
+ */
 const createProviders = () => {
   const providers = [];
-  EMAIL_CONFIG.providers.forEach(pc => {
+  EMAIL_CONFIG.providers.forEach((pc) => {
     if (!pc.enabled) return;
     let provider;
     if (pc.name === 'smtp') provider = new SMTPProvider(pc.config);
@@ -150,7 +163,7 @@ const EMAIL_TEMPLATES = {
         <h1 style="color: #d4af37;">Welcome, ${data.name}!</h1>
         <p>Your sovereign account is now active. CITADEL URL: ${data.loginUrl}</p>
       </div>`,
-    text: (data) => `Welcome to Wilsy OS, ${data.name}! Login: ${data.loginUrl}`
+    text: (data) => `Welcome to Wilsy OS, ${data.name}! Login: ${data.loginUrl}`,
   },
   mfaCode: {
     subject: 'Your MFA Verification Code - Wilsy OS',
@@ -160,7 +173,7 @@ const EMAIL_TEMPLATES = {
         <div style="font-size: 48px; font-weight: 900; color: #d4af37; text-align: center; padding: 24px; background: #000; letter-spacing: 12px;">${data.code}</div>
         <p style="color: #666; font-size: 11px;">Request ID: ${data.requestId}</p>
       </div>`,
-    text: (data) => `MFA CODE: ${data.code} | RID: ${data.requestId}`
+    text: (data) => `MFA CODE: ${data.code} | RID: ${data.requestId}`,
   },
   invoiceGenerated: {
     subject: '📜 Your Sovereign Tax Invoice is Ready',
@@ -169,7 +182,7 @@ const EMAIL_TEMPLATES = {
         <h2 style="color: #d4af37;">TAX INVOICE ATTACHED</h2>
         <p>Your invoice for ${data.period} has been generated and forensically sealed via SHA3-512.</p>
       </div>`,
-    text: (data) => `Invoice Ready: ${data.invoiceNumber} | Amount: ${data.amount}`
+    text: (data) => `Invoice Ready: ${data.invoiceNumber} | Amount: ${data.amount}`,
   },
   investorReport: {
     subject: '🏛️ WILSY OS - CONSOLIDATED INVESTOR REPORT',
@@ -185,8 +198,22 @@ const EMAIL_TEMPLATES = {
         </div>
         <p style="font-size: 12px; color: #888; margin-top: 30px;">This artifact is legally non-repudiable and anchored to the Wilsy OS Sovereign Nucleus.</p>
       </div>`,
-    text: (data) => `WILSY OS INVESTOR REPORT | TRACE: ${data.traceId} | BIBLICAL WORTH BILLIONS`
-  }
+    text: (data) => `WILSY OS INVESTOR REPORT | TRACE: ${data.traceId} | BIBLICAL WORTH BILLIONS`,
+  },
+  meetingInvitation: {
+    subject: 'Wilsy OS Meeting Invitation',
+    template: (data) => `
+      <div style="font-family: sans-serif; background: #02060d; color: #f8fafc; padding: 36px; border: 1px solid #31e981;">
+        <p style="letter-spacing: 4px; text-transform: uppercase; color: #d8c779; margin: 0 0 12px;">${data.brandName || 'Wilsy OS'} Meeting Command</p>
+        <h1 style="margin: 0 0 16px;">${data.title || 'Meeting'}</h1>
+        <p>${data.summary || 'A Wilsy OS meeting invitation is ready.'}</p>
+        <p><strong>When:</strong> ${data.when || 'Date and time pending'}</p>
+        <p><strong>Venue:</strong> ${data.venue || 'Venue pending'}</p>
+        <p><a href="${data.openUrl || '#'}" style="color:#31e981;">Open meeting</a> | <a href="${data.rescheduleUrl || '#'}" style="color:#d8c779;">Request reschedule</a></p>
+      </div>`,
+    text: (data) =>
+      `${data.brandName || 'Wilsy OS'} Meeting: ${data.title || 'Meeting'} | ${data.when || 'Date and time pending'} | ${data.openUrl || ''}`,
+  },
 };
 
 // ============================================================================
@@ -201,10 +228,22 @@ class EmailService {
   }
 
   async send(options = {}, attempt = 1) {
-    const { to, subject, template, templateData = {}, attachments = [] } = options;
+    const {
+      to,
+      subject,
+      template,
+      templateData = {},
+      attachments = [],
+      cc,
+      bcc,
+      replyTo,
+      icalEvent,
+      priority,
+    } = options;
     if (!to) throw new Error('Recipient required');
 
-    if (!this.checkRateLimit(Array.isArray(to) ? to[0] : to).allowed) return { success: false, error: 'RATE_LIMIT_EXCEEDED' };
+    if (!this.checkRateLimit(Array.isArray(to) ? to[0] : to).allowed)
+      return { success: false, error: 'RATE_LIMIT_EXCEEDED' };
 
     const requestId = `SOV-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
     let emailHtml = options.html;
@@ -220,14 +259,28 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: `"${EMAIL_CONFIG.defaultName}" <${EMAIL_CONFIG.defaultFrom}>`,
+      from: options.from || `"${EMAIL_CONFIG.defaultName}" <${EMAIL_CONFIG.defaultFrom}>`,
       to,
+      cc,
+      bcc,
+      replyTo,
       subject: emailSubject,
       text: emailText,
       html: emailHtml,
       attachments,
-      headers: { ...EMAIL_CONFIG.defaultHeaders, ...options.headers }
+      icalEvent,
+      priority,
+      headers: { ...EMAIL_CONFIG.defaultHeaders, ...options.headers },
     };
+    Object.keys(mailOptions).forEach((key) => {
+      if (
+        typeof mailOptions[key] === 'undefined' ||
+        mailOptions[key] === null ||
+        mailOptions[key] === ''
+      ) {
+        delete mailOptions[key];
+      }
+    });
 
     for (const provider of this.providers) {
       const result = await this.sendWithRetry(provider.instance, mailOptions, attempt);
@@ -250,8 +303,11 @@ class EmailService {
       return await provider.send(mailOptions);
     } catch (error) {
       if (attempt < this.retryConfig.maxAttempts) {
-        const delay = Math.min(this.retryConfig.baseDelay * Math.pow(2, attempt - 1), this.retryConfig.maxDelay);
-        await new Promise(r => setTimeout(r, delay));
+        const delay = Math.min(
+          this.retryConfig.baseDelay * Math.pow(2, attempt - 1),
+          this.retryConfig.maxDelay
+        );
+        await new Promise((r) => setTimeout(r, delay));
         return this.sendWithRetry(provider, mailOptions, attempt + 1);
       }
       return { success: false, error: error.message };
@@ -277,15 +333,17 @@ class EmailService {
       to: recipients,
       template: 'investorReport',
       templateData: { traceId },
-      attachments: [{
-        filename: `WilsyOS-InvestorReport-${new Date().toISOString().split('T')[0]}.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf'
-      }],
+      attachments: [
+        {
+          filename: `WilsyOS-InvestorReport-${new Date().toISOString().split('T')[0]}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
       headers: {
         'X-Wilsy-Trace-ID': traceId,
-        'X-Institutional-Strike': 'TRUE'
-      }
+        'X-Institutional-Strike': 'TRUE',
+      },
     });
   }
 
@@ -296,17 +354,19 @@ class EmailService {
       templateData: {
         invoiceNumber: invoice.invoiceNumber,
         amount: `R ${invoice.total.toLocaleString()}`,
-        period: `${new Date().getMonth() + 1}/${new Date().getFullYear()}`
+        period: `${new Date().getMonth() + 1}/${new Date().getFullYear()}`,
       },
-      attachments: [{
-        filename: `TaxInvoice_${invoice.invoiceNumber}.pdf`,
-        path: pdfPath,
-        contentType: 'application/pdf'
-      }],
+      attachments: [
+        {
+          filename: `TaxInvoice_${invoice.invoiceNumber}.pdf`,
+          path: pdfPath,
+          contentType: 'application/pdf',
+        },
+      ],
       headers: {
         'X-Sovereign-Integrity-Seal': invoice.integritySeal,
-        'X-Forensic-Audit-Trace': invoice._id.toString()
-      }
+        'X-Forensic-Audit-Trace': invoice._id.toString(),
+      },
     });
   }
 

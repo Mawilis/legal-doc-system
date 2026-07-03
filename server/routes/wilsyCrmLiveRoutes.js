@@ -25,6 +25,226 @@ import {
 
 const router = express.Router();
 
+const WILSY_R91K179E24P12E_TOP_FAILFAST_MS = 3200;
+
+/**
+ * @function splitWilsyR91K179E24P12EPath
+ * @description Splits an Express path candidate into clean segments without regex.
+ * @param {string} value - Raw Express path candidate.
+ * @returns {Array<string>} Clean path segments.
+ * @collaboration CRM live route fail-fast, Express router diagnostics and syntax-safe generated patches.
+ */
+function splitWilsyR91K179E24P12EPath(value = '') {
+  return String(value || '')
+    .split('?')[0]
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+}
+
+/**
+ * @function resolveWilsyR91K179E24P12EPathCandidates
+ * @description Collects full and router-local Express path candidates for CRM live route targeting.
+ * @param {Object} req - Express request.
+ * @returns {Array<Array<string>>} Segment candidates from originalUrl, baseUrl, url and path.
+ * @collaboration Prevents missed fail-fast matches across mounted router and app-level route forms.
+ */
+function resolveWilsyR91K179E24P12EPathCandidates(req = {}) {
+  const candidates = [
+    req.originalUrl,
+    req.url,
+    req.path,
+    [req.baseUrl, req.url].filter(Boolean).join(''),
+    [req.baseUrl, req.path].filter(Boolean).join(''),
+  ];
+
+  return candidates
+    .filter((candidate, index, array) => candidate && array.indexOf(candidate) === index)
+    .map(splitWilsyR91K179E24P12EPath);
+}
+
+/**
+ * @function resolveWilsyR91K179E24P12ELiveTarget
+ * @description Resolves source-posture or one allowed CRM live collection from any Express path form.
+ * @param {Object} req - Express request.
+ * @returns {Object} Target descriptor for fail-fast handling.
+ * @collaboration Catches /source-posture, /leads, and full /api/crm/live/leads paths before route handlers can hang.
+ */
+function resolveWilsyR91K179E24P12ELiveTarget(req = {}) {
+  if (String(req.method || '').toUpperCase() !== 'GET') {
+    return { matched: false, type: '', collection: '' };
+  }
+
+  const allowed = typeof getAllowedCollections === 'function' ? getAllowedCollections() : [];
+  const candidates = resolveWilsyR91K179E24P12EPathCandidates(req);
+
+  for (const segments of candidates) {
+    if (segments.length === 1 && segments[0] === 'source-posture') {
+      return { matched: true, type: 'source-posture', collection: '' };
+    }
+
+    if (segments.length === 1 && allowed.includes(segments[0])) {
+      return { matched: true, type: 'collection', collection: segments[0] };
+    }
+
+    const liveIndex = segments.findIndex((segment, index) => {
+      return segment === 'live' && index >= 1 && segments[index - 1] === 'crm';
+    });
+
+    if (liveIndex >= 0) {
+      const tail = segments.slice(liveIndex + 1);
+
+      if (tail.length === 1 && tail[0] === 'source-posture') {
+        return { matched: true, type: 'source-posture', collection: '' };
+      }
+
+      if (tail.length === 1 && allowed.includes(tail[0])) {
+        return { matched: true, type: 'collection', collection: tail[0] };
+      }
+    }
+  }
+
+  return { matched: false, type: '', collection: '' };
+}
+
+/**
+ * @function resolveWilsyR91K179E24P12ETenantId
+ * @description Resolves tenant identity for top-router CRM live fail-fast envelopes.
+ * @param {Object} req - Express request.
+ * @returns {string} Tenant id.
+ * @collaboration Tenant evidence, CRM source posture, records rail reliability and source honesty.
+ */
+function resolveWilsyR91K179E24P12ETenantId(req = {}) {
+  return (
+    String(
+      req.tenantId ||
+        req.headers?.['x-tenant-id'] ||
+        req.headers?.['x-wilsy-tenant-id'] ||
+        req.query?.tenantId ||
+        'MASTER'
+    ).trim() || 'MASTER'
+  );
+}
+
+/**
+ * @function buildWilsyR91K179E24P12EEnvelope
+ * @description Builds a source-honest fail-fast payload for CRM live routes that exceed the bounded response window.
+ * @param {Object} req - Express request.
+ * @param {Object} target - Resolved route target.
+ * @returns {Object} Timeout payload with no fake records.
+ * @collaboration Frontend Records rail, Wilsy AI source posture, backend route reliability and investor-grade evidence.
+ */
+function buildWilsyR91K179E24P12EEnvelope(req = {}, target = {}) {
+  const tenantId = resolveWilsyR91K179E24P12ETenantId(req);
+  const generatedAt = new Date().toISOString();
+  const isSourcePosture = target.type === 'source-posture';
+  const collection = isSourcePosture ? null : target.collection || 'unknown';
+  const allowed = typeof getAllowedCollections === 'function' ? getAllowedCollections() : [];
+
+  const sourceIds = isSourcePosture ? allowed : [collection].filter(Boolean);
+
+  const sources = sourceIds.map((sourceId) => ({
+    id: sourceId,
+    route: `/api/crm/live/${sourceId}`,
+    routeLive: true,
+    dataSource: 'top-router-timeout',
+    modelName: null,
+    recordCount: 0,
+    status: 'timeout',
+    timeoutMs: WILSY_R91K179E24P12E_TOP_FAILFAST_MS,
+  }));
+
+  return {
+    ok: false,
+    success: false,
+    status: isSourcePosture ? 'CRM_LIVE_SOURCE_POSTURE_TIMEOUT' : 'CRM_LIVE_COLLECTION_TIMEOUT',
+    message: isSourcePosture
+      ? 'CRM live source posture exceeded the bounded top-router window.'
+      : `CRM live collection ${collection} exceeded the bounded top-router window.`,
+    tenantId,
+    collection: isSourcePosture ? null : collection,
+    route: isSourcePosture ? '/api/crm/live/source-posture' : `/api/crm/live/${collection}`,
+    generatedAt,
+    version: 'r91k179e24p12e-top-router-failfast',
+    sourceStatus: 'ROUTE_TIMEOUT',
+    records: [],
+    data: [],
+    sourcePosture: {
+      tenantId,
+      version: 'crm-live-source-posture-timeout-v1',
+      connectedRoutes: sources.length,
+      totalRoutes: sources.length,
+      sourceGaps: sources.length,
+      status: 'timeout',
+      timeoutMs: WILSY_R91K179E24P12E_TOP_FAILFAST_MS,
+      generatedAt,
+      sources,
+    },
+    meta: {
+      count: 0,
+      timeoutMs: WILSY_R91K179E24P12E_TOP_FAILFAST_MS,
+      sourceHonesty: 'NO_FAKE_RECORDS_RETURNED',
+    },
+  };
+}
+
+/**
+ * @function wilsyR91K179E24P12ETopRouterFailFast
+ * @description Installs a top-router bounded responder before any CRM live route handler can hang.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {void}
+ * @collaboration CRM live source-posture, leads, meetings, Records rail and no-placeholder backend evidence.
+ */
+function wilsyR91K179E24P12ETopRouterFailFast(req, res, next) {
+  const target = resolveWilsyR91K179E24P12ELiveTarget(req);
+
+  if (!target.matched) {
+    next();
+    return;
+  }
+
+  let completed = false;
+
+  const originalJson = res.json.bind(res);
+  const originalSend = res.send.bind(res);
+  const originalEnd = res.end.bind(res);
+
+  const timeoutId = setTimeout(() => {
+    if (completed || res.headersSent) return;
+
+    completed = true;
+    res.status(206);
+    originalJson(buildWilsyR91K179E24P12EEnvelope(req, target));
+  }, WILSY_R91K179E24P12E_TOP_FAILFAST_MS);
+
+  res.json = (body) => {
+    if (completed && res.headersSent) return res;
+    completed = true;
+    clearTimeout(timeoutId);
+    return originalJson(body);
+  };
+
+  res.send = (body) => {
+    if (completed && res.headersSent) return res;
+    completed = true;
+    clearTimeout(timeoutId);
+    return originalSend(body);
+  };
+
+  res.end = (...args) => {
+    if (completed && res.headersSent) return res;
+    completed = true;
+    clearTimeout(timeoutId);
+    return originalEnd(...args);
+  };
+
+  next();
+}
+
+router.use(wilsyR91K179E24P12ETopRouterFailFast);
+
 /* R91K144_SOURCE_SIGNATURE_FABRIC_BACKEND_CONTRACT
    Backend-owned source-to-signature fabric contract for /api/crm/live/source-guide. */
 
@@ -1144,6 +1364,206 @@ async function handleWilsyR91K110CrmRouteSurface(req, res) {
     routeSurface,
   });
 }
+
+const WILSY_R91K179E24P12D_ROUTE_FAILFAST_MS = 3200;
+
+/**
+ * @function resolveWilsyR91K179E24P12DTenantId
+ * @description Resolves tenant identity for CRM live route fail-fast evidence.
+ * @param {Object} req - Express request carrying tenant headers and query context.
+ * @returns {string} Tenant id used in the timeout envelope.
+ * @collaboration CRM live routes, source posture, tenant evidence, frontend records rail and no-fake-record source honesty.
+ */
+function resolveWilsyR91K179E24P12DTenantId(req = {}) {
+  return (
+    String(
+      req.tenantId ||
+        req.headers?.['x-tenant-id'] ||
+        req.headers?.['x-wilsy-tenant-id'] ||
+        req.query?.tenantId ||
+        'MASTER'
+    ).trim() || 'MASTER'
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179E24P12DPathSegments
+ * @description Converts an Express route path into clean slash-separated path segments without using regex literals.
+ * @param {Object} req - Express request.
+ * @returns {Array<string>} Path segments for route targeting.
+ * @collaboration Prevents generated-code regex syntax failures while preserving CRM route boundary targeting.
+ */
+function resolveWilsyR91K179E24P12DPathSegments(req = {}) {
+  const rawPath = String(req.path || req.url || '').split('?')[0];
+
+  return rawPath
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+}
+
+/**
+ * @function isWilsyR91K179E24P12DSourcePosturePath
+ * @description Detects the CRM live source-posture route in router-local Express path form.
+ * @param {Object} req - Express request.
+ * @returns {boolean} True when request targets /source-posture.
+ * @collaboration CRM live route boundary fail-fast and source posture reliability.
+ */
+function isWilsyR91K179E24P12DSourcePosturePath(req = {}) {
+  const segments = resolveWilsyR91K179E24P12DPathSegments(req);
+  return segments.length === 1 && segments[0] === 'source-posture';
+}
+
+/**
+ * @function resolveWilsyR91K179E24P12DCollectionSegment
+ * @description Resolves a supported one-segment CRM live collection route from the request.
+ * @param {Object} req - Express request.
+ * @returns {string} Collection id or empty string.
+ * @collaboration Keeps fail-fast coverage limited to CRM live collection reads.
+ */
+function resolveWilsyR91K179E24P12DCollectionSegment(req = {}) {
+  if (String(req.method || '').toUpperCase() !== 'GET') return '';
+
+  const segments = resolveWilsyR91K179E24P12DPathSegments(req);
+
+  if (segments.length !== 1) return '';
+
+  const collection = segments[0];
+
+  if (!collection || collection === 'source-guide' || collection === 'source-posture') {
+    return '';
+  }
+
+  const allowed = typeof getAllowedCollections === 'function' ? getAllowedCollections() : [];
+
+  return allowed.includes(collection) ? collection : '';
+}
+
+/**
+ * @function buildWilsyR91K179E24P12DTimeoutEnvelope
+ * @description Builds a source-honest JSON timeout envelope for CRM live route reads.
+ * @param {Object} req - Express request.
+ * @returns {Object} Timeout payload with no fabricated CRM records.
+ * @collaboration Prevents UI/backend freezes while preserving source honesty, tenant evidence and audit readability.
+ */
+function buildWilsyR91K179E24P12DTimeoutEnvelope(req = {}) {
+  const tenantId = resolveWilsyR91K179E24P12DTenantId(req);
+  const generatedAt = new Date().toISOString();
+  const isSourcePosture = isWilsyR91K179E24P12DSourcePosturePath(req);
+  const collection = isSourcePosture ? null : resolveWilsyR91K179E24P12DCollectionSegment(req);
+
+  const sourceIds = isSourcePosture
+    ? typeof getAllowedCollections === 'function'
+      ? getAllowedCollections()
+      : []
+    : [collection].filter(Boolean);
+
+  const sources = sourceIds.map((sourceId) => ({
+    id: sourceId,
+    route: `/api/crm/live/${sourceId}`,
+    routeLive: true,
+    dataSource: 'route-path-timeout',
+    modelName: null,
+    recordCount: 0,
+    status: 'timeout',
+    timeoutMs: WILSY_R91K179E24P12D_ROUTE_FAILFAST_MS,
+  }));
+
+  return {
+    ok: false,
+    success: false,
+    status: isSourcePosture ? 'CRM_LIVE_SOURCE_POSTURE_TIMEOUT' : 'CRM_LIVE_COLLECTION_TIMEOUT',
+    message: isSourcePosture
+      ? 'CRM live source posture exceeded the bounded route window.'
+      : `CRM live collection ${collection || 'unknown'} exceeded the bounded route window.`,
+    tenantId,
+    collection,
+    route: isSourcePosture
+      ? '/api/crm/live/source-posture'
+      : `/api/crm/live/${collection || 'unknown'}`,
+    generatedAt,
+    version: 'r91k179e24p12d-no-regex-route-failfast',
+    sourceStatus: 'ROUTE_TIMEOUT',
+    records: [],
+    data: [],
+    sourcePosture: {
+      tenantId,
+      version: 'crm-live-source-posture-timeout-v1',
+      connectedRoutes: sources.length,
+      totalRoutes: sources.length,
+      sourceGaps: sources.length,
+      status: 'timeout',
+      timeoutMs: WILSY_R91K179E24P12D_ROUTE_FAILFAST_MS,
+      generatedAt,
+      sources,
+    },
+    meta: {
+      count: 0,
+      timeoutMs: WILSY_R91K179E24P12D_ROUTE_FAILFAST_MS,
+      sourceHonesty: 'NO_FAKE_RECORDS_RETURNED',
+    },
+  };
+}
+
+/**
+ * @function wilsyR91K179E24P12DRouteFailFast
+ * @description Sends a bounded fallback JSON response if CRM live route handlers hang past the route window.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {void}
+ * @collaboration CRM live routes, route boundary reliability, frontend records rail, Wilsy AI source posture and investor-grade source honesty.
+ */
+function wilsyR91K179E24P12DRouteFailFast(req, res, next) {
+  const isTarget =
+    String(req.method || '').toUpperCase() === 'GET' &&
+    (isWilsyR91K179E24P12DSourcePosturePath(req) ||
+      Boolean(resolveWilsyR91K179E24P12DCollectionSegment(req)));
+
+  if (!isTarget) {
+    next();
+    return;
+  }
+
+  let completed = false;
+
+  const originalJson = res.json.bind(res);
+  const originalSend = res.send.bind(res);
+  const originalEnd = res.end.bind(res);
+
+  const timeoutId = setTimeout(() => {
+    if (completed || res.headersSent) return;
+
+    completed = true;
+    res.status(206);
+    originalJson(buildWilsyR91K179E24P12DTimeoutEnvelope(req));
+  }, WILSY_R91K179E24P12D_ROUTE_FAILFAST_MS);
+
+  res.json = (body) => {
+    if (completed && res.headersSent) return res;
+    completed = true;
+    clearTimeout(timeoutId);
+    return originalJson(body);
+  };
+
+  res.send = (body) => {
+    if (completed && res.headersSent) return res;
+    completed = true;
+    clearTimeout(timeoutId);
+    return originalSend(body);
+  };
+
+  res.end = (...args) => {
+    if (completed && res.headersSent) return res;
+    completed = true;
+    clearTimeout(timeoutId);
+    return originalEnd(...args);
+  };
+
+  next();
+}
+
+router.use(wilsyR91K179E24P12DRouteFailFast);
 
 router.get('/source-posture', asyncHandler(sendSourcePosture));
 
