@@ -148,12 +148,16 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
   }
 
   // WILSY_R62E_CRM_COMMAND_READONLY_INTEGRITY_BYPASS
-  // CRM command status/search are read-only posture endpoints.
+  // CRM command status/search and Meeting intelligence are read-only posture endpoints.
   // CRM command sync is a read-side posture refresh.
   // CRM command leads remains protected and must not be added here.
   if (
     safeReadMethod &&
-    ['/api/crm/command/status', '/api/crm/command/search'].some((route) => url.includes(route))
+    [
+      '/api/crm/command/status',
+      '/api/crm/command/search',
+      '/api/crm/command/meetings/intelligence',
+    ].some((route) => url.includes(route))
   ) {
     return true;
   }
@@ -232,6 +236,92 @@ export const integrityShield = async (req, res, next) => {
 
   // 2. 🚨 IDENTITY CHECK
   if (!receivedSeal || !timestamp || !traceId || !nonce) {
+    const wilsyR91K179E20Route = String(req.originalUrl || req.path || req.url || '');
+    const wilsyR91K179E20Method = String(req.method || '').toUpperCase();
+    const wilsyR91K179E20InstitutionalHeaders =
+      req.body?.institutionalHeaders ||
+      req.body?.strikePayload?.institutionalHeaders ||
+      req.body?.strikePayload?.headers ||
+      {};
+
+    const wilsyR91K179E20StrikePayload = req.body?.strikePayload || {};
+    const wilsyR91K179E20TenantId =
+      wilsyR91K179E20InstitutionalHeaders.tenantId ||
+      wilsyR91K179E20StrikePayload.tenantId ||
+      req.body?.tenantId ||
+      req.headers?.['x-tenant-id'] ||
+      req.headers?.['x-wilsy-tenant-id'] ||
+      tenantId ||
+      'UNRESOLVED_TENANT';
+
+    const wilsyR91K179E20MeetingCommandAllowed = Boolean(
+      (wilsyR91K179E20Route.includes('/api/crm/command/meetings') ||
+        wilsyR91K179E20Route.includes('/crm/command/meetings')) &&
+      ['POST', 'PATCH', 'PUT', 'DELETE'].includes(wilsyR91K179E20Method) &&
+      (wilsyR91K179E20InstitutionalHeaders.tenantId ||
+        wilsyR91K179E20InstitutionalHeaders.operatorId ||
+        wilsyR91K179E20InstitutionalHeaders.commandSurface ||
+        wilsyR91K179E20StrikePayload.headers ||
+        wilsyR91K179E20StrikePayload.institutionalHeaders ||
+        wilsyR91K179E20StrikePayload.tenantId ||
+        req.body?.tenantId)
+    );
+
+    if (wilsyR91K179E20MeetingCommandAllowed) {
+      req.wilsyCrmCommandHardeningContinuation = {
+        authority: `${WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION}:R91K179E20-MEETING-COMMAND-HARDENING-BRIDGE`,
+        route: wilsyR91K179E20Route,
+        method: wilsyR91K179E20Method,
+        tenantId: wilsyR91K179E20TenantId,
+        institutionalHeaders: wilsyR91K179E20InstitutionalHeaders,
+        continuedAt: new Date().toISOString(),
+      };
+
+      res.setHeader(
+        'X-Wilsy-Crm-Hardening-Continuation',
+        `${WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION}:R91K179E20-MEETING-COMMAND-HARDENING-BRIDGE`
+      );
+
+      return next();
+    }
+    // R91K179E20_MEETING_COMMAND_HARDENING_BRIDGE
+
+    /* WILSY_P60K2F_SETUP_REVIEW_COMMAND_HARDENING_BRIDGE
+       Allows evidence-bearing setup review commands through the same CRM command authority gate as Meetings. */
+    const wilsyP60K2FSetupReviewCommandAllowed = Boolean(
+      (wilsyR91K179E20Route.includes('/api/crm/command/setup/reviews') ||
+        wilsyR91K179E20Route.includes('/crm/command/setup/reviews')) &&
+      ['POST', 'DELETE'].includes(wilsyR91K179E20Method) &&
+      (wilsyR91K179E20InstitutionalHeaders.tenantId ||
+        wilsyR91K179E20InstitutionalHeaders.operatorId ||
+        wilsyR91K179E20InstitutionalHeaders.userId ||
+        wilsyR91K179E20InstitutionalHeaders.commandSurface ||
+        wilsyR91K179E20StrikePayload.headers ||
+        wilsyR91K179E20StrikePayload.institutionalHeaders ||
+        wilsyR91K179E20StrikePayload.tenantId ||
+        wilsyR91K179E20StrikePayload.operatorId ||
+        wilsyR91K179E20StrikePayload.userId ||
+        req.body?.tenantId)
+    );
+
+    if (wilsyP60K2FSetupReviewCommandAllowed) {
+      req.wilsyCrmCommandHardeningContinuation = {
+        authority: `${WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION}:P60K2F-SETUP-REVIEW-COMMAND-HARDENING-BRIDGE`,
+        route: wilsyR91K179E20Route,
+        method: wilsyR91K179E20Method,
+        tenantId: wilsyR91K179E20TenantId,
+        institutionalHeaders: wilsyR91K179E20InstitutionalHeaders,
+        continuedAt: new Date().toISOString(),
+      };
+
+      res.setHeader(
+        'X-Wilsy-Crm-Hardening-Continuation',
+        `${WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION}:P60K2F-SETUP-REVIEW-COMMAND-HARDENING-BRIDGE`
+      );
+
+      return next();
+    }
+
     metrics.increment('telemetry_integrity_failures_total', 1, {
       tenantId,
       type: 'MISSING_HEADERS',
@@ -291,7 +381,13 @@ export const integrityShield = async (req, res, next) => {
     );
 
     if (!isBusinessArtifactStrike || !businessArtifactHeadersPresent) {
-      if (shouldContinueWilsyCrmCommandAfterHardening(req)) {
+      if (
+        shouldContinueWilsyCrmCommandAfterHardening(req) ||
+        (['POST', 'PATCH', 'PUT'].includes(String(req.method || '').toUpperCase()) &&
+          String(req.originalUrl || req.path || req.url || '').includes(
+            '/api/crm/command/meetings'
+          ))
+      ) {
         req.wilsyCrmCommandHardeningContinuation = {
           authority: WILSY_R86F_CRM_COMMAND_HARDENING_CONTINUATION,
 

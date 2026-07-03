@@ -96,6 +96,7 @@ import {
   buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief,
   buildLeadSearchRegulatorInvestorTerminalEvidenceLaunchPacket,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
+import { dispatchWilsyMeetingInvitations } from '../services/wilsyMeetingNotificationService.js';
 
 const router = express.Router();
 
@@ -723,6 +724,2414 @@ async function handleWilsyR91K74CrmLeadPatchAuthority(req, res, next) {
     ],
   });
 }
+
+/**
+ * R91K179B12B_LIVE_MEETING_COMMAND_AUTHORITY
+ * @function resolveWilsyR91K179MeetingMongoose
+ * @description Resolves mongoose without assuming a specific upstream import shape.
+ * @returns {Object|null} Mongoose instance or null.
+ * @collaboration CRM command route, meeting command authority, telemetry receipts.
+ */
+function resolveWilsyR91K179MeetingMongoose() {
+  try {
+    return require('mongoose');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @function getWilsyR91K179MeetingTenantId
+ * @description Resolves tenant scope for CRM meeting command writes.
+ * @param {Object} req - Express request.
+ * @returns {string} Tenant id.
+ * @collaboration Tenant-scoped CRM meeting writes, command receipts, live source service.
+ */
+function getWilsyR91K179MeetingTenantId(req) {
+  return (
+    String(
+      req?.headers?.['x-tenant-id'] ||
+        req?.headers?.['X-Tenant-Id'] ||
+        req?.body?.tenantId ||
+        req?.query?.tenantId ||
+        'MASTER'
+    ).trim() || 'MASTER'
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179MeetingModel
+ * @description Resolves the first registered model that can support meeting command persistence.
+ * @param {Array<string>} names - Candidate model names.
+ * @returns {Object|null} Mongoose model or null.
+ * @collaboration Existing CRMMeeting, Meeting, CrmMeeting, CalendarEvent, Event model authority.
+ */
+function resolveWilsyR91K179MeetingModel(names = []) {
+  const mongooseInstance = resolveWilsyR91K179MeetingMongoose();
+
+  if (!mongooseInstance) return null;
+
+  for (const name of names) {
+    try {
+      if (mongooseInstance.models?.[name]) return mongooseInstance.model(name);
+    } catch {
+      // Keep scanning compatible model aliases.
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function insertWilsyR91K179MeetingCollectionRecord
+ * @description Inserts a raw MongoDB collection document when no compatible registered model accepts the write.
+ * @param {string} collectionName - Target collection.
+ * @param {Object} document - Document to insert.
+ * @returns {Promise<Object>} Inserted record summary.
+ * @collaboration Mongo fallback, meeting command persistence, telemetry and compliance receipts.
+ */
+async function insertWilsyR91K179MeetingCollectionRecord(collectionName, document) {
+  const mongooseInstance = resolveWilsyR91K179MeetingMongoose();
+
+  if (!mongooseInstance?.connection?.db) {
+    const error = new Error('MongoDB connection unavailable for meeting command authority.');
+    error.statusCode = 503;
+    error.code = 'CRM_MEETING_DB_UNAVAILABLE';
+    throw error;
+  }
+
+  const result = await mongooseInstance.connection.db
+    .collection(collectionName)
+    .insertOne(document);
+
+  return {
+    ...document,
+    _id: result.insertedId,
+    id: String(result.insertedId),
+    persistence: 'RAW_COLLECTION_PERSISTED',
+    collectionName,
+  };
+}
+
+/**
+ * @function persistWilsyR91K179MeetingDocument
+ * @description Persists a meeting document using the same active CRM Mongoose runtime strategy as the working Lead DB_PERSISTED path.
+ * @param {Object} document - Meeting document.
+ * @returns {Promise<Object>} Persisted meeting record with DB_PERSISTED evidence.
+ * @collaboration CRMMeeting, resolveWilsyR91K76MongooseRuntime, raw MongoDB collection fallback, Wilsy OS Meeting command authority.
+ */
+async function persistWilsyR91K179MeetingDocument(document = {}) {
+  const startedAt = Date.now();
+  const now = new Date();
+  const safeDocument = {
+    ...(document && typeof document === 'object' ? document : {}),
+    updatedAt: now,
+    wilsyPersistenceContract: 'R91K179E12_MEETING_LEAD_RUNTIME_DB_PERSISTED',
+    wilsyCommandPersistedAt: now.toISOString(),
+  };
+
+  delete safeDocument._id;
+  delete safeDocument.id;
+  delete safeDocument.meetingId;
+  delete safeDocument.recordId;
+  delete safeDocument.collection;
+
+  let mongooseRuntime = null;
+  let lastErrorMessage = '';
+
+  try {
+    if (typeof resolveWilsyR91K76MongooseRuntime === 'function') {
+      mongooseRuntime = resolveWilsyR91K76MongooseRuntime();
+    }
+  } catch (runtimeError) {
+    lastErrorMessage = runtimeError?.message || lastErrorMessage;
+  }
+
+  if (!mongooseRuntime) {
+    try {
+      const mongooseModule = await import('mongoose');
+      mongooseRuntime = mongooseModule.default || mongooseModule;
+    } catch (importError) {
+      lastErrorMessage = importError?.message || lastErrorMessage;
+    }
+  }
+
+  const MeetingModel =
+    mongooseRuntime?.models?.CRMMeeting ||
+    mongooseRuntime?.models?.Meeting ||
+    mongooseRuntime?.models?.CrmMeeting ||
+    mongooseRuntime?.models?.CalendarEvent ||
+    mongooseRuntime?.models?.Event ||
+    resolveWilsyR91K179MeetingModel([
+      'CRMMeeting',
+      'Meeting',
+      'CrmMeeting',
+      'CalendarEvent',
+      'Event',
+    ]);
+
+  if (MeetingModel && typeof MeetingModel.create === 'function') {
+    try {
+      const created = await Promise.race([
+        MeetingModel.create(safeDocument),
+        new Promise((resolve) => setTimeout(() => resolve(null), 6500)),
+      ]);
+
+      if (created) {
+        const plain = typeof created?.toObject === 'function' ? created.toObject() : created;
+        const recordId = String(plain?._id || created?._id || '');
+
+        return {
+          ...plain,
+          id: plain?.id || recordId,
+          meetingId: plain?.meetingId || recordId,
+          persistence: 'DB_PERSISTED',
+          persistenceStatus: 'DB_PERSISTED',
+          sourceStatus: 'DB_PERSISTED',
+          modelName: MeetingModel.modelName || 'CRMMeeting',
+          collectionName: MeetingModel.collection?.name || 'crmmeetings',
+          latencyMs: Date.now() - startedAt,
+        };
+      }
+    } catch (modelError) {
+      lastErrorMessage = modelError?.message || lastErrorMessage;
+    }
+  }
+
+  if (MeetingModel?.collection && typeof MeetingModel.collection.insertOne === 'function') {
+    try {
+      const result = await Promise.race([
+        MeetingModel.collection.insertOne(safeDocument),
+        new Promise((resolve) => setTimeout(() => resolve(null), 6500)),
+      ]);
+
+      if (result?.insertedId) {
+        const recordId = String(result.insertedId);
+
+        return {
+          ...safeDocument,
+          _id: result.insertedId,
+          id: recordId,
+          meetingId: recordId,
+          persistence: 'DB_PERSISTED',
+          persistenceStatus: 'DB_PERSISTED',
+          sourceStatus: 'DB_PERSISTED',
+          modelName: MeetingModel.modelName || 'CRMMeeting',
+          collectionName: MeetingModel.collection.name || 'crmmeetings',
+          latencyMs: Date.now() - startedAt,
+        };
+      }
+    } catch (modelCollectionError) {
+      lastErrorMessage = modelCollectionError?.message || lastErrorMessage;
+    }
+  }
+
+  const activeDb =
+    mongooseRuntime?.connection?.db ||
+    (Array.isArray(mongooseRuntime?.connections)
+      ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+      : null);
+
+  if (activeDb) {
+    const candidateCollections = [
+      'crmmeetings',
+      'meetings',
+      'crm_meetings',
+      'CRMMeeting',
+      'Meeting',
+    ];
+
+    for (const collectionName of candidateCollections) {
+      try {
+        const collection = activeDb.collection(collectionName);
+
+        if (!collection || typeof collection.insertOne !== 'function') {
+          continue;
+        }
+
+        const result = await Promise.race([
+          collection.insertOne(safeDocument),
+          new Promise((resolve) => setTimeout(() => resolve(null), 4500)),
+        ]);
+
+        if (result?.insertedId) {
+          const recordId = String(result.insertedId);
+
+          return {
+            ...safeDocument,
+            _id: result.insertedId,
+            id: recordId,
+            meetingId: recordId,
+            persistence: 'DB_PERSISTED',
+            persistenceStatus: 'DB_PERSISTED',
+            sourceStatus: 'DB_PERSISTED',
+            modelName: MeetingModel?.modelName || 'CRMMeeting',
+            collectionName,
+            latencyMs: Date.now() - startedAt,
+          };
+        }
+      } catch (rawError) {
+        lastErrorMessage = rawError?.message || lastErrorMessage;
+      }
+    }
+  }
+
+  const error = new Error(
+    lastErrorMessage ||
+      'CRMMeeting model and MongoDB collection runtime unavailable for meeting command authority.'
+  );
+  error.statusCode = 503;
+  error.code = 'CRM_MEETING_DB_UNAVAILABLE';
+  throw error;
+}
+
+/**
+ * @function persistWilsyR91K179CommandReceipt
+ * @description Persists telemetry/compliance receipts for every live meeting command action.
+ * @param {Object} payload - Receipt payload.
+ * @returns {Promise<Object>} Receipt persistence summary.
+ * @collaboration CRMTelemetryEvent, CRMComplianceReceipt, tenant evidence, command audit chain.
+ */
+async function persistWilsyR91K179CommandReceipt(payload = {}) {
+  const now = new Date();
+  const receipt = {
+    tenantId: payload.tenantId || 'MASTER',
+    commandSurface: 'R91K179B12B_LIVE_MEETING_COMMAND_AUTHORITY',
+    action: payload.action || 'MEETING_COMMAND',
+    module: 'meetings',
+    status: payload.status || 'RECORDED',
+    route: payload.route || '/api/crm/command/meetings/action',
+    source: payload.source || 'WILSY_MEETING_COMMAND_CENTER',
+    operatorId: payload.operatorId || 'wilsy-operator',
+    relatedRecord: payload.relatedRecord || null,
+    meetingId: payload.meetingId || null,
+    fileName: payload.fileName || null,
+    evidence: payload.evidence || {},
+    metadata: payload.metadata || {},
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const writes = [];
+
+  const TelemetryModel = resolveWilsyR91K179MeetingModel([
+    'CRMTelemetryEvent',
+    'TelemetryEvent',
+    'CrmTelemetryEvent',
+  ]);
+  if (TelemetryModel) {
+    try {
+      const saved = await TelemetryModel.create(receipt);
+      writes.push({
+        target: 'CRMTelemetryEvent',
+        persistence: 'MODEL_PERSISTED',
+        id: String(saved?._id || ''),
+      });
+    } catch {
+      const raw = await insertWilsyR91K179MeetingCollectionRecord('crmtelemetryevents', receipt);
+      writes.push({ target: 'crmtelemetryevents', persistence: raw.persistence, id: raw.id });
+    }
+  } else {
+    const raw = await insertWilsyR91K179MeetingCollectionRecord('crmtelemetryevents', receipt);
+    writes.push({ target: 'crmtelemetryevents', persistence: raw.persistence, id: raw.id });
+  }
+
+  const ComplianceModel = resolveWilsyR91K179MeetingModel([
+    'CRMComplianceReceipt',
+    'ComplianceReceipt',
+    'CrmComplianceReceipt',
+  ]);
+  if (ComplianceModel) {
+    try {
+      const saved = await ComplianceModel.create({
+        ...receipt,
+        receiptType: 'CRM_MEETING_COMMAND',
+        compliancePosture: 'TENANT_COMMAND_RECORDED',
+      });
+      writes.push({
+        target: 'CRMComplianceReceipt',
+        persistence: 'MODEL_PERSISTED',
+        id: String(saved?._id || ''),
+      });
+    } catch {
+      const raw = await insertWilsyR91K179MeetingCollectionRecord('crmcompliancereceipts', {
+        ...receipt,
+        receiptType: 'CRM_MEETING_COMMAND',
+        compliancePosture: 'TENANT_COMMAND_RECORDED',
+      });
+      writes.push({ target: 'crmcompliancereceipts', persistence: raw.persistence, id: raw.id });
+    }
+  } else {
+    const raw = await insertWilsyR91K179MeetingCollectionRecord('crmcompliancereceipts', {
+      ...receipt,
+      receiptType: 'CRM_MEETING_COMMAND',
+      compliancePosture: 'TENANT_COMMAND_RECORDED',
+    });
+    writes.push({ target: 'crmcompliancereceipts', persistence: raw.persistence, id: raw.id });
+  }
+
+  return {
+    ok: true,
+    receipt,
+    writes,
+  };
+}
+
+/**
+ * @function buildWilsyR91K179MeetingDocument
+ * @description Builds a source-honest meeting document from the universal meeting command center payload.
+ * @param {Object} req - Express request.
+ * @returns {Object} Meeting document.
+ * @collaboration Universal meeting UI, CRMMeeting persistence, tenant audit receipts.
+ */
+function buildWilsyR91K179MeetingDocument(req) {
+  const now = new Date();
+  const tenantId = getWilsyR91K179MeetingTenantId(req);
+  const draft =
+    req?.body?.meetingDraft && typeof req.body.meetingDraft === 'object'
+      ? req.body.meetingDraft
+      : {};
+  const status = String(req?.body?.status || draft.status || 'SCHEDULED')
+    .trim()
+    .toUpperCase();
+  const title = String(draft.title || req?.body?.title || 'New Meeting').trim();
+
+  if (!title) {
+    const error = new Error('Meeting title is required.');
+    error.statusCode = 400;
+    error.code = 'CRM_MEETING_TITLE_REQUIRED';
+    throw error;
+  }
+
+  return {
+    tenantId,
+    title,
+    name: title,
+    subject: title,
+    venue: draft.venue || draft.meetingVenue || 'Client location',
+    meetingVenue: draft.venue || draft.meetingVenue || 'Client location',
+    location: draft.location || '',
+    allDay: Boolean(draft.allDay),
+    fromDate: draft.fromDate || '',
+    fromTime: draft.fromTime || '',
+    toDate: draft.toDate || '',
+    toTime: draft.toTime || '',
+    startsAt:
+      draft.fromDate || draft.fromTime
+        ? `${draft.fromDate || ''} ${draft.fromTime || ''}`.trim()
+        : null,
+    endsAt:
+      draft.toDate || draft.toTime ? `${draft.toDate || ''} ${draft.toTime || ''}`.trim() : null,
+    host: draft.host || 'Wilsy',
+    participants: draft.participants || '',
+    relatedTo: draft.relatedTo || req?.body?.relatedRecord || null,
+    repeat: draft.repeat || 'None',
+    reminder: draft.reminder || 'None',
+    description: draft.description || '',
+    status,
+    source: 'WILSY_UNIVERSAL_MEETING_COMMAND_CENTER',
+    commandSurface: 'R91K179B12B_LIVE_MEETING_COMMAND_AUTHORITY',
+    relatedRecord: req?.body?.relatedRecord || null,
+    metadata: {
+      mode: req?.body?.mode || 'standalone',
+      operatorAction: req?.body?.action || 'SAVE_MEETING',
+      sourcePolicy: 'BACKEND_PERSISTED_AND_RECORDED',
+      noPlaceholder: true,
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/**
+ * @function handleWilsyR91K179MeetingAction
+ * @description Records a meeting command action that does not create a meeting record.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration Meeting command buttons, tenant audit, telemetry and compliance receipt chain.
+ */
+async function handleWilsyR91K179MeetingAction(req, res) {
+  const tenantId = getWilsyR91K179MeetingTenantId(req);
+  const action = String(req?.body?.action || 'MEETING_COMMAND')
+    .trim()
+    .toUpperCase();
+
+  const receipt = await persistWilsyR91K179CommandReceipt({
+    tenantId,
+    action,
+    status: 'ACTION_RECORDED',
+    route: '/api/crm/command/meetings/action',
+    relatedRecord: req?.body?.relatedRecord || null,
+    metadata: {
+      mode: req?.body?.mode || 'standalone',
+      noPlaceholder: true,
+    },
+  });
+
+  res.status(200).json({
+    ok: true,
+    tenantId,
+    route: '/api/crm/command/meetings/action',
+    action,
+    status: 'ACTION_RECORDED',
+    receipt,
+  });
+}
+
+/**
+ * @function handleWilsyR91K179MeetingCreate
+ * @description Persists CRM Meeting create commands with the same DB_PERSISTED confirmation posture as the working Lead save path.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<Object>} Governed Meeting persistence response.
+ * @collaboration Universal Meeting workspace, CRMMeeting persistence, command receipts, Wilsy OS evidence fabric.
+ */
+async function handleWilsyR91K179MeetingCreate(req, res) {
+  const startedAt = Date.now();
+
+  try {
+    const document = buildWilsyR91K179MeetingDocument(req);
+    const rawDocument = {
+      ...document,
+      updatedAt: new Date(),
+      wilsyPersistenceContract: 'R91K179E10_MEETING_DB_PERSISTED_ROUTE',
+      wilsyCommandPersistedAt: new Date().toISOString(),
+    };
+
+    let saved = null;
+    let persistenceMode = '';
+    let collectionName = '';
+    let persistenceWarning = '';
+
+    const primarySaved = await Promise.race([
+      persistWilsyR91K179MeetingDocument(rawDocument),
+      new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            __wilsyTimedOut: true,
+            label: 'PRIMARY_MEETING_PERSISTENCE_TIMEOUT',
+          });
+        }, 8500);
+      }),
+    ]);
+
+    if (primarySaved && primarySaved.__wilsyTimedOut) {
+      persistenceWarning = primarySaved.label;
+    } else if (primarySaved) {
+      saved = primarySaved;
+      persistenceMode =
+        primarySaved.persistence || primarySaved.persistenceStatus || 'PRIMARY_MEETING_PERSISTED';
+      collectionName = primarySaved.collectionName || primarySaved.collection || '';
+    }
+
+    if (!saved) {
+      const mongooseModule = await import('mongoose');
+      const mongooseRuntime = mongooseModule.default || mongooseModule;
+      const candidateCollections = [
+        'crmmeetings',
+        'meetings',
+        'crm_meetings',
+        'CRMMeeting',
+        'Meeting',
+      ];
+
+      if (!mongooseRuntime?.connection?.db) {
+        return res.status(503).json({
+          ok: false,
+          success: false,
+          status: 'MEETING_DB_UNAVAILABLE',
+          message: 'Mongoose DB connection is unavailable for Meeting persistence.',
+          route: '/api/crm/command/meetings',
+          warning: persistenceWarning || null,
+        });
+      }
+
+      delete rawDocument._id;
+      delete rawDocument.id;
+      delete rawDocument.meetingId;
+      delete rawDocument.recordId;
+      delete rawDocument.collection;
+
+      for (const candidateCollection of candidateCollections) {
+        try {
+          const collection = mongooseRuntime.connection.db.collection(candidateCollection);
+
+          if (!collection || typeof collection.insertOne !== 'function') {
+            continue;
+          }
+
+          const result = await Promise.race([
+            collection.insertOne(rawDocument),
+            new Promise((resolve) => {
+              setTimeout(() => {
+                resolve({
+                  __wilsyTimedOut: true,
+                  label: 'RAW_MEETING_COLLECTION_TIMEOUT',
+                });
+              }, 4500);
+            }),
+          ]);
+
+          if (result && result.__wilsyTimedOut) {
+            persistenceWarning = result.label;
+            continue;
+          }
+
+          if (result && result.insertedId) {
+            saved = {
+              ...rawDocument,
+              _id: result.insertedId,
+              id: String(result.insertedId),
+              persistence: 'DB_PERSISTED',
+              persistenceStatus: 'DB_PERSISTED',
+              sourceStatus: 'DB_PERSISTED',
+              collectionName: candidateCollection,
+            };
+            persistenceMode = 'DB_PERSISTED_RAW_COLLECTION';
+            collectionName = candidateCollection;
+            break;
+          }
+        } catch (collectionError) {
+          persistenceWarning = collectionError?.message || persistenceWarning;
+        }
+      }
+    }
+
+    if (!saved) {
+      return res.status(503).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_DB_PERSIST_FAILED',
+        message: 'Meeting persistence did not confirm through primary or raw collection fallback.',
+        route: '/api/crm/command/meetings',
+        warning: persistenceWarning || null,
+      });
+    }
+
+    const recordId = String(saved.id || saved._id || saved.meetingId || '');
+    let receipt = null;
+    let receiptStatus = 'RECEIPT_DEFERRED';
+
+    try {
+      const receiptAttempt = await Promise.race([
+        persistWilsyR91K179CommandReceipt({
+          tenantId: document.tenantId,
+          action: document.status === 'DRAFT' ? 'PREPARE_DRAFT' : 'SAVE_MEETING',
+          status: 'DB_PERSISTED',
+          route: '/api/crm/command/meetings',
+          meetingId: recordId,
+          relatedRecord: document.relatedRecord,
+          evidence: {
+            meetingPersistence: saved.persistence || persistenceMode || 'DB_PERSISTED',
+            modelName: saved.modelName || null,
+            collectionName: saved.collectionName || collectionName || null,
+            persistenceMode,
+          },
+          metadata: document.metadata,
+        }),
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              __wilsyTimedOut: true,
+              label: 'MEETING_RECEIPT_TIMEOUT_DEFERRED',
+            });
+          }, 3500);
+        }),
+      ]);
+
+      if (receiptAttempt && receiptAttempt.__wilsyTimedOut) {
+        receiptStatus = receiptAttempt.label;
+      } else if (receiptAttempt) {
+        receipt = receiptAttempt;
+        receiptStatus = 'RECEIPT_RECORDED';
+      }
+    } catch (receiptError) {
+      receiptStatus = 'RECEIPT_FAILED_DEFERRED';
+      persistenceWarning = receiptError?.message || persistenceWarning;
+    }
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      tenantId: document.tenantId,
+      route: '/api/crm/command/meetings',
+      status: 'DB_PERSISTED',
+      result: 'DB_PERSISTED',
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+      message: 'Meeting persisted through CRM command authority.',
+      recordId,
+      meetingId: recordId,
+      meeting: saved,
+      record: saved,
+      receipt,
+      receiptStatus,
+      receiptHash: receipt?.receiptHash || receipt?.hash || 'R91K179E10_MEETING_DB_PERSISTED',
+      auditMesh: {
+        status: 'DB_PERSISTED',
+        dbPersisted: true,
+        source: 'R91K179E10_MEETING_DB_PERSISTED_ROUTE',
+        collection: saved.collectionName || collectionName || null,
+        tenantId: document.tenantId,
+        latencyMs: Date.now() - startedAt,
+        warning: persistenceWarning || null,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'MEETING_SAVE_FAILED',
+      message: error?.message || 'Meeting save failed before DB confirmation.',
+      route: '/api/crm/command/meetings',
+    });
+  }
+}
+
+/**
+ * @function handleWilsyR91K179MeetingImportPreview
+ * @description Records a governed import preview request without pretending that rows were imported.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration Meeting import workflow, CSV/XLS/XLSX preview posture, audit receipts.
+ */
+async function handleWilsyR91K179MeetingImportPreview(req, res) {
+  const tenantId = getWilsyR91K179MeetingTenantId(req);
+  const fileName = String(req?.body?.fileName || '').trim();
+
+  if (!fileName) {
+    res.status(400).json({
+      ok: false,
+      tenantId,
+      route: '/api/crm/command/meetings/import-preview',
+      code: 'CRM_MEETING_IMPORT_FILE_REQUIRED',
+      message: 'Meeting import preview requires a file name or upload metadata.',
+    });
+    return;
+  }
+
+  const preview = await insertWilsyR91K179MeetingCollectionRecord('crmmeetingimportpreviews', {
+    tenantId,
+    fileName,
+    status: 'IMPORT_PREVIEW_RECORDED',
+    source: 'WILSY_UNIVERSAL_MEETING_COMMAND_CENTER',
+    commandSurface: 'R91K179B12B_LIVE_MEETING_COMMAND_AUTHORITY',
+    metadata: {
+      noImportedRowsClaimed: true,
+      noPlaceholder: true,
+      supportedFormats: ['csv', 'xlsx', 'xls'],
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const receipt = await persistWilsyR91K179CommandReceipt({
+    tenantId,
+    action: 'IMPORT_PREVIEW',
+    status: 'IMPORT_PREVIEW_RECORDED',
+    route: '/api/crm/command/meetings/import-preview',
+    fileName,
+    evidence: {
+      previewPersistence: preview.persistence,
+      collectionName: preview.collectionName,
+    },
+  });
+
+  res.status(201).json({
+    ok: true,
+    tenantId,
+    route: '/api/crm/command/meetings/import-preview',
+    status: 'IMPORT_PREVIEW_RECORDED',
+    preview,
+    receipt,
+  });
+}
+
+router.post('/meetings/action', handleWilsyR91K179MeetingAction);
+
+/**
+ * @function resolveWilsyR91K179E15RMeetingRuntime
+ * @description Resolves the active Mongoose runtime used by CRM command persistence.
+ * @returns {Promise<Object|null>} Mongoose runtime.
+ * @collaboration Working Lead DB_PERSISTED runtime, CRM Meetings CRUD route, raw collection fallback.
+ */
+async function resolveWilsyR91K179E15RMeetingRuntime() {
+  try {
+    if (typeof resolveWilsyR91K76MongooseRuntime === 'function') {
+      const runtime = resolveWilsyR91K76MongooseRuntime();
+      if (runtime) return runtime;
+    }
+  } catch {
+    // Continue to mongoose import fallback.
+  }
+
+  try {
+    const mongooseModule = await import('mongoose');
+    return mongooseModule.default || mongooseModule;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @function buildWilsyR91K179E15RMeetingFilter
+ * @description Builds a Meeting id filter that works across model and raw collection persistence.
+ * @param {Object} mongooseRuntime - Mongoose runtime.
+ * @param {string} recordId - Meeting record id.
+ * @returns {Object} MongoDB filter.
+ * @collaboration CRMMeeting model, raw Meeting collections, Wilsy OS CRUD workspace.
+ */
+function buildWilsyR91K179E15RMeetingFilter(mongooseRuntime, recordId = '') {
+  const id = String(recordId || '').trim();
+  const filters = [{ id }, { meetingId: id }, { recordId: id }];
+
+  try {
+    const ObjectId = mongooseRuntime?.Types?.ObjectId;
+    if (ObjectId && ObjectId.isValid && ObjectId.isValid(id)) {
+      filters.unshift({ _id: new ObjectId(id) });
+    }
+  } catch {
+    // Keep string id filters.
+  }
+
+  return { $or: filters };
+}
+
+/**
+ * @function resolveWilsyR91K179E15RMeetingRecordId
+ * @description Resolves a Meeting record id from request params or command body.
+ * @param {Object} req - Express request.
+ * @returns {string} Meeting record id.
+ * @collaboration CRM Meetings editor, PATCH/DELETE command routes.
+ */
+function resolveWilsyR91K179E15RMeetingRecordId(req = {}) {
+  return String(
+    req.params?.id ||
+      req.params?.meetingId ||
+      req.body?.recordId ||
+      req.body?.meetingId ||
+      req.body?.id ||
+      req.body?.meeting?.recordId ||
+      req.body?.meeting?.meetingId ||
+      req.body?.meeting?.id ||
+      req.body?.meeting?._id ||
+      ''
+  ).trim();
+}
+
+/**
+ * @function buildWilsyR91K179E15RMeetingUpdate
+ * @description Builds a safe update document for a persisted Meeting record.
+ * @param {Object} req - Express request.
+ * @returns {Object} Meeting update document.
+ * @collaboration CRM Meetings editor, PATCH command route, DB_PERSISTED evidence.
+ */
+function buildWilsyR91K179E15RMeetingUpdate(req = {}) {
+  const payload = req.body && typeof req.body === 'object' ? req.body : {};
+  const meeting =
+    payload.meeting && typeof payload.meeting === 'object'
+      ? payload.meeting
+      : payload.payload && typeof payload.payload === 'object'
+        ? payload.payload
+        : payload.data && typeof payload.data === 'object'
+          ? payload.data
+          : payload;
+
+  const update = {
+    ...(meeting && typeof meeting === 'object' ? meeting : {}),
+    updatedAt: new Date(),
+    wilsyPersistenceContract: 'R91K179E15R_MEETING_CRUD_ROUTE_CONTRACT',
+    wilsyCrudUpdatedAt: new Date().toISOString(),
+  };
+
+  [
+    '_id',
+    'id',
+    'meetingId',
+    'recordId',
+    'collection',
+    'before',
+    'after',
+    'action',
+    'operatorContext',
+    'commandSurface',
+    'institutionalHeaders',
+    'strikePayload',
+  ].forEach((key) => {
+    delete update[key];
+  });
+
+  if (update.title && !update.subject) update.subject = update.title;
+  if (update.title && !update.meetingTitle) update.meetingTitle = update.title;
+  if (update.meetingVenue && !update.venue) update.venue = update.meetingVenue;
+  if (Array.isArray(update.participants) && !Array.isArray(update.attendees))
+    update.attendees = update.participants;
+  if (update.description && !update.agenda) update.agenda = update.description;
+  if (update.relatedRecord && !update.relatedTo) update.relatedTo = update.relatedRecord;
+
+  return update;
+}
+
+/**
+ * @function handleWilsyR91K179E15RMeetingUpdate
+ * @description Updates a persisted CRM Meeting record and returns DB_PERSISTED confirmation.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<Object>} JSON update response.
+ * @collaboration CRM Meeting editor, PATCH /meetings/:id, DB_PERSISTED response contract.
+ */
+async function handleWilsyR91K179E15RMeetingUpdate(req, res) {
+  try {
+    const recordId = resolveWilsyR91K179E15RMeetingRecordId(req);
+    const update = buildWilsyR91K179E15RMeetingUpdate(req);
+    const tenantId =
+      req.headers?.['x-tenant-id'] ||
+      req.headers?.['x-wilsy-tenant-id'] ||
+      req.body?.tenantId ||
+      req.body?.meeting?.tenantId ||
+      update.tenantId ||
+      'wilsy-sovereign-root';
+
+    if (!recordId) {
+      return res.status(400).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_ID_REQUIRED',
+        message: 'Meeting id is required before update.',
+        route: '/api/crm/command/meetings/:id',
+      });
+    }
+
+    const mongooseRuntime = await resolveWilsyR91K179E15RMeetingRuntime();
+    const MeetingModel =
+      mongooseRuntime?.models?.CRMMeeting ||
+      mongooseRuntime?.models?.Meeting ||
+      mongooseRuntime?.models?.CrmMeeting ||
+      null;
+    const filter = buildWilsyR91K179E15RMeetingFilter(mongooseRuntime, recordId);
+
+    let saved = null;
+    let collectionName = '';
+
+    if (MeetingModel && typeof MeetingModel.findOneAndUpdate === 'function') {
+      try {
+        saved = await MeetingModel.findOneAndUpdate(
+          filter,
+          { $set: update },
+          { new: true, returnDocument: 'after', runValidators: false, lean: true }
+        );
+        collectionName = MeetingModel.collection?.name || 'crmmeetings';
+      } catch {
+        saved = null;
+      }
+    }
+
+    const activeDb =
+      mongooseRuntime?.connection?.db ||
+      (Array.isArray(mongooseRuntime?.connections)
+        ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+        : null);
+
+    if (!saved && activeDb) {
+      for (const candidateCollection of [
+        'crmmeetings',
+        'meetings',
+        'crm_meetings',
+        'CRMMeeting',
+        'Meeting',
+      ]) {
+        try {
+          const result = await activeDb
+            .collection(candidateCollection)
+            .findOneAndUpdate(filter, { $set: update }, { returnDocument: 'after' });
+          const value = result?.value || result;
+          if (value && (value._id || value.id || value.meetingId)) {
+            saved = value;
+            collectionName = candidateCollection;
+            break;
+          }
+        } catch {
+          // Try next collection.
+        }
+      }
+    }
+
+    if (!saved) {
+      return res.status(404).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_NOT_FOUND',
+        message: 'Meeting record was not found for update.',
+        route: '/api/crm/command/meetings/:id',
+        recordId,
+      });
+    }
+
+    const savedRecordId = String(saved._id || saved.id || saved.meetingId || recordId);
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      status: 'DB_PERSISTED',
+      result: 'DB_PERSISTED',
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+      message: 'Meeting updated through CRM command authority.',
+      tenantId,
+      recordId: savedRecordId,
+      meetingId: savedRecordId,
+      meeting: saved,
+      record: saved,
+      route: '/api/crm/command/meetings/:id',
+      auditMesh: {
+        status: 'DB_PERSISTED',
+        dbPersisted: true,
+        source: 'R91K179E15R_MEETING_CRUD_ROUTE_CONTRACT',
+        collection: collectionName,
+        tenantId,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'MEETING_UPDATE_FAILED',
+      message: error?.message || 'Meeting update failed.',
+      route: '/api/crm/command/meetings/:id',
+    });
+  }
+}
+
+/**
+ * @function handleWilsyR91K179E15RMeetingDelete
+ * @description Deletes a persisted CRM Meeting record and returns governed deletion confirmation.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<Object>} JSON delete response.
+ * @collaboration CRM Meetings records workspace, DELETE /meetings/:id, audit evidence.
+ */
+async function handleWilsyR91K179E15RMeetingDelete(req, res) {
+  try {
+    const recordId = resolveWilsyR91K179E15RMeetingRecordId(req);
+    const tenantId =
+      req.headers?.['x-tenant-id'] ||
+      req.headers?.['x-wilsy-tenant-id'] ||
+      req.body?.tenantId ||
+      'wilsy-sovereign-root';
+
+    if (!recordId) {
+      return res.status(400).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_ID_REQUIRED',
+        message: 'Meeting id is required before delete.',
+        route: '/api/crm/command/meetings/:id',
+      });
+    }
+
+    const mongooseRuntime = await resolveWilsyR91K179E15RMeetingRuntime();
+    const MeetingModel =
+      mongooseRuntime?.models?.CRMMeeting ||
+      mongooseRuntime?.models?.Meeting ||
+      mongooseRuntime?.models?.CrmMeeting ||
+      null;
+    const filter = buildWilsyR91K179E15RMeetingFilter(mongooseRuntime, recordId);
+
+    let deletedCount = 0;
+    let collectionName = '';
+
+    if (MeetingModel && typeof MeetingModel.deleteOne === 'function') {
+      try {
+        const result = await MeetingModel.deleteOne(filter);
+        deletedCount = Number(result?.deletedCount || 0);
+        collectionName = MeetingModel.collection?.name || 'crmmeetings';
+      } catch {
+        deletedCount = 0;
+      }
+    }
+
+    const activeDb =
+      mongooseRuntime?.connection?.db ||
+      (Array.isArray(mongooseRuntime?.connections)
+        ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+        : null);
+
+    if (!deletedCount && activeDb) {
+      for (const candidateCollection of [
+        'crmmeetings',
+        'meetings',
+        'crm_meetings',
+        'CRMMeeting',
+        'Meeting',
+      ]) {
+        try {
+          const result = await activeDb.collection(candidateCollection).deleteOne(filter);
+          deletedCount = Number(result?.deletedCount || 0);
+          if (deletedCount) {
+            collectionName = candidateCollection;
+            break;
+          }
+        } catch {
+          // Try next collection.
+        }
+      }
+    }
+
+    if (!deletedCount) {
+      return res.status(404).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_NOT_FOUND',
+        message: 'Meeting record was not found for delete.',
+        route: '/api/crm/command/meetings/:id',
+        recordId,
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      status: 'DB_DELETED',
+      result: 'DB_DELETED',
+      persistenceStatus: 'DB_DELETED',
+      sourceStatus: 'DB_DELETED',
+      message: 'Meeting deleted through CRM command authority.',
+      tenantId,
+      recordId,
+      meetingId: recordId,
+      route: '/api/crm/command/meetings/:id',
+      auditMesh: {
+        status: 'DB_DELETED',
+        dbDeleted: true,
+        source: 'R91K179E15R_MEETING_CRUD_ROUTE_CONTRACT',
+        collection: collectionName,
+        tenantId,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'MEETING_DELETE_FAILED',
+      message: error?.message || 'Meeting delete failed.',
+      route: '/api/crm/command/meetings/:id',
+    });
+  }
+}
+
+/**
+ * @function pickWilsyR91K179E21Value
+ * @description Picks the first non-empty value from a candidate list.
+ * @param {...*} candidates - Candidate values.
+ * @returns {*} First non-empty candidate.
+ * @collaboration CRM Meeting create route, venue persistence normalization, DB_PERSISTED response.
+ */
+function pickWilsyR91K179E21Value(...candidates) {
+  return candidates.find((candidate) => {
+    if (Array.isArray(candidate)) return candidate.length > 0;
+    if (candidate && typeof candidate === 'object') return Object.keys(candidate).length > 0;
+    return String(candidate || '').trim();
+  });
+}
+
+/**
+ * @function resolveWilsyR91K179E21MongooseRuntime
+ * @description Resolves the active mongoose runtime for CRM Meeting create persistence.
+ * @returns {Promise<Object|null>} Mongoose runtime.
+ * @collaboration CRM Meeting create route, CRMLead DB_PERSISTED pattern, raw collection fallback.
+ */
+async function resolveWilsyR91K179E21MongooseRuntime() {
+  try {
+    if (typeof resolveWilsyR91K76MongooseRuntime === 'function') {
+      const runtime = resolveWilsyR91K76MongooseRuntime();
+      if (runtime) return runtime;
+    }
+  } catch {
+    // Continue to direct mongoose import.
+  }
+
+  try {
+    const mongooseModule = await import('mongoose');
+    return mongooseModule.default || mongooseModule;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @function normalizeWilsyR91K179E21MeetingCreateDocument
+ * @description Builds a venue-complete CRM Meeting document from frontend command payload variants.
+ * @param {Object} req - Express request.
+ * @returns {Object} Normalized Meeting document and institutional evidence.
+ * @collaboration WilsyMeetingEditor, CRM command route, live Meetings records workspace.
+ */
+function normalizeWilsyR91K179E21MeetingCreateDocument(req = {}) {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : {};
+  const meeting =
+    body.meeting && typeof body.meeting === 'object'
+      ? body.meeting
+      : strikePayload.meeting && typeof strikePayload.meeting === 'object'
+        ? strikePayload.meeting
+        : body.payload && typeof body.payload === 'object'
+          ? body.payload
+          : body.data && typeof body.data === 'object'
+            ? body.data
+            : {};
+
+  const institutionalHeaders =
+    body.institutionalHeaders || strikePayload.institutionalHeaders || strikePayload.headers || {};
+
+  const tenantId = String(
+    pickWilsyR91K179E21Value(
+      meeting.tenantId,
+      body.tenantId,
+      strikePayload.tenantId,
+      institutionalHeaders.tenantId,
+      req.headers?.['x-tenant-id'],
+      req.headers?.['x-wilsy-tenant-id'],
+      'wilsy-sovereign-root'
+    )
+  );
+
+  const operatorId = String(
+    pickWilsyR91K179E21Value(
+      meeting.createdBy,
+      meeting.updatedBy,
+      body.operatorContext?.operatorId,
+      institutionalHeaders.operatorId,
+      institutionalHeaders.actor,
+      req.headers?.['x-operator-id'],
+      'wilsy-local-operator'
+    )
+  );
+
+  const title = String(
+    pickWilsyR91K179E21Value(
+      meeting.title,
+      meeting.subject,
+      meeting.meetingTitle,
+      body.title,
+      'New Meeting'
+    )
+  );
+
+  const venue = String(
+    pickWilsyR91K179E21Value(
+      meeting.meetingVenue,
+      meeting.venue,
+      meeting.venueType,
+      meeting.meetingVenueLabel,
+      meeting.locationType,
+      body.meetingVenue,
+      body.venue,
+      strikePayload.meetingVenue,
+      strikePayload.venue,
+      ''
+    ) || ''
+  ).trim();
+
+  const location = String(
+    pickWilsyR91K179E21Value(
+      meeting.location,
+      meeting.address,
+      meeting.site,
+      body.location,
+      strikePayload.location,
+      ''
+    ) || ''
+  ).trim();
+
+  const participants = Array.isArray(meeting.participants)
+    ? meeting.participants
+    : Array.isArray(meeting.attendees)
+      ? meeting.attendees
+      : Array.isArray(meeting.invitees)
+        ? meeting.invitees
+        : [];
+
+  const createdAt = meeting.createdAt ? new Date(meeting.createdAt) : new Date();
+  const updatedAt = new Date();
+
+  const document = {
+    ...meeting,
+    title,
+    subject: pickWilsyR91K179E21Value(meeting.subject, title),
+    meetingTitle: pickWilsyR91K179E21Value(meeting.meetingTitle, title),
+    meetingVenue: venue,
+    venue,
+    venueType: venue,
+    meetingVenueLabel: venue,
+    locationType: venue,
+    location,
+    participants,
+    attendees: participants,
+    fromDate: meeting.fromDate || body.fromDate || '',
+    fromTime: meeting.fromTime || body.fromTime || '',
+    toDate: meeting.toDate || body.toDate || '',
+    toTime: meeting.toTime || body.toTime || '',
+    startsAt: meeting.startsAt || meeting.startAt || null,
+    endsAt: meeting.endsAt || meeting.endAt || null,
+    repeat: meeting.repeat || 'None',
+    reminder: meeting.reminder || 'None',
+    relatedRecord: meeting.relatedRecord || meeting.relatedTo || null,
+    relatedTo: meeting.relatedTo || meeting.relatedRecord || null,
+    description: meeting.description || meeting.agenda || '',
+    agenda: meeting.agenda || meeting.description || '',
+    status: meeting.status || 'SCHEDULED',
+    tenantId,
+    createdBy: meeting.createdBy || operatorId,
+    updatedBy: operatorId,
+    createdAt,
+    updatedAt,
+    wilsyPersistenceContract: 'R91K179E21_MEETING_CREATE_VENUE_PERSISTENCE_CONTRACT',
+    wilsyVenuePersistence: {
+      captured: Boolean(venue),
+      venue,
+      location,
+      source: 'R91K179E21_MEETING_CREATE_VENUE_PERSISTENCE_CONTRACT',
+      capturedAt: updatedAt.toISOString(),
+    },
+    institutionalHeaders,
+    commandSurface:
+      body.commandSurface ||
+      institutionalHeaders.commandSurface ||
+      'R91K179E21_MEETING_CREATE_VENUE_PERSISTENCE',
+  };
+
+  delete document._id;
+
+  return {
+    document,
+    tenantId,
+    operatorId,
+    venue,
+    institutionalHeaders,
+  };
+}
+
+/**
+ * @function persistWilsyR91K179E21MeetingCreateDocument
+ * @description Persists a normalized CRM Meeting document through model-first and raw-collection fallback.
+ * @param {Object} document - Meeting document.
+ * @returns {Promise<Object>} Persisted record and collection metadata.
+ * @collaboration CRMMeeting model, raw crmmeetings collection, DB_PERSISTED response.
+ */
+async function persistWilsyR91K179E21MeetingCreateDocument(document = {}) {
+  const mongooseRuntime = await resolveWilsyR91K179E21MongooseRuntime();
+  const MeetingModel =
+    mongooseRuntime?.models?.CRMMeeting ||
+    mongooseRuntime?.models?.Meeting ||
+    mongooseRuntime?.models?.CrmMeeting ||
+    null;
+
+  if (MeetingModel && typeof MeetingModel.create === 'function') {
+    try {
+      const savedDocument = await MeetingModel.create(document);
+      const saved =
+        typeof savedDocument?.toObject === 'function' ? savedDocument.toObject() : savedDocument;
+      return {
+        saved,
+        collectionName: MeetingModel.collection?.name || 'crmmeetings',
+        persistenceMode: 'MODEL_CREATE',
+      };
+    } catch {
+      // Fall through to raw collection fallback, matching the stable Lead save contract.
+    }
+  }
+
+  const activeDb =
+    mongooseRuntime?.connection?.db ||
+    (Array.isArray(mongooseRuntime?.connections)
+      ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+      : null);
+
+  if (!activeDb) {
+    return {
+      saved: null,
+      collectionName: '',
+      persistenceMode: 'NO_ACTIVE_DB',
+    };
+  }
+
+  const collectionName = 'crmmeetings';
+  const insertResult = await activeDb.collection(collectionName).insertOne(document);
+
+  return {
+    saved: {
+      ...document,
+      _id: insertResult.insertedId,
+    },
+    collectionName,
+    persistenceMode: 'RAW_COLLECTION_INSERT',
+  };
+}
+
+/**
+ * @function handleWilsyR91K179E21MeetingCreateVenuePersisted
+ * @description Creates CRM Meetings with venue fields persisted for the live records workspace.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<Object>} JSON DB_PERSISTED response.
+ * @collaboration Meeting editor save, CRM live Meetings list, tenant/operator evidence.
+ */
+async function handleWilsyR91K179E21MeetingCreateVenuePersisted(req, res) {
+  try {
+    const normalized = normalizeWilsyR91K179E21MeetingCreateDocument(req);
+    const persistence = await persistWilsyR91K179E21MeetingCreateDocument(normalized.document);
+
+    if (!persistence.saved) {
+      return res.status(503).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_DB_UNAVAILABLE',
+        message: 'MongoDB connection unavailable for meeting command authority.',
+        route: '/api/crm/command/meetings',
+        tenantId: normalized.tenantId,
+      });
+    }
+
+    const savedRecordId = String(
+      persistence.saved._id ||
+        persistence.saved.id ||
+        persistence.saved.meetingId ||
+        persistence.saved.recordId ||
+        ''
+    );
+
+    const saved = {
+      ...persistence.saved,
+      id: String(persistence.saved.id || savedRecordId),
+      recordId: String(persistence.saved.recordId || savedRecordId),
+      meetingId: String(persistence.saved.meetingId || savedRecordId),
+      tenantId: normalized.tenantId,
+      meetingVenue: normalized.venue,
+      venue: normalized.venue,
+      venueType: normalized.venue,
+      meetingVenueLabel: normalized.venue,
+      locationType: normalized.venue,
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+    };
+
+    return res.status(201).json({
+      ok: true,
+      success: true,
+      status: 'DB_PERSISTED',
+      result: 'DB_PERSISTED',
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+      message: 'Meeting persisted through CRM command authority.',
+      tenantId: normalized.tenantId,
+      recordId: saved.recordId,
+      meetingId: saved.meetingId,
+      meeting: saved,
+      record: saved,
+      route: '/api/crm/command/meetings',
+      auditMesh: {
+        status: 'DB_PERSISTED',
+        dbPersisted: true,
+        source: 'R91K179E21_MEETING_CREATE_VENUE_PERSISTENCE_CONTRACT',
+        collection: persistence.collectionName,
+        persistenceMode: persistence.persistenceMode,
+        tenantId: normalized.tenantId,
+        venueCaptured: Boolean(normalized.venue),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'MEETING_CREATE_FAILED',
+      message: error?.message || 'Meeting create failed.',
+      route: '/api/crm/command/meetings',
+    });
+  }
+}
+
+/**
+ * @function pickWilsyR91K179E22B1Value
+ * @description Selects the first non-empty command value without inventing Meeting data.
+ * @param {...*} candidates - Candidate values.
+ * @returns {*} First meaningful value.
+ * @collaboration CRM Meeting create/update, venue integrity, raw DB repair.
+ */
+function pickWilsyR91K179E22B1Value(...candidates) {
+  return candidates.find((candidate) => {
+    if (Array.isArray(candidate)) return candidate.length > 0;
+    if (candidate && typeof candidate === 'object') return Object.keys(candidate).length > 0;
+    return String(candidate || '').trim();
+  });
+}
+
+/**
+ * @function compactWilsyR91K179E22B1Document
+ * @description Removes undefined values before MongoDB write operations.
+ * @param {Object} document - Document candidate.
+ * @returns {Object} Compact document.
+ * @collaboration MongoDB update operators, CRM command route, venue evidence.
+ */
+function compactWilsyR91K179E22B1Document(document = {}) {
+  return Object.fromEntries(
+    Object.entries(document).filter(([, value]) => typeof value !== 'undefined')
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179E22B1MongooseRuntime
+ * @description Resolves the active mongoose runtime without creating a new service.
+ * @returns {Promise<Object|null>} Active mongoose runtime.
+ * @collaboration Existing Wilsy CRM command runtime, CRMMeeting model, raw collection fallback.
+ */
+async function resolveWilsyR91K179E22B1MongooseRuntime() {
+  try {
+    if (typeof resolveWilsyR91K76MongooseRuntime === 'function') {
+      const runtime = resolveWilsyR91K76MongooseRuntime();
+      if (runtime) return runtime;
+    }
+  } catch {
+    // Continue to direct mongoose import.
+  }
+
+  try {
+    const mongooseModule = await import('mongoose');
+    return mongooseModule.default || mongooseModule;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @function normalizeWilsyR91K179E22B1MeetingCommand
+ * @description Normalizes Meeting command payloads so venue survives create and edit saves.
+ * @param {Object} req - Express request.
+ * @returns {Object} Normalized command.
+ * @collaboration WilsyMeetingEditor, POST/PATCH meeting command routes, live records table.
+ */
+function normalizeWilsyR91K179E22B1MeetingCommand(req = {}) {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : {};
+  const meeting =
+    body.meeting && typeof body.meeting === 'object'
+      ? body.meeting
+      : strikePayload.meeting && typeof strikePayload.meeting === 'object'
+        ? strikePayload.meeting
+        : body.payload && typeof body.payload === 'object'
+          ? body.payload
+          : body;
+
+  const institutionalHeaders =
+    body.institutionalHeaders || strikePayload.institutionalHeaders || strikePayload.headers || {};
+
+  const tenantId = String(
+    pickWilsyR91K179E22B1Value(
+      meeting.tenantId,
+      body.tenantId,
+      strikePayload.tenantId,
+      institutionalHeaders.tenantId,
+      req.headers?.['x-tenant-id'],
+      req.headers?.['x-wilsy-tenant-id'],
+      req.tenantId,
+      'wilsy-sovereign-root'
+    )
+  );
+
+  const recordId = String(
+    pickWilsyR91K179E22B1Value(
+      req.params?.id,
+      meeting.recordId,
+      meeting.meetingId,
+      meeting.id,
+      meeting._id,
+      body.recordId,
+      body.meetingId,
+      strikePayload.recordId,
+      strikePayload.meetingId,
+      ''
+    ) || ''
+  ).trim();
+
+  const operatorId = String(
+    pickWilsyR91K179E22B1Value(
+      meeting.updatedBy,
+      meeting.createdBy,
+      body.operatorContext?.operatorId,
+      institutionalHeaders.operatorId,
+      institutionalHeaders.actor,
+      req.headers?.['x-operator-id'],
+      'wilsy-local-operator'
+    )
+  );
+
+  const title = String(
+    pickWilsyR91K179E22B1Value(
+      meeting.title,
+      meeting.subject,
+      meeting.meetingTitle,
+      body.title,
+      'New Meeting'
+    )
+  );
+
+  const venue = String(
+    pickWilsyR91K179E22B1Value(
+      meeting.meetingVenue,
+      meeting.venue,
+      meeting.venueType,
+      meeting.meetingVenueLabel,
+      meeting.locationType,
+      body.meetingVenue,
+      body.venue,
+      body.venueType,
+      body.meetingVenueLabel,
+      body.locationType,
+      strikePayload.meetingVenue,
+      strikePayload.venue,
+      strikePayload.venueType,
+      strikePayload.meetingVenueLabel,
+      strikePayload.locationType,
+      ''
+    ) || ''
+  ).trim();
+
+  const location = String(
+    pickWilsyR91K179E22B1Value(
+      meeting.location,
+      meeting.address,
+      meeting.site,
+      body.location,
+      strikePayload.location,
+      ''
+    ) || ''
+  ).trim();
+
+  const participants = Array.isArray(meeting.participants)
+    ? meeting.participants
+    : Array.isArray(meeting.attendees)
+      ? meeting.attendees
+      : Array.isArray(meeting.invitees)
+        ? meeting.invitees
+        : [];
+
+  const now = new Date();
+
+  const document = compactWilsyR91K179E22B1Document({
+    ...meeting,
+    title,
+    subject: pickWilsyR91K179E22B1Value(meeting.subject, title),
+    meetingTitle: pickWilsyR91K179E22B1Value(meeting.meetingTitle, title),
+    meetingVenue: venue,
+    venue,
+    venueType: venue,
+    meetingVenueLabel: venue,
+    locationType: venue,
+    location,
+    participants,
+    attendees: participants,
+    fromDate: pickWilsyR91K179E22B1Value(meeting.fromDate, body.fromDate, ''),
+    fromTime: pickWilsyR91K179E22B1Value(meeting.fromTime, body.fromTime, ''),
+    toDate: pickWilsyR91K179E22B1Value(meeting.toDate, body.toDate, ''),
+    toTime: pickWilsyR91K179E22B1Value(meeting.toTime, body.toTime, ''),
+    startsAt: pickWilsyR91K179E22B1Value(meeting.startsAt, meeting.startAt, null),
+    endsAt: pickWilsyR91K179E22B1Value(meeting.endsAt, meeting.endAt, null),
+    repeat: pickWilsyR91K179E22B1Value(meeting.repeat, 'None'),
+    reminder: pickWilsyR91K179E22B1Value(meeting.reminder, 'None'),
+    relatedRecord: pickWilsyR91K179E22B1Value(
+      meeting.relatedRecord,
+      meeting.relatedTo,
+      body.relatedRecord,
+      null
+    ),
+    relatedTo: pickWilsyR91K179E22B1Value(
+      meeting.relatedTo,
+      meeting.relatedRecord,
+      body.relatedRecord,
+      null
+    ),
+    description: pickWilsyR91K179E22B1Value(meeting.description, meeting.agenda, ''),
+    agenda: pickWilsyR91K179E22B1Value(meeting.agenda, meeting.description, ''),
+    status: pickWilsyR91K179E22B1Value(meeting.status, 'SCHEDULED'),
+    tenantId,
+    createdBy: pickWilsyR91K179E22B1Value(meeting.createdBy, operatorId),
+    updatedBy: operatorId,
+    updatedAt: now,
+    wilsyPersistenceContract: 'R91K179E22B1_MEETING_VENUE_INTEGRITY_REAL_MAP',
+    wilsyVenuePersistence: {
+      captured: Boolean(venue),
+      venue,
+      location,
+      source: 'R91K179E22B1_MEETING_VENUE_INTEGRITY_REAL_MAP',
+      capturedAt: now.toISOString(),
+      recordId,
+    },
+    institutionalHeaders,
+    commandSurface:
+      body.commandSurface ||
+      institutionalHeaders.commandSurface ||
+      'R91K179E22B1_MEETING_VENUE_INTEGRITY_REAL_MAP',
+  });
+
+  if (!document.createdAt) document.createdAt = now;
+  delete document._id;
+
+  return {
+    body,
+    strikePayload,
+    institutionalHeaders,
+    tenantId,
+    recordId,
+    operatorId,
+    venue,
+    location,
+    document,
+  };
+}
+
+/**
+ * @function buildWilsyR91K179E22B1Filters
+ * @description Builds safe filters for Meeting id variants.
+ * @param {Object} mongooseRuntime - Mongoose runtime.
+ * @param {string} recordId - Meeting record id.
+ * @returns {Array<Object>} Candidate filters.
+ * @collaboration CRMMeeting, raw collection fallback, live records repair.
+ */
+function buildWilsyR91K179E22B1Filters(mongooseRuntime, recordId = '') {
+  const id = String(recordId || '').trim();
+  const filters = [];
+
+  if (!id) return filters;
+
+  try {
+    const ObjectId = mongooseRuntime?.Types?.ObjectId;
+    if (ObjectId && ObjectId.isValid(id)) {
+      filters.push({ _id: new ObjectId(id) });
+    }
+  } catch {
+    // Continue string id filters.
+  }
+
+  filters.push({ _id: id }, { id }, { recordId: id }, { meetingId: id });
+  return filters;
+}
+
+/**
+ * @function forceWilsyR91K179E22B1VenueWrite
+ * @description Forces venue fields into raw Meeting storage after model create or edit update.
+ * @param {Object} args - Venue write args.
+ * @returns {Promise<Object|null>} Updated document.
+ * @collaboration CRMMeeting model, crmmeetings collection, venue integrity loop.
+ */
+async function forceWilsyR91K179E22B1VenueWrite({
+  mongooseRuntime,
+  recordId,
+  document,
+  preferredCollection,
+}) {
+  const db =
+    mongooseRuntime?.connection?.db ||
+    (Array.isArray(mongooseRuntime?.connections)
+      ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+      : null);
+
+  if (!db || !recordId) return null;
+
+  const setDocument = compactWilsyR91K179E22B1Document({
+    meetingVenue: document.meetingVenue,
+    venue: document.venue,
+    venueType: document.venueType,
+    meetingVenueLabel: document.meetingVenueLabel,
+    locationType: document.locationType,
+    location: document.location,
+    participants: document.participants,
+    attendees: document.attendees,
+    relatedRecord: document.relatedRecord,
+    relatedTo: document.relatedTo,
+    description: document.description,
+    agenda: document.agenda,
+    repeat: document.repeat,
+    reminder: document.reminder,
+    tenantId: document.tenantId,
+    updatedBy: document.updatedBy,
+    updatedAt: document.updatedAt || new Date(),
+    wilsyVenuePersistence: document.wilsyVenuePersistence,
+    wilsyPersistenceContract: 'R91K179E22B1_MEETING_VENUE_INTEGRITY_REAL_MAP',
+  });
+
+  const filters = buildWilsyR91K179E22B1Filters(mongooseRuntime, recordId);
+  const collectionNames = Array.from(
+    new Set(
+      [
+        preferredCollection,
+        'crmmeetings',
+        'meetings',
+        'crm_meetings',
+        'CRMMeeting',
+        'Meeting',
+      ].filter(Boolean)
+    )
+  );
+
+  for (const collectionName of collectionNames) {
+    const collection = db.collection(collectionName);
+
+    for (const filter of filters) {
+      const result = await collection.findOneAndUpdate(
+        filter,
+        { $set: setDocument },
+        { returnDocument: 'after' }
+      );
+
+      const updated = result?.value || result;
+
+      if (updated) {
+        return {
+          ...updated,
+          persistenceMode: `RAW_VENUE_INTEGRITY_WRITE:${collectionName}`,
+          collectionName,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function buildWilsyR91K179E28NotificationSetDocument
+ * @description Builds the raw MongoDB update document for Meeting invitation receipts.
+ * @param {Object} notificationPacket - Notification packet from dispatcher.
+ * @returns {Object} Compact update fields.
+ * @collaboration Meeting notification service, raw collection persistence, invitation evidence.
+ */
+function buildWilsyR91K179E28NotificationSetDocument(notificationPacket = {}) {
+  const fields =
+    notificationPacket.persistedFields && typeof notificationPacket.persistedFields === 'object'
+      ? notificationPacket.persistedFields
+      : {};
+
+  return compactWilsyR91K179E22B1Document({
+    calendarUid: fields.calendarUid,
+    calendarSequence: fields.calendarSequence,
+    calendarInvite: fields.calendarInvite,
+    invitationStatus: fields.invitationStatus,
+    lastInviteSentAt: fields.lastInviteSentAt ? new Date(fields.lastInviteSentAt) : undefined,
+    emailInvitationReceipts: fields.emailInvitationReceipts,
+    smsInvitationReceipts: fields.smsInvitationReceipts,
+    notificationReceipts: fields.notificationReceipts,
+    meetingNotificationIntelligence: fields.meetingNotificationIntelligence,
+    wilsyMeetingNotificationContract: fields.wilsyMeetingNotificationContract,
+    updatedAt: new Date(),
+  });
+}
+
+/**
+ * @function persistWilsyR91K179E28MeetingNotificationReceipts
+ * @description Persists invitation receipts onto the Meeting record after the save command succeeds.
+ * @param {Object} args - Persistence arguments.
+ * @returns {Promise<Object|null>} Updated Meeting record or null.
+ * @collaboration CRM Meeting command routes, email/SMS receipts, calendar invite evidence.
+ */
+async function persistWilsyR91K179E28MeetingNotificationReceipts({
+  mongooseRuntime,
+  recordId,
+  notificationPacket,
+  preferredCollection,
+}) {
+  const db =
+    mongooseRuntime?.connection?.db ||
+    (Array.isArray(mongooseRuntime?.connections)
+      ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+      : null);
+
+  if (!db || !recordId || !notificationPacket) return null;
+
+  const setDocument = buildWilsyR91K179E28NotificationSetDocument(notificationPacket);
+  if (Object.keys(setDocument).length === 0) return null;
+
+  const filters = buildWilsyR91K179E22B1Filters(mongooseRuntime, recordId);
+  const collectionNames = Array.from(
+    new Set(
+      [
+        preferredCollection,
+        'crmmeetings',
+        'meetings',
+        'crm_meetings',
+        'CRMMeeting',
+        'Meeting',
+      ].filter(Boolean)
+    )
+  );
+
+  for (const collectionName of collectionNames) {
+    const collection = db.collection(collectionName);
+
+    for (const filter of filters) {
+      const result = await collection.findOneAndUpdate(
+        filter,
+        { $set: setDocument },
+        { returnDocument: 'after' }
+      );
+
+      const updated = result?.value || result;
+
+      if (updated) {
+        return {
+          ...updated,
+          notificationPersistenceMode: `RAW_NOTIFICATION_WRITE:${collectionName}`,
+          collectionName,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function resolveWilsyR91K179E28MeetingNotificationPacket
+ * @description Dispatches notifications without allowing provider errors to undo the Meeting save.
+ * @param {Object} args - Dispatch arguments.
+ * @returns {Promise<Object>} Notification packet.
+ * @collaboration Meeting command finality, email/SMS service resilience, frontend save response.
+ */
+async function resolveWilsyR91K179E28MeetingNotificationPacket(args = {}) {
+  try {
+    return await dispatchWilsyMeetingInvitations(args);
+  } catch (error) {
+    return {
+      ok: false,
+      invitationStatus: 'INVITE_DISPATCH_ERROR',
+      message: error?.message || 'Meeting invitation dispatch failed.',
+      calendarInvite: null,
+      aiTemplate: null,
+      emailInvitationReceipts: [],
+      smsInvitationReceipts: [],
+      notificationReceipts: [
+        {
+          version: 'R91K179E28_MEETING_NOTIFICATION_COMMAND',
+          invitationStatus: 'INVITE_DISPATCH_ERROR',
+          error: error?.message || 'Meeting invitation dispatch failed.',
+          generatedAt: new Date().toISOString(),
+        },
+      ],
+      persistedFields: {
+        invitationStatus: 'INVITE_DISPATCH_ERROR',
+        notificationReceipts: [
+          {
+            version: 'R91K179E28_MEETING_NOTIFICATION_COMMAND',
+            invitationStatus: 'INVITE_DISPATCH_ERROR',
+            error: error?.message || 'Meeting invitation dispatch failed.',
+            generatedAt: new Date().toISOString(),
+          },
+        ],
+        wilsyMeetingNotificationContract: 'R91K179E28_MEETING_NOTIFICATION_COMMAND',
+      },
+    };
+  }
+}
+
+/**
+ * @function persistWilsyR91K179E22B1Create
+ * @description Creates a Meeting then forces venue fields into raw storage.
+ * @param {Object} command - Normalized command.
+ * @returns {Promise<Object>} Persistence result.
+ * @collaboration Meeting create route, CRMMeeting model, raw venue integrity write.
+ */
+async function persistWilsyR91K179E22B1Create(command) {
+  const mongooseRuntime = await resolveWilsyR91K179E22B1MongooseRuntime();
+  const MeetingModel =
+    mongooseRuntime?.models?.CRMMeeting ||
+    mongooseRuntime?.models?.Meeting ||
+    mongooseRuntime?.models?.CrmMeeting ||
+    null;
+
+  let saved = null;
+  let collectionName = 'crmmeetings';
+  let persistenceMode = 'RAW_COLLECTION_INSERT';
+
+  if (MeetingModel && typeof MeetingModel.create === 'function') {
+    try {
+      const savedDocument = await MeetingModel.create(command.document);
+      saved =
+        typeof savedDocument?.toObject === 'function' ? savedDocument.toObject() : savedDocument;
+      collectionName = MeetingModel.collection?.name || collectionName;
+      persistenceMode = 'MODEL_CREATE_WITH_RAW_VENUE_INTEGRITY';
+    } catch {
+      saved = null;
+    }
+  }
+
+  const db =
+    mongooseRuntime?.connection?.db ||
+    (Array.isArray(mongooseRuntime?.connections)
+      ? mongooseRuntime.connections.find((connection) => connection?.db)?.db
+      : null);
+
+  if (!saved && db) {
+    const insertResult = await db.collection(collectionName).insertOne(command.document);
+    saved = { ...command.document, _id: insertResult.insertedId };
+    persistenceMode = 'RAW_COLLECTION_INSERT';
+  }
+
+  if (!saved) return { saved: null, collectionName, persistenceMode: 'NO_ACTIVE_DB' };
+
+  const recordId = String(saved._id || saved.id || saved.recordId || saved.meetingId || '');
+  const repaired = await forceWilsyR91K179E22B1VenueWrite({
+    mongooseRuntime,
+    recordId,
+    document: { ...command.document, _id: saved._id },
+    preferredCollection: collectionName,
+  });
+
+  return {
+    saved: repaired || { ...saved, ...command.document, _id: saved._id },
+    collectionName: repaired?.collectionName || collectionName,
+    persistenceMode: repaired?.persistenceMode || persistenceMode,
+  };
+}
+
+/**
+ * @function persistWilsyR91K179E22B1Update
+ * @description Updates an existing Meeting through raw venue integrity repair.
+ * @param {Object} command - Normalized command.
+ * @returns {Promise<Object>} Persistence result.
+ * @collaboration Meeting edit route, existing record repair, venue display.
+ */
+async function persistWilsyR91K179E22B1Update(command) {
+  const mongooseRuntime = await resolveWilsyR91K179E22B1MongooseRuntime();
+
+  if (!command.recordId) {
+    return { saved: null, collectionName: '', persistenceMode: 'MISSING_RECORD_ID' };
+  }
+
+  const repaired = await forceWilsyR91K179E22B1VenueWrite({
+    mongooseRuntime,
+    recordId: command.recordId,
+    document: command.document,
+    preferredCollection: 'crmmeetings',
+  });
+
+  return {
+    saved: repaired,
+    collectionName: repaired?.collectionName || '',
+    persistenceMode: repaired?.persistenceMode || 'RAW_VENUE_REPAIR_NOT_FOUND',
+  };
+}
+
+/**
+ * @function shapeWilsyR91K179E22B1ResponseRecord
+ * @description Shapes the Meeting response so the UI receives venue fields immediately.
+ * @param {Object} saved - Saved record.
+ * @param {Object} command - Normalized command.
+ * @returns {Object} UI-ready record.
+ * @collaboration Meeting editor, live records table, venue integrity response.
+ */
+function shapeWilsyR91K179E22B1ResponseRecord(saved = {}, command = {}) {
+  const id = String(
+    saved._id || saved.id || saved.recordId || saved.meetingId || command.recordId || ''
+  );
+
+  return {
+    ...saved,
+    id: String(saved.id || id),
+    recordId: String(saved.recordId || id),
+    meetingId: String(saved.meetingId || id),
+    tenantId: command.tenantId,
+    meetingVenue: command.venue,
+    venue: command.venue,
+    venueType: command.venue,
+    meetingVenueLabel: command.venue,
+    locationType: command.venue,
+    location: command.location,
+    persistenceStatus: 'DB_PERSISTED',
+    sourceStatus: 'DB_PERSISTED',
+  };
+}
+
+/**
+ * @function handleWilsyR91K179E22B1MeetingCreateVenueIntegrity
+ * @description Creates Meetings with venue integrity guaranteed beyond model schema stripping.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<Object>} JSON response.
+ * @collaboration POST /api/crm/command/meetings, WilsyMeetingEditor, DB_PERSISTED records.
+ */
+async function handleWilsyR91K179E22B1MeetingCreateVenueIntegrity(req, res) {
+  try {
+    const command = normalizeWilsyR91K179E22B1MeetingCommand(req);
+    const persistence = await persistWilsyR91K179E22B1Create(command);
+
+    if (!persistence.saved) {
+      return res.status(503).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_DB_UNAVAILABLE',
+        message: 'MongoDB connection unavailable for meeting command authority.',
+        route: '/api/crm/command/meetings',
+        tenantId: command.tenantId,
+      });
+    }
+
+    const savedBase = shapeWilsyR91K179E22B1ResponseRecord(persistence.saved, command);
+    const mongooseRuntime = await resolveWilsyR91K179E22B1MongooseRuntime();
+    const notificationPacket = await resolveWilsyR91K179E28MeetingNotificationPacket({
+      meeting: savedBase,
+      command,
+      tenantId: command.tenantId,
+      operatorId: command.operatorId,
+      request: req,
+      saveMode: 'create',
+    });
+    const notificationRecord = await persistWilsyR91K179E28MeetingNotificationReceipts({
+      mongooseRuntime,
+      recordId: savedBase.recordId,
+      notificationPacket,
+      preferredCollection: persistence.collectionName,
+    });
+    const saved = shapeWilsyR91K179E22B1ResponseRecord(
+      {
+        ...savedBase,
+        ...(notificationPacket.persistedFields || {}),
+        ...(notificationRecord || {}),
+      },
+      command
+    );
+
+    return res.status(201).json({
+      ok: true,
+      success: true,
+      status: 'DB_PERSISTED',
+      result: 'DB_PERSISTED',
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+      message: command.venue
+        ? 'Meeting persisted with venue integrity through CRM command authority.'
+        : 'Meeting persisted; venue remains uncaptured until operator selects it.',
+      tenantId: command.tenantId,
+      recordId: saved.recordId,
+      meetingId: saved.meetingId,
+      meeting: saved,
+      record: saved,
+      notificationStatus: notificationPacket.invitationStatus,
+      calendarInvite: notificationPacket.calendarInvite,
+      emailInvitationReceipts: notificationPacket.emailInvitationReceipts || [],
+      smsInvitationReceipts: notificationPacket.smsInvitationReceipts || [],
+      notificationReceipts: notificationPacket.notificationReceipts || [],
+      meetingNotificationIntelligence: notificationPacket.aiTemplate || null,
+      route: '/api/crm/command/meetings',
+      auditMesh: {
+        status: 'DB_PERSISTED',
+        dbPersisted: true,
+        source: 'R91K179E22B1_MEETING_VENUE_INTEGRITY_REAL_MAP',
+        collection: persistence.collectionName,
+        persistenceMode: persistence.persistenceMode,
+        notificationStatus: notificationPacket.invitationStatus,
+        notificationPersistenceMode:
+          notificationRecord?.notificationPersistenceMode || 'NOTIFICATION_RESPONSE_ONLY',
+        tenantId: command.tenantId,
+        venueCaptured: Boolean(command.venue),
+        venue: command.venue,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'MEETING_CREATE_FAILED',
+      message: error?.message || 'Meeting create failed.',
+      route: '/api/crm/command/meetings',
+    });
+  }
+}
+
+/**
+ * @function handleWilsyR91K179E22B1MeetingUpdateVenueIntegrity
+ * @description Updates Meetings and repairs venue fields for old venue-missing records.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<Object>} JSON response.
+ * @collaboration PATCH /api/crm/command/meetings/:id, editor save, live records table.
+ */
+async function handleWilsyR91K179E22B1MeetingUpdateVenueIntegrity(req, res) {
+  try {
+    const command = normalizeWilsyR91K179E22B1MeetingCommand(req);
+
+    if (!command.recordId) {
+      return res.status(400).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_ID_REQUIRED',
+        message: 'Meeting record id is required for venue repair/update.',
+      });
+    }
+
+    const persistence = await persistWilsyR91K179E22B1Update(command);
+
+    if (!persistence.saved) {
+      return res.status(404).json({
+        ok: false,
+        success: false,
+        status: 'MEETING_NOT_FOUND',
+        message: 'Meeting record was not found for venue repair/update.',
+        recordId: command.recordId,
+      });
+    }
+
+    const savedBase = shapeWilsyR91K179E22B1ResponseRecord(persistence.saved, command);
+    const mongooseRuntime = await resolveWilsyR91K179E22B1MongooseRuntime();
+    const notificationPacket = await resolveWilsyR91K179E28MeetingNotificationPacket({
+      meeting: savedBase,
+      command,
+      tenantId: command.tenantId,
+      operatorId: command.operatorId,
+      request: req,
+      saveMode: 'edit',
+    });
+    const notificationRecord = await persistWilsyR91K179E28MeetingNotificationReceipts({
+      mongooseRuntime,
+      recordId: savedBase.recordId,
+      notificationPacket,
+      preferredCollection: persistence.collectionName,
+    });
+    const saved = shapeWilsyR91K179E22B1ResponseRecord(
+      {
+        ...savedBase,
+        ...(notificationPacket.persistedFields || {}),
+        ...(notificationRecord || {}),
+      },
+      command
+    );
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      status: 'DB_PERSISTED',
+      result: 'DB_PERSISTED',
+      persistenceStatus: 'DB_PERSISTED',
+      sourceStatus: 'DB_PERSISTED',
+      message: command.venue
+        ? 'Meeting updated with venue integrity through CRM command authority.'
+        : 'Meeting updated; venue remains uncaptured until operator selects it.',
+      tenantId: command.tenantId,
+      recordId: saved.recordId,
+      meetingId: saved.meetingId,
+      meeting: saved,
+      record: saved,
+      notificationStatus: notificationPacket.invitationStatus,
+      calendarInvite: notificationPacket.calendarInvite,
+      emailInvitationReceipts: notificationPacket.emailInvitationReceipts || [],
+      smsInvitationReceipts: notificationPacket.smsInvitationReceipts || [],
+      notificationReceipts: notificationPacket.notificationReceipts || [],
+      meetingNotificationIntelligence: notificationPacket.aiTemplate || null,
+      route: `/api/crm/command/meetings/${encodeURIComponent(command.recordId)}`,
+      auditMesh: {
+        status: 'DB_PERSISTED',
+        dbPersisted: true,
+        source: 'R91K179E22B1_MEETING_VENUE_INTEGRITY_REAL_MAP',
+        collection: persistence.collectionName,
+        persistenceMode: persistence.persistenceMode,
+        notificationStatus: notificationPacket.invitationStatus,
+        notificationPersistenceMode:
+          notificationRecord?.notificationPersistenceMode || 'NOTIFICATION_RESPONSE_ONLY',
+        tenantId: command.tenantId,
+        venueCaptured: Boolean(command.venue),
+        venue: command.venue,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      status: 'MEETING_UPDATE_FAILED',
+      message: error?.message || 'Meeting update failed.',
+      route: '/api/crm/command/meetings/:id',
+    });
+  }
+}
+
+router.post('/meetings', handleWilsyR91K179E22B1MeetingCreateVenueIntegrity);
+router.patch('/meetings/:id', handleWilsyR91K179E22B1MeetingUpdateVenueIntegrity);
+
+/**
+ * @function buildWilsyR91K179E24P58HMeetingDeleteReceiptHash
+ * @description Builds a deterministic receipt id for successful Meeting delete responses when the legacy handler deletes correctly but omits receiptHash.
+ * @param {Object} context - Receipt context.
+ * @returns {string} Receipt hash.
+ * @collaboration CRM Meeting delete route, protected command capsule, auditMesh response contract.
+ */
+function buildWilsyR91K179E24P58HMeetingDeleteReceiptHash(context = {}) {
+  const raw = [
+    'R91K179E24P58H',
+    context.tenantId || 'MASTER',
+    context.recordId || 'meeting-id-unavailable',
+    context.operatorId || context.operator || 'SYSTEM',
+    context.generatedAt || new Date().toISOString(),
+  ].join(':');
+
+  return `MEETING_DELETE_RECEIPT_${Buffer.from(raw).toString('base64url').slice(0, 48)}`;
+}
+
+/**
+ * @function decorateWilsyR91K179E24P58HMeetingDeleteReceipt
+ * @description Decorates successful Meeting delete responses with receiptHash, receipt, auditMesh and institutional evidence without changing delete persistence.
+ * @param {Object} payload - Original handler response payload.
+ * @param {Object} req - Express request.
+ * @returns {Object} Decorated response payload.
+ * @collaboration Existing Meeting delete handler, protected command capsule, institutional strike payload evidence.
+ */
+function decorateWilsyR91K179E24P58HMeetingDeleteReceipt(payload = {}, req = {}) {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : {};
+  const institutionalHeadersSource =
+    body.institutionalHeaders || strikePayload.institutionalHeaders || {};
+
+  const generatedAt = new Date().toISOString();
+  const tenantId = String(
+    body.tenantId ||
+      strikePayload.tenantId ||
+      institutionalHeadersSource.tenantId ||
+      req.headers?.['x-tenant-id'] ||
+      req.tenantId ||
+      'MASTER'
+  );
+
+  const operatorId = String(
+    body.operatorId ||
+      body.userId ||
+      strikePayload.operatorId ||
+      institutionalHeadersSource.operatorId ||
+      req.headers?.['x-operator-id'] ||
+      req.headers?.['x-wilsy-operator-id'] ||
+      req.user?.id ||
+      'SYSTEM'
+  );
+
+  const operatorEmail = String(
+    body.operatorEmail ||
+      institutionalHeadersSource.operatorEmail ||
+      req.headers?.['x-operator-email'] ||
+      req.headers?.['x-wilsy-operator-email'] ||
+      req.user?.email ||
+      ''
+  );
+
+  const recordId = String(
+    req.params?.id ||
+      body.recordId ||
+      body.meetingId ||
+      strikePayload.recordId ||
+      strikePayload.meetingId ||
+      payload.recordId ||
+      payload.meetingId ||
+      payload.id ||
+      ''
+  );
+
+  const route = `/api/crm/command/meetings/${encodeURIComponent(recordId)}`;
+  const receiptHash =
+    String(
+      payload.receiptHash ||
+        payload.receipt?.receiptHash ||
+        payload.receipt?.hash ||
+        payload.auditMesh?.receiptHash ||
+        ''
+    ) ||
+    buildWilsyR91K179E24P58HMeetingDeleteReceiptHash({
+      tenantId,
+      recordId,
+      operatorId,
+      generatedAt,
+    });
+
+  const institutionalHeaders = {
+    ...institutionalHeadersSource,
+    tenantId,
+    operatorId,
+    userId: operatorId,
+    operatorEmail,
+    route,
+    commandSurface: 'R91K179E24P58H_MEETING_DELETE_RECEIPT_BRIDGE',
+    generatedAt,
+    recordId,
+    module: 'meetings',
+  };
+
+  return {
+    ...payload,
+    ok: payload.ok !== false,
+    status: payload.status || 'MEETING_DELETE_RECEIPT_SEALED',
+    message: payload.message || 'Meeting delete completed through CRM command authority.',
+    tenantId,
+    recordId,
+    meetingId: payload.meetingId || recordId,
+    route,
+    receiptHash,
+    institutionalHeaders,
+    strikePayload: {
+      ...strikePayload,
+      tenantId,
+      operatorId,
+      userId: operatorId,
+      recordId,
+      meetingId: recordId,
+      route,
+      commandSurface: 'R91K179E24P58H_MEETING_DELETE_RECEIPT_BRIDGE',
+      generatedAt,
+      institutionalHeaders,
+    },
+    receipt: {
+      ...(payload.receipt && typeof payload.receipt === 'object' ? payload.receipt : {}),
+      receiptHash,
+      hash: receiptHash,
+      status: payload.status || 'MEETING_DELETE_RECEIPT_SEALED',
+      route,
+      tenantId,
+      operatorId,
+      recordId,
+      module: 'meetings',
+      generatedAt,
+    },
+    auditMesh: {
+      ...(payload.auditMesh && typeof payload.auditMesh === 'object' ? payload.auditMesh : {}),
+      receiptHash,
+      route,
+      tenantId,
+      operatorId,
+      recordId,
+      module: 'meetings',
+      generatedAt,
+      commandSurface: 'R91K179E24P58H_MEETING_DELETE_RECEIPT_BRIDGE',
+    },
+  };
+}
+
+/**
+ * @function handleWilsyR91K179E24P58HMeetingDeleteReceiptBridge
+ * @description Wraps the existing Meeting delete handler to guarantee successful responses carry a protected command receipt hash.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {Promise<void>} Existing handler result.
+ * @collaboration Existing handleWilsyR91K179E15RMeetingDelete, CRM command routes, frontend Delete Governance capsule.
+ */
+async function handleWilsyR91K179E24P58HMeetingDeleteReceiptBridge(req, res, next) {
+  const originalJson = res.json.bind(res);
+
+  res.json = (payload = {}) => {
+    const decoratedPayload = decorateWilsyR91K179E24P58HMeetingDeleteReceipt(payload, req);
+    return originalJson(decoratedPayload);
+  };
+
+  return handleWilsyR91K179E15RMeetingDelete(req, res, next);
+}
+
+router.delete('/meetings/:id', handleWilsyR91K179E24P58HMeetingDeleteReceiptBridge);
+router.post('/meetings/import-preview', handleWilsyR91K179MeetingImportPreview);
 
 router.patch('/leads/:id', handleWilsyR91K74CrmLeadPatchAuthority);
 
@@ -3455,7 +5864,37 @@ const CRM_MODEL_REGISTRY = Object.freeze([
   {
     key: 'meetings',
     modelName: 'CRMMeeting',
-    fields: ['subject', 'title', 'accountName', 'contactName', 'status', 'owner'],
+    fields: [
+      'subject',
+      'title',
+      'meetingTitle',
+      'accountName',
+      'contactName',
+      'status',
+      'owner',
+      'host',
+      'meetingVenue',
+      'venue',
+      'venueType',
+      'meetingVenueLabel',
+      'locationType',
+      'location',
+      'description',
+      'agenda',
+      'participants.email',
+      'participants.displayName',
+      'participants.label',
+      'attendees',
+      'attendees.email',
+      'attendees.displayName',
+      'attendees.label',
+      'relatedRecord.title',
+      'relatedRecord.recordId',
+      'relatedTo.title',
+      'relatedTo.recordId',
+      'relatedType',
+      'relatedId',
+    ],
   },
   {
     key: 'connectors',
@@ -3771,6 +6210,584 @@ async function handleWilsyCrmCommandSync(req, res, next) {
     const rootHash = buildWilsyCrmCommandRootHash(packet);
 
     res.json({
+      ...packet,
+      rootHash,
+      rootHashShort: rootHash.slice(0, 12),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+const WILSY_R91K179E25_MEETING_INTELLIGENCE_VERSION =
+  'R91K179E25-MEETING-COMMAND-INTELLIGENCE-LIVE';
+const WILSY_R91K179E25_MEETING_COLLECTIONS = Object.freeze([
+  'crm_meetings',
+  'crmmeetings',
+  'meetings',
+  'CRMMeeting',
+  'Meeting',
+]);
+
+/**
+ * @function resolveWilsyR91K179E25MeetingRegistryEntry
+ * @description Resolves the CRM registry entry dedicated to Meeting intelligence search.
+ * @returns {Object} Meeting registry entry.
+ * @collaboration CRM_MODEL_REGISTRY, Wilsy AI Meeting command rail, OS search.
+ */
+function resolveWilsyR91K179E25MeetingRegistryEntry() {
+  return (
+    CRM_MODEL_REGISTRY.find((entry) => entry.key === 'meetings') || {
+      key: 'meetings',
+      modelName: 'CRMMeeting',
+      fields: ['title', 'subject', 'meetingVenue', 'venue', 'location', 'status'],
+    }
+  );
+}
+
+/**
+ * @function normalizeWilsyR91K179E25Text
+ * @description Converts a candidate Meeting value into trimmed display text.
+ * @param {*} value - Candidate value.
+ * @returns {string} Text value.
+ * @collaboration Meeting intelligence normalization, evidence ledger, Wilsy AI recommendations.
+ */
+function normalizeWilsyR91K179E25Text(value = '') {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') {
+    return String(
+      value.title || value.name || value.label || value.email || value.recordId || value.id || ''
+    ).trim();
+  }
+
+  return String(value).trim();
+}
+
+/**
+ * @function resolveWilsyR91K179E25MeetingId
+ * @description Resolves a stable id for a Meeting intelligence row.
+ * @param {Object} meeting - Meeting source record.
+ * @param {number} index - Fallback index.
+ * @returns {string} Meeting id.
+ * @collaboration Meeting command endpoint, Wilsy AI rail, search results.
+ */
+function resolveWilsyR91K179E25MeetingId(meeting = {}, index = 0) {
+  return String(
+    meeting.recordId ||
+      meeting.meetingId ||
+      meeting.id ||
+      meeting._id ||
+      meeting.externalId ||
+      `meeting-source-${index}`
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179E25MeetingTitle
+ * @description Resolves a Meeting title from persisted Meeting fields.
+ * @param {Object} meeting - Meeting source record.
+ * @returns {string} Meeting title.
+ * @collaboration Meeting intelligence cards, command recommendations, OS search results.
+ */
+function resolveWilsyR91K179E25MeetingTitle(meeting = {}) {
+  return (
+    normalizeWilsyR91K179E25Text(
+      meeting.title ||
+        meeting.subject ||
+        meeting.meetingTitle ||
+        meeting.name ||
+        meeting.relatedName
+    ) || 'Untitled Meeting'
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179E25MeetingVenue
+ * @description Resolves Meeting venue/location posture from persisted fields.
+ * @param {Object} meeting - Meeting source record.
+ * @returns {string} Venue label.
+ * @collaboration Venue proof, Meeting editor persistence, evidence workspace.
+ */
+function resolveWilsyR91K179E25MeetingVenue(meeting = {}) {
+  return normalizeWilsyR91K179E25Text(
+    meeting.meetingVenue ||
+      meeting.venue ||
+      meeting.venueType ||
+      meeting.meetingVenueLabel ||
+      meeting.locationType ||
+      meeting.location ||
+      meeting.meetingUrl ||
+      meeting.onlineMeetingUrl
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179E25MeetingParticipants
+ * @description Resolves Meeting participant rows from persisted participants, attendees or invitees arrays.
+ * @param {Object} meeting - Meeting source record.
+ * @returns {Array<Object>} Participant summaries.
+ * @collaboration Invitation proof, Meeting participant resolver, Wilsy AI gap detection.
+ */
+function resolveWilsyR91K179E25MeetingParticipants(meeting = {}) {
+  const rawParticipants = Array.isArray(meeting.participants)
+    ? meeting.participants
+    : Array.isArray(meeting.attendees)
+      ? meeting.attendees
+      : Array.isArray(meeting.invitees)
+        ? meeting.invitees
+        : [];
+
+  return rawParticipants
+    .map((participant) => {
+      if (typeof participant === 'string') {
+        return {
+          label: participant,
+          email: participant.includes('@') ? participant : '',
+          sourceType: 'EXTERNAL',
+        };
+      }
+
+      return {
+        label: normalizeWilsyR91K179E25Text(
+          participant.displayName || participant.name || participant.label || participant.email
+        ),
+        email: normalizeWilsyR91K179E25Text(participant.email || participant.normalizedEmail),
+        sourceType: normalizeWilsyR91K179E25Text(
+          participant.sourceType || participant.source || 'CRM'
+        ),
+      };
+    })
+    .filter((participant) => participant.label || participant.email);
+}
+
+/**
+ * @function resolveWilsyR91K179E25MeetingRelated
+ * @description Resolves linked CRM context from Meeting related fields.
+ * @param {Object} meeting - Meeting source record.
+ * @returns {Object} Related record summary.
+ * @collaboration CRM relationship proof, evidence workspace, Wilsy AI recommendations.
+ */
+function resolveWilsyR91K179E25MeetingRelated(meeting = {}) {
+  const related =
+    meeting.relatedRecord || meeting.relatedTo || meeting.crmRecord || meeting.crmLink || null;
+
+  if (related && typeof related === 'object') {
+    return {
+      title: normalizeWilsyR91K179E25Text(
+        related.title || related.name || related.label || related.recordId || related.id
+      ),
+      recordId: normalizeWilsyR91K179E25Text(related.recordId || related.id || related._id),
+      module: normalizeWilsyR91K179E25Text(related.module || related.type || 'CRM'),
+    };
+  }
+
+  const relatedText = normalizeWilsyR91K179E25Text(
+    related ||
+      meeting.relatedRecordName ||
+      meeting.relatedRecordId ||
+      meeting.relatedLeadId ||
+      meeting.relatedContactId ||
+      meeting.relatedAccountId ||
+      meeting.relatedDealId ||
+      meeting.relatedId
+  );
+
+  return {
+    title: relatedText,
+    recordId: normalizeWilsyR91K179E25Text(
+      meeting.relatedRecordId || meeting.relatedId || relatedText
+    ),
+    module: normalizeWilsyR91K179E25Text(meeting.relatedType || 'CRM'),
+  };
+}
+
+/**
+ * @function resolveWilsyR91K179E25MeetingSchedule
+ * @description Resolves Meeting schedule posture from timestamp or date/time fields.
+ * @param {Object} meeting - Meeting source record.
+ * @returns {Object} Schedule posture.
+ * @collaboration Calendar posture, Meeting command evidence, Wilsy AI readiness.
+ */
+function resolveWilsyR91K179E25MeetingSchedule(meeting = {}) {
+  const startsAt =
+    meeting.startsAt || meeting.startAt || meeting.startTime || meeting.scheduledAt || null;
+  const endsAt = meeting.endsAt || meeting.endAt || meeting.endTime || null;
+  const fromLabel = [meeting.fromDate, meeting.fromTime].filter(Boolean).join(' ');
+  const toLabel = [meeting.toDate, meeting.toTime].filter(Boolean).join(' ');
+
+  return {
+    startsAt: startsAt || fromLabel || '',
+    endsAt: endsAt || toLabel || '',
+    hasSchedule: Boolean(startsAt || meeting.fromDate || meeting.date || meeting.scheduledAt),
+  };
+}
+
+/**
+ * @function buildWilsyR91K179E25MeetingReadiness
+ * @description Computes readiness gaps from persisted Meeting source fields only.
+ * @param {Object} meeting - Meeting source record.
+ * @returns {Object} Readiness score and gaps.
+ * @collaboration Wilsy AI Meeting intelligence, evidence workspace, operator repair flow.
+ */
+function buildWilsyR91K179E25MeetingReadiness(meeting = {}) {
+  const venue = resolveWilsyR91K179E25MeetingVenue(meeting);
+  const participants = resolveWilsyR91K179E25MeetingParticipants(meeting);
+  const related = resolveWilsyR91K179E25MeetingRelated(meeting);
+  const schedule = resolveWilsyR91K179E25MeetingSchedule(meeting);
+  const hasAgenda = Boolean(
+    normalizeWilsyR91K179E25Text(meeting.description || meeting.agenda || meeting.outcome)
+  );
+  const gaps = [
+    venue ? '' : 'venue',
+    participants.length > 0 ? '' : 'participants',
+    related.title || related.recordId ? '' : 'related CRM record',
+    schedule.hasSchedule ? '' : 'schedule',
+    hasAgenda ? '' : 'agenda',
+  ].filter(Boolean);
+
+  return {
+    score: Math.max(0, 100 - gaps.length * 20),
+    status: gaps.length ? 'REPAIR_REQUIRED' : 'COMMAND_READY',
+    gaps,
+    venue,
+    participants,
+    related,
+    schedule,
+    hasAgenda,
+  };
+}
+
+/**
+ * @function normalizeWilsyR91K179E25MeetingResult
+ * @description Converts a Meeting source row into an AI/search/evidence-safe result.
+ * @param {Object} meeting - Meeting source record.
+ * @param {number} index - Row index.
+ * @returns {Object} Normalized Meeting intelligence result.
+ * @collaboration OS search, Wilsy AI Meeting rail, evidence ledger.
+ */
+function normalizeWilsyR91K179E25MeetingResult(meeting = {}, index = 0) {
+  const readiness = buildWilsyR91K179E25MeetingReadiness(meeting);
+  const recordId = resolveWilsyR91K179E25MeetingId(meeting, index);
+
+  return {
+    id: recordId,
+    recordId,
+    meetingId: recordId,
+    module: 'meetings',
+    title: resolveWilsyR91K179E25MeetingTitle(meeting),
+    status: normalizeWilsyR91K179E25Text(
+      meeting.status || meeting.stage || meeting.outcome || 'RECORDED'
+    ),
+    venue: readiness.venue,
+    participants: readiness.participants,
+    participantCount: readiness.participants.length,
+    relatedRecord: readiness.related,
+    schedule: readiness.schedule,
+    readiness,
+    updatedAt: meeting.updatedAt || meeting.createdAt || null,
+    sourceStatus: meeting.sourceStatus || meeting.persistenceStatus || 'SOURCE_LIVE',
+  };
+}
+
+/**
+ * @function queryWilsyR91K179E25RawMeetingCollection
+ * @description Searches raw Meeting collections when a Mongoose Meeting model is unavailable.
+ * @param {string} tenantId - Tenant id.
+ * @param {string} query - Search text.
+ * @param {number} limit - Result limit.
+ * @returns {Promise<Object|null>} Raw collection query packet.
+ * @collaboration Raw CRM collection fallback, Meeting intelligence endpoint, source-honest backend wiring.
+ */
+async function queryWilsyR91K179E25RawMeetingCollection(tenantId, query, limit) {
+  const db = mongoose.connection?.db;
+  if (!db) return null;
+
+  const registryEntry = resolveWilsyR91K179E25MeetingRegistryEntry();
+  const filter = buildWilsyCrmSearchFilter(registryEntry, tenantId, query);
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 8, 50));
+
+  for (const collectionName of WILSY_R91K179E25_MEETING_COLLECTIONS) {
+    try {
+      const collection = db.collection(collectionName);
+      let cursor = collection
+        .find(filter)
+        .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+        .limit(safeLimit);
+
+      if (typeof cursor.maxTimeMS === 'function') {
+        cursor = cursor.maxTimeMS(1800);
+      }
+
+      const [count, rows] = await Promise.all([
+        collection.countDocuments(filter).catch(() => 0),
+        cursor.toArray().catch(() => []),
+      ]);
+
+      if (count > 0 || rows.length > 0) {
+        return {
+          connected: true,
+          count,
+          rows,
+          dataSource: 'mongo-collection',
+          modelName: null,
+          collectionName,
+          sourceGap: null,
+        };
+      }
+    } catch {
+      // Try next known Meeting collection name.
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function queryWilsyR91K179E25MeetingRows
+ * @description Queries Meeting source rows from registered CRMMeeting model or raw collection fallback.
+ * @param {string} tenantId - Tenant id.
+ * @param {string} query - Search text.
+ * @param {number} limit - Result limit.
+ * @returns {Promise<Object>} Meeting query packet.
+ * @collaboration /api/crm/command/meetings/intelligence, Wilsy AI, OS search and evidence workspaces.
+ */
+async function queryWilsyR91K179E25MeetingRows(tenantId, query, limit) {
+  const registryEntry = resolveWilsyR91K179E25MeetingRegistryEntry();
+  const MeetingModel = getWilsyCrmModel(registryEntry.modelName);
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 8, 50));
+
+  if (MeetingModel) {
+    const filter = buildWilsyCrmSearchFilter(registryEntry, tenantId, query);
+    const [count, rows] = await Promise.all([
+      MeetingModel.countDocuments(filter).catch(() => 0),
+      MeetingModel.find(filter)
+        .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+        .limit(safeLimit)
+        .lean()
+        .catch(() => []),
+    ]);
+
+    return {
+      connected: true,
+      count,
+      rows,
+      dataSource: 'mongoose',
+      modelName: registryEntry.modelName,
+      collectionName: MeetingModel.collection?.name || 'crm_meetings',
+      sourceGap: null,
+    };
+  }
+
+  const rawPacket = await queryWilsyR91K179E25RawMeetingCollection(tenantId, query, safeLimit);
+
+  if (rawPacket) return rawPacket;
+
+  return {
+    connected: false,
+    count: 0,
+    rows: [],
+    dataSource: 'missing',
+    modelName: registryEntry.modelName,
+    collectionName: null,
+    sourceGap:
+      'CRMMeeting model and known Meeting collections are unavailable for Meeting intelligence.',
+  };
+}
+
+/**
+ * @function buildWilsyR91K179E25MeetingCoverage
+ * @description Aggregates Meeting readiness coverage for the intelligence endpoint.
+ * @param {Array<Object>} results - Normalized Meeting results.
+ * @returns {Object} Coverage summary.
+ * @collaboration Evidence workspace, Wilsy AI posture, board-ready meeting operations.
+ */
+function buildWilsyR91K179E25MeetingCoverage(results = []) {
+  const inspected = Array.isArray(results) ? results.length : 0;
+  const coverage = results.reduce(
+    (accumulator, result) => {
+      const readiness = result.readiness || {};
+      accumulator.venue += readiness.venue ? 1 : 0;
+      accumulator.participants += Number(result.participantCount || 0) > 0 ? 1 : 0;
+      accumulator.relatedRecord += readiness.related?.title || readiness.related?.recordId ? 1 : 0;
+      accumulator.schedule += readiness.schedule?.hasSchedule ? 1 : 0;
+      accumulator.agenda += readiness.hasAgenda ? 1 : 0;
+      accumulator.readyRecords += readiness.status === 'COMMAND_READY' ? 1 : 0;
+      accumulator.gaps.push(...(Array.isArray(readiness.gaps) ? readiness.gaps : []));
+      return accumulator;
+    },
+    {
+      venue: 0,
+      participants: 0,
+      relatedRecord: 0,
+      schedule: 0,
+      agenda: 0,
+      readyRecords: 0,
+      gaps: [],
+    }
+  );
+
+  const possible = Math.max(1, inspected * 5);
+  const score = inspected
+    ? Math.round(
+        ((coverage.venue +
+          coverage.participants +
+          coverage.relatedRecord +
+          coverage.schedule +
+          coverage.agenda) /
+          possible) *
+          100
+      )
+    : 0;
+
+  return {
+    inspected,
+    score,
+    readyRecords: coverage.readyRecords,
+    repairRecords: Math.max(0, inspected - coverage.readyRecords),
+    fieldCoverage: {
+      venue: coverage.venue,
+      participants: coverage.participants,
+      relatedRecord: coverage.relatedRecord,
+      schedule: coverage.schedule,
+      agenda: coverage.agenda,
+    },
+    gaps: Array.from(new Set(coverage.gaps)),
+  };
+}
+
+/**
+ * @function buildWilsyR91K179E25MeetingRecommendations
+ * @description Builds source-honest Meeting intelligence recommendations from actual query output.
+ * @param {Object} queryPacket - Meeting query packet.
+ * @param {Object} readiness - Coverage summary.
+ * @param {string} query - Operator search query.
+ * @returns {Array<Object>} Recommendation records.
+ * @collaboration Wilsy AI Meeting command rail, operator repair workflows, no-fake-data posture.
+ */
+function buildWilsyR91K179E25MeetingRecommendations(queryPacket = {}, readiness = {}, query = '') {
+  const recommendations = [];
+
+  if (!queryPacket.connected) {
+    recommendations.push({
+      severity: 'critical',
+      action: 'Connect CRMMeeting source',
+      detail: queryPacket.sourceGap,
+      route: '/api/crm/live/meetings',
+    });
+  }
+
+  if (queryPacket.connected && Number(queryPacket.count || 0) === 0) {
+    recommendations.push({
+      severity: 'warning',
+      action: query ? 'No matching meetings returned' : 'Create or import meetings',
+      detail: query
+        ? `No Meeting rows matched "${query}". Keep OS search feedback visible and offer create/import next actions.`
+        : 'Meeting source is connected but returned no rows for this tenant.',
+      route: '/api/crm/command/meetings',
+    });
+  }
+
+  readiness.gaps?.forEach((gap) => {
+    recommendations.push({
+      severity: gap === 'participants' || gap === 'related CRM record' ? 'high' : 'medium',
+      action: `Repair Meeting ${gap}`,
+      detail: `${readiness.repairRecords || 0} inspected Meeting record${readiness.repairRecords === 1 ? '' : 's'} need ${gap} evidence before command-ready posture.`,
+      route: '/api/crm/command/meetings/:id',
+    });
+  });
+
+  if (!recommendations.length) {
+    recommendations.push({
+      severity: 'ready',
+      action: 'Proceed with Meeting operations',
+      detail:
+        'Inspected Meeting rows carry venue, participants, schedule, related record and agenda evidence.',
+      route: '/api/crm/command/meetings',
+    });
+  }
+
+  return recommendations.slice(0, 8);
+}
+
+/**
+ * @function buildWilsyR91K179E25MeetingEvidence
+ * @description Builds the route and persistence evidence packet for Meeting intelligence.
+ * @param {Object} queryPacket - Meeting query packet.
+ * @param {Object} readiness - Coverage summary.
+ * @returns {Object} Meeting intelligence evidence packet.
+ * @collaboration Evidence workspace, Wilsy AI rail, Meeting command backend audit.
+ */
+function buildWilsyR91K179E25MeetingEvidence(queryPacket = {}, readiness = {}) {
+  return {
+    sourceRoute: '/api/crm/live/meetings',
+    intelligenceRoute: '/api/crm/command/meetings/intelligence',
+    commandRoutes: {
+      create: '/api/crm/command/meetings',
+      update: '/api/crm/command/meetings/:id',
+      delete: '/api/crm/command/meetings/:id',
+      importPreview: '/api/crm/command/meetings/import-preview',
+    },
+    dataSource: queryPacket.dataSource,
+    modelName: queryPacket.modelName,
+    collectionName: queryPacket.collectionName,
+    connected: Boolean(queryPacket.connected),
+    totalRecords: Number(queryPacket.count || 0),
+    inspectedRecords: readiness.inspected || 0,
+    readinessScore: readiness.score || 0,
+    sourceStatus: queryPacket.connected ? 'MEETING_SOURCE_LIVE' : 'MEETING_SOURCE_REQUIRED',
+  };
+}
+
+/**
+ * @function handleWilsyR91K179E25MeetingIntelligence
+ * @description Returns backend Meeting intelligence for Wilsy AI, OS search and evidence workspaces from live CRM sources only.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Express next callback.
+ * @returns {Promise<void>} Response completion.
+ * @collaboration Wilsy AI Meetings rail, Meeting evidence workspace, source-honest CRM command fabric.
+ */
+async function handleWilsyR91K179E25MeetingIntelligence(req, res, next) {
+  try {
+    const tenantId = getWilsyCrmTenantId(req);
+    const query = String(req.query.q || req.query.query || '').trim();
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 12, 50));
+    const queryPacket = await queryWilsyR91K179E25MeetingRows(tenantId, query, limit);
+    const results = queryPacket.rows.map((meeting, index) =>
+      normalizeWilsyR91K179E25MeetingResult(meeting, index)
+    );
+    const readiness = buildWilsyR91K179E25MeetingCoverage(results);
+    const recommendations = buildWilsyR91K179E25MeetingRecommendations(
+      queryPacket,
+      readiness,
+      query
+    );
+    const evidence = buildWilsyR91K179E25MeetingEvidence(queryPacket, readiness);
+    const sourceGaps = queryPacket.sourceGap ? [queryPacket.sourceGap] : [];
+
+    const packet = {
+      ok: true,
+      version: WILSY_R91K179E25_MEETING_INTELLIGENCE_VERSION,
+      tenantId,
+      query,
+      route: '/api/crm/command/meetings/intelligence',
+      liveRoute: '/api/crm/live/meetings',
+      sourceStatus: queryPacket.connected ? 'MEETING_SOURCE_LIVE' : 'MEETING_SOURCE_REQUIRED',
+      dataSource: queryPacket.dataSource,
+      modelName: queryPacket.modelName,
+      collectionName: queryPacket.collectionName,
+      totalRecords: queryPacket.count,
+      returned: results.length,
+      results,
+      readiness,
+      recommendations,
+      evidence,
+      sourceGaps,
+      generatedAt: new Date().toISOString(),
+    };
+    const rootHash = buildWilsyCrmCommandRootHash(packet);
+
+    res.status(200).json({
       ...packet,
       rootHash,
       rootHashShort: rootHash.slice(0, 12),
@@ -4720,9 +7737,1310 @@ router.post('/address/resolve', handleWilsyR91K87AddressResolve);
 router.post('/address/verify', handleWilsyR91K87AddressVerify);
 
 router.get('/status', handleWilsyCrmCommandStatus);
+router.get('/meetings/intelligence', handleWilsyR91K179E25MeetingIntelligence);
 router.get('/search', handleWilsyCrmCommandSearch);
 router.post('/sync', handleWilsyCrmCommandSync);
 router.post('/leads', handleWilsyCrmCommandLeadCreate);
 router.post('/contacts', handleWilsyCrmCommandContactCreate);
+
+/* WILSY_P60K2_SETUP_REVIEW_BACKEND_AUTHORITY
+   Backend-owned CRM Setup review packet authority. */
+
+/**
+ * @function resolveWilsySetupReviewText
+ * @description Normalizes command text values for setup review packets.
+ * @param {unknown} value - Raw value.
+ * @param {string} fallback - Fallback value.
+ * @returns {string} Normalized string.
+ * @collaboration CRM setup backend authority, setup review packet model, and receipt evidence.
+ */
+function resolveWilsySetupReviewText(value, fallback = '') {
+  const resolved = value === undefined || value === null ? fallback : String(value);
+  return resolved.trim() || fallback;
+}
+
+/**
+ * @function resolveWilsySetupReviewTimestamp
+ * @description Resolves a trustworthy generated timestamp for setup review commands.
+ * @param {Object} body - Request body.
+ * @returns {string} ISO timestamp.
+ * @collaboration CRM setup backend authority, institutional headers, and audit receipts.
+ */
+function resolveWilsySetupReviewTimestamp(body = {}) {
+  const candidate =
+    body.generatedAt ||
+    body.timestamp ||
+    body.institutionalHeaders?.generatedAt ||
+    body.institutionalHeaders?.timestamp ||
+    body.strikePayload?.generatedAt ||
+    body.strikePayload?.timestamp ||
+    body.strikePayload?.institutionalHeaders?.generatedAt ||
+    body.strikePayload?.institutionalHeaders?.timestamp;
+
+  const parsed = candidate ? new Date(candidate) : null;
+  return parsed && !Number.isNaN(parsed.getTime())
+    ? parsed.toISOString()
+    : new Date().toISOString();
+}
+
+/**
+ * @function resolveWilsySetupReviewTenantId
+ * @description Resolves tenant authority from body, strike payload, request tenant, or tenant header.
+ * @param {Object} req - Express request.
+ * @returns {string} Tenant id.
+ * @collaboration CRM command route, tenant evidence, institutional headers, and setup review packets.
+ */
+function resolveWilsySetupReviewTenantId(req) {
+  const body = req.body || {};
+  return resolveWilsySetupReviewText(
+    body.tenantId ||
+      body.institutionalHeaders?.tenantId ||
+      body.strikePayload?.tenantId ||
+      body.strikePayload?.institutionalHeaders?.tenantId ||
+      req.tenant?.id ||
+      req.tenant?.tenantId ||
+      req.headers?.['x-tenant-id'],
+    'MASTER'
+  );
+}
+
+/**
+ * @function resolveWilsySetupReviewOperatorId
+ * @description Resolves operator authority from request identity, body, or institutional evidence.
+ * @param {Object} req - Express request.
+ * @returns {string} Operator id.
+ * @collaboration CRM command route, operator evidence, institutional headers, and setup review packets.
+ */
+function resolveWilsySetupReviewOperatorId(req) {
+  const body = req.body || {};
+  return resolveWilsySetupReviewText(
+    body.operatorId ||
+      body.userId ||
+      body.institutionalHeaders?.operatorId ||
+      body.institutionalHeaders?.userId ||
+      body.strikePayload?.operatorId ||
+      body.strikePayload?.userId ||
+      body.strikePayload?.institutionalHeaders?.operatorId ||
+      body.strikePayload?.institutionalHeaders?.userId ||
+      req.user?.id ||
+      req.user?._id ||
+      req.admin?.id ||
+      req.admin?._id,
+    'wilsy-sovereign-root'
+  );
+}
+
+/**
+ * @function resolveWilsySetupReviewInstitutionalHeaders
+ * @description Builds the canonical institutional header contract required by setup review writes.
+ * @param {Object} req - Express request.
+ * @param {string} route - Command route.
+ * @returns {Object} Institutional headers.
+ * @collaboration CRM setup backend authority, strike payload evidence, and receipt generation.
+ */
+function resolveWilsySetupReviewInstitutionalHeaders(req, route) {
+  const body = req.body || {};
+  const generatedAt = resolveWilsySetupReviewTimestamp(body);
+  const tenantId = resolveWilsySetupReviewTenantId(req);
+  const operatorId = resolveWilsySetupReviewOperatorId(req);
+  const commandSurface = resolveWilsySetupReviewText(
+    body.commandSurface ||
+      body.institutionalHeaders?.commandSurface ||
+      body.strikePayload?.commandSurface ||
+      body.strikePayload?.institutionalHeaders?.commandSurface,
+    'CRM_SETUP_OPERATING_CONTROLS'
+  );
+
+  return {
+    ...(body.institutionalHeaders && typeof body.institutionalHeaders === 'object'
+      ? body.institutionalHeaders
+      : {}),
+    tenantId,
+    operatorId,
+    userId: resolveWilsySetupReviewText(
+      body.userId ||
+        body.institutionalHeaders?.userId ||
+        body.strikePayload?.userId ||
+        body.strikePayload?.institutionalHeaders?.userId,
+      operatorId
+    ),
+    route,
+    commandSurface,
+    generatedAt,
+    timestamp: generatedAt,
+    source: resolveWilsySetupReviewText(
+      body.source || body.institutionalHeaders?.source,
+      'CRM_SETUP_REVIEW_PACKET'
+    ),
+  };
+}
+
+/**
+ * @function assertWilsySetupReviewWriteEvidence
+ * @description Enforces the Wilsy backend write evidence contract for setup review commands.
+ * @param {Object} req - Express request.
+ * @param {string} route - Command route.
+ * @returns {Object} Evidence contract.
+ * @throws {Error} When required evidence is missing.
+ * @collaboration CRM setup backend authority, write guards, institutional headers, and strike payload.
+ */
+function assertWilsySetupReviewWriteEvidence(req, route) {
+  const body = req.body || {};
+  const topHeaders =
+    body.institutionalHeaders && typeof body.institutionalHeaders === 'object'
+      ? body.institutionalHeaders
+      : null;
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : null;
+  const nestedHeaders =
+    strikePayload?.institutionalHeaders && typeof strikePayload.institutionalHeaders === 'object'
+      ? strikePayload.institutionalHeaders
+      : null;
+
+  if (!topHeaders) {
+    const error = new Error('Setup review command requires institutionalHeaders at the top level.');
+    error.statusCode = 400;
+    error.code = 'SETUP_REVIEW_HEADERS_REQUIRED';
+    throw error;
+  }
+
+  if (!strikePayload) {
+    const error = new Error('Setup review command requires strikePayload evidence.');
+    error.statusCode = 400;
+    error.code = 'SETUP_REVIEW_STRIKE_PAYLOAD_REQUIRED';
+    throw error;
+  }
+
+  if (!nestedHeaders) {
+    const error = new Error('Setup review command requires strikePayload.institutionalHeaders.');
+    error.statusCode = 400;
+    error.code = 'SETUP_REVIEW_NESTED_HEADERS_REQUIRED';
+    throw error;
+  }
+
+  const institutionalHeaders = resolveWilsySetupReviewInstitutionalHeaders(req, route);
+
+  return {
+    tenantId: institutionalHeaders.tenantId,
+    operatorId: institutionalHeaders.operatorId,
+    userId: institutionalHeaders.userId,
+    route,
+    commandSurface: institutionalHeaders.commandSurface,
+    generatedAt: institutionalHeaders.generatedAt,
+    timestamp: institutionalHeaders.timestamp,
+    institutionalHeaders,
+    strikePayload: {
+      ...strikePayload,
+      institutionalHeaders: {
+        ...nestedHeaders,
+        ...institutionalHeaders,
+      },
+    },
+  };
+}
+
+/**
+ * @function assertWilsySetupReviewDatabaseReady
+ * @description Fails setup review commands fast when MongoDB is not connected, preventing buffered Mongoose hangs.
+ * @returns {Object} Active Mongoose connection.
+ * @throws {Error} When MongoDB is unavailable.
+ * @collaboration CRM setup review routes, MongoDB command authority, route timeout wrapper, and Packet Console receipts.
+ */
+function assertWilsySetupReviewDatabaseReady() {
+  const readyState = mongoose?.connection?.readyState;
+  const hasDatabase = Boolean(mongoose?.connection?.db);
+
+  if (readyState !== 1 || !hasDatabase) {
+    const error = new Error('Setup review database is not ready. Command was not staged.');
+    error.statusCode = 503;
+    error.code = 'SETUP_REVIEW_DB_NOT_READY';
+    error.details = {
+      readyState,
+      state: mongoose?.STATES?.[readyState] || String(readyState ?? 'unknown'),
+      hasDatabase,
+    };
+    throw error;
+  }
+
+  return mongoose.connection;
+}
+
+/**
+ * @function wrapWilsySetupReviewRoute
+ * @description Wraps setup review command routes with bounded execution and JSON failure responses.
+ * @param {Function} handler - Express route handler.
+ * @returns {Function} Bounded Express route handler.
+ * @collaboration CRM setup command routes, ProductionHardening bridge, MongoDB readiness, and frontend live wiring.
+ */
+function wrapWilsySetupReviewRoute(handler) {
+  return async (req, res, next) => {
+    let timeoutHandle = null;
+
+    try {
+      await Promise.race([
+        Promise.resolve(handler(req, res, next)),
+        new Promise((_, reject) => {
+          timeoutHandle = setTimeout(() => {
+            const error = new Error(
+              'Setup review command timed out before backend authority completed.'
+            );
+            error.statusCode = 504;
+            error.code = 'SETUP_REVIEW_ROUTE_TIMEOUT';
+            reject(error);
+          }, 8000);
+        }),
+      ]);
+    } catch (error) {
+      if (res.headersSent) return;
+
+      const statusCode = Number(error?.statusCode || error?.status || 500);
+
+      return res.status(statusCode).json({
+        ok: false,
+        result: error?.code || 'SETUP_REVIEW_COMMAND_FAILED',
+        error: error?.code || 'SETUP_REVIEW_COMMAND_FAILED',
+        message: error?.message || 'Setup review command failed.',
+        details: error?.details || null,
+        route: req.originalUrl || req.path || req.url,
+        method: req.method,
+        generatedAt: new Date().toISOString(),
+      });
+    } finally {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+    }
+  };
+}
+
+/**
+ * @function resolveWilsySetupReviewModel
+ * @description Creates or reuses the CRM setup review packet mongoose model.
+ * @returns {Object} Mongoose model.
+ * @collaboration MongoDB, CRM command routes, setup review packets, and receipt vault.
+ */
+function resolveWilsySetupReviewModel() {
+  assertWilsySetupReviewDatabaseReady();
+  if (mongoose.models.WilsyCrmSetupReviewPacket) {
+    return mongoose.models.WilsyCrmSetupReviewPacket;
+  }
+
+  const WilsyCrmSetupReviewPacketSchema = new mongoose.Schema(
+    {
+      tenantId: { type: String, required: true, index: true },
+      operatorId: { type: String, required: true, index: true },
+      userId: { type: String, required: true },
+      packetId: { type: String, required: true, unique: true, index: true },
+      domainId: { type: String, required: true, index: true },
+      domainLabel: { type: String, default: '' },
+      controlId: { type: String, required: true, index: true },
+      controlName: { type: String, required: true },
+      lens: { type: String, default: 'Authority' },
+      owner: { type: String, default: 'Security Admin' },
+      risk: { type: String, default: 'MEDIUM', index: true },
+      state: { type: String, default: 'SEALED' },
+      status: { type: String, default: 'STAGED', index: true },
+      benefit: { type: String, default: '' },
+      signal: { type: String, default: '' },
+      surfaces: { type: [String], default: [] },
+      workItems: { type: [String], default: [] },
+      requiredEvidence: { type: [String], default: [] },
+
+      evidenceLedger: { type: [mongoose.Schema.Types.Mixed], default: [] },
+
+      approvalState: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+      releaseState: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+      workflowState: { type: mongoose.Schema.Types.Mixed, default: {} },
+      route: { type: String, required: true },
+      commandSurface: { type: String, required: true },
+      generatedAt: { type: Date, required: true },
+      institutionalHeaders: { type: mongoose.Schema.Types.Mixed, default: {} },
+      strikePayload: { type: mongoose.Schema.Types.Mixed, default: {} },
+      receipts: { type: [mongoose.Schema.Types.Mixed], default: [] },
+      auditTrail: { type: [mongoose.Schema.Types.Mixed], default: [] },
+      removedAt: { type: Date, default: null },
+      clearedAt: { type: Date, default: null },
+    },
+    { timestamps: true, minimize: false, bufferCommands: false }
+  );
+
+  WilsyCrmSetupReviewPacketSchema.index(
+    { tenantId: 1, operatorId: 1, controlId: 1, status: 1 },
+    { name: 'wilsy_setup_review_scope_control_status' }
+  );
+
+  return mongoose.model('WilsyCrmSetupReviewPacket', WilsyCrmSetupReviewPacketSchema);
+}
+
+/**
+ * @function resolveWilsySetupReviewCreateHash
+ * @description Resolves Node crypto createHash inside the route runtime for setup review receipt hashes.
+ * @returns {Function} Node crypto createHash function.
+ * @throws {Error} When crypto hashing is unavailable.
+ * @collaboration CRM setup review receipt builder, backend audit evidence, and Packet Console receipt hash display.
+ */
+function resolveWilsySetupReviewCreateHash() {
+  try {
+    if (typeof createHash === 'function') {
+      return createHash;
+    }
+  } catch {
+    // Continue to route runtime crypto resolver.
+  }
+
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto?.createHash === 'function') {
+      return crypto.createHash.bind(crypto);
+    }
+  } catch {
+    // Continue to CommonJS resolver when available.
+  }
+
+  try {
+    const cryptoModule = require('crypto');
+
+    if (typeof cryptoModule?.createHash === 'function') {
+      return cryptoModule.createHash;
+    }
+  } catch {
+    // Route runtime did not expose CommonJS require.
+  }
+
+  const error = new Error('Setup review receipt hash engine is unavailable.');
+  error.statusCode = 500;
+  error.code = 'SETUP_REVIEW_HASH_ENGINE_UNAVAILABLE';
+  throw error;
+}
+
+/**
+ * @function createWilsySetupReviewReceipt
+ * @description Creates deterministic setup review receipt evidence.
+ * @param {string} action - Receipt action.
+ * @param {Object} packet - Setup review packet.
+ * @param {Object} evidence - Evidence contract.
+ * @returns {Object} Receipt object.
+ * @collaboration CRM setup backend authority, audit trail, receipt return, and Packet Console.
+ */
+function createWilsySetupReviewReceipt(action, packet, evidence) {
+  const generatedAt = new Date().toISOString();
+  const receiptId = `SETUP_REVIEW_RECEIPT_${action}_${Date.now()}`;
+  const hashSource = JSON.stringify({
+    receiptId,
+    action,
+    packetId: packet.packetId,
+    tenantId: packet.tenantId,
+    operatorId: packet.operatorId,
+    route: evidence.route,
+    commandSurface: evidence.commandSurface,
+    generatedAt,
+  });
+
+  return {
+    receiptId,
+    action,
+    packetId: packet.packetId,
+    tenantId: packet.tenantId,
+    operatorId: packet.operatorId,
+    userId: packet.userId,
+    route: evidence.route,
+    commandSurface: evidence.commandSurface,
+    result: action,
+    generatedAt,
+    timestamp: generatedAt,
+    receiptHash: resolveWilsySetupReviewCreateHash()('sha256').update(hashSource).digest('hex'),
+    evidenceContract: {
+      tenantId: Boolean(evidence.tenantId),
+      operatorId: Boolean(evidence.operatorId),
+      route: Boolean(evidence.route),
+      commandSurface: Boolean(evidence.commandSurface),
+      generatedAt: Boolean(evidence.generatedAt),
+      institutionalHeaders: Boolean(evidence.institutionalHeaders),
+      strikePayloadInstitutionalHeaders: Boolean(evidence.strikePayload?.institutionalHeaders),
+    },
+  };
+}
+
+/**
+ * @function serializeWilsySetupReviewPacket
+ * @description Converts a setup review packet document into frontend-safe JSON.
+ * @param {Object} packet - Setup review packet document.
+ * @returns {Object|null} Serialized packet.
+ * @collaboration CRM setup backend authority, Packet Console, and review queue.
+ */
+function serializeWilsySetupReviewPacket(packet) {
+  if (!packet) return null;
+
+  const source = typeof packet.toObject === 'function' ? packet.toObject() : packet;
+
+  return {
+    id: source.packetId,
+    packetId: source.packetId,
+    tenantId: source.tenantId,
+    operatorId: source.operatorId,
+    userId: source.userId,
+    domainId: source.domainId,
+    domainLabel: source.domainLabel,
+    controlId: source.controlId,
+    title: source.controlName,
+    controlName: source.controlName,
+    lens: source.lens,
+    owner: source.owner,
+    risk: source.risk,
+    state: source.state,
+    status: source.status,
+    benefit: source.benefit,
+    signal: source.signal,
+    surfaces: Array.isArray(source.surfaces) ? source.surfaces : [],
+    workItems: Array.isArray(source.workItems) ? source.workItems : [],
+    requiredEvidence: Array.isArray(source.requiredEvidence) ? source.requiredEvidence : [],
+
+    evidenceLedger: Array.isArray(source.evidenceLedger) ? source.evidenceLedger : [],
+
+    approvalState: source.approvalState || {},
+
+    releaseState: source.releaseState || {},
+
+    workflowState: source.workflowState || {},
+    route: source.route,
+    commandSurface: source.commandSurface,
+    generatedAt: source.generatedAt,
+    institutionalHeaders: source.institutionalHeaders || {},
+    strikePayload: source.strikePayload || {},
+    receipts: Array.isArray(source.receipts) ? source.receipts : [],
+    auditTrail: Array.isArray(source.auditTrail) ? source.auditTrail : [],
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
+  };
+}
+
+/**
+ * @function handleWilsySetupReviewList
+ * @description Lists staged setup review packets for the current tenant and operator scope.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, review queue, tenant scope, and operator scope.
+ */
+async function handleWilsySetupReviewList(req, res) {
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+  const tenantId = resolveWilsySetupReviewTenantId(req);
+  const operatorId = resolveWilsySetupReviewOperatorId(req);
+
+  const packets = await WilsyCrmSetupReviewPacket.find({
+    tenantId,
+    operatorId,
+    status: 'STAGED',
+  })
+    .sort({ updatedAt: -1 })
+    .limit(25)
+    .lean();
+
+  res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_QUEUE_LISTED',
+    tenantId,
+    operatorId,
+    count: packets.length,
+    packets: packets.map(serializeWilsySetupReviewPacket),
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewCreate
+ * @description Creates or refreshes a backend-owned setup review packet.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, institutional headers, strike payload, receipt return, and audit trail.
+ */
+async function handleWilsySetupReviewCreate(req, res) {
+  const route = '/api/crm/command/setup/reviews';
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const body = req.body || {};
+  const control = body.control && typeof body.control === 'object' ? body.control : {};
+  const domain = body.domain && typeof body.domain === 'object' ? body.domain : {};
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+
+  const generatedAt = new Date(evidence.generatedAt);
+  const controlId = resolveWilsySetupReviewText(body.controlId || control.id, 'setup-control');
+  const compactStamp = String(Date.now());
+  const packetId = resolveWilsySetupReviewText(
+    body.packetId || body.id,
+    `SETUP_REVIEW_${compactStamp}`
+  );
+
+  const basePacket = {
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    packetId,
+    domainId: resolveWilsySetupReviewText(body.domainId || domain.id, 'authority'),
+    domainLabel: resolveWilsySetupReviewText(
+      body.domainLabel || domain.label || domain.title,
+      'Authority'
+    ),
+    controlId,
+    controlName: resolveWilsySetupReviewText(
+      body.controlName || body.title || control.name,
+      'Authority Graph'
+    ),
+    lens: resolveWilsySetupReviewText(body.lens, 'Authority'),
+    owner: resolveWilsySetupReviewText(body.owner || control.owner, 'Security Admin'),
+    risk: resolveWilsySetupReviewText(body.risk || control.risk, 'CRITICAL').toUpperCase(),
+    state: resolveWilsySetupReviewText(body.state || control.state, 'SEALED').toUpperCase(),
+    status: 'STAGED',
+    benefit: resolveWilsySetupReviewText(body.benefit || control.benefit, ''),
+    signal: resolveWilsySetupReviewText(body.signal || control.signal, ''),
+    surfaces: Array.isArray(body.surfaces)
+      ? body.surfaces
+      : Array.isArray(control.surfaces)
+        ? control.surfaces
+        : [],
+    workItems: Array.isArray(body.workItems)
+      ? body.workItems
+      : Array.isArray(control.workItems)
+        ? control.workItems
+        : [],
+    requiredEvidence: Array.isArray(body.requiredEvidence)
+      ? body.requiredEvidence
+      : [
+          'Tenant authority confirmed',
+          'Operator identity attached',
+          'Control owner assigned',
+          'Risk and impact summary prepared',
+          'Approval gate waiting for authorized approver',
+          'Release gate waiting for evidence receipt',
+        ],
+    route,
+    commandSurface: evidence.commandSurface,
+    generatedAt,
+    institutionalHeaders: evidence.institutionalHeaders,
+    strikePayload: evidence.strikePayload,
+    evidenceLedger: [],
+    approvalState: {
+      status: 'LOCKED',
+      reason: 'AUTHORIZED_APPROVER_REQUIRED',
+      updatedAt: generatedAt,
+    },
+    releaseState: {
+      status: 'LOCKED',
+      reason: 'RECEIPT_BACKED_EVIDENCE_REQUIRED',
+      updatedAt: generatedAt,
+    },
+    workflowState: {
+      evidenceCount: 0,
+      approvalReady: false,
+      approved: false,
+      releaseReady: false,
+      released: false,
+      lastAction: 'SETUP_REVIEW_STAGED',
+      updatedAt: generatedAt,
+    },
+    removedAt: null,
+    clearedAt: null,
+  };
+
+  const existing = await WilsyCrmSetupReviewPacket.findOne({
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    controlId,
+    status: 'STAGED',
+  });
+
+  const receipt = createWilsySetupReviewReceipt(
+    existing ? 'SETUP_REVIEW_REFRESHED' : 'SETUP_REVIEW_STAGED',
+    {
+      ...basePacket,
+    },
+    evidence
+  );
+
+  const auditEvent = {
+    event: existing ? 'SETUP_REVIEW_REFRESHED' : 'SETUP_REVIEW_STAGED',
+    route,
+    commandSurface: evidence.commandSurface,
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    generatedAt: receipt.generatedAt,
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+  };
+
+  const packet = await WilsyCrmSetupReviewPacket.findOneAndUpdate(
+    {
+      tenantId: evidence.tenantId,
+      operatorId: evidence.operatorId,
+      controlId,
+      status: 'STAGED',
+    },
+    {
+      $set: basePacket,
+      $push: {
+        receipts: receipt,
+        auditTrail: auditEvent,
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  res.status(existing ? 200 : 201).json({
+    ok: true,
+    result: receipt.action,
+    why: existing
+      ? 'Setup review packet refreshed through CRM command authority.'
+      : 'Setup review packet staged through CRM command authority.',
+    packet: serializeWilsySetupReviewPacket(packet),
+    receipt,
+    auditEvidence: auditEvent,
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewOpen
+ * @description Opens a backend-owned setup review packet by packet id.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, backend packet read, tenant scope, and operator scope.
+ */
+async function handleWilsySetupReviewOpen(req, res) {
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+  const tenantId = resolveWilsySetupReviewTenantId(req);
+  const operatorId = resolveWilsySetupReviewOperatorId(req);
+  const packetId = resolveWilsySetupReviewText(req.params.packetId, '');
+
+  const packet = await WilsyCrmSetupReviewPacket.findOne({
+    tenantId,
+    operatorId,
+    packetId,
+    status: 'STAGED',
+  });
+
+  if (!packet) {
+    return res.status(404).json({
+      ok: false,
+      result: 'SETUP_REVIEW_PACKET_NOT_FOUND',
+      message: 'Setup review packet was not found for this tenant and operator scope.',
+      tenantId,
+      operatorId,
+      packetId,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  return res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_PACKET_OPENED',
+    packet: serializeWilsySetupReviewPacket(packet),
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewRemove
+ * @description Removes one staged setup review packet while preserving receipt evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, delete authority, receipt return, and audit trail.
+ */
+async function handleWilsySetupReviewRemove(req, res) {
+  const packetId = resolveWilsySetupReviewText(req.params.packetId, '');
+  const route = `/api/crm/command/setup/reviews/${encodeURIComponent(packetId)}`;
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+
+  const packet = await WilsyCrmSetupReviewPacket.findOne({
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    packetId,
+    status: 'STAGED',
+  });
+
+  if (!packet) {
+    return res.status(404).json({
+      ok: false,
+      result: 'SETUP_REVIEW_PACKET_NOT_FOUND',
+      message: 'Setup review packet was not found for removal.',
+      tenantId: evidence.tenantId,
+      operatorId: evidence.operatorId,
+      packetId,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  const receipt = createWilsySetupReviewReceipt('SETUP_REVIEW_REMOVED', packet, evidence);
+  const auditEvent = {
+    event: 'SETUP_REVIEW_REMOVED',
+    route,
+    commandSurface: evidence.commandSurface,
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    packetId,
+    generatedAt: receipt.generatedAt,
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+  };
+
+  packet.status = 'REMOVED';
+  packet.removedAt = new Date();
+  packet.route = route;
+  packet.commandSurface = evidence.commandSurface;
+  packet.institutionalHeaders = evidence.institutionalHeaders;
+  packet.strikePayload = evidence.strikePayload;
+  packet.receipts.push(receipt);
+  packet.auditTrail.push(auditEvent);
+
+  await packet.save();
+
+  return res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_REMOVED',
+    why: 'Setup review packet removed through CRM command authority.',
+    packet: serializeWilsySetupReviewPacket(packet),
+    receipt,
+    auditEvidence: auditEvent,
+  });
+}
+
+/* WILSY_P60K5B_SETUP_WORKFLOW_BACKEND */
+
+/**
+ * @function resolveWilsySetupReviewPacketForWorkflow
+ * @description Loads a staged setup review packet for workflow commands.
+ * @param {Object} model - Setup review Mongoose model.
+ * @param {Object} evidence - Institutional evidence contract.
+ * @param {Object} body - Command body.
+ * @param {string} route - Command route.
+ * @returns {Promise<Object>} Setup review packet.
+ * @throws {Error} When a packet cannot be found.
+ * @collaboration CRM setup workflow backend, evidence attach, approval, release, tenant scope, and Packet Console.
+ */
+async function resolveWilsySetupReviewPacketForWorkflow(model, evidence, body = {}, route = '') {
+  const packetId = resolveWilsySetupReviewText(body.packetId || body.id, '');
+  const controlId = resolveWilsySetupReviewText(body.controlId || body.control?.id, '');
+
+  const query = {
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    status: 'STAGED',
+  };
+
+  if (packetId) {
+    query.packetId = packetId;
+  } else if (controlId) {
+    query.controlId = controlId;
+  } else {
+    const error = new Error('Setup review workflow command requires packetId or controlId.');
+    error.statusCode = 400;
+    error.code = 'SETUP_REVIEW_WORKFLOW_PACKET_ID_REQUIRED';
+    throw error;
+  }
+
+  const packet = await model.findOne(query);
+
+  if (!packet) {
+    const error = new Error(
+      'Setup review workflow packet was not found in the active staged queue.'
+    );
+    error.statusCode = 404;
+    error.code = 'SETUP_REVIEW_WORKFLOW_PACKET_NOT_FOUND';
+    error.details = { route, packetId, controlId };
+    throw error;
+  }
+
+  return packet;
+}
+
+/**
+ * @function createWilsySetupReviewWorkflowAuditEvent
+ * @description Creates a setup review workflow audit event linked to a receipt.
+ * @param {string} event - Workflow event.
+ * @param {Object} packet - Setup review packet.
+ * @param {Object} evidence - Evidence contract.
+ * @param {Object} receipt - Receipt object.
+ * @param {Object} extra - Additional audit data.
+ * @returns {Object} Workflow audit event.
+ * @collaboration Setup workflow receipts, Packet Console, evidence ledger, approval gate, release gate, and audit trail.
+ */
+function createWilsySetupReviewWorkflowAuditEvent(event, packet, evidence, receipt, extra = {}) {
+  return {
+    event,
+    route: evidence.route,
+    commandSurface: evidence.commandSurface,
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    packetId: packet.packetId,
+    generatedAt: receipt.generatedAt,
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+    ...extra,
+  };
+}
+
+/**
+ * @function resolveWilsySetupReviewEvidenceRecord
+ * @description Creates a normalized setup review evidence ledger record from a command body.
+ * @param {Object} body - Command body.
+ * @param {Object} evidence - Institutional evidence contract.
+ * @param {Object} receipt - Receipt object.
+ * @returns {Object} Evidence ledger record.
+ * @collaboration Attach evidence workflow, evidence rail, release readiness, receipts, and audit trail.
+ */
+function resolveWilsySetupReviewEvidenceRecord(body = {}, evidence = {}, receipt = {}) {
+  const evidenceBody = body.evidence && typeof body.evidence === 'object' ? body.evidence : {};
+
+  return {
+    evidenceId: resolveWilsySetupReviewText(
+      body.evidenceId || evidenceBody.evidenceId,
+      `SETUP_EVIDENCE_${Date.now()}`
+    ),
+    label: resolveWilsySetupReviewText(
+      body.label || evidenceBody.label || body.requirement || evidenceBody.requirement,
+      'Setup review evidence'
+    ),
+    requirement: resolveWilsySetupReviewText(
+      body.requirement || evidenceBody.requirement || body.label || evidenceBody.label,
+      'Setup review evidence requirement'
+    ),
+    type: resolveWilsySetupReviewText(body.type || evidenceBody.type, 'OPERATOR_ATTESTATION'),
+    status: 'ATTACHED',
+    source: resolveWilsySetupReviewText(
+      body.source || evidenceBody.source,
+      'CRM_SETUP_PACKET_CONSOLE'
+    ),
+    notes: resolveWilsySetupReviewText(body.notes || evidenceBody.notes, ''),
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    route: evidence.route,
+    commandSurface: evidence.commandSurface,
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+    generatedAt: receipt.generatedAt,
+    timestamp: receipt.generatedAt,
+  };
+}
+
+/**
+ * @function resolveWilsySetupReviewWorkflowState
+ * @description Computes workflow state for a setup review packet.
+ * @param {Object} packet - Setup review packet.
+ * @param {string} lastAction - Latest workflow action.
+ * @returns {Object} Workflow state.
+ * @collaboration Setup workflow board, evidence ledger, approval state, release state, and frontend gate rail.
+ */
+function resolveWilsySetupReviewWorkflowState(
+  packet,
+  lastAction = 'SETUP_REVIEW_WORKFLOW_UPDATED'
+) {
+  const evidenceLedger = Array.isArray(packet.evidenceLedger) ? packet.evidenceLedger : [];
+  const approvalState = packet.approvalState || {};
+  const releaseState = packet.releaseState || {};
+  const evidenceCount = evidenceLedger.filter((item) => item?.status !== 'REMOVED').length;
+  const approved = approvalState.status === 'APPROVED';
+  const released = releaseState.status === 'RELEASED';
+
+  return {
+    evidenceCount,
+    approvalReady: evidenceCount > 0,
+    approved,
+    releaseReady: evidenceCount > 0 && approved,
+    released,
+    lastAction,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * @function handleWilsySetupReviewAttachEvidence
+ * @description Attaches evidence to a staged setup review packet and records receipt-backed audit evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration Evidence rail, backend evidence ledger, release gate, receipt chain, and Packet Console.
+ */
+async function handleWilsySetupReviewAttachEvidence(req, res) {
+  const route = '/api/crm/command/setup/reviews/evidence';
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const body = req.body || {};
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+  const packet = await resolveWilsySetupReviewPacketForWorkflow(
+    WilsyCrmSetupReviewPacket,
+    evidence,
+    body,
+    route
+  );
+
+  const receipt = createWilsySetupReviewReceipt('SETUP_REVIEW_EVIDENCE_ATTACHED', packet, evidence);
+  const evidenceRecord = resolveWilsySetupReviewEvidenceRecord(body, evidence, receipt);
+  const auditEvent = createWilsySetupReviewWorkflowAuditEvent(
+    'SETUP_REVIEW_EVIDENCE_ATTACHED',
+    packet,
+    evidence,
+    receipt,
+    {
+      evidenceId: evidenceRecord.evidenceId,
+      requirement: evidenceRecord.requirement,
+      evidenceStatus: evidenceRecord.status,
+    }
+  );
+
+  packet.evidenceLedger = Array.isArray(packet.evidenceLedger) ? packet.evidenceLedger : [];
+  packet.receipts = Array.isArray(packet.receipts) ? packet.receipts : [];
+  packet.auditTrail = Array.isArray(packet.auditTrail) ? packet.auditTrail : [];
+
+  packet.evidenceLedger.push(evidenceRecord);
+  packet.approvalState = {
+    ...(packet.approvalState || {}),
+    status: 'READY',
+    reason: 'EVIDENCE_ATTACHED',
+    evidenceCount: packet.evidenceLedger.length,
+    updatedAt: receipt.generatedAt,
+    receiptId: receipt.receiptId,
+  };
+  packet.releaseState = {
+    ...(packet.releaseState || {}),
+    status: packet.releaseState?.status === 'RELEASED' ? 'RELEASED' : 'LOCKED',
+    reason:
+      packet.approvalState?.status === 'APPROVED'
+        ? 'APPROVAL_READY_RELEASE_EVIDENCE_ATTACHED'
+        : 'APPROVAL_REQUIRED_BEFORE_RELEASE',
+    updatedAt: receipt.generatedAt,
+  };
+  packet.workflowState = resolveWilsySetupReviewWorkflowState(
+    packet,
+    'SETUP_REVIEW_EVIDENCE_ATTACHED'
+  );
+  packet.route = route;
+  packet.commandSurface = evidence.commandSurface;
+  packet.institutionalHeaders = evidence.institutionalHeaders;
+  packet.strikePayload = evidence.strikePayload;
+  packet.receipts.push(receipt);
+  packet.auditTrail.push(auditEvent);
+
+  await packet.save();
+
+  return res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_EVIDENCE_ATTACHED',
+    why: 'Evidence attached to staged setup review packet with backend receipt.',
+    packet: serializeWilsySetupReviewPacket(packet),
+    evidenceRecord,
+    receipt,
+    auditEvidence: auditEvent,
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewApprove
+ * @description Approves a staged setup review packet when evidence exists and records receipt-backed approval evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration Approval gate, evidence ledger, receipt chain, audit trail, and Packet Console.
+ */
+async function handleWilsySetupReviewApprove(req, res) {
+  const route = '/api/crm/command/setup/reviews/approve';
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const body = req.body || {};
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+  const packet = await resolveWilsySetupReviewPacketForWorkflow(
+    WilsyCrmSetupReviewPacket,
+    evidence,
+    body,
+    route
+  );
+  const evidenceLedger = Array.isArray(packet.evidenceLedger) ? packet.evidenceLedger : [];
+  const activeEvidenceCount = evidenceLedger.filter((item) => item?.status !== 'REMOVED').length;
+
+  if (activeEvidenceCount < 1) {
+    const error = new Error('Approval requires at least one receipt-backed evidence record.');
+    error.statusCode = 409;
+    error.code = 'SETUP_REVIEW_APPROVAL_EVIDENCE_REQUIRED';
+    throw error;
+  }
+
+  packet.receipts = Array.isArray(packet.receipts) ? packet.receipts : [];
+  packet.auditTrail = Array.isArray(packet.auditTrail) ? packet.auditTrail : [];
+
+  const receipt = createWilsySetupReviewReceipt('SETUP_REVIEW_APPROVED', packet, evidence);
+  const approver = resolveWilsySetupReviewText(
+    body.approver || body.approverId || body.operatorName,
+    evidence.operatorId
+  );
+  const approvalState = {
+    status: 'APPROVED',
+    approver,
+    approvalScope: resolveWilsySetupReviewText(
+      body.approvalScope || body.scope,
+      'SETUP_REVIEW_PACKET'
+    ),
+    evidenceCount: activeEvidenceCount,
+    reason: 'AUTHORIZED_APPROVER_APPROVED',
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+    approvedAt: receipt.generatedAt,
+    updatedAt: receipt.generatedAt,
+  };
+  const auditEvent = createWilsySetupReviewWorkflowAuditEvent(
+    'SETUP_REVIEW_APPROVED',
+    packet,
+    evidence,
+    receipt,
+    {
+      approver,
+      evidenceCount: activeEvidenceCount,
+      approvalScope: approvalState.approvalScope,
+    }
+  );
+
+  packet.approvalState = approvalState;
+  packet.releaseState = {
+    ...(packet.releaseState || {}),
+    status: 'READY',
+    reason: 'APPROVAL_COMPLETE_RELEASE_REVIEW_AVAILABLE',
+    evidenceCount: activeEvidenceCount,
+    updatedAt: receipt.generatedAt,
+  };
+  packet.workflowState = resolveWilsySetupReviewWorkflowState(packet, 'SETUP_REVIEW_APPROVED');
+  packet.route = route;
+  packet.commandSurface = evidence.commandSurface;
+  packet.institutionalHeaders = evidence.institutionalHeaders;
+  packet.strikePayload = evidence.strikePayload;
+  packet.receipts.push(receipt);
+  packet.auditTrail.push(auditEvent);
+
+  await packet.save();
+
+  return res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_APPROVED',
+    why: 'Setup review packet approved with receipt-backed evidence.',
+    packet: serializeWilsySetupReviewPacket(packet),
+    approvalState,
+    receipt,
+    auditEvidence: auditEvent,
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewRelease
+ * @description Releases an approved setup review packet and records receipt-backed release evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration Release gate, approval state, evidence ledger, receipt chain, audit trail, and Packet Console.
+ */
+async function handleWilsySetupReviewRelease(req, res) {
+  const route = '/api/crm/command/setup/reviews/release';
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const body = req.body || {};
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+  const packet = await resolveWilsySetupReviewPacketForWorkflow(
+    WilsyCrmSetupReviewPacket,
+    evidence,
+    body,
+    route
+  );
+  const evidenceLedger = Array.isArray(packet.evidenceLedger) ? packet.evidenceLedger : [];
+  const activeEvidenceCount = evidenceLedger.filter((item) => item?.status !== 'REMOVED').length;
+
+  if (packet.approvalState?.status !== 'APPROVED') {
+    const error = new Error('Release requires an approved setup review packet.');
+    error.statusCode = 409;
+    error.code = 'SETUP_REVIEW_RELEASE_APPROVAL_REQUIRED';
+    throw error;
+  }
+
+  if (activeEvidenceCount < 1) {
+    const error = new Error('Release requires receipt-backed evidence.');
+    error.statusCode = 409;
+    error.code = 'SETUP_REVIEW_RELEASE_EVIDENCE_REQUIRED';
+    throw error;
+  }
+
+  packet.receipts = Array.isArray(packet.receipts) ? packet.receipts : [];
+  packet.auditTrail = Array.isArray(packet.auditTrail) ? packet.auditTrail : [];
+
+  const receipt = createWilsySetupReviewReceipt('SETUP_REVIEW_RELEASED', packet, evidence);
+  const releaseState = {
+    status: 'RELEASED',
+    releaseScope: resolveWilsySetupReviewText(
+      body.releaseScope || body.scope,
+      'SETUP_REVIEW_PACKET'
+    ),
+    evidenceCount: activeEvidenceCount,
+    reason: 'APPROVAL_AND_EVIDENCE_CONFIRMED',
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+    releasedAt: receipt.generatedAt,
+    updatedAt: receipt.generatedAt,
+  };
+  const auditEvent = createWilsySetupReviewWorkflowAuditEvent(
+    'SETUP_REVIEW_RELEASED',
+    packet,
+    evidence,
+    receipt,
+    {
+      evidenceCount: activeEvidenceCount,
+      releaseScope: releaseState.releaseScope,
+    }
+  );
+
+  packet.releaseState = releaseState;
+  packet.workflowState = resolveWilsySetupReviewWorkflowState(packet, 'SETUP_REVIEW_RELEASED');
+  packet.status = 'RELEASED';
+  packet.route = route;
+  packet.commandSurface = evidence.commandSurface;
+  packet.institutionalHeaders = evidence.institutionalHeaders;
+  packet.strikePayload = evidence.strikePayload;
+  packet.receipts.push(receipt);
+  packet.auditTrail.push(auditEvent);
+
+  await packet.save();
+
+  return res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_RELEASED',
+    why: 'Setup review packet released with approval and evidence receipts.',
+    packet: serializeWilsySetupReviewPacket(packet),
+    releaseState,
+    receipt,
+    auditEvidence: auditEvent,
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewClear
+ * @description Clears staged setup review packets for the current tenant and operator scope.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, queue clear authority, receipt return, and audit trail.
+ */
+async function handleWilsySetupReviewClear(req, res) {
+  const route = '/api/crm/command/setup/reviews/clear';
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+
+  const packets = await WilsyCrmSetupReviewPacket.find({
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    status: 'STAGED',
+  });
+
+  const receiptSeed = {
+    packetId: `SETUP_REVIEW_CLEAR_${Date.now()}`,
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+  };
+
+  const receipt = createWilsySetupReviewReceipt(
+    'SETUP_REVIEW_QUEUE_CLEARED',
+    receiptSeed,
+    evidence
+  );
+  const auditEvent = {
+    event: 'SETUP_REVIEW_QUEUE_CLEARED',
+    route,
+    commandSurface: evidence.commandSurface,
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    clearedCount: packets.length,
+    generatedAt: receipt.generatedAt,
+    receiptId: receipt.receiptId,
+    receiptHash: receipt.receiptHash,
+  };
+
+  await WilsyCrmSetupReviewPacket.updateMany(
+    {
+      tenantId: evidence.tenantId,
+      operatorId: evidence.operatorId,
+      status: 'STAGED',
+    },
+    {
+      $set: {
+        status: 'CLEARED',
+        clearedAt: new Date(),
+        route,
+        commandSurface: evidence.commandSurface,
+        institutionalHeaders: evidence.institutionalHeaders,
+        strikePayload: evidence.strikePayload,
+      },
+      $push: {
+        receipts: receipt,
+        auditTrail: auditEvent,
+      },
+    }
+  );
+
+  return res.json({
+    ok: true,
+    result: 'SETUP_REVIEW_QUEUE_CLEARED',
+    why: 'Setup review queue cleared through CRM command authority.',
+    clearedCount: packets.length,
+    receipt,
+    auditEvidence: auditEvent,
+  });
+}
+
+/**
+ * @function handleWilsySetupReviewOpenByBody
+ * @description Opens a backend-owned setup review packet through a POST command body so ProductionHardening can validate strike evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, ProductionHardening middleware, command read alias, and tenant scoped packet reads.
+ */
+async function handleWilsySetupReviewOpenByBody(req, res) {
+  const packetId = resolveWilsySetupReviewText(
+    req.body?.packetId || req.body?.id || req.body?.packet?.packetId || req.body?.packet?.id,
+    ''
+  );
+
+  req.params = {
+    ...(req.params || {}),
+    packetId,
+  };
+
+  return handleWilsySetupReviewOpen(req, res);
+}
+
+/**
+ * @function handleWilsySetupReviewListByCommand
+ * @description Lists staged setup review packets through a POST command body so ProductionHardening can validate strike evidence.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup Packet Console, ProductionHardening middleware, command read alias, and tenant scoped packet queue reads.
+ */
+async function handleWilsySetupReviewListByCommand(req, res) {
+  return handleWilsySetupReviewList(req, res);
+}
+
+router.post('/setup/reviews/list', wrapWilsySetupReviewRoute(handleWilsySetupReviewListByCommand));
+router.post('/setup/reviews/open', wrapWilsySetupReviewRoute(handleWilsySetupReviewOpenByBody));
+router.get('/setup/reviews', wrapWilsySetupReviewRoute(handleWilsySetupReviewList));
+router.post('/setup/reviews', wrapWilsySetupReviewRoute(handleWilsySetupReviewCreate));
+router.post('/setup/reviews/clear', wrapWilsySetupReviewRoute(handleWilsySetupReviewClear));
+router.post(
+  '/setup/reviews/evidence',
+  wrapWilsySetupReviewRoute(handleWilsySetupReviewAttachEvidence)
+);
+router.post('/setup/reviews/approve', wrapWilsySetupReviewRoute(handleWilsySetupReviewApprove));
+router.post('/setup/reviews/release', wrapWilsySetupReviewRoute(handleWilsySetupReviewRelease));
+router.get('/setup/reviews/:packetId', wrapWilsySetupReviewRoute(handleWilsySetupReviewOpen));
+router.delete('/setup/reviews/:packetId', wrapWilsySetupReviewRoute(handleWilsySetupReviewRemove));
 
 export default router;
