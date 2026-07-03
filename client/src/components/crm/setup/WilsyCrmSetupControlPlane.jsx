@@ -1157,6 +1157,10 @@ export default function WilsyCrmSetupControlPlane() {
   const [filterText, setFilterText] = useState('');
   const [reviewQueue, setReviewQueue] = useState([]);
   const [reviewResult, setReviewResult] = useState(null);
+  const [setupControlSurface, setSetupControlSurface] = useState(null);
+  const [setupControlSurfaceBusy, setSetupControlSurfaceBusy] = useState(false);
+  const [setupControlSurfaceError, setSetupControlSurfaceError] = useState('');
+
   const [packetConsoleOpen, setPacketConsoleOpen] = useState(false);
   const [viewAreaConsoleOpen, setViewAreaConsoleOpen] = useState(false);
   const [domainRailOpen, setDomainRailOpen] = useState(true);
@@ -1230,6 +1234,76 @@ export default function WilsyCrmSetupControlPlane() {
     };
   }, []);
 
+  /* WILSY_P60K5I2B_FRONTEND_LIVE_CONTROL_SURFACE */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    /**
+     * @function resolveLiveSetupControlSurface
+     * @description Resolves the backend-owned setup control surface for the active domain, control, lens, tenant, and operator context.
+     * @returns {Promise<void>} Updates live control surface state.
+     * @collaboration CRM Setup Control Surface, backend resolver, Packet Console, tenant authority, and operator route guidance.
+     */
+    async function resolveLiveSetupControlSurface() {
+      const route = '/api/crm/command/setup/control-surface/resolve';
+      const ticket = createReviewTicket(activeDomain, activeControl);
+      const payload = buildWilsySetupReviewLivePayload({
+        route,
+        ticket,
+        domain: activeDomain,
+        control: activeControl,
+        lens,
+      });
+
+      setSetupControlSurfaceBusy(true);
+      setSetupControlSurfaceError('');
+
+      try {
+        const data = await requestWilsySetupReviewLiveCommand(route, {
+          ...payload,
+          domainId: activeDomain.id,
+          controlId: activeControl.id,
+          lens,
+          domain: activeDomain,
+          control: activeControl,
+        });
+
+        if (cancelled) return;
+
+        setSetupControlSurface(data);
+
+        if (data?.existingPacket) {
+          const backendTicket = normalizeWilsySetupReviewLivePacket(data.existingPacket, {
+            ...ticket,
+            receipt: data.existingPacket.receipts?.[data.existingPacket.receipts.length - 1] || null,
+            auditEvidence: data.auditEvidence || null,
+          });
+
+          setReviewQueue((current) => [
+            backendTicket,
+            ...current.filter((item) => item.controlId !== backendTicket.controlId && item.packetId !== backendTicket.packetId),
+          ]);
+        }
+      } catch (error) {
+        if (cancelled) return;
+
+        setSetupControlSurface(null);
+        setSetupControlSurfaceError(error?.message || 'Setup control surface resolver failed.');
+      } finally {
+        if (!cancelled) {
+          setSetupControlSurfaceBusy(false);
+        }
+      }
+    }
+
+    resolveLiveSetupControlSurface();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDomain.id, activeControl.id, lens]);
+
   /* WILSY_P60K5D_REVEAL_SCROLL_CANCEL */
   useEffect(() => {
     /**
@@ -1260,12 +1334,51 @@ export default function WilsyCrmSetupControlPlane() {
   const activeControlIndex = activeDomain.controls.findIndex((control) => control.id === activeControl.id);
   const isFirstControl = activeControlIndex <= 0;
   const isLastControl = activeControlIndex >= activeDomain.controls.length - 1;
+  const setupControlSurfaceLive = Boolean(setupControlSurface?.result === 'SETUP_CONTROL_SURFACE_RESOLVED');
+  const setupControlSurfaceControl = setupControlSurface?.control || {};
+  const setupControlSurfacePosture = setupControlSurface?.posture || {};
+  const setupControlSurfaceNextAction = setupControlSurface?.nextAction || null;
+  const setupControlSurfacePacketCandidate = setupControlSurface?.packetCandidate || null;
+  const setupControlSurfaceOwner = setupControlSurfaceControl.owner || setupControlSurfacePosture.owner || activeControl.owner;
+  const setupControlSurfaceRisk = setupControlSurfaceControl.risk || setupControlSurfacePosture.risk || activeControl.risk;
+  const setupControlSurfaceState = setupControlSurfaceControl.state || setupControlSurfacePosture.state || activeControl.state;
+  const setupControlSurfacePurpose =
+    setupControlSurfaceControl.purpose ||
+    setupControlSurfaceControl.signal ||
+    setupControlSurfacePosture.purpose ||
+    activeControl.signal;
+  const setupControlSurfaceRouteGuide = setupControlSurfaceLive
+    ? `${setupControlSurface.domain?.label || activeDomain.label || 'Domain'} → ${setupControlSurfaceControl.name || setupControlSurfaceControl.title || activeControl.name} → ${setupControlSurface.lens || lens} → ${setupControlSurfaceNextAction?.label || 'Stage review'}`
+    : setupControlSurfaceBusy
+      ? 'Resolving backend control surface...'
+      : setupControlSurfaceError
+        ? `Resolver fallback: ${setupControlSurfaceError}`
+        : 'Static fallback until backend control surface resolves.';
+  const setupControlSurfaceWorkQueue = Array.isArray(setupControlSurface?.workQueue) && setupControlSurface.workQueue.length
+    ? setupControlSurface.workQueue
+    : (activeControl.workItems || []).map((item, index) => ({
+        id: `fallback-work-${index + 1}`,
+        title: item,
+        label: item,
+        owner: activeControl.owner,
+        status: 'FALLBACK',
+      }));
+  const setupControlSurfaceAffectedSurfaces =
+    Array.isArray(setupControlSurface?.affectedSurfaces) && setupControlSurface.affectedSurfaces.length
+      ? setupControlSurface.affectedSurfaces
+      : (activeControl.surfaces || []).map((surface, index) => ({
+          id: `fallback-surface-${index + 1}`,
+          title: surface,
+          label: surface,
+          status: activeControl.state,
+          purpose: 'Governed surface',
+        }));
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
       ? 'Stage packet'
       : 'Open packet'
-    : 'Stage review';
+    : setupControlSurfaceNextAction?.label || 'Stage review';
   const setupPacketPrimaryAction = stagedReview
     ? setupPacketRequiresBackendStage
       ? handleStageReview
@@ -1661,7 +1774,29 @@ export default function WilsyCrmSetupControlPlane() {
    * @collaboration Review queue, right authority rail, view area command rail, and action result rail.
    */
   async function handleStageReview() {
-    const localTicket = createReviewTicket(activeDomain, activeControl);
+    const packetCandidateId =
+      setupControlSurfacePacketCandidate?.packetId ||
+      setupControlSurfacePacketCandidate?.id ||
+      `SETUP_REVIEW_${Date.now()}`;
+    const liveCandidateTicket = setupControlSurfacePacketCandidate
+      ? {
+          ...createReviewTicket(activeDomain, activeControl),
+          ...setupControlSurfacePacketCandidate,
+          id: packetCandidateId,
+          packetId: packetCandidateId,
+          title:
+            setupControlSurfacePacketCandidate.title ||
+            setupControlSurfacePacketCandidate.controlName ||
+            activeControl.name,
+          owner: setupControlSurfacePacketCandidate.owner || setupControlSurfaceOwner,
+          risk: setupControlSurfacePacketCandidate.risk || setupControlSurfaceRisk,
+          state: setupControlSurfacePacketCandidate.state || setupControlSurfaceState,
+          signal: setupControlSurfacePacketCandidate.signal || setupControlSurfacePurpose,
+          backendSurface: setupControlSurfaceLive,
+          controlSurfaceRoute: setupControlSurface?.route || '/api/crm/command/setup/control-surface/resolve',
+        }
+      : null;
+    const localTicket = liveCandidateTicket || createReviewTicket(activeDomain, activeControl);
     const route = '/api/crm/command/setup/reviews';
     const payload = buildWilsySetupReviewLivePayload({
       route,
@@ -1692,6 +1827,33 @@ export default function WilsyCrmSetupControlPlane() {
         status: data.result || 'Backend packet staged',
         generatedAt: data.receipt?.generatedAt || data.auditEvidence?.generatedAt || new Date().toISOString(),
       });
+      setSetupControlSurface((current) =>
+        current
+          ? {
+              ...current,
+              existingPacket: data.packet || current.existingPacket || null,
+              packetState: {
+                ...(current.packetState || {}),
+                backendLive: true,
+                packetId: backendTicket.packetId,
+                packetState: 'STAGED',
+                packetStage: 'STAGED',
+              },
+              posture: {
+                ...(current.posture || {}),
+                readiness: 'BACKEND_LIVE',
+                packetState: 'STAGED',
+              },
+              nextAction: {
+                label: 'Attach evidence',
+                action: 'ATTACH_EVIDENCE',
+                reason: 'Backend packet is staged and ready for receipt-backed evidence.',
+                priority: 'PRIMARY',
+              },
+            }
+          : current
+      );
+
     } catch (error) {
       const message = error?.message || 'Setup review stage failed.';
       setReviewCommandError(message);
@@ -2241,7 +2403,7 @@ export default function WilsyCrmSetupControlPlane() {
               aria-disabled={Boolean(stagedReview)}
               title={stagedReview ? 'This control is already staged' : 'Stage this control for authority review'}
             >
-              {stagedReview ? 'Staged' : 'Stage review'}
+              {stagedReview ? 'Staged' : setupControlSurfaceNextAction?.label || 'Stage review'}
             </button>
 
             <div className={styles.controlNavCluster} aria-label="Control navigation">
@@ -2288,13 +2450,13 @@ export default function WilsyCrmSetupControlPlane() {
               <article>
                 <span>Current control</span>
                 <strong>{activeControl.name}</strong>
-                <small>{activeControl.owner}</small>
+                <small>{setupControlSurfaceOwner}</small>
               </article>
 
               <article>
                 <span>Lens</span>
                 <strong>{lens}</strong>
-                <small>{activeControl.signal}</small>
+                <small>{setupControlSurfaceRouteGuide}</small>
               </article>
 
               <article>
@@ -2348,17 +2510,17 @@ export default function WilsyCrmSetupControlPlane() {
             <div className={styles.taskFocusMeta} aria-label="Task operating state">
               <article>
                 <span>Owner</span>
-                <strong>{activeControl.owner}</strong>
+                <strong>{setupControlSurfaceOwner}</strong>
               </article>
 
               <article>
                 <span>Risk</span>
-                <strong className={resolveToneClass(activeControl.risk)}>{activeControl.risk}</strong>
+                <strong className={resolveToneClass(setupControlSurfaceRisk)}>{setupControlSurfaceRisk}</strong>
               </article>
 
               <article>
                 <span>State</span>
-                <strong className={resolveToneClass(activeControl.state)}>{activeControl.state}</strong>
+                <strong className={resolveToneClass(setupControlSurfaceState)}>{setupControlSurfaceState}</strong>
               </article>
             </div>
 
@@ -2702,7 +2864,7 @@ export default function WilsyCrmSetupControlPlane() {
 
                     <article>
                       <span>State</span>
-                      <strong className={resolveToneClass(activeControl.state)}>{activeControl.state}</strong>
+                      <strong className={resolveToneClass(setupControlSurfaceState)}>{setupControlSurfaceState}</strong>
                     </article>
                   </div>
                 </article>
@@ -2763,11 +2925,11 @@ export default function WilsyCrmSetupControlPlane() {
                 <article className={styles.viewPanel}>
                   <span>Work queue</span>
                   <div className={styles.workStepList}>
-                    {activeControl.workItems.map((item, index) => (
-                      <button type="button" key={item}>
+                    {setupControlSurfaceWorkQueue.map((item, index) => (
+                      <button type="button" key={item.id || item.title || item.label || index}>
                         <span>{String(index + 1).padStart(2, '0')}</span>
-                        <strong>{item}</strong>
-                        <small>{activeControl.owner}</small>
+                        <strong>{item.title || item.label || 'Control task'}</strong>
+                        <small>{setupControlSurfaceOwner}</small>
                       </button>
                     ))}
                   </div>
@@ -2776,11 +2938,11 @@ export default function WilsyCrmSetupControlPlane() {
                 <article className={styles.viewPanel}>
                   <span>Affected surfaces</span>
                   <div className={styles.surfaceImpactList}>
-                    {activeControl.surfaces.map((surface) => (
-                      <article key={surface}>
-                        <span>{surface}</span>
-                        <strong>Governed surface</strong>
-                        <small>{activeControl.state}</small>
+                    {setupControlSurfaceAffectedSurfaces.map((surface) => (
+                      <article key={surface.id || surface.title || surface.label}>
+                        <span>{surface.label || surface.title || 'Surface'}</span>
+                        <strong>{surface.purpose || surface.status || 'Governed surface'}</strong>
+                        <small>{surface.status || setupControlSurfaceState}</small>
                       </article>
                     ))}
                   </div>
@@ -2791,22 +2953,22 @@ export default function WilsyCrmSetupControlPlane() {
                   <div className={styles.decisionSignalGrid}>
                     <article>
                       <span>Risk</span>
-                      <strong className={resolveToneClass(activeControl.risk)}>{activeControl.risk}</strong>
+                      <strong className={resolveToneClass(setupControlSurfaceRisk)}>{setupControlSurfaceRisk}</strong>
                     </article>
 
                     <article>
                       <span>State</span>
-                      <strong className={resolveToneClass(activeControl.state)}>{activeControl.state}</strong>
+                      <strong className={resolveToneClass(setupControlSurfaceState)}>{setupControlSurfaceState}</strong>
                     </article>
 
                     <article>
                       <span>Owner</span>
-                      <strong>{activeControl.owner}</strong>
+                      <strong>{setupControlSurfaceOwner}</strong>
                     </article>
 
                     <article>
                       <span>Purpose</span>
-                      <strong>{activeControl.signal}</strong>
+                      <strong>{setupControlSurfacePurpose}</strong>
                     </article>
                   </div>
                 </article>
@@ -2861,7 +3023,7 @@ export default function WilsyCrmSetupControlPlane() {
           <div className={styles.inspectorFacts}>
             <article>
               <span>Owner</span>
-              <strong>{activeControl.owner}</strong>
+              <strong>{setupControlSurfaceOwner}</strong>
             </article>
             <article>
               <span>Engine</span>
@@ -2869,7 +3031,7 @@ export default function WilsyCrmSetupControlPlane() {
             </article>
             <article>
               <span>Investor signal</span>
-              <strong>{activeControl.signal}</strong>
+              <strong>{setupControlSurfacePurpose}</strong>
             </article>
           </div>
         </section>
@@ -2878,7 +3040,7 @@ export default function WilsyCrmSetupControlPlane() {
           <span>Evidence pack</span>
           <div>
             {evidencePack.map((item) => (
-              <strong key={item}>{item}</strong>
+              <strong key={item.id || item.title || item.label || index}>{item}</strong>
             ))}
           </div>
         </section>
