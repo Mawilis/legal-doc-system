@@ -7250,3 +7250,210 @@ button.packetRevealNode {
     grid-template-columns: 1fr;
   }
 }
+
+/* WILSY_P60K5L7_SCREEN2_RAIL_WORKSPACE_POLISH
+   CSS-only refinement for the L6 rail workspace.
+   Contract:
+   - No JSX rewrite.
+   - No CRMDashboard loop logic.
+   - No Screen One / Packet Console changes.
+   - Make the rail feel like a command rail and the workspace feel like the working surface. */
+
+.screenTwoOperatingWorkspace {
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 432px;
+  padding: 12px;
+  border-radius: 30px;
+  background:
+    linear-gradient(90deg, rgba(0, 209, 255, 0.055), transparent 18%),
+    radial-gradient(circle at 100% 0%, rgba(0, 255, 148, 0.08), transparent 34%),
+    linear-gradient(135deg, rgba(1, 10, 23, 0.99), rgba(0, 3, 10, 0.99));
+}
+
+.screenTwoCommandRail {
+  padding: 8px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(0, 209, 255, 0.055), rgba(255, 255, 255, 0.015)),
+    rgba(2, 9, 19, 0.98);
+}
+
+.screenTwoRailPrime {
+  min-height: 112px;
+  padding: 13px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.16), transparent 38%),
+    linear-gradient(135deg, rgba(2, 30, 28, 0.80), rgba(3, 12, 24, 0.98));
+}
+
+.screenTwoRailPrime strong {
+  font-size: 1.12rem;
+}
+
+.screenTwoRailPrime small {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoRailButtons {
+  gap: 8px;
+}
+
+.screenTwoRailButton,
+.screenTwoRailButtonActive {
+  position: relative;
+  min-height: 78px;
+  border-radius: 18px;
+  padding: 10px 11px 10px 14px;
+}
+
+.screenTwoRailButton::before,
+.screenTwoRailButtonActive::before {
+  content: "";
+  position: absolute;
+  inset: 10px auto 10px 7px;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(0, 209, 255, 0.18);
+}
+
+.screenTwoRailButtonActive::before {
+  background: linear-gradient(180deg, rgba(0, 255, 148, 0.95), rgba(0, 209, 255, 0.82));
+  box-shadow: 0 0 18px rgba(0, 255, 148, 0.22);
+}
+
+.screenTwoRailButtonActive {
+  border-color: rgba(130, 203, 255, 0.70);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(130, 203, 255, 0.14), transparent 36%),
+    linear-gradient(135deg, rgba(0, 209, 255, 0.10), rgba(0, 255, 148, 0.045));
+}
+
+.screenTwoWorkspaceSurface {
+  border-radius: 24px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(0, 209, 255, 0.12), transparent 32%),
+    linear-gradient(135deg, rgba(4, 16, 30, 0.72), rgba(1, 6, 16, 0.96));
+}
+
+.screenTwoWorkspaceHeader {
+  grid-template-columns: minmax(0, 0.52fr) minmax(320px, 1fr);
+  gap: 18px;
+  padding: 4px 4px 14px;
+}
+
+.screenTwoWorkspaceHeader strong {
+  max-width: 700px;
+  font-size: clamp(1.02rem, 1.35vw, 1.34rem);
+  line-height: 1.08;
+}
+
+.screenTwoWorkspaceHeader p {
+  align-self: end;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(0, 209, 255, 0.035);
+  color: rgba(255, 239, 185, 0.88);
+}
+
+.screenTwoWorkspaceQueue,
+.screenTwoWorkspaceSurfaces,
+.screenTwoWorkspacePosture,
+.screenTwoWorkspacePacket {
+  padding-right: 6px;
+}
+
+.screenTwoWorkspaceQueue::-webkit-scrollbar,
+.screenTwoWorkspaceSurfaces::-webkit-scrollbar,
+.screenTwoWorkspacePosture::-webkit-scrollbar,
+.screenTwoWorkspacePacket::-webkit-scrollbar,
+.screenTwoRailButtons::-webkit-scrollbar {
+  width: 5px;
+}
+
+.screenTwoWorkspaceQueue::-webkit-scrollbar-thumb,
+.screenTwoWorkspaceSurfaces::-webkit-scrollbar-thumb,
+.screenTwoWorkspacePosture::-webkit-scrollbar-thumb,
+.screenTwoWorkspacePacket::-webkit-scrollbar-thumb,
+.screenTwoRailButtons::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 209, 255, 0.24);
+}
+
+.screenTwoWorkspaceSurfaces {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.screenTwoWorkspaceSurfaces article {
+  min-height: 118px;
+  padding: 15px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 6% 0%, rgba(0, 209, 255, 0.10), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.018));
+}
+
+.screenTwoWorkspaceSurfaces strong {
+  font-size: 0.96rem;
+  line-height: 1.22;
+}
+
+.screenTwoWorkspaceSurfaces small {
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 255, 148, 0.24);
+  border-radius: 999px;
+  background: rgba(0, 255, 148, 0.055);
+  color: rgba(255, 239, 185, 0.92);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.screenTwoWorkspaceQueue button {
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 209, 255, 0.11), transparent 34%),
+    rgba(255, 255, 255, 0.032);
+}
+
+.screenTwoWorkspaceQueue button:hover,
+.screenTwoWorkspaceQueue button:focus-visible,
+.screenTwoWorkspaceSurfaces article:hover,
+.screenTwoWorkspaceSurfaces article:focus-within {
+  border-color: rgba(0, 255, 148, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 148, 0.09),
+    0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+.screenTwoWorkspacePosture article,
+.screenTwoWorkspacePacket article {
+  min-height: 132px;
+}
+
+@media (max-width: 1320px) {
+  .screenTwoOperatingWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .screenTwoCommandRail {
+    grid-template-columns: minmax(220px, 0.65fr) minmax(0, 1fr);
+  }
+
+  .screenTwoRailButtons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .screenTwoWorkspaceHeader,
+  .screenTwoWorkspaceSurfaces {
+    grid-template-columns: 1fr;
+  }
+}
