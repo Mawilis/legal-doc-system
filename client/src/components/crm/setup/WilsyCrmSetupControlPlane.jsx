@@ -1157,6 +1157,10 @@ export default function WilsyCrmSetupControlPlane() {
   const [filterText, setFilterText] = useState('');
   const [reviewQueue, setReviewQueue] = useState([]);
   const [reviewResult, setReviewResult] = useState(null);
+  const [screenTwoSourceSurface, setScreenTwoSourceSurface] = useState(null);
+  const [screenTwoSourceBusy, setScreenTwoSourceBusy] = useState(false);
+  const [screenTwoSourceError, setScreenTwoSourceError] = useState('');
+
   const [packetConsoleOpen, setPacketConsoleOpen] = useState(false);
   const [viewAreaConsoleOpen, setViewAreaConsoleOpen] = useState(false);
   const [domainRailOpen, setDomainRailOpen] = useState(true);
@@ -1230,6 +1234,70 @@ export default function WilsyCrmSetupControlPlane() {
     };
   }, []);
 
+  /* WILSY_P60K5K2B_SCREEN2_EXACT_SOURCE_DATA_ONLY */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    /**
+     * @function resolveWilsyScreenTwoSourceSurface
+     * @description Resolves source intelligence for the normal setup review screen without modifying staged packet or Packet Console state.
+     * @returns {Promise<void>} Updates Screen Two data state only.
+     * @collaboration Screen Two review cards, backend source intelligence, tenant evidence, and protected Packet Console workflow.
+     */
+    async function resolveWilsyScreenTwoSourceSurface() {
+      if (stagedReview || packetConsoleOpen) {
+        setScreenTwoSourceSurface(null);
+        setScreenTwoSourceBusy(false);
+        setScreenTwoSourceError('');
+        return;
+      }
+
+      const route = '/api/crm/command/setup/control-surface/resolve';
+      const ticket = createReviewTicket(activeDomain, activeControl);
+      const payload = buildWilsySetupReviewLivePayload({
+        route,
+        ticket,
+        domain: activeDomain,
+        control: activeControl,
+        lens,
+      });
+
+      setScreenTwoSourceBusy(true);
+      setScreenTwoSourceError('');
+
+      try {
+        const data = await requestWilsySetupReviewLiveCommand(route, {
+          ...payload,
+          domainId: activeDomain.id,
+          controlId: activeControl.id,
+          lens,
+          domain: activeDomain,
+          control: activeControl,
+        });
+
+        if (!cancelled) {
+          setScreenTwoSourceSurface(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setScreenTwoSourceSurface(null);
+          setScreenTwoSourceError(error?.message || 'Screen Two source intelligence failed.');
+        }
+      } finally {
+        if (!cancelled) {
+          setScreenTwoSourceBusy(false);
+        }
+      }
+    }
+
+    resolveWilsyScreenTwoSourceSurface();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDomain.id, activeControl.id, lens, stagedReview, packetConsoleOpen]);
+
   /* WILSY_P60K5D_REVEAL_SCROLL_CANCEL */
   useEffect(() => {
     /**
@@ -1260,6 +1328,43 @@ export default function WilsyCrmSetupControlPlane() {
   const activeControlIndex = activeDomain.controls.findIndex((control) => control.id === activeControl.id);
   const isFirstControl = activeControlIndex <= 0;
   const isLastControl = activeControlIndex >= activeDomain.controls.length - 1;
+  const screenTwoSourceEnabled = !stagedReview && !packetConsoleOpen;
+  const screenTwoSourceLive = Boolean(
+    screenTwoSourceEnabled &&
+    screenTwoSourceSurface?.result === 'SETUP_CONTROL_SURFACE_RESOLVED'
+  );
+  const screenTwoSourceControl = screenTwoSourceLive ? screenTwoSourceSurface?.control || {} : {};
+  const screenTwoSourcePosture = screenTwoSourceLive ? screenTwoSourceSurface?.posture || {} : {};
+  const screenTwoOwner = screenTwoSourceControl.owner || screenTwoSourcePosture.owner || activeControl.owner;
+  const screenTwoRisk = screenTwoSourceControl.risk || screenTwoSourcePosture.risk || activeControl.risk;
+  const screenTwoState = screenTwoSourceControl.state || screenTwoSourcePosture.state || activeControl.state;
+  const screenTwoPurpose =
+    screenTwoSourceControl.purpose ||
+    screenTwoSourceControl.signal ||
+    screenTwoSourcePosture.purpose ||
+    activeControl.signal;
+  const screenTwoWorkItems = screenTwoSourceLive &&
+    Array.isArray(screenTwoSourceSurface?.workQueue) &&
+    screenTwoSourceSurface.workQueue.length
+      ? screenTwoSourceSurface.workQueue
+      : (activeControl.workItems || []).map((item, index) => ({
+          id: `fallback-work-${index + 1}`,
+          title: item,
+          label: item,
+          owner: activeControl.owner,
+          status: activeControl.state,
+        }));
+  const screenTwoAffectedSurfaces = screenTwoSourceLive &&
+    Array.isArray(screenTwoSourceSurface?.affectedSurfaces) &&
+    screenTwoSourceSurface.affectedSurfaces.length
+      ? screenTwoSourceSurface.affectedSurfaces
+      : (activeControl.surfaces || []).map((surface, index) => ({
+          id: `fallback-surface-${index + 1}`,
+          label: surface,
+          title: surface,
+          status: activeControl.state,
+          purpose: 'Governed surface',
+        }));
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2288,13 +2393,13 @@ export default function WilsyCrmSetupControlPlane() {
               <article>
                 <span>Current control</span>
                 <strong>{activeControl.name}</strong>
-                <small>{activeControl.owner}</small>
+                <small>{screenTwoOwner}</small>
               </article>
 
               <article>
                 <span>Lens</span>
                 <strong>{lens}</strong>
-                <small>{activeControl.signal}</small>
+                <small>{screenTwoPurpose}</small>
               </article>
 
               <article>
@@ -2348,17 +2453,17 @@ export default function WilsyCrmSetupControlPlane() {
             <div className={styles.taskFocusMeta} aria-label="Task operating state">
               <article>
                 <span>Owner</span>
-                <strong>{activeControl.owner}</strong>
+                <strong>{screenTwoOwner}</strong>
               </article>
 
               <article>
                 <span>Risk</span>
-                <strong className={resolveToneClass(activeControl.risk)}>{activeControl.risk}</strong>
+                <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
               </article>
 
               <article>
                 <span>State</span>
-                <strong className={resolveToneClass(activeControl.state)}>{activeControl.state}</strong>
+                <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
               </article>
             </div>
 
@@ -2702,7 +2807,7 @@ export default function WilsyCrmSetupControlPlane() {
 
                     <article>
                       <span>State</span>
-                      <strong className={resolveToneClass(activeControl.state)}>{activeControl.state}</strong>
+                      <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
                     </article>
                   </div>
                 </article>
@@ -2763,11 +2868,11 @@ export default function WilsyCrmSetupControlPlane() {
                 <article className={styles.viewPanel}>
                   <span>Work queue</span>
                   <div className={styles.workStepList}>
-                    {activeControl.workItems.map((item, index) => (
-                      <button type="button" key={item}>
+                    {screenTwoWorkItems.map((item, index) => (
+                      <button type="button" key={item.id || item.title || item.label || index}>
                         <span>{String(index + 1).padStart(2, '0')}</span>
-                        <strong>{item}</strong>
-                        <small>{activeControl.owner}</small>
+                        <strong>{item.title || item.label || 'Control task'}</strong>
+                        <small>{item.owner || screenTwoOwner}</small>
                       </button>
                     ))}
                   </div>
@@ -2776,11 +2881,11 @@ export default function WilsyCrmSetupControlPlane() {
                 <article className={styles.viewPanel}>
                   <span>Affected surfaces</span>
                   <div className={styles.surfaceImpactList}>
-                    {activeControl.surfaces.map((surface) => (
-                      <article key={surface}>
-                        <span>{surface}</span>
-                        <strong>Governed surface</strong>
-                        <small>{activeControl.state}</small>
+                    {screenTwoAffectedSurfaces.map((surface, index) => (
+                      <article key={surface.id || surface.title || surface.label || index}>
+                        <span>{surface.label || surface.title || 'Surface'}</span>
+                        <strong>{surface.purpose || surface.reason || 'Governed surface'}</strong>
+                        <small>{surface.status || screenTwoState}</small>
                       </article>
                     ))}
                   </div>
@@ -2791,22 +2896,22 @@ export default function WilsyCrmSetupControlPlane() {
                   <div className={styles.decisionSignalGrid}>
                     <article>
                       <span>Risk</span>
-                      <strong className={resolveToneClass(activeControl.risk)}>{activeControl.risk}</strong>
+                      <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
                     </article>
 
                     <article>
                       <span>State</span>
-                      <strong className={resolveToneClass(activeControl.state)}>{activeControl.state}</strong>
+                      <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
                     </article>
 
                     <article>
                       <span>Owner</span>
-                      <strong>{activeControl.owner}</strong>
+                      <strong>{screenTwoOwner}</strong>
                     </article>
 
                     <article>
                       <span>Purpose</span>
-                      <strong>{activeControl.signal}</strong>
+                      <strong>{screenTwoPurpose}</strong>
                     </article>
                   </div>
                 </article>
@@ -2861,7 +2966,7 @@ export default function WilsyCrmSetupControlPlane() {
           <div className={styles.inspectorFacts}>
             <article>
               <span>Owner</span>
-              <strong>{activeControl.owner}</strong>
+              <strong>{screenTwoOwner}</strong>
             </article>
             <article>
               <span>Engine</span>
@@ -2869,7 +2974,7 @@ export default function WilsyCrmSetupControlPlane() {
             </article>
             <article>
               <span>Investor signal</span>
-              <strong>{activeControl.signal}</strong>
+              <strong>{screenTwoPurpose}</strong>
             </article>
           </div>
         </section>
