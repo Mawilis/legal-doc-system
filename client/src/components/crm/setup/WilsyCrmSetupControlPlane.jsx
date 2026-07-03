@@ -1373,46 +1373,6 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
-  /* WILSY_P60K5I3C_SETUP_LIVE_PRODUCTIVITY_VISIBLE_LAYER */
-  const setupControlSurfacePacketState = setupControlSurface?.packetState || {};
-  const setupControlSurfaceGates = setupControlSurface?.gates || {};
-  const setupControlSurfaceGateCards = Object.entries(setupControlSurfaceGates).map(([gateId, gate]) => ({
-    id: gateId,
-    label: gate?.label || gateId,
-    status: gate?.status || 'PENDING',
-    detail: gate?.detail || 'Waiting for backend resolver',
-  }));
-  const setupControlSurfacePrimaryStatus = setupControlSurfaceLive
-    ? 'LIVE BACKEND SURFACE'
-    : setupControlSurfaceBusy
-      ? 'RESOLVING BACKEND SURFACE'
-      : 'BACKEND FALLBACK';
-  const setupControlSurfacePacketLabel = setupControlSurfacePacketState.packetState || setupControlSurfacePosture.packetState || 'NOT_STAGED';
-  const setupControlSurfaceReadinessLabel = setupControlSurfacePosture.readiness || (setupControlSurfaceLive ? 'BACKEND_LIVE' : 'STATIC_FALLBACK');
-  const setupControlSurfaceNextReason =
-    setupControlSurfaceNextAction?.reason ||
-    (setupControlSurfaceLive
-      ? 'Backend resolver is live and waiting for the next setup command.'
-      : 'Backend resolver has not confirmed this control yet.');
-  const setupControlSurfaceSurfaceSummary = `${setupControlSurfaceAffectedSurfaces.length} affected surfaces · ${setupControlSurfaceWorkQueue.length} work steps`;
-  /* WILSY_P60K5I5_WORK_QUEUE_COMMAND_CONSOLE */
-  const setupControlSurfaceReadyGateCount = setupControlSurfaceGateCards.filter((gate) =>
-    ['READY', 'COMPLETE', 'PASSED'].includes(String(gate.status || '').toUpperCase())
-  ).length;
-  const setupControlSurfaceTotalGateCount = setupControlSurfaceGateCards.length || 6;
-  const setupControlSurfaceGateSummary = `${setupControlSurfaceReadyGateCount}/${setupControlSurfaceTotalGateCount} gates ready`;
-  const setupControlSurfaceFocusedTask = setupControlSurfaceWorkQueue[0] || {};
-  const setupControlSurfaceBlocker =
-    setupControlSurfacePacketLabel === 'NOT_STAGED'
-      ? 'Packet has not been staged.'
-      : setupControlSurfaceNextReason;
-  const setupControlSurfaceCommandBrief =
-    setupControlSurfaceFocusedTask.title ||
-    setupControlSurfaceFocusedTask.label ||
-    setupControlSurfaceNextReason ||
-    'Review the next setup control.';
-
-
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2964,19 +2924,7 @@ export default function WilsyCrmSetupControlPlane() {
               <>
                 <article className={styles.viewPanel}>
                   <span>Work queue</span>
-                    <small className={styles.workQueueFocusCaption}>{setupControlSurfacePrimaryStatus} · {setupControlSurfacePacketLabel} · {setupPacketPrimaryActionLabel}</small>
-                  {/* WILSY_P60K5I4_WORK_QUEUE_FOCUS_RESCUE */}
-                                                                        {/* WILSY_P60K5I6_WORK_QUEUE_MINIMAL_FOCUS_RESCUE */}
-                                    <section className={styles.workQueueFocusRibbon} aria-label="Work queue live setup status">
-                                      <span>{setupControlSurfacePrimaryStatus}</span>
-                                      <span>{setupControlSurfacePacketLabel}</span>
-                                      <span>{setupPacketPrimaryActionLabel}</span>
-                                      <span>{setupControlSurfaceGateSummary}</span>
-                                    </section>
-
                   <div className={styles.workStepList}>
-                    
-
                     {setupControlSurfaceWorkQueue.map((item, index) => (
                       <button type="button" key={item.id || item.title || item.label || index}>
                         <span>{String(index + 1).padStart(2, '0')}</span>
