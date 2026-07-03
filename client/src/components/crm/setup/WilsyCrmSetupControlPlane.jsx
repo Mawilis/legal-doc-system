@@ -1158,7 +1158,6 @@ export default function WilsyCrmSetupControlPlane() {
   const [reviewQueue, setReviewQueue] = useState([]);
   const [reviewResult, setReviewResult] = useState(null);
   const [screenTwoSourceSurface, setScreenTwoSourceSurface] = useState(null);
-  const [screenTwoWorkspaceMode, setScreenTwoWorkspaceMode] = useState('queue');
   const [screenTwoSourceBusy, setScreenTwoSourceBusy] = useState(false);
   const [screenTwoSourceError, setScreenTwoSourceError] = useState('');
 
@@ -1366,98 +1365,6 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
-  /* WILSY_P60K5L8B_CONTROL_AWARE_WORKSPACE */
-  const screenTwoControlLabel =
-    activeControl.title ||
-    activeControl.label ||
-    activeControl.name ||
-    activeControl.id ||
-    'Control';
-  const screenTwoControlFingerprint = String(screenTwoControlLabel).trim().toLowerCase();
-  const screenTwoIsExposureControl =
-    screenTwoControlFingerprint.includes('exposure') ||
-    screenTwoControlFingerprint.includes('field') ||
-    screenTwoControlFingerprint.includes('surface');
-  const screenTwoIsDelegationControl =
-    screenTwoControlFingerprint.includes('delegation') ||
-    screenTwoControlFingerprint.includes('delegate') ||
-    screenTwoControlFingerprint.includes('authority');
-  const screenTwoSourceIntelligence = screenTwoSourceLive ? screenTwoSourceSurface?.sourceIntelligence || {} : {};
-  const screenTwoSourceSummary =
-    screenTwoSourceIntelligence.sourceSummary ||
-    screenTwoSourcePosture.sourceSummary ||
-    screenTwoSourceSurface?.auditEvidence?.sourceSummary ||
-    'Source posture pending.';
-  const screenTwoAttentionSurfaceCount = screenTwoAffectedSurfaces.filter((surface = {}) => {
-    const status = String(surface.status || surface.state || '').toUpperCase();
-
-    return status.includes('ATTENTION') || status.includes('RISK') || status.includes('BLOCK') || status.includes('WATCH');
-  }).length;
-  const screenTwoLiveSurfaceCount = screenTwoAffectedSurfaces.filter((surface = {}) => {
-    const status = String(surface.status || surface.state || '').toUpperCase();
-    const label = String(surface.label || surface.title || '').trim();
-
-    return Boolean(label) && !status.includes('EMPTY');
-  }).length;
-  const screenTwoInvestorAction = stagedReview
-    ? 'Open packet'
-    : (screenTwoIsDelegationControl
-        ? 'Confirm delegation'
-        : (screenTwoIsExposureControl && screenTwoAttentionSurfaceCount > 0 ? 'Review exposure' : 'Stage review'));
-  const screenTwoInvestorVerdict = stagedReview
-    ? String(screenTwoControlLabel) + ' has an active packet path. Continue through Packet Console.'
-    : (screenTwoIsDelegationControl
-        ? 'Confirm tenant authority, delegation boundary, owner accountability, and release permission.'
-        : (screenTwoIsExposureControl && screenTwoAttentionSurfaceCount > 0
-            ? 'Exposure signals found. Resolve attention surfaces before staging.'
-            : 'Control posture is ready. Stage the review when evidence is acceptable.'));
-  const screenTwoSourcePulseLabel = screenTwoSourceLive
-    ? 'Live source graph'
-    : (screenTwoSourceBusy ? 'Resolving graph' : 'Standby graph');
-  const screenTwoMatrixProofLine =
-    String(screenTwoLiveSurfaceCount) +
-    '/' +
-    String(screenTwoAffectedSurfaces.length || 1) +
-    ' surfaces · ' +
-    String(screenTwoAttentionSurfaceCount) +
-    ' attention · ' +
-    String(screenTwoWorkItems.length || 0) +
-    ' queue actions';
-  const screenTwoWorkspaceBrief =
-    String(screenTwoOwner) +
-    ' · ' +
-    String(screenTwoRisk) +
-    ' · ' +
-    String(screenTwoState);
-  const screenTwoWorkspaceRail = [
-    {
-      id: 'queue',
-      label: 'Runway',
-      metric: String(screenTwoWorkItems.length || 0),
-      detail: String(screenTwoControlLabel) + ' actions',
-    },
-    {
-      id: 'surfaces',
-      label: screenTwoIsDelegationControl ? 'Authority' : 'Evidence',
-      metric: String(screenTwoLiveSurfaceCount) + '/' + String(screenTwoAffectedSurfaces.length || 1),
-      detail: screenTwoIsDelegationControl ? 'Delegation map' : 'Source map',
-    },
-    {
-      id: 'posture',
-      label: 'Posture',
-      metric: screenTwoState,
-      detail: screenTwoRisk,
-    },
-    {
-      id: 'packet',
-      label: 'Packet',
-      metric: screenTwoInvestorAction,
-      detail: stagedReview ? 'Active packet' : 'Review path',
-    },
-  ];
-  const screenTwoActiveWorkspace =
-    screenTwoWorkspaceRail.find((item) => item.id === screenTwoWorkspaceMode) ||
-    screenTwoWorkspaceRail[0];
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2958,112 +2865,56 @@ export default function WilsyCrmSetupControlPlane() {
               </section>
             ) : (
               <>
-                <section className={styles.screenTwoOperatingWorkspace} aria-label="Screen Two operating workspace">
-                  <aside className={styles.screenTwoCommandRail} aria-label="Screen Two command rail">
-                    <div className={styles.screenTwoRailPrime}>
-                      <span>{screenTwoControlLabel}</span>
-                      <strong>{screenTwoInvestorAction}</strong>
-                      <small>{screenTwoMatrixProofLine}</small>
-                    </div>
+                <article className={styles.viewPanel}>
+                  <span>Work queue</span>
+                  <div className={styles.workStepList}>
+                    {screenTwoWorkItems.map((item, index) => (
+                      <button type="button" key={item.id || item.title || item.label || index}>
+                        <span>{String(index + 1).padStart(2, '0')}</span>
+                        <strong>{item.title || item.label || 'Control task'}</strong>
+                        <small>{item.owner || screenTwoOwner}</small>
+                      </button>
+                    ))}
+                  </div>
+                </article>
 
-                    <div className={styles.screenTwoRailButtons}>
-                      {screenTwoWorkspaceRail.map((item) => (
-                        <button
-                          type="button"
-                          key={item.id}
-                          className={screenTwoWorkspaceMode === item.id ? styles.screenTwoRailButtonActive : styles.screenTwoRailButton}
-                          aria-pressed={screenTwoWorkspaceMode === item.id}
-                          onClick={() => setScreenTwoWorkspaceMode(item.id)}
-                        >
-                          <span>{item.label}</span>
-                          <strong>{item.metric}</strong>
-                          <small>{item.detail}</small>
-                        </button>
-                      ))}
-                    </div>
-                  </aside>
+                <article className={styles.viewPanel}>
+                  <span>Affected surfaces</span>
+                  <div className={styles.surfaceImpactList}>
+                    {screenTwoAffectedSurfaces.map((surface, index) => (
+                      <article key={surface.id || surface.title || surface.label || index}>
+                        <span>{surface.label || surface.title || 'Surface'}</span>
+                        <strong>{surface.purpose || surface.reason || 'Governed surface'}</strong>
+                        <small>{surface.status || screenTwoState}</small>
+                      </article>
+                    ))}
+                  </div>
+                </article>
 
-                  <main className={styles.screenTwoWorkspaceSurface} aria-label="Interactive Screen Two workspace">
-                    <header className={styles.screenTwoWorkspaceHeader}>
-                      <div>
-                        <span>{screenTwoActiveWorkspace.label} Workspace</span>
-                        <strong>{screenTwoControlLabel}</strong>
-                      </div>
-                      <p>{screenTwoInvestorVerdict}</p>
-                    </header>
+                <article className={styles.viewPanel}>
+                  <span>Control posture</span>
+                  <div className={styles.decisionSignalGrid}>
+                    <article>
+                      <span>Risk</span>
+                      <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
+                    </article>
 
-                    <div className={styles.screenTwoWorkspaceStatusBar}>
-                      <span>{screenTwoSourcePulseLabel}</span>
-                      <strong>{screenTwoWorkspaceBrief}</strong>
-                      <small>{screenTwoSourceSummary}</small>
-                    </div>
+                    <article>
+                      <span>State</span>
+                      <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
+                    </article>
 
-                    {screenTwoWorkspaceMode === 'queue' ? (
-                      <div className={styles.screenTwoWorkspaceQueue}>
-                        {screenTwoWorkItems.map((item, index) => (
-                          <button type="button" key={item.id || item.title || item.label || index}>
-                            <span>{String(index + 1).padStart(2, '0')}</span>
-                            <strong>{item.title || item.label || item.task || screenTwoControlLabel}</strong>
-                            <small>{item.evidence || item.detail || item.reason || item.owner || screenTwoOwner}</small>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
+                    <article>
+                      <span>Owner</span>
+                      <strong>{screenTwoOwner}</strong>
+                    </article>
 
-                    {screenTwoWorkspaceMode === 'surfaces' ? (
-                      <div className={styles.screenTwoWorkspaceSurfaces}>
-                        {screenTwoAffectedSurfaces.map((surface, index) => (
-                          <article key={surface.id || surface.title || surface.label || index}>
-                            <span>{surface.label || surface.title || 'Surface'}</span>
-                            <strong>{surface.metric || surface.summary || surface.detail || surface.description || surface.reason || 'Source surface'}</strong>
-                            <small>{surface.status || screenTwoState}</small>
-                          </article>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    {screenTwoWorkspaceMode === 'posture' ? (
-                      <div className={styles.screenTwoWorkspacePosture}>
-                        <article>
-                          <span>Control</span>
-                          <strong>{screenTwoControlLabel}</strong>
-                        </article>
-                        <article>
-                          <span>Risk</span>
-                          <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
-                        </article>
-                        <article>
-                          <span>State</span>
-                          <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
-                        </article>
-                        <article>
-                          <span>Owner</span>
-                          <strong>{screenTwoOwner}</strong>
-                        </article>
-                        <article>
-                          <span>Purpose</span>
-                          <strong>{screenTwoPurpose}</strong>
-                        </article>
-                      </div>
-                    ) : null}
-
-                    {screenTwoWorkspaceMode === 'packet' ? (
-                      <div className={styles.screenTwoWorkspacePacket}>
-                        <article>
-                          <span>Packet Command</span>
-                          <strong>{screenTwoInvestorAction}</strong>
-                          <p>{stagedReview ? 'Packet workflow is active. Continue through Packet Console.' : 'Use the Stage review command after confirming this control surface.'}</p>
-                        </article>
-                        <article>
-                          <span>Evidence Readiness</span>
-                          <strong>{screenTwoMatrixProofLine}</strong>
-                          <p>{screenTwoSourceSummary}</p>
-                        </article>
-                      </div>
-                    ) : null}
-                  </main>
-                </section>
-
+                    <article>
+                      <span>Purpose</span>
+                      <strong>{screenTwoPurpose}</strong>
+                    </article>
+                  </div>
+                </article>
               </>
             )}
           </div>
