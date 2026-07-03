@@ -2947,48 +2947,50 @@ export default function WilsyCrmSetupControlPlane() {
               <>
                 <article className={styles.viewPanel}>
                   <span>Work queue</span>
+                    <small className={styles.workQueueFocusCaption}>{setupControlSurfacePrimaryStatus} · {setupControlSurfacePacketLabel} · {setupPacketPrimaryActionLabel}</small>
+                  {/* WILSY_P60K5I4_WORK_QUEUE_FOCUS_RESCUE */}
+                  <section className={styles.liveControlSurfaceStrip} aria-label="Live backend setup control surface">
+                                        <div className={styles.liveSurfaceIdentity}>
+                                          <span>{setupControlSurfacePrimaryStatus}</span>
+                                          <strong>{setupControlSurfaceRouteGuide}</strong>
+                                          <small>{setupControlSurfaceNextReason}</small>
+                                        </div>
+                                        <div className={styles.liveSurfaceCommandGrid}>
+                                          <article>
+                                            <span>Next action</span>
+                                            <strong>{setupPacketPrimaryActionLabel}</strong>
+                                            <small>{setupControlSurfaceNextAction?.action || 'STAGE_REVIEW'}</small>
+                                          </article>
+                                          <article>
+                                            <span>Packet state</span>
+                                            <strong>{setupControlSurfacePacketLabel}</strong>
+                                            <small>{setupControlSurfaceReadinessLabel}</small>
+                                          </article>
+                                          <article>
+                                            <span>Surface scope</span>
+                                            <strong>{setupControlSurfaceSurfaceSummary}</strong>
+                                            <small>{setupControlSurfaceLive ? 'Resolved by backend' : 'Using fallback until resolver confirms'}</small>
+                                          </article>
+                                        </div>
+                                        <div className={styles.liveGateRail}>
+                                          {setupControlSurfaceGateCards.length ? setupControlSurfaceGateCards.map((gate) => (
+                                            <article key={gate.id}>
+                                              <span>{gate.label}</span>
+                                              <strong className={resolveToneClass(gate.status)}>{gate.status}</strong>
+                                              <small>{gate.detail}</small>
+                                            </article>
+                                          )) : (
+                                            <article>
+                                              <span>Resolver</span>
+                                              <strong>{setupControlSurfaceBusy ? 'CONNECTING' : 'WAITING'}</strong>
+                                              <small>{setupControlSurfaceError || 'Backend gates will appear here.'}</small>
+                                            </article>
+                                          )}
+                                        </div>
+                                      </section>
+
                   <div className={styles.workStepList}>
-                    <section className={styles.liveControlSurfaceStrip} aria-label="Live backend setup control surface">
-                      <div className={styles.liveSurfaceIdentity}>
-                        <span>{setupControlSurfacePrimaryStatus}</span>
-                        <strong>{setupControlSurfaceRouteGuide}</strong>
-                        <small>{setupControlSurfaceNextReason}</small>
-                      </div>
                     
-                      <div className={styles.liveSurfaceCommandGrid}>
-                        <article>
-                          <span>Next action</span>
-                          <strong>{setupPacketPrimaryActionLabel}</strong>
-                          <small>{setupControlSurfaceNextAction?.action || 'STAGE_REVIEW'}</small>
-                        </article>
-                        <article>
-                          <span>Packet state</span>
-                          <strong>{setupControlSurfacePacketLabel}</strong>
-                          <small>{setupControlSurfaceReadinessLabel}</small>
-                        </article>
-                        <article>
-                          <span>Surface scope</span>
-                          <strong>{setupControlSurfaceSurfaceSummary}</strong>
-                          <small>{setupControlSurfaceLive ? 'Resolved by backend' : 'Using fallback until resolver confirms'}</small>
-                        </article>
-                      </div>
-                    
-                      <div className={styles.liveGateRail}>
-                        {setupControlSurfaceGateCards.length ? setupControlSurfaceGateCards.map((gate) => (
-                          <article key={gate.id}>
-                            <span>{gate.label}</span>
-                            <strong className={resolveToneClass(gate.status)}>{gate.status}</strong>
-                            <small>{gate.detail}</small>
-                          </article>
-                        )) : (
-                          <article>
-                            <span>Resolver</span>
-                            <strong>{setupControlSurfaceBusy ? 'CONNECTING' : 'WAITING'}</strong>
-                            <small>{setupControlSurfaceError || 'Backend gates will appear here.'}</small>
-                          </article>
-                        )}
-                      </div>
-                    </section>
 
                     {setupControlSurfaceWorkQueue.map((item, index) => (
                       <button type="button" key={item.id || item.title || item.label || index}>
