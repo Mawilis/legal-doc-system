@@ -2966,34 +2966,13 @@ export default function WilsyCrmSetupControlPlane() {
                   <span>Work queue</span>
                     <small className={styles.workQueueFocusCaption}>{setupControlSurfacePrimaryStatus} · {setupControlSurfacePacketLabel} · {setupPacketPrimaryActionLabel}</small>
                   {/* WILSY_P60K5I4_WORK_QUEUE_FOCUS_RESCUE */}
-                                    <section className={styles.workQueueCommandConsole} aria-label="Focused work queue command console">
-                    <div className={styles.workQueueNow}>
-                      <span>Live backend surface</span>
-                      <strong>{setupControlSurfaceControl.name || setupControlSurfaceControl.title || activeControl.name}</strong>
-                      <small>{setupControlSurfaceCommandBrief}</small>
-                    </div>
-                  
-                    <div className={styles.workQueueDecision}>
-                      <span>Decision</span>
-                      <strong>{setupControlSurfacePacketLabel}</strong>
-                      <small>{setupControlSurfaceBlocker}</small>
-                    </div>
-                  
-                    <div className={styles.workQueueAction}>
-                      <span>Next command</span>
-                      <strong>{setupPacketPrimaryActionLabel}</strong>
-                      <button type="button" onClick={setupPacketPrimaryAction}>
-                        Run command
-                      </button>
-                    </div>
-                  
-                    <div className={styles.workQueueChipRail}>
-                      <span>{setupControlSurfacePrimaryStatus}</span>
-                      <span>{setupControlSurfaceGateSummary}</span>
-                      <span>{setupControlSurfaceSurfaceSummary}</span>
-                      <span>{setupControlSurfaceReadinessLabel}</span>
-                    </div>
-                  </section>
+                                                                        {/* WILSY_P60K5I6_WORK_QUEUE_MINIMAL_FOCUS_RESCUE */}
+                                    <section className={styles.workQueueFocusRibbon} aria-label="Work queue live setup status">
+                                      <span>{setupControlSurfacePrimaryStatus}</span>
+                                      <span>{setupControlSurfacePacketLabel}</span>
+                                      <span>{setupPacketPrimaryActionLabel}</span>
+                                      <span>{setupControlSurfaceGateSummary}</span>
+                                    </section>
 
                   <div className={styles.workStepList}>
                     

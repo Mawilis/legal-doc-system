@@ -7065,3 +7065,102 @@ button.packetRevealNode {
     grid-column: 2;
   }
 }
+
+/* WILSY_P60K5I6_WORK_QUEUE_MINIMAL_FOCUS_RESCUE
+   Final task-first Work Queue posture:
+   compact status ribbon, visible tasks, no duplicate command console, no horizontal scroll. */
+.workQueueFocusRibbon {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  padding: 8px 0 10px;
+  margin: 0 0 8px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 209, 255, 0.18);
+}
+
+.workQueueFocusRibbon span {
+  max-width: 100%;
+  padding: 6px 9px;
+  border: 1px solid rgba(0, 209, 255, 0.24);
+  border-radius: 999px;
+  color: rgba(235, 224, 173, 0.9);
+  background: rgba(0, 209, 255, 0.075);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewPanel .workQueueCommandConsole,
+.viewPanel .liveControlSurfaceStrip {
+  display: none !important;
+}
+
+.viewPanel .workStepList {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.viewPanel .workStepList button {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) max-content;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 16px;
+  text-align: left;
+}
+
+.viewPanel .workStepList button span {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+}
+
+.viewPanel .workStepList button strong {
+  min-width: 0;
+  color: #ffffff;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewPanel .workStepList button small {
+  min-width: 0;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1320px) {
+  .viewPanel .workStepList button {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .viewPanel .workStepList button small {
+    grid-column: 2;
+  }
+}
