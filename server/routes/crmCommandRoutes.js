@@ -9288,6 +9288,551 @@ function buildWilsySetupControlSurfacePacketCandidate(
   };
 }
 
+/* WILSY_P60K5J4B_SETUP_SOURCE_INTELLIGENCE_DOCSAFE */
+
+/**
+ * @function buildWilsySetupTenantQuery
+ * @description Builds a tenant-safe query for live CRM source inspection.
+ * @param {string} tenantId - Tenant identifier.
+ * @returns {Object} Mongo query.
+ * @collaboration Setup Control Surface resolver, live CRM collections, tenant authority, and source intelligence.
+ */
+function buildWilsySetupTenantQuery(tenantId) {
+  const safeTenantId = resolveWilsySetupReviewText(tenantId, 'MASTER');
+
+  return {
+    $or: [
+      { tenantId: safeTenantId },
+      { tenantKey: safeTenantId },
+      { tenant: safeTenantId },
+      { 'tenant.id': safeTenantId },
+      { 'tenant.tenantId': safeTenantId },
+      { organizationId: safeTenantId },
+      { companyId: safeTenantId },
+      { 'metadata.tenantId': safeTenantId },
+      { 'meta.tenantId': safeTenantId },
+    ],
+  };
+}
+
+/**
+ * @function normalizeWilsySetupCollectionName
+ * @description Normalizes Mongo collection names for CRM source matching.
+ * @param {string} name - Collection name.
+ * @returns {string} Normalized collection name.
+ * @collaboration Mongo collection discovery, CRM source intelligence, and Setup Control Surface resolver.
+ */
+function normalizeWilsySetupCollectionName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * @function resolveWilsySetupNativeDatabase
+ * @description Resolves the native Mongo database through the existing setup review packet model.
+ * @returns {Object|null} Native Mongo database.
+ * @collaboration Mongoose connection, setup review packet model, and live CRM source inspection.
+ */
+function resolveWilsySetupNativeDatabase() {
+  try {
+    const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+    return WilsyCrmSetupReviewPacket?.db?.db || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * @function findWilsySetupSourceCollection
+ * @description Finds a source collection by preferred names or semantic matching.
+ * @param {Object} nativeDb - Native Mongo database.
+ * @param {Array<string>} preferredNames - Preferred collection names.
+ * @param {Array<string>} semanticNeedles - Semantic collection needles.
+ * @returns {Promise<Object|null>} Collection descriptor.
+ * @collaboration Mongo source discovery, CRM Leads, Contacts, Accounts, Users, Exports, and audit evidence.
+ */
+async function findWilsySetupSourceCollection(nativeDb, preferredNames = [], semanticNeedles = []) {
+  if (!nativeDb?.listCollections) return null;
+
+  const collections = await nativeDb.listCollections().toArray();
+  const collectionNames = collections.map((item) => item.name).filter(Boolean);
+  const normalizedPreferred = preferredNames.map(normalizeWilsySetupCollectionName);
+  const normalizedNeedles = semanticNeedles.map(normalizeWilsySetupCollectionName);
+
+  const exactName = collectionNames.find((name) =>
+    normalizedPreferred.includes(normalizeWilsySetupCollectionName(name))
+  );
+
+  const semanticName =
+    exactName ||
+    collectionNames.find((name) => {
+      const normalized = normalizeWilsySetupCollectionName(name);
+      return normalizedNeedles.some((needle) => needle && normalized.includes(needle));
+    });
+
+  if (!semanticName) return null;
+
+  return {
+    name: semanticName,
+    collection: nativeDb.collection(semanticName),
+  };
+}
+
+/**
+ * @function collectWilsySetupDocumentKeys
+ * @description Collects field keys from source samples without exposing raw values.
+ * @param {Object} value - Source document value.
+ * @param {string} prefix - Nested key prefix.
+ * @param {Set<string>} target - Key collector.
+ * @returns {Set<string>} Collected keys.
+ * @collaboration Field Exposure Matrix, privacy-safe metadata scan, source evidence, and CRM compliance posture.
+ */
+function collectWilsySetupDocumentKeys(value, prefix = '', target = new Set()) {
+  if (!value || typeof value !== 'object') return target;
+
+  if (Array.isArray(value)) {
+    value.slice(0, 3).forEach((entry) => collectWilsySetupDocumentKeys(entry, prefix, target));
+    return target;
+  }
+
+  Object.keys(value).forEach((key) => {
+    const joined = prefix ? `${prefix}.${key}` : key;
+    target.add(joined);
+
+    const nested = value[key];
+    if (nested && typeof nested === 'object' && !(nested instanceof Date)) {
+      collectWilsySetupDocumentKeys(nested, joined, target);
+    }
+  });
+
+  return target;
+}
+
+/**
+ * @function isWilsySetupSensitiveFieldKey
+ * @description Detects likely sensitive CRM field names without exposing raw field values.
+ * @param {string} key - Field key.
+ * @returns {boolean} Whether the key is likely sensitive.
+ * @collaboration Field Exposure Matrix, privacy posture, export risk, and CRM compliance evidence.
+ */
+function isWilsySetupSensitiveFieldKey(key) {
+  const normalized = String(key || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  return [
+    'email',
+    'phone',
+    'mobile',
+    'cell',
+    'address',
+    'idnumber',
+    'identity',
+    'passport',
+    'dob',
+    'birth',
+    'tax',
+    'vat',
+    'registration',
+    'bank',
+    'accountnumber',
+    'fica',
+    'kyc',
+    'popia',
+    'consent',
+    'salary',
+    'income',
+  ].some((needle) => normalized.includes(needle));
+}
+
+/**
+ * @function summarizeWilsySetupSourceSamples
+ * @description Summarizes source samples into privacy-safe field intelligence.
+ * @param {Array<Object>} samples - Source samples.
+ * @returns {Object} Field summary.
+ * @collaboration CRM source intelligence, field scan, sensitive key detection, and evidence-ready summaries.
+ */
+function summarizeWilsySetupSourceSamples(samples = []) {
+  const allKeys = new Set();
+  let exposedRecordCount = 0;
+
+  samples.forEach((sample) => {
+    const sampleKeys = collectWilsySetupDocumentKeys(sample);
+    let recordHasSensitiveKey = false;
+
+    sampleKeys.forEach((key) => {
+      allKeys.add(key);
+      if (isWilsySetupSensitiveFieldKey(key)) {
+        recordHasSensitiveKey = true;
+      }
+    });
+
+    if (recordHasSensitiveKey) {
+      exposedRecordCount += 1;
+    }
+  });
+
+  const sensitiveKeys = Array.from(allKeys).filter(isWilsySetupSensitiveFieldKey).sort();
+
+  return {
+    scannedSampleCount: samples.length,
+    totalFieldKeyCount: allKeys.size,
+    sensitiveFieldCount: sensitiveKeys.length,
+    exposedRecordCount,
+    sensitiveFieldKeys: sensitiveKeys.slice(0, 18),
+  };
+}
+
+/**
+ * @function inspectWilsySetupSourceCollection
+ * @description Inspects a live CRM collection with tenant-safe counts and privacy-safe field evidence.
+ * @param {Object} nativeDb - Native Mongo database.
+ * @param {Object} sourceConfig - Source configuration.
+ * @param {Object} evidence - Institutional evidence.
+ * @returns {Promise<Object>} Source intelligence.
+ * @collaboration CRM Leads, Contacts, Accounts, Users, Exports, tenant scope, and Field Exposure Matrix.
+ */
+async function inspectWilsySetupSourceCollection(nativeDb, sourceConfig = {}, evidence = {}) {
+  const descriptor = await findWilsySetupSourceCollection(
+    nativeDb,
+    sourceConfig.preferredNames || [],
+    sourceConfig.semanticNeedles || []
+  );
+
+  const fallback = {
+    id: sourceConfig.id,
+    label: sourceConfig.label,
+    collectionName: '',
+    status: 'SOURCE_UNAVAILABLE',
+    liveCount: 0,
+    totalCount: 0,
+    sensitiveFieldCount: 0,
+    exposedRecordCount: 0,
+    scannedSampleCount: 0,
+    totalFieldKeyCount: 0,
+    reason: 'No matching backend collection was found for this CRM source.',
+    evidenceQuery: 'Collection discovery returned no match.',
+    sensitiveFieldKeys: [],
+  };
+
+  if (!descriptor?.collection) return fallback;
+
+  const tenantQuery = buildWilsySetupTenantQuery(evidence.tenantId);
+  let tenantCount = 0;
+  let totalCount = 0;
+  let samples = [];
+
+  try {
+    tenantCount = await descriptor.collection.countDocuments(tenantQuery);
+    totalCount = await descriptor.collection.estimatedDocumentCount();
+    samples = await descriptor.collection
+      .find(tenantCount > 0 ? tenantQuery : {})
+      .limit(25)
+      .toArray();
+  } catch (error) {
+    return {
+      ...fallback,
+      collectionName: descriptor.name,
+      status: 'SOURCE_ERROR',
+      reason: error?.message || 'Source query failed.',
+      evidenceQuery: `collection:${descriptor.name} tenant:${evidence.tenantId}`,
+    };
+  }
+
+  const sampleSummary = summarizeWilsySetupSourceSamples(samples);
+  const status =
+    tenantCount > 0
+      ? sampleSummary.sensitiveFieldCount > 0
+        ? 'ATTENTION'
+        : 'READY'
+      : totalCount > 0
+        ? 'TENANT_EMPTY'
+        : 'EMPTY';
+
+  return {
+    id: sourceConfig.id,
+    label: sourceConfig.label,
+    collectionName: descriptor.name,
+    status,
+    liveCount: tenantCount,
+    totalCount,
+    sensitiveFieldCount: sampleSummary.sensitiveFieldCount,
+    exposedRecordCount: sampleSummary.exposedRecordCount,
+    scannedSampleCount: sampleSummary.scannedSampleCount,
+    totalFieldKeyCount: sampleSummary.totalFieldKeyCount,
+    sensitiveFieldKeys: sampleSummary.sensitiveFieldKeys,
+    reason:
+      tenantCount > 0
+        ? `${tenantCount} tenant records inspected from ${descriptor.name}.`
+        : totalCount > 0
+          ? `${descriptor.name} has ${totalCount} records, but none matched tenant ${evidence.tenantId}. Sample metadata was inspected for schema posture.`
+          : `${descriptor.name} is available but empty.`,
+    evidenceQuery: `collection:${descriptor.name} tenant:${evidence.tenantId}`,
+  };
+}
+
+/**
+ * @function buildWilsySetupFieldAggregateSurface
+ * @description Builds aggregate Fields intelligence from CRM source summaries.
+ * @param {Array<Object>} sources - Source summaries.
+ * @returns {Object} Aggregate field surface.
+ * @collaboration Field Exposure Matrix, Leads, Contacts, Accounts, field classification, and compliance posture.
+ */
+function buildWilsySetupFieldAggregateSurface(sources = []) {
+  const sensitiveKeys = new Set();
+  const fieldKeyTotal = sources.reduce(
+    (sum, source) => sum + Number(source.totalFieldKeyCount || 0),
+    0
+  );
+
+  sources.forEach((source) => {
+    (source.sensitiveFieldKeys || []).forEach((key) => sensitiveKeys.add(key));
+  });
+
+  const sensitiveFieldCount = sensitiveKeys.size;
+
+  return {
+    id: 'fields',
+    label: 'Fields',
+    status: sensitiveFieldCount > 0 ? 'ATTENTION' : fieldKeyTotal > 0 ? 'READY' : 'SOURCE_EMPTY',
+    liveCount: fieldKeyTotal,
+    totalCount: fieldKeyTotal,
+    sensitiveFieldCount,
+    exposedRecordCount: sources.reduce(
+      (sum, source) => sum + Number(source.exposedRecordCount || 0),
+      0
+    ),
+    reason:
+      sensitiveFieldCount > 0
+        ? `${sensitiveFieldCount} sensitive field keys detected across live CRM source samples.`
+        : 'No sensitive field keys detected in scanned CRM source samples.',
+    evidenceQuery: 'aggregate:leads+contacts+accounts sensitive field key scan',
+    sensitiveFieldKeys: Array.from(sensitiveKeys).slice(0, 18),
+  };
+}
+
+/**
+ * @function convertWilsySetupSourceToAffectedSurface
+ * @description Converts source intelligence into the affected surface contract used by the frontend.
+ * @param {Object} source - Source intelligence.
+ * @returns {Object} Affected surface.
+ * @collaboration Setup Control Surface, Affected Surfaces panel, source posture, and operator guidance.
+ */
+function convertWilsySetupSourceToAffectedSurface(source = {}) {
+  const label = resolveWilsySetupReviewText(source.label, 'Surface');
+  const liveCount = Number(source.liveCount || 0);
+  const sensitiveCount = Number(source.sensitiveFieldCount || 0);
+  const exposedCount = Number(source.exposedRecordCount || 0);
+  const status = source.status || 'PENDING';
+
+  return {
+    id: source.id || label.toLowerCase(),
+    label,
+    title: label,
+    status,
+    purpose:
+      status === 'SOURCE_UNAVAILABLE'
+        ? 'Source unavailable'
+        : `${liveCount} live · ${sensitiveCount} sensitive · ${exposedCount} exposed sample`,
+    risk: sensitiveCount > 0 ? 'ATTENTION' : 'READY',
+    evidenceRequired: true,
+    backendReady: status !== 'SOURCE_UNAVAILABLE' && status !== 'SOURCE_ERROR',
+    reason: source.reason,
+    evidenceQuery: source.evidenceQuery,
+    sensitiveFieldCount: sensitiveCount,
+    exposedRecordCount: exposedCount,
+    liveCount,
+    totalCount: Number(source.totalCount || 0),
+  };
+}
+
+/**
+ * @function buildWilsySetupLiveWorkQueue
+ * @description Builds setup work queue tasks from live source intelligence.
+ * @param {Object} intelligence - Source intelligence.
+ * @param {Object} packetCandidate - Packet candidate.
+ * @returns {Array<Object>} Work queue.
+ * @collaboration Field scan, visibility review, edit-right review, export scope, and Setup Packet Console.
+ */
+function buildWilsySetupLiveWorkQueue(intelligence = {}, packetCandidate = {}) {
+  const leadSource = intelligence.sources?.find((source) => source.id === 'leads') || {};
+  const contactSource = intelligence.sources?.find((source) => source.id === 'contacts') || {};
+  const accountSource = intelligence.sources?.find((source) => source.id === 'accounts') || {};
+  const fieldsSource = intelligence.fieldSurface || {};
+  const userSource = intelligence.sources?.find((source) => source.id === 'users') || {};
+  const exportSource = intelligence.sources?.find((source) => source.id === 'exports') || {};
+  const totalSensitiveFields = Number(fieldsSource.sensitiveFieldCount || 0);
+  const totalLiveRecords =
+    Number(leadSource.liveCount || 0) +
+    Number(contactSource.liveCount || 0) +
+    Number(accountSource.liveCount || 0);
+
+  return [
+    {
+      id: 'scan-sensitive-fields',
+      title:
+        totalSensitiveFields > 0
+          ? `Scan sensitive fields · ${totalSensitiveFields} keys detected`
+          : 'Scan sensitive fields · no sensitive keys detected',
+      label: 'Scan sensitive fields',
+      owner: packetCandidate.owner || 'Compliance Admin',
+      status: totalSensitiveFields > 0 ? 'ATTENTION' : 'READY',
+      evidenceRequired: true,
+      backendReady: true,
+      blocker: totalSensitiveFields > 0 ? 'Sensitive keys need evidence before release.' : '',
+      reason: fieldsSource.reason || 'Field scan completed from live CRM source samples.',
+    },
+    {
+      id: 'review-visibility',
+      title:
+        userSource.totalCount > 0
+          ? `Review visibility · ${userSource.totalCount} user/profile records discovered`
+          : 'Review visibility · user source unavailable',
+      label: 'Review visibility',
+      owner: packetCandidate.owner || 'Compliance Admin',
+      status: userSource.status === 'SOURCE_UNAVAILABLE' ? 'ATTENTION' : 'READY',
+      evidenceRequired: true,
+      backendReady: userSource.status !== 'SOURCE_UNAVAILABLE',
+      blocker:
+        userSource.status === 'SOURCE_UNAVAILABLE'
+          ? 'No user source found for visibility review.'
+          : '',
+      reason: userSource.reason || 'Visibility review requires tenant user source.',
+    },
+    {
+      id: 'check-edit-rights',
+      title:
+        totalLiveRecords > 0
+          ? `Check edit rights · ${totalLiveRecords} tenant CRM records in scope`
+          : 'Check edit rights · no tenant CRM records found',
+      label: 'Check edit rights',
+      owner: packetCandidate.owner || 'Compliance Admin',
+      status: totalLiveRecords > 0 ? 'READY' : 'ATTENTION',
+      evidenceRequired: true,
+      backendReady: true,
+      blocker: totalLiveRecords > 0 ? '' : 'No live tenant CRM records were found.',
+      reason: 'Edit-right review is anchored to tenant CRM record presence.',
+    },
+    {
+      id: 'lock-export-scope',
+      title:
+        exportSource.totalCount > 0
+          ? `Lock export scope · ${exportSource.totalCount} export/audit records discovered`
+          : 'Lock export scope · no export/audit records found',
+      label: 'Lock export scope',
+      owner: packetCandidate.owner || 'Compliance Admin',
+      status: Number(exportSource.totalCount || 0) > 0 ? 'ATTENTION' : 'READY',
+      evidenceRequired: true,
+      backendReady: exportSource.status !== 'SOURCE_ERROR',
+      blocker:
+        Number(exportSource.totalCount || 0) > 0
+          ? 'Export/audit activity must be reviewed before release.'
+          : '',
+      reason:
+        exportSource.reason || 'Export scope checked through export/audit collection discovery.',
+    },
+  ];
+}
+
+/**
+ * @function buildWilsySetupSourceIntelligence
+ * @description Builds live CRM source intelligence for the Setup Control Surface resolver.
+ * @param {Object} evidence - Institutional evidence.
+ * @param {Object} packetCandidate - Packet candidate.
+ * @returns {Promise<Object>} Live source intelligence.
+ * @collaboration CRM live source service, Mongo models, Setup Control Surface, work queue readiness, and affected surface evidence.
+ */
+async function buildWilsySetupSourceIntelligence(evidence = {}, packetCandidate = {}) {
+  const nativeDb = resolveWilsySetupNativeDatabase();
+
+  if (!nativeDb) {
+    return {
+      status: 'SOURCE_DATABASE_UNAVAILABLE',
+      reason: 'Native Mongo database connection was not available from setup review model.',
+      sources: [],
+      fieldSurface: null,
+      affectedSurfaces: [],
+      workQueue: [],
+      sourceSummary: 'No database connection',
+    };
+  }
+
+  const sourceConfigs = [
+    {
+      id: 'leads',
+      label: 'Leads',
+      preferredNames: ['crm_leads', 'wilsy_crm_leads', 'wilsycrmleads', 'leads'],
+      semanticNeedles: ['lead'],
+    },
+    {
+      id: 'contacts',
+      label: 'Contacts',
+      preferredNames: ['crm_contacts', 'wilsy_crm_contacts', 'wilsycrmcontacts', 'contacts'],
+      semanticNeedles: ['contact'],
+    },
+    {
+      id: 'accounts',
+      label: 'Accounts',
+      preferredNames: ['crm_accounts', 'wilsy_crm_accounts', 'wilsycrmaccounts', 'accounts'],
+      semanticNeedles: ['account'],
+    },
+    {
+      id: 'users',
+      label: 'Users',
+      preferredNames: ['users', 'user', 'wilsy_users', 'userprofiles', 'profiles', 'roles'],
+      semanticNeedles: ['user', 'profile', 'role'],
+    },
+    {
+      id: 'exports',
+      label: 'Exports',
+      preferredNames: [
+        'exports',
+        'audit_logs',
+        'auditlogs',
+        'audit_events',
+        'auditevents',
+        'audittrails',
+      ],
+      semanticNeedles: ['export', 'audit'],
+    },
+  ];
+
+  const sources = [];
+  for (const config of sourceConfigs) {
+    sources.push(await inspectWilsySetupSourceCollection(nativeDb, config, evidence));
+  }
+
+  const crmSources = sources.filter((source) =>
+    ['leads', 'contacts', 'accounts'].includes(source.id)
+  );
+  const fieldSurface = buildWilsySetupFieldAggregateSurface(crmSources);
+  const affectedSurfaces = [
+    ...crmSources.map(convertWilsySetupSourceToAffectedSurface),
+    convertWilsySetupSourceToAffectedSurface(fieldSurface),
+    convertWilsySetupSourceToAffectedSurface(
+      sources.find((source) => source.id === 'exports') || {}
+    ),
+  ];
+
+  const workQueue = buildWilsySetupLiveWorkQueue({ sources, fieldSurface }, packetCandidate);
+  const liveSourceCount = sources.filter((source) => Number(source.liveCount || 0) > 0).length;
+  const discoveredSourceCount = sources.filter(
+    (source) => source.status !== 'SOURCE_UNAVAILABLE'
+  ).length;
+  const sensitiveFieldCount = Number(fieldSurface.sensitiveFieldCount || 0);
+
+  return {
+    status: 'SOURCE_INTELLIGENCE_RESOLVED',
+    reason: `${liveSourceCount} tenant-live sources, ${discoveredSourceCount} discovered backend sources, ${sensitiveFieldCount} sensitive field keys detected.`,
+    sources,
+    fieldSurface,
+    affectedSurfaces,
+    workQueue,
+    sourceSummary: `${liveSourceCount}/${sources.length} tenant-live · ${discoveredSourceCount}/${sources.length} discovered · ${sensitiveFieldCount} sensitive keys`,
+  };
+}
+
 /**
  * @function handleWilsySetupControlSurfaceResolve
  * @description Resolves a backend-owned CRM setup control surface for the active domain, control, lens, tenant, and operator.
@@ -9320,20 +9865,32 @@ async function handleWilsySetupControlSurfaceResolve(req, res) {
   const gates = buildWilsySetupControlSurfaceGates(packetState, packetCandidate, evidence);
   const generatedAt = new Date().toISOString();
 
-  const workQueue = resolveWilsySetupControlSurfaceList(packetCandidate.workItems, [
+  const sourceIntelligence = await buildWilsySetupSourceIntelligence(evidence, packetCandidate);
+
+  const fallbackWorkQueue = resolveWilsySetupControlSurfaceList(packetCandidate.workItems, [
     'Confirm control scope',
     'Review affected surfaces',
     'Attach receipt-backed evidence',
     'Execute approval and release gates',
   ]);
 
-  const affectedSurfaces = resolveWilsySetupControlSurfaceList(packetCandidate.surfaces, [
+  const fallbackAffectedSurfaces = resolveWilsySetupControlSurfaceList(packetCandidate.surfaces, [
     'Leads',
     'Contacts',
     'Accounts',
     'Fields',
     'Exports',
   ]);
+
+  const workQueue =
+    Array.isArray(sourceIntelligence.workQueue) && sourceIntelligence.workQueue.length
+      ? sourceIntelligence.workQueue
+      : fallbackWorkQueue;
+
+  const affectedSurfaces =
+    Array.isArray(sourceIntelligence.affectedSurfaces) && sourceIntelligence.affectedSurfaces.length
+      ? sourceIntelligence.affectedSurfaces
+      : fallbackAffectedSurfaces;
 
   return res.status(200).json({
     ok: true,
@@ -9362,12 +9919,15 @@ async function handleWilsySetupControlSurfaceResolve(req, res) {
     lens,
     workQueue,
     affectedSurfaces,
+    sourceIntelligence,
     posture: {
       risk: packetCandidate.risk,
       state: packetCandidate.state,
       owner: packetCandidate.owner,
       purpose: packetCandidate.purpose,
       readiness: packetState.backendLive ? 'BACKEND_LIVE' : 'STAGE_REQUIRED',
+      sourceReadiness: sourceIntelligence.status || 'SOURCE_INTELLIGENCE_PENDING',
+      sourceSummary: sourceIntelligence.sourceSummary || '',
       packetState: packetState.packetState,
       packetStage: packetState.packetStage,
     },
@@ -9385,6 +9945,8 @@ async function handleWilsySetupControlSurfaceResolve(req, res) {
       userId: evidence.userId,
       controlId: packetCandidate.controlId,
       lens,
+      sourceIntelligenceStatus: sourceIntelligence.status || 'SOURCE_INTELLIGENCE_PENDING',
+      sourceSummary: sourceIntelligence.sourceSummary || '',
       generatedAt,
     },
   });
