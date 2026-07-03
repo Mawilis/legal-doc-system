@@ -1395,6 +1395,23 @@ export default function WilsyCrmSetupControlPlane() {
       ? 'Backend resolver is live and waiting for the next setup command.'
       : 'Backend resolver has not confirmed this control yet.');
   const setupControlSurfaceSurfaceSummary = `${setupControlSurfaceAffectedSurfaces.length} affected surfaces · ${setupControlSurfaceWorkQueue.length} work steps`;
+  /* WILSY_P60K5I5_WORK_QUEUE_COMMAND_CONSOLE */
+  const setupControlSurfaceReadyGateCount = setupControlSurfaceGateCards.filter((gate) =>
+    ['READY', 'COMPLETE', 'PASSED'].includes(String(gate.status || '').toUpperCase())
+  ).length;
+  const setupControlSurfaceTotalGateCount = setupControlSurfaceGateCards.length || 6;
+  const setupControlSurfaceGateSummary = `${setupControlSurfaceReadyGateCount}/${setupControlSurfaceTotalGateCount} gates ready`;
+  const setupControlSurfaceFocusedTask = setupControlSurfaceWorkQueue[0] || {};
+  const setupControlSurfaceBlocker =
+    setupControlSurfacePacketLabel === 'NOT_STAGED'
+      ? 'Packet has not been staged.'
+      : setupControlSurfaceNextReason;
+  const setupControlSurfaceCommandBrief =
+    setupControlSurfaceFocusedTask.title ||
+    setupControlSurfaceFocusedTask.label ||
+    setupControlSurfaceNextReason ||
+    'Review the next setup control.';
+
 
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
@@ -2949,45 +2966,34 @@ export default function WilsyCrmSetupControlPlane() {
                   <span>Work queue</span>
                     <small className={styles.workQueueFocusCaption}>{setupControlSurfacePrimaryStatus} · {setupControlSurfacePacketLabel} · {setupPacketPrimaryActionLabel}</small>
                   {/* WILSY_P60K5I4_WORK_QUEUE_FOCUS_RESCUE */}
-                  <section className={styles.liveControlSurfaceStrip} aria-label="Live backend setup control surface">
-                                        <div className={styles.liveSurfaceIdentity}>
-                                          <span>{setupControlSurfacePrimaryStatus}</span>
-                                          <strong>{setupControlSurfaceRouteGuide}</strong>
-                                          <small>{setupControlSurfaceNextReason}</small>
-                                        </div>
-                                        <div className={styles.liveSurfaceCommandGrid}>
-                                          <article>
-                                            <span>Next action</span>
-                                            <strong>{setupPacketPrimaryActionLabel}</strong>
-                                            <small>{setupControlSurfaceNextAction?.action || 'STAGE_REVIEW'}</small>
-                                          </article>
-                                          <article>
-                                            <span>Packet state</span>
-                                            <strong>{setupControlSurfacePacketLabel}</strong>
-                                            <small>{setupControlSurfaceReadinessLabel}</small>
-                                          </article>
-                                          <article>
-                                            <span>Surface scope</span>
-                                            <strong>{setupControlSurfaceSurfaceSummary}</strong>
-                                            <small>{setupControlSurfaceLive ? 'Resolved by backend' : 'Using fallback until resolver confirms'}</small>
-                                          </article>
-                                        </div>
-                                        <div className={styles.liveGateRail}>
-                                          {setupControlSurfaceGateCards.length ? setupControlSurfaceGateCards.map((gate) => (
-                                            <article key={gate.id}>
-                                              <span>{gate.label}</span>
-                                              <strong className={resolveToneClass(gate.status)}>{gate.status}</strong>
-                                              <small>{gate.detail}</small>
-                                            </article>
-                                          )) : (
-                                            <article>
-                                              <span>Resolver</span>
-                                              <strong>{setupControlSurfaceBusy ? 'CONNECTING' : 'WAITING'}</strong>
-                                              <small>{setupControlSurfaceError || 'Backend gates will appear here.'}</small>
-                                            </article>
-                                          )}
-                                        </div>
-                                      </section>
+                                    <section className={styles.workQueueCommandConsole} aria-label="Focused work queue command console">
+                    <div className={styles.workQueueNow}>
+                      <span>Live backend surface</span>
+                      <strong>{setupControlSurfaceControl.name || setupControlSurfaceControl.title || activeControl.name}</strong>
+                      <small>{setupControlSurfaceCommandBrief}</small>
+                    </div>
+                  
+                    <div className={styles.workQueueDecision}>
+                      <span>Decision</span>
+                      <strong>{setupControlSurfacePacketLabel}</strong>
+                      <small>{setupControlSurfaceBlocker}</small>
+                    </div>
+                  
+                    <div className={styles.workQueueAction}>
+                      <span>Next command</span>
+                      <strong>{setupPacketPrimaryActionLabel}</strong>
+                      <button type="button" onClick={setupPacketPrimaryAction}>
+                        Run command
+                      </button>
+                    </div>
+                  
+                    <div className={styles.workQueueChipRail}>
+                      <span>{setupControlSurfacePrimaryStatus}</span>
+                      <span>{setupControlSurfaceGateSummary}</span>
+                      <span>{setupControlSurfaceSurfaceSummary}</span>
+                      <span>{setupControlSurfaceReadinessLabel}</span>
+                    </div>
+                  </section>
 
                   <div className={styles.workStepList}>
                     
