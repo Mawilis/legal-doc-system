@@ -2,6 +2,8 @@
 import { sha3_512 } from 'js-sha3';
 import { openWilsyLeadCommandCapsule as openWilsyLeadCommandCapsuleNative } from './WilsyLeadCommandCapsule';
 import { openWilsyLeadEditSurface } from './WilsyLeadEditSurface';
+import WilsyUniversalMeetingCommandCenter from '../meeting/WilsyUniversalMeetingCommandCenter.jsx';
+import WilsyMeetingEditor from '../meeting/workspace/WilsyMeetingEditor.jsx';
 /**
  * @function readWilsyR91KOwnerWrapperPath
  * @description Reads nested owner evidence paths for the Owner table wrapper without mutating Lead data.
@@ -160,6 +162,21 @@ function resolveWilsyR91KOwnerTableDisplay(record = {}, fallbackResolver = null)
 }
 
 /**
+ * @function isWilsyR91K179E26MeetingShellRecord
+ * @description Detects Meeting records adapted into the shared Lead records shell.
+ * @param {Object} record - Lead shell row record.
+ * @returns {boolean} True when the row represents a CRM Meeting.
+ * @collaboration Meeting operating room adapter, shared CRM list grid, Lead-safe row behavior.
+ */
+function isWilsyR91K179E26MeetingShellRecord(record = {}) {
+  return (
+    String(record.sourceModule || record.module || '').toLowerCase() === 'meetings'
+    || String(record.source || '').toUpperCase() === 'CRMMEETING'
+    || Boolean(record.wilsyMeetingSourceRecord)
+  );
+}
+
+/**
  * @function canUseLeadAdministrativeCrud
  * @description Resolves whether the current operator can use selected-row Lead CRUD controls.
  * @param {string} role - Current operator role.
@@ -246,6 +263,7 @@ import {
 import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } from '../theme/wilsyCrmThemeEngineBridge.js';
 import styles from './WilsyLeadOperatingRoom.module.css';
 
+import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
 /**
  * @function openWilsyLeadCommandCapsule
  * @description Routes Edit actions to the real DB-persisted Lead Edit Surface while preserving the native command capsule for non-Edit actions.
@@ -684,6 +702,17 @@ function resolveLeadStageTone(stage = '') {
  * @collaboration Uses live title/role fields when available and falls back to the live stage only.
  */
 function resolveLeadSubtitle(record = {}) {
+  if (isWilsyR91K179E26MeetingShellRecord(record)) {
+    return String(
+      record.recordSubtitle ||
+      record.rowSubtitle ||
+      record.meetingSubtitle ||
+      record.subtitle ||
+      resolveLeadStage(record) ||
+      '—'
+    ).trim() || '—';
+  }
+
   return String(record.title || record.jobTitle || record.position || record.roleTitle || resolveLeadStage(record) || '—').trim() || '—';
 }
 
@@ -707,6 +736,14 @@ function isKnownLeadValue(value = '') {
  * @collaboration Gives operators a useful working order while preserving no-fake-data discipline.
  */
 function resolveLeadPriorityScore(record = {}) {
+  if (isWilsyR91K179E26MeetingShellRecord(record)) {
+    const meetingScore = Number(record.priorityScore ?? record.readinessScore ?? record.leadScore ?? record.score);
+
+    if (Number.isFinite(meetingScore)) {
+      return Math.max(0, Math.min(100, Math.round(meetingScore)));
+    }
+  }
+
   const complianceStatus = getComplianceStatus(record);
   const provenanceHash = getProvenanceHash(record);
   const stage = resolveLeadStage(record).toUpperCase();
@@ -822,6 +859,10 @@ function buildLeadSourceChannels(routeRegistry = [], leads = []) {
  * @collaboration Makes quick actions operate on real lead fields without unsafe script links.
  */
 function resolveLeadContactHref(record = {}, channel = 'email') {
+  if (isWilsyR91K179E26MeetingShellRecord(record)) {
+    return null;
+  }
+
   if (channel === 'email') {
     const email = resolveLeadValue(record, 'email');
     return isKnownLeadValue(email) ? `mailto:${email}` : null;
@@ -1454,6 +1495,69 @@ const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
  * @returns {JSX.Element} Lead operating room.
  * @collaboration Replaces action-fatigue layout with a high-density sovereign cockpit.
  */
+
+const WILSY_R91K179E24P44B_DEFAULT_OPERATING_COPY = Object.freeze({
+  heroEyebrow: 'SALES PIPELINE',
+  title: 'Leads',
+  createLabel: 'Create Lead',
+  heroDescription: 'Manage pipeline, qualify demand, and track every live revenue opportunity.',
+  allRecordsLabel: 'All Leads',
+  allRecordsDetail: 'Every source-backed row',
+  filterTitle: 'Filter Leads by',
+  pipelineHealthLabel: 'Pipeline Health',
+  openRecordsLabel: 'Open Leads',
+  qualifiedLabel: 'Qualified',
+  conversionLabel: 'Conversion Rate',
+  averageScoreLabel: 'Avg. Lead Score',
+  recordSingular: 'lead',
+  recordPlural: 'leads',
+  pipelineTabLabel: 'Pipeline',
+  recordsTabLabel: 'Records',
+  signalsTabLabel: 'Signals',
+  proofTabLabel: 'Proof',
+  sourcesTabLabel: 'Sources',
+  selectedRecordLabel: 'selected lead',
+  selectedRecordsLabel: 'selected leads',
+  tableHeaders: {
+    name: 'Lead Name',
+    company: 'Company',
+    email: 'Email',
+    phone: 'Phone',
+    owner: 'Owner',
+    status: 'Status',
+    score: 'Score',
+  },
+});
+
+/**
+ * @function resolveWilsyR91K179E24P44BOperatingCopy
+ * @description Resolves CRM operating-room copy while preserving Leads as the default visual/source contract.
+ * @param {Object} overrides - Optional module-specific copy overrides.
+ * @returns {Object} Operating-room copy packet.
+ * @collaboration WilsyLeadOperatingRoom, WilsyMeetingOperatingRoom adapter, identical CRM workspace doctrine.
+ */
+function resolveWilsyR91K179E24P44BOperatingCopy(overrides = {}) {
+  return {
+    ...WILSY_R91K179E24P44B_DEFAULT_OPERATING_COPY,
+    ...overrides,
+    tableHeaders: {
+      ...WILSY_R91K179E24P44B_DEFAULT_OPERATING_COPY.tableHeaders,
+      ...(overrides.tableHeaders || {}),
+    },
+  };
+}
+/**
+ * @function WilsyLeadOperatingRoom
+ * @description Renders the canonical CRM Leads operating room and now also acts as the parameterized records shell for sibling CRM workspaces such as Meetings.
+ * @param {Object} props - Lead operating room props and optional operatingCopy overrides.
+ * @returns {JSX.Element} Canonical CRM records operating room.
+ * @collaboration CRMDashboard, WilsyMeetingOperatingRoom adapter, CRM live source posture, Lead records workspace, Wilsy OS identical module doctrine.
+ */
+/**
+ * @function WilsyLeadOperatingRoom
+ * @description Renders the canonical CRM records operating room and parameterized shell for sibling CRM workspaces such as Meetings.
+ * @collaboration CRMDashboard, WilsyMeetingOperatingRoom adapter, CRM live records, Wilsy OS identical module doctrine.
+ */
 export default function WilsyLeadOperatingRoom({
   leads = [],
   searchTerm = '',
@@ -1464,8 +1568,94 @@ export default function WilsyLeadOperatingRoom({
   user = {},
   loading = false,
   themeRuntime = {},
-  onOpenThemeAuthority = openCrmGlobalThemeAuthorityFallback
+  onOpenThemeAuthority = openCrmGlobalThemeAuthorityFallback,
+  operatingCopy = {},
+  onOpenOperatingCreate = null,
+  onOpenOperatingEdit = null,
+  onOpenCrmSetup = null
 }) {
+  const leadOperatingCopy = useMemo(() => resolveWilsyR91K179E24P44BOperatingCopy(operatingCopy), [operatingCopy]);
+  const leadOperatingCopyTitle = leadOperatingCopy.title || 'Leads';
+  const leadOperatingCopyRecordSingular = leadOperatingCopy.recordSingular || 'lead';
+  const leadOperatingCopyRecordPlural = leadOperatingCopy.recordPlural || 'leads';
+
+  /**
+   * @function handleWilsyR91K179E24P49BOperatingCreateAction
+   * @description Delegates module-specific create actions such as Meetings before falling back to native Lead create mode.
+   * @param {Object} context - Optional action context.
+   * @returns {void}
+   * @collaboration WilsyLeadOperatingRoom, WilsyMeetingOperatingRoom, module-safe CRM create workflows.
+   */
+  function handleWilsyR91K179E24P49BOperatingCreateAction(context = {}) {
+    if (typeof onOpenOperatingCreate === 'function') {
+      const delegationResult = onOpenOperatingCreate({
+        ...context,
+        module: leadOperatingCopy.recordPlural || 'leads',
+        recordSingular: leadOperatingCopy.recordSingular || 'lead',
+        title: leadOperatingCopyTitle || 'Leads',
+        commandSurface: 'R91K179E24P49B_OPERATING_CREATE_DELEGATION',
+        generatedAt: new Date().toISOString(),
+      });
+
+      if (delegationResult !== false) {
+        return;
+      }
+    }
+
+    setMode('create');
+  }
+
+  /**
+   * @function handleWilsyR91K179E26OperatingEditAction
+   * @description Delegates module-specific edit actions such as Meetings before falling back to native Lead edit authority.
+   * @param {Object} record - Row record.
+   * @param {string} recordId - Row record id.
+   * @param {Array<string>} recordIds - Selected record ids.
+   * @returns {void}
+   * @collaboration WilsyMeetingOperatingRoom edit workflow, Lead command capsule, shared CRM records table.
+   */
+  function handleWilsyR91K179E26OperatingEditAction(record = {}, recordId = '', recordIds = []) {
+    if (isWilsyR91K179E26MeetingShellRecord(record) && typeof onOpenOperatingEdit === 'function') {
+      const delegationResult = onOpenOperatingEdit({
+        activeModule: leadOperatingCopyRecordPlural,
+        source: 'R91K179E26_SHARED_RECORDS_EDIT_DELEGATION',
+        record,
+        recordId,
+        recordIds,
+      });
+
+      if (delegationResult !== false) {
+        return;
+      }
+    }
+
+    openLeadCrudPanelWithAuthority('edit', record, recordId, recordIds);
+  }
+
+
+  /**
+   * @function resolveLeadOperatingCopyLabel
+   * @description Resolves visible Lead shell labels from operatingCopy so sibling workspaces such as Meetings do not render Lead copy.
+   * @param {string} label - Default Lead-shell label.
+   * @param {string} id - Optional tab or view id.
+   * @returns {string} Resolved visible label.
+   * @collaboration WilsyLeadOperatingRoom, WilsyMeetingOperatingRoom adapter, CRM records shell label parity.
+   */
+  function resolveLeadOperatingCopyLabel(label = '', id = '') {
+    const normalizedId = String(id || '').toLowerCase();
+    const normalizedLabel = String(label || '').toLowerCase();
+
+    if (normalizedId === 'pipeline' || normalizedLabel === 'pipeline') return leadOperatingCopy.pipelineTabLabel || label;
+    if (normalizedId === 'records' || normalizedLabel === 'records') return leadOperatingCopy.recordsTabLabel || label;
+    if (normalizedId === 'signals' || normalizedLabel === 'signals') return leadOperatingCopy.signalsTabLabel || label;
+    if (normalizedId === 'proof' || normalizedLabel === 'proof') return leadOperatingCopy.proofTabLabel || label;
+    if (normalizedId === 'sources' || normalizedLabel === 'sources') return leadOperatingCopy.sourcesTabLabel || label;
+    if (normalizedLabel === 'all leads') return leadOperatingCopy.allRecordsLabel || label;
+    if (normalizedLabel === 'leads') return leadOperatingCopyTitle;
+    if (normalizedLabel === 'create lead') return leadOperatingCopy.createLabel || label;
+
+    return label;
+  }
   const role = resolveLeadRole(user, tenantConfig);
   const globalThemeAuthorityLabel = resolveCrmGlobalThemeAuthorityLabel(themeRuntime);
   const globalThemeAuthorityMode = resolveCrmGlobalThemeAuthorityMode(themeRuntime);
@@ -1488,7 +1678,7 @@ export default function WilsyLeadOperatingRoom({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
-  const [coreToolsOpen, setCoreToolsOpen] = useState(false);
+const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   const [draft, setDraft] = useState(() => createEmptyLeadDraft({}));
   const [saveStatus, setSaveStatus] = useState('');
   const [syncStatus, setSyncStatus] = useState('SOURCE_READY_UPSTREAM');
@@ -1921,7 +2111,7 @@ export default function WilsyLeadOperatingRoom({
         </label>
 
         <div className={styles.commandActions}>
-          <button type="button" className={styles.primaryToolbarButton} onClick={() => setMode('create')} disabled={!canUseLeadAction(role, 'create')}>
+          <button type="button" className={styles.primaryToolbarButton} onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()} disabled={!canUseLeadAction(role, 'create')}>
             <Plus size={17} />
             <span>New Lead</span>
           </button>
@@ -1944,7 +2134,16 @@ export default function WilsyLeadOperatingRoom({
                 <button type="button" onClick={() => setCalendarOpen(true)}><CalendarDays size={15} />Calendar View</button>
                 <button type="button" onClick={() => setSplitView(previous => !previous)}><SplitSquareHorizontal size={15} />{splitView ? 'Single Interface' : 'Split Interface'}</button>
                 <button type="button" onClick={() => setCommandOpen(true)}><Command size={15} />Command Center</button>
-                <button type="button" disabled={!canUseLeadAction(role, 'setup')} onClick={() => setSetupOpen(true)}><Settings size={15} />Setup</button>
+                {/* WILSY_P60G4_SETUP_ICON_RESTORED_CONTROLLED */}
+        <button
+          type="button"
+          className={styles.wilsyP60G4SetupIconButton}
+          onClick={handleOpenCrmSetupFromTopRail}
+          aria-label="Open CRM setup controls"
+          title="Setup"
+        >
+          ⚙
+        </button>
                 <button type="button" disabled={!canUseLeadAction(role, 'export')}><Download size={15} />Export Leads</button>
               </section>
             ) : null}
@@ -1997,10 +2196,10 @@ export default function WilsyLeadOperatingRoom({
         data-wilsy-lead-topbar={WILSY_LEAD_TABBED_APP_BAR_VERSION}
       >
         <section className={[styles.headerPrimaryRow, styles.leadModuleTopBar, styles.leadHeaderPrimary].join(' ')}>
-          <section className={[styles.headerIdentity, styles.leadModuleTitleBlock].join(' ')}>
-            <small>Sales Pipeline</small>
-            <strong>{mode === 'create' ? 'Create Lead' : 'Leads'}</strong>
-            <em>Manage pipeline, qualify demand, and track every live revenue opportunity.</em>
+          <section className={[styles.headerIdentity, styles.leadModuleTitleBlock].join(' ')} data-wilsy-r91k179e24p48b-hero-copy-stack="true" data-wilsy-r91k179e24p48c-hero-copy-kind={String(leadOperatingCopyTitle || "").trim().toLowerCase()}>
+            <small>{leadOperatingCopy.heroEyebrow}</small>
+            <strong>{mode === 'create' ? leadOperatingCopy.createLabel : leadOperatingCopyTitle}</strong>
+            <em>{leadOperatingCopy.heroDescription}</em>
           </section>
 
           <section
@@ -2022,13 +2221,22 @@ export default function WilsyLeadOperatingRoom({
               <RotateCw size={18} />
             </button>
 
-            <button type="button" className={styles.leadIconButton} onClick={() => setCalendarOpen(true)} title="Calendar">
+            
+            {/* WILSY_P60H2B_SETUP_ICON_BEFORE_CALENDAR */}
+            <button
+              type="button"
+              className={styles.leadIconButton}
+              onClick={handleOpenCrmSetupFromTopRail}
+              title="Setup"
+              aria-label="Open CRM setup controls"
+            >
+              <Settings size={18} aria-hidden="true" />
+            </button>
+<button type="button" className={styles.leadIconButton} onClick={() => setCalendarOpen(true)} title="Calendar">
               <CalendarDays size={18} />
             </button>
 
-            <button type="button" className={styles.leadIconButton} disabled={!canUseLeadAction(role, 'setup')} onClick={() => setSetupOpen(true)} title="Setup">
-              <Settings size={18} />
-            </button>
+            {/* WILSY_P60G3_SETUP_TRIGGER_REMOVED_FROM_SHARED_RECORD_SHELL: setup trigger removed from shared Leads/Meetings record header. Setup belongs at CRMDashboard admin scope. */ null}
 
             <div className={styles.leadDropdownWrap}>
                 <button
@@ -2038,7 +2246,7 @@ export default function WilsyLeadOperatingRoom({
                   aria-label={`Open global theme authority: ${globalThemeAuthorityLabel}`}
                   data-wilsy-global-theme-authority-control="command-center"
                 >
-                  <Sparkles size={17} />
+                  <Settings size={18} aria-hidden="true" />
                   <span>
                     <small>Theme Authority</small>
                     <strong>{globalThemeAuthorityLabel}</strong>
@@ -2059,7 +2267,7 @@ export default function WilsyLeadOperatingRoom({
               <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
                 <List size={18} />
                 <span>
-                  <strong>{activeListView.label}</strong>
+                  <strong>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</strong>
                   <em>{activeListView.detail}</em>
                 </span>
                 <ChevronDown size={16} />
@@ -2074,7 +2282,7 @@ export default function WilsyLeadOperatingRoom({
                       data-active={view.id === activeListView.id ? 'true' : 'false'}
                       onClick={() => handleSelectLeadListView(view.id)}
                     >
-                      <span>{view.label}</span>
+                      <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
                       <em>{view.detail}</em>
                     </button>
                   ))}
@@ -2126,7 +2334,7 @@ export default function WilsyLeadOperatingRoom({
                   onClick={() => setActiveTopTab(tab.id)}
                 >
                   <TabIcon size={16} />
-                  <span>{tab.label}</span>
+                  <span>{resolveLeadOperatingCopyLabel(tab.label, tab.id)}</span>
                 </button>
               );
             })}
@@ -2177,11 +2385,11 @@ export default function WilsyLeadOperatingRoom({
               <button
                 type="button"
                 className={[styles.headerPrimaryAction, styles.leadCreateButton].join(' ')}
-                onClick={() => setMode('create')}
+                onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()}
                 disabled={!canUseLeadAction(role, 'create')}
               >
                 <Plus size={18} />
-                <span>Create Lead</span>
+                <span>{leadOperatingCopy.createLabel}</span>
               </button>
               <button
                 type="button"
@@ -2194,7 +2402,7 @@ export default function WilsyLeadOperatingRoom({
               </button>
               {createMenuOpen ? (
                 <section className={styles.leadDropdownMenu} aria-label="Create Lead options">
-                  <button type="button" onClick={() => setMode('create')}><Plus size={14} />Create Lead</button>
+                  <button type="button" onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()}><Plus size={14} />{leadOperatingCopy.createLabel}</button>
                   <button type="button" disabled={!canUseLeadAction(role, 'import')}><Upload size={14} />Import Leads</button>
                   <button type="button" disabled={!canUseLeadAction(role, 'import')}><FileInput size={14} />Import Notes</button>
                 </section>
@@ -2350,7 +2558,7 @@ export default function WilsyLeadOperatingRoom({
                 <RotateCw size={15} />
                 Sync Sources
               </button>
-              <button type="button" onClick={() => setMode('create')} disabled={!canUseLeadAction(role, 'create')}>
+              <button type="button" onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()} disabled={!canUseLeadAction(role, 'create')}>
                 <Plus size={15} />
                 New Lead
               </button>
@@ -2553,7 +2761,7 @@ export default function WilsyLeadOperatingRoom({
       >
         <header className={styles.leadFilterRailHeader}>
           <span>
-            <strong>Filter Leads by</strong>
+            <strong>{leadOperatingCopy.filterTitle}</strong>
             <em>{visibleFilterCount} available filters</em>
           </span>
           <button
@@ -2640,7 +2848,7 @@ export default function WilsyLeadOperatingRoom({
             <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
               <SlidersHorizontal size={18} />
               <span>
-                <strong>{activeListView.label}</strong>
+                <strong>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</strong>
                 <em>{activeListView.detail}</em>
               </span>
               <ChevronDown size={16} />
@@ -2655,7 +2863,7 @@ export default function WilsyLeadOperatingRoom({
                     data-active={view.id === activeListView.id ? 'true' : 'false'}
                     onClick={() => handleSelectLeadListView(view.id)}
                   >
-                    <span>{view.label}</span>
+                    <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
                     <em>{view.detail}</em>
                   </button>
                 ))}
@@ -2680,7 +2888,7 @@ export default function WilsyLeadOperatingRoom({
                 onClick={() => setActiveTopTab(tab.id)}
               >
                 <TabIcon size={16} />
-                <span>{tab.label}</span>
+                <span>{resolveLeadOperatingCopyLabel(tab.label, tab.id)}</span>
               </button>
             );
           })}
@@ -2751,11 +2959,11 @@ export default function WilsyLeadOperatingRoom({
           <button
             type="button"
             className={[styles.headerPrimaryAction, styles.leadCreateButton].join(' ')}
-            onClick={() => setMode('create')}
+            onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()}
             disabled={!canUseLeadAction(role, 'create')}
           >
             <Plus size={18} />
-            <span>Create Lead</span>
+            <span>{leadOperatingCopy.createLabel}</span>
           </button>
           <button
             type="button"
@@ -2768,7 +2976,7 @@ export default function WilsyLeadOperatingRoom({
           </button>
           {createMenuOpen ? (
             <section className={styles.leadDropdownMenu} aria-label="Create Lead options">
-              <button type="button" onClick={() => setMode('create')}><Plus size={14} />Create Lead</button>
+              <button type="button" onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()}><Plus size={14} />{leadOperatingCopy.createLabel}</button>
               <button type="button" disabled={!canUseLeadAction(role, 'import')}><Upload size={14} />Import Leads</button>
               <button type="button" disabled={!canUseLeadAction(role, 'import')}><FileInput size={14} />Import Notes</button>
             </section>
@@ -2798,6 +3006,23 @@ export default function WilsyLeadOperatingRoom({
     });
   }
   /**
+   * @function closeWilsyR91K179E24P56D2TransientRecordMenus
+   * @description Closes transient CRM dropdown menus before foreground command surfaces open.
+   * @returns {void}
+   * @collaboration Proof Trail foreground behavior, More menu, Create menu, Sort menu, CRM command capsule.
+   */
+  function closeWilsyR91K179E24P56D2TransientRecordMenus() {
+    try {
+      if (typeof setMoreMenuOpen === 'function') setMoreMenuOpen(false);
+      if (typeof setCreateMenuOpen === 'function') setCreateMenuOpen(false);
+      if (typeof setSortMenuOpen === 'function') setSortMenuOpen(false);
+      if (typeof setOpenRowActionId === 'function') setOpenRowActionId('');
+    } catch (error) {
+      // Non-fatal: command capsule must still open even if a transient menu state is unavailable.
+    }
+  } /* R91K179E24P56D2_CLOSE_TRANSIENT_MENUS */
+
+  /**
    * @function openLeadCrudPanel
    * @description Opens the dedicated R91K Lead command capsule for View, Proof Trail, Edit, Delete Selected, Change Owner, Mass Update, and Mass Email actions.
    * @param {string} modeKey - Requested lead action key.
@@ -2808,6 +3033,8 @@ export default function WilsyLeadOperatingRoom({
    * @collaboration R91K.14B direct button route, WilsyLeadCommandCapsule, selected-row action bar, row action menu.
    */
   function openLeadCrudPanel(modeKey, record = null, recordId = '', recordIds = []) {
+    closeWilsyR91K179E24P56D2TransientRecordMenus(); /* R91K179E24P56D2_OPEN_CRUD_CLOSE_MENUS */
+
     const normalizedLeadAction = String(modeKey || 'view').trim();
     const selectedRecordIds = Array.isArray(recordIds) && recordIds.length
       ? recordIds.filter(Boolean)
@@ -2853,6 +3080,24 @@ export default function WilsyLeadOperatingRoom({
       record: resolvedRecord,
       recordId: resolvedRecordId,
       recordIds: selectedRecordIds.length ? selectedRecordIds : [resolvedRecordId].filter(Boolean),
+      module: leadOperatingCopy?.recordPlural || resolvedRecord?.sourceModule || resolvedRecord?.source || 'leads',
+      moduleName: leadOperatingCopy?.title || leadOperatingCopy?.recordPlural || 'Leads',
+      recordModule: leadOperatingCopy?.recordPlural || resolvedRecord?.sourceModule || resolvedRecord?.source || 'leads',
+      sourceModule: resolvedRecord?.sourceModule || resolvedRecord?.source || leadOperatingCopy?.recordPlural || 'leads',
+      recordSingular: leadOperatingCopy?.recordSingular || 'lead',
+      recordPlural: leadOperatingCopy?.recordPlural || 'leads',
+      operatingCopy: leadOperatingCopy,
+      governanceCopy: {
+        module: leadOperatingCopy?.recordPlural || resolvedRecord?.sourceModule || resolvedRecord?.source || 'leads',
+        title: leadOperatingCopy?.title || 'Leads',
+        recordSingular: leadOperatingCopy?.recordSingular || 'lead',
+        recordPlural: leadOperatingCopy?.recordPlural || 'leads',
+        recordNameLabel: leadOperatingCopy?.tableHeaders?.name || 'Lead Name',
+        companyLabel: leadOperatingCopy?.tableHeaders?.company || 'Company',
+        emailLabel: leadOperatingCopy?.tableHeaders?.email || 'Email',
+        phoneLabel: leadOperatingCopy?.tableHeaders?.phone || 'Phone',
+        commandSurface: 'R91K179E24P58D2_MODULE_AWARE_DELETE_GOVERNANCE',
+      }, /* R91K179E24P58D2_MODULE_CONTEXT */
       tenantId
     });
   }
@@ -2961,7 +3206,7 @@ export default function WilsyLeadOperatingRoom({
         <section className={styles.leadRecordsPanel}>
           <header className={styles.leadRecordsHeader}>
             <span>
-              <small>{activeListView.label}</small>
+              <small>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</small>
               <strong>{filteredLeads.length} records</strong>
               <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : `${activeSort.label} order`}</em>
             </span>
@@ -2993,7 +3238,7 @@ export default function WilsyLeadOperatingRoom({
                 disabled={selectedRowIds.length !== 1 || !canUseLeadAdministrativeCrud(role, 'edit')}
                 aria-disabled={selectedRowIds.length !== 1 || !canUseLeadAdministrativeCrud(role, 'edit')}
                 title={resolveLeadCrudAuthorityReason(role)}
-                onClick={() => openLeadCrudPanelWithAuthority('edit', resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], [selectedRowIds[0]])}
+                onClick={() => handleWilsyR91K179E26OperatingEditAction(resolveSelectedLeadActionRecord(selectedRowIds[0], 0), selectedRowIds[0], [selectedRowIds[0]])}
               >
                 Edit
               </button>
@@ -3053,13 +3298,13 @@ export default function WilsyLeadOperatingRoom({
                       onChange={handleToggleAllLeadSelection}
                     />
                   </th>
-                  <th>Lead Name</th>
-                  <th>Company</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Owner</th>
-                  <th>Status</th>
-                  <th>Score</th>
+                  <th>{leadOperatingCopy.tableHeaders.name}</th>
+                  <th>{leadOperatingCopy.tableHeaders.company}</th>
+                  <th>{leadOperatingCopy.tableHeaders.email}</th>
+                  <th>{leadOperatingCopy.tableHeaders.phone}</th>
+                  <th>{leadOperatingCopy.tableHeaders.owner}</th>
+                  <th>{leadOperatingCopy.tableHeaders.status}</th>
+                  <th>{leadOperatingCopy.tableHeaders.score}</th>
                   <th aria-label="Row actions" />
                 </tr>
               </thead>
@@ -3072,30 +3317,40 @@ export default function WilsyLeadOperatingRoom({
                   const priorityScore = resolveLeadPriorityScore(record);
                   const emailHref = resolveLeadContactHref(record, 'email');
                   const phoneHref = resolveLeadContactHref(record, 'phone');
+                  const rowSourceModule = String(record.sourceModule || record.module || '').toLowerCase();
+                  const rowName = resolveLeadValue(record, 'name');
+                  const rowSubtitle = resolveLeadSubtitle(record);
+                  const rowCompany = resolveLeadValue(record, 'company');
+                  const rowEmail = resolveLeadValue(record, 'email');
+                  const rowPhone = resolveLeadValue(record, 'phone');
 
                   return (
-                    <tr key={recordId} data-selected={selectedRowIds.includes(recordId) ? 'true' : 'false'}>
+                    <tr
+                      key={recordId}
+                      data-selected={selectedRowIds.includes(recordId) ? 'true' : 'false'}
+                      data-wilsy-source-module={rowSourceModule || undefined}
+                    >
                       <td>
                         <input
                           type="checkbox"
-                          aria-label={`Select ${resolveLeadValue(record, 'name')}`}
+                          aria-label={`Select ${rowName}`}
                           checked={selectedRowIds.includes(recordId)}
                           onChange={() => handleToggleLeadSelection(recordId)}
                         />
                       </td>
                       <td>
                         <button type="button" className={styles.leadNameCell} onClick={() => setSelectedLeadId(recordId)}>
-                          <strong>{resolveLeadValue(record, 'name')}</strong>
-                          <em>{resolveLeadSubtitle(record)}</em>
+                          <strong title={rowName}>{rowName}</strong>
+                          <em title={rowSubtitle}>{rowSubtitle}</em>
                         </button>
                       </td>
-                      <td>{resolveLeadValue(record, 'company')}</td>
+                      <td title={rowCompany}>{rowCompany}</td>
                       <td>
-                        {emailHref ? <a href={emailHref}>{resolveLeadValue(record, 'email')}</a> : resolveLeadValue(record, 'email')}
+                        {emailHref ? <a href={emailHref}>{rowEmail}</a> : <span title={rowEmail}>{rowEmail}</span>}
                       </td>
                       <td>
                         <span className={styles.leadPhoneCell}>
-                          {phoneHref ? <a href={phoneHref}>{resolveLeadValue(record, 'phone')}</a> : resolveLeadValue(record, 'phone')}
+                          {phoneHref ? <a href={phoneHref}>{rowPhone}</a> : <span title={rowPhone}>{rowPhone}</span>}
                           {phoneHref ? <Phone size={14} /> : null}
                         </span>
                       </td>
@@ -3121,7 +3376,7 @@ export default function WilsyLeadOperatingRoom({
                         </button>
                         {openRowActionId === recordId ? (
                           <section className={styles.leadRowActionMenu} aria-label="Record actions">
-                            <button type="button" onClick={() => setMode('create')}>Edit Record</button>
+                            <button type="button" onClick={() => handleWilsyR91K179E26OperatingEditAction(record, recordId, [recordId])}>Edit Record</button>
                             <a href={emailHref || undefined} onClick={(event) => { if (!emailHref) event.preventDefault(); }}>Send Email</a>
                             <button type="button" onClick={() => setCalendarOpen(true)}>Create Task</button>
                             <button type="button" onClick={() => setCommandOpen(true)}>Add Tags</button>
@@ -3152,10 +3407,10 @@ export default function WilsyLeadOperatingRoom({
 
           <footer className={styles.leadRecordsFooter} data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER">
             <span className={styles.leadFooterRecordRange}>
-              <strong>{filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} leads` : 'Showing 0 live leads'}</strong>
+              <strong>{filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} ${leadOperatingCopyRecordPlural}` : `Showing 0 live ${leadOperatingCopyRecordPlural}`}</strong>
               <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : 'Live backend rows only'}</em>
             </span>
-            <nav className={styles.leadFooterPagination} aria-label="Lead records pagination">
+            <nav className={styles.leadFooterPagination} aria-label={`${leadOperatingCopyTitle} records pagination`}>
               <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="First page" onClick={() => handleLeadPageChange(1)}>|&lt;</button>
               <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="Previous page" onClick={() => handleLeadPageChange(leadPagination.currentPage - 1)}>&lt;</button>
               {leadPagination.pageItems.map(item => (
@@ -3178,7 +3433,7 @@ export default function WilsyLeadOperatingRoom({
                 <select
                   value={leadPagination.pageSize}
                   onChange={event => handleLeadPageSizeChange(event.target.value)}
-                  aria-label="Lead records per page"
+                  aria-label={`${leadOperatingCopyTitle} records per page`}
                 >
                   {LEAD_PAGE_SIZE_OPTIONS.map(option => (
                     <option key={option} value={option}>{option} / page</option>
@@ -3511,7 +3766,7 @@ export default function WilsyLeadOperatingRoom({
             <small>Verified Create</small>
             <strong>Create the first real Lead</strong>
             <p>Lead name, company and email are required before backend creation activates.</p>
-            <button type="button" onClick={() => setMode('create')}>Create Verified Lead</button>
+            <button type="button" onClick={() => handleWilsyR91K179E24P49BOperatingCreateAction()}>Create Verified Lead</button>
           </article>
         </section>
 
@@ -3543,7 +3798,7 @@ export default function WilsyLeadOperatingRoom({
         <header>
           <span>
             <small>Data Provenance Ledger</small>
-            <strong>All Leads</strong>
+            <strong>{leadOperatingCopy.allRecordsLabel}</strong>
           </span>
           <div>
             <button type="button" onClick={handleSourceSync} disabled={isSyncing}>
@@ -4117,13 +4372,13 @@ export default function WilsyLeadOperatingRoom({
               <label><span>Lead Name *</span><input value={draft.name} onChange={event => updateDraftField('name', event.target.value)} /></label>
               <label><span>Company *</span><input value={draft.company} onChange={event => updateDraftField('company', event.target.value)} /></label>
               <label><span>Email *</span><input value={draft.email} onChange={event => updateDraftField('email', event.target.value)} /></label>
-              <label><span>Phone</span><input value={draft.phone} onChange={event => updateDraftField('phone', event.target.value)} /></label>
+              <label><span>{leadOperatingCopy.tableHeaders.phone}</span><input value={draft.phone} onChange={event => updateDraftField('phone', event.target.value)} /></label>
               <label><span>Mobile</span><input value={draft.mobile} onChange={event => updateDraftField('mobile', event.target.value)} /></label>
               <label><span>Title</span><input value={draft.title} onChange={event => updateDraftField('title', event.target.value)} /></label>
               <label><span>Lead Source</span><select value={draft.source} onChange={event => updateDraftField('source', event.target.value)}><option>Website</option><option>Referral</option><option>Partner</option><option>Outbound</option><option>Event</option><option>Wilsy AI</option></select></label>
-              <label><span>Status</span><select value={draft.status} onChange={event => updateDraftField('status', event.target.value)}><option>NEW</option><option>OPEN</option><option>CONTACTED</option><option>QUALIFIED</option><option>DISQUALIFIED</option></select></label>
+              <label><span>{leadOperatingCopy.tableHeaders.status}</span><select value={draft.status} onChange={event => updateDraftField('status', event.target.value)}><option>NEW</option><option>OPEN</option><option>CONTACTED</option><option>{leadOperatingCopy.qualifiedLabel}</option><option>DISQUALIFIED</option></select></label>
               <label><span>Industry</span><input value={draft.industry} onChange={event => updateDraftField('industry', event.target.value)} /></label>
-              <label><span>Owner</span><input value={draft.owner} onChange={event => updateDraftField('owner', event.target.value)} /></label>
+              <label><span>{leadOperatingCopy.tableHeaders.owner}</span><input value={draft.owner} onChange={event => updateDraftField('owner', event.target.value)} /></label>
               <label><span>Website</span><input value={draft.website} onChange={event => updateDraftField('website', event.target.value)} /></label>
               <label><span>Employees</span><input value={draft.employees} onChange={event => updateDraftField('employees', event.target.value)} /></label>
             </div>
@@ -4221,23 +4476,75 @@ export default function WilsyLeadOperatingRoom({
     );
   }
 
+  
   /**
    * @function renderCalendarDrawer
-   * @description Renders the Lead calendar drawer.
-   * @returns {JSX.Element|null} Calendar drawer.
-   * @collaboration Gives Leads call, meeting and unavailable planning.
+   * @description Renders the calendar create drawer. In Meetings mode this uses the canonical Meeting editor instead of the legacy Universal Meeting command center.
+   * @returns {JSX.Element|null} Calendar drawer or canonical Meeting editor surface.
+   * @collaboration Theme Authority calendar icon, WilsyMeetingEditor, MeetingOperatingRoom, Lead calendar fallback.
    */
   function renderCalendarDrawer() {
-    if (!calendarOpen) return null;
+    if (!calendarOpen) {
+      return null;
+    }
+
+    const isMeetingModule = String(
+      leadOperatingCopy?.recordPlural ||
+      leadOperatingCopy?.recordSingular ||
+      ''
+    ).toLowerCase().includes('meeting');
+
+    if (isMeetingModule) {
+      return (
+        <section
+          className={styles.drawer}
+          data-wilsy-r91k179e24p59b5-canonical-meeting-calendar="true"
+          aria-label="Canonical Meeting create workspace"
+        >
+          <header>
+            <span>
+              <small>Meeting</small>
+              <strong>Create Meeting</strong>
+            </span>
+            <button type="button" onClick={() => setCalendarOpen(false)}>Close</button>
+          </header>
+
+          <WilsyMeetingEditor
+            mode="create"
+            tenantConfig={tenantConfig}
+            user={user}
+            meeting={null}
+            initialMeeting={{}}
+            onCancel={() => setCalendarOpen(false)}
+            onClose={() => setCalendarOpen(false)}
+            onBack={() => setCalendarOpen(false)}
+            onBackToOverview={() => setCalendarOpen(false)}
+            onSaved={() => setCalendarOpen(false)}
+            onMeetingSaved={() => setCalendarOpen(false)}
+          />
+        </section>
+      );
+    }
 
     return (
-      <section className={styles.drawer} aria-label="Lead calendar workspace">
-        <header><span><small>Calendar</small><strong>Lead Activity Month</strong></span><button type="button" onClick={() => setCalendarOpen(false)}>Close</button></header>
-        <nav><button type="button">Meeting</button><button type="button">Call</button><button type="button">Mark As Unavailable</button></nav>
-        <div className={styles.calendarGrid}>{buildCalendarDays().map(day => <button key={day} type="button"><strong>{day <= 31 ? day : ''}</strong>{day % 7 === 0 ? <span>Call</span> : null}{day % 11 === 0 ? <em>Meeting</em> : null}</button>)}</div>
-      </section>
+      <WilsyUniversalMeetingCommandCenter
+        mode="create-lead"
+        initialViewport="MEETING_INFO"
+        relatedRecord={{ module: 'Lead', type: 'Lead', title: 'Create Lead draft' }}
+        onClose={() => setCalendarOpen(false)}
+        onSaveDraft={(payload) => {
+          console.info('[WILSY CRM] Meeting draft prepared', payload?.status || 'LOCAL_DRAFT_READY');
+        }}
+        onImportPreview={(payload) => {
+          console.info('[WILSY CRM] Meeting import preview', payload?.status || 'LOCAL_PREVIEW_ONLY');
+        }}
+        onMeetingCreated={(payload) => {
+          console.info('[WILSY CRM] Meeting backend route required', payload?.status || 'BACKEND_ROUTE_REQUIRED');
+        }}
+      />
     );
   }
+
 
   /**
    * @function renderCommandDrawer
@@ -4266,13 +4573,93 @@ export default function WilsyLeadOperatingRoom({
     );
   }
 
+
   /**
    * @function renderSetupDrawer
    * @description Renders CRM setup drawer.
    * @returns {JSX.Element|null} Setup drawer.
    * @collaboration Groups operating controls into enterprise setup domains.
    */
+
+  /**
+   * @function handleOpenCrmSetupFromTopRail
+   * @description Opens CRM Setup from the shared top rail while keeping Setup ownership in CRMDashboard.
+   * @returns {void}
+   * @collaboration Shared Leads and Meetings top rail, CRMDashboard setup owner, WilsyCrmSetupControlPlane, records-only workspace boundary.
+   */
+  function handleOpenCrmSetupFromTopRail() {
+    if (typeof onOpenCrmSetup === 'function') {
+      onOpenCrmSetup();
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('wilsy:crm-setup-open', {
+        detail: {
+          source: 'WILSY_P60H1_TOPRAIL_SETUP_EVENT',
+          commandSurface: 'CRM_SHARED_RECORDS_TOP_RAIL',
+          generatedAt: new Date().toISOString(),
+        },
+      }));
+    }
+  }
+  /**
+   * @function renderSetupDrawer
+   * @description Returns null because CRM Setup is now owned by CRMDashboard and must not mount inside the shared Leads or Meetings records shell.
+   * @returns {JSX.Element|null} Null inside WilsyLeadOperatingRoom so records workspaces remain isolated from CRM admin setup state.
+   * @collaboration CRMDashboard setup owner, shared records shell boundary, Leads workspace, Meetings workspace, and WilsyCrmSetupControlPlane.
+   */
+  /* WILSY_P60H1C_RENDER_SETUP_DRAWER_DOCGUARD */
+
   function renderSetupDrawer() {
+  /* WILSY_P60H1_DISABLE_LOCAL_SETUP_DRAWER
+     Setup is rendered by CRMDashboard only. Shared Leads and Meetings records shell must never mount setup locally. */
+  return null;
+
+
+/* WILSY_P60G_MEETING_SETUP_SCOPE_RESCUE
+     Setup is a CRM admin surface and must not render inside the shared Meetings records shell. */
+  if (
+    String(leadOperatingCopyTitle || '').toLowerCase().includes('meeting') ||
+    String(leadOperatingCopyRecordSingular || '').toLowerCase().includes('meeting') ||
+    String(leadOperatingCopyRecordPlural || '').toLowerCase().includes('meeting')
+  ) {
+    return null;
+  }
+
+
+  /* WILSY_P60E4B_SINGLE_SETUP_SURFACE
+     Early return keeps only one canonical setup surface and bypasses the legacy stacked drawer body. */
+  return (
+    <section
+      className={styles.wilsyP60E4BSetupSingleSurface}
+      role="dialog"
+      aria-modal="true"
+      aria-label="CRM setup operating controls"
+    >
+      <header className={styles.wilsyP60E4BSetupSingleChrome}>
+        <div className={styles.wilsyP60E4BSetupSingleTitleBlock}>
+          <span>Setup</span>
+          <strong>CRM Operating Controls</strong>
+          <small>Configure CRM authority, data controls, automation, APIs, and evidence.</small>
+        </div>
+
+        <button
+          type="button"
+          className={styles.wilsyP60E4BSetupSingleClose}
+          onClick={() => setSetupOpen(false)}
+        >
+          Close
+        </button>
+      </header>
+
+      <div className={styles.wilsyP60E4BSetupSingleViewport}>
+        <WilsyCrmSetupControlPlane setupOperatingModel={setupOperatingModel} />
+      </div>
+    </section>
+  );
+
+
     if (!setupOpen) return null;
 
     const liveStatus = setupOperatingModel.summary.find(item => item.label === 'Source Routes')?.status || 'waiting';
@@ -4284,6 +4671,8 @@ export default function WilsyLeadOperatingRoom({
         data-wilsy-setup-live="CRM_COMMAND_FABRIC"
         data-wilsy-setup-status={liveStatus}
       >
+      {/* WILSY_P60C_SETUP_CONTROL_PLANE */}
+      <WilsyCrmSetupControlPlane setupOperatingModel={setupOperatingModel} />
         <header className={styles.setupDrawerHeader}>
           <span className={styles.setupTitleLock}>
             <small>Setup</small>

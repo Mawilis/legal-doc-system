@@ -8403,3 +8403,338 @@
 .addressManualFallback {
   font-weight: 600;
 }
+
+
+
+/* R91K179E24P47C THEME AUTHORITY MICRO SPACING */
+/* Shared by Leads and Meetings through WilsyLeadOperatingRoom. */
+/* Horizontal breathing only: no height, no width, no table, no filter, no rail impact. */
+:global([data-wilsy-global-theme-authority-control="command-center"]) {
+  padding-inline-start: 16px;
+  padding-inline-end: 14px;
+}
+
+:global([data-wilsy-global-theme-authority-control="command-center"] > span) {
+  min-width: 0;
+  padding-inline-end: 6px;
+}
+
+:global([data-wilsy-global-theme-authority-control="command-center"] > svg:first-child) {
+  flex: 0 0 auto;
+  margin-inline-end: 2px;
+}
+
+:global([data-wilsy-global-theme-authority-control="command-center"] > svg:last-child) {
+  flex: 0 0 auto;
+}
+
+/* R91K179E24P48B HERO COPY LEFT PIN */
+/* Shared Lead shell rule: pins only the hero copy stack, not Theme Authority, not records, not rails. */
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48b-hero-copy-stack="true"]) {
+  justify-self: start !important;
+  align-self: center !important;
+  text-align: left !important;
+  margin-inline-start: 0 !important;
+  padding-inline-start: 0 !important;
+  transform: none !important;
+  width: min(100%, 860px) !important;
+  max-width: 860px !important;
+}
+
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48b-hero-copy-stack="true"] small),
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48b-hero-copy-stack="true"] h1),
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48b-hero-copy-stack="true"] h2),
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48b-hero-copy-stack="true"] strong),
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48b-hero-copy-stack="true"] p) {
+  text-align: left !important;
+  margin-inline-start: 0 !important;
+  padding-inline-start: 0 !important;
+}
+
+
+/* R91K179E24P48C LEADS-ONLY HERO OFFSET */
+/* Meetings is the reference. Move only the Leads copy stack left to match the shared OS header rhythm. */
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48c-hero-copy-kind="leads"]) {
+  transform: translateX(clamp(-42px, -2.85vw, -30px)) !important;
+}
+
+:global(header:has([data-wilsy-global-theme-authority-control="command-center"]) [data-wilsy-r91k179e24p48c-hero-copy-kind="meetings"]) {
+  transform: none !important;
+}
+
+
+
+/* R91K179E24P59B2 CANONICAL MEETING CALENDAR DRAWER */
+/* Keeps the Theme Authority calendar icon inside the canonical Meeting editor path. */
+.drawer[data-wilsy-r91k179e24p59b2-canonical-meeting-calendar="true"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  width: min(1280px, calc(100vw - 96px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+
+.drawer[data-wilsy-r91k179e24p59b2-canonical-meeting-calendar="true"] > header {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  backdrop-filter: blur(16px);
+}
+
+.drawer[data-wilsy-r91k179e24p59b2-canonical-meeting-calendar="true"] :global([class*="meetingShell"]),
+.drawer[data-wilsy-r91k179e24p59b2-canonical-meeting-calendar="true"] :global([class*="editorShell"]),
+.drawer[data-wilsy-r91k179e24p59b2-canonical-meeting-calendar="true"] :global([class*="workspace"]) {
+  min-height: 0;
+}
+
+
+/* R91K179E24P59B3 CANONICAL MEETING CALENDAR DRAWER */
+/* Keeps the Theme Authority calendar icon inside the canonical Meeting editor path. */
+.drawer[data-wilsy-r91k179e24p59b3-canonical-meeting-calendar="true"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  width: min(1280px, calc(100vw - 96px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+
+.drawer[data-wilsy-r91k179e24p59b3-canonical-meeting-calendar="true"] > header {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  backdrop-filter: blur(16px);
+}
+
+.drawer[data-wilsy-r91k179e24p59b3-canonical-meeting-calendar="true"] :global([class*="meetingShell"]),
+.drawer[data-wilsy-r91k179e24p59b3-canonical-meeting-calendar="true"] :global([class*="editorShell"]),
+.drawer[data-wilsy-r91k179e24p59b3-canonical-meeting-calendar="true"] :global([class*="workspace"]) {
+  min-height: 0;
+}
+
+
+/* R91K179E24P59B5 CANONICAL MEETING CALENDAR DRAWER */
+/* Keeps the Theme Authority calendar icon inside the canonical Meeting editor path. */
+.drawer[data-wilsy-r91k179e24p59b5-canonical-meeting-calendar="true"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  width: min(1280px, calc(100vw - 96px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+
+.drawer[data-wilsy-r91k179e24p59b5-canonical-meeting-calendar="true"] > header {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  backdrop-filter: blur(16px);
+}
+
+.drawer[data-wilsy-r91k179e24p59b5-canonical-meeting-calendar="true"] :global([class*="meetingShell"]),
+.drawer[data-wilsy-r91k179e24p59b5-canonical-meeting-calendar="true"] :global([class*="editorShell"]),
+.drawer[data-wilsy-r91k179e24p59b5-canonical-meeting-calendar="true"] :global([class*="workspace"]) {
+  min-height: 0;
+}
+
+
+/* WILSY_P60E4B_SINGLE_SETUP_SURFACE
+   Forces CRM setup into one opaque, fixed, scroll-safe control plane. */
+.wilsyP60E4BSetupSingleSurface {
+  position: fixed;
+  inset: 22px 24px 22px 126px;
+  z-index: 5000;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 209, 255, 0.24);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 114, 255, 0.12), transparent 38%),
+    linear-gradient(135deg, rgba(6, 8, 13, 0.99), rgba(10, 11, 16, 0.985));
+  box-shadow:
+    0 34px 120px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.wilsyP60E4BSetupSingleChrome {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top right, rgba(0, 255, 148, 0.12), transparent 34%),
+    rgba(8, 10, 16, 0.96);
+}
+
+.wilsyP60E4BSetupSingleTitleBlock {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wilsyP60E4BSetupSingleTitleBlock span {
+  color: var(--forensic-warning, #ffb800);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.wilsyP60E4BSetupSingleTitleBlock strong {
+  overflow: hidden;
+  color: var(--text-primary, #ffffff);
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wilsyP60E4BSetupSingleTitleBlock small {
+  color: var(--text-secondary, #8b949e);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.wilsyP60E4BSetupSingleClose {
+  flex: 0 0 auto;
+  min-width: 118px;
+  padding: 12px 18px;
+  border: 1px solid rgba(0, 209, 255, 0.24);
+  border-radius: 16px;
+  background: rgba(0, 209, 255, 0.08);
+  color: var(--text-primary, #ffffff);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.wilsyP60E4BSetupSingleClose:hover {
+  border-color: rgba(0, 255, 148, 0.38);
+  background: rgba(0, 255, 148, 0.1);
+}
+
+.wilsyP60E4BSetupSingleViewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 18px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wilsyP60E4BSetupSingleViewport::-webkit-scrollbar {
+  width: 10px;
+}
+
+.wilsyP60E4BSetupSingleViewport::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.wilsyP60E4BSetupSingleViewport::-webkit-scrollbar-thumb {
+  background: rgba(0, 209, 255, 0.36);
+  border: 2px solid rgba(10, 11, 16, 0.9);
+  border-radius: 999px;
+}
+
+.wilsyP60E4BSetupSingleViewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 148, 0.44);
+}
+
+@media (max-width: 980px) {
+  .wilsyP60E4BSetupSingleSurface {
+    inset: 12px;
+  }
+
+  .wilsyP60E4BSetupSingleChrome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wilsyP60E4BSetupSingleClose {
+    width: 100%;
+  }
+
+  .wilsyP60E4BSetupSingleViewport {
+    padding: 12px;
+  }
+}
+
+/* WILSY_P60F_SETUP_OPERATING_WORKBENCH_SHELL
+   Tightens the setup shell so the view behaves like an OS control surface. */
+.wilsyP60E4BSetupSingleChrome {
+  min-height: 72px;
+  padding: 10px 14px;
+}
+
+.wilsyP60E4BSetupSingleTitleBlock {
+  gap: 2px;
+}
+
+.wilsyP60E4BSetupSingleTitleBlock strong {
+  font-size: clamp(1rem, 1.5vw, 1.45rem);
+}
+
+.wilsyP60E4BSetupSingleTitleBlock small {
+  color: var(--text-secondary, #8b949e);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wilsyP60E4BSetupSingleClose {
+  min-width: 92px;
+  padding: 9px 13px;
+  border-radius: 12px;
+}
+
+.wilsyP60E4BSetupSingleViewport {
+  padding: 12px;
+}
+
+
+/* WILSY_P60G4_SETUP_ICON_RESTORED_CONTROLLED
+   Restores setup access in Leads and Meetings without reintroducing presentation chrome. */
+.wilsyP60G4SetupIconButton {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 209, 255, 0.28);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 255, 148, 0.12), transparent 42%),
+    rgba(12, 18, 30, 0.92);
+  color: var(--text-primary, #ffffff);
+  font-size: 1.28rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset;
+}
+
+.wilsyP60G4SetupIconButton:hover {
+  border-color: rgba(0, 255, 148, 0.44);
+  background:
+    radial-gradient(circle at top left, rgba(0, 255, 148, 0.18), transparent 48%),
+    rgba(14, 28, 32, 0.96);
+}
+
+.wilsyP60G4SetupIconButton:focus-visible {
+  outline: 2px solid rgba(0, 255, 148, 0.72);
+  outline-offset: 3px;
+}

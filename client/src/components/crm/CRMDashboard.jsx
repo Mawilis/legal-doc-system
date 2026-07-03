@@ -70,8 +70,12 @@ import { searchCrmCommandFabric, syncCrmCommandFabric, createCrmCommandLead } fr
 import CrmSovereignSideRail from './rail/CrmSovereignSideRail.jsx';
 
 import WilsyLeadOperatingRoom from './lead/WilsyLeadOperatingRoom.jsx';
+import WilsyUniversalMeetingCommandCenter from './meeting/WilsyUniversalMeetingCommandCenter.jsx';
 
 import TerminalEvidenceCockpitPanel from './TerminalEvidenceCockpitPanel.js';
+import { WilsyMeetingsWorkspace } from './meeting/workspace';
+import WilsyMeetingOperatingRoom from './meeting/WilsyMeetingOperatingRoom';
+import WilsyCrmSetupControlPlane from './setup/WilsyCrmSetupControlPlane';
 const WILSY_R66A_LEAD_OPERATING_ROOM = 'R66A-WILSY-LEAD-OPERATING-ROOM';
 const WILSY_R65A_TRI_STATE_KINETIC_RAIL = 'R65A-TRI-STATE-KINETIC-RAIL';
 const WILSY_R62I_CRM_CLEAN_INLINE_COMMAND_FABRIC = 'R62I-CRM-CLEAN-INLINE-COMMAND-FABRIC';
@@ -110,6 +114,59 @@ const CRM_ENDPOINTS = Object.freeze({
 });
 
 const CRM_SOURCE_POSTURE_ENDPOINT = '/api/crm/live/source-posture';
+
+/**
+ * @function extractWilsyR91K179E24P45BRailLiveCounts
+ * @description Extracts source-backed CRM rail counts from the live source-posture payload without creating fake counts.
+ * @param {Object} payload - Source posture payload.
+ * @returns {Object} Workspace id to live record count map.
+ * @collaboration CRM left rail, /api/crm/live/source-posture, source-backed count badges.
+ */
+function extractWilsyR91K179E24P45BRailLiveCounts(payload = {}) {
+  const sourceRows = [
+    ...(Array.isArray(payload.sources) ? payload.sources : []),
+    ...(Array.isArray(payload.data?.sources) ? payload.data.sources : []),
+    ...(Array.isArray(payload.sourcePosture?.sources) ? payload.sourcePosture.sources : []),
+  ];
+
+  return sourceRows.reduce((counts, source = {}) => {
+    const routeTail = String(source.route || '')
+      .split('/')
+      .filter(Boolean)
+      .pop();
+
+    const ids = [
+      source.id,
+      source.key,
+      source.collection,
+      source.label,
+      routeTail,
+    ]
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter(Boolean);
+
+    const count = Number(
+      source.recordCount ??
+      source.count ??
+      source.meta?.count ??
+      source.recordsLength ??
+      (Array.isArray(source.records) ? source.records.length : undefined) ??
+      (Array.isArray(source.data) ? source.data.length : undefined)
+    );
+
+    if (!Number.isFinite(count) || count < 0) {
+      return counts;
+    }
+
+    ids.forEach((id) => {
+      counts[id] = count;
+    });
+
+    return counts;
+  }, {});
+}
+
+
 const CRM_ROUTE_SURFACE_ENDPOINT = '/api/crm/live/route-surface';
 const CRM_SOURCE_GUIDE_ENDPOINT = '/api/crm/live/source-guide';
 
@@ -4257,6 +4314,165 @@ function WilsyR91K157DCreatePathTo100Surface({
             <p>{liveActivationError || activeSummary?.proofLine || activeLane.blocker}</p>
           </section>
 
+          {/* R91K178B3_ACTIVE_SOURCE_COMMAND_INLINE_PANEL_ONLY */}
+
+          <section
+
+            className={styles.r91k178bActiveCommandIntelligence}
+
+            data-wilsy-r91k178b-active-command="source-playbook"
+
+            data-active-source={activeLane.id}
+
+            data-command-state={
+
+              liveRecordCount > 0
+
+                ? 'SOURCE_EVIDENCE_PRESENT'
+
+                : activeLane.id === 'connectors'
+
+                  ? 'CONNECTOR_NEED_OPEN'
+
+                  : 'SOURCE_DENSITY_REQUIRED'
+
+            }
+
+            aria-label="Active Source Command operating playbook"
+
+          >
+
+            <article className={styles.r91k178bCommandNarrative}>
+
+              <small>Operator playbook</small>
+
+              <strong>
+
+                {readinessCurrent}% readiness · {activeLane.label} · {liveRecordCount > 0 ? 'records present' : 'records required'}
+
+              </strong>
+
+              <p>{activeLane.blocker}</p>
+
+            </article>
+
+          
+
+            <div className={styles.r91k178bRouteProofGrid} aria-label="Active source route proof">
+
+              <article>
+
+                <span>Backend route</span>
+
+                <strong>{liveRoute}</strong>
+
+              </article>
+
+              <article>
+
+                <span>HTTP</span>
+
+                <strong>{liveHttpStatus}</strong>
+
+              </article>
+
+              <article>
+
+                <span>Records</span>
+
+                <strong>{liveRecordCount}</strong>
+
+              </article>
+
+              <article>
+
+                <span>Model</span>
+
+                <strong>{liveModel}</strong>
+
+              </article>
+
+            </div>
+
+          
+
+            <div className={styles.r91k178bPlaybookGrid} aria-label="Active source command sequence">
+
+              <article>
+
+                <span>01</span>
+
+                <strong>Prove live route</strong>
+
+                <p>Refresh {liveRoute} and keep the command bound to backend evidence.</p>
+
+              </article>
+
+              <article>
+
+                <span>02</span>
+
+                <strong>{liveRecordCount > 0 ? 'Use live evidence' : 'Create source density'}</strong>
+
+                <p>{activeLane.action}</p>
+
+              </article>
+
+              <article>
+
+                <span>03</span>
+
+                <strong>Govern AI limits</strong>
+
+                <p>
+
+                  {liveRecordCount > 0
+
+                    ? 'Wilsy AI may explain this lane using live records and route proof.'
+
+                    : 'Wilsy AI must not invent records, connector status, or synthetic readiness.'}
+
+                </p>
+
+              </article>
+
+            </div>
+
+          
+
+            <article className={styles.r91k178bAiBoundary}>
+
+              <small>Wilsy AI boundary</small>
+
+              <strong>
+
+                {liveRecordCount > 0
+
+                  ? 'SOURCE_EVIDENCE_PRESENT'
+
+                  : activeLane.id === 'connectors'
+
+                    ? 'CONNECTOR_NEED_OPEN'
+
+                    : 'SOURCE_DENSITY_REQUIRED'}
+
+              </strong>
+
+              <p>
+
+                {activeLane.id === 'connectors'
+
+                  ? 'Connector count remains source-honest until a real connector record exists.'
+
+                  : 'Readiness can only move through live records, verified route proof, evidence, and governed operator action.'}
+
+              </p>
+
+            </article>
+
+          </section>
+
+
           <section className={styles.r91k170CommandTray} aria-label="Selected source command tray">
             <button type="button" onClick={() => handleWilsyR91K170OpenWorkspace(activeLane)}>
               Execute workspace command
@@ -4595,6 +4811,14 @@ function WilsyR91K131FullViewpointSurface({
  * @description Renders the Wilsy CRM operating workspace and delegates Pipeline/Create/Proof to the R91K131 full viewpoint contract.
  * @collaboration Coordinates live CRM snapshot, Source Guide posture, account command controls, and sovereign operating surfaces.
  */
+
+/**
+ * @function CRMDashboard
+ * @description Renders the Wilsy OS CRM command workspace with live source records, Records rail counts, lead operating room, drill-down panels, tenant runtime and account command controls.
+ * @param {Object} props - CRM dashboard props.
+ * @returns {JSX.Element} CRM dashboard workspace.
+ * @collaboration CRM live routes, source posture, Records rail, lead operating room, meetings workspace, Wilsy Account Command Center, tenant context and production evidence surfaces.
+ */
 function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
   const searchPermissionProfile = useMemo(
     () => resolveCrmPermissionProfile(user, tenantConfig, buildOperatorIdentity(user)),
@@ -4710,6 +4934,51 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
 
   const [refreshSignal, setRefreshSignal] = useState(0);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [crmSetupOpen, setCrmSetupOpen] = useState(false);
+
+  /**
+   * @function openCrmSetupControlPlane
+   * @description Opens the CRM-owned Setup control plane from top command surfaces without using Lead or Meeting local state.
+   * @returns {void}
+   * @collaboration CRMDashboard ownership, top rail setup trigger, WilsyCrmSetupControlPlane, shared records shell isolation.
+   */
+  function openCrmSetupControlPlane() {
+    setCrmSetupOpen(true);
+  }
+
+  /**
+   * @function closeCrmSetupControlPlane
+   * @description Closes the CRM-owned Setup control plane and returns the operator to the current CRM workspace.
+   * @returns {void}
+   * @collaboration CRMDashboard ownership, setup overlay, current module preservation, and records-only workspace discipline.
+   */
+  function closeCrmSetupControlPlane() {
+    setCrmSetupOpen(false);
+  }
+
+  /* WILSY_P60H1_CRM_SETUP_OWNER */
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    /**
+     * @function handleWilsyP60H1CrmSetupOpenEvent
+     * @description Receives top rail setup open events from shared records chrome and opens the CRM-owned setup surface.
+     * @returns {void}
+     * @collaboration Shared records top rail, CRMDashboard setup ownership, and WilsyCrmSetupControlPlane overlay.
+     */
+    function handleWilsyP60H1CrmSetupOpenEvent() {
+      openCrmSetupControlPlane();
+    }
+
+    window.addEventListener('wilsy:crm-setup-open', handleWilsyP60H1CrmSetupOpenEvent);
+
+    return () => {
+      window.removeEventListener('wilsy:crm-setup-open', handleWilsyP60H1CrmSetupOpenEvent);
+    };
+  }, []);
+
   const [themeRuntime, setThemeRuntime] = useState(() => buildCrmFallbackThemeRuntime());
 
   const tenantIdentity = useMemo(
@@ -4835,6 +5104,39 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
   const readinessNarrative = resolveWilsyR91K114ReadinessNarrative(operatingSnapshot, readinessScore);
   const pipelineStages = useMemo(() => buildPipelineStages(operatingSnapshot.deals), [operatingSnapshot.deals]);
   const weightedPipeline = useMemo(() => buildPipelineTotal(pipelineStages.filter(stage => stage.lane === 'primary')), [pipelineStages]);
+
+  const [crmRailLiveCounts, setCrmRailLiveCounts] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const railTenantId = resolveR88FCrmCommandTenantId(tenantConfig, user);
+
+    fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}?railCounts=R91K179E24P45B&generatedAt=${Date.now()}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Cache-Control': 'no-cache',
+        'X-Tenant-Id': railTenantId,
+        'X-Wilsy-Tenant-ID': railTenantId,
+        'X-Operator-ID': 'wilsy-crm-rail-live-count-bridge',
+        'X-Operator-Role': 'Founder',
+      },
+      cache: 'no-store',
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload) return;
+        setCrmRailLiveCounts(extractWilsyR91K179E24P45BRailLiveCounts(payload));
+      })
+      .catch(() => {
+        if (!cancelled) setCrmRailLiveCounts({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshSignal, tenantConfig, user]);
+
   const workspaceTelemetry = useMemo(
     () => buildCrmWorkspaceTelemetry(operatingSnapshot, visibleCrmWorkspaces),
     [operatingSnapshot, visibleCrmWorkspaces]
@@ -4843,6 +5145,94 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
     () => buildCrmCreateWorkspaceRail(operatingSnapshot, visibleCrmWorkspaces),
     [operatingSnapshot, visibleCrmWorkspaces]
   );
+
+  /**
+   * @function resolveWorkspaceCount
+   * @description Resolves live CRM workspace counts from backend sourcePosture before falling back to local workspace metadata.
+   * @param {Object} workspace - CRM workspace rail item.
+   * @returns {number} Source-honest record count for the workspace.
+   * @collaboration CRM live source routes, Records rail, Create workspace rail, Wilsy AI source posture and no-placeholder count evidence.
+   */
+  const resolveWorkspaceCount = useCallback((workspace = {}) => {
+    const workspaceId = String(workspace?.id || workspace?.key || workspace?.label || '').trim().toLowerCase();
+    const labelId = String(workspace?.label || '').trim().toLowerCase();
+
+    const liveRailCount = Number(
+      crmRailLiveCounts[workspaceId] ??
+      crmRailLiveCounts[labelId]
+    );
+
+    if (Number.isFinite(liveRailCount) && liveRailCount >= 0) {
+      return liveRailCount;
+    }
+
+    const sourceRows = [
+      ...(Array.isArray(operatingSnapshot?.sourcePosture?.sources) ? operatingSnapshot.sourcePosture.sources : []),
+      ...(Array.isArray(operatingSnapshot?.sourcePosture?.raw?.sources) ? operatingSnapshot.sourcePosture.raw.sources : []),
+      ...(Array.isArray(operatingSnapshot?.sourcePosture?.payload?.sources) ? operatingSnapshot.sourcePosture.payload.sources : []),
+      ...(Array.isArray(operatingSnapshot?.sourceGuide?.sourcePosture?.sources) ? operatingSnapshot.sourceGuide.sourcePosture.sources : []),
+      ...(Array.isArray(operatingSnapshot?.sources) ? operatingSnapshot.sources : []),
+    ];
+
+    const row = sourceRows.find((source = {}) => {
+      const routeTail = String(source.route || '')
+        .split('/')
+        .filter(Boolean)
+        .pop();
+
+      return [
+        source.id,
+        source.key,
+        source.collection,
+        source.label,
+        routeTail,
+      ]
+        .map((value) => String(value || '').trim().toLowerCase())
+        .filter(Boolean)
+        .some((value) => value === workspaceId || value === labelId);
+    });
+
+    const sourceCount = Number(
+      row?.recordCount ??
+      row?.count ??
+      row?.meta?.count ??
+      row?.recordsLength ??
+      (Array.isArray(row?.records) ? row.records.length : undefined) ??
+      (Array.isArray(row?.data) ? row.data.length : undefined)
+    );
+
+    if (Number.isFinite(sourceCount) && sourceCount >= 0) {
+      return sourceCount;
+    }
+
+    const localRecords = operatingSnapshot?.[workspace.id];
+
+    if (Array.isArray(localRecords)) {
+      return localRecords.length;
+    }
+
+    const fallbackCount = Number(workspace.count);
+
+    return Number.isFinite(fallbackCount) && fallbackCount >= 0 ? fallbackCount : 0;
+  }, [crmRailLiveCounts, operatingSnapshot]);
+
+  const crmRailWorkspaceTelemetry = useMemo(
+    () => workspaceTelemetry.map((workspace) => ({
+      ...workspace,
+      count: resolveWorkspaceCount(workspace),
+    })),
+    [resolveWorkspaceCount, workspaceTelemetry]
+  );
+
+  const crmRailVisibleWorkspaces = useMemo(
+    () => visibleCrmWorkspaces.map((workspace) => ({
+      ...workspace,
+      count: resolveWorkspaceCount(workspace),
+    })),
+    [resolveWorkspaceCount, visibleCrmWorkspaces]
+  );
+
+
 
   const primaryPipelineStages = useMemo(
     () => pipelineStages.filter(stage => stage.lane === 'primary'),
@@ -4967,7 +5357,6 @@ return (
     >
 
       <CrmSovereignSideRail
-        workspaces={visibleCrmWorkspaces}
         activeWorkspace={activeWorkspace}
         snapshot={operatingSnapshot}
         tenantConfig={tenantConfig}
@@ -4978,7 +5367,9 @@ return (
           }
         }}
         onRailStateChange={setCrmRailEngineStateR65A}
-      />
+        workspaceTelemetry={crmRailWorkspaceTelemetry}
+  workspaces={crmRailVisibleWorkspaces}
+/>
 
       <section className={styles.commandSurface}>
         {activeWorkspace === 'home' ? (
@@ -5160,6 +5551,30 @@ return (
                   return createResponse;
                 }}
               />
+            ) : activeWorkspace === 'meetings' ? (
+              <WilsyMeetingOperatingRoom
+                meetings={Array.isArray(operatingSnapshot?.meetings) ? operatingSnapshot.meetings : []}
+                records={Array.isArray(operatingSnapshot?.meetings) ? operatingSnapshot.meetings : []}
+                sourcePosture={operatingSnapshot?.sourcePosture}
+                searchTerm={searchTerm}
+                loading={loading}
+                themeRuntime={themeRuntime}
+                tenantConfig={tenantConfig}
+                user={user}
+                onOpenThemeAuthority={() => setAccountSettingsOpen(true)}
+                onSearch={(queryValue) => {
+                  setSearchTerm(queryValue);
+                }}
+                onSync={() => syncCrmCommandFabric({
+                  tenantId: resolveR88FCrmCommandTenantId(tenantConfig, user),
+                  activeModule: 'meetings',
+                  reason: 'R91K179E24P28C_REAL_MEETINGS_WORKSPACE_SYNC'
+                }).catch(() => {})}
+                onCreateMeeting={() => openCreateFlow('meetings')}
+                onCreate={() => openCreateFlow('meetings')}
+                onBackHome={() => setActiveWorkspace('home')}
+              />
+              
             ) : activeWorkspace === 'home' ? (
             <section className={styles.homeGrid}>
               <section className={styles.crmWorkspaceDeck} aria-label="CRM module workspaces">
@@ -5178,7 +5593,7 @@ return (
                         <strong>{workspace.label}</strong>
                         <em>{workspace.detail}</em>
                       </span>
-                      <b>{workspace.count}</b>
+                      <b>{resolveWorkspaceCount(workspace)}</b>
                       <small>{workspace.source}</small>
                     </button>
                   );
@@ -5315,7 +5730,7 @@ return (
                             <strong>{workspace.label}</strong>
                             <em>{workspace.readiness}</em>
                           </span>
-                          <b>{workspace.count}</b>
+                          <b>{resolveWorkspaceCount(workspace)}</b>
                         </button>
                       );
                     })}
@@ -5670,6 +6085,17 @@ return (
                 </article>
               </section>
             </section>
+            ) : activeWorkspace === 'meetings' ? (
+              <section
+          className={styles.r91k179e2MeetingsModulePageHost}
+          data-wilsy-r91k179e2-meetings-host="crm-module-page"
+          aria-label="CRM Meetings module page host"
+        >
+          <WilsyMeetingOperatingRoom
+            tenantConfig={tenantConfig}
+            onBackToCrm={() => setActiveWorkspace('operate')}
+          />
+        </section>
             ) : activeWorkspace === 'contacts' ? (
               <WilsyContactOperatingRoom
                 contacts={snapshot.contacts || []}
@@ -5765,7 +6191,32 @@ return (
           )}
         </main>
       </section>
-      <WilsyAccountCommandCenter
+              {crmSetupOpen ? (
+          <section
+            className={styles.crmSetupAuthorityOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="CRM setup operating controls"
+          >
+            <header className={styles.crmSetupAuthorityChrome}>
+              <div>
+                <span>Setup</span>
+                <strong>CRM Operating Controls</strong>
+                <small>Sovereign admin command plane. Authority, custody, automation, and proof stay under review.</small>
+              </div>
+
+              <button type="button" onClick={closeCrmSetupControlPlane}>
+                Close
+              </button>
+            </header>
+
+            <div className={styles.crmSetupAuthorityViewport}>
+              <WilsyCrmSetupControlPlane setupOperatingModel={[]} />
+            </div>
+          </section>
+        ) : null}
+        {/* WILSY_P60H1_CRM_SETUP_OVERLAY */}
+<WilsyAccountCommandCenter
         isOpen={accountSettingsOpen}
         onClose={() => setAccountSettingsOpen(false)}
         activeThemeId={themeRuntime.themeId}

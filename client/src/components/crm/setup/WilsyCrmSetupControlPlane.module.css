@@ -1,0 +1,867 @@
+.wilsySetupOS {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  color: var(--text-primary, #ffffff);
+  background: #05070c;
+}
+
+.osHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(520px, 0.8fr);
+  gap: 10px;
+  align-items: stretch;
+  min-height: 92px;
+}
+
+.osTitleBlock,
+.commandAtlas,
+.matrixDeck,
+.authorityInspector,
+.algorithmBar article,
+.controlMatrix,
+.queueDock,
+.reviewQueue article,
+.inspectorPanel,
+.inspectorGrid article,
+.algorithmPanel,
+.evidencePack,
+.releaseGate {
+  border: 1px solid rgba(0, 209, 255, 0.14);
+  background: #080c14;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+}
+
+.osTitleBlock {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.osTitleBlock span,
+.atlasHeader span,
+.atlasSearch span,
+.algorithmBar span,
+.queueDock span,
+.reviewQueue span,
+.authorityInspector header span,
+.inspectorPanel span,
+.inspectorGrid span,
+.algorithmPanel span,
+.evidencePack span,
+.releaseGate span,
+.osScoreStrip span {
+  color: #9ba7b8;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.osTitleBlock > span {
+  color: #00d1ff;
+}
+
+.osTitleBlock strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: clamp(1.3rem, 2vw, 2rem);
+  line-height: 1.02;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.osTitleBlock small {
+  overflow: hidden;
+  color: #aab2c2;
+  font-size: 0.88rem;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.osScoreStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.osScoreStrip article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(0, 255, 148, 0.16);
+  border-radius: 16px;
+  background: #07120f;
+}
+
+.osScoreStrip strong {
+  overflow: hidden;
+  color: #00ff94;
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.osGrid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 360px;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.commandAtlas,
+.matrixDeck,
+.authorityInspector {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.commandAtlas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.atlasHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.atlasHeader strong {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.atlasSearch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.atlasSearch input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(0, 209, 255, 0.22);
+  border-radius: 13px;
+  background: #050a12;
+  color: #ffffff;
+  font-weight: 800;
+  outline: none;
+}
+
+.atlasSearch input::placeholder {
+  color: #6e7788;
+}
+
+.domainStack {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.domainButton,
+.domainActive {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding: 11px;
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.domainButton {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #090d15;
+  color: #ffffff;
+}
+
+.domainActive {
+  border: 1px solid rgba(0, 209, 255, 0.45);
+  background: #071b31;
+  color: #ffffff;
+}
+
+.domainButton span,
+.domainActive span {
+  grid-column: 1;
+  color: #00d1ff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.domainButton strong,
+.domainActive strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #00ff94;
+  font-size: 1.15rem;
+}
+
+.domainButton small,
+.domainActive small {
+  grid-column: 1;
+  color: #e6d89a;
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.matrixDeck {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.algorithmBar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.algorithmBar article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.algorithmBar strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controlMatrix {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.matrixHead,
+.matrixRow,
+.matrixRowActive {
+  display: grid;
+  grid-template-columns: minmax(270px, 1.5fr) 145px 105px 105px minmax(180px, 0.85fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.matrixHead {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d111a;
+  color: #9ba7b8;
+  font-size: 0.69rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.matrixRows {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.matrixRow,
+.matrixRowActive {
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.matrixRow {
+  background: #080c14;
+}
+
+.matrixRowActive {
+  background: #0b2430;
+}
+
+.matrixRow > span,
+.matrixRowActive > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.matrixRow strong,
+.matrixRowActive strong {
+  display: block;
+  overflow: hidden;
+  color: #ffffff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matrixRow small,
+.matrixRowActive small {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: #e6d89a;
+  font-size: 0.72rem;
+  font-weight: 820;
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.riskCritical,
+.riskHigh,
+.riskMedium,
+.riskLow,
+.stateSealed,
+.stateWatched,
+.stateReady {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.riskCritical {
+  border: 1px solid rgba(255, 75, 75, 0.36);
+  background: rgba(255, 75, 75, 0.1);
+  color: #ff6b6b;
+}
+
+.riskHigh {
+  border: 1px solid rgba(255, 184, 0, 0.38);
+  background: rgba(255, 184, 0, 0.1);
+  color: #ffce53;
+}
+
+.riskMedium {
+  border: 1px solid rgba(0, 209, 255, 0.32);
+  background: rgba(0, 209, 255, 0.1);
+  color: #00d1ff;
+}
+
+.riskLow {
+  border: 1px solid rgba(0, 255, 148, 0.28);
+  background: rgba(0, 255, 148, 0.08);
+  color: #00ff94;
+}
+
+.stateSealed {
+  border: 1px solid rgba(0, 255, 148, 0.32);
+  background: rgba(0, 255, 148, 0.08);
+  color: #00ff94;
+}
+
+.stateWatched {
+  border: 1px solid rgba(255, 184, 0, 0.34);
+  background: rgba(255, 184, 0, 0.1);
+  color: #ffce53;
+}
+
+.stateReady {
+  border: 1px solid rgba(0, 209, 255, 0.28);
+  background: rgba(0, 209, 255, 0.08);
+  color: #00d1ff;
+}
+
+.queueDock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+}
+
+.queueDock div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.queueDock strong {
+  color: #ffffff;
+}
+
+.queueDock small {
+  color: #9ba7b8;
+  font-weight: 780;
+}
+
+.queueDock button,
+.releaseGate button {
+  border: 1px solid rgba(0, 255, 148, 0.32);
+  border-radius: 14px;
+  background: #0c2a1e;
+  color: #ffffff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.queueDock button {
+  padding: 11px 14px;
+}
+
+.reviewQueue {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reviewQueue article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.reviewQueue strong {
+  overflow: hidden;
+  color: #ffffff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewQueue small {
+  overflow: hidden;
+  color: #9ba7b8;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authorityInspector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow-y: auto;
+  background: #060910;
+}
+
+.authorityInspector header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.authorityInspector header strong {
+  color: #ffffff;
+  font-size: 1.25rem;
+  line-height: 1.08;
+}
+
+.inspectorPanel,
+.algorithmPanel,
+.evidencePack,
+.releaseGate {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  border-radius: 15px;
+}
+
+.inspectorPanel p,
+.algorithmPanel p {
+  margin: 0;
+  color: #aab2c2;
+  line-height: 1.45;
+}
+
+.inspectorGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.inspectorGrid article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.inspectorGrid strong,
+.algorithmPanel strong,
+.releaseGate strong {
+  color: #ffffff;
+}
+
+.evidencePack div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.evidencePack strong {
+  display: inline-flex;
+  padding: 7px 9px;
+  border: 1px solid rgba(0, 209, 255, 0.22);
+  border-radius: 999px;
+  background: #071522;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.releaseGate button {
+  width: 100%;
+  padding: 11px 14px;
+}
+
+@media (max-width: 1480px) {
+  .osHeader,
+  .osGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .commandAtlas,
+  .matrixDeck,
+  .authorityInspector {
+    max-height: none;
+  }
+
+  .algorithmBar,
+  .osScoreStrip,
+  .reviewQueue {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .matrixHead,
+  .matrixRow,
+  .matrixRowActive {
+    grid-template-columns: minmax(220px, 1.3fr) 120px 95px 100px minmax(140px, 0.8fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .algorithmBar,
+  .osScoreStrip,
+  .reviewQueue {
+    grid-template-columns: 1fr;
+  }
+
+  .matrixHead {
+    display: none;
+  }
+
+  .matrixRow,
+  .matrixRowActive {
+    grid-template-columns: 1fr;
+  }
+
+  .queueDock {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* WILSY_P60I1_SETUP_OS_GRID_RESCUE
+   Restores the desktop operating system layout and stops the stacked presentation layout. */
+.wilsySetupOS {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  background: #05070c !important;
+}
+
+.osHeader {
+  grid-template-columns: minmax(0, 1fr) minmax(520px, 0.82fr) !important;
+  min-height: 76px !important;
+  max-height: 86px !important;
+  flex: 0 0 auto !important;
+}
+
+.osTitleBlock {
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+}
+
+.osTitleBlock strong {
+  font-size: clamp(1.15rem, 1.75vw, 1.65rem) !important;
+}
+
+.osTitleBlock small {
+  font-size: 0.78rem !important;
+}
+
+.osScoreStrip {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.osScoreStrip article {
+  padding: 9px 10px !important;
+  border-radius: 14px !important;
+}
+
+.osScoreStrip strong {
+  font-size: 0.96rem !important;
+}
+
+.osGrid {
+  display: grid !important;
+  grid-template-columns: 286px minmax(620px, 1fr) 348px !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
+.commandAtlas,
+.matrixDeck,
+.authorityInspector {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.commandAtlas {
+  grid-column: 1 !important;
+}
+
+.matrixDeck {
+  grid-column: 2 !important;
+}
+
+.authorityInspector {
+  grid-column: 3 !important;
+  overflow-y: auto !important;
+}
+
+.algorithmBar {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  flex: 0 0 auto !important;
+}
+
+.algorithmBar article {
+  padding: 8px 9px !important;
+}
+
+.algorithmBar strong {
+  font-size: 0.72rem !important;
+}
+
+.controlMatrix {
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.matrixHead,
+.matrixRow,
+.matrixRowActive {
+  grid-template-columns: minmax(260px, 1.45fr) 135px 92px 98px minmax(150px, 0.82fr) !important;
+}
+
+.matrixRow,
+.matrixRowActive {
+  padding: 10px !important;
+}
+
+.queueDock {
+  flex: 0 0 auto !important;
+  padding: 10px !important;
+}
+
+.reviewQueue {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  flex: 0 0 auto !important;
+  max-height: 108px !important;
+  overflow: hidden !important;
+}
+
+.authorityInspector header strong {
+  font-size: 1.05rem !important;
+}
+
+.inspectorPanel,
+.algorithmPanel,
+.evidencePack,
+.releaseGate {
+  padding: 10px !important;
+}
+
+.inspectorGrid {
+  grid-template-columns: 1fr !important;
+}
+
+/* Undo the previous desktop collapse until true tablet width. */
+@media (max-width: 1480px) {
+  .osHeader {
+    grid-template-columns: minmax(0, 1fr) minmax(440px, 0.8fr) !important;
+  }
+
+  .osGrid {
+    grid-template-columns: 260px minmax(520px, 1fr) 310px !important;
+  }
+
+  .algorithmBar,
+  .osScoreStrip,
+  .reviewQueue {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .matrixHead,
+  .matrixRow,
+  .matrixRowActive {
+    grid-template-columns: minmax(230px, 1.35fr) 120px 86px 92px minmax(130px, 0.75fr) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .osHeader,
+  .osGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .commandAtlas,
+  .matrixDeck,
+  .authorityInspector {
+    grid-column: auto !important;
+    max-height: none !important;
+  }
+
+  .algorithmBar,
+  .osScoreStrip,
+  .reviewQueue {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .algorithmBar,
+  .osScoreStrip,
+  .reviewQueue {
+    grid-template-columns: 1fr !important;
+  }
+
+  .matrixHead {
+    display: none !important;
+  }
+
+  .matrixRow,
+  .matrixRowActive {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* WILSY_P60I2_AUTHORITY_SIMULATION_POLISH
+   Adds operating simulation density without changing backend state. */
+.simulationDock {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.simulationDock article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 14px;
+  background: #080c14;
+}
+
+.simulationDock span {
+  color: #9ba7b8;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.simulationDock strong {
+  overflow: hidden;
+  color: #ffffff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.simulationDock small {
+  overflow: hidden;
+  color: #e6d89a;
+  font-size: 0.72rem;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matrixDeck {
+  gap: 8px !important;
+}
+
+.controlMatrix {
+  border-color: rgba(0, 209, 255, 0.2) !important;
+}
+
+.authorityInspector {
+  border-color: rgba(0, 209, 255, 0.2) !important;
+}
+
+@media (max-width: 1180px) {
+  .simulationDock {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -12860,3 +12860,894 @@
     radial-gradient(circle at 12% 18%, rgba(255, 221, 151, 0.24), transparent 44%),
     rgba(2, 15, 23, 1) !important;
 }
+
+
+
+/* R91K178B3_ACTIVE_SOURCE_COMMAND_INLINE_PANEL_ONLY
+   Scope: Active Source Command center panel only.
+   Purpose:
+   - enhance operator playbook inside the accepted R91K170 command surface
+   - show route/model/record proof without backend writes
+   - preserve R91K170/R91K171/R91K172/R91K173/R91K174 shell contracts
+*/
+
+.r91k178bActiveCommandIntelligence {
+  display: grid !important;
+  gap: 9px !important;
+  min-width: 0 !important;
+  padding: 10px !important;
+  border: 1px solid rgba(255, 221, 151, 0.18) !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 221, 151, 0.09), transparent 42%),
+    rgba(2, 12, 22, 0.78) !important;
+}
+
+.r91k178bCommandNarrative {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+.r91k178bCommandNarrative small,
+.r91k178bAiBoundary small,
+.r91k178bRouteProofGrid span,
+.r91k178bPlaybookGrid span {
+  color: rgba(255, 232, 170, 0.96) !important;
+  font-size: clamp(0.48rem, 0.5vw, 0.62rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+}
+
+.r91k178bCommandNarrative strong {
+  color: #ffffff !important;
+  font-size: clamp(0.9rem, 0.88vw, 1.12rem) !important;
+  font-weight: 950 !important;
+  line-height: 1.08 !important;
+}
+
+.r91k178bCommandNarrative p,
+.r91k178bAiBoundary p,
+.r91k178bPlaybookGrid p {
+  margin: 0 !important;
+  color: rgba(176, 255, 218, 0.78) !important;
+  font-size: 0.68rem !important;
+  line-height: 1.22 !important;
+}
+
+.r91k178bRouteProofGrid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+
+.r91k178bRouteProofGrid article,
+.r91k178bPlaybookGrid article,
+.r91k178bAiBoundary {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(141, 255, 203, 0.12) !important;
+  border-radius: 13px !important;
+  background: rgba(2, 10, 22, 0.66) !important;
+}
+
+.r91k178bRouteProofGrid article {
+  min-height: 58px !important;
+  padding: 8px !important;
+}
+
+.r91k178bRouteProofGrid strong {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #ffffff !important;
+  font-size: 0.66rem !important;
+  font-weight: 950 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.r91k178bPlaybookGrid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+
+.r91k178bPlaybookGrid article {
+  display: grid !important;
+  gap: 5px !important;
+  min-height: 96px !important;
+  padding: 8px !important;
+}
+
+.r91k178bPlaybookGrid strong {
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+  line-height: 1.12 !important;
+}
+
+.r91k178bAiBoundary {
+  display: grid !important;
+  gap: 5px !important;
+  padding: 9px !important;
+  border-color: rgba(255, 221, 151, 0.2) !important;
+  background: rgba(255, 221, 151, 0.055) !important;
+}
+
+.r91k178bAiBoundary strong {
+  color: #ffffff !important;
+  font-size: 0.76rem !important;
+  font-weight: 950 !important;
+}
+
+@media (max-width: 1180px) {
+  .r91k178bRouteProofGrid,
+  .r91k178bPlaybookGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* R91K179B4_STANDALONE_MEETINGS_FULL_VIEWPORT_LAYOUT
+   Scope: Standalone Meetings workspace only.
+   Purpose:
+   - remove the universal meeting command center from the old Create Workspace grid trap
+   - give Meetings the same spacious viewport discipline as a premium CRM module
+   - preserve source honesty and avoid backend mutations
+*/
+.r91k179b4MeetingsWorkspace {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: calc(100vh - 124px) !important;
+  padding: clamp(10px, 0.9vw, 18px) !important;
+  border: 1px solid rgba(126, 255, 196, 0.18) !important;
+  border-radius: clamp(22px, 1.4vw, 30px) !important;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(64, 255, 156, 0.08), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(111, 84, 255, 0.12), transparent 34%),
+    rgba(1, 7, 18, 0.72) !important;
+  overflow: hidden !important;
+}
+
+.r91k179b4MeetingsWorkspace > * {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.r91k179b4MeetingsWorkspace [data-wilsy-r91k179-universal-meeting='command-center'] {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: calc(100vh - 156px) !important;
+}
+
+.crmShell[data-wilsy-active-workspace='meetings'] .workspaceViewport {
+  display: block !important;
+  overflow: hidden !important;
+}
+
+
+/* R91K179B5_MEETINGS_WORKSPACE_VIEWPORT_CONTAINMENT
+   Scope: Standalone Meetings workspace shell.
+   Purpose:
+   - keep the universal Meeting Command Center inside the CRM viewport
+   - prevent right rail and footer watermark bleed-through
+*/
+.r91k179b4MeetingsWorkspace {
+  height: calc(100vh - 122px) !important;
+  max-height: calc(100vh - 122px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.r91k179b4MeetingsWorkspace > [data-wilsy-r91k179-universal-meeting='command-center'] {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+.crmShell[data-wilsy-active-workspace='meetings'] .workspaceViewport {
+  min-height: 0 !important;
+  height: calc(100vh - 98px) !important;
+  overflow: hidden !important;
+}
+
+
+/* R91K179B6_STANDALONE_MEETINGS_VIEWPORT_SIZE_NUDGE
+   Scope: Standalone CRM Meetings workspace.
+   Purpose:
+   - increase the board slightly for readable right-rail evidence and Wilsy AI controls
+   - keep the command center contained inside the CRM chrome
+*/
+.r91k179b4MeetingsWorkspace {
+  padding: clamp(12px, 1vw, 20px) !important;
+}
+
+.crmShell[data-wilsy-active-workspace='meetings'] .workspaceViewport {
+  padding-right: clamp(10px, 1vw, 18px) !important;
+  padding-bottom: clamp(10px, 1vw, 18px) !important;
+}
+
+
+
+
+
+
+
+/* R91K179D5_CRM_MEETINGS_CANONICAL_FULLSCREEN_HOST
+   Scope: CRM Meetings host.
+   Purpose:
+   - Meetings is SaaS software, not a nested presentation board.
+   - The meeting workspace owns the viewport beside the OS rail.
+*/
+.r91k179b4MeetingsWorkspace {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: clamp(96px, 5.8vw, 118px) !important;
+  z-index: 28 !important;
+  width: auto !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background:
+    radial-gradient(circle at 8% 6%, rgba(84, 255, 141, 0.06), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(111, 84, 255, 0.1), transparent 36%),
+    rgba(0, 4, 12, 0.98) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.r91k179b4MeetingsWorkspace > [data-wilsy-r91k179-universal-meeting='command-center'] {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+
+/* R91K179E2_MEETINGS_MODULE_PAGE_HOST
+   CRM Meetings is a full module page, not the old squeezed Universal Meeting Command Center.
+*/
+.r91k179e2MeetingsModulePageHost {
+  position: fixed !important;
+  inset: 0 0 0 clamp(96px, 5.8vw, 118px) !important;
+  z-index: 80 !important;
+  display: block !important;
+  width: auto !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  background: #f6f8ff !important;
+}
+
+
+/* R91K179E3_MEETINGS_FULL_VIEWPORT_HOST_SYSTEM_THEME
+   Meetings is a CRM module page and must cover the old CRM/OS rail.
+   The Meetings module rail is the only rail visible while Meetings is active.
+*/
+.r91k179e1MeetingsModulePageHost,
+.r91k179e2MeetingsModulePageHost {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 10% 0%, var(--glow-primary, rgba(0, 114, 255, 0.22)), transparent 34%),
+    var(--sovereign-bg, #0A0B10) !important;
+}
+
+
+/* R91K179E24P29 MEETINGS LIST FIRST */
+.meetingsListFirstWorkspace,
+.meetingsListFirstWorkspaceShell,
+.meetingsListFirstOperatingCockpit {
+  min-height: 100%;
+}
+
+.meetingsListFirstOperatingCockpit {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 12px;
+  padding-block: 10px;
+}
+
+.meetingsListFirstHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: auto;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+
+.meetingsListFirstHero h1,
+.meetingsListFirstHero h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  letter-spacing: -0.05em;
+}
+
+.meetingsListFirstHero p {
+  max-width: 760px;
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.meetingsListFirstKpiRail {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.meetingsListFirstKpiRail > * {
+  min-height: auto;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.meetingsListFirstKpiRail h3,
+.meetingsListFirstKpiRail strong,
+.meetingsListFirstKpiRail b {
+  font-size: 0.95rem;
+}
+
+.meetingsListFirstKpiRail p,
+.meetingsListFirstKpiRail span {
+  font-size: 0.68rem;
+}
+
+.meetingsListFirstSearch {
+  display: grid;
+  grid-template-columns: minmax(320px, 560px) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.meetingsListFirstSearch input {
+  min-height: 42px;
+  padding-block: 8px;
+}
+
+.meetingsListFirstTableShell {
+  min-height: min(68vh, 720px);
+  max-height: calc(100vh - 300px);
+  overflow: auto;
+  border-radius: 20px;
+}
+
+.meetingsListFirstTableShell table,
+.meetingsListFirstTableShell [role='table'] {
+  width: 100%;
+}
+
+.meetingsListFirstTableShell tbody tr,
+.meetingsListFirstTableShell [role='row'] {
+  min-height: 72px;
+}
+
+.meetingsListFirstTableShell th,
+.meetingsListFirstTableShell td {
+  padding-block: 12px;
+}
+
+@media (max-width: 1280px) {
+  .meetingsListFirstKpiRail {
+    grid-template-columns: repeat(3, minmax(130px, 1fr));
+  }
+
+  .meetingsListFirstTableShell {
+    max-height: calc(100vh - 340px);
+  }
+}
+
+@media (max-width: 900px) {
+  .meetingsListFirstHero,
+  .meetingsListFirstSearch {
+    grid-template-columns: 1fr;
+  }
+
+  .meetingsListFirstKpiRail {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
+  .meetingsListFirstTableShell {
+    max-height: none;
+  }
+}
+
+/* R91K179E24P30 MEETINGS SAAS WORKBENCH */
+.crmMeetingsSaasWorkbench {
+  height: calc(100vh - 118px);
+  min-height: 720px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.crmMeetingsSaasWorkbench > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Remove presentation-first surfaces. Rails already carry status/navigation. */
+.crmMeetingsSaasWorkbench :global([class*="Hero"]),
+.crmMeetingsSaasWorkbench :global([class*="hero"]),
+.crmMeetingsSaasWorkbench :global([class*="Kpi"]),
+.crmMeetingsSaasWorkbench :global([class*="KPI"]),
+.crmMeetingsSaasWorkbench :global([class*="kpi"]),
+.crmMeetingsSaasWorkbench :global([class*="Metric"]),
+.crmMeetingsSaasWorkbench :global([class*="metric"]),
+.crmMeetingsSaasWorkbench :global([class*="ScoreGrid"]),
+.crmMeetingsSaasWorkbench :global([class*="scoreGrid"]),
+.crmMeetingsSaasWorkbench :global([class*="SummaryGrid"]),
+.crmMeetingsSaasWorkbench :global([class*="summaryGrid"]) {
+  display: none !important;
+}
+
+/* Remove duplicate body search because the command bar already has search. */
+.crmMeetingsSaasWorkbench :global([class*="SearchRecords"]),
+.crmMeetingsSaasWorkbench :global([class*="searchRecords"]),
+.crmMeetingsSaasWorkbench :global([class*="SearchSection"]),
+.crmMeetingsSaasWorkbench :global([class*="searchSection"]) {
+  display: none !important;
+}
+
+/* Compact any remaining page chrome so the records list owns the viewport. */
+.crmMeetingsSaasWorkbench :global([class*="Workspace"]),
+.crmMeetingsSaasWorkbench :global([class*="workspace"]),
+.crmMeetingsSaasWorkbench :global([class*="Cockpit"]),
+.crmMeetingsSaasWorkbench :global([class*="cockpit"]) {
+  min-height: 0 !important;
+}
+
+.crmMeetingsSaasWorkbench :global(header) {
+  min-height: 52px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+/* Top icon groups are presentation chrome. Keep task actions inside rows/drawers. */
+.crmMeetingsSaasWorkbench :global(header [class*="Actions"]),
+.crmMeetingsSaasWorkbench :global(header [class*="actions"]),
+.crmMeetingsSaasWorkbench :global(header [class*="Toolbar"]),
+.crmMeetingsSaasWorkbench :global(header [class*="toolbar"]) {
+  max-height: 44px !important;
+  overflow: hidden !important;
+}
+
+/* Force the record list/table to become the primary work surface. */
+.crmMeetingsSaasWorkbench :global([class*="TableShell"]),
+.crmMeetingsSaasWorkbench :global([class*="tableShell"]),
+.crmMeetingsSaasWorkbench :global([class*="Table"]),
+.crmMeetingsSaasWorkbench :global([class*="table"]),
+.crmMeetingsSaasWorkbench :global([class*="List"]),
+.crmMeetingsSaasWorkbench :global([class*="list"]),
+.crmMeetingsSaasWorkbench :global([class*="Records"]),
+.crmMeetingsSaasWorkbench :global([class*="records"]) {
+  max-height: none !important;
+}
+
+.crmMeetingsSaasWorkbench :global([class*="TableShell"]),
+.crmMeetingsSaasWorkbench :global([class*="tableShell"]),
+.crmMeetingsSaasWorkbench :global([class*="ListShell"]),
+.crmMeetingsSaasWorkbench :global([class*="listShell"]),
+.crmMeetingsSaasWorkbench :global([class*="RecordsShell"]),
+.crmMeetingsSaasWorkbench :global([class*="recordsShell"]) {
+  height: calc(100vh - 180px) !important;
+  min-height: 560px !important;
+  overflow: auto !important;
+  border-radius: 18px !important;
+}
+
+/* Make rows easier to scan as a SaaS work queue, not a demo tile. */
+.crmMeetingsSaasWorkbench :global(table) {
+  width: 100% !important;
+}
+
+.crmMeetingsSaasWorkbench :global(thead th),
+.crmMeetingsSaasWorkbench :global([role='columnheader']) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.crmMeetingsSaasWorkbench :global(tbody tr),
+.crmMeetingsSaasWorkbench :global([role='row']) {
+  min-height: 64px !important;
+}
+
+.crmMeetingsSaasWorkbench :global(td),
+.crmMeetingsSaasWorkbench :global(th) {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+/* Keep row actions visible because they are the daily task entry points. */
+.crmMeetingsSaasWorkbench :global(tbody [class*="Actions"]),
+.crmMeetingsSaasWorkbench :global(tbody [class*="actions"]),
+.crmMeetingsSaasWorkbench :global([role='row'] [class*="Actions"]),
+.crmMeetingsSaasWorkbench :global([role='row'] [class*="actions"]) {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+/* Hide pagination chrome until real volume requires it. The list is the viewport. */
+.crmMeetingsSaasWorkbench :global([class*="Pagination"]),
+.crmMeetingsSaasWorkbench :global([class*="pagination"]),
+.crmMeetingsSaasWorkbench :global([aria-label*="pagination"]),
+.crmMeetingsSaasWorkbench :global([aria-label*="Pagination"]) {
+  display: none !important;
+}
+
+@media (max-width: 1280px) {
+  .crmMeetingsSaasWorkbench {
+    height: calc(100vh - 104px);
+  }
+
+  .crmMeetingsSaasWorkbench :global([class*="TableShell"]),
+  .crmMeetingsSaasWorkbench :global([class*="tableShell"]),
+  .crmMeetingsSaasWorkbench :global([class*="ListShell"]),
+  .crmMeetingsSaasWorkbench :global([class*="listShell"]),
+  .crmMeetingsSaasWorkbench :global([class*="RecordsShell"]),
+  .crmMeetingsSaasWorkbench :global([class*="recordsShell"]) {
+    height: calc(100vh - 160px) !important;
+  }
+}
+
+/* R91K179E27_MEETINGS_VIEWPORT_CLOSEOUT_HOST_OVERRIDE
+   Scope: CRM host wrappers that mount the Meetings module.
+   Purpose: keep Meetings as a full viewport CRM module, restore page footer controls, and prevent the old SaaS workbench sizing rules from clipping overview/create/edit screens.
+*/
+.r91k179e1MeetingsModulePageHost,
+.r91k179e2MeetingsModulePageHost {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.r91k179e1MeetingsModulePageHost > *,
+.r91k179e2MeetingsModulePageHost > *,
+.crmMeetingsSaasWorkbench,
+.crmMeetingsSaasWorkbench > * {
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+.crmMeetingsSaasWorkbench {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-workspace="operator-workbench"]) {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [class*="moduleMain"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [class*="moduleMain"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-workspace="operator-workbench"] [class*="moduleMain"]) {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [aria-label="Meetings records work queue"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [aria-label="Meetings records work queue"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-workspace="operator-workbench"] [aria-label="Meetings records work queue"]),
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [data-wilsy-r91k179e15r-view="editor"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [data-wilsy-r91k179e15r-view="editor"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-workspace="operator-workbench"] [data-wilsy-r91k179e15r-view="editor"]) {
+  height: calc(100% - 18px) !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 18px) !important;
+  overflow: hidden !important;
+}
+
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [class*="meetingTableShell"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-workspace="operator-workbench"] [class*="meetingTableShell"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-workspace="operator-workbench"] [class*="meetingTableShell"]) {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: auto !important;
+}
+
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-footer="LIVE_BACKEND_RECORDS_FOOTER"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-footer="LIVE_BACKEND_RECORDS_FOOTER"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-footer="LIVE_BACKEND_RECORDS_FOOTER"]) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.r91k179e1MeetingsModulePageHost :global([data-wilsy-meetings-footer="LIVE_BACKEND_RECORDS_FOOTER"] [class*="Pagination"]),
+.r91k179e2MeetingsModulePageHost :global([data-wilsy-meetings-footer="LIVE_BACKEND_RECORDS_FOOTER"] [class*="Pagination"]),
+.crmMeetingsSaasWorkbench :global([data-wilsy-meetings-footer="LIVE_BACKEND_RECORDS_FOOTER"] [class*="Pagination"]),
+.r91k179e1MeetingsModulePageHost :global([aria-label="Meeting records pagination"]),
+.r91k179e2MeetingsModulePageHost :global([aria-label="Meeting records pagination"]),
+.crmMeetingsSaasWorkbench :global([aria-label="Meeting records pagination"]),
+.r91k179e1MeetingsModulePageHost :global([aria-label="Meeting records quick pagination"]),
+.r91k179e2MeetingsModulePageHost :global([aria-label="Meeting records quick pagination"]),
+.crmMeetingsSaasWorkbench :global([aria-label="Meeting records quick pagination"]) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* R91K179E24P42C MEETINGS PARENT VIEWPORT PARITY */
+/* Meetings is now a first-class operating room; give it the same parent treatment as Leads. */
+.crmShell[data-wilsy-active-workspace="meetings"] .commandSurface > header {
+  display: none !important;
+}
+
+.crmShell[data-wilsy-active-workspace="meetings"] .workspaceViewport {
+  padding: 0 !important;
+  min-height: calc(100vh - 28px) !important;
+  overflow: auto !important;
+}
+
+/* R91K179E24P44B3 MEETINGS USE LEAD SHELL PARENT VIEWPORT */
+/* Meetings now renders through WilsyLeadOperatingRoom; keep parent viewport identical to Leads. */
+.crmShell[data-wilsy-active-workspace="meetings"] .commandSurface > header {
+  display: none !important;
+}
+
+.crmShell[data-wilsy-active-workspace="meetings"] .workspaceViewport {
+  padding: 0 !important;
+  min-height: calc(100vh - 28px) !important;
+  overflow: auto !important;
+}
+
+
+/* WILSY_P60H1_CRM_SETUP_OVERLAY
+   CRM-owned Setup overlay. It sits above the CRM side rail and returns to the active module on close. */
+.crmSetupAuthorityOverlay {
+  position: fixed;
+  inset: 24px 24px 24px 126px;
+  z-index: 9500;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 209, 255, 0.28);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top right, rgba(0, 255, 148, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(5, 7, 12, 0.995), rgba(10, 11, 16, 0.99));
+  box-shadow:
+    0 38px 140px rgba(0, 0, 0, 0.76),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.crmSetupAuthorityChrome {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 70px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top left, rgba(0, 114, 255, 0.14), transparent 38%),
+    rgba(7, 10, 16, 0.98);
+}
+
+.crmSetupAuthorityChrome > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.crmSetupAuthorityChrome span {
+  color: var(--forensic-warning, #ffb800);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.crmSetupAuthorityChrome strong {
+  overflow: hidden;
+  color: var(--text-primary, #ffffff);
+  font-size: clamp(1.1rem, 1.6vw, 1.55rem);
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crmSetupAuthorityChrome small {
+  color: var(--text-secondary, #8b949e);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.crmSetupAuthorityChrome button {
+  min-width: 96px;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 209, 255, 0.28);
+  border-radius: 14px;
+  background: rgba(0, 209, 255, 0.08);
+  color: var(--text-primary, #ffffff);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.crmSetupAuthorityChrome button:hover {
+  border-color: rgba(0, 255, 148, 0.44);
+  background: rgba(0, 255, 148, 0.1);
+}
+
+.crmSetupAuthorityViewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 12px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crmSetupAuthorityViewport::-webkit-scrollbar {
+  width: 10px;
+}
+
+.crmSetupAuthorityViewport::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.crmSetupAuthorityViewport::-webkit-scrollbar-thumb {
+  background: rgba(0, 209, 255, 0.36);
+  border: 2px solid rgba(10, 11, 16, 0.9);
+  border-radius: 999px;
+}
+
+.crmSetupAuthorityViewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 148, 0.44);
+}
+
+@media (max-width: 980px) {
+  .crmSetupAuthorityOverlay {
+    inset: 12px;
+  }
+
+  .crmSetupAuthorityChrome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .crmSetupAuthorityChrome button {
+    width: 100%;
+  }
+}
+
+/* WILSY_P60I_SETUP_OVERLAY_NO_BLEED
+   Makes the CRM-owned Setup surface opaque, scroll-stable, and visually independent from the workspace behind it. */
+.crmSetupAuthorityOverlay {
+  inset: 18px 18px 18px 118px;
+  z-index: 9800;
+  background: #05070c !important;
+  border-color: rgba(0, 209, 255, 0.34);
+  box-shadow:
+    0 44px 160px rgba(0, 0, 0, 0.86),
+    0 0 0 1px rgba(0, 255, 148, 0.08) inset;
+}
+
+.crmSetupAuthorityChrome {
+  min-height: 60px;
+  padding: 10px 14px;
+  background: #05070c !important;
+}
+
+.crmSetupAuthorityChrome small {
+  color: #e6d89a;
+}
+
+.crmSetupAuthorityViewport {
+  overflow: hidden;
+  padding: 10px;
+  background: #05070c !important;
+}
+
+.crmSetupAuthorityViewport > * {
+  min-height: 0;
+}
+
+@media (max-width: 980px) {
+  .crmSetupAuthorityOverlay {
+    inset: 10px;
+  }
+}
+
+/* WILSY_P60I1_SETUP_OVERLAY_FULL_OS_SURFACE
+   Covers CRM rail bleed and makes Setup behave like a full operating surface. */
+.crmSetupAuthorityOverlay {
+  position: fixed !important;
+  inset: 12px !important;
+  z-index: 99990 !important;
+  display: flex !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 209, 255, 0.42) !important;
+  border-radius: 24px !important;
+  background: #05070c !important;
+  box-shadow:
+    0 56px 180px rgba(0, 0, 0, 0.92),
+    0 0 0 1px rgba(0, 255, 148, 0.08) inset !important;
+}
+
+.crmSetupAuthorityChrome {
+  min-height: 56px !important;
+  padding: 9px 14px !important;
+  background: #05070c !important;
+}
+
+.crmSetupAuthorityChrome strong {
+  font-size: clamp(1rem, 1.35vw, 1.35rem) !important;
+}
+
+.crmSetupAuthorityChrome small {
+  color: #e6d89a !important;
+  font-size: 0.7rem !important;
+}
+
+.crmSetupAuthorityViewport {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 8px !important;
+  background: #05070c !important;
+}
+
+.crmSetupAuthorityViewport > * {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
