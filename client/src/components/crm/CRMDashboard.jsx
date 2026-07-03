@@ -5351,11 +5351,50 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
 
   const [crmRailLiveCounts, setCrmRailLiveCounts] = useState({});
 
+  /* WILSY_P60K5K8B_STOP_RAIL_SOURCE_POSTURE_LOOP_DOCSAFE */
   useEffect(() => {
     let cancelled = false;
     const railTenantId = resolveR88FCrmCommandTenantId(tenantConfig, user);
+    const cacheKey = `R91K179E24P45B:${railTenantId}`;
+    const cooldownMs = 60000;
 
-    fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}?railCounts=R91K179E24P45B&generatedAt=${Date.now()}`, {
+    const railCache =
+      globalThis.__WILSY_P60K5K8B_RAIL_SOURCE_POSTURE_CACHE__ ||
+      (globalThis.__WILSY_P60K5K8B_RAIL_SOURCE_POSTURE_CACHE__ = {
+        key: '',
+        expiresAt: 0,
+        payload: null,
+        promise: null,
+      });
+
+    if (railCache.key === cacheKey && railCache.payload && railCache.expiresAt > Date.now()) {
+      setCrmRailLiveCounts(extractWilsyR91K179E24P45BRailLiveCounts(railCache.payload || {}));
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (railCache.key === cacheKey && railCache.promise) {
+      railCache.promise
+        .then((payload) => {
+          if (!cancelled) {
+            setCrmRailLiveCounts(extractWilsyR91K179E24P45BRailLiveCounts(payload || {}));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setCrmRailLiveCounts({});
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    railCache.key = cacheKey;
+    railCache.promise = fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}?railCounts=R91K179E24P45B&generatedAt=${Date.now()}`, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -5367,19 +5406,46 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
       },
       cache: 'no-store',
     })
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => (response.ok ? response.json() : {}))
       .then((payload) => {
-        if (cancelled || !payload) return;
-        setCrmRailLiveCounts(extractWilsyR91K179E24P45BRailLiveCounts(payload));
+        railCache.payload = payload || {};
+        railCache.expiresAt = Date.now() + cooldownMs;
+        return railCache.payload;
       })
       .catch(() => {
-        if (!cancelled) setCrmRailLiveCounts({});
+        railCache.payload = {};
+        railCache.expiresAt = Date.now() + cooldownMs;
+        return {};
+      })
+      .finally(() => {
+        railCache.promise = null;
+      });
+
+    railCache.promise
+      .then((payload) => {
+        if (!cancelled) {
+          setCrmRailLiveCounts(extractWilsyR91K179E24P45BRailLiveCounts(payload || {}));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCrmRailLiveCounts({});
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [refreshSignal, tenantConfig, user]);
+  }, [
+    tenantConfig?.id,
+    tenantConfig?.tenantId,
+    tenantConfig?.tenantKey,
+    tenantConfig?.slug,
+    user?.id,
+    user?._id,
+    user?.tenantId,
+    user?.email,
+  ]);
 
   const workspaceTelemetry = useMemo(
     () => buildCrmWorkspaceTelemetry(operatingSnapshot, visibleCrmWorkspaces),
