@@ -2999,7 +2999,7 @@ export default function WilsyCrmSetupControlPlane() {
         <section className={styles.evidenceRail}>
           <span>Evidence pack</span>
           <div>
-            {evidencePack.map((item) => (
+            {evidencePack.map((item, index) => (
               <strong key={item.id || item.title || item.label || index}>{item}</strong>
             ))}
           </div>
