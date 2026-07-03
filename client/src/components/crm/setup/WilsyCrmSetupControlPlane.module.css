@@ -6917,83 +6917,64 @@ button.packetRevealNode {
 }
 
 
-/* WILSY_P60K5L5B_SOVEREIGN_EXPOSURE_MATRIX
-   Screen Two operating matrix.
+/* WILSY_P60K5L6_SCREEN2_RAIL_WORKSPACE
+   Screen Two becomes an interactive rail + workspace.
    Contract:
-   - Matrix sits above Work Queue / Affected Surfaces / Control Posture.
-   - Work Queue remains task-first.
-   - No CRMDashboard loop logic or Screen One Packet Console changes. */
+   - Main viewport is the working surface.
+   - Rail controls workspace mode.
+   - No CRMDashboard loop logic.
+   - No Screen One Packet Console changes. */
 
-.screenTwoSovereignExposureMatrix {
+.screenTwoOperatingWorkspace {
   grid-column: 1 / -1;
-  position: relative;
-  isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(310px, 0.92fr) minmax(230px, 0.7fr) minmax(420px, 1.38fr);
-  gap: 12px;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 14px;
   min-width: 0;
-  padding: 12px;
+  min-height: 408px;
+  padding: 14px;
   border: 1px solid rgba(0, 209, 255, 0.22);
-  border-radius: 26px;
+  border-radius: 28px;
   background:
-    radial-gradient(circle at 4% 0%, rgba(0, 255, 148, 0.14), transparent 28%),
-    radial-gradient(circle at 75% 0%, rgba(0, 209, 255, 0.13), transparent 34%),
-    linear-gradient(135deg, rgba(2, 14, 28, 0.97), rgba(1, 5, 14, 0.99));
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.11), transparent 30%),
+    radial-gradient(circle at 78% 0%, rgba(0, 209, 255, 0.12), transparent 36%),
+    linear-gradient(135deg, rgba(2, 13, 28, 0.98), rgba(1, 5, 14, 0.99));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 18px 54px rgba(0, 0, 0, 0.26),
-    0 0 34px rgba(0, 209, 255, 0.06);
+    0 18px 58px rgba(0, 0, 0, 0.28);
   overflow: hidden;
 }
 
-.screenTwoSovereignExposureMatrix::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.045);
-  border-radius: 21px;
-  pointer-events: none;
-}
-
-.exposureMatrixPrime,
-.exposureMatrixSignalRail article,
-.exposureRunwayStep {
-  position: relative;
-  min-width: 0;
-  border: 1px solid rgba(0, 209, 255, 0.16);
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(0, 209, 255, 0.10), transparent 34%),
-    rgba(255, 255, 255, 0.035);
-  overflow: hidden;
-}
-
-.exposureMatrixPrime {
+.screenTwoCommandRail {
   display: grid;
-  align-content: center;
-  min-height: 132px;
-  padding: 16px;
-  border-color: rgba(0, 255, 148, 0.30);
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(0, 209, 255, 0.18);
+  border-radius: 22px;
   background:
-    radial-gradient(circle at 8% 0%, rgba(0, 255, 148, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(7, 38, 32, 0.74), rgba(4, 14, 24, 0.96));
+    linear-gradient(180deg, rgba(2, 18, 34, 0.96), rgba(1, 7, 18, 0.98));
+  overflow: hidden;
 }
 
-.exposureMatrixPrime::after,
-.exposureMatrixSignalRail article::after,
-.exposureRunwayStep::after {
-  content: "";
-  position: absolute;
-  inset: auto 12px 10px 12px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(0, 209, 255, 0.76), rgba(0, 255, 148, 0.64));
-  opacity: 0.68;
+.screenTwoRailPrime {
+  padding: 12px;
+  border: 1px solid rgba(0, 255, 148, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(0, 255, 148, 0.14), transparent 36%),
+    rgba(255, 255, 255, 0.035);
 }
 
-.exposureMatrixPrime span,
-.exposureMatrixSignalRail span,
-.exposureRunwayStep span {
+.screenTwoRailPrime span,
+.screenTwoRailButton span,
+.screenTwoRailButtonActive span,
+.screenTwoWorkspaceHeader span,
+.screenTwoWorkspaceQueue span,
+.screenTwoWorkspaceSurfaces span,
+.screenTwoWorkspacePosture span,
+.screenTwoWorkspacePacket span {
   color: rgba(188, 244, 255, 0.68);
   font-size: 0.56rem;
   font-weight: 950;
@@ -7002,176 +6983,270 @@ button.packetRevealNode {
   text-transform: uppercase;
 }
 
-.exposureMatrixPrime strong {
-  margin-top: 10px;
+.screenTwoRailPrime strong {
+  display: block;
+  margin-top: 9px;
   color: #ffffff;
-  font-size: clamp(1.2rem, 1.8vw, 1.72rem);
+  font-size: 1.25rem;
   font-weight: 950;
   letter-spacing: -0.04em;
-  line-height: 1.02;
+  line-height: 1.04;
 }
 
-.exposureMatrixPrime p {
-  margin: 8px 0 0;
-  color: rgba(255, 239, 185, 0.90);
-  font-size: 0.72rem;
+.screenTwoRailPrime small {
+  display: block;
+  margin-top: 8px;
+  color: rgba(206, 255, 231, 0.76);
+  font-size: 0.63rem;
   font-weight: 850;
   letter-spacing: 0.08em;
-  line-height: 1.35;
+  line-height: 1.28;
   text-transform: uppercase;
 }
 
-.exposureMatrixPrime small {
-  margin-top: 10px;
-  color: rgba(206, 255, 231, 0.72);
-  font-size: 0.66rem;
-  font-weight: 850;
-  letter-spacing: 0.08em;
-  line-height: 1.25;
-  text-transform: uppercase;
-}
-
-.exposureMatrixSignalRail {
+.screenTwoRailButtons {
   display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  align-content: start;
+  gap: 9px;
   min-width: 0;
+  overflow: auto;
+  padding-right: 2px;
 }
 
-.exposureMatrixSignalRail article {
-  display: grid;
-  align-content: center;
-  min-height: 61px;
-  padding: 11px 12px 14px;
+.screenTwoRailButton,
+.screenTwoRailButtonActive {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.028);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.exposureMatrixSignalRail strong {
+.screenTwoRailButtonActive,
+.screenTwoRailButton:hover {
+  border-color: rgba(0, 255, 148, 0.42);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(0, 255, 148, 0.12), transparent 34%),
+    rgba(0, 209, 255, 0.045);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 148, 0.10),
+    0 14px 32px rgba(0, 0, 0, 0.20);
+  transform: translateX(2px);
+}
+
+.screenTwoRailButton strong,
+.screenTwoRailButtonActive strong {
+  display: block;
   margin-top: 7px;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 950;
   letter-spacing: -0.02em;
   line-height: 1.08;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
-.exposureMatrixSignalRail small {
+.screenTwoRailButton small,
+.screenTwoRailButtonActive small {
+  display: block;
   margin-top: 5px;
-  color: rgba(221, 235, 241, 0.72);
+  color: rgba(221, 235, 241, 0.68);
   font-size: 0.62rem;
-  font-weight: 750;
+  font-weight: 780;
   line-height: 1.22;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
-.exposureMatrixRunway {
-  position: relative;
+.screenTwoWorkspaceSurface {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
   min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid rgba(0, 209, 255, 0.18);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 75% 0%, rgba(0, 209, 255, 0.11), transparent 34%),
+    rgba(255, 255, 255, 0.025);
+  overflow: hidden;
 }
 
-.exposureMatrixRunway::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 32px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(0, 209, 255, 0.1), rgba(0, 209, 255, 0.52), rgba(0, 255, 148, 0.36));
-  pointer-events: none;
+.screenTwoWorkspaceHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(240px, 1fr);
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(0, 209, 255, 0.14);
 }
 
-.exposureRunwayStep {
+.screenTwoWorkspaceHeader strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: clamp(1.08rem, 1.55vw, 1.48rem);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+
+.screenTwoWorkspaceHeader p {
+  margin: 0;
+  color: rgba(255, 239, 185, 0.84);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.36;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkspaceQueue,
+.screenTwoWorkspaceSurfaces,
+.screenTwoWorkspacePosture,
+.screenTwoWorkspacePacket {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.screenTwoWorkspaceQueue {
   display: grid;
   align-content: start;
-  min-height: 132px;
-  padding: 12px;
+  gap: 10px;
 }
 
-.exposureRunwayStep span {
+.screenTwoWorkspaceQueue button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 0.9fr) minmax(220px, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  min-height: 72px;
+  padding: 11px 13px;
+  border: 1px solid rgba(0, 209, 255, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(0, 209, 255, 0.075), rgba(255, 255, 255, 0.028));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.screenTwoWorkspaceQueue button span {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  margin-bottom: 10px;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(0, 209, 255, 0.38);
   border-radius: 999px;
   background: rgba(0, 209, 255, 0.10);
   color: rgba(136, 235, 255, 0.98);
-  box-shadow: 0 0 20px rgba(0, 209, 255, 0.13);
 }
 
-.exposureRunwayStep strong {
+.screenTwoWorkspaceQueue button strong {
   color: #ffffff;
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 950;
-  letter-spacing: -0.01em;
-  line-height: 1.16;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 1.22;
 }
 
-.exposureRunwayStep small {
-  margin-top: 7px;
-  color: rgba(221, 235, 241, 0.68);
-  font-size: 0.62rem;
-  font-weight: 760;
-  line-height: 1.25;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+.screenTwoWorkspaceQueue button small {
+  color: rgba(221, 235, 241, 0.72);
+  font-size: 0.68rem;
+  font-weight: 780;
+  line-height: 1.26;
 }
 
-.viewPanel button {
-  min-height: 58px;
+.screenTwoWorkspaceSurfaces {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
 }
 
-.viewPanel button strong {
-  white-space: normal;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.screenTwoWorkspaceSurfaces article,
+.screenTwoWorkspacePosture article,
+.screenTwoWorkspacePacket article {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid rgba(0, 209, 255, 0.17);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 209, 255, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.03);
 }
 
-.viewPanel button small {
-  white-space: normal;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.screenTwoWorkspaceSurfaces strong,
+.screenTwoWorkspacePosture strong,
+.screenTwoWorkspacePacket strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 950;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 1460px) {
-  .screenTwoSovereignExposureMatrix {
-    grid-template-columns: minmax(260px, 0.95fr) minmax(420px, 1.2fr);
-  }
-
-  .exposureMatrixSignalRail {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: none;
-  }
+.screenTwoWorkspaceSurfaces small,
+.screenTwoWorkspacePacket p {
+  display: block;
+  margin-top: 8px;
+  color: rgba(221, 235, 241, 0.72);
+  font-size: 0.68rem;
+  font-weight: 780;
+  line-height: 1.32;
 }
 
-@media (max-width: 1080px) {
-  .screenTwoSovereignExposureMatrix,
-  .exposureMatrixSignalRail,
-  .exposureMatrixRunway {
+.screenTwoWorkspacePosture {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
+}
+
+.screenTwoWorkspacePacket {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
+}
+
+@media (max-width: 1320px) {
+  .screenTwoOperatingWorkspace {
     grid-template-columns: 1fr;
   }
 
-  .exposureMatrixRunway::before {
-    display: none;
+  .screenTwoCommandRail {
+    grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .screenTwoRailButtons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+
+@media (max-width: 920px) {
+  .screenTwoCommandRail,
+  .screenTwoRailButtons,
+  .screenTwoWorkspaceHeader,
+  .screenTwoWorkspaceQueue button,
+  .screenTwoWorkspaceSurfaces,
+  .screenTwoWorkspacePosture,
+  .screenTwoWorkspacePacket {
+    grid-template-columns: 1fr;
   }
 }
