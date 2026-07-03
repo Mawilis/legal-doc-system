@@ -8,7 +8,13 @@
     "not ios_saf <= 18.5",
     "not safari <= 18.5",
     "not chrome <= 112",
-    "not samsung <= 28"
+    "not samsung <= 28",
+    "not and_chr <= 138",
+    "not and_ff <= 140",
+    "not chrome <= 138",
+    "not edge <= 138",
+    "not firefox <= 140",
+    "not opera <= 117"
   ],
   "hints": {
     "compat-api/css": [
