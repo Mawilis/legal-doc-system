@@ -1365,6 +1365,34 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
+  /* WILSY_P60K5L3_SCREEN2_INVESTOR_VERDICT_STRIP */
+  const screenTwoSourceIntelligence = screenTwoSourceLive ? screenTwoSourceSurface?.sourceIntelligence || {} : {};
+  const screenTwoSourceSummary =
+    screenTwoSourceIntelligence.sourceSummary ||
+    screenTwoSourcePosture.sourceSummary ||
+    screenTwoSourceSurface?.auditEvidence?.sourceSummary ||
+    'Source posture pending.';
+  const screenTwoAttentionSurfaceCount = screenTwoAffectedSurfaces.filter((surface = {}) => {
+    const status = String(surface.status || surface.state || '').toUpperCase();
+
+    return status.includes('ATTENTION') || status.includes('RISK') || status.includes('BLOCK') || status.includes('WATCH');
+  }).length;
+  const screenTwoLiveSurfaceCount = screenTwoAffectedSurfaces.filter((surface = {}) => {
+    const status = String(surface.status || surface.state || '').toUpperCase();
+    const label = String(surface.label || surface.title || '').trim();
+
+    return Boolean(label) && !status.includes('EMPTY');
+  }).length;
+  const screenTwoInvestorVerdict = screenTwoSourceLive
+    ? (screenTwoAttentionSurfaceCount > 0
+        ? 'Live source graph found exposure signals. Review affected surfaces before staging.'
+        : 'Live source graph is resolved. This control is ready to move toward staged evidence.')
+    : (screenTwoSourceBusy
+        ? 'Resolving live source graph.'
+        : 'Static control mode. Source graph standby.');
+  const screenTwoInvestorAction = stagedReview
+    ? 'Open packet'
+    : (screenTwoAttentionSurfaceCount > 0 ? 'Review exposure' : 'Stage review');
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2867,6 +2895,24 @@ export default function WilsyCrmSetupControlPlane() {
               <>
                 <article className={styles.viewPanel}>
                   <span>Work queue</span>
+                  <div className={styles.screenTwoInvestorVerdictStrip} aria-label="Investor verdict">
+                    <article>
+                      <span>Source Pulse</span>
+                      <strong>{screenTwoSourceLive ? 'Live' : screenTwoSourceBusy ? 'Resolving' : 'Standby'}</strong>
+                      <small>{screenTwoSourceSummary}</small>
+                    </article>
+                    <article>
+                      <span>Exposure Map</span>
+                      <strong>{screenTwoLiveSurfaceCount}/{screenTwoAffectedSurfaces.length || 1}</strong>
+                      <small>{screenTwoAttentionSurfaceCount} attention surface{screenTwoAttentionSurfaceCount === 1 ? '' : 's'}</small>
+                    </article>
+                    <article>
+                      <span>Investor Verdict</span>
+                      <strong>{screenTwoInvestorAction}</strong>
+                      <small>{screenTwoInvestorVerdict}</small>
+                    </article>
+                  </div>
+
                   <div className={styles.workStepList}>
                     {screenTwoWorkItems.map((item, index) => (
                       <button type="button" key={item.id || item.title || item.label || index}>
