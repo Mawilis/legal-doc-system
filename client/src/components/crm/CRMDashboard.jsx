@@ -753,8 +753,90 @@ async function fetchCrmCollection(collection, tenantId, signal) {
 }
 
 
+/* WILSY_P60K5K6_SOURCE_POSTURE_FUNCTION_LOCK */
+const WILSY_P60K5K6_SOURCE_POSTURE_COOLDOWN_MS = 30000;
+const wilsyP60K5K6SourcePostureFunctionCache = {
+  key: '',
+  expiresAt: 0,
+  payload: null,
+  promise: null,
+};
+
+/**
+ * @function buildWilsyP60K5K6SourcePostureFunctionKey
+ * @description Builds a stable source-posture function cache key that ignores volatile generatedAt churn.
+ * @returns {string} Stable source-posture function cache key.
+ * @collaboration CRMDashboard, fetchCrmSourcePosture, source posture telemetry, and backend request storm prevention.
+ */
+function buildWilsyP60K5K6SourcePostureFunctionKey() {
+  return String(CRM_SOURCE_POSTURE_ENDPOINT || '/api/crm/live/source-posture');
+}
+
+/**
+ * @function cloneWilsyP60K5K6SourcePosturePayload
+ * @description Clones source-posture payloads before returning cached data to React state.
+ * @param {Object} payload - Cached source-posture payload.
+ * @returns {Object} Cloned payload.
+ * @collaboration CRMDashboard source posture state, React render safety, and request-loop cache discipline.
+ */
+function cloneWilsyP60K5K6SourcePosturePayload(payload = {}) {
+  try {
+    return JSON.parse(JSON.stringify(payload || {}));
+  } catch (error) {
+    return payload || {};
+  }
+}
+
 /**
  * @function fetchCrmSourcePosture
+ * @description Fetches CRM source-posture telemetry through a function-level cooldown so repeated renders cannot spam the backend.
+ * @param {AbortSignal} signal - Abort signal for cancelling source-posture fetches.
+ * @returns {Promise<Object>} Source-posture payload.
+ * @collaboration CRM live source telemetry, source-posture request loop guard, backend SLA protection, and Screen Two stability.
+ */
+async function fetchCrmSourcePosture(tenantId, signal) {
+  const cacheKey = buildWilsyP60K5K6SourcePostureFunctionKey();
+  const now = Date.now();
+
+  if (
+    wilsyP60K5K6SourcePostureFunctionCache.key === cacheKey &&
+    wilsyP60K5K6SourcePostureFunctionCache.payload &&
+    wilsyP60K5K6SourcePostureFunctionCache.expiresAt > now
+  ) {
+    return cloneWilsyP60K5K6SourcePosturePayload(wilsyP60K5K6SourcePostureFunctionCache.payload);
+  }
+
+  if (
+    wilsyP60K5K6SourcePostureFunctionCache.key === cacheKey &&
+    wilsyP60K5K6SourcePostureFunctionCache.promise
+  ) {
+    const payload = await wilsyP60K5K6SourcePostureFunctionCache.promise;
+    return cloneWilsyP60K5K6SourcePosturePayload(payload);
+  }
+
+  wilsyP60K5K6SourcePostureFunctionCache.key = cacheKey;
+  wilsyP60K5K6SourcePostureFunctionCache.promise = fetchCrmSourcePostureUncached(...arguments)
+    .then((payload) => {
+      wilsyP60K5K6SourcePostureFunctionCache.payload = payload || {};
+      wilsyP60K5K6SourcePostureFunctionCache.expiresAt = Date.now() + WILSY_P60K5K6_SOURCE_POSTURE_COOLDOWN_MS;
+      return wilsyP60K5K6SourcePostureFunctionCache.payload;
+    })
+    .catch((error) => {
+      wilsyP60K5K6SourcePostureFunctionCache.payload = null;
+      wilsyP60K5K6SourcePostureFunctionCache.expiresAt = 0;
+      throw error;
+    })
+    .finally(() => {
+      wilsyP60K5K6SourcePostureFunctionCache.promise = null;
+    });
+
+  const payload = await wilsyP60K5K6SourcePostureFunctionCache.promise;
+  return cloneWilsyP60K5K6SourcePosturePayload(payload);
+}
+
+
+/**
+ * @function fetchCrmSourcePostureUncached
  * @description Fetches live CRM source posture from the backend.
  * @param {string} tenantId - Active tenant id.
  * @param {AbortSignal} signal - Abort signal.
@@ -966,13 +1048,13 @@ function resolveWilsyR91K110RouteSurfaceLabel(sourcePosture = {}) {
 
 /**
  * @function fetchCrmSourcePosture
- * @description Fetches live CRM source-posture telemetry for the active tenant.
+ * @description Fetches live CRM source-posture telemetry for the active tenant without request-loop caching.
  * @param {string} tenantId - Active tenant id.
  * @param {AbortSignal} signal - Abort signal for cancelling source-posture fetches.
  * @returns {Promise<Object|null>} Source posture payload or null when unavailable.
  * @collaboration CRM live source telemetry, route-surface enrichment, production header truth.
  */
-async function fetchCrmSourcePosture(tenantId, signal) {
+async function fetchCrmSourcePostureUncached(tenantId, signal) {
   try {
     const response = await fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}`, {
       method: 'GET',
