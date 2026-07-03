@@ -1,0 +1,3401 @@
+/* eslint-disable */
+/**
+ * WILSY OS - CRM MEETINGS WORKSPACE STYLES
+ * Collaboration: Wilson Khanyezi mandated a usable CRM Meetings workspace; AI Engineering consolidated the visual system into one operator-first layer.
+ */
+
+.moduleShell {
+  --meeting-bg: #0b1017;
+  --meeting-panel: #121a24;
+  --meeting-panel-strong: #172232;
+  --meeting-line: rgba(151, 166, 194, 0.22);
+  --meeting-line-strong: rgba(82, 143, 255, 0.46);
+  --meeting-text: #f5f7fb;
+  --meeting-muted: #aeb9ca;
+  --meeting-soft: #77849b;
+  --meeting-blue: #5c8dff;
+  --meeting-green: #2fd184;
+  --meeting-gold: #e5bd5a;
+  --meeting-red: #ff6b72;
+  --meeting-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
+
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  background: var(--meeting-bg);
+  color: var(--meeting-text);
+  overflow: hidden;
+}
+
+.railCollapsed {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+
+.moduleRail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 16px 12px;
+  border-right: 1px solid var(--meeting-line);
+  background: #0f1722;
+  overflow: hidden;
+}
+
+.railHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 8px;
+  align-items: center;
+  min-height: 46px;
+}
+
+.railHeader small,
+.overviewHeader small,
+.workHeader small,
+.editorHeader small,
+.importHeader small,
+.r91k22d3bCapsuleHeader small,
+.r91k22d3bCapsuleNotes small,
+.wilsyAiMeetingRail small,
+.wilsyCommandModal small,
+.participantSelectedTray small {
+  display: block;
+  color: var(--meeting-gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.railHeader strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--meeting-text);
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.railToggle,
+.moduleTopbar nav button,
+.r91k22d3bCapsuleHeader > button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--meeting-text);
+  cursor: pointer;
+}
+
+.railToggle:hover,
+.moduleTopbar nav button:hover,
+.r91k22d3bCapsuleHeader > button:hover {
+  border-color: var(--meeting-blue);
+  background: rgba(92, 141, 255, 0.14);
+}
+
+.moduleRail nav {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.moduleRail nav button,
+.backToCrm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  width: 100%;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--meeting-muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.moduleRail nav button:hover,
+.backToCrm:hover,
+.activeRailItem {
+  border-color: rgba(47, 209, 132, 0.44) !important;
+  background: rgba(47, 209, 132, 0.1) !important;
+  color: var(--meeting-text) !important;
+}
+
+.backToCrm {
+  align-self: end;
+}
+
+.railCollapsed .moduleRail {
+  padding-inline: 10px;
+}
+
+.railCollapsed .railHeader {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.railCollapsed .railHeader div,
+.railCollapsed .moduleRail nav span,
+.railCollapsed .backToCrm span {
+  display: none;
+}
+
+.railCollapsed .moduleRail nav button,
+.railCollapsed .backToCrm {
+  justify-content: center;
+  padding: 0;
+}
+
+.moduleMain {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.moduleTopbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.5fr) minmax(280px, 0.82fr) auto;
+  gap: 16px;
+  align-items: center;
+  min-height: 70px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--meeting-line);
+  background: #111923;
+}
+
+.moduleTopbar small {
+  display: block;
+  color: var(--meeting-gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.moduleTopbar strong {
+  display: block;
+  color: var(--meeting-text);
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.moduleTopbar span {
+  display: block;
+  color: var(--meeting-muted);
+  font-size: 0.78rem;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0 12px;
+  color: var(--meeting-muted);
+}
+
+.search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--meeting-text);
+  font: inherit;
+  font-weight: 750;
+}
+
+.search input::placeholder {
+  color: var(--meeting-soft);
+}
+
+.moduleTopbar nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.moduleTopbar nav button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.moduleViewportFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 18px;
+  border-top: 1px solid var(--meeting-line);
+  background: #080d14;
+  color: var(--meeting-muted);
+  overflow: hidden;
+}
+
+.moduleViewportFooter span,
+.moduleViewportFooter strong,
+.moduleViewportFooter em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moduleViewportFooter span {
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.moduleViewportFooter strong {
+  color: var(--meeting-text);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.moduleViewportFooter em {
+  color: rgba(229, 189, 90, 0.64);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+}
+
+.meetingsOverview,
+.pageSurface,
+.r91k22d3bCapsulePage {
+  min-height: 0;
+  margin: 14px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: var(--meeting-panel);
+  box-shadow: var(--meeting-shadow);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.meetingsOverview {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-self: stretch;
+  height: calc(100% - 28px);
+  max-height: calc(100% - 28px);
+  padding-bottom: 48px;
+}
+
+.overviewHeader,
+.workHeader,
+.editorHeader,
+.r91k22d3bCapsuleHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--meeting-line);
+}
+
+.overviewHeader h2,
+.workHeader h2,
+.editorHeader h2,
+.importHeader h2,
+.r91k22d3bCapsuleHeader h2 {
+  margin: 3px 0 0;
+  color: var(--meeting-text);
+  font-size: clamp(1.28rem, 1.8vw, 2rem);
+  line-height: 1.08;
+}
+
+.overviewHeader p,
+.workHeader p,
+.editorHeader p,
+.importNotice p,
+.r91k22d3bCapsuleHeader p,
+.r91k22d3bCapsuleGrid p,
+.r91k22d3bCapsuleNotes p,
+.wilsyAiMeetingRail p,
+.wilsyCommandModal p {
+  margin: 6px 0 0;
+  color: var(--meeting-muted);
+  line-height: 1.42;
+}
+
+.overviewHeader nav,
+.workHeader nav,
+.editorHeader nav,
+.r91k22d3bCapsuleHeader nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.overviewHeader button,
+.workHeader button,
+.editorHeader button,
+.importHeader button,
+.rowActions button,
+.meetingsEmptyState button,
+.dropzone button,
+.r91k22d3bCapsuleHeader nav button,
+.wilsyAiMeetingRail section button,
+.editorFormGrid button,
+.manualInviteRow button,
+.participantResolverTabs button,
+.participantSourceList button,
+.selectedParticipantPanel button,
+.externalInvitePanel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(92, 141, 255, 0.44);
+  border-radius: 8px;
+  background: rgba(92, 141, 255, 0.12);
+  color: var(--meeting-text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.overviewHeader button:hover,
+.workHeader button:hover,
+.editorHeader button:hover,
+.rowActions button:hover,
+.meetingsEmptyState button:hover,
+.r91k22d3bCapsuleHeader nav button:hover,
+.wilsyAiMeetingRail section button:hover {
+  border-color: rgba(47, 209, 132, 0.62);
+  background: rgba(47, 209, 132, 0.12);
+}
+
+.overviewHeader button:disabled,
+.workHeader button:disabled,
+.editorHeader button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.recordsNotice,
+.commandBanner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--meeting-line);
+  background: rgba(47, 209, 132, 0.08);
+}
+
+.recordsNotice[data-status="error"],
+.commandBanner[data-status="SAVE_FAILED"],
+.commandBanner[data-status="DELETE_FAILED"],
+.commandBanner[data-status="VALIDATION_REQUIRED"],
+.commandBanner[data-status="VERIFICATION_REQUIRED"] {
+  background: rgba(255, 107, 114, 0.1);
+}
+
+.recordsNotice strong,
+.commandBanner strong {
+  color: var(--meeting-gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.recordsNotice span,
+.commandBanner span {
+  color: var(--meeting-muted);
+}
+
+.recordsUtilityBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 50px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--meeting-line);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.meetingUtilityPager {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+.recordsUtilityBar strong {
+  color: var(--meeting-muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.selectAllControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--meeting-text);
+  font-weight: 850;
+}
+
+.selectAllControl input,
+.meetingTitleCell input,
+.participantResolverToggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--meeting-green);
+}
+
+.meetingTableShell {
+  min-height: 0;
+  height: 100%;
+  background: #111a26;
+  overflow: auto;
+}
+
+.meetingTable {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+}
+
+.meetingTableHead,
+.meetingTableRow {
+  display: grid;
+  grid-template-columns:
+    minmax(240px, 1.16fr)
+    minmax(150px, 0.72fr)
+    minmax(140px, 0.68fr)
+    minmax(130px, 0.62fr)
+    minmax(140px, 0.62fr)
+    minmax(300px, 0.96fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.meetingTableHead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 44px;
+  border-bottom: 1px solid var(--meeting-line);
+  background: #151f2d;
+}
+
+.meetingTableHead span {
+  color: var(--meeting-gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.meetingTableBody {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+}
+
+.meetingTableRow {
+  min-height: 74px;
+  border-bottom: 1px solid rgba(151, 166, 194, 0.14);
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.meetingTableRow:hover,
+.meetingTableRow[data-selected="true"] {
+  background: rgba(92, 141, 255, 0.08);
+}
+
+.meetingTableRow > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meetingTableRow span,
+.meetingTableRow small,
+.meetingTableRow em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meetingTableRow span {
+  color: var(--meeting-muted);
+  font-weight: 750;
+}
+
+.meetingTitleCell {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+}
+
+.meetingTitleCell strong,
+.readinessCell strong,
+.r91k22d3bCapsuleGrid strong,
+.ledger strong,
+.participantSelectedTray strong,
+.wilsyAiMeetingRail strong,
+.participantResolverEmpty strong,
+.selectedParticipantPanel strong,
+.participantSourceList strong {
+  color: var(--meeting-text);
+  font-weight: 900;
+}
+
+.meetingTitleCell small {
+  display: block;
+  margin-top: 3px;
+  color: var(--meeting-soft);
+  font-size: 0.72rem;
+}
+
+.meetingTitleCell em {
+  display: inline-block;
+  margin-top: 5px;
+  color: var(--meeting-green);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.readinessCell {
+  display: grid !important;
+  gap: 3px;
+}
+
+.readinessCell[data-readiness="gap"] strong {
+  color: var(--meeting-gold);
+}
+
+.readinessCell span {
+  color: var(--meeting-soft);
+  font-size: 0.78rem;
+}
+
+.rowActions {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.rowActions button {
+  min-height: 34px;
+  min-width: 0;
+  padding-inline: 9px;
+  white-space: nowrap;
+}
+
+.meetingRecordsFooter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 48px;
+  padding: 8px 16px 8px 18px;
+  border-top: 1px solid var(--meeting-line);
+  background: #111827;
+}
+
+.meetingFooterRecordRange {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.meetingFooterRecordRange strong {
+  color: var(--meeting-text);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.meetingFooterRecordRange em {
+  color: var(--meeting-muted);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 780;
+}
+
+.meetingFooterPagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.meetingFooterPagination button,
+.meetingFooterPagination span,
+.meetingFooterPageSize select {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--meeting-text);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.meetingFooterPagination button {
+  cursor: pointer;
+}
+
+.meetingFooterPagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.meetingFooterPagination button[aria-current="page"] {
+  border-color: rgba(92, 141, 255, 0.72);
+  background: rgba(92, 141, 255, 0.38);
+  color: #ffffff;
+}
+
+.meetingFooterPagination span[data-wilsy-pagination-ellipsis="true"] {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--meeting-muted);
+}
+
+.meetingUtilityPagination {
+  gap: 5px;
+}
+
+.meetingUtilityPagination button,
+.meetingUtilityPagination span {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 0.72rem;
+}
+
+.meetingFooterPageSize {
+  display: inline-flex;
+  align-items: center;
+}
+
+.meetingFooterPageSize select {
+  min-width: 98px;
+  padding: 0 8px;
+  outline: none;
+  color-scheme: dark;
+}
+
+.meetingsEmptyState {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 360px;
+  padding: 28px;
+  color: var(--meeting-muted);
+  text-align: center;
+}
+
+.meetingsEmptyState strong {
+  color: var(--meeting-text);
+  font-size: 1.18rem;
+}
+
+.meetingsEmptyState p {
+  max-width: 620px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.meetingsEmptyState div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pageSurface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-self: stretch;
+  height: calc(100% - 28px);
+  min-height: 0;
+  max-height: calc(100% - 28px);
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: calc(100% - 28px);
+  min-height: 0;
+  max-height: calc(100% - 28px);
+  overflow: hidden;
+}
+
+.editorHeader {
+  align-items: start;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader {
+  padding-block: 14px;
+}
+
+.editorBodyViewport {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editorCommandDeck {
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) minmax(380px, 0.65fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editorFormGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  padding: 14px 18px 16px;
+  overflow-y: auto;
+}
+
+.editorFormGrid label {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.24fr) minmax(0, 1fr) minmax(120px, auto);
+  gap: 9px;
+  align-items: center;
+  min-height: 48px;
+  border-bottom: 1px solid rgba(151, 166, 194, 0.16);
+}
+
+.editorFormGrid span,
+.modalField span {
+  color: var(--meeting-gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.editorFormGrid input,
+.editorFormGrid select,
+.editorFormGrid textarea,
+.modalField input,
+.participantResolverSearchInput input,
+.externalInvitePanel textarea,
+.manualInviteRow input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--meeting-text);
+  font: inherit;
+  font-weight: 780;
+}
+
+.editorFormGrid input,
+.editorFormGrid select,
+.modalField input,
+.manualInviteRow input {
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.editorFormGrid input[type="date"],
+.editorFormGrid input[type="time"] {
+  color-scheme: dark;
+}
+
+.editorFormGrid textarea {
+  min-height: 120px;
+  padding: 10px;
+  resize: vertical;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.editorAgendaPanel {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px 16px 14px;
+  border-left: 1px solid var(--meeting-line);
+  background: rgba(8, 13, 20, 0.24);
+  overflow: hidden;
+}
+
+.editorAgendaPanel header {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 12px;
+}
+
+.editorAgendaPanel strong {
+  color: var(--meeting-text);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.editorAgendaPanel p {
+  margin: 0;
+  color: var(--meeting-muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.editorAgendaPanel textarea {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(92, 141, 255, 0.38);
+  border-radius: 8px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.26);
+  color: var(--meeting-text);
+  padding: 14px;
+  font: inherit;
+  font-size: 0.96rem;
+  font-weight: 760;
+  line-height: 1.48;
+  resize: none;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.editorAgendaPanel textarea:focus {
+  border-color: rgba(47, 209, 132, 0.64);
+  box-shadow: inset 0 0 0 1px rgba(47, 209, 132, 0.24);
+}
+
+.editorAgendaMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  color: var(--meeting-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.editorFormGrid strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--meeting-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorWide {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(128px, 0.14fr) minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+.participantResolverSummary {
+  align-items: start !important;
+}
+
+.participantResolverSummary p {
+  grid-column: 2 / -1;
+  margin: 0;
+  color: var(--meeting-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participantSelectedTray {
+  display: grid;
+  gap: 10px;
+  flex: 0 0 auto;
+  max-height: 108px;
+  margin: 0 20px 12px;
+  padding: 12px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  overflow-y: auto;
+}
+
+.participantSelectedTray header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.participantSelectedTray > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.participantSelectedTray > div > button {
+  display: inline-grid;
+  grid-template-columns: auto auto auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  max-width: 100%;
+  border: 1px solid rgba(47, 209, 132, 0.36);
+  border-radius: 999px;
+  background: rgba(47, 209, 132, 0.08);
+  color: var(--meeting-text);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.participantSelectedTray button span {
+  color: var(--meeting-green);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.participantSelectedTray button small {
+  color: var(--meeting-muted);
+}
+
+.participantSelectedTray button em {
+  color: var(--meeting-gold);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.editorEvidenceStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 20px;
+  border-top: 1px solid var(--meeting-line);
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--meeting-muted);
+  font-weight: 800;
+}
+
+.editorEvidenceStrip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.importHeader {
+  display: grid;
+  grid-template-columns: minmax(160px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--meeting-line);
+}
+
+.importHeader ol {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.importHeader li {
+  min-height: 30px;
+  padding: 7px 10px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 999px;
+  color: var(--meeting-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.importHeader li[data-active="true"] {
+  border-color: rgba(47, 209, 132, 0.48);
+  color: var(--meeting-text);
+}
+
+.importHeader nav {
+  display: flex;
+  gap: 8px;
+}
+
+.importBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+  align-items: center;
+  padding: 22px;
+  overflow: auto;
+}
+
+.dropzone {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 320px;
+  border: 1px dashed rgba(92, 141, 255, 0.5);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--meeting-muted);
+  text-align: center;
+}
+
+.dropzone strong {
+  color: var(--meeting-text);
+  font-size: 1.1rem;
+}
+
+.dropzone p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--meeting-muted);
+  line-height: 1.45;
+}
+
+.importNotice {
+  display: grid;
+  gap: 8px;
+  align-self: stretch;
+  align-content: center;
+  padding: 16px;
+  border: 1px solid rgba(229, 189, 90, 0.34);
+  border-radius: 8px;
+  background: rgba(229, 189, 90, 0.08);
+}
+
+.ledger {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ledger article {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.22fr) minmax(180px, 0.26fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 78px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(151, 166, 194, 0.14);
+}
+
+.ledger span {
+  color: var(--meeting-gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ledger p {
+  margin: 0;
+  color: var(--meeting-muted);
+  line-height: 1.42;
+}
+
+.r91k22d3bCapsulePage {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow-y: auto;
+}
+
+.r91k22d3bCapsuleHeader {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.r91k22d3bCapsuleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.r91k22d3bCapsuleGrid article {
+  display: grid;
+  gap: 7px;
+  min-height: 150px;
+  padding: 14px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.r91k22d3bCapsuleGrid article[data-risk="warning"] {
+  border-color: rgba(229, 189, 90, 0.45);
+  background: rgba(229, 189, 90, 0.07);
+}
+
+.r91k22d3bCapsuleGrid svg {
+  color: var(--meeting-green);
+}
+
+.r91k22d3bCapsuleGrid article[data-risk="warning"] svg {
+  color: var(--meeting-gold);
+}
+
+.r91k22d3bCapsuleGrid span {
+  color: var(--meeting-gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.r91k22d3bCapsuleNotes {
+  margin: 0 20px 20px;
+  padding: 16px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.wilsyModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  overflow: auto;
+}
+
+.wilsyCommandModal {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  width: min(720px, calc(100vw - 36px));
+  max-height: calc(100vh - 36px);
+  border: 1px solid rgba(47, 209, 132, 0.42);
+  border-radius: 8px;
+  background: var(--meeting-panel);
+  color: var(--meeting-text);
+  box-shadow: var(--meeting-shadow);
+  overflow: hidden;
+}
+
+.wilsyCommandModal header {
+  padding: 20px;
+  border-bottom: 1px solid var(--meeting-line);
+}
+
+.wilsyCommandModal header h2,
+.wilsyCommandModal header h3 {
+  margin: 4px 0 0;
+  color: var(--meeting-text);
+  font-size: 1.45rem;
+}
+
+.modalWarning {
+  display: grid;
+  gap: 5px;
+  margin: 16px 20px 0;
+  padding: 12px;
+  border: 1px solid rgba(229, 189, 90, 0.34);
+  border-radius: 8px;
+  background: rgba(229, 189, 90, 0.08);
+}
+
+.modalWarning strong {
+  color: var(--meeting-text);
+}
+
+.modalWarning span {
+  color: var(--meeting-muted);
+  word-break: break-all;
+}
+
+.modalField {
+  display: grid;
+  gap: 8px;
+  padding: 16px 20px;
+}
+
+.wilsyModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--meeting-line);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.wilsyModalActions button {
+  min-height: 40px;
+  min-width: 116px;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.wilsyModalActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.modalSecondary {
+  border: 1px solid var(--meeting-line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--meeting-text);
+}
+
+.modalPrimary,
+.primaryCommandButton {
+  border: 1px solid rgba(47, 209, 132, 0.54) !important;
+  background: rgba(47, 209, 132, 0.16) !important;
+  color: var(--meeting-text) !important;
+}
+
+.modalDanger {
+  border: 1px solid rgba(255, 107, 114, 0.58);
+  background: rgba(255, 107, 114, 0.14);
+  color: var(--meeting-text);
+}
+
+.wilsyAiMeetingRail {
+  position: fixed;
+  top: 86px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 10020;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  width: min(380px, calc(100vw - 40px));
+  padding: 16px;
+  border: 1px solid rgba(47, 209, 132, 0.48);
+  border-radius: 8px;
+  background: var(--meeting-panel);
+  box-shadow: var(--meeting-shadow);
+  overflow: auto;
+}
+
+.wilsyAiMeetingRail header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 6px;
+}
+
+.wilsyAiMeetingRail header h3 {
+  margin: 0;
+  color: var(--meeting-text);
+}
+
+.wilsyAiMeetingRail header button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--meeting-text);
+  cursor: pointer;
+}
+
+.wilsyAiMeetingRail section {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.participantResolverModal {
+  width: min(1060px, calc(100vw - 44px));
+  height: min(620px, calc(100vh - 44px));
+  max-height: calc(100vh - 44px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.participantResolverHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.participantResolverHeader nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.participantResolverHeader button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--meeting-text);
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.participantResolverModal .wilsyModalActions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  flex: 0 0 auto;
+  background: rgba(7, 12, 18, 0.96);
+}
+
+.participantResolverModal .wilsyModalActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.participantResolverShell {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.participantResolverTabs {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 12px;
+  border-right: 1px solid var(--meeting-line);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.participantResolverTabs button {
+  justify-content: space-between;
+  min-height: 48px;
+}
+
+.participantResolverTabs button[data-active="true"] {
+  border-color: rgba(47, 209, 132, 0.55);
+  background: rgba(47, 209, 132, 0.11);
+}
+
+.participantResolverTabs strong {
+  color: var(--meeting-text);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.participantResolverTabs span {
+  color: var(--meeting-gold);
+}
+
+.participantResolverStage {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.participantResolverSearch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.participantResolverSearchInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--meeting-muted);
+}
+
+.participantResolverToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--meeting-muted);
+  white-space: nowrap;
+}
+
+.participantResolverNotice {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 8px;
+  background: rgba(92, 141, 255, 0.08);
+}
+
+.participantResolverNotice[data-status="warning"],
+.participantResolverNotice[data-status="duplicate"] {
+  border-color: rgba(229, 189, 90, 0.38);
+  background: rgba(229, 189, 90, 0.08);
+}
+
+.participantResolverNotice span,
+.participantResolverEmpty p,
+.participantSourceList small,
+.selectedParticipantPanel span,
+.externalInvitePanel p {
+  color: var(--meeting-muted);
+}
+
+.participantSourceList {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  padding-bottom: 8px;
+  overflow-y: auto;
+}
+
+.participantSourceList button {
+  justify-content: flex-start;
+  min-height: 58px;
+  text-align: left;
+}
+
+.selectedParticipantPanel {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 0;
+  padding-bottom: 8px;
+  overflow-y: auto;
+}
+
+.externalInvitePanel {
+  display: grid;
+  gap: 10px;
+}
+
+.externalInvitePanel textarea {
+  min-height: 160px;
+  padding: 10px;
+  resize: vertical;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.participantResolverEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px dashed rgba(229, 189, 90, 0.34);
+  border-radius: 8px;
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .moduleShell {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .moduleRail .railHeader div,
+  .moduleRail nav span,
+  .backToCrm span {
+    display: none;
+  }
+
+  .moduleRail nav button,
+  .backToCrm {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .moduleTopbar,
+  .overviewHeader,
+  .workHeader,
+  .editorHeader,
+  .importHeader,
+  .r91k22d3bCapsuleHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .moduleTopbar nav,
+  .overviewHeader nav,
+  .workHeader nav,
+  .editorHeader nav,
+  .importHeader nav,
+  .r91k22d3bCapsuleHeader nav {
+    justify-content: flex-start;
+  }
+
+  .editorCommandDeck,
+  .editorFormGrid,
+  .importBody,
+  .r91k22d3bCapsuleGrid,
+  .ledger article {
+    grid-template-columns: 1fr;
+  }
+
+  .editorCommandDeck {
+    overflow-y: auto;
+  }
+
+  .editorFormGrid {
+    overflow: visible;
+  }
+
+  .editorAgendaPanel {
+    min-height: 320px;
+    border-left: 0;
+    border-top: 1px solid var(--meeting-line);
+  }
+}
+
+@media (max-width: 760px) {
+  .moduleShell {
+    grid-template-columns: 1fr;
+  }
+
+  .moduleRail {
+    display: none;
+  }
+
+  .moduleTopbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .moduleTopbar nav,
+  .overviewHeader nav,
+  .rowActions {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding-bottom: 2px;
+  }
+
+  .meetingsOverview,
+  .pageSurface,
+  .r91k22d3bCapsulePage {
+    margin: 8px;
+    max-height: none;
+  }
+
+  .editorFormGrid label,
+  .editorWide {
+    grid-template-columns: 1fr !important;
+  }
+
+  .editorAgendaPanel {
+    padding-inline: 14px;
+  }
+
+  .participantResolverShell {
+    grid-template-columns: 1fr;
+  }
+
+  .participantResolverTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-right: 0;
+    border-bottom: 1px solid var(--meeting-line);
+  }
+
+  .participantResolverSearch {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* R91K179E26_MEETINGS_VISIBLE_PAGINATION_OVERRIDE
+   Purpose: force the CRM Meetings records footer and editor viewport to stay inside the visible host.
+*/
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .moduleMain {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .moduleViewportFooter {
+  display: flex !important;
+  min-height: 44px !important;
+  flex-shrink: 0 !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .meetingsOverview {
+  position: relative !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  height: calc(100% - 18px) !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 18px) !important;
+  padding-bottom: 52px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .meetingTableShell {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .meetingRecordsFooter {
+  position: absolute !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  z-index: 20 !important;
+  display: flex !important;
+  min-height: 52px !important;
+  background: #111827 !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .meetingUtilityPager,
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .meetingFooterPagination {
+  display: inline-flex !important;
+}
+
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .pageSurface,
+.moduleShell[data-wilsy-meetings-workspace="operator-workbench"] .pageSurface[data-wilsy-r91k179e15r-view="editor"] {
+  height: calc(100% - 18px) !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 18px) !important;
+  overflow: hidden !important;
+}
+
+/* R91K179E24P52B MEETING_EDITOR_NON_OVERLAP_FINAL
+   Scope: Meeting create/edit workspace after command banner, agenda and participant graph are sibling surfaces.
+   Purpose: keep rate-limit errors contained, make date/time fields directly editable, and prevent selected participant graph overlap.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] {
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  gap: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner {
+  position: relative !important;
+  z-index: 6 !important;
+  display: grid !important;
+  grid-template-columns: minmax(118px, auto) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  max-height: 76px !important;
+  margin: 0 28px 14px !important;
+  padding: 11px 16px !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner span {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner span {
+  white-space: normal !important;
+  line-height: 1.25 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner[data-status="RATE_LIMITED"] {
+  border-color: rgba(229, 189, 90, 0.56) !important;
+  background:
+    linear-gradient(90deg, rgba(95, 65, 18, 0.78), rgba(30, 25, 13, 0.84)),
+    rgba(12, 8, 4, 0.92) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 20px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  margin: 0 28px 18px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck {
+  flex: 1 1 min(58%, 900px) !important;
+  min-width: 520px !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 64px 22px 22px !important;
+  overflow: auto !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel {
+  flex: 0 1 clamp(360px, 30vw, 560px) !important;
+  width: clamp(360px, 30vw, 560px) !important;
+  min-width: 340px !important;
+  max-width: 560px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  padding: 24px 22px 18px !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+  flex: 0 1 clamp(300px, 24vw, 500px) !important;
+  width: clamp(300px, 24vw, 500px) !important;
+  min-width: 280px !important;
+  max-width: 500px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: stretch !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray > div {
+  align-content: start !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray > div > button {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  width: 100% !important;
+  min-height: 52px !important;
+  max-width: 100% !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  text-align: left !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray button strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray button small {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorDateField input[type="date"],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorTimeField input[type="time"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding-right: 44px !important;
+  color-scheme: dark !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: 0 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+  grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+  column-gap: 20px !important;
+  row-gap: 16px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 1540px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport {
+    gap: 16px !important;
+    margin-inline: 22px !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck {
+    min-width: 460px !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+    min-width: 300px !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}
+
+/* R91K179E24P53B MEETING_EDITOR_TYPING_AUTHORITY
+   Scope: Meeting editor form controls.
+   Purpose: keep decorative card layers behind real inputs so operators can type into every field.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel header {
+  pointer-events: auto !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .modalField input {
+  position: relative !important;
+  z-index: 12 !important;
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  caret-color: #ffffff !important;
+  touch-action: manipulation !important;
+  isolation: isolate !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input[type="date"],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input[type="time"] {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea {
+  display: block !important;
+  height: 100% !important;
+  min-height: 300px !important;
+  padding: 22px 24px !important;
+  background: rgba(3, 7, 18, 0.96) !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea::placeholder,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input::placeholder {
+  color: rgba(191, 198, 215, 0.62) !important;
+  -webkit-text-fill-color: rgba(191, 198, 215, 0.62) !important;
+  opacity: 1 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck::before,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel::before {
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* R91K179E24P54B MEETING_EDITOR_PRODUCTION_INPUT_GRID
+   Scope: final authority for Meeting create/edit panes.
+   Purpose: stable banner row, editable inputs, bounded body viewport, and participant-aware layout.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] {
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner[data-visible="false"] {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] > .commandBanner[data-visible="true"] {
+  grid-template-columns: minmax(118px, max-content) minmax(0, 1fr) !important;
+  min-height: 48px !important;
+  margin: 0 28px 14px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport {
+  display: grid !important;
+  grid-template-columns: minmax(560px, 1fr) minmax(420px, 0.68fr) !important;
+  align-items: stretch !important;
+  gap: 20px !important;
+  width: auto !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 28px 18px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport[data-has-participants="true"] {
+  grid-template-columns: minmax(520px, 1.04fr) minmax(390px, 0.74fr) minmax(300px, 0.58fr) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  border-radius: 12px !important;
+  z-index: 2 !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck {
+  display: block !important;
+  padding: 64px 24px 24px !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck::before {
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(220px, 1fr)) !important;
+  align-content: start !important;
+  column-gap: 24px !important;
+  row-gap: 18px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: start !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 0 10px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.13) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label > span {
+  min-width: 0 !important;
+  white-space: normal !important;
+  letter-spacing: 0.16em !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select {
+  position: relative !important;
+  z-index: 5 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 16px !important;
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  caret-color: #ffffff !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input[type="date"],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input[type="time"] {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid strong {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel {
+  display: grid !important;
+  grid-template-rows: auto minmax(260px, 1fr) auto !important;
+  padding: 28px 24px 20px !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel::before {
+  display: none !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea {
+  position: relative !important;
+  z-index: 5 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 260px !important;
+  padding: 18px 20px !important;
+  border-radius: 10px !important;
+  resize: none !important;
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  caret-color: #ffffff !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaMeta {
+  min-height: 24px !important;
+  margin-top: 12px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  padding: 20px !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray > div {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorEvidenceStrip {
+  min-height: 42px !important;
+  max-height: 42px !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 1420px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport[data-has-participants="true"] {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.58fr) !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+    grid-column: 1 / -1 !important;
+    min-height: 150px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport[data-has-participants="true"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow-y: auto !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+
+/* R91K179E24P55B2 CREATE_MEETING_PRODUCTION_CSS_ONLY
+   Scope: Meeting Create/Edit editor only.
+   Doctrine: fixed productivity workspace, two main surfaces, no participant third-column distortion.
+*/
+:global([data-wilsy-r91k179e24p49b-meeting-workflow="editor"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: calc(100dvh - 28px) !important;
+  max-height: calc(100dvh - 28px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: calc(100dvh - 28px) !important;
+  max-height: calc(100dvh - 28px) !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  gap: 14px !important;
+  padding: 18px 24px 14px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(34, 197, 94, 0.10), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(99, 102, 241, 0.12), transparent 28%),
+    #05070b !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 20px !important;
+  align-items: start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader h2 {
+  margin: 2px 0 6px !important;
+  font-size: clamp(34px, 2.7vw, 52px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.052em !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader p {
+  max-width: 980px !important;
+  margin: 0 !important;
+  color: rgba(245, 247, 250, 0.84) !important;
+  font-size: clamp(14px, 0.95vw, 18px) !important;
+  line-height: 1.32 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader nav {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: flex-end !important;
+  align-items: flex-start !important;
+  min-width: max-content !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader nav button {
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 17px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(96, 132, 255, 0.56) !important;
+  background: rgba(18, 30, 56, 0.72) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorHeader nav button:last-child {
+  border-color: rgba(74, 222, 128, 0.72) !important;
+  background: linear-gradient(135deg, rgba(20, 102, 53, 0.98), rgba(18, 128, 65, 0.76)) !important;
+  color: #f3fff5 !important;
+}
+
+/* Permanent two-surface editor body. Participant state must not create a third column. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport[data-has-participants="true"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(620px, 1.46fr) minmax(360px, 0.68fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  float: none !important;
+  margin: 0 !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, 0.88), rgba(5, 8, 14, 0.94)),
+    rgba(17, 20, 26, 0.92) !important;
+  box-shadow:
+    0 22px 54px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  padding: 58px 22px 20px !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck::before {
+  content: "▣  GENERAL INFORMATION";
+  position: absolute !important;
+  top: 22px !important;
+  left: 26px !important;
+  color: #69f58d !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.24em !important;
+  text-transform: uppercase !important;
+  pointer-events: none !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  padding: 24px 22px 18px !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 24px !important;
+  row-gap: 14px !important;
+  align-content: start !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 7px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label > span {
+  display: block !important;
+  color: rgba(232, 226, 174, 0.96) !important;
+  font-size: 10.5px !important;
+  font-weight: 900 !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 14px !important;
+  border: 1px solid rgba(100, 116, 139, 0.42) !important;
+  border-radius: 8px !important;
+  background: rgba(8, 12, 20, 0.94) !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.94) !important;
+  font-size: 15px !important;
+  font-weight: 650 !important;
+  pointer-events: auto !important;
+  caret-color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 10px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input:focus,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select:focus,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea:focus {
+  border-color: rgba(74, 222, 128, 0.88) !important;
+  box-shadow:
+    0 0 0 2px rgba(74, 222, 128, 0.16),
+    0 14px 32px rgba(0, 0, 0, 0.22) !important;
+  outline: none !important;
+}
+
+/* Participant dock: full-width, bounded, never a third column. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(150px, 0.24fr) minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 72px !important;
+  max-height: 92px !important;
+  padding: 12px 14px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(74, 222, 128, 0.32) !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(135deg, rgba(5, 46, 22, 0.42), rgba(15, 23, 42, 0.76)),
+    rgba(8, 12, 20, 0.88) !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray::before {
+  content: "PARTICIPANT DOCK";
+  color: rgba(232, 226, 174, 0.96) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray > *,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray header,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray p {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.15 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray strong {
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.06em !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray button {
+  flex: 0 0 auto !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  max-width: 170px !important;
+  padding: 0 15px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(74, 222, 128, 0.46) !important;
+  background: rgba(20, 87, 49, 0.34) !important;
+  color: #86efac !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="participant"][class*="Graph"],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="Participant"][class*="Graph"],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="selected"][class*="Participant"],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="Selected"][class*="Participant"] {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 58px !important;
+  max-height: 92px !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel strong {
+  margin: 0 0 8px !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 18px !important;
+  line-height: 1.14 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel p {
+  margin: 0 0 14px !important;
+  color: rgba(245, 247, 250, 0.84) !important;
+  line-height: 1.34 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 260px !important;
+  resize: none !important;
+  padding: 18px 20px !important;
+  border: 1px solid rgba(83, 116, 177, 0.56) !important;
+  border-radius: 10px !important;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(3, 7, 18, 0.74)),
+    rgba(3, 7, 18, 0.96) !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  font-size: 15px !important;
+  line-height: 1.58 !important;
+  pointer-events: auto !important;
+  caret-color: #ffffff !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-shadow:
+    inset 3px 0 0 rgba(74, 222, 128, 0.78),
+    0 18px 38px rgba(0, 0, 0, 0.28) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaMeta {
+  min-height: 24px !important;
+  margin-top: 12px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-weight: 800 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorEvidenceStrip {
+  min-height: 38px !important;
+  max-height: 38px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+@media (max-width: 1360px) and (min-width: 1181px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorBodyViewport[data-has-participants="true"] {
+    grid-template-columns: minmax(560px, 1.34fr) minmax(330px, 0.66fr) !important;
+    gap: 16px !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+    column-gap: 18px !important;
+    row-gap: 12px !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select {
+    height: 39px !important;
+    min-height: 39px !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+    min-height: 68px !important;
+    max-height: 86px !important;
+  }
+}
+
+
+/* R91K179E24P55D CENTERED_SCROLLABLE_GENERAL_INFO
+   Scope: Create/Edit Meeting General Information card only.
+   Purpose: center the form inside the card and isolate scrolling to the internal form viewport.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  padding: 64px 24px 20px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  isolation: isolate !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck::before {
+  top: 24px !important;
+  left: 30px !important;
+  z-index: 3 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+  width: min(100%, 920px) !important;
+  max-width: 920px !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin-inline: auto !important;
+  padding: 4px 12px 30px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 26px !important;
+  row-gap: 20px !important;
+  grid-auto-rows: minmax(78px, auto) !important;
+  align-content: safe center !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(74, 222, 128, 0.48) rgba(15, 23, 42, 0.20) !important;
+  overscroll-behavior: contain !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid::-webkit-scrollbar {
+  width: 7px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.18) !important;
+  border-radius: 999px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.50) !important;
+  border-radius: 999px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 222, 128, 0.76) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label {
+  min-width: 0 !important;
+  min-height: 76px !important;
+  max-width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto 42px !important;
+  gap: 9px !important;
+  align-content: start !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label > span {
+  position: relative !important;
+  z-index: 2 !important;
+  height: auto !important;
+  min-height: 13px !important;
+  opacity: 1 !important;
+  color: rgba(232, 226, 174, 0.98) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid input,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid select {
+  position: relative !important;
+  z-index: 1 !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  overflow: hidden !important;
+}
+
+/* Full-width participant and related-rich areas must consume rows, not bleed over the next row. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 92px !important;
+  max-height: 132px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  gap: 8px 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(74, 222, 128, 0.34) !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(135deg, rgba(5, 46, 22, 0.36), rgba(15, 23, 42, 0.78)),
+    rgba(8, 12, 20, 0.86) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary em {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary button {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / 3 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  margin: 0 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+  display: grid !important;
+  grid-template-columns: minmax(160px, 0.24fr) minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(74, 222, 128, 0.34) !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(135deg, rgba(5, 46, 22, 0.42), rgba(15, 23, 42, 0.76)),
+    rgba(8, 12, 20, 0.88) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray > div {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: 94px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 6px !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(74, 222, 128, 0.48) rgba(15, 23, 42, 0.20) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid p {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Participant emails display lowercase even when surrounding Wilsy labels use uppercase operating typography. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray a,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray [data-email],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="participant"] small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="Participant"] small {
+  text-transform: lowercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorAgendaPanel textarea {
+  min-height: 220px !important;
+  max-height: 100% !important;
+}
+
+@media (max-width: 1360px) and (min-width: 1181px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid {
+    width: min(100%, 860px) !important;
+    max-width: 860px !important;
+    row-gap: 16px !important;
+    grid-auto-rows: minmax(72px, auto) !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorFormGrid label {
+    min-height: 70px !important;
+  }
+
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary,
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray {
+    min-height: 86px !important;
+    max-height: 122px !important;
+  }
+}
+
+
+/* R91K179E24P55K HARD_CENTER_GENERAL_INFO_CARD
+   Scope: General Information card only.
+   Contract: the editable grid is anchored to the exact horizontal center of the card.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck {
+  position: relative !important;
+  display: block !important;
+  overflow: hidden !important;
+  padding: 64px 28px 22px !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck::before {
+  top: 24px !important;
+  left: 32px !important;
+  z-index: 5 !important;
+}
+
+/* Hard center: cannot drift left because the block is positioned from the card center. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid {
+  position: relative !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: min(72%, 1060px) !important;
+  max-width: calc(100% - 96px) !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 4px 8px 34px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: clamp(36px, 4vw, 72px) !important;
+  row-gap: 18px !important;
+  grid-auto-rows: minmax(74px, auto) !important;
+  align-content: start !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(74, 222, 128, 0.48) rgba(15, 23, 42, 0.20) !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid::-webkit-scrollbar {
+  width: 7px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.18) !important;
+  border-radius: 999px !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.50) !important;
+  border-radius: 999px !important;
+}
+
+/* Normal two-column fields. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:not(:has(button)) {
+  grid-column: auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 74px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto 42px !important;
+  gap: 9px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:not(:has(button)) > span {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  color: rgba(232, 226, 174, 0.98) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  line-height: 1.18 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid input,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid select {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+}
+
+/* Participants and Related To: identical approved action-row posture. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button),
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button),
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button),
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 64px !important;
+  max-height: 82px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 170px !important;
+  grid-template-rows: auto 42px !important;
+  align-items: center !important;
+  gap: 7px 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary > span,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray::before,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button) > span,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button) > span,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button) > span,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) > span {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  align-self: end !important;
+  justify-self: start !important;
+  color: rgba(232, 226, 174, 0.98) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  line-height: 1.18 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* Draw the action-row input shell without changing JSX. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary::after,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray::after,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button)::after,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button)::after,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button)::after,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button)::after {
+  content: "" !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  align-self: stretch !important;
+  border: 1px solid rgba(74, 222, 128, 0.44) !important;
+  border-radius: 8px !important;
+  background:
+    linear-gradient(135deg, rgba(5, 46, 22, 0.28), rgba(15, 23, 42, 0.72)),
+    rgba(8, 12, 20, 0.88) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button) strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button) p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button) em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button) small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button) strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button) p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button) em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button) small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button) strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button) p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button) em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button) small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) strong,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) small {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 !important;
+  align-self: center !important;
+  justify-self: start !important;
+  margin: 0 0 0 16px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  font-size: 16px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  z-index: 1 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantResolverSummary button,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .participantSelectedTray button,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > label:has(button) button,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > div:has(button) button,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > section:has(button) button,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid > article:has(button) button {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  width: 158px !important;
+  min-width: 158px !important;
+  max-width: 158px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 8px 0 0 !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(96, 132, 255, 0.72) !important;
+  background: rgba(18, 30, 56, 0.86) !important;
+  color: rgba(232, 226, 174, 0.98) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  z-index: 1 !important;
+}
+
+/* Participant emails always display lowercase. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray a,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantSelectedTray [data-email],
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .participantResolverSummary em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="participant"] small,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] [class*="Participant"] small {
+  text-transform: lowercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+@media (max-width: 1500px) and (min-width: 1181px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid {
+    width: min(78%, 960px) !important;
+    max-width: calc(100% - 64px) !important;
+    column-gap: clamp(28px, 3vw, 52px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid {
+    left: auto !important;
+    transform: none !important;
+    width: min(100%, 720px) !important;
+    max-width: calc(100% - 24px) !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+
+/* R91K179E24P55M INLINE_PARTICIPANT_SINGLE_VALUE
+   Scope: inline Participants row in General Information only.
+   Cause fixed: broad P55K rule placed strong/p/em in the same grid slot, causing double text.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary {
+  overflow: hidden !important;
+}
+
+/* Keep the inline participant label clean and above the input shell. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary > span {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  align-self: end !important;
+  justify-self: start !important;
+  z-index: 2 !important;
+}
+
+/* One visible value line only. Prefer the selected participant/name text. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary strong {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 !important;
+  align-self: center !important;
+  justify-self: start !important;
+  display: block !important;
+  margin: 0 0 0 16px !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 20px) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  font-size: 16px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-transform: none !important;
+  z-index: 2 !important;
+}
+
+/* Hide helper/detail fragments in the inline row only. The bottom participant dock remains untouched. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary p,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary em,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary small {
+  display: none !important;
+  visibility: hidden !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  margin: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Resolve button stays on the right; no text collision. */
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary button {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  z-index: 2 !important;
+}
+
+
+/* R91K179E24P55N PARTICIPANT_TITLE_RENDERING_FIX
+   Scope: inline Participants title only.
+   Purpose: remove clipped/distorted title rendering without touching value, Resolve, bottom dock, Related To, or Agenda.
+*/
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 0 0 2px !important;
+  color: rgba(232, 226, 174, 0.98) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.20em !important;
+  line-height: 1.25 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  text-indent: 0 !important;
+  clip-path: none !important;
+  transform: none !important;
+  filter: none !important;
+  isolation: isolate !important;
+  font-kerning: normal !important;
+  text-rendering: geometricPrecision !important;
+  z-index: 4 !important;
+}
+
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary > span::before,
+.pageSurface[data-wilsy-r91k179e15r-view="editor"] .editorCommandDeck .editorFormGrid .participantResolverSummary > span::after {
+  content: none !important;
+  display: none !important;
+}
+
+
+/* R91K179E24P56B LIVE_RELATED_CRM_LINKER
+   Scope: Related CRM linker modal only.
+   Purpose: source-backed CRM candidate selection and evidence preview.
+*/
+.relatedCandidateSurface {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(5, 46, 22, 0.20), rgba(15, 23, 42, 0.74)),
+    rgba(4, 8, 14, 0.88);
+}
+
+.relatedCandidateHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.relatedCandidateHeader span,
+.relatedEvidencePreview span {
+  color: rgba(232, 226, 174, 0.98);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.relatedCandidateHeader button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(96, 132, 255, 0.56);
+  border-radius: 10px;
+  background: rgba(18, 30, 56, 0.86);
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.relatedCandidateHeader button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.relatedCandidateError,
+.relatedCandidateEmpty {
+  margin: 0;
+  color: rgba(255, 185, 120, 0.92);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.relatedCandidateList {
+  display: grid;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.relatedCandidateCard {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "type title status"
+    "type meta status";
+  gap: 4px 12px;
+  align-items: center;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid rgba(96, 132, 255, 0.28);
+  border-radius: 14px;
+  background: rgba(8, 13, 23, 0.90);
+  color: rgba(255, 255, 255, 0.92);
+  text-align: left;
+  cursor: pointer;
+}
+
+.relatedCandidateCard[data-selected="true"] {
+  border-color: rgba(74, 222, 128, 0.72);
+  background:
+    linear-gradient(135deg, rgba(5, 46, 22, 0.38), rgba(15, 23, 42, 0.90)),
+    rgba(8, 13, 23, 0.94);
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.16);
+}
+
+.relatedCandidateCard span {
+  grid-area: type;
+  color: rgba(74, 222, 128, 0.96);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.relatedCandidateCard strong {
+  grid-area: title;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.relatedCandidateCard small {
+  grid-area: meta;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(205, 213, 226, 0.76);
+  font-size: 12px;
+  text-transform: none;
+}
+
+.relatedCandidateCard em {
+  grid-area: status;
+  justify-self: end;
+  color: rgba(232, 226, 174, 0.92);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.relatedEvidencePreview {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-left: 3px solid rgba(74, 222, 128, 0.86);
+  border-radius: 12px;
+  background: rgba(2, 6, 12, 0.72);
+}
+
+.relatedEvidencePreview strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
+}
+
+.relatedEvidencePreview p {
+  margin: 0;
+  color: rgba(205, 213, 226, 0.74);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+
+/* R91K179E24P56D2 ACTIVE_RELATED_MODAL_VISIBILITY
+   Scope: Related CRM command modal only.
+   Purpose: make the live candidate renderer visible in the active modal path.
+*/
+.wilsyModalBackdrop {
+  z-index: 120000 !important;
+}
+
+.wilsyCommandModal {
+  position: relative !important;
+  z-index: 120010 !important;
+  max-height: min(88vh, 920px) !important;
+  overflow: auto !important;
+}
+
+.wilsyCommandModal [data-wilsy-r91k179e24p56d2-related-visible="true"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 18px 0 0 !important;
+  position: relative !important;
+  z-index: 4 !important;
+}
+
+.wilsyCommandModal .relatedCandidateSurface {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 160px !important;
+  max-height: min(420px, 42vh) !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+.wilsyCommandModal .relatedCandidateHeader,
+.wilsyCommandModal .relatedCandidateList,
+.wilsyCommandModal .relatedCandidateCard,
+.wilsyCommandModal .relatedEvidencePreview {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.wilsyCommandModal .relatedCandidateList {
+  display: grid !important;
+  max-height: min(260px, 28vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.wilsyCommandModal .relatedCandidateCard {
+  display: grid !important;
+}
+
+
+/* R91K179E24P56E RELATED_LINKER_CANDIDATE_POLISH
+   Scope: Related CRM linker candidate visibility only.
+*/
+.wilsyCommandModal .relatedCandidateSurface {
+  gap: 12px !important;
+}
+
+.wilsyCommandModal .relatedCandidateCard {
+  min-height: 72px !important;
+  border-color: rgba(74, 222, 128, 0.34) !important;
+}
+
+.wilsyCommandModal .relatedCandidateCard[data-selected="true"] {
+  border-color: rgba(74, 222, 128, 0.82) !important;
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.22), 0 18px 40px rgba(0, 0, 0, 0.22) !important;
+}
+
+.wilsyCommandModal .relatedCandidateEmpty {
+  padding: 12px 14px !important;
+  border: 1px dashed rgba(232, 226, 174, 0.24) !important;
+  border-radius: 12px !important;
+  background: rgba(8, 13, 23, 0.64) !important;
+}
