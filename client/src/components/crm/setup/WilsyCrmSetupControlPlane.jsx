@@ -1260,6 +1260,24 @@ export default function WilsyCrmSetupControlPlane() {
   const activeControlIndex = activeDomain.controls.findIndex((control) => control.id === activeControl.id);
   const isFirstControl = activeControlIndex <= 0;
   const isLastControl = activeControlIndex >= activeDomain.controls.length - 1;
+  const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
+  const setupPacketPrimaryActionLabel = stagedReview
+    ? setupPacketRequiresBackendStage
+      ? 'Stage packet'
+      : 'Open packet'
+    : 'Stage review';
+  const setupPacketPrimaryAction = stagedReview
+    ? setupPacketRequiresBackendStage
+      ? handleStageReview
+      : () => handleOpenTicket(stagedReview)
+    : handleStageReview;
+  const setupPacketActionFeedbackStatus = reviewResult
+    ? reviewResult.status
+    : setupPacketRequiresBackendStage
+      ? 'Packet requires backend stage'
+      : stagedReview
+        ? 'Packet staged'
+        : 'Ready';
   const resultText = reviewResult ? `${reviewResult.status}: ${reviewResult.title}` : 'No review staged yet.';
   const packetProofReceiptId = stagedReview ? resolveWilsySetupReviewProofReceiptId(stagedReview) : '';
   const packetProofHash = stagedReview ? resolveWilsySetupReviewProofHash(stagedReview) : '';
@@ -2281,7 +2299,7 @@ export default function WilsyCrmSetupControlPlane() {
 
               <article>
                 <span>Review state</span>
-                <strong>{stagedReview ? 'Packet staged' : 'Ready'}</strong>
+                <strong>{stagedReview ? (setupPacketRequiresBackendStage ? 'Stage required' : 'Packet staged') : 'Ready'}</strong>
                 <small>{stagedReview ? stagedReview.title : 'No packet staged'}</small>
               </article>
 
@@ -2295,9 +2313,9 @@ export default function WilsyCrmSetupControlPlane() {
             <div className={styles.viewAreaConsoleActions}>
               <button
                 type="button"
-                onClick={stagedReview ? () => handleOpenTicket(stagedReview) : handleStageReview}
+                onClick={setupPacketPrimaryAction}
               >
-                {stagedReview ? 'Open packet' : 'Stage review'}
+                {setupPacketPrimaryActionLabel}
               </button>
 
               <button
@@ -2712,13 +2730,13 @@ export default function WilsyCrmSetupControlPlane() {
 
                 <article className={styles.reviewFocusFeedback}>
                   <span>Action feedback</span>
-                  <strong>{reviewResult ? reviewResult.status : 'Packet staged'}</strong>
+                  <strong>{setupPacketActionFeedbackStatus}</strong>
                   <small>{reviewResult ? reviewResult.generatedAt : stagedReview.generatedAt}</small>
                   {reviewCommandError ? <small>{reviewCommandError}</small> : null}
 
                   <div className={styles.packetActionStack}>
-                    <button type="button" onClick={() => handleOpenTicket(stagedReview)}>
-                      Open packet
+                    <button type="button" onClick={setupPacketPrimaryAction}>
+                      {setupPacketPrimaryActionLabel}
                     </button>
 
                     <button
