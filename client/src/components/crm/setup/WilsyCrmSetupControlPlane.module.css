@@ -6667,3 +6667,251 @@ button.packetRevealNode {
   }
 }
 
+
+/* WILSY_P60K5K3_SCREEN2_EAGLE_EYE_UI_POLISH
+   CSS-only Screen Two enhancement.
+   Protected contract:
+   - No JSX.
+   - No backend.
+   - No packet-console changes.
+   - No command-console/ribbon/live strip.
+   - Existing Work Queue and Affected Surfaces cards only. */
+
+.taskFocusBar,
+.viewPanel,
+.workQueuePanel,
+.surfacePanel,
+.posturePanel {
+  min-width: 0;
+}
+
+.workStepList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.workStepList button {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 62px;
+  padding: 11px 14px;
+  border: 1px solid rgba(0, 209, 255, 0.24);
+  background:
+    linear-gradient(135deg, rgba(0, 209, 255, 0.10), rgba(0, 255, 148, 0.035)),
+    rgba(2, 12, 24, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 12px 28px rgba(0, 0, 0, 0.18);
+  transform: translateZ(0);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.workStepList button::before {
+  content: "";
+  position: absolute;
+  inset: 7px auto 7px 0;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 209, 255, 0.95), rgba(0, 255, 148, 0.72));
+  opacity: 0.76;
+  z-index: -1;
+}
+
+.workStepList button:hover,
+.workStepList button:focus-visible {
+  border-color: rgba(0, 255, 148, 0.58);
+  background:
+    linear-gradient(135deg, rgba(0, 209, 255, 0.16), rgba(0, 255, 148, 0.085)),
+    rgba(2, 12, 24, 0.98);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 148, 0.22),
+    0 20px 48px rgba(0, 209, 255, 0.12),
+    0 18px 42px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.workStepList button:focus-visible {
+  outline: 2px solid rgba(0, 209, 255, 0.44);
+  outline-offset: 3px;
+}
+
+.workStepList button strong {
+  min-width: 0;
+  max-width: 100%;
+  color: #ffffff;
+  font-size: 0.92rem;
+  line-height: 1.24;
+  letter-spacing: -0.01em;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.workStepList button:hover strong,
+.workStepList button:focus-visible strong {
+  -webkit-line-clamp: 3;
+}
+
+.workStepList button small {
+  min-width: 0;
+  max-width: 120px;
+  color: rgba(235, 224, 173, 0.92);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 1.25;
+  text-align: right;
+  text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.workStepList button span {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 209, 255, 0.34),
+    0 0 22px rgba(0, 209, 255, 0.12);
+}
+
+.surfaceGrid,
+.affectedSurfaceGrid,
+.affectedSurfacesGrid,
+.impactGrid,
+.systemImpactGrid {
+  min-width: 0;
+}
+
+.surfaceGrid article,
+.affectedSurfaceGrid article,
+.affectedSurfacesGrid article,
+.impactGrid article,
+.systemImpactGrid article {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  overflow: hidden;
+  border-color: rgba(0, 209, 255, 0.22);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(0, 209, 255, 0.11), transparent 32%),
+    linear-gradient(135deg, rgba(4, 18, 34, 0.98), rgba(2, 8, 18, 0.94));
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.surfaceGrid article::after,
+.affectedSurfaceGrid article::after,
+.affectedSurfacesGrid article::after,
+.impactGrid article::after,
+.systemImpactGrid article::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 8px 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(0, 209, 255, 0.8), rgba(0, 255, 148, 0.56));
+  opacity: 0.52;
+}
+
+.surfaceGrid article:hover,
+.surfaceGrid article:focus-within,
+.affectedSurfaceGrid article:hover,
+.affectedSurfaceGrid article:focus-within,
+.affectedSurfacesGrid article:hover,
+.affectedSurfacesGrid article:focus-within,
+.impactGrid article:hover,
+.impactGrid article:focus-within,
+.systemImpactGrid article:hover,
+.systemImpactGrid article:focus-within {
+  border-color: rgba(0, 255, 148, 0.46);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 148, 0.16),
+    0 20px 44px rgba(0, 209, 255, 0.10);
+  transform: translateY(-1px);
+}
+
+.surfaceGrid article strong,
+.affectedSurfaceGrid article strong,
+.affectedSurfacesGrid article strong,
+.impactGrid article strong,
+.systemImpactGrid article strong {
+  max-width: 100%;
+  color: #ffffff;
+  font-size: 0.82rem;
+  line-height: 1.28;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.surfaceGrid article:hover strong,
+.affectedSurfaceGrid article:hover strong,
+.affectedSurfacesGrid article:hover strong,
+.impactGrid article:hover strong,
+.systemImpactGrid article:hover strong {
+  -webkit-line-clamp: 4;
+}
+
+.surfaceGrid article small,
+.affectedSurfaceGrid article small,
+.affectedSurfacesGrid article small,
+.impactGrid article small,
+.systemImpactGrid article small {
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid rgba(0, 255, 148, 0.28);
+  border-radius: 999px;
+  color: rgba(235, 224, 173, 0.92);
+  background: rgba(0, 255, 148, 0.07);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.postureGrid article,
+.controlPosture article {
+  min-width: 0;
+  background:
+    linear-gradient(135deg, rgba(0, 209, 255, 0.055), rgba(255, 255, 255, 0.012)),
+    rgba(2, 8, 18, 0.88);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.postureGrid article:hover,
+.controlPosture article:hover {
+  border-color: rgba(0, 209, 255, 0.34);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1320px) {
+  .workStepList button {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .workStepList button small {
+    grid-column: 2;
+    max-width: none;
+    text-align: left;
+  }
+}
