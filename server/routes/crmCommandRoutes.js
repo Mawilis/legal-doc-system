@@ -9029,6 +9029,371 @@ async function handleWilsySetupReviewListByCommand(req, res) {
   return handleWilsySetupReviewList(req, res);
 }
 
+/* WILSY_P60K5I1B_SETUP_CONTROL_SURFACE_RESOLVER */
+
+/**
+ * @function resolveWilsySetupControlSurfaceList
+ * @description Normalizes backend-owned setup control surface lists for production UI rendering.
+ * @param {Array|undefined} values - Incoming list values.
+ * @param {Array} fallback - Fallback values.
+ * @returns {Array<Object>} Normalized list items.
+ * @collaboration CRM setup control surface resolver, work queue, affected surfaces, and packet candidate creation.
+ */
+function resolveWilsySetupControlSurfaceList(values, fallback = []) {
+  const sourceList = Array.isArray(values) && values.length ? values : fallback;
+
+  return sourceList.map((item, index) => {
+    if (typeof item === 'string') {
+      return {
+        id: `surface-item-${index + 1}`,
+        title: item,
+        label: item,
+        owner: 'SYSTEM',
+        status: 'PENDING',
+        evidenceRequired: true,
+        backendReady: false,
+      };
+    }
+
+    const value = item && typeof item === 'object' ? item : {};
+
+    return {
+      id: resolveWilsySetupReviewText(value.id || value.key, `surface-item-${index + 1}`),
+      title: resolveWilsySetupReviewText(
+        value.title || value.name || value.label,
+        `Surface item ${index + 1}`
+      ),
+      label: resolveWilsySetupReviewText(
+        value.label || value.title || value.name,
+        `Surface item ${index + 1}`
+      ),
+      owner: resolveWilsySetupReviewText(value.owner, 'SYSTEM'),
+      status: resolveWilsySetupReviewText(value.status || value.state, 'PENDING').toUpperCase(),
+      risk: resolveWilsySetupReviewText(value.risk, ''),
+      evidenceRequired: value.evidenceRequired !== false,
+      backendReady: Boolean(value.backendReady || value.live || value.status === 'LIVE'),
+      purpose: resolveWilsySetupReviewText(value.purpose || value.reason, ''),
+    };
+  });
+}
+
+/**
+ * @function resolveWilsySetupControlSurfacePacketState
+ * @description Resolves the packet state attached to a backend setup control surface.
+ * @param {Object|null} packet - Existing setup review packet.
+ * @returns {Object} Packet state summary.
+ * @collaboration CRM setup review packets, workflow state, release state, and production route guidance.
+ */
+function resolveWilsySetupControlSurfacePacketState(packet) {
+  if (!packet) {
+    return {
+      packetState: 'NOT_STAGED',
+      packetStage: 'CONTROL_SURFACE_ONLY',
+      backendLive: false,
+      evidenceCount: 0,
+      approved: false,
+      released: false,
+    };
+  }
+
+  const workflowState = packet.workflowState || {};
+  const evidenceLedger = Array.isArray(packet.evidenceLedger) ? packet.evidenceLedger : [];
+
+  return {
+    packetState: workflowState.released
+      ? 'RELEASED'
+      : workflowState.approved
+        ? 'APPROVED'
+        : evidenceLedger.length > 0
+          ? 'EVIDENCE_ATTACHED'
+          : 'STAGED',
+    packetStage: packet.status || 'STAGED',
+    backendLive: true,
+    packetId: packet.packetId,
+    evidenceCount: evidenceLedger.length,
+    approved: Boolean(workflowState.approved),
+    released: Boolean(workflowState.released),
+    lastAction: workflowState.lastAction || 'SETUP_REVIEW_STAGED',
+  };
+}
+
+/**
+ * @function buildWilsySetupControlSurfaceNextAction
+ * @description Builds the next operator action for the backend-owned setup control surface.
+ * @param {Object} packetState - Packet state summary.
+ * @returns {Object} Next action contract.
+ * @collaboration CRM setup operator guidance, Packet Console, Stage review, approval, release, and Review next control.
+ */
+function buildWilsySetupControlSurfaceNextAction(packetState = {}) {
+  if (!packetState.backendLive) {
+    return {
+      label: 'Stage review',
+      action: 'STAGE_REVIEW',
+      reason: 'No backend setup review packet exists for this control yet.',
+      priority: 'PRIMARY',
+    };
+  }
+
+  if (!packetState.approved && packetState.evidenceCount < 1) {
+    return {
+      label: 'Attach evidence',
+      action: 'ATTACH_EVIDENCE',
+      reason: 'Backend packet is staged and needs receipt-backed evidence.',
+      priority: 'PRIMARY',
+    };
+  }
+
+  if (!packetState.approved) {
+    return {
+      label: 'Approve',
+      action: 'APPROVE',
+      reason: 'Evidence is attached and approval is ready.',
+      priority: 'PRIMARY',
+    };
+  }
+
+  if (!packetState.released) {
+    return {
+      label: 'Release',
+      action: 'RELEASE',
+      reason: 'Approval is complete and release can be executed.',
+      priority: 'PRIMARY',
+    };
+  }
+
+  return {
+    label: 'Review next control',
+    action: 'REVIEW_NEXT_CONTROL',
+    reason: 'This setup packet is released with receipt-backed audit evidence.',
+    priority: 'PRIMARY',
+  };
+}
+
+/**
+ * @function buildWilsySetupControlSurfaceGates
+ * @description Builds production gates for tenant, operator, ownership, risk, approval, and release readiness.
+ * @param {Object} packetState - Packet state summary.
+ * @param {Object} control - Active setup control.
+ * @param {Object} evidence - Institutional evidence.
+ * @returns {Object} Gate state contract.
+ * @collaboration CRM setup control surface resolver, tenant authority, operator accountability, risk review, approval gate, and release gate.
+ */
+function buildWilsySetupControlSurfaceGates(packetState = {}, control = {}, evidence = {}) {
+  return {
+    tenant: {
+      status: evidence.tenantId ? 'READY' : 'BLOCKED',
+      label: 'Tenant authority',
+      detail: evidence.tenantId || 'Tenant scope missing',
+    },
+    operator: {
+      status: evidence.operatorId ? 'READY' : 'BLOCKED',
+      label: 'Operator accountability',
+      detail: evidence.operatorId || 'Operator scope missing',
+    },
+    owner: {
+      status: control.owner ? 'READY' : 'ATTENTION',
+      label: 'Control ownership',
+      detail: control.owner || 'Owner pending',
+    },
+    risk: {
+      status: control.risk ? 'READY' : 'ATTENTION',
+      label: 'Risk review',
+      detail: control.risk || 'Risk pending',
+    },
+    approval: {
+      status: packetState.approved
+        ? 'COMPLETE'
+        : packetState.evidenceCount > 0
+          ? 'READY'
+          : 'LOCKED',
+      label: 'Approval gate',
+      detail: packetState.approved
+        ? 'Approved'
+        : packetState.evidenceCount > 0
+          ? 'Evidence attached'
+          : 'Evidence required',
+    },
+    release: {
+      status: packetState.released ? 'COMPLETE' : packetState.approved ? 'READY' : 'LOCKED',
+      label: 'Release gate',
+      detail: packetState.released
+        ? 'Released'
+        : packetState.approved
+          ? 'Approval complete'
+          : 'Approval required',
+    },
+  };
+}
+
+/**
+ * @function buildWilsySetupControlSurfacePacketCandidate
+ * @description Builds the packet candidate used by Stage review from the live control surface.
+ * @param {Object} body - Incoming resolver body.
+ * @param {Object} domain - Active domain.
+ * @param {Object} control - Active control.
+ * @param {string} lens - Active lens.
+ * @returns {Object} Packet candidate.
+ * @collaboration CRM setup control surface resolver, setup review create route, packet console, and evidence workflow.
+ */
+function buildWilsySetupControlSurfacePacketCandidate(
+  body = {},
+  domain = {},
+  control = {},
+  lens = 'Authority'
+) {
+  const controlId = resolveWilsySetupReviewText(
+    body.controlId || control.id || control.controlId,
+    'setup-control'
+  );
+
+  return {
+    id: resolveWilsySetupReviewText(body.packetId || body.id, ''),
+    packetId: resolveWilsySetupReviewText(body.packetId || body.id, ''),
+    domainId: resolveWilsySetupReviewText(
+      body.domainId || domain.id || domain.domainId,
+      'authority'
+    ),
+    domainLabel: resolveWilsySetupReviewText(
+      body.domainLabel || domain.label || domain.title || domain.name,
+      'Authority'
+    ),
+    controlId,
+    controlName: resolveWilsySetupReviewText(
+      body.controlName || body.title || control.name || control.title,
+      'Authority Control'
+    ),
+    title: resolveWilsySetupReviewText(
+      body.title || control.title || control.name,
+      'Authority Control'
+    ),
+    lens: resolveWilsySetupReviewText(body.lens || lens, 'Authority'),
+    owner: resolveWilsySetupReviewText(body.owner || control.owner, 'Security Admin'),
+    risk: resolveWilsySetupReviewText(body.risk || control.risk, 'CRITICAL').toUpperCase(),
+    state: resolveWilsySetupReviewText(body.state || control.state, 'WATCHED').toUpperCase(),
+    benefit: resolveWilsySetupReviewText(body.benefit || control.benefit, ''),
+    signal: resolveWilsySetupReviewText(body.signal || control.signal, ''),
+    purpose: resolveWilsySetupReviewText(body.purpose || control.purpose || control.signal, ''),
+    surfaces: resolveWilsySetupControlSurfaceList(body.surfaces || control.surfaces, []),
+    workItems: resolveWilsySetupControlSurfaceList(body.workItems || control.workItems, []),
+    requiredEvidence: Array.isArray(body.requiredEvidence)
+      ? body.requiredEvidence
+      : [
+          'Tenant authority confirmed',
+          'Operator identity attached',
+          'Control owner assigned',
+          'Risk and impact summary prepared',
+          'Approval gate waiting for authorized approver',
+          'Release gate waiting for evidence receipt',
+        ],
+  };
+}
+
+/**
+ * @function handleWilsySetupControlSurfaceResolve
+ * @description Resolves a backend-owned CRM setup control surface for the active domain, control, lens, tenant, and operator.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON response.
+ * @collaboration CRM setup operating controls, ProductionHardening middleware, tenant scope, operator scope, Packet Console, and Stage review.
+ */
+async function handleWilsySetupControlSurfaceResolve(req, res) {
+  const route = '/api/crm/command/setup/control-surface/resolve';
+  const evidence = assertWilsySetupReviewWriteEvidence(req, route);
+  const body = req.body || {};
+  const domain = body.domain && typeof body.domain === 'object' ? body.domain : {};
+  const control = body.control && typeof body.control === 'object' ? body.control : {};
+  const lens = resolveWilsySetupReviewText(body.lens, 'Authority');
+  const packetCandidate = buildWilsySetupControlSurfacePacketCandidate(body, domain, control, lens);
+  const WilsyCrmSetupReviewPacket = resolveWilsySetupReviewModel();
+
+  const existingPacket = await WilsyCrmSetupReviewPacket.findOne({
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    controlId: packetCandidate.controlId,
+    status: 'STAGED',
+  })
+    .sort({ updatedAt: -1 })
+    .lean();
+
+  const packetState = resolveWilsySetupControlSurfacePacketState(existingPacket);
+  const nextAction = buildWilsySetupControlSurfaceNextAction(packetState);
+  const gates = buildWilsySetupControlSurfaceGates(packetState, packetCandidate, evidence);
+  const generatedAt = new Date().toISOString();
+
+  const workQueue = resolveWilsySetupControlSurfaceList(packetCandidate.workItems, [
+    'Confirm control scope',
+    'Review affected surfaces',
+    'Attach receipt-backed evidence',
+    'Execute approval and release gates',
+  ]);
+
+  const affectedSurfaces = resolveWilsySetupControlSurfaceList(packetCandidate.surfaces, [
+    'Leads',
+    'Contacts',
+    'Accounts',
+    'Fields',
+    'Exports',
+  ]);
+
+  return res.status(200).json({
+    ok: true,
+    result: 'SETUP_CONTROL_SURFACE_RESOLVED',
+    route,
+    tenantId: evidence.tenantId,
+    operatorId: evidence.operatorId,
+    userId: evidence.userId,
+    generatedAt,
+    domain: {
+      id: packetCandidate.domainId,
+      label: packetCandidate.domainLabel,
+      summary: resolveWilsySetupReviewText(domain.summary || domain.description, ''),
+    },
+    control: {
+      id: packetCandidate.controlId,
+      name: packetCandidate.controlName,
+      title: packetCandidate.title,
+      owner: packetCandidate.owner,
+      risk: packetCandidate.risk,
+      state: packetCandidate.state,
+      purpose: packetCandidate.purpose,
+      signal: packetCandidate.signal,
+      benefit: packetCandidate.benefit,
+    },
+    lens,
+    workQueue,
+    affectedSurfaces,
+    posture: {
+      risk: packetCandidate.risk,
+      state: packetCandidate.state,
+      owner: packetCandidate.owner,
+      purpose: packetCandidate.purpose,
+      readiness: packetState.backendLive ? 'BACKEND_LIVE' : 'STAGE_REQUIRED',
+      packetState: packetState.packetState,
+      packetStage: packetState.packetStage,
+    },
+    gates,
+    nextAction,
+    packetState,
+    packetCandidate,
+    existingPacket: existingPacket ? serializeWilsySetupReviewPacket(existingPacket) : null,
+    auditEvidence: {
+      event: 'SETUP_CONTROL_SURFACE_RESOLVED',
+      route,
+      commandSurface: evidence.commandSurface,
+      tenantId: evidence.tenantId,
+      operatorId: evidence.operatorId,
+      userId: evidence.userId,
+      controlId: packetCandidate.controlId,
+      lens,
+      generatedAt,
+    },
+  });
+}
+
+router.post(
+  '/setup/control-surface/resolve',
+  wrapWilsySetupReviewRoute(handleWilsySetupControlSurfaceResolve)
+);
 router.post('/setup/reviews/list', wrapWilsySetupReviewRoute(handleWilsySetupReviewListByCommand));
 router.post('/setup/reviews/open', wrapWilsySetupReviewRoute(handleWilsySetupReviewOpenByBody));
 router.get('/setup/reviews', wrapWilsySetupReviewRoute(handleWilsySetupReviewList));

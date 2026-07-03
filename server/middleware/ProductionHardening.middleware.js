@@ -290,7 +290,9 @@ export const integrityShield = async (req, res, next) => {
        Allows evidence-bearing setup review commands through the same CRM command authority gate as Meetings. */
     const wilsyP60K2FSetupReviewCommandAllowed = Boolean(
       (wilsyR91K179E20Route.includes('/api/crm/command/setup/reviews') ||
-        wilsyR91K179E20Route.includes('/crm/command/setup/reviews')) &&
+        wilsyR91K179E20Route.includes('/api/crm/command/setup/control-surface') ||
+        wilsyR91K179E20Route.includes('/crm/command/setup/reviews') ||
+        wilsyR91K179E20Route.includes('/crm/command/setup/control-surface')) &&
       ['POST', 'DELETE'].includes(wilsyR91K179E20Method) &&
       (wilsyR91K179E20InstitutionalHeaders.tenantId ||
         wilsyR91K179E20InstitutionalHeaders.operatorId ||
