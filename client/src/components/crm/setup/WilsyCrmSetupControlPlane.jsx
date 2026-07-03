@@ -1373,6 +1373,29 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
+  /* WILSY_P60K5I3C_SETUP_LIVE_PRODUCTIVITY_VISIBLE_LAYER */
+  const setupControlSurfacePacketState = setupControlSurface?.packetState || {};
+  const setupControlSurfaceGates = setupControlSurface?.gates || {};
+  const setupControlSurfaceGateCards = Object.entries(setupControlSurfaceGates).map(([gateId, gate]) => ({
+    id: gateId,
+    label: gate?.label || gateId,
+    status: gate?.status || 'PENDING',
+    detail: gate?.detail || 'Waiting for backend resolver',
+  }));
+  const setupControlSurfacePrimaryStatus = setupControlSurfaceLive
+    ? 'LIVE BACKEND SURFACE'
+    : setupControlSurfaceBusy
+      ? 'RESOLVING BACKEND SURFACE'
+      : 'BACKEND FALLBACK';
+  const setupControlSurfacePacketLabel = setupControlSurfacePacketState.packetState || setupControlSurfacePosture.packetState || 'NOT_STAGED';
+  const setupControlSurfaceReadinessLabel = setupControlSurfacePosture.readiness || (setupControlSurfaceLive ? 'BACKEND_LIVE' : 'STATIC_FALLBACK');
+  const setupControlSurfaceNextReason =
+    setupControlSurfaceNextAction?.reason ||
+    (setupControlSurfaceLive
+      ? 'Backend resolver is live and waiting for the next setup command.'
+      : 'Backend resolver has not confirmed this control yet.');
+  const setupControlSurfaceSurfaceSummary = `${setupControlSurfaceAffectedSurfaces.length} affected surfaces · ${setupControlSurfaceWorkQueue.length} work steps`;
+
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2925,6 +2948,48 @@ export default function WilsyCrmSetupControlPlane() {
                 <article className={styles.viewPanel}>
                   <span>Work queue</span>
                   <div className={styles.workStepList}>
+                    <section className={styles.liveControlSurfaceStrip} aria-label="Live backend setup control surface">
+                      <div className={styles.liveSurfaceIdentity}>
+                        <span>{setupControlSurfacePrimaryStatus}</span>
+                        <strong>{setupControlSurfaceRouteGuide}</strong>
+                        <small>{setupControlSurfaceNextReason}</small>
+                      </div>
+                    
+                      <div className={styles.liveSurfaceCommandGrid}>
+                        <article>
+                          <span>Next action</span>
+                          <strong>{setupPacketPrimaryActionLabel}</strong>
+                          <small>{setupControlSurfaceNextAction?.action || 'STAGE_REVIEW'}</small>
+                        </article>
+                        <article>
+                          <span>Packet state</span>
+                          <strong>{setupControlSurfacePacketLabel}</strong>
+                          <small>{setupControlSurfaceReadinessLabel}</small>
+                        </article>
+                        <article>
+                          <span>Surface scope</span>
+                          <strong>{setupControlSurfaceSurfaceSummary}</strong>
+                          <small>{setupControlSurfaceLive ? 'Resolved by backend' : 'Using fallback until resolver confirms'}</small>
+                        </article>
+                      </div>
+                    
+                      <div className={styles.liveGateRail}>
+                        {setupControlSurfaceGateCards.length ? setupControlSurfaceGateCards.map((gate) => (
+                          <article key={gate.id}>
+                            <span>{gate.label}</span>
+                            <strong className={resolveToneClass(gate.status)}>{gate.status}</strong>
+                            <small>{gate.detail}</small>
+                          </article>
+                        )) : (
+                          <article>
+                            <span>Resolver</span>
+                            <strong>{setupControlSurfaceBusy ? 'CONNECTING' : 'WAITING'}</strong>
+                            <small>{setupControlSurfaceError || 'Backend gates will appear here.'}</small>
+                          </article>
+                        )}
+                      </div>
+                    </section>
+
                     {setupControlSurfaceWorkQueue.map((item, index) => (
                       <button type="button" key={item.id || item.title || item.label || index}>
                         <span>{String(index + 1).padStart(2, '0')}</span>

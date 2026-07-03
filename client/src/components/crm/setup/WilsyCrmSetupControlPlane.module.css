@@ -6667,3 +6667,99 @@ button.packetRevealNode {
   }
 }
 
+
+/* WILSY_P60K5I3C_SETUP_LIVE_PRODUCTIVITY_VISIBLE_LAYER
+   Makes backend resolver work visible in the production viewport. */
+.liveControlSurfaceStrip {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.15fr) minmax(360px, 1.45fr);
+  gap: 12px;
+  padding: 14px;
+  margin: 0 0 14px;
+  border: 1px solid rgba(0, 209, 255, 0.34);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(0, 209, 255, 0.14), rgba(0, 255, 148, 0.06)),
+    rgba(3, 9, 18, 0.94);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+}
+
+.liveSurfaceIdentity {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  min-width: 0;
+}
+
+.liveSurfaceIdentity span,
+.liveSurfaceCommandGrid span,
+.liveGateRail span {
+  color: rgba(235, 224, 173, 0.9);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.liveSurfaceIdentity strong {
+  color: #ffffff;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.liveSurfaceIdentity small,
+.liveSurfaceCommandGrid small,
+.liveGateRail small {
+  color: rgba(214, 225, 239, 0.7);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.liveSurfaceCommandGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.liveSurfaceCommandGrid article,
+.liveGateRail article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid rgba(0, 209, 255, 0.24);
+  border-radius: 14px;
+  background: rgba(2, 10, 20, 0.84);
+}
+
+.liveSurfaceCommandGrid strong,
+.liveGateRail strong {
+  color: #ffffff;
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.liveGateRail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 9px;
+}
+
+@media (max-width: 1320px) {
+  .liveControlSurfaceStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .liveGateRail {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .liveSurfaceCommandGrid,
+  .liveGateRail {
+    grid-template-columns: 1fr;
+  }
+}
