@@ -1365,7 +1365,7 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
-  /* WILSY_P60K5L4_SCREEN2_OPERATOR_MISSION_STRIP */
+  /* WILSY_P60K5L5B_SOVEREIGN_EXPOSURE_MATRIX */
   const screenTwoSourceIntelligence = screenTwoSourceLive ? screenTwoSourceSurface?.sourceIntelligence || {} : {};
   const screenTwoSourceSummary =
     screenTwoSourceIntelligence.sourceSummary ||
@@ -1394,8 +1394,17 @@ export default function WilsyCrmSetupControlPlane() {
     ? 'Open packet'
     : (screenTwoAttentionSurfaceCount > 0 ? 'Review exposure' : 'Stage review');
   const screenTwoSourcePulseLabel = screenTwoSourceLive
-    ? 'Live'
-    : (screenTwoSourceBusy ? 'Resolving' : 'Standby');
+    ? 'Live source graph'
+    : (screenTwoSourceBusy ? 'Resolving graph' : 'Standby graph');
+  const screenTwoMatrixProofLine =
+    String(screenTwoLiveSurfaceCount) +
+    '/' +
+    String(screenTwoAffectedSurfaces.length || 1) +
+    ' surfaces · ' +
+    String(screenTwoAttentionSurfaceCount) +
+    ' attention · ' +
+    String(screenTwoWorkItems.length || 0) +
+    ' queue actions';
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2896,30 +2905,36 @@ export default function WilsyCrmSetupControlPlane() {
               </section>
             ) : (
               <>
-                <section className={styles.screenTwoOperatorMissionStrip} aria-label="Screen Two operator mission verdict">
-                  <article className={styles.screenTwoMissionPrime}>
-                    <span>Operator Verdict</span>
+                <section className={styles.screenTwoSovereignExposureMatrix} aria-label="Sovereign exposure command matrix">
+                  <div className={styles.exposureMatrixPrime}>
+                    <span>Field Exposure Matrix</span>
                     <strong>{screenTwoInvestorAction}</strong>
-                    <small>{screenTwoInvestorVerdict}</small>
-                  </article>
+                    <p>{screenTwoInvestorVerdict}</p>
+                    <small>{screenTwoMatrixProofLine}</small>
+                  </div>
 
-                  <article>
-                    <span>Source Pulse</span>
-                    <strong>{screenTwoSourcePulseLabel}</strong>
-                    <small>{screenTwoSourceSummary}</small>
-                  </article>
+                  <div className={styles.exposureMatrixSignalRail}>
+                    <article>
+                      <span>Source Pulse</span>
+                      <strong>{screenTwoSourcePulseLabel}</strong>
+                      <small>{screenTwoSourceSummary}</small>
+                    </article>
+                    <article>
+                      <span>Authority Gate</span>
+                      <strong>{screenTwoState}</strong>
+                      <small>{screenTwoOwner} · {screenTwoRisk}</small>
+                    </article>
+                  </div>
 
-                  <article>
-                    <span>Exposure Map</span>
-                    <strong>{screenTwoLiveSurfaceCount}/{screenTwoAffectedSurfaces.length || 1}</strong>
-                    <small>{screenTwoAttentionSurfaceCount} attention surface{screenTwoAttentionSurfaceCount === 1 ? '' : 's'}</small>
-                  </article>
-
-                  <article>
-                    <span>Next Move</span>
-                    <strong>{screenTwoInvestorAction}</strong>
-                    <small>{stagedReview ? 'Packet workflow is active.' : 'Keep review moving from this control.'}</small>
-                  </article>
+                  <div className={styles.exposureMatrixRunway} aria-label="Control action runway">
+                    {screenTwoWorkItems.slice(0, 4).map((item, index) => (
+                      <article key={item.id || item.title || item.label || index} className={styles.exposureRunwayStep}>
+                        <span>{String(index + 1).padStart(2, '0')}</span>
+                        <strong>{item.title || item.label || item.task || 'Control action'}</strong>
+                        <small>{item.evidence || item.detail || item.reason || item.owner || screenTwoOwner}</small>
+                      </article>
+                    ))}
+                  </div>
                 </section>
 
                 <article className={styles.viewPanel}>
