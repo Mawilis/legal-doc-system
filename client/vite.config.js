@@ -16,8 +16,24 @@
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * @function resolveWilsyR91K179E27ClientModule
+ * @description Resolves frontend dependencies from the client package boundary so the workspace root cannot inject a second React runtime.
+ * @param {string} modulePath - Module path inside client node_modules.
+ * @returns {string} Absolute module path.
+ * @collaboration Vite React runtime, Sovereign dashboard error boundary, Meeting workspace development server.
+ */
+function resolveWilsyR91K179E27ClientModule(modulePath) {
+  return path.resolve(__dirname, 'node_modules', modulePath);
+}
 
 /**
  * Vite configuration for WILSY OS frontend.
@@ -40,6 +56,33 @@ export default defineConfig({
    * @type {Array}
    */
   plugins: [react()],
+
+  // ============================================================================
+  // ⚛️ REACT RUNTIME SOVEREIGNTY
+  // ============================================================================
+  /**
+   * React runtime resolution – locks Vite to the client React 18 tree even when
+   * the monorepo root has a different React version for server-side tooling.
+   * @type {Object}
+   */
+  resolve: {
+    alias: {
+      react: resolveWilsyR91K179E27ClientModule('react'),
+      'react-dom': resolveWilsyR91K179E27ClientModule('react-dom'),
+      'react/jsx-dev-runtime': resolveWilsyR91K179E27ClientModule('react/jsx-dev-runtime.js'),
+      'react/jsx-runtime': resolveWilsyR91K179E27ClientModule('react/jsx-runtime.js'),
+    },
+    dedupe: ['react', 'react-dom', 'react/jsx-dev-runtime', 'react/jsx-runtime'],
+  },
+
+  /**
+   * Dependency pre-bundling – makes the dev server optimize the same React
+   * runtime that production build uses.
+   * @type {Object}
+   */
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-dev-runtime', 'react/jsx-runtime'],
+  },
 
   // ============================================================================
   // 🎨 CSS CONFIGURATION

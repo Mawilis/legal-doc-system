@@ -25,6 +25,7 @@ const WILSY_SEARCH_REGISTRY = Object.freeze([
   { id: 'executive', label: 'Executive Dashboard', type: 'Dashboard', dashboardKey: 'EXECUTIVE_DASHBOARD', route: '/executive', keywords: 'ceo executive boardroom arr kpi decision command', icon: LayoutDashboard },
   { id: 'hr', label: 'People and HR', type: 'Vertical System', dashboardKey: 'HR_DASHBOARD', route: '/hr', keywords: 'employees people payroll benefits performance time off recruitment', icon: Users },
   { id: 'crm', label: 'CRM and Customers', type: 'Vertical System', dashboardKey: 'CRM_DASHBOARD', route: '/crm', keywords: 'clients customers leads accounts deals contacts pipeline', icon: Building2 },
+  { id: 'crm-operating-controls', label: 'CRM Operating Controls', type: 'Command', command: 'OPEN_CRM_OPERATING_CONTROLS', route: '/crm/setup', keywords: 'crm setup operating controls admin authority permissions roles profiles fields workflows automation audit evidence command plane', icon: Terminal },
   { id: 'finance', label: 'Finance Dashboard', type: 'Vertical System', dashboardKey: 'FINANCE_DASHBOARD', route: '/finance', keywords: 'finance cfo kpi revenue currency fx', icon: CreditCard },
   { id: 'billing', label: 'Billing and Invoicing', type: 'Business System', route: '/billing', keywords: 'billing invoice payment receipt credit note vat subscription', icon: CreditCard },
   { id: 'revenue-ledger', label: 'Revenue Ledger', type: 'Forensic Ledger', route: '/revenue-ledger', keywords: 'ledger revenue proof invoice evidence fiscal trail', icon: FileText },
@@ -159,7 +160,34 @@ const WilsyGlobalCommandSearch = ({
   /**
    * @function handleResultActivation
    * @description Activates a selected command search result.
-   * @param {Object} row - Selected search row.
+   * @param {
+    if (row?.command === 'OPEN_CRM_OPERATING_CONTROLS') {
+      const generatedAt = new Date().toISOString();
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('wilsy:crm-setup-open', {
+          detail: {
+            source: 'COMMAND_K_CRM_OPERATING_CONTROLS',
+            commandSurface: 'COMMAND_K',
+            route: row.route || '/crm/setup',
+            requestedAction: 'OPEN_CRM_OPERATING_CONTROLS',
+            generatedAt,
+            timestamp: generatedAt,
+            institutionalHeaders: {
+              source: 'COMMAND_K_CRM_OPERATING_CONTROLS',
+              commandSurface: 'COMMAND_K',
+              route: row.route || '/crm/setup',
+              generatedAt,
+            },
+          },
+        }));
+      }
+
+      onClose?.();
+      return;
+    }
+
+Object} row - Selected search row.
    * @returns {void}
    * @collaboration Routes dashboards, commands and vertical systems from one sovereign command interface.
    */

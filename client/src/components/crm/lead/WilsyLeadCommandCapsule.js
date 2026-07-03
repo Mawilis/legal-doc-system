@@ -13,6 +13,491 @@ import {
   formatWilsyPhoneDisplay,
 } from '../../../utils/wilsyPhoneGovernance';
 
+
+
+/* R91K179E24P58D2 ADAPTIVE_MODULE_AWARE_GOVERNANCE_COPY */
+
+/**
+ * @function resolveWilsyR91K179E24P58D2TitleCase
+ * @description Converts a module noun into display-safe title case.
+ * @param {string} value - Raw module value.
+ * @returns {string} Display-safe label.
+ * @collaboration WilsyLeadCommandCapsule, shared CRM command governance, Meeting adapter.
+ */
+function resolveWilsyR91K179E24P58D2TitleCase(value = 'lead') {
+  const normalized = String(value || 'lead').replace(/[_-]+/g, ' ').trim().toLowerCase();
+  if (!normalized) return 'Lead';
+
+  return normalized
+    .split(/\s+/)
+    .map(part => part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : '')
+    .join(' ')
+    .trim() || 'Lead';
+}
+
+/**
+ * @function resolveWilsyR91K179E24P58D2GovernanceCopy
+ * @description Resolves protected command governance copy from module context without requiring old hardcoded Lead strings.
+ * @param {Object} params - Capsule launch params.
+ * @param {Object} record - Source record.
+ * @returns {Object} Module-aware copy packet.
+ * @collaboration WilsyLeadCommandCapsule, WilsyLeadOperatingRoom, WilsyMeetingOperatingRoom, protected delete governance.
+ */
+function resolveWilsyR91K179E24P58D2GovernanceCopy(params = {}, record = {}) {
+  const operatingCopy = params.operatingCopy && typeof params.operatingCopy === 'object' ? params.operatingCopy : {};
+  const providedCopy = params.governanceCopy && typeof params.governanceCopy === 'object' ? params.governanceCopy : {};
+  const sourceSignal = String(
+    providedCopy.module ||
+    params.sourceModule ||
+    params.recordModule ||
+    params.module ||
+    operatingCopy.recordPlural ||
+    record.sourceModule ||
+    record.source ||
+    record.module ||
+    ''
+  ).toLowerCase();
+
+  const isMeeting = sourceSignal.includes('meeting') ||
+    String(record.sourceModule || '').toLowerCase().includes('meeting') ||
+    String(record.source || '').toLowerCase().includes('meeting');
+
+  const recordSingular = String(
+    providedCopy.recordSingular ||
+    params.recordSingular ||
+    operatingCopy.recordSingular ||
+    (isMeeting ? 'meeting' : 'lead')
+  ).toLowerCase();
+
+  const recordPlural = String(
+    providedCopy.recordPlural ||
+    params.recordPlural ||
+    operatingCopy.recordPlural ||
+    (isMeeting ? 'meetings' : 'leads')
+  ).toLowerCase();
+
+  const recordTitle = resolveWilsyR91K179E24P58D2TitleCase(recordSingular);
+  const headers = operatingCopy.tableHeaders || {};
+
+  return {
+    module: recordPlural,
+    recordSingular,
+    recordPlural,
+    recordTitle,
+    sidebarTitle: providedCopy.sidebarTitle || `Sovereign ${recordTitle} Intelligence`,
+    sidebarTitleUpper: String(providedCopy.sidebarTitle || `Sovereign ${recordTitle} Intelligence`).toUpperCase(),
+    recordNameLabel: providedCopy.recordNameLabel || headers.name || (isMeeting ? 'Meeting' : 'Lead Name'),
+    companyLabel: providedCopy.companyLabel || headers.company || (isMeeting ? 'CRM Link' : 'Company'),
+    emailLabel: providedCopy.emailLabel || headers.email || (isMeeting ? 'Participants / Host' : 'Email'),
+    phoneLabel: providedCopy.phoneLabel || headers.phone || (isMeeting ? 'Time' : 'Phone'),
+    commandSurface: providedCopy.commandSurface || 'R91K179E24P58D2_MODULE_AWARE_DELETE_GOVERNANCE',
+  };
+}
+
+/**
+ * @function applyWilsyR91K179E24P58D2GovernanceCopy
+ * @description Applies module-aware visible copy after the shared capsule renders.
+ * @param {Document|HTMLElement} root - Root node.
+ * @param {Object} copy - Module-aware copy packet.
+ * @returns {void}
+ * @collaboration WilsyLeadCommandCapsule, Meeting delete verification, Lead delete verification, DOM copy reconciliation.
+ */
+function applyWilsyR91K179E24P58D2GovernanceCopy(root = document, copy = {}) {
+  if (!root || !copy || !copy.sidebarTitle) return;
+
+  const replacements = [
+    ['SOVEREIGN LEAD INTELLIGENCE', copy.sidebarTitleUpper],
+    ['Sovereign Lead Intelligence', copy.sidebarTitle],
+    ['Sovereign Lead', `Sovereign ${copy.recordTitle}`],
+    ['Lead Intelligence', `${copy.recordTitle} Intelligence`],
+    ['LEAD INTELLIGENCE', `${copy.recordTitle.toUpperCase()} INTELLIGENCE`],
+    ['Lead Name', copy.recordNameLabel],
+    ['LEAD NAME', String(copy.recordNameLabel || '').toUpperCase()],
+    ['Company', copy.companyLabel],
+    ['COMPANY', String(copy.companyLabel || '').toUpperCase()],
+    ['Email', copy.emailLabel],
+    ['EMAIL', String(copy.emailLabel || '').toUpperCase()],
+    ['Phone', copy.phoneLabel],
+    ['PHONE', String(copy.phoneLabel || '').toUpperCase()],
+    ['operating memory of the Lead', `operating memory of the ${copy.recordTitle}`],
+    ['operating memory of the lead', `operating memory of the ${copy.recordSingular}`],
+    ['the Lead', `the ${copy.recordTitle}`],
+  ];
+
+  try {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach((node) => {
+      let value = node.nodeValue || '';
+      replacements.forEach(([from, to]) => {
+        value = value.split(from).join(to);
+      });
+
+      if (value !== node.nodeValue) {
+        node.nodeValue = value;
+      }
+    });
+
+    const elementRoot = root.querySelectorAll ? root : document;
+    elementRoot.querySelectorAll('[aria-label], [title]').forEach((element) => {
+      ['aria-label', 'title'].forEach((attribute) => {
+        const original = element.getAttribute(attribute);
+        if (!original) return;
+
+        let value = original;
+        replacements.forEach(([from, to]) => {
+          value = value.split(from).join(to);
+        });
+
+        if (value !== original) {
+          element.setAttribute(attribute, value);
+        }
+      });
+    });
+  } catch (error) {
+    // Non-fatal. Command governance must not fail because copy reconciliation failed.
+  }
+}
+
+
+
+/* R91K179E24P58H MEETING_DELETE_ROUTE_RECEIPT_RESOLVER */
+
+/**
+ * @function resolveWilsyR91K179E24P58HModuleSignal
+ * @description Resolves the CRM module signal from command payload and source record evidence.
+ * @param {Object} payload - Command payload or launch params.
+ * @returns {string} Normalized module signal.
+ * @collaboration WilsyLeadCommandCapsule, Meeting adapter, protected delete route authority.
+ */
+function resolveWilsyR91K179E24P58HModuleSignal(payload = {}) {
+  const record = payload.record || payload.meeting || payload.lead || {};
+  return String(
+    payload.sourceModule ||
+    payload.recordModule ||
+    payload.module ||
+    payload.recordPlural ||
+    payload.governanceCopy?.module ||
+    payload.operatingCopy?.recordPlural ||
+    record.sourceModule ||
+    record.source ||
+    record.sourceSystem ||
+    record.module ||
+    record.metadata?.sourceModule ||
+    ''
+  ).toLowerCase();
+}
+
+/**
+ * @function isWilsyR91K179E24P58HMeetingCommand
+ * @description Determines whether a protected command is operating on the Meetings module.
+ * @param {Object} payload - Command payload or launch params.
+ * @returns {boolean} True when command belongs to Meetings.
+ * @collaboration CRM Meeting delete route authority, Lead shell adapter, protected command receipt bridge.
+ */
+function isWilsyR91K179E24P58HMeetingCommand(payload = {}) {
+  const signal = resolveWilsyR91K179E24P58HModuleSignal(payload);
+  const record = payload.record || {};
+  return signal.includes('meeting') ||
+    String(record.sourceModule || '').toLowerCase().includes('meeting') ||
+    String(record.source || '').toLowerCase().includes('meeting') ||
+    String(record.sourceSystem || '').toLowerCase().includes('meeting');
+}
+
+/**
+ * @function resolveWilsyR91K179E24P58HRecordId
+ * @description Resolves source-backed CRM record id from command payload and Meeting source record variants.
+ * @param {Object} payload - Command payload.
+ * @returns {string} Record id.
+ * @collaboration Meeting adapter, protected delete command, backend route id integrity.
+ */
+function resolveWilsyR91K179E24P58HRecordId(payload = {}) {
+  const record = payload.record || {};
+  const sourceRecord = record.wilsyMeetingSourceRecord || record.sourceRecord || {};
+  return String(
+    payload.recordId ||
+    payload.id ||
+    payload.meetingId ||
+    record.sourceRecordId ||
+    record.meetingId ||
+    record.recordId ||
+    record._id ||
+    record.id ||
+    sourceRecord.sourceRecordId ||
+    sourceRecord.meetingId ||
+    sourceRecord.recordId ||
+    sourceRecord._id ||
+    sourceRecord.id ||
+    ''
+  ).trim();
+}
+
+/**
+ * @function resolveWilsyR91K179E24P58HProtectedDeleteRoute
+ * @description Resolves the backend delete route for module-aware protected delete commands.
+ * @param {Object} payload - Command payload.
+ * @returns {string} Backend command route.
+ * @collaboration /api/crm/command/meetings/:id, /api/crm/command/leads/:id, receipt bridge.
+ */
+function resolveWilsyR91K179E24P58HProtectedDeleteRoute(payload = {}) {
+  const recordId = resolveWilsyR91K179E24P58HRecordId(payload);
+  const encodedRecordId = encodeURIComponent(recordId || payload.recordId || 'record-id-unavailable');
+
+  if (isWilsyR91K179E24P58HMeetingCommand(payload)) {
+    return `/api/crm/command/meetings/${encodedRecordId}`;
+  }
+
+  return `/api/crm/command/leads/${encodedRecordId}`;
+}
+
+/**
+ * @function resolveWilsyR91K179E24P58HReceiptHash
+ * @description Resolves receipt hash from known backend response shapes without hiding missing receipt evidence.
+ * @param {Object} payload - Backend response payload.
+ * @returns {string} Receipt hash or empty string.
+ * @collaboration Backend delete receipt, command capsule status rendering, auditMesh normalization.
+ */
+function resolveWilsyR91K179E24P58HReceiptHash(payload = {}) {
+  return String(
+    payload.receiptHash ||
+    payload.hash ||
+    payload.receipt?.receiptHash ||
+    payload.receipt?.hash ||
+    payload.receipt?.id ||
+    payload.auditMesh?.receiptHash ||
+    payload.auditMesh?.hash ||
+    payload.auditMesh?.rootHash ||
+    payload.commandReceipt?.receiptHash ||
+    payload.commandReceipt?.hash ||
+    payload.data?.receiptHash ||
+    payload.data?.receipt?.receiptHash ||
+    ''
+  ).trim();
+}
+
+/**
+ * @function buildWilsyLeadApiUrl
+ * @description Builds a safe CRM command API URL from Vite runtime base, explicit apiBase, relative route, or absolute route without inventing backend authority.
+ * @param {string|Object} first - API base string, route string, or options object.
+ * @param {string} second - Optional route string.
+ * @returns {string} Safe API URL.
+ * @collaboration WilsyLeadCommandCapsule, protected delete governance, Meeting adapter, receipt-safe backend command routing.
+ */
+function buildWilsyLeadApiUrl(first = '', second = '') {
+  const options = first && typeof first === 'object'
+    ? first
+    : {
+        apiBase: first,
+        route: second,
+      };
+
+  const rawApiBase = String(
+    options.apiBase ||
+    options.baseUrl ||
+    options.baseURL ||
+    options.base ||
+    ''
+  ).trim();
+
+  const rawRoute = String(
+    options.route ||
+    options.path ||
+    options.url ||
+    options.endpoint ||
+    second ||
+    ''
+  ).trim();
+
+  const defaultRoute = '/api/crm/command/leads';
+  const route = rawRoute || defaultRoute;
+
+  if (/^https?:\/\//i.test(route)) {
+    return route;
+  }
+
+  const normalizedRoute = route.startsWith('/') ? route : `/${route}`;
+
+  let runtimeBase = '';
+  try {
+    runtimeBase = String(import.meta?.env?.VITE_API_URL || '').trim();
+  } catch (error) {
+    runtimeBase = '';
+  }
+
+  const base = String(rawApiBase || runtimeBase || '').replace(/\/$/, '');
+
+  if (!base) {
+    return normalizedRoute;
+  }
+
+  return `${base}${normalizedRoute}`;
+}
+
+/**
+ * @function buildWilsyLeadNetworkFailurePayload
+ * @description Builds a receipt-safe failure payload when protected CRM command probes, profile lookups, or backend command requests fail before backend authority can return a formal receipt.
+ * @param {Object|string} context - Failure context, route, command, record, operator, tenant or message.
+ * @returns {Object} Receipt-safe network failure payload.
+ * @collaboration WilsyLeadCommandCapsule, Meeting lead-shell adapter, protected delete governance, institutional strike payload evidence.
+ */
+function buildWilsyLeadNetworkFailurePayload(context = {}) {
+  const normalizedContext = context && typeof context === 'object' ? context : { message: String(context || '') };
+  const error = normalizedContext.error || normalizedContext.networkError || normalizedContext.exception || {};
+  const record = normalizedContext.record || normalizedContext.lead || normalizedContext.meeting || normalizedContext.sourceRecord || {};
+  const institutionalHeadersSource =
+    normalizedContext.institutionalHeaders ||
+    normalizedContext.headers ||
+    normalizedContext.strikePayload?.institutionalHeaders ||
+    {};
+
+  const generatedAt = new Date().toISOString();
+  const route = String(
+    normalizedContext.route ||
+    normalizedContext.sourceRoute ||
+    normalizedContext.endpoint ||
+    normalizedContext.url ||
+    normalizedContext.strikePayload?.route ||
+    '/api/crm/command/protected'
+  );
+
+  const moduleName = String(
+    normalizedContext.module ||
+    normalizedContext.moduleName ||
+    normalizedContext.recordModule ||
+    normalizedContext.strikePayload?.module ||
+    record.module ||
+    record.sourceModule ||
+    record.source ||
+    'crm'
+  );
+
+  const recordId = String(
+    normalizedContext.recordId ||
+    normalizedContext.id ||
+    normalizedContext.leadId ||
+    normalizedContext.meetingId ||
+    record._id ||
+    record.id ||
+    record.recordId ||
+    record.leadId ||
+    record.meetingId ||
+    'record-id-unavailable'
+  );
+
+  const tenantId = String(
+    normalizedContext.tenantId ||
+    institutionalHeadersSource.tenantId ||
+    normalizedContext.strikePayload?.tenantId ||
+    record.tenantId ||
+    record.tenant ||
+    'wilsy-sovereign-root'
+  );
+
+  const operatorId = String(
+    normalizedContext.operatorId ||
+    normalizedContext.userId ||
+    institutionalHeadersSource.operatorId ||
+    institutionalHeadersSource.userId ||
+    institutionalHeadersSource.actor ||
+    normalizedContext.operator?.id ||
+    normalizedContext.operator?.operatorId ||
+    'wilsy-local-operator'
+  );
+
+  const operatorEmail = String(
+    normalizedContext.operatorEmail ||
+    institutionalHeadersSource.operatorEmail ||
+    normalizedContext.operator?.email ||
+    ''
+  );
+
+  const commandSurface = String(
+    normalizedContext.commandSurface ||
+    institutionalHeadersSource.commandSurface ||
+    normalizedContext.strikePayload?.commandSurface ||
+    'WILSY_PROTECTED_COMMAND_GOVERNANCE'
+  );
+
+  const message = String(
+    normalizedContext.message ||
+    error.message ||
+    'Protected command could not complete because network, auth profile, or backend command authority returned an unavailable response.'
+  );
+
+  const institutionalHeaders = {
+    ...institutionalHeadersSource,
+    tenantId,
+    operatorId,
+    userId: operatorId,
+    operatorEmail,
+    route,
+    commandSurface,
+    generatedAt,
+    module: moduleName,
+    recordId,
+    evidenceMode: 'NETWORK_FAILURE_RECEIPT',
+  };
+
+  const strikePayload = {
+    ...(normalizedContext.strikePayload && typeof normalizedContext.strikePayload === 'object' ? normalizedContext.strikePayload : {}),
+    tenantId,
+    operatorId,
+    userId: operatorId,
+    route,
+    commandSurface,
+    generatedAt,
+    module: moduleName,
+    recordId,
+    institutionalHeaders,
+    error: {
+      name: String(error.name || 'NetworkFailure'),
+      message,
+      status: normalizedContext.status || normalizedContext.statusCode || error.status || 'NETWORK_OR_AUTH_FAILURE',
+    },
+  };
+
+  return {
+    ok: false,
+    status: 'PROTECTED_COMMAND_NETWORK_FAILURE',
+    sourceStatus: 'RECEIPT_SAFE_FAILURE',
+    message,
+    route,
+    tenantId,
+    operatorId,
+    userId: operatorId,
+    operatorEmail,
+    commandSurface,
+    module: moduleName,
+    recordId,
+    generatedAt,
+    institutionalHeaders,
+    strikePayload,
+    auditMesh: {
+      tenantId,
+      operatorId,
+      route,
+      commandSurface,
+      generatedAt,
+      recordId,
+      module: moduleName,
+      posture: 'failure-recorded-not-silent',
+    },
+    receipt: {
+      status: 'NETWORK_FAILURE_RECEIPT',
+      generatedAt,
+      route,
+      tenantId,
+      operatorId,
+      recordId,
+      module: moduleName,
+    },
+  };
+}
+
+
 /**
  * @function shouldRouteWilsyLeadCommandCapsuleToEditSurface
  * @description Detects Lead Edit intent before the legacy command capsule shell is allowed to render.
@@ -677,7 +1162,13 @@ function ensureWilsyLeadCommandStyles() {
  */
 async function requestWilsyLeadActionReceipt({ apiBase = '', tenantId = 'wilsy-sovereign-root', recordId = '', action = 'VIEW_OPENED', mode = 'view', metadata = {} } = {}) {
   const bodyPayload = { tenantId, action, mode, metadata };
-  const response = await fetch(buildWilsyLeadApiUrl(apiBase, `/api/crm/command/leads/${encodeURIComponent(recordId)}/action-receipt`), {
+  const commandRoute = metadata?.route || metadata?.commandRoute || `/api/crm/command/leads/${encodeURIComponent(recordId)}/action-receipt`;
+  const endpoint = buildWilsyLeadApiUrl({
+    apiBase,
+    route: commandRoute,
+  }); /* R91K179E24P58H3_ACTION_RECEIPT_FETCH_REBUILT */
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: buildWilsyLeadCommandHeaders({ tenantId, bodyPayload }),
     credentials: 'include',
@@ -702,13 +1193,20 @@ async function requestWilsyLeadActionReceipt({ apiBase = '', tenantId = 'wilsy-s
  * @returns {Promise<Object>} Mutation response.
  * @collaboration Backend authority returns reasons, next best actions and receipts.
  */
-async function executeWilsyLeadMutation({ apiBase = '', tenantId = 'wilsy-sovereign-root', recordId = '', method = 'PATCH', lead = {}, action = '' } = {}) {
-  const bodyPayload = method === 'DELETE' ? {} : { tenantId, lead, action };
-  const response = await fetch(buildWilsyLeadApiUrl(apiBase, `/api/crm/command/leads/${encodeURIComponent(recordId)}`), {
-    method,
+async function executeWilsyLeadMutation({ apiBase = '', tenantId = 'wilsy-sovereign-root', recordId = '', method = 'PATCH', lead = {}, action = '', route = '' } = {}) {
+  const normalizedMethod = String(method || 'PATCH').toUpperCase();
+  const bodyPayload = normalizedMethod === 'DELETE' ? {} : { tenantId, lead, action };
+  const commandRoute = route || lead?.route || lead?.commandRoute || `/api/crm/command/leads/${encodeURIComponent(recordId)}`;
+  const endpoint = buildWilsyLeadApiUrl({
+    apiBase,
+    route: commandRoute,
+  }); /* R91K179E24P58H4_MUTATION_FETCH_REBUILT */
+
+  const response = await fetch(endpoint, {
+    method: normalizedMethod,
     headers: buildWilsyLeadCommandHeaders({ tenantId, bodyPayload }),
     credentials: 'include',
-    body: method === 'DELETE' ? undefined : JSON.stringify(bodyPayload)
+    body: normalizedMethod === 'DELETE' ? undefined : JSON.stringify(bodyPayload),
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -745,21 +1243,298 @@ function buildWilsyLeadEditPayload(form, record = {}) {
   };
 }
 
+
+/* R91K179E24P58K BUSINESS_DELETE_RESULT_COPY */
+
+/**
+ * @function resolveWilsyR91K179E24P58KReceiptHash
+ * @description Resolves a receipt hash from backend command responses for business-facing delete confirmation.
+ * @param {Object} payload - Backend command payload.
+ * @returns {string} Receipt hash or fallback.
+ * @collaboration Delete governance menu, backend receipt bridge, audit proof trail.
+ */
+function resolveWilsyR91K179E24P58KReceiptHash(payload = {}) {
+  return String(
+    payload.receiptHash ||
+    payload.receipt?.receiptHash ||
+    payload.receipt?.hash ||
+    payload.auditMesh?.receiptHash ||
+    payload.commandReceipt?.receiptHash ||
+    payload.data?.receiptHash ||
+    ''
+  ).trim();
+}
+
+/**
+ * @function isWilsyR91K179E24P58KDeleteSuccess
+ * @description Determines whether a command payload represents a successful protected delete.
+ * @param {Object} payload - Backend command payload.
+ * @returns {boolean} True when delete succeeded.
+ * @collaboration CRM command result renderer, Meeting delete receipt bridge, Lead delete governance.
+ */
+function isWilsyR91K179E24P58KDeleteSuccess(payload = {}) {
+  const status = String(payload.status || payload.result || payload.code || '').toUpperCase();
+  const message = String(payload.message || payload.why || '').toLowerCase();
+
+  return Boolean(
+    payload.ok !== false &&
+    (
+      status.includes('DB_DELETED') ||
+      status.includes('DELETED') ||
+      message.includes('deleted through crm command authority') ||
+      message.includes('meeting deleted') ||
+      message.includes('lead deleted')
+    )
+  );
+}
+
+/**
+ * @function resolveWilsyR91K179E24P58KBusinessDeleteCopy
+ * @description Converts protected delete results into clear business English while retaining evidence posture.
+ * @param {Object} payload - Backend command payload.
+ * @returns {Object} Business copy.
+ * @collaboration Delete verification menu, executive operator experience, receipt-safe audit posture.
+ */
+function resolveWilsyR91K179E24P58KBusinessDeleteCopy(payload = {}) {
+  const moduleSignal = String(
+    payload.module ||
+    payload.recordModule ||
+    payload.sourceModule ||
+    payload.receipt?.module ||
+    payload.auditMesh?.module ||
+    ''
+  ).toLowerCase();
+
+  const recordLabel = moduleSignal.includes('meeting') ? 'meeting' : 'record';
+  const receiptHash = resolveWilsyR91K179E24P58KReceiptHash(payload);
+
+  return {
+    title: 'The ' + recordLabel + ' was deleted successfully.',
+    summary: 'Wilsy OS completed the protected delete and recorded the action against the audit trail.',
+    evidence: receiptHash ? 'Receipt sealed: ' + receiptHash : 'Receipt evidence is pending review.',
+    next: 'You can return to the records workspace or open the proof trail for the full governance record.',
+    resultLabel: 'Completed',
+    recordLabel,
+    receiptHash,
+  };
+}
+
+/**
+ * @function renderWilsyR91K179E24P58KBusinessDeleteResult
+ * @description Renders a compact business-English protected delete result.
+ * @param {HTMLElement} statusNode - Status container.
+ * @param {Object} payload - Backend command payload.
+ * @returns {boolean} True when rendered.
+ * @collaboration Protected delete verification menu, receipt-safe result renderer, boardroom-grade UX.
+ */
+function renderWilsyR91K179E24P58KBusinessDeleteResult(statusNode, payload = {}) {
+  if (!statusNode || !isWilsyR91K179E24P58KDeleteSuccess(payload)) {
+    return false;
+  }
+
+  const copy = resolveWilsyR91K179E24P58KBusinessDeleteCopy(payload);
+
+  statusNode.classList.add('wlcc-business-delete-result');
+  statusNode.innerHTML = '';
+
+  const card = createWilsyLeadNode('div', 'wlcc-business-delete-card');
+  const badge = createWilsyLeadNode('span', 'wlcc-business-delete-badge', copy.resultLabel);
+  const title = createWilsyLeadNode('strong', 'wlcc-business-delete-title', copy.title);
+  const summary = createWilsyLeadNode('p', 'wlcc-business-delete-summary', copy.summary);
+
+  const evidence = createWilsyLeadNode('div', 'wlcc-business-delete-evidence');
+  evidence.append(createWilsyLeadNode('span', '', 'Audit receipt'));
+  evidence.append(createWilsyLeadNode('code', '', copy.receiptHash || 'Receipt pending'));
+
+  const next = createWilsyLeadNode('p', 'wlcc-business-delete-next', copy.next);
+
+  card.append(badge, title, summary, evidence, next);
+  statusNode.append(card);
+
+  return true;
+}
+
+/**
+ * @function ensureWilsyR91K179E24P58KCompactDeleteVerificationStyles
+ * @description Installs compact protected delete verification styles without changing backend command authority.
+ * @returns {void}
+ * @collaboration Delete governance drawer, Meeting verification UX, Lead command capsule.
+ */
+function ensureWilsyR91K179E24P58KCompactDeleteVerificationStyles() {
+  if (document.getElementById('wilsy-r91k179e24p58k-delete-verification-styles')) {
+    return;
+  }
+
+  const style = document.createElement('style');
+  style.id = 'wilsy-r91k179e24p58k-delete-verification-styles';
+  style.textContent = [
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-result { display: block; min-height: auto; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-card { display: grid; gap: 0.7rem; padding: 1rem; border: 1px solid rgba(34,197,94,0.28); border-radius: 18px; background: linear-gradient(135deg, rgba(34,197,94,0.14), rgba(15,23,42,0.84)); box-shadow: 0 18px 48px rgba(0,0,0,0.24); }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-badge { width: fit-content; padding: 0.24rem 0.62rem; border-radius: 999px; border: 1px solid rgba(34,197,94,0.38); color: #bbf7d0; background: rgba(34,197,94,0.14); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-title { color: #f8fafc; font-size: 1rem; line-height: 1.3; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-summary, #wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-next { margin: 0; color: rgba(226,232,240,0.82); line-height: 1.5; font-size: 0.86rem; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-evidence { display: grid; gap: 0.35rem; padding: 0.72rem; border-radius: 14px; border: 1px solid rgba(148,163,184,0.22); background: rgba(15,23,42,0.62); overflow: hidden; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-evidence span { color: rgba(148,163,184,0.88); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-evidence code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; font-size: 0.78rem; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof, #wilsy-r91g1-lead-inspection-overlay .wlcc-status { max-height: 42vh; overflow: auto; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof pre, #wilsy-r91g1-lead-inspection-overlay .wlcc-panel pre { max-height: 180px; overflow: auto; border-radius: 14px; }',
+    '#wilsy-r91g1-lead-inspection-overlay .wlcc-actions { position: sticky; bottom: 0; z-index: 8; padding-top: 0.75rem; background: linear-gradient(180deg, rgba(15,23,42,0), rgba(15,23,42,0.96) 32%); backdrop-filter: blur(12px); }'
+  ].join('\n');
+
+  document.head.appendChild(style);
+}
+
 /**
  * @function renderWilsyLeadReasonBox
- * @description Renders reason and next-best-action details into a status node.
+ * @description Renders business-safe command status, including pre-delete verification and post-delete success receipts.
  * @param {HTMLElement} node - Status node.
  * @param {Object} payload - Backend payload.
  * @returns {void}
- * @collaboration User must never be left guessing.
+ * @collaboration Delete governance menu, backend receipt bridge, business-English operator confirmation.
  */
 function renderWilsyLeadReasonBox(node, payload = {}) {
-  const reasons = Array.isArray(payload.reasons) ? payload.reasons : [payload.message || payload.status || 'Command completed.'];
-  const nextBestActions = Array.isArray(payload.nextBestActions) ? payload.nextBestActions : ['Open Proof Trail for source fields, source silence, ownership evidence, compliance posture, receipt posture, and audit posture.'];
-  const receipt = payload.proofTrail?.auditReceiptHashShort || payload.auditMesh?.receiptHashShort || payload.auditMesh?.receiptHash || 'NO_RECEIPT_HASH';
+  if (!node) {
+    return;
+  }
 
-  node.textContent = `Result: ${payload.sourceStatus || payload.status || 'COMMAND_RESULT'} · Receipt: ${receipt} · Why: ${reasons.join(' ')} · Next: ${nextBestActions.join(' ')}`;
-}
+  const overlay = document.getElementById('wilsy-r91g1-lead-inspection-overlay');
+  const drawer = overlay?.querySelector?.('.wlcc-drawer') || node.closest?.('.wlcc-drawer') || null;
+
+  /**
+   * @function collapseProofTrail
+   * @description Collapses long audit/proof panels by default for daily users while preserving on-demand evidence access.
+   * @returns {void}
+   * @collaboration Delete verification menu, tenant daily UX, audit evidence disclosure.
+   */
+  const collapseProofTrail = () => {
+    const proofPanels = Array.from(drawer?.querySelectorAll?.('.wlcc-proof, .wlcc-panel') || []);
+    proofPanels.forEach((panel) => {
+      const heading = String(panel.querySelector?.('h3')?.textContent || panel.textContent || '').toLowerCase();
+      const isProofTrail = heading.includes('complete proof trail') || heading.includes('proof trail') || heading.includes('audit');
+      if (!isProofTrail) return;
+
+      panel.classList.add('wlcc-proof-collapsed-daily');
+
+      if (!panel.dataset.wilsyP58mCollapsed) {
+        panel.dataset.wilsyP58mCollapsed = 'true';
+
+        const toggle = createWilsyLeadNode('button', 'wlcc-secondary wlcc-proof-toggle', 'Show audit evidence');
+        toggle.type = 'button';
+        toggle.addEventListener('click', () => {
+          const expanded = panel.classList.toggle('wlcc-proof-expanded-daily');
+          toggle.textContent = expanded ? 'Hide audit evidence' : 'Show audit evidence';
+        });
+
+        panel.insertBefore(toggle, panel.firstChild);
+      }
+    });
+  };
+
+  /**
+   * @function scheduleSuccessClose
+   * @description Keeps the successful delete confirmation visible briefly before closing the capsule automatically.
+   * @returns {void}
+   * @collaboration Business delete confirmation, meeting receipt UX, command capsule lifecycle.
+   */
+  const scheduleSuccessClose = () => {
+    if (!overlay || overlay.dataset.wilsyP58mAutoCloseScheduled === 'true') {
+      return;
+    }
+
+    overlay.dataset.wilsyP58mAutoCloseScheduled = 'true';
+
+    const closeNotice = createWilsyLeadNode('p', 'wlcc-business-delete-next', 'This confirmation will close automatically in a few seconds.');
+    node.querySelector?.('.wlcc-business-delete-card')?.append(closeNotice);
+
+    window.setTimeout(() => {
+      const closeButton = overlay.querySelector('button[aria-label="Close"], .wlcc-close, button');
+      if (closeButton && typeof closeButton.click === 'function') {
+        closeButton.click();
+        return;
+      }
+
+      overlay.remove();
+    }, 4200);
+  };
+
+  const status = String(payload.sourceStatus || payload.status || payload.result || 'COMMAND_RESULT').toUpperCase();
+  const message = String(payload.message || payload.why || '').trim();
+  const receipt = payload.proofTrail?.auditReceiptHashShort ||
+    payload.auditMesh?.receiptHashShort ||
+    payload.auditMesh?.receiptHash ||
+    payload.receipt?.receiptHash ||
+    payload.receiptHash ||
+    '';
+
+  const isDeleteSuccess = payload.ok !== false && (
+    status.includes('DB_DELETED') ||
+    status.includes('DELETED') ||
+    message.toLowerCase().includes('deleted through crm command authority') ||
+    message.toLowerCase().includes('meeting deleted') ||
+    message.toLowerCase().includes('lead deleted')
+  );
+
+  const isPreDeleteVerification = !receipt && (
+    status === 'COMMAND_RESULT' ||
+    status === 'READY' ||
+    status === 'PENDING' ||
+    message.toLowerCase().includes('command completed') ||
+    !message
+  );
+
+  node.classList.add('wlcc-business-verification-status');
+  node.innerHTML = '';
+
+  if (isDeleteSuccess) {
+    const card = createWilsyLeadNode('div', 'wlcc-business-delete-card');
+    card.append(createWilsyLeadNode('span', 'wlcc-business-delete-badge', 'Completed'));
+    card.append(createWilsyLeadNode('strong', 'wlcc-business-delete-title', 'The meeting was deleted successfully.'));
+    card.append(createWilsyLeadNode('p', 'wlcc-business-delete-summary', 'Wilsy OS completed the protected delete and recorded the action against the audit trail.'));
+
+    const evidence = createWilsyLeadNode('div', 'wlcc-business-delete-evidence');
+    evidence.append(createWilsyLeadNode('span', '', 'Audit receipt'));
+    evidence.append(createWilsyLeadNode('code', '', receipt || 'Receipt recorded'));
+    card.append(evidence);
+
+    card.append(createWilsyLeadNode('p', 'wlcc-business-delete-next', 'You can return to the records workspace or open the proof trail for the full governance record.'));
+    node.append(card);
+
+    collapseProofTrail();
+    scheduleSuccessClose();
+    return;
+  }
+
+  if (isPreDeleteVerification) {
+    const card = createWilsyLeadNode('div', 'wlcc-business-delete-card wlcc-business-delete-card-pending');
+    card.append(createWilsyLeadNode('span', 'wlcc-business-delete-badge', 'Verification required'));
+    card.append(createWilsyLeadNode('strong', 'wlcc-business-delete-title', 'Ready for protected deletion.'));
+    card.append(createWilsyLeadNode('p', 'wlcc-business-delete-summary', 'Wilsy OS will ask backend authority to delete this meeting. The action will only complete when the server confirms the decision and returns a receipt.'));
+
+    const evidence = createWilsyLeadNode('div', 'wlcc-business-delete-evidence');
+    evidence.append(createWilsyLeadNode('span', '', 'Receipt status'));
+    evidence.append(createWilsyLeadNode('code', '', 'Receipt will be created after execution'));
+    card.append(evidence);
+
+    card.append(createWilsyLeadNode('p', 'wlcc-business-delete-next', 'Review the selected meeting, then choose Execute protected delete to continue.'));
+    node.append(card);
+
+    collapseProofTrail();
+    return;
+  }
+
+  const reasons = Array.isArray(payload.reasons)
+    ? payload.reasons
+    : [message || payload.status || 'Command completed.'];
+
+  const nextBestActions = Array.isArray(payload.nextBestActions)
+    ? payload.nextBestActions
+    : ['Open the proof trail for source fields, ownership evidence, compliance posture, receipt posture, and audit posture.'];
+
+  const safeReceipt = receipt || 'Receipt pending';
+  node.textContent = `Result: ${payload.sourceStatus || payload.status || 'COMMAND_RESULT'} · Receipt: ${safeReceipt} · Why: ${reasons.join(' ')} · Next: ${nextBestActions.join(' ')}`;
+
+  collapseProofTrail();
+} /* R91K179E24P58M_COLLAPSE_PROOF_AND_AUTOCLOSE_RENDERER */
 
 /**
  * @function openWilsyLeadCommandCapsule
@@ -2277,9 +3052,86 @@ function openR91K24LeadEditWorkspace({ mode = 'edit', label = 'Edit Lead', recor
  * @description Opens the CRM Lead command capsule and delegates Edit mode to the R91K.24A focused edit constructor while keeping View, Proof Trail, Delete, Mass Update, and Change Owner governed.
  * @collaboration Receives Lead row actions from WilsyLeadOperatingRoom and preserves backend-backed receipt, reason, and Proof Trail separation.
  */
-export function openWilsyLeadCommandCapsule({ mode = 'view', label = 'View', record = {}, recordId = '', recordIds = [], tenantId = 'wilsy-sovereign-root', apiBase = '' } = {}) {
-  const wilsyR91K24ECommandPayload = arguments[0] || {};
+export function openWilsyLeadCommandCapsule({
+  mode = 'view',
+  label = 'View',
+  record = {},
+  recordId = '',
+  recordIds = [],
+  tenantId = 'wilsy-sovereign-root',
+  apiBase = '',
+  module = '',
+  moduleName = '',
+  recordModule = '',
+  sourceModule = '',
+  recordSingular = '',
+  recordPlural = '',
+  operatingCopy = {},
+  governanceCopy = {},
+} = {}) {
+  const wilsyR91K179E24P58D2LaunchParams = {
+    mode,
+    label,
+    record,
+    recordId,
+    recordIds,
+    tenantId,
+    apiBase,
+    module,
+    moduleName,
+    recordModule,
+    sourceModule,
+    recordSingular,
+    recordPlural,
+    operatingCopy,
+    governanceCopy,
+  };
+  const wilsyR91K179E24P58D2GovernanceCopy = resolveWilsyR91K179E24P58D2GovernanceCopy(wilsyR91K179E24P58D2LaunchParams, record || {});
 
+  const wilsyR91K24ECommandPayload = {
+    mode,
+    label,
+    record,
+    recordId,
+    recordIds,
+    tenantId,
+    apiBase,
+    module,
+    moduleName,
+    recordModule,
+    sourceModule,
+    recordSingular,
+    recordPlural,
+    operatingCopy,
+    governanceCopy,
+    governanceCopyResolved: wilsyR91K179E24P58D2GovernanceCopy,
+    route: resolveWilsyR91K179E24P58HProtectedDeleteRoute({
+      mode,
+      label,
+      record,
+      recordId,
+      recordIds,
+      module,
+      moduleName,
+      recordModule,
+      sourceModule,
+      recordSingular,
+      recordPlural,
+      operatingCopy,
+      governanceCopy,
+    }),
+    method: 'DELETE', /* R91K179E24P58H_ROUTE_ON_COMMAND_PAYLOAD */
+    commandSurface: governanceCopy?.commandSurface || 'R91K179E24P58E2_RESTORED_COMMAND_PAYLOAD',
+  }; /* R91K179E24P58E2_RESTORED_COMMAND_PAYLOAD */
+
+  try {
+    window.setTimeout(() => applyWilsyR91K179E24P58D2GovernanceCopy(document, wilsyR91K179E24P58D2GovernanceCopy), 0);
+    window.setTimeout(() => applyWilsyR91K179E24P58D2GovernanceCopy(document, wilsyR91K179E24P58D2GovernanceCopy), 60);
+    window.setTimeout(() => applyWilsyR91K179E24P58D2GovernanceCopy(document, wilsyR91K179E24P58D2GovernanceCopy), 180);
+    window.setTimeout(() => applyWilsyR91K179E24P58D2GovernanceCopy(document, wilsyR91K179E24P58D2GovernanceCopy), 360);
+  } catch (error) {
+    // Non-fatal. Capsule opening and backend authority are more important than copy reconciliation.
+  } /* P58D2_APPLY_MODULE_GOVERNANCE_COPY_TIMERS */
   if (shouldRouteWilsyLeadCommandCapsuleToEditSurface(wilsyR91K24ECommandPayload)) {
     return openWilsyLeadEditSurface(
       buildWilsyLeadEditSurfacePayloadFromCapsule(wilsyR91K24ECommandPayload)
@@ -2301,6 +3153,35 @@ export function openWilsyLeadCommandCapsule({ mode = 'view', label = 'View', rec
   if (typeof document === 'undefined') return;
 
   ensureWilsyLeadCommandStyles();
+  if (!document.getElementById('wilsy-r91k179e24p58m-collapsed-proof-styles')) {
+    const wilsyR91K179E24P58MStyle = document.createElement('style');
+    wilsyR91K179E24P58MStyle.id = 'wilsy-r91k179e24p58m-collapsed-proof-styles';
+    wilsyR91K179E24P58MStyle.textContent = [
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof-collapsed-daily { max-height: 74px; overflow: hidden; opacity: .82; transition: max-height .22s ease, opacity .22s ease; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof-collapsed-daily.wlcc-proof-expanded-daily { max-height: 52vh; overflow: auto; opacity: 1; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof-toggle { margin: 0 0 .75rem 0; width: fit-content; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof-collapsed-daily:not(.wlcc-proof-expanded-daily) > *:not(.wlcc-proof-toggle):not(h3):not(p) { display: none !important; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof-collapsed-daily:not(.wlcc-proof-expanded-daily) p { display: none !important; }'
+    ].join('\n');
+    document.head.appendChild(wilsyR91K179E24P58MStyle);
+  } /* R91K179E24P58M_COLLAPSED_PROOF_STYLES */
+  if (!document.getElementById('wilsy-r91k179e24p58l-business-delete-status-styles')) {
+    const wilsyR91K179E24P58LStyle = document.createElement('style');
+    wilsyR91K179E24P58LStyle.id = 'wilsy-r91k179e24p58l-business-delete-status-styles';
+    wilsyR91K179E24P58LStyle.textContent = [
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-card { display: grid; gap: .7rem; padding: 1rem; border: 1px solid rgba(34,197,94,.28); border-radius: 18px; background: linear-gradient(135deg, rgba(34,197,94,.12), rgba(15,23,42,.84)); }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-card-pending { border-color: rgba(232,220,167,.28); background: linear-gradient(135deg, rgba(232,220,167,.10), rgba(15,23,42,.84)); }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-badge { width: fit-content; padding: .25rem .65rem; border-radius: 999px; border: 1px solid rgba(34,197,94,.34); color: #bbf7d0; background: rgba(34,197,94,.12); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 900; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-title { color: #f8fafc; font-size: 1rem; line-height: 1.35; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-summary, #wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-next { margin: 0; color: rgba(226,232,240,.82); line-height: 1.5; font-size: .88rem; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-evidence { display: grid; gap: .35rem; padding: .7rem; border-radius: 14px; border: 1px solid rgba(148,163,184,.22); background: rgba(15,23,42,.62); overflow: hidden; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-evidence span { color: rgba(148,163,184,.88); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 900; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-business-delete-evidence code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; font-size: .78rem; }',
+      '#wilsy-r91g1-lead-inspection-overlay .wlcc-proof, #wilsy-r91g1-lead-inspection-overlay .wlcc-status { max-height: 42vh; overflow: auto; }'
+    ].join('\n');
+    document.head.appendChild(wilsyR91K179E24P58LStyle);
+  } /* R91K179E24P58L_BUSINESS_DELETE_STATUS_STYLES */
+  ensureWilsyR91K179E24P58KCompactDeleteVerificationStyles(); /* R91K179E24P58K_COMPACT_DELETE_STYLES_INSTALLED */
   ensureR91K9LeadCommandViewportDesign();
   ensureR91K11LeadRailAndAuthorityDesign();
 
@@ -2425,7 +3306,13 @@ export function openWilsyLeadCommandCapsule({ mode = 'view', label = 'View', rec
       status.textContent = 'Executing protected delete. Backend authority will decide.';
 
       try {
-        const payload = await executeWilsyLeadMutation({ apiBase, tenantId, recordId, method: 'DELETE' });
+        const payload = await executeWilsyLeadMutation({
+          apiBase,
+          tenantId,
+          recordId,
+          method: 'DELETE',
+          route: wilsyR91K24ECommandPayload?.route,
+        }); /* R91K179E24P58J_DELETE_ROUTE_PASSED */
         renderWilsyLeadReasonBox(status, payload);
       } catch (error) {
         renderWilsyLeadReasonBox(status, error.payload || buildWilsyLeadNetworkFailurePayload(error, { apiBase, recordId, commandPath: 'protected-delete' }));

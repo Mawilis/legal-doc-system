@@ -4935,6 +4935,158 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
   const [refreshSignal, setRefreshSignal] = useState(0);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [crmSetupOpen, setCrmSetupOpen] = useState(false);
+  const [crmSetupDenied, setCrmSetupDenied] = useState(null);
+
+  /**
+   * @function normalizeCrmSetupPermissionSignal
+   * @description Normalizes user role and authority text for CRM Setup access checks.
+   * @param {unknown} value - Permission value from local browser authority context.
+   * @returns {string} Normalized permission signal.
+   * @collaboration CRMDashboard, CRM top rail setup trigger, operator authority, tenant authority, and setup access denial panel.
+   */
+  function normalizeCrmSetupPermissionSignal(value = '') {
+    return String(value || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  /**
+   * @function collectCrmSetupPermissionSignals
+   * @description Collects local authority signals used to decide whether the operator may open CRM Setup.
+   * @returns {Array<string>} Normalized authority signals.
+   * @collaboration Local storage authority state, session storage authority state, visible root operator context, and CRM setup permission gate.
+   */
+  function collectCrmSetupPermissionSignals() {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    const signals = [];
+    const storageTargets = [window.localStorage, window.sessionStorage].filter(Boolean);
+
+    storageTargets.forEach((storageTarget) => {
+      try {
+        for (let index = 0; index < storageTarget.length; index += 1) {
+          const key = storageTarget.key(index);
+          const value = key ? storageTarget.getItem(key) : '';
+
+          if (!key && !value) {
+            continue;
+          }
+
+          signals.push(normalizeCrmSetupPermissionSignal(key));
+          signals.push(normalizeCrmSetupPermissionSignal(String(value || '').slice(0, 1800)));
+        }
+      } catch (error) {
+        signals.push('STORAGE_PERMISSION_SCAN_UNAVAILABLE');
+      }
+    });
+
+    try {
+      const globalSignals = [
+        window.__WILSY_OPERATOR__,
+        window.__WILSY_AUTH_USER__,
+        window.__WILSY_USER__,
+        window.__WILSY_TENANT__,
+        window.__SOVEREIGN_USER__,
+      ];
+
+      globalSignals.forEach((signal) => {
+        if (signal) {
+          signals.push(normalizeCrmSetupPermissionSignal(JSON.stringify(signal).slice(0, 1800)));
+        }
+      });
+    } catch (error) {
+      signals.push('GLOBAL_PERMISSION_SCAN_UNAVAILABLE');
+    }
+
+    try {
+      const visibleShell = String(document?.body?.innerText || '').slice(0, 6000);
+      signals.push(normalizeCrmSetupPermissionSignal(visibleShell));
+    } catch (error) {
+      signals.push('VISIBLE_PERMISSION_SCAN_UNAVAILABLE');
+    }
+
+    return signals.filter(Boolean);
+  }
+
+  /**
+   * @function hasCrmSetupPermissionToken
+   * @description Checks whether collected permission signals contain a specific role token.
+   * @param {Array<string>} signals - Normalized permission signals.
+   * @param {string} token - Normalized role token.
+   * @returns {boolean} Whether the token is present.
+   * @collaboration CRM setup permission gate, allowed authority matrix, and denied access message.
+   */
+  function hasCrmSetupPermissionToken(signals = [], token = '') {
+    const normalizedToken = normalizeCrmSetupPermissionSignal(token);
+    const rolePattern = new RegExp(`(^|_)${normalizedToken}(_|$)`);
+
+    return signals.some((signal) => rolePattern.test(signal));
+  }
+
+  /**
+   * @function resolveCrmSetupAccessLevel
+   * @description Resolves whether the current operator can open the CRM Setup Intelligence Workbench.
+   * @returns {Object} Access decision with matched role and required roles.
+   * @collaboration CRMDashboard setup owner, top rail setup trigger, access denial overlay, and future backend authority receipts.
+   */
+  function resolveCrmSetupAccessLevel() {
+    const signals = collectCrmSetupPermissionSignals();
+    const allowedRoles = [
+      'SUPER_ADMIN',
+      'WILSY_OS_ROOT',
+      'WILSY_ROOT',
+      'ROOT',
+      'TENANT_OWNER',
+      'TENANT_ADMIN',
+      'CRM_ADMIN',
+      'SECURITY_ADMIN',
+      'COMPLIANCE_ADMIN',
+      'EXECUTIVE_ADMIN',
+    ];
+
+    const deniedRoles = [
+      'STANDARD_USER',
+      'CRM_USER',
+      'SALES_AGENT',
+      'VIEWER',
+      'READ_ONLY',
+      'GUEST',
+    ];
+
+    const matchedAllowedRole = allowedRoles.find((role) => hasCrmSetupPermissionToken(signals, role));
+    const matchedDeniedRole = deniedRoles.find((role) => hasCrmSetupPermissionToken(signals, role));
+
+    return {
+      allowed: Boolean(matchedAllowedRole),
+      matchedRole: matchedAllowedRole || matchedDeniedRole || 'NO_SETUP_AUTHORITY_FOUND',
+      requiredRoles: allowedRoles,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * @function buildCrmSetupDeniedState
+   * @description Builds the in-app denial message shown when a user clicks Setup without setup authority.
+   * @param {Object} accessDecision - Setup access decision.
+   * @param {Object} eventDetail - Setup open event detail.
+   * @returns {Object} Denied access state.
+   * @collaboration CRM setup permission gate, top rail trigger, denied access overlay, and operator education.
+   */
+  function buildCrmSetupDeniedState(accessDecision = {}, eventDetail = {}) {
+    return {
+      title: 'Setup access restricted',
+      message: 'Your current role does not have CRM Setup authority. Ask a tenant administrator or security administrator to grant setup access.',
+      matchedRole: accessDecision.matchedRole || 'NO_SETUP_AUTHORITY_FOUND',
+      requiredRoles: accessDecision.requiredRoles || [],
+      source: eventDetail.source || 'CRM_TOP_RAIL_SETUP',
+      generatedAt: accessDecision.generatedAt || new Date().toISOString(),
+    };
+  }
+
+  /* WILSY_SETUP_PERMISSION_GATE */
 
   /**
    * @function openCrmSetupControlPlane
@@ -4942,7 +5094,16 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
    * @returns {void}
    * @collaboration CRMDashboard ownership, top rail setup trigger, WilsyCrmSetupControlPlane, shared records shell isolation.
    */
-  function openCrmSetupControlPlane() {
+  function openCrmSetupControlPlane(eventDetail = {}) {
+    const accessDecision = resolveCrmSetupAccessLevel();
+
+    if (!accessDecision.allowed) {
+      setCrmSetupOpen(false);
+      setCrmSetupDenied(buildCrmSetupDeniedState(accessDecision, eventDetail));
+      return;
+    }
+
+    setCrmSetupDenied(null);
     setCrmSetupOpen(true);
   }
 
@@ -4954,6 +5115,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
    */
   function closeCrmSetupControlPlane() {
     setCrmSetupOpen(false);
+    setCrmSetupDenied(null);
   }
 
   /* WILSY_P60H1_CRM_SETUP_OWNER */
@@ -4968,8 +5130,8 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
      * @returns {void}
      * @collaboration Shared records top rail, CRMDashboard setup ownership, and WilsyCrmSetupControlPlane overlay.
      */
-    function handleWilsyP60H1CrmSetupOpenEvent() {
-      openCrmSetupControlPlane();
+    function handleWilsyP60H1CrmSetupOpenEvent(event) {
+      openCrmSetupControlPlane(event?.detail || {});
     }
 
     window.addEventListener('wilsy:crm-setup-open', handleWilsyP60H1CrmSetupOpenEvent);
@@ -6191,7 +6353,48 @@ return (
           )}
         </main>
       </section>
-              {crmSetupOpen ? (
+              {crmSetupDenied ? (
+          <section
+            className={styles.crmSetupAccessDeniedOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="CRM setup access restricted"
+          >
+            <div className={styles.crmSetupAccessDeniedCard}>
+              <span>Setup authority required</span>
+              <strong>{crmSetupDenied.title}</strong>
+              <p>{crmSetupDenied.message}</p>
+
+              <div className={styles.crmSetupAccessDeniedGrid}>
+                <article>
+                  <span>Detected role</span>
+                  <strong>{crmSetupDenied.matchedRole}</strong>
+                </article>
+
+                <article>
+                  <span>Required authority</span>
+                  <strong>{crmSetupDenied.requiredRoles.join(', ')}</strong>
+                </article>
+
+                <article>
+                  <span>Command source</span>
+                  <strong>{crmSetupDenied.source}</strong>
+                </article>
+
+                <article>
+                  <span>Checked at</span>
+                  <strong>{crmSetupDenied.generatedAt}</strong>
+                </article>
+              </div>
+
+              <button type="button" onClick={() => setCrmSetupDenied(null)}>
+                Close
+              </button>
+            </div>
+          </section>
+        ) : null}
+        {/* WILSY_SETUP_ACCESS_DENIED_PANEL */}
+        {crmSetupOpen ? (
           <section
             className={styles.crmSetupAuthorityOverlay}
             role="dialog"
