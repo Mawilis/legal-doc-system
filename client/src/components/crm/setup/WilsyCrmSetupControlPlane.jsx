@@ -1440,6 +1440,73 @@ export default function WilsyCrmSetupControlPlane() {
       ? 'Awaiting source timestamp'
       : authorityInspectorLiveGeneratedAt;
 
+  /* WILSY_P60K5O9B_HUMANIZE_INSPECTOR_SUMMARY_LINE */
+  const authorityInspectorRawSummary = String(authorityInspectorLiveSummary || '').trim();
+  const authorityInspectorTenantLiveMatch =
+    authorityInspectorRawSummary.match(/(\d+)\s*\/\s*(\d+)\s*tenant-live/i);
+  const authorityInspectorDiscoveredMatch =
+    authorityInspectorRawSummary.match(/(\d+)\s*\/\s*(\d+)\s*discovered/i);
+  const authorityInspectorSensitiveMatch =
+    authorityInspectorRawSummary.match(/(\d+)\s*sensitive/i);
+  const authorityInspectorAffectedSurfaceRows = Array.isArray(authorityInspectorLiveSurface?.affectedSurfaces)
+    ? authorityInspectorLiveSurface.affectedSurfaces
+    : (Array.isArray(authorityInspectorLiveSource.affectedSurfaces)
+        ? authorityInspectorLiveSource.affectedSurfaces
+        : []);
+  const authorityInspectorWorkQueueRows = Array.isArray(authorityInspectorLiveSurface?.workQueue)
+    ? authorityInspectorLiveSurface.workQueue
+    : (Array.isArray(authorityInspectorLiveSource.workQueue)
+        ? authorityInspectorLiveSource.workQueue
+        : []);
+  const authorityInspectorLiveSurfaceTotal =
+    authorityInspectorTenantLiveMatch?.[2] ||
+    (authorityInspectorAffectedSurfaceRows.length ? String(authorityInspectorAffectedSurfaceRows.length) : '');
+  const authorityInspectorLiveSurfaceActive =
+    authorityInspectorTenantLiveMatch?.[1] ||
+    (authorityInspectorAffectedSurfaceRows.length
+      ? String(authorityInspectorAffectedSurfaceRows.filter((surface) => {
+          const liveValue = Number(
+            surface?.liveRecords ??
+            surface?.liveCount ??
+            surface?.tenantLive ??
+            surface?.recordCount ??
+            surface?.records ??
+            0
+          );
+
+          return liveValue > 0 || String(surface?.status || '').toUpperCase().includes('ATTENTION');
+        }).length)
+      : '');
+  const authorityInspectorDiscoveredTotal =
+    authorityInspectorDiscoveredMatch?.[2] ||
+    (authorityInspectorAffectedSurfaceRows.length ? String(authorityInspectorAffectedSurfaceRows.length) : '');
+  const authorityInspectorDiscoveredActive =
+    authorityInspectorDiscoveredMatch?.[1] ||
+    (authorityInspectorAffectedSurfaceRows.length ? String(authorityInspectorAffectedSurfaceRows.length) : '');
+  const authorityInspectorSensitiveTotal =
+    authorityInspectorSensitiveMatch?.[1] ||
+    (authorityInspectorLiveEvidenceCount ? String(authorityInspectorLiveEvidenceCount) : '');
+  const authorityInspectorSummaryFacts = [
+    authorityInspectorLiveSurfaceActive && authorityInspectorLiveSurfaceTotal
+      ? `${authorityInspectorLiveSurfaceActive} of ${authorityInspectorLiveSurfaceTotal} authority surfaces are live`
+      : '',
+    authorityInspectorDiscoveredActive && authorityInspectorDiscoveredTotal
+      ? `${authorityInspectorDiscoveredActive} of ${authorityInspectorDiscoveredTotal} review surfaces are mapped`
+      : '',
+    authorityInspectorSensitiveTotal
+      ? `${authorityInspectorSensitiveTotal} sensitive control signal${authorityInspectorSensitiveTotal === '1' ? '' : 's'} require custody`
+      : '',
+    authorityInspectorWorkQueueRows.length
+      ? `${authorityInspectorWorkQueueRows.length} operator action${authorityInspectorWorkQueueRows.length === 1 ? '' : 's'} ready for review`
+      : '',
+  ].filter(Boolean);
+  const authorityInspectorLiveSummaryDisplay = authorityInspectorLiveError
+    ? 'Live authority evidence needs review before this control is released.'
+    : (authorityInspectorSummaryFacts.length
+        ? `Live authority evidence confirms ${authorityInspectorSummaryFacts.join(', ')}.`
+        : 'Live authority evidence is synced for this control and ready for operator review.');
+
+
   useEffect(() => {
     let cancelled = false;
     const route = '/api/crm/command/setup/control-surface/resolve';
@@ -3136,7 +3203,7 @@ export default function WilsyCrmSetupControlPlane() {
             <em>{authorityInspectorLiveStatusDisplay}</em>
           </span>
           <strong>{authorityInspectorLiveTitle}</strong>
-          <p>{authorityInspectorLiveSummary}</p>
+          <p>{authorityInspectorLiveSummaryDisplay}</p>
 
           <article>
             <span>Owner</span>

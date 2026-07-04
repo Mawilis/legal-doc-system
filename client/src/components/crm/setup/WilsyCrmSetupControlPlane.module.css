@@ -8637,3 +8637,26 @@ button.packetRevealNode {
     line-height: 1.38 !important;
   }
 }
+
+/* WILSY_P60K5O9B_HUMANIZE_INSPECTOR_SUMMARY_LINE
+   Right rail Inspector summary only.
+   Contract:
+   - Raw compact resolver telemetry must not be displayed as the Inspector summary line.
+   - Human-facing live authority evidence sentence must be readable and left aligned.
+   - No score strip, Packet Console, Screen Two panel, governance, DB, or CRMDashboard change. */
+
+.authorityRail .inspector > p {
+  max-width: 100% !important;
+  margin: 0 0 4px !important;
+  color: rgba(218, 231, 240, 0.84) !important;
+  font-size: 0.74rem !important;
+  font-weight: 780 !important;
+  line-height: 1.38 !important;
+  letter-spacing: 0.01em !important;
+  text-align: left !important;
+  overflow-wrap: break-word !important;
+}
+
+.authorityRail .inspector > strong + p {
+  padding-top: 2px !important;
+}
