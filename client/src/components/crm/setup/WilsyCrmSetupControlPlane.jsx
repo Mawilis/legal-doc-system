@@ -1158,6 +1158,8 @@ export default function WilsyCrmSetupControlPlane() {
   const [reviewQueue, setReviewQueue] = useState([]);
   const [reviewResult, setReviewResult] = useState(null);
   const [screenTwoSourceSurface, setScreenTwoSourceSurface] = useState(null);
+  const [screenTwoSelectedCardKey, setScreenTwoSelectedCardKey] = useState('task:0');
+  const [screenTwoCardActionReceipt, setScreenTwoCardActionReceipt] = useState(null);
   const [screenTwoSourceBusy, setScreenTwoSourceBusy] = useState(false);
   const [screenTwoSourceError, setScreenTwoSourceError] = useState('');
 
@@ -1365,6 +1367,276 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
+  /* WILSY_P60K5M5_CARD_INTELLIGENCE_ACTIONS */
+  const screenTwoTaskCards = screenTwoWorkItems.map((item = {}, index) => ({
+    key: `task:${index}`,
+    kind: 'Work Queue',
+    title: item.title || item.label || item.task || 'Control action',
+    evidence: item.evidence || item.detail || item.reason || item.owner || screenTwoPurpose,
+    status: item.status || item.state || screenTwoState,
+    owner: item.owner || screenTwoOwner,
+    risk: item.risk || screenTwoRisk,
+    source: 'workQueue',
+    raw: item,
+  }));
+  const screenTwoSurfaceCards = screenTwoAffectedSurfaces.map((surface = {}, index) => ({
+    key: `surface:${index}`,
+    kind: 'Affected Surface',
+    title: surface.label || surface.title || 'Surface',
+    evidence:
+      surface.metric ||
+      surface.summary ||
+      surface.detail ||
+      surface.description ||
+      surface.reason ||
+      surface.purpose ||
+      'Governed surface',
+    status: surface.status || surface.state || screenTwoState,
+    owner: surface.owner || screenTwoOwner,
+    risk: surface.risk || screenTwoRisk,
+    source: 'affectedSurfaces',
+    raw: surface,
+  }));
+  const screenTwoPostureCards = [
+    {
+      key: 'posture:risk',
+      kind: 'Control Posture',
+      title: 'Risk',
+      evidence: screenTwoRisk,
+      status: screenTwoRisk,
+      owner: screenTwoOwner,
+      risk: screenTwoRisk,
+      source: 'posture',
+      raw: { risk: screenTwoRisk },
+    },
+    {
+      key: 'posture:state',
+      kind: 'Control Posture',
+      title: 'State',
+      evidence: screenTwoState,
+      status: screenTwoState,
+      owner: screenTwoOwner,
+      risk: screenTwoRisk,
+      source: 'posture',
+      raw: { state: screenTwoState },
+    },
+    {
+      key: 'posture:owner',
+      kind: 'Control Posture',
+      title: 'Owner',
+      evidence: screenTwoOwner,
+      status: screenTwoState,
+      owner: screenTwoOwner,
+      risk: screenTwoRisk,
+      source: 'posture',
+      raw: { owner: screenTwoOwner },
+    },
+    {
+      key: 'posture:purpose',
+      kind: 'Control Posture',
+      title: 'Purpose',
+      evidence: screenTwoPurpose,
+      status: screenTwoState,
+      owner: screenTwoOwner,
+      risk: screenTwoRisk,
+      source: 'posture',
+      raw: { purpose: screenTwoPurpose },
+    },
+  ];
+  const screenTwoOperatingCards = [
+    ...screenTwoTaskCards,
+    ...screenTwoSurfaceCards,
+    ...screenTwoPostureCards,
+  ];
+  const screenTwoSelectedCard =
+    screenTwoOperatingCards.find((card) => card.key === screenTwoSelectedCardKey) ||
+    screenTwoOperatingCards[0] ||
+    {};
+  const screenTwoSelectedCardRequiresAttention = ['ATTENTION', 'HIGH', 'CRITICAL', 'WATCHED', 'BLOCKED']
+    .some((token) => String(screenTwoSelectedCard.status || screenTwoSelectedCard.risk || '').toUpperCase().includes(token));
+  const screenTwoCardProductivityParameters = [
+    {
+      label: 'Priority',
+      value: screenTwoSelectedCardRequiresAttention ? 'Expedite' : 'Standard',
+    },
+    {
+      label: 'Owner',
+      value: screenTwoSelectedCard.owner || screenTwoOwner,
+    },
+    {
+      label: 'Evidence route',
+      value: screenTwoSelectedCard.source || 'setup-control',
+    },
+    {
+      label: 'Risk posture',
+      value: screenTwoSelectedCard.risk || screenTwoRisk,
+    },
+    {
+      label: 'Next action',
+      value: stagedReview ? 'Attach evidence' : 'Stage review',
+    },
+  ];
+  const screenTwoCardProductivityActions = [
+    {
+      id: 'INSPECT_CARD_EVIDENCE',
+      label: 'Inspect evidence',
+      route: '/api/crm/command/setup/reviews/evidence',
+    },
+    {
+      id: 'ATTACH_CARD_EVIDENCE',
+      label: 'Attach evidence',
+      route: '/api/crm/command/setup/reviews/evidence',
+      disabled: !stagedReview,
+      disabledReason: 'Stage review before attaching evidence.',
+    },
+    {
+      id: 'FLAG_CARD_AUTHORITY',
+      label: 'Flag authority',
+      route: '/api/crm/command/setup/reviews/evidence',
+      disabled: !stagedReview,
+      disabledReason: 'Stage review before authority flag.',
+    },
+    {
+      id: 'STAGE_CARD_REVIEW',
+      label: 'Stage card review',
+      route: '/api/crm/command/setup/reviews',
+    },
+  ];
+
+  /**
+   * @function handleScreenTwoCardProductivityAction
+   * @description Executes a productivity action for the selected Screen Two card through the existing institutional setup review command bridge.
+   * @param {Object} action - Productivity action configuration.
+   * @returns {Promise<void>} Resolves after the card command receipt is updated.
+   * @collaboration Screen Two cards, card intelligence algorithm, setup review command bridge, institutionalHeaders, strikePayload, selected card drawer, and backend receipts.
+   */
+  async function handleScreenTwoCardProductivityAction(action = {}) {
+    if (!action?.route) {
+      setScreenTwoCardActionReceipt({
+        status: 'LOCKED',
+        command: 'NO_ROUTE',
+        message: 'No backend route is available for this productivity action.',
+      });
+      return;
+    }
+
+    if (action.disabled) {
+      setScreenTwoCardActionReceipt({
+        status: 'LOCKED',
+        command: action.id,
+        message: action.disabledReason || 'This productivity action is locked.',
+      });
+      return;
+    }
+
+    const packetId =
+      stagedReview?.packetId ||
+      stagedReview?.id ||
+      `SCREEN_TWO_CARD_${activeControl.id || 'CONTROL'}_${Date.now()}`;
+    const ticket = {
+      ...createReviewTicket(activeDomain, activeControl),
+      id: packetId,
+      packetId,
+      title: `${activeControl.title || activeControl.name || 'Setup control'} · ${screenTwoSelectedCard.title || 'Selected card'}`,
+      owner: screenTwoOwner,
+      risk: screenTwoRisk,
+      state: screenTwoState,
+      signal: screenTwoPurpose,
+      selectedCard: screenTwoSelectedCard,
+      productivityParameters: screenTwoCardProductivityParameters,
+      requiredEvidence: [
+        screenTwoSelectedCard.kind,
+        screenTwoSelectedCard.title,
+        screenTwoSelectedCard.evidence,
+        screenTwoSelectedCard.status,
+      ],
+    };
+    const payload = buildWilsySetupReviewLivePayload({
+      route: action.route,
+      ticket,
+      domain: activeDomain,
+      control: activeControl,
+      lens,
+    });
+    const institutionalHeaders = {
+      ...payload.institutionalHeaders,
+      route: action.route,
+      commandSurface: 'CRM_SETUP_SCREEN_TWO_CARD_INTELLIGENCE',
+    };
+    const commandPayload = {
+      ...payload,
+      route: action.route,
+      command: action.id,
+      commandSurface: 'CRM_SETUP_SCREEN_TWO_CARD_INTELLIGENCE',
+      institutionalHeaders,
+      selectedCard: screenTwoSelectedCard,
+      productivityParameters: screenTwoCardProductivityParameters,
+      strikePayload: {
+        ...payload.strikePayload,
+        command: action.id,
+        selectedCard: screenTwoSelectedCard,
+        productivityParameters: screenTwoCardProductivityParameters,
+        headers: institutionalHeaders,
+        institutionalHeaders,
+      },
+    };
+
+    setReviewCommandBusy(action.id);
+    setReviewCommandError(null);
+    setScreenTwoCardActionReceipt({
+      status: 'RUNNING',
+      command: action.id,
+      message: `${action.label || action.id} running through Wilsy card intelligence...`,
+      generatedAt: new Date().toISOString(),
+    });
+
+    try {
+      const data = await requestWilsySetupReviewLiveCommand(action.route, commandPayload);
+      const backendTicket = normalizeWilsySetupReviewLivePacket(data.packet || data.review || {}, ticket);
+
+      if (backendTicket?.packetId || backendTicket?.id) {
+        setStagedReview(backendTicket);
+        setReviewQueue((current) => {
+          const nextTicketId = backendTicket.packetId || backendTicket.id;
+          const withoutDuplicate = current.filter((item) => (item.packetId || item.id) !== nextTicketId);
+
+          return [backendTicket, ...withoutDuplicate].slice(0, 8);
+        });
+      }
+
+      setReviewResult({
+        ...backendTicket,
+        title: backendTicket.title || ticket.title,
+        status: data.result || data.message || 'Card productivity action posted',
+        backendLive: true,
+      });
+      setScreenTwoCardActionReceipt({
+        status: 'POSTED',
+        command: action.id,
+        message: data.message || data.result || 'Card productivity action posted.',
+        receiptId:
+          data.receiptId ||
+          data.evidenceId ||
+          data.reviewId ||
+          backendTicket.packetId ||
+          backendTicket.id ||
+          '',
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      const message = error?.message || 'Card productivity action failed.';
+      setReviewCommandError(message);
+      setScreenTwoCardActionReceipt({
+        status: 'FAILED',
+        command: action.id,
+        message,
+        generatedAt: new Date().toISOString(),
+      });
+    } finally {
+      setReviewCommandBusy('');
+    }
+  }
+
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2865,56 +3137,110 @@ export default function WilsyCrmSetupControlPlane() {
               </section>
             ) : (
               <>
-                <article className={styles.viewPanel}>
-                  <span>Work queue</span>
-                  <div className={styles.workStepList}>
-                    {screenTwoWorkItems.map((item, index) => (
-                      <button type="button" key={item.id || item.title || item.label || index}>
-                        <span>{String(index + 1).padStart(2, '0')}</span>
-                        <strong>{item.title || item.label || 'Control task'}</strong>
-                        <small>{item.owner || screenTwoOwner}</small>
-                      </button>
-                    ))}
-                  </div>
-                </article>
+                <section className={styles.screenTwoCardWorkbench} aria-label="Screen Two card intelligence workbench">
+                  <article className={`${styles.viewPanel} ${styles.screenTwoCardPanel}`}>
+                    <span>Work queue</span>
+                    <div className={styles.workStepList}>
+                      {screenTwoWorkItems.map((item, index) => {
+                        const cardKey = `task:${index}`;
 
-                <article className={styles.viewPanel}>
-                  <span>Affected surfaces</span>
-                  <div className={styles.surfaceImpactList}>
-                    {screenTwoAffectedSurfaces.map((surface, index) => (
-                      <article key={surface.id || surface.title || surface.label || index}>
-                        <span>{surface.label || surface.title || 'Surface'}</span>
-                        <strong>{surface.purpose || surface.reason || 'Governed surface'}</strong>
-                        <small>{surface.status || screenTwoState}</small>
-                      </article>
-                    ))}
-                  </div>
-                </article>
+                        return (
+                          <button
+                            type="button"
+                            key={item.id || item.title || item.label || index}
+                            className={screenTwoSelectedCardKey === cardKey ? styles.screenTwoCardButtonActive : styles.screenTwoCardButton}
+                            onClick={() => setScreenTwoSelectedCardKey(cardKey)}
+                          >
+                            <span>{String(index + 1).padStart(2, '0')}</span>
+                            <strong>{item.title || item.label || item.task || 'Control action'}</strong>
+                            <small>{item.owner || screenTwoOwner}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </article>
 
-                <article className={styles.viewPanel}>
-                  <span>Control posture</span>
-                  <div className={styles.decisionSignalGrid}>
-                    <article>
-                      <span>Risk</span>
-                      <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
-                    </article>
+                  <article className={`${styles.viewPanel} ${styles.screenTwoCardPanel}`}>
+                    <span>Affected surfaces</span>
+                    <div className={styles.surfaceImpactList}>
+                      {screenTwoAffectedSurfaces.map((surface, index) => {
+                        const cardKey = `surface:${index}`;
 
-                    <article>
-                      <span>State</span>
-                      <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
-                    </article>
+                        return (
+                          <button
+                            type="button"
+                            key={surface.id || surface.title || surface.label || index}
+                            className={screenTwoSelectedCardKey === cardKey ? styles.screenTwoSurfaceCardActive : styles.screenTwoSurfaceCard}
+                            onClick={() => setScreenTwoSelectedCardKey(cardKey)}
+                          >
+                            <span>{surface.label || surface.title || 'Surface'}</span>
+                            <strong>{surface.metric || surface.summary || surface.detail || surface.description || surface.reason || 'Source surface'}</strong>
+                            <small>{surface.status || screenTwoState}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </article>
 
-                    <article>
-                      <span>Owner</span>
-                      <strong>{screenTwoOwner}</strong>
-                    </article>
+                  <article className={`${styles.viewPanel} ${styles.screenTwoCardPanel}`}>
+                    <span>Control posture</span>
+                    <div className={styles.decisionSignalGrid}>
+                      {screenTwoPostureCards.map((card) => (
+                        <button
+                          type="button"
+                          key={card.key}
+                          className={screenTwoSelectedCardKey === card.key ? styles.screenTwoPostureCardActive : styles.screenTwoPostureCard}
+                          onClick={() => setScreenTwoSelectedCardKey(card.key)}
+                        >
+                          <span>{card.title}</span>
+                          <strong>{card.evidence}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </article>
 
-                    <article>
-                      <span>Purpose</span>
-                      <strong>{screenTwoPurpose}</strong>
-                    </article>
-                  </div>
-                </article>
+                  <aside className={styles.screenTwoCardInspector} aria-label="Selected card intelligence drawer">
+                    <section className={styles.screenTwoCardInspectorPrime}>
+                      <span>{screenTwoSelectedCard.kind || 'Selected card'}</span>
+                      <strong>{screenTwoSelectedCard.title || 'Select a card'}</strong>
+                      <p>{screenTwoSelectedCard.evidence || 'Select a Work Queue, Affected Surface, or Control Posture card.'}</p>
+                    </section>
+
+                    <section className={styles.screenTwoCardParameterGrid} aria-label="Productivity parameters">
+                      {screenTwoCardProductivityParameters.map((parameter) => (
+                        <article key={parameter.label}>
+                          <span>{parameter.label}</span>
+                          <strong>{parameter.value}</strong>
+                        </article>
+                      ))}
+                    </section>
+
+                    <section className={styles.screenTwoCardActionDock} aria-label="Productivity actions">
+                      <span>Productivity Actions</span>
+                      <div>
+                        {screenTwoCardProductivityActions.map((action) => (
+                          <button
+                            type="button"
+                            key={action.id}
+                            disabled={Boolean(reviewCommandBusy) || Boolean(action.disabled)}
+                            onClick={() => handleScreenTwoCardProductivityAction(action)}
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className={styles.screenTwoCardReceipt} data-status={screenTwoCardActionReceipt?.status || 'STANDBY'}>
+                      <span>{screenTwoCardActionReceipt?.status || 'STANDBY'}</span>
+                      <strong>{screenTwoCardActionReceipt?.command || 'No action posted'}</strong>
+                      <p>{screenTwoCardActionReceipt?.message || 'Select a card and run a productivity action.'}</p>
+                      {screenTwoCardActionReceipt?.receiptId ? (
+                        <small>{screenTwoCardActionReceipt.receiptId}</small>
+                      ) : null}
+                    </section>
+                  </aside>
+                </section>
               </>
             )}
           </div>
