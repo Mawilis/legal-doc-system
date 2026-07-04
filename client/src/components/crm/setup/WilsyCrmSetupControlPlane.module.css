@@ -8508,3 +8508,132 @@ button.packetRevealNode {
     line-height: 1.40 !important;
   }
 }
+
+/* WILSY_P60K5O8_INSPECTOR_UTILITY_HOVER_THREE_CARDS
+   Contract:
+   - Apply the same full-card in-hover explanation technology to the 3 lower Inspector utility cards.
+   - Target: Evidence Path, Evidence Nodes, Last Verified.
+   - Keep text human-facing, not backend/raw route language.
+   - Keep explanation inside the hovered card and readable across the full card width.
+   - No JSX change. No DB change. No loop fix change. No Screen One Packet Console change. */
+
+.authorityRail .inspector .inspectorLiveBackendGrid article {
+  position: relative !important;
+  overflow: hidden !important;
+  transition:
+    min-height 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease !important;
+}
+
+/* Restore the same technology for the 3 Inspector utility cards */
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto !important;
+  row-gap: 8px !important;
+  align-items: start !important;
+  min-height: 154px !important;
+  padding: 12px 14px 14px 16px !important;
+  overflow: visible !important;
+  border-color: rgba(0, 209, 255, 0.36) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 12px 30px rgba(0,0,0,0.22) !important;
+  transform: translateY(-1px) !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover > span,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within > span {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  align-self: start !important;
+  margin: 0 !important;
+  padding-left: 7px !important;
+  color: rgba(188, 244, 255, 0.80) !important;
+  font-size: 0.56rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.15em !important;
+  line-height: 1 !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover > strong,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within > strong {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  align-self: start !important;
+  margin: 2px 0 0 !important;
+  padding-left: 7px !important;
+  color: rgba(255,255,255,0.98) !important;
+  font-size: 0.88rem !important;
+  font-weight: 940 !important;
+  line-height: 1.22 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within::after {
+  display: block !important;
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 12px 13px !important;
+  border: 1px solid rgba(0, 209, 255, 0.28) !important;
+  border-radius: 15px !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.08), transparent 40%),
+    linear-gradient(145deg, rgba(3,17,31,0.97), rgba(1,6,16,0.99)) !important;
+  color: rgba(226,240,246,0.95) !important;
+  font-size: 0.67rem !important;
+  font-weight: 820 !important;
+  line-height: 1.42 !important;
+  letter-spacing: 0.015em !important;
+  text-align: left !important;
+  text-transform: none !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 10px 24px rgba(0,0,0,0.18) !important;
+}
+
+/* Human-facing hover explanations for the 3 lower cards */
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(1):hover::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(1):focus-within::after {
+  content: "The evidence path shows the operating proof route for this authority control — from live review, through operator judgment, into accountable action and release readiness." !important;
+  border-color: rgba(0,255,148,0.30) !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(2):hover::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(2):focus-within::after {
+  content: "Evidence nodes count the live proof points supporting this control, including scope, sensitivity, operator custody, decision anchors, and review facts." !important;
+  border-color: rgba(255,231,154,0.30) !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3):hover::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3):focus-within::after {
+  content: "Last verified shows when this authority block was last confirmed against live review data, so the operator can trust its freshness before taking action." !important;
+  border-color: rgba(130,203,255,0.30) !important;
+}
+
+/* Slightly tighter typography if rail width contracts */
+@media (max-width: 1280px) {
+  .authorityRail .inspector .inspectorLiveBackendGrid article:hover,
+  .authorityRail .inspector .inspectorLiveBackendGrid article:focus-within {
+    min-height: 168px !important;
+  }
+
+  .authorityRail .inspector .inspectorLiveBackendGrid article:hover::after,
+  .authorityRail .inspector .inspectorLiveBackendGrid article:focus-within::after {
+    font-size: 0.65rem !important;
+    line-height: 1.38 !important;
+  }
+}
