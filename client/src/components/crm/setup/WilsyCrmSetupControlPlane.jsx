@@ -1162,6 +1162,9 @@ export default function WilsyCrmSetupControlPlane() {
   const [domainRailOpen, setDomainRailOpen] = useState(true);
   const [authorityRailOpen, setAuthorityRailOpen] = useState(true);
   const [authorityRailPendingAction, setAuthorityRailPendingAction] = useState(null);
+  const [authorityInspectorLiveSurface, setAuthorityInspectorLiveSurface] = useState(null);
+  const [authorityInspectorLiveStatus, setAuthorityInspectorLiveStatus] = useState('CONNECTING');
+  const [authorityInspectorLiveError, setAuthorityInspectorLiveError] = useState('');
   const [reviewCommandBusy, setReviewCommandBusy] = useState('');
   const [reviewCommandError, setReviewCommandError] = useState(null);
   const [setupWorkflowCommandBusy, setSetupWorkflowCommandBusy] = useState('');
@@ -1334,6 +1337,165 @@ export default function WilsyCrmSetupControlPlane() {
       await handleRemoveReview(pending.packetOrControlId);
     }
   }
+
+  /* WILSY_P60K5O2_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND */
+  const authorityInspectorLiveSource =
+    authorityInspectorLiveSurface?.sourceIntelligence && typeof authorityInspectorLiveSurface.sourceIntelligence === 'object'
+      ? authorityInspectorLiveSurface.sourceIntelligence
+      : {};
+  const authorityInspectorLiveControl =
+    authorityInspectorLiveSurface?.control && typeof authorityInspectorLiveSurface.control === 'object'
+      ? authorityInspectorLiveSurface.control
+      : {};
+  const authorityInspectorLivePosture =
+    authorityInspectorLiveSurface?.posture && typeof authorityInspectorLiveSurface.posture === 'object'
+      ? authorityInspectorLiveSurface.posture
+      : {};
+  const authorityInspectorLiveAudit =
+    authorityInspectorLiveSurface?.auditEvidence && typeof authorityInspectorLiveSurface.auditEvidence === 'object'
+      ? authorityInspectorLiveSurface.auditEvidence
+      : {};
+  const authorityInspectorLiveTitle =
+    authorityInspectorLiveControl.title ||
+    authorityInspectorLiveControl.controlName ||
+    authorityInspectorLiveControl.name ||
+    activeControl.name;
+  const authorityInspectorLiveSummary =
+    authorityInspectorLiveSource.sourceSummary ||
+    authorityInspectorLivePosture.sourceSummary ||
+    authorityInspectorLiveAudit.sourceSummary ||
+    activeControl.benefit;
+  const authorityInspectorLiveOwner =
+    authorityInspectorLiveControl.owner ||
+    authorityInspectorLivePosture.owner ||
+    stagedReview?.owner ||
+    activeControl.owner;
+  const authorityInspectorLiveEngine =
+    authorityInspectorLiveSource.status ||
+    authorityInspectorLivePosture.sourceReadiness ||
+    authorityInspectorLiveAudit.sourceIntelligenceStatus ||
+    'LIVE_BACKEND_RESOLVER';
+  const authorityInspectorLiveSignal =
+    authorityInspectorLiveAudit.sourceIntelligenceStatus ||
+    authorityInspectorLivePosture.sourceReadiness ||
+    authorityInspectorLiveControl.signal ||
+    activeControl.signal;
+  const authorityInspectorLiveRoute =
+    authorityInspectorLiveSurface?.route ||
+    authorityInspectorLiveSurface?.commandRoute ||
+    '/api/crm/command/setup/control-surface/resolve';
+  const authorityInspectorLiveGeneratedAt =
+    authorityInspectorLiveSurface?.generatedAt ||
+    authorityInspectorLiveSurface?.timestamp ||
+    authorityInspectorLiveSurface?.__wilsyInspectorGeneratedAt ||
+    'Awaiting backend timestamp';
+  const authorityInspectorLiveEvidenceCount =
+    [
+      authorityInspectorLiveSource.workQueue,
+      authorityInspectorLiveSurface?.workQueue,
+      authorityInspectorLiveSource.affectedSurfaces,
+      authorityInspectorLiveSurface?.affectedSurfaces,
+    ].reduce((total, value) => total + (Array.isArray(value) ? value.length : 0), 0);
+  const authorityInspectorLiveStatusLabel = authorityInspectorLiveError
+    ? 'BACKEND_ERROR'
+    : authorityInspectorLiveStatus;
+
+  useEffect(() => {
+    let cancelled = false;
+    const route = '/api/crm/command/setup/control-surface/resolve';
+    const controlId = activeControl?.id || activeControl?.name || 'control';
+    const domainId = activeDomain?.id || activeDomain?.label || 'domain';
+    const cacheKey = `${domainId}:${controlId}:${lens || 'Authority'}`;
+    const cache =
+      globalThis.__WILSY_P60K5O2_INSPECTOR_LIVE_BACKEND_CACHE__ ||
+      (globalThis.__WILSY_P60K5O2_INSPECTOR_LIVE_BACKEND_CACHE__ = {});
+    const cached = cache[cacheKey];
+    const now = Date.now();
+
+    if (cached && now - cached.cachedAt < 60000) {
+      setAuthorityInspectorLiveSurface(cached.payload);
+      setAuthorityInspectorLiveStatus(cached.status || 'LIVE_BACKEND_CACHED');
+      setAuthorityInspectorLiveError('');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setAuthorityInspectorLiveStatus('CONNECTING');
+    setAuthorityInspectorLiveError('');
+
+    const ticket = createReviewTicket(activeDomain, activeControl);
+    const payload = buildWilsySetupReviewLivePayload({
+      route,
+      ticket,
+      domain: activeDomain,
+      control: activeControl,
+      lens,
+    });
+    const generatedAt = new Date().toISOString();
+    const institutionalHeaders = {
+      ...payload.institutionalHeaders,
+      route,
+      commandSurface: 'CRM_SETUP_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+      generatedAt,
+      timestamp: generatedAt,
+    };
+    const livePayload = {
+      ...payload,
+      route,
+      command: 'RESOLVE_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+      commandSurface: 'CRM_SETUP_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+      generatedAt,
+      timestamp: generatedAt,
+      dryRun: true,
+      institutionalHeaders,
+      strikePayload: {
+        ...payload.strikePayload,
+        dryRun: true,
+        command: 'RESOLVE_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+        route,
+        commandSurface: 'CRM_SETUP_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+        generatedAt,
+        timestamp: generatedAt,
+        headers: institutionalHeaders,
+        institutionalHeaders,
+      },
+    };
+
+    requestWilsySetupReviewLiveCommand(route, livePayload)
+      .then((data) => {
+        if (cancelled) {
+          return;
+        }
+
+        const payloadWithTimestamp = {
+          ...data,
+          __wilsyInspectorGeneratedAt: generatedAt,
+        };
+
+        cache[cacheKey] = {
+          payload: payloadWithTimestamp,
+          cachedAt: Date.now(),
+          status: data?.result || data?.status || 'LIVE_BACKEND_RESOLVED',
+        };
+
+        setAuthorityInspectorLiveSurface(payloadWithTimestamp);
+        setAuthorityInspectorLiveStatus(data?.result || data?.status || 'LIVE_BACKEND_RESOLVED');
+        setAuthorityInspectorLiveError('');
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+
+        setAuthorityInspectorLiveStatus('BACKEND_ERROR');
+        setAuthorityInspectorLiveError(error?.message || 'Inspector backend resolver failed.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeControl?.id, activeControl?.name, activeDomain?.id, activeDomain?.label, lens]);
 
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
@@ -2928,25 +3090,47 @@ export default function WilsyCrmSetupControlPlane() {
           </article>
         </section>
 
-        <section className={styles.inspector}>
-          <span>Inspector</span>
-          <strong>{activeControl.name}</strong>
-          <p>{activeDomain.purpose}</p>
+        <section className={styles.inspector} data-live-status={authorityInspectorLiveStatusLabel} aria-live="polite">
+          <span>
+            Inspector
+            <em>{authorityInspectorLiveStatusLabel}</em>
+          </span>
+          <strong>{authorityInspectorLiveTitle}</strong>
+          <p>{authorityInspectorLiveSummary}</p>
 
-          <div className={styles.inspectorFacts}>
+          <article>
+            <span>Owner</span>
+            <strong>{authorityInspectorLiveOwner}</strong>
+          </article>
+
+          <article>
+            <span>Backend Engine</span>
+            <strong>{authorityInspectorLiveEngine}</strong>
+          </article>
+
+          <article>
+            <span>Investor Signal</span>
+            <strong>{authorityInspectorLiveSignal}</strong>
+          </article>
+
+          <div className={styles.inspectorLiveBackendGrid} aria-label="Live backend inspector evidence">
             <article>
-              <span>Owner</span>
-              <strong>{activeControl.owner}</strong>
+              <span>Live route</span>
+              <strong>{authorityInspectorLiveRoute}</strong>
             </article>
             <article>
-              <span>Engine</span>
-              <strong>{activeControl.engine}</strong>
+              <span>Evidence nodes</span>
+              <strong>{authorityInspectorLiveEvidenceCount}</strong>
             </article>
             <article>
-              <span>Investor signal</span>
-              <strong>{activeControl.signal}</strong>
+              <span>Generated</span>
+              <strong>{authorityInspectorLiveGeneratedAt}</strong>
             </article>
           </div>
+
+          {authorityInspectorLiveError ? (
+            <small className={styles.inspectorLiveBackendError}>{authorityInspectorLiveError}</small>
+          ) : null}
         </section>
 
         <section className={styles.evidenceRail}>
