@@ -7354,3 +7354,229 @@ button.packetRevealNode {
     grid-template-columns: 1fr;
   }
 }
+
+/* WILSY_P60K5M2_DOCK_SCREEN2_COMMAND_DRAWER
+   CSS-only correction for the first real Screen Two workflow.
+   Contract:
+   - Command Drawer must stay visible inside the workspace.
+   - Runway, Evidence Drawer, and Command Drawer form one operating row on desktop.
+   - No JSX changes.
+   - No CRMDashboard loop logic.
+   - No Screen One Packet Console changes. */
+
+.screenTwoOperatingWorkflow {
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 438px;
+  padding: 12px;
+}
+
+.screenTwoWorkflowRail {
+  padding: 8px;
+}
+
+.screenTwoWorkflowPrime {
+  min-height: 106px;
+  padding: 12px;
+}
+
+.screenTwoWorkflowPrime strong {
+  font-size: 1rem;
+}
+
+.screenTwoWorkflowPrime small {
+  font-size: 0.58rem;
+  line-height: 1.18;
+}
+
+.screenTwoWorkflowModes {
+  gap: 7px;
+}
+
+.screenTwoWorkflowMode,
+.screenTwoWorkflowModeActive {
+  min-height: 66px;
+  padding: 9px 10px 9px 14px;
+}
+
+.screenTwoWorkflowMode strong,
+.screenTwoWorkflowModeActive strong {
+  font-size: 0.88rem;
+}
+
+.screenTwoWorkflowMode small,
+.screenTwoWorkflowModeActive small {
+  font-size: 0.58rem;
+}
+
+.screenTwoWorkflowSurface {
+  padding: 12px;
+  gap: 10px;
+}
+
+.screenTwoWorkflowHeader {
+  grid-template-columns: minmax(250px, 0.38fr) minmax(0, 1fr);
+  padding: 2px 2px 11px;
+}
+
+.screenTwoWorkflowHeader strong {
+  font-size: clamp(1.02rem, 1.45vw, 1.44rem);
+}
+
+.screenTwoWorkflowHeader p {
+  padding: 9px 11px;
+  font-size: 0.64rem;
+  line-height: 1.28;
+}
+
+.screenTwoWorkflowGrid {
+  grid-template-columns:
+    minmax(280px, 0.88fr)
+    minmax(280px, 0.82fr)
+    minmax(244px, 0.72fr);
+  gap: 11px;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.screenTwoWorkflowRunway,
+.screenTwoWorkflowEvidence,
+.screenTwoWorkflowCommandDrawer {
+  padding: 11px;
+  border-radius: 18px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.screenTwoWorkflowRunway > div {
+  max-height: 252px;
+  gap: 8px;
+}
+
+.screenTwoWorkflowRow,
+.screenTwoWorkflowRowActive {
+  min-height: 62px;
+  padding: 9px 10px;
+  border-radius: 16px;
+}
+
+.screenTwoWorkflowRow span,
+.screenTwoWorkflowRowActive span {
+  width: 30px;
+  height: 30px;
+}
+
+.screenTwoWorkflowRow strong,
+.screenTwoWorkflowRowActive strong {
+  font-size: 0.76rem;
+  line-height: 1.14;
+}
+
+.screenTwoWorkflowRow small,
+.screenTwoWorkflowRowActive small {
+  font-size: 0.58rem;
+  line-height: 1.18;
+}
+
+.screenTwoWorkflowEvidence article,
+.screenTwoWorkflowCommandDrawer > article {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 15px;
+}
+
+.screenTwoWorkflowEvidence article strong,
+.screenTwoWorkflowCommandDrawer strong,
+.screenTwoWorkflowReceipt strong {
+  font-size: 0.82rem;
+  line-height: 1.14;
+}
+
+.screenTwoWorkflowEvidence article p,
+.screenTwoWorkflowCommandDrawer p,
+.screenTwoWorkflowReceipt small {
+  font-size: 0.6rem;
+  line-height: 1.22;
+}
+
+.screenTwoWorkflowSurfacePicker {
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.screenTwoSurfacePick,
+.screenTwoSurfacePickActive {
+  padding: 8px 9px;
+  border-radius: 13px;
+}
+
+.screenTwoWorkflowCommandDrawer {
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  align-content: start;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.11), transparent 34%),
+    rgba(255, 255, 255, 0.028);
+}
+
+.screenTwoWorkflowCommandDrawer > strong {
+  font-size: 0.98rem;
+}
+
+.screenTwoWorkflowCommandDrawer > p {
+  margin: 8px 0 0;
+  padding-bottom: 9px;
+}
+
+.screenTwoWorkflowCommandButtons {
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.screenTwoWorkflowCommandButtons button {
+  min-height: 38px;
+  border-radius: 13px;
+  font-size: 0.64rem;
+  letter-spacing: 0.075em;
+}
+
+.screenTwoWorkflowReceipt {
+  margin-top: 10px;
+  align-self: stretch;
+}
+
+/* Override the earlier M1B responsive rule that pushed Command Drawer below the fold too early. */
+@media (max-width: 1440px) {
+  .screenTwoOperatingWorkflow {
+    grid-template-columns: 228px minmax(0, 1fr);
+  }
+
+  .screenTwoWorkflowGrid {
+    grid-template-columns:
+      minmax(250px, 0.88fr)
+      minmax(250px, 0.82fr)
+      minmax(230px, 0.72fr);
+  }
+
+  .screenTwoWorkflowCommandDrawer {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 1180px) {
+  .screenTwoWorkflowGrid {
+    grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+  }
+
+  .screenTwoWorkflowCommandDrawer {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 980px) {
+  .screenTwoOperatingWorkflow,
+  .screenTwoWorkflowHeader,
+  .screenTwoWorkflowGrid,
+  .screenTwoWorkflowSurfacePicker {
+    grid-template-columns: 1fr;
+  }
+}
