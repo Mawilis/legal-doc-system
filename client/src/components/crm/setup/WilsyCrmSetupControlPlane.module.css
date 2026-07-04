@@ -8199,3 +8199,178 @@ button.packetRevealNode {
     transform: translateY(0) scale(1) !important;
   }
 }
+
+/* WILSY_P60K5O6_INSPECTOR_HOVER_IN_CARD_LEFT_PANEL
+   Right rail Inspector only.
+   Contract:
+   - Replace invisible outside-rail hover portal with an in-card left description panel.
+   - Description appears on the LEFT side of the hovered Owner / Engine / Investor Signal text.
+   - No fixed portal, no outside projection, no hidden workstation layer.
+   - No backend/internal language in visible hover copy.
+   - No JSX, DB, score strip, Packet Console, Screen Two panel, governance, or CRMDashboard change. */
+
+/* Kill the O4/O5 projected pseudo sidecar behavior. */
+.authorityRail .inspector article::after {
+  position: static !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  z-index: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Default Inspector cards remain normal. */
+.authorityRail .inspector > article {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto auto !important;
+  gap: 0 !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+/* Hide the description until the user hovers/focuses a real Inspector fact card. */
+.authorityRail .inspector > article::after {
+  display: none !important;
+}
+
+/* Hover state expands the card into a two-column operating explanation. */
+.authorityRail .inspector > article:hover,
+.authorityRail .inspector > article:focus-within {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.18fr) minmax(8.5rem, 0.82fr) !important;
+  grid-template-rows: auto auto !important;
+  column-gap: 14px !important;
+  row-gap: 4px !important;
+  align-items: center !important;
+  min-height: 128px !important;
+  padding: 14px 14px 14px 18px !important;
+  overflow: visible !important;
+}
+
+/* Hover description panel sits LEFT of the hovered label/value. */
+.authorityRail .inspector > article:hover::after,
+.authorityRail .inspector > article:focus-within::after {
+  display: block !important;
+  grid-column: 1 !important;
+  grid-row: 1 / span 2 !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  min-height: 86px !important;
+  padding: 12px 13px !important;
+  border: 1px solid rgba(0, 209, 255, 0.30) !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.10), transparent 38%),
+    linear-gradient(145deg, rgba(3, 17, 31, 0.96), rgba(1, 6, 16, 0.985)) !important;
+  color: rgba(226, 240, 246, 0.94) !important;
+  font-size: 0.66rem !important;
+  font-weight: 820 !important;
+  letter-spacing: 0.025em !important;
+  line-height: 1.38 !important;
+  text-align: left !important;
+  text-transform: none !important;
+  white-space: normal !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 12px 28px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* The hovered label/value moves to the RIGHT side of the card. */
+.authorityRail .inspector > article:hover > span,
+.authorityRail .inspector > article:focus-within > span,
+.authorityRail .inspector > article:hover > strong,
+.authorityRail .inspector > article:focus-within > strong {
+  grid-column: 2 !important;
+  padding-left: 0 !important;
+  text-align: left !important;
+}
+
+.authorityRail .inspector > article:hover > span,
+.authorityRail .inspector > article:focus-within > span {
+  grid-row: 1 !important;
+  align-self: end !important;
+  font-size: 0.54rem !important;
+  letter-spacing: 0.13em !important;
+}
+
+.authorityRail .inspector > article:hover > strong,
+.authorityRail .inspector > article:focus-within > strong {
+  grid-row: 2 !important;
+  align-self: start !important;
+  margin-top: 6px !important;
+  font-size: 0.78rem !important;
+  line-height: 1.18 !important;
+}
+
+/* Product-language descriptions, no raw backend words. */
+.authorityRail .inspector > article:nth-of-type(1)::after {
+  content: "Accountable operator for this live control. This shows who must explain, defend, approve, and release the authority posture." !important;
+  border-color: rgba(0, 255, 148, 0.34) !important;
+}
+
+.authorityRail .inspector > article:nth-of-type(2)::after {
+  content: "Wilsy OS source intelligence translating authority, delegation, export, approval, and delete power into operator evidence." !important;
+  border-color: rgba(255, 231, 154, 0.34) !important;
+}
+
+.authorityRail .inspector > article:nth-of-type(3)::after {
+  content: "Board-facing proof value for audit clarity, regulator trust, and enterprise readiness." !important;
+  border-color: rgba(130, 203, 255, 0.34) !important;
+}
+
+/* Utility route/evidence/timestamp cards must not inherit the in-card explanation. */
+.authorityRail .inspector .inspectorLiveBackendGrid article,
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto auto !important;
+  min-height: 58px !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Narrow fallback keeps everything visible inside the rail. */
+@media (max-width: 1280px) {
+  .authorityRail .inspector > article:hover,
+  .authorityRail .inspector > article:focus-within {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+  }
+
+  .authorityRail .inspector > article:hover::after,
+  .authorityRail .inspector > article:focus-within::after {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .authorityRail .inspector > article:hover > span,
+  .authorityRail .inspector > article:focus-within > span {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    margin-top: 10px !important;
+  }
+
+  .authorityRail .inspector > article:hover > strong,
+  .authorityRail .inspector > article:focus-within > strong {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+}
