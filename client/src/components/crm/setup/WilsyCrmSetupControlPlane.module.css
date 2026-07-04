@@ -8620,7 +8620,7 @@ button.packetRevealNode {
 
 .authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3):hover::after,
 .authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3):focus-within::after {
-  content: "Last verified shows when this authority block was last confirmed against live review data, so the operator can trust its freshness before taking action." !important;
+  content: "Daily verification confirms this authority block against the current live source cycle, so the operator can trust today’s freshness before taking action." !important;
   border-color: rgba(130,203,255,0.30) !important;
 }
 
@@ -8659,4 +8659,29 @@ button.packetRevealNode {
 
 .authorityRail .inspector > strong + p {
   padding-top: 2px !important;
+}
+
+
+/* WILSY_P60K5O10B_DAILY_INSPECTOR_VERIFICATION
+   Right rail Inspector verification card only.
+   Contract:
+   - Last verification is not a hardcoded timestamp.
+   - UI displays a daily live verification state.
+   - Verification cycle refreshes automatically when the day changes.
+   - No score strip, Packet Console, Screen Two panel, governance, DB, or CRMDashboard change. */
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3) span {
+  color: rgba(188, 244, 255, 0.84) !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3) strong {
+  color: rgba(226, 240, 246, 0.96) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1.24 !important;
+  overflow-wrap: break-word !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article:nth-of-type(3)::before {
+  background: linear-gradient(180deg, rgba(0, 255, 148, 0.80), rgba(0, 209, 255, 0.70)) !important;
 }

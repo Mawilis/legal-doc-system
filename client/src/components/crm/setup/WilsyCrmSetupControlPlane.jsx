@@ -1165,6 +1165,7 @@ export default function WilsyCrmSetupControlPlane() {
   const [authorityInspectorLiveSurface, setAuthorityInspectorLiveSurface] = useState(null);
   const [authorityInspectorLiveStatus, setAuthorityInspectorLiveStatus] = useState('CONNECTING');
   const [authorityInspectorLiveError, setAuthorityInspectorLiveError] = useState('');
+  const [authorityInspectorVerificationCycle, setAuthorityInspectorVerificationCycle] = useState(() => new Date().toISOString().slice(0, 10));
   const [reviewCommandBusy, setReviewCommandBusy] = useState('');
   const [reviewCommandError, setReviewCommandError] = useState(null);
   const [setupWorkflowCommandBusy, setSetupWorkflowCommandBusy] = useState('');
@@ -1388,7 +1389,7 @@ export default function WilsyCrmSetupControlPlane() {
     authorityInspectorLiveSurface?.generatedAt ||
     authorityInspectorLiveSurface?.timestamp ||
     authorityInspectorLiveSurface?.__wilsyInspectorGeneratedAt ||
-    'Awaiting backend timestamp';
+    '';
   const authorityInspectorLiveEvidenceCount =
     [
       authorityInspectorLiveSource.workQueue,
@@ -1435,10 +1436,32 @@ export default function WilsyCrmSetupControlPlane() {
       'Evidence graph ready');
   const authorityInspectorEvidencePathDisplay =
     `${authorityInspectorLiveTitle || activeControl.name || 'Control'} · evidence path`;
-  const authorityInspectorLastVerifiedDisplay =
-    authorityInspectorLiveGeneratedAt === 'Awaiting backend timestamp'
-      ? 'Awaiting source timestamp'
-      : authorityInspectorLiveGeneratedAt;
+  /* WILSY_P60K5O10B_DAILY_INSPECTOR_VERIFICATION */
+  const authorityInspectorVerificationEpoch = Date.parse(authorityInspectorLiveGeneratedAt || '');
+  const authorityInspectorVerificationDate = Number.isFinite(authorityInspectorVerificationEpoch)
+    ? new Date(authorityInspectorVerificationEpoch)
+    : null;
+  const authorityInspectorVerificationDateKey = authorityInspectorVerificationDate
+    ? authorityInspectorVerificationDate.toISOString().slice(0, 10)
+    : '';
+  const authorityInspectorVerificationTimeDisplay = authorityInspectorVerificationDate
+    ? authorityInspectorVerificationDate.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    : '';
+  const authorityInspectorVerificationDateDisplay = authorityInspectorVerificationDate
+    ? authorityInspectorVerificationDate.toISOString().slice(0, 10)
+    : '';
+  const authorityInspectorVerificationIsCurrentCycle =
+    authorityInspectorVerificationDateKey &&
+    authorityInspectorVerificationDateKey === authorityInspectorVerificationCycle;
+  const authorityInspectorLastVerifiedDisplay = authorityInspectorVerificationDate
+    ? (authorityInspectorVerificationIsCurrentCycle
+        ? `Verified today · ${authorityInspectorVerificationTimeDisplay}`
+        : `Refresh due · ${authorityInspectorVerificationDateDisplay} · ${authorityInspectorVerificationTimeDisplay}`)
+    : 'Live source verification pending';
 
   /* WILSY_P60K5O9B_HUMANIZE_INSPECTOR_SUMMARY_LINE */
   const authorityInspectorRawSummary = String(authorityInspectorLiveSummary || '').trim();
@@ -1508,11 +1531,27 @@ export default function WilsyCrmSetupControlPlane() {
 
 
   useEffect(() => {
+    const intervalId = globalThis.setInterval(() => {
+      const nextVerificationCycle = new Date().toISOString().slice(0, 10);
+
+      setAuthorityInspectorVerificationCycle((currentVerificationCycle) => (
+        currentVerificationCycle === nextVerificationCycle
+          ? currentVerificationCycle
+          : nextVerificationCycle
+      ));
+    }, 60000);
+
+    return () => {
+      globalThis.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const route = '/api/crm/command/setup/control-surface/resolve';
     const controlId = activeControl?.id || activeControl?.name || 'control';
     const domainId = activeDomain?.id || activeDomain?.label || 'domain';
-    const cacheKey = `${domainId}:${controlId}:${lens || 'Authority'}`;
+    const cacheKey = `${domainId}:${controlId}:${lens || 'Authority'}:${authorityInspectorVerificationCycle}`;
     const cache =
       globalThis.__WILSY_P60K5O2_INSPECTOR_LIVE_BACKEND_CACHE__ ||
       (globalThis.__WILSY_P60K5O2_INSPECTOR_LIVE_BACKEND_CACHE__ = {});
@@ -1544,6 +1583,7 @@ export default function WilsyCrmSetupControlPlane() {
       ...payload.institutionalHeaders,
       route,
       commandSurface: 'CRM_SETUP_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+      verificationCycle: authorityInspectorVerificationCycle,
       generatedAt,
       timestamp: generatedAt,
     };
@@ -1552,6 +1592,7 @@ export default function WilsyCrmSetupControlPlane() {
       route,
       command: 'RESOLVE_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
       commandSurface: 'CRM_SETUP_RIGHT_RAIL_INSPECTOR_LIVE_BACKEND',
+      verificationCycle: authorityInspectorVerificationCycle,
       generatedAt,
       timestamp: generatedAt,
       dryRun: true,
@@ -1602,7 +1643,7 @@ export default function WilsyCrmSetupControlPlane() {
     return () => {
       cancelled = true;
     };
-  }, [activeControl?.id, activeControl?.name, activeDomain?.id, activeDomain?.label, lens]);
+  }, [activeControl?.id, activeControl?.name, activeDomain?.id, activeDomain?.label, authorityInspectorVerificationCycle, lens]);
 
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
@@ -3230,7 +3271,7 @@ export default function WilsyCrmSetupControlPlane() {
               <strong>{authorityInspectorLiveEvidenceCount}</strong>
             </article>
             <article>
-              <span>Last verified</span>
+              <span>Daily verification</span>
               <strong>{authorityInspectorLastVerifiedDisplay}</strong>
             </article>
           </div>
