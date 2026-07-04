@@ -1869,6 +1869,7 @@ async function resolveWilsyR91K179E21MongooseRuntime() {
  */
 function normalizeWilsyR91K179E21MeetingCreateDocument(req = {}) {
   const body = req.body && typeof req.body === 'object' ? req.body : {};
+
   const strikePayload =
     body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : {};
   const meeting =
@@ -9956,6 +9957,334 @@ router.post(
   '/setup/control-surface/resolve',
   wrapWilsySetupReviewRoute(handleWilsySetupControlSurfaceResolve)
 );
+
+/* WILSY_P60K5Q4G2_RUNTIME_PERSISTENCE_PROOF_ROUTE */
+
+/**
+ * @function resolveWilsySetupReviewPersistenceProofText
+ * @description Normalizes read-only persistence proof values without leaking sensitive connection data.
+ * @param {unknown} value - Source value.
+ * @param {string} fallback - Fallback value.
+ * @returns {string} Normalized value.
+ * @collaboration CRM setup review runtime proof route, live mongoose connection, Packet Console receipts, and operator audit evidence.
+ */
+function resolveWilsySetupReviewPersistenceProofText(value = '', fallback = '') {
+  const normalized = String(value ?? '').trim();
+  return normalized || fallback;
+}
+
+/**
+ * @function summarizeWilsySetupReviewPersistenceProofPacket
+ * @description Builds a safe summary of a persisted setup review packet for live runtime proof.
+ * @param {Object} packet - Setup review packet document.
+ * @returns {Object|null} Safe packet proof summary.
+ * @collaboration Staged Reviews workflow, evidence ledger, approval gate, release gate, receipts, and live backend persistence verification.
+ */
+function summarizeWilsySetupReviewPersistenceProofPacket(packet = {}) {
+  if (!packet || typeof packet !== 'object') {
+    return null;
+  }
+
+  const receipts = Array.isArray(packet.receipts) ? packet.receipts : [];
+  const evidenceLedger = Array.isArray(packet.evidenceLedger) ? packet.evidenceLedger : [];
+  const latestReceipt = packet.receipt || receipts[receipts.length - 1] || {};
+
+  return {
+    mongoId: String(packet._id || ''),
+    packetId: packet.packetId || packet.id || null,
+    controlId: packet.controlId || null,
+    title: packet.title || packet.controlName || packet.name || null,
+    tenantId: packet.tenantId || packet.institutionalHeaders?.tenantId || null,
+    operatorId: packet.operatorId || packet.institutionalHeaders?.operatorId || null,
+    status: packet.status || packet.workflowState?.status || null,
+    workflowStatus: packet.workflowState?.status || null,
+    approvalStatus: packet.approvalState?.status || null,
+    releaseStatus: packet.releaseState?.status || null,
+    evidenceCount: evidenceLedger.length,
+    receiptCount: receipts.length,
+    latestReceiptId: latestReceipt.receiptId || null,
+    latestReceiptHash: latestReceipt.receiptHash || null,
+    createdAt: packet.createdAt || null,
+    updatedAt: packet.updatedAt || null,
+    hasInstitutionalHeaders: Boolean(packet.institutionalHeaders),
+    hasStrikePayload: Boolean(packet.strikePayload),
+    hasStrikePayloadInstitutionalHeaders: Boolean(packet.strikePayload?.institutionalHeaders),
+    requiredEvidence: Array.isArray(packet.requiredEvidence) ? packet.requiredEvidence : [],
+    evidenceLedger: evidenceLedger.map((item) => ({
+      requirement: item.requirement,
+      label: item.label,
+      type: item.type,
+      status: item.status,
+      receiptId: item.receiptId,
+      receiptHash: item.receiptHash,
+      generatedAt: item.generatedAt || item.timestamp,
+    })),
+    receipts: receipts.map((receipt) => ({
+      action: receipt.action,
+      receiptId: receipt.receiptId,
+      receiptHash: receipt.receiptHash,
+      generatedAt: receipt.generatedAt,
+      packetId: receipt.packetId,
+    })),
+  };
+}
+
+/**
+ * @function handleWilsySetupReviewPersistenceProof
+ * @description Reads the live backend mongoose runtime and returns proof of setup review packet persistence without mutating DB state.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} JSON proof response.
+ * @collaboration Runtime mongoose connection, CRM setup review packets, Staged Reviews UI, evidence receipts, approval persistence, release persistence, and institutional headers.
+ */
+async function handleWilsySetupReviewPersistenceProof(req, res) {
+  const route = '/api/crm/command/setup/reviews/persistence-proof';
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  /* WILSY_P60K5Q4K_INTERNAL_RUNTIME_PROOF_GATE */
+  const internalProofEnabled = process.env.WILSY_ENABLE_SETUP_REVIEW_PERSISTENCE_PROOF === 'true';
+  const expectedProofSeal =
+    process.env.WILSY_SETUP_REVIEW_PERSISTENCE_PROOF_SEAL || 'P60K5Q4K_INTERNAL_RUNTIME_PROOF';
+  const suppliedProofSeal =
+    req.get('X-Wilsy-Internal-Proof-Seal') ||
+    body.internalProofSeal ||
+    body.strikePayload?.internalProofSeal ||
+    '';
+  const proofOperator =
+    body.operatorId ||
+    body.userId ||
+    body.institutionalHeaders?.operatorId ||
+    body.institutionalHeaders?.userId ||
+    '';
+
+  if (!internalProofEnabled) {
+    return res.status(404).json({
+      ok: false,
+      result: 'NOT_FOUND',
+      route,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  if (suppliedProofSeal !== expectedProofSeal) {
+    return res.status(403).json({
+      ok: false,
+      result: 'INTERNAL_PROOF_SEAL_REQUIRED',
+      message: 'Runtime persistence proof requires an internal verification seal.',
+      route,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  if (!/admin|proof|audit|sovereign|root|wilsy/i.test(String(proofOperator))) {
+    return res.status(403).json({
+      ok: false,
+      result: 'INTERNAL_PROOF_OPERATOR_REQUIRED',
+      message: 'Runtime persistence proof requires an internal proof operator context.',
+      route,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  const institutionalHeaders =
+    body.institutionalHeaders && typeof body.institutionalHeaders === 'object'
+      ? body.institutionalHeaders
+      : null;
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : null;
+  const strikeHeaders =
+    strikePayload?.institutionalHeaders && typeof strikePayload.institutionalHeaders === 'object'
+      ? strikePayload.institutionalHeaders
+      : null;
+
+  if (!institutionalHeaders || !strikePayload || !strikeHeaders) {
+    return res.status(400).json({
+      ok: false,
+      result: 'PERSISTENCE_PROOF_REQUIRES_EVIDENCE_CONTRACT',
+      message:
+        'Persistence proof requires institutionalHeaders, strikePayload, and strikePayload.institutionalHeaders.',
+      route,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  if (!mongoose.connection || mongoose.connection.readyState !== 1 || !mongoose.connection.db) {
+    return res.status(503).json({
+      ok: false,
+      result: 'MONGOOSE_RUNTIME_NOT_READY',
+      connection: {
+        readyState: mongoose.connection?.readyState || 0,
+        name: mongoose.connection?.name || null,
+        host: mongoose.connection?.host || null,
+        port: mongoose.connection?.port || null,
+      },
+      route,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  const packetId = resolveWilsySetupReviewPersistenceProofText(
+    body.packetId || body.id || body.packet?.packetId,
+    ''
+  );
+  const controlId = resolveWilsySetupReviewPersistenceProofText(
+    body.controlId || body.packet?.controlId,
+    ''
+  );
+
+  const db = mongoose.connection.db;
+  const collectionList = await db.listCollections().toArray();
+  const collectionNames = collectionList.map((collection) => collection.name).sort();
+  const preferredCollection = 'wilsycrmsetupreviewpackets';
+  const collectionName = collectionNames.includes(preferredCollection)
+    ? preferredCollection
+    : collectionNames.find((name) =>
+        /setup.*review.*packet|review.*packet|setupreview/i.test(name)
+      );
+
+  const proof = {
+    ok: true,
+    result: 'SETUP_REVIEW_RUNTIME_PERSISTENCE_PROOF',
+    route,
+    generatedAt: new Date().toISOString(),
+    connection: {
+      readyState: mongoose.connection.readyState,
+      name: mongoose.connection.name,
+      host: mongoose.connection.host,
+      port: mongoose.connection.port,
+    },
+    collectionName: collectionName || null,
+    collectionExists: Boolean(collectionName),
+    availableReviewCollections: collectionNames.filter((name) =>
+      /setup|review|packet|receipt|audit|workflow/i.test(name)
+    ),
+    requested: {
+      packetId,
+      controlId,
+      tenantId: institutionalHeaders.tenantId || body.tenantId || null,
+      operatorId: institutionalHeaders.operatorId || institutionalHeaders.userId || null,
+    },
+    exactPacket: null,
+    latestPackets: [],
+    receiptPackets: [],
+    releasedPackets: [],
+  };
+
+  if (!collectionName) {
+    proof.verdicts = {
+      exactPacketFound: false,
+      receiptsPersisted: false,
+      approvalPersisted: false,
+      releasePersisted: false,
+      evidencePersisted: false,
+    };
+
+    return res.json(proof);
+  }
+
+  const collection = db.collection(collectionName);
+
+  if (packetId || controlId) {
+    const exactPacket = await collection.findOne({
+      $or: [
+        ...(packetId ? [{ packetId }, { id: packetId }] : []),
+        ...(controlId ? [{ controlId }] : []),
+      ],
+    });
+
+    proof.exactPacket = summarizeWilsySetupReviewPersistenceProofPacket(exactPacket);
+  }
+
+  const latestPackets = await collection
+    .find({})
+    .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+    .limit(10)
+    .toArray();
+
+  const receiptPackets = await collection
+    .find({
+      $or: [{ receipts: { $exists: true, $ne: [] } }, { receipt: { $exists: true } }],
+    })
+    .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+    .limit(10)
+    .toArray();
+
+  const releasedPackets = await collection
+    .find({
+      $or: [
+        { 'releaseState.status': 'RELEASED' },
+        { 'workflowState.status': 'RELEASED' },
+        { status: 'RELEASED' },
+      ],
+    })
+    .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+    .limit(10)
+    .toArray();
+
+  proof.latestPackets = latestPackets.map(summarizeWilsySetupReviewPersistenceProofPacket);
+  proof.receiptPackets = receiptPackets.map(summarizeWilsySetupReviewPersistenceProofPacket);
+  proof.releasedPackets = releasedPackets.map(summarizeWilsySetupReviewPersistenceProofPacket);
+  proof.verdicts = {
+    exactPacketFound: Boolean(proof.exactPacket),
+    receiptsPersisted:
+      Boolean(proof.exactPacket?.receiptCount) ||
+      proof.receiptPackets.some((packet) => packet?.receiptCount > 0),
+    approvalPersisted:
+      proof.exactPacket?.approvalStatus === 'APPROVED' ||
+      proof.latestPackets.some((packet) => packet?.approvalStatus === 'APPROVED'),
+    releasePersisted:
+      proof.exactPacket?.releaseStatus === 'RELEASED' ||
+      proof.releasedPackets.some((packet) => packet?.releaseStatus === 'RELEASED'),
+    evidencePersisted:
+      Boolean(proof.exactPacket?.evidenceCount) ||
+      proof.latestPackets.some((packet) => packet?.evidenceCount > 0),
+  };
+
+  /* WILSY_P60K5Q4K_REDACTED_RUNTIME_PROOF_RESPONSE */
+  const fullInternalAudit =
+    process.env.WILSY_ENABLE_SETUP_REVIEW_PERSISTENCE_PROOF_FULL === 'true' &&
+    body.proofDepth === 'FULL_INTERNAL_AUDIT';
+
+  if (fullInternalAudit) {
+    return res.json(proof);
+  }
+
+  return res.json({
+    ok: true,
+    result: proof.result,
+    route: proof.route,
+    generatedAt: proof.generatedAt,
+    connection: {
+      readyState: proof.connection.readyState,
+      name: proof.connection.name,
+    },
+    collectionName: proof.collectionName,
+    collectionExists: proof.collectionExists,
+    requested: proof.requested,
+    verdicts: proof.verdicts,
+    counts: {
+      latestPacketCount: proof.latestPackets.length,
+      receiptPacketCount: proof.receiptPackets.length,
+      releasedPacketCount: proof.releasedPackets.length,
+    },
+    latestPacketSnapshots: proof.latestPackets.slice(0, 5).map((packet) => ({
+      packetId: packet.packetId,
+      controlId: packet.controlId,
+      title: packet.title,
+      status: packet.status,
+      evidenceCount: packet.evidenceCount,
+      receiptCount: packet.receiptCount,
+      approvalStatus: packet.approvalStatus,
+      releaseStatus: packet.releaseStatus,
+      updatedAt: packet.updatedAt,
+    })),
+  });
+}
+
+router.post(
+  '/setup/reviews/persistence-proof',
+  wrapWilsySetupReviewRoute(handleWilsySetupReviewPersistenceProof)
+);
+
 router.post('/setup/reviews/list', wrapWilsySetupReviewRoute(handleWilsySetupReviewListByCommand));
 router.post('/setup/reviews/open', wrapWilsySetupReviewRoute(handleWilsySetupReviewOpenByBody));
 router.get('/setup/reviews', wrapWilsySetupReviewRoute(handleWilsySetupReviewList));

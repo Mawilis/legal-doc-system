@@ -355,6 +355,161 @@ function buildEvidencePack() {
   ];
 }
 
+/* WILSY_P60K5P2E_EVIDENCE_PACK_REAL_HANDLER_FULL_VIEW */
+
+/**
+ * @function resolveWilsyEvidencePackTaskId
+ * @description Converts an Evidence Pack label into a stable full-view task id.
+ * @param {string} label - Evidence Pack label.
+ * @returns {string} Stable task id.
+ * @collaboration CRM Operating Controls, Authority rail Evidence Pack, live task bridge, and setup workflow receipts.
+ */
+function resolveWilsyEvidencePackTaskId(label = '') {
+  return String(label || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'tenant-authority';
+}
+
+/**
+ * @function resolveWilsyEvidencePackWorkflowCommand
+ * @description Selects the existing setup workflow command for an Evidence Pack task.
+ * @param {Array} actions - Setup workflow actions.
+ * @param {string} taskId - Evidence Pack task id.
+ * @returns {Object|null} Existing workflow command.
+ * @collaboration Existing evidence command, approval command, release command, Packet Console receipts, and Evidence Pack completion.
+ */
+function resolveWilsyEvidencePackWorkflowCommand(actions = [], taskId = '') {
+  const normalized = String(taskId || '').toLowerCase();
+  const candidates = Array.isArray(actions) ? actions : [];
+
+  if (normalized.includes('review-outcome')) {
+    return candidates.find((action) => action?.id === 'approve') || null;
+  }
+
+  if (normalized.includes('evidence-receipt')) {
+    return candidates.find((action) => action?.id === 'release') || null;
+  }
+
+  return candidates.find((action) => action?.id === 'attach-evidence') || null;
+}
+
+/**
+ * @function buildWilsyEvidencePackFullViewTasks
+ * @description Builds live full-view Evidence Pack tasks from the current setup packet, Inspector proof, and workflow receipts.
+ * @param {Object} context - Evidence Pack source context.
+ * @returns {Array<Object>} Full-view task records.
+ * @collaboration Evidence rail, Authority Graph, setup workflow command rail, Packet Console, approval gates, release gates, and receipt evidence.
+ */
+function buildWilsyEvidencePackFullViewTasks(context = {}) {
+  const labels = Array.isArray(context.labels) ? context.labels : [];
+  const activeControl = context.activeControl || {};
+  const stagedReview = context.stagedReview || {};
+  const liveSurface = context.authorityInspectorLiveSurface || {};
+  const workflowActions = Array.isArray(context.setupWorkflowActions) ? context.setupWorkflowActions : [];
+
+  const activeTitle = activeControl.title || activeControl.label || activeControl.name || stagedReview.title || stagedReview.controlName || 'Active setup control';
+  const receipt = context.setupWorkflowReceiptLabel || stagedReview?.receipt?.receiptId || 'Receipt pending';
+  const proofHash = stagedReview?.receipt?.receiptHash || stagedReview?.receiptHash || stagedReview?.proofHash || 'Proof hash pending';
+  const liveStatus = context.authorityInspectorReadableStatus || 'Live source';
+  const owner = activeControl.owner || stagedReview.owner || liveSurface.owner || 'Control owner pending';
+  const tenant = stagedReview.tenantId || activeControl.tenantId || liveSurface.tenantId || 'Tenant authority pending';
+  const operator = liveSurface.operator || stagedReview.operator || stagedReview.operatorId || 'Operator identity pending';
+  const risk = activeControl.risk || activeControl.riskRating || stagedReview.riskRating || 'Risk review pending';
+  const impact = activeControl.impact || stagedReview.impactSummary || 'Impact summary pending';
+  const intent = activeControl.intent || activeControl.policyIntent || 'Policy intent pending';
+  const outcome = stagedReview.approvalState?.status || stagedReview.workflowState?.status || 'Review outcome pending';
+
+  const dictionary = {
+    'tenant-authority': {
+      status: tenant,
+      summary: 'Confirms which tenant owns this setup control and where the decision must be defended.',
+      task: 'Verify tenant scope, authority boundary, and release ownership before evidence is attached.',
+      actionLabel: 'Attach authority evidence',
+      proofRows: [['Tenant', tenant], ['Control', activeTitle], ['Source', liveStatus]],
+    },
+    'operator-identity': {
+      status: operator,
+      summary: 'Binds the active operator to this evidence chain before approval or release.',
+      task: 'Confirm operator identity, role custody, and current task ownership.',
+      actionLabel: 'Attach identity evidence',
+      proofRows: [['Operator', operator], ['Owner', owner], ['Receipt', receipt]],
+    },
+    'control-owner': {
+      status: owner,
+      summary: 'Shows who must explain, approve, defend, or stop the authority control.',
+      task: 'Confirm accountable ownership before the packet moves forward.',
+      actionLabel: 'Attach owner evidence',
+      proofRows: [['Owner', owner], ['Control', activeTitle], ['Proof hash', proofHash]],
+    },
+    'policy-intent': {
+      status: intent,
+      summary: 'Explains why this control exists and what safe operating behavior it enforces.',
+      task: 'Review policy intent and attach supporting evidence before approval.',
+      actionLabel: 'Attach policy evidence',
+      proofRows: [['Intent', intent], ['Control', activeTitle], ['Source', liveStatus]],
+    },
+    'risk-rating': {
+      status: risk,
+      summary: 'Turns exposure into a clear operating risk before approval or release.',
+      task: 'Review risk drivers, sensitivity, and mitigation before outcome approval.',
+      actionLabel: 'Attach risk evidence',
+      proofRows: [['Risk', risk], ['Impact', impact], ['Receipt', receipt]],
+    },
+    'impact-summary': {
+      status: impact,
+      summary: 'Shows affected users, controls, records, release gates, and business impact.',
+      task: 'Review operating impact and attach evidence for audit and board review.',
+      actionLabel: 'Attach impact evidence',
+      proofRows: [['Impact', impact], ['Control', activeTitle], ['Proof hash', proofHash]],
+    },
+    'review-outcome': {
+      status: outcome,
+      summary: 'Completes the accountable review step after evidence exists.',
+      task: 'Approve, hold, or return the packet based on the evidence already attached.',
+      actionLabel: 'Approve outcome',
+      proofRows: [['Outcome', outcome], ['Receipt', receipt], ['Source', liveStatus]],
+    },
+    'evidence-receipt': {
+      status: receipt,
+      summary: 'Opens the receipt proof needed for audit, board review, support, and release readiness.',
+      task: 'Verify receipt id, proof hash, and release readiness before final release.',
+      actionLabel: 'Release with receipt',
+      proofRows: [['Receipt', receipt], ['Proof hash', proofHash], ['Control', activeTitle]],
+    },
+  };
+
+  return labels.map((label) => {
+    const id = resolveWilsyEvidencePackTaskId(label);
+    const task = dictionary[id] || dictionary['tenant-authority'];
+
+    return {
+      id,
+      label,
+      ...task,
+      workflowAction: resolveWilsyEvidencePackWorkflowCommand(workflowActions, id),
+    };
+  });
+}
+
+/**
+ * @function escapeWilsyEvidencePackTaskHtml
+ * @description Escapes Evidence Pack full-view values before they enter the task shell.
+ * @param {string} value - Raw value.
+ * @returns {string} Escaped value.
+ * @collaboration Evidence Pack full-view shell, live Inspector proof, setup workflow receipts, and safe browser rendering.
+ */
+function escapeWilsyEvidencePackTaskHtml(value = '') {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+
 /**
  * @function calculatePosture
  * @description Calculates setup posture from scores, exposure, and review queue size.
@@ -1852,6 +2007,619 @@ export default function WilsyCrmSetupControlPlane() {
     },
   ];
   const setupWorkflowReceiptLabel = setupWorkflowLastReceipt?.receiptId || 'No workflow receipt yet';
+
+  /* WILSY_P60K5Q2B_STAGED_REVIEWS_LIVE_WORKBENCH_NO_PARSER */
+
+  /**
+   * @function resolveWilsyStagedReviewWorkbenchPacketId
+   * @description Resolves a stable staged review packet id for the live workbench.
+   * @param {Object} packet - Review packet.
+   * @returns {string} Stable packet id.
+   * @collaboration Staged Reviews rail, Packet Console, review queue, Remove governance, Clear governance, and backend receipts.
+   */
+  function resolveWilsyStagedReviewWorkbenchPacketId(packet = {}) {
+    return String(
+      packet.packetId ||
+        packet.id ||
+        packet.controlId ||
+        packet.controlName ||
+        packet.title ||
+        'active-staged-review'
+    );
+  }
+
+  /**
+   * @function compactWilsyStagedReviewWorkbenchValue
+   * @description Produces compact business-facing values for the Staged Reviews workbench.
+   * @param {unknown} value - Source value.
+   * @param {string} fallback - Fallback value.
+   * @returns {string} Compacted value.
+   * @collaboration Staged review card, full-view workbench, receipt display, and release gate status.
+   */
+  function compactWilsyStagedReviewWorkbenchValue(value = '', fallback = 'Pending') {
+    const normalized = String(value ?? '').trim();
+
+    if (!normalized) {
+      return fallback;
+    }
+
+    return normalized.length > 88 ? `${normalized.slice(0, 85)}...` : normalized;
+  }
+
+  /**
+   * @function escapeWilsyStagedReviewWorkbenchHtml
+   * @description Escapes Staged Reviews workbench values before browser rendering.
+   * @param {unknown} value - Raw value.
+   * @returns {string} Escaped value.
+   * @collaboration Live staged review workbench, review queue, receipt display, and safe operator rendering.
+   */
+  function escapeWilsyStagedReviewWorkbenchHtml(value = '') {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * @function buildWilsyStagedReviewWorkbenchSurface
+   * @description Builds the live Staged Reviews full-view workbench surface from review queue, workflow state, and receipts.
+   * @param {Object} context - Workbench context.
+   * @returns {Object} Workbench surface.
+   * @collaboration Authority rail Staged Reviews, setup workflow actions, backend receipts, Clear governance, Remove governance, and Packet Console.
+   */
+  function buildWilsyStagedReviewWorkbenchSurface(context = {}) {
+    const queue = Array.isArray(context.reviewQueue) ? context.reviewQueue : [];
+    const currentStagedReview = context.stagedReview || {};
+    const activePacket = currentStagedReview.packetId || currentStagedReview.id ? currentStagedReview : queue[0] || {};
+    const packets = queue.length ? queue : (activePacket.packetId || activePacket.id ? [activePacket] : []);
+    const timeline = Array.isArray(context.setupWorkflowTimeline) ? context.setupWorkflowTimeline : [];
+    const actions = Array.isArray(context.setupWorkflowActions) ? context.setupWorkflowActions : [];
+    const receipts = Array.isArray(activePacket.receipts) ? activePacket.receipts : [];
+    const latestReceipt = activePacket.receipt || receipts[receipts.length - 1] || {};
+    const evidenceLedger = Array.isArray(activePacket.evidenceLedger) ? activePacket.evidenceLedger : [];
+    const evidenceCount = evidenceLedger.filter((item) => item?.status !== 'REMOVED').length;
+    const packetId = resolveWilsyStagedReviewWorkbenchPacketId(activePacket);
+    const title = activePacket.title || activePacket.controlName || activePacket.name || 'Authority Graph';
+    const domain = activePacket.domain || activePacket.domainName || activePacket.lens || 'Authority';
+    const role = activePacket.operatorRole || activePacket.role || activePacket.operator || 'Security Admin';
+    const risk = activePacket.risk || activePacket.riskRating || activePacket.severity || 'Critical review';
+    const status = activePacket.status || activePacket.workflowState?.status || context.setupWorkflowGateLabel || 'Evidence required';
+    const receiptId = context.setupWorkflowReceiptLabel || latestReceipt.receiptId || 'Receipt pending';
+    const receiptHash = latestReceipt.receiptHash || activePacket.receiptHash || 'Proof hash pending';
+
+    return {
+      id: packetId,
+      title: compactWilsyStagedReviewWorkbenchValue(title, 'Authority Graph'),
+      subtitle: `${compactWilsyStagedReviewWorkbenchValue(role, 'Security Admin')} · ${compactWilsyStagedReviewWorkbenchValue(risk, 'Critical review')}`,
+      status: compactWilsyStagedReviewWorkbenchValue(status, 'Evidence required'),
+      domain: compactWilsyStagedReviewWorkbenchValue(domain, 'Authority'),
+      packet: activePacket,
+      packets,
+      queueCount: packets.length,
+      evidenceCount,
+      receiptCount: receipts.length + (activePacket.receipt ? 1 : 0),
+      receiptId,
+      receiptHash,
+      commandBusy: context.setupWorkflowCommandBusy || '',
+      feedback: context.setupWorkflowCommandFeedback || '',
+      timeline,
+      actions,
+      proofRows: [
+        ['Packet', compactWilsyStagedReviewWorkbenchValue(packetId, 'Packet pending')],
+        ['Domain', compactWilsyStagedReviewWorkbenchValue(domain, 'Authority')],
+        ['Owner', compactWilsyStagedReviewWorkbenchValue(activePacket.owner || activePacket.operatorId || role, 'Owner pending')],
+        ['Evidence', `${evidenceCount} attached`],
+        ['Receipt', compactWilsyStagedReviewWorkbenchValue(receiptId, 'Receipt pending')],
+        ['Hash', compactWilsyStagedReviewWorkbenchValue(receiptHash, 'Proof hash pending')],
+      ],
+    };
+  }
+
+  const [stagedReviewWorkbenchState, setStagedReviewWorkbenchState] = useState({
+    open: false,
+    mode: 'packet',
+    packetId: '',
+  });
+
+  const stagedReviewWorkbenchSurface = buildWilsyStagedReviewWorkbenchSurface({
+    reviewQueue,
+    stagedReview,
+    setupWorkflowTimeline,
+    setupWorkflowActions,
+    setupWorkflowGateLabel,
+    setupWorkflowReceiptLabel,
+    setupWorkflowCommandBusy,
+    setupWorkflowCommandFeedback,
+  });
+
+  const activeStagedReviewWorkbenchPacket = stagedReviewWorkbenchSurface.packets.find((packet) => (
+    resolveWilsyStagedReviewWorkbenchPacketId(packet) === stagedReviewWorkbenchState.packetId
+  )) || stagedReviewWorkbenchSurface.packet;
+
+  const activeStagedReviewWorkbenchSurface = buildWilsyStagedReviewWorkbenchSurface({
+    reviewQueue: stagedReviewWorkbenchSurface.packets,
+    stagedReview: activeStagedReviewWorkbenchPacket,
+    setupWorkflowTimeline,
+    setupWorkflowActions,
+    setupWorkflowGateLabel,
+    setupWorkflowReceiptLabel,
+    setupWorkflowCommandBusy,
+    setupWorkflowCommandFeedback,
+  });
+
+  /**
+   * @function handleOpenStagedReviewWorkbench
+   * @description Opens the full-view Staged Reviews workbench for a packet or governed queue action.
+   * @param {string} mode - Workbench mode.
+   * @param {Object|null} packet - Optional selected packet.
+   * @returns {void}
+   * @collaboration Staged Reviews rail, Clear governance, Remove governance, Packet Console, and backend review receipts.
+   */
+  function handleOpenStagedReviewWorkbench(mode = 'packet', packet = null) {
+    const resolvedPacket = packet || stagedReview || stagedReviewWorkbenchSurface.packet || {};
+    setStagedReviewWorkbenchState({
+      open: true,
+      mode: mode || 'packet',
+      packetId: resolveWilsyStagedReviewWorkbenchPacketId(resolvedPacket),
+    });
+  }
+
+  /**
+   * @function handleCloseStagedReviewWorkbench
+   * @description Closes the full-view Staged Reviews workbench without mutating backend state.
+   * @returns {void}
+   * @collaboration Staged Reviews full-view workbench, operator navigation, and non-destructive rail focus.
+   */
+  function handleCloseStagedReviewWorkbench() {
+    setStagedReviewWorkbenchState((current) => ({
+      ...current,
+      open: false,
+    }));
+  }
+
+  /**
+   * @function handleRunStagedReviewWorkbenchAction
+   * @description Executes a selected Staged Reviews workbench action through existing live handlers.
+   * @param {string} actionId - Workbench action id.
+   * @returns {Promise<void>} Action promise.
+   * @collaboration handleWilsySetupWorkflowCommand, handleOpenTicket, handleAuthorityRailActionRequest, backend receipts, and review queue governance.
+   */
+  async function handleRunStagedReviewWorkbenchAction(actionId = 'open') {
+    const surface = activeStagedReviewWorkbenchSurface;
+    const packet = surface.packet || stagedReview || {};
+    const action = surface.actions.find((item) => item.id === actionId);
+
+    if (actionId === 'open') {
+      await handleOpenTicket(packet);
+      return;
+    }
+
+    /* WILSY_P60K5Q3_STAGED_REVIEW_GOVERNED_CLEAR_LAYER_RESCUE */
+    if (actionId === 'remove') {
+      handleCloseStagedReviewWorkbench();
+      globalThis.setTimeout(() => {
+        handleAuthorityRailActionRequest('remove', packet);
+      }, 0);
+      return;
+    }
+
+    if (actionId === 'clear') {
+      handleCloseStagedReviewWorkbench();
+      globalThis.setTimeout(() => {
+        handleAuthorityRailActionRequest('clear');
+      }, 0);
+      return;
+    }
+
+    if (action) {
+      await handleWilsySetupWorkflowCommand(action);
+    }
+  }
+
+  useEffect(() => {
+    /**
+     * @function handleStagedReviewRailClickBridge
+     * @description Captures clicks in the existing Staged Reviews rail and opens the full-view workbench.
+     * @param {Event} event - Browser click event.
+     * @returns {void}
+     * @collaboration Existing queue rail, full-view staged review workbench, Clear governance, Remove governance, and packet opening.
+     */
+    function handleStagedReviewRailClickBridge(event) {
+      const target = event.target;
+
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+
+      if (target.closest('#wilsy-p60k5q2b-staged-review-workbench-shell')) {
+        return;
+      }
+
+      const authorityRail = target.closest('[class*="authorityRail"]');
+      const queueRail = target.closest('[class*="queueRail"]');
+
+      if (!authorityRail || !queueRail) {
+        return;
+      }
+
+      const closestButton = target.closest('button');
+      const text = String(closestButton?.textContent || target.textContent || '').trim().toLowerCase();
+      const mode = text.includes('clear')
+        ? 'clear'
+        : text.includes('remove')
+          ? 'remove'
+          : 'packet';
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      handleOpenStagedReviewWorkbench(mode, stagedReview || stagedReviewWorkbenchSurface.packet);
+    }
+
+    document.addEventListener('click', handleStagedReviewRailClickBridge, true);
+
+    return () => {
+      document.removeEventListener('click', handleStagedReviewRailClickBridge, true);
+    };
+  }, [stagedReview, stagedReviewWorkbenchSurface.packet]);
+
+  useEffect(() => () => {
+    document.getElementById('wilsy-p60k5q2b-staged-review-workbench-shell')?.remove();
+  }, []);
+
+  useEffect(() => {
+    const shellId = 'wilsy-p60k5q2b-staged-review-workbench-shell';
+    let shell = document.getElementById(shellId);
+
+    if (!shell) {
+      shell = document.createElement('section');
+      shell.id = shellId;
+      shell.className = 'wilsyP60K5Q2BStagedReviewWorkbench';
+      shell.setAttribute('role', 'dialog');
+      shell.setAttribute('aria-modal', 'true');
+      shell.setAttribute('aria-label', 'Staged Reviews live workbench');
+      document.body.appendChild(shell);
+    }
+
+    const surface = activeStagedReviewWorkbenchSurface;
+
+    if (!stagedReviewWorkbenchState.open) {
+      shell.classList.remove('isOpen');
+      shell.innerHTML = '';
+      return undefined;
+    }
+
+    const modeCopy = stagedReviewWorkbenchState.mode === 'clear'
+      ? 'Queue cleanup review'
+      : stagedReviewWorkbenchState.mode === 'remove'
+        ? 'Packet removal review'
+        : 'Packet completion workbench';
+
+    shell.classList.add('isOpen');
+    shell.innerHTML = `
+      <header class="wilsyP60K5Q2BWorkbenchHeader">
+        <div>
+          <span>Staged Reviews</span>
+          <strong>${escapeWilsyStagedReviewWorkbenchHtml(surface.title)}</strong>
+          <p>${escapeWilsyStagedReviewWorkbenchHtml(modeCopy)} · ${escapeWilsyStagedReviewWorkbenchHtml(surface.subtitle)}</p>
+        </div>
+        <button type="button" data-wilsy-q2b-action="close">Close</button>
+      </header>
+
+      <div class="wilsyP60K5Q2BWorkbenchBody">
+        <article class="wilsyP60K5Q2BWorkbenchMission">
+          <span>Live packet state</span>
+          <strong>${escapeWilsyStagedReviewWorkbenchHtml(surface.status)}</strong>
+          <p>${escapeWilsyStagedReviewWorkbenchHtml(surface.queueCount)} staged packet${surface.queueCount === 1 ? '' : 's'} · ${escapeWilsyStagedReviewWorkbenchHtml(surface.evidenceCount)} evidence item${surface.evidenceCount === 1 ? '' : 's'} · ${escapeWilsyStagedReviewWorkbenchHtml(surface.receiptCount)} receipt signal${surface.receiptCount === 1 ? '' : 's'}</p>
+        </article>
+
+        <div class="wilsyP60K5Q2BWorkbenchProofGrid">
+          ${surface.proofRows.map(([label, value]) => `
+            <article>
+              <span>${escapeWilsyStagedReviewWorkbenchHtml(label)}</span>
+              <strong>${escapeWilsyStagedReviewWorkbenchHtml(value)}</strong>
+            </article>
+          `).join('')}
+        </div>
+
+        <section class="wilsyP60K5Q2BWorkbenchTimeline">
+          <span>Completion path</span>
+          <div>
+            ${surface.timeline.map((item) => `
+              <article>
+                <small>${escapeWilsyStagedReviewWorkbenchHtml(item.label)}</small>
+                <strong>${escapeWilsyStagedReviewWorkbenchHtml(item.value)}</strong>
+                <em>${escapeWilsyStagedReviewWorkbenchHtml(item.status)}</em>
+              </article>
+            `).join('')}
+          </div>
+        </section>
+
+        ${surface.feedback ? `
+          <article class="wilsyP60K5Q2BWorkbenchFeedback">
+            <span>Action feedback</span>
+            <strong>${escapeWilsyStagedReviewWorkbenchHtml(surface.feedback)}</strong>
+          </article>
+        ` : ''}
+      </div>
+
+      <footer class="wilsyP60K5Q2BWorkbenchFooter">
+        <button type="button" data-wilsy-q2b-action="open">Open packet</button>
+        <button type="button" data-wilsy-q2b-action="attach-evidence">Attach evidence</button>
+        <button type="button" data-wilsy-q2b-action="approve">Approve</button>
+        <button type="button" data-wilsy-q2b-action="release">Release</button>
+        <button type="button" data-wilsy-q2b-action="remove">Remove with receipt</button>
+        <button type="button" data-wilsy-q2b-action="clear">Clear queue</button>
+      </footer>
+    `;
+
+    /**
+     * @function handleStagedReviewWorkbenchShellClick
+     * @description Routes workbench shell actions to existing live review handlers.
+     * @param {Event} event - Browser click event.
+     * @returns {void}
+     * @collaboration Full-view Staged Reviews shell, backend workflow commands, packet open, Clear governance, and Remove governance.
+     */
+    function handleStagedReviewWorkbenchShellClick(event) {
+      const target = event.target;
+
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+
+      const actionButton = target.closest('[data-wilsy-q2b-action]');
+
+      if (!actionButton) {
+        return;
+      }
+
+      const actionId = actionButton.getAttribute('data-wilsy-q2b-action') || 'open';
+
+      if (actionId === 'close') {
+        handleCloseStagedReviewWorkbench();
+        return;
+      }
+
+      handleRunStagedReviewWorkbenchAction(actionId);
+    }
+
+    shell.addEventListener('click', handleStagedReviewWorkbenchShellClick);
+
+    return () => {
+      shell.removeEventListener('click', handleStagedReviewWorkbenchShellClick);
+    };
+  }, [
+    stagedReviewWorkbenchState.open,
+    stagedReviewWorkbenchState.mode,
+    stagedReviewWorkbenchState.packetId,
+    activeStagedReviewWorkbenchSurface,
+  ]);
+
+
+  /* WILSY_P60K5P2E_EVIDENCE_PACK_REAL_HANDLER_FULL_VIEW */
+  const [evidencePackFullViewState, setEvidencePackFullViewState] = useState({
+    open: false,
+    taskId: 'tenant-authority',
+    completed: {},
+  });
+
+  const evidencePackFullViewTasks = buildWilsyEvidencePackFullViewTasks({
+    labels: buildEvidencePack(),
+    activeControl,
+    stagedReview,
+    setupWorkflowActions,
+    setupWorkflowReceiptLabel,
+    authorityInspectorLiveSurface,
+    authorityInspectorReadableStatus: authorityInspectorLiveStatus === 'BACKEND_ERROR' ? 'Source check' : 'Live source',
+  });
+
+  const activeEvidencePackFullViewTask = evidencePackFullViewTasks.find((task) => (
+    task.id === evidencePackFullViewState.taskId
+  )) || evidencePackFullViewTasks[0];
+
+  /**
+   * @function handleOpenEvidencePackFullViewTask
+   * @description Opens the full Evidence Pack task view for a clicked Authority rail pill.
+   * @param {string} taskId - Evidence Pack task id.
+   * @returns {void}
+   * @collaboration Authority rail Evidence Pack, full-view task shell, setup workflow receipts, and in-app operator completion.
+   */
+  function handleOpenEvidencePackFullViewTask(taskId = '') {
+    setEvidencePackFullViewState((current) => ({
+      ...current,
+      open: true,
+      taskId: taskId || current.taskId || 'tenant-authority',
+    }));
+  }
+
+  /**
+   * @function handleCloseEvidencePackFullViewTask
+   * @description Closes the full Evidence Pack task view without changing source state.
+   * @returns {void}
+   * @collaboration Evidence Pack full-view shell, CRM Operating Controls, and non-destructive task navigation.
+   */
+  function handleCloseEvidencePackFullViewTask() {
+    setEvidencePackFullViewState((current) => ({
+      ...current,
+      open: false,
+    }));
+  }
+
+  /**
+   * @function handleCompleteEvidencePackFullViewTask
+   * @description Runs the real setup workflow handler for the active Evidence Pack task.
+   * @returns {Promise<void>} Completion promise.
+   * @collaboration handleWilsySetupWorkflowCommand, setup evidence route, approval route, release route, Packet Console receipts, and Evidence Pack task completion.
+   */
+  async function handleCompleteEvidencePackFullViewTask() {
+    const task = activeEvidencePackFullViewTask || {};
+
+    if (task.workflowAction) {
+      await handleWilsySetupWorkflowCommand(task.workflowAction);
+    } else {
+      setSetupWorkflowCommandFeedback(`${task.label || 'Evidence task'} reviewed`);
+    }
+
+    setEvidencePackFullViewState((current) => ({
+      ...current,
+      completed: {
+        ...current.completed,
+        [task.id || 'evidence-task']: true,
+      },
+    }));
+  }
+
+  useEffect(() => {
+    const labels = new Map(evidencePackFullViewTasks.map((task) => [
+      String(task.label || '').trim().toLowerCase(),
+      task.id,
+    ]));
+
+    /**
+     * @function handleEvidencePackFullViewClickBridge
+     * @description Captures clicks on existing Evidence Pack pills and opens the matching full task view.
+     * @param {Event} event - Browser click event.
+     * @returns {void}
+     * @collaboration Existing Evidence Pack rail, Authority rail full-view bridge, task shell, and workflow completion.
+     */
+    function handleEvidencePackFullViewClickBridge(event) {
+      const target = event.target;
+
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+
+      const authorityRail = target.closest('[class*="authorityRail"]');
+      const evidenceRail = target.closest('[class*="evidenceRail"]');
+
+      if (!authorityRail || !evidenceRail) {
+        return;
+      }
+
+      const clickable = target.closest('button, [role="button"], div, span, strong, small');
+      const labelText = String(clickable?.textContent || target.textContent || '').trim().toLowerCase();
+      const matched = Array.from(labels.entries()).find(([label]) => labelText.includes(label));
+
+      if (!matched) {
+        return;
+      }
+
+      event.preventDefault();
+      handleOpenEvidencePackFullViewTask(matched[1]);
+    }
+
+    document.addEventListener('click', handleEvidencePackFullViewClickBridge, true);
+
+    return () => {
+      document.removeEventListener('click', handleEvidencePackFullViewClickBridge, true);
+    };
+  }, [evidencePackFullViewTasks]);
+
+  useEffect(() => () => {
+    document.getElementById('wilsy-p60k5p2e-evidence-pack-full-view-shell')?.remove();
+  }, []);
+
+  useEffect(() => {
+    const shellId = 'wilsy-p60k5p2e-evidence-pack-full-view-shell';
+    let shell = document.getElementById(shellId);
+
+    if (!shell) {
+      shell = document.createElement('section');
+      shell.id = shellId;
+      shell.className = 'wilsyP60K5P2EEvidencePackFullView';
+      shell.setAttribute('role', 'dialog');
+      shell.setAttribute('aria-modal', 'true');
+      shell.setAttribute('aria-label', 'Evidence Pack full task view');
+      document.body.appendChild(shell);
+    }
+
+    const task = activeEvidencePackFullViewTask || {};
+
+    if (!evidencePackFullViewState.open || !task.id) {
+      shell.classList.remove('isOpen');
+      shell.innerHTML = '';
+      return undefined;
+    }
+
+    const rows = Array.isArray(task.proofRows) ? task.proofRows : [];
+
+    shell.classList.add('isOpen');
+    shell.innerHTML = `
+      <header class="wilsyP60K5P2EEvidencePackHeader">
+        <div>
+          <span>Evidence Pack task</span>
+          <strong>${escapeWilsyEvidencePackTaskHtml(task.label)}</strong>
+          <p>${escapeWilsyEvidencePackTaskHtml(task.summary)}</p>
+        </div>
+        <button type="button" data-wilsy-evidence-close="true">Close</button>
+      </header>
+      <div class="wilsyP60K5P2EEvidencePackBody">
+        <article class="wilsyP60K5P2EEvidencePackTask">
+          <span>Task to complete</span>
+          <strong>${escapeWilsyEvidencePackTaskHtml(task.task)}</strong>
+          <p>${escapeWilsyEvidencePackTaskHtml(task.status)}</p>
+        </article>
+        <div class="wilsyP60K5P2EEvidencePackProofGrid">
+          ${rows.map(([label, value]) => `
+            <article>
+              <span>${escapeWilsyEvidencePackTaskHtml(label)}</span>
+              <strong>${escapeWilsyEvidencePackTaskHtml(value)}</strong>
+            </article>
+          `).join('')}
+        </div>
+        <article class="wilsyP60K5P2EEvidencePackCompletion">
+          <span>Completion path</span>
+          <strong>${escapeWilsyEvidencePackTaskHtml(task.actionLabel)}</strong>
+          <p>This uses the current setup packet, live authority proof, and receipt workflow. The operator finishes the task inside Wilsy OS.</p>
+        </article>
+      </div>
+      <footer class="wilsyP60K5P2EEvidencePackFooter">
+        <button type="button" data-wilsy-evidence-jump="tenant-authority">Tenant</button>
+        <button type="button" data-wilsy-evidence-jump="operator-identity">Operator</button>
+        <button type="button" data-wilsy-evidence-jump="review-outcome">Outcome</button>
+        <button type="button" data-wilsy-evidence-complete="true" class="wilsyP60K5P2EPrimary">${escapeWilsyEvidencePackTaskHtml(task.actionLabel)}</button>
+      </footer>
+    `;
+
+    /**
+     * @function handleEvidencePackShellClick
+     * @description Routes full-view shell clicks to close, jump, or complete task actions.
+     * @param {Event} event - Browser click event.
+     * @returns {void}
+     * @collaboration Evidence Pack full-view shell, workflow command handler, and task navigation.
+     */
+    function handleEvidencePackShellClick(event) {
+      const target = event.target;
+
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+
+      if (target.closest('[data-wilsy-evidence-close="true"]')) {
+        handleCloseEvidencePackFullViewTask();
+        return;
+      }
+
+      const jump = target.closest('[data-wilsy-evidence-jump]');
+      if (jump) {
+        handleOpenEvidencePackFullViewTask(jump.getAttribute('data-wilsy-evidence-jump') || 'tenant-authority');
+        return;
+      }
+
+      if (target.closest('[data-wilsy-evidence-complete="true"]')) {
+        handleCompleteEvidencePackFullViewTask();
+      }
+    }
+
+    shell.addEventListener('click', handleEvidencePackShellClick);
+
+    return () => {
+      shell.removeEventListener('click', handleEvidencePackShellClick);
+    };
+  }, [evidencePackFullViewState.open, evidencePackFullViewState.taskId, activeEvidencePackFullViewTask]);
+
 
   /* WILSY_P60K5C2_DYNAMIC_GATE_RAIL */
   const gateRailItems = [
