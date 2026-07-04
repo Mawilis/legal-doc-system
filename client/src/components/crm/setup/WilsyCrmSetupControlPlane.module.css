@@ -7971,3 +7971,124 @@ button.packetRevealNode {
   background: rgba(255, 184, 0, 0.075) !important;
   color: rgba(255, 231, 154, 0.96) !important;
 }
+
+/* WILSY_P60K5O4_INSPECTOR_LEFT_HOVER_SIDECAR
+   Right rail Inspector only.
+   Contract:
+   - Hover description appears to the LEFT side of the hovered Inspector card.
+   - No bottom shelf for Inspector descriptions.
+   - No backend/internal language in visible hover text.
+   - Score strip, Packet Console, Screen Two panels, Clear/Remove governance, and CRMDashboard remain untouched. */
+
+.authorityRail .inspector {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 8 !important;
+}
+
+/* Disable the old bottom Inspector shelf. */
+.authorityRail .inspector::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Allow each Inspector fact card to project a readable left-side sidecar. */
+.authorityRail .inspector article {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.authorityRail .inspector article:hover,
+.authorityRail .inspector article:focus-within {
+  z-index: 50 !important;
+}
+
+/* Left-hand Wilsy Hover description panel. */
+.authorityRail .inspector article::after {
+  content: "Inspect this authority fact." !important;
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 16px) !important;
+  z-index: 70 !important;
+  width: min(20rem, 38vw) !important;
+  min-height: 72px !important;
+  padding: 13px 15px !important;
+  border: 1px solid rgba(0, 209, 255, 0.34) !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.11), transparent 38%),
+    linear-gradient(145deg, rgba(3, 17, 31, 0.99), rgba(1, 6, 16, 0.99)) !important;
+  color: rgba(226, 240, 246, 0.94) !important;
+  font-size: 0.68rem !important;
+  font-weight: 820 !important;
+  letter-spacing: 0.025em !important;
+  line-height: 1.42 !important;
+  text-align: left !important;
+  text-transform: none !important;
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(0, 255, 148, 0.06),
+    0 0 28px rgba(0, 209, 255, 0.12) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-50%) translateX(10px) scale(0.985) !important;
+  pointer-events: none !important;
+  white-space: normal !important;
+  transition:
+    opacity 150ms ease,
+    visibility 150ms ease,
+    transform 150ms ease !important;
+}
+
+/* Small connector pointing back to the hovered card. */
+.authorityRail .inspector article:nth-of-type(1)::after {
+  content: "OWNER: accountable operator for this live control. This shows who must explain, defend, and release the authority posture." !important;
+  border-color: rgba(0, 255, 148, 0.34) !important;
+}
+
+.authorityRail .inspector article:nth-of-type(2)::after {
+  content: "ENGINE: Wilsy OS source intelligence translating authority, delegation, export, approval, and delete power into operator evidence." !important;
+  border-color: rgba(255, 231, 154, 0.34) !important;
+}
+
+.authorityRail .inspector article:nth-of-type(3)::after {
+  content: "INVESTOR SIGNAL: board-facing proof value for audit clarity, regulator trust, and enterprise readiness." !important;
+  border-color: rgba(130, 203, 255, 0.34) !important;
+}
+
+.authorityRail .inspector article:hover::after,
+.authorityRail .inspector article:focus-within::after {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(-50%) translateX(0) scale(1) !important;
+}
+
+/* Keep the left-side sidecar readable above rail/content boundaries. */
+.authorityRail,
+.authorityRail .inspector,
+.authorityRail .inspector article {
+  contain: none !important;
+}
+
+/* Do not let route/evidence/timestamp utility cards open sidecars unless explicitly needed later. */
+.authorityRail .inspector .inspectorLiveBackendGrid article::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Responsive fallback: on narrow screens, place the sidecar under the hovered card but still left-aligned. */
+@media (max-width: 1280px) {
+  .authorityRail .inspector article::after {
+    top: calc(100% + 10px) !important;
+    right: auto !important;
+    left: 0 !important;
+    width: min(100%, 24rem) !important;
+    transform: translateY(0) translateX(0) scale(0.985) !important;
+  }
+
+  .authorityRail .inspector article:hover::after,
+  .authorityRail .inspector article:focus-within::after {
+    transform: translateY(0) translateX(0) scale(1) !important;
+  }
+}
