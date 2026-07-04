@@ -8092,3 +8092,110 @@ button.packetRevealNode {
     transform: translateY(0) translateX(0) scale(1) !important;
   }
 }
+
+/* WILSY_P60K5O5_INSPECTOR_HOVER_PORTAL_RESCUE
+   Right rail Inspector only.
+   Contract:
+   - Rescue O4 hover sidecar from being painted under the workstation view.
+   - Description appears as a fixed viewport-level Wilsy hover portal to the left of the right rail.
+   - Text is visible, left-aligned, and never clipped by the rail/workspace stack.
+   - No JSX, backend, DB, score strip, Packet Console, Screen Two panel, or CRMDashboard change. */
+
+/* Keep the rail itself scrollable, but do not let it own the hover paint layer. */
+.authorityRail {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  z-index: 200 !important;
+}
+
+.authorityRail .inspector {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 220 !important;
+}
+
+.authorityRail .inspector article {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 230 !important;
+}
+
+/* Override O4's absolute sidecar and promote it to a fixed visible portal. */
+.authorityRail .inspector article::after {
+  position: fixed !important;
+  right: clamp(26.5rem, 32vw, 38rem) !important;
+  left: auto !important;
+  width: min(24rem, 34vw) !important;
+  min-height: 82px !important;
+  max-height: 34vh !important;
+  overflow: auto !important;
+  z-index: 2147483000 !important;
+  padding: 14px 16px !important;
+  border-radius: 18px !important;
+  text-align: left !important;
+  white-space: normal !important;
+  line-height: 1.42 !important;
+  pointer-events: none !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+  transform: translateX(8px) scale(0.985) !important;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(0, 255, 148, 0.10),
+    0 0 42px rgba(0, 209, 255, 0.18) !important;
+}
+
+/* Fixed vertical positions align the portal with the hovered Inspector cards. */
+.authorityRail .inspector article:nth-of-type(1)::after {
+  top: 30vh !important;
+}
+
+.authorityRail .inspector article:nth-of-type(2)::after {
+  top: 43vh !important;
+}
+
+.authorityRail .inspector article:nth-of-type(3)::after {
+  top: 56vh !important;
+}
+
+/* Reveal above every workspace layer. */
+.authorityRail .inspector article:hover::after,
+.authorityRail .inspector article:focus-within::after {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(0) scale(1) !important;
+}
+
+/* Do not show sidecars for route/evidence/timestamp utility cards. */
+.authorityRail .inspector .inspectorLiveBackendGrid article::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:hover::after,
+.authorityRail .inspector .inspectorLiveBackendGrid article:focus-within::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Wide-monitor tuning: keep the portal close to the right rail, not floating in the center. */
+@media (min-width: 1700px) {
+  .authorityRail .inspector article::after {
+    right: clamp(31rem, 30vw, 42rem) !important;
+    width: min(26rem, 31vw) !important;
+  }
+}
+
+/* Smaller workstations: keep it visible by placing it inside the viewport, still left-aligned. */
+@media (max-width: 1280px) {
+  .authorityRail .inspector article::after {
+    top: auto !important;
+    right: 1.25rem !important;
+    bottom: 1.25rem !important;
+    width: min(31rem, calc(100vw - 2.5rem)) !important;
+    max-height: 28vh !important;
+    transform: translateY(8px) scale(0.985) !important;
+  }
+
+  .authorityRail .inspector article:hover::after,
+  .authorityRail .inspector article:focus-within::after {
+    transform: translateY(0) scale(1) !important;
+  }
+}
