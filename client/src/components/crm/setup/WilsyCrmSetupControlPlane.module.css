@@ -6915,3 +6915,442 @@ button.packetRevealNode {
     text-align: left;
   }
 }
+
+/* WILSY_P60K5M1B_SCREEN2_OPERATING_WORKFLOW
+   First real Screen Two workflow:
+   - selected task
+   - selected surface
+   - evidence drawer
+   - command drawer
+   - backend receipt */
+
+.screenTwoOperatingWorkflow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 276px minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  min-height: 468px;
+  padding: 14px;
+  border: 1px solid rgba(0, 209, 255, 0.22);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.11), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(0, 209, 255, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(1, 10, 22, 0.99), rgba(0, 3, 10, 0.99));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 20px 64px rgba(0, 0, 0, 0.30);
+  overflow: hidden;
+}
+
+.screenTwoWorkflowRail {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(0, 209, 255, 0.18);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(0, 209, 255, 0.055), rgba(255, 255, 255, 0.014)),
+    rgba(2, 9, 19, 0.98);
+  overflow: hidden;
+}
+
+.screenTwoWorkflowPrime {
+  min-height: 122px;
+  padding: 13px;
+  border: 1px solid rgba(0, 255, 148, 0.30);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.17), transparent 38%),
+    linear-gradient(135deg, rgba(2, 30, 28, 0.82), rgba(3, 12, 24, 0.98));
+}
+
+.screenTwoWorkflowPrime span,
+.screenTwoWorkflowMode span,
+.screenTwoWorkflowModeActive span,
+.screenTwoWorkflowHeader span,
+.screenTwoWorkflowRunway > span,
+.screenTwoWorkflowEvidence > span,
+.screenTwoWorkflowCommandDrawer > span,
+.screenTwoWorkflowRow span,
+.screenTwoWorkflowRowActive span,
+.screenTwoSurfacePick span,
+.screenTwoSurfacePickActive span,
+.screenTwoWorkflowReceipt span {
+  color: rgba(188, 244, 255, 0.70);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.screenTwoWorkflowPrime strong {
+  display: block;
+  margin-top: 10px;
+  color: #ffffff;
+  font-size: 1.12rem;
+  font-weight: 950;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowPrime small {
+  display: block;
+  margin-top: 9px;
+  color: rgba(206, 255, 231, 0.76);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.28;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowModes {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.screenTwoWorkflowMode,
+.screenTwoWorkflowModeActive {
+  position: relative;
+  width: 100%;
+  min-height: 78px;
+  padding: 10px 11px 10px 15px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.028);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.screenTwoWorkflowModeActive,
+.screenTwoWorkflowMode:hover {
+  border-color: rgba(130, 203, 255, 0.70);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(130, 203, 255, 0.14), transparent 36%),
+    linear-gradient(135deg, rgba(0, 209, 255, 0.10), rgba(0, 255, 148, 0.045));
+}
+
+.screenTwoWorkflowMode strong,
+.screenTwoWorkflowModeActive strong {
+  display: block;
+  margin-top: 7px;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowMode small,
+.screenTwoWorkflowModeActive small {
+  display: block;
+  margin-top: 5px;
+  color: rgba(221, 235, 241, 0.68);
+  font-size: 0.62rem;
+  font-weight: 780;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowSurface {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 13px;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px;
+  border: 1px solid rgba(0, 209, 255, 0.18);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(0, 209, 255, 0.12), transparent 32%),
+    linear-gradient(135deg, rgba(4, 16, 30, 0.74), rgba(1, 6, 16, 0.96));
+  overflow: hidden;
+}
+
+.screenTwoWorkflowHeader {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-width: 0;
+  padding: 4px 4px 14px;
+  border-bottom: 1px solid rgba(0, 209, 255, 0.14);
+}
+
+.screenTwoWorkflowHeader strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: clamp(1.18rem, 1.8vw, 1.72rem);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowHeader p {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(0, 209, 255, 0.035);
+  color: rgba(255, 239, 185, 0.88);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.34;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowGrid {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.82fr) minmax(260px, 0.74fr) minmax(260px, 0.68fr);
+  gap: 13px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.screenTwoWorkflowRunway,
+.screenTwoWorkflowEvidence,
+.screenTwoWorkflowCommandDrawer {
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 209, 255, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.024);
+  overflow: hidden;
+}
+
+.screenTwoWorkflowRunway > div {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  margin-top: 11px;
+  max-height: 308px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.screenTwoWorkflowRow,
+.screenTwoWorkflowRowActive {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: center;
+  min-height: 72px;
+  padding: 10px 11px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.028);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.screenTwoWorkflowRowActive,
+.screenTwoWorkflowRow:hover {
+  border-color: rgba(0, 255, 148, 0.42);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 148, 0.12), transparent 34%),
+    rgba(0, 209, 255, 0.04);
+}
+
+.screenTwoWorkflowRow span,
+.screenTwoWorkflowRowActive span {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(0, 209, 255, 0.38);
+  border-radius: 999px;
+  background: rgba(0, 209, 255, 0.10);
+  color: rgba(136, 235, 255, 0.98);
+  grid-row: span 2;
+}
+
+.screenTwoWorkflowRow strong,
+.screenTwoWorkflowRowActive strong {
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 950;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowRow small,
+.screenTwoWorkflowRowActive small {
+  color: rgba(221, 235, 241, 0.72);
+  font-size: 0.62rem;
+  font-weight: 780;
+  line-height: 1.24;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowEvidence article,
+.screenTwoWorkflowCommandDrawer > article {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.026);
+}
+
+.screenTwoWorkflowEvidence article small,
+.screenTwoWorkflowCommandDrawer article span {
+  color: rgba(188, 244, 255, 0.68);
+  font-size: 0.55rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.screenTwoWorkflowEvidence article strong,
+.screenTwoWorkflowCommandDrawer strong,
+.screenTwoWorkflowReceipt strong {
+  display: block;
+  margin-top: 7px;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 950;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowEvidence article p,
+.screenTwoWorkflowCommandDrawer p,
+.screenTwoWorkflowReceipt small {
+  margin: 7px 0 0;
+  color: rgba(221, 235, 241, 0.72);
+  font-size: 0.64rem;
+  font-weight: 760;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
+}
+
+.screenTwoWorkflowSurfacePicker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.screenTwoSurfacePick,
+.screenTwoSurfacePickActive {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(0, 209, 255, 0.16);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.024);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.screenTwoSurfacePickActive,
+.screenTwoSurfacePick:hover {
+  border-color: rgba(0, 255, 148, 0.38);
+  background: rgba(0, 255, 148, 0.055);
+}
+
+.screenTwoSurfacePick small,
+.screenTwoSurfacePickActive small {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255, 239, 185, 0.88);
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.screenTwoWorkflowCommandButtons {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.screenTwoWorkflowCommandButtons button {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(0, 209, 255, 0.22);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(0, 209, 255, 0.10), rgba(0, 255, 148, 0.035));
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.screenTwoWorkflowCommandButtons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.screenTwoWorkflowCommandButtons button:not(:disabled):hover,
+.screenTwoWorkflowCommandButtons button:not(:disabled):focus-visible {
+  border-color: rgba(0, 255, 148, 0.42);
+  box-shadow: 0 0 0 1px rgba(0, 255, 148, 0.12);
+}
+
+.screenTwoWorkflowReceipt {
+  border-color: rgba(255, 184, 0, 0.22);
+}
+
+.screenTwoWorkflowReceipt[data-status="POSTED"] {
+  border-color: rgba(0, 255, 148, 0.36);
+  background: rgba(0, 255, 148, 0.055);
+}
+
+.screenTwoWorkflowReceipt[data-status="FAILED"],
+.screenTwoWorkflowReceipt[data-status="REJECTED"] {
+  border-color: rgba(255, 75, 75, 0.34);
+  background: rgba(255, 75, 75, 0.055);
+}
+
+@media (max-width: 1440px) {
+  .screenTwoOperatingWorkflow {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .screenTwoWorkflowGrid {
+    grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+  }
+
+  .screenTwoWorkflowCommandDrawer {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 980px) {
+  .screenTwoOperatingWorkflow,
+  .screenTwoWorkflowHeader,
+  .screenTwoWorkflowGrid,
+  .screenTwoWorkflowSurfacePicker {
+    grid-template-columns: 1fr;
+  }
+}
