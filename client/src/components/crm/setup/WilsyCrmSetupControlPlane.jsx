@@ -1158,10 +1158,6 @@ export default function WilsyCrmSetupControlPlane() {
   const [reviewQueue, setReviewQueue] = useState([]);
   const [reviewResult, setReviewResult] = useState(null);
   const [screenTwoSourceSurface, setScreenTwoSourceSurface] = useState(null);
-  const [screenTwoWorkflowMode, setScreenTwoWorkflowMode] = useState('runway');
-  const [screenTwoSelectedTaskKey, setScreenTwoSelectedTaskKey] = useState('0');
-  const [screenTwoSelectedSurfaceKey, setScreenTwoSelectedSurfaceKey] = useState('0');
-  const [screenTwoWorkflowReceipt, setScreenTwoWorkflowReceipt] = useState(null);
   const [screenTwoSourceBusy, setScreenTwoSourceBusy] = useState(false);
   const [screenTwoSourceError, setScreenTwoSourceError] = useState('');
 
@@ -1369,226 +1365,6 @@ export default function WilsyCrmSetupControlPlane() {
           status: activeControl.state,
           purpose: 'Governed surface',
         }));
-  /* WILSY_P60K5M1B_SCREEN2_OPERATING_WORKFLOW */
-  const screenTwoSelectedTaskIndex = Math.min(
-    Math.max(Number(screenTwoSelectedTaskKey) || 0, 0),
-    Math.max(screenTwoWorkItems.length - 1, 0)
-  );
-  const screenTwoSelectedSurfaceIndex = Math.min(
-    Math.max(Number(screenTwoSelectedSurfaceKey) || 0, 0),
-    Math.max(screenTwoAffectedSurfaces.length - 1, 0)
-  );
-  const screenTwoSelectedWorkItem = screenTwoWorkItems[screenTwoSelectedTaskIndex] || screenTwoWorkItems[0] || {};
-  const screenTwoSelectedSurface = screenTwoAffectedSurfaces[screenTwoSelectedSurfaceIndex] || screenTwoAffectedSurfaces[0] || {};
-  const screenTwoSelectedTaskTitle =
-    screenTwoSelectedWorkItem.title ||
-    screenTwoSelectedWorkItem.label ||
-    screenTwoSelectedWorkItem.task ||
-    activeControl.title ||
-    activeControl.name ||
-    'Control task';
-  const screenTwoSelectedTaskEvidence =
-    screenTwoSelectedWorkItem.evidence ||
-    screenTwoSelectedWorkItem.detail ||
-    screenTwoSelectedWorkItem.reason ||
-    screenTwoSelectedWorkItem.owner ||
-    screenTwoPurpose;
-  const screenTwoSelectedSurfaceTitle =
-    screenTwoSelectedSurface.label ||
-    screenTwoSelectedSurface.title ||
-    'Surface';
-  const screenTwoSelectedSurfaceEvidence =
-    screenTwoSelectedSurface.metric ||
-    screenTwoSelectedSurface.summary ||
-    screenTwoSelectedSurface.detail ||
-    screenTwoSelectedSurface.description ||
-    screenTwoSelectedSurface.reason ||
-    screenTwoSelectedSurface.purpose ||
-    'Governed surface';
-  const screenTwoWorkflowSourceSummary =
-    screenTwoSourceSurface?.sourceIntelligence?.sourceSummary ||
-    screenTwoSourcePosture.sourceSummary ||
-    screenTwoSourceSurface?.auditEvidence?.sourceSummary ||
-    screenTwoSelectedTaskEvidence ||
-    'Source evidence pending.';
-  const screenTwoAttentionSurfaceCount = screenTwoAffectedSurfaces.filter((surface = {}) => {
-    const status = String(surface.status || surface.state || '').toUpperCase();
-
-    return status.includes('ATTENTION') || status.includes('RISK') || status.includes('BLOCK') || status.includes('WATCH');
-  }).length;
-  const screenTwoLiveSurfaceCount = screenTwoAffectedSurfaces.filter((surface = {}) => {
-    const status = String(surface.status || surface.state || '').toUpperCase();
-    const label = String(surface.label || surface.title || '').trim();
-
-    return Boolean(label) && !status.includes('EMPTY');
-  }).length;
-  const screenTwoWorkflowActionLabel = stagedReview
-    ? 'Attach evidence'
-    : 'Stage selected control';
-  const screenTwoWorkflowProofLine =
-    String(screenTwoLiveSurfaceCount) +
-    '/' +
-    String(screenTwoAffectedSurfaces.length || 1) +
-    ' surfaces · ' +
-    String(screenTwoAttentionSurfaceCount) +
-    ' attention · ' +
-    String(screenTwoWorkItems.length || 0) +
-    ' actions';
-  const screenTwoWorkflowModes = [
-    {
-      id: 'runway',
-      label: 'Runway',
-      metric: String(screenTwoWorkItems.length || 0),
-      detail: 'Select task',
-    },
-    {
-      id: 'evidence',
-      label: 'Evidence',
-      metric: String(screenTwoLiveSurfaceCount) + '/' + String(screenTwoAffectedSurfaces.length || 1),
-      detail: 'Select surface',
-    },
-    {
-      id: 'authority',
-      label: 'Authority',
-      metric: screenTwoState,
-      detail: screenTwoRisk,
-    },
-    {
-      id: 'command',
-      label: 'Command',
-      metric: screenTwoWorkflowActionLabel,
-      detail: stagedReview ? 'Post receipt' : 'Stage packet',
-    },
-  ];
-  const screenTwoActiveWorkflowMode =
-    screenTwoWorkflowModes.find((mode) => mode.id === screenTwoWorkflowMode) ||
-    screenTwoWorkflowModes[0];
-
-  /**
-   * @function handleScreenTwoOperatingCommand
-   * @description Executes the selected Screen Two operating command through the existing institutional setup review command bridge.
-   * @param {string} commandId - Selected operating workflow command.
-   * @returns {Promise<void>} Resolves after backend command receipt state is updated.
-   * @collaboration Screen Two operating workflow, setup review command bridge, institutionalHeaders, strikePayload, selected task, selected surface, and receipt panel.
-   */
-  async function handleScreenTwoOperatingCommand(commandId = 'STAGE_SELECTED_CONTROL') {
-    const route = commandId === 'STAGE_SELECTED_CONTROL'
-      ? '/api/crm/command/setup/reviews'
-      : '/api/crm/command/setup/reviews/evidence';
-    const packetId =
-      stagedReview?.packetId ||
-      stagedReview?.id ||
-      `SETUP_SCREEN_TWO_${activeControl.id || 'CONTROL'}_${Date.now()}`;
-    const ticket = {
-      ...createReviewTicket(activeDomain, activeControl),
-      id: packetId,
-      packetId,
-      title: `${activeControl.title || activeControl.name || 'Setup control'} · ${screenTwoSelectedTaskTitle}`,
-      controlName: activeControl.title || activeControl.name || screenTwoSelectedTaskTitle,
-      owner: screenTwoOwner,
-      risk: screenTwoRisk,
-      state: screenTwoState,
-      signal: screenTwoPurpose,
-      surfaces: [screenTwoSelectedSurface, ...screenTwoAffectedSurfaces].filter(Boolean),
-      workItems: [screenTwoSelectedWorkItem, ...screenTwoWorkItems].filter(Boolean),
-      requiredEvidence: [
-        screenTwoSelectedTaskTitle,
-        screenTwoSelectedSurfaceTitle,
-        screenTwoWorkflowSourceSummary,
-        screenTwoWorkflowProofLine,
-      ],
-    };
-    const payload = buildWilsySetupReviewLivePayload({
-      route,
-      ticket,
-      domain: activeDomain,
-      control: activeControl,
-      lens,
-    });
-    const institutionalHeaders = {
-      ...payload.institutionalHeaders,
-      route,
-      commandSurface: 'CRM_SETUP_SCREEN_TWO_OPERATING_WORKFLOW',
-    };
-    const workflowPayload = {
-      ...payload,
-      route,
-      command: commandId,
-      commandSurface: 'CRM_SETUP_SCREEN_TWO_OPERATING_WORKFLOW',
-      institutionalHeaders,
-      selectedTask: screenTwoSelectedWorkItem,
-      selectedSurface: screenTwoSelectedSurface,
-      evidenceSummary: screenTwoWorkflowSourceSummary,
-      strikePayload: {
-        ...payload.strikePayload,
-        command: commandId,
-        selectedTask: screenTwoSelectedWorkItem,
-        selectedSurface: screenTwoSelectedSurface,
-        evidenceSummary: screenTwoWorkflowSourceSummary,
-        proofLine: screenTwoWorkflowProofLine,
-        headers: institutionalHeaders,
-        institutionalHeaders,
-      },
-    };
-
-    setScreenTwoWorkflowReceipt({
-      status: 'RUNNING',
-      command: commandId,
-      message: `${commandId} running through setup command authority...`,
-      generatedAt: new Date().toISOString(),
-    });
-    setReviewCommandBusy(commandId);
-    setReviewCommandError(null);
-
-    try {
-      const data = await requestWilsySetupReviewLiveCommand(route, workflowPayload);
-      const backendTicket = normalizeWilsySetupReviewLivePacket(data.packet || data.review || {}, ticket);
-
-      if (backendTicket?.packetId || backendTicket?.id) {
-        setStagedReview(backendTicket);
-        setReviewQueue((current) => {
-          const nextTicketId = backendTicket.packetId || backendTicket.id;
-          const withoutDuplicate = current.filter((item) => (item.packetId || item.id) !== nextTicketId);
-
-          return [backendTicket, ...withoutDuplicate].slice(0, 8);
-        });
-      }
-
-      setReviewResult({
-        ...backendTicket,
-        title: backendTicket.title || ticket.title,
-        status: data.result || data.message || 'Screen Two command posted',
-        backendLive: true,
-      });
-      setScreenTwoWorkflowReceipt({
-        status: 'POSTED',
-        command: commandId,
-        message: data.message || data.result || 'Screen Two command posted.',
-        receiptId:
-          data.receiptId ||
-          data.evidenceId ||
-          data.reviewId ||
-          backendTicket.packetId ||
-          backendTicket.id ||
-          '',
-        generatedAt: new Date().toISOString(),
-      });
-      setScreenTwoWorkflowMode('command');
-    } catch (error) {
-      const message = error?.message || 'Screen Two command failed.';
-      setReviewCommandError(message);
-      setScreenTwoWorkflowReceipt({
-        status: 'FAILED',
-        command: commandId,
-        message,
-        generatedAt: new Date().toISOString(),
-      });
-      setScreenTwoWorkflowMode('command');
-    } finally {
-      setReviewCommandBusy('');
-    }
-  }
-
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -3089,129 +2865,56 @@ export default function WilsyCrmSetupControlPlane() {
               </section>
             ) : (
               <>
-                <section className={styles.screenTwoOperatingWorkflow} aria-label="Screen Two operating workflow">
-                  <aside className={styles.screenTwoWorkflowRail} aria-label="Workflow rail">
-                    <div className={styles.screenTwoWorkflowPrime}>
-                      <span>{activeControl.title || activeControl.name}</span>
-                      <strong>{screenTwoWorkflowActionLabel}</strong>
-                      <small>{screenTwoWorkflowProofLine}</small>
-                    </div>
+                <article className={styles.viewPanel}>
+                  <span>Work queue</span>
+                  <div className={styles.workStepList}>
+                    {screenTwoWorkItems.map((item, index) => (
+                      <button type="button" key={item.id || item.title || item.label || index}>
+                        <span>{String(index + 1).padStart(2, '0')}</span>
+                        <strong>{item.title || item.label || 'Control task'}</strong>
+                        <small>{item.owner || screenTwoOwner}</small>
+                      </button>
+                    ))}
+                  </div>
+                </article>
 
-                    <div className={styles.screenTwoWorkflowModes}>
-                      {screenTwoWorkflowModes.map((mode) => (
-                        <button
-                          type="button"
-                          key={mode.id}
-                          className={screenTwoWorkflowMode === mode.id ? styles.screenTwoWorkflowModeActive : styles.screenTwoWorkflowMode}
-                          aria-pressed={screenTwoWorkflowMode === mode.id}
-                          onClick={() => setScreenTwoWorkflowMode(mode.id)}
-                        >
-                          <span>{mode.label}</span>
-                          <strong>{mode.metric}</strong>
-                          <small>{mode.detail}</small>
-                        </button>
-                      ))}
-                    </div>
-                  </aside>
+                <article className={styles.viewPanel}>
+                  <span>Affected surfaces</span>
+                  <div className={styles.surfaceImpactList}>
+                    {screenTwoAffectedSurfaces.map((surface, index) => (
+                      <article key={surface.id || surface.title || surface.label || index}>
+                        <span>{surface.label || surface.title || 'Surface'}</span>
+                        <strong>{surface.purpose || surface.reason || 'Governed surface'}</strong>
+                        <small>{surface.status || screenTwoState}</small>
+                      </article>
+                    ))}
+                  </div>
+                </article>
 
-                  <main className={styles.screenTwoWorkflowSurface} aria-label="Selected workflow workspace">
-                    <header className={styles.screenTwoWorkflowHeader}>
-                      <div>
-                        <span>{screenTwoActiveWorkflowMode.label} Workspace</span>
-                        <strong>{screenTwoSelectedTaskTitle}</strong>
-                      </div>
-                      <p>{screenTwoWorkflowSourceSummary}</p>
-                    </header>
+                <article className={styles.viewPanel}>
+                  <span>Control posture</span>
+                  <div className={styles.decisionSignalGrid}>
+                    <article>
+                      <span>Risk</span>
+                      <strong className={resolveToneClass(activeControl.risk)}>{screenTwoRisk}</strong>
+                    </article>
 
-                    <div className={styles.screenTwoWorkflowGrid}>
-                      <section className={styles.screenTwoWorkflowRunway} aria-label="Selectable task runway">
-                        <span>Action Runway</span>
-                        <div>
-                          {screenTwoWorkItems.map((item, index) => (
-                            <button
-                              type="button"
-                              key={item.id || item.title || item.label || index}
-                              className={screenTwoSelectedTaskIndex === index ? styles.screenTwoWorkflowRowActive : styles.screenTwoWorkflowRow}
-                              onClick={() => {
-                                setScreenTwoSelectedTaskKey(String(index));
-                                setScreenTwoWorkflowMode('runway');
-                              }}
-                            >
-                              <span>{String(index + 1).padStart(2, '0')}</span>
-                              <strong>{item.title || item.label || item.task || 'Control action'}</strong>
-                              <small>{item.evidence || item.detail || item.reason || item.owner || screenTwoOwner}</small>
-                            </button>
-                          ))}
-                        </div>
-                      </section>
+                    <article>
+                      <span>State</span>
+                      <strong className={resolveToneClass(activeControl.state)}>{screenTwoState}</strong>
+                    </article>
 
-                      <section className={styles.screenTwoWorkflowEvidence} aria-label="Evidence drawer">
-                        <span>Evidence Drawer</span>
-                        <article>
-                          <small>Selected task</small>
-                          <strong>{screenTwoSelectedTaskTitle}</strong>
-                          <p>{screenTwoSelectedTaskEvidence}</p>
-                        </article>
-                        <article>
-                          <small>Selected surface</small>
-                          <strong>{screenTwoSelectedSurfaceTitle}</strong>
-                          <p>{screenTwoSelectedSurfaceEvidence}</p>
-                        </article>
-                        <div className={styles.screenTwoWorkflowSurfacePicker}>
-                          {screenTwoAffectedSurfaces.map((surface, index) => (
-                            <button
-                              type="button"
-                              key={surface.id || surface.title || surface.label || index}
-                              className={screenTwoSelectedSurfaceIndex === index ? styles.screenTwoSurfacePickActive : styles.screenTwoSurfacePick}
-                              onClick={() => {
-                                setScreenTwoSelectedSurfaceKey(String(index));
-                                setScreenTwoWorkflowMode('evidence');
-                              }}
-                            >
-                              <span>{surface.label || surface.title || 'Surface'}</span>
-                              <small>{surface.status || screenTwoState}</small>
-                            </button>
-                          ))}
-                        </div>
-                      </section>
+                    <article>
+                      <span>Owner</span>
+                      <strong>{screenTwoOwner}</strong>
+                    </article>
 
-                      <aside className={styles.screenTwoWorkflowCommandDrawer} aria-label="Command drawer">
-                        <span>Command Drawer</span>
-                        <strong>{screenTwoWorkflowActionLabel}</strong>
-                        <p>{screenTwoOwner} · {screenTwoRisk} · {screenTwoState}</p>
-
-                        <div className={styles.screenTwoWorkflowCommandButtons}>
-                          <button type="button" disabled={Boolean(reviewCommandBusy)} onClick={() => handleScreenTwoOperatingCommand('STAGE_SELECTED_CONTROL')}>
-                            Stage selected
-                          </button>
-                          <button type="button" disabled={Boolean(reviewCommandBusy) || !stagedReview} onClick={() => handleScreenTwoOperatingCommand('ATTACH_SELECTED_EVIDENCE')}>
-                            Attach evidence
-                          </button>
-                          <button type="button" disabled={Boolean(reviewCommandBusy) || !stagedReview} onClick={() => handleScreenTwoOperatingCommand('FLAG_AUTHORITY_REVIEW')}>
-                            Flag authority
-                          </button>
-                        </div>
-
-                        {screenTwoWorkflowReceipt ? (
-                          <article className={styles.screenTwoWorkflowReceipt} data-status={screenTwoWorkflowReceipt.status}>
-                            <span>{screenTwoWorkflowReceipt.status}</span>
-                            <strong>{screenTwoWorkflowReceipt.command}</strong>
-                            <small>{screenTwoWorkflowReceipt.message}</small>
-                            {screenTwoWorkflowReceipt.receiptId ? (
-                              <small>{screenTwoWorkflowReceipt.receiptId}</small>
-                            ) : null}
-                          </article>
-                        ) : (
-                          <article className={styles.screenTwoWorkflowReceipt} data-status="STANDBY">
-                            <span>STANDBY</span>
-                            <strong>No command posted</strong>
-                            <small>Select a task and surface, then post a command.</small>
-                          </article>
-                        )}
-                      </aside>
-                    </div>
-                  </main>
-                </section>
+                    <article>
+                      <span>Purpose</span>
+                      <strong>{screenTwoPurpose}</strong>
+                    </article>
+                  </div>
+                </article>
               </>
             )}
           </div>
