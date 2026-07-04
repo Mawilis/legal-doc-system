@@ -6894,3 +6894,69 @@ button.packetRevealNode {
   border-radius: 999px;
   background: rgba(0, 209, 255, 0.24);
 }
+
+/* WILSY_P60K5N2_RIGHT_RAIL_SCROLL_RESCUE
+   CSS-only rescue after N1C.
+   Contract:
+   - Authority rail owns vertical scroll.
+   - Evidence Pack and Staged Reviews must not trap rail scroll.
+   - Prevent footer/watermark collision with bottom padding.
+   - No JSX, backend, DB, Screen One main view, Screen Two panels, or CRMDashboard changes. */
+
+.authorityRail {
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 96px !important;
+  scroll-behavior: smooth;
+}
+
+/* Stop nested sections from stealing the rail scroll. */
+.authorityRail .evidenceRail div,
+.authorityRail .queueRail > div {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Let Staged Reviews participate in the rail flow instead of becoming a trapped mini-scroll area. */
+.authorityRail .queueRail {
+  display: grid;
+  grid-template-rows: auto auto auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+}
+
+/* Keep right rail content compact while still fully reachable. */
+.authorityRail .inspector,
+.authorityRail .evidenceRail,
+.authorityRail .queueRail {
+  flex-shrink: 0;
+}
+
+/* Preserve readable chips without forcing a nested scrollbar. */
+.authorityRail .evidenceRail div {
+  align-content: start;
+}
+
+/* Keep destructive-confirmation dock reachable in normal rail flow. */
+.authorityRailConfirmDock {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+/* Right rail scrollbar must appear on the rail itself. */
+.authorityRail::-webkit-scrollbar {
+  width: 6px;
+}
+
+.authorityRail::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 209, 255, 0.34);
+}
+
+.authorityRail::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.12);
+}
