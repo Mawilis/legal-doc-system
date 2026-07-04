@@ -1161,6 +1161,7 @@ export default function WilsyCrmSetupControlPlane() {
   const [viewAreaConsoleOpen, setViewAreaConsoleOpen] = useState(false);
   const [domainRailOpen, setDomainRailOpen] = useState(true);
   const [authorityRailOpen, setAuthorityRailOpen] = useState(true);
+  const [authorityRailPendingAction, setAuthorityRailPendingAction] = useState(null);
   const [reviewCommandBusy, setReviewCommandBusy] = useState('');
   const [reviewCommandError, setReviewCommandError] = useState(null);
   const [setupWorkflowCommandBusy, setSetupWorkflowCommandBusy] = useState('');
@@ -1260,6 +1261,80 @@ export default function WilsyCrmSetupControlPlane() {
   const activeControlIndex = activeDomain.controls.findIndex((control) => control.id === activeControl.id);
   const isFirstControl = activeControlIndex <= 0;
   const isLastControl = activeControlIndex >= activeDomain.controls.length - 1;
+  /* WILSY_P60K5N1C_GOVERN_RIGHT_RAIL_ACTIONS */
+  const authorityRailPendingTitle =
+    authorityRailPendingAction?.ticket?.title ||
+    authorityRailPendingAction?.label ||
+    'Right rail command';
+  const authorityRailPendingScope =
+    authorityRailPendingAction?.type === 'clear'
+      ? `${reviewQueue.length} staged review${reviewQueue.length === 1 ? '' : 's'}`
+      : (authorityRailPendingAction?.packetOrControlId ||
+          authorityRailPendingAction?.ticket?.packetId ||
+          authorityRailPendingAction?.ticket?.id ||
+          authorityRailPendingAction?.ticket?.controlId ||
+          'selected review');
+
+  /**
+   * @function handleAuthorityRailActionRequest
+   * @description Opens a governed in-app confirmation for right rail Clear and Remove commands before live backend handlers run.
+   * @param {string} type - Right rail action type.
+   * @param {Object} ticket - Optional staged review ticket.
+   * @returns {void}
+   * @collaboration Authority rail, staged review queue, in-app confirmation, backend review handlers, and receipt discipline.
+   */
+  function handleAuthorityRailActionRequest(type = 'review', ticket = null) {
+    const label = type === 'clear' ? 'Clear staged reviews' : 'Withdraw staged review';
+    const packetOrControlId =
+      ticket?.controlId ||
+      ticket?.packetId ||
+      ticket?.id ||
+      '';
+
+    setAuthorityRailPendingAction({
+      type,
+      ticket,
+      label,
+      packetOrControlId,
+      requestedAt: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * @function handleAuthorityRailActionCancel
+   * @description Cancels the pending right rail command confirmation without changing queue or backend state.
+   * @returns {void}
+   * @collaboration Authority rail, in-app confirmation, staged review queue, and operator safety.
+   */
+  function handleAuthorityRailActionCancel() {
+    setAuthorityRailPendingAction(null);
+  }
+
+  /**
+   * @function handleAuthorityRailActionConfirm
+   * @description Confirms the pending right rail command and delegates to the existing live Clear or Remove backend handler.
+   * @returns {Promise<void>} Resolves after the governed command handler completes.
+   * @collaboration Authority rail confirmation, handleClearQueue, handleRemoveReview, institutional headers, strike payload, and receipts.
+   */
+  async function handleAuthorityRailActionConfirm() {
+    const pending = authorityRailPendingAction;
+
+    if (!pending) {
+      return;
+    }
+
+    setAuthorityRailPendingAction(null);
+
+    if (pending.type === 'clear') {
+      await handleClearQueue();
+      return;
+    }
+
+    if (pending.type === 'remove') {
+      await handleRemoveReview(pending.packetOrControlId);
+    }
+  }
+
   const setupPacketRequiresBackendStage = Boolean(stagedReview && !stagedReview.backendLive);
   const setupPacketPrimaryActionLabel = stagedReview
     ? setupPacketRequiresBackendStage
@@ -2886,8 +2961,20 @@ export default function WilsyCrmSetupControlPlane() {
         <section className={styles.queueRail}>
           <header>
             <span>Staged reviews</span>
-            <button type="button" onClick={handleClearQueue}>Clear</button>
+            <button type="button" onClick={() => handleAuthorityRailActionRequest('clear')}>Clear</button>
           </header>
+
+            {authorityRailPendingAction ? (
+              <section className={styles.authorityRailConfirmDock} aria-label="Right rail command confirmation">
+                <span>Confirm governed command</span>
+                <strong>{authorityRailPendingTitle}</strong>
+                <small>{authorityRailPendingScope}</small>
+                <div>
+                  <button type="button" onClick={handleAuthorityRailActionCancel}>Cancel</button>
+                  <button type="button" onClick={handleAuthorityRailActionConfirm}>Confirm</button>
+                </div>
+              </section>
+            ) : null}
 
           {reviewQueue.length ? (
             <div>
@@ -2899,7 +2986,7 @@ export default function WilsyCrmSetupControlPlane() {
                     <small>{ticket.owner} · {ticket.risk}</small>
                   </button>
 
-                  <button type="button" onClick={() => handleRemoveReview(ticket.controlId)}>Remove</button>
+                  <button type="button" onClick={() => handleAuthorityRailActionRequest('remove', ticket)}>Remove</button>
                 </article>
               ))}
             </div>

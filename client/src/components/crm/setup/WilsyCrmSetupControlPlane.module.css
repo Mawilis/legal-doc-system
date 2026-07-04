@@ -6667,3 +6667,230 @@ button.packetRevealNode {
   }
 }
 
+
+/* WILSY_P60K5N1C_GOVERN_RIGHT_RAIL_ACTIONS
+   Right rail only.
+   Contract:
+   - Compact Inspector / Evidence Pack / Staged Reviews.
+   - Prevent footer collision.
+   - Govern Clear/Remove through confirmation dock.
+   - No main view, Screen One Packet Console, Screen Two panels, or CRMDashboard changes. */
+
+.authorityRail {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.authorityRail .authorityRailChrome {
+  padding: 10px;
+  border-radius: 20px;
+}
+
+.authorityRail .authorityRailChrome strong {
+  font-size: 0.98rem;
+}
+
+.authorityRail .scoreRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.authorityRail .scoreRail article {
+  min-height: 58px;
+  padding: 9px 10px;
+  border-radius: 16px;
+}
+
+.authorityRail .scoreRail span {
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+}
+
+.authorityRail .scoreRail strong {
+  font-size: 1rem;
+}
+
+.authorityRail .inspector,
+.authorityRail .evidenceRail,
+.authorityRail .queueRail {
+  padding: 11px;
+  border-radius: 18px;
+}
+
+.authorityRail .inspector {
+  display: grid;
+  gap: 9px;
+}
+
+.authorityRail .inspector p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.32;
+}
+
+.authorityRail .inspector article {
+  min-height: 54px;
+  padding: 9px 10px;
+  border-radius: 14px;
+}
+
+.authorityRail .inspector span,
+.authorityRail .evidenceRail > span,
+.authorityRail .queueRail header span,
+.authorityRailConfirmDock span {
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+}
+
+.authorityRail .inspector strong {
+  font-size: 0.78rem;
+  line-height: 1.18;
+}
+
+.authorityRail .evidenceRail div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  max-height: 112px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.authorityRail .evidenceRail strong {
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.authorityRail .queueRail {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.authorityRail .queueRail header {
+  align-items: center;
+  gap: 8px;
+}
+
+.authorityRail .queueRail header button {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 14px;
+  font-size: 0.68rem;
+}
+
+.authorityRail .queueRail > div {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  max-height: 214px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.authorityRail .queueRail article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 72px;
+  padding: 9px;
+  border-radius: 16px;
+}
+
+.authorityRail .queueRail article > button:first-child {
+  min-width: 0;
+  text-align: left;
+}
+
+.authorityRail .queueRail article > button:first-child strong {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authorityRail .queueRail article > button:first-child small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.authorityRail .queueRail article > button:last-child {
+  min-height: 36px;
+  padding: 7px 11px;
+  border-radius: 14px;
+  font-size: 0.68rem;
+}
+
+.authorityRailConfirmDock {
+  display: grid;
+  gap: 7px;
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 184, 0, 0.34);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 184, 0, 0.10), transparent 34%),
+    rgba(255, 184, 0, 0.035);
+}
+
+.authorityRailConfirmDock strong {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.authorityRailConfirmDock small {
+  color: rgba(255, 231, 154, 0.88);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.authorityRailConfirmDock div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.authorityRailConfirmDock button {
+  min-height: 34px;
+  border-radius: 13px;
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.authorityRailConfirmDock button:first-child {
+  border-color: rgba(140, 236, 255, 0.26);
+  background: rgba(0, 209, 255, 0.04);
+  color: rgba(188, 244, 255, 0.92);
+}
+
+.authorityRailConfirmDock button:last-child {
+  border-color: rgba(255, 184, 0, 0.40);
+  background: rgba(255, 184, 0, 0.08);
+  color: rgba(255, 231, 154, 0.98);
+}
+
+.authorityRail *::-webkit-scrollbar {
+  width: 5px;
+}
+
+.authorityRail *::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 209, 255, 0.24);
+}
