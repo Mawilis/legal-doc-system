@@ -7911,7 +7911,7 @@ button.packetRevealNode {
 
 /* Update O1 hover shelf language now that Inspector has live backend facts. */
 .authorityRail .inspector::after {
-  content: "Live backend Inspector: hover Owner, Backend Engine, Investor Signal, or review the route/evidence/timestamp facts below." !important;
+  content: "Live source Inspector: hover Owner, Engine, or Investor Signal. Review evidence path, evidence nodes, and verification time below." !important;
 }
 
 .authorityRail .inspector:has(article:nth-of-type(1):hover)::after,
@@ -7921,10 +7921,53 @@ button.packetRevealNode {
 
 .authorityRail .inspector:has(article:nth-of-type(2):hover)::after,
 .authorityRail .inspector:has(article:nth-of-type(2):focus-within)::after {
-  content: "BACKEND ENGINE: live source-readiness result returned by the setup control-surface resolver, not static UI copy." !important;
+  content: "ENGINE: live source-readiness result returned by the control-surface resolver, translated into operator language." !important;
 }
 
 .authorityRail .inspector:has(article:nth-of-type(3):hover)::after,
 .authorityRail .inspector:has(article:nth-of-type(3):focus-within)::after {
-  content: "INVESTOR SIGNAL: live evidence signal for board, audit, and regulator posture returned by the backend resolver." !important;
+  content: "INVESTOR SIGNAL: live evidence signal for board, audit, and regulator posture returned by the source resolver." !important;
+}
+
+
+/* WILSY_P60K5O3_HUMANIZE_INSPECTOR_LIVE_DATA
+   Right rail Inspector display language only.
+   Contract:
+   - No backend/internal route/status language visible in UI.
+   - Live resolver data remains wired.
+   - Hover shelf and long description text align left.
+   - Score strip, Packet Console, Screen Two panels, governance, and CRMDashboard stay untouched. */
+
+.authorityRail .inspector > p,
+.authorityRail .inspector::after,
+.authorityRail .inspector article span,
+.authorityRail .inspector article strong,
+.authorityRail .inspector .inspectorLiveBackendGrid article span,
+.authorityRail .inspector .inspectorLiveBackendGrid article strong,
+.inspectorLiveBackendError {
+  text-align: left !important;
+}
+
+.authorityRail .inspector::after {
+  justify-self: stretch !important;
+  align-self: stretch !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  line-height: 1.42 !important;
+}
+
+.authorityRail .inspector > span em {
+  max-width: 9.8rem !important;
+  letter-spacing: 0.08em !important;
+}
+
+.authorityRail .inspector .inspectorLiveBackendGrid article strong {
+  font-size: 0.68rem !important;
+  line-height: 1.26 !important;
+}
+
+.authorityRail .inspector[data-live-status*="SOURCE CHECK"] > span em {
+  border-color: rgba(255, 184, 0, 0.36) !important;
+  background: rgba(255, 184, 0, 0.075) !important;
+  color: rgba(255, 231, 154, 0.96) !important;
 }

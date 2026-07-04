@@ -1400,6 +1400,46 @@ export default function WilsyCrmSetupControlPlane() {
     ? 'BACKEND_ERROR'
     : authorityInspectorLiveStatus;
 
+  /* WILSY_P60K5O3_HUMANIZE_INSPECTOR_LIVE_DATA */
+  const authorityInspectorLiveStatusDisplay =
+    ({
+      BACKEND_ERROR: 'SOURCE CHECK',
+      CONNECTING: 'SYNCING',
+      LIVE_BACKEND_CACHED: 'LIVE SOURCE',
+      LIVE_BACKEND_RESOLVED: 'LIVE SOURCE',
+      SETUP_CONTROL_SURFACE_RESOLVED: 'LIVE SOURCE',
+      SOURCE_INTELLIGENCE_RESOLVED: 'LIVE SOURCE',
+    }[String(authorityInspectorLiveStatusLabel || '').toUpperCase()] || 'LIVE SOURCE');
+  const authorityInspectorLiveEngineCode = String(authorityInspectorLiveEngine || '').toUpperCase();
+  const authorityInspectorLiveEngineDisplay =
+    ({
+      LIVE_BACKEND_RESOLVER: activeControl.engine || 'Sovereign Authority Graph',
+      LIVE_BACKEND_RESOLVED: 'Source Intelligence',
+      SETUP_CONTROL_SURFACE_RESOLVED: 'Control Surface Intelligence',
+      SOURCE_INTELLIGENCE_RESOLVED: 'Source Intelligence',
+      SOURCE_INTELLIGENCE_READY: 'Source Intelligence',
+    }[authorityInspectorLiveEngineCode] ||
+      authorityInspectorLiveControl.engine ||
+      activeControl.engine ||
+      'Source Intelligence');
+  const authorityInspectorLiveSignalCode = String(authorityInspectorLiveSignal || '').toUpperCase();
+  const authorityInspectorLiveSignalDisplay =
+    ({
+      LIVE_BACKEND_RESOLVED: 'Evidence graph ready',
+      SETUP_CONTROL_SURFACE_RESOLVED: 'Evidence graph ready',
+      SOURCE_INTELLIGENCE_RESOLVED: 'Evidence graph ready',
+      SOURCE_INTELLIGENCE_READY: 'Evidence graph ready',
+    }[authorityInspectorLiveSignalCode] ||
+      authorityInspectorLiveControl.investorSignal ||
+      activeControl.signal ||
+      'Evidence graph ready');
+  const authorityInspectorEvidencePathDisplay =
+    `${authorityInspectorLiveTitle || activeControl.name || 'Control'} · evidence path`;
+  const authorityInspectorLastVerifiedDisplay =
+    authorityInspectorLiveGeneratedAt === 'Awaiting backend timestamp'
+      ? 'Awaiting source timestamp'
+      : authorityInspectorLiveGeneratedAt;
+
   useEffect(() => {
     let cancelled = false;
     const route = '/api/crm/command/setup/control-surface/resolve';
@@ -1489,7 +1529,7 @@ export default function WilsyCrmSetupControlPlane() {
         }
 
         setAuthorityInspectorLiveStatus('BACKEND_ERROR');
-        setAuthorityInspectorLiveError(error?.message || 'Inspector backend resolver failed.');
+        setAuthorityInspectorLiveError(error?.message || 'Live source resolver failed.');
       });
 
     return () => {
@@ -3090,10 +3130,10 @@ export default function WilsyCrmSetupControlPlane() {
           </article>
         </section>
 
-        <section className={styles.inspector} data-live-status={authorityInspectorLiveStatusLabel} aria-live="polite">
+        <section className={styles.inspector} data-live-status={authorityInspectorLiveStatusDisplay} aria-live="polite">
           <span>
             Inspector
-            <em>{authorityInspectorLiveStatusLabel}</em>
+            <em>{authorityInspectorLiveStatusDisplay}</em>
           </span>
           <strong>{authorityInspectorLiveTitle}</strong>
           <p>{authorityInspectorLiveSummary}</p>
@@ -3104,27 +3144,27 @@ export default function WilsyCrmSetupControlPlane() {
           </article>
 
           <article>
-            <span>Backend Engine</span>
-            <strong>{authorityInspectorLiveEngine}</strong>
+            <span>Engine</span>
+            <strong>{authorityInspectorLiveEngineDisplay}</strong>
           </article>
 
           <article>
             <span>Investor Signal</span>
-            <strong>{authorityInspectorLiveSignal}</strong>
+            <strong>{authorityInspectorLiveSignalDisplay}</strong>
           </article>
 
           <div className={styles.inspectorLiveBackendGrid} aria-label="Live backend inspector evidence">
             <article>
-              <span>Live route</span>
-              <strong>{authorityInspectorLiveRoute}</strong>
+              <span>Evidence path</span>
+              <strong>{authorityInspectorEvidencePathDisplay}</strong>
             </article>
             <article>
               <span>Evidence nodes</span>
               <strong>{authorityInspectorLiveEvidenceCount}</strong>
             </article>
             <article>
-              <span>Generated</span>
-              <strong>{authorityInspectorLiveGeneratedAt}</strong>
+              <span>Last verified</span>
+              <strong>{authorityInspectorLastVerifiedDisplay}</strong>
             </article>
           </div>
 
