@@ -2079,3 +2079,104 @@
     text-align: left;
   }
 }
+
+/* WILSY_P60K5Q10DV_MISSION_COMMAND_BOARD */
+.missionCommandBoard {
+  margin-top: 0.95rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 216, 120, 0.16);
+}
+
+.missionCommandHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.missionCommandHeader span {
+  color: #28ffd5;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.32em;
+}
+
+.missionCommandHeader strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.86rem;
+}
+
+.missionMoveGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.missionMoveButton {
+  min-height: 4.8rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(39, 255, 213, 0.24);
+  border-radius: 0.95rem;
+  background:
+    radial-gradient(circle at top left, rgba(39, 255, 213, 0.13), transparent 36%),
+    rgba(1, 12, 24, 0.9);
+  color: rgba(255, 255, 255, 0.94);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.missionMoveButton:hover,
+.missionMoveButton:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(39, 255, 213, 0.82);
+  background:
+    radial-gradient(circle at top left, rgba(39, 255, 213, 0.2), transparent 40%),
+    rgba(0, 54, 50, 0.62);
+  box-shadow: 0 18px 46px rgba(0, 255, 190, 0.12);
+  outline: none;
+}
+
+.missionMoveButton span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.45rem;
+  margin-bottom: 0.42rem;
+  border: 1px solid rgba(39, 255, 213, 0.28);
+  border-radius: 999px;
+  color: #28ffd5;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.missionMoveButton strong {
+  display: block;
+  margin-bottom: 0.34rem;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.missionMoveButton small {
+  display: block;
+  color: rgba(210, 225, 235, 0.68);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+@media (max-width: 980px) {
+  .missionMoveGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .missionCommandHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

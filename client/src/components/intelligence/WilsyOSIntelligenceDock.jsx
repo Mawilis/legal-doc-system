@@ -1486,6 +1486,36 @@ export function WilsyOSIntelligenceDock() {
                       <span key={`${gate}-${index}`}>{gate}</span>
                     ))}
                   </div>
+                  {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).length > 0 ? (
+                    <div className={styles.missionCommandBoard} data-wilsy-mission-command-board="active">
+                      <div className={styles.missionCommandHeader}>
+                        <span>NEXT MOVES</span>
+                        <strong>Play the mission forward</strong>
+                      </div>
+                      <div className={styles.missionMoveGrid}>
+                        {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).slice(0, 3).map((move, index) => (
+                          <button
+                            key={`${move}-${index}`}
+                            type="button"
+                            className={styles.missionMoveButton}
+                            onClick={() =>
+                              handleWilsyQuickPrompt({
+                                id: resolveWilsyOperatorIntent(move, activePrompt),
+                                intent: resolveWilsyOperatorIntent(move, activePrompt),
+                                label: move,
+                                prompt: move,
+                                description: `Mission next move: ${move}`,
+                              })
+                            }
+                          >
+                            <span>{String(index + 1).padStart(2, '0')}</span>
+                            <strong>{move}</strong>
+                            <small>Execute next safe move</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {operatorBackendBusy ? <em className={styles.operatorProgress}>Live source search in progress...</em> : null}
