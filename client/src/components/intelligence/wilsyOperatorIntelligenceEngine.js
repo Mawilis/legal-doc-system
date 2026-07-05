@@ -430,6 +430,107 @@ export function buildWilsyPlayableActionRail(profile = {}, intent = 'what_next',
   ];
 }
 
+
+/**
+ * @function buildWilsyMissionState
+ * @description Builds a game-like mission state when the operator clicks a playable action rail button.
+ * @param {Object} profile - Workspace profile.
+ * @param {string} intent - Resolved intent.
+ * @param {string} promptText - Operator prompt text.
+ * @param {Array<string>} checklist - Current checklist.
+ * @returns {Object|null} Mission state for the selected action.
+ * @collaboration Wilsy AI Core Engine, playable action rail, authority inspection, evidence preparation, release readiness, workflow packaging, and safe governed execution.
+ */
+export function buildWilsyMissionState(profile = {}, intent = 'what_next', promptText = '', checklist = []) {
+  const prompt = String(promptText || '').toLowerCase();
+  const isBilling = profile?.domain === 'billing';
+  const workspace = profile?.workspace || 'Wilsy OS';
+  const safeChecklist = Array.isArray(checklist) ? checklist : [];
+
+  const actionKey =
+    prompt.includes('inspect') || prompt.includes('authority')
+      ? 'inspect'
+      : prompt.includes('evidence')
+        ? 'evidence'
+        : prompt.includes('approval') || prompt.includes('release')
+          ? 'approval'
+          : prompt.includes('package') || prompt.includes('workflow')
+            ? 'package'
+            : intent;
+
+  const missionMap = isBilling
+    ? {
+        inspect: {
+          title: 'Mission: Inspect billing exceptions',
+          objective: 'Find the billing items that can leak revenue or create unauthorized state change.',
+          answer: 'Open the exception lane first: unpaid invoices, failed payments, missing receipts, entitlement mismatches, unresolved credits, refunds, and blocked approvals. Your job is not to mutate billing yet; your job is to identify which item deserves evidence and approval.',
+          outcome: 'Mission active: billing exceptions must be inspected before evidence or release.',
+          gates: ['Invoice state known', 'Payment status known', 'Receipt trail present', 'Tenant entitlement checked'],
+          nextMoves: ['Prepare billing evidence', 'Check approval owner', 'Package billing workflow'],
+        },
+        evidence: {
+          title: 'Mission: Prepare billing evidence',
+          objective: 'Build the evidence pack that makes a billing command safe.',
+          answer: 'Prepare the evidence pack before any billing change: invoice ID, tenant identity, operator identity, payment status, receipt trail, plan entitlement, approval owner, command surface, and timestamp. This is the proof layer that protects revenue and prevents accidental mutation.',
+          outcome: 'Mission active: evidence pack is the next safe billing move.',
+          gates: ['Tenant identified', 'Operator identified', 'Invoice/payment proof attached', 'Approval owner known'],
+          nextMoves: ['Check approval owner', 'Package billing workflow', 'Inspect billing exceptions'],
+        },
+        approval: {
+          title: 'Mission: Check billing approval owner',
+          objective: 'Find who can authorize the billing-state change.',
+          answer: 'Approval is the lock. Credits, refunds, entitlement changes, failed-payment overrides, and invoice release must not move until an authorized approval owner is present. If approval is missing, hold release and route the evidence pack to the correct owner.',
+          outcome: 'Mission active: approval gate decides whether release can unlock.',
+          gates: ['Approval owner present', 'Evidence pack complete', 'Release action identified', 'Mutation still locked'],
+          nextMoves: ['Prepare billing evidence', 'Package billing workflow', 'Inspect billing exceptions'],
+        },
+        package: {
+          title: 'Mission: Package billing workflow',
+          objective: 'Turn the billing control loop into a tenant-facing productivity workflow.',
+          answer: 'Package the workflow as Revenue Assurance: detect exceptions, collect evidence, verify approval, and only then release a billing-state command. This is how Wilsy turns billing operations into a repeatable productivity lane.',
+          outcome: 'Mission active: billing workflow package ready for tenant value framing.',
+          gates: ['Exception lane defined', 'Evidence pack defined', 'Approval gate defined', 'Release lock defined'],
+          nextMoves: ['Inspect billing exceptions', 'Prepare billing evidence', 'Check approval owner'],
+        },
+      }
+    : {
+        inspect: {
+          title: 'Mission: Inspect authority path',
+          objective: 'Find the exact permission path before setup work moves.',
+          answer: 'Inspect the authority path first: who can review, who can approve, who can release, and what evidence each step requires. Setup control changes stay locked until that path is proven.',
+          outcome: 'Mission active: authority path must be proven before execution.',
+          gates: ['Reviewer identified', 'Approver identified', 'Release owner identified', 'Evidence requirement known'],
+          nextMoves: ['Prepare evidence proof', 'Check release readiness', 'Package tenant workflow'],
+        },
+        evidence: {
+          title: 'Mission: Prepare setup evidence',
+          objective: 'Collect the receipts that make the setup command safe.',
+          answer: 'Prepare the proof pack: staged review proof, packet status, approval receipt, release readiness, tenant identity, operator identity, and command-surface evidence. This makes the next setup move auditable.',
+          outcome: 'Mission active: setup evidence must be ready before mutation.',
+          gates: ['Staged proof present', 'Packet status known', 'Approval receipt attached', 'Command surface recorded'],
+          nextMoves: ['Inspect authority path', 'Check release readiness', 'Package tenant workflow'],
+        },
+        approval: {
+          title: 'Mission: Check release readiness',
+          objective: 'Decide whether release can unlock or must stay blocked.',
+          answer: 'Release readiness requires staged proof, approval state, release permission, packet integrity, and receipt trail. If one is missing, release stays locked and the next move is evidence repair.',
+          outcome: 'Mission active: release gate is being checked.',
+          gates: ['Staged proof clear', 'Approval complete', 'Release permission present', 'Receipt trail complete'],
+          nextMoves: ['Prepare evidence proof', 'Inspect authority path', 'Package tenant workflow'],
+        },
+        package: {
+          title: 'Mission: Package tenant workflow',
+          objective: 'Turn the setup control loop into a repeatable tenant workflow.',
+          answer: 'Package the workflow as authority, evidence, approval, and release readiness. This gives the tenant a repeatable operating lane instead of isolated setup cards.',
+          outcome: 'Mission active: tenant workflow package ready.',
+          gates: ['Authority lane defined', 'Evidence lane defined', 'Approval lane defined', 'Release lane defined'],
+          nextMoves: ['Inspect authority path', 'Prepare evidence proof', 'Check release readiness'],
+        },
+      };
+
+  return missionMap[actionKey] || null;
+}
+
 /**
  * @function buildWilsyOperatorIntelligence
  * @description Produces an immediate Wilsy AI operator model response using workspace reasoning before backend tools are needed.
@@ -480,27 +581,34 @@ export function buildWilsyOperatorIntelligence({
           ];
 
   const playableActions = buildWilsyPlayableActionRail(profile, intent, checklist);
+  const missionState = buildWilsyMissionState(profile, intent, promptValue, checklist);
+  const selectedTitle = missionState?.title || selected.title;
+  const selectedAnswer = missionState?.answer || selected.answer;
+  const selectedOutcome = missionState?.outcome || selected.outcome;
 
   return {
     intent,
     domain: profile.workspace,
     supported: true,
-    title: selected.title,
-    answer: selected.answer,
-    outcome: selected.outcome,
+    title: selectedTitle,
+    answer: selectedAnswer,
+    outcome: selectedOutcome,
     progress: 'Wilsy AI Core Engine',
     quickPrompts,
     actions: playableActions,
     playableActions,
+    missionState,
     actionSummary: playableActions.map((action) => action.title),
     checklist,
+    missionGates: missionState?.gates || checklist,
+    missionNextMoves: missionState?.nextMoves || [],
     commandPlan: [
       `Workspace: ${profile.workspace}`,
       `Focus: ${profile.focus}`,
       `Operator role: ${profile.role}`,
       `Prompt: ${promptValue}`,
-      `Intent: ${selected.title}`,
-      `Outcome: ${selected.outcome}`,
+      `Intent: ${selectedTitle}`,
+      `Outcome: ${selectedOutcome}`,
       `Locked mutation: ${profile.lockedMutation}`,
       ...checklist.map((item) => `Check: ${item}`),
       'Mutation: none until the operator approves a governed Wilsy command.',

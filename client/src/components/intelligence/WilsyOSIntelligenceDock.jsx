@@ -1475,6 +1475,19 @@ export function WilsyOSIntelligenceDock() {
               <strong>{operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}</strong>
               <p>{operatorBackendBusy ? 'I am checking connected CRM sources and evidence before answering.' : getWilsyDisplayAnswer(liveOperatorModel)}</p>
               <small>{getWilsyDisplayOutcome(liveOperatorModel)}</small>
+              {liveOperatorModel.missionState ? (
+                <div className={styles.missionStatePanel} data-wilsy-mission-state="active">
+                  <div className={styles.missionStateHeader}>
+                    <span>ACTIVE MISSION</span>
+                    <strong>{liveOperatorModel.missionState.objective}</strong>
+                  </div>
+                  <div className={styles.missionStateGrid}>
+                    {(liveOperatorModel.missionGates || liveOperatorModel.missionState.gates || []).slice(0, 4).map((gate, index) => (
+                      <span key={`${gate}-${index}`}>{gate}</span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {operatorBackendBusy ? <em className={styles.operatorProgress}>Live source search in progress...</em> : null}
               {operatorBackendError ? <em className={styles.operatorError}>{operatorBackendError}</em> : null}
               {/* WILSY_P60K5Q10AY_FOUNDRY_SINGLE_CARD */}
