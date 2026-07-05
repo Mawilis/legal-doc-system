@@ -2662,3 +2662,152 @@
     border-radius: 1rem;
   }
 }
+
+/* WILSY_P60K5Q10EA_RAW_TYPOGRAPHIC_RESPONSE_THREAD */
+:global([data-wilsy-raw-terminal-thread='true']) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+:global([data-wilsy-raw-terminal-thread='true']) > * {
+  border-radius: 0;
+}
+
+:global([data-wilsy-raw-terminal-thread='true']) span:first-child {
+  color: rgba(39, 255, 213, 0.82);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.rawTypographicThreadPrefix {
+  display: block;
+  margin-top: 0.7rem;
+  color: rgba(226, 241, 237, 0.92);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.86rem;
+  font-weight: 820;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.rawTypographicThreadBody {
+  max-width: 96ch;
+  min-height: 0;
+  margin-top: 0.85rem;
+  color: rgba(226, 241, 237, 0.9);
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.68;
+  white-space: pre-wrap;
+}
+
+.liveInlineComposerCursor {
+  color: #28ffd5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.liveInlineComposerStatus {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: rgba(255, 216, 120, 0.84);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 820;
+  letter-spacing: 0.14em;
+}
+
+.liveInlineCommandShelf {
+  margin-top: 0.85rem !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.liveInlineCommandShelf > span {
+  display: inline !important;
+  margin: 0 0.55rem 0 0 !important;
+  color: rgba(98, 125, 118, 0.95) !important;
+  font-size: 0.78rem !important;
+  font-weight: 760 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: none !important;
+}
+
+.liveInlineCommandShelf > div {
+  display: inline !important;
+}
+
+.liveInlineCommandLink {
+  display: inline !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 0.85rem 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  text-align: left !important;
+  cursor: pointer;
+}
+
+.liveInlineCommandLink:hover,
+.liveInlineCommandLink:focus-visible {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none;
+}
+
+.liveInlineCommandLink strong {
+  display: inline !important;
+  margin-right: 0.32rem;
+  color: #28ffd5 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem !important;
+  font-weight: 820 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  white-space: nowrap;
+}
+
+.liveInlineCommandLink code {
+  display: inline !important;
+  color: rgba(39, 255, 213, 0.72) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.74rem !important;
+  font-weight: 760 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
+.sovereignExecutionCanvas,
+.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
+.missionStatePanel[data-wilsy-mission-focus-lock='true'],
+.missionStatePanel[data-wilsy-mission-state='active'],
+.executionCanvasStream,
+.missionCommandBoard {
+  display: none !important;
+}
+
+@media (max-width: 920px) {
+  .liveInlineCommandShelf > div,
+  .liveInlineCommandLink,
+  .liveInlineCommandLink strong,
+  .liveInlineCommandLink code {
+    display: block !important;
+    white-space: normal !important;
+  }
+
+  .liveInlineCommandLink {
+    margin: 0.45rem 0 0 !important;
+  }
+}

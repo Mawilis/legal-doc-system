@@ -1545,10 +1545,12 @@ export function WilsyOSIntelligenceDock() {
             </form>
 
                         {/* WILSY_P60K5Q10BR_ANSWER_FIRST_LAYOUT */}
-<div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`}>
-              <span>WILSY ANSWER</span>
-              <strong>{operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}</strong>
-              <p className={styles.liveInlineComposerText} data-wilsy-live-inline-composer-stream="active">
+<div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`} data-wilsy-raw-terminal-thread="true">
+              <span>WILSY_ANSWER_STREAM</span>
+              <strong className={styles.rawTypographicThreadPrefix}>
+                {operatorBackendBusy ? '[stream] checking live Wilsy sources' : `[stream] ${getWilsyDisplayTitle(liveOperatorModel)}`}
+              </strong>
+              <p className={`${styles.liveInlineComposerText} ${styles.rawTypographicThreadBody}`} data-wilsy-live-inline-composer-stream="active" data-wilsy-raw-text-output="active">
                 {operatorBackendBusy
                   ? 'I am checking connected CRM sources and evidence before answering.'
                   : wilsyInlineComposerStream.text || getWilsyDisplayAnswer(liveOperatorModel)}
@@ -1556,10 +1558,10 @@ export function WilsyOSIntelligenceDock() {
                   <span className={styles.liveInlineComposerCursor}>▍</span>
                 ) : null}
               </p>
-              <small className={styles.liveInlineComposerStatus}>{wilsyInlineComposerStream.active ? 'STREAMING RESPONSE' : getWilsyDisplayOutcome(liveOperatorModel)}</small>
+              <small className={styles.liveInlineComposerStatus}>{wilsyInlineComposerStream.active ? 'STREAMING' : getWilsyDisplayOutcome(liveOperatorModel)}</small>
               {!operatorBackendBusy && wilsyHasSubmittedOperatorResult && wilsyInlineComposerStream.tokens.length > 0 ? (
                 <div className={styles.liveInlineCommandShelf} data-wilsy-inline-command-links="active">
-                  <span>INLINE COMMAND ROUTES</span>
+                  <span>routes://</span>
                   <div>
                     {wilsyInlineComposerStream.tokens.map((token, index) => (
                       <button
@@ -1576,8 +1578,8 @@ export function WilsyOSIntelligenceDock() {
                           })
                         }
                       >
+                        <strong>[{token.label || token.buttonLabel || token.title || token.prompt}]</strong>
                         <code>{token.token || `wilsy://inline/${String(index + 1).padStart(2, '0')}`}</code>
-                        <strong>{token.label || token.buttonLabel || token.title || token.prompt}</strong>
                       </button>
                     ))}
                   </div>
