@@ -622,6 +622,177 @@ function buildWilsyDynamicOperatorDirectives(model = {}, activeIntent = '') {
   }));
 }
 
+
+/**
+ * @function normalizeWilsyConversationArray
+ * @description Normalizes model arrays so the conversation engine can scan command tokens, source traces, telemetry, and evidence anchors safely.
+ * @param {*} value - Candidate array-like value.
+ * @returns {Array} Safe array for conversational CRM reasoning.
+ * @collaboration Wilsy AI conversation engine, CRM source trace, command-token routes, telemetry packs, and evidence anchors.
+ */
+function normalizeWilsyConversationArray(value = []) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+/**
+ * @function resolveWilsyConversationGreetingState
+ * @description Allows Wilsy AI to greet the operator once per browser session and then continue naturally without repeating the greeting on every answer.
+ * @param {Object} model - Current Wilsy operator model.
+ * @param {string} firstName - Resolved operator first name.
+ * @param {string} promptText - Current prompt text.
+ * @returns {boolean} True only when this is the first meaningful conversational answer in the current session scope.
+ * @collaboration Wilsy operator identity, browser session memory, natural response flow, and continuation-aware AI composer.
+ */
+function resolveWilsyConversationGreetingState(model = {}, firstName = 'Wilson', promptText = '') {
+  const workspace = model?.workspace || model?.module || model?.contextLabel || 'CRM Setup';
+  const promptReady = String(promptText || '').trim().length > 0;
+
+  if (!promptReady) {
+    return false;
+  }
+
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  const key = `wilsy.ai.greeted.v1.${workspace}.${firstName}`.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
+
+  try {
+    if (window.sessionStorage?.getItem(key) === 'true') {
+      return false;
+    }
+
+    window.sessionStorage?.setItem(key, 'true');
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * @function buildWilsyDeepCrmWorkspaceScan
+ * @description Builds a deeper CRM operating readout from the current model, including source traces, command routes, telemetry packs, authority posture, evidence anchors, and release constraints.
+ * @param {Object} model - Current Wilsy operator model.
+ * @param {string} promptText - Current operator prompt text.
+ * @returns {Object} Natural conversational response parts.
+ * @collaboration Wilsy CRM setup cockpit, source route judge, evidence anchors, command tokens, tenant authority graph, and governed command flow.
+ */
+function buildWilsyDeepCrmWorkspaceScan(model = {}, promptText = '') {
+  const workspace = model?.workspace || model?.module || model?.contextLabel || 'CRM Setup';
+  const prompt = String(promptText || '').toLowerCase();
+  const commandTokens = normalizeWilsyConversationArray(
+    model?.commandTokens?.length
+      ? model.commandTokens
+      : model?.executionThread?.length
+        ? model.executionThread
+        : model?.playableActions?.length
+          ? model.playableActions
+          : model?.actions,
+  );
+  const sourceTrace = normalizeWilsyConversationArray(model?.sourceTrace);
+  const telemetry = normalizeWilsyConversationArray(model?.telemetryPacks);
+  const evidenceAnchors = normalizeWilsyConversationArray(model?.evidenceAnchors);
+  const routeJudge = model?.sourceRouteJudge || {};
+  const displayAnswer = getWilsyDisplayAnswer(model);
+  const routeNames = commandTokens
+    .map((token) => token?.label || token?.title || token?.name || token?.intent || token?.route)
+    .filter(Boolean);
+  const sourceNames = sourceTrace
+    .map((trace) => trace?.label || trace?.source || trace?.surface || trace?.statusLabel)
+    .filter(Boolean);
+  const evidenceNames = evidenceAnchors
+    .map((anchor) => anchor?.label || anchor?.title || anchor?.name || anchor)
+    .filter(Boolean);
+  const telemetryNames = telemetry
+    .map((item) => item?.label || item?.title || item?.name)
+    .filter(Boolean);
+
+  const hasAuthorityIntent = /authority|permission|approver|approval|reviewer|release owner|owner|role|power/.test(prompt);
+  const hasEvidenceIntent = /evidence|proof|receipt|anchor|checklist|packet|manifest/.test(prompt);
+  const hasReleaseIntent = /release|ready|readiness|ship|publish|go live|unlock/.test(prompt);
+  const hasQueueIntent = /queue|hygiene|stale|drift|pending|orphan/.test(prompt);
+  const hasPackageIntent = /package|workflow|lane|playbook|process/.test(prompt);
+
+  const routeSummary = routeNames.length
+    ? `I found ${routeNames.length} governed route${routeNames.length === 1 ? '' : 's'} behind this answer: ${routeNames.slice(0, 5).join(', ')}.`
+    : `I do not see a complete command-route set yet, so I am treating ${workspace} as read-only until the route judge is satisfied.`;
+
+  const sourceSummary = sourceNames.length
+    ? `The connected source posture points at ${sourceNames.slice(0, 4).join(', ')}.`
+    : `The source trace is thin, so I am relying on the visible ${workspace} model, authority graph, command tokens, and evidence posture before recommending movement.`;
+
+  const evidenceSummary = evidenceNames.length
+    ? `Evidence already visible: ${evidenceNames.slice(0, 5).join(', ')}.`
+    : `The evidence still needs to be proven through staged review proof, packet status, approval receipt, operator identity, tenant identity, and command-surface record.`;
+
+  const judgeSummary =
+    routeJudge?.decision ||
+    routeJudge?.reason ||
+    routeJudge?.status ||
+    'Prepare work only. Mutation stays locked until authority, evidence, and release permission agree.';
+
+  if (hasAuthorityIntent) {
+    return {
+      opening: `On the authority path, the real issue is separation of power.`,
+      readout: `${sourceSummary} ${routeSummary}`,
+      decision: `Before setup moves, resolve four things: who reviews, who approves, who owns release, and which evidence each step requires.`,
+      nextMove: `The useful next move is to trace the authority route against the staged review packet, then bind missing role evidence before checking release readiness.`,
+      boundary: `Do not let one role hold review power, approval power, release power, and mutation power. ${judgeSummary}`,
+    };
+  }
+
+  if (hasEvidenceIntent) {
+    return {
+      opening: `For evidence, I would not start with another card. I would build the proof pack first.`,
+      readout: `${sourceSummary} ${evidenceSummary}`,
+      decision: `The proof pack should show staged review proof, packet state, approval receipt, tenant identity, operator identity, and the exact command surface that would be affected.`,
+      nextMove: `Bind the missing anchors first, then check whether the release route is still blocked. If any receipt is missing, prepare the repair route instead of pushing the setup forward.`,
+      boundary: `${judgeSummary}`,
+    };
+  }
+
+  if (hasReleaseIntent) {
+    return {
+      opening: `Release readiness is not a yes-or-no button here. It is a lock check.`,
+      readout: `${sourceSummary} ${routeSummary}`,
+      decision: `Treat release as blocked unless staged proof, approval state, release owner, packet integrity, and receipt trail all match.`,
+      nextMove: `Check release after evidence binding. If the approval receipt or release owner is missing, hold the release and open a repair route.`,
+      boundary: `${judgeSummary}`,
+    };
+  }
+
+  if (hasQueueIntent) {
+    return {
+      opening: `Queue hygiene is where hidden setup risk usually appears.`,
+      readout: `${sourceSummary} ${telemetryNames.length ? `Telemetry surfaces include ${telemetryNames.slice(0, 5).join(', ')}.` : routeSummary}`,
+      decision: `Look for stale setup reviews, repeated pending states, orphan approvals, missing receipts, and packets that appear staged but cannot prove who approved the next move.`,
+      nextMove: `Start by isolating stale packets, then attach receipts or mark the packet for repair before it reaches release readiness.`,
+      boundary: `${judgeSummary}`,
+    };
+  }
+
+  if (hasPackageIntent) {
+    return {
+      opening: `Packaging the workflow only makes sense after authority and evidence are clean.`,
+      readout: `${routeSummary} ${evidenceSummary}`,
+      decision: `A proper tenant workflow should repeat the safe sequence: inspect authority, bind evidence, judge release, inspect queue drift, then package the governed lane.`,
+      nextMove: `Package only the lane that can prove who may review, approve, release, and mutate. Everything else stays in repair.`,
+      boundary: `${judgeSummary}`,
+    };
+  }
+
+  return {
+    opening: `Here is the operational read: ${workspace} is not waiting for another suggestion. It is waiting for proof that the next move is safe.`,
+    readout: displayAnswer
+      ? `${displayAnswer} ${sourceSummary}`
+      : `${sourceSummary} ${routeSummary}`,
+    decision: `The outstanding work is authority, evidence, release judgement, and queue hygiene. Those are not equal priorities; authority and evidence come first because they decide whether any later move is valid.`,
+    nextMove: `Work it in this order: trace the authority route, bind the missing evidence anchors, then judge release readiness. If the route still cannot prove approval or receipt trail, prepare the repair route.`,
+    boundary: `${judgeSummary}`,
+  };
+}
+
+
 /**
  * @function buildWilsyNaturalConversationAnswer
  * @description Builds a natural time-aware human response for Wilsy AI, including greeting, operator name, acknowledgement, and model-grounded reasoning.
@@ -631,49 +802,22 @@ function buildWilsyDynamicOperatorDirectives(model = {}, activeIntent = '') {
  * @collaboration Wilsy live composer, dynamic directive engine, operator identity, local time greeting, CRM setup context, source route judge, and evidence-first governance.
  */
 function buildWilsyNaturalConversationAnswer(model = {}, promptText = '') {
-  const greeting = resolveWilsyTemporalGreeting();
   const firstName = resolveWilsyOperatorFirstName(model);
-  const directive = String(promptText || '').trim() || 'What should I do next?';
-  const title = getWilsyDisplayTitle(model);
-  const answer = getWilsyDisplayAnswer(model);
-  const routeJudge = model?.sourceRouteJudge || {};
-  const sourceTrace = Array.isArray(model?.sourceTrace) ? model.sourceTrace : [];
-  const commandTokens = Array.isArray(model?.commandTokens)
-    ? model.commandTokens
-    : Array.isArray(model?.executionThread)
-      ? model.executionThread
-      : Array.isArray(model?.playableActions)
-        ? model.playableActions
-        : Array.isArray(model?.actions)
-          ? model.actions
-          : [];
-  const telemetry = Array.isArray(model?.telemetryPacks) ? model.telemetryPacks : [];
-  const connectedSources = sourceTrace.filter((trace) => /complete|ready|connected|success/i.test(`${trace?.status || ''} ${trace?.statusLabel || ''}`)).length || sourceTrace.length || 1;
-  const routeCount = commandTokens.length || 3;
-  const firstMove = commandTokens[0]?.label || commandTokens[0]?.title || 'trace the authority route';
-  const secondMove = commandTokens[1]?.label || commandTokens[1]?.title || 'bind the evidence anchors';
-  const thirdMove = commandTokens[2]?.label || commandTokens[2]?.title || 'judge release readiness';
-  const authorityBoundary =
-    telemetry.find((item) => /authority/i.test(item?.label || ''))?.value ||
-    'the reviewer, approver, release owner, tenant identity, operator identity, and mutation boundary must all line up';
-  const evidenceBoundary =
-    telemetry.find((item) => /evidence/i.test(item?.label || ''))?.value ||
-    'the staged proof, packet status, approval receipt, command surface, and source evidence must be visible';
-  const routeDecision =
-    routeJudge.decision ||
-    routeJudge.reason ||
-    'I can prepare the next move, but I will not treat the setup as executable until authority and evidence agree.';
+  const shouldGreet = resolveWilsyConversationGreetingState(model, firstName, promptText);
+  const greeting = shouldGreet ? `${resolveWilsyTemporalGreeting()}, ${firstName}. ` : '';
+  const scan = buildWilsyDeepCrmWorkspaceScan(model, promptText);
+  const continuationLead = shouldGreet
+    ? `${greeting}I am in the ${model?.workspace || model?.module || model?.contextLabel || 'CRM Setup'} workspace with you.`
+    : scan.opening;
+
+  const opening = shouldGreet ? `${continuationLead} ${scan.opening}` : continuationLead;
 
   return [
-    `${greeting}, ${firstName}. I hear you. I am going to answer this like a real assistant, not as a static dashboard.`,
-    `You asked: "${directive}"`,
-    title || answer
-      ? `Here is what I am seeing: ${answer || title}`
-      : `I checked the live ${model?.workspace || model?.module || 'CRM Setup'} context and found ${connectedSources} connected source${connectedSources === 1 ? '' : 's'} with ${routeCount} governed route${routeCount === 1 ? '' : 's'} to reason through.`,
-    `The next move is not to click another card. First, ${String(firstMove).toLowerCase()}. Then ${String(secondMove).toLowerCase()}. After that, ${String(thirdMove).toLowerCase()}.`,
-    `The reason is simple: ${authorityBoundary}. Evidence boundary: ${evidenceBoundary}.`,
-    `My route judge says: ${routeDecision}`,
-    'I will keep this in one live response surface. As I answer, the workspace should feel like someone competent is sitting with you, reading the situation, and typing the next useful move in real time.',
+    opening,
+    scan.readout,
+    scan.decision,
+    scan.nextMove,
+    scan.boundary,
   ]
     .filter(Boolean)
     .join('\n\n');
