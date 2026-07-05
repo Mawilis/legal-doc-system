@@ -1733,14 +1733,50 @@ export function WilsyOSIntelligenceDock() {
 
     setActivePrompt(nextPromptId);
     setOperatorPrompt(promptLabel);
-    setWilsyInlineComposerStream({
-      active: false,
-      text: '',
-      streamKey: 'directive-autosubmit-reset-' + nextPromptId + '-' + Date.now(),
-      tokens: [],
-    });
+    const wilsyDirectStreamModel = normalizeWilsyFoundryModelForDisplay(intelligenceModel);
+    const wilsyDirectStreamText = buildWilsyNaturalConversationAnswer(wilsyDirectStreamModel, promptLabel);
+    const wilsyDirectStreamTokens = Array.isArray(wilsyDirectStreamModel.commandTokens)
+      ? wilsyDirectStreamModel.commandTokens
+      : Array.isArray(wilsyDirectStreamModel.executionThread)
+        ? wilsyDirectStreamModel.executionThread
+        : Array.isArray(wilsyDirectStreamModel.playableActions)
+          ? wilsyDirectStreamModel.playableActions
+          : Array.isArray(wilsyDirectStreamModel.actions)
+            ? wilsyDirectStreamModel.actions
+            : [];
+    const wilsyDirectStreamGlyphs = Array.from(wilsyDirectStreamText);
+    const wilsyDirectStreamKey = 'directive-direct-typewriter-' + nextPromptId + '-' + Date.now();
+    let wilsyDirectStreamCursor = 0;
 
-    setOperatorBackendModel(normalizeWilsyFoundryModelForDisplay(intelligenceModel));
+    setOperatorBackendModel(wilsyDirectStreamModel);
+
+    if (typeof window !== 'undefined') {
+      if (window.__wilsyDirectiveAutosubmitTypeTimer) {
+        window.clearInterval(window.__wilsyDirectiveAutosubmitTypeTimer);
+      }
+
+      setWilsyInlineComposerStream({
+        active: true,
+        text: '',
+        streamKey: wilsyDirectStreamKey,
+        tokens: wilsyDirectStreamTokens.slice(0, 8),
+      });
+
+      window.__wilsyDirectiveAutosubmitTypeTimer = window.setInterval(() => {
+        wilsyDirectStreamCursor = Math.min(wilsyDirectStreamCursor + 3, wilsyDirectStreamGlyphs.length);
+
+        setWilsyInlineComposerStream({
+          active: wilsyDirectStreamCursor < wilsyDirectStreamGlyphs.length,
+          text: wilsyDirectStreamGlyphs.slice(0, wilsyDirectStreamCursor).join(''),
+          streamKey: wilsyDirectStreamKey,
+          tokens: wilsyDirectStreamTokens.slice(0, 8),
+        });
+
+        if (wilsyDirectStreamCursor >= wilsyDirectStreamGlyphs.length) {
+          window.clearInterval(window.__wilsyDirectiveAutosubmitTypeTimer);
+        }
+      }, 18);
+    }
     setOperatorBackendBusy(false);
     setOperatorBackendError('');
     setPlanCopied(false);
