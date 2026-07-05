@@ -76,6 +76,7 @@ import TerminalEvidenceCockpitPanel from './TerminalEvidenceCockpitPanel.js';
 import { WilsyMeetingsWorkspace } from './meeting/workspace';
 import WilsyMeetingOperatingRoom from './meeting/WilsyMeetingOperatingRoom';
 import WilsyCrmSetupControlPlane from './setup/WilsyCrmSetupControlPlane';
+import WilsyCrmRawStreamThread from './WilsyCrmRawStreamThread.jsx';
 const WILSY_R66A_LEAD_OPERATING_ROOM = 'R66A-WILSY-LEAD-OPERATING-ROOM';
 const WILSY_R65A_TRI_STATE_KINETIC_RAIL = 'R65A-TRI-STATE-KINETIC-RAIL';
 const WILSY_R62I_CRM_CLEAN_INLINE_COMMAND_FABRIC = 'R62I-CRM-CLEAN-INLINE-COMMAND-FABRIC';
@@ -2871,6 +2872,7 @@ function WilsyR91K131ProofLedger({ receipts, expandedReceipt, onExpand }) {
         <small>Forensic integrity</small>
         <strong>Live proof ledger</strong>
       </header>
+        <WilsyCrmRawStreamThread />
 
       {receipts.map((receipt) => (
         <details
