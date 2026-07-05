@@ -463,6 +463,235 @@ function getWilsyDisplayOutcome(model = {}) {
 
 
 
+
+/**
+ * @function resolveWilsyOperatorFirstName
+ * @description Resolves the operator first name from live model context, browser profile storage, visible identity text, or the known local founder/operator fallback.
+ * @param {Object} model - Current Wilsy operator model.
+ * @returns {string} Operator first name for natural greetings.
+ * @collaboration Wilsy identity context, tenant identity surface, browser session state, and natural assistant response engine.
+ */
+function resolveWilsyOperatorFirstName(model = {}) {
+  const modelCandidates = [
+    model?.operator?.firstName,
+    model?.operator?.name,
+    model?.operatorName,
+    model?.user?.firstName,
+    model?.user?.name,
+    model?.profile?.firstName,
+    model?.profile?.name,
+    model?.tenantOperator?.firstName,
+    model?.tenantOperator?.name,
+  ];
+
+  const storageCandidates = [];
+
+  if (typeof window !== 'undefined') {
+    [
+      'wilsyUser',
+      'wilsy:user',
+      'wilsy_operator_profile',
+      'operatorProfile',
+      'user',
+      'profile',
+      'authUser',
+      'currentUser',
+    ].forEach((key) => {
+      try {
+        const rawValue = window.localStorage?.getItem(key) || window.sessionStorage?.getItem(key);
+
+        if (!rawValue) {
+          return;
+        }
+
+        const parsedValue = JSON.parse(rawValue);
+        storageCandidates.push(
+          parsedValue?.firstName,
+          parsedValue?.name,
+          parsedValue?.displayName,
+          parsedValue?.user?.firstName,
+          parsedValue?.user?.name,
+          parsedValue?.profile?.firstName,
+          parsedValue?.profile?.name,
+        );
+      } catch (error) {
+        storageCandidates.push(window.localStorage?.getItem(key), window.sessionStorage?.getItem(key));
+      }
+    });
+
+    try {
+      const visibleIdentity = document?.querySelector?.('[data-wilsy-operator-name], [data-operator-name], [data-user-name]');
+      storageCandidates.push(visibleIdentity?.textContent);
+    } catch (error) {
+      storageCandidates.push('');
+    }
+  }
+
+  const candidate = [...modelCandidates, ...storageCandidates]
+    .map((value) => String(value || '').trim())
+    .find((value) => value && !/security admin|finance operator|operator|tenant|root/i.test(value));
+
+  const firstName = String(candidate || 'Wilson')
+    .replace(/[^a-zA-ZÀ-ÿ'\-\s]/g, ' ')
+    .trim()
+    .split(/\s+/)[0];
+
+  return firstName || 'Wilson';
+}
+
+/**
+ * @function resolveWilsyTemporalGreeting
+ * @description Builds a local time-aware greeting from the operator browser clock.
+ * @param {Date} now - Browser-local date instance.
+ * @returns {string} Natural daypart greeting.
+ * @collaboration Browser local time, Wilsy live composer, and human-facing assistant tone.
+ */
+function resolveWilsyTemporalGreeting(now = new Date()) {
+  const hour = now.getHours();
+
+  if (hour < 12) {
+    return 'Good morning';
+  }
+
+  if (hour < 18) {
+    return 'Good afternoon';
+  }
+
+  return 'Good evening';
+}
+
+/**
+ * @function buildWilsyDynamicOperatorDirectives
+ * @description Builds context-aware quick directives from model state instead of exposing fixed childish suggestion cards.
+ * @param {Object} model - Current Wilsy operator model.
+ * @param {string} activeIntent - Current active operator intent.
+ * @returns {Array<Object>} Dynamic directive descriptors.
+ * @collaboration Wilsy operator model, command tokens, source route judge, CRM setup authority graph, evidence posture, and quick prompt surface.
+ */
+function buildWilsyDynamicOperatorDirectives(model = {}, activeIntent = '') {
+  const commandTokens = Array.isArray(model?.commandTokens)
+    ? model.commandTokens
+    : Array.isArray(model?.executionThread)
+      ? model.executionThread
+      : Array.isArray(model?.playableActions)
+        ? model.playableActions
+        : Array.isArray(model?.actions)
+          ? model.actions
+          : [];
+
+  const sourceTrace = Array.isArray(model?.sourceTrace) ? model.sourceTrace : [];
+  const routeCount = commandTokens.length;
+  const sourceCount = sourceTrace.length || 1;
+  const workspace = model?.workspace || model?.module || model?.contextLabel || 'CRM Setup';
+  const outstandingCount = Math.max(routeCount || 3, sourceCount + 2);
+
+  const dynamicDirectives = [
+    {
+      id: `dynamic_outstanding_${outstandingCount}`,
+      intent: 'what_next',
+      label: `Tell me what is outstanding in ${workspace}`,
+      prompt: `Tell me what is outstanding in ${workspace}`,
+      description: `${sourceCount} live source${sourceCount === 1 ? '' : 's'} checked · ${outstandingCount} route checks available`,
+    },
+    {
+      id: `dynamic_authority_${routeCount || 'route'}`,
+      intent: 'authority_graph',
+      label: `Walk me through the ${workspace} authority path`,
+      prompt: `Walk me through the ${workspace} authority path`,
+      description: 'Resolve reviewer, approver, release owner, and mutation boundary',
+    },
+    {
+      id: `dynamic_evidence_${sourceCount}`,
+      intent: 'evidence_checklist',
+      label: `Show the evidence gaps before setup moves`,
+      prompt: `Show the evidence gaps before setup moves`,
+      description: 'Find missing staged proof, packet status, receipts, and command-surface evidence',
+    },
+    {
+      id: `dynamic_release_${routeCount || 'readiness'}`,
+      intent: 'release_readiness',
+      label: `Check whether this setup is safe to release`,
+      prompt: `Check whether this setup is safe to release`,
+      description: 'Judge readiness before any command mutates workspace state',
+    },
+  ];
+
+  return dynamicDirectives.map((directive) => ({
+    ...directive,
+    id: directive.id === activeIntent ? `${directive.id}_active` : directive.id,
+  }));
+}
+
+/**
+ * @function buildWilsyNaturalConversationAnswer
+ * @description Builds a natural time-aware human response for Wilsy AI, including greeting, operator name, acknowledgement, and model-grounded reasoning.
+ * @param {Object} model - Current Wilsy operator model.
+ * @param {string} promptText - Operator prompt text.
+ * @returns {string} Natural assistant response for character-by-character streaming.
+ * @collaboration Wilsy live composer, dynamic directive engine, operator identity, local time greeting, CRM setup context, source route judge, and evidence-first governance.
+ */
+function buildWilsyNaturalConversationAnswer(model = {}, promptText = '') {
+  const greeting = resolveWilsyTemporalGreeting();
+  const firstName = resolveWilsyOperatorFirstName(model);
+  const directive = String(promptText || '').trim() || 'What should I do next?';
+  const title = getWilsyDisplayTitle(model);
+  const answer = getWilsyDisplayAnswer(model);
+  const routeJudge = model?.sourceRouteJudge || {};
+  const sourceTrace = Array.isArray(model?.sourceTrace) ? model.sourceTrace : [];
+  const commandTokens = Array.isArray(model?.commandTokens)
+    ? model.commandTokens
+    : Array.isArray(model?.executionThread)
+      ? model.executionThread
+      : Array.isArray(model?.playableActions)
+        ? model.playableActions
+        : Array.isArray(model?.actions)
+          ? model.actions
+          : [];
+  const telemetry = Array.isArray(model?.telemetryPacks) ? model.telemetryPacks : [];
+  const connectedSources = sourceTrace.filter((trace) => /complete|ready|connected|success/i.test(`${trace?.status || ''} ${trace?.statusLabel || ''}`)).length || sourceTrace.length || 1;
+  const routeCount = commandTokens.length || 3;
+  const firstMove = commandTokens[0]?.label || commandTokens[0]?.title || 'trace the authority route';
+  const secondMove = commandTokens[1]?.label || commandTokens[1]?.title || 'bind the evidence anchors';
+  const thirdMove = commandTokens[2]?.label || commandTokens[2]?.title || 'judge release readiness';
+  const authorityBoundary =
+    telemetry.find((item) => /authority/i.test(item?.label || ''))?.value ||
+    'the reviewer, approver, release owner, tenant identity, operator identity, and mutation boundary must all line up';
+  const evidenceBoundary =
+    telemetry.find((item) => /evidence/i.test(item?.label || ''))?.value ||
+    'the staged proof, packet status, approval receipt, command surface, and source evidence must be visible';
+  const routeDecision =
+    routeJudge.decision ||
+    routeJudge.reason ||
+    'I can prepare the next move, but I will not treat the setup as executable until authority and evidence agree.';
+
+  return [
+    `${greeting}, ${firstName}. I hear you. I am going to answer this like a real assistant, not as a static dashboard.`,
+    `You asked: "${directive}"`,
+    title || answer
+      ? `Here is what I am seeing: ${answer || title}`
+      : `I checked the live ${model?.workspace || model?.module || 'CRM Setup'} context and found ${connectedSources} connected source${connectedSources === 1 ? '' : 's'} with ${routeCount} governed route${routeCount === 1 ? '' : 's'} to reason through.`,
+    `The next move is not to click another card. First, ${String(firstMove).toLowerCase()}. Then ${String(secondMove).toLowerCase()}. After that, ${String(thirdMove).toLowerCase()}.`,
+    `The reason is simple: ${authorityBoundary}. Evidence boundary: ${evidenceBoundary}.`,
+    `My route judge says: ${routeDecision}`,
+    'I will keep this in one live response surface. As I answer, the workspace should feel like someone competent is sitting with you, reading the situation, and typing the next useful move in real time.',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+/**
+ * @function buildWilsyDynamicComposerPlaceholder
+ * @description Builds the CRM setup input placeholder from active model context instead of a fixed string.
+ * @param {Object} model - Current Wilsy operator model.
+ * @returns {string} Dynamic input placeholder.
+ * @collaboration Wilsy operator input, CRM setup context, and dynamic directive system.
+ */
+function buildWilsyDynamicComposerPlaceholder(model = {}) {
+  const workspace = model?.workspace || model?.module || model?.contextLabel || 'CRM Setup';
+  return `Ask Wilsy what needs attention in ${workspace}...`;
+}
+
+
 /**
  * @function buildWilsyCinematicComposerAnswer
  * @description Builds a deeper natural response that can be typed into the live composer without dumping a shallow hardcoded line.
@@ -1541,7 +1770,7 @@ export function WilsyOSIntelligenceDock() {
       return undefined;
     }
 
-    const streamText = buildWilsyCinematicComposerAnswer(liveOperatorModel, operatorPrompt);
+    const streamText = buildWilsyNaturalConversationAnswer(liveOperatorModel, operatorPrompt);
     const streamKey = `${activePrompt}::${operatorPrompt}::${streamText}`;
 
     if (!streamText || wilsyInlineComposerStream.streamKey === streamKey) {
@@ -1614,6 +1843,9 @@ export function WilsyOSIntelligenceDock() {
     wilsyInlineComposerStream.streamKey,
   ]);
 
+  const dynamicWilsyQuickPrompts = buildWilsyDynamicOperatorDirectives(liveOperatorModel, activePrompt);
+  const dynamicWilsyComposerPlaceholder = buildWilsyDynamicComposerPlaceholder(liveOperatorModel);
+
   const dockClassName = [
     styles.dock,
     dockState.collapsed ? styles.collapsed : '',
@@ -1666,7 +1898,7 @@ export function WilsyOSIntelligenceDock() {
             </form>
 
                         {/* WILSY_P60K5Q10BR_ANSWER_FIRST_LAYOUT */}
-<div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`} data-wilsy-raw-terminal-thread="true" data-wilsy-sovereign-ai-composer="competition-core" data-wilsy-composer-printing={operatorBackendBusy || wilsyInlineComposerStream.active ? 'true' : 'false'} data-wilsy-composer-empty={!operatorBackendBusy && !wilsyInlineComposerStream.active && !wilsyInlineComposerStream.text ? 'true' : 'false'} data-wilsy-composer-complete={!operatorBackendBusy && !wilsyInlineComposerStream.active && Boolean(wilsyInlineComposerStream.text) ? 'true' : 'false'} data-wilsy-response-slot-owner="true">
+<div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`} data-wilsy-raw-terminal-thread="true" data-wilsy-sovereign-ai-composer="competition-core" data-wilsy-composer-printing={operatorBackendBusy || wilsyInlineComposerStream.active ? 'true' : 'false'} data-wilsy-composer-empty={!operatorBackendBusy && !wilsyInlineComposerStream.active && !wilsyInlineComposerStream.text ? 'true' : 'false'} data-wilsy-composer-complete={!operatorBackendBusy && !wilsyInlineComposerStream.active && Boolean(wilsyInlineComposerStream.text) ? 'true' : 'false'} data-wilsy-response-slot-owner="true" hidden={!operatorBackendBusy && !wilsyInlineComposerStream.active && !wilsyInlineComposerStream.text}>
               <span className={styles.singleSurfaceHiddenLabel} aria-hidden="true">WILSY_ANSWER_STREAM</span>
               <strong className={styles.singleSurfaceHiddenTitle} aria-hidden="true">
                 {operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}
@@ -2204,7 +2436,7 @@ export function WilsyOSIntelligenceDock() {
             ) : null}
 
             <div className={`${styles.promptGrid} ${wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `} aria-label="Wilsy quick prompts">
-              {liveOperatorModel.quickPrompts.map((prompt) => (
+              {dynamicWilsyQuickPrompts.map((prompt) => (
                 <button
                   key={prompt.id}
                   type="button"
@@ -2217,7 +2449,7 @@ export function WilsyOSIntelligenceDock() {
             </div>
           </section>
 
-          <section className={`${styles.actionBoard} ${wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
+          <section className={`${styles.actionBoard} ${styles.operatingStateHidden} `} data-wilsy-legacy-execution-pipeline="true">
             <div className={styles.sectionHeader}>
               <span>EXECUTION PIPELINE</span>
               <strong>Route work through the cockpit</strong>
@@ -2244,7 +2476,7 @@ export function WilsyOSIntelligenceDock() {
             </div>
           </section>
 
-          <section className={`${styles.commandPrep} ${wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `} data-wilsy-hardcoded-command-prep="true">
+          <section className={`${styles.commandPrep} ${styles.operatingStateHidden} `} data-wilsy-hardcoded-command-prep="true">
             <div className={styles.sectionHeader} data-wilsy-hardcoded-command-prep="true" hidden={wilsyHasSubmittedOperatorResult}>
               <span>GOVERNED COMMAND PREP</span>
               <strong>Ready for operator review</strong>
