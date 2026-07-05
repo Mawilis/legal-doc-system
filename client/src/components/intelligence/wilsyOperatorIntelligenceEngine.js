@@ -531,6 +531,159 @@ export function buildWilsyMissionState(profile = {}, intent = 'what_next', promp
   return missionMap[actionKey] || null;
 }
 
+
+/**
+ * @function buildWilsyExecutionCanvas
+ * @description Builds a state-aware execution cockpit with telemetry, command tokens, route judge, evidence anchors, and non-obvious next moves.
+ * @param {Object} profile - Workspace profile.
+ * @param {string} intent - Current resolved intent.
+ * @param {string} promptText - Operator prompt text.
+ * @param {Array<string>} checklist - Current checklist.
+ * @param {Object|null} missionState - Current mission state.
+ * @returns {Object} Execution canvas stream payload.
+ * @collaboration Wilsy AI Core Engine, live canvas stream, source route judge, evidence anchors, authority boundary, command tokens, and sovereign execution cockpit.
+ */
+export function buildWilsyExecutionCanvas(profile = {}, intent = 'what_next', promptText = '', checklist = [], missionState = null) {
+  const isBilling = profile?.domain === 'billing';
+  const workspace = profile?.workspace || 'Wilsy OS';
+  const focus = profile?.focus || 'Workspace';
+  const safeChecklist = Array.isArray(checklist) ? checklist : [];
+  const lowerPrompt = String(promptText || '').toLowerCase();
+
+  const routeBase = isBilling ? 'wilsy://billing' : 'wilsy://crm-setup';
+  const cockpitMoves = isBilling
+    ? [
+        {
+          label: 'Trace exception lane',
+          intent: 'queue_hygiene',
+          token: `${routeBase}/exceptions/trace`,
+          telemetry: 'Locate unpaid invoices, failed payments, credits, refunds, and missing receipts.',
+        },
+        {
+          label: 'Bind evidence anchors',
+          intent: 'evidence_checklist',
+          token: `${routeBase}/evidence/bind`,
+          telemetry: 'Attach invoice, tenant, operator, payment, entitlement, approval, and receipt proof.',
+        },
+        {
+          label: 'Judge release route',
+          intent: 'release_readiness',
+          token: `${routeBase}/release/judge`,
+          telemetry: 'Compare release request against payment state, approval owner, and receipt trail.',
+        },
+        {
+          label: 'Split approval owner',
+          intent: 'release_readiness',
+          token: `${routeBase}/approval/split-owner`,
+          telemetry: 'Separate inspection, approval, and release identity so mutation cannot jump gates.',
+        },
+        {
+          label: 'Forecast leakage risk',
+          intent: 'queue_hygiene',
+          token: `${routeBase}/risk/leakage-forecast`,
+          telemetry: 'Rank exceptions by revenue leakage, stale receipts, and entitlement mismatch.',
+        },
+        {
+          label: 'Package revenue workflow',
+          intent: 'workflow_packaging',
+          token: `${routeBase}/workflow/package-revenue-assurance`,
+          telemetry: 'Turn the lane into a tenant-facing Revenue Assurance workflow.',
+        },
+      ]
+    : [
+        {
+          label: 'Trace authority route',
+          intent: 'authority_graph',
+          token: `${routeBase}/authority/trace-route`,
+          telemetry: 'Resolve reviewer, approver, release owner, and evidence boundary before setup changes state.',
+        },
+        {
+          label: 'Bind evidence anchors',
+          intent: 'evidence_checklist',
+          token: `${routeBase}/evidence/bind-anchors`,
+          telemetry: 'Attach staged proof, packet state, approval receipt, operator identity, tenant identity, and command surface.',
+        },
+        {
+          label: 'Judge release route',
+          intent: 'release_readiness',
+          token: `${routeBase}/release/judge-route`,
+          telemetry: 'Check staged proof, approval state, release permission, packet integrity, and receipt trail.',
+        },
+        {
+          label: 'Inspect queue drift',
+          intent: 'queue_hygiene',
+          token: `${routeBase}/queue/inspect-drift`,
+          telemetry: 'Find stale reviews, orphan approvals, repeated pending states, and missing receipts.',
+        },
+        {
+          label: 'Split control boundary',
+          intent: 'authority_graph',
+          token: `${routeBase}/authority/split-boundary`,
+          telemetry: 'Separate review power, approval power, release power, and mutation power.',
+        },
+        {
+          label: 'Package tenant workflow',
+          intent: 'workflow_packaging',
+          token: `${routeBase}/workflow/package-governance-lane`,
+          telemetry: 'Convert authority, evidence, approval, and release readiness into a repeatable tenant lane.',
+        },
+        {
+          label: 'Prepare repair route',
+          intent: 'evidence_checklist',
+          token: `${routeBase}/repair/prepare-route`,
+          telemetry: 'Create the repair path for any missing receipt, role, permission, or packet proof.',
+        },
+      ];
+
+  const prioritizedMoves = cockpitMoves
+    .map((move, index) => ({
+      ...move,
+      rank: index + 1,
+      mode: 'read_only_execution_stream',
+      mutation: false,
+      evidenceRequired: true,
+    }))
+    .sort((left, right) => {
+      const leftScore = lowerPrompt.includes(left.intent.replace('_', ' ')) || lowerPrompt.includes(left.label.toLowerCase()) ? -1 : left.rank;
+      const rightScore = lowerPrompt.includes(right.intent.replace('_', ' ')) || lowerPrompt.includes(right.label.toLowerCase()) ? -1 : right.rank;
+      return leftScore - rightScore;
+    });
+
+  return {
+    label: 'Live Canvas Stream',
+    summary: missionState?.objective || `State-aware execution cockpit for ${workspace}.`,
+    moves: prioritizedMoves.map((move) => move.label),
+    tokens: prioritizedMoves,
+    telemetry: [
+      {
+        label: 'Authority Boundary',
+        value: isBilling
+          ? 'Billing mutation locked until approval owner and receipt trail are proven.'
+          : 'Setup mutation locked until reviewer, approver, release owner, and evidence path are proven.',
+      },
+      {
+        label: 'Evidence Anchor',
+        value: safeChecklist[0] || 'Proof is required before any governed command can execute.',
+      },
+      {
+        label: 'Execution Mode',
+        value: 'Read-only stream. Wilsy prepares the route; human approval executes mutation.',
+      },
+      {
+        label: 'Workspace Lens',
+        value: `${workspace} · ${focus}`,
+      },
+    ],
+    sourceRouteJudge: {
+      status: 'READ_ONLY_ALLOWED',
+      route: isBilling ? 'billing_governance_lane' : 'crm_setup_governance_lane',
+      decision: 'Prepare work only. Mutation requires governed approval.',
+      reason: profile?.lockedMutation || 'Mutation remains locked until approval and evidence are present.',
+    },
+    evidenceAnchors: safeChecklist.slice(0, 6),
+  };
+}
+
 /**
  * @function buildWilsyOperatorIntelligence
  * @description Produces an immediate Wilsy AI operator model response using workspace reasoning before backend tools are needed.
@@ -582,6 +735,7 @@ export function buildWilsyOperatorIntelligence({
 
   const playableActions = buildWilsyPlayableActionRail(profile, intent, checklist);
   const missionState = buildWilsyMissionState(profile, intent, promptValue, checklist);
+  const executionCanvas = buildWilsyExecutionCanvas(profile, intent, promptValue, checklist, missionState);
   const selectedTitle = missionState?.title || selected.title;
   const selectedAnswer = missionState?.answer || selected.answer;
   const selectedOutcome = missionState?.outcome || selected.outcome;
@@ -601,7 +755,12 @@ export function buildWilsyOperatorIntelligence({
     actionSummary: playableActions.map((action) => action.title),
     checklist,
     missionGates: missionState?.gates || checklist,
-    missionNextMoves: missionState?.nextMoves || [],
+    missionNextMoves: executionCanvas?.moves || missionState?.nextMoves || [],
+    executionCanvas,
+    commandTokens: executionCanvas?.tokens || [],
+    telemetryPacks: executionCanvas?.telemetry || [],
+    sourceRouteJudge: executionCanvas?.sourceRouteJudge || null,
+    evidenceAnchors: executionCanvas?.evidenceAnchors || [],
     commandPlan: [
       `Workspace: ${profile.workspace}`,
       `Focus: ${profile.focus}`,

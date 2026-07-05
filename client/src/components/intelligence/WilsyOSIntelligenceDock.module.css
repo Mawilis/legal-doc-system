@@ -2209,3 +2209,152 @@
 .missionStatePanel[data-wilsy-mission-focus-lock='true'] .missionCommandBoard {
   margin-top: 1.1rem;
 }
+
+/* WILSY_P60K5Q10DX_LIVE_CANVAS_EXECUTION_STREAM */
+.executionCanvasStream {
+  margin-top: 1rem;
+  padding: 0.95rem;
+  border: 1px solid rgba(39, 255, 213, 0.2);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, rgba(39, 255, 213, 0.08), transparent 42%),
+    rgba(1, 11, 22, 0.78);
+}
+
+.executionCanvasHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.executionCanvasHeader span {
+  color: #28ffd5;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.32em;
+}
+
+.executionCanvasHeader strong {
+  max-width: 70%;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.86rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.executionTelemetryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.executionTelemetryGrid span {
+  min-height: 4rem;
+  padding: 0.62rem;
+  border: 1px solid rgba(39, 255, 213, 0.14);
+  border-radius: 0.78rem;
+  background: rgba(2, 15, 28, 0.78);
+}
+
+.executionTelemetryGrid strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #28ffd5;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.executionTelemetryGrid small {
+  display: block;
+  color: rgba(218, 231, 238, 0.72);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.sourceRouteJudge {
+  display: grid;
+  grid-template-columns: minmax(0, 0.6fr) minmax(0, 0.55fr) minmax(0, 1.85fr);
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 0.72rem;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid rgba(255, 216, 120, 0.18);
+  border-radius: 0.78rem;
+  background: rgba(255, 216, 120, 0.04);
+}
+
+.sourceRouteJudge span,
+.sourceRouteJudge strong {
+  color: #ffd878;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sourceRouteJudge small {
+  color: rgba(255, 241, 204, 0.78);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.missionMoveGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.missionMoveButton {
+  min-height: 4.35rem;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  column-gap: 0.8rem;
+  align-items: center;
+}
+
+.missionMoveButton span {
+  grid-row: span 2;
+  margin-bottom: 0;
+}
+
+.missionMoveButton strong {
+  margin-bottom: 0.2rem;
+}
+
+.missionMoveButton small {
+  color: rgba(39, 255, 213, 0.74);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .executionTelemetryGrid,
+  .missionMoveGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sourceRouteJudge {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .executionCanvasHeader {
+    flex-direction: column;
+  }
+
+  .executionCanvasHeader strong {
+    max-width: none;
+    text-align: left;
+  }
+
+  .executionTelemetryGrid,
+  .missionMoveGrid {
+    grid-template-columns: 1fr;
+  }
+}

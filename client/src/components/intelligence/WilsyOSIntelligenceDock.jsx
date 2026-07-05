@@ -1486,14 +1486,37 @@ export function WilsyOSIntelligenceDock() {
                       <span key={`${gate}-${index}`}>{gate}</span>
                     ))}
                   </div>
+                  {liveOperatorModel.executionCanvas ? (
+                    <div className={styles.executionCanvasStream} data-wilsy-execution-canvas-stream="active">
+                      <div className={styles.executionCanvasHeader}>
+                        <span>SOVEREIGN STREAM</span>
+                        <strong>{liveOperatorModel.executionCanvas.summary}</strong>
+                      </div>
+                      <div className={styles.executionTelemetryGrid}>
+                        {(liveOperatorModel.telemetryPacks || liveOperatorModel.executionCanvas.telemetry || []).slice(0, 4).map((item, index) => (
+                          <span key={`${item.label || item.value}-${index}`}>
+                            <strong>{item.label}</strong>
+                            <small>{item.value}</small>
+                          </span>
+                        ))}
+                      </div>
+                      {liveOperatorModel.sourceRouteJudge ? (
+                        <div className={styles.sourceRouteJudge}>
+                          <span>SOURCE ROUTE JUDGE</span>
+                          <strong>{liveOperatorModel.sourceRouteJudge.status}</strong>
+                          <small>{liveOperatorModel.sourceRouteJudge.decision}</small>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).length > 0 ? (
                     <div className={styles.missionCommandBoard} data-wilsy-mission-command-board="active">
                       <div className={styles.missionCommandHeader}>
-                        <span>NEXT MOVES</span>
-                        <strong>Play the mission forward</strong>
+                        <span>LIVE CANVAS STREAM</span>
+                        <strong>State-aware execution cockpit</strong>
                       </div>
                       <div className={styles.missionMoveGrid}>
-                        {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).slice(0, 3).map((move, index) => (
+                        {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).slice(0, 8).map((move, index) => (
                           <button
                             key={`${move}-${index}`}
                             type="button"
@@ -1510,7 +1533,7 @@ export function WilsyOSIntelligenceDock() {
                           >
                             <span>{String(index + 1).padStart(2, '0')}</span>
                             <strong>{move}</strong>
-                            <small>Execute next safe move</small>
+                            <small>{(liveOperatorModel.commandTokens || [])[index]?.token || 'wilsy://governed/read-only-step'}</small>
                           </button>
                         ))}
                       </div>
