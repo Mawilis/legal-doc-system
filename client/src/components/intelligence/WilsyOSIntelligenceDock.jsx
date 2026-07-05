@@ -1733,6 +1733,13 @@ export function WilsyOSIntelligenceDock() {
 
     setActivePrompt(nextPromptId);
     setOperatorPrompt(promptLabel);
+    setWilsyInlineComposerStream({
+      active: false,
+      text: '',
+      streamKey: 'directive-autosubmit-reset-' + nextPromptId + '-' + Date.now(),
+      tokens: [],
+    });
+
     setOperatorBackendModel(normalizeWilsyFoundryModelForDisplay(intelligenceModel));
     setOperatorBackendBusy(false);
     setOperatorBackendError('');
@@ -1825,7 +1832,7 @@ export function WilsyOSIntelligenceDock() {
       }
     };
 
-    window.__wilsyInlineComposerStreamTimer = window.setTimeout(printNextGlyph, 180);
+    window.__wilsyInlineComposerStreamTimer = window.setTimeout(printNextGlyph, 30);
 
     return () => {
       if (window.__wilsyInlineComposerStreamTimer) {
@@ -2440,6 +2447,7 @@ export function WilsyOSIntelligenceDock() {
                 <button
                   key={prompt.id}
                   type="button"
+                  data-wilsy-directive-autosubmit="true"
                   className={activePrompt === prompt.id ? styles.activePrompt : ''}
                   onClick={() => handleWilsyQuickPrompt(prompt)}
                 >
