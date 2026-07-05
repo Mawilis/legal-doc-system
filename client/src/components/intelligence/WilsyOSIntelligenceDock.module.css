@@ -3815,3 +3815,39 @@
 .wilsyConversationClearHistoryButton:disabled::after {
   content: 'No history' !important;
 }
+
+
+/* WILSY_P60K5Q10EW_PRODUCTION_RESPONSE_COMPOSER */
+.operatorWorkbench {
+  gap: 18px !important;
+}
+
+.inlineComposerStream,
+.operatorResponse,
+.responsePanel,
+.liveComposerAnswer,
+.wilsyInlineComposerStream,
+.wilsyNaturalAnswer,
+.capabilityFoundryPanel,
+.wilsyCapabilityFoundryPanel {
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+.inlineComposerStream:empty,
+.operatorResponse:empty,
+.responsePanel:empty,
+.liveComposerAnswer:empty,
+.wilsyInlineComposerStream:empty,
+.wilsyNaturalAnswer:empty {
+  display: none !important;
+}
+
+.capabilityFoundryPanel,
+.wilsyCapabilityFoundryPanel {
+  margin-top: 16px !important;
+}
+
+.askBar {
+  margin-top: 14px !important;
+}

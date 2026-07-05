@@ -1729,6 +1729,7 @@ export function WilsyOSIntelligenceDock() {
   }, []);
 
   const [operatorPrompt, setOperatorPrompt] = useState('');
+  const [wilsySubmittedQuestion, setWilsySubmittedQuestion] = useState('');
   const [wilsySuggestionRefreshKey, setWilsySuggestionRefreshKey] = useState(() => Date.now());
   const [operatorBackendBusy, setOperatorBackendBusy] = useState(false);
   const [operatorBackendError, setOperatorBackendError] = useState('');
@@ -1778,6 +1779,7 @@ export function WilsyOSIntelligenceDock() {
     event.preventDefault();
 
     const question = operatorPrompt.trim();
+    setWilsySubmittedQuestion(question);
     setOperatorPrompt('');
 
     if (!question) {
@@ -1986,8 +1988,24 @@ export function WilsyOSIntelligenceDock() {
       return undefined;
     }
 
-    const streamText = buildWilsyNaturalConversationAnswer(liveOperatorModel, operatorPrompt);
-    const streamKey = `${activePrompt}::${operatorPrompt}::${streamText}`;
+    const wilsyResponsePromptText = String(wilsySubmittedQuestion || operatorPrompt || '').trim();
+    const streamText = buildWilsyNaturalConversationAnswer(liveOperatorModel, wilsyResponsePromptText);
+    const streamKey = `${activePrompt}::${wilsyResponsePromptText}::${streamText}`;
+
+    if (wilsyResponsePromptText) {
+      applyWilsyConversationHistoryResult(
+        persistWilsyAIConversationTurn({
+          activeThreadId: wilsyActiveConversationId,
+          threads: wilsyConversationThreads,
+          workspace: resolveWilsyActiveConversationWorkspace(),
+          model: liveOperatorModel,
+          context,
+          promptText: wilsyResponsePromptText,
+          answerText: streamText,
+          intent: activePrompt,
+        }),
+      );
+    }
 
 
 
