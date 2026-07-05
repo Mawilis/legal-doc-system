@@ -2901,3 +2901,85 @@
     opacity: 0;
   }
 }
+
+/* WILSY_P60K5Q10ED1_SOVEREIGN_COMPOSER_ANCHOR_RESCUE */
+:global([data-wilsy-sovereign-ai-composer='competition-core']) {
+  position: relative;
+  margin: 1rem 0 1.2rem !important;
+  padding: clamp(1.35rem, 2vw, 2rem) !important;
+  border: 1px solid rgba(39, 255, 213, 0.22) !important;
+  border-radius: 1.35rem !important;
+  background:
+    radial-gradient(circle at top left, rgba(39, 255, 213, 0.14), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(170, 120, 255, 0.12), transparent 32%),
+    linear-gradient(135deg, rgba(1, 15, 28, 0.96), rgba(0, 39, 35, 0.7)) !important;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 0 42px rgba(39, 255, 213, 0.08) !important;
+}
+
+:global([data-wilsy-sovereign-ai-composer='competition-core'])::before {
+  content: 'WILSY OS · LIVE INTELLIGENCE COMPOSER';
+  display: block;
+  margin-bottom: 1rem;
+  color: rgba(39, 255, 213, 0.88);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.24em;
+}
+
+.singleSurfaceNaturalBody {
+  max-width: 104ch !important;
+  min-height: 13rem !important;
+  color: rgba(232, 247, 243, 0.96) !important;
+  font-size: clamp(1.05rem, 1.34vw, 1.24rem) !important;
+  font-weight: 650 !important;
+  line-height: 1.75 !important;
+  white-space: pre-wrap !important;
+}
+
+.singleSurfaceInlineRoutes button {
+  color: #28ffd5 !important;
+  font-weight: 850 !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(39, 255, 213, 0.5);
+  text-underline-offset: 0.22rem;
+}
+
+.liveInlineComposerCursor {
+  display: inline-block;
+  color: #28ffd5 !important;
+  filter: drop-shadow(0 0 10px rgba(39, 255, 213, 0.75));
+  animation: wilsySovereignComposerCursor 680ms steps(2, start) infinite;
+}
+
+:global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden),
+:global([data-wilsy-hardcoded-command-prep='true'][hidden]),
+.commandPrep.operatingStateHidden {
+  display: none !important;
+}
+
+.liveInlineCommandShelf,
+.sourceTrace,
+.sovereignExecutionCanvas,
+.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
+.missionStatePanel[data-wilsy-mission-focus-lock='true'],
+.missionStatePanel[data-wilsy-mission-state='active'],
+.executionCanvasStream,
+.missionCommandBoard {
+  display: none !important;
+}
+
+@keyframes wilsySovereignComposerCursor {
+  0%,
+  46% {
+    opacity: 1;
+  }
+
+  47%,
+  100% {
+    opacity: 0;
+  }
+}
