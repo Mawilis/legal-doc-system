@@ -2180,3 +2180,20 @@
     flex-direction: column;
   }
 }
+
+/* WILSY_P60K5Q10DT3_DEMAND_GATED_ACTION_RAIL */
+.playableActionDeck[data-wilsy-rail-demand-gated='true'] {
+  animation: wilsyPlayableRailEnter 180ms ease-out both;
+}
+
+@keyframes wilsyPlayableRailEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

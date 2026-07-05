@@ -1885,8 +1885,8 @@ export function WilsyOSIntelligenceDock() {
               </section>
             ) : null}
 
-            {!activeDocumentReview && (liveOperatorModel.playableActions || liveOperatorModel.actions || []).length > 0 ? (
-              <div className={styles.playableActionDeck} data-wilsy-visible-playable-action-rail="true">
+            {wilsyHasSubmittedOperatorResult && !activeDocumentReview && (liveOperatorModel.playableActions || liveOperatorModel.actions || []).length > 0 ? (
+              <div className={styles.playableActionDeck} data-wilsy-visible-playable-action-rail="true" data-wilsy-rail-demand-gated="true">
                 <div className={styles.playableActionHeader}>
                   <span>PLAYABLE ACTION RAIL</span>
                   <strong>Choose the next safe move</strong>
@@ -1929,7 +1929,7 @@ export function WilsyOSIntelligenceDock() {
             </div>
           </section>
 
-          <section className={`${styles.actionBoard} ${activeDocumentReview ? styles.operatingStateHidden : ''} `}>
+          <section className={`${styles.actionBoard} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
             <div className={styles.sectionHeader}>
               <span>PLAYABLE ACTION RAIL</span>
               <strong>Play the next safe move</strong>
