@@ -294,6 +294,142 @@ export function buildWilsyCoreAnswerMap(profile = {}, promptText = '') {
   };
 }
 
+
+/**
+ * @function buildWilsyPlayableActionRail
+ * @description Builds clickable, game-like next actions from the AI reasoning result so the operator can move work immediately.
+ * @param {Object} profile - Workspace profile.
+ * @param {string} intent - Current AI intent.
+ * @param {Array<string>} checklist - Evidence and safety checklist.
+ * @returns {Array<Object>} Playable action rail entries.
+ * @collaboration Wilsy AI Core Engine, Billing action rail, CRM Setup action rail, evidence proof, approval gates, and no-mutation command planning.
+ */
+export function buildWilsyPlayableActionRail(profile = {}, intent = 'what_next', checklist = []) {
+  const workspace = profile?.workspace || 'Wilsy OS';
+  const isBilling = profile?.domain === 'billing';
+  const safeChecklist = Array.isArray(checklist) ? checklist : [];
+
+  if (isBilling) {
+    return [
+      {
+        rank: 1,
+        id: 'inspect_billing_exceptions',
+        intent: 'queue_hygiene',
+        title: 'Inspect billing exceptions',
+        buttonLabel: 'Inspect exceptions',
+        prompt: 'Inspect billing queue hygiene',
+        description: safeChecklist[0] || 'Inspect open invoices, unpaid receipts, failed payments, and revenue leakage.',
+        mode: 'playable_read_only',
+        mutation: false,
+        evidenceRequired: true,
+        nextState: 'Exception lane',
+        lockedReason: 'Billing mutation remains locked until approval and receipt proof are complete.',
+      },
+      {
+        rank: 2,
+        id: 'prepare_billing_evidence',
+        intent: 'evidence_checklist',
+        title: 'Prepare billing evidence',
+        buttonLabel: 'Prepare evidence',
+        prompt: 'Prepare billing evidence checklist',
+        description: safeChecklist[1] || 'Collect tenant, operator, payment, entitlement, receipt, and approval evidence.',
+        mode: 'playable_read_only',
+        mutation: false,
+        evidenceRequired: true,
+        nextState: 'Evidence lane',
+        lockedReason: 'Evidence is required before payment, entitlement, credit, refund, or invoice release.',
+      },
+      {
+        rank: 3,
+        id: 'check_billing_approval_owner',
+        intent: 'release_readiness',
+        title: 'Check approval owner',
+        buttonLabel: 'Check approval',
+        prompt: 'Check billing release readiness',
+        description: safeChecklist[2] || 'Verify approval owner before billing release, refund, credit, or entitlement change.',
+        mode: 'playable_read_only',
+        mutation: false,
+        evidenceRequired: true,
+        nextState: 'Approval lane',
+        lockedReason: 'Release remains locked until approval owner and receipt proof are present.',
+      },
+      {
+        rank: 4,
+        id: 'package_billing_workflow',
+        intent: 'workflow_packaging',
+        title: 'Package billing workflow',
+        buttonLabel: 'Package workflow',
+        prompt: 'Package tenant billing workflow',
+        description: 'Package exception detection, evidence, approval, and release gates into a tenant-facing Revenue Assurance workflow.',
+        mode: 'playable_read_only',
+        mutation: false,
+        evidenceRequired: true,
+        nextState: 'Workflow package',
+        lockedReason: 'Packaging is read-only until operator approves a governed command.',
+      },
+    ];
+  }
+
+  return [
+    {
+      rank: 1,
+      id: 'inspect_authority_path',
+      intent: 'authority_graph',
+      title: 'Inspect authority path',
+      buttonLabel: 'Inspect authority',
+      prompt: 'Explain authority graph',
+      description: safeChecklist[0] || 'Verify operator role, authority boundary, and command surface.',
+      mode: 'playable_read_only',
+      mutation: false,
+      evidenceRequired: true,
+      nextState: `${workspace} authority lane`,
+      lockedReason: 'Mutation remains locked until authority and approval proof are complete.',
+    },
+    {
+      rank: 2,
+      id: 'prepare_evidence_proof',
+      intent: 'evidence_checklist',
+      title: 'Prepare evidence proof',
+      buttonLabel: 'Prepare evidence',
+      prompt: 'Prepare evidence checklist',
+      description: safeChecklist[1] || 'Collect staged proof, approval path, release readiness, and command evidence.',
+      mode: 'playable_read_only',
+      mutation: false,
+      evidenceRequired: true,
+      nextState: `${workspace} evidence lane`,
+      lockedReason: 'Evidence must be complete before any governed command can mutate state.',
+    },
+    {
+      rank: 3,
+      id: 'check_release_readiness',
+      intent: 'release_readiness',
+      title: 'Check release readiness',
+      buttonLabel: 'Check release',
+      prompt: 'Check release readiness',
+      description: safeChecklist[2] || 'Check release permission, packet integrity, approval state, and receipt trail.',
+      mode: 'playable_read_only',
+      mutation: false,
+      evidenceRequired: true,
+      nextState: `${workspace} release lane`,
+      lockedReason: 'Release remains locked until authority, evidence, and approval are present.',
+    },
+    {
+      rank: 4,
+      id: 'package_tenant_workflow',
+      intent: 'workflow_packaging',
+      title: 'Package tenant workflow',
+      buttonLabel: 'Package workflow',
+      prompt: 'Package tenant workflow',
+      description: 'Package authority checks, evidence, approval, and release readiness into a tenant productivity workflow.',
+      mode: 'playable_read_only',
+      mutation: false,
+      evidenceRequired: true,
+      nextState: `${workspace} package`,
+      lockedReason: 'Package is read-only until the operator approves a governed command.',
+    },
+  ];
+}
+
 /**
  * @function buildWilsyOperatorIntelligence
  * @description Produces an immediate Wilsy AI operator model response using workspace reasoning before backend tools are needed.
@@ -343,6 +479,8 @@ export function buildWilsyOperatorIntelligence({
             { id: 'workflow_packaging', label: 'Package tenant workflow' },
           ];
 
+  const playableActions = buildWilsyPlayableActionRail(profile, intent, checklist);
+
   return {
     intent,
     domain: profile.workspace,
@@ -352,29 +490,9 @@ export function buildWilsyOperatorIntelligence({
     outcome: selected.outcome,
     progress: 'Wilsy AI Core Engine',
     quickPrompts,
-    actions: [
-      {
-        rank: 1,
-        title: profile.domain === 'billing' ? 'Inspect billing exceptions' : 'Inspect authority path',
-        description: checklist[0],
-        mode: 'read_only',
-        mutation: false,
-      },
-      {
-        rank: 2,
-        title: profile.domain === 'billing' ? 'Prepare billing evidence' : 'Prepare evidence proof',
-        description: checklist[1],
-        mode: 'read_only',
-        mutation: false,
-      },
-      {
-        rank: 3,
-        title: profile.domain === 'billing' ? 'Check approval owner' : 'Check release readiness',
-        description: checklist[2],
-        mode: 'read_only',
-        mutation: false,
-      },
-    ],
+    actions: playableActions,
+    playableActions,
+    actionSummary: playableActions.map((action) => action.title),
     checklist,
     commandPlan: [
       `Workspace: ${profile.workspace}`,

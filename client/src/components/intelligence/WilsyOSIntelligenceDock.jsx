@@ -1373,8 +1373,8 @@ export function WilsyOSIntelligenceDock() {
    * @collaboration Operator quick prompts, CRM Setup authority guidance, evidence checklist, and release readiness workflow.
    */
   function handleWilsyQuickPrompt(prompt = {}) {
-    const promptLabel = String(prompt.label || '').trim();
-    const nextPromptId = prompt.id || resolveWilsyOperatorIntent(promptLabel, activePrompt) || 'what_next';
+    const promptLabel = String(prompt.label || prompt.title || prompt.prompt || prompt.description || '').trim();
+    const nextPromptId = prompt.intent || prompt.id || resolveWilsyOperatorIntent(promptLabel, activePrompt) || 'what_next';
 
     if (!promptLabel) {
       return;
@@ -1858,8 +1858,8 @@ export function WilsyOSIntelligenceDock() {
 
           <section className={`${styles.actionBoard} ${activeDocumentReview ? styles.operatingStateHidden : ''} `}>
             <div className={styles.sectionHeader}>
-              <span>PRIORITY ACTIONS</span>
-              <strong>Use the model to move work</strong>
+              <span>PLAYABLE ACTION RAIL</span>
+              <strong>Play the next safe move</strong>
             </div>
             <div className={styles.actionList}>
               {liveOperatorModel.actions.map((action) => (
@@ -1869,7 +1869,9 @@ export function WilsyOSIntelligenceDock() {
                   onClick={() =>
                     handleWilsyQuickPrompt({
                       id: action.rank === 1 ? 'authority_graph' : action.rank === 2 ? 'evidence_checklist' : 'queue_hygiene',
-                      label: action.title,
+                      label: action.buttonLabel || action.title,
+                        prompt: action.prompt || action.title,
+                        intent: action.intent,
                     })
                   }
                 >
