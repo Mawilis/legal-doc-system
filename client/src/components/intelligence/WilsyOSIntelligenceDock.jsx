@@ -2081,6 +2081,7 @@ export function WilsyOSIntelligenceDock() {
       promptText: operatorPrompt,
       refreshKey: wilsySuggestionRefreshKey,
       minimumCount: 6,
+      persistExposure: false,
     }),
     [liveOperatorModel, operatorModel, context, operatorPrompt, wilsySuggestionRefreshKey],
   );
