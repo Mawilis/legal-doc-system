@@ -826,9 +826,19 @@ export function buildWilsyOperatorIntelligence({
           ];
 
   const playableActions = buildWilsyPlayableActionRail(profile, intent, checklist);
-  const sovereignExecutionThread = buildWilsyNativeExecutionThread(profile, intent, promptValue, checklist, typeof missionState !== 'undefined' ? missionState : null, playableActions);
   const missionState = buildWilsyMissionState(profile, intent, promptValue, checklist);
-  const executionCanvas = buildWilsyExecutionCanvas(profile, intent, promptValue, checklist, missionState);
+  const executionCanvas =
+    typeof buildWilsyExecutionCanvas === 'function'
+      ? buildWilsyExecutionCanvas(profile, intent, promptValue, checklist, missionState)
+      : null;
+  const sovereignExecutionThread = buildWilsyNativeExecutionThread(
+    profile,
+    intent,
+    promptValue,
+    checklist,
+    missionState,
+    playableActions,
+  );
   const selectedTitle = missionState?.title || selected.title;
   const selectedAnswer = missionState?.answer || selected.answer;
   const selectedOutcome = missionState?.outcome || selected.outcome;
@@ -854,7 +864,7 @@ export function buildWilsyOperatorIntelligence({
     actionSummary: playableActions.map((action) => action.title),
     checklist,
     missionGates: missionState?.gates || checklist,
-    missionNextMoves: executionCanvas?.moves || missionState?.nextMoves || [],
+    missionNextMoves: sovereignExecutionThread?.stream?.map((row) => row.label) || executionCanvas?.moves || missionState?.nextMoves || [],
     executionCanvas,
     commandTokens: executionCanvas?.tokens || [],
     telemetryPacks: executionCanvas?.telemetry || [],
