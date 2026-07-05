@@ -3798,3 +3798,20 @@
   cursor: not-allowed !important;
   opacity: 0.42 !important;
 }
+
+
+/* WILSY_P60K5Q10EV_NEW_THREAD_SUGGESTIONS_RESET_CSS */
+.wilsyConversationNewButton::after {
+  content: 'New thread' !important;
+}
+
+.wilsyConversationClearHistoryButton::after {
+  content: 'Clear history' !important;
+  font-size: 0.78rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.18em !important;
+}
+
+.wilsyConversationClearHistoryButton:disabled::after {
+  content: 'No history' !important;
+}

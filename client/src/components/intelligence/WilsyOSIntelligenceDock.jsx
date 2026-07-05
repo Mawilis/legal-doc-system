@@ -2138,6 +2138,13 @@ export function WilsyOSIntelligenceDock() {
     setWilsyActiveConversationId(nextThread.id);
     setOperatorPrompt('');
     setWilsyInlineComposerStream({ active: false, text: '', streamKey: '', tokens: [] });
+
+    setActivePrompt('what_next');
+    setOperatorBackendModel(null);
+    setActiveDocumentReview(null);
+    setOperatorBackendBusy(false);
+    setOperatorBackendError('');
+    setWilsySuggestionRefreshKey(Date.now() + Math.floor(Math.random() * 1000000));
   }
 
   /**
