@@ -1919,3 +1919,96 @@
   }
 }
 /* WILSY_P60K5Q10DE_ACTUAL_DOCUMENT_CANVAS_MODE_END */
+
+/* WILSY_P60K5Q10DT2_VISIBLE_PLAYABLE_ACTION_RAIL */
+.playableActionDeck {
+  margin: 1.15rem 0 1.2rem;
+  padding: 1rem;
+  border: 1px solid rgba(39, 255, 213, 0.26);
+  border-radius: 1.35rem;
+  background:
+    radial-gradient(circle at top left, rgba(39, 255, 213, 0.13), transparent 34%),
+    rgba(2, 12, 22, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(39, 255, 213, 0.05), 0 20px 50px rgba(0, 0, 0, 0.22);
+}
+
+.playableActionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.playableActionHeader span {
+  color: #28ffd5;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.36em;
+}
+
+.playableActionHeader strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.96rem;
+}
+
+.playableActionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.playableActionButton {
+  min-height: 5.1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(39, 255, 213, 0.22);
+  border-radius: 1rem;
+  background: rgba(1, 13, 25, 0.9);
+  color: rgba(255, 255, 255, 0.92);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.playableActionButton:hover,
+.playableActionButton:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(39, 255, 213, 0.78);
+  background: rgba(0, 61, 51, 0.64);
+  box-shadow: 0 18px 44px rgba(0, 255, 190, 0.1);
+  outline: none;
+}
+
+.playableActionButton span {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.playableActionButton small {
+  display: block;
+  color: rgba(210, 225, 235, 0.72);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+@media (max-width: 1180px) {
+  .playableActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .playableActionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .playableActionGrid {
+    grid-template-columns: 1fr;
+  }
+}

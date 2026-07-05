@@ -1842,6 +1842,36 @@ export function WilsyOSIntelligenceDock() {
               </section>
             ) : null}
 
+            {!activeDocumentReview && (liveOperatorModel.playableActions || liveOperatorModel.actions || []).length > 0 ? (
+              <div className={styles.playableActionDeck} data-wilsy-visible-playable-action-rail="true">
+                <div className={styles.playableActionHeader}>
+                  <span>PLAYABLE ACTION RAIL</span>
+                  <strong>Choose the next safe move</strong>
+                </div>
+                <div className={styles.playableActionGrid}>
+                  {(liveOperatorModel.playableActions || liveOperatorModel.actions || []).slice(0, 4).map((action, index) => (
+                    <button
+                      key={action.id || action.title || index}
+                      type="button"
+                      className={styles.playableActionButton}
+                      onClick={() =>
+                        handleWilsyQuickPrompt({
+                          id: action.intent || resolveWilsyOperatorIntent(action.prompt || action.title, activePrompt),
+                          intent: action.intent || resolveWilsyOperatorIntent(action.prompt || action.title, activePrompt),
+                          label: action.buttonLabel || action.title,
+                          prompt: action.prompt || action.title,
+                          description: action.description,
+                        })
+                      }
+                    >
+                      <span>{action.buttonLabel || action.title}</span>
+                      <small>{action.nextState || action.lockedReason || action.description || 'Read-only governed move'}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className={`${styles.promptGrid} ${activeDocumentReview ? styles.operatingStateHidden : ''} `} aria-label="Wilsy quick prompts">
               {liveOperatorModel.quickPrompts.map((prompt) => (
                 <button
