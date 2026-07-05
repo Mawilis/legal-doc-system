@@ -1860,6 +1860,201 @@ export function WilsyOSIntelligenceDock() {
   }
 
   /**
+   * @function resolveWilsyAIWorkspaceCommand
+   * @description Resolves AI command labels into workspace-opening commands so command clicks do real work instead of repeating chat.
+   * @param {Object|string} command - Command token, label, or prompt payload.
+   * @returns {Object|null} Workspace command payload.
+   * @collaboration Wilsy AI command links, CRM Setup work surfaces, authority graph, evidence vault, release readiness, queue hygiene, and control boundary navigation.
+   */
+  function resolveWilsyAIWorkspaceCommand(command = {}) {
+    const label =
+      typeof command === 'string'
+        ? command
+        : String(command.label || command.title || command.prompt || command.description || command.name || '').trim();
+
+    const commands = [
+      {
+        match: /trace authority route|review setup authority|authority graph|authority path/i,
+        commandId: 'trace_authority_route',
+        label: 'Trace authority route',
+        receipt: 'Opening Authority Graph so you can complete reviewer, approver, release owner, and mutation-boundary review.',
+        selectors: [
+          '[data-wilsy-crm-setup-surface="authority_graph"]',
+          '[data-wilsy-surface="authority_graph"]',
+          '[aria-label*="Authority"]',
+          '[data-control-surface*="authority"]',
+        ],
+        textTargets: ['Authority Graph', 'Review setup authority', 'Authority', 'Roles', 'Approvals'],
+      },
+      {
+        match: /bind evidence anchors|evidence gaps|evidence vault|missing evidence|proof/i,
+        commandId: 'bind_evidence_anchors',
+        label: 'Bind evidence anchors',
+        receipt: 'Opening Evidence Vault so you can bind missing role proof, source proof, and release receipts.',
+        selectors: [
+          '[data-wilsy-crm-setup-surface="evidence_vault"]',
+          '[data-wilsy-surface="evidence_vault"]',
+          '[aria-label*="Evidence"]',
+          '[data-control-surface*="evidence"]',
+        ],
+        textTargets: ['Evidence Vault', 'Evidence', 'Proof', 'Receipts', 'Required evidence'],
+      },
+      {
+        match: /judge release route|release checklist|safe to release|release readiness|approval/i,
+        commandId: 'judge_release_route',
+        label: 'Judge release route',
+        receipt: 'Opening Release Readiness so you can verify approval gates and release blockers.',
+        selectors: [
+          '[data-wilsy-crm-setup-surface="release_readiness"]',
+          '[data-wilsy-surface="release_readiness"]',
+          '[aria-label*="Release"]',
+          '[aria-label*="Approval"]',
+          '[data-control-surface*="release"]',
+        ],
+        textTargets: ['Release', 'Release checklist', 'Approval', 'Completion path', 'Review packet staged'],
+      },
+      {
+        match: /inspect queue drift|queue hygiene|queue drift|import ledger|ledger/i,
+        commandId: 'inspect_queue_drift',
+        label: 'Inspect queue drift',
+        receipt: 'Opening Queue Hygiene so you can inspect stale reviews, orphan approvals, and missing receipts.',
+        selectors: [
+          '[data-wilsy-crm-setup-surface="queue_hygiene"]',
+          '[data-wilsy-surface="queue_hygiene"]',
+          '[aria-label*="Queue"]',
+          '[data-control-surface*="queue"]',
+        ],
+        textTargets: ['Queue', 'Queue hygiene', 'Import Ledger', 'Review queue', 'Ledger'],
+      },
+      {
+        match: /split control boundary|control boundary|permission|role boundary|mutation power/i,
+        commandId: 'split_control_boundary',
+        label: 'Split control boundary',
+        receipt: 'Opening Control Boundary so you can separate review, approval, release, and mutation powers.',
+        selectors: [
+          '[data-wilsy-crm-setup-surface="control_boundary"]',
+          '[data-wilsy-surface="control_boundary"]',
+          '[aria-label*="Control"]',
+          '[aria-label*="Boundary"]',
+          '[data-control-surface*="control"]',
+        ],
+        textTargets: ['Control', 'Boundary', 'Permissions', 'Mutation', 'Roles'],
+      },
+    ];
+
+    if (!label) {
+      return null;
+    }
+
+    const matched = commands.find((item) => item.match.test(label));
+
+    if (!matched) {
+      return null;
+    }
+
+    return {
+      ...matched,
+      sourceLabel: label,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * @function openWilsyAIWorkspaceCommandSurface
+   * @description Opens or scrolls to the existing CRM Setup component that completes a Wilsy AI command.
+   * @param {Object} command - Resolved workspace command.
+   * @returns {boolean} True when a matching visible target was found.
+   * @collaboration Wilsy AI command routing, CRM Setup DOM surfaces, component opening, scroll navigation, and operator task completion.
+   */
+  function openWilsyAIWorkspaceCommandSurface(command = {}) {
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !command?.commandId) {
+      return false;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('wilsy-crm-setup-open-workspace-command', {
+        detail: {
+          commandId: command.commandId,
+          label: command.label,
+          sourceLabel: command.sourceLabel,
+          receipt: command.receipt,
+          generatedAt: command.generatedAt,
+          tenantId: context?.tenantId || context?.tenant || 'wilsy-sovereign-root',
+          operatorRole: context?.role || 'operator',
+        },
+      }),
+    );
+
+    document.documentElement.setAttribute('data-wilsy-ai-requested-workspace-command', command.commandId);
+
+    const directTarget = (command.selectors || [])
+      .map((selector) => document.querySelector(selector))
+      .find(Boolean);
+
+    const clickables = Array.from(
+      document.querySelectorAll('button, [role="tab"], [role="button"], a, [data-wilsy-action], [data-control-id]'),
+    );
+    const textTarget = clickables.find((node) => {
+      const nodeText = String(node.textContent || node.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
+      return (command.textTargets || []).some((target) => nodeText.toLowerCase().includes(String(target).toLowerCase()));
+    });
+    const targetNode = directTarget || textTarget || document.querySelector('[data-wilsy-crm-setup-control-plane]');
+
+    if (textTarget && typeof textTarget.click === 'function') {
+      textTarget.click();
+    }
+
+    if (targetNode && typeof targetNode.scrollIntoView === 'function') {
+      window.requestAnimationFrame(() => {
+        targetNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      });
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('wilsy-crm-setup-command-surface-opened', {
+        detail: {
+          ...command,
+          opened: Boolean(targetNode),
+          openedAt: new Date().toISOString(),
+        },
+      }),
+    );
+
+    return Boolean(targetNode);
+  }
+
+  /**
+   * @function handleWilsyAIWorkspaceCommand
+   * @description Routes a Wilsy AI command click into a CRM Setup workspace surface and replaces repeated answer text with a short opening receipt.
+   * @param {Object|string} command - Command token or label.
+   * @returns {boolean} True when the command was handled.
+   * @collaboration Wilsy AI inline commands, CRM Setup component opening, chat-loop prevention, task completion, and governed operator receipts.
+   */
+  function handleWilsyAIWorkspaceCommand(command = {}) {
+    const resolvedCommand = resolveWilsyAIWorkspaceCommand(command);
+
+    if (!resolvedCommand) {
+      return false;
+    }
+
+    const opened = openWilsyAIWorkspaceCommandSurface(resolvedCommand);
+
+    setActivePrompt(resolvedCommand.commandId);
+    setOperatorPrompt('');
+    setWilsySubmittedQuestion('');
+    setWilsyInlineComposerStream({
+      active: false,
+      text: opened
+        ? resolvedCommand.receipt
+        : `${resolvedCommand.receipt} I could not find a visible surface yet, but I raised the workspace command event for CRM Setup.`,
+      streamKey: `workspace-command-${resolvedCommand.commandId}-${Date.now()}`,
+      tokens: [],
+    });
+
+    return true;
+  }
+
+  /**
    * @function handleWilsyQuickPrompt
    * @description Runs a workspace quick prompt through the Wilsy Operator Model.
    * @param {Object} prompt - Quick prompt descriptor.
@@ -1867,6 +2062,9 @@ export function WilsyOSIntelligenceDock() {
    * @collaboration Operator quick prompts, CRM Setup authority guidance, evidence checklist, and release readiness workflow.
    */
   function handleWilsyQuickPrompt(prompt = {}) {
+    if (handleWilsyAIWorkspaceCommand(prompt)) {
+      return;
+    }
     recordWilsyAISuggestionUsage(prompt);
     const promptLabel = String(prompt.label || prompt.title || prompt.prompt || prompt.description || '').trim();
     const nextPromptId = prompt.intent || prompt.id || resolveWilsyOperatorIntent(promptLabel, activePrompt) || 'what_next';
