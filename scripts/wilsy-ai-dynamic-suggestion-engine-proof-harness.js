@@ -140,6 +140,17 @@ function runWilsyAIDynamicSuggestionEngineProofHarness() {
     first.map((item) => item.label).join('|') !== second.map((item) => item.label).join('|'),
     'suggestions must not repeat same order after refresh',
   );
+  const openCommandCount = first.filter((item) => /^Open\s/i.test(item.label)).length;
+  const nonOpenCount = first.filter((item) => !/^Open\s/i.test(item.label)).length;
+
+  assertWilsyHarnessCondition(
+    openCommandCount <= 1,
+    'suggestion set must contain no more than one Open command',
+  );
+  assertWilsyHarnessCondition(
+    nonOpenCount >= 5,
+    'suggestion set must contain at least five non-Open assistant suggestions',
+  );
   assertWilsyHarnessCondition(
     typed.some((item) => /authority approval blocker|blocker|candidate/i.test(`${item.label} ${item.prompt}`)),
     'typed intent must influence suggestions',

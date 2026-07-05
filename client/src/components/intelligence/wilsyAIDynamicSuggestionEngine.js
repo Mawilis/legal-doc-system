@@ -219,6 +219,163 @@ export function resolveWilsyAIConversationTitle(payload = {}) {
 }
 
 /**
+ * @function selectWilsyBalancedDynamicSuggestions
+ * @description Selects a mixed six-pack of suggestions so command-opening actions do not dominate the assistant surface.
+ * @param {Array} scored - Ranked suggestion candidates.
+ * @param {Object} payload - Selection payload.
+ * @returns {Array} Balanced suggestion descriptors.
+ * @collaboration Wilsy AI dynamic suggestion engine, non-repetitive prompt UX, command-route restraint, workspace analysis, and operator productivity flow.
+ */
+function selectWilsyBalancedDynamicSuggestions(scored = [], payload = {}) {
+  const requestedCount = Math.max(6, Number(payload.minimumCount || 6));
+  const refreshSeed = Number(payload.refreshKey || Date.now());
+  const promptText = sanitizeWilsySuggestionText(payload.promptText, '');
+  const usedIds = new Set();
+  const selected = [];
+  const maxOpenCommands = promptText ? 1 : 1;
+
+  /**
+   * @function classify
+   * @description Classifies a scored suggestion into a balancing bucket without changing the suggestion payload.
+   * @param {Object} item - Scored suggestion candidate.
+   * @returns {string} Suggestion bucket name.
+   * @collaboration Wilsy AI balanced suggestions, command-route restraint, workspace prompts, evidence prompts, risk prompts, and typeahead routing.
+   */
+  const classify = (item = {}) => {
+    const label = sanitizeWilsySuggestionText(item.label, '');
+    const origin = sanitizeWilsySuggestionText(item.origin, '');
+    const intent = sanitizeWilsySuggestionText(item.intent, '');
+
+    if (/^open\s/i.test(label) || origin === 'command_token' || intent === 'command_route') {
+      return 'command';
+    }
+
+    if (origin === 'typeahead' || /^typed_/i.test(item.sourceId || item.id || '')) {
+      return 'typeahead';
+    }
+
+    if (origin === 'evidence_anchor' || /evidence|proof|receipt/i.test(label)) {
+      return 'evidence';
+    }
+
+    if (origin === 'telemetry' || /risk|drift|queue|stale|inspect/i.test(label)) {
+      return 'risk';
+    }
+
+    if (origin === 'conversation_memory') {
+      return 'memory';
+    }
+
+    return 'workspace';
+  };
+
+  /**
+   * @function rotate
+   * @description Rotates a suggestion bucket by refresh seed so repeated openings do not show a static menu.
+   * @param {Array} items - Suggestion bucket entries.
+   * @param {number} seed - Rotation seed.
+   * @returns {Array} Rotated suggestion entries.
+   * @collaboration Wilsy AI suggestion refresh, non-repeating prompt order, open-lifecycle entropy, and deterministic proof harness behavior.
+   */
+  const rotate = (items = [], seed = 0) => {
+    if (!items.length) {
+      return [];
+    }
+
+    const offset = Math.abs(seed) % items.length;
+    return [...items.slice(offset), ...items.slice(0, offset)];
+  };
+
+  const buckets = scored.reduce(
+    (acc, item) => {
+      const bucket = classify(item);
+      acc[bucket] = acc[bucket] || [];
+      acc[bucket].push(item);
+      return acc;
+    },
+    {
+      typeahead: [],
+      workspace: [],
+      evidence: [],
+      risk: [],
+      memory: [],
+      command: [],
+    },
+  );
+
+  const bucketOrder = rotate(
+    promptText
+      ? ['typeahead', 'workspace', 'evidence', 'risk', 'memory', 'command']
+      : ['workspace', 'evidence', 'risk', 'memory', 'command'],
+    refreshSeed,
+  );
+
+  /**
+   * @function pickFromBucket
+   * @description Picks one eligible suggestion from a named bucket while enforcing the command-opening cap.
+   * @param {string} bucketName - Bucket name to select from.
+   * @returns {boolean} True when a suggestion was selected.
+   * @collaboration Wilsy AI six-pack selection, max-one Open command policy, assistant-grade variety, and operator productivity prompts.
+   */
+  const pickFromBucket = (bucketName) => {
+    const bucket = rotate(buckets[bucketName] || [], refreshSeed + bucketName.length);
+    const commandCount = selected.filter((item) => classify(item) === 'command').length;
+
+    for (const item of bucket) {
+      const stableId = item.sourceId || item.id;
+
+      if (!stableId || usedIds.has(stableId)) {
+        continue;
+      }
+
+      if (classify(item) === 'command' && commandCount >= maxOpenCommands) {
+        continue;
+      }
+
+      usedIds.add(stableId);
+      selected.push(item);
+      return true;
+    }
+
+    return false;
+  };
+
+  while (selected.length < requestedCount) {
+    const previousLength = selected.length;
+
+    bucketOrder.forEach((bucketName) => {
+      if (selected.length < requestedCount) {
+        pickFromBucket(bucketName);
+      }
+    });
+
+    if (selected.length === previousLength) {
+      break;
+    }
+  }
+
+  if (selected.length < requestedCount) {
+    rotate(scored, refreshSeed).forEach((item) => {
+      const stableId = item.sourceId || item.id;
+      const commandCount = selected.filter((selectedItem) => classify(selectedItem) === 'command').length;
+
+      if (selected.length >= requestedCount || !stableId || usedIds.has(stableId)) {
+        return;
+      }
+
+      if (classify(item) === 'command' && commandCount >= maxOpenCommands) {
+        return;
+      }
+
+      usedIds.add(stableId);
+      selected.push(item);
+    });
+  }
+
+  return selected.slice(0, requestedCount);
+}
+
+/**
  * @function buildWilsyDynamicSuggestions
  * @description Builds six dynamic, non-repeating, context-aware suggestions from live workspace data, typing, usage, and source posture.
  * @param {Object} payload - Suggestion generation payload.
@@ -284,13 +441,13 @@ export function buildWilsyDynamicSuggestions(payload = {}) {
     candidates.push(
       normalizeWilsySuggestionCandidate({
         id: `route_${index}_${label}`,
-        label: `Open ${label}`,
+        label: index === 0 ? `Open ${label}` : `Review ${label}`,
         prompt: route
-          ? `Open ${label} and explain the safest next move through ${route}`
-          : `Open ${label} and explain the safest next move`,
+          ? `Open ${label} only if it is the right next workspace move, then explain the safest next move through ${route}`
+          : `Review ${label} and explain the safest next workspace move`,
         intent: token.intent || 'command_route',
         origin: 'command_token',
-        score: 26 - index,
+        score: 13 - index,
       }),
     );
   });
@@ -420,7 +577,7 @@ export function buildWilsyDynamicSuggestions(payload = {}) {
     })
     .sort((first, second) => second.rank - first.rank);
 
-  const selected = scored.slice(0, 6);
+  const selected = selectWilsyBalancedDynamicSuggestions(scored, payload);
 
   if (!promptTextRaw && selected.length && payload.persistExposure !== false) {
     saveWilsySuggestionMemory(
