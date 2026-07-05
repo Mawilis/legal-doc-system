@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { buildWilsyOperatorIntelligence } from './wilsyOperatorIntelligenceEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
+import WilsyOSExecutionCanvas from './WilsyOSExecutionCanvas.jsx';
 
 const WILSY_INTELLIGENCE_ROOT_ID = 'wilsy-os-intelligence-dock-root';
 const WILSY_INTELLIGENCE_STORAGE_KEY = 'wilsy-os-intelligence-dock-state-v2-large-productivity';
@@ -1475,6 +1476,11 @@ export function WilsyOSIntelligenceDock() {
               <strong>{operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}</strong>
               <p>{operatorBackendBusy ? 'I am checking connected CRM sources and evidence before answering.' : getWilsyDisplayAnswer(liveOperatorModel)}</p>
               <small>{getWilsyDisplayOutcome(liveOperatorModel)}</small>
+              <WilsyOSExecutionCanvas
+                model={liveOperatorModel}
+                visible={wilsyHasSubmittedOperatorResult && !activeDocumentReview}
+                onSelect={handleWilsyQuickPrompt}
+              />
               {liveOperatorModel.missionState ? (
                 <div className={styles.missionStatePanel} data-wilsy-mission-state="active" data-wilsy-mission-focus-lock="true">
                   <div className={styles.missionStateHeader}>
@@ -1512,8 +1518,8 @@ export function WilsyOSIntelligenceDock() {
                   {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).length > 0 ? (
                     <div className={styles.missionCommandBoard} data-wilsy-mission-command-board="active">
                       <div className={styles.missionCommandHeader}>
-                        <span>LIVE CANVAS STREAM</span>
-                        <strong>State-aware execution cockpit</strong>
+                        <span>EXECUTION THREAD</span>
+                        <strong>Sovereign route cockpit</strong>
                       </div>
                       <div className={styles.missionMoveGrid}>
                         {(liveOperatorModel.missionNextMoves || liveOperatorModel.missionState.nextMoves || []).slice(0, 8).map((move, index) => (
@@ -1911,8 +1917,8 @@ export function WilsyOSIntelligenceDock() {
             {wilsyHasSubmittedOperatorResult && !liveOperatorModel.missionState && !activeDocumentReview && (liveOperatorModel.playableActions || liveOperatorModel.actions || []).length > 0 ? (
               <div className={styles.playableActionDeck} data-wilsy-visible-playable-action-rail="true" data-wilsy-rail-demand-gated="true">
                 <div className={styles.playableActionHeader}>
-                  <span>PLAYABLE ACTION RAIL</span>
-                  <strong>Choose the next safe move</strong>
+                  <span>EXECUTION PIPELINE</span>
+                  <strong>Route work through the cockpit</strong>
                 </div>
                 <div className={styles.playableActionGrid}>
                   {(liveOperatorModel.playableActions || liveOperatorModel.actions || []).slice(0, 4).map((action, index) => (
@@ -1954,8 +1960,8 @@ export function WilsyOSIntelligenceDock() {
 
           <section className={`${styles.actionBoard} ${!wilsyHasSubmittedOperatorResult || liveOperatorModel.missionState || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
             <div className={styles.sectionHeader}>
-              <span>PLAYABLE ACTION RAIL</span>
-              <strong>Play the next safe move</strong>
+              <span>EXECUTION PIPELINE</span>
+              <strong>Route work through the cockpit</strong>
             </div>
             <div className={styles.actionList}>
               {liveOperatorModel.actions.map((action) => (

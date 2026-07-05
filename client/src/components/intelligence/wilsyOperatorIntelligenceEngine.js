@@ -684,6 +684,98 @@ export function buildWilsyExecutionCanvas(profile = {}, intent = 'what_next', pr
   };
 }
 
+
+/**
+ * @function buildWilsyNativeExecutionThread
+ * @description Builds a native execution thread with command tokens, route judging, telemetry, and deeper governed actions.
+ * @param {Object} profile - Workspace profile.
+ * @param {string} intent - Resolved intent.
+ * @param {string} promptText - Operator prompt text.
+ * @param {Array<string>} checklist - Current checklist.
+ * @param {Object|null} missionState - Optional mission state.
+ * @param {Array<Object>} playableActions - Existing playable action candidates.
+ * @returns {Object} Native execution thread payload.
+ * @collaboration Wilsy AI core engine, native execution canvas, sovereign route judge, evidence anchors, command tokens, and operator cockpit.
+ */
+export function buildWilsyNativeExecutionThread(profile = {}, intent = 'what_next', promptText = '', checklist = [], missionState = null, playableActions = []) {
+  const isBilling = profile?.domain === 'billing';
+  const workspace = profile?.workspace || 'Wilsy OS';
+  const focus = profile?.focus || 'Workspace';
+  const route = isBilling ? 'billing-governance-lane' : 'crm-setup-governance-lane';
+  const routeBase = isBilling ? 'wilsy://billing' : 'wilsy://crm-setup';
+  const safeChecklist = Array.isArray(checklist) ? checklist : [];
+
+  const tokens = isBilling
+    ? [
+        ['Trace exception lane', 'queue_hygiene', `${routeBase}/exceptions/trace`, 'Locate unpaid invoices, failed payments, credits, refunds, entitlement mismatch, and missing receipts.'],
+        ['Bind evidence anchors', 'evidence_checklist', `${routeBase}/evidence/bind`, 'Attach invoice, tenant, operator, payment, entitlement, approval, and receipt proof.'],
+        ['Judge release route', 'release_readiness', `${routeBase}/release/judge`, 'Compare release request against payment state, approval owner, and receipt trail.'],
+        ['Split approval owner', 'release_readiness', `${routeBase}/approval/split-owner`, 'Separate inspection, approval, and release identity so mutation cannot jump gates.'],
+        ['Forecast leakage risk', 'queue_hygiene', `${routeBase}/risk/leakage-forecast`, 'Rank exceptions by revenue leakage, stale receipts, and entitlement mismatch.'],
+        ['Package revenue workflow', 'workflow_packaging', `${routeBase}/workflow/package-revenue-assurance`, 'Turn the lane into a tenant-facing Revenue Assurance workflow.'],
+      ]
+    : [
+        ['Trace authority route', 'authority_graph', `${routeBase}/authority/trace-route`, 'Resolve reviewer, approver, release owner, and evidence boundary before setup changes state.'],
+        ['Bind evidence anchors', 'evidence_checklist', `${routeBase}/evidence/bind-anchors`, 'Attach staged proof, packet state, approval receipt, operator identity, tenant identity, and command surface.'],
+        ['Judge release route', 'release_readiness', `${routeBase}/release/judge-route`, 'Check staged proof, approval state, release permission, packet integrity, and receipt trail.'],
+        ['Inspect queue drift', 'queue_hygiene', `${routeBase}/queue/inspect-drift`, 'Find stale reviews, orphan approvals, repeated pending states, and missing receipts.'],
+        ['Split control boundary', 'authority_graph', `${routeBase}/authority/split-boundary`, 'Separate review power, approval power, release power, and mutation power.'],
+        ['Prepare repair route', 'evidence_checklist', `${routeBase}/repair/prepare-route`, 'Create the repair path for any missing receipt, role, permission, or packet proof.'],
+        ['Package tenant workflow', 'workflow_packaging', `${routeBase}/workflow/package-governance-lane`, 'Convert authority, evidence, approval, and release readiness into a repeatable tenant lane.'],
+      ];
+
+  const nativeTokens = tokens.map(([label, tokenIntent, token, telemetry], index) => ({
+    rank: index + 1,
+    id: token.replace('wilsy://', '').replaceAll('/', '-'),
+    label,
+    title: label,
+    buttonLabel: label,
+    intent: tokenIntent,
+    prompt: label,
+    token,
+    telemetry,
+    description: telemetry,
+    mode: 'read_only_execution_stream',
+    mutation: false,
+    evidenceRequired: true,
+  }));
+
+  return {
+    label: 'Native Execution Thread',
+    summary: missionState?.objective || `State-aware execution cockpit for ${workspace}.`,
+    stream: nativeTokens,
+    tokens: nativeTokens,
+    telemetry: [
+      {
+        label: 'Authority Boundary',
+        value: isBilling
+          ? 'Billing mutation locked until approval owner and receipt trail are proven.'
+          : 'Setup mutation locked until reviewer, approver, release owner, and evidence path are proven.',
+      },
+      {
+        label: 'Evidence Anchor',
+        value: safeChecklist[0] || 'Proof is required before any governed command can execute.',
+      },
+      {
+        label: 'Execution Mode',
+        value: 'Read-only stream. Wilsy prepares the route; human approval executes mutation.',
+      },
+      {
+        label: 'Workspace Lens',
+        value: `${workspace} · ${focus}`,
+      },
+    ],
+    sourceRouteJudge: {
+      status: 'READ_ONLY_ALLOWED',
+      route,
+      decision: 'Prepare work only. Mutation requires governed approval.',
+      reason: profile?.lockedMutation || 'Mutation remains locked until approval and evidence are present.',
+    },
+    evidenceAnchors: safeChecklist.slice(0, 6),
+    inheritedActions: Array.isArray(playableActions) ? playableActions.slice(0, 4) : [],
+  };
+}
+
 /**
  * @function buildWilsyOperatorIntelligence
  * @description Produces an immediate Wilsy AI operator model response using workspace reasoning before backend tools are needed.
@@ -734,6 +826,7 @@ export function buildWilsyOperatorIntelligence({
           ];
 
   const playableActions = buildWilsyPlayableActionRail(profile, intent, checklist);
+  const sovereignExecutionThread = buildWilsyNativeExecutionThread(profile, intent, promptValue, checklist, typeof missionState !== 'undefined' ? missionState : null, playableActions);
   const missionState = buildWilsyMissionState(profile, intent, promptValue, checklist);
   const executionCanvas = buildWilsyExecutionCanvas(profile, intent, promptValue, checklist, missionState);
   const selectedTitle = missionState?.title || selected.title;
@@ -750,6 +843,12 @@ export function buildWilsyOperatorIntelligence({
     progress: 'Wilsy AI Core Engine',
     quickPrompts,
     actions: playableActions,
+    executionCanvas: sovereignExecutionThread,
+    executionThread: sovereignExecutionThread?.stream || [],
+    commandTokens: sovereignExecutionThread?.tokens || [],
+    telemetryPacks: sovereignExecutionThread?.telemetry || [],
+    sourceRouteJudge: sovereignExecutionThread?.sourceRouteJudge || null,
+    evidenceAnchors: sovereignExecutionThread?.evidenceAnchors || [],
     playableActions,
     missionState,
     actionSummary: playableActions.map((action) => action.title),
