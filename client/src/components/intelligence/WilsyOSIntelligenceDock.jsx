@@ -462,6 +462,63 @@ function getWilsyDisplayOutcome(model = {}) {
 }
 
 
+
+/**
+ * @function buildWilsyCinematicComposerAnswer
+ * @description Builds a deeper natural response that can be typed into the live composer without dumping a shallow hardcoded line.
+ * @param {Object} model - Current Wilsy operator model.
+ * @param {string} promptText - Operator prompt text.
+ * @returns {string} Cinematic single-surface response text.
+ * @collaboration Wilsy AI composer, live workspace state, source route judge, command tokens, evidence anchors, and operator-facing natural reasoning.
+ */
+function buildWilsyCinematicComposerAnswer(model = {}, promptText = '') {
+  const title = getWilsyDisplayTitle(model);
+  const answer = getWilsyDisplayAnswer(model);
+  const routeJudge = model?.sourceRouteJudge || {};
+  const sourceTrace = Array.isArray(model?.sourceTrace) ? model.sourceTrace : [];
+  const telemetry = Array.isArray(model?.telemetryPacks) ? model.telemetryPacks : [];
+  const commandTokens = Array.isArray(model?.commandTokens)
+    ? model.commandTokens
+    : Array.isArray(model?.executionThread)
+      ? model.executionThread
+      : Array.isArray(model?.playableActions)
+        ? model.playableActions
+        : Array.isArray(model?.actions)
+          ? model.actions
+          : [];
+  const routeCount = commandTokens.length;
+  const connectedSources = sourceTrace.filter((trace) => /complete|ready|connected|success/i.test(`${trace?.status || ''} ${trace?.statusLabel || ''}`)).length || sourceTrace.length || 1;
+  const firstMove = commandTokens[0]?.label || commandTokens[0]?.title || 'trace the authority route';
+  const secondMove = commandTokens[1]?.label || commandTokens[1]?.title || 'bind evidence anchors';
+  const thirdMove = commandTokens[2]?.label || commandTokens[2]?.title || 'judge release readiness';
+  const authorityBoundary =
+    telemetry.find((item) => /authority/i.test(item?.label || ''))?.value ||
+    'the reviewer, approver, release owner, tenant identity, operator identity, and mutation boundary must agree before setup work moves';
+  const evidenceAnchor =
+    telemetry.find((item) => /evidence/i.test(item?.label || ''))?.value ||
+    'the staged proof, packet status, approval receipt, command surface, and tenant context must be visible';
+  const routeDecision =
+    routeJudge.decision ||
+    routeJudge.reason ||
+    'Wilsy may prepare the route, but it may not mutate setup state until the source route and approval evidence are proven.';
+  const directive = String(promptText || '').trim();
+
+  return [
+    title,
+    answer,
+    `I checked ${connectedSources} connected setup source${connectedSources === 1 ? '' : 's'} and found ${routeCount || 'multiple'} governed route${routeCount === 1 ? '' : 's'} available for the next move. I am not going to turn that into another card. I am keeping it inside this live composer and letting the workspace behave like operating software.`,
+    `The safe path is: ${String(firstMove).toLowerCase()} first, then ${String(secondMove).toLowerCase()}, then ${String(thirdMove).toLowerCase()}. That sequence matters because ${authorityBoundary}.`,
+    `Evidence boundary: ${evidenceAnchor}.`,
+    `Route judge: ${routeDecision}`,
+    directive
+      ? `Your directive is "${directive}". I will use that as the operating focus, but I will only expose actions that can survive authority, evidence, and release checks.`
+      : 'The next interaction should feel like the system is thinking with you: text appears as it is being composed, route words become clickable inline, and the chrome disappears when the thought is complete.',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+
 /**
  * @function buildWilsySingleSurfaceCompetitiveAnswer
  * @description Builds a richer natural operator answer from the live Wilsy model without adding cards, rails, or separate panels.
@@ -1474,18 +1531,18 @@ export function WilsyOSIntelligenceDock() {
     }
   }
 
-    /* WILSY_P60K5Q10ED1_SOVEREIGN_COMPOSER_ANCHOR_RESCUE_EFFECT */
+      /* WILSY_P60K5Q10EE_CINEMATIC_COMPOSER_PRINT_GATE_EFFECT */
   /**
-   * @description Streams a richer natural Wilsy answer character-by-character inside one premium composer surface.
-   * @collaboration Wilsy AI operator dock, single surface composer, command token payload, source route judge, and natural response typing.
+   * @description Materializes the composer only while text is printing and streams a richer response character-by-character.
+   * @collaboration Wilsy AI dock, cinematic composer print gate, natural response engine, source route judge, and inline command links.
    */
   useEffect(() => {
     if (!wilsyHasSubmittedOperatorResult || operatorBackendBusy || activeDocumentReview) {
       return undefined;
     }
 
-    const streamText = buildWilsySingleSurfaceCompetitiveAnswer(liveOperatorModel, operatorPrompt);
-    const streamKey = `${activePrompt}::${streamText}`;
+    const streamText = buildWilsyCinematicComposerAnswer(liveOperatorModel, operatorPrompt);
+    const streamKey = `${activePrompt}::${operatorPrompt}::${streamText}`;
 
     if (!streamText || wilsyInlineComposerStream.streamKey === streamKey) {
       return undefined;
@@ -1505,6 +1562,7 @@ export function WilsyOSIntelligenceDock() {
     let cursor = 0;
 
     if (window.__wilsyInlineComposerStreamTimer) {
+      window.clearTimeout(window.__wilsyInlineComposerStreamTimer);
       window.clearInterval(window.__wilsyInlineComposerStreamTimer);
     }
 
@@ -1515,8 +1573,15 @@ export function WilsyOSIntelligenceDock() {
       tokens: commandTokens.slice(0, 8),
     });
 
-    window.__wilsyInlineComposerStreamTimer = window.setInterval(() => {
-      cursor += 1;
+    /**
+     * @function printNextGlyph
+     * @description Prints the next burst of composer glyphs into the single Wilsy response surface without dumping the full answer at once.
+     * @returns {void}
+     * @collaboration Wilsy cinematic composer, response-slot owner, character stream timer, and inline command output.
+     */
+    const printNextGlyph = () => {
+      const burst = glyphs[cursor] === '\n' ? 1 : 2;
+      cursor = Math.min(cursor + burst, glyphs.length);
 
       setWilsyInlineComposerStream((current) => ({
         ...current,
@@ -1525,13 +1590,17 @@ export function WilsyOSIntelligenceDock() {
         tokens: commandTokens.slice(0, 8),
       }));
 
-      if (cursor >= glyphs.length) {
-        window.clearInterval(window.__wilsyInlineComposerStreamTimer);
+      if (cursor < glyphs.length) {
+        const delay = glyphs[cursor - 1] === '.' || glyphs[cursor - 1] === '\n' ? 76 : 16;
+        window.__wilsyInlineComposerStreamTimer = window.setTimeout(printNextGlyph, delay);
       }
-    }, 18);
+    };
+
+    window.__wilsyInlineComposerStreamTimer = window.setTimeout(printNextGlyph, 180);
 
     return () => {
       if (window.__wilsyInlineComposerStreamTimer) {
+        window.clearTimeout(window.__wilsyInlineComposerStreamTimer);
         window.clearInterval(window.__wilsyInlineComposerStreamTimer);
       }
     };
@@ -1597,7 +1666,7 @@ export function WilsyOSIntelligenceDock() {
             </form>
 
                         {/* WILSY_P60K5Q10BR_ANSWER_FIRST_LAYOUT */}
-<div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`} data-wilsy-raw-terminal-thread="true" data-wilsy-sovereign-ai-composer="competition-core">
+<div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`} data-wilsy-raw-terminal-thread="true" data-wilsy-sovereign-ai-composer="competition-core" data-wilsy-composer-printing={operatorBackendBusy || wilsyInlineComposerStream.active ? 'true' : 'false'} data-wilsy-composer-empty={!operatorBackendBusy && !wilsyInlineComposerStream.active && !wilsyInlineComposerStream.text ? 'true' : 'false'} data-wilsy-composer-complete={!operatorBackendBusy && !wilsyInlineComposerStream.active && Boolean(wilsyInlineComposerStream.text) ? 'true' : 'false'} data-wilsy-response-slot-owner="true">
               <span className={styles.singleSurfaceHiddenLabel} aria-hidden="true">WILSY_ANSWER_STREAM</span>
               <strong className={styles.singleSurfaceHiddenTitle} aria-hidden="true">
                 {operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}
@@ -1609,7 +1678,7 @@ export function WilsyOSIntelligenceDock() {
               >
                 {operatorBackendBusy
                   ? 'I am checking connected CRM sources and evidence before answering.'
-                  : wilsyInlineComposerStream.text || getWilsyDisplayAnswer(liveOperatorModel)}
+                  : wilsyInlineComposerStream.text}
                 {!operatorBackendBusy &&
                 !wilsyInlineComposerStream.active &&
                 wilsyHasSubmittedOperatorResult &&
@@ -1745,7 +1814,7 @@ export function WilsyOSIntelligenceDock() {
 
                 return capabilityItem ? (
                   <div className={styles.capabilityReviewCard}>
-                    <div className={styles.capabilityReviewHeader}>
+                    <div className={styles.capabilityReviewHeader} data-wilsy-legacy-foundry-surface="true" data-wilsy-legacy-foundry-review="true" hidden={wilsyHasSubmittedOperatorResult}>
                       <span>CAPABILITY FOUNDRY</span>
                       <strong>REVIEW REQUIRED</strong>
                     </div>
@@ -2176,7 +2245,7 @@ export function WilsyOSIntelligenceDock() {
           </section>
 
           <section className={`${styles.commandPrep} ${wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `} data-wilsy-hardcoded-command-prep="true">
-            <div className={styles.sectionHeader}>
+            <div className={styles.sectionHeader} data-wilsy-hardcoded-command-prep="true" hidden={wilsyHasSubmittedOperatorResult}>
               <span>GOVERNED COMMAND PREP</span>
               <strong>Ready for operator review</strong>
             </div>
