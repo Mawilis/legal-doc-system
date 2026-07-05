@@ -1989,18 +1989,7 @@ export function WilsyOSIntelligenceDock() {
     const streamText = buildWilsyNaturalConversationAnswer(liveOperatorModel, operatorPrompt);
     const streamKey = `${activePrompt}::${operatorPrompt}::${streamText}`;
 
-    applyWilsyConversationHistoryResult(
-      persistWilsyAIConversationTurn({
-        activeThreadId: wilsyActiveConversationId,
-        threads: wilsyConversationThreads,
-        workspace: resolveWilsyActiveConversationWorkspace(),
-        model: liveOperatorModel,
-        context,
-        promptText: question,
-        answerText: streamText,
-        intent: activePrompt,
-      }),
-    );
+
 
     if (
       wilsyInlineComposerStream.active &&
