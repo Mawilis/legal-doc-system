@@ -1476,7 +1476,7 @@ export function WilsyOSIntelligenceDock() {
               <p>{operatorBackendBusy ? 'I am checking connected CRM sources and evidence before answering.' : getWilsyDisplayAnswer(liveOperatorModel)}</p>
               <small>{getWilsyDisplayOutcome(liveOperatorModel)}</small>
               {liveOperatorModel.missionState ? (
-                <div className={styles.missionStatePanel} data-wilsy-mission-state="active">
+                <div className={styles.missionStatePanel} data-wilsy-mission-state="active" data-wilsy-mission-focus-lock="true">
                   <div className={styles.missionStateHeader}>
                     <span>ACTIVE MISSION</span>
                     <strong>{liveOperatorModel.missionState.objective}</strong>
@@ -1885,7 +1885,7 @@ export function WilsyOSIntelligenceDock() {
               </section>
             ) : null}
 
-            {wilsyHasSubmittedOperatorResult && !activeDocumentReview && (liveOperatorModel.playableActions || liveOperatorModel.actions || []).length > 0 ? (
+            {wilsyHasSubmittedOperatorResult && !liveOperatorModel.missionState && !activeDocumentReview && (liveOperatorModel.playableActions || liveOperatorModel.actions || []).length > 0 ? (
               <div className={styles.playableActionDeck} data-wilsy-visible-playable-action-rail="true" data-wilsy-rail-demand-gated="true">
                 <div className={styles.playableActionHeader}>
                   <span>PLAYABLE ACTION RAIL</span>
@@ -1915,7 +1915,7 @@ export function WilsyOSIntelligenceDock() {
               </div>
             ) : null}
 
-            <div className={`${styles.promptGrid} ${activeDocumentReview ? styles.operatingStateHidden : ''} `} aria-label="Wilsy quick prompts">
+            <div className={`${styles.promptGrid} ${liveOperatorModel.missionState || activeDocumentReview ? styles.operatingStateHidden : ''} `} aria-label="Wilsy quick prompts">
               {liveOperatorModel.quickPrompts.map((prompt) => (
                 <button
                   key={prompt.id}
@@ -1929,7 +1929,7 @@ export function WilsyOSIntelligenceDock() {
             </div>
           </section>
 
-          <section className={`${styles.actionBoard} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
+          <section className={`${styles.actionBoard} ${!wilsyHasSubmittedOperatorResult || liveOperatorModel.missionState || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
             <div className={styles.sectionHeader}>
               <span>PLAYABLE ACTION RAIL</span>
               <strong>Play the next safe move</strong>
