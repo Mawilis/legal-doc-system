@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { buildWilsyOperatorIntelligence } from './wilsyOperatorIntelligenceEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
 import { buildWilsyDynamicSuggestions, recordWilsyAISuggestionUsage } from './wilsyAIDynamicSuggestionEngine.js';
+import { clearWilsyAIConversationThreads, createWilsyAIConversationThread, loadWilsyAIConversationThreads, persistWilsyAIConversationTurn } from './wilsyAIConversationHistoryEngine.js';
 
 const WILSY_INTELLIGENCE_ROOT_ID = 'wilsy-os-intelligence-dock-root';
 const WILSY_INTELLIGENCE_STORAGE_KEY = 'wilsy-os-intelligence-dock-state-v2-large-productivity';
@@ -1735,6 +1736,8 @@ export function WilsyOSIntelligenceDock() {
   const [activePrompt, setActivePrompt] = useState('what_next');
   const [planCopied, setPlanCopied] = useState(false);
   const [wilsyInlineComposerStream, setWilsyInlineComposerStream] = useState({ active: false, text: '', streamKey: '', tokens: [] });
+  const [wilsyConversationThreads, setWilsyConversationThreads] = useState(() => loadWilsyAIConversationThreads());
+  const [wilsyActiveConversationId, setWilsyActiveConversationId] = useState('');
   const operatorModel = useMemo(
     () =>
       buildWilsyOperatorModelSurface({
@@ -1900,6 +1903,19 @@ export function WilsyOSIntelligenceDock() {
     const wilsyDirectStreamKey = 'directive-direct-typewriter-' + nextPromptId + '-' + Date.now();
     let wilsyDirectStreamCursor = Math.min(1, wilsyDirectStreamGlyphs.length);
 
+    applyWilsyConversationHistoryResult(
+      persistWilsyAIConversationTurn({
+        activeThreadId: wilsyActiveConversationId,
+        threads: wilsyConversationThreads,
+        workspace: resolveWilsyActiveConversationWorkspace(),
+        model: wilsyDirectStreamModel,
+        context,
+        promptText: promptLabel,
+        answerText: wilsyDirectStreamText,
+        intent: nextPromptId,
+      }),
+    );
+
     setOperatorBackendModel(wilsyDirectStreamModel);
 
     if (typeof window !== 'undefined') {
@@ -1972,6 +1988,19 @@ export function WilsyOSIntelligenceDock() {
 
     const streamText = buildWilsyNaturalConversationAnswer(liveOperatorModel, operatorPrompt);
     const streamKey = `${activePrompt}::${operatorPrompt}::${streamText}`;
+
+    applyWilsyConversationHistoryResult(
+      persistWilsyAIConversationTurn({
+        activeThreadId: wilsyActiveConversationId,
+        threads: wilsyConversationThreads,
+        workspace: resolveWilsyActiveConversationWorkspace(),
+        model: liveOperatorModel,
+        context,
+        promptText: question,
+        answerText: streamText,
+        intent: activePrompt,
+      }),
+    );
 
     if (
       wilsyInlineComposerStream.active &&
@@ -2074,6 +2103,134 @@ export function WilsyOSIntelligenceDock() {
     };
   }, []);
 
+  /**
+   * @function resolveWilsyActiveConversationWorkspace
+   * @description Resolves the current workspace label for Wilsy AI conversation history.
+   * @returns {string} Active workspace label.
+   * @collaboration Wilsy AI chat history, CRM workspace context, operator model state, and named conversation controls.
+   */
+  function resolveWilsyActiveConversationWorkspace() {
+    return String(context?.workspace || liveOperatorModel?.workspace || liveOperatorModel?.module || liveOperatorModel?.contextLabel || 'Workspace')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * @function applyWilsyConversationHistoryResult
+   * @description Applies a persisted chat history result into React state.
+   * @param {Object} result - Conversation persistence result.
+   * @returns {void}
+   * @collaboration Wilsy AI named chats, active conversation selection, local history state, and operator continuity.
+   */
+  function applyWilsyConversationHistoryResult(result = {}) {
+    if (!result || !Array.isArray(result.threads)) {
+      return;
+    }
+
+    setWilsyConversationThreads(result.threads);
+    setWilsyActiveConversationId(result.activeThreadId || result.thread?.id || '');
+  }
+
+  /**
+   * @function handleWilsyStartNewChat
+   * @description Starts a new named Wilsy AI chat for the current workspace without deleting previous history.
+   * @returns {void}
+   * @collaboration Wilsy AI new chat, contextual title creation, previous chat history, and active conversation reset.
+   */
+  function handleWilsyStartNewChat() {
+    const nextThread = createWilsyAIConversationThread({
+      workspace: resolveWilsyActiveConversationWorkspace(),
+      model: liveOperatorModel,
+      context,
+    });
+    const nextThreads = [nextThread, ...loadWilsyAIConversationThreads()].slice(0, 60);
+
+    setWilsyConversationThreads(nextThreads);
+    setWilsyActiveConversationId(nextThread.id);
+    setOperatorPrompt('');
+    setWilsyInlineComposerStream({ active: false, text: '', streamKey: '', tokens: [] });
+  }
+
+  /**
+   * @function handleWilsySelectConversationThread
+   * @description Opens a previous Wilsy AI chat from the named history list.
+   * @param {Object} event - Select change event.
+   * @returns {void}
+   * @collaboration Wilsy AI previous chats, named conversation recovery, answer restoration, and operator recall.
+   */
+  function handleWilsySelectConversationThread(event) {
+    const threadId = String(event?.target?.value || '').trim();
+    const threads = loadWilsyAIConversationThreads();
+    const selectedThread = threads.find((thread) => thread?.id === threadId);
+
+    setWilsyConversationThreads(threads);
+    setWilsyActiveConversationId(threadId);
+
+    if (!selectedThread) {
+      setWilsyInlineComposerStream({ active: false, text: '', streamKey: '', tokens: [] });
+      return;
+    }
+
+    const latestTurn = Array.isArray(selectedThread.turns) ? selectedThread.turns[selectedThread.turns.length - 1] : null;
+
+    setOperatorPrompt('');
+    setWilsyInlineComposerStream({
+      active: false,
+      text: latestTurn?.answerText || '',
+      streamKey: `history-${selectedThread.id}-${Date.now()}`,
+      tokens: [],
+    });
+  }
+
+  /**
+   * @function handleWilsyClearConversationHistory
+   * @description Clears local Wilsy AI chat history without using browser-native confirmation dialogs.
+   * @returns {void}
+   * @collaboration Wilsy AI clear history, local privacy control, previous chat list reset, and safe in-app actions.
+   */
+  function handleWilsyClearConversationHistory() {
+    clearWilsyAIConversationThreads();
+    setWilsyConversationThreads([]);
+    setWilsyActiveConversationId('');
+    setOperatorPrompt('');
+    setWilsyInlineComposerStream({ active: false, text: '', streamKey: '', tokens: [] });
+  }
+
+  /**
+   * @function handleWilsyCloseDock
+   * @description Closes Wilsy AI and closes the active chat session while preserving saved history.
+   * @returns {void}
+   * @collaboration Wilsy AI dock close, active chat lifecycle, saved history preservation, and split runtime controls.
+   */
+  function handleWilsyCloseDock() {
+    setWilsyActiveConversationId('');
+    setOperatorPrompt('');
+    setWilsyInlineComposerStream({ active: false, text: '', streamKey: '', tokens: [] });
+    updateDockState({ collapsed: true });
+  }
+
+  useEffect(() => {
+    /**
+     * @function refreshWilsyConversationHistoryOnOpen
+     * @description Refreshes the named chat history list whenever Wilsy AI opens.
+     * @returns {void} Refreshes local chat history state.
+     * @collaboration Wilsy AI dock open lifecycle, previous chat history, local storage, and active conversation controls.
+     */
+    const refreshWilsyConversationHistoryOnOpen = () => {
+      setWilsyConversationThreads(loadWilsyAIConversationThreads());
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('wilsy-os-intelligence-open-request', refreshWilsyConversationHistoryOnOpen);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('wilsy-os-intelligence-open-request', refreshWilsyConversationHistoryOnOpen);
+      }
+    };
+  }, []);
+
   const dynamicWilsyQuickPrompts = useMemo(
     () => buildWilsyDynamicSuggestions({
       model: liveOperatorModel || operatorModel || {},
@@ -2114,7 +2271,7 @@ export function WilsyOSIntelligenceDock() {
             <button type="button" onClick={handleCopyWilsyCommandPlan}>
               {planCopied ? 'Copied' : 'Copy plan'}
             </button>
-            <button type="button" onClick={() => updateDockState({ collapsed: true })}>
+            <button type="button" onClick={handleWilsyCloseDock}>
               Close
             </button>
           </div>
@@ -2127,6 +2284,39 @@ export function WilsyOSIntelligenceDock() {
 
         <div className={styles.body}>
           <section className={styles.operatorWorkbench}>
+            {/* WILSY_P60K5Q10ET_CONTEXTUAL_CHAT_HISTORY_UI */}
+            <div className={styles.wilsyConversationMemoryDock} data-wilsy-ai-chat-history="true">
+              <button type="button" className={styles.wilsyConversationNewButton} onClick={handleWilsyStartNewChat}>
+                New chat
+              </button>
+              <label className={styles.wilsyConversationThreadFrame}>
+                <strong className={styles.wilsyConversationEyebrow}>Chat history</strong>
+                <div className={styles.wilsyConversationSelectShell}>
+                  <span className={styles.wilsyConversationSelectLabel}>Conversation</span>
+                  <select
+                    aria-label="Select previous Wilsy AI chat"
+                    value={wilsyActiveConversationId}
+                    onChange={handleWilsySelectConversationThread}
+                  >
+                    <option value="">Select previous chat</option>
+                    {wilsyConversationThreads.map((thread) => (
+                      <option key={thread.id} value={thread.id}>
+                        {thread.title || `${thread.workspace || 'Workspace'} · Saved chat`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+              <button
+                type="button"
+                className={styles.wilsyConversationClearHistoryButton}
+                onClick={handleWilsyClearConversationHistory}
+                disabled={wilsyConversationThreads.length === 0}
+              >
+                Clear history
+              </button>
+            </div>
+
             <form className={styles.askBar} onSubmit={handleWilsyAskSubmit}>
               <input
                 type="text"

@@ -3684,7 +3684,7 @@
 }
 
 .wilsyConversationMemoryDock > label::before {
-  content: 'CRM Setup memory';
+  content: none !important;
   position: absolute;
   left: 18px;
   top: 50%;
@@ -3772,4 +3772,29 @@
     justify-content: flex-start !important;
     text-align: left !important;
   }
+}
+
+
+/* WILSY_P60K5Q10ET_CONTEXTUAL_CHAT_HISTORY_CSS */
+.wilsyConversationMemoryDock > label::before {
+  content: none !important;
+  display: none !important;
+}
+
+.wilsyConversationMemoryDock > label > span {
+  display: initial !important;
+}
+
+.wilsyConversationMemoryDock > label > strong {
+  display: inline-flex !important;
+}
+
+.wilsyConversationClearHistoryButton {
+  border-color: rgba(255, 184, 0, 0.28) !important;
+  color: rgba(255, 236, 179, 0.96) !important;
+}
+
+.wilsyConversationClearHistoryButton:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.42 !important;
 }
