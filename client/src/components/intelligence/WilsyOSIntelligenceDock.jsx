@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { buildWilsyOperatorIntelligence } from './wilsyOperatorIntelligenceEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
+import { buildWilsyDynamicSuggestions, recordWilsyAISuggestionUsage } from './wilsyAIDynamicSuggestionEngine.js';
 
 const WILSY_INTELLIGENCE_ROOT_ID = 'wilsy-os-intelligence-dock-root';
 const WILSY_INTELLIGENCE_STORAGE_KEY = 'wilsy-os-intelligence-dock-state-v2-large-productivity';
@@ -1727,6 +1728,7 @@ export function WilsyOSIntelligenceDock() {
   }, []);
 
   const [operatorPrompt, setOperatorPrompt] = useState('');
+  const [wilsySuggestionRefreshKey, setWilsySuggestionRefreshKey] = useState(() => Date.now());
   const [operatorBackendBusy, setOperatorBackendBusy] = useState(false);
   const [operatorBackendError, setOperatorBackendError] = useState('');
   const [operatorBackendModel, setOperatorBackendModel] = useState(null);
@@ -1773,6 +1775,7 @@ export function WilsyOSIntelligenceDock() {
     event.preventDefault();
 
     const question = operatorPrompt.trim();
+    setOperatorPrompt('');
 
     if (!question) {
       return;
@@ -1859,6 +1862,7 @@ export function WilsyOSIntelligenceDock() {
    * @collaboration Operator quick prompts, CRM Setup authority guidance, evidence checklist, and release readiness workflow.
    */
   function handleWilsyQuickPrompt(prompt = {}) {
+    recordWilsyAISuggestionUsage(prompt);
     const promptLabel = String(prompt.label || prompt.title || prompt.prompt || prompt.description || '').trim();
     const nextPromptId = prompt.intent || prompt.id || resolveWilsyOperatorIntent(promptLabel, activePrompt) || 'what_next';
 
@@ -1876,7 +1880,7 @@ export function WilsyOSIntelligenceDock() {
     });
 
     setActivePrompt(nextPromptId);
-    setOperatorPrompt(promptLabel);
+    setOperatorPrompt('');
     const wilsyDirectStreamModel = normalizeWilsyFoundryModelForDisplay(intelligenceModel);
     const wilsyDirectFallbackText =
       'I hear you. I am reading the current workspace and typing the next useful move directly into this composer.';
@@ -2046,7 +2050,40 @@ export function WilsyOSIntelligenceDock() {
     wilsyInlineComposerStream.streamKey,
   ]);
 
-  const dynamicWilsyQuickPrompts = buildWilsyDynamicOperatorDirectives(liveOperatorModel, activePrompt);
+  useEffect(() => {
+    /**
+     * @function refreshWilsyDynamicSuggestionsOnOpen
+     * @description Refreshes the dynamic suggestion entropy whenever the Wilsy AI dock opens.
+     * @returns {void} Refreshes the suggestion key.
+     * @collaboration Wilsy AI split launcher, isolated dynamic suggestion engine, open lifecycle, and non-repeating prompt recommendations.
+     */
+    const refreshWilsyDynamicSuggestionsOnOpen = () => {
+      setWilsySuggestionRefreshKey(Date.now() + Math.floor(Math.random() * 1000000));
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('wilsy-os-intelligence-open-request', refreshWilsyDynamicSuggestionsOnOpen);
+      window.addEventListener('wilsy-ai-refresh-suggestions', refreshWilsyDynamicSuggestionsOnOpen);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('wilsy-os-intelligence-open-request', refreshWilsyDynamicSuggestionsOnOpen);
+        window.removeEventListener('wilsy-ai-refresh-suggestions', refreshWilsyDynamicSuggestionsOnOpen);
+      }
+    };
+  }, []);
+
+  const dynamicWilsyQuickPrompts = useMemo(
+    () => buildWilsyDynamicSuggestions({
+      model: liveOperatorModel || operatorModel || {},
+      context,
+      promptText: operatorPrompt,
+      refreshKey: wilsySuggestionRefreshKey,
+      minimumCount: 6,
+    }),
+    [liveOperatorModel, operatorModel, context, operatorPrompt, wilsySuggestionRefreshKey],
+  );
   const dynamicWilsyComposerPlaceholder = buildWilsyDynamicComposerPlaceholder(liveOperatorModel);
 
   const dockClassName = [
