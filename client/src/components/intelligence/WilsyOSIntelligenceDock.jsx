@@ -1734,7 +1734,11 @@ export function WilsyOSIntelligenceDock() {
     setActivePrompt(nextPromptId);
     setOperatorPrompt(promptLabel);
     const wilsyDirectStreamModel = normalizeWilsyFoundryModelForDisplay(intelligenceModel);
-    const wilsyDirectStreamText = buildWilsyNaturalConversationAnswer(wilsyDirectStreamModel, promptLabel);
+    const wilsyDirectFallbackText =
+      'I hear you. I am reading the current workspace and typing the next useful move directly into this composer.';
+    const wilsyDirectStreamText =
+      String(buildWilsyNaturalConversationAnswer(wilsyDirectStreamModel, promptLabel) || wilsyDirectFallbackText).trim() ||
+      wilsyDirectFallbackText;
     const wilsyDirectStreamTokens = Array.isArray(wilsyDirectStreamModel.commandTokens)
       ? wilsyDirectStreamModel.commandTokens
       : Array.isArray(wilsyDirectStreamModel.executionThread)
@@ -1746,7 +1750,7 @@ export function WilsyOSIntelligenceDock() {
             : [];
     const wilsyDirectStreamGlyphs = Array.from(wilsyDirectStreamText);
     const wilsyDirectStreamKey = 'directive-direct-typewriter-' + nextPromptId + '-' + Date.now();
-    let wilsyDirectStreamCursor = 0;
+    let wilsyDirectStreamCursor = Math.min(1, wilsyDirectStreamGlyphs.length);
 
     setOperatorBackendModel(wilsyDirectStreamModel);
 
@@ -1755,15 +1759,19 @@ export function WilsyOSIntelligenceDock() {
         window.clearInterval(window.__wilsyDirectiveAutosubmitTypeTimer);
       }
 
+      if (window.__wilsyInlineComposerStreamTimer) {
+        window.clearInterval(window.__wilsyInlineComposerStreamTimer);
+      }
+
       setWilsyInlineComposerStream({
         active: true,
-        text: '',
+        text: wilsyDirectStreamGlyphs.slice(0, wilsyDirectStreamCursor).join(''),
         streamKey: wilsyDirectStreamKey,
         tokens: wilsyDirectStreamTokens.slice(0, 8),
       });
 
       window.__wilsyDirectiveAutosubmitTypeTimer = window.setInterval(() => {
-        wilsyDirectStreamCursor = Math.min(wilsyDirectStreamCursor + 3, wilsyDirectStreamGlyphs.length);
+        wilsyDirectStreamCursor = Math.min(wilsyDirectStreamCursor + 1, wilsyDirectStreamGlyphs.length);
 
         setWilsyInlineComposerStream({
           active: wilsyDirectStreamCursor < wilsyDirectStreamGlyphs.length,
@@ -1774,8 +1782,9 @@ export function WilsyOSIntelligenceDock() {
 
         if (wilsyDirectStreamCursor >= wilsyDirectStreamGlyphs.length) {
           window.clearInterval(window.__wilsyDirectiveAutosubmitTypeTimer);
+          window.__wilsyDirectiveAutosubmitTypeTimer = null;
         }
-      }, 18);
+      }, 34);
     }
     setOperatorBackendBusy(false);
     setOperatorBackendError('');
@@ -1815,6 +1824,13 @@ export function WilsyOSIntelligenceDock() {
 
     const streamText = buildWilsyNaturalConversationAnswer(liveOperatorModel, operatorPrompt);
     const streamKey = `${activePrompt}::${operatorPrompt}::${streamText}`;
+
+    if (
+      wilsyInlineComposerStream.active &&
+      String(wilsyInlineComposerStream.streamKey || '').startsWith('directive-direct-typewriter-')
+    ) {
+      return undefined;
+    }
 
     if (!streamText || wilsyInlineComposerStream.streamKey === streamKey) {
       return undefined;
