@@ -2552,3 +2552,113 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* WILSY_P60K5Q10DZ_LIVE_INLINE_COMPOSER_STREAM */
+.liveInlineComposerText {
+  position: relative;
+  min-height: 3.5rem;
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(218, 231, 238, 0.86);
+}
+
+.liveInlineComposerCursor {
+  display: inline-block;
+  margin-left: 0.18rem;
+  color: #28ffd5;
+  animation: wilsyInlineComposerBlink 760ms steps(2, start) infinite;
+}
+
+.liveInlineComposerStatus {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.35rem;
+}
+
+.liveInlineCommandShelf {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(39, 255, 213, 0.16);
+}
+
+.liveInlineCommandShelf > span {
+  display: block;
+  margin-bottom: 0.65rem;
+  color: #28ffd5;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.32em;
+}
+
+.liveInlineCommandShelf > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
+.liveInlineCommandLink {
+  display: inline-grid;
+  grid-template-columns: minmax(9rem, auto) minmax(7rem, auto);
+  gap: 0.55rem;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.5rem 0.62rem;
+  border: 1px solid rgba(39, 255, 213, 0.2);
+  border-radius: 999px;
+  background: rgba(1, 16, 28, 0.72);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.liveInlineCommandLink:hover,
+.liveInlineCommandLink:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(39, 255, 213, 0.76);
+  background: rgba(0, 48, 43, 0.7);
+  outline: none;
+}
+
+.liveInlineCommandLink code {
+  color: rgba(39, 255, 213, 0.86);
+  font-size: 0.66rem;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveInlineCommandLink strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sovereignExecutionCanvas,
+.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
+.missionStatePanel[data-wilsy-mission-focus-lock='true'],
+.missionStatePanel[data-wilsy-mission-state='active'] {
+  display: none !important;
+}
+
+@keyframes wilsyInlineComposerBlink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 840px) {
+  .liveInlineCommandLink {
+    grid-template-columns: 1fr;
+    border-radius: 1rem;
+  }
+}

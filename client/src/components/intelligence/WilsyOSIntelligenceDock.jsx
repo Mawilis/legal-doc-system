@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { buildWilsyOperatorIntelligence } from './wilsyOperatorIntelligenceEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
-import WilsyOSExecutionCanvas from './WilsyOSExecutionCanvas.jsx';
 
 const WILSY_INTELLIGENCE_ROOT_ID = 'wilsy-os-intelligence-dock-root';
 const WILSY_INTELLIGENCE_STORAGE_KEY = 'wilsy-os-intelligence-dock-state-v2-large-productivity';
@@ -1248,6 +1247,7 @@ export function WilsyOSIntelligenceDock() {
   const [operatorBackendModel, setOperatorBackendModel] = useState(null);
   const [activePrompt, setActivePrompt] = useState('what_next');
   const [planCopied, setPlanCopied] = useState(false);
+  const [wilsyInlineComposerStream, setWilsyInlineComposerStream] = useState({ active: false, text: '', streamKey: '', tokens: [] });
   const operatorModel = useMemo(
     () =>
       buildWilsyOperatorModelSurface({
@@ -1419,6 +1419,80 @@ export function WilsyOSIntelligenceDock() {
     }
   }
 
+  /* WILSY_P60K5Q10DZ_LIVE_INLINE_COMPOSER_STREAM_EFFECT */
+
+  /**
+   * @description Streams the current Wilsy answer into one living inline response surface instead of appending cards.
+   * @collaboration Wilsy AI operator dock, native inline composer stream, command token shelf, sovereign route judge, and no-card execution cockpit.
+   */
+  useEffect(() => {
+    if (!wilsyHasSubmittedOperatorResult || operatorBackendBusy || activeDocumentReview) {
+      return undefined;
+    }
+
+    const title = getWilsyDisplayTitle(liveOperatorModel);
+    const answer = getWilsyDisplayAnswer(liveOperatorModel);
+    const outcome = getWilsyDisplayOutcome(liveOperatorModel);
+    const streamText = [answer, outcome].filter(Boolean).join(' ');
+    const streamKey = `${title}::${streamText}`;
+
+    if (!streamText || wilsyInlineComposerStream.streamKey === streamKey) {
+      return undefined;
+    }
+
+    const commandTokens = Array.isArray(liveOperatorModel.commandTokens)
+      ? liveOperatorModel.commandTokens
+      : Array.isArray(liveOperatorModel.executionThread)
+        ? liveOperatorModel.executionThread
+        : Array.isArray(liveOperatorModel.playableActions)
+          ? liveOperatorModel.playableActions
+          : Array.isArray(liveOperatorModel.actions)
+            ? liveOperatorModel.actions
+            : [];
+
+    const words = streamText.split(/\s+/).filter(Boolean);
+    let cursor = 0;
+
+    if (window.__wilsyInlineComposerStreamTimer) {
+      window.clearInterval(window.__wilsyInlineComposerStreamTimer);
+    }
+
+    setWilsyInlineComposerStream({
+      active: true,
+      text: '',
+      streamKey,
+      tokens: commandTokens.slice(0, 8),
+    });
+
+    window.__wilsyInlineComposerStreamTimer = window.setInterval(() => {
+      cursor += 1;
+
+      setWilsyInlineComposerStream((current) => ({
+        ...current,
+        active: cursor < words.length,
+        text: words.slice(0, cursor).join(' '),
+        tokens: commandTokens.slice(0, 8),
+      }));
+
+      if (cursor >= words.length) {
+        window.clearInterval(window.__wilsyInlineComposerStreamTimer);
+      }
+    }, 34);
+
+    return () => {
+      if (window.__wilsyInlineComposerStreamTimer) {
+        window.clearInterval(window.__wilsyInlineComposerStreamTimer);
+      }
+    };
+  }, [
+    activeDocumentReview,
+    activePrompt,
+    liveOperatorModel,
+    operatorBackendBusy,
+    wilsyHasSubmittedOperatorResult,
+    wilsyInlineComposerStream.streamKey,
+  ]);
+
   const dockClassName = [
     styles.dock,
     dockState.collapsed ? styles.collapsed : '',
@@ -1474,13 +1548,41 @@ export function WilsyOSIntelligenceDock() {
 <div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`}>
               <span>WILSY ANSWER</span>
               <strong>{operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}</strong>
-              <p>{operatorBackendBusy ? 'I am checking connected CRM sources and evidence before answering.' : getWilsyDisplayAnswer(liveOperatorModel)}</p>
-              <small>{getWilsyDisplayOutcome(liveOperatorModel)}</small>
-              <WilsyOSExecutionCanvas
-                model={liveOperatorModel}
-                visible={wilsyHasSubmittedOperatorResult && !activeDocumentReview}
-                onSelect={handleWilsyQuickPrompt}
-              />
+              <p className={styles.liveInlineComposerText} data-wilsy-live-inline-composer-stream="active">
+                {operatorBackendBusy
+                  ? 'I am checking connected CRM sources and evidence before answering.'
+                  : wilsyInlineComposerStream.text || getWilsyDisplayAnswer(liveOperatorModel)}
+                {!operatorBackendBusy && wilsyInlineComposerStream.active ? (
+                  <span className={styles.liveInlineComposerCursor}>▍</span>
+                ) : null}
+              </p>
+              <small className={styles.liveInlineComposerStatus}>{wilsyInlineComposerStream.active ? 'STREAMING RESPONSE' : getWilsyDisplayOutcome(liveOperatorModel)}</small>
+              {!operatorBackendBusy && wilsyHasSubmittedOperatorResult && wilsyInlineComposerStream.tokens.length > 0 ? (
+                <div className={styles.liveInlineCommandShelf} data-wilsy-inline-command-links="active">
+                  <span>INLINE COMMAND ROUTES</span>
+                  <div>
+                    {wilsyInlineComposerStream.tokens.map((token, index) => (
+                      <button
+                        key={token.token || token.id || token.label || index}
+                        type="button"
+                        className={styles.liveInlineCommandLink}
+                        onClick={() =>
+                          handleWilsyQuickPrompt({
+                            id: token.intent || token.id || resolveWilsyOperatorIntent(token.prompt || token.label || token.title, activePrompt),
+                            intent: token.intent || token.id || resolveWilsyOperatorIntent(token.prompt || token.label || token.title, activePrompt),
+                            label: token.label || token.buttonLabel || token.title || token.prompt,
+                            prompt: token.prompt || token.label || token.title,
+                            description: token.telemetry || token.description || token.token,
+                          })
+                        }
+                      >
+                        <code>{token.token || `wilsy://inline/${String(index + 1).padStart(2, '0')}`}</code>
+                        <strong>{token.label || token.buttonLabel || token.title || token.prompt}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {liveOperatorModel.missionState ? (
                 <div className={styles.missionStatePanel} data-wilsy-mission-state="active" data-wilsy-mission-focus-lock="true">
                   <div className={styles.missionStateHeader}>
