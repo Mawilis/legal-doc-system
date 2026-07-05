@@ -2811,3 +2811,93 @@
     margin: 0.45rem 0 0 !important;
   }
 }
+
+/* WILSY_P60K5Q10EC_SINGLE_SURFACE_NATURAL_STREAM */
+.singleSurfaceHiddenLabel,
+.singleSurfaceHiddenTitle,
+.singleSurfaceHiddenStatus {
+  display: none !important;
+}
+
+.singleSurfaceNaturalBody {
+  max-width: 92ch;
+  min-height: 6.2rem;
+  margin: 0;
+  padding: 0;
+  color: rgba(226, 241, 237, 0.94);
+  font-size: clamp(1rem, 1.28vw, 1.18rem);
+  font-weight: 620;
+  line-height: 1.72;
+  white-space: pre-wrap;
+}
+
+.singleSurfaceNaturalBody::selection {
+  background: rgba(39, 255, 213, 0.24);
+}
+
+.singleSurfaceInlineRoutes {
+  display: inline;
+  color: rgba(226, 241, 237, 0.94);
+}
+
+.singleSurfaceInlineRoutes button {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #28ffd5;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: rgba(39, 255, 213, 0.42);
+  text-underline-offset: 0.22rem;
+}
+
+.singleSurfaceInlineRoutes button:hover,
+.singleSurfaceInlineRoutes button:focus-visible {
+  color: #9fffe9;
+  outline: none;
+  text-decoration-color: rgba(159, 255, 233, 0.82);
+}
+
+.liveInlineComposerCursor {
+  color: #28ffd5;
+  animation: wilsySingleSurfaceCursor 720ms steps(2, start) infinite;
+}
+
+.liveInlineCommandShelf,
+.sourceTrace,
+.sovereignExecutionCanvas,
+.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
+.missionStatePanel[data-wilsy-mission-focus-lock='true'],
+.missionStatePanel[data-wilsy-mission-state='active'],
+.executionCanvasStream,
+.missionCommandBoard {
+  display: none !important;
+}
+
+:global([data-wilsy-raw-terminal-thread='true']) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:global([data-wilsy-raw-terminal-thread='true']) [data-wilsy-single-surface-output='true'] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+@keyframes wilsySingleSurfaceCursor {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
+}

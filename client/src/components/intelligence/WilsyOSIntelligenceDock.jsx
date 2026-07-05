@@ -1433,7 +1433,7 @@ export function WilsyOSIntelligenceDock() {
     const title = getWilsyDisplayTitle(liveOperatorModel);
     const answer = getWilsyDisplayAnswer(liveOperatorModel);
     const outcome = getWilsyDisplayOutcome(liveOperatorModel);
-    const streamText = [answer, outcome].filter(Boolean).join(' ');
+    const streamText = [title, answer].filter(Boolean).join('\n\n');
     const streamKey = `${title}::${streamText}`;
 
     if (!streamText || wilsyInlineComposerStream.streamKey === streamKey) {
@@ -1546,19 +1546,53 @@ export function WilsyOSIntelligenceDock() {
 
                         {/* WILSY_P60K5Q10BR_ANSWER_FIRST_LAYOUT */}
 <div className={`${styles.answerWorkspace} ${!wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''}`} data-wilsy-raw-terminal-thread="true">
-              <span>WILSY_ANSWER_STREAM</span>
-              <strong className={styles.rawTypographicThreadPrefix}>
-                {operatorBackendBusy ? '[stream] checking live Wilsy sources' : `[stream] ${getWilsyDisplayTitle(liveOperatorModel)}`}
+              <span className={styles.singleSurfaceHiddenLabel} aria-hidden="true">WILSY_ANSWER_STREAM</span>
+              <strong className={styles.singleSurfaceHiddenTitle} aria-hidden="true">
+                {operatorBackendBusy ? 'Checking live Wilsy sources' : getWilsyDisplayTitle(liveOperatorModel)}
               </strong>
-              <p className={`${styles.liveInlineComposerText} ${styles.rawTypographicThreadBody}`} data-wilsy-live-inline-composer-stream="active" data-wilsy-raw-text-output="active">
+              <p
+                className={`${styles.liveInlineComposerText} ${styles.singleSurfaceNaturalBody}`}
+                data-wilsy-live-inline-composer-stream="active"
+                data-wilsy-single-surface-output="true"
+              >
                 {operatorBackendBusy
                   ? 'I am checking connected CRM sources and evidence before answering.'
                   : wilsyInlineComposerStream.text || getWilsyDisplayAnswer(liveOperatorModel)}
+                {!operatorBackendBusy &&
+                !wilsyInlineComposerStream.active &&
+                wilsyHasSubmittedOperatorResult &&
+                wilsyInlineComposerStream.tokens.length > 0 ? (
+                  <span className={styles.singleSurfaceInlineRoutes} data-wilsy-inline-links-in-prose="true">
+                    {' '}
+                    Next, open{' '}
+                    {wilsyInlineComposerStream.tokens.slice(0, 5).map((token, index) => (
+                      <React.Fragment key={token.token || token.id || token.label || index}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleWilsyQuickPrompt({
+                              id: token.intent || token.id || resolveWilsyOperatorIntent(token.prompt || token.label || token.title, activePrompt),
+                              intent: token.intent || token.id || resolveWilsyOperatorIntent(token.prompt || token.label || token.title, activePrompt),
+                              label: token.label || token.buttonLabel || token.title || token.prompt,
+                              prompt: token.prompt || token.label || token.title,
+                              description: token.telemetry || token.description || token.token,
+                            })
+                          }
+                        >
+                          {token.label || token.buttonLabel || token.title || token.prompt}
+                        </button>
+                        {index < Math.min(wilsyInlineComposerStream.tokens.length, 5) - 1 ? <span>, </span> : <span>.</span>}
+                      </React.Fragment>
+                    ))}
+                  </span>
+                ) : null}
                 {!operatorBackendBusy && wilsyInlineComposerStream.active ? (
                   <span className={styles.liveInlineComposerCursor}>▍</span>
                 ) : null}
               </p>
-              <small className={styles.liveInlineComposerStatus}>{wilsyInlineComposerStream.active ? 'STREAMING' : getWilsyDisplayOutcome(liveOperatorModel)}</small>
+              <small className={styles.singleSurfaceHiddenStatus} aria-hidden="true">
+                {getWilsyDisplayOutcome(liveOperatorModel)}
+              </small>
               {!operatorBackendBusy && wilsyHasSubmittedOperatorResult && wilsyInlineComposerStream.tokens.length > 0 ? (
                 <div className={styles.liveInlineCommandShelf} data-wilsy-inline-command-links="active">
                   <span>routes://</span>
@@ -2048,7 +2082,7 @@ export function WilsyOSIntelligenceDock() {
               </div>
             ) : null}
 
-            <div className={`${styles.promptGrid} ${liveOperatorModel.missionState || activeDocumentReview ? styles.operatingStateHidden : ''} `} aria-label="Wilsy quick prompts">
+            <div className={`${styles.promptGrid} ${wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `} aria-label="Wilsy quick prompts">
               {liveOperatorModel.quickPrompts.map((prompt) => (
                 <button
                   key={prompt.id}
@@ -2062,7 +2096,7 @@ export function WilsyOSIntelligenceDock() {
             </div>
           </section>
 
-          <section className={`${styles.actionBoard} ${!wilsyHasSubmittedOperatorResult || liveOperatorModel.missionState || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
+          <section className={`${styles.actionBoard} ${wilsyHasSubmittedOperatorResult || activeDocumentReview ? styles.operatingStateHidden : ''} `}>
             <div className={styles.sectionHeader}>
               <span>EXECUTION PIPELINE</span>
               <strong>Route work through the cockpit</strong>
