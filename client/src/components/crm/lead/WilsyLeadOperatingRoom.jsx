@@ -889,7 +889,7 @@ const LEAD_SORT_OPTIONS = Object.freeze([
   { id: 'recent', label: 'Last activity' }
 ]);
 
-const LEAD_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50, 100]);
+const LEAD_PAGE_SIZE_OPTIONS = Object.freeze([6, 10, 20, 50, 100]);
 
 const LEAD_FILTER_GROUPS = Object.freeze([
   {
@@ -2625,7 +2625,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [openRowActionId, setOpenRowActionId] = useState('');
   const [currentLeadPage, setCurrentLeadPage] = useState(1);
-  const [leadPageSize, setLeadPageSize] = useState(20);
+  const [leadPageSize, setLeadPageSize] = useState(6);
 
   /**
    * @function openWilsyLeadProofTrailViewpoint
@@ -2766,7 +2766,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   const sourceChannels = useMemo(() => buildLeadSourceChannels(routeRegistry, leads), [routeRegistry, leads]);
   const selectedLead = useMemo(() => {
     const matchedLead = filteredLeads.find((record, index) => resolveLeadRecordId(record, index) === selectedLeadId);
-    return matchedLead || filteredLeads[0] || null;
+    return matchedLead || null;
   }, [filteredLeads, selectedLeadId]);
   const operatingMetrics = useMemo(() => buildLeadOperatingMetrics({
     leads,
@@ -2834,7 +2834,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
     const hasSelectedLead = filteredLeads.some((record, index) => resolveLeadRecordId(record, index) === selectedLeadId);
     if (!hasSelectedLead) {
-      setSelectedLeadId(resolveLeadRecordId(filteredLeads[0], 0));
+      /* P60K5Q10FG89A_NO_AUTO_FIRST_ROW_SELECTION */
+      setSelectedLeadId('');
     }
   }, [filteredLeads, selectedLeadId]);
 
@@ -2897,6 +2898,172 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
   /**
+   * @function normalizeWilsyFG89LeadSaveText
+   * @description Normalizes Create Lead draft values before final save payload expansion.
+   * @param {*} value - Candidate draft value.
+   * @returns {string} Normalized value.
+   * @collaboration Create Lead form state, AI-hydrated draft state, backend create payload, Records grid, and source authority.
+   */
+  function normalizeWilsyFG89LeadSaveText(value = '') {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * @function buildWilsyFG89LeadFinalSavePayload
+   * @description Builds the final backend Create Lead payload with every known Lead name, company, owner, title, and address alias.
+   * @param {Object} draftPayload - Current Create Lead draft payload.
+   * @returns {Object} Save payload with canonical and compatibility aliases.
+   * @collaboration Create Lead save button, Wilsy AI draft hydration, CRM command route, backend persistence, and Records table display.
+   */
+  function buildWilsyFG89LeadFinalSavePayload(draftPayload = {}) {
+    /* P60K5Q10FG89A_FINAL_SAVE_PAYLOAD_NORMALIZER */
+    const leadName = normalizeWilsyFG89LeadSaveText(
+      draftPayload.leadName ||
+      draftPayload.name ||
+      draftPayload.fullName ||
+      draftPayload.displayName ||
+      draftPayload.contactName ||
+      draftPayload.personName
+    );
+
+    const companyName = normalizeWilsyFG89LeadSaveText(
+      draftPayload.companyName ||
+      draftPayload.company ||
+      draftPayload.accountName ||
+      draftPayload.organizationName ||
+      draftPayload.organisationName
+    );
+
+    const title = normalizeWilsyFG89LeadSaveText(
+      draftPayload.title ||
+      draftPayload.jobTitle ||
+      draftPayload.position ||
+      draftPayload.roleTitle
+    );
+
+    const owner = normalizeWilsyFG89LeadSaveText(
+      draftPayload.owner ||
+      draftPayload.ownerName ||
+      draftPayload.assignedTo ||
+      draftPayload.assignedToName
+    );
+
+    const street = normalizeWilsyFG89LeadSaveText(
+      draftPayload.street ||
+      draftPayload.streetAddress ||
+      draftPayload.addressLine1 ||
+      draftPayload.addressSearch
+    );
+
+    const city = normalizeWilsyFG89LeadSaveText(draftPayload.city || draftPayload.town);
+    const province = normalizeWilsyFG89LeadSaveText(draftPayload.province || draftPayload.state || draftPayload.region);
+    const postalCode = normalizeWilsyFG89LeadSaveText(draftPayload.postalCode || draftPayload.zipCode || draftPayload.zip || draftPayload.postCode);
+    const country = normalizeWilsyFG89LeadSaveText(draftPayload.country || 'South Africa');
+    const formattedAddress = normalizeWilsyFG89LeadSaveText(
+      draftPayload.formattedAddress ||
+      [street, city, province, postalCode, country].filter(Boolean).join(', ')
+    );
+
+    const aliasPayload = {
+      ...draftPayload,
+      ...(leadName ? {
+        name: leadName,
+        leadName,
+        fullName: leadName,
+        displayName: leadName,
+        contactName: leadName,
+        personName: leadName,
+        firstName: leadName.split(' ').slice(0, -1).join(' ') || leadName,
+        lastName: leadName.split(' ').slice(-1).join(' ') || '',
+      } : {}),
+      ...(companyName ? {
+        company: companyName,
+        companyName,
+        accountName: companyName,
+        organizationName: companyName,
+        organisationName: companyName,
+        businessName: companyName,
+        employer: companyName,
+      } : {}),
+      ...(title ? {
+        title,
+        jobTitle: title,
+        position: title,
+        roleTitle: title,
+      } : {}),
+      ...(owner ? {
+        owner,
+        ownerName: owner,
+        assignedTo: owner,
+        assignedToName: owner,
+      } : {}),
+      ...(street ? {
+        street,
+        streetAddress: street,
+        addressLine1: street,
+      } : {}),
+      ...(city ? {
+        city,
+        town: city,
+      } : {}),
+      ...(province ? {
+        province,
+        state: province,
+        region: province,
+      } : {}),
+      ...(postalCode ? {
+        postalCode,
+        zipCode: postalCode,
+        zip: postalCode,
+        postCode: postalCode,
+      } : {}),
+      ...(country ? {
+        country,
+      } : {}),
+      ...(formattedAddress ? {
+        formattedAddress,
+        addressSearch: draftPayload.addressSearch || formattedAddress,
+      } : {}),
+    };
+
+    return {
+      ...aliasPayload,
+      address: {
+        ...(typeof draftPayload.address === 'object' && draftPayload.address ? draftPayload.address : {}),
+        ...(street ? { street, streetAddress: street, addressLine1: street } : {}),
+        ...(city ? { city, town: city } : {}),
+        ...(province ? { province, state: province, region: province } : {}),
+        ...(postalCode ? { postalCode, zipCode: postalCode, zip: postalCode, postCode: postalCode } : {}),
+        ...(country ? { country } : {}),
+        ...(formattedAddress ? { formattedAddress } : {}),
+      },
+      sourcePayload: {
+        ...(typeof draftPayload.sourcePayload === 'object' && draftPayload.sourcePayload ? draftPayload.sourcePayload : {}),
+        ...(leadName ? { name: leadName, leadName, displayName: leadName } : {}),
+        ...(companyName ? { company: companyName, companyName, accountName: companyName } : {}),
+        ...(formattedAddress ? { formattedAddress } : {}),
+      },
+    };
+  }
+
+  /**
+   * @function updateWilsyFG89DraftFieldWithAliases
+   * @description Updates one Create Lead draft field while preserving final save aliases in state.
+   * @param {Object} previousDraft - Previous draft payload.
+   * @param {string} field - Field key.
+   * @param {*} value - New value.
+   * @returns {Object} Updated draft payload.
+   * @collaboration Create Lead manual entry, AI draft hydration, save payload normalization, and Records grid display.
+   */
+  function updateWilsyFG89DraftFieldWithAliases(previousDraft = {}, field = '', value = '') {
+    return buildWilsyFG89LeadFinalSavePayload({
+      ...previousDraft,
+      [field]: value,
+    });
+  }
+
+
+  /**
    * @function updateDraftField
    * @description Updates one field on the Lead draft.
    * @param {string} field - Field key.
@@ -2905,10 +3072,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    * @collaboration Keeps draft local until backend save.
    */
   function updateDraftField(field, value) {
-    setDraft(previous => ({
-      ...previous,
-      [field]: value
-    }));
+    setDraft(previous => updateWilsyFG89DraftFieldWithAliases(previous, field, value));
   }
 
   /**
@@ -3091,12 +3255,15 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    * @collaboration Prevents fake rows and preserves backend authority.
    */
   async function handleSaveLead(createAnother = false) {
+    /* P60K5Q10FG89A_FINAL_SAVE_DRAFT_BRIDGE */
+    const wilsyFG89AFinalSaveDraft = buildWilsyFG89LeadFinalSavePayload(draft);
+
     if (!canUseLeadAction(role, 'create')) {
       setSaveStatus('Create Lead is locked by role policy.');
       return;
     }
 
-    if (!isLeadDraftValid(draft)) {
+    if (!isLeadDraftValid(wilsyFG89AFinalSaveDraft)) {
       setSaveStatus('Lead name, company and email are required before backend creation.');
       return;
     }
@@ -3105,7 +3272,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
     try {
       if (typeof onSaveLead === 'function') {
-        await onSaveLead(normalizeLeadPayload(draft, tenantId));
+        await onSaveLead(normalizeLeadPayload(wilsyFG89AFinalSaveDraft, tenantId));
       }
 
       setSaveStatus('Lead saved through backend command fabric.');
