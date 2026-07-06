@@ -3589,7 +3589,18 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
             </button>
           </section>
 
-          <section className={styles.headerInvestorStrip} data-wilsy-investor-strip="source-root-compliance">
+          <section className={styles.headerInvestorStrip} data-wilsy-investor-strip="source-root-compliance"
+        data-wilsy-leads-kpi-strip={
+          String(
+            leadOperatingCopyTitle ||
+            leadOperatingCopy?.title ||
+            leadOperatingCopy?.recordPlural ||
+            leadOperatingCopy?.recordSingular ||
+            ''
+          ).toLowerCase().includes('lead')
+            ? 'records'
+            : undefined
+        }>
             <article>
               <small>Source Routes</small>
               <strong>{routeLabel}</strong>
@@ -6246,16 +6257,6 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       data-wilsy-lead-skin={themeRuntime?.themeId || 'crm_revenue_pulse'}
       data-wilsy-theme-engine-source="global-command-center"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}
-      data-wilsy-leads-visual-scope={
-        String(
-          leadOperatingCopyRecordSingular ||
-          leadOperatingCopy?.recordSingular ||
-          leadOperatingCopyTitle ||
-          ''
-        ).toLowerCase().includes('lead')
-          ? 'leads-only'
-          : undefined
-      }
     >
       {renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}

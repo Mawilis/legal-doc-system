@@ -9595,56 +9595,54 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   align-self: end !important;
 }
 
-/* P60K5Q10FG.6.4 - Leads header KPI strip compression */
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .headerInvestorStrip {
+/* P60K5Q10FG.6.5 - Direct Leads KPI strip target */
+.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] {
   min-height: 0 !important;
-  height: auto !important;
-  max-height: 4.7rem !important;
+  height: 8.15rem !important;
+  max-height: 8.15rem !important;
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 0.52rem !important;
-  margin-top: 0.34rem !important;
-  margin-bottom: 0.48rem !important;
+  grid-auto-rows: 8.15rem !important;
+  gap: 0.58rem !important;
+  margin-top: 0.42rem !important;
+  margin-bottom: 0.54rem !important;
   overflow: hidden !important;
 }
 
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .headerInvestorStrip article {
-  min-height: 3.55rem !important;
-  height: 3.75rem !important;
-  max-height: 3.85rem !important;
-  padding: 0.42rem 0.58rem !important;
-  border-radius: 0.72rem !important;
+.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article {
+  min-height: 7.65rem !important;
+  height: 7.65rem !important;
+  max-height: 7.65rem !important;
+  padding: 0.58rem 0.68rem !important;
+  border-radius: 0.78rem !important;
+  display: grid !important;
   align-content: center !important;
-  gap: 0.08rem !important;
+  gap: 0.16rem !important;
   overflow: hidden !important;
 }
 
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .headerInvestorStrip article small {
-  font-size: 0.58rem !important;
-  line-height: 0.95 !important;
+.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article small {
+  font-size: 0.62rem !important;
+  line-height: 1 !important;
   letter-spacing: 0.12em !important;
   margin: 0 !important;
 }
 
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .headerInvestorStrip article strong {
-  font-size: clamp(1.02rem, 1.32vw, 1.28rem) !important;
-  line-height: 0.92 !important;
+.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article strong {
+  font-size: clamp(1.14rem, 1.55vw, 1.42rem) !important;
+  line-height: 0.96 !important;
   margin: 0 !important;
 }
 
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .headerInvestorStrip article em {
-  font-size: 0.58rem !important;
-  line-height: 1.02 !important;
+.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article em {
+  font-size: 0.64rem !important;
+  line-height: 1.05 !important;
   margin: 0 !important;
-  max-height: 1.15rem !important;
+  max-height: 2rem !important;
   overflow: hidden !important;
 }
 
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .leadModuleHeader,
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .leadModuleHero {
-  padding-bottom: 0.55rem !important;
-}
-
-.leadOperatingRoom[data-wilsy-leads-visual-scope="leads-only"][data-wilsy-active-lead-tab="records"] .leadTabbedShell {
-  margin-top: 0.42rem !important;
+.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] + .leadTabbedShell,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
+  margin-top: 0.48rem !important;
 }
