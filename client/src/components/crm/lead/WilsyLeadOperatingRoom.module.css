@@ -8739,120 +8739,51 @@
   outline-offset: 3px;
 }
 
-/* P60K5Q10FG.2.3 — Production Leads filter checkbox row layout */
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] {
-  width: 100%;
-  min-height: 3.15rem;
-  display: grid;
-  grid-template-columns: 1.1rem minmax(0, 1fr);
-  align-items: center;
-  column-gap: 0.85rem;
-  padding: 0.68rem 0.88rem;
-  border-radius: 0.7rem;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] input[type="checkbox"] {
-  width: 1.05rem;
-  height: 1.05rem;
-  min-width: 1.05rem;
-  margin: 0;
-  padding: 0;
-  justify-self: center;
-  align-self: center;
-  accent-color: #3eff9a;
-  cursor: pointer;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] span {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.12rem;
-  align-items: center;
-  overflow: hidden;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] strong {
-  display: block;
-  margin: 0;
-  padding: 0;
-  color: rgba(245, 252, 255, 0.96);
-  font-size: 0.92rem;
-  font-weight: 850;
-  line-height: 1.12;
-  letter-spacing: 0.01em;
-  text-transform: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] em {
-  display: block;
-  margin: 0;
-  padding: 0;
-  color: rgba(144, 191, 162, 0.88);
-  font-size: 0.72rem;
-  font-style: normal;
-  font-weight: 650;
-  line-height: 1.12;
-  letter-spacing: 0.01em;
-  text-transform: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] input[type="checkbox"]:checked {
-  outline: 2px solid rgba(62, 255, 154, 0.42);
-  outline-offset: 2px;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"][data-selected="true"] {
-  background: rgba(62, 255, 154, 0.14);
-  border-color: rgba(62, 255, 154, 0.42);
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] strong,
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] em {
-  pointer-events: none;
-}
-
-/* P60K5Q10FG.2.4 — Leads filter text layout final */
+/* P60K5Q10FG.2.5 — Compact production Leads filter checkbox list */
 .leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] {
   width: 100% !important;
-  min-height: 54px !important;
-  height: auto !important;
-  display: grid !important;
-  grid-template-columns: 22px minmax(0, 1fr) !important;
-  grid-template-rows: auto !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
-  justify-content: stretch !important;
-  gap: 0 14px !important;
-  padding: 10px 14px !important;
-  border-radius: 12px !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  padding: 0 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
   overflow: hidden !important;
+  cursor: pointer !important;
   text-align: left !important;
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
+  transform: none !important;
+}
+
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"]:hover {
+  background: rgba(62, 255, 154, 0.08) !important;
+}
+
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"][data-selected="true"] {
+  background: rgba(62, 255, 154, 0.14) !important;
+  border-color: rgba(62, 255, 154, 0.28) !important;
 }
 
 .leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] input[type="checkbox"] {
   position: static !important;
+  display: inline-block !important;
   width: 18px !important;
   height: 18px !important;
   min-width: 18px !important;
   max-width: 18px !important;
   min-height: 18px !important;
   max-height: 18px !important;
+  flex: 0 0 18px !important;
   margin: 0 !important;
   padding: 0 !important;
-  grid-column: 1 !important;
-  grid-row: 1 !important;
-  justify-self: center !important;
-  align-self: center !important;
   opacity: 1 !important;
   visibility: visible !important;
   transform: none !important;
@@ -8863,20 +8794,18 @@
 
 .leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] span {
   position: static !important;
-  width: auto !important;
+  display: block !important;
   min-width: 0 !important;
-  max-width: 100% !important;
+  width: auto !important;
+  max-width: calc(100% - 30px) !important;
   height: auto !important;
-  min-height: 0 !important;
-  grid-column: 2 !important;
-  grid-row: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  justify-content: center !important;
-  gap: 3px !important;
   margin: 0 !important;
   padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
   overflow: hidden !important;
   transform: none !important;
   writing-mode: horizontal-tb !important;
@@ -8892,11 +8821,16 @@
   max-width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
-  color: rgba(245, 252, 255, 0.96) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: rgba(232, 238, 248, 0.92) !important;
   font-size: 15px !important;
-  font-weight: 850 !important;
-  line-height: 1.12 !important;
-  letter-spacing: 0.01em !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0 !important;
   text-transform: none !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -8907,31 +8841,7 @@
 }
 
 .leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] em {
-  position: static !important;
-  display: block !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  color: rgba(144, 191, 162, 0.88) !important;
-  font-size: 12px !important;
-  font-style: normal !important;
-  font-weight: 650 !important;
-  line-height: 1.12 !important;
-  letter-spacing: 0.01em !important;
-  text-transform: none !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  transform: none !important;
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
-}
-
-.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"][data-selected="true"] {
-  background: rgba(62, 255, 154, 0.14) !important;
-  border-color: rgba(62, 255, 154, 0.42) !important;
+  display: none !important;
 }
 
 .leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] strong,
