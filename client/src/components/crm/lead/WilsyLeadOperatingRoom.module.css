@@ -9655,3 +9655,11 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
   margin-top: 0 !important;
 }
+
+/* P60K5Q10FG.7.4 - KPI shell two-row records contract
+   Fixes the mapped records blank band without moving the shared shell.
+   Applies only when the records shell actually contains the live KPI deck. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: stretch !important;
+}
