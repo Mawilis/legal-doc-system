@@ -6246,6 +6246,16 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       data-wilsy-lead-skin={themeRuntime?.themeId || 'crm_revenue_pulse'}
       data-wilsy-theme-engine-source="global-command-center"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}
+      data-wilsy-leads-visual-scope={
+        String(
+          leadOperatingCopyRecordSingular ||
+          leadOperatingCopy?.recordSingular ||
+          leadOperatingCopyTitle ||
+          ''
+        ).toLowerCase().includes('lead')
+          ? 'leads-only'
+          : undefined
+      }
     >
       {renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}
