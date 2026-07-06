@@ -5855,8 +5855,18 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     const addressVerificationPacket = buildWilsyR91K85AddressVerificationPacket(draft);
 
     return (
-      <section className={styles.createSurface}>
-        <header className={styles.createHeader}>
+      <section
+        className={styles.createSurface}
+        data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"
+        data-wilsy-lead-task-mode="create"
+        data-wilsy-ai-component-scope="crm.leads.create"
+        data-wilsy-ai-model-awareness="field_groups.source_posture.address_intelligence.proof_readiness.save_contract"
+      >
+        <header
+          className={styles.createHeader}
+          data-wilsy-lead-create-header="edit-grade-command-header"
+          data-wilsy-ai-component="create-lead-command-header"
+        >
           <span><small>Focused Create</small><strong>Create Verified Lead</strong><em>Capture, enrich, schedule and prove the Lead source from one workspace.</em></span>
           <div>
             <button type="button" onClick={() => resetLeadDraftForPrivacy('list')}>Cancel</button>
@@ -5865,15 +5875,64 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           </div>
         </header>
 
-        <main className={styles.createGrid}>
-          <section className={styles.formPanel}>
+        <main
+          className={styles.createGrid}
+          data-wilsy-lead-create-workgrid="edit-grade-create-workspace"
+          data-wilsy-ai-component="create-lead-workgrid"
+        >
+          <section
+            className={styles.formPanel}
+            data-wilsy-lead-create-field-group="lead_information"
+            data-wilsy-ai-component="create-lead-primary-fields"
+          >
             <h3>Lead Information</h3>
-            <div className={styles.formGrid}>
+            <p className={styles.createFieldGroupLead}>
+              Create the backend Lead record from one focused production surface. Required fields stay explicit; source, address and proof posture stay visible for Wilsy AI.
+            </p>
+            <div
+              className={styles.formGrid}
+              data-wilsy-lead-create-fields="identity_company_contact_source"
+              data-wilsy-ai-readable-fields="name.company.email.phone.mobile.title.source.status.industry.owner.website.employees"
+            >
               <label><span>Lead Name *</span><input value={draft.name} onChange={event => updateDraftField('name', event.target.value)} /></label>
               <label><span>Company *</span><input value={draft.company} onChange={event => updateDraftField('company', event.target.value)} /></label>
               <label><span>Email *</span><input value={draft.email} onChange={event => updateDraftField('email', event.target.value)} /></label>
-              <label><span>{leadOperatingCopy.tableHeaders.phone}</span><input value={draft.phone} onChange={event => updateDraftField('phone', event.target.value)} /></label>
-              <label><span>Mobile</span><input value={draft.mobile} onChange={event => updateDraftField('mobile', event.target.value)} /></label>
+              <label data-wilsy-lead-create-field="phone">
+                <span>{leadOperatingCopy.tableHeaders.phone}</span>
+                <div className={styles.createPhonePair} data-wilsy-ai-component="create-lead-phone-control">
+                  <select
+                    value={draft.countryCode || 'ZA'}
+                    onChange={event => updateDraftField('countryCode', event.target.value)}
+                    aria-label="Phone country code"
+                  >
+                    <option value="ZA">South Africa +27</option>
+                    <option value="US">United States +1</option>
+                    <option value="GB">United Kingdom +44</option>
+                    <option value="AE">United Arab Emirates +971</option>
+                    <option value="NG">Nigeria +234</option>
+                    <option value="KE">Kenya +254</option>
+                  </select>
+                  <input value={draft.phone} onChange={event => updateDraftField('phone', event.target.value)} />
+                </div>
+              </label>
+              <label data-wilsy-lead-create-field="mobile">
+                <span>Mobile</span>
+                <div className={styles.createPhonePair} data-wilsy-ai-component="create-lead-mobile-control">
+                  <select
+                    value={draft.mobileCountryCode || draft.countryCode || 'ZA'}
+                    onChange={event => updateDraftField('mobileCountryCode', event.target.value)}
+                    aria-label="Mobile country code"
+                  >
+                    <option value="ZA">South Africa +27</option>
+                    <option value="US">United States +1</option>
+                    <option value="GB">United Kingdom +44</option>
+                    <option value="AE">United Arab Emirates +971</option>
+                    <option value="NG">Nigeria +234</option>
+                    <option value="KE">Kenya +254</option>
+                  </select>
+                  <input value={draft.mobile} onChange={event => updateDraftField('mobile', event.target.value)} />
+                </div>
+              </label>
               <label><span>Title</span><input value={draft.title} onChange={event => updateDraftField('title', event.target.value)} /></label>
               <label><span>Lead Source</span><select value={draft.source} onChange={event => updateDraftField('source', event.target.value)}><option>Website</option><option>Referral</option><option>Partner</option><option>Outbound</option><option>Event</option><option>Wilsy AI</option></select></label>
               <label><span>{leadOperatingCopy.tableHeaders.status}</span><select value={draft.status} onChange={event => updateDraftField('status', event.target.value)}><option>NEW</option><option>OPEN</option><option>CONTACTED</option><option>{leadOperatingCopy.qualifiedLabel}</option><option>DISQUALIFIED</option></select></label>
@@ -5884,7 +5943,13 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
             </div>
 
             <h3>Address Intelligence</h3>
-            <section className={styles.addressCommandDeck} aria-label="Wilsy OS address intelligence command">
+            <section
+              className={styles.addressCommandDeck}
+              aria-label="Wilsy OS address intelligence command"
+              data-wilsy-lead-create-field-group="address_intelligence"
+              data-wilsy-ai-component="create-lead-address-intelligence"
+              data-wilsy-ai-readable-fields="street.city.state.zipCode.country.latitude.longitude.formattedAddress.addressVerificationStatus.addressSourceProvider.addressConfidence.addressEvidenceReceipt"
+            >
               <label className={styles.addressCommandSearch}>
                 <span>Wilsy OS Address Intelligence</span>
                 <input
@@ -5966,10 +6031,32 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
             <label className={styles.descriptionField}><span>Description / Notes</span><textarea value={draft.description} onChange={event => updateDraftField('description', event.target.value)} /></label>
           </section>
 
-          <aside className={styles.createCommandPanel}>
-            <section><ShieldCheck size={23} /><strong>Source posture</strong><p>Backend create activates only after required fields are valid. Browser does not manufacture Lead authority.</p><span>{saveStatus || 'Awaiting validated Lead payload.'}</span></section>
-            <section><CalendarDays size={23} /><strong>Activity shortcuts</strong><button type="button" onClick={() => setCalendarOpen(true)}><CalendarDays size={16} />Create meeting</button><button type="button" onClick={() => setCalendarOpen(true)}><Phone size={16} />Create call</button><button type="button" onClick={() => setCalendarOpen(true)}><Activity size={16} />Mark unavailable</button></section>
-            <section><Sparkles size={23} /><strong>Wilsy AI services</strong><button type="button"><WandSparkles size={16} />Enrich Lead</button><button type="button"><Mail size={16} />Draft outreach</button><button type="button"><ClipboardList size={16} />Score readiness</button></section>
+          <aside
+            className={styles.createCommandPanel}
+            data-wilsy-lead-create-command-panel="source_proof_ai_readiness"
+            data-wilsy-ai-component="create-lead-authority-panel"
+          >
+            <section data-wilsy-lead-create-authority-card="source_posture" data-wilsy-ai-component="create-source-authority">
+              <ShieldCheck size={23} />
+              <strong>Source posture</strong>
+              <p>Backend create activates only after required fields are valid. Browser does not manufacture Lead authority.</p>
+              <span>{saveStatus || 'Awaiting validated Lead payload.'}</span>
+            </section>
+            <section data-wilsy-lead-create-authority-card="activity_shortcuts" data-wilsy-ai-component="create-activity-shortcuts">
+              <CalendarDays size={23} />
+              <strong>Activity shortcuts</strong>
+              <button type="button" onClick={() => setCalendarOpen(true)}><CalendarDays size={16} />Create meeting</button>
+              <button type="button" onClick={() => setCalendarOpen(true)}><Phone size={16} />Create call</button>
+              <button type="button" onClick={() => setCalendarOpen(true)}><Activity size={16} />Mark unavailable</button>
+            </section>
+            <section data-wilsy-lead-create-authority-card="wilsy_ai_readiness" data-wilsy-ai-component="create-ai-readiness">
+              <Sparkles size={23} />
+              <strong>Wilsy AI readiness</strong>
+              <p>Floating Wilsy AI can read this Create surface, field groups, source posture, address proof and save readiness.</p>
+              <button type="button" data-wilsy-ai-inline-command="create_lead_enrich"><WandSparkles size={16} />Enrich Lead</button>
+              <button type="button" data-wilsy-ai-inline-command="create_lead_draft_outreach"><Mail size={16} />Draft outreach</button>
+              <button type="button" data-wilsy-ai-inline-command="create_lead_score_readiness"><ClipboardList size={16} />Score readiness</button>
+            </section>
           </aside>
         </main>
       </section>
