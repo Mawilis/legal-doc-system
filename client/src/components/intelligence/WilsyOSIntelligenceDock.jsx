@@ -2363,7 +2363,10 @@ export function WilsyOSIntelligenceDock() {
     if (dispatchWilsyFG84GlobalAskLeadCreateDraft(wilsyFG84GlobalLeadCreateDraft)) {
       /* P60K5Q10FG84_GLOBAL_ASK_SUBMIT_DIRECT_ROUTER */
       if (typeof setWilsyHasSubmittedOperatorResult === 'function') {
+        /* P60K5Q10FG90B_SAFE_SUBMITTED_OPERATOR_RESULT_SETTER */
+      if (typeof setWilsyHasSubmittedOperatorResult === 'function') {
         setWilsyHasSubmittedOperatorResult(true);
+      }
       }
       if (typeof setLiveOperatorModel === 'function') {
         setLiveOperatorModel(wilsyFG84GlobalLeadCreateDraft.packet.operatorModel);

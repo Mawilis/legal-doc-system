@@ -3657,6 +3657,58 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
 
+  useEffect(() => {
+    /* P60K5Q10FG90B_FILTER_CONTROL_STATE_QUARANTINE */
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const wilsyFG90BFilterKeys = [
+      'wilsy.crm.leads.filters',
+      'wilsy.crm.leads.selectedFilters',
+      'wilsy.crm.leads.controlState',
+      'wilsy.crm.controlState.leads.filters',
+      'crm.leads.filters',
+      'crm.leads.controlState',
+      'leads.filters',
+      'selectedLeadFilterOptions',
+    ];
+
+    [window.localStorage, window.sessionStorage].forEach((storage) => {
+      if (!storage) return;
+
+      wilsyFG90BFilterKeys.forEach(key => storage.removeItem(key));
+
+      Object.keys(storage)
+        .filter(key => key.toLowerCase().includes('lead') && key.toLowerCase().includes('filter'))
+        .forEach(key => storage.removeItem(key));
+
+      Object.keys(storage)
+        .filter(key => key.toLowerCase().includes('control') && key.toLowerCase().includes('lead'))
+        .forEach(key => storage.removeItem(key));
+    });
+
+    setSelectedLeadFilterOptions(new Set());
+    setSelectedRowIds([]);
+    setSelectedLeadId('');
+
+    if (typeof setLeadPage === 'function') {
+      setLeadPage(1);
+    }
+
+    if (typeof setLeadCurrentPage === 'function') {
+      setLeadCurrentPage(1);
+    }
+
+    if (typeof setCurrentPage === 'function') {
+      setCurrentPage(1);
+    }
+
+    return undefined;
+  }, []);
+
+
+
   /**
    * @function handleWilsyLeadAIQuestionSubmit
    * @description Sends the operator question and live CRM Leads context to the Wilsy AI Operator Kernel.
