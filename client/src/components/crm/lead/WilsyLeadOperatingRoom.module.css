@@ -9016,3 +9016,74 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+
+/* P60K5Q10FG.4.0 - Leads Proof workarea scroll containment
+   Contains the Proof viewpoint inside the Leads work surface.
+   The ledger/table scrolls inside the viewpoint instead of bleeding under the footer. */
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: calc(100dvh - 252px) !important;
+  overflow: hidden !important;
+  contain: layout paint !important;
+  isolation: isolate !important;
+  clip-path: inset(0 0 0 0 round 24px) !important;
+  box-sizing: border-box !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"],
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] > *,
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] * {
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] > * {
+  flex-shrink: 0 !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] .leadOsProofRail {
+  flex: 0 0 auto !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] .tableFrame,
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] [class*="tableFrame"],
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] [class*="ledger"],
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] [class*="Ledger"] {
+  position: relative !important;
+  flex: 1 1 auto !important;
+  min-height: 178px !important;
+  max-height: min(36vh, 380px) !important;
+  max-width: 100% !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] table {
+  min-width: max-content !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] .activationFooter,
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"] [class*="activationFooter"] {
+  position: relative !important;
+  bottom: auto !important;
+  flex: 0 0 auto !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+[data-wilsy-lead-proof-viewpoint="workarea-scroll"]::after {
+  content: "" !important;
+  display: block !important;
+  flex: 0 0 clamp(72px, 8vh, 118px) !important;
+  width: 100% !important;
+  pointer-events: none !important;
+}

@@ -3169,7 +3169,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               <RotateCw size={18} />
             </button>
 
-            
+
             {/* WILSY_P60H2B_SETUP_ICON_BEFORE_CALENDAR */}
             <button
               type="button"
@@ -4565,7 +4565,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         className={styles.leadTabbedShell}
         data-wilsy-lead-os-canvas={WILSY_LEAD_TABBED_APP_BAR_VERSION}
         data-wilsy-lead-split-view={splitView ? 'true' : 'false'}
-      >
+       data-wilsy-lead-proof-viewpoint="workarea-scroll">
         {activeTopTab === 'records' ? renderLeadVisionMetricDeck() : null}
         {renderLeadTabContent()}
       </section>
@@ -5481,7 +5481,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     );
   }
 
-  
+
   /**
    * @function renderCalendarDrawer
    * @description Renders the calendar create drawer. In Meetings mode this uses the canonical Meeting editor instead of the legacy Universal Meeting command center.
