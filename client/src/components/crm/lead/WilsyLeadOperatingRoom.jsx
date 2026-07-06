@@ -1886,6 +1886,8 @@ function openCrmGlobalThemeAuthorityFallback() {
 }
 
 
+const WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY = 'wilsy.crm.leads.filterSelection.v2';
+
 const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
   {
     id: 'SYSTEM_DEFINED_FILTERS',
@@ -2133,7 +2135,42 @@ export default function WilsyLeadOperatingRoom({
   const [activeListViewId, setActiveListViewId] = useState('ALL_LEADS');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [leadFilterQuery, setLeadFilterQuery] = useState('');
-  const [selectedLeadFilterOptions, setSelectedLeadFilterOptions] = useState(() => new Set());
+  const [selectedLeadFilterOptions, setSelectedLeadFilterOptions] = useState(() => {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return new Set();
+    }
+
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY) || '[]');
+      return new Set(Array.isArray(parsed) ? parsed.filter(Boolean) : []);
+    } catch (error) {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY,
+      JSON.stringify(Array.from(selectedLeadFilterOptions)),
+    );
+  }, [selectedLeadFilterOptions]);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY,
+      JSON.stringify(Array.from(selectedLeadFilterOptions)),
+    );
+  }, [selectedLeadFilterOptions]);
+
   const [sortMode, setSortMode] = useState('priority');
   const [leadSkin, setLeadSkin] = useState('crm_revenue_pulse');
   const [splitView, setSplitView] = useState(false);
@@ -3266,28 +3303,42 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               </header>
 
               <div className={styles.leadFilterOptionStack}>
-                {section.options.map(option => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={styles.leadFilterOption}
-                    data-selected={selectedLeadFilterOptions.has(option.id) ? 'true' : 'false'}
-                    onClick={() => setSelectedLeadFilterOptions(previous => {
-                      const nextSelection = new Set(previous);
+                {section.options.map(option => {
+                  const optionSelected = selectedLeadFilterOptions.has(option.id);
+                  const checkboxId = `lead-filter-${section.id}-${option.id}`;
 
-                      if (nextSelection.has(option.id)) {
-                        nextSelection.delete(option.id);
-                      } else {
-                        nextSelection.add(option.id);
-                      }
+                  return (
+                    <label
+                      key={option.id}
+                      className={styles.leadFilterOption}
+                      data-selected={optionSelected ? 'true' : 'false'}
+                      data-wilsy-lead-filter-option="controlled-checkbox"
+                      htmlFor={checkboxId}
+                    >
+                      <input
+                        id={checkboxId}
+                        type="checkbox"
+                        checked={optionSelected}
+                        onChange={() => setSelectedLeadFilterOptions(previous => {
+                          const nextSelection = new Set(previous);
 
-                      return nextSelection;
-                    })}
-                  >
-                    <span aria-hidden="true" />
-                    <em>{option.label}</em>
-                  </button>
-                ))}
+                          if (nextSelection.has(option.id)) {
+                            nextSelection.delete(option.id);
+                          } else {
+                            nextSelection.add(option.id);
+                          }
+
+                          return nextSelection;
+                        })}
+                        aria-label={`Select ${option.label} filter`}
+                      />
+                      <span>
+                        <strong>{option.label}</strong>
+                        <em>{option.detail}</em>
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </section>
           )) : (

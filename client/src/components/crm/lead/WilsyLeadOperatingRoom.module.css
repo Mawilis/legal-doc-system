@@ -8738,3 +8738,34 @@
   outline: 2px solid rgba(0, 255, 148, 0.72);
   outline-offset: 3px;
 }
+
+/* P60K5Q10FG.2 — Real controlled Leads filter checkbox renderer */
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] {
+  cursor: pointer;
+}
+
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: #3eff9a;
+  cursor: pointer;
+}
+
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] input[type="checkbox"]:checked {
+  outline: 2px solid rgba(62, 255, 154, 0.42);
+  outline-offset: 2px;
+}
+
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] span {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] strong,
+.leadFilterOption[data-wilsy-lead-filter-option="controlled-checkbox"] em {
+  pointer-events: none;
+}
+
