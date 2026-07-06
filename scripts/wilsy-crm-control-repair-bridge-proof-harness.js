@@ -6,48 +6,46 @@ const ROOT = path.join(__dirname, '..');
 const BRIDGE_PATH = path.join(ROOT, 'client', 'src', 'components', 'crm', 'shared', 'wilsyCrmControlRepairBridge.js');
 
 /**
- * @function assertWilsyCrmControlRepairCondition
- * @description Throws when a CRM control repair proof condition fails.
+ * @function assertWilsyContainedBridgeCondition
+ * @description Throws when a contained bridge proof condition fails.
  * @param {boolean} condition - Condition to assert.
  * @param {string} message - Failure message.
  * @returns {void}
- * @collaboration Shared CRM control repair bridge, static proof harness, guard discipline, and production repair verification.
+ * @collaboration Contained CRM bridge, checkbox persistence, setup rail protection, and static proof.
  */
-function assertWilsyCrmControlRepairCondition(condition, message) {
+function assertWilsyContainedBridgeCondition(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
 }
 
 /**
- * @function runWilsyCrmControlRepairBridgeProofHarness
- * @description Proves the shared CRM control bridge contains completed P0/P1 contracts without backend mutation.
+ * @function runWilsyContainedBridgeProofHarness
+ * @description Proves the CRM bridge is contained and no longer manipulates Setup rails or staged layout globally.
  * @returns {void}
- * @collaboration Leads checkbox ticks, Meetings outcome capture, readiness pill alignment, Setup rail repair, and adaptive stage layout.
+ * @collaboration Leads filters, Meetings filters, Setup map search, side rail protection, and import placeholder hardening.
  */
-function runWilsyCrmControlRepairBridgeProofHarness() {
+function runWilsyContainedBridgeProofHarness() {
   const source = fs.readFileSync(BRIDGE_PATH, 'utf8');
 
   const proof = {
-    bridgeId: source.includes('P60K5Q10FE_CRM_CONTROL_COMPLETION'),
-    nativeCheckboxSetter: source.includes('setWilsyNativeCheckboxValue') && source.includes('HTMLInputElement.prototype'),
-    visibleCheckboxTick: source.includes('input[type="checkbox"][data-wilsy-crm-filter-selected="true"]::after'),
-    setupSearch: source.includes('filterWilsySetupMapControls') && source.includes('resolveWilsySetupSearchInput'),
-    placeholderImports: source.includes('PLACEHOLDER_IMPORT_BLOCKED') && source.includes('manifest preview'),
-    readinessSource: source.includes('UI_MODEL_SNAPSHOT_PENDING_LIVE_RECHECK') && source.includes('live recheck required'),
-    meetingOutcomeCapture: source.includes('showWilsyMeetingOutcomePanel') && source.includes('saveWilsyMeetingOutcomeCandidate'),
-    meetingImprovementSignal: source.includes('improvementSignal') && source.includes('NEGATIVE_RESULT'),
-    meetingReadinessCentering: source.includes('data-wilsy-meeting-readiness-pill') && source.includes('justify-content: center'),
-    setupRailRepair: source.includes('data-wilsy-setup-domain-rail-repaired') && source.includes('data-wilsy-setup-inspector-rail-repaired'),
-    adaptiveStageRepair: source.includes('data-wilsy-setup-adaptive-stage-repaired'),
+    bridgeId: source.includes('P60K5Q10FF_CONTAINED_CRM_CONTROL_BRIDGE'),
+    checkboxNativeSetter: source.includes('setWilsyCheckboxChecked') && source.includes('HTMLInputElement.prototype'),
+    checkboxPersistence: source.includes('persistWilsyCheckbox') && source.includes('restoreWilsyCheckboxes'),
+    setupSearchOnly: source.includes('filterWilsySetupMapControls') && source.includes('without changing rail layout'),
+    placeholderBlocking: source.includes('PLACEHOLDER_IMPORT_BLOCKED'),
+    previousGlobalCleanup: source.includes('cleanupPreviousWilsyGlobalBridgeEffects'),
+    noMutationObserver: !source.includes('new MutationObserver'),
+    noBodyHasCss: !source.includes('body:has'),
+    noRailCssInjection: !source.includes('data-wilsy-setup-domain-rail-repaired="true"] {') && !source.includes('writing-mode: horizontal-tb'),
     noBackendMutation: !source.includes('fetch(') && !source.includes('axios'),
   };
 
   Object.entries(proof).forEach(([key, value]) => {
-    assertWilsyCrmControlRepairCondition(Boolean(value), `CRM control completion proof failed: ${key}`);
+    assertWilsyContainedBridgeCondition(Boolean(value), `Contained bridge proof failed: ${key}`);
   });
 
-  console.log('[WILSY CRM CONTROL COMPLETION PROOF PASS]', proof);
+  console.log('[WILSY CONTAINED CRM BRIDGE PROOF PASS]', proof);
 }
 
-runWilsyCrmControlRepairBridgeProofHarness();
+runWilsyContainedBridgeProofHarness();
