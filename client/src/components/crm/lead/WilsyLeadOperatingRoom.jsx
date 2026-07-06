@@ -264,8 +264,6 @@ import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } f
 import styles from './WilsyLeadOperatingRoom.module.css';
 
 import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
-import { installWilsyCrmControlRepairBridge } from '../shared/wilsyCrmControlRepairBridge.js';
-installWilsyCrmControlRepairBridge('leads');
 /**
  * @function openWilsyLeadCommandCapsule
  * @description Routes Edit actions to the real DB-persisted Lead Edit Surface while preserving the native command capsule for non-Edit actions.

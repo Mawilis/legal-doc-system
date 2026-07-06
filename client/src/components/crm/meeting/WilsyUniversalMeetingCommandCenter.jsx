@@ -24,8 +24,6 @@ import {
   X,
 } from 'lucide-react';
 import styles from './WilsyUniversalMeetingCommandCenter.module.css';
-import { installWilsyCrmControlRepairBridge } from '../shared/wilsyCrmControlRepairBridge.js';
-installWilsyCrmControlRepairBridge('meetings');
 
 const WILSY_MEETING_VIEWPORTS = Object.freeze([
   'OVERVIEW',

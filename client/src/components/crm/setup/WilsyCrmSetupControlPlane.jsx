@@ -2,8 +2,6 @@
 import React, { useEffect, useMemo, useState, useRef} from 'react';
 import { createPortal } from 'react-dom';
 import styles from './WilsyCrmSetupControlPlane.module.css';
-import { installWilsyCrmControlRepairBridge } from '../shared/wilsyCrmControlRepairBridge.js';
-installWilsyCrmControlRepairBridge('setup');
 
 /**
  * @function buildSetupDomains

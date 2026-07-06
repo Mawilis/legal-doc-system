@@ -4,8 +4,6 @@ import WilsyLeadOperatingRoom from '../lead/WilsyLeadOperatingRoom.jsx';
 import WilsyMeetingEditor from './workspace/WilsyMeetingEditor.jsx';
 import meetingRoomStyles from './WilsyMeetingOperatingRoom.module.css';
 import WilsyMeetingRecordsIntelligencePanel from './WilsyMeetingRecordsIntelligencePanel.jsx';
-import { installWilsyCrmControlRepairBridge } from '../shared/wilsyCrmControlRepairBridge.js';
-installWilsyCrmControlRepairBridge('meetings');
 
 
 /* WILSY_P60K5F5_MEETING_NATIVE_KPI_RESOLVER */
