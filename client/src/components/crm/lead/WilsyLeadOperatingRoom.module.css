@@ -9296,3 +9296,142 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
     overflow: auto;
   }
 }
+
+
+/* P60K5Q10FG.4.2 - CSS-only contextual Leads header
+   Uses the existing data-wilsy-active-lead-tab root state to make the visible
+   header task-aware without touching renderHeader JSX. */
+.leadOperatingRoom[data-wilsy-active-lead-tab] h1 {
+  margin: 0 !important;
+  line-height: 0.88 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab] h1,
+.leadOperatingRoom[data-wilsy-active-lead-tab] h1 * {
+  font-size: clamp(1.9rem, 2.85vw, 3.1rem) !important;
+  letter-spacing: -0.055em !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab] p {
+  max-width: 56rem !important;
+  margin-top: 0.3rem !important;
+  font-size: clamp(0.88rem, 0.98vw, 1.02rem) !important;
+  line-height: 1.24 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab] h1 {
+  font-size: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab] h1::before {
+  display: inline-block !important;
+  color: var(--text-primary, #ffffff) !important;
+  font-size: clamp(1.9rem, 2.85vw, 3.1rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.055em !important;
+  line-height: 0.88 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] h1::before {
+  content: "Leads";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="signals"] h1::before {
+  content: "Lead Signals";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="pipeline"] h1::before {
+  content: "Revenue Movement";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] h1::before {
+  content: "Evidence Ledger";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] h1::before {
+  content: "Record Order";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] h1::before {
+  content: "Ingestion Routes";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab]:not([data-wilsy-active-lead-tab="records"]) p {
+  font-size: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab]:not([data-wilsy-active-lead-tab="records"]) p::before {
+  display: inline-block !important;
+  max-width: 52rem !important;
+  color: rgba(222, 231, 238, 0.72) !important;
+  font-size: clamp(0.84rem, 0.95vw, 0.98rem) !important;
+  font-weight: 720 !important;
+  line-height: 1.24 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="signals"] p::before {
+  content: "Read intent, stale movement, route posture, and next-best revenue action.";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="pipeline"] p::before {
+  content: "Inspect stage pressure, conversion flow, and live opportunity movement.";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] p::before {
+  content: "Verify provenance, compliance, source routes, root hash, and row authority.";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] p::before {
+  content: "Rank the working set by activity, company, owner, source, or compliance posture.";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] p::before {
+  content: "Review CRM routes, sync state, connector posture, and missing source evidence.";
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [class*="Header"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] [class*="Header"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] [class*="Header"] {
+  min-height: auto !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [class*="hero"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [class*="Hero"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] [class*="hero"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] [class*="Hero"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] [class*="hero"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] [class*="Hero"] {
+  min-height: auto !important;
+  padding-top: clamp(0.65rem, 1vw, 1rem) !important;
+  padding-bottom: clamp(0.65rem, 1vw, 1rem) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .headerInvestorStrip,
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] .headerInvestorStrip,
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] .headerInvestorStrip {
+  gap: 0.5rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .headerInvestorStrip article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="sort"] .headerInvestorStrip article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="sources"] .headerInvestorStrip article {
+  min-height: 3.25rem !important;
+  padding-top: 0.55rem !important;
+  padding-bottom: 0.55rem !important;
+}
+
+@media (max-height: 820px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab] h1::before {
+    font-size: clamp(1.55rem, 2.25vw, 2.35rem) !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-active-lead-tab]:not([data-wilsy-active-lead-tab="records"]) p::before {
+    font-size: 0.82rem !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .headerInvestorStrip article,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="sort"] .headerInvestorStrip article,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="sources"] .headerInvestorStrip article {
+    min-height: 2.8rem !important;
+  }
+}
