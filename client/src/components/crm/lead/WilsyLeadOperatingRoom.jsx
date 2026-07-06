@@ -264,6 +264,7 @@ import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } f
 import styles from './WilsyLeadOperatingRoom.module.css';
 
 import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
+import { createPortal } from 'react-dom';
 
 
 const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
@@ -1885,6 +1886,35 @@ function openCrmGlobalThemeAuthorityFallback() {
   }));
 }
 
+
+
+/**
+ * @function renderWilsyLeadPortalSurface
+ * @description Renders Leads overlay surfaces through document.body so Proof Trail and command drawers escape workspace clipping and stacking contexts.
+ * @param {JSX.Element} surface - Overlay surface to render.
+ * @param {string} label - Surface label for proof diagnostics.
+ * @returns {JSX.Element|null} Portal-mounted surface.
+ * @collaboration Leads Proof Trail, command drawer, React portal layer, CRM records workspace, and operator overlay recovery.
+ */
+function renderWilsyLeadPortalSurface(surface, label = 'Lead overlay') {
+  if (!surface) {
+    return null;
+  }
+
+  if (typeof document === 'undefined' || !document.body) {
+    return surface;
+  }
+
+  return createPortal(
+    <div
+      data-wilsy-lead-portal-layer="proof-trail"
+      data-wilsy-lead-portal-label={label}
+    >
+      {surface}
+    </div>,
+    document.body,
+  );
+}
 
 const WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY = 'wilsy.crm.leads.filterSelection.v3';
 
@@ -5494,8 +5524,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     const isMaster = ['MASTER', 'FOUNDER', 'SUPER_ADMIN', 'ROOT'].includes(role);
     const isAdmin = isMaster || ['TENANT_ADMIN', 'ADMIN', 'CRM_ADMIN'].includes(role);
 
-    return (
-      <section className={styles.drawer} aria-label="Lead command center">
+    return renderWilsyLeadPortalSurface((
+      <section className={styles.drawer} aria-label="Lead command center" data-wilsy-lead-overlay-surface="proof-trail-command-drawer">
         <header><span><small>Command Center</small><strong>{tenantId} · {role}</strong></span><button type="button" onClick={() => setCommandOpen(false)}>Close</button></header>
         <div className={styles.commandTiles}>
           {isMaster ? <button type="button"><UserRoundCog size={18} />Manage Organizations</button> : null}
@@ -5506,7 +5536,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           <button type="button"><ClipboardList size={18} />Sales Shortcuts</button>
         </div>
       </section>
-    );
+    ), 'Lead proof trail command drawer');
   }
 
 
