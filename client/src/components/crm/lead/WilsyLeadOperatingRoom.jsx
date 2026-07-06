@@ -264,6 +264,438 @@ import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } f
 import styles from './WilsyLeadOperatingRoom.module.css';
 
 import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
+
+
+const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
+const WILSY_LEADS_FILTER_LOCAL_STATE_KEY = 'wilsy.crm.leads.filterButtons.v1';
+
+/**
+ * @function normalizeWilsyLeadFilterText
+ * @description Normalizes Leads filter text for component-owned checkbox state and backend persistence.
+ * @param {*} value - Candidate filter text.
+ * @returns {string} Normalized filter text.
+ * @collaboration Leads filter sidebar, checkbox buttons, backend control state, and tenant/operator evidence persistence.
+ */
+function normalizeWilsyLeadFilterText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * @function resolveWilsyLeadApiBase
+ * @description Resolves the API base used by Leads filter control-state requests.
+ * @returns {string} API base URL.
+ * @collaboration Leads frontend, Vite API configuration, backend control-state route, and local development routing.
+ */
+function resolveWilsyLeadApiBase() {
+  return String(import.meta.env?.VITE_API_URL || '').replace(/\/$/, '');
+}
+
+/**
+ * @function resolveWilsyLeadOperatorHeaders
+ * @description Resolves tenant/operator headers and optional browser auth token for Leads filter control-state requests.
+ * @returns {Object} Request headers with tenant and operator scope.
+ * @collaboration Leads filter buttons, tenant context, operator context, browser authenticated session, and backend evidence route.
+ */
+function resolveWilsyLeadOperatorHeaders() {
+  const storage = typeof window !== 'undefined' ? window.localStorage : null;
+  const tenantId =
+    storage?.getItem('wilsy.tenantId') ||
+    storage?.getItem('tenantId') ||
+    document.documentElement?.dataset?.tenantId ||
+    'wilsy-sovereign-root';
+  const operatorId =
+    storage?.getItem('wilsy.operatorId') ||
+    storage?.getItem('operatorId') ||
+    storage?.getItem('userId') ||
+    document.documentElement?.dataset?.operatorId ||
+    'wilsy-operator';
+  const token =
+    storage?.getItem('token') ||
+    storage?.getItem('authToken') ||
+    storage?.getItem('accessToken') ||
+    storage?.getItem('wilsy.auth.token') ||
+    '';
+
+  return {
+    tenantId,
+    operatorId,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': tenantId,
+      'X-Operator-Id': operatorId,
+      'X-Wilsy-Command-Surface': 'LEADS_FILTER_CONTROL_STATE',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  };
+}
+
+/**
+ * @function resolveWilsyLeadsFilterPanel
+ * @description Resolves the Leads filter sidebar panel from the current component screen.
+ * @returns {HTMLElement|null} Leads filter panel.
+ * @collaboration Leads component ownership, filter sidebar, checkbox button control, and scoped DOM repair.
+ */
+function resolveWilsyLeadsFilterPanel() {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return Array.from(document.querySelectorAll('aside, section, div')).find((node) => {
+    const text = normalizeWilsyLeadFilterText(node.textContent);
+    return /Filter Leads by/i.test(text) && /System Defined Filters|Filter By Fields|Activities|Record Action/i.test(text);
+  }) || null;
+}
+
+/**
+ * @function resolveWilsyLeadFilterInputs
+ * @description Resolves checkbox inputs owned by the Leads filter panel.
+ * @returns {Array<HTMLInputElement>} Leads filter checkboxes.
+ * @collaboration Leads filter buttons, checkbox tick rendering, persisted filter state, and component-scoped UI behavior.
+ */
+function resolveWilsyLeadFilterInputs() {
+  const panel = resolveWilsyLeadsFilterPanel();
+
+  if (!panel) {
+    return [];
+  }
+
+  panel.dataset.wilsyLeadsFilterPanel = 'true';
+
+  return Array.from(panel.querySelectorAll('input[type="checkbox"]'));
+}
+
+/**
+ * @function resolveWilsyLeadFilterLabel
+ * @description Resolves the user-facing label for a Leads filter checkbox.
+ * @param {HTMLInputElement} input - Checkbox input.
+ * @returns {string} Filter label.
+ * @collaboration Leads filter labels, selected filter persistence, backend control-state payload, and operator-readable filter state.
+ */
+function resolveWilsyLeadFilterLabel(input) {
+  const row = input?.closest?.('label, li, div');
+  const text = normalizeWilsyLeadFilterText(row?.textContent || input?.name || input?.id || input?.value);
+
+  return text || 'Unnamed filter';
+}
+
+/**
+ * @function loadWilsyLeadLocalFilterState
+ * @description Loads local Leads filter state as fallback before backend state resolves.
+ * @returns {Array<string>} Selected filter labels.
+ * @collaboration Leads filters, local continuity, backend fallback, and persisted operator preference.
+ */
+function loadWilsyLeadLocalFilterState() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.map(normalizeWilsyLeadFilterText).filter(Boolean) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * @function saveWilsyLeadLocalFilterState
+ * @description Saves selected Leads filters locally until backend persistence confirms state.
+ * @param {Array<string>} selectedFilters - Selected filter labels.
+ * @returns {void}
+ * @collaboration Leads filter persistence, browser continuity, backend fallback, and operator-controlled filter state.
+ */
+function saveWilsyLeadLocalFilterState(selectedFilters = []) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY, JSON.stringify(selectedFilters));
+  } catch (error) {}
+}
+
+/**
+ * @function setWilsyLeadFilterChecked
+ * @description Sets the actual checkbox checked property so the square ticks when active and unticks when cleared.
+ * @param {HTMLInputElement} input - Checkbox input.
+ * @param {boolean} checked - Desired checked state.
+ * @returns {void}
+ * @collaboration Leads filter buttons, actual checkbox state, persisted selection, and visual operator feedback.
+ */
+function setWilsyLeadFilterChecked(input, checked) {
+  if (!input || input.type !== 'checkbox') {
+    return;
+  }
+
+  const descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked');
+
+  if (descriptor?.set) {
+    descriptor.set.call(input, Boolean(checked));
+  } else {
+    input.checked = Boolean(checked);
+  }
+
+  input.indeterminate = false;
+  input.dataset.wilsyLeadFilterChecked = input.checked ? 'true' : 'false';
+  input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+
+  if (input.checked) {
+    input.setAttribute('checked', 'checked');
+  } else {
+    input.removeAttribute('checked');
+  }
+
+  const row = input.closest('label, li, div');
+
+  if (row) {
+    row.dataset.wilsyLeadFilterSelected = input.checked ? 'true' : 'false';
+  }
+}
+
+/**
+ * @function applyWilsyLeadSelectedFilters
+ * @description Applies selected filter labels to Leads checkboxes.
+ * @param {Array<string>} selectedFilters - Selected filter labels.
+ * @returns {void}
+ * @collaboration Leads filter sidebar, backend selected state, checkbox tick state, and user-controlled clearing.
+ */
+function applyWilsyLeadSelectedFilters(selectedFilters = []) {
+  const selectedSet = new Set(selectedFilters.map((item) => item.toLowerCase()));
+
+  resolveWilsyLeadFilterInputs().forEach((input) => {
+    const label = resolveWilsyLeadFilterLabel(input).toLowerCase();
+    setWilsyLeadFilterChecked(input, selectedSet.has(label));
+  });
+}
+
+/**
+ * @function collectWilsyLeadSelectedFilters
+ * @description Collects the current selected Leads filters from actual checkbox state.
+ * @returns {Array<string>} Selected filter labels.
+ * @collaboration Leads filter buttons, checkbox state source of truth, backend persistence, and operator preference.
+ */
+function collectWilsyLeadSelectedFilters() {
+  return resolveWilsyLeadFilterInputs()
+    .filter((input) => input.checked)
+    .map(resolveWilsyLeadFilterLabel)
+    .filter(Boolean);
+}
+
+/**
+ * @function buildWilsyLeadFilterInstitutionalPayload
+ * @description Builds the Wilsy institutional payload for persisting Leads filter control state.
+ * @param {Array<string>} selectedFilters - Selected filter labels.
+ * @returns {Object} Evidence-bearing payload.
+ * @collaboration Leads filter backend persistence, institutionalHeaders, strikePayload, tenant/operator evidence, and audit-ready control state.
+ */
+function buildWilsyLeadFilterInstitutionalPayload(selectedFilters = []) {
+  const { tenantId, operatorId } = resolveWilsyLeadOperatorHeaders();
+  const generatedAt = new Date().toISOString();
+  const institutionalHeaders = {
+    tenantId,
+    operatorId,
+    route: WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT,
+    commandSurface: 'LEADS_FILTER_CONTROL_STATE',
+    generatedAt,
+    source: 'WilsyLeadOperatingRoom',
+  };
+
+  return {
+    tenantId,
+    operatorId,
+    route: WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT,
+    commandSurface: 'LEADS_FILTER_CONTROL_STATE',
+    generatedAt,
+    selectedFilters,
+    institutionalHeaders,
+    strikePayload: {
+      tenantId,
+      operatorId,
+      route: WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT,
+      commandSurface: 'LEADS_FILTER_CONTROL_STATE',
+      generatedAt,
+      selectedFilters,
+      institutionalHeaders,
+      evidence: {
+        action: 'PERSIST_LEADS_FILTER_SELECTION',
+        source: 'Leads filter sidebar',
+        stateOwner: 'WilsyLeadOperatingRoom',
+      },
+    },
+  };
+}
+
+/**
+ * @function fetchWilsyLeadFilterControlState
+ * @description Reads persisted Leads filter control state from backend.
+ * @returns {Promise<Array<string>>} Selected filter labels.
+ * @collaboration Leads filter buttons, backend control-state route, tenant/operator scope, and source-backed UI persistence.
+ */
+async function fetchWilsyLeadFilterControlState() {
+  const { headers } = resolveWilsyLeadOperatorHeaders();
+  const response = await fetch(`${resolveWilsyLeadApiBase()}${WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Leads filter control state GET failed with ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return Array.isArray(payload?.selectedFilters) ? payload.selectedFilters.map(normalizeWilsyLeadFilterText).filter(Boolean) : [];
+}
+
+/**
+ * @function persistWilsyLeadFilterControlState
+ * @description Persists current Leads filter checkbox state to backend with institutional evidence.
+ * @param {Array<string>} selectedFilters - Selected filter labels.
+ * @returns {Promise<void>} Completion promise.
+ * @collaboration Leads filter buttons, backend PUT route, institutional headers, strike payload, and source-backed control state.
+ */
+async function persistWilsyLeadFilterControlState(selectedFilters = []) {
+  const { headers } = resolveWilsyLeadOperatorHeaders();
+  const response = await fetch(`${resolveWilsyLeadApiBase()}${WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(buildWilsyLeadFilterInstitutionalPayload(selectedFilters)),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Leads filter control state PUT failed with ${response.status}`);
+  }
+}
+
+/**
+ * @function injectWilsyLeadFilterButtonStyles
+ * @description Injects Leads-only checkbox styles so active filter boxes visibly tick.
+ * @returns {void}
+ * @collaboration Leads filter buttons, actual checkbox state, scoped component styling, and no global CRM rail side effects.
+ */
+function injectWilsyLeadFilterButtonStyles() {
+  if (typeof document === 'undefined' || document.querySelector('#wilsy-leads-filter-button-state-styles')) {
+    return;
+  }
+
+  const style = document.createElement('style');
+  style.id = 'wilsy-leads-filter-button-state-styles';
+  style.textContent = `
+    [data-wilsy-leads-filter-panel="true"] input[type="checkbox"] {
+      -webkit-appearance: checkbox !important;
+      appearance: auto !important;
+      accent-color: #3eff9a !important;
+    }
+
+    [data-wilsy-leads-filter-panel="true"] input[type="checkbox"][data-wilsy-lead-filter-checked="true"] {
+      outline: 2px solid rgba(62, 255, 154, 0.58) !important;
+      outline-offset: 2px !important;
+    }
+
+    [data-wilsy-leads-filter-panel="true"] [data-wilsy-lead-filter-selected="true"] {
+      background: rgba(62, 255, 154, 0.14) !important;
+      border-color: rgba(62, 255, 154, 0.42) !important;
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+/**
+ * @function installWilsyLeadFilterControlStateController
+ * @description Installs Leads component-owned filter checkbox ticking and backend state persistence.
+ * @returns {Function} Cleanup function.
+ * @collaboration WilsyLeadOperatingRoom, Leads filter buttons, backend control-state route, tenant/operator evidence, and persisted user selections.
+ */
+function installWilsyLeadFilterControlStateController() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return () => {};
+  }
+
+  injectWilsyLeadFilterButtonStyles();
+  applyWilsyLeadSelectedFilters(loadWilsyLeadLocalFilterState());
+
+  fetchWilsyLeadFilterControlState()
+    .then((selectedFilters) => {
+      saveWilsyLeadLocalFilterState(selectedFilters);
+      applyWilsyLeadSelectedFilters(selectedFilters);
+    })
+    .catch(() => {
+      applyWilsyLeadSelectedFilters(loadWilsyLeadLocalFilterState());
+    });
+
+  /**
+   * @function handleLeadFilterClick
+   * @description Handles Leads filter row and checkbox clicks so the actual checkbox square ticks or unticks, then persists the selected filter state.
+   * @param {MouseEvent} event - Browser click event from the Leads filter sidebar.
+   * @returns {void}
+   * @collaboration Leads filter sidebar, checkbox source of truth, backend control-state persistence, local fallback state, and operator-controlled filtering.
+   */
+  const handleLeadFilterClick = (event) => {
+    const panel = resolveWilsyLeadsFilterPanel();
+
+    if (!panel || !panel.contains(event.target)) {
+      return;
+    }
+
+    const directInput = event.target?.closest?.('input[type="checkbox"]');
+    const row = event.target?.closest?.('label, li, div');
+    const input = directInput || row?.querySelector?.('input[type="checkbox"]');
+
+    if (!input || input.disabled) {
+      return;
+    }
+
+    if (!directInput) {
+      event.preventDefault();
+      event.stopPropagation();
+      setWilsyLeadFilterChecked(input, !input.checked);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    window.setTimeout(() => {
+      const selectedFilters = collectWilsyLeadSelectedFilters();
+      saveWilsyLeadLocalFilterState(selectedFilters);
+      persistWilsyLeadFilterControlState(selectedFilters).catch(() => {});
+    }, 0);
+  };
+
+  /**
+   * @function handleLeadFilterChange
+   * @description Handles native Leads checkbox changes and synchronizes selected filters to local storage and the backend control-state route.
+   * @param {Event} event - Browser change event from a Leads filter checkbox.
+   * @returns {void}
+   * @collaboration Leads checkbox state, selected filter persistence, Wilsy institutional evidence payload, and backend control-state route.
+   */
+  const handleLeadFilterChange = (event) => {
+    const panel = resolveWilsyLeadsFilterPanel();
+    const input = event.target?.closest?.('input[type="checkbox"]');
+
+    if (!panel || !input || !panel.contains(input)) {
+      return;
+    }
+
+    setWilsyLeadFilterChecked(input, input.checked);
+
+    const selectedFilters = collectWilsyLeadSelectedFilters();
+    saveWilsyLeadLocalFilterState(selectedFilters);
+    persistWilsyLeadFilterControlState(selectedFilters).catch(() => {});
+  };
+
+  document.addEventListener('click', handleLeadFilterClick, true);
+  document.addEventListener('change', handleLeadFilterChange, true);
+
+  const refreshTimer = window.setInterval(() => {
+    applyWilsyLeadSelectedFilters(loadWilsyLeadLocalFilterState());
+  }, 1600);
+
+  return () => {
+    document.removeEventListener('click', handleLeadFilterClick, true);
+    document.removeEventListener('change', handleLeadFilterChange, true);
+    window.clearInterval(refreshTimer);
+  };
+}
+
+
 /**
  * @function openWilsyLeadCommandCapsule
  * @description Routes Edit actions to the real DB-persisted Lead Edit Surface while preserving the native command capsule for non-Edit actions.
@@ -1608,6 +2040,8 @@ export default function WilsyLeadOperatingRoom({
   onOpenOperatingEdit = null,
   onOpenCrmSetup = null
 }) {
+  useEffect(() => installWilsyLeadFilterControlStateController(), []);
+
   const leadOperatingCopy = useMemo(() => resolveWilsyR91K179E24P44BOperatingCopy(operatingCopy), [operatingCopy]);
   const leadOperatingCopyTitle = leadOperatingCopy.title || 'Leads';
   const leadOperatingCopyRecordSingular = leadOperatingCopy.recordSingular || 'lead';

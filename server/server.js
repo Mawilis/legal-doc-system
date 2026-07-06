@@ -153,6 +153,12 @@ import sovereignPrometheusRegistry from './metrics/prometheus.js';
 import { telemetryEvents } from './metrics/prometheus.js';
 
 import { getSourceRegistryStatus as getSourceRegistryStatusController } from './controllers/sourceRegistryController.js';
+import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
+import { resolveWilsyAISovereignContext } from './services/wilsyAI/wilsyAISovereignContextService.js';
+import { resolveWilsyAIOperatorModel } from './services/wilsyAI/wilsyAIOperatorModelService.js';
+
+import express from 'express';
+import crmControlStateRoutes from './routes/crmControlStateRoutes.js';
 const server = http.createServer(app);
 const PORT = validatedEnv.PORT;
 const VERSION = '48.6.0-MARS-GENERATIONAL';
@@ -225,7 +231,122 @@ logger.info('Initializing Sovereign CORS Engine...');
  * ║ PURPOSE: Operator health/status before forensic, integrity and tenant walls.║
  * ╚══════════════════════════════════════════════════════════════════════════════╝
  */
-app.get('/api/source-registry/health', (req, res) => {
+app.get('/api/source-registry/health', async (req, res) => {
+  // WILSY_P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE_START
+  const wilsyAIContextMode = String(
+    req.query?.wilsyAiContext || req.query?.wilsyAIContext || req.query?.aiContext || ''
+  ).toUpperCase();
+
+  /* P60K5Q10AI_OPERATOR_MODEL_BRANCH */
+  if (
+    wilsyAIContextMode === 'ASK' ||
+    wilsyAIContextMode === 'OPERATOR' ||
+    wilsyAIContextMode === 'OPERATOR_MODEL' ||
+    req.query?.operatorQuestion ||
+    req.query?.question
+  ) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
+    res.setHeader('X-Wilsy-AI-Bridge', 'SOURCE_REGISTRY_HEALTH_GET_OPERATOR_KERNEL');
+
+    const operatorModel = await resolveWilsyAIOperatorModel(req);
+
+    return res.status(200).json(operatorModel);
+  }
+
+  if (wilsyAIContextMode === 'RESOLVE' || wilsyAIContextMode === 'CONTEXT') {
+    const generatedAt = new Date().toISOString();
+    const tenantId = String(req.query?.tenantId || req.headers?.['x-tenant-id'] || 'MASTER');
+    const operatorId = String(
+      req.query?.operatorId || req.headers?.['x-operator-id'] || 'WILSY_OPERATOR'
+    );
+    const workspaceRoute = String(req.query?.workspaceRoute || '/crm/setup');
+    const workspaceSurface = String(
+      req.query?.workspaceSurface ||
+        'CRM Operating Controls Authority Graph Evidence Approval Release'
+    );
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
+    res.setHeader('X-Wilsy-AI-Bridge', 'SOURCE_REGISTRY_HEALTH_GET_CONTEXT_BRIDGE');
+
+    try {
+      const context = await resolveWilsyAISovereignContext({
+        ...req,
+        headers: {
+          ...req.headers,
+          'x-tenant-id': tenantId,
+          'x-operator-id': operatorId,
+        },
+        body: {
+          tenantId,
+          operatorId,
+          workspaceRoute,
+          workspaceSurface,
+          institutionalHeaders: {
+            tenantId,
+            operatorId,
+            generatedAt,
+            route: '/api/source-registry/health',
+            commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+            mutation: false,
+            contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
+          },
+          strikePayload: {
+            institutionalHeaders: {
+              tenantId,
+              operatorId,
+              generatedAt,
+              route: '/api/source-registry/health',
+              commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+              mutation: false,
+              contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
+            },
+            commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION',
+            mutation: false,
+          },
+        },
+      });
+
+      return res.status(200).json({
+        ...context,
+        bridge: 'SOURCE_REGISTRY_HEALTH_GET_CONTEXT_BRIDGE',
+      });
+    } catch (error) {
+      return res.status(500).json({
+        result: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
+        mutation: false,
+        generatedAt,
+        institutionalHeaders: {
+          tenantId,
+          operatorId,
+          generatedAt,
+          route: '/api/source-registry/health',
+          commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+          mutation: false,
+          contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
+        },
+        strikePayload: {
+          institutionalHeaders: {
+            tenantId,
+            operatorId,
+            generatedAt,
+            route: '/api/source-registry/health',
+            commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+            mutation: false,
+            contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
+          },
+          commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION_FAILURE',
+          mutation: false,
+        },
+        error: {
+          code: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
+          message: error?.message || 'Unable to resolve Wilsy AI context.',
+        },
+      });
+    }
+  }
+  // WILSY_P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE_END
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
   return res.status(200).json({
@@ -249,6 +370,229 @@ app.get('/api/source-registry/health', (req, res) => {
 });
 
 app.get('/api/source-registry/status', getSourceRegistryStatusController);
+
+// WILSY_P60K5Q10Y_SOURCE_REGISTRY_HEALTH_POST_AI_BRIDGE_START
+app.post(
+  '/api/source-registry/health',
+  express.json({ limit: '1mb' }),
+  validateWilsyAIDirectBridgeEvidence,
+  handleWilsyAIDirectBridgeContextResolve
+);
+// WILSY_P60K5Q10Y_SOURCE_REGISTRY_HEALTH_POST_AI_BRIDGE_END
+
+// WILSY_P60K5Q10U_DIRECT_AI_READONLY_BRIDGE_EXPRESS_BINDING_REPAIRED_START
+/**
+ * @function applyWilsyAIDirectBridgeHeaders
+ * @description Applies browser-safe read-only Wilsy AI bridge headers for exact AI context endpoints.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {void}
+ * @collaboration Wilsy OS Intelligence Dock, source-registry root bridge, CORS posture, and no-mutation AI context contract.
+ */
+function applyWilsyAIDirectBridgeHeaders(req, res) {
+  const origin = req.headers?.origin || 'http://localhost:3000';
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin, Access-Control-Request-Headers');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'X-Tenant-Id',
+      'x-tenant-id',
+      'X-Operator-Id',
+      'x-operator-id',
+      'X-Wilsy-Command-Surface',
+      'x-wilsy-command-surface',
+      'X-Request-ID',
+      'x-request-id',
+      'X-Trace-ID',
+      'x-trace-id',
+      req.headers?.['access-control-request-headers'] || '',
+    ]
+      .filter(Boolean)
+      .join(', ')
+  );
+  res.setHeader(
+    'Access-Control-Expose-Headers',
+    'X-Wilsy-Trace-ID, X-Wilsy-AI-Bridge, X-Institutional-Latency'
+  );
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Wilsy-AI-Bridge', 'DIRECT_READ_ONLY_CONTEXT_BRIDGE');
+}
+
+/**
+ * @function handleWilsyAIDirectBridgeOptions
+ * @description Handles preflight for exact read-only Wilsy AI direct bridge endpoints.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {void}
+ * @collaboration Enables the global Intelligence Dock to reach the read-only AI context route without weakening mutation surfaces.
+ */
+function handleWilsyAIDirectBridgeOptions(req, res) {
+  applyWilsyAIDirectBridgeHeaders(req, res);
+  res.status(204).end();
+}
+
+/**
+ * @function validateWilsyAIDirectBridgeEvidence
+ * @description Validates the institutional header and nested strike payload evidence contract for direct AI context resolution.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware callback.
+ * @returns {void}
+ * @collaboration Keeps direct AI context resolution read-only, tenant-scoped, and evidence-gated before future execution bridges.
+ */
+function validateWilsyAIDirectBridgeEvidence(req, res, next) {
+  applyWilsyAIDirectBridgeHeaders(req, res);
+
+  const body = req.body || {};
+  const institutionalHeaders = body.institutionalHeaders || {};
+  const strikeHeaders = body.strikePayload?.institutionalHeaders || {};
+  const tenantId =
+    req.headers?.['x-tenant-id'] || body.tenantId || institutionalHeaders.tenantId || 'MASTER';
+  const operatorId =
+    req.headers?.['x-operator-id'] ||
+    body.operatorId ||
+    institutionalHeaders.operatorId ||
+    'UNKNOWN_OPERATOR';
+
+  if (!institutionalHeaders.tenantId || !strikeHeaders.tenantId) {
+    return res.status(400).json({
+      result: 'WILSY_AI_DIRECT_CONTEXT_EVIDENCE_REQUIRED',
+      mutation: false,
+      generatedAt: new Date().toISOString(),
+      institutionalHeaders: {
+        tenantId,
+        operatorId,
+        route: '/api/wilsy/ai/context/resolve',
+        commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+      },
+      strikePayload: {
+        institutionalHeaders: {
+          tenantId,
+          operatorId,
+          route: '/api/wilsy/ai/context/resolve',
+          commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+        },
+        commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION_REJECTED',
+        mutation: false,
+      },
+      error: {
+        code: 'WILSY_AI_EVIDENCE_CONTRACT_REQUIRED',
+        message:
+          'institutionalHeaders and strikePayload.institutionalHeaders are required for Wilsy AI context resolution.',
+      },
+    });
+  }
+
+  return next();
+}
+
+/**
+ * @function handleWilsyAIDirectBridgeHealth
+ * @description Reports read-only Wilsy AI direct bridge health before forensic auth gates.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {void}
+ * @collaboration Wilsy OS Intelligence Dock, source-registry safe bridge, and sovereign context resolver diagnostics.
+ */
+function handleWilsyAIDirectBridgeHealth(req, res) {
+  applyWilsyAIDirectBridgeHeaders(req, res);
+
+  return res.status(200).json({
+    result: 'WILSY_AI_ROUTE_HEALTHY',
+    contractVersion: 'P60K5Q10_WILSY_AI_SOVEREIGN_CONTEXT_RESOLVER',
+    route: '/api/wilsy/ai',
+    bridge: 'DIRECT_READ_ONLY_CONTEXT_BRIDGE',
+    mutation: false,
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * @function handleWilsyAIDirectBridgeContextResolve
+ * @description Resolves Wilsy AI read-only sovereign context through an exact direct endpoint with local evidence validation.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Promise<void>} Sends read-only AI sovereign context response.
+ * @collaboration Wilsy OS Intelligence Dock, sovereign context service, tenant evidence contract, and future governed execution bridge.
+ */
+async function handleWilsyAIDirectBridgeContextResolve(req, res) {
+  applyWilsyAIDirectBridgeHeaders(req, res);
+
+  try {
+    const context = await resolveWilsyAISovereignContext(req);
+    return res.status(200).json({
+      ...context,
+      bridge: 'DIRECT_READ_ONLY_CONTEXT_BRIDGE',
+    });
+  } catch (error) {
+    const generatedAt = new Date().toISOString();
+    const tenantId = req.headers?.['x-tenant-id'] || req.body?.tenantId || 'MASTER';
+    const operatorId = req.headers?.['x-operator-id'] || req.body?.operatorId || 'UNKNOWN_OPERATOR';
+
+    return res.status(500).json({
+      result: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
+      mutation: false,
+      generatedAt,
+      institutionalHeaders: {
+        tenantId,
+        operatorId,
+        generatedAt,
+        route: '/api/wilsy/ai/context/resolve',
+        commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+        contractVersion: 'P60K5Q10_WILSY_AI_SOVEREIGN_CONTEXT_RESOLVER',
+      },
+      strikePayload: {
+        institutionalHeaders: {
+          tenantId,
+          operatorId,
+          generatedAt,
+          route: '/api/wilsy/ai/context/resolve',
+          commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
+        },
+        commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION_FAILURE',
+        mutation: false,
+      },
+      error: {
+        code: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
+        message: error?.message || 'Unable to resolve Wilsy AI context.',
+      },
+    });
+  }
+}
+
+app.options('/api/wilsy/ai/health', handleWilsyAIDirectBridgeOptions);
+app.get('/api/wilsy/ai/health', handleWilsyAIDirectBridgeHealth);
+app.options('/api/wilsy/ai/context/resolve', handleWilsyAIDirectBridgeOptions);
+app.post(
+  '/api/wilsy/ai/context/resolve',
+  express.json({ limit: '1mb' }),
+  validateWilsyAIDirectBridgeEvidence,
+  handleWilsyAIDirectBridgeContextResolve
+);
+// WILSY_P60K5Q10U_DIRECT_AI_READONLY_BRIDGE_EXPRESS_BINDING_REPAIRED_END
+
+// WILSY_P60K5Q10X_SOURCE_REGISTRY_AI_BRIDGE_ALIAS_START
+app.options('/api/source-registry/wilsy-ai/health', handleWilsyAIDirectBridgeOptions);
+app.get('/api/source-registry/wilsy-ai/health', handleWilsyAIDirectBridgeHealth);
+app.options('/api/source-registry/wilsy-ai/context/resolve', handleWilsyAIDirectBridgeOptions);
+app.post(
+  '/api/source-registry/wilsy-ai/context/resolve',
+  express.json({ limit: '1mb' }),
+  validateWilsyAIDirectBridgeEvidence,
+  handleWilsyAIDirectBridgeContextResolve
+);
+// WILSY_P60K5Q10X_SOURCE_REGISTRY_AI_BRIDGE_ALIAS_END
+
+app.use('/api/wilsy/ai', wilsyAIRoutes); // WILSY_P60K5Q10R_APPGET_SIGNATURE_REPAIRED_SOURCE_ZONE
 
 // WILSY_R18AD26A_ACCOUNT_COMMAND_CORS_BRIDGE
 /**
@@ -889,7 +1233,9 @@ app.use((req, res, next) => {
     req.originalUrl === '/api/status' ||
     req.originalUrl.includes('/api/telemetry/event') ||
     req.originalUrl.includes('/api/source-registry/health') ||
+    req.originalUrl.includes('/api/wilsy/ai/health') ||
     req.originalUrl.includes('/api/source-registry/status') ||
+    req.originalUrl.includes('/api/wilsy/ai/context/resolve') ||
     req.originalUrl.includes('/api/account/identity-posture', '/api/account/compliance-command')
   )
     return next();
@@ -916,7 +1262,9 @@ app.use((req, res, next) => {
     '/api/telemetry/event',
     '/api/telemetry/pulse',
     '/api/source-registry/health',
+    '/api/wilsy/ai/health',
     '/api/source-registry/status',
+    '/api/wilsy/ai/context/resolve',
   ];
   if (publicPaths.some((path) => req.originalUrl.includes(path))) {
     if (!req.tenantId) {
@@ -951,7 +1299,9 @@ app.use((req, res, next) => {
     '/api/generate/pdf/health',
     '/api/statements/generate/pdf',
     '/api/source-registry/health',
+    '/api/wilsy/ai/health',
     '/api/source-registry/status',
+    '/api/wilsy/ai/context/resolve',
   ];
   if (artifactPaths.some((path) => req.originalUrl.includes(path))) {
     return next(); // Skip guard for artifact generation; router will handle auth
@@ -979,6 +1329,7 @@ app.get('/api/compliance-status', complianceController.complianceStatus);
 app.get('/api/forensics-status', forensicsController.forensicsStatus);
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/source-registry', sourceRegistryRoutes);
+app.use('/api/crm/control-state', crmControlStateRoutes);
 app.use('/api/account', wilsyAccountIdentityPostureRoutes);
 app.use('/api', apiRouter);
 app.use('/api/billing-advanced', billingAdvancedRoutes);
@@ -1003,7 +1354,6 @@ app.use('/api/statements', statementsRoutes);
  * @example POST /api/generate/pdf
  */
 app.use('/api/generate', artifactRoutes);
-
 // ============================================================================
 // 🏛️ SOVEREIGN MONITORING ROUTER (ADDITIVE – no existing code removed)
 // ============================================================================
