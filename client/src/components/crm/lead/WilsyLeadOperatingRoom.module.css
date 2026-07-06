@@ -9655,20 +9655,3 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
   margin-top: 0 !important;
 }
-
-/* P60K5Q10FG.6.9 - Leads tabbed shell gap collapse */
-.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] {
-  margin-bottom: 0 !important;
-}
-
-.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
-  position: relative !important;
-  z-index: 12 !important;
-  transform: translateY(clamp(-9.2rem, -15.5vh, -7.1rem)) !important;
-  margin-bottom: clamp(-9.2rem, -15.5vh, -7.1rem) !important;
-  align-self: start !important;
-}
-
-.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
-  margin-top: 0 !important;
-}
