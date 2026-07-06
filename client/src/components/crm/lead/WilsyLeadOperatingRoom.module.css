@@ -8929,3 +8929,90 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadFilterRailCollapsed[data-wilsy-lead-filter-rail-open="false"] {
   display: flex !important;
 }
+
+/* P60K5Q10FG.3.8 — Leads Proof viewpoint containment */
+:global([data-wilsy-lead-portal-layer="proof-trail"]) {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.leadModuleShell,
+.leadRecordsPanel,
+.leadRecordsBody {
+  min-height: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.leadRecordsPanel {
+  overflow: hidden !important;
+  isolation: isolate !important;
+  contain: layout paint !important;
+}
+
+.leadRecordsBody {
+  max-height: calc(100vh - 318px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 9rem !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+
+.leadRecordsBody > * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.leadRecordsBody table,
+.leadRecordsBody [role="table"] {
+  max-width: 100% !important;
+}
+
+.leadRecordsBody footer,
+.leadRecordsBody [data-wilsy-footer],
+.leadRecordsBody [class*="Footer"] {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 12 !important;
+}
+
+
+/* Proof content classes discovered from the visible Proof viewpoint */
+.activationGrid,
+.headerCommandGrid,
+.leadLaneRecords,
+.leadModuleTitleBlock,
+.leadModuleTopBar,
+.leadModuleUtilities,
+.leadModuleViewBar,
+.leadOsProofRail,
+.leadOsWorkgrid,
+.leadPanelHead,
+.leadPanelHeader,
+.leadProofGrid,
+.leadProofLedger,
+.leadQueuePanel,
+.leadRecordsFooter,
+.leadRecordsHeader,
+.leadRecordsPanel,
+.leadRecordsWorkspace,
+.leadSignalGrid,
+.leadSourcesGrid,
+.leadTabSurface,
+.leadTabbedShell,
+.leadViewButton,
+.leadViewCluster,
+.leadViewMoreButton,
+.ledgerEmptyFrame,
+.ledgerPanel,
+.setupGrid,
+.sourcePanel,
+.tableFrame,
+.telemetryPanel,
+.wilsyP60E4BSetupSingleSurface,
+.wilsyP60E4BSetupSingleViewport {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}

@@ -2608,6 +2608,20 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
   const hasAutoHydratedTelemetryRef = useRef(false);
+
+  /* WILSY_P60K5Q10FG38_PROOF_VIEW_CONTAINMENT_EFFECT */
+  useEffect(() => {
+    if (activeTopTab !== 'proof') {
+      return;
+    }
+
+    setCommandOpen(false);
+    setCreateMenuOpen(false);
+    setMoreMenuOpen(false);
+    setThemeMenuOpen(false);
+    setOpenRowActionId('');
+  }, [activeTopTab]);
+
   const leadThemeOptions = useMemo(() => resolveCrmThemeEngineOptions(), []);
   const activeLeadThemeOption = useMemo(() => ({
     id: themeRuntime?.themeId || leadSkin || 'crm_revenue_pulse',
