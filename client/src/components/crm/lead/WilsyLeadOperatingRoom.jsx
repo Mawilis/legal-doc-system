@@ -3589,18 +3589,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
             </button>
           </section>
 
-          <section className={styles.headerInvestorStrip} data-wilsy-investor-strip="source-root-compliance"
-        data-wilsy-leads-kpi-strip={
-          String(
-            leadOperatingCopyTitle ||
-            leadOperatingCopy?.title ||
-            leadOperatingCopy?.recordPlural ||
-            leadOperatingCopy?.recordSingular ||
-            ''
-          ).toLowerCase().includes('lead')
-            ? 'records'
-            : undefined
-        }>
+          <section className={styles.headerInvestorStrip} data-wilsy-investor-strip="source-root-compliance">
             <article>
               <small>Source Routes</small>
               <strong>{routeLabel}</strong>

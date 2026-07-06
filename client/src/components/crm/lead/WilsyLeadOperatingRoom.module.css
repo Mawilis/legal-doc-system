@@ -9595,54 +9595,63 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   align-self: end !important;
 }
 
-/* P60K5Q10FG.6.5 - Direct Leads KPI strip target */
-.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] {
+/* P60K5Q10FG.6.6 - Live Leads vision metric deck compression */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] {
   min-height: 0 !important;
-  height: 8.15rem !important;
-  max-height: 8.15rem !important;
+  height: 7.35rem !important;
+  max-height: 7.35rem !important;
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  grid-auto-rows: 8.15rem !important;
-  gap: 0.58rem !important;
-  margin-top: 0.42rem !important;
-  margin-bottom: 0.54rem !important;
+  grid-auto-rows: 6.75rem !important;
+  gap: 0.62rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.58rem !important;
   overflow: hidden !important;
+  align-items: stretch !important;
 }
 
-.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article {
-  min-height: 7.65rem !important;
-  height: 7.65rem !important;
-  max-height: 7.65rem !important;
-  padding: 0.58rem 0.68rem !important;
-  border-radius: 0.78rem !important;
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] > article {
+  min-height: 6.35rem !important;
+  height: 6.55rem !important;
+  max-height: 6.65rem !important;
+  padding: 0.55rem 0.68rem !important;
   display: grid !important;
+  grid-template-columns: 1.55rem minmax(0, 1fr) !important;
+  gap: 0.42rem !important;
   align-content: center !important;
-  gap: 0.16rem !important;
   overflow: hidden !important;
 }
 
-.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article small {
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] .leadVisionMetricCopy {
+  min-height: 0 !important;
+  gap: 0.1rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] > article small {
   font-size: 0.62rem !important;
-  line-height: 1 !important;
+  line-height: 0.95 !important;
   letter-spacing: 0.12em !important;
   margin: 0 !important;
 }
 
-.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article strong {
-  font-size: clamp(1.14rem, 1.55vw, 1.42rem) !important;
-  line-height: 0.96 !important;
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] > article strong {
+  font-size: clamp(1.15rem, 1.45vw, 1.42rem) !important;
+  line-height: 0.95 !important;
   margin: 0 !important;
 }
 
-.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] > article em {
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] > article em {
   font-size: 0.64rem !important;
   line-height: 1.05 !important;
   margin: 0 !important;
-  max-height: 2rem !important;
+  max-height: 1.9rem !important;
   overflow: hidden !important;
 }
 
-.headerInvestorStrip[data-wilsy-leads-kpi-strip="records"] + .leadTabbedShell,
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
-  margin-top: 0.48rem !important;
+  margin-top: 0.5rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  margin-top: 0 !important;
 }
