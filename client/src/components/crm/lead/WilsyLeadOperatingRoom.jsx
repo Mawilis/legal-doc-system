@@ -1957,6 +1957,314 @@ const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
 ]);
 
 /**
+ * @function normalizeWilsyLeadFilterExecutionText
+ * @description Normalizes Lead record values before local filter execution.
+ * @param {*} value - Candidate Lead value.
+ * @returns {string} Normalized searchable value.
+ * @collaboration Leads filter sidebar, record grid viewpoint, local row filtering, and source-backed CRM rows.
+ */
+function normalizeWilsyLeadFilterExecutionText(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeWilsyLeadFilterExecutionText).filter(Boolean).join(' ');
+  }
+
+  if (typeof value === 'object') {
+    return Object.values(value).map(normalizeWilsyLeadFilterExecutionText).filter(Boolean).join(' ');
+  }
+
+  return String(value).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * @function resolveWilsyLeadFilterAliasValue
+ * @description Resolves a value from a Lead record using common Wilsy OS and CRM field aliases.
+ * @param {Object} record - Lead record.
+ * @param {Array<string>} aliases - Candidate aliases.
+ * @returns {*} Resolved value.
+ * @collaboration Leads filter execution, CRM field aliases, backend row payloads, and local source-backed filtering.
+ */
+function resolveWilsyLeadFilterAliasValue(record = {}, aliases = []) {
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(record, alias)) {
+      return record[alias];
+    }
+
+    const camelAlias = alias.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    if (Object.prototype.hasOwnProperty.call(record, camelAlias)) {
+      return record[camelAlias];
+    }
+
+    const nestedValue = String(alias || '').split('.').reduce((current, key) => {
+      if (!current || typeof current !== 'object') {
+        return undefined;
+      }
+
+      return current[key];
+    }, record);
+
+    if (nestedValue !== undefined) {
+      return nestedValue;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * @function hasWilsyLeadFilterMeaningfulValue
+ * @description Determines whether a resolved Lead value should count as present for filter execution.
+ * @param {*} value - Candidate value.
+ * @returns {boolean} Whether the value is meaningful.
+ * @collaboration Leads field filters, related module filters, system filters, and local row visibility.
+ */
+function hasWilsyLeadFilterMeaningfulValue(value) {
+  if (value === null || value === undefined || value === false) {
+    return false;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value !== 0;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (typeof value === 'object') {
+    return Object.keys(value).length > 0;
+  }
+
+  const normalizedValue = normalizeWilsyLeadFilterExecutionText(value).toLowerCase();
+
+  return Boolean(normalizedValue) && !['0', 'false', 'no', 'none', 'null', 'undefined', 'n/a'].includes(normalizedValue);
+}
+
+/**
+ * @function resolveWilsyLeadFilterOptionMap
+ * @description Builds a lookup map for Lead filter option ids and their owning sections.
+ * @returns {Map<string, Object>} Filter option map.
+ * @collaboration LEAD_FILTER_OPERATING_SECTIONS, selected filter ids, grouped filter execution, and sidebar state.
+ */
+function resolveWilsyLeadFilterOptionMap() {
+  const optionMap = new Map();
+
+  LEAD_FILTER_OPERATING_SECTIONS.forEach((section) => {
+    section.options.forEach((option) => {
+      optionMap.set(option.id, {
+        ...option,
+        sectionId: section.id,
+        sectionTitle: section.title,
+      });
+    });
+  });
+
+  return optionMap;
+}
+
+/**
+ * @function resolveWilsyLeadFilterFieldAliases
+ * @description Resolves field aliases for a selected Lead filter option.
+ * @param {string} filterId - Selected filter id.
+ * @returns {Array<string>} Candidate field aliases.
+ * @collaboration Leads field filters, Zoho-style CRM labels, Wilsy backend row aliases, and local filter execution.
+ */
+function resolveWilsyLeadFilterFieldAliases(filterId = '') {
+  const aliasMap = {
+    annual_revenue: ['annualRevenue', 'annual_revenue', 'revenue', 'companyRevenue'],
+    city: ['city', 'addressCity', 'billingCity'],
+    company: ['company', 'companyName', 'accountName', 'organization', 'organisation'],
+    converted_account: ['convertedAccount', 'converted_account', 'accountId', 'account', 'isConvertedAccount'],
+    converted_contact: ['convertedContact', 'converted_contact', 'contactId', 'contact', 'isConvertedContact'],
+    converted_deal: ['convertedDeal', 'converted_deal', 'dealId', 'deal', 'opportunityId', 'isConvertedDeal'],
+    country: ['country', 'addressCountry', 'billingCountry'],
+    created_by: ['createdBy', 'created_by', 'creator', 'createdByName'],
+    created_time: ['createdTime', 'created_time', 'createdAt', 'created_at'],
+    email: ['email', 'emailAddress', 'primaryEmail'],
+    email_opt_out: ['emailOptOut', 'email_opt_out', 'emailOptedOut', 'marketingOptOut'],
+    fax: ['fax', 'faxNumber'],
+    first_name: ['firstName', 'first_name'],
+    industry: ['industry', 'sector'],
+    last_activity_time: ['lastActivityTime', 'last_activity_time', 'lastTouchedAt', 'activityUpdatedAt'],
+    last_name: ['lastName', 'last_name'],
+    lead_conversion_time: ['leadConversionTime', 'lead_conversion_time', 'convertedAt', 'conversionTime'],
+    lead_name: ['name', 'leadName', 'lead_name', 'fullName'],
+    lead_owner: ['owner', 'ownerName', 'leadOwner', 'lead_owner', 'assignedTo'],
+    lead_source: ['source', 'leadSource', 'lead_source', 'sourceModule', 'sourceChannel'],
+    lead_status: ['status', 'leadStatus', 'lead_status', 'stage', 'pipelineStage'],
+    mobile: ['mobile', 'mobilePhone', 'cellphone'],
+    modified_by: ['modifiedBy', 'modified_by', 'updatedBy'],
+    modified_time: ['modifiedTime', 'modified_time', 'updatedAt', 'updated_at'],
+    employees: ['employees', 'employeeCount', 'numberOfEmployees', 'noOfEmployees'],
+    phone: ['phone', 'phoneNumber', 'primaryPhone'],
+    rating: ['rating', 'leadRating'],
+    salutation: ['salutation'],
+    title: ['title', 'jobTitle', 'designation'],
+    twitter: ['twitter', 'twitterProfile', 'xProfile'],
+    unsubscribed_mode: ['unsubscribedMode', 'unsubscribed_mode', 'unsubscribeMode'],
+    unsubscribed_time: ['unsubscribedTime', 'unsubscribed_time', 'unsubscribeTime'],
+    website: ['website', 'webSite', 'url', 'domain'],
+    zip_code: ['zipCode', 'zip_code', 'postalCode', 'postcode'],
+    calls: ['calls', 'callCount', 'callsCount', 'relatedCalls'],
+    emails: ['emails', 'emailCount', 'emailsCount', 'relatedEmails'],
+    invitees: ['invitees', 'invitedMeetings', 'meetingInvitees'],
+    meetings: ['meetings', 'meetingCount', 'meetingsCount', 'relatedMeetings'],
+    notes: ['notes', 'noteCount', 'notesCount', 'relatedNotes'],
+    tasks: ['tasks', 'taskCount', 'tasksCount', 'relatedTasks'],
+  };
+
+  const genericAliases = [
+    filterId,
+    filterId.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
+  ];
+
+  return [...new Set([...(aliasMap[filterId] || []), ...genericAliases])];
+}
+
+/**
+ * @function hasWilsyLeadActivitySignal
+ * @description Resolves whether a Lead record has any engagement or activity signal.
+ * @param {Object} record - Lead record.
+ * @returns {boolean} Whether the Lead is touched.
+ * @collaboration Touched records, untouched records, activity history, Meetings, Tasks, Calls, Emails, and CRM readiness.
+ */
+function hasWilsyLeadActivitySignal(record = {}) {
+  return [
+    'activities',
+    'activityCount',
+    'lastActivityTime',
+    'last_activity_time',
+    'lastTouchedAt',
+    'modifiedTime',
+    'modified_time',
+    'updatedAt',
+    'calls',
+    'emails',
+    'meetings',
+    'tasks',
+    'notes',
+  ].some((alias) => hasWilsyLeadFilterMeaningfulValue(resolveWilsyLeadFilterAliasValue(record, [alias])));
+}
+
+/**
+ * @function hasWilsyLeadRelatedRecordSignal
+ * @description Resolves whether a Lead record has related CRM module linkage.
+ * @param {Object} record - Lead record.
+ * @returns {boolean} Whether related module evidence is present.
+ * @collaboration Related records action, Calls, Emails, Meetings, Notes, Tasks, Deals, Accounts, Contacts, and CRM relationship readiness.
+ */
+function hasWilsyLeadRelatedRecordSignal(record = {}) {
+  return [
+    'relatedRecords',
+    'relatedRecordCount',
+    'calls',
+    'emails',
+    'meetings',
+    'tasks',
+    'notes',
+    'deals',
+    'accounts',
+    'contacts',
+    'accountId',
+    'contactId',
+    'dealId',
+    'meetingCount',
+    'taskCount',
+    'noteCount',
+    'emailCount',
+    'callCount',
+  ].some((alias) => hasWilsyLeadFilterMeaningfulValue(resolveWilsyLeadFilterAliasValue(record, [alias])));
+}
+
+/**
+ * @function doesWilsyLeadRecordMatchFilter
+ * @description Checks whether a Lead record matches one selected filter id.
+ * @param {Object} record - Lead record.
+ * @param {string} filterId - Selected filter id.
+ * @returns {boolean} Whether the record matches.
+ * @collaboration Leads filter execution, record grid viewpoint, selected checkbox state, and source-backed rows.
+ */
+function doesWilsyLeadRecordMatchFilter(record = {}, filterId = '') {
+  const normalizedFilterId = String(filterId || '').trim();
+
+  if (!normalizedFilterId) {
+    return true;
+  }
+
+  if (normalizedFilterId === 'activities') {
+    return hasWilsyLeadActivitySignal(record);
+  }
+
+  if (normalizedFilterId === 'campaigns') {
+    return ['campaigns', 'campaign', 'campaignId', 'campaignName'].some((alias) => hasWilsyLeadFilterMeaningfulValue(resolveWilsyLeadFilterAliasValue(record, [alias])));
+  }
+
+  if (normalizedFilterId === 'latest_email_status') {
+    return ['latestEmailStatus', 'latest_email_status', 'emailStatus', 'emailEngagementStatus'].some((alias) => hasWilsyLeadFilterMeaningfulValue(resolveWilsyLeadFilterAliasValue(record, [alias])));
+  }
+
+  if (normalizedFilterId === 'record_action') {
+    const status = normalizeWilsyLeadFilterExecutionText(resolveWilsyLeadFilterAliasValue(record, ['status', 'leadStatus', 'stage'])).toLowerCase();
+    const actionableStatus = status && !['converted', 'closed', 'deleted', 'archived', 'lost'].includes(status);
+
+    return actionableStatus || hasWilsyLeadFilterMeaningfulValue(resolveWilsyLeadFilterAliasValue(record, ['email', 'phone', 'mobile', 'owner', 'ownerName']));
+  }
+
+  if (normalizedFilterId === 'related_records_action') {
+    return hasWilsyLeadRelatedRecordSignal(record);
+  }
+
+  if (normalizedFilterId === 'touched_records') {
+    return hasWilsyLeadActivitySignal(record);
+  }
+
+  if (normalizedFilterId === 'untouched_records') {
+    return !hasWilsyLeadActivitySignal(record);
+  }
+
+  return resolveWilsyLeadFilterFieldAliases(normalizedFilterId).some((alias) => (
+    hasWilsyLeadFilterMeaningfulValue(resolveWilsyLeadFilterAliasValue(record, [alias]))
+  ));
+}
+
+/**
+ * @function applyWilsyLeadOperatingFilters
+ * @description Applies selected Lead filter ids to already-loaded backend rows without fabricating records.
+ * @param {Array<Object>} records - Base filtered Lead records.
+ * @param {Array<string>} selectedFilterIds - Selected filter ids.
+ * @returns {Array<Object>} Visible Lead records after selected filter execution.
+ * @collaboration Leads filter checkboxes, records table, pagination, empty state, and source-backed CRM data.
+ */
+function applyWilsyLeadOperatingFilters(records = [], selectedFilterIds = []) {
+  const activeFilterIds = selectedFilterIds.map((item) => String(item || '').trim()).filter(Boolean);
+
+  if (!activeFilterIds.length) {
+    return records;
+  }
+
+  const optionMap = resolveWilsyLeadFilterOptionMap();
+  const groupedFilterIds = activeFilterIds.reduce((groups, filterId) => {
+    const sectionId = optionMap.get(filterId)?.sectionId || 'UNKNOWN_FILTER_SECTION';
+    const existingGroup = groups.get(sectionId) || [];
+
+    existingGroup.push(filterId);
+    groups.set(sectionId, existingGroup);
+
+    return groups;
+  }, new Map());
+
+  return records.filter((record) => (
+    Array.from(groupedFilterIds.values()).every((filterIds) => (
+      filterIds.some((filterId) => doesWilsyLeadRecordMatchFilter(record, filterId))
+    ))
+  ));
+}
+
+
+/**
  * @function WilsyLeadOperatingRoom
  * @description Renders the production Lead operating room with contextual command strip and skin-aware density.
  * @param {Object} props - Component props.
@@ -2215,7 +2523,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     return { total, verified, pending, failed };
   }, [leads]);
 
-  const filteredLeads = useMemo(() => {
+  const baseFilteredLeads = useMemo(() => {
     const query = String(searchTerm || '').trim().toLowerCase();
 
     const matchedLeads = leads.filter(record => {
@@ -2229,6 +2537,15 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
     return sortLeadRecords(matchedLeads, sortMode);
   }, [activeFilter, activeListViewId, leads, searchTerm, sortMode]);
+
+  const selectedLeadFilterIds = useMemo(() => (
+    Array.from(selectedLeadFilterOptions)
+  ), [selectedLeadFilterOptions]);
+
+  const filteredLeads = useMemo(() => (
+    applyWilsyLeadOperatingFilters(baseFilteredLeads, selectedLeadFilterIds)
+  ), [baseFilteredLeads, selectedLeadFilterIds]);
+
   const leadPagination = useMemo(() => buildLeadPaginationModel({
     totalRecords: filteredLeads.length,
     currentPage: currentLeadPage,
@@ -2237,6 +2554,12 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   const paginatedLeads = useMemo(() => (
     filteredLeads.slice(leadPagination.startIndex, leadPagination.endIndex)
   ), [filteredLeads, leadPagination.endIndex, leadPagination.startIndex]);
+
+  useEffect(() => {
+    setCurrentLeadPage(1);
+    setSelectedRowIds([]);
+  }, [selectedLeadFilterIds]);
+
 
   const sourcePosture = leads.length ? 'Sources connected' : 'Ready for source connection';
   const routeRegistry = Array.isArray(syncTelemetry?.registry) ? syncTelemetry.registry : [];
@@ -3716,6 +4039,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         data-wilsy-filter-state={filterPanelOpen ? 'open' : 'closed'}
         data-wilsy-leads-listview-shell="R83A-DB-ONLY-PRODUCT-SHELL"
         data-wilsy-lead-row-count={filteredLeads.length}
+        data-wilsy-base-lead-row-count={baseFilteredLeads.length}
+        data-wilsy-selected-lead-filter-count={selectedLeadFilterOptions.size}
         data-wilsy-lead-page-count={leadPagination.totalPages}
         data-wilsy-real-data-contract="LIVE_BACKEND_ONLY"
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
@@ -3728,7 +4053,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
             <span>
               <small>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</small>
               <strong>{filteredLeads.length} records</strong>
-              <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : `${activeSort.label} order`}</em>
+              <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : selectedLeadFilterOptions.size ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows` : `${activeSort.label} order`}</em>
             </span>
 
             <div>
@@ -3915,8 +4240,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
                 >
                   <td colSpan={9}>
                     <section className={styles.leadRealEmptyState}>
-                      <strong>No live leads returned yet</strong>
-                      <em>Verified backend Lead records will appear here after source sync or lead creation.</em>
+                      <strong>{selectedLeadFilterOptions.size ? 'No leads match the selected filters' : 'No live leads returned yet'}</strong>
+                      <em>{selectedLeadFilterOptions.size ? 'Clear or change the selected filters to return matching live backend rows.' : 'Verified backend Lead records will appear here after source sync or lead creation.'}</em>
                     </section>
                   </td>
                 </tr>
@@ -3927,8 +4252,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
           <footer className={styles.leadRecordsFooter} data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER">
             <span className={styles.leadFooterRecordRange}>
-              <strong>{filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} ${leadOperatingCopyRecordPlural}` : `Showing 0 live ${leadOperatingCopyRecordPlural}`}</strong>
-              <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : 'Live backend rows only'}</em>
+              <strong>{filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} ${leadOperatingCopyRecordPlural}` : selectedLeadFilterOptions.size ? `Showing 0 matching ${leadOperatingCopyRecordPlural}` : `Showing 0 live ${leadOperatingCopyRecordPlural}`}</strong>
+              <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : selectedLeadFilterOptions.size ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows` : 'Live backend rows only'}</em>
             </span>
             <nav className={styles.leadFooterPagination} aria-label={`${leadOperatingCopyTitle} records pagination`}>
               <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="First page" onClick={() => handleLeadPageChange(1)}>|&lt;</button>
