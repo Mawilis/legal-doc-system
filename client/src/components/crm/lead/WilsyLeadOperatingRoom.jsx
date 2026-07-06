@@ -404,14 +404,35 @@ function resolveWilsyLeadAIInlineCommands(packet = {}) {
  * @collaboration Leads component ownership, filter sidebar, checkbox button control, and scoped DOM repair.
  */
 function resolveWilsyLeadsFilterPanel() {
+  /* P60K5Q10FG90D_PRECISE_FILTER_PANEL_RESOLVER */
   if (typeof document === 'undefined') {
     return null;
   }
 
-  return Array.from(document.querySelectorAll('aside, section, div')).find((node) => {
-    const text = normalizeWilsyLeadFilterText(node.textContent);
-    return /Filter Leads by/i.test(text) && /System Defined Filters|Filter By Fields|Activities|Record Action/i.test(text);
-  }) || null;
+  const filterOptionPattern = /Activities|Campaigns|Latest Email Status|Record Action/i;
+  const candidateNodes = Array.from(document.querySelectorAll('aside, section, nav, div'))
+    .filter((node) => {
+      const text = normalizeWilsyLeadFilterText(node.textContent || '');
+      const checkboxCount = node.querySelectorAll?.('input[type="checkbox"]')?.length || 0;
+
+      return /Filter Leads by/i.test(text) &&
+        /System Defined Filters/i.test(text) &&
+        filterOptionPattern.test(text) &&
+        checkboxCount > 0;
+    })
+    .sort((firstNode, secondNode) => {
+      const firstCheckboxCount = firstNode.querySelectorAll('input[type="checkbox"]').length;
+      const secondCheckboxCount = secondNode.querySelectorAll('input[type="checkbox"]').length;
+      const checkboxDelta = firstCheckboxCount - secondCheckboxCount;
+
+      if (checkboxDelta !== 0) {
+        return checkboxDelta;
+      }
+
+      return String(firstNode.textContent || '').length - String(secondNode.textContent || '').length;
+    });
+
+  return candidateNodes[0] || null;
 }
 
 /**
@@ -453,16 +474,20 @@ function resolveWilsyLeadFilterLabel(input) {
  * @collaboration Leads filters, local continuity, backend fallback, and persisted operator preference.
  */
 function loadWilsyLeadLocalFilterState() {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return [];
+  /* P60K5Q10FG90D_FILTER_LOCAL_RESTORE_DISABLED */
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY, JSON.stringify([]));
+      window.localStorage.removeItem('wilsy.crm.leads.filterSelection.v2');
+      window.localStorage.removeItem('wilsy.crm.leads.filterButtons.v1');
+      window.localStorage.removeItem('wilsy.crm.leads.filters');
+      window.localStorage.removeItem('wilsy.crm.leads.selectedFilters');
+      window.localStorage.removeItem('wilsy.crm.leads.controlState');
+      window.localStorage.removeItem('wilsy.crm.controlState.leads.filters');
+    } catch (error) {}
   }
 
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.map(normalizeWilsyLeadFilterText).filter(Boolean) : [];
-  } catch (error) {
-    return [];
-  }
+  return [];
 }
 
 /**
@@ -473,12 +498,15 @@ function loadWilsyLeadLocalFilterState() {
  * @collaboration Leads filter persistence, browser continuity, backend fallback, and operator-controlled filter state.
  */
 function saveWilsyLeadLocalFilterState(selectedFilters = []) {
+  /* P60K5Q10FG90D_FILTER_LOCAL_SAVE_DISABLED */
   if (typeof window === 'undefined' || !window.localStorage) {
     return;
   }
 
   try {
-    window.localStorage.setItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY, JSON.stringify(selectedFilters));
+    window.localStorage.setItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY, JSON.stringify([]));
+    window.localStorage.removeItem('wilsy.crm.leads.filterSelection.v2');
+    window.localStorage.removeItem('wilsy.crm.leads.filterButtons.v1');
   } catch (error) {}
 }
 
@@ -600,18 +628,8 @@ function buildWilsyLeadFilterInstitutionalPayload(selectedFilters = []) {
  * @collaboration Leads filter buttons, backend control-state route, tenant/operator scope, and source-backed UI persistence.
  */
 async function fetchWilsyLeadFilterControlState() {
-  const { headers } = resolveWilsyLeadOperatorHeaders();
-  const response = await fetch(`${resolveWilsyLeadApiBase()}${WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT}`, {
-    method: 'GET',
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Leads filter control state GET failed with ${response.status}`);
-  }
-
-  const payload = await response.json();
-  return Array.isArray(payload?.selectedFilters) ? payload.selectedFilters.map(normalizeWilsyLeadFilterText).filter(Boolean) : [];
+  /* P60K5Q10FG90D_FILTER_BACKEND_FETCH_DISABLED */
+  return [];
 }
 
 /**
@@ -622,16 +640,12 @@ async function fetchWilsyLeadFilterControlState() {
  * @collaboration Leads filter buttons, backend PUT route, institutional headers, strike payload, and source-backed control state.
  */
 async function persistWilsyLeadFilterControlState(selectedFilters = []) {
-  const { headers } = resolveWilsyLeadOperatorHeaders();
-  const response = await fetch(`${resolveWilsyLeadApiBase()}${WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT}`, {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify(buildWilsyLeadFilterInstitutionalPayload(selectedFilters)),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Leads filter control state PUT failed with ${response.status}`);
-  }
+  /* P60K5Q10FG90D_FILTER_BACKEND_PERSIST_DISABLED */
+  return {
+    skipped: true,
+    selectedFilters: [],
+    reason: 'LEADS_FILTER_DOM_CONTROLLER_DISABLED_UNTIL_AUTH_CONTROL_STATE_READY',
+  };
 }
 
 /**
@@ -669,97 +683,56 @@ function injectWilsyLeadFilterButtonStyles() {
 }
 
 /**
+ * @function clearWilsyFG90DLeadFilterVisualState
+ * @description Clears any checkbox and row highlight state created by the legacy Leads filter DOM controller.
+ * @returns {void}
+ * @collaboration Leads filter rail, disabled DOM controller, React filter state, pagination navigation, and auth-safe filter recovery.
+ */
+function clearWilsyFG90DLeadFilterVisualState() {
+  /* P60K5Q10FG90D_FILTER_VISUAL_STATE_RESET */
+  const inputs = resolveWilsyLeadFilterInputs();
+
+  inputs.forEach((input) => {
+    try {
+      setWilsyLeadFilterChecked(input, false);
+
+      const row = input.closest?.('label, li, div');
+
+      if (row) {
+        row.removeAttribute('aria-checked');
+        row.removeAttribute('data-selected');
+        row.removeAttribute('data-active');
+        row.removeAttribute('data-state');
+        row.dataset.wilsyLeadFilterSelected = 'false';
+        row.dataset.wilsyFilterSelected = 'false';
+
+        ['active', 'selected', 'checked', 'isActive', 'isSelected', 'filterActive', 'filterSelected'].forEach((className) => {
+          row.classList?.remove?.(className);
+        });
+      }
+    } catch (error) {}
+  });
+}
+
+
+/**
  * @function installWilsyLeadFilterControlStateController
  * @description Installs Leads component-owned filter checkbox ticking and backend state persistence.
  * @returns {Function} Cleanup function.
  * @collaboration WilsyLeadOperatingRoom, Leads filter buttons, backend control-state route, tenant/operator evidence, and persisted user selections.
  */
 function installWilsyLeadFilterControlStateController() {
+  /* P60K5Q10FG90D_FILTER_DOM_CONTROLLER_DISABLED */
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return () => {};
   }
 
   injectWilsyLeadFilterButtonStyles();
-  applyWilsyLeadSelectedFilters(loadWilsyLeadLocalFilterState());
-
-  fetchWilsyLeadFilterControlState()
-    .then((selectedFilters) => {
-      saveWilsyLeadLocalFilterState(selectedFilters);
-      applyWilsyLeadSelectedFilters(selectedFilters);
-    })
-    .catch(() => {
-      applyWilsyLeadSelectedFilters(loadWilsyLeadLocalFilterState());
-    });
-
-  /**
-   * @function handleLeadFilterClick
-   * @description Handles Leads filter row and checkbox clicks so the actual checkbox square ticks or unticks, then persists the selected filter state.
-   * @param {MouseEvent} event - Browser click event from the Leads filter sidebar.
-   * @returns {void}
-   * @collaboration Leads filter sidebar, checkbox source of truth, backend control-state persistence, local fallback state, and operator-controlled filtering.
-   */
-  const handleLeadFilterClick = (event) => {
-    const panel = resolveWilsyLeadsFilterPanel();
-
-    if (!panel || !panel.contains(event.target)) {
-      return;
-    }
-
-    const directInput = event.target?.closest?.('input[type="checkbox"]');
-    const row = event.target?.closest?.('label, li, div');
-    const input = directInput || row?.querySelector?.('input[type="checkbox"]');
-
-    if (!input || input.disabled) {
-      return;
-    }
-
-    if (!directInput) {
-      event.preventDefault();
-      event.stopPropagation();
-      setWilsyLeadFilterChecked(input, !input.checked);
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    window.setTimeout(() => {
-      const selectedFilters = collectWilsyLeadSelectedFilters();
-      saveWilsyLeadLocalFilterState(selectedFilters);
-      persistWilsyLeadFilterControlState(selectedFilters).catch(() => {});
-    }, 0);
-  };
-
-  /**
-   * @function handleLeadFilterChange
-   * @description Handles native Leads checkbox changes and synchronizes selected filters to local storage and the backend control-state route.
-   * @param {Event} event - Browser change event from a Leads filter checkbox.
-   * @returns {void}
-   * @collaboration Leads checkbox state, selected filter persistence, Wilsy institutional evidence payload, and backend control-state route.
-   */
-  const handleLeadFilterChange = (event) => {
-    const panel = resolveWilsyLeadsFilterPanel();
-    const input = event.target?.closest?.('input[type="checkbox"]');
-
-    if (!panel || !input || !panel.contains(input)) {
-      return;
-    }
-
-    setWilsyLeadFilterChecked(input, input.checked);
-
-    const selectedFilters = collectWilsyLeadSelectedFilters();
-    saveWilsyLeadLocalFilterState(selectedFilters);
-    persistWilsyLeadFilterControlState(selectedFilters).catch(() => {});
-  };
-
-  document.addEventListener('click', handleLeadFilterClick, true);
-  document.addEventListener('change', handleLeadFilterChange, true);
-
-  const refreshTimer = window.setInterval(() => {
-    applyWilsyLeadSelectedFilters(loadWilsyLeadLocalFilterState());
-  }, 1600);
+  saveWilsyLeadLocalFilterState([]);
+  clearWilsyFG90DLeadFilterVisualState();
 
   return () => {
-    document.removeEventListener('click', handleLeadFilterClick, true);
-    document.removeEventListener('change', handleLeadFilterChange, true);
-    window.clearInterval(refreshTimer);
+    clearWilsyFG90DLeadFilterVisualState();
   };
 }
 
@@ -2518,16 +2491,9 @@ export default function WilsyLeadOperatingRoom({
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [leadFilterQuery, setLeadFilterQuery] = useState('');
   const [selectedLeadFilterOptions, setSelectedLeadFilterOptions] = useState(() => {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return new Set();
-    }
-
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY) || '[]');
-      return new Set(Array.isArray(parsed) ? parsed.filter(Boolean) : []);
-    } catch (error) {
-      return new Set();
-    }
+    /* P60K5Q10FG90D_REACT_FILTER_STATE_STARTS_EMPTY */
+    /* P60K5Q10FG90E_REACT_FILTER_INITIALIZER_REPAIR */
+    return new Set();
   });
 
   useEffect(() => {
@@ -2730,6 +2696,43 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
     return sortLeadRecords(matchedLeads, sortMode);
   }, [activeFilter, activeListViewId, leads, searchTerm, sortMode]);
+
+  useEffect(() => {
+    /* P60K5Q10FG90D_REACT_FILTER_STATE_MOUNT_RESET */
+    setSelectedLeadFilterOptions(new Set());
+    setSelectedRowIds([]);
+    setSelectedLeadId('');
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem(WILSY_LEADS_FILTER_LOCAL_STATE_KEY, JSON.stringify([]));
+        window.localStorage.removeItem('wilsy.crm.leads.filterSelection.v2');
+        window.localStorage.removeItem('wilsy.crm.leads.filterButtons.v1');
+        window.localStorage.removeItem('wilsy.crm.leads.filters');
+        window.localStorage.removeItem('wilsy.crm.leads.selectedFilters');
+        window.localStorage.removeItem('wilsy.crm.leads.controlState');
+        window.localStorage.removeItem('wilsy.crm.controlState.leads.filters');
+      } catch (error) {}
+    }
+
+    window.setTimeout(() => clearWilsyFG90DLeadFilterVisualState(), 0);
+    window.setTimeout(() => clearWilsyFG90DLeadFilterVisualState(), 120);
+  }, []);
+
+  useEffect(() => {
+    /* P60K5Q10FG90D_FILTER_VISUAL_RESET_ON_NAVIGATION */
+    if (selectedLeadFilterOptions.size) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.setTimeout(() => clearWilsyFG90DLeadFilterVisualState(), 0);
+  }, [activeTopTab, currentLeadPage, selectedLeadFilterOptions.size]);
+
+
 
   const selectedLeadFilterIds = useMemo(() => (
     Array.from(selectedLeadFilterOptions)
