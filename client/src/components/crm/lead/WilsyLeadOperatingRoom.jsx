@@ -2901,6 +2901,278 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
   /**
+   * @function normalizeWilsyFG91OwnerText
+   * @description Normalizes the candidate owner identity used for Lead assignment.
+   * @param {*} value - Candidate owner value.
+   * @returns {string} Normalized owner text.
+   * @collaboration Current user identity, Create Lead final save payload, owner assignment aliases, and Records performance tracking.
+   */
+  function normalizeWilsyFG91OwnerText(value = '') {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * @function buildWilsyFG91OwnerInitials
+   * @description Builds initials for the assigned Lead owner avatar.
+   * @param {string} displayName - Owner display name.
+   * @returns {string} Owner initials.
+   * @collaboration Owner column rendering, current user assignment, performance tracking, and CRM accountability.
+   */
+  function buildWilsyFG91OwnerInitials(displayName = '') {
+    const parts = normalizeWilsyFG91OwnerText(displayName)
+      .split(' ')
+      .filter(Boolean);
+
+    if (!parts.length) {
+      return 'U';
+    }
+
+    return parts
+      .slice(0, 2)
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  }
+
+  /**
+   * @function parseWilsyFG91OwnerStorageCandidate
+   * @description Reads one possible browser storage profile packet for current-user Lead ownership.
+   * @param {Storage} storage - Browser storage object.
+   * @param {string} key - Storage key.
+   * @returns {Object|null} Parsed profile packet.
+   * @collaboration Local auth cache, session profile cache, Create Lead owner assignment, and 403-safe owner fallback.
+   */
+  function parseWilsyFG91OwnerStorageCandidate(storage, key) {
+    try {
+      const raw = storage?.getItem?.(key);
+
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (error) {}
+
+    return null;
+  }
+
+  /**
+   * @function resolveWilsyFG91OwnerCandidateDisplayName
+   * @description Resolves a display name from a possible current-user profile object.
+   * @param {Object} candidate - Candidate profile object.
+   * @returns {string} Owner display name.
+   * @collaboration Current user profile packets, tenant operator context, Lead assignment aliases, and Records owner display.
+   */
+  function resolveWilsyFG91OwnerCandidateDisplayName(candidate = {}) {
+    const nestedUser = candidate.user || candidate.profile || candidate.operator || candidate.account || candidate.identity || {};
+    const source = {
+      ...nestedUser,
+      ...candidate,
+    };
+
+    const firstName = normalizeWilsyFG91OwnerText(source.firstName || source.givenName);
+    const lastName = normalizeWilsyFG91OwnerText(source.lastName || source.familyName || source.surname);
+    const joinedName = normalizeWilsyFG91OwnerText([firstName, lastName].filter(Boolean).join(' '));
+
+    return normalizeWilsyFG91OwnerText(
+      source.displayName ||
+      source.name ||
+      source.fullName ||
+      source.operatorName ||
+      source.userName ||
+      source.username ||
+      source.emailName ||
+      joinedName
+    );
+  }
+
+  /**
+   * @function resolveWilsyFG91OwnerCandidateId
+   * @description Resolves a stable owner/operator id from a possible current-user profile object.
+   * @param {Object} candidate - Candidate profile object.
+   * @returns {string} Owner identifier.
+   * @collaboration Current user identity, ownerId payload aliases, assignedToId payload aliases, and CRM performance allocation.
+   */
+  function resolveWilsyFG91OwnerCandidateId(candidate = {}) {
+    const nestedUser = candidate.user || candidate.profile || candidate.operator || candidate.account || candidate.identity || {};
+    const source = {
+      ...nestedUser,
+      ...candidate,
+    };
+
+    return normalizeWilsyFG91OwnerText(
+      source.id ||
+      source._id ||
+      source.userId ||
+      source.operatorId ||
+      source.ownerId ||
+      source.accountId ||
+      source.email
+    );
+  }
+
+  /**
+   * @function resolveWilsyFG91OwnerCandidateEmail
+   * @description Resolves an owner email from a possible current-user profile object.
+   * @param {Object} candidate - Candidate profile object.
+   * @returns {string} Owner email.
+   * @collaboration Current user identity, Lead assignment evidence, CRM ownership payload, and audit-friendly performance attribution.
+   */
+  function resolveWilsyFG91OwnerCandidateEmail(candidate = {}) {
+    const nestedUser = candidate.user || candidate.profile || candidate.operator || candidate.account || candidate.identity || {};
+    const source = {
+      ...nestedUser,
+      ...candidate,
+    };
+
+    return normalizeWilsyFG91OwnerText(source.email || source.operatorEmail || source.userEmail);
+  }
+
+  /**
+   * @function collectWilsyFG91OwnerIdentityCandidates
+   * @description Collects current-user profile candidates from safe browser globals and storage without relying on failing auth/profile probes.
+   * @returns {Object[]} Candidate owner identity packets.
+   * @collaboration Current session, tenant context, frontend auth cache, Create Lead save payload, and owner assignment fallback.
+   */
+  function collectWilsyFG91OwnerIdentityCandidates() {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    const globalCandidates = [
+      window.__WILSY_CURRENT_USER__,
+      window.__WILSY_USER__,
+      window.__WILSY_OPERATOR__,
+      window.__WILSY_OPERATOR_CONTEXT__,
+      window.__WILSY_AUTH_USER__,
+      window.WILSY_USER,
+      window.WILSY_AUTH_USER,
+      window.wilsyUser,
+      window.wilsyOperator,
+      window.sovereignUser,
+    ].filter(candidate => candidate && typeof candidate === 'object');
+
+    const storageKeys = [
+      'wilsy.currentUser',
+      'wilsy.user',
+      'wilsy.operator',
+      'wilsy.operator.profile',
+      'wilsy.account.profile',
+      'wilsy.auth.user',
+      'wilsy.user.profile',
+      'wilsy.profile',
+      'currentUser',
+      'user',
+      'operator',
+      'profile',
+      'accountProfile',
+      'authUser',
+      'tenantUser',
+      'tenantOperator',
+      'sovereignUser',
+    ];
+
+    const storageCandidates = [];
+
+    [window.localStorage, window.sessionStorage].forEach((storage) => {
+      storageKeys.forEach((key) => {
+        const candidate = parseWilsyFG91OwnerStorageCandidate(storage, key);
+
+        if (candidate) {
+          storageCandidates.push(candidate);
+        }
+      });
+    });
+
+    return [...globalCandidates, ...storageCandidates];
+  }
+
+  /**
+   * @function resolveWilsyFG91LeadOwnerAssignment
+   * @description Resolves the current Lead owner assignment and expands fallback identity when auth/profile endpoints are unavailable.
+   * @param {Object} draftPayload - Create Lead draft payload.
+   * @returns {Object} Owner assignment packet.
+   * @collaboration Create Lead save payload, AI-created Lead assignment, manual owner field, current user context, and performance management.
+   */
+  function resolveWilsyFG91LeadOwnerAssignment(draftPayload = {}) {
+    /* P60K5Q10FG91B_CURRENT_USER_OWNER_ASSIGNMENT */
+    const draftOwnerName = normalizeWilsyFG91OwnerText(
+      draftPayload.ownerDisplayName ||
+      draftPayload.ownerName ||
+      draftPayload.assignedToName ||
+      draftPayload.owner ||
+      draftPayload.assignedTo
+    );
+
+    const draftOwnerId = normalizeWilsyFG91OwnerText(
+      draftPayload.ownerId ||
+      draftPayload.assignedToId ||
+      draftPayload.operatorId ||
+      draftPayload.userId
+    );
+
+    const draftOwnerEmail = normalizeWilsyFG91OwnerText(
+      draftPayload.ownerEmail ||
+      draftPayload.assignedToEmail ||
+      draftPayload.operatorEmail ||
+      draftPayload.userEmail
+    );
+
+    if (draftOwnerName && !/^unassigned$/i.test(draftOwnerName)) {
+      return {
+        displayName: draftOwnerName,
+        ownerName: draftOwnerName,
+        assignedToName: draftOwnerName,
+        ownerId: draftOwnerId || draftOwnerEmail || draftOwnerName,
+        assignedToId: draftOwnerId || draftOwnerEmail || draftOwnerName,
+        ownerEmail: draftOwnerEmail,
+        assignedToEmail: draftOwnerEmail,
+        ownerInitials: buildWilsyFG91OwnerInitials(draftOwnerName),
+        source: 'DRAFT_OWNER_FIELD',
+      };
+    }
+
+    const candidates = collectWilsyFG91OwnerIdentityCandidates();
+
+    for (const candidate of candidates) {
+      const displayName = resolveWilsyFG91OwnerCandidateDisplayName(candidate);
+      const ownerId = resolveWilsyFG91OwnerCandidateId(candidate);
+      const ownerEmail = resolveWilsyFG91OwnerCandidateEmail(candidate);
+
+      if (displayName && !/^unassigned$/i.test(displayName)) {
+        return {
+          displayName,
+          ownerName: displayName,
+          assignedToName: displayName,
+          ownerId: ownerId || ownerEmail || displayName,
+          assignedToId: ownerId || ownerEmail || displayName,
+          ownerEmail,
+          assignedToEmail: ownerEmail,
+          ownerInitials: buildWilsyFG91OwnerInitials(displayName),
+          source: 'CURRENT_USER_CONTEXT',
+        };
+      }
+    }
+
+    return {
+      displayName: 'Wilson Khanyezi',
+      ownerName: 'Wilson Khanyezi',
+      assignedToName: 'Wilson Khanyezi',
+      ownerId: 'wilson-khanyezi',
+      assignedToId: 'wilson-khanyezi',
+      ownerEmail: '',
+      assignedToEmail: '',
+      ownerInitials: 'WK',
+      source: 'FG91B_LOCAL_OPERATOR_FALLBACK',
+    };
+  }
+
+
+  /**
    * @function normalizeWilsyFG89LeadSaveText
    * @description Normalizes Create Lead draft values before final save payload expansion.
    * @param {*} value - Candidate draft value.
@@ -2944,11 +3216,14 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       draftPayload.roleTitle
     );
 
+    const wilsyFG91OwnerAssignment = resolveWilsyFG91LeadOwnerAssignment(draftPayload);
     const owner = normalizeWilsyFG89LeadSaveText(
       draftPayload.owner ||
       draftPayload.ownerName ||
       draftPayload.assignedTo ||
-      draftPayload.assignedToName
+      draftPayload.assignedToName ||
+      draftPayload.ownerDisplayName ||
+      wilsyFG91OwnerAssignment.displayName
     );
 
     const street = normalizeWilsyFG89LeadSaveText(
@@ -2997,8 +3272,33 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       ...(owner ? {
         owner,
         ownerName: owner,
+        ownerDisplayName: owner,
+        ownerFullName: owner,
         assignedTo: owner,
         assignedToName: owner,
+        assignedToDisplayName: owner,
+        assignedUserName: owner,
+        ownerInitials: wilsyFG91OwnerAssignment.ownerInitials || buildWilsyFG91OwnerInitials(owner),
+        assignedToInitials: wilsyFG91OwnerAssignment.ownerInitials || buildWilsyFG91OwnerInitials(owner),
+        ownerId: wilsyFG91OwnerAssignment.ownerId || owner,
+        assignedToId: wilsyFG91OwnerAssignment.assignedToId || wilsyFG91OwnerAssignment.ownerId || owner,
+        ownerEmail: wilsyFG91OwnerAssignment.ownerEmail || '',
+        assignedToEmail: wilsyFG91OwnerAssignment.assignedToEmail || wilsyFG91OwnerAssignment.ownerEmail || '',
+        assignmentSource: wilsyFG91OwnerAssignment.source || 'CURRENT_USER_CONTEXT',
+        ownerProfile: {
+          id: wilsyFG91OwnerAssignment.ownerId || owner,
+          name: owner,
+          displayName: owner,
+          initials: wilsyFG91OwnerAssignment.ownerInitials || buildWilsyFG91OwnerInitials(owner),
+          email: wilsyFG91OwnerAssignment.ownerEmail || '',
+        },
+        assignedUser: {
+          id: wilsyFG91OwnerAssignment.assignedToId || wilsyFG91OwnerAssignment.ownerId || owner,
+          name: owner,
+          displayName: owner,
+          initials: wilsyFG91OwnerAssignment.ownerInitials || buildWilsyFG91OwnerInitials(owner),
+          email: wilsyFG91OwnerAssignment.assignedToEmail || wilsyFG91OwnerAssignment.ownerEmail || '',
+        },
       } : {}),
       ...(street ? {
         street,
@@ -3044,6 +3344,15 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         ...(typeof draftPayload.sourcePayload === 'object' && draftPayload.sourcePayload ? draftPayload.sourcePayload : {}),
         ...(leadName ? { name: leadName, leadName, displayName: leadName } : {}),
         ...(companyName ? { company: companyName, companyName, accountName: companyName } : {}),
+        ...(owner ? {
+          owner,
+          ownerName: owner,
+          ownerDisplayName: owner,
+          assignedTo: owner,
+          assignedToName: owner,
+          ownerInitials: wilsyFG91OwnerAssignment.ownerInitials || buildWilsyFG91OwnerInitials(owner),
+          ownerId: wilsyFG91OwnerAssignment.ownerId || owner,
+        } : {}),
         ...(formattedAddress ? { formattedAddress } : {}),
       },
     };
