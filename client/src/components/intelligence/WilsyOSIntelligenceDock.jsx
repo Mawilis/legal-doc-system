@@ -8,6 +8,217 @@ import { clearWilsyAIConversationThreads, createWilsyAIConversationThread, loadW
 
 
 
+
+/**
+ * @function normalizeWilsyFG84LeadCreatePromptText
+ * @description Normalizes global Wilsy AI create-lead prompt text before local governed draft extraction.
+ * @param {*} value - Prompt value.
+ * @returns {string} Trimmed prompt text.
+ * @collaboration Global Wilsy AI Ask bar, CRM Setup copilot, Leads Create surface, and no-blind-write draft review.
+ */
+function normalizeWilsyFG84LeadCreatePromptText(value = '') {
+  return String(value || '').trim();
+}
+
+/**
+ * @function extractWilsyFG84LeadCreateField
+ * @description Extracts bounded Lead create values from natural language prompt text.
+ * @param {string} text - Prompt text.
+ * @param {RegExp[]} patterns - Candidate extraction patterns.
+ * @returns {string} Extracted value.
+ * @collaboration Global Wilsy AI prompt parser, Create Lead parity fields, and operator-reviewed save flow.
+ */
+function extractWilsyFG84LeadCreateField(text = '', patterns = []) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      return normalizeWilsyFG84LeadCreatePromptText(match[1])
+        .replace(/[.;]+$/g, '')
+        .trim();
+    }
+  }
+
+  return '';
+}
+
+/**
+ * @function buildWilsyFG84GlobalLeadCreateDraft
+ * @description Builds a governed Lead create draft locally from the global Ask prompt without mutating the backend.
+ * @param {string} prompt - Operator prompt.
+ * @returns {Object|null} Draft event payload or null.
+ * @collaboration Floating/global Wilsy AI, CRM Setup copilot, Leads Create receiver, pending draft storage, and human approval.
+ */
+function buildWilsyFG84GlobalLeadCreateDraft(prompt = '') {
+  /* P60K5Q10FG84_GLOBAL_ASK_DIRECT_LEAD_CREATE_DRAFT */
+  const text = normalizeWilsyFG84LeadCreatePromptText(prompt);
+  const lower = text.toLowerCase();
+
+  if (!/\b(create|add|capture|prepare|draft|register)\b/.test(lower) || !/\b(lead|prospect)\b/.test(lower)) {
+    return null;
+  }
+
+  const name = extractWilsyFG84LeadCreateField(text, [
+    /\blead\s+(?:named|called)\s+([^.;]+?)(?:\s+at\s+|\s+company|\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    /\b(?:create|add|capture|prepare|draft|register)\s+(?:a\s+)?(?:new\s+)?(?:lead|prospect)\s+(?:named|called|for)?\s*([^.;]+?)(?:\s+at\s+|\s+company|\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+  ]);
+
+  const company = extractWilsyFG84LeadCreateField(text, [
+    /\bcompany\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    /\bat\s+([^.;]+?)(?:\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+  ]);
+
+  const email = extractWilsyFG84LeadCreateField(text, [
+    /\bemail(?:\s+address)?\s*(?:is|=|:)?\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i,
+    /\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b/i,
+  ]);
+
+  const phone = extractWilsyFG84LeadCreateField(text, [
+    /\bphone\s*(?:number)?\s*(?:is|=|:)?\s*(\+?[0-9][0-9\s().-]{6,})/i,
+  ]);
+
+  const mobile = extractWilsyFG84LeadCreateField(text, [
+    /\bmobile\s*(?:number)?\s*(?:is|=|:)?\s*(\+?[0-9][0-9\s().-]{6,})/i,
+  ]);
+
+  const estimatedDealValue = extractWilsyFG84LeadCreateField(text, [
+    /\b(?:estimated\s+deal\s+value|deal\s+value|pipeline\s+value|value)\s*(?:is|=|:)?\s*(?:R|ZAR)?\s*([0-9][0-9\s,._]*)/i,
+  ]).replace(/[^0-9.]/g, '');
+
+  const priority = extractWilsyFG84LeadCreateField(text, [
+    /\bpriority\s*(?:is|=|:)?\s*(urgent|high|medium|low)\b/i,
+  ]);
+
+  const source = extractWilsyFG84LeadCreateField(text, [
+    /\bsource\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+website|\s+employees|\s+due|\s+notes|$)/i,
+  ]) || (lower.includes('referral') ? 'Referral' : lower.includes('partner') ? 'Partner' : lower.includes('outbound') ? 'Outbound' : 'Wilsy AI');
+
+  const draft = {
+    module: 'Lead',
+    name,
+    company,
+    email,
+    phone,
+    mobile: mobile || phone,
+    countryCode: 'ZA',
+    mobileCountryCode: 'ZA',
+    title: extractWilsyFG84LeadCreateField(text, [
+      /\btitle\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]),
+    priority: priority ? priority[0].toUpperCase() + priority.slice(1).toLowerCase() : 'Medium',
+    estimatedDealValue,
+    dealValue: estimatedDealValue,
+    industry: extractWilsyFG84LeadCreateField(text, [
+      /\bindustry\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]),
+    stage: extractWilsyFG84LeadCreateField(text, [
+      /\bstage\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]) || 'NURTURE',
+    status: extractWilsyFG84LeadCreateField(text, [
+      /\bstatus\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]) || 'NEW',
+    owner: extractWilsyFG84LeadCreateField(text, [
+      /\bowner\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]),
+    source,
+    website: extractWilsyFG84LeadCreateField(text, [
+      /\b(?:website|site)\s*(?:is|=|:)?\s*(https?:\/\/[^\s,;]+|[A-Z0-9.-]+\.[A-Z]{2,})/i,
+    ]),
+    employees: extractWilsyFG84LeadCreateField(text, [
+      /\bemployees\s*(?:is|=|:)?\s*([0-9][0-9\s,._]*)/i,
+    ]).replace(/[^0-9.]/g, ''),
+    dueDate: extractWilsyFG84LeadCreateField(text, [
+      /\b(?:due|follow\s*up|follow-up)\s*(?:date)?\s*(?:is|=|:)?\s*([0-9]{4}[-/][0-9]{2}[-/][0-9]{2})/i,
+    ]).replace(/\//g, '-'),
+    notes: extractWilsyFG84LeadCreateField(text, [
+      /\bnotes\s*(?:are|is|=|:)?\s*(.+)$/i,
+    ]) || text,
+    description: extractWilsyFG84LeadCreateField(text, [
+      /\bnotes\s*(?:are|is|=|:)?\s*(.+)$/i,
+    ]) || text,
+  };
+
+  Object.keys(draft).forEach((key) => {
+    if (draft[key] === '') delete draft[key];
+  });
+
+  if (!draft.name || !draft.company || !draft.email) {
+    return null;
+  }
+
+  return {
+    source: 'P60K5Q10FG84_GLOBAL_ASK_DIRECT_LEAD_CREATE_DRAFT',
+    leadCreateDraft: draft,
+    createLeadDraft: draft,
+    packet: {
+      mutation: 'NO_BACKEND_MUTATION_REQUIRES_OPERATOR_SAVE',
+      operatorModel: {
+        intent: 'create_lead',
+        action: 'prepare_create_lead_draft',
+        leadCreateDraft: draft,
+        createLeadDraft: draft,
+        answer: `I prepared a governed Create Lead draft for ${draft.name} at ${draft.company}. Review it and press Save.`,
+      },
+      toolRuns: [
+        {
+          tool: 'crm_lead_create_draft',
+          status: 'APPROVAL_REQUIRED',
+          mutation: 'NO_BACKEND_MUTATION_REQUIRES_OPERATOR_SAVE',
+          leadCreateDraft: draft,
+          createLeadDraft: draft,
+        },
+      ],
+    },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * @function dispatchWilsyFG84GlobalAskLeadCreateDraft
+ * @description Stores and dispatches a governed Create Lead draft from the global Ask bar into the Leads workspace.
+ * @param {Object} eventDetail - Create Lead draft event detail.
+ * @returns {boolean} True when dispatched.
+ * @collaboration Global Ask submit, browser event bridge, pending draft storage, route transition, and Leads Create hydration.
+ */
+function dispatchWilsyFG84GlobalAskLeadCreateDraft(eventDetail = {}) {
+  /* P60K5Q10FG84_GLOBAL_ASK_DIRECT_LEAD_CREATE_ROUTER */
+  if (typeof window === 'undefined' || !eventDetail?.leadCreateDraft) {
+    return false;
+  }
+
+  try {
+    window.sessionStorage?.setItem?.('wilsy.crm.leads.pendingCreateDraft', JSON.stringify(eventDetail));
+  } catch {
+    // Session storage is optional; live event remains primary.
+  }
+
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-open-request', { detail: { mode: 'create', ...eventDetail } }));
+  window.dispatchEvent(new CustomEvent('wilsy:crm-module-open-request', { detail: { module: 'leads', mode: 'create', ...eventDetail } }));
+
+  try {
+    if (!window.location.pathname.includes('/crm/leads')) {
+      window.history.pushState({ wilsyModule: 'leads', wilsyMode: 'create' }, '', '/crm/leads');
+      window.dispatchEvent(new PopStateEvent('popstate', { state: { wilsyModule: 'leads', wilsyMode: 'create' } }));
+      window.dispatchEvent(new CustomEvent('wilsy:workspace-context-changed', { detail: { module: 'leads', mode: 'create' } }));
+
+      window.setTimeout(() => {
+        if (!document.querySelector('[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"]')) {
+          window.location.assign('/crm/leads');
+        }
+      }, 180);
+    }
+  } catch {
+    try {
+      window.location.assign('/crm/leads');
+    } catch {
+      return true;
+    }
+  }
+
+  return true;
+}
+
+
 /**
  * @function dispatchWilsyFG83BGlobalLeadCreateDraftBridge
  * @description Dispatches governed Lead create drafts from global Wilsy AI Ask responses into the Leads Create workspace.
@@ -1903,6 +2114,41 @@ export function WilsyOSIntelligenceDock() {
    */
   async function handleWilsyAskSubmit(event) {
     event.preventDefault();
+
+    const wilsyFG84GlobalLeadCreateDraft = buildWilsyFG84GlobalLeadCreateDraft(operatorPrompt);
+    if (dispatchWilsyFG84GlobalAskLeadCreateDraft(wilsyFG84GlobalLeadCreateDraft)) {
+      /* P60K5Q10FG84_GLOBAL_ASK_SUBMIT_DIRECT_ROUTER */
+      if (typeof setWilsyHasSubmittedOperatorResult === 'function') {
+        setWilsyHasSubmittedOperatorResult(true);
+      }
+      if (typeof setLiveOperatorModel === 'function') {
+        setLiveOperatorModel(wilsyFG84GlobalLeadCreateDraft.packet.operatorModel);
+      }
+      if (typeof setWilsyInlineComposerStream === 'function') {
+        setWilsyInlineComposerStream({
+          active: false,
+          text: wilsyFG84GlobalLeadCreateDraft.packet.operatorModel.answer,
+          streamKey: 'P60K5Q10FG84_GLOBAL_ASK_DIRECT_LEAD_CREATE_ROUTER',
+          tokens: [
+            {
+              id: 'open_create_lead_draft',
+              intent: 'create_lead',
+              label: 'Open Create Lead draft',
+              prompt: 'Open the governed Create Lead draft',
+            },
+          ],
+        });
+      }
+      if (typeof setOperatorBackendBusy === 'function') {
+        setOperatorBackendBusy(false);
+      }
+      if (typeof setOperatorPrompt === 'function') {
+        setOperatorPrompt('');
+      }
+      return;
+    }
+
+
 
     const question = operatorPrompt.trim();
     setWilsySubmittedQuestion(question);
