@@ -1,0 +1,27 @@
+{
+  "contractVersion": "P60K5Q10AR_CAPABILITY_MANIFEST",
+  "capabilityId": "business_document_generate",
+  "businessName": "Generate Business Document",
+  "domain": "documents",
+  "action": "generate_document",
+  "status": "STAGED_FOR_REVIEW",
+  "mutationRisk": "draft",
+  "approvalRequired": true,
+  "evidenceRequired": true,
+  "generatedAt": "2026-07-05T00:26:53.956Z",
+  "requestedBy": {
+    "tenantId": "MASTER",
+    "operatorId": "P60K5Q10AZ_OPERATOR_SMOKE"
+  },
+  "sourceQuestion": "send a contract form",
+  "intentExamples": ["generate a proposal", "draft an agreement", "create a business letter"],
+  "requiredInputs": ["documentType", "parties", "purpose", "content", "approval"],
+  "connectors": ["Document Generator", "Evidence Vault", "Template Registry"],
+  "publicationPolicy": {
+    "autoPublish": false,
+    "humanApprovalRequired": true,
+    "tenantIsolationRequired": true,
+    "noMutationWithoutApproval": true,
+    "rollbackRequired": true
+  }
+}

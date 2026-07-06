@@ -1,0 +1,27 @@
+{
+  "contractVersion": "P60K5Q10AR_CAPABILITY_MANIFEST",
+  "capabilityId": "calendar_connector_bind",
+  "businessName": "Bind Calendar Connector",
+  "domain": "calendar",
+  "action": "bind_calendar_connector",
+  "status": "STAGED_FOR_REVIEW",
+  "mutationRisk": "configuration",
+  "approvalRequired": true,
+  "evidenceRequired": true,
+  "generatedAt": "2026-07-04T23:44:46.371Z",
+  "requestedBy": {
+    "tenantId": "MASTER",
+    "operatorId": "P60K5Q10AR_FOUNDRY_OPERATOR"
+  },
+  "sourceQuestion": "Connect Google Calendar so I can create event links",
+  "intentExamples": ["connect Google Calendar", "connect Microsoft Calendar", "create event link"],
+  "requiredInputs": ["provider", "tenantOAuth", "calendarId", "approval"],
+  "connectors": ["CRM Calendar", "Google Calendar", "Microsoft Graph Calendar"],
+  "publicationPolicy": {
+    "autoPublish": false,
+    "humanApprovalRequired": true,
+    "tenantIsolationRequired": true,
+    "noMutationWithoutApproval": true,
+    "rollbackRequired": true
+  }
+}

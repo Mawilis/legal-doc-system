@@ -1,0 +1,69 @@
+{
+  "contractVersion": "P60K5Q10AR_TOOL_CONTRACT",
+  "capabilityId": "business_document_generate",
+  "businessName": "Generate Business Document",
+  "inputSchema": {
+    "type": "object",
+    "required": ["documentType", "parties", "purpose", "content", "approval"],
+    "properties": {
+      "documentType": {
+        "type": "string"
+      },
+      "parties": {
+        "type": "string"
+      },
+      "purpose": {
+        "type": "string"
+      },
+      "content": {
+        "type": "string"
+      },
+      "approval": {
+        "type": "string"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": [
+      "result",
+      "businessAnswer",
+      "sourceTrace",
+      "institutionalHeaders",
+      "strikePayload"
+    ],
+    "properties": {
+      "result": {
+        "type": "string"
+      },
+      "businessAnswer": {
+        "type": "string"
+      },
+      "sourceTrace": {
+        "type": "array"
+      },
+      "mutation": {
+        "type": "boolean"
+      },
+      "evidenceReceipt": {
+        "type": "object"
+      }
+    }
+  },
+  "permissions": {
+    "tenantScoped": true,
+    "operatorScoped": true,
+    "approvalRequired": true,
+    "mutationRisk": "draft"
+  },
+  "evidenceContract": {
+    "institutionalHeadersRequired": true,
+    "strikePayloadRequired": true,
+    "sourceTraceRequired": true,
+    "noFakeAnswerRequired": true
+  },
+  "rollback": {
+    "required": true,
+    "strategy": "tool-specific rollback plan required before approval"
+  }
+}

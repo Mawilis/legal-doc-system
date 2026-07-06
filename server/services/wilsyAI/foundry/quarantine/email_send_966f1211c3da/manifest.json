@@ -1,0 +1,27 @@
+{
+  "contractVersion": "P60K5Q10AR_CAPABILITY_MANIFEST",
+  "capabilityId": "email_send",
+  "businessName": "Send Email",
+  "domain": "communications",
+  "action": "send_email",
+  "status": "STAGED_FOR_REVIEW",
+  "mutationRisk": "write",
+  "approvalRequired": true,
+  "evidenceRequired": true,
+  "generatedAt": "2026-07-04T23:44:46.553Z",
+  "requestedBy": {
+    "tenantId": "MASTER",
+    "operatorId": "P60K5Q10AR_OPERATOR_SMOKE"
+  },
+  "sourceQuestion": "Send this board memo to wilsy.wk@gmail.com",
+  "intentExamples": ["send an email", "email the client", "send this memo to the board"],
+  "requiredInputs": ["recipients", "subject", "body", "tenantId", "operatorId"],
+  "connectors": ["SMTP", "Google Gmail", "Microsoft Graph Mail"],
+  "publicationPolicy": {
+    "autoPublish": false,
+    "humanApprovalRequired": true,
+    "tenantIsolationRequired": true,
+    "noMutationWithoutApproval": true,
+    "rollbackRequired": true
+  }
+}

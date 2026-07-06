@@ -1,0 +1,15 @@
+{
+  "promotionGates": [
+    "Secret Guard",
+    "Documentation Guard",
+    "Syntax Check",
+    "Client Build",
+    "Tool Routing Evaluation",
+    "Tenant Isolation Evaluation",
+    "Mutation Approval Evaluation",
+    "Evidence Receipt Evaluation",
+    "Rollback Plan Review",
+    "Load Smoke Test",
+    "Human/Admin Approval"
+  ]
+}

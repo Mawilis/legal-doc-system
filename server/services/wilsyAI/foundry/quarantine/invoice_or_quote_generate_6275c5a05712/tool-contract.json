@@ -1,0 +1,69 @@
+{
+  "contractVersion": "P60K5Q10AR_TOOL_CONTRACT",
+  "capabilityId": "invoice_or_quote_generate",
+  "businessName": "Generate Invoice or Quote",
+  "inputSchema": {
+    "type": "object",
+    "required": ["customer", "lineItems", "amounts", "taxProfile", "approval"],
+    "properties": {
+      "customer": {
+        "type": "string"
+      },
+      "lineItems": {
+        "type": "string"
+      },
+      "amounts": {
+        "type": "string"
+      },
+      "taxProfile": {
+        "type": "string"
+      },
+      "approval": {
+        "type": "string"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": [
+      "result",
+      "businessAnswer",
+      "sourceTrace",
+      "institutionalHeaders",
+      "strikePayload"
+    ],
+    "properties": {
+      "result": {
+        "type": "string"
+      },
+      "businessAnswer": {
+        "type": "string"
+      },
+      "sourceTrace": {
+        "type": "array"
+      },
+      "mutation": {
+        "type": "boolean"
+      },
+      "evidenceReceipt": {
+        "type": "object"
+      }
+    }
+  },
+  "permissions": {
+    "tenantScoped": true,
+    "operatorScoped": true,
+    "approvalRequired": true,
+    "mutationRisk": "write"
+  },
+  "evidenceContract": {
+    "institutionalHeadersRequired": true,
+    "strikePayloadRequired": true,
+    "sourceTraceRequired": true,
+    "noFakeAnswerRequired": true
+  },
+  "rollback": {
+    "required": true,
+    "strategy": "tool-specific rollback plan required before approval"
+  }
+}

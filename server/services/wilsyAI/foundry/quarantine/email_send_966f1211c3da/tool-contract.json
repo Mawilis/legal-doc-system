@@ -1,0 +1,69 @@
+{
+  "contractVersion": "P60K5Q10AR_TOOL_CONTRACT",
+  "capabilityId": "email_send",
+  "businessName": "Send Email",
+  "inputSchema": {
+    "type": "object",
+    "required": ["recipients", "subject", "body", "tenantId", "operatorId"],
+    "properties": {
+      "recipients": {
+        "type": "string"
+      },
+      "subject": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      },
+      "tenantId": {
+        "type": "string"
+      },
+      "operatorId": {
+        "type": "string"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": [
+      "result",
+      "businessAnswer",
+      "sourceTrace",
+      "institutionalHeaders",
+      "strikePayload"
+    ],
+    "properties": {
+      "result": {
+        "type": "string"
+      },
+      "businessAnswer": {
+        "type": "string"
+      },
+      "sourceTrace": {
+        "type": "array"
+      },
+      "mutation": {
+        "type": "boolean"
+      },
+      "evidenceReceipt": {
+        "type": "object"
+      }
+    }
+  },
+  "permissions": {
+    "tenantScoped": true,
+    "operatorScoped": true,
+    "approvalRequired": true,
+    "mutationRisk": "write"
+  },
+  "evidenceContract": {
+    "institutionalHeadersRequired": true,
+    "strikePayloadRequired": true,
+    "sourceTraceRequired": true,
+    "noFakeAnswerRequired": true
+  },
+  "rollback": {
+    "required": true,
+    "strategy": "tool-specific rollback plan required before approval"
+  }
+}

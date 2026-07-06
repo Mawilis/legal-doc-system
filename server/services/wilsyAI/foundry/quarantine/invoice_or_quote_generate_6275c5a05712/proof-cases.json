@@ -1,0 +1,39 @@
+{
+  "proofCases": [
+    {
+      "caseId": "intent-routing",
+      "requirement": "Route tenant requests to invoice_or_quote_generate",
+      "expected": "Correct tool selected before domain fallback."
+    },
+    {
+      "caseId": "required-inputs",
+      "requirement": "Detect missing required inputs.",
+      "expected": "Missing fields are requested in business English."
+    },
+    {
+      "caseId": "tenant-isolation",
+      "requirement": "Restrict data/tool execution to tenant scope.",
+      "expected": "No cross-tenant data access."
+    },
+    {
+      "caseId": "approval-gate",
+      "requirement": "Block write/configuration actions without approval.",
+      "expected": "No mutation when approval is absent."
+    },
+    {
+      "caseId": "source-trace",
+      "requirement": "Return source/tool checked.",
+      "expected": "Every answer includes sourceTrace."
+    },
+    {
+      "caseId": "evidence-receipt",
+      "requirement": "Return institutionalHeaders and strikePayload.",
+      "expected": "Evidence contract is complete."
+    },
+    {
+      "caseId": "no-fake-answer",
+      "requirement": "Do not hallucinate unsupported capability.",
+      "expected": "Unsupported path stages candidate and tells truth."
+    }
+  ]
+}
