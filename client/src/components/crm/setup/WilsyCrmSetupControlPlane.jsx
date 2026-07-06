@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState, useRef} from 'react';
 import { createPortal } from 'react-dom';
 import styles from './WilsyCrmSetupControlPlane.module.css';
+import { installWilsyCrmControlRepairBridge } from '../shared/wilsyCrmControlRepairBridge.js';
+installWilsyCrmControlRepairBridge('setup');
 
 /**
  * @function buildSetupDomains
@@ -1304,6 +1306,8 @@ function createWilsySetupWorkflowActionRevealNode(action = {}, workflowState = {
  * @collaboration CRMDashboard setup owner, CRM top rail, setup domain rail, operating view area, authority rail, and review queue.
  */
 export default function WilsyCrmSetupControlPlane() {
+
+
   const domains = useMemo(() => buildSetupDomains(), []);
   const evidencePack = useMemo(() => buildEvidencePack(), []);
   const [activeDomainId, setActiveDomainId] = useState('authority');
