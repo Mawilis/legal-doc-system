@@ -264,7 +264,6 @@ import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } f
 import styles from './WilsyLeadOperatingRoom.module.css';
 
 import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
-import { createPortal } from 'react-dom';
 
 
 const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
@@ -1888,34 +1887,6 @@ function openCrmGlobalThemeAuthorityFallback() {
 
 
 
-/**
- * @function renderWilsyLeadPortalSurface
- * @description Renders Leads overlay surfaces through document.body so Proof Trail and command drawers escape workspace clipping and stacking contexts.
- * @param {JSX.Element} surface - Overlay surface to render.
- * @param {string} label - Surface label for proof diagnostics.
- * @returns {JSX.Element|null} Portal-mounted surface.
- * @collaboration Leads Proof Trail, command drawer, React portal layer, CRM records workspace, and operator overlay recovery.
- */
-function renderWilsyLeadPortalSurface(surface, label = 'Lead overlay') {
-  if (!surface) {
-    return null;
-  }
-
-  if (typeof document === 'undefined' || !document.body) {
-    return surface;
-  }
-
-  return createPortal(
-    <div
-      data-wilsy-lead-portal-layer="proof-trail"
-      data-wilsy-lead-portal-label={label}
-    >
-      {surface}
-    </div>,
-    document.body,
-  );
-}
-
 const WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY = 'wilsy.crm.leads.filterSelection.v3';
 
 const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
@@ -2582,6 +2553,60 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   const [openRowActionId, setOpenRowActionId] = useState('');
   const [currentLeadPage, setCurrentLeadPage] = useState(1);
   const [leadPageSize, setLeadPageSize] = useState(20);
+
+  /**
+   * @function openWilsyLeadProofTrailViewpoint
+   * @description Routes generated row Proof Trail actions to the visible Leads Proof viewpoint instead of the hidden drawer edge.
+   * @returns {void}
+   * @collaboration Leads generated row action menu, Proof tab, record viewpoint, row evidence trail, and operator-visible task completion.
+   */
+  function openWilsyLeadProofTrailViewpoint() {
+    setActiveTopTab('proof');
+    setCommandOpen(false);
+    setCreateMenuOpen(false);
+    setMoreMenuOpen(false);
+    setThemeMenuOpen(false);
+    setOpenRowActionId('');
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.document) {
+      return undefined;
+    }
+
+    /**
+     * @function captureWilsyLeadProofTrailClick
+     * @description Captures generated Proof Trail menu clicks before the hidden drawer command can run.
+     * @param {Event} event - Native browser click event.
+     * @returns {void}
+     * @collaboration Document capture phase, generated Leads action menu, Proof viewpoint routing, and drawer suppression.
+     */
+    const captureWilsyLeadProofTrailClick = (event) => {
+      const actionElement = event?.target?.closest?.('button, [role="menuitem"], a, li, [data-action], [data-command]');
+      const actionText = String(actionElement?.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+      if (actionText !== 'proof trail') {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+      }
+
+      openWilsyLeadProofTrailViewpoint();
+    };
+
+    window.document.addEventListener('click', captureWilsyLeadProofTrailClick, true);
+
+    return () => {
+      window.document.removeEventListener('click', captureWilsyLeadProofTrailClick, true);
+    };
+  }, []);
+
+
   const hasAutoHydratedTelemetryRef = useRef(false);
   const leadThemeOptions = useMemo(() => resolveCrmThemeEngineOptions(), []);
   const activeLeadThemeOption = useMemo(() => ({
@@ -5524,8 +5549,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     const isMaster = ['MASTER', 'FOUNDER', 'SUPER_ADMIN', 'ROOT'].includes(role);
     const isAdmin = isMaster || ['TENANT_ADMIN', 'ADMIN', 'CRM_ADMIN'].includes(role);
 
-    return renderWilsyLeadPortalSurface((
-      <section className={styles.drawer} aria-label="Lead command center" data-wilsy-lead-overlay-surface="proof-trail-command-drawer">
+    return (
+      <section className={styles.drawer} aria-label="Lead command center">
         <header><span><small>Command Center</small><strong>{tenantId} · {role}</strong></span><button type="button" onClick={() => setCommandOpen(false)}>Close</button></header>
         <div className={styles.commandTiles}>
           {isMaster ? <button type="button"><UserRoundCog size={18} />Manage Organizations</button> : null}
@@ -5536,7 +5561,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           <button type="button"><ClipboardList size={18} />Sales Shortcuts</button>
         </div>
       </section>
-    ), 'Lead proof trail command drawer');
+    );
   }
 
 
