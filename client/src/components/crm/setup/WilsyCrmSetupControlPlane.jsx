@@ -4,6 +4,74 @@ import { createPortal } from 'react-dom';
 import styles from './WilsyCrmSetupControlPlane.module.css';
 
 
+
+/**
+ * @function dispatchWilsyFG83BGlobalLeadCreateDraftBridge
+ * @description Dispatches governed Lead create drafts from global Wilsy AI Ask responses into the Leads Create workspace.
+ * @param {Object} packet - Wilsy AI operator packet.
+ * @returns {boolean} True when a Create Lead draft was dispatched.
+ * @collaboration Global Wilsy AI, CRM Setup copilot, Leads Create surface, pending draft storage, and no-blind-write operator approval.
+ */
+function dispatchWilsyFG83BGlobalLeadCreateDraftBridge(packet = {}) {
+  /* P60K5Q10FG83B_GLOBAL_AI_ASK_RESPONSE_LEAD_CREATE_BRIDGE */
+  if (typeof window === 'undefined' || !packet || typeof packet !== 'object') {
+    return false;
+  }
+
+  const operatorModel = packet.operatorModel || packet.model || packet.payload?.operatorModel || {};
+  const firstTool = Array.isArray(packet.toolRuns) ? packet.toolRuns[0] : null;
+  const draft =
+    operatorModel.leadCreateDraft ||
+    operatorModel.createLeadDraft ||
+    operatorModel.draft?.leadCreateDraft ||
+    operatorModel.draft?.lead ||
+    firstTool?.leadCreateDraft ||
+    firstTool?.createLeadDraft ||
+    firstTool?.draft?.leadCreateDraft ||
+    firstTool?.draft?.lead ||
+    firstTool?.draft;
+
+  const isCreateLead =
+    operatorModel.intent === 'create_lead' ||
+    operatorModel.action === 'prepare_create_lead_draft' ||
+    firstTool?.tool === 'crm_lead_create_draft' ||
+    Boolean(draft);
+
+  if (!isCreateLead || !draft || typeof draft !== 'object') {
+    return false;
+  }
+
+  const eventDetail = {
+    source: 'P60K5Q10FG83B_GLOBAL_AI_ASK_RESPONSE_LEAD_CREATE_BRIDGE',
+    leadCreateDraft: draft,
+    createLeadDraft: draft,
+    packet,
+    generatedAt: new Date().toISOString(),
+  };
+
+  try {
+    window.sessionStorage?.setItem?.('wilsy.crm.leads.pendingCreateDraft', JSON.stringify(eventDetail));
+  } catch {
+    // Session storage is optional; live event remains primary.
+  }
+
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-open-request', { detail: { mode: 'create', ...eventDetail } }));
+  window.dispatchEvent(new CustomEvent('wilsy:crm-module-open-request', { detail: { module: 'leads', mode: 'create', ...eventDetail } }));
+
+  try {
+    if (!window.location.pathname.includes('/crm/leads')) {
+      window.history.pushState({ wilsyModule: 'leads', wilsyMode: 'create' }, '', '/crm/leads');
+      window.dispatchEvent(new PopStateEvent('popstate', { state: { wilsyModule: 'leads', wilsyMode: 'create' } }));
+    }
+  } catch {
+    // Navigation is best-effort; pending draft storage hydrates when Leads mounts.
+  }
+
+  return true;
+}
+
+
 /**
  * @function dispatchWilsyFG82GlobalLeadCreateDraftBridge
  * @description Dispatches governed Create Lead drafts from any global Wilsy AI packet into the mounted Leads workspace.
