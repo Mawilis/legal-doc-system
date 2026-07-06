@@ -267,6 +267,7 @@ import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
 
 
 const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
+const WILSY_LEADS_AI_OPERATOR_ENDPOINT = '/api/wilsy/ai/operator/resolve';
 const WILSY_LEADS_FILTER_LOCAL_STATE_KEY = 'wilsy.crm.leads.filterButtons.v1';
 
 /**
@@ -328,6 +329,72 @@ function resolveWilsyLeadOperatorHeaders() {
     },
   };
 }
+
+/**
+ * @function normalizeWilsyLeadAIText
+ * @description Normalizes Wilsy AI question and answer text for the continuous Leads response surface.
+ * @param {*} value - Candidate text.
+ * @returns {string} Normalized text.
+ * @collaboration Wilsy AI Operator Kernel, CRM Leads context, and continuous typographic response discipline.
+ */
+function normalizeWilsyLeadAIText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * @function resolveWilsyLeadAIWorkspaceSurface
+ * @description Resolves the current CRM Leads workspace surface label for Operator Kernel routing.
+ * @param {string} activeTab - Active Leads top tab.
+ * @returns {string} Workspace surface label.
+ * @collaboration CRM Leads records, proof, sources, sort, pipeline, and Wilsy AI operator routing.
+ */
+function resolveWilsyLeadAIWorkspaceSurface(activeTab = 'records') {
+  const surfaceByTab = {
+    records: 'CRM Leads Records Lead Table Evidence Ledger Source Authority',
+    signals: 'CRM Leads Signals Lead Intelligence Evidence Ledger',
+    pipeline: 'CRM Leads Revenue Movement Pipeline Telemetry',
+    proof: 'CRM Leads Proof Trail Evidence Ledger Source Authority Compliance Gap',
+    sources: 'CRM Leads Source Authority Ingestion Routes Evidence Ledger',
+    sort: 'CRM Leads Sort Command Source Authority Evidence Ledger Compliance Gap',
+  };
+
+  return surfaceByTab[activeTab] || surfaceByTab.records;
+}
+
+/**
+ * @function resolveWilsyLeadAIAnswerText
+ * @description Extracts the best typographic answer from the Operator Kernel response packet.
+ * @param {Object} packet - Wilsy AI response packet.
+ * @returns {string} Answer text.
+ * @collaboration Wilsy AI frontend, Operator Kernel route response, and no-fake-answer fallbacks.
+ */
+function resolveWilsyLeadAIAnswerText(packet = {}) {
+  return normalizeWilsyLeadAIText(
+    packet?.operatorModel?.operatorModel?.answer ||
+    packet?.operatorModel?.answer ||
+    packet?.answer ||
+    packet?.error?.message ||
+    ''
+  );
+}
+
+/**
+ * @function resolveWilsyLeadAIInlineCommands
+ * @description Extracts inline command links from the Operator Kernel response packet.
+ * @param {Object} packet - Wilsy AI response packet.
+ * @returns {Array<Object>} Inline command links.
+ * @collaboration Continuous typographic response flow, inline actions, and approved workflow routing.
+ */
+function resolveWilsyLeadAIInlineCommands(packet = {}) {
+  const commandLinks =
+    packet?.operatorModel?.operatorModel?.inlineCommandLinks ||
+    packet?.operatorModel?.inlineCommandLinks ||
+    packet?.inlineCommandLinks ||
+    [];
+
+  return Array.isArray(commandLinks) ? commandLinks : [];
+}
+
 
 /**
  * @function resolveWilsyLeadsFilterPanel
@@ -2441,6 +2508,10 @@ export default function WilsyLeadOperatingRoom({
   const tenantId = resolveTenantId(tenantConfig, user);
   const [mode, setMode] = useState('list');
   const [activeTopTab, setActiveTopTab] = useState('records');
+  const [wilsyLeadAiQuestion, setWilsyLeadAiQuestion] = useState('');
+  const [wilsyLeadAiPacket, setWilsyLeadAiPacket] = useState(null);
+  const [wilsyLeadAiLoading, setWilsyLeadAiLoading] = useState(false);
+  const [wilsyLeadAiError, setWilsyLeadAiError] = useState('');
   const [leadSortViewpoint, setLeadSortViewpoint] = useState({ field: 'lastActivity', direction: 'desc' });
   const [activeListViewId, setActiveListViewId] = useState('ALL_LEADS');
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -3014,6 +3085,206 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     setSetupOpen(false);
     return undefined;
   }
+
+  /**
+   * @function buildWilsyLeadAIContext
+   * @description Builds live CRM Leads context for the Wilsy AI Operator Kernel without depending on fake data.
+   * @returns {Object} CRM Leads context packet.
+   * @collaboration Leads active tab, sort posture, source posture, proof state, and Wilsy AI universal operator growth.
+   */
+  function buildWilsyLeadAIContext() {
+    /**
+     * @function safeLeadRows
+     * @description Resolves the currently visible CRM Leads rows for Wilsy AI context without inventing data.
+     * @returns {Array<Object>} Current Leads rows available to the workspace.
+     * @collaboration CRM Leads live context, Wilsy AI Operator Kernel, and no-fake-data response discipline.
+     */
+    const safeLeadRows = (() => {
+      if (typeof visibleLeads !== 'undefined' && Array.isArray(visibleLeads)) return visibleLeads;
+      if (typeof filteredLeads !== 'undefined' && Array.isArray(filteredLeads)) return filteredLeads;
+      if (typeof leadRecords !== 'undefined' && Array.isArray(leadRecords)) return leadRecords;
+      if (typeof leads !== 'undefined' && Array.isArray(leads)) return leads;
+      return [];
+    })();
+    /**
+     * @function safeSourceRows
+     * @description Resolves source route rows for Wilsy AI context without creating synthetic source authority.
+     * @returns {Array<Object>} Source route rows available to the Leads workspace.
+     * @collaboration CRM Leads source posture, evidence routing, Wilsy AI Operator Kernel, and no-fake-data response discipline.
+     */
+    const safeSourceRows = (() => {
+      if (typeof sourceRoutes !== 'undefined' && Array.isArray(sourceRoutes)) return sourceRoutes;
+      if (typeof leadSourceRoutes !== 'undefined' && Array.isArray(leadSourceRoutes)) return leadSourceRoutes;
+      if (typeof sourceRows !== 'undefined' && Array.isArray(sourceRows)) return sourceRows;
+      return [];
+    })();
+    const liveSourceCount = safeSourceRows.filter(source => (
+      source?.live === true ||
+      source?.status === 'LIVE' ||
+      source?.status === 'CONNECTED' ||
+      source?.posture === 'UPLINK'
+    )).length;
+    const safeActiveSort = typeof activeSort !== 'undefined' ? activeSort : {};
+    const safeSortDirection = typeof activeSortDirection !== 'undefined' ? activeSortDirection : 'desc';
+    const safeLiveSources = typeof liveSources !== 'undefined' ? Number(liveSources) || 0 : 0;
+    const safeComplianceVerified = typeof complianceVerified !== 'undefined' ? Number(complianceVerified) || 0 : 0;
+    const safeCompliancePending = typeof compliancePending !== 'undefined' ? Number(compliancePending) || 0 : 0;
+    const safeComplianceFailed = typeof complianceFailed !== 'undefined' ? Number(complianceFailed) || 0 : 0;
+    const safeRootHash = typeof rootHash !== 'undefined' ? String(rootHash || '') : '';
+
+    return {
+      activeTopTab,
+      workspaceRoute: '/crm/leads',
+      workspaceSurface: resolveWilsyLeadAIWorkspaceSurface(activeTopTab),
+      visibleLeadCount: safeLeadRows.length,
+      sourceRouteCount: safeSourceRows.length,
+      sourceRouteLiveCount: liveSourceCount || safeLiveSources,
+      complianceVerified: safeComplianceVerified,
+      compliancePending: safeCompliancePending,
+      complianceFailed: safeComplianceFailed,
+      activeSortField: safeActiveSort?.id || safeActiveSort?.field || 'lastActivity',
+      activeSortDirection: safeActiveSort?.direction || safeSortDirection || 'desc',
+      rootHash: safeRootHash,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * @function handleWilsyLeadAIQuestionSubmit
+   * @description Sends the operator question and live CRM Leads context to the Wilsy AI Operator Kernel.
+   * @param {Event} event - Form submit event.
+   * @returns {Promise<void>} Resolves after packet state updates.
+   * @collaboration CRM Leads frontend, FG46 Operator route, institutional headers, strike payload evidence, and continuous typographic output.
+   */
+  async function handleWilsyLeadAIQuestionSubmit(event) {
+    event?.preventDefault?.();
+
+    const operatorQuestion = normalizeWilsyLeadAIText(wilsyLeadAiQuestion);
+
+    if (!operatorQuestion) {
+      setWilsyLeadAiError('Ask Wilsy AI a CRM Leads question first.');
+      return;
+    }
+
+    const generatedAt = new Date().toISOString();
+    const { tenantId, operatorId, headers } = resolveWilsyLeadOperatorHeaders();
+    const crmLeadsContext = buildWilsyLeadAIContext();
+    const institutionalHeaders = {
+      tenantId,
+      operatorId,
+      route: WILSY_LEADS_AI_OPERATOR_ENDPOINT,
+      commandSurface: 'CRM_LEADS_WILSY_AI_TYPOGRAPHIC_SURFACE',
+      timestamp: generatedAt,
+      generatedAt,
+    };
+    const strikePayload = {
+      institutionalHeaders,
+      operatorQuestion,
+      workspaceRoute: '/crm/leads',
+      workspaceSurface: crmLeadsContext.workspaceSurface,
+      crmLeadsContext,
+      generatedAt,
+    };
+
+    setWilsyLeadAiLoading(true);
+    setWilsyLeadAiError('');
+
+    try {
+      const response = await fetch(resolveWilsyLeadApiBase() + WILSY_LEADS_AI_OPERATOR_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'X-Wilsy-Command-Surface': 'CRM_LEADS_WILSY_AI_TYPOGRAPHIC_SURFACE',
+        },
+        body: JSON.stringify({
+          tenantId,
+          operatorId,
+          wilsyAiContext: 'ASK',
+          operatorQuestion,
+          workspaceRoute: '/crm/leads',
+          workspaceSurface: crmLeadsContext.workspaceSurface,
+          crmLeadsContext,
+          institutionalHeaders,
+          strikePayload,
+        }),
+      });
+      const packet = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(packet?.error?.message || 'Wilsy AI Operator route failed.');
+      }
+
+      setWilsyLeadAiPacket(packet);
+    } catch (error) {
+      setWilsyLeadAiPacket(null);
+      setWilsyLeadAiError(error?.message || 'Wilsy AI could not answer this yet.');
+    } finally {
+      setWilsyLeadAiLoading(false);
+    }
+  }
+
+  /**
+   * @function renderWilsyLeadAIResponseSurface
+   * @description Renders a single continuous typographic Wilsy AI response surface with inline command links.
+   * @returns {JSX.Element} Continuous typographic response surface.
+   * @collaboration Wilsy AI universal operator, CRM Leads live context, inline command actions, and no-card interaction doctrine.
+   */
+  function renderWilsyLeadAIResponseSurface() {
+    const answer = resolveWilsyLeadAIAnswerText(wilsyLeadAiPacket);
+    const inlineCommands = resolveWilsyLeadAIInlineCommands(wilsyLeadAiPacket);
+
+    return (
+      <section className={styles.leadAIResponseSurface} data-wilsy-ai-response-surface="continuous_typographic">
+        <form className={styles.leadAIQuestionForm} onSubmit={handleWilsyLeadAIQuestionSubmit}>
+          <label htmlFor="wilsy-leads-ai-question">Wilsy AI</label>
+          <input
+            id="wilsy-leads-ai-question"
+            className={styles.leadAIQuestionInput}
+            type="text"
+            value={wilsyLeadAiQuestion}
+            onChange={event => setWilsyLeadAiQuestion(event.target.value)}
+            placeholder="Ask about these leads, proof, sort order, source authority or compliance gaps"
+            aria-label="Ask Wilsy AI about CRM Leads"
+          />
+          <button className={styles.leadAIAskButton} type="submit" disabled={wilsyLeadAiLoading}>
+            {wilsyLeadAiLoading ? 'Thinking…' : 'Ask'}
+          </button>
+        </form>
+
+        <div className={styles.leadAITypographicFlow} aria-live="polite">
+          {wilsyLeadAiError ? (
+            <p className={styles.leadAIErrorLine}>{wilsyLeadAiError}</p>
+          ) : null}
+
+          {answer ? (
+            <p className={styles.leadAIFlowLine}>
+              {answer}
+              {inlineCommands.length ? (
+                <span className={styles.leadAIInlineCommandRun}>
+                  {inlineCommands.map(command => (
+                    <button
+                      key={command.id || command.label || command.command || command.action}
+                      type="button"
+                      className={styles.leadAIInlineCommandLink}
+                      data-wilsy-ai-inline-command={command.command || command.action || command.id || 'inline'}
+                      onClick={() => setWilsyLeadAiQuestion(command.prompt || command.label || command.command || '')}
+                    >
+                      {command.label || command.title || command.command || 'Use command'}
+                    </button>
+                  ))}
+                </span>
+              ) : null}
+            </p>
+          ) : (
+            <p className={styles.leadAIFlowLine}>
+              Ask Wilsy AI from this Leads workspace. It will read the active tab, source posture, sort posture and proof context before answering.
+            </p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
 
   /**
    * @function renderSkinSwitcher
@@ -4718,6 +4989,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         data-wilsy-lead-split-view={splitView ? 'true' : 'false'}
        data-wilsy-lead-proof-viewpoint={activeTopTab === 'proof' ? 'workarea-scroll' : undefined}
           data-wilsy-lead-sort-viewpoint={activeTopTab === 'sort' ? 'workarea' : undefined}>
+        {renderWilsyLeadAIResponseSurface()}
         {activeTopTab === 'records' ? renderLeadVisionMetricDeck() : null}
         {renderLeadTabContent()}
       </section>

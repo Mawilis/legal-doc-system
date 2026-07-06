@@ -9435,3 +9435,104 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
     min-height: 2.8rem !important;
   }
 }
+
+/* P60K5Q10FG.4.7 - Leads Wilsy AI continuous typographic response surface
+   Wires CRM Leads live context into the Operator Kernel without adding cards, rails, shelves, chips or detached panels. */
+.leadAIResponseSurface {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(142, 255, 190, 0.18);
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(circle at top left, rgba(62, 255, 154, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(2, 10, 7, 0.84), rgba(5, 8, 14, 0.9));
+  box-sizing: border-box;
+}
+
+.leadAIQuestionForm {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.leadAIQuestionForm label {
+  color: #91ffc2;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.leadAIQuestionInput {
+  min-width: 0;
+  min-height: 2.6rem;
+  border: 1px solid rgba(142, 255, 190, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 8, 6, 0.72);
+  color: var(--text-primary, #ffffff);
+  font: inherit;
+  font-weight: 720;
+  outline: none;
+  padding: 0 1rem;
+}
+
+.leadAIQuestionInput::placeholder {
+  color: rgba(221, 246, 233, 0.48);
+}
+
+.leadAIAskButton,
+.leadAIInlineCommandLink {
+  border: 1px solid rgba(62, 255, 154, 0.26);
+  border-radius: 999px;
+  background: rgba(7, 27, 16, 0.84);
+  color: var(--text-primary, #ffffff);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.leadAIAskButton {
+  min-height: 2.6rem;
+  padding: 0 1rem;
+}
+
+.leadAIAskButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.leadAITypographicFlow {
+  min-width: 0;
+  color: var(--text-primary, #ffffff);
+  font-size: clamp(0.92rem, 1vw, 1rem);
+  line-height: 1.55;
+}
+
+.leadAIFlowLine,
+.leadAIErrorLine {
+  margin: 0;
+}
+
+.leadAIErrorLine {
+  color: #ffb8b8;
+  font-weight: 850;
+}
+
+.leadAIInlineCommandRun {
+  display: inline;
+  margin-left: 0.45rem;
+}
+
+.leadAIInlineCommandLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  margin: 0 0.2rem;
+  padding: 0 0.65rem;
+  vertical-align: baseline;
+}
