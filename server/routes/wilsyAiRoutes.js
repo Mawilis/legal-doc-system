@@ -1,6 +1,7 @@
 /* eslint-disable */
 import express from 'express';
 import { resolveWilsyAISovereignContext } from '../services/wilsyAI/wilsyAISovereignContextService.js';
+import { resolveWilsyAIOperatorModel } from '../services/wilsyAI/wilsyAIOperatorModelService.js';
 
 const router = express.Router();
 
@@ -121,6 +122,107 @@ async function handleWilsyAIContextResolve(req, res) {
   }
 }
 
+/* WILSY_P60K5Q10FG46_OPERATOR_ROUTE */
+/**
+ * @function handleWilsyAIOperatorResolve
+ * @description Resolves workspace-aware Wilsy AI operator questions through the Operator Kernel without mutating records.
+ * @param {Object} req - Express request with institutional evidence, tenant/operator headers, and workspace context.
+ * @param {Object} res - Express response with continuous typographic answer payload.
+ * @returns {Promise<void>} Sends Operator Kernel response.
+ * @collaboration Wilsy AI Operator Kernel, CRM Leads viewpoint context, institutional evidence gate, and frontend continuous response surface.
+ */
+async function handleWilsyAIOperatorResolve(req, res) {
+  const generatedAt = new Date().toISOString();
+
+  try {
+    const body = req.body || {};
+    const institutionalHeaders = body.institutionalHeaders || {};
+    const tenantId =
+      institutionalHeaders.tenantId || req.headers['x-tenant-id'] || body.tenantId || 'MASTER';
+    const operatorId =
+      institutionalHeaders.operatorId ||
+      req.headers['x-operator-id'] ||
+      body.operatorId ||
+      'WILSY_AI_OPERATOR';
+    const operatorQuestion =
+      body.operatorQuestion || body.question || req.query?.operatorQuestion || '';
+
+    if (!String(operatorQuestion || '').trim()) {
+      return res.status(400).json({
+        result: 'WILSY_AI_OPERATOR_QUESTION_REQUIRED',
+        mutation: false,
+        generatedAt,
+        error: {
+          code: 'OPERATOR_QUESTION_REQUIRED',
+          message: 'A Wilsy AI operator question is required.',
+        },
+      });
+    }
+
+    const operatorRequest = {
+      ...req,
+      query: {
+        ...(req.query || {}),
+        wilsyAiContext: req.query?.wilsyAiContext || body.wilsyAiContext || 'ASK',
+        operatorQuestion,
+        tenantId,
+        operatorId,
+        workspaceRoute: body.workspaceRoute || req.query?.workspaceRoute || '/crm/leads',
+        workspaceSurface: body.workspaceSurface || req.query?.workspaceSurface || 'CRM Leads',
+      },
+      body: {
+        ...body,
+        tenantId,
+        operatorId,
+        operatorQuestion,
+        workspaceRoute: body.workspaceRoute || req.query?.workspaceRoute || '/crm/leads',
+        workspaceSurface: body.workspaceSurface || req.query?.workspaceSurface || 'CRM Leads',
+        crmLeadsContext: body.crmLeadsContext || {},
+      },
+      headers: {
+        ...(req.headers || {}),
+        'x-tenant-id': tenantId,
+        'x-operator-id': operatorId,
+      },
+    };
+
+    const operatorModel = await resolveWilsyAIOperatorModel(operatorRequest);
+
+    return res.status(200).json({
+      result: 'WILSY_AI_OPERATOR_RESOLVED',
+      contractVersion: 'P60K5Q10FG46_WILSY_AI_OPERATOR_ROUTE',
+      route: '/api/wilsy/ai/operator/resolve',
+      mutation: Boolean(operatorModel?.mutation),
+      generatedAt,
+      tenantId,
+      operatorId,
+      operatorModel,
+      responseSurface:
+        operatorModel?.operatorModel?.responseSurface ||
+        operatorModel?.responseSurface ||
+        'continuous_typographic',
+      inlineCommandLinks:
+        operatorModel?.operatorModel?.inlineCommandLinks || operatorModel?.inlineCommandLinks || [],
+      crmLeadsViewpoint:
+        operatorModel?.operatorModel?.crmLeadsViewpoint || operatorModel?.crmLeadsViewpoint || null,
+      institutionalHeaders,
+      strikePayload: body.strikePayload || null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      result: 'WILSY_AI_OPERATOR_RESOLVE_FAILED',
+      contractVersion: 'P60K5Q10FG46_WILSY_AI_OPERATOR_ROUTE',
+      route: '/api/wilsy/ai/operator/resolve',
+      mutation: false,
+      generatedAt,
+      error: {
+        code: error?.code || 'OPERATOR_RESOLVE_FAILED',
+        message: error?.message || 'Unable to resolve Wilsy AI operator question.',
+      },
+    });
+  }
+}
+
 /**
  * @function handleWilsyAIHealth
  * @description Reports read-only Wilsy AI route health and contract posture.
@@ -143,5 +245,6 @@ function handleWilsyAIHealth(req, res) {
 
 router.get('/health', handleWilsyAIHealth);
 router.post('/context/resolve', validateWilsyAIContextEvidence, handleWilsyAIContextResolve);
+router.post('/operator/resolve', validateWilsyAIContextEvidence, handleWilsyAIOperatorResolve);
 
 export default router;
