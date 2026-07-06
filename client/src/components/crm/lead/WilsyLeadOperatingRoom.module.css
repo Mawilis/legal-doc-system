@@ -9594,3 +9594,142 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   flex: 0 0 auto !important;
   align-self: end !important;
 }
+
+/* P60K5Q10FG.5.7 - Leads KPI height recovery */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="KpiDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="kpiDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="MetricDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="metricDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="MetricsDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="metricsDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="SummaryDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="summaryDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="SignalDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="signalDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="ScoreDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="scoreDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="HealthDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="healthDeck"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadKpi"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetric"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetrics"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSummary"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSnapshot"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSignalGrid"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadScoreGrid"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="pipelineHealthGrid"] {
+  gap: clamp(0.58rem, 0.72vw, 0.82rem) !important;
+  margin-top: clamp(0.58rem, 0.72vh, 0.76rem) !important;
+  margin-bottom: clamp(0.58rem, 0.78vh, 0.82rem) !important;
+  align-items: stretch !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Kpi"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="kpi"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Metric"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="metric"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Stat"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="stat"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Summary"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="summary"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Signal"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="signal"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Health"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="health"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Score"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="score"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="KpiCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="kpiCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="MetricCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="metricCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="StatCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="statCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="SummaryCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="summaryCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="SignalCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="signalCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="HealthCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="healthCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="ScoreCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] div[class*="scoreCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadKpiCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetricCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadStatCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSummaryCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSignalCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadHealthCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadScoreCard"],
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="pipelineHealthCard"] {
+  min-height: 142px !important;
+  height: clamp(142px, 16.5vh, 158px) !important;
+  max-height: 158px !important;
+  padding: clamp(12px, 0.95vw, 16px) clamp(14px, 1.12vw, 18px) !important;
+  align-content: center !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Kpi"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Metric"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Stat"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Summary"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Signal"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Health"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Score"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadKpiCard"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetricCard"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadStatCard"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSummaryCard"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSignalCard"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadHealthCard"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadScoreCard"] strong {
+  line-height: 1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Kpi"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Metric"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Stat"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Summary"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Signal"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Health"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Score"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Kpi"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Metric"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Stat"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Summary"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Signal"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Health"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Score"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Kpi"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Metric"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Stat"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Summary"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Signal"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Health"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] article[class*="Score"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadKpiCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetricCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadStatCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSummaryCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSignalCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadHealthCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadScoreCard"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadKpiCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetricCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadStatCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSummaryCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSignalCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadHealthCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadScoreCard"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadKpiCard"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadMetricCard"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadStatCard"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSummaryCard"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadSignalCard"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadHealthCard"] em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [class*="leadScoreCard"] em {
+  line-height: 1.16 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  margin-top: clamp(0.55rem, 0.72vh, 0.8rem) !important;
+}
