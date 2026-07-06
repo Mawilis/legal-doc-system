@@ -3326,6 +3326,54 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
 
+  useEffect(() => {
+    /* P60K5Q10FG82_GLOBAL_AI_CREATE_LEAD_DRAFT_RECEIVER */
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    /**
+     * @function handleWilsyFG82GlobalLeadCreateDraft
+     * @description Receives governed Create Lead drafts from the global Wilsy AI dock and hydrates the Leads Create surface.
+     * @param {CustomEvent} event - Global Wilsy AI Create Lead draft event.
+     * @returns {void}
+     * @collaboration Floating Wilsy AI, CRM Setup copilot, Leads Create surface, governed draft approval, and no-blind-write policy.
+     */
+    function handleWilsyFG82GlobalLeadCreateDraft(event) {
+      const detail = event?.detail || {};
+      const draft = detail.leadCreateDraft || detail.createLeadDraft || detail.draft;
+      const packet = detail.packet || detail.operatorPacket || {};
+
+      const resolvedDraft = draft || resolveWilsyFG81LeadCreateDraftFromAIResponse(packet);
+
+      if (applyWilsyFG81AILeadCreateDraft(resolvedDraft || {})) {
+        try {
+          window.sessionStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
+        } catch {
+          // Session storage is optional; Create Lead state already hydrated.
+        }
+      }
+    }
+
+    window.addEventListener('wilsy:crm-leads-create-draft', handleWilsyFG82GlobalLeadCreateDraft);
+
+    try {
+      const pendingDraftText = window.sessionStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft');
+      if (pendingDraftText) {
+        const pendingPacket = JSON.parse(pendingDraftText);
+        handleWilsyFG82GlobalLeadCreateDraft({ detail: pendingPacket });
+      }
+    } catch {
+      // Invalid pending draft must not block the Leads workspace.
+    }
+
+    return () => {
+      window.removeEventListener('wilsy:crm-leads-create-draft', handleWilsyFG82GlobalLeadCreateDraft);
+    };
+  }, []);
+
+
+
   /**
    * @function handleWilsyLeadAIQuestionSubmit
    * @description Sends the operator question and live CRM Leads context to the Wilsy AI Operator Kernel.

@@ -6,6 +6,62 @@ import styles from './WilsyOSIntelligenceDock.module.css';
 import { buildWilsyDynamicSuggestions, recordWilsyAISuggestionUsage } from './wilsyAIDynamicSuggestionEngine.js';
 import { clearWilsyAIConversationThreads, createWilsyAIConversationThread, loadWilsyAIConversationThreads, persistWilsyAIConversationTurn } from './wilsyAIConversationHistoryEngine.js';
 
+
+/**
+ * @function dispatchWilsyFG82GlobalLeadCreateDraftBridge
+ * @description Dispatches governed Create Lead drafts from any global Wilsy AI packet into the mounted Leads workspace.
+ * @param {Object} packet - Wilsy AI operator response packet.
+ * @returns {boolean} True when a Create Lead draft event was dispatched.
+ * @collaboration Global Wilsy AI dock, CRM Setup copilot, Leads Create surface, and governed no-blind-write draft review.
+ */
+function dispatchWilsyFG82GlobalLeadCreateDraftBridge(packet = {}) {
+  /* P60K5Q10FG82_GLOBAL_AI_CREATE_LEAD_DRAFT_BRIDGE */
+  if (typeof window === 'undefined' || !packet || typeof packet !== 'object') {
+    return false;
+  }
+
+  const operatorModel = packet.operatorModel || packet.model || packet.payload?.operatorModel || {};
+  const firstTool = Array.isArray(packet.toolRuns) ? packet.toolRuns[0] : null;
+  const draft =
+    operatorModel.leadCreateDraft ||
+    operatorModel.createLeadDraft ||
+    operatorModel.draft?.leadCreateDraft ||
+    operatorModel.draft?.lead ||
+    firstTool?.leadCreateDraft ||
+    firstTool?.createLeadDraft ||
+    firstTool?.draft?.leadCreateDraft ||
+    firstTool?.draft?.lead ||
+    firstTool?.draft;
+
+  const isCreateLead =
+    operatorModel.intent === 'create_lead' ||
+    operatorModel.action === 'prepare_create_lead_draft' ||
+    firstTool?.tool === 'crm_lead_create_draft' ||
+    Boolean(draft);
+
+  if (!isCreateLead || !draft || typeof draft !== 'object') {
+    return false;
+  }
+
+  const eventDetail = {
+    source: 'P60K5Q10FG82_GLOBAL_AI_CREATE_LEAD_DRAFT_BRIDGE',
+    leadCreateDraft: draft,
+    createLeadDraft: draft,
+    packet,
+    generatedAt: new Date().toISOString(),
+  };
+
+  try {
+    window.sessionStorage?.setItem?.('wilsy.crm.leads.pendingCreateDraft', JSON.stringify(eventDetail));
+  } catch {
+    // Session storage is optional; the live event is the primary bridge.
+  }
+
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
+  return true;
+}
+
+
 const WILSY_INTELLIGENCE_ROOT_ID = 'wilsy-os-intelligence-dock-root';
 const WILSY_INTELLIGENCE_STORAGE_KEY = 'wilsy-os-intelligence-dock-state-v2-large-productivity';
 /* WILSY_P60K5Q10AG_AI_OPERATOR_MODEL_SURFACE_JSX_MARKER */
@@ -1591,6 +1647,8 @@ function useWilsySovereignBrainContext(snapshot = {}, localContext = {}) {
         }
 
         const rawWilsyAIData = await response.json();
+
+        dispatchWilsyFG82GlobalLeadCreateDraftBridge(rawWilsyAIData);
         const data = buildWilsyAIProductivityCopy(rawWilsyAIData);
         setBackendContext(data);
         setStatus('SOVEREIGN_CONTEXT');

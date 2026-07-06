@@ -1314,6 +1314,24 @@ function buildWilsyFG81LeadCreateOperatorResponse({
  */
 export async function resolveWilsyAIOperatorModel(req = {}) {
   /* WILSY_P60K5Q10FG43_CRM_LEADS_VIEWPOINT_AI */
+  const wilsyFG82CreateLeadPriorityResponse = buildWilsyFG81LeadCreateOperatorResponse({
+    operatorQuestion:
+      req.query?.operatorQuestion || req.query?.question || req.body?.operatorQuestion || '',
+    tenantId: req.query?.tenantId || req.headers?.['x-tenant-id'] || req.body?.tenantId || 'MASTER',
+    operatorId:
+      req.query?.operatorId ||
+      req.headers?.['x-operator-id'] ||
+      req.body?.operatorId ||
+      'WILSY_OPERATOR',
+    workspaceRoute: req.query?.workspaceRoute || req.body?.workspaceRoute || '/crm/leads',
+    context: {},
+  });
+
+  if (wilsyFG82CreateLeadPriorityResponse) {
+    /* P60K5Q10FG82_CREATE_LEAD_PRIORITY_BEFORE_VIEWPOINT */
+    return wilsyFG82CreateLeadPriorityResponse;
+  }
+
   const wilsyCRMLeadsViewpointModel = resolveWilsyAICRMLeadsViewpointModel(req);
 
   if (wilsyCRMLeadsViewpointModel) {
