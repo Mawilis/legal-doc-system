@@ -9780,3 +9780,74 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
   margin-top: 0 !important;
 }
+
+/* P60K5Q10FG.5.9 - Leads KPI article deck compression */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article),
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article),
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 136px !important;
+  margin-top: 0.55rem !important;
+  margin-bottom: 0.58rem !important;
+  gap: 0.7rem !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article {
+  min-height: 106px !important;
+  height: 116px !important;
+  max-height: 120px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  align-content: center !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article > * {
+  min-height: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article b {
+  line-height: 0.98 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadSortViewpointGrid > *,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > section:has(> article) > article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > div:has(> article) > article em {
+  line-height: 1.08 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
+  margin-top: 0.45rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  margin-top: 0 !important;
+}
