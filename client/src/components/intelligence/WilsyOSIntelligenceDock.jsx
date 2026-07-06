@@ -9,6 +9,234 @@ import { clearWilsyAIConversationThreads, createWilsyAIConversationThread, loadW
 
 
 
+
+/**
+ * @function normalizeWilsyFG85LeadCreatePromptText
+ * @description Normalizes the visible global Wilsy AI Ask prompt before governed Lead draft extraction.
+ * @param {*} value - Raw prompt value.
+ * @returns {string} Trimmed prompt text.
+ * @collaboration Global Wilsy AI Ask form, CRM Setup copilot, Leads Create surface, and operator-reviewed save flow.
+ */
+function normalizeWilsyFG85LeadCreatePromptText(value = '') {
+  return String(value || '').trim();
+}
+
+/**
+ * @function extractWilsyFG85LeadCreateField
+ * @description Extracts bounded Create Lead field values from the global Ask prompt.
+ * @param {string} text - Prompt text.
+ * @param {RegExp[]} patterns - Candidate extraction patterns.
+ * @returns {string} Extracted field value.
+ * @collaboration Global Ask parser, Create Lead field parity, pending draft storage, and no-blind-write posture.
+ */
+function extractWilsyFG85LeadCreateField(text = '', patterns = []) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      return normalizeWilsyFG85LeadCreatePromptText(match[1]).replace(/[.;]+$/g, '').trim();
+    }
+  }
+
+  return '';
+}
+
+/**
+ * @function buildWilsyFG85GlobalLeadCreateDraft
+ * @description Builds a governed Lead draft from a global Ask prompt without executing backend create.
+ * @param {string} prompt - Visible global Ask prompt.
+ * @returns {Object|null} Event detail with Lead draft, or null.
+ * @collaboration Floating Wilsy AI, CRM home, Add Lead command, Leads Create hydration, and human Save approval.
+ */
+function buildWilsyFG85GlobalLeadCreateDraft(prompt = '') {
+  /* P60K5Q10FG85_GLOBAL_ASK_CAPTURE_LEAD_CREATE_DRAFT */
+  const text = normalizeWilsyFG85LeadCreatePromptText(prompt);
+  const lower = text.toLowerCase();
+
+  if (!/\b(create|add|capture|prepare|draft|register)\b/.test(lower) || !/\b(lead|prospect)\b/.test(lower)) {
+    return null;
+  }
+
+  const name = extractWilsyFG85LeadCreateField(text, [
+    /\blead\s+(?:named|called)\s+([^.;]+?)(?:\s+at\s+|\s+company|\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    /\b(?:create|add|capture|prepare|draft|register)\s+(?:a\s+)?(?:new\s+)?(?:lead|prospect)\s+(?:named|called|for)?\s*([^.;]+?)(?:\s+at\s+|\s+company|\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+  ]);
+
+  const company = extractWilsyFG85LeadCreateField(text, [
+    /\bcompany\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    /\bat\s+([^.;]+?)(?:\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+title|\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+  ]);
+
+  const email = extractWilsyFG85LeadCreateField(text, [
+    /\bemail(?:\s+address)?\s*(?:is|=|:)?\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i,
+    /\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b/i,
+  ]);
+
+  const phone = extractWilsyFG85LeadCreateField(text, [
+    /\bphone\s*(?:number)?\s*(?:is|=|:)?\s*(\+?[0-9][0-9\s().-]{6,})/i,
+  ]);
+
+  const mobile = extractWilsyFG85LeadCreateField(text, [
+    /\bmobile\s*(?:number)?\s*(?:is|=|:)?\s*(\+?[0-9][0-9\s().-]{6,})/i,
+  ]);
+
+  const estimatedDealValue = extractWilsyFG85LeadCreateField(text, [
+    /\b(?:estimated\s+deal\s+value|deal\s+value|pipeline\s+value|value)\s*(?:is|=|:)?\s*(?:R|ZAR)?\s*([0-9][0-9\s,._]*)/i,
+  ]).replace(/[^0-9.]/g, '');
+
+  const priority = extractWilsyFG85LeadCreateField(text, [
+    /\bpriority\s*(?:is|=|:)?\s*(urgent|high|medium|low)\b/i,
+  ]);
+
+  const source = extractWilsyFG85LeadCreateField(text, [
+    /\bsource\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+website|\s+employees|\s+due|\s+notes|$)/i,
+  ]) || (lower.includes('referral') ? 'Referral' : lower.includes('partner') ? 'Partner' : lower.includes('outbound') ? 'Outbound' : 'Wilsy AI');
+
+  const draft = {
+    module: 'Lead',
+    name,
+    company,
+    email,
+    phone,
+    mobile: mobile || phone,
+    countryCode: 'ZA',
+    mobileCountryCode: 'ZA',
+    title: extractWilsyFG85LeadCreateField(text, [
+      /\btitle\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+priority|\s+value|\s+industry|\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]),
+    priority: priority ? priority[0].toUpperCase() + priority.slice(1).toLowerCase() : 'Medium',
+    estimatedDealValue,
+    dealValue: estimatedDealValue,
+    industry: extractWilsyFG85LeadCreateField(text, [
+      /\bindustry\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+stage|\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]),
+    stage: extractWilsyFG85LeadCreateField(text, [
+      /\bstage\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+status|\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]) || 'NURTURE',
+    status: extractWilsyFG85LeadCreateField(text, [
+      /\bstatus\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+owner|\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]) || 'NEW',
+    owner: extractWilsyFG85LeadCreateField(text, [
+      /\bowner\s*(?:is|=|:)?\s*([^.;]+?)(?:\s+source|\s+website|\s+employees|\s+due|\s+notes|$)/i,
+    ]),
+    source,
+    website: extractWilsyFG85LeadCreateField(text, [
+      /\b(?:website|site)\s*(?:is|=|:)?\s*(https?:\/\/[^\s,;]+|[A-Z0-9.-]+\.[A-Z]{2,})/i,
+    ]),
+    employees: extractWilsyFG85LeadCreateField(text, [
+      /\bemployees\s*(?:is|=|:)?\s*([0-9][0-9\s,._]*)/i,
+    ]).replace(/[^0-9.]/g, ''),
+    dueDate: extractWilsyFG85LeadCreateField(text, [
+      /\b(?:due|follow\s*up|follow-up)\s*(?:date)?\s*(?:is|=|:)?\s*([0-9]{4}[-/][0-9]{2}[-/][0-9]{2})/i,
+    ]).replace(/\//g, '-'),
+    notes: extractWilsyFG85LeadCreateField(text, [
+      /\bnotes\s*(?:are|is|=|:)?\s*(.+)$/i,
+    ]) || text,
+    description: extractWilsyFG85LeadCreateField(text, [
+      /\bnotes\s*(?:are|is|=|:)?\s*(.+)$/i,
+    ]) || text,
+  };
+
+  Object.keys(draft).forEach((key) => {
+    if (draft[key] === '') delete draft[key];
+  });
+
+  if (!draft.name || !draft.company || !draft.email) {
+    return null;
+  }
+
+  return {
+    source: 'P60K5Q10FG85_GLOBAL_ASK_CAPTURE_LEAD_CREATE_DRAFT',
+    leadCreateDraft: draft,
+    createLeadDraft: draft,
+    packet: {
+      mutation: 'NO_BACKEND_MUTATION_REQUIRES_OPERATOR_SAVE',
+      operatorModel: {
+        intent: 'create_lead',
+        action: 'prepare_create_lead_draft',
+        leadCreateDraft: draft,
+        createLeadDraft: draft,
+        answer: `I prepared a governed Create Lead draft for ${draft.name} at ${draft.company}. Review it and press Save.`,
+      },
+      toolRuns: [
+        {
+          tool: 'crm_lead_create_draft',
+          status: 'APPROVAL_REQUIRED',
+          mutation: 'NO_BACKEND_MUTATION_REQUIRES_OPERATOR_SAVE',
+          leadCreateDraft: draft,
+          createLeadDraft: draft,
+        },
+      ],
+    },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * @function clickWilsyFG85VisibleAddLeadControl
+ * @description Clicks the visible CRM Add Lead/New Lead/Create Lead button using the real application control path.
+ * @returns {boolean} True when a matching button was clicked.
+ * @collaboration CRM home Add Lead button, Leads module create mode, global AI draft routing, and existing create handlers.
+ */
+function clickWilsyFG85VisibleAddLeadControl() {
+  if (typeof document === 'undefined') return false;
+
+  const buttons = Array.from(document.querySelectorAll('button'));
+  const target = buttons.find((button) => {
+    const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    return ['add lead', 'new lead', 'create lead'].some((candidate) => label.includes(candidate));
+  });
+
+  if (!target) return false;
+
+  target.click();
+  return true;
+}
+
+/**
+ * @function dispatchWilsyFG85GlobalLeadDraft
+ * @description Stores and dispatches the governed Lead draft for the mounted or next-mounted Leads workspace.
+ * @param {Object} eventDetail - Create Lead draft detail.
+ * @returns {boolean} True when dispatched.
+ * @collaboration sessionStorage, localStorage fallback, CustomEvent bridge, CRM home Add Lead control, and Leads Create hydration.
+ */
+function dispatchWilsyFG85GlobalLeadDraft(eventDetail = {}) {
+  /* P60K5Q10FG85_GLOBAL_ASK_CAPTURE_LEAD_CREATE_ROUTER */
+  if (typeof window === 'undefined' || !eventDetail?.leadCreateDraft) return false;
+
+  const serialized = JSON.stringify(eventDetail);
+
+  try {
+    window.sessionStorage?.setItem?.('wilsy.crm.leads.pendingCreateDraft', serialized);
+  } catch {
+    // sessionStorage is optional.
+  }
+
+  try {
+    window.localStorage?.setItem?.('wilsy.crm.leads.pendingCreateDraft', serialized);
+  } catch {
+    // localStorage is optional.
+  }
+
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
+  window.dispatchEvent(new CustomEvent('wilsy:crm-leads-open-request', { detail: { mode: 'create', ...eventDetail } }));
+  window.dispatchEvent(new CustomEvent('wilsy:crm-module-open-request', { detail: { module: 'leads', mode: 'create', ...eventDetail } }));
+
+  window.setTimeout(() => {
+    if (!document.querySelector('[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"]')) {
+      clickWilsyFG85VisibleAddLeadControl();
+    }
+  }, 40);
+
+  window.setTimeout(() => {
+    if (!document.querySelector('[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"]')) {
+      clickWilsyFG85VisibleAddLeadControl();
+    }
+  }, 220);
+
+  return true;
+}
+
+
 /**
  * @function normalizeWilsyFG84LeadCreatePromptText
  * @description Normalizes global Wilsy AI create-lead prompt text before local governed draft extraction.
@@ -2814,6 +3042,55 @@ export function WilsyOSIntelligenceDock() {
       }
     };
   }, []);
+
+
+  useEffect(() => {
+    /* P60K5Q10FG85_GLOBAL_ASK_CAPTURE_SUBMIT_LISTENER */
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    /**
+     * @function handleWilsyFG85GlobalAskSubmitCapture
+     * @description Captures create-lead prompts before the CRM Setup copilot submit flow can swallow the draft.
+     * @param {SubmitEvent} event - Native submit event from the visible Wilsy AI Ask form.
+     * @returns {void}
+     * @collaboration Global Ask form, governed Lead draft parser, Add Lead control, and Leads Create surface.
+     */
+    function handleWilsyFG85GlobalAskSubmitCapture(event) {
+      const form = event.target?.closest?.('form');
+      const input = form?.querySelector?.('input[aria-label="Ask Wilsy"], input[placeholder*="Ask Wilsy"]');
+
+      if (!form || !input) {
+        return;
+      }
+
+      const promptText = normalizeWilsyFG85LeadCreatePromptText(input.value);
+      const eventDetail = buildWilsyFG85GlobalLeadCreateDraft(promptText);
+
+      if (!eventDetail) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+      }
+
+      dispatchWilsyFG85GlobalLeadDraft(eventDetail);
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    document.addEventListener('submit', handleWilsyFG85GlobalAskSubmitCapture, true);
+
+    return () => {
+      document.removeEventListener('submit', handleWilsyFG85GlobalAskSubmitCapture, true);
+    };
+  }, []);
+
 
   const dynamicWilsyQuickPrompts = useMemo(
     () => buildWilsyDynamicSuggestions({

@@ -3349,6 +3349,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       if (applyWilsyFG81AILeadCreateDraft(resolvedDraft || {})) {
         try {
           window.sessionStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
+          window.localStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
         } catch {
           // Session storage is optional; Create Lead state already hydrated.
         }
@@ -3358,7 +3359,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     window.addEventListener('wilsy:crm-leads-create-draft', handleWilsyFG82GlobalLeadCreateDraft);
 
     try {
-      const pendingDraftText = window.sessionStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft');
+      /* P60K5Q10FG85_PENDING_DRAFT_LOCALSTORAGE_FALLBACK */
+      const pendingDraftText =
+        window.sessionStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft') ||
+        window.localStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft');
       if (pendingDraftText) {
         const pendingPacket = JSON.parse(pendingDraftText);
         handleWilsyFG82GlobalLeadCreateDraft({ detail: pendingPacket });
