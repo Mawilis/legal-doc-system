@@ -4602,7 +4602,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         data-wilsy-lead-page-count={leadPagination.totalPages}
         data-wilsy-real-data-contract="LIVE_BACKEND_ONLY"
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
-        data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW" data-wilsy-lead-records="tabbed-list-view">
+        data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW" data-wilsy-lead-records="tabbed-list-view"
+        data-wilsy-leads-records-surface="records">
         {renderLeadRecordsCommandBar()}
         {renderLeadFilterRail()}
 

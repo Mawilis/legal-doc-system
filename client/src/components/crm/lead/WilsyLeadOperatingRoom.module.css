@@ -9656,23 +9656,26 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   margin-top: 0 !important;
 }
 
-/* P60K5Q10FG.6.7 - Leads records surface elevation after metric compression */
-.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
-  gap: 0.52rem !important;
-  row-gap: 0.52rem !important;
+/* P60K5Q10FG.6.8 - Direct Leads records surface lift */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell[data-wilsy-lead-os-canvas="R68B-ZOHO-INSPIRED-TABBED-APP-BAR"] {
+  gap: 0.35rem !important;
+  row-gap: 0.35rem !important;
   align-content: start !important;
   grid-auto-rows: min-content !important;
 }
 
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] {
-  margin-bottom: 0.2rem !important;
+  margin-bottom: 0.16rem !important;
 }
 
-.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
-  margin-top: clamp(-9.25rem, -16vh, -7.25rem) !important;
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-records-surface="records"] {
+  position: relative !important;
+  z-index: 8 !important;
+  margin-top: clamp(-9.5rem, -16vh, -7.65rem) !important;
+  margin-bottom: clamp(-9.5rem, -16vh, -7.65rem) !important;
   align-self: start !important;
 }
 
-.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace > *:first-child {
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-records-surface="records"] > *:first-child {
   margin-top: 0 !important;
 }
