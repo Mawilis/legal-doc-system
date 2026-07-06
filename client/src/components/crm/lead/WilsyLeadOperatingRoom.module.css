@@ -9656,21 +9656,21 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   margin-top: 0 !important;
 }
 
-/* P60K5Q10FG.7.6 - Leads AI KPI records three-row shell contract
-   Source order is AI response, live KPI deck, then tab content.
-   This prevents the records workspace from inheriting the collapsed one-row shell contract.
-   Scope requires the live Leads KPI deck, so Meetings/shared shells without this deck are untouched. */
+/* P60K5Q10FG.7.7 - Shared records bottom bleed containment
+   Preserves the source order contract: AI response, live KPI deck, then tab content.
+   Fixes the post-FG76 bottom bleed by containing the shared shell to the viewport row.
+   Applies to shared Leads/Meetings records shells only when the live KPI deck is present. */
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) {
   display: grid !important;
   grid-template-rows: auto auto minmax(0, 1fr) !important;
   grid-auto-rows: auto !important;
-  align-content: start !important;
+  align-content: stretch !important;
   align-items: stretch !important;
   gap: 0.62rem !important;
-  height: auto !important;
-  min-height: clamp(31rem, calc(100dvh - 16.4rem), 43rem) !important;
-  max-height: none !important;
-  overflow: visible !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
 }
 
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > [data-wilsy-ai-response-surface="continuous_typographic"] {
@@ -9691,10 +9691,22 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] {
   grid-row: 3 / 4 !important;
   align-self: stretch !important;
-  height: clamp(29rem, calc(100dvh - 18.4rem), 40rem) !important;
-  min-height: clamp(29rem, calc(100dvh - 18.4rem), 40rem) !important;
-  max-height: clamp(29rem, calc(100dvh - 18.4rem), 40rem) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
   margin-top: 0 !important;
   overflow: hidden !important;
   transform: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] .leadFilterRail,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] .leadRecordsPanel,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] .leadRecordsTableFrame {
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] .leadRecordsPanel,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] .leadRecordsTableFrame {
+  overflow: auto !important;
 }
