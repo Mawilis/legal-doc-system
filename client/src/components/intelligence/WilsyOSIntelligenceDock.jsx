@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { buildWilsyOperatorIntelligence } from './wilsyOperatorIntelligenceEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
 import { buildWilsyDynamicSuggestions, recordWilsyAISuggestionUsage } from './wilsyAIDynamicSuggestionEngine.js';
-import { clearWilsyAIConversationThreads, createWilsyAIConversationThread, loadWilsyAIConversationThreads, persistWilsyAIConversationTurn } from './wilsyAIConversationHistoryEngine.js';
+import { clearWilsyAIConversationThreads, createWilsyAIConversationThread, loadWilsyAIConversationThreads, persistWilsyAIConversationTurn, saveWilsyAIConversationThreads } from './wilsyAIConversationHistoryEngine.js';
 
 
 
@@ -205,6 +205,9 @@ function dispatchWilsyFG85GlobalLeadDraft(eventDetail = {}) {
 
   const serialized = JSON.stringify(eventDetail);
 
+  /* P60K5Q10FG87B_PENDING_DRAFT_GLOBAL_MEMORY */
+  window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__ = eventDetail;
+
   try {
     window.sessionStorage?.setItem?.('wilsy.crm.leads.pendingCreateDraft', serialized);
   } catch {
@@ -225,13 +228,26 @@ function dispatchWilsyFG85GlobalLeadDraft(eventDetail = {}) {
     if (!document.querySelector('[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"]')) {
       clickWilsyFG85VisibleAddLeadControl();
     }
+
+    /* P60K5Q10FG87B_LATE_REPLAY_AFTER_ADD_LEAD_CLICK */
+    window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
   }, 40);
 
   window.setTimeout(() => {
     if (!document.querySelector('[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"]')) {
       clickWilsyFG85VisibleAddLeadControl();
     }
+
+    window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
   }, 220);
+
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
+  }, 520);
+
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('wilsy:crm-leads-create-draft', { detail: eventDetail }));
+  }, 900);
 
   return true;
 }
@@ -3080,6 +3096,75 @@ export function WilsyOSIntelligenceDock() {
       }
 
       dispatchWilsyFG85GlobalLeadDraft(eventDetail);
+
+      /* P60K5Q10FG86B_DIRECT_LEAD_CREATE_CHAT_STATE_FINALIZER */
+      const wilsyFG86LeadDraft = eventDetail.leadCreateDraft || {};
+      const wilsyFG86LeadCreateAnswer =
+        eventDetail.packet?.operatorModel?.answer ||
+        `I prepared a governed Create Lead draft for ${wilsyFG86LeadDraft.name || 'this lead'}. Review it and press Save.`;
+      const wilsyFG86Now = new Date().toISOString();
+      const wilsyFG86Thread = {
+        id: `wilsy-lead-create-${Date.now()}`,
+        title: `CRM Leads · ${wilsyFG86LeadDraft.name || 'Create Lead draft'}`,
+        workspace: 'CRM Leads',
+        updatedAt: wilsyFG86Now,
+        messages: [
+          {
+            id: `operator-${Date.now()}`,
+            role: 'operator',
+            content: promptText,
+            createdAt: wilsyFG86Now,
+          },
+          {
+            id: `wilsy-${Date.now()}`,
+            role: 'wilsy',
+            content: wilsyFG86LeadCreateAnswer,
+            createdAt: wilsyFG86Now,
+          },
+        ],
+      };
+
+      try {
+        const existingThreads = loadWilsyAIConversationThreads();
+        const nextThreads = [
+          wilsyFG86Thread,
+          ...existingThreads.filter(thread => thread?.id !== wilsyFG86Thread.id),
+        ].slice(0, 60);
+
+        saveWilsyAIConversationThreads(nextThreads);
+        setWilsyConversationThreads(nextThreads);
+        setWilsyActiveConversationId(wilsyFG86Thread.id);
+      } catch {
+        // Chat history persistence must not block Create Lead hydration.
+      }
+
+      setOperatorPrompt('');
+      setWilsyHasSubmittedOperatorResult(true);
+
+      if (typeof setLiveOperatorModel === 'function') {
+        setLiveOperatorModel(eventDetail.packet?.operatorModel || {});
+      }
+
+      if (typeof setWilsyInlineComposerStream === 'function') {
+        setWilsyInlineComposerStream({
+          active: false,
+          text: wilsyFG86LeadCreateAnswer,
+          streamKey: 'P60K5Q10FG86B_DIRECT_LEAD_CREATE_CHAT_STATE_FINALIZER',
+          tokens: [
+            {
+              id: 'open_create_lead_draft',
+              intent: 'create_lead',
+              label: 'Review Create Lead draft',
+              prompt: 'Review the governed Create Lead draft and press Save.',
+            },
+          ],
+        });
+      }
+
+      if (typeof setOperatorBackendBusy === 'function') {
+        setOperatorBackendBusy(false);
+      }
+
       input.value = '';
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }

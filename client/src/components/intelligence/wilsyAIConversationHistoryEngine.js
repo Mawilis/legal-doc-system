@@ -113,29 +113,6 @@ export function loadWilsyAIConversationThreads(storage = null) {
 }
 
 /**
- * @function saveWilsyAIConversationThreads
- * @description Saves bounded Wilsy AI conversation history into local non-sensitive storage.
- * @param {Array} threads - Conversation thread list.
- * @param {Storage|null} storage - Optional storage adapter.
- * @returns {Array} Saved conversation thread list.
- * @collaboration Wilsy AI chat history, contextual titles, local persistence, and operator recall.
- */
-export function saveWilsyAIConversationThreads(threads = [], storage = null) {
-  const nextThreads = Array.isArray(threads) ? threads.filter(Boolean).slice(0, 60) : [];
-  const runtimeStorage = resolveWilsyConversationRuntimeStorage(storage);
-
-  if (runtimeStorage) {
-    try {
-      runtimeStorage.setItem(WILSY_AI_CONVERSATION_HISTORY_KEY, JSON.stringify(nextThreads));
-    } catch (error) {
-      return nextThreads;
-    }
-  }
-
-  return nextThreads;
-}
-
-/**
  * @function createWilsyAIConversationThread
  * @description Creates a new named Wilsy AI conversation thread for the current workspace context.
  * @param {Object} payload - Thread creation payload.
@@ -246,4 +223,33 @@ export function clearWilsyAIConversationThreads(storage = null) {
   }
 
   return [];
+}
+
+/**
+ * @function saveWilsyAIConversationThreads
+ * @description Persists the Wilsy AI conversation thread list using the same storage posture as the history loader.
+ * @param {Array} threads - Conversation thread list to persist.
+ * @returns {Array} Persisted thread list.
+ * @collaboration Wilsy AI conversation history, global Lead create routing, and CRM Leads draft review history.
+ */
+export function saveWilsyAIConversationThreads(threads = []) {
+  /* P60K5Q10FG87C_CONVERSATION_HISTORY_SAVER_SINGLETON */
+  const safeThreads = Array.isArray(threads) ? threads : [];
+
+  if (typeof window === 'undefined') {
+    return safeThreads;
+  }
+
+  try {
+    const storageKey =
+      typeof WILSY_AI_CONVERSATION_HISTORY_KEY !== 'undefined'
+        ? WILSY_AI_CONVERSATION_HISTORY_KEY
+        : 'wilsy.ai.conversation.threads';
+
+    window.localStorage?.setItem?.(storageKey, JSON.stringify(safeThreads));
+  } catch {
+    // Conversation persistence must not block the production workspace.
+  }
+
+  return safeThreads;
 }

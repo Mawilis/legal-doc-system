@@ -3378,6 +3378,118 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
 
+  useEffect(() => {
+    /* P60K5Q10FG86B_CREATE_MODE_PENDING_DRAFT_HYDRATOR */
+    if (mode !== 'create' || typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      /* P60K5Q10FG87B_PENDING_DRAFT_GLOBAL_MEMORY_READ */
+      const pendingGlobalDraft = window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__ || null;
+      const pendingDraftText =
+        window.sessionStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft') ||
+        window.localStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft') ||
+        (pendingGlobalDraft ? JSON.stringify(pendingGlobalDraft) : '');
+
+      if (!pendingDraftText) {
+        return;
+      }
+
+      const pendingPacket = JSON.parse(pendingDraftText);
+      const pendingDraft =
+        pendingPacket?.leadCreateDraft ||
+        pendingPacket?.createLeadDraft ||
+        pendingPacket?.draft ||
+        resolveWilsyFG81LeadCreateDraftFromAIResponse(pendingPacket?.packet || pendingPacket);
+
+      if (applyWilsyFG81AILeadCreateDraft(pendingDraft || {})) {
+        /* P60K5Q10FG87B_PENDING_DRAFT_GLOBAL_MEMORY_CLEANUP */
+        window.sessionStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
+        window.localStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
+
+        try {
+          delete window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__;
+        } catch {
+          window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__ = null;
+        }
+      }
+    } catch {
+      // Pending draft hydration must never block the Create Lead surface.
+    }
+  }, [mode]);
+
+
+
+  useEffect(() => {
+    /* P60K5Q10FG87B_CREATE_SURFACE_VISIBLE_REPLAY_HYDRATOR */
+    if (mode !== 'create' || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+
+    /**
+     * @function hydratePendingDraftWhenVisible
+     * @description Replays a pending AI-created Lead draft after the Create Lead surface is visible.
+     * @returns {void}
+     * @collaboration Global Wilsy AI pending draft storage, Create Lead surface visibility, hydration retry timing, and operator-reviewed save flow.
+     */
+    const hydratePendingDraftWhenVisible = () => {
+      if (cancelled || attempts >= 18) {
+        return;
+      }
+
+      attempts += 1;
+
+      try {
+        const createSurfaceVisible = Boolean(
+          document.querySelector('[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"]')
+        );
+
+        const pendingGlobalDraft = window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__ || null;
+        const pendingDraftText =
+          window.sessionStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft') ||
+          window.localStorage?.getItem?.('wilsy.crm.leads.pendingCreateDraft') ||
+          (pendingGlobalDraft ? JSON.stringify(pendingGlobalDraft) : '');
+
+        if (!createSurfaceVisible || !pendingDraftText) {
+          window.setTimeout(hydratePendingDraftWhenVisible, 90);
+          return;
+        }
+
+        const pendingPacket = JSON.parse(pendingDraftText);
+        const pendingDraft =
+          pendingPacket?.leadCreateDraft ||
+          pendingPacket?.createLeadDraft ||
+          pendingPacket?.draft ||
+          resolveWilsyFG81LeadCreateDraftFromAIResponse(pendingPacket?.packet || pendingPacket);
+
+        if (applyWilsyFG81AILeadCreateDraft(pendingDraft || {})) {
+          window.sessionStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
+          window.localStorage?.removeItem?.('wilsy.crm.leads.pendingCreateDraft');
+
+          try {
+            delete window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__;
+          } catch {
+            window.__WILSY_CRM_LEADS_PENDING_CREATE_DRAFT__ = null;
+          }
+        }
+      } catch {
+        window.setTimeout(hydratePendingDraftWhenVisible, 90);
+      }
+    };
+
+    hydratePendingDraftWhenVisible();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
+
+
+
   /**
    * @function handleWilsyLeadAIQuestionSubmit
    * @description Sends the operator question and live CRM Leads context to the Wilsy AI Operator Kernel.
