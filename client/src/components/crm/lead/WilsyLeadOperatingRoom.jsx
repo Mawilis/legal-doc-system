@@ -1886,7 +1886,7 @@ function openCrmGlobalThemeAuthorityFallback() {
 }
 
 
-const WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY = 'wilsy.crm.leads.filterSelection.v2';
+const WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY = 'wilsy.crm.leads.filterSelection.v3';
 
 const LEAD_FILTER_OPERATING_SECTIONS = Object.freeze([
   {
@@ -2478,6 +2478,34 @@ export default function WilsyLeadOperatingRoom({
       JSON.stringify(Array.from(selectedLeadFilterOptions)),
     );
   }, [selectedLeadFilterOptions]);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+
+    window.localStorage.removeItem('wilsy.crm.leads.filterSelection.v2');
+  }, []);
+
+
+  /**
+   * @function clearWilsyLeadFilterSelection
+   * @description Clears active Leads filter checkboxes, search text, pagination, selected table rows, and persisted local filter state.
+   * @returns {void}
+   * @collaboration Leads filter rail, controlled checkbox state, record viewpoint, pagination reset, and operator escape control.
+   */
+  function clearWilsyLeadFilterSelection() {
+    setSelectedLeadFilterOptions(new Set());
+    setLeadFilterQuery('');
+    setCurrentLeadPage(1);
+    setSelectedRowIds([]);
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(WILSY_LEADS_FILTER_SELECTION_STORAGE_KEY, JSON.stringify([]));
+      window.localStorage.removeItem('wilsy.crm.leads.filterSelection.v2');
+    }
+  }
 
   const [sortMode, setSortMode] = useState('priority');
   const [leadSkin, setLeadSkin] = useState('crm_revenue_pulse');
@@ -3596,7 +3624,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           <button
             type="button"
             aria-label="Collapse Lead filters"
-            onClick={() => setFilterPanelOpen(false)}
+            onClick={() => {
+              setFilterPanelOpen(false);
+              setLeadFilterQuery('');
+            }}
           >
             ‹‹
           </button>
@@ -3612,9 +3643,24 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           />
         </label>
 
-        <div className={styles.leadFilterRailMeta} aria-live="polite">
-          <strong>{selectedFilterCount}</strong>
-          <span>{selectedFilterCount === 1 ? 'filter selected' : 'filters selected'}</span>
+        <div
+          className={styles.leadFilterRailMeta}
+          aria-live="polite"
+          data-wilsy-lead-filter-active={selectedFilterCount ? 'true' : 'false'}
+        >
+          <span>
+            <strong>{selectedFilterCount}</strong>
+            <span>{selectedFilterCount === 1 ? 'filter selected' : 'filters selected'}</span>
+          </span>
+          {selectedFilterCount ? (
+            <button
+              type="button"
+              className={styles.leadFilterClearButton}
+              onClick={clearWilsyLeadFilterSelection}
+            >
+              Clear filters
+            </button>
+          ) : null}
         </div>
 
         <div className={styles.leadFilterScroll} data-wilsy-independent-scroll="lead-filter-options">
