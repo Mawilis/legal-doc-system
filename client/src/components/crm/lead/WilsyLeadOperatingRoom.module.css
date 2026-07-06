@@ -9656,17 +9656,17 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   margin-top: 0 !important;
 }
 
-/* P60K5Q10FG.7.7 - Shared records bottom bleed containment
-   Preserves the source order contract: AI response, live KPI deck, then tab content.
-   Fixes the post-FG76 bottom bleed by containing the shared shell to the viewport row.
-   Applies to shared Leads/Meetings records shells only when the live KPI deck is present. */
+/* P60K5Q10FG.7.8 - Records workspace reclaimed from inline AI
+   Floating Wilsy AI remains available; the inline AI prompt card no longer consumes records-mode height.
+   Records mode now prioritizes the production work area: live KPI deck then records grid.
+   Applies only to shared Leads/Meetings records shells that contain the live KPI deck. */
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) {
   display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
   grid-auto-rows: auto !important;
   align-content: stretch !important;
   align-items: stretch !important;
-  gap: 0.62rem !important;
+  gap: 0.56rem !important;
   height: 100% !important;
   min-height: 0 !important;
   max-height: 100% !important;
@@ -9674,22 +9674,19 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 }
 
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > [data-wilsy-ai-response-surface="continuous_typographic"] {
-  grid-row: 1 / 2 !important;
-  align-self: start !important;
-  min-height: 0 !important;
-  transform: none !important;
+  display: none !important;
 }
 
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] {
-  grid-row: 2 / 3 !important;
+  grid-row: 1 / 2 !important;
   align-self: start !important;
-  margin-top: 0.5rem !important;
-  margin-bottom: 0.62rem !important;
+  margin-top: 0.38rem !important;
+  margin-bottom: 0.5rem !important;
   transform: none !important;
 }
 
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell:has(> .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"]) > .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"] {
-  grid-row: 3 / 4 !important;
+  grid-row: 2 / 3 !important;
   align-self: stretch !important;
   height: 100% !important;
   min-height: 0 !important;
