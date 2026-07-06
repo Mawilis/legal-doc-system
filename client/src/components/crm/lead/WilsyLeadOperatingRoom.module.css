@@ -10018,3 +10018,59 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
     max-height: none !important;
   }
 }
+
+/* P60K5Q10FG.8.1C - Create Lead Edit parity fields
+   Adds the missing Edit Lead-grade pipeline fields to Create Lead while preserving FG80 productivity density. */
+.createSurface[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"] .createPipelineGrid {
+  margin-top: 0.78rem !important;
+  padding-top: 0.72rem !important;
+  border-top: 1px solid rgba(250, 240, 190, 0.12) !important;
+}
+
+.createDealValuePair {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 2.8rem minmax(0, 1fr) !important;
+  align-items: stretch !important;
+}
+
+.createDealValuePair em {
+  min-height: 3rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-right: 0 !important;
+  border-radius: 0.86rem 0 0 0.86rem !important;
+  background: rgba(2, 6, 23, 0.82) !important;
+  color: var(--lead-gold) !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+}
+
+.createDealValuePair input {
+  border-radius: 0 0.86rem 0.86rem 0 !important;
+}
+
+.createDealPresetRail {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.42rem !important;
+  margin-top: 0.42rem !important;
+}
+
+.createDealPresetRail button {
+  min-height: 2rem !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(93, 244, 156, 0.22) !important;
+  background: rgba(0, 255, 148, 0.08) !important;
+  color: rgba(217, 255, 233, 0.9) !important;
+  padding: 0 0.68rem !important;
+  font-size: 0.64rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.createSurface[data-wilsy-lead-create-surface="P60K5Q10FG79_CREATE_AI_AWARE_SURFACE"] .descriptionField[data-wilsy-lead-create-field="notes"] textarea {
+  min-height: 6.15rem !important;
+}

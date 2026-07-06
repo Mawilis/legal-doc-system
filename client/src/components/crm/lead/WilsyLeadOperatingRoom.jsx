@@ -3219,6 +3219,113 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     };
   }
 
+
+  /**
+   * @function normalizeWilsyFG81LeadCreateDraftValue
+   * @description Normalizes AI-provided Lead create draft values for controlled Create Lead fields.
+   * @param {*} value - Incoming AI draft value.
+   * @returns {string} Controlled Create Lead field value.
+   * @collaboration Wilsy AI governed draft hydration, Create Lead field parity, and operator-reviewed save flow.
+   */
+  function normalizeWilsyFG81LeadCreateDraftValue(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
+  }
+
+  /**
+   * @function resolveWilsyFG81LeadCreateDraftFromAIResponse
+   * @description Extracts a governed Create Lead draft from the Wilsy AI Operator Kernel response without executing a backend mutation.
+   * @param {Object} packet - Wilsy AI operator response packet.
+   * @returns {Object|null} Lead create draft payload or null.
+   * @collaboration Floating Wilsy AI, CRM Leads Create surface, governed draft approval, and no-blind-write policy.
+   */
+  function resolveWilsyFG81LeadCreateDraftFromAIResponse(packet = {}) {
+    const operatorModel = packet?.operatorModel || {};
+    const firstTool = Array.isArray(packet?.toolRuns) ? packet.toolRuns[0] : null;
+    const candidates = [
+      operatorModel.leadCreateDraft,
+      operatorModel.createLeadDraft,
+      operatorModel.draft?.leadCreateDraft,
+      operatorModel.draft?.lead,
+      firstTool?.leadCreateDraft,
+      firstTool?.createLeadDraft,
+      firstTool?.draft?.leadCreateDraft,
+      firstTool?.draft?.lead,
+      firstTool?.draft,
+    ];
+
+    return candidates.find(candidate => candidate && typeof candidate === 'object') || null;
+  }
+
+  /**
+   * @function applyWilsyFG81AILeadCreateDraft
+   * @description Opens Create Lead and hydrates fields from a governed Wilsy AI draft for operator review.
+   * @param {Object} aiCreateDraft - AI-prepared Create Lead draft.
+   * @returns {boolean} True when a draft was applied.
+   * @collaboration Wilsy AI chat execution, Create Lead parity fields, institutional evidence posture, and human approval.
+   */
+  function applyWilsyFG81AILeadCreateDraft(aiCreateDraft = {}) {
+    /* P60K5Q10FG81_CREATE_FIELD_PARITY_AI_DRAFT */
+    if (!aiCreateDraft || typeof aiCreateDraft !== 'object') return false;
+
+    const fieldMap = {
+      name: aiCreateDraft.name || aiCreateDraft.leadName || aiCreateDraft.title || '',
+      company: aiCreateDraft.company || aiCreateDraft.accountName || aiCreateDraft.organization || '',
+      email: aiCreateDraft.email || aiCreateDraft.emailAddress || '',
+      phone: aiCreateDraft.phone || aiCreateDraft.phoneNumber || '',
+      mobile: aiCreateDraft.mobile || aiCreateDraft.mobileNumber || aiCreateDraft.phone || '',
+      countryCode: aiCreateDraft.countryCode || 'ZA',
+      mobileCountryCode: aiCreateDraft.mobileCountryCode || aiCreateDraft.countryCode || 'ZA',
+      title: aiCreateDraft.jobTitle || aiCreateDraft.roleTitle || aiCreateDraft.designation || '',
+      source: aiCreateDraft.source || aiCreateDraft.leadSource || 'Wilsy AI',
+      status: aiCreateDraft.status || 'NEW',
+      stage: aiCreateDraft.stage || 'NURTURE',
+      owner: aiCreateDraft.owner || aiCreateDraft.ownerName || '',
+      priority: aiCreateDraft.priority || 'Medium',
+      estimatedDealValue: aiCreateDraft.estimatedDealValue || aiCreateDraft.dealValue || aiCreateDraft.value || '',
+      dealValue: aiCreateDraft.estimatedDealValue || aiCreateDraft.dealValue || aiCreateDraft.value || '',
+      score: aiCreateDraft.score || aiCreateDraft.leadScore || '',
+      industry: aiCreateDraft.industry || '',
+      dueDate: aiCreateDraft.dueDate || aiCreateDraft.followUpDate || '',
+      website: aiCreateDraft.website || '',
+      employees: aiCreateDraft.employees || aiCreateDraft.employeeCount || '',
+      notes: aiCreateDraft.notes || aiCreateDraft.description || aiCreateDraft.summary || '',
+      description: aiCreateDraft.description || aiCreateDraft.notes || aiCreateDraft.summary || '',
+      street: aiCreateDraft.street || '',
+      city: aiCreateDraft.city || '',
+      state: aiCreateDraft.state || aiCreateDraft.province || '',
+      zipCode: aiCreateDraft.zipCode || aiCreateDraft.postalCode || '',
+      country: aiCreateDraft.country || '',
+      addressSearch: aiCreateDraft.addressSearch || aiCreateDraft.formattedAddress || aiCreateDraft.street || '',
+      formattedAddress: aiCreateDraft.formattedAddress || '',
+    };
+
+    const normalizedDraft = Object.entries(fieldMap).reduce((nextDraft, [field, value]) => {
+      const normalizedValue = normalizeWilsyFG81LeadCreateDraftValue(value);
+      if (normalizedValue) nextDraft[field] = normalizedValue;
+      return nextDraft;
+    }, {});
+
+    if (!Object.keys(normalizedDraft).length) return false;
+
+    setDraft(previous => ({
+      ...previous,
+      ...normalizedDraft,
+      source: normalizedDraft.source || previous.source || 'Wilsy AI',
+      status: normalizedDraft.status || previous.status || 'NEW',
+      stage: normalizedDraft.stage || previous.stage || 'NURTURE',
+      priority: normalizedDraft.priority || previous.priority || 'Medium',
+      addressVerificationStatus: previous.addressVerificationStatus || 'AI_DRAFT_REVIEW_REQUIRED',
+      addressSourceProvider: previous.addressSourceProvider || 'WILSY_AI_OPERATOR_DRAFT',
+      addressEvidenceReceipt: previous.addressEvidenceReceipt || 'Wilsy AI prepared this Create Lead draft for operator review.',
+    }));
+
+    setSaveStatus('Wilsy AI prepared a governed Create Lead draft. Review every field, then Save.');
+    setMode('create');
+    return true;
+  }
+
+
   /**
    * @function handleWilsyLeadAIQuestionSubmit
    * @description Sends the operator question and live CRM Leads context to the Wilsy AI Operator Kernel.
@@ -3283,6 +3390,25 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       if (!response.ok) {
         throw new Error(packet?.error?.message || 'Wilsy AI Operator route failed.');
       }
+
+      const wilsyFG81AILeadCreateDraft = resolveWilsyFG81LeadCreateDraftFromAIResponse(packet);
+
+      if (
+
+        packet?.operatorModel?.intent === 'create_lead' ||
+
+        packet?.operatorModel?.action === 'prepare_create_lead_draft' ||
+
+        wilsyFG81AILeadCreateDraft
+
+      ) {
+
+        /* P60K5Q10FG81_APPLY_AI_CREATE_DRAFT_RESPONSE */
+
+        applyWilsyFG81AILeadCreateDraft(wilsyFG81AILeadCreateDraft || {});
+
+      }
+
 
       setWilsyLeadAiPacket(packet);
     } catch (error) {
@@ -5892,7 +6018,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
             <div
               className={styles.formGrid}
               data-wilsy-lead-create-fields="identity_company_contact_source"
-              data-wilsy-ai-readable-fields="name.company.email.phone.mobile.title.source.status.industry.owner.website.employees"
+              data-wilsy-ai-readable-fields="name.company.email.phone.mobile.title.source.status.stage.owner.priority.estimatedDealValue.score.industry.dueDate.notes.website.employees"
             >
               <label><span>Lead Name *</span><input value={draft.name} onChange={event => updateDraftField('name', event.target.value)} /></label>
               <label><span>Company *</span><input value={draft.company} onChange={event => updateDraftField('company', event.target.value)} /></label>
@@ -5940,6 +6066,100 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               <label><span>{leadOperatingCopy.tableHeaders.owner}</span><input value={draft.owner} onChange={event => updateDraftField('owner', event.target.value)} /></label>
               <label><span>Website</span><input value={draft.website} onChange={event => updateDraftField('website', event.target.value)} /></label>
               <label><span>Employees</span><input value={draft.employees} onChange={event => updateDraftField('employees', event.target.value)} /></label>
+            </div>
+
+
+            <h3 data-wilsy-lead-create-section="pipeline_qualification">Pipeline Qualification</h3>
+            <div
+              className={`${styles.formGrid} ${styles.createPipelineGrid}`}
+              data-wilsy-lead-create-field-group="pipeline_qualification"
+              data-wilsy-ai-component="create-lead-pipeline-fields"
+              data-wilsy-ai-readable-fields="stage.owner.priority.estimatedDealValue.score.industry.dueDate.notes.website.employees"
+            >
+              <label data-wilsy-lead-create-field="owner">
+                <span>Owner</span>
+                <input value={draft.owner || ''} placeholder="Lead owner" onChange={event => updateDraftField('owner', event.target.value)} />
+              </label>
+              <label data-wilsy-lead-create-field="stage">
+                <span>Stage</span>
+                <select value={draft.stage || 'NURTURE'} onChange={event => updateDraftField('stage', event.target.value)}>
+                  <option>NURTURE</option>
+                  <option>NEW</option>
+                  <option>OPEN</option>
+                  <option>CONTACTED</option>
+                  <option>{leadOperatingCopy.qualifiedLabel}</option>
+                  <option>DISQUALIFIED</option>
+                </select>
+              </label>
+              <label data-wilsy-lead-create-field="priority">
+                <span>Priority</span>
+                <select value={draft.priority || 'Medium'} onChange={event => updateDraftField('priority', event.target.value)}>
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Urgent</option>
+                </select>
+              </label>
+              <label data-wilsy-lead-create-field="industry">
+                <span>Industry</span>
+                <input value={draft.industry || ''} placeholder="Software, finance, legal..." onChange={event => updateDraftField('industry', event.target.value)} />
+              </label>
+              <label className={styles.wideField} data-wilsy-lead-create-field="estimatedDealValue">
+                <span>Estimated Deal Value (ZAR)</span>
+                <div className={styles.createDealValuePair} data-wilsy-ai-component="create-lead-deal-value-control">
+                  <em>R</em>
+                  <input
+                    value={draft.estimatedDealValue || draft.dealValue || ''}
+                    inputMode="numeric"
+                    placeholder="0"
+                    onChange={event => {
+                      updateDraftField('estimatedDealValue', event.target.value);
+                      updateDraftField('dealValue', event.target.value);
+                    }}
+                  />
+                </div>
+                <div className={styles.createDealPresetRail} aria-label="Estimated deal value presets">
+                  {[
+                    ['10000', 'R10K'],
+                    ['50000', 'R50K'],
+                    ['100000', 'R100K'],
+                    ['250000', 'R250K'],
+                    ['1000000', 'R1M']
+                  ].map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      onClick={() => {
+                        updateDraftField('estimatedDealValue', value);
+                        updateDraftField('dealValue', value);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </label>
+              <label data-wilsy-lead-create-field="score">
+                <span>Score</span>
+                <input
+                  value={draft.score || ''}
+                  inputMode="numeric"
+                  placeholder="0"
+                  onChange={event => updateDraftField('score', event.target.value)}
+                />
+              </label>
+              <label data-wilsy-lead-create-field="dueDate">
+                <span>Due Date</span>
+                <input type="date" value={draft.dueDate || ''} onChange={event => updateDraftField('dueDate', event.target.value)} />
+              </label>
+              <label data-wilsy-lead-create-field="website">
+                <span>Website</span>
+                <input value={draft.website || ''} placeholder="https://example.com" onChange={event => updateDraftField('website', event.target.value)} />
+              </label>
+              <label data-wilsy-lead-create-field="employees">
+                <span>Employees</span>
+                <input value={draft.employees || ''} inputMode="numeric" placeholder="0" onChange={event => updateDraftField('employees', event.target.value)} />
+              </label>
             </div>
 
             <h3>Address Intelligence</h3>
@@ -6028,7 +6248,21 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               <input type="hidden" value={draft.addressEvidenceReceipt || ''} readOnly />
             </div>
             <h3>Description Information</h3>
-            <label className={styles.descriptionField}><span>Description / Notes</span><textarea value={draft.description} onChange={event => updateDraftField('description', event.target.value)} /></label>
+            <label
+              className={styles.descriptionField}
+              data-wilsy-lead-create-field="notes"
+              data-wilsy-ai-component="create-lead-notes-control"
+            >
+              <span>Notes / Description</span>
+              <textarea
+                value={draft.notes || draft.description || ''}
+                placeholder="Operator notes, qualification context, source proof, follow-up posture..."
+                onChange={event => {
+                  updateDraftField('notes', event.target.value);
+                  updateDraftField('description', event.target.value);
+                }}
+              />
+            </label>
           </section>
 
           <aside

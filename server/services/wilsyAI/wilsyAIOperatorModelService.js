@@ -1090,6 +1090,222 @@ function buildWilsySourceTrace(toolRuns = []) {
 }
 
 /**
+ * @function extractWilsyFG81LeadCreateValue
+ * @description Extracts a bounded Lead field value from an operator question using conservative patterns.
+ * @param {string} text - Operator question text.
+ * @param {RegExp[]} patterns - Candidate extraction patterns.
+ * @returns {string} Extracted value.
+ * @collaboration Wilsy AI Create Lead draft preparation, no-mutation safeguards, and operator review.
+ */
+function extractWilsyFG81LeadCreateValue(text = '', patterns = []) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      return coerceWilsyOperatorText(match[1])
+        .replace(/[.,;]+$/g, '')
+        .trim();
+    }
+  }
+
+  return '';
+}
+
+/**
+ * @function buildWilsyFG81LeadCreateDraftFromQuestion
+ * @description Builds a governed CRM Lead create draft from chat text without mutating the backend.
+ * @param {string} operatorQuestion - Operator question.
+ * @returns {Object|null} Draft packet or null when the question is not a Create Lead request.
+ * @collaboration Wilsy AI Operator Kernel, CRM Create Lead, Edit Lead parity fields, and governed approval.
+ */
+function buildWilsyFG81LeadCreateDraftFromQuestion(operatorQuestion = '') {
+  /* P60K5Q10FG81_GOVERNED_CREATE_LEAD_DRAFT */
+  const text = coerceWilsyOperatorText(operatorQuestion);
+  const lower = text.toLowerCase();
+
+  if (
+    !(
+      /\b(create|add|capture|prepare|draft|register)\b/.test(lower) &&
+      /\b(lead|prospect)\b/.test(lower)
+    )
+  ) {
+    return null;
+  }
+
+  const email = extractWilsyFG81LeadCreateValue(text, [
+    /\bemail(?:\s+address)?\s*(?:is|=|:)?\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i,
+    /\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b/i,
+  ]);
+
+  const phone = extractWilsyFG81LeadCreateValue(text, [
+    /\b(?:phone|mobile|cell)\s*(?:number)?\s*(?:is|=|:)?\s*(\+?[0-9][0-9\s().-]{6,})/i,
+    /\b(\+?[0-9][0-9\s().-]{8,})\b/i,
+  ]);
+
+  const company = extractWilsyFG81LeadCreateValue(text, [
+    /\bcompany\s*(?:is|=|:)?\s*([^.,;]+?)(?:\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+stage|\s+status|\s+priority|\s+value|\s+score|\s+industry|\s+due|\s+source|$)/i,
+    /\b(?:at|for)\s+([^.,;]+?)(?:\s+with\s+email|\s+email|\s+phone|\s+mobile|\s+stage|\s+status|\s+priority|\s+value|\s+score|\s+industry|\s+due|\s+source|$)/i,
+  ]);
+
+  const name = extractWilsyFG81LeadCreateValue(text, [
+    /\blead\s+(?:named|called)\s+([^.,;]+?)(?:\s+at\s+|\s+for\s+|\s+company|\s+email|\s+phone|\s+mobile|\s+stage|\s+status|\s+priority|\s+value|\s+score|\s+industry|\s+due|\s+source|$)/i,
+    /\b(?:create|add|capture|prepare|draft|register)\s+(?:a\s+)?(?:new\s+)?(?:lead|prospect)\s+(?:for|named|called)?\s*([^.,;]+?)(?:\s+at\s+|\s+company|\s+email|\s+phone|\s+mobile|\s+stage|\s+status|\s+priority|\s+value|\s+score|\s+industry|\s+due|\s+source|$)/i,
+  ]);
+
+  const estimatedDealValue = extractWilsyFG81LeadCreateValue(text, [
+    /\b(?:estimated\s+deal\s+value|deal\s+value|value|pipeline\s+value)\s*(?:is|=|:)?\s*(?:R|ZAR)?\s*([0-9][0-9\s,._]*)/i,
+  ]).replace(/[^0-9.]/g, '');
+
+  const priority = extractWilsyFG81LeadCreateValue(text, [
+    /\bpriority\s*(?:is|=|:)?\s*(urgent|high|medium|low)\b/i,
+  ]);
+  const stage = extractWilsyFG81LeadCreateValue(text, [
+    /\bstage\s*(?:is|=|:)?\s*([^.,;]+?)(?:\s+status|\s+priority|\s+value|\s+score|\s+industry|\s+due|$)/i,
+  ]);
+  const status = extractWilsyFG81LeadCreateValue(text, [
+    /\bstatus\s*(?:is|=|:)?\s*([^.,;]+?)(?:\s+stage|\s+priority|\s+value|\s+score|\s+industry|\s+due|$)/i,
+  ]);
+  const industry = extractWilsyFG81LeadCreateValue(text, [
+    /\bindustry\s*(?:is|=|:)?\s*([^.,;]+?)(?:\s+with\s+|\s+email|\s+phone|\s+priority|\s+value|\s+score|\s+due|$)/i,
+  ]);
+  const score = extractWilsyFG81LeadCreateValue(text, [/\bscore\s*(?:is|=|:)?\s*([0-9]{1,3})\b/i]);
+  const dueDate = extractWilsyFG81LeadCreateValue(text, [
+    /\b(?:due|follow\s*up|follow-up)\s*(?:date)?\s*(?:is|=|:)?\s*([0-9]{4}[-/][0-9]{2}[-/][0-9]{2})/i,
+  ]).replace(/\//g, '-');
+  const website = extractWilsyFG81LeadCreateValue(text, [
+    /\b(?:website|site)\s*(?:is|=|:)?\s*(https?:\/\/[^\s,;]+|[A-Z0-9.-]+\.[A-Z]{2,})/i,
+  ]);
+
+  const source = lower.includes('referral')
+    ? 'Referral'
+    : lower.includes('partner')
+      ? 'Partner'
+      : lower.includes('outbound')
+        ? 'Outbound'
+        : lower.includes('event')
+          ? 'Event'
+          : 'Wilsy AI';
+
+  const draft = {
+    module: 'Lead',
+    name,
+    company,
+    email,
+    phone,
+    mobile: phone,
+    countryCode: 'ZA',
+    mobileCountryCode: 'ZA',
+    source,
+    status: status || 'NEW',
+    stage: stage || 'NURTURE',
+    priority: priority ? priority[0].toUpperCase() + priority.slice(1).toLowerCase() : 'Medium',
+    estimatedDealValue,
+    dealValue: estimatedDealValue,
+    industry,
+    score,
+    dueDate,
+    website,
+    notes: text,
+    description: text,
+  };
+
+  Object.keys(draft).forEach((key) => {
+    if (draft[key] === '') delete draft[key];
+  });
+
+  const missingFields = [];
+  if (!draft.name) missingFields.push('lead name');
+  if (!draft.company) missingFields.push('company');
+  if (!draft.email) missingFields.push('email');
+
+  return {
+    status: missingFields.length ? 'DRAFT_INCOMPLETE' : 'APPROVAL_REQUIRED',
+    tool: 'crm_lead_create_draft',
+    label: 'Create Lead draft',
+    mutation: 'NO_BACKEND_MUTATION_REQUIRES_OPERATOR_SAVE',
+    missingFields,
+    leadCreateDraft: draft,
+    createLeadDraft: draft,
+    message: missingFields.length
+      ? `I can prepare the Lead, but I need: ${missingFields.join(', ')}.`
+      : `I prepared a governed Create Lead draft for ${draft.name} at ${draft.company}. Review the Create Lead surface and press Save.`,
+  };
+}
+
+/**
+ * @function buildWilsyFG81LeadCreateOperatorResponse
+ * @description Builds the Operator Kernel response for governed Create Lead draft requests.
+ * @param {Object} params - Response construction parameters.
+ * @returns {Object|null} Operator response or null.
+ * @collaboration Wilsy AI chat-to-Create Lead, no-blind-write posture, and frontend draft hydration.
+ */
+function buildWilsyFG81LeadCreateOperatorResponse({
+  operatorQuestion = '',
+  tenantId = 'MASTER',
+  operatorId = 'WILSY_OPERATOR',
+  workspaceRoute = '/crm/leads',
+  context = {},
+} = {}) {
+  const tool = buildWilsyFG81LeadCreateDraftFromQuestion(operatorQuestion);
+  if (!tool) return null;
+
+  const draft = tool.leadCreateDraft || {};
+  const ready = tool.status === 'APPROVAL_REQUIRED';
+
+  const operatorModel = {
+    intent: 'create_lead',
+    action: 'prepare_create_lead_draft',
+    domain: 'leads',
+    supported: true,
+    title: ready ? 'Create Lead draft ready' : 'Create Lead draft needs fields',
+    answer: tool.message,
+    outcome: ready
+      ? 'Draft hydrated into the Create Lead workflow for operator review.'
+      : 'Provide the missing fields and Wilsy AI will complete the governed draft.',
+    responseSurface: 'continuous_typographic',
+    leadCreateDraft: draft,
+    createLeadDraft: draft,
+    inlineCommandLinks: [
+      {
+        id: 'open_create_lead_draft',
+        label: ready ? 'Open Create Lead draft' : 'Complete Lead draft',
+        command: 'open_create_lead_draft',
+        action: 'prepare_create_lead_draft',
+        payload: {
+          module: 'Lead',
+          draft,
+          missingFields: tool.missingFields,
+          requiresOperatorApproval: true,
+        },
+      },
+    ],
+    sourceTrace: [
+      'Wilsy AI prepared a Create Lead draft from chat text.',
+      'No backend mutation was executed.',
+      'Operator must review fields and press Save.',
+    ],
+  };
+
+  return {
+    result: 'WILSY_AI_OPERATOR_MODEL_RESOLVED',
+    mutation: 'NO_BACKEND_MUTATION_REQUIRES_OPERATOR_SAVE',
+    tenant: { tenantId, operatorId },
+    workspace: context.workspace || { route: workspaceRoute },
+    evidencePosture: context.evidencePosture || null,
+    operatorModel,
+    toolRuns: [tool],
+    inlineCommandLinks: operatorModel.inlineCommandLinks,
+    actionSuggestions: [
+      {
+        id: 'review_create_lead_draft',
+        title: 'Review Create Lead draft',
+        description: 'Open the Create Lead surface, verify every field, then Save.',
+        command: 'open_create_lead_draft',
+      },
+    ],
+  };
+}
+
+/**
  * @function resolveWilsyAIOperatorModel
  * @description Resolves tenant CRM and business productivity requests through the production Operator Kernel.
  * @param {Object} req - Express request.
@@ -1278,6 +1494,19 @@ export async function resolveWilsyAIOperatorModel(req = {}) {
     'Review evidence gaps before preparing a command.',
     'Execute only through an approved governed Wilsy command.',
   ];
+
+  const wilsyFG81CreateLeadResponse = buildWilsyFG81LeadCreateOperatorResponse({
+    operatorQuestion,
+    tenantId,
+    operatorId,
+    workspaceRoute,
+    context,
+  });
+
+  if (wilsyFG81CreateLeadResponse) {
+    /* P60K5Q10FG81_CREATE_LEAD_EARLY_OPERATOR_RESPONSE */
+    return wilsyFG81CreateLeadResponse;
+  }
 
   const operatorModel = {
     intent: intent.intent,
