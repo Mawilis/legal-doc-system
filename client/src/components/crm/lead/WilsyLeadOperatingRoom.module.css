@@ -9733,3 +9733,50 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
   margin-top: clamp(0.55rem, 0.72vh, 0.8rem) !important;
 }
+
+/* P60K5Q10FG.5.8 - Leads structural KPI compression */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 156px !important;
+  margin-top: clamp(0.58rem, 0.72vh, 0.78rem) !important;
+  margin-bottom: clamp(0.58rem, 0.72vh, 0.82rem) !important;
+  gap: clamp(0.58rem, 0.72vw, 0.82rem) !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) > * {
+  min-height: 132px !important;
+  height: 144px !important;
+  max-height: 144px !important;
+  padding-top: clamp(10px, 0.85vw, 14px) !important;
+  padding-bottom: clamp(10px, 0.85vw, 14px) !important;
+  align-content: center !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) > * > * {
+  min-height: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) b {
+  line-height: 1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] > *:has(+ .leadTabbedShell) em {
+  line-height: 1.14 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
+  margin-top: clamp(0.5rem, 0.68vh, 0.75rem) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  margin-top: 0 !important;
+}
