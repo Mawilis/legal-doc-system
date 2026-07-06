@@ -9655,3 +9655,24 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
 .leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
   margin-top: 0 !important;
 }
+
+/* P60K5Q10FG.6.7 - Leads records surface elevation after metric compression */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
+  gap: 0.52rem !important;
+  row-gap: 0.52rem !important;
+  align-content: start !important;
+  grid-auto-rows: min-content !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadVisionMetricDeck[data-wilsy-lead-vision-metrics="LIVE_DB_DERIVED"] {
+  margin-bottom: 0.2rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  margin-top: clamp(-9.25rem, -16vh, -7.25rem) !important;
+  align-self: start !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace > *:first-child {
+  margin-top: 0 !important;
+}
