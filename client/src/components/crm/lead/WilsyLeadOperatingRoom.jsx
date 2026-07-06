@@ -2441,6 +2441,7 @@ export default function WilsyLeadOperatingRoom({
   const tenantId = resolveTenantId(tenantConfig, user);
   const [mode, setMode] = useState('list');
   const [activeTopTab, setActiveTopTab] = useState('records');
+  const [leadSortViewpoint, setLeadSortViewpoint] = useState({ field: 'lastActivity', direction: 'desc' });
   const [activeListViewId, setActiveListViewId] = useState('ALL_LEADS');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [leadFilterQuery, setLeadFilterQuery] = useState('');
@@ -3835,6 +3836,56 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     );
   }
 
+
+  /**
+   * @function openWilsyLeadSortViewpoint
+   * @description Opens Sort as a full Leads workspace viewpoint instead of a small dropdown.
+   * @returns {void}
+   * @collaboration Keeps sort work inside the same production viewport as Records and Proof.
+   */
+  function openWilsyLeadSortViewpoint() {
+    setActiveTopTab('sort');
+    setCommandOpen(false);
+    setCreateMenuOpen(false);
+    setMoreMenuOpen(false);
+    setThemeMenuOpen(false);
+    setOpenRowActionId('');
+  }
+
+  /**
+   * @function handleWilsyLeadSortViewpointSelect
+   * @description Stores the active Leads sort field and direction from the Sort viewpoint.
+   * @param {string} field - Lead field key.
+   * @param {string} direction - Sort direction.
+   * @returns {void}
+   * @collaboration Connects sort intent to the visible records and ledger work surface.
+   */
+  function handleWilsyLeadSortViewpointSelect(field, direction) {
+    setLeadSortViewpoint({ field, direction });
+  }
+
+  /**
+   * @function sortWilsyLeadRecordsForViewpoint
+   * @description Sorts Leads for the active Sort viewpoint without mutating source records.
+   * @param {Array<object>} records - Candidate Lead records.
+   * @returns {Array<object>} Sorted Lead records.
+   * @collaboration Keeps source-backed rows deterministic while the operator changes sort posture.
+   */
+  function sortWilsyLeadRecordsForViewpoint(records) {
+    const safeRecords = Array.isArray(records) ? records : [];
+    const field = leadSortViewpoint?.field || 'lastActivity';
+    const direction = leadSortViewpoint?.direction === 'asc' ? 'asc' : 'desc';
+
+    return [...safeRecords].sort((leftRecord, rightRecord) => {
+      const leftValue = String(resolveLeadValue(leftRecord, field) || '').toLowerCase();
+      const rightValue = String(resolveLeadValue(rightRecord, field) || '').toLowerCase();
+
+      if (leftValue < rightValue) return direction === 'asc' ? -1 : 1;
+      if (leftValue > rightValue) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
   /**
    * @function renderLeadRecordsCommandBar
    * @description Renders the records-table command bar with view, tab, filter, sort and create actions.
@@ -3908,7 +3959,13 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           </button>
 
           <div className={styles.leadDropdownWrap}>
-            <button type="button" className={styles.leadSortButton} onClick={() => setSortMenuOpen(previous => !previous)}>
+            <button
+              type="button"
+              className={styles.leadSortButton}
+              onClick={openWilsyLeadSortViewpoint}
+              data-wilsy-lead-sort-trigger="viewpoint"
+              data-active={activeTopTab === 'sort' ? 'true' : 'false'}
+            >
               <Filter size={18} />
               <span>Sort</span>
               <ChevronDown size={15} />
@@ -4484,6 +4541,99 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     );
   }
 
+
+  /**
+   * @function renderLeadSortTab
+   * @description Renders Sort as a full Leads workspace viewpoint.
+   * @returns {JSX.Element} Leads Sort viewpoint.
+   * @collaboration Turns sorting into a visible task surface with field, direction and preview evidence.
+   */
+  function renderLeadSortTab() {
+    const sortFields = LEAD_COLUMNS.filter(column => column.key !== 'actions');
+    const sortedPreview = sortWilsyLeadRecordsForViewpoint(filteredLeads).slice(0, 8);
+    const activeFieldLabel = sortFields.find(column => column.key === leadSortViewpoint.field)?.label || 'Last Activity';
+    const activeDirectionLabel = leadSortViewpoint.direction === 'asc' ? 'Ascending' : 'Descending';
+
+    return (
+      <section className={styles.leadSortViewpoint} data-wilsy-lead-sort-viewpoint="workarea">
+        <header className={styles.leadSortViewpointHeader}>
+          <span>
+            <small>Sort Operating Viewpoint</small>
+            <strong>{activeFieldLabel} · {activeDirectionLabel}</strong>
+            <em>{filteredLeads.length} source-backed rows ready for ordering</em>
+          </span>
+          <div>
+            <button type="button" onClick={() => handleWilsyLeadSortViewpointSelect('lastActivity', 'desc')}>
+              Latest Activity
+            </button>
+            <button type="button" onClick={() => setActiveTopTab('records')}>
+              Return Records
+            </button>
+          </div>
+        </header>
+
+        <section className={styles.leadSortViewpointGrid}>
+          <article className={styles.leadSortViewpointPanel}>
+            <small>Sort field</small>
+            <strong>Choose the record authority</strong>
+            <div className={styles.leadSortFieldGrid}>
+              {sortFields.map(column => (
+                <button
+                  key={column.key}
+                  type="button"
+                  data-active={leadSortViewpoint.field === column.key ? 'true' : 'false'}
+                  onClick={() => handleWilsyLeadSortViewpointSelect(column.key, leadSortViewpoint.direction)}
+                >
+                  <span>{column.label}</span>
+                  <em>{column.key}</em>
+                </button>
+              ))}
+            </div>
+          </article>
+
+          <article className={styles.leadSortViewpointPanel}>
+            <small>Direction</small>
+            <strong>Control row movement</strong>
+            <div className={styles.leadSortDirectionGrid}>
+              <button
+                type="button"
+                data-active={leadSortViewpoint.direction === 'asc' ? 'true' : 'false'}
+                onClick={() => handleWilsyLeadSortViewpointSelect(leadSortViewpoint.field, 'asc')}
+              >
+                <span>Ascending</span>
+                <em>A to Z, low to high</em>
+              </button>
+              <button
+                type="button"
+                data-active={leadSortViewpoint.direction === 'desc' ? 'true' : 'false'}
+                onClick={() => handleWilsyLeadSortViewpointSelect(leadSortViewpoint.field, 'desc')}
+              >
+                <span>Descending</span>
+                <em>Z to A, high to low</em>
+              </button>
+            </div>
+          </article>
+
+          <article className={styles.leadSortViewpointPreview}>
+            <small>Sorted preview</small>
+            <strong>Visible row order</strong>
+            <div>
+              {sortedPreview.length ? sortedPreview.map((record, index) => (
+                <button key={record._id || record.id || `sort-preview-${index}`} type="button">
+                  <span>{index + 1}</span>
+                  <strong>{resolveLeadValue(record, 'leadName')}</strong>
+                  <em>{resolveLeadValue(record, leadSortViewpoint.field)}</em>
+                </button>
+              )) : (
+                <p>No source-backed rows available for sorting.</p>
+              )}
+            </div>
+          </article>
+        </section>
+      </section>
+    );
+  }
+
   /**
    * @function renderLeadProofTab
    * @description Renders compliance telemetry and ledger proof behind the Proof tab.
@@ -4547,6 +4697,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   function renderLeadTabContent() {
     if (activeTopTab === 'signals') return renderLeadSignalsTab();
     if (activeTopTab === 'pipeline') return renderLeadPipelineTab();
+    if (activeTopTab === 'sort') return renderLeadSortTab();
     if (activeTopTab === 'proof') return renderLeadProofTab();
     if (activeTopTab === 'sources') return renderLeadSourcesTab();
 
@@ -4565,7 +4716,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         className={styles.leadTabbedShell}
         data-wilsy-lead-os-canvas={WILSY_LEAD_TABBED_APP_BAR_VERSION}
         data-wilsy-lead-split-view={splitView ? 'true' : 'false'}
-       data-wilsy-lead-proof-viewpoint="workarea-scroll">
+       data-wilsy-lead-proof-viewpoint={activeTopTab === 'proof' ? 'workarea-scroll' : undefined}
+          data-wilsy-lead-sort-viewpoint={activeTopTab === 'sort' ? 'workarea' : undefined}>
         {activeTopTab === 'records' ? renderLeadVisionMetricDeck() : null}
         {renderLeadTabContent()}
       </section>
@@ -4794,6 +4946,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    */
   function renderLedger() {
     const hasRows = filteredLeads.length > 0;
+    const ledgerRows = sortWilsyLeadRecordsForViewpoint(filteredLeads);
 
     return (
       <section
@@ -4828,7 +4981,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
                 </tr>
               </thead>
               <tbody>
-                {filteredLeads.map((record, index) => (
+                {ledgerRows.map((record, index) => (
                   <tr key={record._id || record.id || `lead-record-${index}`}>
                     <td><input type="checkbox" aria-label={`Select lead ${index + 1}`} /></td>
                     {LEAD_COLUMNS.map(column => (
