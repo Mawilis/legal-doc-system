@@ -9594,3 +9594,50 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   flex: 0 0 auto !important;
   align-self: end !important;
 }
+
+/* P60K5Q10FG.6.1 - Leads explicit KPI deck compression */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-deck="records"] {
+  min-height: 0 !important;
+  height: 132px !important;
+  max-height: 132px !important;
+  margin-top: 0.62rem !important;
+  margin-bottom: 0.66rem !important;
+  gap: 0.75rem !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] {
+  min-height: 112px !important;
+  height: 118px !important;
+  max-height: 118px !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+  align-content: center !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] > * {
+  min-height: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] b {
+  line-height: 0.98 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] p,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-leads-kpi-card="records"] em {
+  line-height: 1.08 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
+  margin-top: 0.52rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  margin-top: 0 !important;
+}

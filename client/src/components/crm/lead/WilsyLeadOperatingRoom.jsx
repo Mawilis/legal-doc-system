@@ -269,6 +269,13 @@ import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
 const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
 const WILSY_LEADS_AI_OPERATOR_ENDPOINT = '/api/wilsy/ai/operator/resolve';
 const WILSY_LEADS_EXTERNAL_POINTER_SELECTION_BLOCK_MS = 700;
+const WILSY_LEAD_KPI_LAYOUT_LABELS = [
+  'PIPELINE HEALTH',
+  'OPEN LEADS',
+  'QUALIFIED',
+  'CONVERSION RATE',
+  'AVG. LEAD SCORE',
+];
 const WILSY_LEADS_FILTER_LOCAL_STATE_KEY = 'wilsy.crm.leads.filterButtons.v1';
 
 /**
@@ -2966,6 +2973,129 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     setViewMenuOpen(false);
     setOpenRowActionId('');
   }
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const leadRoot = document.querySelector('[data-wilsy-lead-operating-room]');
+
+    if (!leadRoot) {
+      return undefined;
+    }
+
+    /**
+     * @function normalizeWilsyLeadKpiLayoutText
+     * @description Normalizes visible metric text so KPI cards can be identified without relying on unstable CSS module names.
+     * @param {string} value - Raw visible text.
+     * @returns {string} Normalized text.
+     * @collaboration Leads visual KPI layer, runtime DOM annotation, and records workspace height recovery.
+     */
+    function normalizeWilsyLeadKpiLayoutText(value = '') {
+      return String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
+    }
+
+    /**
+     * @function resolveWilsyLeadKpiCardNode
+     * @description Walks from a visible KPI label to the actual card container that should be compressed.
+     * @param {Element} labelNode - Label node found inside the Leads workspace.
+     * @returns {Element|null} KPI card element.
+     * @collaboration Leads KPI cards, data attributes, CSS compression rules, and Meetings isolation.
+     */
+    function resolveWilsyLeadKpiCardNode(labelNode) {
+      let candidate = labelNode;
+
+      while (candidate && candidate !== leadRoot) {
+        const rect = candidate.getBoundingClientRect?.();
+        const text = normalizeWilsyLeadKpiLayoutText(candidate.textContent || '');
+        const hasMetricLabel = WILSY_LEAD_KPI_LAYOUT_LABELS.some(label => text.includes(label));
+        const looksLikeCard =
+          rect &&
+          rect.width >= 180 &&
+          rect.height >= 90 &&
+          rect.height <= 360 &&
+          text.length <= 420;
+
+        if (hasMetricLabel && looksLikeCard) {
+          return candidate;
+        }
+
+        candidate = candidate.parentElement;
+      }
+
+      return null;
+    }
+
+    /**
+     * @function markWilsyLeadKpiDeckForLayout
+     * @description Tags the visible Leads KPI deck and cards so CSS can compress exactly this Leads-only metric row.
+     * @returns {void}
+     * @collaboration Leads KPI cards, records table viewport, Meetings isolation, and runtime layout recovery.
+     */
+    function markWilsyLeadKpiDeckForLayout() {
+      const existingCards = leadRoot.querySelectorAll('[data-wilsy-leads-kpi-card="records"]');
+      existingCards.forEach(card => card.removeAttribute('data-wilsy-leads-kpi-card'));
+
+      const existingDecks = leadRoot.querySelectorAll('[data-wilsy-leads-kpi-deck="records"]');
+      existingDecks.forEach(deck => deck.removeAttribute('data-wilsy-leads-kpi-deck'));
+
+      const labelNodes = Array.from(leadRoot.querySelectorAll('small, span, strong, b, em, p, div'));
+      const matchedCards = [];
+
+      labelNodes.forEach((node) => {
+        const normalizedText = normalizeWilsyLeadKpiLayoutText(node.textContent || '');
+        const isMetricLabel = WILSY_LEAD_KPI_LAYOUT_LABELS.some(label => normalizedText === label || normalizedText.includes(label));
+
+        if (!isMetricLabel) {
+          return;
+        }
+
+        const card = resolveWilsyLeadKpiCardNode(node);
+
+        if (card && !matchedCards.includes(card)) {
+          matchedCards.push(card);
+        }
+      });
+
+      matchedCards.forEach((card) => {
+        card.setAttribute('data-wilsy-leads-kpi-card', 'records');
+      });
+
+      const deckCounts = new Map();
+
+      matchedCards.forEach((card) => {
+        const deck = card.parentElement;
+
+        if (!deck || deck === leadRoot) {
+          return;
+        }
+
+        deckCounts.set(deck, (deckCounts.get(deck) || 0) + 1);
+      });
+
+      deckCounts.forEach((count, deck) => {
+        if (count >= 3) {
+          deck.setAttribute('data-wilsy-leads-kpi-deck', 'records');
+        }
+      });
+    }
+
+    markWilsyLeadKpiDeckForLayout();
+
+    const layoutObserver = new MutationObserver(() => {
+      markWilsyLeadKpiDeckForLayout();
+    });
+
+    layoutObserver.observe(leadRoot, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      layoutObserver.disconnect();
+    };
+  });
 
   /**
    * @function canCommitWilsyLeadSelectionEvent
