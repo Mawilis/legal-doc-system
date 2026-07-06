@@ -268,6 +268,7 @@ import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
 
 const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
 const WILSY_LEADS_AI_OPERATOR_ENDPOINT = '/api/wilsy/ai/operator/resolve';
+const WILSY_LEADS_EXTERNAL_POINTER_SELECTION_BLOCK_MS = 700;
 const WILSY_LEADS_FILTER_LOCAL_STATE_KEY = 'wilsy.crm.leads.filterButtons.v1';
 
 /**
@@ -2680,6 +2681,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
   const hasAutoHydratedTelemetryRef = useRef(false);
+  const wilsyLeadExternalPointerDownRef = useRef(0);
 
   /* WILSY_P60K5Q10FG38_PROOF_VIEW_CONTAINMENT_EFFECT */
   useEffect(() => {
@@ -2842,6 +2844,36 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }, [filteredLeads]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    /**
+     * @function captureWilsyLeadExternalPointerDown
+     * @description Records pointer starts outside the Leads workspace so layout-shift clicks cannot select records.
+     * @param {PointerEvent|MouseEvent} event - Captured pointer or mouse event.
+     * @returns {void}
+     * @collaboration CRM side rail collapse controls, Leads records grid, and selection click isolation.
+     */
+    function captureWilsyLeadExternalPointerDown(event) {
+      const target = event?.target;
+      const insideLeadWorkspace = target?.closest?.('[data-wilsy-lead-operating-room]');
+
+      if (!insideLeadWorkspace) {
+        wilsyLeadExternalPointerDownRef.current = Date.now();
+      }
+    }
+
+    document.addEventListener('pointerdown', captureWilsyLeadExternalPointerDown, true);
+    document.addEventListener('mousedown', captureWilsyLeadExternalPointerDown, true);
+
+    return () => {
+      document.removeEventListener('pointerdown', captureWilsyLeadExternalPointerDown, true);
+      document.removeEventListener('mousedown', captureWilsyLeadExternalPointerDown, true);
+    };
+  }, []);
+
+  useEffect(() => {
     if (hasAutoHydratedTelemetryRef.current) return;
     hasAutoHydratedTelemetryRef.current = true;
 
@@ -2936,13 +2968,48 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
   /**
+   * @function canCommitWilsyLeadSelectionEvent
+   * @description Allows Leads row selection only when the interaction is not a side-rail collapse click-through.
+   * @param {Event|null} event - Optional selection event.
+   * @returns {boolean} True when selection may mutate local selectedRowIds.
+   * @collaboration CRM navigation rail, Leads record checkboxes, layout-shift click shield, and operator-safe bulk actions.
+   */
+  function canCommitWilsyLeadSelectionEvent(event = null) {
+    const lastExternalPointerAt = Number(wilsyLeadExternalPointerDownRef.current || 0);
+    const clickedImmediatelyAfterExternalPointer =
+      lastExternalPointerAt > 0 &&
+      Date.now() - lastExternalPointerAt < WILSY_LEADS_EXTERNAL_POINTER_SELECTION_BLOCK_MS;
+
+    event?.stopPropagation?.();
+
+    if (clickedImmediatelyAfterExternalPointer) {
+      return false;
+    }
+
+    if (!event) {
+      return true;
+    }
+
+    const target = event?.target;
+
+    if (!target?.closest) {
+      return true;
+    }
+
+    return Boolean(target.closest('[data-wilsy-lead-operating-room]'));
+  }
+
+  /**
    * @function handleToggleLeadSelection
    * @description Toggles one row in the Lead records grid.
    * @param {string} recordId - Lead record id.
    * @returns {void}
    * @collaboration Enables list-view mass action posture without mutating backend rows in the browser.
    */
-  function handleToggleLeadSelection(recordId) {
+  function handleToggleLeadSelection(recordId, event = null) {
+    if (!canCommitWilsyLeadSelectionEvent(event)) {
+      return;
+    }
     setSelectedRowIds(previous => (
       previous.includes(recordId)
         ? previous.filter(value => value !== recordId)
@@ -2956,7 +3023,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    * @returns {void}
    * @collaboration Mirrors enterprise CRM list-view behavior while keeping actions explicit.
    */
-  function handleToggleAllLeadSelection() {
+  function handleToggleAllLeadSelection(event = null) {
+    if (!canCommitWilsyLeadSelectionEvent(event)) {
+      return;
+    }
     const visibleIds = paginatedLeads.map((record, index) => resolveLeadRecordId(record, leadPagination.startIndex + index));
     const allSelected = visibleIds.length > 0 && visibleIds.every(recordId => selectedRowIds.includes(recordId));
 
@@ -4668,7 +4738,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
                           type="checkbox"
                           aria-label={`Select ${rowName}`}
                           checked={selectedRowIds.includes(recordId)}
-                          onChange={() => handleToggleLeadSelection(recordId)}
+                          onChange={(event) => handleToggleLeadSelection(recordId, event)}
                         />
                       </td>
                       <td>
