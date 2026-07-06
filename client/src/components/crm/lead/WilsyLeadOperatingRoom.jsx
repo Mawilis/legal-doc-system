@@ -158,7 +158,7 @@ function resolveWilsyR91KOwnerTableDisplay(record = {}, fallbackResolver = null)
     }
   }
 
-  return 'Unassigned';
+  return resolveWilsyFG91ECurrentOwnerFallbackName();
 }
 
 /**
@@ -2924,7 +2924,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       .filter(Boolean);
 
     if (!parts.length) {
-      return 'U';
+      return resolveWilsyFG91ECurrentOwnerFallbackInitials();
     }
 
     return parts
@@ -3183,6 +3183,104 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     return String(value || '').replace(/\s+/g, ' ').trim();
   }
 
+/**
+ * @function resolveWilsyFG91ECurrentOwnerFallbackName
+ * @description Resolves the owner fallback used by the Records owner column when backend Lead owner fields are blank or unassigned.
+ * @returns {string} Current operator fallback display name.
+ * @collaboration Records owner column, AI-created Lead rows, CRM performance ownership, and operator accountability.
+ */
+function resolveWilsyFG91ECurrentOwnerFallbackName() {
+  /* P60K5Q10FG91E_OWNER_COLUMN_FALLBACK_REPAIR */
+  if (typeof window !== 'undefined') {
+    const candidates = [
+      window.__WILSY_CURRENT_USER__,
+      window.__WILSY_USER__,
+      window.__WILSY_OPERATOR__,
+      window.__WILSY_OPERATOR_CONTEXT__,
+      window.__WILSY_AUTH_USER__,
+      window.WILSY_USER,
+      window.WILSY_AUTH_USER,
+      window.wilsyUser,
+      window.wilsyOperator,
+      window.sovereignUser,
+    ].filter(candidate => candidate && typeof candidate === 'object');
+
+    const storageKeys = [
+      'wilsy.currentUser',
+      'wilsy.user',
+      'wilsy.operator',
+      'wilsy.operator.profile',
+      'wilsy.account.profile',
+      'wilsy.auth.user',
+      'wilsy.user.profile',
+      'wilsy.profile',
+      'currentUser',
+      'user',
+      'operator',
+      'profile',
+      'accountProfile',
+      'authUser',
+      'tenantUser',
+      'tenantOperator',
+      'sovereignUser',
+    ];
+
+    [window.localStorage, window.sessionStorage].forEach((storage) => {
+      storageKeys.forEach((key) => {
+        try {
+          const parsed = JSON.parse(storage?.getItem?.(key) || 'null');
+
+          if (parsed && typeof parsed === 'object') {
+            candidates.push(parsed);
+          }
+        } catch (error) {}
+      });
+    });
+
+    for (const candidate of candidates) {
+      const nested = candidate.user || candidate.profile || candidate.operator || candidate.account || candidate.identity || {};
+      const source = { ...nested, ...candidate };
+      const firstName = String(source.firstName || source.givenName || '').trim();
+      const lastName = String(source.lastName || source.surname || source.familyName || '').trim();
+      const joinedName = [firstName, lastName].filter(Boolean).join(' ').trim();
+      const displayName = String(
+        source.displayName ||
+        source.name ||
+        source.fullName ||
+        source.operatorName ||
+        source.userName ||
+        source.username ||
+        joinedName ||
+        ''
+      ).replace(/\s+/g, ' ').trim();
+
+      if (displayName && !/^unassigned$/i.test(displayName) && displayName !== 'U' && displayName !== '-') {
+        return displayName;
+      }
+    }
+  }
+
+  return 'Wilson Khanyezi';
+}
+
+/**
+ * @function resolveWilsyFG91ECurrentOwnerFallbackInitials
+ * @description Resolves fallback owner initials for AI-created Lead rows when backend initials are blank or U.
+ * @returns {string} Current operator fallback initials.
+ * @collaboration Records owner avatar, CRM performance ownership, AI-created Lead rows, and accountability display.
+ */
+function resolveWilsyFG91ECurrentOwnerFallbackInitials() {
+  const ownerName = resolveWilsyFG91ECurrentOwnerFallbackName();
+  const parts = ownerName.split(' ').filter(Boolean);
+
+  if (!parts.length) {
+    return 'WK';
+  }
+
+  return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
+}
+
+
   /**
    * @function buildWilsyFG89LeadFinalSavePayload
    * @description Builds the final backend Create Lead payload with every known Lead name, company, owner, title, and address alias.
@@ -3269,9 +3367,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         position: title,
         roleTitle: title,
       } : {}),
-      ...(owner ? {
-        owner,
-        ownerName: owner,
+      ...((owner || resolveWilsyFG91ECurrentOwnerFallbackName()) ? {
+        /* P60K5Q10FG91E_FINAL_SAVE_OWNER_FALLBACK_ALIAS */
+        owner: owner || resolveWilsyFG91ECurrentOwnerFallbackName(),
+        ownerName: owner || resolveWilsyFG91ECurrentOwnerFallbackName(),
         ownerDisplayName: owner,
         ownerFullName: owner,
         assignedTo: owner,
