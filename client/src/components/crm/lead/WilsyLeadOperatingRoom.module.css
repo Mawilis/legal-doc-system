@@ -8930,3 +8930,59 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   display: flex !important;
 }
 
+/* P60K5Q10FG.3.1 — Leads Proof Trail overlay uplift */
+.drawer,
+.drawerWide {
+  position: fixed !important;
+  top: 86px !important;
+  right: 28px !important;
+  bottom: 28px !important;
+  z-index: 2147482600 !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  isolation: isolate !important;
+  contain: none !important;
+  clip-path: none !important;
+  overflow: auto !important;
+}
+
+.drawerWide {
+  left: clamp(118px, 8vw, 164px) !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.drawer::before,
+.drawerWide::before {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+}
+
+.leadOperatingRoom:has(.drawer),
+.leadOperatingRoom:has(.drawerWide) {
+  overflow: visible !important;
+  contain: none !important;
+}
+
+.leadRecordsPanel:has(.drawer),
+.leadRecordsPanel:has(.drawerWide),
+.leadRecordsBody:has(.drawer),
+.leadRecordsBody:has(.drawerWide),
+.leadModuleShell:has(.drawer),
+.leadModuleShell:has(.drawerWide) {
+  overflow: visible !important;
+  contain: none !important;
+}
+
+.leadDropdownMenu,
+.headerMoreMenu,
+.leadRowActionMenu {
+  z-index: 2147482000 !important;
+}
+
