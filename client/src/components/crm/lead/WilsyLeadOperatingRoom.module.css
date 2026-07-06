@@ -9536,3 +9536,61 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   padding: 0 0.65rem;
   vertical-align: baseline;
 }
+
+/* P60K5Q10FG.4.9 - Leads records height parity with Meetings
+   Fixes the one-row Leads records collapse by making the records workspace stretch vertically
+   while preserving the existing Meetings behavior, FG47 Wilsy AI surface, and protected backend routes. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTabbedShell {
+  align-content: stretch !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  min-height: clamp(31rem, calc(100dvh - 16.4rem), 43rem) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsWorkspace {
+  height: 100% !important;
+  min-height: clamp(29rem, calc(100dvh - 18.4rem), 40rem) !important;
+  max-height: clamp(29rem, calc(100dvh - 18.4rem), 40rem) !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsPanel {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsTable {
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsTableBody,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRows,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTableRows,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsBody,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] [data-wilsy-lead-records-body] {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+  scrollbar-gutter: stable !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordRow,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadTableRow,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRow {
+  min-height: clamp(5.75rem, 10.5dvh, 8.25rem) !important;
+  align-items: center !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsFooter {
+  flex: 0 0 auto !important;
+  align-self: end !important;
+}
