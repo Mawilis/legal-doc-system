@@ -8904,3 +8904,29 @@
   border-color: rgba(62, 255, 154, 0.42) !important;
 }
 
+/* P60K5Q10FG.2.8.3 — Exact Leads filter rail close/open controls */
+.leadFilterRailCloseButton[data-wilsy-leads-filter-close="true"],
+.leadFilterRailOpenButton[data-wilsy-leads-filter-open="true"],
+button[data-wilsy-leads-filter-toolbar-toggle="true"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.leadFilterRailCloseButton[data-wilsy-leads-filter-close="true"] {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  position: relative !important;
+  z-index: 30 !important;
+}
+
+.leadFilterRailCloseButton[data-wilsy-leads-filter-close="true"]:hover,
+.leadFilterRailCloseButton[data-wilsy-leads-filter-close="true"]:focus-visible {
+  border-color: rgba(62, 255, 154, 0.55) !important;
+  background: rgba(62, 255, 154, 0.12) !important;
+}
+
+.leadFilterRailCollapsed[data-wilsy-lead-filter-rail-open="false"] {
+  display: flex !important;
+}
+

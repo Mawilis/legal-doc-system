@@ -2507,6 +2507,28 @@ export default function WilsyLeadOperatingRoom({
     }
   }
 
+
+  /**
+   * @function openWilsyLeadFilterRail
+   * @description Opens the Leads filter rail from the collapsed rail or toolbar filter control.
+   * @returns {void}
+   * @collaboration Leads toolbar, collapsed filter rail, record viewpoint, and operator navigation recovery.
+   */
+  function openWilsyLeadFilterRail() {
+    setFilterPanelOpen(true);
+  }
+
+  /**
+   * @function closeWilsyLeadFilterRail
+   * @description Closes the Leads filter rail and clears only temporary filter search text without changing selected filters.
+   * @returns {void}
+   * @collaboration Leads filter rail, collapse control, filter search field, record viewpoint, and operator navigation recovery.
+   */
+  function closeWilsyLeadFilterRail() {
+    setFilterPanelOpen(false);
+    setLeadFilterQuery('');
+  }
+
   const [sortMode, setSortMode] = useState('priority');
   const [leadSkin, setLeadSkin] = useState('crm_revenue_pulse');
   const [splitView, setSplitView] = useState(false);
@@ -3202,6 +3224,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               type="button"
               onClick={() => setFilterPanelOpen(previous => !previous)}
               data-active={filterPanelOpen ? 'true' : 'false'}
+              data-wilsy-leads-filter-toolbar-toggle="true"
             >
               <SlidersHorizontal size={18} />
               <span>Filter</span>
@@ -3581,13 +3604,25 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         <aside
           className={styles.leadFilterRailCollapsed}
           data-wilsy-filter-restore="R83A-FILTER-RESTORE"
+          data-wilsy-lead-filter-rail-open="false"
           aria-label="Lead filters collapsed"
         >
           <button
             type="button"
-            onClick={() => setFilterPanelOpen(previous => !previous)}
+            className={styles.leadFilterRailOpenButton}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              openWilsyLeadFilterRail();
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              openWilsyLeadFilterRail();
+            }}
             aria-label="Show Lead filters"
             title="Show filters"
+            data-wilsy-leads-filter-open="true"
           >
             <SlidersHorizontal size={17} />
             <span>Show filters</span>
@@ -3614,6 +3649,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       <aside
         className={styles.leadFilterRail}
         data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"
+        data-wilsy-lead-filter-rail-open="true"
         aria-label="Lead filters"
       >
         <header className={styles.leadFilterRailHeader}>
@@ -3623,10 +3659,19 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           </span>
           <button
             type="button"
+            className={styles.leadFilterRailCloseButton}
             aria-label="Collapse Lead filters"
-            onClick={() => {
-              setFilterPanelOpen(false);
-              setLeadFilterQuery('');
+            title="Collapse Lead filters"
+            data-wilsy-leads-filter-close="true"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              closeWilsyLeadFilterRail();
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              closeWilsyLeadFilterRail();
             }}
           >
             ‹‹
