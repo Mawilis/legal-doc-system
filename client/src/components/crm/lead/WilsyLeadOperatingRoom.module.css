@@ -11184,3 +11184,64 @@ td[data-wilsy-lead-empty-state="records"] {
   min-height: 42px !important;
   max-height: 42px !important;
 }
+
+/* P60K5Q10FG100C_VISIBLE_CUSTOM_VIEW_SAVE_FOOTER
+   Keeps the production Save Custom View action visible inside short workspace viewports. */
+.leadCustomViewPanel {
+  max-height: min(86vh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.leadCustomViewActions {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  margin: 1rem -1.15rem -1.15rem;
+  border-top: 1px solid rgba(129, 109, 255, 0.26);
+  background:
+    linear-gradient(180deg, rgba(10, 12, 28, 0.82), rgba(6, 8, 20, 0.98)),
+    rgba(8, 10, 22, 0.98);
+  box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
+}
+
+.leadCustomViewActions button {
+  min-height: 2.75rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.leadCustomViewActions button:last-of-type {
+  min-width: 12rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.leadCustomViewActions span {
+  white-space: nowrap;
+}
+
+@media (max-height: 820px) {
+  .leadCustomViewPanel {
+    max-height: calc(100vh - 4rem);
+  }
+
+  .leadCustomViewGrid {
+    gap: 0.8rem;
+  }
+
+  .leadCustomViewPreview {
+    margin-top: 0.85rem;
+  }
+
+  .leadCustomViewActions {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+}
