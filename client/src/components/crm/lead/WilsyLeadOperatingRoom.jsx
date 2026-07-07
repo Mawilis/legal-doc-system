@@ -10349,6 +10349,47 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
   // P60K5Q10FG104C_PROOF_DENSITY_ACTION_SYSTEM
 
+  /**
+   * @description Auto-targets a saved custom Lead proof view when Proof opens from All Leads.
+   * @collaboration Proof workspace, saved custom views, backend /run hydration, evidence receipts, and operator productivity.
+   */
+  useEffect(() => {
+    if (activeTopTab !== 'proof') {
+      return;
+    }
+
+    if (isWilsyToolbarCustomCollectionView(activeLeadOrganizerView) && resolveWilsyToolbarViewBackendId(activeLeadOrganizerView)) {
+      return;
+    }
+
+    const preferredProofView = leadCustomViews.find((view) => (
+      isWilsyToolbarCustomCollectionView(view) && resolveWilsyToolbarViewBackendId(view)
+    )) || leadCustomViews.find((view) => resolveWilsyToolbarViewBackendId(view)) || null;
+    const preferredProofViewId = String(
+      preferredProofView?.id
+      || preferredProofView?.backendViewId
+      || preferredProofView?.backendId
+      || preferredProofView?.registryViewId
+      || preferredProofView?._id
+      || ''
+    ).trim();
+
+    if (!preferredProofViewId || preferredProofViewId === activeListViewId) {
+      return;
+    }
+
+    setLeadToolbarCommandFeedback(`Auto-loading ${resolveLeadOperatingCopyLabel(preferredProofView?.label || 'saved proof view', preferredProofViewId)} proof…`);
+    void handleSelectLeadListView(preferredProofViewId);
+  }, [
+    activeListViewId,
+    activeLeadOrganizerView,
+    activeTopTab,
+    leadCustomViews,
+  ]);
+
+  // P60K5Q10FG104D3_AUTO_TARGET_SAVED_PROOF_VIEW
+
+
   // P60K5Q10FG104A_PRODUCTION_PROOF_COCKPIT
 
 
