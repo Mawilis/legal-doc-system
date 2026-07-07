@@ -188,11 +188,14 @@ async function explainLeadCategoriesHandler(req, res) {
 }
 
 router.get('/', listLeadViews);
+router.post('/query', listLeadViews); // P60K5Q10FG98F_AUDITED_READ_COMMANDS
+router.post('/list', listLeadViews); // P60K5Q10FG98F_AUDITED_READ_COMMANDS
 router.post('/', createLeadViewHandler);
 router.patch('/:viewId', updateLeadViewHandler);
 router.delete('/:viewId', archiveLeadViewHandler);
 router.post('/preview', previewLeadViewHandler);
 router.get('/categories/summary', explainLeadCategoriesHandler);
+router.post('/categories/summary', explainLeadCategoriesHandler); // P60K5Q10FG98F_AUDITED_READ_COMMANDS
 router.post('/:viewId/run', runLeadViewHandler);
 
 export default router;
