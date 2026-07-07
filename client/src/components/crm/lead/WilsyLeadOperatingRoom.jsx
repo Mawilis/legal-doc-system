@@ -3554,10 +3554,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function refreshWilsyToolbarCollectionSummary
-   * @description Runs the active custom Lead view and stores its membership summary.
+   * @description Runs the active custom Lead view and stores its membership summary for visible custom view refresh.
    * @param {object} view Active organizer view.
    * @returns {Promise<void>} Summary refresh completion.
-   * @collaboration Backend run endpoint, toolbar compact count, and membership summary.
+   * @collaboration Backend run endpoint, toolbar compact count, effective membership, Sync button, and visible custom collection rows.
    */
   async function refreshWilsyToolbarCollectionSummary(view = activeLeadOrganizerView) {
     const backendViewId = resolveWilsyToolbarViewBackendId(view);
@@ -3573,12 +3573,32 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       const route = `/api/crm/leads/views/${backendViewId}/run`;
       const result = await requestWilsyToolbarCollectionCommand(route, 'RUN_LEAD_VIEW', {}, 'POST');
       const membership = result?.result?.membership || result?.membership || {};
+      const effectiveLeads = result?.result?.effectiveLeads
+        || result?.effectiveLeads
+        || result?.result?.leads
+        || result?.leads
+        || result?.result?.records
+        || result?.records
+        || [];
+
+      const effectiveLeadIds = Array.isArray(effectiveLeads)
+        ? effectiveLeads.map((record, index) => resolveLeadRecordId(record, index)).filter(Boolean)
+        : [];
 
       setLeadToolbarMembershipById((previous) => ({
         ...previous,
-        [view.id]: membership,
-        [backendViewId]: membership,
+        [view.id]: {
+          ...(previous?.[view.id] || {}),
+          ...membership,
+          effectiveLeadIds: normalizeWilsyLeadMembershipIdList(effectiveLeadIds),
+        },
+        [backendViewId]: {
+          ...(previous?.[backendViewId] || {}),
+          ...membership,
+          effectiveLeadIds: normalizeWilsyLeadMembershipIdList(effectiveLeadIds),
+        },
       }));
+
       setLeadToolbarCommandFeedback('Collection synced');
     } catch (error) {
       setLeadToolbarCommandFeedback(error?.message || 'Collection sync failed');
@@ -3586,6 +3606,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       setLeadToolbarCommandBusy('');
     }
   }
+
+  // P60K5Q10FG103Q_SYNC_LIVE_EFFECTIVE_MEMBERSHIP
 
   /**
    * @function applyWilsyToolbarMembershipCommand
@@ -3959,7 +3981,54 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         },
       }));
 
-      setLeadToolbarCommandFeedback(`${selectedLeadIds.length} source lead${selectedLeadIds.length === 1 ? '' : 's'} added`);
+      const nextManualIncludeLeadIds = normalizeWilsyLeadMembershipIdList([
+        ...(Array.isArray(activeLeadOrganizerView?.manualIncludeLeadIds) ? activeLeadOrganizerView.manualIncludeLeadIds : []),
+        ...selectedLeadIds,
+      ]);
+
+      setLeadCustomViews((previousViews) => {
+        const nextViews = previousViews.map((view) => {
+          const candidateIds = [
+            view?.id,
+            view?.backendViewId,
+            view?.backendId,
+            view?.registryViewId,
+            view?._id,
+          ].map((value) => String(value || ''));
+
+          if (!candidateIds.includes(String(activeLeadOrganizerView?.id || '')) && !candidateIds.includes(String(backendViewId))) {
+            return view;
+          }
+
+          return {
+            ...view,
+            manualIncludeLeadIds: nextManualIncludeLeadIds,
+            membershipSummary: {
+              ...(view?.membershipSummary || {}),
+              ...summary,
+              manualIncludeLeadIds: nextManualIncludeLeadIds,
+            },
+            lastRun: {
+              ...(view?.lastRun || {}),
+              membership: {
+                ...(view?.lastRun?.membership || {}),
+                ...summary,
+                manualIncludeLeadIds: nextManualIncludeLeadIds,
+              },
+            },
+            updatedAt: new Date().toISOString(),
+          };
+        });
+
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
+        }
+
+        return nextViews;
+      });
+
+      // P60K5Q10FG103Q_LOCAL_CUSTOM_VIEW_INCLUDE_STATE
+      setLeadToolbarCommandFeedback(`${selectedLeadIds.length} source lead${selectedLeadIds.length === 1 ? '' : 's'} added · view updated`);
       setLeadCollectionSourceSelectedIds([]);
       setLeadCollectionSourceQuery('');
       setLeadCollectionSourcePickerOpen(false);
@@ -4218,6 +4287,92 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
 
 
+
+  /**
+   * @function normalizeWilsyLeadMembershipIdList
+   * @description Normalizes a candidate Lead id list for effective custom view membership calculations.
+   * @param {Array<string>} ids Candidate ids.
+   * @returns {Array<string>} Normalized unique ids.
+   * @collaboration Manual include/exclude state, backend run summaries, source picker commits, and visible custom view rows.
+   */
+  function normalizeWilsyLeadMembershipIdList(ids = []) {
+    return Array.from(new Set(
+      (Array.isArray(ids) ? ids : [])
+        .map((leadId) => String(leadId || '').trim())
+        .filter(Boolean)
+    ));
+  }
+
+  /**
+   * @function resolveWilsyEffectiveViewMembershipState
+   * @description Resolves manual include/exclude ids for the active custom Lead view from local view state and backend summary state.
+   * @param {object} view Active custom view.
+   * @returns {object} Effective membership id sets.
+   * @collaboration Custom view filtering, source picker additions, remove overrides, Sync, and backend membership engine.
+   */
+  function resolveWilsyEffectiveViewMembershipState(view = activeLeadOrganizerView) {
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+    const summaryByView = leadToolbarMembershipById?.[view?.id] || {};
+    const summaryByBackend = backendViewId ? leadToolbarMembershipById?.[backendViewId] || {} : {};
+    const candidate = {
+      ...summaryByView,
+      ...summaryByBackend,
+    };
+
+    const manualIncludeLeadIds = normalizeWilsyLeadMembershipIdList([
+      ...(Array.isArray(view?.manualIncludeLeadIds) ? view.manualIncludeLeadIds : []),
+      ...(Array.isArray(view?.includedLeadIds) ? view.includedLeadIds : []),
+      ...(Array.isArray(view?.leadIds) ? view.leadIds : []),
+      ...(Array.isArray(candidate.manualIncludeLeadIds) ? candidate.manualIncludeLeadIds : []),
+      ...(Array.isArray(candidate.includedLeadIds) ? candidate.includedLeadIds : []),
+    ]);
+
+    const manualExcludeLeadIds = normalizeWilsyLeadMembershipIdList([
+      ...(Array.isArray(view?.manualExcludeLeadIds) ? view.manualExcludeLeadIds : []),
+      ...(Array.isArray(view?.excludedLeadIds) ? view.excludedLeadIds : []),
+      ...(Array.isArray(candidate.manualExcludeLeadIds) ? candidate.manualExcludeLeadIds : []),
+      ...(Array.isArray(candidate.excludedLeadIds) ? candidate.excludedLeadIds : []),
+    ]);
+
+    return {
+      backendViewId,
+      manualIncludeLeadIds,
+      manualExcludeLeadIds,
+      manualIncludeSet: new Set(manualIncludeLeadIds),
+      manualExcludeSet: new Set(manualExcludeLeadIds),
+    };
+  }
+
+  /**
+   * @function doesWilsyLeadMatchEffectiveCustomViewMembership
+   * @description Evaluates custom view membership as rule matches plus manual includes minus manual excludes.
+   * @param {object} record Lead record.
+   * @param {number} index Lead source index.
+   * @returns {boolean} Whether the record belongs in the visible effective custom view.
+   * @collaboration Frontend table filtering, backend membership overrides, source picker additions, Sync, and duplicate prevention.
+   */
+  function doesWilsyLeadMatchEffectiveCustomViewMembership(record = {}, index = 0) {
+    if (!activeLeadOrganizerView?.custom) {
+      return doesLeadMatchListView(record, activeListViewId);
+    }
+
+    const leadId = resolveLeadRecordId(record, index);
+    const membership = resolveWilsyEffectiveViewMembershipState(activeLeadOrganizerView);
+
+    if (leadId && membership.manualExcludeSet.has(leadId)) {
+      return false;
+    }
+
+    if (leadId && membership.manualIncludeSet.has(leadId)) {
+      return true;
+    }
+
+    return doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {});
+  }
+
+  // P60K5Q10FG103Q_EFFECTIVE_MEMBERSHIP_FILTER_HELPERS
+
+
   const complianceMetrics = useMemo(() => {
     const total = leads.length;
     const verified = leads.filter(record => getComplianceStatus(record) === 'VERIFIED').length;
@@ -4228,19 +4383,30 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }, [leads]);
 
   const baseFilteredLeads = useMemo(() => {
+    /* P60K5Q10FG103Q_EFFECTIVE_CUSTOM_VIEW_RECORD_FILTER */
     const query = String(searchTerm || '').trim().toLowerCase();
 
-    const matchedLeads = leads.filter(record => {
+    const matchedLeads = leads.filter((record, index) => {
       const matchesSearch = !query || JSON.stringify(record || {}).toLowerCase().includes(query);
       const status = getComplianceStatus(record);
       const matchesFilter = activeFilter === 'ALL' || status === activeFilter;
-      const matchesListView = (/* P60K5Q10FG93B_CUSTOM_VIEW_RECORD_FILTER */ activeLeadOrganizerView?.custom ? doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {}) : (/* P60K5Q10FG93I_CUSTOM_VIEW_RECORD_FILTER */ activeLeadOrganizerView?.custom ? doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {}) : doesLeadMatchListView(record, activeListViewId)));
+      const matchesListView = activeLeadOrganizerView?.custom
+        ? doesWilsyLeadMatchEffectiveCustomViewMembership(record, index)
+        : doesLeadMatchListView(record, activeListViewId);
 
       return matchesSearch && matchesFilter && matchesListView;
     });
 
     return sortLeadRecords(matchedLeads, sortMode);
-  }, [activeFilter, activeListViewId, leads, searchTerm, sortMode]);
+  }, [
+    activeFilter,
+    activeLeadOrganizerView,
+    activeListViewId,
+    leadToolbarMembershipById,
+    leads,
+    searchTerm,
+    sortMode,
+  ]);
 
   useEffect(() => {
     /* P60K5Q10FG90D_REACT_FILTER_STATE_MOUNT_RESET */
