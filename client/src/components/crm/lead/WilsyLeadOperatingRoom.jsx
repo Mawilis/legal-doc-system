@@ -1501,21 +1501,23 @@ function resolveLeadListView(listViewId = 'ALL_LEADS') {
 
 /**
  * @function resolveWilsyFG92BLeadOrganizerCountLabel
- * @description Builds the live backend count label for a Leads Organizer option.
+ * @description Builds compact live backend count copy for the Leads Organizer selector.
  * @param {number} count - Matching live backend Lead count.
  * @param {number} total - Total live backend Lead count.
- * @returns {string} Count label.
- * @collaboration Leads Organizer dropdown, live backend rows, list-view counts, and Records grid operating evidence.
+ * @returns {string} Compact count label.
+ * @collaboration Leads Organizer dropdown, live backend rows, list-view counts, compact selector display, and Records grid operating evidence.
  */
 function resolveWilsyFG92BLeadOrganizerCountLabel(count = 0, total = 0) {
+  /* P60K5Q10FG92G_COMPACT_ORGANIZER_COUNT_COPY */
+  /* P60K5Q10FG92H_COUNT_HELPER_JSDOC_REPAIRED */
   const safeCount = Number.isFinite(Number(count)) ? Number(count) : 0;
   const safeTotal = Number.isFinite(Number(total)) ? Number(total) : 0;
 
   if (!safeTotal) {
-    return '0 live backend rows';
+    return '0 live';
   }
 
-  return `${safeCount} of ${safeTotal} live backend rows`;
+  return `${safeCount}/${safeTotal} live`;
 }
 
 /**
@@ -1528,6 +1530,7 @@ function resolveWilsyFG92BLeadOrganizerCountLabel(count = 0, total = 0) {
 function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
   /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MODEL */
   /* P60K5Q10FG92E_BUILDER_BODY_HARD_REPLACED */
+  /* P60K5Q10FG92G_COMPACT_ORGANIZER_BUILDER */
   const liveRows = Array.isArray(sourceRows) ? sourceRows : [];
   const totalRows = liveRows.length;
 
@@ -1550,8 +1553,10 @@ function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
       ...view,
       liveCount,
       liveTotal: totalRows,
-      detail: baseDetail ? `${countLabel} · ${baseDetail}` : countLabel,
+      detail: countLabel,
+      staticDetail: baseDetail,
       liveBackendConnected: true,
+      compactOrganizer: true,
     };
   });
 }
@@ -4701,7 +4706,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
               {viewMenuOpen ? (
                 <section className={styles.leadDropdownMenu} aria-label="Lead list views">
-                  {LEAD_LIST_VIEWS.map(view => (
+                  {/* P60K5Q10FG92G_DROPDOWN_LIVE_COMPACT_SOURCE */}
+                  {leadOrganizerLiveViews.map(view => (
                     <button
                       key={view.id}
                       type="button"
@@ -5387,7 +5393,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
             {viewMenuOpen ? (
               <section className={styles.leadDropdownMenu} aria-label="Lead list views">
-                {LEAD_LIST_VIEWS.map(view => (
+                {leadOrganizerLiveViews.map(view => (
                   <button
                     key={view.id}
                     type="button"

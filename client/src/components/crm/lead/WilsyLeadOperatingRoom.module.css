@@ -10170,3 +10170,130 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   font-size: 0.69rem !important;
   line-height: 1.08 !important;
 }
+
+/* P60K5Q10FG92G - Direct compact Leads Organizer clamp
+   This is intentionally scoped to the Leads view cluster so the organizer
+   behaves as a narrow selector instead of a presentation overlay. */
+.leadViewCluster {
+  flex: 0 0 13rem !important;
+  width: 13rem !important;
+  max-width: 13rem !important;
+  min-width: 13rem !important;
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: 120 !important;
+}
+
+.leadViewCluster .leadDropdownWrap {
+  width: 13rem !important;
+  max-width: 13rem !important;
+  min-width: 13rem !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.leadViewCluster .leadViewButton {
+  width: 13rem !important;
+  max-width: 13rem !important;
+  min-width: 13rem !important;
+  height: 2.35rem !important;
+  min-height: 2.35rem !important;
+  padding: 0.34rem 0.48rem !important;
+  display: grid !important;
+  grid-template-columns: 1rem minmax(0, 1fr) 0.68rem !important;
+  column-gap: 0.38rem !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.leadViewCluster .leadViewButton span {
+  min-width: 0 !important;
+  max-width: 10.45rem !important;
+  overflow: hidden !important;
+}
+
+.leadViewCluster .leadViewButton strong,
+.leadViewCluster .leadViewButton em {
+  display: block !important;
+  max-width: 10.45rem !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadViewCluster .leadViewButton strong {
+  font-size: 0.78rem !important;
+  line-height: 1 !important;
+}
+
+.leadViewCluster .leadViewButton em {
+  font-size: 0.58rem !important;
+  line-height: 0.95 !important;
+  opacity: 0.82 !important;
+}
+
+.leadViewCluster .leadDropdownMenu {
+  width: 13rem !important;
+  min-width: 13rem !important;
+  max-width: 13rem !important;
+  left: 0 !important;
+  right: auto !important;
+  top: calc(100% + 0.28rem) !important;
+  max-height: 9.85rem !important;
+  padding: 0.3rem !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  border-radius: 0.68rem !important;
+  border: 1px solid rgba(147, 119, 255, 0.64) !important;
+  background: #080414 !important;
+  box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.76) !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+  z-index: 3200 !important;
+  contain: layout paint !important;
+}
+
+.leadViewCluster .leadDropdownMenu button {
+  width: 100% !important;
+  min-height: 1.92rem !important;
+  height: 1.92rem !important;
+  padding: 0.28rem 0.38rem !important;
+  border-radius: 0.46rem !important;
+  display: grid !important;
+  grid-template-rows: 1fr 0.7rem !important;
+  align-items: center !important;
+  background: rgba(16, 22, 38, 0.99) !important;
+  border: 1px solid rgba(132, 111, 242, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.leadViewCluster .leadDropdownMenu button + button {
+  margin-top: 0.22rem !important;
+}
+
+.leadViewCluster .leadDropdownMenu button span,
+.leadViewCluster .leadDropdownMenu button em {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadViewCluster .leadDropdownMenu button span {
+  font-size: 0.7rem !important;
+  line-height: 1 !important;
+}
+
+.leadViewCluster .leadDropdownMenu button em {
+  font-size: 0.54rem !important;
+  line-height: 0.9 !important;
+  opacity: 0.78 !important;
+}
+
+.leadViewCluster .leadDropdownMenu button[data-active="true"] {
+  background: rgba(72, 52, 145, 0.94) !important;
+  border-color: rgba(176, 146, 255, 0.76) !important;
+}
