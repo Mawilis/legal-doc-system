@@ -11978,3 +11978,38 @@ td[data-wilsy-lead-empty-state="records"] {
   font-weight: 900;
   letter-spacing: 0.02em;
 }
+
+/* P60K5Q10FG103F4_EVIDENCE_RECEIPT_VISUAL_POLISH */
+[data-wilsy-receipt="FG103F2"] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin: 7px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(121, 102, 255, 0.32);
+  border-radius: 12px;
+  background: rgba(9, 14, 31, 0.72);
+  color: rgba(225, 231, 255, 0.86);
+  font-size: 10.5px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+[data-wilsy-receipt="FG103F2"] span {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+[data-wilsy-receipt="FG103F2"] span:first-child {
+  color: rgba(246, 241, 201, 0.96);
+  font-weight: 700;
+}
+
+[data-wilsy-receipt="FG103F2"] span:not(:first-child) {
+  color: rgba(165, 177, 213, 0.88);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
