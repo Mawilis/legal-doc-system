@@ -5027,6 +5027,46 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     });
   }
 
+
+  /**
+   * @function resolveWilsySelectorBackendRunPaginationForView
+   * @description Resolves backend run pagination for a selector view.
+   * @param {object} view Selector view.
+   * @returns {object|null} Backend pagination or null.
+   * @collaboration Custom view selector, backend /run response, cursor pagination, and compact count labels.
+   */
+  function resolveWilsySelectorBackendRunPaginationForView(view = activeLeadOrganizerView) {
+    const viewKey = resolveWilsyBackendRunViewKey(view);
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+
+    return leadBackendRunPaginationByViewId?.[viewKey]
+      || leadBackendRunPaginationByViewId?.[backendViewId]
+      || null;
+  }
+
+  /**
+   * @function formatWilsySelectorBackendCountLabel
+   * @description Formats the compact selector count from backend run pagination when available.
+   * @param {object} view Selector view.
+   * @returns {string} Selector detail label.
+   * @collaboration View selector, Wilsy custom views, backend run pagination, and stale count prevention.
+   */
+  function formatWilsySelectorBackendCountLabel(view = activeLeadOrganizerView) {
+    const pagination = resolveWilsySelectorBackendRunPaginationForView(view);
+    const returnedCount = Number(pagination?.returnedCount || 0);
+    const totalCount = Number(pagination?.totalCount || 0);
+
+    if (isWilsyToolbarCustomCollectionView(view) && pagination && totalCount >= 0) {
+      return `${returnedCount}/${totalCount} live`;
+    }
+
+    return String(view?.detail || view?.countLabel || view?.supportLabel || 'Live view').trim();
+  }
+
+  // P60K5Q10FG103X2_SELECTOR_BACKEND_COUNT_LABEL
+
+
+
   // P60K5Q10FG103V2_BACKEND_CURSOR_FOOTER_HELPERS
 
 
@@ -6979,7 +7019,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                 <List size={18} />
                 <span>
                   <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListViewId)}</strong>
-                  <em>{activeLeadOrganizerView.detail}</em>
+                  <em>{formatWilsySelectorBackendCountLabel(activeLeadOrganizerView)}</em>
                 </span>
                 <ChevronDown size={16} />
               </button>
@@ -7003,7 +7043,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                     }}
                     >
                       <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
-                      <em>{view.detail}</em>
+                      <em>{formatWilsySelectorBackendCountLabel(view)}</em>
                     </button>
                   ))}
                   <button type="button" onClick={() => setCommandOpen(true)}>
@@ -7674,7 +7714,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
               <SlidersHorizontal size={18} />
               <span>
                 <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListViewId)}</strong>
-                <em>{activeLeadOrganizerView.detail}</em>
+                <em>{formatWilsySelectorBackendCountLabel(activeLeadOrganizerView)}</em>
               </span>
               <ChevronDown size={16} />
             </button>
@@ -7694,7 +7734,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                     }}
                   >
                     <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
-                    <em>{view.detail}</em>
+                    <em>{formatWilsySelectorBackendCountLabel(view)}</em>
                   </button>
                 ))}
                 <button type="button" onClick={() => setCommandOpen(true)}>
