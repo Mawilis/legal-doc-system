@@ -11331,3 +11331,48 @@ td[data-wilsy-lead-empty-state="records"] {
     min-width: 0 !important;
   }
 }
+
+/* P60K5Q10FG100G_CUSTOM_VIEW_SAVE_EXECUTION_FEEDBACK
+   Shows save execution state and prevents the operator from thinking the command did nothing. */
+.leadCustomViewHeaderSave[disabled],
+.leadCustomViewActions button[disabled] {
+  cursor: progress !important;
+  opacity: 0.84 !important;
+}
+
+.leadCustomViewHeaderSave[data-save-state="saving"],
+.leadCustomViewActions button[data-save-state="saving"] {
+  border-color: rgba(255, 219, 112, 0.72) !important;
+  box-shadow: 0 0 30px rgba(255, 203, 92, 0.2) !important;
+}
+
+.leadCustomViewHeaderSave[data-save-state="saved"],
+.leadCustomViewActions button[data-save-state="saved"] {
+  border-color: rgba(118, 255, 184, 0.88) !important;
+  box-shadow: 0 0 34px rgba(41, 255, 154, 0.24) !important;
+}
+
+.leadCustomViewSaveStatus {
+  margin: 0.8rem 1.15rem 0;
+  padding: 0.72rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(129, 109, 255, 0.28);
+  background: rgba(12, 16, 34, 0.72);
+  color: rgba(226, 232, 255, 0.9);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+}
+
+.leadCustomViewSaveStatus[data-status="saved"] {
+  border-color: rgba(118, 255, 184, 0.46);
+  color: rgba(179, 255, 219, 0.98);
+}
+
+.leadCustomViewSaveStatus[data-status="error"] {
+  border-color: rgba(255, 90, 115, 0.55);
+  color: rgba(255, 195, 205, 0.98);
+}

@@ -173,6 +173,9 @@ export default function WilsyLeadCustomViewBuilder({
     visibility: 'private',
   });
 
+  const [leadCustomViewSaveState, setLeadCustomViewSaveState] = useState({ status: 'idle', message: '' });
+  // P60K5Q10FG100G_SAVE_EXECUTION_STATE
+
   const previewRows = useMemo(() => (
     Array.isArray(liveLeads)
       ? liveLeads.filter(record => doesWilsyLeadMatchCustomViewCriteria(record, draft))
@@ -196,12 +199,33 @@ export default function WilsyLeadCustomViewBuilder({
 
   /**
    * @function saveView
-   * @description Saves the current Custom View Builder draft.
-   * @returns {void}
-   * @collaboration Saved custom views, Organizer list, local persistence, and live backend row filtering.
+   * @description Saves the current Custom View Builder draft with visible execution feedback.
+   * @returns {Promise<void>} Save execution promise.
+   * @collaboration Saved custom views, Organizer list, signed backend registry persistence, local persistence, and live backend row filtering.
    */
-  const saveView = () => {
-    onSave(buildWilsyLeadCustomViewPayload(draft, previewRows.length));
+  const saveView = async () => {
+    if (leadCustomViewSaveState.status === 'saving') {
+      return;
+    }
+
+    setLeadCustomViewSaveState({
+      status: 'saving',
+      message: 'Signing and saving custom view...'
+    });
+
+    try {
+      await onSave(buildWilsyLeadCustomViewPayload(draft, previewRows.length));
+      setLeadCustomViewSaveState({
+        status: 'saved',
+        message: 'Saved to Lead View Registry'
+      });
+    } catch (error) {
+      console.error('[WILSY CRM] Custom view save failed', error);
+      setLeadCustomViewSaveState({
+        status: 'error',
+        message: error?.message || 'Save failed. Check backend authority and retry.'
+      });
+    }
   };
 
   if (!isOpen) {
@@ -218,9 +242,21 @@ export default function WilsyLeadCustomViewBuilder({
             <em>Criteria-driven views filter current backend Lead records immediately.</em>
           </div>
           <div className={styles.leadCustomViewHeaderActions} data-wilsy-lead-custom-view-header-actions="P60K5Q10FG100F_OPERATOR_GRADE_HEADER_SAVE_ACTION">
-            <button type="button" onClick={saveView} className={styles.leadCustomViewHeaderSave}>
+            <button
+              type="button"
+              onClick={saveView}
+              className={styles.leadCustomViewHeaderSave}
+              data-save-state={leadCustomViewSaveState.status}
+              disabled={leadCustomViewSaveState.status === 'saving'}
+            >
               <Save size={16} />
-              <span>Save custom view</span>
+              <span>
+                {leadCustomViewSaveState.status === 'saving'
+                  ? 'Saving...'
+                  : leadCustomViewSaveState.status === 'saved'
+                    ? 'Saved'
+                    : 'Save custom view'}
+              </span>
             </button>
             <button type="button" onClick={onClose} className={styles.leadCustomViewHeaderClose} aria-label="Close custom view builder">
               <X size={18} />
@@ -281,11 +317,23 @@ export default function WilsyLeadCustomViewBuilder({
           <em>{existingViews.length} saved custom views available in this workspace.</em>
         </section>
 
+        {leadCustomViewSaveState.message ? (
+          <p className={styles.leadCustomViewSaveStatus} data-status={leadCustomViewSaveState.status}>
+            <CheckCircle2 size={14} />
+            <span>{leadCustomViewSaveState.message}</span>
+          </p>
+        ) : null}
+
         <footer className={styles.leadCustomViewActions}>
           <button type="button" onClick={onClose}>Cancel</button>
-          <button type="button" onClick={saveView}>
+          <button
+            type="button"
+            onClick={saveView}
+            data-save-state={leadCustomViewSaveState.status}
+            disabled={leadCustomViewSaveState.status === 'saving'}
+          >
             <Save size={16} />
-            Save custom view
+            {leadCustomViewSaveState.status === 'saving' ? 'Saving...' : 'Save custom view'}
           </button>
           <span><CheckCircle2 size={14} /> Live criteria ready</span>
         </footer>

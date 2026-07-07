@@ -3381,6 +3381,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
     setLeadCustomViews(nextViews);
     setActiveListViewId(finalViewPayload.id);
+    setLeadCustomViewBuilderOpen(false);
+    setViewMenuOpen(false);
+
+    return finalViewPayload;
   };
 
   const leadOrganizerLiveViews = useMemo(() => (
