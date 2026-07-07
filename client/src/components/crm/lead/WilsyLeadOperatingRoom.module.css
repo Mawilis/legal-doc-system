@@ -10729,3 +10729,55 @@ td[data-wilsy-lead-empty-state="records"] {
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
+
+/* P60K5Q10FG93F - Primary Organizer anchor safety net */
+[data-wilsy-leads-organizer-duplicate-menu="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+[data-wilsy-leads-primary-runtime-menu="true"] {
+  position: fixed !important;
+  width: 168px !important;
+  min-width: 168px !important;
+  max-width: 168px !important;
+  height: auto !important;
+  max-height: 128px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  box-sizing: border-box !important;
+  background: #070312 !important;
+  border: 1px solid rgba(147, 119, 255, 0.74) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: none !important;
+  z-index: 9000 !important;
+  contain: layout paint !important;
+}
+
+[data-wilsy-leads-primary-runtime-menu="true"] button {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  padding: 3px 6px !important;
+  margin: 0 0 4px 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+[data-wilsy-leads-primary-runtime-menu="true"] span,
+[data-wilsy-leads-primary-runtime-menu="true"] em,
+[data-wilsy-leads-primary-runtime-menu="true"] strong {
+  max-width: 148px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}

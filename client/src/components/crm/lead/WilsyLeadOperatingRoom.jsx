@@ -3063,30 +3063,63 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
   useEffect(() => {
-    /* P60K5Q10FG93E_RUNTIME_FIXED_ORGANIZER_GEOMETRY */
+    /* P60K5Q10FG93F_PRIMARY_ORGANIZER_MENU_ONLY */
     if (!viewMenuOpen || typeof document === 'undefined' || typeof window === 'undefined') {
       return undefined;
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      const menuNodes = Array.from(document.querySelectorAll('section[aria-label="Lead list views"]'));
+      const shellCandidates = Array
+        .from(document.querySelectorAll('[data-wilsy-leads-organizer-shell="true"]'))
+        .map((shellNode) => {
+          const shellRect = shellNode.getBoundingClientRect();
+          const menuNode = shellNode.querySelector('section[aria-label="Lead list views"]');
+          const buttonNode = shellNode.querySelector('[data-wilsy-leads-organizer-wrap="true"] > button, button');
 
-      menuNodes.forEach((menuNode) => {
-        const shellNode = menuNode.closest('[data-wilsy-leads-organizer-shell="true"], [class*="leadViewCluster"]');
-        const buttonNode = shellNode?.querySelector?.('[data-wilsy-leads-organizer-wrap="true"] > button, button');
-        const anchorNode = buttonNode || shellNode || menuNode;
-        const anchorRect = anchorNode.getBoundingClientRect();
+          return {
+            shellNode,
+            menuNode,
+            buttonNode,
+            shellRect,
+          };
+        })
+        .filter(({ menuNode, shellRect }) => (
+          Boolean(menuNode) &&
+          shellRect.width > 0 &&
+          shellRect.height > 0 &&
+          shellRect.bottom > 0 &&
+          shellRect.top < window.innerHeight
+        ))
+        .sort((leftShell, rightShell) => (
+          leftShell.shellRect.top - rightShell.shellRect.top ||
+          leftShell.shellRect.left - rightShell.shellRect.left
+        ));
 
-        if (!anchorRect.width || !anchorRect.height) {
+      const primaryShell = shellCandidates[0] || null;
+      const allMenus = Array.from(document.querySelectorAll('section[aria-label="Lead list views"]'));
+
+      allMenus.forEach((menuNode) => {
+        if (!primaryShell || menuNode !== primaryShell.menuNode) {
+          menuNode.setAttribute('data-wilsy-leads-organizer-duplicate-menu', 'true');
+          menuNode.style.setProperty('display', 'none', 'important');
+          menuNode.style.setProperty('visibility', 'hidden', 'important');
+          menuNode.style.setProperty('pointer-events', 'none', 'important');
+          menuNode.style.setProperty('max-height', '0', 'important');
+          menuNode.style.setProperty('overflow', 'hidden', 'important');
           return;
         }
 
+        const anchorRect = (primaryShell.buttonNode || primaryShell.shellNode).getBoundingClientRect();
         const desiredWidth = 168;
-        const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - desiredWidth - 12));
-        const top = Math.max(8, Math.min(anchorRect.bottom + 6, window.innerHeight - 154));
-        const maxHeight = Math.max(92, Math.min(136, window.innerHeight - top - 72));
+        const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - desiredWidth - 8));
+        const top = Math.max(8, Math.min(anchorRect.bottom + 4, window.innerHeight - 148));
+        const maxHeight = Math.max(92, Math.min(128, window.innerHeight - top - 48));
 
-        menuNode.setAttribute('data-wilsy-leads-runtime-fixed-menu', 'true');
+        menuNode.removeAttribute('data-wilsy-leads-organizer-duplicate-menu');
+        menuNode.setAttribute('data-wilsy-leads-primary-runtime-menu', 'true');
+        menuNode.style.setProperty('display', 'block', 'important');
+        menuNode.style.setProperty('visibility', 'visible', 'important');
+        menuNode.style.setProperty('pointer-events', 'auto', 'important');
         menuNode.style.setProperty('position', 'fixed', 'important');
         menuNode.style.setProperty('left', `${left}px`, 'important');
         menuNode.style.setProperty('right', 'auto', 'important');
@@ -3110,7 +3143,6 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         menuNode.style.setProperty('backdrop-filter', 'none', 'important');
         menuNode.style.setProperty('z-index', '9000', 'important');
         menuNode.style.setProperty('contain', 'layout paint', 'important');
-        menuNode.style.setProperty('clip-path', 'inset(0 round 10px)', 'important');
 
         Array.from(menuNode.querySelectorAll('button')).forEach((buttonNode) => {
           buttonNode.style.setProperty('width', '100%', 'important');
@@ -3141,6 +3173,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       window.cancelAnimationFrame(frameId);
     };
   }, [viewMenuOpen, activeListViewId, leadOrganizerLiveViews.length]);
+
 
 
   const complianceMetrics = useMemo(() => {
