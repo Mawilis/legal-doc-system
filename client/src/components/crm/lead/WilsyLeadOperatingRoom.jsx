@@ -2915,6 +2915,9 @@ export default function WilsyLeadOperatingRoom({
   const [leadToolbarMembershipById, setLeadToolbarMembershipById] = useState({});
   const [leadToolbarCommandBusy, setLeadToolbarCommandBusy] = useState('');
   const [leadToolbarCommandFeedback, setLeadToolbarCommandFeedback] = useState('');
+  const [leadCollectionSourcePickerOpen, setLeadCollectionSourcePickerOpen] = useState(false);
+  const [leadCollectionSourceSelectedIds, setLeadCollectionSourceSelectedIds] = useState([]);
+  const [leadCollectionSourceQuery, setLeadCollectionSourceQuery] = useState('');
   /* P60K5Q10FG93I_CUSTOM_VIEW_STATE */
   const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
   const [leadCustomViews, setLeadCustomViews] = useState(() => {
@@ -3743,9 +3746,9 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         </span>
         <button
           type="button"
-          disabled={!hasCollectionTarget || !selectedLeadIds.length || busy}
-          onClick={() => applyWilsyToolbarMembershipCommand('include')}
-          title={hasCollectionTarget ? 'Add selected leads to this custom view' : 'Select a saved custom view with backend registry id'}
+          disabled={!isCustomView || Boolean(leadToolbarCommandBusy)}
+          onClick={openWilsyCollectionSourcePicker}
+          title="Open source picker to add leads from All Leads into this custom view"
         >
           {leadToolbarCommandBusy === 'include' ? 'Adding…' : '+ Add'}
         </button>
@@ -3786,6 +3789,245 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
   // P60K5Q10FG103M_ACTIVE_EMPTY_CUSTOM_VIEW_ACTIONS
+
+
+  /**
+   * @function resolveWilsyCollectionSourceCandidateRows
+   * @description Returns source Lead records that are not already in the active custom view.
+   * @returns {Array<object>} Source picker candidate rows.
+   * @collaboration All Leads source records, custom view criteria, manual include workflow, and controlled source picker.
+   */
+  function resolveWilsyCollectionSourceCandidateRows() {
+    const criteria = activeLeadOrganizerView?.criteria || {};
+    const query = String(leadCollectionSourceQuery || '').trim().toLowerCase();
+    const activeIds = new Set(
+      leads
+        .filter((record) => doesWilsyLeadMatchCustomViewCriteria(record, criteria))
+        .map((record, index) => resolveLeadRecordId(record, index))
+        .filter(Boolean)
+    );
+
+    return leads
+      .map((record, index) => {
+        const id = resolveLeadRecordId(record, index);
+        const name = String(record?.name || record?.leadName || record?.fullName || record?.title || 'Untitled Lead');
+        const company = String(record?.company || record?.accountName || record?.organization || 'No company');
+        const email = String(record?.email || record?.primaryEmail || '');
+        const owner = String(resolveLeadOwnerLabel(record) || record?.owner || record?.ownerName || 'Unassigned');
+        const status = String(record?.status || record?.stage || '').toUpperCase();
+
+        return {
+          id,
+          record,
+          name,
+          company,
+          email,
+          owner,
+          status,
+          searchText: `${name} ${company} ${email} ${owner} ${status}`.toLowerCase(),
+        };
+      })
+      .filter((row) => row.id && !activeIds.has(row.id))
+      .filter((row) => !query || row.searchText.includes(query));
+  }
+
+  /**
+   * @function toggleWilsyCollectionSourceCandidate
+   * @description Toggles a source Lead row inside the add-from-source picker.
+   * @param {string} leadId Lead id.
+   * @returns {void}
+   * @collaboration Source picker selection, manual include payload, and custom view membership.
+   */
+  function toggleWilsyCollectionSourceCandidate(leadId = '') {
+    const normalizedLeadId = String(leadId || '').trim();
+
+    if (!normalizedLeadId) {
+      return;
+    }
+
+    setLeadCollectionSourceSelectedIds((previous) => (
+      previous.includes(normalizedLeadId)
+        ? previous.filter((candidateId) => candidateId !== normalizedLeadId)
+        : [...previous, normalizedLeadId]
+    ));
+  }
+
+  /**
+   * @function openWilsyCollectionSourcePicker
+   * @description Opens the controlled source picker for adding All Leads records into the active custom view.
+   * @returns {void}
+   * @collaboration Custom view toolbar, source records, controlled add workflow, and membership overrides.
+   */
+  function openWilsyCollectionSourcePicker() {
+    if (!isWilsyToolbarCustomCollectionView(activeLeadOrganizerView)) {
+      setLeadToolbarCommandFeedback('Select a custom view first');
+      return;
+    }
+
+    setLeadCollectionSourceSelectedIds([]);
+    setLeadCollectionSourceQuery('');
+    setLeadCollectionSourcePickerOpen(true);
+    setLeadToolbarCommandFeedback('Choose source leads to add');
+  }
+
+  /**
+   * @function closeWilsyCollectionSourcePicker
+   * @description Closes and clears the controlled source picker.
+   * @returns {void}
+   * @collaboration Add-from-source workflow, toolbar state, and custom view productivity.
+   */
+  function closeWilsyCollectionSourcePicker() {
+    setLeadCollectionSourcePickerOpen(false);
+    setLeadCollectionSourceSelectedIds([]);
+    setLeadCollectionSourceQuery('');
+  }
+
+  /**
+   * @function applyWilsyCollectionSourcePickerIncludes
+   * @description Adds selected source Lead rows to the active custom view through backend membership overrides.
+   * @returns {Promise<void>} Add completion.
+   * @collaboration FG103B include endpoint, source picker, selected source rows, backend audit, and membership summary.
+   */
+  async function applyWilsyCollectionSourcePickerIncludes() {
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const selectedLeadIds = leadCollectionSourceSelectedIds
+      .map((leadId) => String(leadId || '').trim())
+      .filter(Boolean);
+
+    if (!backendViewId) {
+      setLeadToolbarCommandFeedback('Save this custom view before adding source leads');
+      return;
+    }
+
+    if (!selectedLeadIds.length) {
+      setLeadToolbarCommandFeedback('Select source leads first');
+      return;
+    }
+
+    setLeadToolbarCommandBusy('sourceAdd');
+    setLeadToolbarCommandFeedback('');
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}/overrides/include`;
+      const result = await requestWilsyToolbarCollectionCommand(
+        route,
+        'INCLUDE_LEADS_IN_VIEW',
+        {
+          leadIds: selectedLeadIds,
+          reason: 'FG103N add source leads into custom view',
+        },
+        'POST'
+      );
+
+      const summary = result?.membership?.summary || result?.summary || {};
+      setLeadToolbarMembershipById((previous) => ({
+        ...previous,
+        [activeLeadOrganizerView.id]: summary,
+        [backendViewId]: summary,
+      }));
+
+      setLeadToolbarCommandFeedback(`${selectedLeadIds.length} source lead${selectedLeadIds.length === 1 ? '' : 's'} added`);
+      closeWilsyCollectionSourcePicker();
+      await refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView);
+    } catch (error) {
+      setLeadToolbarCommandFeedback(error?.message || 'Add source leads failed');
+    } finally {
+      setLeadToolbarCommandBusy('');
+    }
+  }
+
+  /**
+   * @function renderWilsyCollectionSourcePicker
+   * @description Renders the controlled add-from-source picker without changing the records table or dropdown.
+   * @returns {JSX.Element|null} Source picker overlay.
+   * @collaboration All Leads source records, custom view membership, backend include route, and non-invasive toolbar workflow.
+   */
+  function renderWilsyCollectionSourcePicker() {
+    if (!leadCollectionSourcePickerOpen) {
+      return null;
+    }
+
+    const candidates = resolveWilsyCollectionSourceCandidateRows();
+    const visibleCandidates = candidates.slice(0, 80);
+    const selectedCount = leadCollectionSourceSelectedIds.length;
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+
+    return (
+      <section
+        className={styles.leadCollectionSourcePickerBackdrop}
+        data-wilsy-lead-source-picker="FG103N"
+        aria-label="Add source leads to custom view"
+      >
+        <section className={styles.leadCollectionSourcePicker}>
+          <header className={styles.leadCollectionSourcePickerHeader}>
+            <span>
+              <small>Add to custom view</small>
+              <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView?.label || 'Custom View', activeListViewId)}</strong>
+              <em>{candidates.length} source leads available · {selectedCount} selected</em>
+            </span>
+            <button type="button" onClick={closeWilsyCollectionSourcePicker} aria-label="Close add source picker">
+              ×
+            </button>
+          </header>
+
+          <div className={styles.leadCollectionSourcePickerSearch}>
+            <input
+              value={leadCollectionSourceQuery}
+              onChange={(event) => setLeadCollectionSourceQuery(event.target.value)}
+              placeholder="Search source leads by name, company, email, owner, or status"
+              aria-label="Search source leads"
+            />
+          </div>
+
+          <div className={styles.leadCollectionSourcePickerList}>
+            {visibleCandidates.length ? visibleCandidates.map((candidate) => {
+              const selected = leadCollectionSourceSelectedIds.includes(candidate.id);
+
+              return (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  data-selected={selected ? 'true' : 'false'}
+                  onClick={() => toggleWilsyCollectionSourceCandidate(candidate.id)}
+                >
+                  <span>
+                    <strong>{candidate.name}</strong>
+                    <em>{candidate.company}</em>
+                  </span>
+                  <span>
+                    <strong>{candidate.owner}</strong>
+                    <em>{candidate.email || candidate.status || 'No email captured'}</em>
+                  </span>
+                  <b>{selected ? 'Selected' : 'Add'}</b>
+                </button>
+              );
+            }) : (
+              <p className={styles.leadCollectionSourcePickerEmpty}>
+                No outside source leads available for this custom view.
+              </p>
+            )}
+          </div>
+
+          <footer className={styles.leadCollectionSourcePickerFooter}>
+            <span>
+              {backendViewId ? `Registry ${backendViewId.slice(0, 8)}` : 'Save view before backend include'}
+            </span>
+            <button type="button" onClick={closeWilsyCollectionSourcePicker}>Cancel</button>
+            <button
+              type="button"
+              disabled={!backendViewId || !selectedCount || Boolean(leadToolbarCommandBusy)}
+              onClick={applyWilsyCollectionSourcePickerIncludes}
+            >
+              {leadToolbarCommandBusy === 'sourceAdd' ? 'Adding…' : `Add ${selectedCount || ''}`.trim()}
+            </button>
+          </footer>
+        </section>
+      </section>
+    );
+  }
+
+  // P60K5Q10FG103N_ADD_FROM_SOURCE_PICKER
+
 
   // P60K5Q10FG103G_TOOLBAR_COLLECTION_ACTIONS_ENGINE
 
@@ -8692,6 +8934,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           existingViews={leadCustomViews}
         />
       </div>
+      {renderWilsyCollectionSourcePicker()}
       {renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}
       {renderCalendarDrawer()}

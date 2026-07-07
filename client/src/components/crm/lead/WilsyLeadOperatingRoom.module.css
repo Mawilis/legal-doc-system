@@ -11671,3 +11671,230 @@ td[data-wilsy-lead-empty-state="records"] {
   margin-inline-end: 0.45rem !important;
   scroll-snap-align: end !important;
 }
+
+/* P60K5Q10FG103N_ADD_FROM_SOURCE_PICKER
+   Controlled add-from-source workflow for custom Lead view membership.
+   Does not change dropdown geometry, table rows, pagination, or toolbar rail sizing. */
+.leadCollectionSourcePickerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1800;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(124, 92, 255, 0.16), transparent 36%),
+    rgba(2, 6, 14, 0.76);
+  backdrop-filter: blur(14px);
+}
+
+.leadCollectionSourcePicker {
+  display: grid;
+  grid-template-rows: auto auto minmax(14rem, 1fr) auto;
+  width: min(58rem, calc(100vw - 3rem));
+  max-height: min(42rem, calc(100vh - 3rem));
+  overflow: hidden;
+  border: 1px solid rgba(154, 126, 255, 0.42);
+  border-radius: 1.2rem;
+  background:
+    linear-gradient(135deg, rgba(8, 13, 26, 0.98), rgba(7, 17, 34, 0.96)),
+    radial-gradient(circle at top right, rgba(0, 209, 255, 0.12), transparent 34%);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.42);
+}
+
+.leadCollectionSourcePickerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 1.15rem;
+  border-bottom: 1px solid rgba(154, 126, 255, 0.22);
+}
+
+.leadCollectionSourcePickerHeader span {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.leadCollectionSourcePickerHeader small,
+.leadCollectionSourcePickerFooter span {
+  color: rgba(205, 214, 255, 0.68);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.leadCollectionSourcePickerHeader strong {
+  color: rgba(248, 252, 255, 0.96);
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.leadCollectionSourcePickerHeader em {
+  color: rgba(203, 225, 255, 0.72);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.leadCollectionSourcePickerHeader > button {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid rgba(154, 126, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(248, 252, 255, 0.9);
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.leadCollectionSourcePickerSearch {
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid rgba(154, 126, 255, 0.14);
+}
+
+.leadCollectionSourcePickerSearch input {
+  width: 100%;
+  min-height: 2.7rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(154, 126, 255, 0.32);
+  border-radius: 0.85rem;
+  background: rgba(3, 8, 18, 0.72);
+  color: rgba(248, 252, 255, 0.94);
+  font-size: 0.86rem;
+  font-weight: 850;
+  outline: none;
+}
+
+.leadCollectionSourcePickerList {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+}
+
+.leadCollectionSourcePickerList > button {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  min-height: 4.1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(154, 126, 255, 0.22);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(248, 252, 255, 0.92);
+  cursor: pointer;
+  text-align: left;
+}
+
+.leadCollectionSourcePickerList > button[data-selected="true"] {
+  border-color: rgba(126, 255, 188, 0.48);
+  background: rgba(38, 179, 115, 0.14);
+}
+
+.leadCollectionSourcePickerList > button span {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.leadCollectionSourcePickerList > button strong,
+.leadCollectionSourcePickerList > button em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadCollectionSourcePickerList > button strong {
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.leadCollectionSourcePickerList > button em {
+  color: rgba(203, 225, 255, 0.68);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.leadCollectionSourcePickerList > button b {
+  justify-self: end;
+  padding: 0.42rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(154, 126, 255, 0.16);
+  color: rgba(224, 214, 255, 0.94);
+  font-size: 0.65rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.leadCollectionSourcePickerEmpty {
+  margin: 0;
+  padding: 1rem;
+  border: 1px dashed rgba(154, 126, 255, 0.26);
+  border-radius: 1rem;
+  color: rgba(203, 225, 255, 0.72);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.leadCollectionSourcePickerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.62rem;
+  padding: 0.9rem 1.15rem;
+  border-top: 1px solid rgba(154, 126, 255, 0.18);
+}
+
+.leadCollectionSourcePickerFooter span {
+  margin-right: auto;
+}
+
+.leadCollectionSourcePickerFooter button {
+  min-height: 2.35rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(154, 126, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(248, 252, 255, 0.92);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+}
+
+.leadCollectionSourcePickerFooter button:last-child {
+  border-color: rgba(126, 255, 188, 0.42);
+  background: rgba(38, 179, 115, 0.16);
+}
+
+.leadCollectionSourcePickerFooter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+}
+
+@media (max-width: 760px) {
+  .leadCollectionSourcePickerBackdrop {
+    padding: 0.9rem;
+  }
+
+  .leadCollectionSourcePickerList > button {
+    grid-template-columns: 1fr;
+  }
+
+  .leadCollectionSourcePickerFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .leadCollectionSourcePickerFooter span {
+    margin-right: 0;
+  }
+}
