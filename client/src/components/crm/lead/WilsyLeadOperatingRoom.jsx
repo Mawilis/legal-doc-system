@@ -3374,31 +3374,11 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    * @collaboration Lead View Registry, toolbar membership actions, custom views, and archive command.
    */
   function resolveWilsyToolbarViewBackendId(view = {}) {
-    const directBackendId = String(
+    return String(
       view?.backendViewId
       || view?.backendId
       || view?.registryViewId
       || view?._id
-      || ''
-    ).trim();
-
-    if (directBackendId) {
-      return directBackendId;
-    }
-
-    const matchingCustomView = leadCustomViews.find((customView) => {
-      const sameId = customView?.id && view?.id && String(customView.id) === String(view.id);
-      const sameLabel = customView?.label && view?.label && String(customView.label) === String(view.label);
-      const sameName = customView?.name && view?.label && String(customView.name) === String(view.label);
-
-      return sameId || sameLabel || sameName;
-    });
-
-    return String(
-      matchingCustomView?.backendViewId
-      || matchingCustomView?.backendId
-      || matchingCustomView?.registryViewId
-      || matchingCustomView?._id
       || ''
     ).trim();
   }
@@ -3820,16 +3800,14 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   };
 
   const leadOrganizerLiveViews = useMemo(() => {
-    /* P60K5Q10FG103L_CUSTOM_VIEW_SELECTION_BRIDGE
-       Saved custom views must be active collection objects, not orphaned dropdown rows. */
+    /* P60K5Q10FG103L2_SELECT_CUSTOM_VIEW_BRIDGE
+       Saved custom views must become selectable organizer objects with backend metadata preserved. */
     const builtinViews = buildWilsyFG92BLiveLeadOrganizerViews(leads, leadOrganizerViewDefinitions);
     const builtinIds = new Set(builtinViews.map((view) => String(view.id || '')));
 
-    const customViews = leadCustomViews
+    const savedCustomViews = leadCustomViews
       .filter((view) => view && !builtinIds.has(String(view.id || '')))
       .map((view, index) => {
-        const criteria = view.criteria || {};
-        const count = leads.filter((record) => doesWilsyLeadMatchCustomViewCriteria(record, criteria)).length;
         const id = String(
           view.id
           || view.backendViewId
@@ -3838,24 +3816,34 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           || view._id
           || `CUSTOM_VIEW_${index}`
         );
+        const criteria = view.criteria || {};
+        const count = leads.filter((record) => doesWilsyLeadMatchCustomViewCriteria(record, criteria)).length;
 
         return {
           ...view,
           id,
           label: view.label || view.name || 'Custom View',
           detail: `${count}/${leads.length} live`,
-          staticDetail: view.description || view.detail || 'Saved custom collection',
+          staticDetail: view.staticDetail || view.description || view.detail || 'Saved custom collection',
           count,
           custom: true,
           criteria,
           backendViewId: view.backendViewId || view.backendId || view.registryViewId || view._id || '',
+          backendId: view.backendId || view.backendViewId || view.registryViewId || view._id || '',
+          registryViewId: view.registryViewId || view.backendViewId || view.backendId || view._id || '',
           criteriaHash: view.criteriaHash || '',
           auditReceiptId: view.auditReceiptId || '',
-          persistedBackend: Boolean(view.persistedBackend || view.backendViewId || view.backendId || view.registryViewId || view._id),
+          persistedBackend: Boolean(
+            view.persistedBackend
+            || view.backendViewId
+            || view.backendId
+            || view.registryViewId
+            || view._id
+          ),
         };
       });
 
-    return [...builtinViews, ...customViews];
+    return [...builtinViews, ...savedCustomViews];
   }, [leads, leadOrganizerViewDefinitions, leadCustomViews]);
 
 
@@ -3883,10 +3871,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   };
 
   const activeLeadOrganizerView = useMemo(() => {
-    /* P60K5Q10FG103L_ACTIVE_CUSTOM_VIEW_MEMO */
-    const matchedView = leadOrganizerLiveViews.find((view) => String(view.id) === String(activeListViewId));
-
-    return matchedView || leadOrganizerLiveViews[0] || activeListView;
+    /* P60K5Q10FG103L2_ACTIVE_CUSTOM_VIEW_MEMO */
+    return leadOrganizerLiveViews.find((view) => String(view.id) === String(activeListViewId))
+      || leadOrganizerLiveViews[0]
+      || activeListView;
   }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
 
@@ -5777,7 +5765,12 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                       key={view.id}
                       type="button"
                       data-active={String(view.id) === String(activeListViewId) ? 'true' : 'false'}
-                      onClick={() => handleSelectLeadListView(view.id)}
+                      onClick={() => {
+                      setActiveListViewId(view.id || 'ALL');
+                      setCurrentLeadPage(1);
+                      setLeadPage(1);
+                      setViewMenuOpen(false);
+                    }}
                     >
                       <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
                       <em>{view.detail}</em>
@@ -6463,7 +6456,12 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                     key={view.id}
                     type="button"
                     data-active={String(view.id) === String(activeListViewId) ? 'true' : 'false'}
-                    onClick={() => handleSelectLeadListView(view.id)}
+                    onClick={() => {
+                      setActiveListViewId(view.id || 'ALL');
+                      setCurrentLeadPage(1);
+                      setLeadPage(1);
+                      setViewMenuOpen(false);
+                    }}
                   >
                     <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
                     <em>{view.detail}</em>
