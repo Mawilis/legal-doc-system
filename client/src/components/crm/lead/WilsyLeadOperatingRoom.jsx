@@ -4772,6 +4772,18 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       const rows = normalizeWilsyBackendRunRows(result);
       const pagination = normalizeWilsyBackendRunPagination(result, rows);
       const membership = result?.run?.membership || result?.result?.membership || result?.membership || {};
+      const runEvidencePacket = result?.run || result?.result || {};
+      const viewEvidencePacket = result?.view || {};
+      const runAuditReceiptId = runEvidencePacket?.auditReceiptId
+        || result?.auditReceiptId
+        || viewEvidencePacket?.lastRun?.auditReceiptId
+        || '';
+      const runCriteriaHash = viewEvidencePacket?.criteriaHash
+        || result?.criteriaHash
+        || activeLeadOrganizerView?.criteriaHash
+        || '';
+      /* P60K5Q10FG103F3_RUN_AUDIT_RECEIPT_CAPTURE */
+
 
       setLeadBackendRunRowsByViewId((previous) => ({
         ...previous,
@@ -4791,12 +4803,24 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           status: 'hydrated',
           rowCount: rows.length,
           totalCount: pagination.totalCount,
+          auditReceiptId: runAuditReceiptId,
+          runAuditReceiptId,
+          criteriaHash: runCriteriaHash,
+          view: viewEvidencePacket,
+          run: runEvidencePacket,
+          result: result?.result || runEvidencePacket,
           generatedAt: new Date().toISOString(),
         },
         [backendViewId]: {
           status: 'hydrated',
           rowCount: rows.length,
           totalCount: pagination.totalCount,
+          auditReceiptId: runAuditReceiptId,
+          runAuditReceiptId,
+          criteriaHash: runCriteriaHash,
+          view: viewEvidencePacket,
+          run: runEvidencePacket,
+          result: result?.result || runEvidencePacket,
           generatedAt: new Date().toISOString(),
         },
       }));
