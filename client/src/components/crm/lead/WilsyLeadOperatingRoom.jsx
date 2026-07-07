@@ -5150,23 +5150,140 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function renderWilsyActiveCustomViewExactCountSupport
-   * @description Renders exact backend count support inside the active custom-view organizer area.
-   * @returns {JSX.Element|null} Exact count support text.
-   * @collaboration Custom view organizer, inspector-grade count language, backend cursor pagination, and million-record clarity.
+   * @description Renders exact backend count and forensic receipts inside the active custom-view organizer area.
+   * @returns {JSX.Element|null} Exact count and evidence receipt support text.
+   * @collaboration Custom view organizer, inspector-grade count language, backend cursor pagination, criteria hashes, audit receipts, membership overrides, and million-record clarity.
    */
   function renderWilsyActiveCustomViewExactCountSupport() {
     const label = formatWilsySelectorExactBackendCountLabel(activeLeadOrganizerView);
+    const evidence = resolveWilsyActiveViewRunEvidence(activeLeadOrganizerView);
 
-    if (!label) {
+    if (!label && !evidence.backendViewId) {
       return null;
     }
 
     return (
-      <small data-wilsy-custom-view-exact-count="FG103Y">
-        {label}
+      <small
+        data-wilsy-custom-view-exact-count="FG103Y"
+        data-wilsy-receipt="FG103F2"
+        data-wilsy-backend-view-id={evidence.backendViewId || undefined}
+        data-wilsy-criteria-hash={evidence.criteriaHash || undefined}
+        data-wilsy-audit-receipt={evidence.auditReceiptId || undefined}
+        data-wilsy-membership-receipt={evidence.membershipReceiptLabel}
+      >
+        <span>{label}</span>
+        <span>{formatWilsyEvidenceReceiptLine('backendViewId', evidence.backendViewId)}</span>
+        <span>{formatWilsyEvidenceReceiptLine('criteriaHash', evidence.criteriaHash)}</span>
+        <span>{formatWilsyEvidenceReceiptLine('auditReceiptId', evidence.auditReceiptId)}</span>
+        <span>{`membership overrides: ${evidence.membershipReceiptLabel}`}</span>
       </small>
     );
   }
+
+
+  /**
+   * @function truncateWilsyEvidenceReceiptValue
+   * @description Truncates long forensic evidence values for compact UI display.
+   * @param {string} value Evidence value.
+   * @param {number} size Visible character budget.
+   * @returns {string} Truncated evidence value.
+   * @collaboration Evidence receipts, compact organizer language, backend hashes, and copy-safe display.
+   */
+  function truncateWilsyEvidenceReceiptValue(value = '', size = 12) {
+    const normalized = String(value || '').trim();
+
+    if (!normalized) {
+      return '—';
+    }
+
+    if (normalized.length <= size) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, size)}…`;
+  }
+
+  /**
+   * @function resolveWilsyActiveViewRunEvidence
+   * @description Resolves forensic evidence receipts for the active custom Lead view.
+   * @param {object} view Active custom view.
+   * @returns {object} Evidence receipt packet.
+   * @collaboration Backend run response, criteria hash, audit receipt, membership overrides, and visible custom-view receipts.
+   */
+  function resolveWilsyActiveViewRunEvidence(view = activeLeadOrganizerView) {
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+    const viewKey = resolveWilsyBackendRunViewKey(view);
+    const statusPacket = leadBackendRunStatusByViewId?.[viewKey]
+      || leadBackendRunStatusByViewId?.[backendViewId]
+      || {};
+    const membershipPacket = leadToolbarMembershipById?.[view?.id]
+      || leadToolbarMembershipById?.[backendViewId]
+      || {};
+    const savedCustomView = leadCustomViews.find((candidateView) => (
+      candidateView.id === view?.id
+      || candidateView.backendViewId === backendViewId
+      || candidateView.backendId === backendViewId
+      || candidateView.registryViewId === backendViewId
+      || candidateView._id === backendViewId
+    )) || {};
+    const viewPacket = statusPacket.view
+      || savedCustomView.view
+      || savedCustomView
+      || view
+      || {};
+    const runPacket = statusPacket.run
+      || statusPacket.result
+      || viewPacket.lastRun
+      || {};
+    const criteriaHash = viewPacket.criteriaHash
+      || view?.criteriaHash
+      || savedCustomView.criteriaHash
+      || statusPacket.criteriaHash
+      || '';
+    const auditReceiptId = statusPacket.auditReceiptId
+      || statusPacket.runAuditReceiptId
+      || runPacket.auditReceiptId
+      || viewPacket?.lastRun?.auditReceiptId
+      || '';
+    const includeCount = Number(
+      membershipPacket.manualIncludeCount
+      || membershipPacket.includeCount
+      || membershipPacket.includes
+      || membershipPacket.manualIncludes
+      || 0
+    );
+    const excludeCount = Number(
+      membershipPacket.manualExcludeCount
+      || membershipPacket.excludeCount
+      || membershipPacket.excludes
+      || membershipPacket.manualExcludes
+      || 0
+    );
+
+    return {
+      backendViewId,
+      criteriaHash,
+      auditReceiptId,
+      includeCount,
+      excludeCount,
+      membershipReceiptLabel: `${includeCount} include · ${excludeCount} exclude`,
+    };
+  }
+
+  /**
+   * @function formatWilsyEvidenceReceiptLine
+   * @description Formats a compact evidence receipt line.
+   * @param {string} label Evidence label.
+   * @param {string} value Evidence value.
+   * @returns {string} Formatted evidence line.
+   * @collaboration BackendViewId visibility, criteria hashes, audit receipts, membership receipts, and operator confidence.
+   */
+  function formatWilsyEvidenceReceiptLine(label = '', value = '') {
+    return `${label}: ${truncateWilsyEvidenceReceiptValue(value, 18)}`;
+  }
+
+  // P60K5Q10FG103F2_VISIBLE_EVIDENCE_RECEIPTS_HELPERS
+
 
   // P60K5Q10FG103Y_COUNT_LANGUAGE_POLISH
 
