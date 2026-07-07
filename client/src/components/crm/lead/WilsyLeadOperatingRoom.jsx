@@ -3042,86 +3042,306 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
   /**
-   * @function resolveWilsyLeadViewRegistryIdentity
-   * @description Resolves tenant and operator identity for Lead View Registry persistence.
-   * @returns {object} Registry identity.
-   * @collaboration Multi-tenant CRM, institutional headers, operator evidence, and saved view ownership.
+   * @function readWilsyLeadViewRegistryStoredValue
+   * @description Reads browser storage for signed Lead View Registry requests without exposing credentials in source.
+   * @param {string} key Browser storage key.
+   * @returns {string} Stored value or empty string.
+   * @collaboration Browser auth session, CRM Lead View Registry, token-backed saved view persistence, and frontend request signing.
    */
-  function resolveWilsyLeadViewRegistryIdentity() {
-    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+  function readWilsyLeadViewRegistryStoredValue(key = '') {
+    try {
+      if (typeof window === 'undefined') {
+        return '';
+      }
+
+      return window.localStorage?.getItem(key)
+        || window.sessionStorage?.getItem(key)
+        || '';
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * @function resolveWilsyLeadViewRegistryAuthToken
+   * @description Resolves the active browser JWT used for authenticated Lead View Registry requests.
+   * @returns {string} Browser token without Bearer prefix.
+   * @collaboration Browser session, authenticated backend route, Custom View Builder, and CRM Lead View persistence.
+   */
+  function resolveWilsyLeadViewRegistryAuthToken() {
+    return String(
+      readWilsyLeadViewRegistryStoredValue('token')
+      || readWilsyLeadViewRegistryStoredValue('authToken')
+      || readWilsyLeadViewRegistryStoredValue('accessToken')
+      || readWilsyLeadViewRegistryStoredValue('wilsyToken')
+      || readWilsyLeadViewRegistryStoredValue('wilsy_token')
+      || readWilsyLeadViewRegistryStoredValue('sovereignToken')
+      || ''
+    ).replace(/^Bearer\s+/i, '').trim();
+  }
+
+  /**
+   * @function decodeWilsyLeadViewRegistryJwtPayload
+   * @description Decodes an existing browser JWT payload without validating or storing secrets.
+   * @param {string} token Browser JWT token.
+   * @returns {object} Decoded JWT payload.
+   * @collaboration Operator identity, tenant evidence, Lead View ownership, and browser-authenticated registry saves.
+   */
+  function decodeWilsyLeadViewRegistryJwtPayload(token = '') {
+    try {
+      const cleanToken = String(token || '').replace(/^Bearer\s+/i, '').trim();
+      const payload = cleanToken.split('.')[1];
+
+      if (!payload) {
+        return {};
+      }
+
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+
+      return JSON.parse(atob(padded));
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * @function stableWilsyLeadViewRegistrySealValue
+   * @description Recursively sorts object keys so the browser seal payload matches backend deterministic payload reconstruction.
+   * @param {*} value Payload value.
+   * @returns {*} Stable value.
+   * @collaboration ProductionHardening.middleware getRawPayloadString, browser signer, and CRM Lead View Registry payloads.
+   */
+  function stableWilsyLeadViewRegistrySealValue(value) {
+    if (Array.isArray(value)) {
+      return value.map(stableWilsyLeadViewRegistrySealValue);
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.keys(value)
+        .sort()
+        .reduce((nextValue, key) => {
+          nextValue[key] = stableWilsyLeadViewRegistrySealValue(value[key]);
+          return nextValue;
+        }, {});
+    }
+
+    return value;
+  }
+
+  /**
+   * @function stableWilsyLeadViewRegistrySealStringify
+   * @description Converts a payload into the deterministic JSON string used for Lead View Registry seal reconstruction.
+   * @param {object} payload Request payload.
+   * @returns {string} Stable JSON string.
+   * @collaboration Browser request signer, backend SHA3 seal verification, and persisted custom Lead views.
+   */
+  function stableWilsyLeadViewRegistrySealStringify(payload = {}) {
+    return JSON.stringify(stableWilsyLeadViewRegistrySealValue(payload));
+  }
+
+  /**
+   * @function hashWilsyLeadViewRegistrySha3512
+   * @description Hashes the Lead View Registry reconstruction string with SHA3-512 and uppercase hex output.
+   * @param {string} reconstruction Seal reconstruction string.
+   * @returns {string} Uppercase SHA3-512 digest.
+   * @collaboration js-sha3, ProductionHardening.middleware, X-Request-Seal, and forensic request verification.
+   */
+  function hashWilsyLeadViewRegistrySha3512(reconstruction = '') {
+    return String(sha3_512(String(reconstruction))).toUpperCase();
+  }
+
+  /**
+   * @function buildWilsyLeadViewRegistrySealHeaders
+   * @description Builds forensic headers for a signed Lead View Registry request using the backend reconstruction contract.
+   * @param {object} payload Request payload.
+   * @returns {object} Signed request headers.
+   * @collaboration CRM Lead View Registry, browser auth token, ProductionHardening.middleware, and SHA3-512 seal verification.
+   */
+  function buildWilsyLeadViewRegistrySealHeaders(payload = {}) {
+    const traceId = String(payload.requestId || `REQ-WILSY-LEADVIEW-CLIENT-${Date.now()}`);
+    const timestamp = String(payload.generatedAt || new Date().toISOString());
+    const nonce = `NONCE-WILSY-LEADVIEW-CLIENT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const payloadString = stableWilsyLeadViewRegistrySealStringify(payload);
+    const reconstruction = `${traceId}|${timestamp}|${payloadString}|${nonce}`;
+    const requestSeal = hashWilsyLeadViewRegistrySha3512(reconstruction);
 
     return {
-      tenantId: storage?.getItem('wilsy.tenantId') || storage?.getItem('tenantId') || 'MASTER',
-      operatorUserId: storage?.getItem('wilsy.operatorUserId') || storage?.getItem('userId') || storage?.getItem('operatorId') || 'wilsy-operator'
+      traceId,
+      timestamp,
+      nonce,
+      requestSeal,
+      headers: {
+        'X-Request-ID': traceId,
+        'X-Trace-ID': traceId,
+        'X-Correlation-ID': traceId,
+        'X-Forensic-Timestamp': timestamp,
+        'X-Timestamp': timestamp,
+        'X-Generated-At': timestamp,
+        'X-Cryptographic-Nonce': nonce,
+        'X-Request-Seal': requestSeal,
+        'X-Request-Proof': requestSeal,
+        'X-Quantum-Verified': 'true',
+        'X-Wilsy-Lead-View-Seal': 'P60K5Q10FG99F_SIGNED_LEAD_VIEW_REGISTRY'
+      }
+    };
+  }
+
+  /**
+   * @function resolveWilsyLeadViewRegistryIdentity
+   * @description Resolves tenant and operator identity for signed Lead View Registry persistence.
+   * @returns {object} Registry identity.
+   * @collaboration Multi-tenant CRM, institutional headers, browser auth token, operator evidence, and saved view ownership.
+   */
+  function resolveWilsyLeadViewRegistryIdentity() {
+    const token = resolveWilsyLeadViewRegistryAuthToken();
+    const decodedToken = decodeWilsyLeadViewRegistryJwtPayload(token);
+    const tenantSource = typeof tenantConfig !== 'undefined' && tenantConfig ? tenantConfig : {};
+
+    const tenantId = String(
+      tenantSource.tenantId
+      || tenantSource.id
+      || readWilsyLeadViewRegistryStoredValue('wilsy.tenantId')
+      || readWilsyLeadViewRegistryStoredValue('tenantId')
+      || decodedToken.tenantId
+      || decodedToken.tenant
+      || 'MASTER'
+    ).trim();
+
+    const operatorUserId = String(
+      readWilsyLeadViewRegistryStoredValue('wilsy.operatorUserId')
+      || readWilsyLeadViewRegistryStoredValue('operatorUserId')
+      || readWilsyLeadViewRegistryStoredValue('operatorId')
+      || readWilsyLeadViewRegistryStoredValue('userId')
+      || decodedToken.id
+      || decodedToken.sub
+      || decodedToken.userId
+      || decodedToken.email
+      || 'wilsy-operator'
+    ).trim();
+
+    return {
+      tenantId: tenantId || 'MASTER',
+      operatorId: operatorUserId || 'wilsy-operator',
+      operatorUserId: operatorUserId || 'wilsy-operator',
+      userId: operatorUserId || 'wilsy-operator',
+      operatorEmail: decodedToken.email || readWilsyLeadViewRegistryStoredValue('operatorEmail') || '',
+      operatorRole: decodedToken.role || readWilsyLeadViewRegistryStoredValue('operatorRole') || ''
     };
   }
 
   /**
    * @function buildWilsyLeadViewRegistryPayload
-   * @description Builds institutional Lead View Registry payload evidence from a custom view.
+   * @description Builds signed institutional Lead View Registry payload evidence from a custom view.
    * @param {object} viewPayload Custom view payload.
    * @returns {object} Backend payload.
-   * @collaboration Custom View Builder, strike payload evidence, backend persistence, and Wilsy AI view memory.
+   * @collaboration Custom View Builder, strike payload evidence, backend persistence, signed browser requests, and Wilsy AI view memory.
    */
   function buildWilsyLeadViewRegistryPayload(viewPayload = {}) {
     const identity = resolveWilsyLeadViewRegistryIdentity();
     const generatedAt = new Date().toISOString();
+    const requestId = `REQ-WILSY-LEADVIEW-CLIENT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const route = '/api/crm/leads/views';
+    const commandSurface = 'CRM_LEADS_CUSTOM_VIEW_BUILDER';
+
     const institutionalHeaders = {
       tenantId: identity.tenantId,
+      operatorId: identity.operatorId,
       operatorUserId: identity.operatorUserId,
-      route: '/api/crm/leads/views',
-      commandSurface: 'CRM_LEADS_CUSTOM_VIEW_BUILDER',
-      generatedAt
+      userId: identity.userId,
+      operatorEmail: identity.operatorEmail,
+      operatorRole: identity.operatorRole,
+      route,
+      commandSurface,
+      timestamp: generatedAt,
+      generatedAt,
+      requestId
     };
 
     return {
       ...viewPayload,
       tenantId: identity.tenantId,
       ownerUserId: identity.operatorUserId,
+      createdBy: identity.operatorUserId,
+      updatedBy: identity.operatorUserId,
       source: 'lead-custom-view-builder',
-      uiVersion: 'FG98C',
+      uiVersion: 'FG99F',
+      commandSurface,
+      generatedAt,
+      requestId,
       institutionalHeaders,
       strikePayload: {
         action: 'CREATE_LEAD_VIEW',
-        route: '/api/crm/leads/views',
-        commandSurface: 'CRM_LEADS_CUSTOM_VIEW_BUILDER',
+        tenantId: identity.tenantId,
+        operatorId: identity.operatorId,
+        operatorUserId: identity.operatorUserId,
+        userId: identity.userId,
+        operatorEmail: identity.operatorEmail,
+        operatorRole: identity.operatorRole,
+        route,
+        commandSurface,
+        timestamp: generatedAt,
         generatedAt,
+        requestId,
         institutionalHeaders,
         criteria: viewPayload.criteria || [],
-        visibility: viewPayload.visibility || 'private'
+        columns: viewPayload.columns || [],
+        visibility: viewPayload.visibility || 'private',
+        name: viewPayload.name || ''
       }
     };
   }
 
   /**
    * @function persistWilsyLeadCustomViewToRegistry
-   * @description Persists a Lead Custom View to the backend Lead View Registry with audit evidence.
+   * @description Persists a Lead Custom View to the backend Lead View Registry with auth, institutional evidence, and SHA3 request seal.
    * @param {object} viewPayload Custom view payload.
    * @returns {Promise<object|null>} Persisted backend view or null fallback.
-   * @collaboration Backend CRUD, Custom View Builder, tenant persistence, and audit receipts.
+   * @collaboration Backend CRUD, Custom View Builder, tenant persistence, Authorization bearer token, forensic seal headers, and audit receipts.
    */
   async function persistWilsyLeadCustomViewToRegistry(viewPayload = {}) {
     const identity = resolveWilsyLeadViewRegistryIdentity();
-    const response = await fetch(resolveWilsyLeadViewRegistryUrl(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Tenant-Id': identity.tenantId,
-        'X-Operator-Id': identity.operatorUserId,
-        'X-Command-Surface': 'CRM_LEADS_CUSTOM_VIEW_BUILDER'
-      },
-      body: JSON.stringify(buildWilsyLeadViewRegistryPayload(viewPayload))
-    });
+    const token = resolveWilsyLeadViewRegistryAuthToken();
 
-    if (!response.ok) {
-      throw new Error(`Lead View Registry save failed: ${response.status}`);
+    if (!token) {
+      throw new Error('CRM_LEAD_VIEW_AUTH_TOKEN_REQUIRED: Signed Lead View Registry save requires an authenticated browser session.');
     }
 
-    const result = await response.json();
+    const payload = buildWilsyLeadViewRegistryPayload(viewPayload);
+    const sealContract = buildWilsyLeadViewRegistrySealHeaders(payload);
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      'X-Tenant-Id': identity.tenantId,
+      'X-Operator-Id': identity.operatorId,
+      'X-Operator-User-Id': identity.operatorUserId,
+      'X-User-Id': identity.userId,
+      'X-Command-Surface': 'CRM_LEADS_CUSTOM_VIEW_BUILDER',
+      ...sealContract.headers
+    };
+
+    const response = await fetch(resolveWilsyLeadViewRegistryUrl(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    let result = {};
+
+    try {
+      result = await response.json();
+    } catch {
+      result = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(result.message || result.error || result.code || `Lead View Registry save failed: ${response.status}`);
+    }
+
     return result?.view || null;
   }
 
-  // P60K5Q10FG98C_LEAD_VIEW_REGISTRY_CLIENT
+  // P60K5Q10FG99F_SIGNED_LEAD_VIEW_REGISTRY_CLIENT
 
 /**
    * @function handleSaveLeadCustomView
