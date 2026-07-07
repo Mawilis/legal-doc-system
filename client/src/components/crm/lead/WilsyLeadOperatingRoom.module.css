@@ -11968,3 +11968,13 @@ td[data-wilsy-lead-empty-state="records"] {
     justify-content: flex-end;
   }
 }
+
+/* P60K5Q10FG103P_SOURCE_PICKER_COMMIT_FEEDBACK
+   Visible source-picker commit status without changing the picker layout contract. */
+.leadCollectionSourcePickerStatus {
+  margin: 0.55rem 0 0;
+  color: rgba(126, 255, 188, 0.88);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}

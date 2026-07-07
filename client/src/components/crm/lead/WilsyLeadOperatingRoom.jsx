@@ -3793,19 +3793,35 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function resolveWilsyCollectionSourceCandidateRows
-   * @description Returns source Lead records that are not already in the active custom view.
+   * @description Returns source Lead records that are not already effective members of the active custom view.
    * @returns {Array<object>} Source picker candidate rows.
-   * @collaboration All Leads source records, custom view criteria, manual include workflow, and controlled source picker.
+   * @collaboration All Leads source records, custom view criteria, manual include workflow, duplicate prevention, and controlled source picker.
    */
   function resolveWilsyCollectionSourceCandidateRows() {
     const criteria = activeLeadOrganizerView?.criteria || {};
     const query = String(leadCollectionSourceQuery || '').trim().toLowerCase();
+    const membershipSummary = resolveWilsyToolbarMembershipSummary(activeLeadOrganizerView);
+    const activeBackendId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+
     const activeIds = new Set(
       leads
         .filter((record) => doesWilsyLeadMatchCustomViewCriteria(record, criteria))
         .map((record, index) => resolveLeadRecordId(record, index))
         .filter(Boolean)
     );
+
+    const knownManualIds = [
+      ...(Array.isArray(activeLeadOrganizerView?.manualIncludeLeadIds) ? activeLeadOrganizerView.manualIncludeLeadIds : []),
+      ...(Array.isArray(activeLeadOrganizerView?.includedLeadIds) ? activeLeadOrganizerView.includedLeadIds : []),
+      ...(Array.isArray(activeLeadOrganizerView?.leadIds) ? activeLeadOrganizerView.leadIds : []),
+      ...(Array.isArray(membershipSummary?.manualIncludeLeadIds) ? membershipSummary.manualIncludeLeadIds : []),
+      ...(Array.isArray(membershipSummary?.includedLeadIds) ? membershipSummary.includedLeadIds : []),
+    ];
+
+    knownManualIds
+      .map((leadId) => String(leadId || '').trim())
+      .filter(Boolean)
+      .forEach((leadId) => activeIds.add(leadId));
 
     return leads
       .map((record, index) => {
@@ -3824,6 +3840,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           email,
           owner,
           status,
+          activeBackendId,
           searchText: `${name} ${company} ${email} ${owner} ${status}`.toLowerCase(),
         };
       })
@@ -3884,15 +3901,17 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function applyWilsyCollectionSourcePickerIncludes
-   * @description Adds selected source Lead rows to the active custom view through backend membership overrides.
+   * @description Adds selected source Lead rows to the active custom view through backend membership overrides with visible commit feedback.
    * @returns {Promise<void>} Add completion.
-   * @collaboration FG103B include endpoint, source picker, selected source rows, backend audit, and membership summary.
+   * @collaboration FG103B include endpoint, source picker, selected source rows, backend audit, duplicate prevention, and membership summary.
    */
   async function applyWilsyCollectionSourcePickerIncludes() {
     const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
-    const selectedLeadIds = leadCollectionSourceSelectedIds
-      .map((leadId) => String(leadId || '').trim())
-      .filter(Boolean);
+    const selectedLeadIds = Array.from(new Set(
+      leadCollectionSourceSelectedIds
+        .map((leadId) => String(leadId || '').trim())
+        .filter(Boolean)
+    ));
 
     if (!backendViewId) {
       setLeadToolbarCommandFeedback('Save this custom view before adding source leads');
@@ -3905,7 +3924,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     }
 
     setLeadToolbarCommandBusy('sourceAdd');
-    setLeadToolbarCommandFeedback('');
+    setLeadToolbarCommandFeedback(`Adding ${selectedLeadIds.length} source lead${selectedLeadIds.length === 1 ? '' : 's'}…`);
 
     try {
       const route = `/api/crm/leads/views/${backendViewId}/overrides/include`;
@@ -3914,20 +3933,36 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         'INCLUDE_LEADS_IN_VIEW',
         {
           leadIds: selectedLeadIds,
-          reason: 'FG103N add source leads into custom view',
+          reason: 'FG103P add source leads into custom view with duplicate-safe commit',
         },
         'POST'
       );
 
       const summary = result?.membership?.summary || result?.summary || {};
+      const resultLeadIds = result?.leadIds || selectedLeadIds;
+
       setLeadToolbarMembershipById((previous) => ({
         ...previous,
-        [activeLeadOrganizerView.id]: summary,
-        [backendViewId]: summary,
+        [activeLeadOrganizerView.id]: {
+          ...summary,
+          manualIncludeLeadIds: Array.from(new Set([
+            ...(previous?.[activeLeadOrganizerView.id]?.manualIncludeLeadIds || []),
+            ...resultLeadIds,
+          ])),
+        },
+        [backendViewId]: {
+          ...summary,
+          manualIncludeLeadIds: Array.from(new Set([
+            ...(previous?.[backendViewId]?.manualIncludeLeadIds || []),
+            ...resultLeadIds,
+          ])),
+        },
       }));
 
       setLeadToolbarCommandFeedback(`${selectedLeadIds.length} source lead${selectedLeadIds.length === 1 ? '' : 's'} added`);
-      closeWilsyCollectionSourcePicker();
+      setLeadCollectionSourceSelectedIds([]);
+      setLeadCollectionSourceQuery('');
+      setLeadCollectionSourcePickerOpen(false);
       await refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView);
     } catch (error) {
       setLeadToolbarCommandFeedback(error?.message || 'Add source leads failed');
@@ -3935,6 +3970,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       setLeadToolbarCommandBusy('');
     }
   }
+
+  // P60K5Q10FG103P_SOURCE_PICKER_COMMIT_FEEDBACK
 
   /**
    * @function renderWilsyCollectionSourcePicker
@@ -3989,6 +4026,11 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               placeholder="Search source leads by name, company, email, owner, or status"
               aria-label="Search source leads"
             />
+            {leadToolbarCommandFeedback ? (
+              <p className={styles.leadCollectionSourcePickerStatus} data-wilsy-source-picker-status="FG103P">
+                {leadToolbarCommandFeedback}
+              </p>
+            ) : null}
           </div>
 
           <div className={styles.leadCollectionSourcePickerList}>
