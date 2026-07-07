@@ -11578,3 +11578,72 @@ td[data-wilsy-lead-empty-state="records"] {
     display: none !important;
   }
 }
+
+/* P60K5Q10FG103I_HORIZONTAL_TOOLBAR_PILL_RAIL
+   Converts the compact Lead collection toolbar actions into a contained horizontal pill rail.
+   The outer toolbar remains fixed; the inner action pills scroll sideways instead of bleeding. */
+.leadToolbarCollectionActions {
+  flex: 0 1 21.75rem !important;
+  width: auto !important;
+  max-width: min(21.75rem, 28vw) !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.28rem !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-inline: contain !important;
+  scroll-snap-type: x proximity !important;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch !important;
+  white-space: nowrap !important;
+}
+
+.leadToolbarCollectionActions::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.leadToolbarCollectionStatus {
+  flex: 0 0 auto !important;
+  max-width: 9.25rem !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+.leadToolbarCollectionActions button {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  scroll-snap-align: start !important;
+  white-space: nowrap !important;
+}
+
+/* FG103I reverses the temporary FG103H hiding rule:
+   Edit, Sync, and Archive must remain reachable through sideways pill movement. */
+.leadToolbarCollectionActions button:nth-of-type(n + 3) {
+  display: inline-flex !important;
+}
+
+@media (max-width: 1480px) {
+  .leadToolbarCollectionActions {
+    max-width: min(18rem, 24vw) !important;
+  }
+
+  .leadToolbarCollectionStatus {
+    max-width: 7rem !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .leadToolbarCollectionActions {
+    max-width: min(13rem, 22vw) !important;
+  }
+
+  .leadToolbarCollectionStatus {
+    display: inline-block !important;
+    max-width: 4.8rem !important;
+  }
+}
