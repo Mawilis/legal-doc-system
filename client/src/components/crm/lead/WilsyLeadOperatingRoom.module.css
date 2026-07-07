@@ -11898,3 +11898,73 @@ td[data-wilsy-lead-empty-state="records"] {
     margin-right: 0;
   }
 }
+
+/* P60K5Q10FG103O_SOURCE_PICKER_VISIBLE_CONFIRM
+   Keeps the Add-from-source confirm controls visible even when the candidate list scrolls. */
+.leadCollectionSourcePicker {
+  min-height: 0 !important;
+}
+
+.leadCollectionSourcePickerHeader {
+  align-items: center !important;
+}
+
+.leadCollectionSourcePickerHeaderActions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.48rem;
+}
+
+.leadCollectionSourcePickerHeaderActions button {
+  min-height: 2.35rem;
+  padding: 0 0.82rem;
+  border: 1px solid rgba(154, 126, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(248, 252, 255, 0.92);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.leadCollectionSourcePickerHeaderActions button:first-child {
+  border-color: rgba(126, 255, 188, 0.48);
+  background: rgba(38, 179, 115, 0.18);
+}
+
+.leadCollectionSourcePickerHeaderActions button:last-child {
+  width: 2.35rem;
+  padding: 0;
+  font-size: 1.12rem;
+}
+
+.leadCollectionSourcePickerHeaderActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+}
+
+.leadCollectionSourcePickerList {
+  min-height: 0 !important;
+}
+
+.leadCollectionSourcePickerFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background:
+    linear-gradient(135deg, rgba(8, 13, 26, 0.98), rgba(7, 17, 34, 0.96));
+}
+
+@media (max-width: 760px) {
+  .leadCollectionSourcePickerHeader {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .leadCollectionSourcePickerHeaderActions {
+    justify-content: flex-end;
+  }
+}

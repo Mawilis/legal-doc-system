@@ -3965,9 +3965,21 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
               <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView?.label || 'Custom View', activeListViewId)}</strong>
               <em>{candidates.length} source leads available · {selectedCount} selected</em>
             </span>
-            <button type="button" onClick={closeWilsyCollectionSourcePicker} aria-label="Close add source picker">
-              ×
-            </button>
+            <div className={styles.leadCollectionSourcePickerHeaderActions} data-wilsy-source-picker-confirm-dock="FG103O">
+              <button
+                type="button"
+                disabled={!backendViewId || !selectedCount || Boolean(leadToolbarCommandBusy)}
+                onClick={applyWilsyCollectionSourcePickerIncludes}
+              >
+                {leadToolbarCommandBusy === 'sourceAdd' ? 'Adding…' : `Add ${selectedCount || ''} selected`.trim()}
+              </button>
+              <button type="button" onClick={closeWilsyCollectionSourcePicker}>
+                Cancel
+              </button>
+              <button type="button" onClick={closeWilsyCollectionSourcePicker} aria-label="Close add source picker">
+                ×
+              </button>
+            </div>
           </header>
 
           <div className={styles.leadCollectionSourcePickerSearch}>
@@ -4025,6 +4037,8 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       </section>
     );
   }
+
+  // P60K5Q10FG103O_SOURCE_PICKER_VISIBLE_CONFIRM
 
   // P60K5Q10FG103N_ADD_FROM_SOURCE_PICKER
 
