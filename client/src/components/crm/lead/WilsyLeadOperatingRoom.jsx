@@ -1534,6 +1534,7 @@ function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = [], viewDefinitions 
   /* P60K5Q10FG92G_COMPACT_ORGANIZER_BUILDER */
   const liveRows = Array.isArray(sourceRows) ? sourceRows : [];
   const totalRows = liveRows.length;
+  /* P60K5Q10FG93I_CUSTOM_VIEW_DEFINITION_SOURCE */
   const organizerDefinitions = Array.isArray(viewDefinitions) && viewDefinitions.length ? viewDefinitions : LEAD_LIST_VIEWS;
 
   /* P60K5Q10FG93B_CUSTOM_VIEW_DEFINITION_SOURCE */
@@ -2911,6 +2912,7 @@ export default function WilsyLeadOperatingRoom({
   const [splitView, setSplitView] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(true);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  /* P60K5Q10FG93I_CUSTOM_VIEW_STATE */
   const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
   const [leadCustomViews, setLeadCustomViews] = useState(() => {
     /* P60K5Q10FG93B_CUSTOM_VIEW_STATE */
@@ -3036,6 +3038,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    * @collaboration Lead Custom View Builder, Leads Organizer, local saved views, pagination reset, and live Records filtering.
    */
   const handleSaveLeadCustomView = (viewPayload = {}) => {
+    /* P60K5Q10FG93I_CUSTOM_VIEW_SAVE_HANDLER */
     /* P60K5Q10FG93B_CUSTOM_VIEW_SAVE_HANDLER */
     const nextViews = [
       viewPayload,
@@ -3063,7 +3066,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
   useEffect(() => {
-    /* P60K5Q10FG93G_SINGLE_RUNTIME_VIEW_SWITCHER */
+    /* P60K5Q10FG93I_FULL_HEIGHT_VIEW_ORGANIZER */
     if (typeof document === 'undefined' || typeof window === 'undefined') {
       return undefined;
     }
@@ -3077,7 +3080,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       legacyMenuNode.style.setProperty('overflow', 'hidden', 'important');
     });
 
-    const existingRuntimeNode = document.getElementById('wilsy-leads-single-view-switcher');
+    const existingRuntimeNode = document.getElementById('wilsy-leads-full-height-view-organizer');
     if (existingRuntimeNode) {
       existingRuntimeNode.remove();
     }
@@ -3110,24 +3113,36 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         return;
       }
 
-      const desiredWidth = 188;
+      const footerNode = document.querySelector('[data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER"]');
+      const footerRect = footerNode?.getBoundingClientRect?.();
+      const desiredWidth = Math.max(280, Math.min(Math.round(primaryTrigger.rect.width), 360));
       const left = Math.max(8, Math.min(primaryTrigger.rect.left, window.innerWidth - desiredWidth - 8));
       const top = Math.max(8, primaryTrigger.rect.bottom + 6);
+      const targetBottom = footerRect?.bottom && footerRect.bottom > top
+        ? footerRect.bottom
+        : window.innerHeight - 28;
+      const desiredHeight = Math.max(420, Math.min(targetBottom - top - 6, window.innerHeight - top - 24));
 
-      const switcherNode = document.createElement('section');
-      switcherNode.id = 'wilsy-leads-single-view-switcher';
-      switcherNode.setAttribute('data-wilsy-leads-single-view-switcher', 'true');
-      switcherNode.setAttribute('role', 'menu');
-      switcherNode.setAttribute('aria-label', 'Lead Organizer views');
+      const organizerNode = document.createElement('section');
+      organizerNode.id = 'wilsy-leads-full-height-view-organizer';
+      organizerNode.setAttribute('data-wilsy-leads-full-height-view-organizer', 'true');
+      organizerNode.setAttribute('role', 'menu');
+      organizerNode.setAttribute('aria-label', 'Lead View Organizer');
 
-      switcherNode.style.setProperty('position', 'fixed', 'important');
-      switcherNode.style.setProperty('left', `${left}px`, 'important');
-      switcherNode.style.setProperty('top', `${top}px`, 'important');
-      switcherNode.style.setProperty('width', `${desiredWidth}px`, 'important');
-      switcherNode.style.setProperty('max-height', '144px', 'important');
-      switcherNode.style.setProperty('overflow-y', 'auto', 'important');
-      switcherNode.style.setProperty('overflow-x', 'hidden', 'important');
-      switcherNode.style.setProperty('z-index', '12000', 'important');
+      organizerNode.style.setProperty('position', 'fixed', 'important');
+      organizerNode.style.setProperty('left', `${left}px`, 'important');
+      organizerNode.style.setProperty('top', `${top}px`, 'important');
+      organizerNode.style.setProperty('width', `${desiredWidth}px`, 'important');
+      organizerNode.style.setProperty('height', `${desiredHeight}px`, 'important');
+      organizerNode.style.setProperty('max-height', `${desiredHeight}px`, 'important');
+      organizerNode.style.setProperty('z-index', '12000', 'important');
+
+      const headerNode = document.createElement('header');
+      headerNode.setAttribute('data-wilsy-view-organizer-header', 'true');
+      headerNode.innerHTML = '<strong>View Organizer</strong><em>Live backend views</em>';
+
+      const optionsNode = document.createElement('div');
+      optionsNode.setAttribute('data-wilsy-view-organizer-options', 'true');
 
       leadOrganizerLiveViews.forEach((view) => {
         const optionNode = document.createElement('button');
@@ -3153,20 +3168,35 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           setViewMenuOpen(false);
         };
 
-        switcherNode.appendChild(optionNode);
+        optionsNode.appendChild(optionNode);
       });
 
-      document.body.appendChild(switcherNode);
+      const addViewNode = document.createElement('button');
+      addViewNode.type = 'button';
+      addViewNode.setAttribute('data-wilsy-add-custom-view-action', 'true');
+      addViewNode.innerHTML = '<strong>+ Add Custom View</strong><em>Create saved criteria</em>';
+      addViewNode.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setLeadCustomViewBuilderOpen(true);
+        setViewMenuOpen(false);
+      };
+
+      organizerNode.appendChild(headerNode);
+      organizerNode.appendChild(optionsNode);
+      organizerNode.appendChild(addViewNode);
+      document.body.appendChild(organizerNode);
     });
 
     return () => {
       window.cancelAnimationFrame(frameId);
-      const runtimeNode = document.getElementById('wilsy-leads-single-view-switcher');
+      const runtimeNode = document.getElementById('wilsy-leads-full-height-view-organizer');
       if (runtimeNode) {
         runtimeNode.remove();
       }
     };
-  }, [viewMenuOpen, activeListViewId, leadOrganizerLiveViews]);
+  }, [viewMenuOpen, activeListViewId, leadOrganizerLiveViews, setLeadCustomViewBuilderOpen]);
+
 
 
 
@@ -3187,7 +3217,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       const matchesSearch = !query || JSON.stringify(record || {}).toLowerCase().includes(query);
       const status = getComplianceStatus(record);
       const matchesFilter = activeFilter === 'ALL' || status === activeFilter;
-      const matchesListView = (/* P60K5Q10FG93B_CUSTOM_VIEW_RECORD_FILTER */ activeLeadOrganizerView?.custom ? doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {}) : doesLeadMatchListView(record, activeListViewId));
+      const matchesListView = (/* P60K5Q10FG93B_CUSTOM_VIEW_RECORD_FILTER */ activeLeadOrganizerView?.custom ? doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {}) : (/* P60K5Q10FG93I_CUSTOM_VIEW_RECORD_FILTER */ activeLeadOrganizerView?.custom ? doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {}) : doesLeadMatchListView(record, activeListViewId)));
 
       return matchesSearch && matchesFilter && matchesListView;
     });

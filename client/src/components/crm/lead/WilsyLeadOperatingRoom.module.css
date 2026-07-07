@@ -10865,3 +10865,249 @@ section[aria-label="Lead list views"][data-wilsy-legacy-lead-view-menu-hidden="t
   font-size: 10px !important;
   font-style: normal !important;
 }
+
+/* P60K5Q10FG93I - Full-height Lead View Organizer */
+section[aria-label="Lead list views"][data-wilsy-legacy-lead-view-menu-hidden="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#wilsy-leads-full-height-view-organizer,
+[data-wilsy-leads-full-height-view-organizer="true"] {
+  min-height: 420px !important;
+  padding: 0.62rem !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  gap: 0.62rem !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(156, 126, 255, 0.78) !important;
+  border-radius: 1rem !important;
+  background: linear-gradient(180deg, rgba(13, 18, 34, 0.98), rgba(7, 10, 20, 0.995)), #070312 !important;
+  box-shadow: 0 1.2rem 2.8rem rgba(0, 0, 0, 0.82) !important;
+  box-sizing: border-box !important;
+  backdrop-filter: none !important;
+  contain: layout paint !important;
+}
+
+[data-wilsy-view-organizer-header="true"] {
+  padding: 0.62rem 0.68rem !important;
+  border: 1px solid rgba(156, 126, 255, 0.28) !important;
+  border-radius: 0.82rem !important;
+  background: rgba(19, 25, 44, 0.92) !important;
+  display: grid !important;
+  gap: 0.18rem !important;
+}
+
+[data-wilsy-view-organizer-options="true"] {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 0.44rem !important;
+  padding-right: 0.14rem !important;
+}
+
+[data-wilsy-view-organizer-options="true"] button,
+[data-wilsy-add-custom-view-action="true"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 3.1rem !important;
+  padding: 0.58rem 0.68rem !important;
+  display: grid !important;
+  gap: 0.18rem !important;
+  align-items: center !important;
+  border: 1px solid rgba(122, 101, 219, 0.34) !important;
+  border-radius: 0.82rem !important;
+  background: rgba(17, 23, 40, 0.98) !important;
+  color: #ffffff !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+}
+
+[data-wilsy-view-organizer-options="true"] button[data-active="true"] {
+  background: linear-gradient(135deg, rgba(99, 64, 190, 0.98), rgba(83, 45, 164, 0.92)) !important;
+  border-color: rgba(195, 164, 255, 0.9) !important;
+}
+
+[data-wilsy-view-organizer-options="true"] button strong,
+[data-wilsy-view-organizer-options="true"] button em,
+[data-wilsy-add-custom-view-action="true"] strong,
+[data-wilsy-add-custom-view-action="true"] em,
+[data-wilsy-view-organizer-header="true"] strong,
+[data-wilsy-view-organizer-header="true"] em {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+[data-wilsy-view-organizer-options="true"] button strong,
+[data-wilsy-add-custom-view-action="true"] strong,
+[data-wilsy-view-organizer-header="true"] strong {
+  color: #ffffff !important;
+  font-size: 0.9rem !important;
+  font-weight: 950 !important;
+}
+
+[data-wilsy-view-organizer-options="true"] button em,
+[data-wilsy-add-custom-view-action="true"] em,
+[data-wilsy-view-organizer-header="true"] em {
+  color: rgba(204, 184, 255, 0.82) !important;
+  font-size: 0.72rem !important;
+  font-style: normal !important;
+}
+
+[data-wilsy-add-custom-view-action="true"] {
+  border-color: rgba(103, 233, 172, 0.42) !important;
+  background: rgba(23, 86, 61, 0.24) !important;
+}
+
+/* P60K5Q10FG93I - Real Lead Custom View Builder */
+.leadCustomViewOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 14000;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(2, 6, 18, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.leadCustomViewPanel {
+  width: min(46rem, calc(100vw - 2rem));
+  max-height: min(42rem, calc(100dvh - 2rem));
+  overflow: auto;
+  border: 1px solid rgba(148, 125, 255, 0.44);
+  border-radius: 1.2rem;
+  background: linear-gradient(180deg, rgba(15, 20, 38, 0.98), rgba(7, 10, 20, 0.995)), #070a14;
+  box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.62);
+}
+
+.leadCustomViewHeader,
+.leadCustomViewActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(148, 125, 255, 0.18);
+}
+
+.leadCustomViewHeader div {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.leadCustomViewHeader span,
+.leadCustomViewPreview strong,
+.leadCustomViewActions span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: rgba(222, 214, 255, 0.82);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.leadCustomViewHeader strong {
+  color: #ffffff;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.leadCustomViewHeader em,
+.leadCustomViewPreview em {
+  color: rgba(184, 193, 214, 0.78);
+  font-style: normal;
+  font-size: 0.82rem;
+}
+
+.leadCustomViewHeader button,
+.leadCustomViewActions button {
+  border: 1px solid rgba(148, 125, 255, 0.32);
+  border-radius: 0.82rem;
+  background: rgba(10, 14, 26, 0.9);
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.leadCustomViewHeader button {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+}
+
+.leadCustomViewGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.leadCustomViewGrid label {
+  display: grid;
+  gap: 0.38rem;
+  color: rgba(214, 221, 238, 0.82);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.leadCustomViewGrid input,
+.leadCustomViewGrid select {
+  width: 100%;
+  border: 1px solid rgba(148, 125, 255, 0.28);
+  border-radius: 0.72rem;
+  background: rgba(7, 11, 22, 0.92);
+  color: #ffffff;
+  padding: 0.72rem 0.78rem;
+  outline: none;
+}
+
+.leadCustomViewPreview {
+  margin: 0 1rem 1rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(87, 219, 153, 0.28);
+  border-radius: 0.86rem;
+  background: rgba(31, 121, 84, 0.12);
+  display: grid;
+  gap: 0.28rem;
+}
+
+.leadCustomViewPreview span {
+  color: #75f0b5;
+  font-weight: 950;
+}
+
+.leadCustomViewActions {
+  border-top: 1px solid rgba(148, 125, 255, 0.18);
+  border-bottom: 0;
+}
+
+.leadCustomViewActions button {
+  min-height: 2.4rem;
+  padding: 0 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.leadCustomViewActions button:nth-child(2) {
+  border-color: rgba(87, 219, 153, 0.48);
+  background: rgba(36, 145, 98, 0.22);
+}

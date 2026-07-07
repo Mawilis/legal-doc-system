@@ -165,8 +165,8 @@ export default function WilsyLeadCustomViewBuilder({
   existingViews = [],
 }) {
   const [draft, setDraft] = useState({
-    label: 'My Lead View',
-    description: '',
+    label: 'Wilson Owned Leads',
+    description: 'Live backend Leads assigned to Wilson',
     field: 'owner',
     operator: 'contains',
     value: 'Wilson',
@@ -215,7 +215,7 @@ export default function WilsyLeadCustomViewBuilder({
           <div>
             <span><SlidersHorizontal size={16} /> Lead Custom View</span>
             <strong>Build a live saved view</strong>
-            <em>Criteria-driven views filter the current backend Lead records immediately.</em>
+            <em>Criteria-driven views filter current backend Lead records immediately.</em>
           </div>
           <button type="button" onClick={onClose} aria-label="Close custom view builder">
             <X size={18} />
@@ -225,20 +225,12 @@ export default function WilsyLeadCustomViewBuilder({
         <div className={styles.leadCustomViewGrid}>
           <label>
             <span>View name</span>
-            <input
-              value={draft.label}
-              onChange={event => updateDraft('label', event.target.value)}
-              placeholder="Wilson owned leads"
-            />
+            <input value={draft.label} onChange={event => updateDraft('label', event.target.value)} />
           </label>
 
           <label>
             <span>Description</span>
-            <input
-              value={draft.description}
-              onChange={event => updateDraft('description', event.target.value)}
-              placeholder="Saved live backend segment"
-            />
+            <input value={draft.description} onChange={event => updateDraft('description', event.target.value)} />
           </label>
 
           <label>
@@ -264,11 +256,7 @@ export default function WilsyLeadCustomViewBuilder({
 
           <label>
             <span>Value</span>
-            <input
-              value={draft.value}
-              onChange={event => updateDraft('value', event.target.value)}
-              placeholder="Wilson, contacted, 80..."
-            />
+            <input value={draft.value} onChange={event => updateDraft('value', event.target.value)} />
           </label>
 
           <label>
@@ -288,9 +276,7 @@ export default function WilsyLeadCustomViewBuilder({
         </section>
 
         <footer className={styles.leadCustomViewActions}>
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
+          <button type="button" onClick={onClose}>Cancel</button>
           <button type="button" onClick={saveView}>
             <Save size={16} />
             Save custom view
