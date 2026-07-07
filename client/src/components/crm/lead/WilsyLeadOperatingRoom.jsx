@@ -5044,12 +5044,73 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       || null;
   }
 
+
+  /**
+   * @function formatWilsyCompactRunCount
+   * @description Formats large backend counts into compact dropdown language.
+   * @param {number|string} count Raw count.
+   * @returns {string} Compact count.
+   * @collaboration Million-record CRM views, compact selector labels, backend run pagination, and operator scanning.
+   */
+  function formatWilsyCompactRunCount(count = 0) {
+    const value = Math.max(0, Number(count || 0));
+
+    if (!Number.isFinite(value)) {
+      return '0';
+    }
+
+    /**
+     * @function trim
+     * @description Removes trailing zeroes from compact count decimals.
+     * @param {number|string} number Compact decimal value.
+     * @returns {string} Trimmed compact decimal label.
+     * @collaboration Million-record count labels, compact selector grammar, and backend pagination summaries.
+     */
+    const trim = (number) => String(number).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+
+    if (value >= 1000000000) {
+      return `${trim((value / 1000000000).toFixed(value >= 10000000000 ? 1 : 2))}B`;
+    }
+
+    if (value >= 1000000) {
+      return `${trim((value / 1000000).toFixed(value >= 10000000 ? 1 : 2))}M`;
+    }
+
+    if (value >= 1000) {
+      return `${trim((value / 1000).toFixed(value >= 10000 ? 1 : 2))}K`;
+    }
+
+    return String(value);
+  }
+
+  /**
+   * @function formatWilsyExactRunCount
+   * @description Formats backend counts as exact inspector/footer-grade numbers.
+   * @param {number|string} count Raw count.
+   * @returns {string} Exact count.
+   * @collaboration Inspector support language, exact footer counts, cursor pagination, and evidence-grade totals.
+   */
+  function formatWilsyExactRunCount(count = 0) {
+    const value = Math.max(0, Number(count || 0));
+
+    if (!Number.isFinite(value)) {
+      return '0';
+    }
+
+    try {
+      return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+
   /**
    * @function formatWilsySelectorBackendCountLabel
    * @description Formats the compact selector count from backend run pagination when available.
    * @param {object} view Selector view.
    * @returns {string} Selector detail label.
-   * @collaboration View selector, Wilsy custom views, backend run pagination, and stale count prevention.
+   * @collaboration View selector, Wilsy custom views, backend run pagination, million-record compact language, and stale count prevention.
    */
   function formatWilsySelectorBackendCountLabel(view = activeLeadOrganizerView) {
     const pagination = resolveWilsySelectorBackendRunPaginationForView(view);
@@ -5057,11 +5118,58 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     const totalCount = Number(pagination?.totalCount || 0);
 
     if (isWilsyToolbarCustomCollectionView(view) && pagination && totalCount >= 0) {
-      return `${returnedCount}/${totalCount} live`;
+      return `${formatWilsyCompactRunCount(returnedCount)}/${formatWilsyCompactRunCount(totalCount)} live`;
     }
 
     return String(view?.detail || view?.countLabel || view?.supportLabel || 'Live view').trim();
   }
+
+
+  /**
+   * @function formatWilsySelectorExactBackendCountLabel
+   * @description Formats exact backend count support text for the active custom-view organizer area.
+   * @param {object} view Selector view.
+   * @returns {string} Exact count support label.
+   * @collaboration Active custom-view inspector, backend run pagination, cursor offset, and exact count clarity.
+   */
+  function formatWilsySelectorExactBackendCountLabel(view = activeLeadOrganizerView) {
+    const pagination = resolveWilsySelectorBackendRunPaginationForView(view);
+
+    if (!isWilsyToolbarCustomCollectionView(view) || !pagination) {
+      return '';
+    }
+
+    const offset = Number(pagination.offset || 0);
+    const returnedCount = Number(pagination.returnedCount || 0);
+    const totalCount = Number(pagination.totalCount || 0);
+    const start = returnedCount ? offset + 1 : 0;
+    const end = returnedCount ? offset + returnedCount : 0;
+
+    return `Exact backend count: ${formatWilsyExactRunCount(returnedCount)} returned · ${formatWilsyExactRunCount(totalCount)} total · rows ${formatWilsyExactRunCount(start)}-${formatWilsyExactRunCount(end)}`;
+  }
+
+  /**
+   * @function renderWilsyActiveCustomViewExactCountSupport
+   * @description Renders exact backend count support inside the active custom-view organizer area.
+   * @returns {JSX.Element|null} Exact count support text.
+   * @collaboration Custom view organizer, inspector-grade count language, backend cursor pagination, and million-record clarity.
+   */
+  function renderWilsyActiveCustomViewExactCountSupport() {
+    const label = formatWilsySelectorExactBackendCountLabel(activeLeadOrganizerView);
+
+    if (!label) {
+      return null;
+    }
+
+    return (
+      <small data-wilsy-custom-view-exact-count="FG103Y">
+        {label}
+      </small>
+    );
+  }
+
+  // P60K5Q10FG103Y_COUNT_LANGUAGE_POLISH
+
 
   // P60K5Q10FG103X2_SELECTOR_BACKEND_COUNT_LABEL
 
@@ -7023,6 +7131,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                 </span>
                 <ChevronDown size={16} />
               </button>
+              {renderWilsyActiveCustomViewExactCountSupport()}
 
               {viewMenuOpen ? (
                 <section className={styles.leadOrganizerCompactMenu} data-wilsy-leads-organizer-compact-menu="FG97" aria-label="Lead list views"
