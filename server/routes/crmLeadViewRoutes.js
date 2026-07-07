@@ -1,6 +1,6 @@
 /* eslint-disable */
-const express = require('express');
-const {
+import express from 'express';
+import {
   archiveLeadView,
   createLeadView,
   explainLeadCategories,
@@ -9,7 +9,7 @@ const {
   resolveRequestContext,
   runLeadView,
   updateLeadView,
-} = require('../services/crmLeadViewRegistryService');
+} from '../services/crmLeadViewRegistryService.js';
 
 const router = express.Router();
 
@@ -195,4 +195,4 @@ router.post('/preview', previewLeadViewHandler);
 router.get('/categories/summary', explainLeadCategoriesHandler);
 router.post('/:viewId/run', runLeadViewHandler);
 
-module.exports = router;
+export default router;

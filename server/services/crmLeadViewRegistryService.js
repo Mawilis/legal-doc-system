@@ -1,13 +1,13 @@
 /* eslint-disable */
-const mongoose = require('mongoose');
-const CrmLeadView = require('../models/crmLeadViewModel');
-const {
+import mongoose from 'mongoose';
+import CrmLeadView from '../models/crmLeadViewModel.js';
+import {
   RULE_ENGINE_VERSION,
   buildCriteriaHash,
   buildLeadCategorySummary,
   doesLeadMatchBuiltInCategory,
   doesLeadMatchCustomCriteria,
-} = require('./crmLeadViewCategoryEngine');
+} from './crmLeadViewCategoryEngine.js';
 
 const LEAD_COLLECTION_CANDIDATES = [
   'leads',
@@ -449,7 +449,7 @@ async function explainLeadCategories(context = {}) {
   return buildLeadCategorySummary(leads);
 }
 
-module.exports = {
+export {
   archiveLeadView,
   createLeadView,
   explainLeadCategories,

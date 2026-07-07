@@ -1,5 +1,5 @@
 /* eslint-disable */
-const crmLeadViewRoutes = require('./routes/crmLeadViewRoutes');
+import crmLeadViewRoutes from './routes/crmLeadViewRoutes.js';
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                                                                                        ║

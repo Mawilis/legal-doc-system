@@ -1,5 +1,5 @@
 /* eslint-disable */
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const RULE_ENGINE_VERSION = 'wilsy-lead-category-engine-v1';
 
@@ -363,7 +363,7 @@ function buildLeadCategorySummary(leads = []) {
   };
 }
 
-module.exports = {
+export {
   RULE_ENGINE_VERSION,
   buildCriteriaHash,
   buildLeadCategorySummary,

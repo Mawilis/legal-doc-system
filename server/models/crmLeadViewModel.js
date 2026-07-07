@@ -1,5 +1,5 @@
 /* eslint-disable */
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const crmLeadViewCriterionSchema = new mongoose.Schema(
   {
@@ -90,4 +90,7 @@ function buildCrmLeadViewModel() {
   return mongoose.models.CrmLeadView || mongoose.model('CrmLeadView', crmLeadViewSchema);
 }
 
-module.exports = buildCrmLeadViewModel();
+const CrmLeadView = buildCrmLeadViewModel();
+
+export { buildCrmLeadViewModel };
+export default CrmLeadView;
