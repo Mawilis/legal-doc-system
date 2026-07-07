@@ -11647,3 +11647,27 @@ td[data-wilsy-lead-empty-state="records"] {
     max-width: 4.8rem !important;
   }
 }
+
+/* P60K5Q10FG103J_TOOLBAR_PILL_END_RUNWAY
+   CSS-only end-runway for the horizontal Lead collection action rail.
+   Allows the final pill to scroll fully into view instead of clipping at the capsule edge. */
+.leadToolbarCollectionActions {
+  box-sizing: border-box !important;
+  justify-content: flex-start !important;
+  padding-inline-end: 1.1rem !important;
+  scroll-padding-inline-start: 0.35rem !important;
+  scroll-padding-inline-end: 1.65rem !important;
+}
+
+.leadToolbarCollectionActions::after {
+  content: "" !important;
+  flex: 0 0 1.35rem !important;
+  width: 1.35rem !important;
+  min-width: 1.35rem !important;
+  height: 1px !important;
+}
+
+.leadToolbarCollectionActions button:last-of-type {
+  margin-inline-end: 0.45rem !important;
+  scroll-snap-align: end !important;
+}
