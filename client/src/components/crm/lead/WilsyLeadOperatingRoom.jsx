@@ -3063,116 +3063,111 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
   useEffect(() => {
-    /* P60K5Q10FG93F_PRIMARY_ORGANIZER_MENU_ONLY */
-    if (!viewMenuOpen || typeof document === 'undefined' || typeof window === 'undefined') {
+    /* P60K5Q10FG93G_SINGLE_RUNTIME_VIEW_SWITCHER */
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    document.querySelectorAll('section[aria-label="Lead list views"]').forEach((legacyMenuNode) => {
+      legacyMenuNode.setAttribute('data-wilsy-legacy-lead-view-menu-hidden', 'true');
+      legacyMenuNode.style.setProperty('display', 'none', 'important');
+      legacyMenuNode.style.setProperty('visibility', 'hidden', 'important');
+      legacyMenuNode.style.setProperty('pointer-events', 'none', 'important');
+      legacyMenuNode.style.setProperty('max-height', '0px', 'important');
+      legacyMenuNode.style.setProperty('overflow', 'hidden', 'important');
+    });
+
+    const existingRuntimeNode = document.getElementById('wilsy-leads-single-view-switcher');
+    if (existingRuntimeNode) {
+      existingRuntimeNode.remove();
+    }
+
+    if (!viewMenuOpen) {
       return undefined;
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      const shellCandidates = Array
-        .from(document.querySelectorAll('[data-wilsy-leads-organizer-shell="true"]'))
-        .map((shellNode) => {
-          const shellRect = shellNode.getBoundingClientRect();
-          const menuNode = shellNode.querySelector('section[aria-label="Lead list views"]');
-          const buttonNode = shellNode.querySelector('[data-wilsy-leads-organizer-wrap="true"] > button, button');
-
-          return {
-            shellNode,
-            menuNode,
-            buttonNode,
-            shellRect,
-          };
-        })
-        .filter(({ menuNode, shellRect }) => (
-          Boolean(menuNode) &&
-          shellRect.width > 0 &&
-          shellRect.height > 0 &&
-          shellRect.bottom > 0 &&
-          shellRect.top < window.innerHeight
+      const triggerCandidates = Array
+        .from(document.querySelectorAll('[data-wilsy-leads-organizer-wrap="true"] > button'))
+        .map((buttonNode) => ({
+          buttonNode,
+          rect: buttonNode.getBoundingClientRect(),
+        }))
+        .filter(({ rect }) => (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.bottom > 0 &&
+          rect.top < window.innerHeight
         ))
-        .sort((leftShell, rightShell) => (
-          leftShell.shellRect.top - rightShell.shellRect.top ||
-          leftShell.shellRect.left - rightShell.shellRect.left
+        .sort((leftItem, rightItem) => (
+          leftItem.rect.top - rightItem.rect.top ||
+          leftItem.rect.left - rightItem.rect.left
         ));
 
-      const primaryShell = shellCandidates[0] || null;
-      const allMenus = Array.from(document.querySelectorAll('section[aria-label="Lead list views"]'));
+      const primaryTrigger = triggerCandidates[0];
 
-      allMenus.forEach((menuNode) => {
-        if (!primaryShell || menuNode !== primaryShell.menuNode) {
-          menuNode.setAttribute('data-wilsy-leads-organizer-duplicate-menu', 'true');
-          menuNode.style.setProperty('display', 'none', 'important');
-          menuNode.style.setProperty('visibility', 'hidden', 'important');
-          menuNode.style.setProperty('pointer-events', 'none', 'important');
-          menuNode.style.setProperty('max-height', '0', 'important');
-          menuNode.style.setProperty('overflow', 'hidden', 'important');
-          return;
-        }
+      if (!primaryTrigger) {
+        return;
+      }
 
-        const anchorRect = (primaryShell.buttonNode || primaryShell.shellNode).getBoundingClientRect();
-        const desiredWidth = 168;
-        const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - desiredWidth - 8));
-        const top = Math.max(8, Math.min(anchorRect.bottom + 4, window.innerHeight - 148));
-        const maxHeight = Math.max(92, Math.min(128, window.innerHeight - top - 48));
+      const desiredWidth = 188;
+      const left = Math.max(8, Math.min(primaryTrigger.rect.left, window.innerWidth - desiredWidth - 8));
+      const top = Math.max(8, primaryTrigger.rect.bottom + 6);
 
-        menuNode.removeAttribute('data-wilsy-leads-organizer-duplicate-menu');
-        menuNode.setAttribute('data-wilsy-leads-primary-runtime-menu', 'true');
-        menuNode.style.setProperty('display', 'block', 'important');
-        menuNode.style.setProperty('visibility', 'visible', 'important');
-        menuNode.style.setProperty('pointer-events', 'auto', 'important');
-        menuNode.style.setProperty('position', 'fixed', 'important');
-        menuNode.style.setProperty('left', `${left}px`, 'important');
-        menuNode.style.setProperty('right', 'auto', 'important');
-        menuNode.style.setProperty('top', `${top}px`, 'important');
-        menuNode.style.setProperty('bottom', 'auto', 'important');
-        menuNode.style.setProperty('width', `${desiredWidth}px`, 'important');
-        menuNode.style.setProperty('min-width', `${desiredWidth}px`, 'important');
-        menuNode.style.setProperty('max-width', `${desiredWidth}px`, 'important');
-        menuNode.style.setProperty('height', 'auto', 'important');
-        menuNode.style.setProperty('max-height', `${maxHeight}px`, 'important');
-        menuNode.style.setProperty('overflow-y', 'auto', 'important');
-        menuNode.style.setProperty('overflow-x', 'hidden', 'important');
-        menuNode.style.setProperty('overscroll-behavior', 'contain', 'important');
-        menuNode.style.setProperty('padding', '4px', 'important');
-        menuNode.style.setProperty('margin', '0', 'important');
-        menuNode.style.setProperty('box-sizing', 'border-box', 'important');
-        menuNode.style.setProperty('border-radius', '10px', 'important');
-        menuNode.style.setProperty('background', '#070312', 'important');
-        menuNode.style.setProperty('border', '1px solid rgba(147, 119, 255, 0.74)', 'important');
-        menuNode.style.setProperty('box-shadow', '0 10px 22px rgba(0, 0, 0, 0.78)', 'important');
-        menuNode.style.setProperty('backdrop-filter', 'none', 'important');
-        menuNode.style.setProperty('z-index', '9000', 'important');
-        menuNode.style.setProperty('contain', 'layout paint', 'important');
+      const switcherNode = document.createElement('section');
+      switcherNode.id = 'wilsy-leads-single-view-switcher';
+      switcherNode.setAttribute('data-wilsy-leads-single-view-switcher', 'true');
+      switcherNode.setAttribute('role', 'menu');
+      switcherNode.setAttribute('aria-label', 'Lead Organizer views');
 
-        Array.from(menuNode.querySelectorAll('button')).forEach((buttonNode) => {
-          buttonNode.style.setProperty('width', '100%', 'important');
-          buttonNode.style.setProperty('max-width', '100%', 'important');
-          buttonNode.style.setProperty('min-width', '0', 'important');
-          buttonNode.style.setProperty('height', '26px', 'important');
-          buttonNode.style.setProperty('min-height', '26px', 'important');
-          buttonNode.style.setProperty('padding', '3px 6px', 'important');
-          buttonNode.style.setProperty('margin', '0 0 4px 0', 'important');
-          buttonNode.style.setProperty('display', 'grid', 'important');
-          buttonNode.style.setProperty('grid-template-rows', '13px 10px', 'important');
-          buttonNode.style.setProperty('overflow', 'hidden', 'important');
-          buttonNode.style.setProperty('box-sizing', 'border-box', 'important');
-        });
+      switcherNode.style.setProperty('position', 'fixed', 'important');
+      switcherNode.style.setProperty('left', `${left}px`, 'important');
+      switcherNode.style.setProperty('top', `${top}px`, 'important');
+      switcherNode.style.setProperty('width', `${desiredWidth}px`, 'important');
+      switcherNode.style.setProperty('max-height', '144px', 'important');
+      switcherNode.style.setProperty('overflow-y', 'auto', 'important');
+      switcherNode.style.setProperty('overflow-x', 'hidden', 'important');
+      switcherNode.style.setProperty('z-index', '12000', 'important');
 
-        Array.from(menuNode.querySelectorAll('span, em, strong')).forEach((textNode) => {
-          textNode.style.setProperty('max-width', '148px', 'important');
-          textNode.style.setProperty('min-width', '0', 'important');
-          textNode.style.setProperty('overflow', 'hidden', 'important');
-          textNode.style.setProperty('text-overflow', 'ellipsis', 'important');
-          textNode.style.setProperty('white-space', 'nowrap', 'important');
-          textNode.style.setProperty('line-height', '1', 'important');
-        });
+      leadOrganizerLiveViews.forEach((view) => {
+        const optionNode = document.createElement('button');
+        optionNode.type = 'button';
+        optionNode.setAttribute('data-wilsy-lead-view-option', String(view.id || 'ALL'));
+        optionNode.setAttribute('role', 'menuitem');
+        optionNode.setAttribute('data-active', String(view.id === activeListViewId));
+
+        const labelNode = document.createElement('strong');
+        labelNode.textContent = String(view.label || 'Lead view');
+
+        const detailNode = document.createElement('em');
+        detailNode.textContent = String(view.detail || view.staticDetail || '');
+
+        optionNode.appendChild(labelNode);
+        optionNode.appendChild(detailNode);
+
+        optionNode.onclick = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setActiveListViewId(view.id || 'ALL');
+          setLeadPage(1);
+          setViewMenuOpen(false);
+        };
+
+        switcherNode.appendChild(optionNode);
       });
+
+      document.body.appendChild(switcherNode);
     });
 
     return () => {
       window.cancelAnimationFrame(frameId);
+      const runtimeNode = document.getElementById('wilsy-leads-single-view-switcher');
+      if (runtimeNode) {
+        runtimeNode.remove();
+      }
     };
-  }, [viewMenuOpen, activeListViewId, leadOrganizerLiveViews.length]);
+  }, [viewMenuOpen, activeListViewId, leadOrganizerLiveViews]);
+
 
 
 

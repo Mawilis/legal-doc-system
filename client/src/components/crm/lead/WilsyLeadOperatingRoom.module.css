@@ -10781,3 +10781,87 @@ td[data-wilsy-lead-empty-state="records"] {
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
+
+/* P60K5Q10FG93G - Single runtime Lead view switcher
+   The legacy duplicated dropdown is hidden. This body-level switcher is the
+   only visible Organizer menu. */
+section[aria-label="Lead list views"][data-wilsy-legacy-lead-view-menu-hidden="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#wilsy-leads-single-view-switcher,
+[data-wilsy-leads-single-view-switcher="true"] {
+  width: 188px !important;
+  min-width: 188px !important;
+  max-width: 188px !important;
+  max-height: 144px !important;
+  padding: 5px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  border: 1px solid rgba(156, 126, 255, 0.78) !important;
+  border-radius: 12px !important;
+  background: #070312 !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.82) !important;
+  box-sizing: border-box !important;
+  backdrop-filter: none !important;
+  contain: layout paint !important;
+}
+
+#wilsy-leads-single-view-switcher button,
+[data-wilsy-leads-single-view-switcher="true"] button {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  margin: 0 0 5px 0 !important;
+  padding: 4px 7px !important;
+  display: grid !important;
+  grid-template-rows: 14px 10px !important;
+  align-items: center !important;
+  border: 1px solid rgba(122, 101, 219, 0.32) !important;
+  border-radius: 8px !important;
+  background: rgba(17, 23, 40, 0.98) !important;
+  color: #ffffff !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+}
+
+#wilsy-leads-single-view-switcher button[data-active="true"],
+[data-wilsy-leads-single-view-switcher="true"] button[data-active="true"] {
+  background: rgba(85, 55, 168, 0.96) !important;
+  border-color: rgba(188, 160, 255, 0.82) !important;
+}
+
+#wilsy-leads-single-view-switcher strong,
+#wilsy-leads-single-view-switcher em,
+[data-wilsy-leads-single-view-switcher="true"] strong,
+[data-wilsy-leads-single-view-switcher="true"] em {
+  display: block !important;
+  max-width: 168px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+#wilsy-leads-single-view-switcher strong,
+[data-wilsy-leads-single-view-switcher="true"] strong {
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+#wilsy-leads-single-view-switcher em,
+[data-wilsy-leads-single-view-switcher="true"] em {
+  color: rgba(204, 184, 255, 0.82) !important;
+  font-size: 10px !important;
+  font-style: normal !important;
+}
