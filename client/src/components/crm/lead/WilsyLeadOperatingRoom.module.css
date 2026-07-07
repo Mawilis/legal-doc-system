@@ -12283,3 +12283,153 @@ td[data-wilsy-lead-empty-state="records"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* P60K5Q10FG104B_PROOF_WORKSPACE_ISOLATION_POLISH */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit {
+  min-height: calc(100dvh - 92px);
+  margin: 0;
+  padding: clamp(18px, 1.6vw, 28px);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(62, 255, 154, 0.2), transparent 24%),
+    radial-gradient(circle at 82% 4%, rgba(142, 102, 255, 0.2), transparent 28%),
+    linear-gradient(135deg, rgba(2, 12, 8, 0.98), rgba(5, 8, 22, 0.97));
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero {
+  align-items: center;
+  padding: clamp(10px, 1.2vw, 18px);
+  border: 1px solid rgba(126, 255, 188, 0.22);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(62, 255, 154, 0.14), transparent 36%),
+    rgba(0, 0, 0, 0.18);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero small {
+  color: rgba(246, 231, 151, 0.94);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero strong {
+  max-width: 980px;
+  font-size: clamp(2.25rem, 4.2vw, 5.2rem);
+  line-height: 0.92;
+  letter-spacing: -0.072em;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero em {
+  max-width: 760px;
+  color: rgba(212, 224, 244, 0.82);
+  font-size: clamp(0.92rem, 1vw, 1.1rem);
+}
+
+.leadProofCockpitStatusRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.leadProofCockpitStatusRail article {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(126, 255, 188, 0.16);
+  border-radius: 18px;
+  background: rgba(4, 12, 18, 0.72);
+}
+
+.leadProofCockpitStatusRail article[data-status="sealed"] {
+  border-color: rgba(62, 255, 154, 0.34);
+  background: rgba(4, 28, 17, 0.72);
+}
+
+.leadProofCockpitStatusRail article[data-status="scope-required"],
+.leadProofCockpitStatusRail article[data-status="pending"] {
+  border-color: rgba(246, 231, 151, 0.25);
+  background: rgba(29, 23, 7, 0.46);
+}
+
+.leadProofCockpitStatusRail small {
+  display: block;
+  color: rgba(246, 231, 151, 0.9);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.leadProofCockpitStatusRail strong {
+  display: block;
+  margin-top: 5px;
+  color: rgba(249, 255, 251, 0.98);
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.leadProofCockpitStatusRail em {
+  display: block;
+  min-width: 0;
+  margin-top: 5px;
+  overflow: hidden;
+  color: rgba(173, 189, 218, 0.84);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitGrid {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  align-items: stretch;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitPanel {
+  border-color: rgba(126, 255, 188, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(126, 255, 188, 0.08), transparent 28%),
+    rgba(3, 8, 18, 0.82);
+}
+
+.leadProofCockpitValue[data-wilsy-proof-value-status="scope-required"] {
+  border-color: rgba(246, 231, 151, 0.18);
+  background: rgba(34, 27, 10, 0.35);
+}
+
+.leadProofCockpitValue[data-wilsy-proof-value-status="scope-required"] strong {
+  color: rgba(246, 231, 151, 0.78);
+  font-family: inherit;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="receipt-spine"] {
+  border-color: rgba(62, 255, 154, 0.26);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="run-integrity"] {
+  border-color: rgba(94, 178, 255, 0.22);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="membership-ledger"] {
+  border-color: rgba(246, 231, 151, 0.22);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="proof-timeline"] {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1180px) {
+  .leadProofCockpitStatusRail,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero strong {
+    font-size: clamp(2rem, 9vw, 3.8rem);
+  }
+}

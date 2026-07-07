@@ -9981,6 +9981,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const visibleStart = returnedCount ? offset + 1 : 0;
     const visibleEnd = returnedCount ? offset + returnedCount : 0;
 
+    const registryProofReady = Boolean(evidence.backendViewId && evidence.criteriaHash);
+    const proofScopeLabel = registryProofReady
+      ? 'Saved-view registry proof sealed'
+      : 'Global Lead scope · select a saved custom view for registry receipts';
+    const proofModeLabel = activeLeadOrganizerView?.custom
+      ? resolveLeadOperatingCopyLabel(activeLeadOrganizerView?.label || 'Custom View', activeLeadOrganizerView?.id || 'custom')
+      : 'All Leads source scope';
+
     return {
       evidence,
       pagination,
@@ -9999,6 +10007,9 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       cursorLabel: pagination?.cursor ? 'cursor page' : 'first page',
       nextCursorLabel: pagination?.nextCursor ? 'next ready' : 'end reached',
       previousCursorLabel: pagination?.previousCursor ? 'previous ready' : 'start reached',
+      registryProofReady,
+      proofScopeLabel,
+      proofModeLabel,
     };
   }
 
@@ -10007,29 +10018,34 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
    * @description Renders a copyable value row for the production Proof Cockpit.
    * @param {object} item Value item.
    * @returns {JSX.Element} Proof value row.
-   * @collaboration Receipt spine, criteria hashes, audit receipts, clipboard proof actions, and operator audit review.
+   * @collaboration Receipt spine, criteria hashes, audit receipts, clipboard proof actions, saved-view scope detection, and operator audit review.
    */
   function renderWilsyProofCockpitValue(item = {}) {
-    const value = String(item.value || '').trim() || '—';
+    const displayValue = String(item.value || '').trim() || 'Not available for this scope';
+    const copyValue = String(item.copyValue ?? item.value ?? '').trim();
+    const proofStatus = copyValue ? 'sealed' : 'scope-required';
 
     return (
       <article
         key={item.label}
         className={styles.leadProofCockpitValue}
         data-wilsy-proof-value={item.marker || item.label}
+        data-wilsy-proof-value-status={proofStatus}
       >
         <small>{item.label}</small>
-        <strong title={value}>{value}</strong>
+        <strong title={displayValue}>{displayValue}</strong>
         <button
           type="button"
-          onClick={() => copyWilsyProofCockpitValue(value, item.label)}
-          disabled={!String(item.value || '').trim()}
+          onClick={() => copyWilsyProofCockpitValue(copyValue, item.label)}
+          disabled={!copyValue}
         >
           Copy
         </button>
       </article>
     );
   }
+
+  // P60K5Q10FG104B_COPY_BUTTONS_REQUIRE_REAL_PROOF_VALUES
 
   /**
    * @function renderWilsyProductionProofCockpit
@@ -10042,22 +10058,26 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const evidenceValues = [
       {
         label: 'backendViewId',
-        value: packet.evidence.backendViewId,
+        value: packet.evidence.backendViewId || 'Saved custom-view registry required',
+        copyValue: packet.evidence.backendViewId,
         marker: 'backend-view-id',
       },
       {
         label: 'criteriaHash',
-        value: packet.evidence.criteriaHash,
+        value: packet.evidence.criteriaHash || 'Criteria hash appears after saved-view proof',
+        copyValue: packet.evidence.criteriaHash,
         marker: 'criteria-hash',
       },
       {
         label: 'auditReceiptId',
-        value: packet.evidence.auditReceiptId,
+        value: packet.evidence.auditReceiptId || 'Run receipt appears after backend /run',
+        copyValue: packet.evidence.auditReceiptId,
         marker: 'audit-receipt-id',
       },
       {
         label: 'membership overrides',
         value: packet.evidence.membershipReceiptLabel,
+        copyValue: packet.evidence.backendViewId ? packet.evidence.membershipReceiptLabel : '',
         marker: 'membership-overrides',
       },
     ];
@@ -10103,26 +10123,64 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       >
         <header className={styles.leadProofCockpitHero}>
           <span>
-            <small>Proof Cockpit</small>
-            <strong>Evidence Ledger Operating Surface</strong>
-            <em>{packet.exactCountLabel}</em>
+            <small>Proof Cockpit · {packet.proofModeLabel}</small>
+            <strong>Evidence Ledger Command Surface</strong>
+            <em>{packet.proofScopeLabel}</em>
           </span>
           <div>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')}>
+            <button type="button" onClick={() => setActiveTopTab('records')}>
+              Back to records
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTopTab('records');
+                setViewMenuOpen(true);
+              }}
+            >
+              Select view
+            </button>
+            <button
+              type="button"
+              onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')}
+              disabled={!packet.evidence.auditReceiptId}
+            >
               Copy receipt
             </button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')}>
+            <button
+              type="button"
+              onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')}
+              disabled={!packet.evidence.criteriaHash}
+            >
               Copy hash
             </button>
             <button
               type="button"
               onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)}
-              disabled={Boolean(leadToolbarCommandBusy)}
+              disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}
             >
               Refresh proof
             </button>
           </div>
         </header>
+
+        <section className={styles.leadProofCockpitStatusRail} data-wilsy-proof-status-rail="FG104B">
+          <article data-status={packet.registryProofReady ? 'sealed' : 'scope-required'}>
+            <small>Proof Scope</small>
+            <strong>{packet.proofScopeLabel}</strong>
+            <em>{packet.exactCountLabel}</em>
+          </article>
+          <article data-status={packet.evidence.auditReceiptId ? 'sealed' : 'pending'}>
+            <small>Run Receipt</small>
+            <strong>{packet.evidence.auditReceiptId ? 'Sealed' : 'Waiting'}</strong>
+            <em>{packet.evidence.auditReceiptId || 'Run a saved custom view to seal audit receipt.'}</em>
+          </article>
+          <article data-status={packet.evidence.criteriaHash ? 'sealed' : 'pending'}>
+            <small>Criteria Hash</small>
+            <strong>{packet.evidence.criteriaHash ? 'Verified' : 'Not available'}</strong>
+            <em>{packet.evidence.criteriaHash || 'All Leads has no saved criteria hash.'}</em>
+          </article>
+        </section>
 
         <div className={styles.leadProofCockpitGrid}>
           <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="receipt-spine">
@@ -10484,8 +10542,9 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       </div>
       {renderWilsyCollectionSourcePicker()}
       {renderWilsyViewActionConfirmation()}
-      {renderHeader()}
+      {activeTopTab === 'proof' ? null : renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}
+      {/* P60K5Q10FG104B_PROOF_WORKSPACE_ISOLATION */}
       {renderCalendarDrawer()}
       {renderCommandDrawer()}
       {renderSetupDrawer()}
