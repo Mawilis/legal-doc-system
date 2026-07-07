@@ -11377,63 +11377,57 @@ td[data-wilsy-lead-empty-state="records"] {
   color: rgba(255, 195, 205, 0.98);
 }
 
-/* P60K5Q10FG102B_VERIFIED_COMPACT_ORGANIZER_SCROLL
-   Verified target: the visible Lead view menu is .leadOrganizerCompactMenu. */
-.leadDropdownWrap:has(.leadOrganizerCompactMenu),
-.leadViewCluster:has(.leadOrganizerCompactMenu) {
-  overflow: visible !important;
-  isolation: isolate !important;
-}
-
+/* P60K5Q10FG102C_RESTORE_COMPACT_ORGANIZER_SCROLL_ONLY
+   Restores approved FG97B compact geometry and adds only reliable scrolling. */
 .leadOrganizerCompactMenu {
-  width: min(19rem, calc(100vw - 3rem)) !important;
-  min-width: min(19rem, calc(100vw - 3rem)) !important;
-  max-width: min(19rem, calc(100vw - 3rem)) !important;
-  max-height: min(48dvh, calc(100dvh - 13rem), 24rem) !important;
-  overflow-y: scroll !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  max-height: min(390px, calc(100dvh - 13rem)) !important;
+  overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-y !important;
   pointer-events: auto !important;
-  scrollbar-gutter: stable both-edges !important;
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(126, 255, 188, 0.92) rgba(24, 18, 54, 0.76) !important;
+  scrollbar-color: rgba(156, 126, 255, 0.82) rgba(9, 14, 25, 0.92) !important;
 }
 
 .leadOrganizerCompactMenu::-webkit-scrollbar {
-  width: 0.58rem !important;
+  width: 0.48rem !important;
 }
 
 .leadOrganizerCompactMenu::-webkit-scrollbar-track {
-  background: rgba(24, 18, 54, 0.76) !important;
+  background: rgba(9, 14, 25, 0.92) !important;
   border-radius: 999px !important;
 }
 
 .leadOrganizerCompactMenu::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(126, 255, 188, 0.95), rgba(179, 139, 255, 0.92)) !important;
+  background: linear-gradient(180deg, rgba(156, 126, 255, 0.92), rgba(126, 255, 188, 0.78)) !important;
   border-radius: 999px !important;
 }
 
 .leadOrganizerCompactMenu > button {
-  height: auto !important;
-  min-height: 3.2rem !important;
-  max-height: none !important;
-  padding: 0.72rem 0.9rem !important;
-  grid-template-rows: auto !important;
-  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 7px 11px !important;
+  margin: 0 0 6px 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
 .leadOrganizerCompactMenu > button span,
 .leadOrganizerCompactMenu > button strong,
 .leadOrganizerCompactMenu > button em {
+  display: block !important;
   max-width: 100% !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  white-space: normal !important;
-  line-height: 1.12 !important;
-}
-
-.leadOrganizerCompactMenu > button em {
-  margin-top: 0.18rem !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
