@@ -5796,9 +5796,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       || leadCustomViews.find((view) => view.id === nextViewId || view.backendViewId === nextViewId || view.backendId === nextViewId || view.registryViewId === nextViewId || view._id === nextViewId)
       || null;
 
+    const resolvedListView = resolveLeadListView(nextViewId);
+
     setActiveListViewId(nextViewId);
+    setActiveFilter(resolvedListView.filter || 'ALL');
     setCurrentLeadPage(1);
     setSelectedRowIds([]);
+    setOpenRowActionId('');
+    /* P60K5Q10FG103U3_SELECTOR_SIDE_EFFECTS */
 
     if (typeof setViewMenuOpen === 'function') {
       setViewMenuOpen(false);
