@@ -4811,8 +4811,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           className={[styles.headerCommandGrid, styles.leadModuleViewBar].join(' ')}
           data-wilsy-header-command-grid="investor-grade"
         >
-          <section className={styles.leadViewCluster}>
-            <div className={styles.leadDropdownWrap}>
+          <section className={styles.leadViewCluster} data-wilsy-leads-organizer-shell="true">
+            <div className={styles.leadDropdownWrap} data-wilsy-leads-organizer-wrap="true">
               <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => {
                     const nextOpen = !previous;
                     if (nextOpen) {
@@ -4831,7 +4831,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
               </button>
 
               {viewMenuOpen ? (
-                <section className={styles.leadDropdownMenu} aria-label="Lead list views">
+                <section className={styles.leadDropdownMenu} data-wilsy-leads-organizer-menu="true" aria-label="Lead list views">
                   {/* P60K5Q10FG92G_DROPDOWN_LIVE_COMPACT_SOURCE */}
                   {leadOrganizerLiveViews.map(view => (
                     <button
@@ -5506,8 +5506,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
     return (
       <section className={styles.leadRecordsCommandBar} data-wilsy-lead-grid-toolbar="R84A-VISION-COMMAND-BAR">
-        <section className={styles.leadViewCluster}>
-          <div className={styles.leadDropdownWrap}>
+        <section className={styles.leadViewCluster} data-wilsy-leads-organizer-shell="true">
+          <div className={styles.leadDropdownWrap} data-wilsy-leads-organizer-wrap="true">
             <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
               <SlidersHorizontal size={18} />
               <span>
@@ -5518,7 +5518,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             </button>
 
             {viewMenuOpen ? (
-              <section className={styles.leadDropdownMenu} aria-label="Lead list views">
+              <section className={styles.leadDropdownMenu} data-wilsy-leads-organizer-menu="true" aria-label="Lead list views">
                 {leadOrganizerLiveViews.map(view => (
                   <button
                     key={view.id}
