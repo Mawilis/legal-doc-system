@@ -406,6 +406,7 @@ import { WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION, resolveCrmThemeEngineOptions } f
 import styles from './WilsyLeadOperatingRoom.module.css';
 
 import WilsyCrmSetupControlPlane from '../setup/WilsyCrmSetupControlPlane';
+import WilsyLeadCustomViewBuilder, { doesWilsyLeadMatchCustomViewCriteria } from './WilsyLeadCustomViewBuilder.jsx';
 
 
 const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
@@ -1527,18 +1528,24 @@ function resolveWilsyFG92BLeadOrganizerCountLabel(count = 0, total = 0) {
  * @returns {Object[]} Live backend organizer view models.
  * @collaboration LEAD_LIST_VIEWS, doesLeadMatchListView, Leads Organizer dropdown, active list filtering, and live Records grid.
  */
-function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
+function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = [], viewDefinitions = LEAD_LIST_VIEWS) {
   /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MODEL */
   /* P60K5Q10FG92E_BUILDER_BODY_HARD_REPLACED */
   /* P60K5Q10FG92G_COMPACT_ORGANIZER_BUILDER */
   const liveRows = Array.isArray(sourceRows) ? sourceRows : [];
   const totalRows = liveRows.length;
+  const organizerDefinitions = Array.isArray(viewDefinitions) && viewDefinitions.length ? viewDefinitions : LEAD_LIST_VIEWS;
 
-  return LEAD_LIST_VIEWS.map((view) => {
+  /* P60K5Q10FG93B_CUSTOM_VIEW_DEFINITION_SOURCE */
+  return organizerDefinitions.map((view) => {
     const matchingRows = view?.id === 'ALL'
       ? liveRows
       : liveRows.filter((record) => {
           try {
+            if (view?.custom) {
+              return doesWilsyLeadMatchCustomViewCriteria(record, view.criteria || {});
+            }
+
             return doesLeadMatchListView(record, view.id);
           } catch (error) {
             return false;
@@ -2904,6 +2911,20 @@ export default function WilsyLeadOperatingRoom({
   const [splitView, setSplitView] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(true);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
+  const [leadCustomViews, setLeadCustomViews] = useState(() => {
+    /* P60K5Q10FG93B_CUSTOM_VIEW_STATE */
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem('wilsy.crm.leads.customViews.v1') || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  });
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -3002,9 +3023,39 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }), [globalThemeAuthorityLabel, leadSkin, themeRuntime]);
   const activeListView = useMemo(() => resolveLeadListView(activeListViewId), [activeListViewId]);
 
+  const leadOrganizerViewDefinitions = useMemo(() => ([
+    ...LEAD_LIST_VIEWS,
+    ...leadCustomViews,
+  ]), [leadCustomViews]);
+
+  /**
+   * @function handleSaveLeadCustomView
+   * @description Saves a custom Lead view into local workspace state, selects it, resets pagination, and closes the builder.
+   * @param {Object} viewPayload - Custom Lead view payload from the builder.
+   * @returns {void}
+   * @collaboration Lead Custom View Builder, Leads Organizer, local saved views, pagination reset, and live Records filtering.
+   */
+  const handleSaveLeadCustomView = (viewPayload = {}) => {
+    /* P60K5Q10FG93B_CUSTOM_VIEW_SAVE_HANDLER */
+    const nextViews = [
+      viewPayload,
+      ...leadCustomViews.filter(view => view.id !== viewPayload.id),
+    ].slice(0, 24);
+
+    setLeadCustomViews(nextViews);
+    setActiveListViewId(viewPayload.id);
+    setLeadPage(1);
+    setViewMenuOpen(false);
+    setLeadCustomViewBuilderOpen(false);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
+    }
+  };
+
   const leadOrganizerLiveViews = useMemo(() => (
-    buildWilsyFG92BLiveLeadOrganizerViews(leads)
-  ), [leads]);
+    buildWilsyFG92BLiveLeadOrganizerViews(leads, leadOrganizerViewDefinitions)
+  ), [leads, leadOrganizerViewDefinitions]);
 
   const activeLeadOrganizerView = useMemo(() => {
     /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MEMO */
@@ -3028,7 +3079,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       const matchesSearch = !query || JSON.stringify(record || {}).toLowerCase().includes(query);
       const status = getComplianceStatus(record);
       const matchesFilter = activeFilter === 'ALL' || status === activeFilter;
-      const matchesListView = doesLeadMatchListView(record, activeListViewId);
+      const matchesListView = (/* P60K5Q10FG93B_CUSTOM_VIEW_RECORD_FILTER */ activeLeadOrganizerView?.custom ? doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {}) : doesLeadMatchListView(record, activeListViewId));
 
       return matchesSearch && matchesFilter && matchesListView;
     });
@@ -3057,6 +3108,57 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     window.setTimeout(() => clearWilsyFG90DLeadFilterVisualState(), 0);
     window.setTimeout(() => clearWilsyFG90DLeadFilterVisualState(), 120);
   }, []);
+
+  useEffect(() => {
+    /* P60K5Q10FG93B_INTERCEPT_WRONG_CUSTOM_VIEW_ROUTE */
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    /**
+     * @function handleCustomViewCapture
+     * @description Intercepts Add New Custom View actions inside the Lead list-view menu so they open the Lead Custom View Builder.
+     * @param {MouseEvent} event - Captured click event.
+     * @returns {void}
+     * @collaboration Leads Organizer, Custom View Builder, command routing, Super Admin misroute prevention, and live saved views.
+     */
+    const handleCustomViewCapture = (event) => {
+      const menuNode = event.target?.closest?.('section[aria-label="Lead list views"]');
+
+      if (!menuNode) {
+        return;
+      }
+
+      const actionNode = event.target?.closest?.('button, [role="button"], a');
+
+      if (!actionNode) {
+        return;
+      }
+
+      const actionText = String(actionNode.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const isCustomViewAction = actionText === '+' ||
+        actionText.includes('custom view') ||
+        actionText.includes('new view') ||
+        actionText.includes('create view') ||
+        actionText.includes('add view');
+
+      if (!isCustomViewAction) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      setLeadCustomViewBuilderOpen(true);
+      setViewMenuOpen(false);
+    };
+
+    document.addEventListener('click', handleCustomViewCapture, true);
+
+    return () => {
+      document.removeEventListener('click', handleCustomViewCapture, true);
+    };
+  }, []);
+
 
   useEffect(() => {
     /* P60K5Q10FG90D_FILTER_VISUAL_RESET_ON_NAVIGATION */
@@ -7710,6 +7812,15 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       data-wilsy-theme-engine-source="global-command-center"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}
     >
+      <div data-wilsy-lead-custom-view-builder-host="true">
+        <WilsyLeadCustomViewBuilder
+          isOpen={leadCustomViewBuilderOpen}
+          onClose={() => setLeadCustomViewBuilderOpen(false)}
+          onSave={handleSaveLeadCustomView}
+          liveLeads={leads}
+          existingViews={leadCustomViews}
+        />
+      </div>
       {renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}
       {renderCalendarDrawer()}
