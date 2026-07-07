@@ -2912,6 +2912,9 @@ export default function WilsyLeadOperatingRoom({
   const [splitView, setSplitView] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(true);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [leadToolbarMembershipById, setLeadToolbarMembershipById] = useState({});
+  const [leadToolbarCommandBusy, setLeadToolbarCommandBusy] = useState('');
+  const [leadToolbarCommandFeedback, setLeadToolbarCommandFeedback] = useState('');
   /* P60K5Q10FG93I_CUSTOM_VIEW_STATE */
   const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
   const [leadCustomViews, setLeadCustomViews] = useState(() => {
@@ -3342,6 +3345,415 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
   // P60K5Q10FG99F_SIGNED_LEAD_VIEW_REGISTRY_CLIENT
+
+
+  /**
+   * @function formatWilsyToolbarCollectionCount
+   * @description Formats collection membership counts for compact toolbar display.
+   * @param {number} count Raw count.
+   * @returns {string} Compact count label.
+   * @collaboration Million-record CRM views, toolbar actions, membership summaries, and compact UI.
+   */
+  function formatWilsyToolbarCollectionCount(count = 0) {
+    const value = Number(count || 0);
+
+    if (!Number.isFinite(value) || value <= 0) return '0';
+    if (value < 1000) return String(value);
+    if (value < 1000000) {
+      return `${value < 10000 ? (value / 1000).toFixed(1) : Math.round(value / 1000)}K`;
+    }
+
+    return `${value < 10000000 ? (value / 1000000).toFixed(1) : Math.round(value / 1000000)}M`;
+  }
+
+  /**
+   * @function resolveWilsyToolbarViewBackendId
+   * @description Resolves the backend registry id for the active Lead collection view.
+   * @param {object} view Active organizer view.
+   * @returns {string} Backend view id.
+   * @collaboration Lead View Registry, toolbar membership actions, custom views, and archive command.
+   */
+  function resolveWilsyToolbarViewBackendId(view = {}) {
+    return String(
+      view?.backendViewId
+      || view?.backendId
+      || view?.registryViewId
+      || view?._id
+      || ''
+    ).trim();
+  }
+
+  /**
+   * @function resolveWilsyToolbarSelectedLeadIds
+   * @description Normalizes selected Lead ids from the existing selectedRowIds state.
+   * @returns {string[]} Selected Lead ids.
+   * @collaboration Existing table selection, Add selected, Remove selected, and backend membership overrides.
+   */
+  function resolveWilsyToolbarSelectedLeadIds() {
+    if (selectedRowIds instanceof Set) {
+      return Array.from(selectedRowIds).map((leadId) => String(leadId || '').trim()).filter(Boolean);
+    }
+
+    if (Array.isArray(selectedRowIds)) {
+      return selectedRowIds.map((leadId) => String(leadId || '').trim()).filter(Boolean);
+    }
+
+    if (selectedRowIds && typeof selectedRowIds === 'object') {
+      return Object.entries(selectedRowIds)
+        .filter(([, selected]) => Boolean(selected))
+        .map(([leadId]) => String(leadId || '').trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  /**
+   * @function isWilsyToolbarCustomCollectionView
+   * @description Determines whether the active view is a saved custom Lead collection.
+   * @param {object} view Active organizer view.
+   * @returns {boolean} Whether collection actions should be enabled.
+   * @collaboration Built-in views, custom views, backend registry ids, and safe toolbar enablement.
+   */
+  function isWilsyToolbarCustomCollectionView(view = {}) {
+    return Boolean(
+      view?.persistedBackend
+      || view?.backendViewId
+      || view?.criteriaHash
+      || leadCustomViews.some((customView) => customView.id === view?.id)
+    );
+  }
+
+  /**
+   * @function resolveWilsyToolbarMembershipSummary
+   * @description Resolves current membership summary for compact toolbar display.
+   * @param {object} view Active organizer view.
+   * @returns {object} Membership summary.
+   * @collaboration Backend run endpoint, manual includes, manual excludes, and toolbar status copy.
+   */
+  function resolveWilsyToolbarMembershipSummary(view = {}) {
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+    const summary = leadToolbarMembershipById[view?.id]
+      || leadToolbarMembershipById[backendViewId]
+      || view?.membership
+      || view?.membershipSummary
+      || view?.lastRun?.membership
+      || {};
+
+    return {
+      effectiveCount: Number(summary.effectiveCount ?? view?.count ?? 0),
+      ruleMatchCount: Number(summary.ruleMatchCount ?? view?.count ?? 0),
+      manualIncludeCount: Number(summary.manualIncludeCount ?? summary.includeCount ?? 0),
+      manualExcludeCount: Number(summary.manualExcludeCount ?? summary.excludeCount ?? 0),
+    };
+  }
+
+  /**
+   * @function buildWilsyToolbarCollectionPayload
+   * @description Builds institutional evidence payloads for toolbar collection commands.
+   * @param {string} route Backend route.
+   * @param {string} action Command action.
+   * @param {object} body Command body.
+   * @returns {object} Signed command payload.
+   * @collaboration Institutional headers, strike payload, backend membership overrides, and toolbar actions.
+   */
+  function buildWilsyToolbarCollectionPayload(route = '/api/crm/leads/views', action = 'RUN_LEAD_VIEW', body = {}) {
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const generatedAt = new Date().toISOString();
+    const requestId = `REQ-FG103G-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const institutionalHeaders = {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorUserId,
+      operatorUserId: identity.operatorUserId,
+      userId: identity.operatorUserId,
+      route,
+      commandSurface: 'CRM_LEADS_TOOLBAR_COLLECTION_ACTIONS',
+      timestamp: generatedAt,
+      generatedAt,
+      requestId,
+    };
+
+    return {
+      ...body,
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorUserId,
+      operatorUserId: identity.operatorUserId,
+      userId: identity.operatorUserId,
+      commandSurface: 'CRM_LEADS_TOOLBAR_COLLECTION_ACTIONS',
+      generatedAt,
+      requestId,
+      institutionalHeaders,
+      strikePayload: {
+        action,
+        tenantId: identity.tenantId,
+        operatorId: identity.operatorUserId,
+        operatorUserId: identity.operatorUserId,
+        userId: identity.operatorUserId,
+        route,
+        commandSurface: 'CRM_LEADS_TOOLBAR_COLLECTION_ACTIONS',
+        timestamp: generatedAt,
+        generatedAt,
+        requestId,
+        institutionalHeaders,
+      },
+    };
+  }
+
+  /**
+   * @function requestWilsyToolbarCollectionCommand
+   * @description Executes a signed Lead View Registry command from compact toolbar actions.
+   * @param {string} route Backend route path.
+   * @param {string} action Command action.
+   * @param {object} body Command body.
+   * @param {string} method HTTP method.
+   * @returns {Promise<object>} Backend JSON response.
+   * @collaboration FG103B membership endpoints, browser JWT, signed headers, and toolbar CRUD.
+   */
+  async function requestWilsyToolbarCollectionCommand(route = '/api/crm/leads/views', action = 'RUN_LEAD_VIEW', body = {}, method = 'POST') {
+    const token = resolveWilsyLeadViewRegistryAuthToken();
+    const payload = buildWilsyToolbarCollectionPayload(route, action, body);
+    const sealContract = buildWilsyLeadViewRegistrySealHeaders(payload);
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const registryUrl = resolveWilsyLeadViewRegistryUrl();
+    const endpoint = `${registryUrl}${route.replace('/api/crm/leads/views', '')}`;
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Tenant-Id': identity.tenantId,
+        'X-Operator-Id': identity.operatorUserId,
+        'X-Operator-User-Id': identity.operatorUserId,
+        'X-User-Id': identity.operatorUserId,
+        'X-Command-Surface': 'CRM_LEADS_TOOLBAR_COLLECTION_ACTIONS',
+        'X-Request-ID': payload.requestId,
+        'X-Trace-ID': payload.requestId,
+        'X-Correlation-ID': payload.requestId,
+        'X-Forensic-Timestamp': payload.generatedAt,
+        'X-Timestamp': payload.generatedAt,
+        'X-Generated-At': payload.generatedAt,
+        'X-Cryptographic-Nonce': sealContract.nonce,
+        'X-Request-Seal': sealContract.requestSeal,
+        'X-Wilsy-Lead-View-Seal': 'P60K5Q10FG103G_TOOLBAR_COLLECTION_ACTIONS',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(json?.message || json?.error || `Lead collection command failed: ${response.status}`);
+    }
+
+    return json;
+  }
+
+  /**
+   * @function refreshWilsyToolbarCollectionSummary
+   * @description Runs the active custom Lead view and stores its membership summary.
+   * @param {object} view Active organizer view.
+   * @returns {Promise<void>} Summary refresh completion.
+   * @collaboration Backend run endpoint, toolbar compact count, and membership summary.
+   */
+  async function refreshWilsyToolbarCollectionSummary(view = activeLeadOrganizerView) {
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+
+    if (!backendViewId || !isWilsyToolbarCustomCollectionView(view)) {
+      return;
+    }
+
+    setLeadToolbarCommandBusy('sync');
+    setLeadToolbarCommandFeedback('');
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}/run`;
+      const result = await requestWilsyToolbarCollectionCommand(route, 'RUN_LEAD_VIEW', {}, 'POST');
+      const membership = result?.result?.membership || result?.membership || {};
+
+      setLeadToolbarMembershipById((previous) => ({
+        ...previous,
+        [view.id]: membership,
+        [backendViewId]: membership,
+      }));
+      setLeadToolbarCommandFeedback('Collection synced');
+    } catch (error) {
+      setLeadToolbarCommandFeedback(error?.message || 'Collection sync failed');
+    } finally {
+      setLeadToolbarCommandBusy('');
+    }
+  }
+
+  /**
+   * @function applyWilsyToolbarMembershipCommand
+   * @description Adds or removes selected Lead rows from the active custom view.
+   * @param {string} mode Membership mode.
+   * @returns {Promise<void>} Command completion.
+   * @collaboration Selected rows, FG103B include/exclude routes, toolbar actions, and audit evidence.
+   */
+  async function applyWilsyToolbarMembershipCommand(mode = 'include') {
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const selectedLeadIds = resolveWilsyToolbarSelectedLeadIds();
+    const normalizedMode = mode === 'exclude' ? 'exclude' : 'include';
+
+    if (!backendViewId || !isWilsyToolbarCustomCollectionView(activeLeadOrganizerView)) {
+      setLeadToolbarCommandFeedback('Select a custom view');
+      return;
+    }
+
+    if (!selectedLeadIds.length) {
+      setLeadToolbarCommandFeedback('Select leads first');
+      return;
+    }
+
+    setLeadToolbarCommandBusy(normalizedMode);
+    setLeadToolbarCommandFeedback('');
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}/overrides/${normalizedMode}`;
+      const result = await requestWilsyToolbarCollectionCommand(
+        route,
+        normalizedMode === 'include' ? 'INCLUDE_LEADS_IN_VIEW' : 'EXCLUDE_LEADS_FROM_VIEW',
+        {
+          leadIds: selectedLeadIds,
+          reason: `FG103G ${normalizedMode} selected leads from Records toolbar`,
+        },
+        'POST'
+      );
+
+      const summary = result?.membership?.summary || result?.summary || {};
+      setLeadToolbarMembershipById((previous) => ({
+        ...previous,
+        [activeLeadOrganizerView.id]: summary,
+        [backendViewId]: summary,
+      }));
+      setLeadToolbarCommandFeedback(`${selectedLeadIds.length} ${normalizedMode === 'include' ? 'added' : 'removed'}`);
+      await refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView);
+    } catch (error) {
+      setLeadToolbarCommandFeedback(error?.message || 'Membership command failed');
+    } finally {
+      setLeadToolbarCommandBusy('');
+    }
+  }
+
+  /**
+   * @function archiveWilsyToolbarActiveCollectionView
+   * @description Archives the active custom Lead view through the backend registry.
+   * @returns {Promise<void>} Archive completion.
+   * @collaboration Existing archive route, audit retention, toolbar lifecycle controls, and local view state.
+   */
+  async function archiveWilsyToolbarActiveCollectionView() {
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+
+    if (!backendViewId || !isWilsyToolbarCustomCollectionView(activeLeadOrganizerView)) {
+      setLeadToolbarCommandFeedback('Select a custom view');
+      return;
+    }
+
+    setLeadToolbarCommandBusy('archive');
+    setLeadToolbarCommandFeedback('');
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}`;
+      await requestWilsyToolbarCollectionCommand(route, 'ARCHIVE_LEAD_VIEW', {}, 'DELETE');
+
+      const nextViews = leadCustomViews.filter((view) => view.id !== activeLeadOrganizerView.id);
+      setLeadCustomViews(nextViews);
+      setActiveListViewId('ALL');
+      setLeadPage(1);
+
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
+      }
+
+      setLeadToolbarCommandFeedback('Archived');
+    } catch (error) {
+      setLeadToolbarCommandFeedback(error?.message || 'Archive failed');
+    } finally {
+      setLeadToolbarCommandBusy('');
+    }
+  }
+
+  /**
+   * @function openWilsyToolbarCollectionEditor
+   * @description Opens the existing custom view builder from compact toolbar actions.
+   * @returns {void}
+   * @collaboration Custom View Builder, active view workflow, rules editing, and toolbar productivity.
+   */
+  function openWilsyToolbarCollectionEditor() {
+    setLeadToolbarCommandFeedback('Edit view rules');
+    setLeadCustomViewBuilderOpen(true);
+  }
+
+  /**
+   * @function renderWilsyToolbarCollectionActions
+   * @description Renders compact collection controls inside the existing Records toolbar.
+   * @returns {JSX.Element|null} Toolbar actions.
+   * @collaboration Existing toolbar, selected rows, custom views, membership overrides, and non-invasive frontend UX.
+   */
+  function renderWilsyToolbarCollectionActions() {
+    const selectedLeadIds = resolveWilsyToolbarSelectedLeadIds();
+    const isCustomView = isWilsyToolbarCustomCollectionView(activeLeadOrganizerView);
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const membership = resolveWilsyToolbarMembershipSummary(activeLeadOrganizerView);
+    const disabled = !isCustomView || !backendViewId;
+    const shouldRender = isCustomView || selectedLeadIds.length > 0;
+
+    if (!shouldRender) {
+      return null;
+    }
+
+    return (
+      <div
+        className={styles.leadToolbarCollectionActions}
+        data-wilsy-lead-toolbar-collection-actions="FG103G"
+        data-wilsy-custom-view-active={String(isCustomView)}
+      >
+        <span className={styles.leadToolbarCollectionStatus}>
+          {leadToolbarCommandFeedback
+            || `${selectedLeadIds.length} selected · ${formatWilsyToolbarCollectionCount(membership.manualIncludeCount)} add · ${formatWilsyToolbarCollectionCount(membership.manualExcludeCount)} out`}
+        </span>
+        <button
+          type="button"
+          disabled={disabled || !selectedLeadIds.length || Boolean(leadToolbarCommandBusy)}
+          onClick={() => applyWilsyToolbarMembershipCommand('include')}
+        >
+          {leadToolbarCommandBusy === 'include' ? 'Adding…' : '+ Add'}
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !selectedLeadIds.length || Boolean(leadToolbarCommandBusy)}
+          onClick={() => applyWilsyToolbarMembershipCommand('exclude')}
+        >
+          {leadToolbarCommandBusy === 'exclude' ? 'Removing…' : '− Remove'}
+        </button>
+        <button
+          type="button"
+          disabled={!isCustomView || Boolean(leadToolbarCommandBusy)}
+          onClick={openWilsyToolbarCollectionEditor}
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          disabled={disabled || Boolean(leadToolbarCommandBusy)}
+          onClick={() => refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)}
+        >
+          {leadToolbarCommandBusy === 'sync' ? 'Syncing…' : 'Sync'}
+        </button>
+        <button
+          type="button"
+          disabled={disabled || Boolean(leadToolbarCommandBusy)}
+          onClick={archiveWilsyToolbarActiveCollectionView}
+        >
+          {leadToolbarCommandBusy === 'archive' ? 'Archiving…' : 'Archive'}
+        </button>
+      </div>
+    );
+  }
+
+  // P60K5Q10FG103G_TOOLBAR_COLLECTION_ACTIONS_ENGINE
+
 
 /**
    * @function handleSaveLeadCustomView
@@ -6104,7 +6516,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <Plus size={18} />
             <span>{leadOperatingCopy.createLabel}</span>
           </button>
-          <button
+                    {renderWilsyToolbarCollectionActions()}
+<button
             type="button"
             className={styles.leadCreateMenuButton}
             onClick={() => setCreateMenuOpen(previous => !previous)}

@@ -11456,3 +11456,71 @@ td[data-wilsy-lead-empty-state="records"] {
 
 /* P60K5Q10FG102O_HEIGHT_ONLY_COMPACT_ORGANIZER
    Operator-approved scroll remains unchanged. Only the compact Lead view menu height was slightly increased. */
+
+/* P60K5Q10FG103G_TOOLBAR_COLLECTION_ACTIONS
+   Compact inline collection controls inside the existing Records toolbar only.
+   Does not alter dropdown geometry, table rows, pagination, or workspace grid. */
+.leadToolbarCollectionActions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.34rem;
+  max-width: 34rem;
+  min-height: 2.18rem;
+  padding: 0.2rem 0.24rem 0.2rem 0.42rem;
+  border: 1px solid rgba(125, 232, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(8, 16, 30, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.leadToolbarCollectionStatus {
+  max-width: 9.4rem;
+  overflow: hidden;
+  color: rgba(203, 225, 255, 0.72);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadToolbarCollectionActions button {
+  min-height: 1.86rem;
+  padding: 0 0.58rem;
+  border: 1px solid rgba(168, 135, 255, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(248, 252, 255, 0.9);
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.leadToolbarCollectionActions button:hover:not(:disabled),
+.leadToolbarCollectionActions button:focus-visible:not(:disabled) {
+  border-color: rgba(125, 232, 255, 0.45);
+  background: rgba(0, 209, 255, 0.12);
+  outline: none;
+}
+
+.leadToolbarCollectionActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+@media (max-width: 1280px) {
+  .leadToolbarCollectionStatus {
+    display: none;
+  }
+
+  .leadToolbarCollectionActions {
+    max-width: 25rem;
+  }
+
+  .leadToolbarCollectionActions button {
+    padding: 0 0.48rem;
+  }
+}
