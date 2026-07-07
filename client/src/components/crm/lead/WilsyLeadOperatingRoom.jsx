@@ -9096,6 +9096,12 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
    * @collaboration Replaces button flood with telemetry, source routes and provenance ledger.
    */
   function renderListMode() {
+    if (activeTopTab === 'proof') {
+      return renderWilsyProductionProofCockpit();
+    }
+
+    /* P60K5Q10FG104A_PROOF_TAB_USES_PRODUCTION_COCKPIT */
+
     return renderLeadTabbedWorkspace();
   }
 
@@ -9905,6 +9911,296 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       </section>
     );
   }
+
+
+
+  /**
+   * @function copyWilsyProofCockpitValue
+   * @description Copies a Proof Cockpit evidence value into the operator clipboard.
+   * @param {string} value Evidence value.
+   * @param {string} label Evidence label.
+   * @returns {void}
+   * @collaboration Proof Cockpit, receipt spine, operator evidence workflow, and global Wilsy AI command context.
+   */
+  function copyWilsyProofCockpitValue(value = '', label = 'proof') {
+    const normalized = String(value || '').trim();
+
+    if (!normalized) {
+      setLeadToolbarCommandFeedback(`${label} unavailable`);
+      return;
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        void navigator.clipboard.writeText(normalized);
+      }
+
+      setLeadToolbarCommandFeedback(`${label} copied`);
+    } catch {
+      setLeadToolbarCommandFeedback(`${label} ready to copy`);
+    }
+  }
+
+  /**
+   * @function resolveWilsyProductionProofAuthorityItem
+   * @description Resolves a named authority item from setup operating telemetry.
+   * @param {string} label Authority label.
+   * @returns {object} Authority item.
+   * @collaboration Source authority, compliance proof, setup telemetry, and Proof Cockpit operating cards.
+   */
+  function resolveWilsyProductionProofAuthorityItem(label = '') {
+    const expected = String(label || '').toLowerCase();
+
+    return (setupOperatingModel?.summary || []).find((item) => (
+      String(item?.label || '').toLowerCase() === expected
+    )) || {
+      label,
+      value: '—',
+      status: 'waiting',
+      detail: 'Authority telemetry pending.',
+    };
+  }
+
+  /**
+   * @function resolveWilsyProductionProofCockpitPacket
+   * @description Builds the production proof packet from backend run evidence, cursor state, and authority telemetry.
+   * @returns {object} Proof packet.
+   * @collaboration Backend /run, evidence receipts, criteria hash, membership overrides, cursor pagination, source authority, and compliance telemetry.
+   */
+  function resolveWilsyProductionProofCockpitPacket() {
+    const evidence = resolveWilsyActiveViewRunEvidence(activeLeadOrganizerView);
+    const pagination = resolveWilsySelectorBackendRunPaginationForView(activeLeadOrganizerView) || {};
+    const exactCountLabel = formatWilsySelectorExactBackendCountLabel(activeLeadOrganizerView) || 'Exact backend count pending.';
+    const sourceRoutes = resolveWilsyProductionProofAuthorityItem('Source Routes');
+    const sovereignRoot = resolveWilsyProductionProofAuthorityItem('Sovereign Root');
+    const compliance = resolveWilsyProductionProofAuthorityItem('Compliance');
+    const themeAuthority = resolveWilsyProductionProofAuthorityItem('Theme Authority');
+    const returnedCount = Number(pagination.returnedCount || filteredLeads.length || 0);
+    const totalCount = Number(pagination.totalCount || filteredLeads.length || 0);
+    const offset = Number(pagination.offset || 0);
+    const visibleStart = returnedCount ? offset + 1 : 0;
+    const visibleEnd = returnedCount ? offset + returnedCount : 0;
+
+    return {
+      evidence,
+      pagination,
+      exactCountLabel,
+      sourceRoutes,
+      sovereignRoot,
+      compliance,
+      themeAuthority,
+      returnedCount,
+      totalCount,
+      offset,
+      visibleStart,
+      visibleEnd,
+      visibleRows: paginatedLeads.length,
+      filteredRows: filteredLeads.length,
+      cursorLabel: pagination?.cursor ? 'cursor page' : 'first page',
+      nextCursorLabel: pagination?.nextCursor ? 'next ready' : 'end reached',
+      previousCursorLabel: pagination?.previousCursor ? 'previous ready' : 'start reached',
+    };
+  }
+
+  /**
+   * @function renderWilsyProofCockpitValue
+   * @description Renders a copyable value row for the production Proof Cockpit.
+   * @param {object} item Value item.
+   * @returns {JSX.Element} Proof value row.
+   * @collaboration Receipt spine, criteria hashes, audit receipts, clipboard proof actions, and operator audit review.
+   */
+  function renderWilsyProofCockpitValue(item = {}) {
+    const value = String(item.value || '').trim() || '—';
+
+    return (
+      <article
+        key={item.label}
+        className={styles.leadProofCockpitValue}
+        data-wilsy-proof-value={item.marker || item.label}
+      >
+        <small>{item.label}</small>
+        <strong title={value}>{value}</strong>
+        <button
+          type="button"
+          onClick={() => copyWilsyProofCockpitValue(value, item.label)}
+          disabled={!String(item.value || '').trim()}
+        >
+          Copy
+        </button>
+      </article>
+    );
+  }
+
+  /**
+   * @function renderWilsyProductionProofCockpit
+   * @description Renders the production-grade Leads Proof Cockpit with evidence receipts, cursor run proof, membership ledger, and source authority.
+   * @returns {JSX.Element} Production Proof Cockpit.
+   * @collaboration Active Proof tab, backend view registry, audit receipts, criteria hashes, membership overrides, source routes, compliance telemetry, and global Wilsy AI boundary.
+   */
+  function renderWilsyProductionProofCockpit() {
+    const packet = resolveWilsyProductionProofCockpitPacket();
+    const evidenceValues = [
+      {
+        label: 'backendViewId',
+        value: packet.evidence.backendViewId,
+        marker: 'backend-view-id',
+      },
+      {
+        label: 'criteriaHash',
+        value: packet.evidence.criteriaHash,
+        marker: 'criteria-hash',
+      },
+      {
+        label: 'auditReceiptId',
+        value: packet.evidence.auditReceiptId,
+        marker: 'audit-receipt-id',
+      },
+      {
+        label: 'membership overrides',
+        value: packet.evidence.membershipReceiptLabel,
+        marker: 'membership-overrides',
+      },
+    ];
+
+    const runValues = [
+      {
+        label: 'exact range',
+        value: `${formatWilsyExactRunCount(packet.visibleStart)}-${formatWilsyExactRunCount(packet.visibleEnd)} / ${formatWilsyExactRunCount(packet.totalCount)}`,
+        marker: 'exact-range',
+      },
+      {
+        label: 'returned rows',
+        value: `${formatWilsyExactRunCount(packet.returnedCount)} returned · ${formatWilsyExactRunCount(packet.visibleRows)} visible`,
+        marker: 'returned-rows',
+      },
+      {
+        label: 'cursor state',
+        value: `${packet.cursorLabel} · ${packet.previousCursorLabel} · ${packet.nextCursorLabel}`,
+        marker: 'cursor-state',
+      },
+      {
+        label: 'scope integrity',
+        value: `${formatWilsyExactRunCount(packet.filteredRows)} filtered · ${formatWilsyExactRunCount(packet.totalCount)} backend total`,
+        marker: 'scope-integrity',
+      },
+    ];
+
+    const authorityItems = [
+      packet.sourceRoutes,
+      packet.sovereignRoot,
+      packet.compliance,
+      packet.themeAuthority,
+    ];
+
+    return (
+      <section
+        className={styles.leadProductionProofCockpit}
+        data-wilsy-production-proof-cockpit="FG104A"
+        data-wilsy-proof-backend-view-id={packet.evidence.backendViewId || undefined}
+        data-wilsy-proof-criteria-hash={packet.evidence.criteriaHash || undefined}
+        data-wilsy-proof-audit-receipt={packet.evidence.auditReceiptId || undefined}
+        data-wilsy-proof-membership-receipt={packet.evidence.membershipReceiptLabel}
+      >
+        <header className={styles.leadProofCockpitHero}>
+          <span>
+            <small>Proof Cockpit</small>
+            <strong>Evidence Ledger Operating Surface</strong>
+            <em>{packet.exactCountLabel}</em>
+          </span>
+          <div>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')}>
+              Copy receipt
+            </button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')}>
+              Copy hash
+            </button>
+            <button
+              type="button"
+              onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)}
+              disabled={Boolean(leadToolbarCommandBusy)}
+            >
+              Refresh proof
+            </button>
+          </div>
+        </header>
+
+        <div className={styles.leadProofCockpitGrid}>
+          <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="receipt-spine">
+            <header>
+              <small>Receipt Spine</small>
+              <strong>Backend Authority</strong>
+            </header>
+            <div className={styles.leadProofCockpitValueGrid}>
+              {evidenceValues.map(renderWilsyProofCockpitValue)}
+            </div>
+          </section>
+
+          <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="run-integrity">
+            <header>
+              <small>Run Integrity</small>
+              <strong>Cursor-backed Execution</strong>
+            </header>
+            <div className={styles.leadProofCockpitValueGrid}>
+              {runValues.map(renderWilsyProofCockpitValue)}
+            </div>
+          </section>
+
+          <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="membership-ledger">
+            <header>
+              <small>Override Ledger</small>
+              <strong>Manual Membership Controls</strong>
+            </header>
+            <div className={styles.leadProofCockpitTimeline}>
+              <article>
+                <b>{formatWilsyExactRunCount(packet.evidence.includeCount)}</b>
+                <span>Manual include receipts</span>
+              </article>
+              <article>
+                <b>{formatWilsyExactRunCount(packet.evidence.excludeCount)}</b>
+                <span>Manual exclude receipts</span>
+              </article>
+              <article>
+                <b>{packet.evidence.auditReceiptId ? 'sealed' : 'pending'}</b>
+                <span>Latest run audit receipt</span>
+              </article>
+            </div>
+          </section>
+
+          <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="source-authority">
+            <header>
+              <small>Source Authority</small>
+              <strong>Operating Telemetry</strong>
+            </header>
+            <div className={styles.leadProofAuthorityGrid}>
+              {authorityItems.map((item) => (
+                <article key={item.label} data-status={item.status || 'waiting'}>
+                  <small>{item.label}</small>
+                  <strong>{item.value}</strong>
+                  <em>{item.detail}</em>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="proof-timeline">
+            <header>
+              <small>Proof Timeline</small>
+              <strong>Operational Chain</strong>
+            </header>
+            <ol className={styles.leadProofCockpitTimelineList}>
+              <li><span>1</span><strong>Saved view resolved</strong><em>{packet.evidence.backendViewId || 'backendViewId pending'}</em></li>
+              <li><span>2</span><strong>Criteria hash verified</strong><em>{packet.evidence.criteriaHash || 'criteriaHash pending'}</em></li>
+              <li><span>3</span><strong>Backend /run executed</strong><em>{packet.evidence.auditReceiptId || 'audit receipt pending'}</em></li>
+              <li><span>4</span><strong>Cursor page hydrated</strong><em>{packet.cursorLabel} · offset {formatWilsyExactRunCount(packet.offset)}</em></li>
+              <li><span>5</span><strong>Membership overrides applied</strong><em>{packet.evidence.membershipReceiptLabel}</em></li>
+            </ol>
+          </section>
+        </div>
+      </section>
+    );
+  }
+
+  // P60K5Q10FG104A_PRODUCTION_PROOF_COCKPIT
 
 
   /**

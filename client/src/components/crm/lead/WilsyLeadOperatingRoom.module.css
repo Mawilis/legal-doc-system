@@ -12013,3 +12013,273 @@ td[data-wilsy-lead-empty-state="records"] {
   color: rgba(165, 177, 213, 0.88);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
+
+/* P60K5Q10FG104A_PRODUCTION_PROOF_COCKPIT */
+.leadProductionProofCockpit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+  border: 1px solid rgba(86, 255, 184, 0.28);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(62, 255, 154, 0.13), transparent 34%),
+    radial-gradient(circle at top right, rgba(127, 100, 255, 0.12), transparent 36%),
+    linear-gradient(135deg, rgba(3, 13, 9, 0.96), rgba(8, 12, 24, 0.95));
+  box-shadow:
+    0 24px 90px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.leadProofCockpitHero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.leadProofCockpitHero > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.leadProofCockpitHero small,
+.leadProofCockpitPanel small,
+.leadProofCockpitValue small {
+  color: rgba(246, 231, 151, 0.9);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.leadProofCockpitHero strong {
+  color: rgba(246, 255, 250, 0.98);
+  font-size: clamp(1.25rem, 1.65vw, 1.85rem);
+  font-weight: 950;
+  letter-spacing: -0.035em;
+}
+
+.leadProofCockpitHero em {
+  color: rgba(183, 198, 224, 0.86);
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 780;
+}
+
+.leadProofCockpitHero > div {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.leadProofCockpitHero button,
+.leadProofCockpitValue button {
+  min-height: 34px;
+  border: 1px solid rgba(126, 255, 188, 0.34);
+  border-radius: 999px;
+  background: rgba(9, 25, 18, 0.82);
+  color: rgba(245, 255, 249, 0.94);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 950;
+  padding: 0 12px;
+}
+
+.leadProofCockpitHero button:disabled,
+.leadProofCockpitValue button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.leadProofCockpitGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+}
+
+.leadProofCockpitPanel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(124, 143, 255, 0.2);
+  border-radius: 18px;
+  background: rgba(4, 9, 20, 0.74);
+}
+
+.leadProofCockpitPanel header {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leadProofCockpitPanel header strong {
+  color: rgba(250, 253, 255, 0.94);
+  font-size: 0.98rem;
+  font-weight: 950;
+}
+
+.leadProofCockpitValueGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.leadProofCockpitValue {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.72fr) minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.leadProofCockpitValue strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(217, 229, 255, 0.95);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadProofCockpitTimeline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.leadProofCockpitTimeline article,
+.leadProofAuthorityGrid article {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(126, 255, 188, 0.16);
+  border-radius: 14px;
+  background: rgba(6, 19, 14, 0.66);
+}
+
+.leadProofCockpitTimeline b,
+.leadProofAuthorityGrid strong {
+  display: block;
+  color: rgba(248, 255, 251, 0.98);
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.leadProofCockpitTimeline span,
+.leadProofAuthorityGrid em {
+  display: block;
+  margin-top: 4px;
+  color: rgba(178, 194, 216, 0.78);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 760;
+}
+
+.leadProofAuthorityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.leadProofAuthorityGrid article[data-status="ready"],
+.leadProofAuthorityGrid article[data-status="connected"],
+.leadProofAuthorityGrid article[data-status="complete"] {
+  border-color: rgba(62, 255, 154, 0.28);
+  background: rgba(12, 37, 24, 0.68);
+}
+
+.leadProofCockpitTimelineList {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leadProofCockpitTimelineList li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 0.85fr) minmax(0, 1.3fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.leadProofCockpitTimelineList li span {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(126, 255, 188, 0.16);
+  color: rgba(180, 255, 216, 0.96);
+  font-weight: 950;
+}
+
+.leadProofCockpitTimelineList li strong {
+  color: rgba(246, 250, 255, 0.94);
+  font-size: 0.82rem;
+  font-weight: 920;
+}
+
+.leadProofCockpitTimelineList li em {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(165, 177, 213, 0.88);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.76rem;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* P60K5Q10FG104A_LOCAL_AI_BLOCK_REMOVED
+   Local Leads AI prompt is removed from the workspace visual path because global Wilsy AI is the canonical access point. */
+.leadAIResponseSurface,
+.leadAIQuestionForm {
+  display: none !important;
+}
+
+@media (max-width: 1180px) {
+  .leadProofCockpitGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .leadProofCockpitHero,
+  .leadProofCockpitHero > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .leadProofCockpitTimeline,
+  .leadProofAuthorityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .leadProofCockpitValue,
+  .leadProofCockpitTimelineList li {
+    grid-template-columns: 1fr;
+  }
+}
