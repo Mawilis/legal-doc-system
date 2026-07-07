@@ -217,9 +217,15 @@ export default function WilsyLeadCustomViewBuilder({
             <strong>Build a live saved view</strong>
             <em>Criteria-driven views filter current backend Lead records immediately.</em>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close custom view builder">
-            <X size={18} />
-          </button>
+          <div className={styles.leadCustomViewHeaderActions} data-wilsy-lead-custom-view-header-actions="P60K5Q10FG100E_HEADER_SAVE_ACTION">
+            <button type="button" onClick={saveView} className={styles.leadCustomViewHeaderSave}>
+              <Save size={16} />
+              Save view
+            </button>
+            <button type="button" onClick={onClose} aria-label="Close custom view builder">
+              <X size={18} />
+            </button>
+          </div>
         </header>
 
         <div className={styles.leadCustomViewGrid}>
