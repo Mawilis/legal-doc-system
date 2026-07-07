@@ -3374,11 +3374,31 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
    * @collaboration Lead View Registry, toolbar membership actions, custom views, and archive command.
    */
   function resolveWilsyToolbarViewBackendId(view = {}) {
-    return String(
+    const directBackendId = String(
       view?.backendViewId
       || view?.backendId
       || view?.registryViewId
       || view?._id
+      || ''
+    ).trim();
+
+    if (directBackendId) {
+      return directBackendId;
+    }
+
+    const matchingCustomView = leadCustomViews.find((customView) => {
+      const sameId = customView?.id && view?.id && String(customView.id) === String(view.id);
+      const sameLabel = customView?.label && view?.label && String(customView.label) === String(view.label);
+      const sameName = customView?.name && view?.label && String(customView.name) === String(view.label);
+
+      return sameId || sameLabel || sameName;
+    });
+
+    return String(
+      matchingCustomView?.backendViewId
+      || matchingCustomView?.backendId
+      || matchingCustomView?.registryViewId
+      || matchingCustomView?._id
       || ''
     ).trim();
   }
@@ -3799,9 +3819,44 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     return finalViewPayload;
   };
 
-  const leadOrganizerLiveViews = useMemo(() => (
-    buildWilsyFG92BLiveLeadOrganizerViews(leads, leadOrganizerViewDefinitions)
-  ), [leads, leadOrganizerViewDefinitions]);
+  const leadOrganizerLiveViews = useMemo(() => {
+    /* P60K5Q10FG103L_CUSTOM_VIEW_SELECTION_BRIDGE
+       Saved custom views must be active collection objects, not orphaned dropdown rows. */
+    const builtinViews = buildWilsyFG92BLiveLeadOrganizerViews(leads, leadOrganizerViewDefinitions);
+    const builtinIds = new Set(builtinViews.map((view) => String(view.id || '')));
+
+    const customViews = leadCustomViews
+      .filter((view) => view && !builtinIds.has(String(view.id || '')))
+      .map((view, index) => {
+        const criteria = view.criteria || {};
+        const count = leads.filter((record) => doesWilsyLeadMatchCustomViewCriteria(record, criteria)).length;
+        const id = String(
+          view.id
+          || view.backendViewId
+          || view.backendId
+          || view.registryViewId
+          || view._id
+          || `CUSTOM_VIEW_${index}`
+        );
+
+        return {
+          ...view,
+          id,
+          label: view.label || view.name || 'Custom View',
+          detail: `${count}/${leads.length} live`,
+          staticDetail: view.description || view.detail || 'Saved custom collection',
+          count,
+          custom: true,
+          criteria,
+          backendViewId: view.backendViewId || view.backendId || view.registryViewId || view._id || '',
+          criteriaHash: view.criteriaHash || '',
+          auditReceiptId: view.auditReceiptId || '',
+          persistedBackend: Boolean(view.persistedBackend || view.backendViewId || view.backendId || view.registryViewId || view._id),
+        };
+      });
+
+    return [...builtinViews, ...customViews];
+  }, [leads, leadOrganizerViewDefinitions, leadCustomViews]);
 
 
   /**
@@ -3828,8 +3883,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   };
 
   const activeLeadOrganizerView = useMemo(() => {
-    /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MEMO */
-    return leadOrganizerLiveViews.find(view => view.id === activeListViewId) || leadOrganizerLiveViews[0] || activeListView;
+    /* P60K5Q10FG103L_ACTIVE_CUSTOM_VIEW_MEMO */
+    const matchedView = leadOrganizerLiveViews.find((view) => String(view.id) === String(activeListViewId));
+
+    return matchedView || leadOrganizerLiveViews[0] || activeListView;
   }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
 
@@ -5703,7 +5760,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                   })}>
                 <List size={18} />
                 <span>
-                  <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListView.id)}</strong>
+                  <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListViewId)}</strong>
                   <em>{activeLeadOrganizerView.detail}</em>
                 </span>
                 <ChevronDown size={16} />
@@ -5719,7 +5776,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                     <button
                       key={view.id}
                       type="button"
-                      data-active={view.id === activeListView.id ? 'true' : 'false'}
+                      data-active={String(view.id) === String(activeListViewId) ? 'true' : 'false'}
                       onClick={() => handleSelectLeadListView(view.id)}
                     >
                       <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
@@ -6393,7 +6450,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
               <SlidersHorizontal size={18} />
               <span>
-                <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListView.id)}</strong>
+                <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListViewId)}</strong>
                 <em>{activeLeadOrganizerView.detail}</em>
               </span>
               <ChevronDown size={16} />
@@ -6405,7 +6462,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                   <button
                     key={view.id}
                     type="button"
-                    data-active={view.id === activeListView.id ? 'true' : 'false'}
+                    data-active={String(view.id) === String(activeListViewId) ? 'true' : 'false'}
                     onClick={() => handleSelectLeadListView(view.id)}
                   >
                     <span>{resolveLeadOperatingCopyLabel(view.label, view.id)}</span>
@@ -6760,7 +6817,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         <section className={styles.leadRecordsPanel}>
           <header className={styles.leadRecordsHeader}>
             <span>
-              <small>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListView.id)}</small>
+              <small>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListViewId)}</small>
               <strong>{filteredLeads.length} records</strong>
               <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : selectedLeadFilterOptions.size ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows` : `${activeSort.label} order`}</em>
             </span>
@@ -8612,4 +8669,4 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   );
 }
 
-// P60K5Q10FG97_UNIQUE_COMPACT_ORGANIZER_MENU_SOURCE
+// P60K5Q10FG97_UNIQUE_COMPACT_ORGANIZER_MENU_SOURCE\n
