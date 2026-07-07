@@ -1563,39 +1563,165 @@ function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
 
 /**
  * @function doesLeadMatchListView
- * @description Checks whether a lead belongs in the active module list view.
+ * @description Checks whether a backend Lead record belongs in the selected Organizer category.
  * @param {Object} record - Lead record.
- * @param {string} listViewId - List view id.
- * @returns {boolean} True when the lead matches the view.
- * @collaboration Adds serious list-view organization without fabricating backend rows.
+ * @param {string} listViewId - Organizer list view id.
+ * @returns {boolean} True when the Lead belongs in the selected category.
+ * @collaboration Leads Organizer, live backend records, category counts, Records grid filtering, and source-backed CRM row rendering.
  */
-function doesLeadMatchListView(record = {}, listViewId = 'ALL_LEADS') {
-  const activeView = resolveLeadListView(listViewId);
-  const complianceStatus = getComplianceStatus(record);
-  const priorityScore = resolveLeadPriorityScore(record);
-  const provenanceHash = getProvenanceHash(record);
-  const source = resolveLeadSource(record);
-  const activityValue = resolveLeadValue(record, 'lastActivity');
-  const hasActivitySignal = isKnownLeadValue(activityValue)
-    || Boolean(record.activityCount || record.touchCount || record.lastTouchedAt || record.lastContactedAt || record.activities?.length);
+function doesLeadMatchListView(record = {}, listViewId = 'ALL') {
+  /* P60K5Q10FG92J_CATEGORY_MATCHER_REPAIRED */
+  /* P60K5Q10FG92K_MATCHER_DOCGUARD_FINALIZED */
+  const viewId = String(listViewId || 'ALL').toUpperCase();
+  const sourcePayload = record && typeof record.sourcePayload === 'object' && record.sourcePayload ? record.sourcePayload : {};
 
-  switch (activeView.id) {
-    case 'HIGH_PRIORITY':
-      return priorityScore >= 52;
-    case 'VERIFIED_LEADS':
-      return complianceStatus === 'VERIFIED';
-    case 'PENDING_REVIEW':
-      return complianceStatus === 'PENDING';
-    case 'SOURCE_GAPS':
-      return !isKnownLeadValue(provenanceHash) || !isKnownLeadValue(source);
-    case 'UNTOUCHED':
-      return !hasActivitySignal;
-    case 'FAILED_GATES':
-      return complianceStatus === 'FAILED';
-    case 'ALL_LEADS':
-    default:
-      return true;
+  if (viewId.includes('ALL')) {
+    return true;
   }
+
+  const statusText = [
+    record.status,
+    record.stage,
+    record.leadStatus,
+    record.pipelineStatus,
+    sourcePayload.status,
+    sourcePayload.stage,
+  ].map((value) => String(value ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').toLowerCase();
+
+  const proofText = [
+    record.verificationStatus,
+    record.complianceStatus,
+    record.auditStatus,
+    record.proofStatus,
+    record.reviewStatus,
+    record.qualityGateStatus,
+    sourcePayload.verificationStatus,
+    sourcePayload.complianceStatus,
+    sourcePayload.auditStatus,
+    sourcePayload.proofStatus,
+    sourcePayload.reviewStatus,
+  ].map((value) => String(value ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').toLowerCase();
+
+  const priorityText = [
+    record.priority,
+    record.leadPriority,
+    record.urgency,
+    sourcePayload.priority,
+    sourcePayload.leadPriority,
+    sourcePayload.urgency,
+  ].map((value) => String(value ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').toLowerCase();
+
+  const sourceText = [
+    record.source,
+    record.leadSource,
+    record.origin,
+    sourcePayload.source,
+    sourcePayload.leadSource,
+    sourcePayload.origin,
+  ].map((value) => String(value ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').toLowerCase();
+
+  const activityText = [
+    record.lastActivity,
+    record.lastActivityAt,
+    record.lastContactedAt,
+    record.lastInteractionAt,
+    record.activityStatus,
+    record.activitySignal,
+    sourcePayload.lastActivity,
+    sourcePayload.lastActivityAt,
+    sourcePayload.lastContactedAt,
+    sourcePayload.lastInteractionAt,
+    sourcePayload.activityStatus,
+    sourcePayload.activitySignal,
+  ].map((value) => String(value ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').toLowerCase();
+
+  const score = Math.max(0, ...[
+    record.score,
+    record.leadScore,
+    record.priorityScore,
+    record.sourceCompletenessScore,
+    sourcePayload.score,
+    sourcePayload.leadScore,
+    sourcePayload.priorityScore,
+  ].map((value) => Number(String(value ?? '').replace(/[^0-9.-]/g, ''))).filter(Number.isFinite));
+
+  const value = Math.max(0, ...[
+    record.value,
+    record.dealValue,
+    record.estimatedValue,
+    record.pipelineValue,
+    record.expectedRevenue,
+    sourcePayload.value,
+    sourcePayload.dealValue,
+    sourcePayload.estimatedValue,
+    sourcePayload.pipelineValue,
+    sourcePayload.expectedRevenue,
+  ].map((candidate) => Number(String(candidate ?? '').replace(/[^0-9.-]/g, ''))).filter(Number.isFinite));
+
+  const hasEmail = [
+    record.email,
+    sourcePayload.email,
+  ].map((candidate) => String(candidate ?? '').trim()).some(Boolean);
+
+  const hasPhone = [
+    record.phone,
+    record.mobile,
+    sourcePayload.phone,
+    sourcePayload.mobile,
+  ].map((candidate) => String(candidate ?? '').trim()).some(Boolean);
+
+  const hasCompany = [
+    record.company,
+    record.companyName,
+    record.accountName,
+    sourcePayload.company,
+    sourcePayload.companyName,
+  ].map((candidate) => String(candidate ?? '').trim()).some(Boolean);
+
+  const activityCount = Math.max(0, ...[
+    record.activityCount,
+    record.activitiesCount,
+    record.touchCount,
+    sourcePayload.activityCount,
+    sourcePayload.activitiesCount,
+    sourcePayload.touchCount,
+  ].map((candidate) => Number(String(candidate ?? '').replace(/[^0-9.-]/g, ''))).filter(Number.isFinite));
+
+  const verified = /verified|approved|passed|complete|compliant|qualified/.test(proofText) || /qualified/.test(statusText);
+  const failed = /failed|rejected|disqualified|invalid|lost|blocked/.test(`${proofText} ${statusText}`);
+  const priority = /urgent|high|priority/.test(priorityText) || score >= 70 || value >= 750000;
+  const sourceGap = !hasEmail || !hasPhone || !hasCompany || !sourceText;
+  const untouched = activityCount <= 0 && !activityText && !/qualified|converted|won|lost|failed|rejected|disqualified/.test(statusText);
+  const pendingReview = /pending|review|audit|awaiting|needs review|needs_review/.test(`${proofText} ${statusText}`) ||
+    (!verified && !failed && /new|open|contacted/.test(statusText) && !priority);
+
+  if (viewId.includes('PRIOR')) {
+    return priority;
+  }
+
+  if (viewId.includes('VERIFIED') || viewId.includes('COMPLIANCE')) {
+    return verified;
+  }
+
+  if (viewId.includes('PENDING') || viewId.includes('REVIEW') || viewId.includes('AUDIT')) {
+    return pendingReview;
+  }
+
+  if (viewId.includes('SOURCE') || viewId.includes('GAP') || viewId.includes('PROVENANCE')) {
+    return sourceGap;
+  }
+
+  if (viewId.includes('UNTOUCHED') || viewId.includes('ACTIVITY')) {
+    return untouched;
+  }
+
+  if (viewId.includes('FAILED') || viewId.includes('GATE')) {
+    return failed;
+  }
+
+  return true;
+
+  /* P60K5Q10FG92M_MATCHER_FUNCTION_CLOSED */
 }
 
 /**
@@ -5938,7 +6064,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                   className={styles.leadEmptyRow}
                   data-wilsy-real-data-empty-state="LIVE_BACKEND_EMPTY"
                 >
-                  <td colSpan={9}>
+                  <td data-wilsy-lead-empty-state="records" colSpan={9}>
                     <section className={styles.leadRealEmptyState}>
                       <strong>{selectedLeadFilterOptions.size ? 'No leads match the selected filters' : 'No live leads returned yet'}</strong>
                       <em>{selectedLeadFilterOptions.size ? 'Clear or change the selected filters to return matching live backend rows.' : 'Verified backend Lead records will appear here after source sync or lead creation.'}</em>

@@ -10297,3 +10297,139 @@ button[data-wilsy-leads-filter-toolbar-toggle="true"] {
   background: rgba(72, 52, 145, 0.94) !important;
   border-color: rgba(176, 146, 255, 0.76) !important;
 }
+
+/* P60K5Q10FG92J - Organizer bleed and empty-state repair
+   Higher specificity than the previous command-bar popover rules. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster,
+.leadRecordsCommandBar .leadViewCluster,
+.leadViewCluster {
+  flex: 0 0 11.25rem !important;
+  width: 11.25rem !important;
+  max-width: 11.25rem !important;
+  min-width: 11.25rem !important;
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: 140 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownWrap,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadDropdownWrap,
+.leadRecordsCommandBar .leadViewCluster .leadDropdownWrap,
+.leadViewCluster .leadDropdownWrap {
+  width: 11.25rem !important;
+  max-width: 11.25rem !important;
+  min-width: 11.25rem !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadViewButton,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadViewButton,
+.leadRecordsCommandBar .leadViewCluster .leadViewButton,
+.leadViewCluster .leadViewButton {
+  width: 11.25rem !important;
+  max-width: 11.25rem !important;
+  min-width: 11.25rem !important;
+  height: 2.28rem !important;
+  min-height: 2.28rem !important;
+  padding: 0.3rem 0.4rem !important;
+  grid-template-columns: 0.92rem minmax(0, 1fr) 0.58rem !important;
+  column-gap: 0.32rem !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadViewButton strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadViewButton em,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadViewButton strong,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadViewButton em,
+.leadViewCluster .leadViewButton strong,
+.leadViewCluster .leadViewButton em {
+  max-width: 8.9rem !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu,
+.leadRecordsCommandBar .leadViewCluster .leadDropdownMenu,
+.leadViewCluster .leadDropdownMenu {
+  width: 11.25rem !important;
+  min-width: 11.25rem !important;
+  max-width: 11.25rem !important;
+  left: 0 !important;
+  right: auto !important;
+  top: calc(100% + 0.24rem) !important;
+  max-height: 8.4rem !important;
+  padding: 0.24rem !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  border-radius: 0.58rem !important;
+  background: #080414 !important;
+  border: 1px solid rgba(147, 119, 255, 0.68) !important;
+  box-shadow: 0 0.75rem 1.45rem rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+  z-index: 4000 !important;
+  contain: layout paint !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button,
+.leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button,
+.leadViewCluster .leadDropdownMenu button {
+  width: 100% !important;
+  min-height: 1.76rem !important;
+  height: 1.76rem !important;
+  padding: 0.22rem 0.32rem !important;
+  border-radius: 0.4rem !important;
+  display: grid !important;
+  grid-template-rows: 0.92rem 0.62rem !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button span,
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button em,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button span,
+.leadOperatingRoom .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button em,
+.leadViewCluster .leadDropdownMenu button span,
+.leadViewCluster .leadDropdownMenu button em {
+  max-width: 10.3rem !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button span,
+.leadViewCluster .leadDropdownMenu button span {
+  font-size: 0.66rem !important;
+  line-height: 0.95 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="records"] .leadRecordsCommandBar .leadViewCluster .leadDropdownMenu button em,
+.leadViewCluster .leadDropdownMenu button em {
+  font-size: 0.5rem !important;
+  line-height: 0.82 !important;
+  opacity: 0.78 !important;
+}
+
+[data-wilsy-lead-empty-state="records"] {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  text-align: center !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  writing-mode: horizontal-tb !important;
+  line-height: 1.35 !important;
+}
+
+tr [data-wilsy-lead-empty-state="records"],
+td[data-wilsy-lead-empty-state="records"] {
+  display: table-cell !important;
+}
