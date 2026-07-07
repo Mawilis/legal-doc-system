@@ -1527,10 +1527,11 @@ function resolveWilsyFG92BLeadOrganizerCountLabel(count = 0, total = 0) {
  */
 function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
   /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MODEL */
+  /* P60K5Q10FG92E_BUILDER_BODY_HARD_REPLACED */
   const liveRows = Array.isArray(sourceRows) ? sourceRows : [];
   const totalRows = liveRows.length;
 
-  return leadOrganizerLiveViews.map((view) => {
+  return LEAD_LIST_VIEWS.map((view) => {
     const matchingRows = view?.id === 'ALL'
       ? liveRows
       : liveRows.filter((record) => {
@@ -1554,7 +1555,6 @@ function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
     };
   });
 }
-
 
 /**
  * @function doesLeadMatchListView
