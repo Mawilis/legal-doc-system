@@ -11376,3 +11376,120 @@ td[data-wilsy-lead-empty-state="records"] {
   border-color: rgba(255, 90, 115, 0.55);
   color: rgba(255, 195, 205, 0.98);
 }
+
+/* P60K5Q10FG101B_SCROLLABLE_LIVE_VIEW_ORGANIZER_ARRIVAL_COPY
+   Makes every available Lead view navigable and declares the live backend arrival state. */
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] {
+  width: min(31rem, calc(100vw - 8rem)) !important;
+  max-width: min(31rem, calc(100vw - 8rem)) !important;
+  max-height: min(62dvh, calc(100dvh - 16rem), 36rem) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  scroll-behavior: smooth !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.72rem !important;
+  padding: 0.95rem !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(132, 255, 191, 0.78) rgba(24, 18, 54, 0.68) !important;
+}
+
+.leadOrganizerArrivalCopy {
+  position: sticky !important;
+  top: -0.95rem !important;
+  z-index: 8 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.22rem !important;
+  margin: -0.95rem -0.95rem 0.2rem !important;
+  padding: 0.86rem 0.95rem 0.62rem !important;
+  border-bottom: 1px solid rgba(126, 105, 255, 0.28) !important;
+  background:
+    linear-gradient(180deg, rgba(12, 14, 34, 0.98), rgba(12, 14, 34, 0.88)),
+    rgba(8, 10, 24, 0.98) !important;
+}
+
+.leadOrganizerArrivalCopy strong {
+  color: rgba(119, 255, 188, 0.98) !important;
+  font-size: 0.78rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+  line-height: 1.1 !important;
+  text-transform: uppercase !important;
+}
+
+.leadOrganizerArrivalCopy span {
+  color: rgba(205, 213, 255, 0.82) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.035em !important;
+  line-height: 1.2 !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"]::after {
+  content: "Live records update these views as backend source data changes.";
+  flex: 0 0 auto !important;
+  display: block !important;
+  padding: 0.7rem 0.8rem !important;
+  border-radius: 1rem !important;
+  border: 1px solid rgba(118, 255, 184, 0.28) !important;
+  background: rgba(11, 42, 32, 0.26) !important;
+  color: rgba(187, 255, 224, 0.88) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.045em !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"]::-webkit-scrollbar {
+  width: 0.55rem !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"]::-webkit-scrollbar-track {
+  background: rgba(24, 18, 54, 0.62) !important;
+  border-radius: 999px !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(132, 255, 191, 0.9), rgba(151, 117, 255, 0.88)) !important;
+  border-radius: 999px !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 3.65rem !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button span,
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button strong,
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button em {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button strong,
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button span {
+  line-height: 1.12 !important;
+}
+
+section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] button em {
+  line-height: 1.05 !important;
+  opacity: 0.92 !important;
+}
+
+@media (max-height: 820px) {
+  section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] {
+    max-height: min(56dvh, calc(100dvh - 14rem), 30rem) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  section[data-wilsy-leads-organizer-menu="true"][aria-label="Lead list views"] {
+    width: min(26rem, calc(100vw - 2rem)) !important;
+    max-width: min(26rem, calc(100vw - 2rem)) !important;
+  }
+}
