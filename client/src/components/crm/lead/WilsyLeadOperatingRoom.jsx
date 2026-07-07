@@ -4707,12 +4707,21 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   /**
    * @function resolveWilsyBackendRunLimit
    * @description Resolves a safe backend run page size for custom Lead view hydration.
+   * @param {number|string} requestedLimit Requested page size.
    * @returns {number} Backend run limit.
-   * @collaboration Cursor pagination, backend run endpoint, table hydration, and production-safe request sizing.
+   * @collaboration Cursor pagination, backend run endpoint, table hydration, page-size selector, and production-safe request sizing.
    */
-  function resolveWilsyBackendRunLimit() {
-    return 25;
+  function resolveWilsyBackendRunLimit(requestedLimit = '') {
+    const candidate = Number(requestedLimit || leadPagination?.pageSize || 25);
+
+    if (!Number.isFinite(candidate)) {
+      return 25;
+    }
+
+    return Math.min(100, Math.max(1, candidate));
   }
+
+  // P60K5Q10FG103V2_BACKEND_RUN_LIMIT_USES_FOOTER_SIZE
 
   /**
    * @function hydrateWilsyBackendRunRowsForView
@@ -4853,6 +4862,173 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       hydrated: Boolean(activeLeadOrganizerView?.custom && status?.status === 'hydrated'),
     };
   }
+
+
+  /**
+   * @function resolveWilsyActiveBackendRunPagination
+   * @description Resolves active backend cursor pagination for the current custom Lead view.
+   * @returns {object|null} Active cursor pagination.
+   * @collaboration FG103T run response, FG103U row hydration, existing records footer, and cursor navigation controls.
+   */
+  function resolveWilsyActiveBackendRunPagination() {
+    const hydration = resolveWilsyBackendHydratedRowsForActiveView();
+
+    if (!activeLeadOrganizerView?.custom || !hydration?.pagination) {
+      return null;
+    }
+
+    return hydration.pagination;
+  }
+
+  /**
+   * @function shouldUseWilsyBackendCursorPagination
+   * @description Determines whether the existing footer should use backend cursor pagination.
+   * @returns {boolean} Whether backend cursor pagination is active.
+   * @collaboration Custom view selector, backend rows, local fallback pagination, and existing footer controls.
+   */
+  function shouldUseWilsyBackendCursorPagination() {
+    const hydration = resolveWilsyBackendHydratedRowsForActiveView();
+    const pagination = hydration?.pagination || null;
+
+    return Boolean(
+      activeLeadOrganizerView?.custom
+      && hydration?.hydrated
+      && pagination
+      && pagination.mode === 'cursor'
+    );
+  }
+
+  /**
+   * @function formatWilsyBackendCursorRange
+   * @description Formats the visible backend cursor record range for the records footer.
+   * @returns {string} Footer range label.
+   * @collaboration Cursor pagination metadata, records footer, backend view rows, and operator clarity.
+   */
+  function formatWilsyBackendCursorRange() {
+    const pagination = resolveWilsyActiveBackendRunPagination();
+
+    if (!pagination) {
+      return filteredLeads.length
+        ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} ${leadOperatingCopyRecordPlural}`
+        : `Showing 0 live ${leadOperatingCopyRecordPlural}`;
+    }
+
+    const offset = Number(pagination.offset || 0);
+    const returnedCount = Number(pagination.returnedCount || filteredLeads.length || 0);
+    const totalCount = Number(pagination.totalCount || returnedCount || 0);
+    const start = returnedCount ? offset + 1 : 0;
+    const end = returnedCount ? offset + returnedCount : 0;
+
+    return `Showing ${start} to ${end} of ${totalCount} ${leadOperatingCopyRecordPlural}`;
+  }
+
+  /**
+   * @function formatWilsyBackendCursorSupport
+   * @description Formats backend cursor support text for the records footer.
+   * @returns {string} Cursor support text.
+   * @collaboration Cursor next/previous state, selected row state, filter state, and operator feedback.
+   */
+  function formatWilsyBackendCursorSupport() {
+    const pagination = resolveWilsyActiveBackendRunPagination();
+
+    if (!shouldUseWilsyBackendCursorPagination() || !pagination) {
+      return selectedRowIds.length
+        ? `${selectedRowIds.length} selected`
+        : selectedLeadFilterOptions.size
+          ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows`
+          : 'Live backend rows only';
+    }
+
+    if (selectedRowIds.length) {
+      return `${selectedRowIds.length} selected · backend cursor page`;
+    }
+
+    const previousLabel = pagination.hasPreviousPage ? 'Back ready' : 'Start';
+    const nextLabel = pagination.hasNextPage ? 'Next ready' : 'End';
+
+    return `Backend cursor · ${previousLabel} · ${nextLabel}`;
+  }
+
+  /**
+   * @function handleWilsyBackendCursorPageChange
+   * @description Moves a backend-hydrated custom Lead view through cursor Previous, Next, or First.
+   * @param {string} direction Cursor direction.
+   * @returns {Promise<void>} Cursor page hydration.
+   * @collaboration Existing footer buttons, backend /run endpoint, nextCursor, previousCursor, custom view rows, and selected row reset.
+   */
+  async function handleWilsyBackendCursorPageChange(direction = 'next') {
+    if (!shouldUseWilsyBackendCursorPagination()) {
+      return;
+    }
+
+    const pagination = resolveWilsyActiveBackendRunPagination();
+
+    if (!pagination) {
+      return;
+    }
+
+    let cursor = '';
+
+    if (direction === 'next') {
+      if (!pagination.nextCursor) return;
+      cursor = pagination.nextCursor;
+    }
+
+    if (direction === 'previous') {
+      if (!pagination.previousCursor) return;
+      cursor = pagination.previousCursor;
+    }
+
+    if (direction === 'first') {
+      cursor = '';
+    }
+
+    setSelectedRowIds([]);
+    setOpenRowActionId('');
+    setCurrentLeadPage(1);
+
+    await hydrateWilsyBackendRunRowsForView(activeLeadOrganizerView, {
+      cursor,
+      limit: resolveWilsyBackendRunLimit(pagination.limit),
+      reason: `FG103V2 backend cursor ${direction}`,
+      busyLabel: 'run',
+      feedback: direction === 'next'
+        ? 'Loading next backend page…'
+        : direction === 'previous'
+          ? 'Loading previous backend page…'
+          : 'Loading first backend page…',
+    });
+  }
+
+  /**
+   * @function handleWilsyBackendCursorPageSizeChange
+   * @description Re-runs the active backend-hydrated custom Lead view with a new page size.
+   * @param {string|number} nextPageSize Next page size.
+   * @returns {void}
+   * @collaboration Existing page-size selector, backend /run limit, cursor reset, and local pagination fallback.
+   */
+  function handleWilsyBackendCursorPageSizeChange(nextPageSize = '') {
+    handleLeadPageSizeChange(nextPageSize);
+
+    if (!shouldUseWilsyBackendCursorPagination()) {
+      return;
+    }
+
+    setSelectedRowIds([]);
+    setOpenRowActionId('');
+    setCurrentLeadPage(1);
+
+    void hydrateWilsyBackendRunRowsForView(activeLeadOrganizerView, {
+      cursor: '',
+      limit: resolveWilsyBackendRunLimit(nextPageSize),
+      reason: 'FG103V2 backend cursor page size change',
+      busyLabel: 'run',
+      feedback: 'Reloading backend page size…',
+    });
+  }
+
+  // P60K5Q10FG103V2_BACKEND_CURSOR_FOOTER_HELPERS
+
 
   // P60K5Q10FG103U2_SELECTOR_HANDLER_RUN_HYDRATION_HELPERS
 
@@ -8033,13 +8209,22 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
           <footer className={styles.leadRecordsFooter} data-wilsy-lead-footer="LIVE_BACKEND_RECORDS_FOOTER">
             <span className={styles.leadFooterRecordRange}>
-              <strong>{filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} ${leadOperatingCopyRecordPlural}` : selectedLeadFilterOptions.size ? `Showing 0 matching ${leadOperatingCopyRecordPlural}` : `Showing 0 live ${leadOperatingCopyRecordPlural}`}</strong>
-              <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : selectedLeadFilterOptions.size ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows` : 'Live backend rows only'}</em>
+              <strong>{shouldUseWilsyBackendCursorPagination() ? formatWilsyBackendCursorRange() : filteredLeads.length ? `Showing ${leadPagination.startRecord} to ${leadPagination.endRecord} of ${filteredLeads.length} ${leadOperatingCopyRecordPlural}` : selectedLeadFilterOptions.size ? `Showing 0 matching ${leadOperatingCopyRecordPlural}` : `Showing 0 live ${leadOperatingCopyRecordPlural}`}</strong>
+              <em>{shouldUseWilsyBackendCursorPagination() ? formatWilsyBackendCursorSupport() : selectedRowIds.length ? `${selectedRowIds.length} selected` : selectedLeadFilterOptions.size ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows` : 'Live backend rows only'}</em>
             </span>
             <nav className={styles.leadFooterPagination} aria-label={`${leadOperatingCopyTitle} records pagination`}>
-              <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="First page" onClick={() => handleLeadPageChange(1)}>|&lt;</button>
-              <button type="button" disabled={leadPagination.currentPage <= 1} aria-label="Previous page" onClick={() => handleLeadPageChange(leadPagination.currentPage - 1)}>&lt;</button>
-              {leadPagination.pageItems.map(item => (
+              <button type="button" disabled={shouldUseWilsyBackendCursorPagination() ? !resolveWilsyActiveBackendRunPagination()?.hasPreviousPage || Boolean(leadToolbarCommandBusy) : leadPagination.currentPage <= 1} aria-label="First page" onClick={() => shouldUseWilsyBackendCursorPagination() ? void handleWilsyBackendCursorPageChange('first') : handleLeadPageChange(1)}>|&lt;</button>
+              <button type="button" disabled={shouldUseWilsyBackendCursorPagination() ? !resolveWilsyActiveBackendRunPagination()?.previousCursor || Boolean(leadToolbarCommandBusy) : leadPagination.currentPage <= 1} aria-label="Previous page" onClick={() => shouldUseWilsyBackendCursorPagination() ? void handleWilsyBackendCursorPageChange('previous') : handleLeadPageChange(leadPagination.currentPage - 1)}>&lt;</button>
+              {shouldUseWilsyBackendCursorPagination() ? (
+                <button
+                  type="button"
+                  aria-current="page"
+                  data-wilsy-backend-cursor-page="FG103V2"
+                  disabled
+                >
+                  Cursor
+                </button>
+              ) : leadPagination.pageItems.map(item => (
                 typeof item === 'number' ? (
                   <button
                     key={item}
@@ -8053,12 +8238,12 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                   <span key={item} data-wilsy-pagination-ellipsis="true">...</span>
                 )
               ))}
-              <button type="button" disabled={leadPagination.currentPage >= leadPagination.totalPages} aria-label="Next page" onClick={() => handleLeadPageChange(leadPagination.currentPage + 1)}>&gt;</button>
-              <button type="button" disabled={leadPagination.currentPage >= leadPagination.totalPages} aria-label="Last page" onClick={() => handleLeadPageChange(leadPagination.totalPages)}>&gt;|</button>
+              <button type="button" disabled={shouldUseWilsyBackendCursorPagination() ? !resolveWilsyActiveBackendRunPagination()?.nextCursor || Boolean(leadToolbarCommandBusy) : leadPagination.currentPage >= leadPagination.totalPages} aria-label="Next page" onClick={() => shouldUseWilsyBackendCursorPagination() ? void handleWilsyBackendCursorPageChange('next') : handleLeadPageChange(leadPagination.currentPage + 1)}>&gt;</button>
+              <button type="button" disabled={shouldUseWilsyBackendCursorPagination() ? true : leadPagination.currentPage >= leadPagination.totalPages} aria-label="Last page" title={shouldUseWilsyBackendCursorPagination() ? 'Cursor pagination uses Next until the backend reports the end.' : 'Last page'} onClick={() => shouldUseWilsyBackendCursorPagination() ? undefined : handleLeadPageChange(leadPagination.totalPages)}>&gt;|</button>
               <label className={styles.leadFooterPageSize}>
                 <select
                   value={leadPagination.pageSize}
-                  onChange={event => handleLeadPageSizeChange(event.target.value)}
+                  onChange={event => handleWilsyBackendCursorPageSizeChange(event.target.value)}
                   aria-label={`${leadOperatingCopyTitle} records per page`}
                 >
                   {LEAD_PAGE_SIZE_OPTIONS.map(option => (
