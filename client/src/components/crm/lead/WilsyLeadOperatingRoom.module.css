@@ -11524,3 +11524,57 @@ td[data-wilsy-lead-empty-state="records"] {
     padding: 0 0.48rem;
   }
 }
+
+/* P60K5Q10FG103H_STOP_TOOLBAR_ACTIONS_BLEED
+   CSS-only containment for FG103G compact collection controls.
+   Keeps the feature in the toolbar without bleeding beyond the records shell. */
+.leadToolbarCollectionActions {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  max-width: 19.4rem !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  gap: 0.24rem !important;
+  padding: 0.16rem 0.2rem 0.16rem 0.34rem !important;
+  white-space: nowrap !important;
+}
+
+.leadToolbarCollectionStatus {
+  flex: 0 1 6.7rem !important;
+  max-width: 6.7rem !important;
+  min-width: 0 !important;
+  font-size: 0.58rem !important;
+}
+
+.leadToolbarCollectionActions button {
+  flex: 0 0 auto !important;
+  min-height: 1.72rem !important;
+  padding: 0 0.42rem !important;
+  font-size: 0.56rem !important;
+}
+
+/* Keep destructive/deeper lifecycle actions out of the crowded primary toolbar.
+   They belong in the existing ellipsis/menu workflow next. */
+.leadToolbarCollectionActions button:nth-of-type(n + 3) {
+  display: none !important;
+}
+
+@media (max-width: 1480px) {
+  .leadToolbarCollectionActions {
+    max-width: 15.2rem !important;
+  }
+
+  .leadToolbarCollectionStatus {
+    max-width: 5.6rem !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .leadToolbarCollectionActions {
+    max-width: 10.5rem !important;
+  }
+
+  .leadToolbarCollectionStatus {
+    display: none !important;
+  }
+}
