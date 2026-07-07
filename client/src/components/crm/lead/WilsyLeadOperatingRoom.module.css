@@ -10782,195 +10782,7 @@ td[data-wilsy-lead-empty-state="records"] {
   white-space: nowrap !important;
 }
 
-/* P60K5Q10FG93G - Single runtime Lead view switcher
-   The legacy duplicated dropdown is hidden. This body-level switcher is the
-   only visible Organizer menu. */
-section[aria-label="Lead list views"][data-wilsy-legacy-lead-view-menu-hidden="true"] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  max-height: 0 !important;
-  overflow: hidden !important;
-}
-
-#wilsy-leads-single-view-switcher,
-[data-wilsy-leads-single-view-switcher="true"] {
-  width: 188px !important;
-  min-width: 188px !important;
-  max-width: 188px !important;
-  max-height: 144px !important;
-  padding: 5px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  overscroll-behavior: contain !important;
-  border: 1px solid rgba(156, 126, 255, 0.78) !important;
-  border-radius: 12px !important;
-  background: #070312 !important;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.82) !important;
-  box-sizing: border-box !important;
-  backdrop-filter: none !important;
-  contain: layout paint !important;
-}
-
-#wilsy-leads-single-view-switcher button,
-[data-wilsy-leads-single-view-switcher="true"] button {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  margin: 0 0 5px 0 !important;
-  padding: 4px 7px !important;
-  display: grid !important;
-  grid-template-rows: 14px 10px !important;
-  align-items: center !important;
-  border: 1px solid rgba(122, 101, 219, 0.32) !important;
-  border-radius: 8px !important;
-  background: rgba(17, 23, 40, 0.98) !important;
-  color: #ffffff !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-  cursor: pointer !important;
-}
-
-#wilsy-leads-single-view-switcher button[data-active="true"],
-[data-wilsy-leads-single-view-switcher="true"] button[data-active="true"] {
-  background: rgba(85, 55, 168, 0.96) !important;
-  border-color: rgba(188, 160, 255, 0.82) !important;
-}
-
-#wilsy-leads-single-view-switcher strong,
-#wilsy-leads-single-view-switcher em,
-[data-wilsy-leads-single-view-switcher="true"] strong,
-[data-wilsy-leads-single-view-switcher="true"] em {
-  display: block !important;
-  max-width: 168px !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  line-height: 1 !important;
-}
-
-#wilsy-leads-single-view-switcher strong,
-[data-wilsy-leads-single-view-switcher="true"] strong {
-  font-size: 12px !important;
-  font-weight: 950 !important;
-}
-
-#wilsy-leads-single-view-switcher em,
-[data-wilsy-leads-single-view-switcher="true"] em {
-  color: rgba(204, 184, 255, 0.82) !important;
-  font-size: 10px !important;
-  font-style: normal !important;
-}
-
-/* P60K5Q10FG93I - Full-height Lead View Organizer */
-section[aria-label="Lead list views"][data-wilsy-legacy-lead-view-menu-hidden="true"] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  max-height: 0 !important;
-  overflow: hidden !important;
-}
-
-#wilsy-leads-full-height-view-organizer,
-[data-wilsy-leads-full-height-view-organizer="true"] {
-  min-height: 420px !important;
-  padding: 0.62rem !important;
-  display: grid !important;
-  grid-template-rows: auto minmax(0, 1fr) auto !important;
-  gap: 0.62rem !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(156, 126, 255, 0.78) !important;
-  border-radius: 1rem !important;
-  background: linear-gradient(180deg, rgba(13, 18, 34, 0.98), rgba(7, 10, 20, 0.995)), #070312 !important;
-  box-shadow: 0 1.2rem 2.8rem rgba(0, 0, 0, 0.82) !important;
-  box-sizing: border-box !important;
-  backdrop-filter: none !important;
-  contain: layout paint !important;
-}
-
-[data-wilsy-view-organizer-header="true"] {
-  padding: 0.62rem 0.68rem !important;
-  border: 1px solid rgba(156, 126, 255, 0.28) !important;
-  border-radius: 0.82rem !important;
-  background: rgba(19, 25, 44, 0.92) !important;
-  display: grid !important;
-  gap: 0.18rem !important;
-}
-
-[data-wilsy-view-organizer-options="true"] {
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  overscroll-behavior: contain !important;
-  display: grid !important;
-  align-content: start !important;
-  gap: 0.44rem !important;
-  padding-right: 0.14rem !important;
-}
-
-[data-wilsy-view-organizer-options="true"] button,
-[data-wilsy-add-custom-view-action="true"] {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 3.1rem !important;
-  padding: 0.58rem 0.68rem !important;
-  display: grid !important;
-  gap: 0.18rem !important;
-  align-items: center !important;
-  border: 1px solid rgba(122, 101, 219, 0.34) !important;
-  border-radius: 0.82rem !important;
-  background: rgba(17, 23, 40, 0.98) !important;
-  color: #ffffff !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-  cursor: pointer !important;
-}
-
-[data-wilsy-view-organizer-options="true"] button[data-active="true"] {
-  background: linear-gradient(135deg, rgba(99, 64, 190, 0.98), rgba(83, 45, 164, 0.92)) !important;
-  border-color: rgba(195, 164, 255, 0.9) !important;
-}
-
-[data-wilsy-view-organizer-options="true"] button strong,
-[data-wilsy-view-organizer-options="true"] button em,
-[data-wilsy-add-custom-view-action="true"] strong,
-[data-wilsy-add-custom-view-action="true"] em,
-[data-wilsy-view-organizer-header="true"] strong,
-[data-wilsy-view-organizer-header="true"] em {
-  display: block !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  line-height: 1 !important;
-}
-
-[data-wilsy-view-organizer-options="true"] button strong,
-[data-wilsy-add-custom-view-action="true"] strong,
-[data-wilsy-view-organizer-header="true"] strong {
-  color: #ffffff !important;
-  font-size: 0.9rem !important;
-  font-weight: 950 !important;
-}
-
-[data-wilsy-view-organizer-options="true"] button em,
-[data-wilsy-add-custom-view-action="true"] em,
-[data-wilsy-view-organizer-header="true"] em {
-  color: rgba(204, 184, 255, 0.82) !important;
-  font-size: 0.72rem !important;
-  font-style: normal !important;
-}
-
-[data-wilsy-add-custom-view-action="true"] {
-  border-color: rgba(103, 233, 172, 0.42) !important;
-  background: rgba(23, 86, 61, 0.24) !important;
-}
+/* P60K5Q10FG94E_RUNTIME_ORGANIZER_CSS_REMOVED */
 
 /* P60K5Q10FG93I - Real Lead Custom View Builder */
 .leadCustomViewOverlay {
@@ -11110,4 +10922,141 @@ section[aria-label="Lead list views"][data-wilsy-legacy-lead-view-menu-hidden="t
 .leadCustomViewActions button:nth-child(2) {
   border-color: rgba(87, 219, 153, 0.48);
   background: rgba(36, 145, 98, 0.22);
+}
+
+
+/* P60K5Q10FG94E_EXISTING_IN_TREE_ORGANIZER_SAFETY_STYLES */
+.leadRecordsViewOrganizerMount {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  isolation: isolate;
+  min-width: 0;
+}
+
+.leadRecordsViewOrganizerPanel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.55rem);
+  z-index: 36;
+  width: 19rem;
+  max-width: calc(100vw - 2rem);
+  max-height: min(30rem, calc(100dvh - 16rem));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 1.05rem;
+  background: rgba(9, 14, 25, 0.98);
+  box-shadow: 0 22px 64px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+}
+
+.leadRecordsViewOrganizerHeader {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.95rem 1rem 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.leadRecordsViewOrganizerHeader strong {
+  color: rgba(248, 250, 252, 0.96);
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.leadRecordsViewOrganizerHeader small {
+  color: rgba(203, 213, 225, 0.68);
+  line-height: 1.35;
+}
+
+.leadRecordsViewOrganizerEyebrow {
+  color: rgba(56, 189, 248, 0.94);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.leadRecordsViewOrganizerBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.leadRecordsViewOrganizerOption {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 0.86rem;
+  background: rgba(15, 23, 42, 0.72);
+  color: rgba(226, 232, 240, 0.92);
+  text-align: left;
+  cursor: pointer;
+}
+
+.leadRecordsViewOrganizerOption:hover {
+  border-color: rgba(56, 189, 248, 0.42);
+  background: rgba(14, 30, 48, 0.9);
+}
+
+.leadRecordsViewOrganizerOptionActive {
+  border-color: rgba(56, 189, 248, 0.72);
+  background: rgba(14, 116, 144, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.18);
+}
+
+.leadRecordsViewOrganizerOption span {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.leadRecordsViewOrganizerOption strong {
+  color: rgba(248, 250, 252, 0.96);
+  font-size: 0.86rem;
+}
+
+.leadRecordsViewOrganizerOption small {
+  color: rgba(148, 163, 184, 0.82);
+  font-size: 0.71rem;
+}
+
+.leadRecordsViewOrganizerOption em {
+  color: rgba(125, 211, 252, 0.96);
+  font-size: 0.71rem;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.leadRecordsViewOrganizerFooter {
+  flex: 0 0 auto;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(2, 6, 23, 0.72);
+}
+
+.leadRecordsAddCustomViewButton {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 1px solid rgba(56, 189, 248, 0.52);
+  border-radius: 0.86rem;
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.95), rgba(37, 99, 235, 0.86));
+  color: rgba(248, 250, 252, 0.98);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.leadRecordsAddCustomViewButton:hover {
+  border-color: rgba(125, 211, 252, 0.9);
 }
