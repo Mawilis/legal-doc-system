@@ -2918,6 +2918,7 @@ export default function WilsyLeadOperatingRoom({
   const [leadCollectionSourcePickerOpen, setLeadCollectionSourcePickerOpen] = useState(false);
   const [leadCollectionSourceSelectedIds, setLeadCollectionSourceSelectedIds] = useState([]);
   const [leadCollectionSourceQuery, setLeadCollectionSourceQuery] = useState('');
+  const [leadViewActionConfirmation, setLeadViewActionConfirmation] = useState(null);
   /* P60K5Q10FG93I_CUSTOM_VIEW_STATE */
   const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
   const [leadCustomViews, setLeadCustomViews] = useState(() => {
@@ -3735,9 +3736,9 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function renderWilsyToolbarCollectionActions
-   * @description Renders compact collection controls inside the existing Records toolbar with custom-view delete available even when the view is empty.
+   * @description Renders compact collection controls with explicit Remove from View and Delete View semantics.
    * @returns {JSX.Element|null} Toolbar actions.
-   * @collaboration Existing toolbar, selected rows, custom views, membership overrides, delete view, and non-invasive frontend UX.
+   * @collaboration Existing toolbar, selected rows, custom views, membership overrides, delete view, confirmation workflow, and non-invasive frontend UX.
    */
   function renderWilsyToolbarCollectionActions() {
     const selectedLeadIds = resolveWilsyToolbarSelectedLeadIds();
@@ -3758,7 +3759,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         data-wilsy-lead-toolbar-collection-actions="FG103G"
         data-wilsy-custom-view-active={String(isCustomView)}
         data-wilsy-collection-target-ready={String(hasCollectionTarget)}
-        data-wilsy-fg103m-delete-view-actions="true"
+        data-wilsy-fg103r-confirmed-actions="true"
       >
         <span className={styles.leadToolbarCollectionStatus}>
           {leadToolbarCommandFeedback
@@ -3772,15 +3773,15 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
           onClick={openWilsyCollectionSourcePicker}
           title="Open source picker to add leads from All Leads into this custom view"
         >
-          {leadToolbarCommandBusy === 'include' ? 'Adding…' : '+ Add'}
+          + Add
         </button>
         <button
           type="button"
           disabled={!hasCollectionTarget || !selectedLeadIds.length || busy}
-          onClick={() => applyWilsyToolbarMembershipCommand('exclude')}
-          title="Remove selected leads from this custom view"
+          onClick={openWilsyRemoveFromViewConfirmation}
+          title="Remove selected leads from this view only. Lead records are preserved."
         >
-          {leadToolbarCommandBusy === 'exclude' ? 'Removing…' : '− Remove'}
+          − Remove from View
         </button>
         <button
           type="button"
@@ -3801,14 +3802,16 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         <button
           type="button"
           disabled={!isCustomView || busy}
-          onClick={archiveWilsyToolbarActiveCollectionView}
-          title={hasCollectionTarget ? 'Delete entire custom view and preserve backend audit' : 'Delete local custom view'}
+          onClick={openWilsyDeleteViewConfirmation}
+          title="Delete this custom view only. Lead records are preserved."
         >
-          {leadToolbarCommandBusy === 'archive' ? 'Deleting…' : 'Delete'}
+          {leadToolbarCommandBusy === 'archive' ? 'Deleting…' : 'Delete View'}
         </button>
       </div>
     );
   }
+
+  // P60K5Q10FG103R_TOOLBAR_SEMANTIC_LABELS
 
   // P60K5Q10FG103M_ACTIVE_EMPTY_CUSTOM_VIEW_ACTIONS
 
@@ -4150,6 +4153,290 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
   // P60K5Q10FG103O_SOURCE_PICKER_VISIBLE_CONFIRM
+
+
+  /**
+   * @function openWilsyRemoveFromViewConfirmation
+   * @description Opens an in-app confirmation before removing selected leads from the active custom view.
+   * @returns {void}
+   * @collaboration Custom view toolbar, selected rows, membership exclusions, audit-safe confirmation, and lead-preserving UX.
+   */
+  function openWilsyRemoveFromViewConfirmation() {
+    const selectedLeadIds = resolveWilsyToolbarSelectedLeadIds();
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+
+    if (!isWilsyToolbarCustomCollectionView(activeLeadOrganizerView) || !backendViewId) {
+      setLeadToolbarCommandFeedback('Select a saved custom view first');
+      return;
+    }
+
+    if (!selectedLeadIds.length) {
+      setLeadToolbarCommandFeedback('Select leads to remove from this view');
+      return;
+    }
+
+    setLeadViewActionConfirmation({
+      type: 'removeFromView',
+      leadIds: selectedLeadIds,
+      backendViewId,
+      viewId: activeLeadOrganizerView?.id || '',
+      viewLabel: resolveLeadOperatingCopyLabel(activeLeadOrganizerView?.label || 'Custom View', activeListViewId),
+      title: 'Remove from View?',
+      primary: `Remove ${selectedLeadIds.length} from View`,
+      body: `${selectedLeadIds.length} selected lead${selectedLeadIds.length === 1 ? '' : 's'} will disappear from this custom view only. Lead records stay in All Leads and CRM history.`,
+    });
+  }
+
+  /**
+   * @function openWilsyDeleteViewConfirmation
+   * @description Opens an in-app confirmation before deleting the active custom view.
+   * @returns {void}
+   * @collaboration Custom view lifecycle, backend archive, local view removal, audit retention, and lead-preserving UX.
+   */
+  function openWilsyDeleteViewConfirmation() {
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+
+    if (!isWilsyToolbarCustomCollectionView(activeLeadOrganizerView)) {
+      setLeadToolbarCommandFeedback('Select a custom view to delete');
+      return;
+    }
+
+    setLeadViewActionConfirmation({
+      type: 'deleteView',
+      leadIds: [],
+      backendViewId,
+      viewId: activeLeadOrganizerView?.id || '',
+      viewLabel: resolveLeadOperatingCopyLabel(activeLeadOrganizerView?.label || 'Custom View', activeListViewId),
+      title: 'Delete View?',
+      primary: 'Delete View',
+      body: 'This deletes the saved custom view only. No Lead records will be deleted. Backend audit history is preserved when this view has a registry id.',
+    });
+  }
+
+  /**
+   * @function closeWilsyViewActionConfirmation
+   * @description Closes the in-app custom view action confirmation.
+   * @returns {void}
+   * @collaboration Remove from View, Delete View, non-browser confirmations, and operator-safe cancellation.
+   */
+  function closeWilsyViewActionConfirmation() {
+    setLeadViewActionConfirmation(null);
+  }
+
+  /**
+   * @function executeWilsyRemoveFromViewConfirmed
+   * @description Executes confirmed custom-view removal while preserving Lead records.
+   * @param {object} confirmation Confirmation payload.
+   * @returns {Promise<void>} Removal completion.
+   * @collaboration Backend exclude override, effective membership state, visible view refresh, and audit-safe lead preservation.
+   */
+  async function executeWilsyRemoveFromViewConfirmed(confirmation = {}) {
+    const backendViewId = confirmation.backendViewId || resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const selectedLeadIds = normalizeWilsyLeadMembershipIdList(confirmation.leadIds || []);
+
+    if (!backendViewId || !selectedLeadIds.length) {
+      setLeadToolbarCommandFeedback('Nothing to remove from this view');
+      return;
+    }
+
+    setLeadToolbarCommandBusy('removeFromView');
+    setLeadToolbarCommandFeedback(`Removing ${selectedLeadIds.length} from view…`);
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}/overrides/exclude`;
+      const result = await requestWilsyToolbarCollectionCommand(
+        route,
+        'EXCLUDE_LEADS_FROM_VIEW',
+        {
+          leadIds: selectedLeadIds,
+          reason: 'FG103R confirmed remove selected leads from custom view only',
+        },
+        'POST'
+      );
+
+      const summary = result?.membership?.summary || result?.summary || {};
+      const selectedIdSet = new Set(selectedLeadIds);
+
+      const previousMembership = resolveWilsyEffectiveViewMembershipState(activeLeadOrganizerView);
+      const nextManualIncludeLeadIds = normalizeWilsyLeadMembershipIdList(
+        previousMembership.manualIncludeLeadIds.filter((leadId) => !selectedIdSet.has(leadId))
+      );
+      const nextManualExcludeLeadIds = normalizeWilsyLeadMembershipIdList([
+        ...previousMembership.manualExcludeLeadIds,
+        ...selectedLeadIds,
+      ]);
+
+      setLeadToolbarMembershipById((previous) => ({
+        ...previous,
+        [activeLeadOrganizerView.id]: {
+          ...(previous?.[activeLeadOrganizerView.id] || {}),
+          ...summary,
+          manualIncludeLeadIds: nextManualIncludeLeadIds,
+          manualExcludeLeadIds: nextManualExcludeLeadIds,
+        },
+        [backendViewId]: {
+          ...(previous?.[backendViewId] || {}),
+          ...summary,
+          manualIncludeLeadIds: nextManualIncludeLeadIds,
+          manualExcludeLeadIds: nextManualExcludeLeadIds,
+        },
+      }));
+
+      setLeadCustomViews((previousViews) => {
+        const nextViews = previousViews.map((view) => {
+          const candidateIds = [
+            view?.id,
+            view?.backendViewId,
+            view?.backendId,
+            view?.registryViewId,
+            view?._id,
+          ].map((value) => String(value || ''));
+
+          if (!candidateIds.includes(String(activeLeadOrganizerView?.id || '')) && !candidateIds.includes(String(backendViewId))) {
+            return view;
+          }
+
+          return {
+            ...view,
+            manualIncludeLeadIds: nextManualIncludeLeadIds,
+            manualExcludeLeadIds: nextManualExcludeLeadIds,
+            membershipSummary: {
+              ...(view?.membershipSummary || {}),
+              ...summary,
+              manualIncludeLeadIds: nextManualIncludeLeadIds,
+              manualExcludeLeadIds: nextManualExcludeLeadIds,
+            },
+            lastRun: {
+              ...(view?.lastRun || {}),
+              membership: {
+                ...(view?.lastRun?.membership || {}),
+                ...summary,
+                manualIncludeLeadIds: nextManualIncludeLeadIds,
+                manualExcludeLeadIds: nextManualExcludeLeadIds,
+              },
+            },
+            updatedAt: new Date().toISOString(),
+          };
+        });
+
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
+        }
+
+        return nextViews;
+      });
+
+      setSelectedRowIds([]);
+      setCurrentLeadPage(1);
+      setLeadToolbarCommandFeedback(`${selectedLeadIds.length} removed from view · leads preserved`);
+      setLeadViewActionConfirmation(null);
+      await refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView);
+    } catch (error) {
+      setLeadToolbarCommandFeedback(error?.message || 'Remove from View failed');
+    } finally {
+      setLeadToolbarCommandBusy('');
+    }
+  }
+
+  /**
+   * @function executeWilsyConfirmedViewAction
+   * @description Executes the pending confirmed custom view action.
+   * @returns {Promise<void>} Confirmation execution.
+   * @collaboration Remove from View, Delete View, backend audit archive, in-app confirmation, and lead-preserving workflows.
+   */
+  async function executeWilsyConfirmedViewAction() {
+    if (!leadViewActionConfirmation) {
+      return;
+    }
+
+    if (leadViewActionConfirmation.type === 'removeFromView') {
+      await executeWilsyRemoveFromViewConfirmed(leadViewActionConfirmation);
+      return;
+    }
+
+    if (leadViewActionConfirmation.type === 'deleteView') {
+      setLeadViewActionConfirmation(null);
+      await archiveWilsyToolbarActiveCollectionView();
+    }
+  }
+
+  /**
+   * @function renderWilsyViewActionConfirmation
+   * @description Renders an in-app confirmation for Remove from View and Delete View actions.
+   * @returns {JSX.Element|null} Confirmation overlay.
+   * @collaboration Operator confirmation, custom view membership, lead preservation, backend audit retention, and no browser dialogs.
+   */
+  function renderWilsyViewActionConfirmation() {
+    if (!leadViewActionConfirmation) {
+      return null;
+    }
+
+    const destructive = leadViewActionConfirmation.type === 'deleteView';
+
+    return (
+      <section
+        className={styles.leadCollectionSourcePickerBackdrop}
+        data-wilsy-view-action-confirmation="FG103R"
+        aria-label="Confirm custom view action"
+      >
+        <section className={styles.leadCollectionSourcePicker}>
+          <header className={styles.leadCollectionSourcePickerHeader}>
+            <span>
+              <small>{destructive ? 'Delete custom view' : 'Remove from custom view'}</small>
+              <strong>{leadViewActionConfirmation.title}</strong>
+              <em>{leadViewActionConfirmation.viewLabel}</em>
+            </span>
+            <div className={styles.leadCollectionSourcePickerHeaderActions}>
+              <button
+                type="button"
+                disabled={Boolean(leadToolbarCommandBusy)}
+                onClick={executeWilsyConfirmedViewAction}
+              >
+                {leadToolbarCommandBusy
+                  ? 'Working…'
+                  : leadViewActionConfirmation.primary}
+              </button>
+              <button type="button" onClick={closeWilsyViewActionConfirmation}>
+                Cancel
+              </button>
+              <button type="button" onClick={closeWilsyViewActionConfirmation} aria-label="Close confirmation">
+                ×
+              </button>
+            </div>
+          </header>
+
+          <div className={styles.leadCollectionSourcePickerSearch}>
+            <p className={styles.leadCollectionSourcePickerStatus} data-wilsy-view-action-confirmation-copy="FG103R">
+              {leadViewActionConfirmation.body}
+            </p>
+          </div>
+
+          <footer className={styles.leadCollectionSourcePickerFooter}>
+            <span>
+              {destructive
+                ? 'Lead records are preserved. Only the saved view is removed.'
+                : 'Lead records are preserved. Only view membership changes.'}
+            </span>
+            <button type="button" onClick={closeWilsyViewActionConfirmation}>
+              Keep
+            </button>
+            <button
+              type="button"
+              disabled={Boolean(leadToolbarCommandBusy)}
+              onClick={executeWilsyConfirmedViewAction}
+            >
+              {leadToolbarCommandBusy
+                ? 'Working…'
+                : leadViewActionConfirmation.primary}
+            </button>
+          </footer>
+        </section>
+      </section>
+    );
+  }
+
+  // P60K5Q10FG103R_VIEW_ACTION_CONFIRMATION
+
 
   // P60K5Q10FG103N_ADD_FROM_SOURCE_PICKER
 
@@ -9157,6 +9444,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         />
       </div>
       {renderWilsyCollectionSourcePicker()}
+      {renderWilsyViewActionConfirmation()}
       {renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}
       {renderCalendarDrawer()}
