@@ -1,6 +1,7 @@
 /* eslint-disable */
 import mongoose from 'mongoose';
 import CrmLeadView from '../models/crmLeadViewModel.js';
+import CrmLeadViewMembershipOverride from '../models/crmLeadViewMembershipOverrideModel.js';
 import {
   RULE_ENGINE_VERSION,
   buildCriteriaHash,
@@ -352,6 +353,337 @@ async function archiveLeadView(viewId, context = {}) {
 }
 
 /**
+ * @function resolveLeadViewMembershipLeadId
+ * @description Resolves a stable lead id from a backend Lead document or payload value.
+ * @param {object|string} lead Lead document or lead id.
+ * @returns {string} Normalized lead id.
+ * @collaboration Lead membership overrides, live query execution, manual include, and manual exclude controls.
+ */
+function resolveLeadViewMembershipLeadId(lead = {}) {
+  if (typeof lead === 'string') return lead.trim();
+  return String(lead?._id || lead?.id || lead?.leadId || lead?.recordId || '').trim();
+}
+
+/**
+ * @function normalizeLeadViewMembershipLeadIds
+ * @description Normalizes selected lead ids supplied by frontend row selection or payload tests.
+ * @param {object} payload Membership payload.
+ * @returns {string[]} Unique lead ids.
+ * @collaboration Selected-row state, membership override writes, signed payload tests, and CRM Lead collections.
+ */
+function normalizeLeadViewMembershipLeadIds(payload = {}) {
+  const rawLeadIds =
+    payload.leadIds || payload.selectedRowIds || payload.selectedLeadIds || payload.ids || [];
+  const list = Array.isArray(rawLeadIds) ? rawLeadIds : [rawLeadIds];
+
+  return Array.from(new Set(list.map((leadId) => String(leadId || '').trim()).filter(Boolean)));
+}
+
+/**
+ * @function buildLeadViewMembershipSummary
+ * @description Builds an operator-grade membership summary for live rule matches plus manual include/exclude overrides.
+ * @param {object} params Summary params.
+ * @returns {object} Membership summary.
+ * @collaboration View Command Strip, backend run endpoint, Wilsy AI explanation, and collection productivity controls.
+ */
+function buildLeadViewMembershipSummary(params = {}) {
+  const ruleMatchCount = Number(params.ruleMatchCount || 0);
+  const manualIncludeCount = Number(params.manualIncludeCount || 0);
+  const manualExcludeCount = Number(params.manualExcludeCount || 0);
+  const effectiveCount = Number(params.effectiveCount || 0);
+
+  return {
+    effectiveCount,
+    ruleMatchCount,
+    manualIncludeCount,
+    manualExcludeCount,
+    algorithm: 'rule_matches_plus_manual_includes_minus_manual_excludes',
+    formula: 'effective = ruleMatches + manualIncludes - manualExcludes',
+  };
+}
+
+/**
+ * @function listLeadViewMembershipOverrides
+ * @description Lists active membership overrides for a Lead view.
+ * @param {string} viewId Lead view id.
+ * @param {object} context Request context.
+ * @returns {Promise<object>} Membership override list and summary.
+ * @collaboration Custom view CRUD, manual membership controls, audit explanation, and selected-row productivity.
+ */
+async function listLeadViewMembershipOverrides(viewId, context = {}) {
+  const overrides = await CrmLeadViewMembershipOverride.find({
+    tenantId: context.tenantId,
+    viewId: String(viewId || ''),
+    status: 'active',
+  })
+    .sort({ updatedAt: -1 })
+    .lean();
+
+  return {
+    overrides,
+    summary: {
+      includeCount: overrides.filter((override) => override.mode === 'include').length,
+      excludeCount: overrides.filter((override) => override.mode === 'exclude').length,
+      totalCount: overrides.length,
+    },
+  };
+}
+
+/**
+ * @function applyLeadViewMembershipOverrides
+ * @description Applies manual include/exclude overrides to rule-matched Lead records.
+ * @param {object} view Lead view document.
+ * @param {object[]} ruleMatchedLeads Leads matching saved criteria.
+ * @param {object[]} allLeads All live leads in scope.
+ * @param {object} context Request context.
+ * @returns {Promise<object>} Effective leads and membership summary.
+ * @collaboration Rule engine, manual include, manual exclude, live backend records, and million-record-safe collection semantics.
+ */
+async function applyLeadViewMembershipOverrides(
+  view,
+  ruleMatchedLeads = [],
+  allLeads = [],
+  context = {}
+) {
+  const overrides = await CrmLeadViewMembershipOverride.find({
+    tenantId: context.tenantId,
+    viewId: String(view?._id || view?.id || ''),
+    status: 'active',
+  }).lean();
+
+  const includes = overrides.filter((override) => override.mode === 'include');
+  const excludes = overrides.filter((override) => override.mode === 'exclude');
+  const excludeIds = new Set(excludes.map((override) => String(override.leadId)));
+  const includeIds = new Set(includes.map((override) => String(override.leadId)));
+  const leadsById = new Map(allLeads.map((lead) => [resolveLeadViewMembershipLeadId(lead), lead]));
+
+  const effectiveById = new Map();
+
+  for (const lead of ruleMatchedLeads) {
+    const leadId = resolveLeadViewMembershipLeadId(lead);
+    if (leadId && !excludeIds.has(leadId)) {
+      effectiveById.set(leadId, lead);
+    }
+  }
+
+  for (const leadId of includeIds) {
+    if (!excludeIds.has(leadId) && leadsById.has(leadId)) {
+      effectiveById.set(leadId, leadsById.get(leadId));
+    }
+  }
+
+  const effectiveLeads = Array.from(effectiveById.values());
+
+  return {
+    effectiveLeads,
+    summary: buildLeadViewMembershipSummary({
+      effectiveCount: effectiveLeads.length,
+      ruleMatchCount: ruleMatchedLeads.length,
+      manualIncludeCount: includes.length,
+      manualExcludeCount: excludes.length,
+    }),
+    overrides: {
+      includes,
+      excludes,
+    },
+  };
+}
+
+/**
+ * @function writeLeadViewMembershipOverrides
+ * @description Writes manual include or exclude overrides for a Lead view and records audit evidence on the view.
+ * @param {string} viewId Lead view id.
+ * @param {object} payload Membership payload.
+ * @param {object} context Request context.
+ * @param {string} mode Override mode.
+ * @returns {Promise<object|null>} Write result.
+ * @collaboration Selected rows, view membership engine, auditTrail, institutionalHeaders, and strikePayload.
+ */
+async function writeLeadViewMembershipOverrides(
+  viewId,
+  payload = {},
+  context = {},
+  mode = 'include'
+) {
+  const view = await CrmLeadView.findOne({
+    _id: viewId,
+    tenantId: context.tenantId,
+    status: 'active',
+  });
+
+  if (!view) return null;
+
+  const leadIds = normalizeLeadViewMembershipLeadIds(payload);
+  if (!leadIds.length) {
+    const error = new Error('No lead ids supplied for membership override.');
+    error.code = 'LEAD_VIEW_MEMBERSHIP_IDS_REQUIRED';
+    throw error;
+  }
+
+  const normalizedMode = mode === 'exclude' ? 'exclude' : 'include';
+  const auditReceiptId = createAuditReceiptId(normalizedMode === 'include' ? 'include' : 'exclude');
+  const now = new Date();
+
+  await CrmLeadViewMembershipOverride.bulkWrite(
+    leadIds.map((leadId) => ({
+      updateOne: {
+        filter: {
+          tenantId: context.tenantId,
+          viewId: String(viewId),
+          leadId,
+        },
+        update: {
+          $set: {
+            mode: normalizedMode,
+            reason: String(payload.reason || '').trim(),
+            status: 'active',
+            updatedBy: context.operatorUserId,
+            institutionalHeaders: context.institutionalHeaders,
+            strikePayload: context.strikePayload,
+            updatedAt: now,
+          },
+          $setOnInsert: {
+            tenantId: context.tenantId,
+            viewId: String(viewId),
+            leadId,
+            createdBy: context.operatorUserId,
+            createdAt: now,
+          },
+        },
+        upsert: true,
+      },
+    }))
+  );
+
+  view.updatedBy = context.operatorUserId;
+  view.auditTrail.push(
+    buildAuditEntry({
+      auditReceiptId,
+      action: normalizedMode === 'include' ? 'INCLUDE_LEADS_IN_VIEW' : 'EXCLUDE_LEADS_FROM_VIEW',
+      route: `/api/crm/leads/views/${viewId}/overrides/${normalizedMode}`,
+      tenantId: context.tenantId,
+      operatorUserId: context.operatorUserId,
+      criteriaHash: view.criteriaHash,
+      resultCount: leadIds.length,
+      institutionalHeaders: context.institutionalHeaders,
+      strikePayload: {
+        ...context.strikePayload,
+        leadIds,
+        mode: normalizedMode,
+      },
+    })
+  );
+
+  await view.save();
+
+  return {
+    view: view.toObject(),
+    leadIds,
+    mode: normalizedMode,
+    auditReceiptId,
+    membership: await listLeadViewMembershipOverrides(viewId, context),
+  };
+}
+
+/**
+ * @function includeLeadViewMembers
+ * @description Adds selected leads to a Lead view as manual include overrides.
+ * @param {string} viewId Lead view id.
+ * @param {object} payload Membership payload.
+ * @param {object} context Request context.
+ * @returns {Promise<object|null>} Include result.
+ * @collaboration Selected-row add action, live collection membership, backend evidence, and audit receipts.
+ */
+async function includeLeadViewMembers(viewId, payload = {}, context = {}) {
+  return writeLeadViewMembershipOverrides(viewId, payload, context, 'include');
+}
+
+/**
+ * @function excludeLeadViewMembers
+ * @description Removes selected leads from a Lead view as manual exclude overrides.
+ * @param {string} viewId Lead view id.
+ * @param {object} payload Membership payload.
+ * @param {object} context Request context.
+ * @returns {Promise<object|null>} Exclude result.
+ * @collaboration Selected-row remove action, live collection membership, backend evidence, and audit receipts.
+ */
+async function excludeLeadViewMembers(viewId, payload = {}, context = {}) {
+  return writeLeadViewMembershipOverrides(viewId, payload, context, 'exclude');
+}
+
+/**
+ * @function clearLeadViewMembershipOverride
+ * @description Clears a manual membership override for a Lead view and records audit evidence.
+ * @param {string} viewId Lead view id.
+ * @param {string} leadId Lead id.
+ * @param {object} context Request context.
+ * @returns {Promise<object|null>} Clear result.
+ * @collaboration Manual membership cleanup, audit retention, selected-row correction, and view productivity.
+ */
+async function clearLeadViewMembershipOverride(viewId, leadId, context = {}) {
+  const view = await CrmLeadView.findOne({
+    _id: viewId,
+    tenantId: context.tenantId,
+    status: 'active',
+  });
+
+  if (!view) return null;
+
+  const existing = await CrmLeadViewMembershipOverride.findOne({
+    tenantId: context.tenantId,
+    viewId: String(viewId),
+    leadId: String(leadId || ''),
+    status: 'active',
+  });
+
+  if (!existing) {
+    return {
+      view: view.toObject(),
+      cleared: false,
+      leadId: String(leadId || ''),
+      membership: await listLeadViewMembershipOverrides(viewId, context),
+    };
+  }
+
+  existing.status = 'cleared';
+  existing.updatedBy = context.operatorUserId;
+  existing.institutionalHeaders = context.institutionalHeaders;
+  existing.strikePayload = context.strikePayload;
+  await existing.save();
+
+  const auditReceiptId = createAuditReceiptId('clear');
+  view.updatedBy = context.operatorUserId;
+  view.auditTrail.push(
+    buildAuditEntry({
+      auditReceiptId,
+      action: 'CLEAR_LEAD_VIEW_MEMBERSHIP_OVERRIDE',
+      route: `/api/crm/leads/views/${viewId}/overrides/${leadId}`,
+      tenantId: context.tenantId,
+      operatorUserId: context.operatorUserId,
+      criteriaHash: view.criteriaHash,
+      institutionalHeaders: context.institutionalHeaders,
+      strikePayload: {
+        ...context.strikePayload,
+        leadId: String(leadId || ''),
+        previousMode: existing.mode,
+      },
+    })
+  );
+
+  await view.save();
+
+  return {
+    view: view.toObject(),
+    cleared: true,
+    leadId: String(leadId || ''),
+    auditReceiptId,
+    membership: await listLeadViewMembershipOverrides(viewId, context),
+  };
+}
+
+// P60K5Q10FG103B_VIEW_MEMBERSHIP_OVERRIDE_ENGINE
+
+/**
  * @function runLeadView
  * @description Executes a saved Lead view against live backend Lead records.
  * @collaboration Live counts, custom views, Wilsy AI answer tools, audit receipts, and backend analytics.
@@ -370,7 +702,9 @@ async function runLeadView(viewId, context = {}) {
 
   const startedAt = Date.now();
   const leads = await listLiveLeadRecords(context);
-  const matchedLeads = leads.filter((lead) => doesLeadMatchCustomCriteria(lead, view.criteria));
+  const ruleMatchedLeads = leads.filter((lead) => doesLeadMatchCustomCriteria(lead, view.criteria));
+  const membership = await applyLeadViewMembershipOverrides(view, ruleMatchedLeads, leads, context);
+  const matchedLeads = membership.effectiveLeads;
   const durationMs = Date.now() - startedAt;
   const auditReceiptId = createAuditReceiptId('run');
 
@@ -407,6 +741,7 @@ async function runLeadView(viewId, context = {}) {
       ruleEngineVersion: RULE_ENGINE_VERSION,
       auditReceiptId,
       durationMs,
+      membership: membership.summary,
     },
   };
 }
@@ -450,6 +785,10 @@ async function explainLeadCategories(context = {}) {
 }
 
 export {
+  clearLeadViewMembershipOverride,
+  excludeLeadViewMembers,
+  includeLeadViewMembers,
+  listLeadViewMembershipOverrides,
   archiveLeadView,
   createLeadView,
   explainLeadCategories,

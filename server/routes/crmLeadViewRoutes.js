@@ -1,6 +1,10 @@
 /* eslint-disable */
 import express from 'express';
 import {
+  clearLeadViewMembershipOverride,
+  excludeLeadViewMembers,
+  includeLeadViewMembers,
+  listLeadViewMembershipOverrides,
   archiveLeadView,
   createLeadView,
   explainLeadCategories,
@@ -187,6 +191,116 @@ async function explainLeadCategoriesHandler(req, res) {
   }
 }
 
+/**
+ * @function listLeadViewMembershipOverridesHandler
+ * @description Lists manual include/exclude overrides for a saved Lead view.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} Response promise.
+ * @collaboration View Membership Engine, selected-row controls, audit evidence, and backend collection state.
+ */
+async function listLeadViewMembershipOverridesHandler(req, res) {
+  try {
+    const context = resolveRequestContext(req);
+    const result = await listLeadViewMembershipOverrides(req.params.viewId, context);
+
+    res.status(200).json({
+      ok: true,
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+/**
+ * @function includeLeadViewMembersHandler
+ * @description Adds selected leads to a saved Lead view as manual include overrides.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} Response promise.
+ * @collaboration View Membership Engine, selected rows, signed requests, and audit receipts.
+ */
+async function includeLeadViewMembersHandler(req, res) {
+  try {
+    const context = resolveRequestContext(req);
+    const result = await includeLeadViewMembers(req.params.viewId, req.body, context);
+
+    if (!result) {
+      return res.status(404).json({ ok: false, success: false, error: 'LEAD_VIEW_NOT_FOUND' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    return sendError(res, error);
+  }
+}
+
+/**
+ * @function excludeLeadViewMembersHandler
+ * @description Removes selected leads from a saved Lead view as manual exclude overrides.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} Response promise.
+ * @collaboration View Membership Engine, selected rows, signed requests, and audit receipts.
+ */
+async function excludeLeadViewMembersHandler(req, res) {
+  try {
+    const context = resolveRequestContext(req);
+    const result = await excludeLeadViewMembers(req.params.viewId, req.body, context);
+
+    if (!result) {
+      return res.status(404).json({ ok: false, success: false, error: 'LEAD_VIEW_NOT_FOUND' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    return sendError(res, error);
+  }
+}
+
+/**
+ * @function clearLeadViewMembershipOverrideHandler
+ * @description Clears a manual include/exclude override for a saved Lead view.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} Response promise.
+ * @collaboration Override cleanup, selected-row correction, audit receipts, and live view membership.
+ */
+async function clearLeadViewMembershipOverrideHandler(req, res) {
+  try {
+    const context = resolveRequestContext(req);
+    const result = await clearLeadViewMembershipOverride(
+      req.params.viewId,
+      req.params.leadId,
+      context
+    );
+
+    if (!result) {
+      return res.status(404).json({ ok: false, success: false, error: 'LEAD_VIEW_NOT_FOUND' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    return sendError(res, error);
+  }
+}
+
+// P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTE_HANDLERS
+
 router.get('/', listLeadViews);
 router.post('/query', listLeadViews); // P60K5Q10FG98F_AUDITED_READ_COMMANDS
 router.post('/list', listLeadViews); // P60K5Q10FG98F_AUDITED_READ_COMMANDS
@@ -196,6 +310,10 @@ router.delete('/:viewId', archiveLeadViewHandler);
 router.post('/preview', previewLeadViewHandler);
 router.get('/categories/summary', explainLeadCategoriesHandler);
 router.post('/categories/summary', explainLeadCategoriesHandler); // P60K5Q10FG98F_AUDITED_READ_COMMANDS
+router.get('/:viewId/overrides', listLeadViewMembershipOverridesHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
+router.post('/:viewId/overrides/include', includeLeadViewMembersHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
+router.post('/:viewId/overrides/exclude', excludeLeadViewMembersHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
+router.delete('/:viewId/overrides/:leadId', clearLeadViewMembershipOverrideHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
 router.post('/:viewId/run', runLeadViewHandler);
 
 export default router;
