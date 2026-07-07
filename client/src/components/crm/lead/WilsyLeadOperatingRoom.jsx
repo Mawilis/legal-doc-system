@@ -3062,6 +3062,86 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     return leadOrganizerLiveViews.find(view => view.id === activeListViewId) || leadOrganizerLiveViews[0] || activeListView;
   }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
+  useEffect(() => {
+    /* P60K5Q10FG93E_RUNTIME_FIXED_ORGANIZER_GEOMETRY */
+    if (!viewMenuOpen || typeof document === 'undefined' || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      const menuNodes = Array.from(document.querySelectorAll('section[aria-label="Lead list views"]'));
+
+      menuNodes.forEach((menuNode) => {
+        const shellNode = menuNode.closest('[data-wilsy-leads-organizer-shell="true"], [class*="leadViewCluster"]');
+        const buttonNode = shellNode?.querySelector?.('[data-wilsy-leads-organizer-wrap="true"] > button, button');
+        const anchorNode = buttonNode || shellNode || menuNode;
+        const anchorRect = anchorNode.getBoundingClientRect();
+
+        if (!anchorRect.width || !anchorRect.height) {
+          return;
+        }
+
+        const desiredWidth = 168;
+        const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - desiredWidth - 12));
+        const top = Math.max(8, Math.min(anchorRect.bottom + 6, window.innerHeight - 154));
+        const maxHeight = Math.max(92, Math.min(136, window.innerHeight - top - 72));
+
+        menuNode.setAttribute('data-wilsy-leads-runtime-fixed-menu', 'true');
+        menuNode.style.setProperty('position', 'fixed', 'important');
+        menuNode.style.setProperty('left', `${left}px`, 'important');
+        menuNode.style.setProperty('right', 'auto', 'important');
+        menuNode.style.setProperty('top', `${top}px`, 'important');
+        menuNode.style.setProperty('bottom', 'auto', 'important');
+        menuNode.style.setProperty('width', `${desiredWidth}px`, 'important');
+        menuNode.style.setProperty('min-width', `${desiredWidth}px`, 'important');
+        menuNode.style.setProperty('max-width', `${desiredWidth}px`, 'important');
+        menuNode.style.setProperty('height', 'auto', 'important');
+        menuNode.style.setProperty('max-height', `${maxHeight}px`, 'important');
+        menuNode.style.setProperty('overflow-y', 'auto', 'important');
+        menuNode.style.setProperty('overflow-x', 'hidden', 'important');
+        menuNode.style.setProperty('overscroll-behavior', 'contain', 'important');
+        menuNode.style.setProperty('padding', '4px', 'important');
+        menuNode.style.setProperty('margin', '0', 'important');
+        menuNode.style.setProperty('box-sizing', 'border-box', 'important');
+        menuNode.style.setProperty('border-radius', '10px', 'important');
+        menuNode.style.setProperty('background', '#070312', 'important');
+        menuNode.style.setProperty('border', '1px solid rgba(147, 119, 255, 0.74)', 'important');
+        menuNode.style.setProperty('box-shadow', '0 10px 22px rgba(0, 0, 0, 0.78)', 'important');
+        menuNode.style.setProperty('backdrop-filter', 'none', 'important');
+        menuNode.style.setProperty('z-index', '9000', 'important');
+        menuNode.style.setProperty('contain', 'layout paint', 'important');
+        menuNode.style.setProperty('clip-path', 'inset(0 round 10px)', 'important');
+
+        Array.from(menuNode.querySelectorAll('button')).forEach((buttonNode) => {
+          buttonNode.style.setProperty('width', '100%', 'important');
+          buttonNode.style.setProperty('max-width', '100%', 'important');
+          buttonNode.style.setProperty('min-width', '0', 'important');
+          buttonNode.style.setProperty('height', '26px', 'important');
+          buttonNode.style.setProperty('min-height', '26px', 'important');
+          buttonNode.style.setProperty('padding', '3px 6px', 'important');
+          buttonNode.style.setProperty('margin', '0 0 4px 0', 'important');
+          buttonNode.style.setProperty('display', 'grid', 'important');
+          buttonNode.style.setProperty('grid-template-rows', '13px 10px', 'important');
+          buttonNode.style.setProperty('overflow', 'hidden', 'important');
+          buttonNode.style.setProperty('box-sizing', 'border-box', 'important');
+        });
+
+        Array.from(menuNode.querySelectorAll('span, em, strong')).forEach((textNode) => {
+          textNode.style.setProperty('max-width', '148px', 'important');
+          textNode.style.setProperty('min-width', '0', 'important');
+          textNode.style.setProperty('overflow', 'hidden', 'important');
+          textNode.style.setProperty('text-overflow', 'ellipsis', 'important');
+          textNode.style.setProperty('white-space', 'nowrap', 'important');
+          textNode.style.setProperty('line-height', '1', 'important');
+        });
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [viewMenuOpen, activeListViewId, leadOrganizerLiveViews.length]);
+
 
   const complianceMetrics = useMemo(() => {
     const total = leads.length;

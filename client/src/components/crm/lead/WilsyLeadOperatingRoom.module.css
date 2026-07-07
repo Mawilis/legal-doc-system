@@ -10682,3 +10682,50 @@ td[data-wilsy-lead-empty-state="records"] {
   border-color: rgba(87, 219, 153, 0.48);
   background: rgba(36, 145, 98, 0.22);
 }
+
+/* P60K5Q10FG93E - Runtime fixed Organizer geometry safety net
+   Inline runtime geometry is authoritative; these rules protect against
+   late stylesheet overrides and keep the list-view menu compact. */
+[data-wilsy-leads-runtime-fixed-menu="true"] {
+  position: fixed !important;
+  width: 168px !important;
+  min-width: 168px !important;
+  max-width: 168px !important;
+  height: auto !important;
+  max-height: 136px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  box-sizing: border-box !important;
+  background: #070312 !important;
+  border: 1px solid rgba(147, 119, 255, 0.74) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: none !important;
+  z-index: 9000 !important;
+  contain: layout paint !important;
+  clip-path: inset(0 round 10px) !important;
+}
+
+[data-wilsy-leads-runtime-fixed-menu="true"] button {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  padding: 3px 6px !important;
+  margin: 0 0 4px 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+[data-wilsy-leads-runtime-fixed-menu="true"] span,
+[data-wilsy-leads-runtime-fixed-menu="true"] em,
+[data-wilsy-leads-runtime-fixed-menu="true"] strong {
+  max-width: 148px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
