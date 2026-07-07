@@ -11377,10 +11377,9 @@ td[data-wilsy-lead-empty-state="records"] {
   color: rgba(255, 195, 205, 0.98);
 }
 
-/* P60K5Q10FG102F_VERIFIED_SCROLL_MATH_COMPACT_ORGANIZER
-   Browser proof showed clientHeight === scrollHeight, so no scroll was possible.
-   This preserves the approved 220px width and 42px row rhythm, then caps only the
-   visible viewport so the compact menu can actually scroll. */
+/* P60K5Q10FG102J_APPROVED_COMPACT_ORGANIZER_SCROLL_MATH
+   Final approved compact geometry: 220px menu, 42px rows, 294px scroll viewport.
+   Do not change width, row height, or copy from this block. */
 :global(section[aria-label="Lead list views"]) {
   width: 220px !important;
   min-width: 220px !important;
