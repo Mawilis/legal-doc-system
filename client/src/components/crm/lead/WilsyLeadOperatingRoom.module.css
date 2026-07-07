@@ -11377,24 +11377,59 @@ td[data-wilsy-lead-empty-state="records"] {
   color: rgba(255, 195, 205, 0.98);
 }
 
-/* P60K5Q10FG102E_SCROLL_ONLY_COMPACT_ORGANIZER
-   Approved geometry is preserved: 220px menu, 42px rows. This only enables menu-local scrolling. */
-.leadOrganizerCompactMenu {
+/* P60K5Q10FG102F_VERIFIED_SCROLL_MATH_COMPACT_ORGANIZER
+   Browser proof showed clientHeight === scrollHeight, so no scroll was possible.
+   This preserves the approved 220px width and 42px row rhythm, then caps only the
+   visible viewport so the compact menu can actually scroll. */
+:global(section[aria-label="Lead list views"]) {
   width: 220px !important;
   min-width: 220px !important;
   max-width: 220px !important;
-  max-height: 390px !important;
+
+  max-height: 294px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-y !important;
   pointer-events: auto !important;
+
+  grid-auto-rows: 42px !important;
+  align-content: start !important;
   scrollbar-width: thin !important;
 }
 
-.leadOrganizerCompactMenu > button {
+:global(section[aria-label="Lead list views"] > button) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
   height: 42px !important;
   min-height: 42px !important;
   max-height: 42px !important;
+
+  flex: 0 0 42px !important;
+  box-sizing: border-box !important;
+}
+
+:global(section[aria-label="Lead list views"] > button span),
+:global(section[aria-label="Lead list views"] > button strong),
+:global(section[aria-label="Lead list views"] > button em) {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+:global(section[aria-label="Lead list views"]::-webkit-scrollbar) {
+  width: 6px !important;
+}
+
+:global(section[aria-label="Lead list views"]::-webkit-scrollbar-track) {
+  background: rgba(9, 14, 25, 0.92) !important;
+  border-radius: 999px !important;
+}
+
+:global(section[aria-label="Lead list views"]::-webkit-scrollbar-thumb) {
+  background: linear-gradient(180deg, rgba(156, 126, 255, 0.94), rgba(126, 255, 188, 0.76)) !important;
+  border-radius: 999px !important;
 }
