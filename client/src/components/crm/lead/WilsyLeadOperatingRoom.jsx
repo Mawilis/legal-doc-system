@@ -1500,6 +1500,63 @@ function resolveLeadListView(listViewId = 'ALL_LEADS') {
 }
 
 /**
+ * @function resolveWilsyFG92BLeadOrganizerCountLabel
+ * @description Builds the live backend count label for a Leads Organizer option.
+ * @param {number} count - Matching live backend Lead count.
+ * @param {number} total - Total live backend Lead count.
+ * @returns {string} Count label.
+ * @collaboration Leads Organizer dropdown, live backend rows, list-view counts, and Records grid operating evidence.
+ */
+function resolveWilsyFG92BLeadOrganizerCountLabel(count = 0, total = 0) {
+  const safeCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+  const safeTotal = Number.isFinite(Number(total)) ? Number(total) : 0;
+
+  if (!safeTotal) {
+    return '0 live backend rows';
+  }
+
+  return `${safeCount} of ${safeTotal} live backend rows`;
+}
+
+/**
+ * @function buildWilsyFG92BLiveLeadOrganizerViews
+ * @description Enriches static Lead list-view definitions with live backend row counts and source-backed details.
+ * @param {Object[]} sourceRows - Live backend Lead rows.
+ * @returns {Object[]} Live backend organizer view models.
+ * @collaboration LEAD_LIST_VIEWS, doesLeadMatchListView, Leads Organizer dropdown, active list filtering, and live Records grid.
+ */
+function buildWilsyFG92BLiveLeadOrganizerViews(sourceRows = []) {
+  /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MODEL */
+  const liveRows = Array.isArray(sourceRows) ? sourceRows : [];
+  const totalRows = liveRows.length;
+
+  return leadOrganizerLiveViews.map((view) => {
+    const matchingRows = view?.id === 'ALL'
+      ? liveRows
+      : liveRows.filter((record) => {
+          try {
+            return doesLeadMatchListView(record, view.id);
+          } catch (error) {
+            return false;
+          }
+        });
+
+    const liveCount = matchingRows.length;
+    const baseDetail = String(view.detail || '').replace(/\s+/g, ' ').trim();
+    const countLabel = resolveWilsyFG92BLeadOrganizerCountLabel(liveCount, totalRows);
+
+    return {
+      ...view,
+      liveCount,
+      liveTotal: totalRows,
+      detail: baseDetail ? `${countLabel} · ${baseDetail}` : countLabel,
+      liveBackendConnected: true,
+    };
+  });
+}
+
+
+/**
  * @function doesLeadMatchListView
  * @description Checks whether a lead belongs in the active module list view.
  * @param {Object} record - Lead record.
@@ -2813,6 +2870,15 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     source: 'global-command-center'
   }), [globalThemeAuthorityLabel, leadSkin, themeRuntime]);
   const activeListView = useMemo(() => resolveLeadListView(activeListViewId), [activeListViewId]);
+
+  const leadOrganizerLiveViews = useMemo(() => (
+    buildWilsyFG92BLiveLeadOrganizerViews(leads)
+  ), [leads]);
+
+  const activeLeadOrganizerView = useMemo(() => {
+    /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MEMO */
+    return leadOrganizerLiveViews.find(view => view.id === activeListViewId) || leadOrganizerLiveViews[0] || activeListView;
+  }, [activeListView, activeListViewId, leadOrganizerLiveViews]);
 
 
   const complianceMetrics = useMemo(() => {
@@ -4616,11 +4682,19 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         >
           <section className={styles.leadViewCluster}>
             <div className={styles.leadDropdownWrap}>
-              <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
+              <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => {
+                    const nextOpen = !previous;
+                    if (nextOpen) {
+                      setSortMenuOpen(false);
+                      setCreateMenuOpen(false);
+                      setMoreMenuOpen(false);
+                    }
+                    return nextOpen;
+                  })}>
                 <List size={18} />
                 <span>
-                  <strong>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</strong>
-                  <em>{activeListView.detail}</em>
+                  <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListView.id)}</strong>
+                  <em>{activeLeadOrganizerView.detail}</em>
                 </span>
                 <ChevronDown size={16} />
               </button>
@@ -5305,8 +5379,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <button type="button" className={styles.leadViewButton} onClick={() => setViewMenuOpen(previous => !previous)}>
               <SlidersHorizontal size={18} />
               <span>
-                <strong>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</strong>
-                <em>{activeListView.detail}</em>
+                <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListView.id)}</strong>
+                <em>{activeLeadOrganizerView.detail}</em>
               </span>
               <ChevronDown size={16} />
             </button>
@@ -5671,7 +5745,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         <section className={styles.leadRecordsPanel}>
           <header className={styles.leadRecordsHeader}>
             <span>
-              <small>{resolveLeadOperatingCopyLabel(activeListView.label, activeListView.id)}</small>
+              <small>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeListView.id)}</small>
               <strong>{filteredLeads.length} records</strong>
               <em>{selectedRowIds.length ? `${selectedRowIds.length} selected` : selectedLeadFilterOptions.size ? `${selectedLeadFilterOptions.size} active filters · ${baseFilteredLeads.length} source rows` : `${activeSort.label} order`}</em>
             </span>
