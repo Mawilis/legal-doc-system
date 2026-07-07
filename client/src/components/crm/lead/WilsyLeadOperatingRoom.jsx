@@ -3030,30 +3030,137 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     ...leadCustomViews,
   ]), [leadCustomViews]);
 
+    /**
+   * @function resolveWilsyLeadViewRegistryUrl
+   * @description Resolves the backend Lead View Registry route for saved custom views.
+   * @returns {string} Lead View Registry route.
+   * @collaboration Custom View Builder, backend CRUD, audit receipts, and tenant view persistence.
+   */
+  function resolveWilsyLeadViewRegistryUrl() {
+    const apiBase = String(import.meta.env?.VITE_API_URL || '').replace(/\/$/, '');
+    return `${apiBase}/api/crm/leads/views`;
+  }
+
   /**
+   * @function resolveWilsyLeadViewRegistryIdentity
+   * @description Resolves tenant and operator identity for Lead View Registry persistence.
+   * @returns {object} Registry identity.
+   * @collaboration Multi-tenant CRM, institutional headers, operator evidence, and saved view ownership.
+   */
+  function resolveWilsyLeadViewRegistryIdentity() {
+    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+
+    return {
+      tenantId: storage?.getItem('wilsy.tenantId') || storage?.getItem('tenantId') || 'MASTER',
+      operatorUserId: storage?.getItem('wilsy.operatorUserId') || storage?.getItem('userId') || storage?.getItem('operatorId') || 'wilsy-operator'
+    };
+  }
+
+  /**
+   * @function buildWilsyLeadViewRegistryPayload
+   * @description Builds institutional Lead View Registry payload evidence from a custom view.
+   * @param {object} viewPayload Custom view payload.
+   * @returns {object} Backend payload.
+   * @collaboration Custom View Builder, strike payload evidence, backend persistence, and Wilsy AI view memory.
+   */
+  function buildWilsyLeadViewRegistryPayload(viewPayload = {}) {
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const generatedAt = new Date().toISOString();
+    const institutionalHeaders = {
+      tenantId: identity.tenantId,
+      operatorUserId: identity.operatorUserId,
+      route: '/api/crm/leads/views',
+      commandSurface: 'CRM_LEADS_CUSTOM_VIEW_BUILDER',
+      generatedAt
+    };
+
+    return {
+      ...viewPayload,
+      tenantId: identity.tenantId,
+      ownerUserId: identity.operatorUserId,
+      source: 'lead-custom-view-builder',
+      uiVersion: 'FG98C',
+      institutionalHeaders,
+      strikePayload: {
+        action: 'CREATE_LEAD_VIEW',
+        route: '/api/crm/leads/views',
+        commandSurface: 'CRM_LEADS_CUSTOM_VIEW_BUILDER',
+        generatedAt,
+        institutionalHeaders,
+        criteria: viewPayload.criteria || [],
+        visibility: viewPayload.visibility || 'private'
+      }
+    };
+  }
+
+  /**
+   * @function persistWilsyLeadCustomViewToRegistry
+   * @description Persists a Lead Custom View to the backend Lead View Registry with audit evidence.
+   * @param {object} viewPayload Custom view payload.
+   * @returns {Promise<object|null>} Persisted backend view or null fallback.
+   * @collaboration Backend CRUD, Custom View Builder, tenant persistence, and audit receipts.
+   */
+  async function persistWilsyLeadCustomViewToRegistry(viewPayload = {}) {
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const response = await fetch(resolveWilsyLeadViewRegistryUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': identity.tenantId,
+        'X-Operator-Id': identity.operatorUserId,
+        'X-Command-Surface': 'CRM_LEADS_CUSTOM_VIEW_BUILDER'
+      },
+      body: JSON.stringify(buildWilsyLeadViewRegistryPayload(viewPayload))
+    });
+
+    if (!response.ok) {
+      throw new Error(`Lead View Registry save failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result?.view || null;
+  }
+
+  // P60K5Q10FG98C_LEAD_VIEW_REGISTRY_CLIENT
+
+/**
    * @function handleSaveLeadCustomView
    * @description Saves a custom Lead view into local workspace state, selects it, resets pagination, and closes the builder.
    * @param {Object} viewPayload - Custom Lead view payload from the builder.
    * @returns {void}
    * @collaboration Lead Custom View Builder, Leads Organizer, local saved views, pagination reset, and live Records filtering.
    */
-  const handleSaveLeadCustomView = (viewPayload = {}) => {
-    /* P60K5Q10FG93I_CUSTOM_VIEW_SAVE_HANDLER */
-    /* P60K5Q10FG93B_CUSTOM_VIEW_SAVE_HANDLER */
+  const handleSaveLeadCustomView = async (viewPayload = {}) => {
+    /* P60K5Q10FG98C_BACKEND_PERSISTED_CUSTOM_VIEW_SAVE */
+    let persistedBackendView = null;
+
+    try {
+      persistedBackendView = await persistWilsyLeadCustomViewToRegistry(viewPayload);
+    } catch (error) {
+      console.warn('[WILSY CRM] Lead View Registry save fallback engaged', error);
+    }
+
+    const backendAuditTrail = Array.isArray(persistedBackendView?.auditTrail) ? persistedBackendView.auditTrail : [];
+    const latestAuditEntry = backendAuditTrail[backendAuditTrail.length - 1] || {};
+    const finalViewPayload = {
+      ...viewPayload,
+      backendViewId: persistedBackendView?._id || persistedBackendView?.id || viewPayload.backendViewId || '',
+      auditReceiptId: latestAuditEntry.auditReceiptId || viewPayload.auditReceiptId || '',
+      criteriaHash: persistedBackendView?.criteriaHash || viewPayload.criteriaHash || '',
+      persistedBackend: Boolean(persistedBackendView),
+      persistedAt: new Date().toISOString()
+    };
     const nextViews = [
-      viewPayload,
-      ...leadCustomViews.filter(view => view.id !== viewPayload.id),
-    ].slice(0, 24);
+      ...leadCustomViews.filter(view => view.id !== finalViewPayload.id),
+      finalViewPayload
+    ];
 
-    setLeadCustomViews(nextViews);
-    setActiveListViewId(viewPayload.id);
-    setLeadPage(1);
-    setViewMenuOpen(false);
-    setLeadCustomViewBuilderOpen(false);
-
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
     }
+
+    setLeadCustomViews(nextViews);
+    setActiveListViewId(finalViewPayload.id);
   };
 
   const leadOrganizerLiveViews = useMemo(() => (

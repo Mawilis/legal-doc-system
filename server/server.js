@@ -1,4 +1,5 @@
 /* eslint-disable */
+const crmLeadViewRoutes = require('./routes/crmLeadViewRoutes');
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                                                                                        ║
@@ -1330,6 +1331,7 @@ app.get('/api/forensics-status', forensicsController.forensicsStatus);
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/source-registry', sourceRegistryRoutes);
 app.use('/api/crm/control-state', crmControlStateRoutes);
+app.use('/api/crm/leads/views', crmLeadViewRoutes);
 app.use('/api/account', wilsyAccountIdentityPostureRoutes);
 app.use('/api', apiRouter);
 app.use('/api/billing-advanced', billingAdvancedRoutes);
