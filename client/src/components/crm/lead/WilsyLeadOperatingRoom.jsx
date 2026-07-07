@@ -5276,10 +5276,6 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
               {viewMenuOpen ? (
                 <section className={styles.leadOrganizerCompactMenu} data-wilsy-leads-organizer-compact-menu="FG97" aria-label="Lead list views"
               data-wilsy-leads-organizer-menu="true">
-              <div className={styles.leadOrganizerArrivalCopy} data-wilsy-lead-organizer-arrival="P60K5Q10FG101B_ARRIVAL_COPY">
-                <strong>Wilsy OS has arrived</strong>
-                <span>Every view is live-linked to backend Lead records.</span>
-              </div>
                   {/* P60K5Q10FG92G_DROPDOWN_LIVE_COMPACT_SOURCE */}
                   {leadOrganizerLiveViews.map(view => (
                     <button
