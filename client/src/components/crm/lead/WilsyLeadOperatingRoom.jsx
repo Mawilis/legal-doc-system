@@ -83,6 +83,148 @@ function normalizeWilsyR91KOwnerWrapperValue(value) {
  * @returns {string} Owner table display label.
  * @collaboration Records table Owner column, Lead Edit owner resolver, source-backed CRM row rendering.
  */
+
+/**
+ * @function resolveWilsyFG91FOwnerCandidateText
+ * @description Normalizes candidate owner identity text for safe top-level owner fallback resolution.
+ * @param {*} value - Candidate owner value.
+ * @returns {string} Normalized owner text.
+ * @collaboration Top-level Leads owner table display, ErrorBoundary recovery, current operator fallback, and CRM performance ownership.
+ */
+function resolveWilsyFG91FOwnerCandidateText(value = '') {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * @function resolveWilsyFG91FOwnerNameFromCandidate
+ * @description Resolves a display name from a possible browser current-user or operator packet.
+ * @param {Object} candidate - Candidate owner profile packet.
+ * @returns {string} Owner display name.
+ * @collaboration Browser auth cache, tenant operator context, top-level Leads owner display, and crash-safe rendering.
+ */
+function resolveWilsyFG91FOwnerNameFromCandidate(candidate = {}) {
+  const nested = candidate.user || candidate.profile || candidate.operator || candidate.account || candidate.identity || {};
+  const source = { ...nested, ...candidate };
+  const firstName = resolveWilsyFG91FOwnerCandidateText(source.firstName || source.givenName);
+  const lastName = resolveWilsyFG91FOwnerCandidateText(source.lastName || source.surname || source.familyName);
+  const joinedName = [firstName, lastName].filter(Boolean).join(' ');
+
+  return resolveWilsyFG91FOwnerCandidateText(
+    source.displayName ||
+    source.name ||
+    source.fullName ||
+    source.operatorName ||
+    source.userName ||
+    source.username ||
+    joinedName
+  );
+}
+
+/**
+ * @function collectWilsyFG91FOwnerFallbackCandidates
+ * @description Collects safe browser-side owner identity candidates without relying on failing auth/profile probes.
+ * @returns {Object[]} Candidate owner identity packets.
+ * @collaboration Local/session storage, browser operator globals, Leads owner display, and runtime crash recovery.
+ */
+function collectWilsyFG91FOwnerFallbackCandidates() {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const candidates = [
+    window.__WILSY_CURRENT_USER__,
+    window.__WILSY_USER__,
+    window.__WILSY_OPERATOR__,
+    window.__WILSY_OPERATOR_CONTEXT__,
+    window.__WILSY_AUTH_USER__,
+    window.WILSY_USER,
+    window.WILSY_AUTH_USER,
+    window.wilsyUser,
+    window.wilsyOperator,
+    window.sovereignUser,
+  ].filter(candidate => candidate && typeof candidate === 'object');
+
+  const storageKeys = [
+    'wilsy.currentUser',
+    'wilsy.user',
+    'wilsy.operator',
+    'wilsy.operator.profile',
+    'wilsy.account.profile',
+    'wilsy.auth.user',
+    'wilsy.user.profile',
+    'wilsy.profile',
+    'currentUser',
+    'user',
+    'operator',
+    'profile',
+    'accountProfile',
+    'authUser',
+    'tenantUser',
+    'tenantOperator',
+    'sovereignUser',
+  ];
+
+  [window.localStorage, window.sessionStorage].forEach((storage) => {
+    storageKeys.forEach((key) => {
+      try {
+        const parsed = JSON.parse(storage?.getItem?.(key) || 'null');
+
+        if (parsed && typeof parsed === 'object') {
+          candidates.push(parsed);
+        }
+      } catch (error) {}
+    });
+  });
+
+  return candidates;
+}
+
+/**
+ * @function resolveWilsyFG91FCurrentOwnerFallbackName
+ * @description Resolves a crash-safe top-level current owner name for the Leads owner column.
+ * @returns {string} Owner fallback display name.
+ * @collaboration resolveWilsyR91KOwnerTableDisplay, AI-created Lead rows, operator performance tracking, and ErrorBoundary protection.
+ */
+function resolveWilsyFG91FCurrentOwnerFallbackName() {
+  /* P60K5Q10FG91F_TOP_LEVEL_OWNER_FALLBACK_RUNTIME */
+  const candidates = collectWilsyFG91FOwnerFallbackCandidates();
+
+  for (const candidate of candidates) {
+    const displayName = resolveWilsyFG91FOwnerNameFromCandidate(candidate);
+
+    if (displayName && !/^unassigned$/i.test(displayName) && displayName !== 'U' && displayName !== '-') {
+      return displayName;
+    }
+  }
+
+  return 'Wilson Khanyezi';
+}
+
+/**
+ * @function resolveWilsyFG91FCurrentOwnerFallbackInitials
+ * @description Resolves crash-safe top-level owner initials for the Leads owner avatar.
+ * @returns {string} Owner fallback initials.
+ * @collaboration Records owner avatar, current operator fallback, AI-created Lead rows, and CRM performance ownership.
+ */
+function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
+  const ownerName = resolveWilsyFG91FCurrentOwnerFallbackName();
+  const parts = ownerName.split(' ').filter(Boolean);
+
+  if (!parts.length) {
+    return 'WK';
+  }
+
+  return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
+}
+
+/**
+ * @function resolveWilsyR91KOwnerTableDisplay
+ * @description Resolves the Records table owner label from backend owner fields and the crash-safe current-operator fallback.
+ * @param {Object} record - Lead record being rendered in the Records grid.
+ * @param {Function|null} fallbackResolver - Optional legacy fallback resolver.
+ * @returns {string} Owner table display label.
+ * @collaboration Records table Owner column, Lead Edit owner resolver, current-operator fallback, source-backed CRM row rendering, and ErrorBoundary recovery.
+ */
 function resolveWilsyR91KOwnerTableDisplay(record = {}, fallbackResolver = null) {
   const ownerEvidencePaths = [
     'wilsyResolvedOwnerLabel',
@@ -158,7 +300,7 @@ function resolveWilsyR91KOwnerTableDisplay(record = {}, fallbackResolver = null)
     }
   }
 
-  return resolveWilsyFG91ECurrentOwnerFallbackName();
+  return resolveWilsyFG91FCurrentOwnerFallbackName();
 }
 
 /**
@@ -2924,7 +3066,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       .filter(Boolean);
 
     if (!parts.length) {
-      return resolveWilsyFG91ECurrentOwnerFallbackInitials();
+      return resolveWilsyFG91FCurrentOwnerFallbackInitials();
     }
 
     return parts
@@ -3189,7 +3331,7 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
  * @returns {string} Current operator fallback display name.
  * @collaboration Records owner column, AI-created Lead rows, CRM performance ownership, and operator accountability.
  */
-function resolveWilsyFG91ECurrentOwnerFallbackName() {
+function resolveWilsyFG91FCurrentOwnerFallbackName() {
   /* P60K5Q10FG91E_OWNER_COLUMN_FALLBACK_REPAIR */
   if (typeof window !== 'undefined') {
     const candidates = [
@@ -3269,8 +3411,8 @@ function resolveWilsyFG91ECurrentOwnerFallbackName() {
  * @returns {string} Current operator fallback initials.
  * @collaboration Records owner avatar, CRM performance ownership, AI-created Lead rows, and accountability display.
  */
-function resolveWilsyFG91ECurrentOwnerFallbackInitials() {
-  const ownerName = resolveWilsyFG91ECurrentOwnerFallbackName();
+function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
+  const ownerName = resolveWilsyFG91FCurrentOwnerFallbackName();
   const parts = ownerName.split(' ').filter(Boolean);
 
   if (!parts.length) {
@@ -3367,10 +3509,10 @@ function resolveWilsyFG91ECurrentOwnerFallbackInitials() {
         position: title,
         roleTitle: title,
       } : {}),
-      ...((owner || resolveWilsyFG91ECurrentOwnerFallbackName()) ? {
+      ...((owner || resolveWilsyFG91FCurrentOwnerFallbackName()) ? {
         /* P60K5Q10FG91E_FINAL_SAVE_OWNER_FALLBACK_ALIAS */
-        owner: owner || resolveWilsyFG91ECurrentOwnerFallbackName(),
-        ownerName: owner || resolveWilsyFG91ECurrentOwnerFallbackName(),
+        owner: owner || resolveWilsyFG91FCurrentOwnerFallbackName(),
+        ownerName: owner || resolveWilsyFG91FCurrentOwnerFallbackName(),
         ownerDisplayName: owner,
         ownerFullName: owner,
         assignedTo: owner,
