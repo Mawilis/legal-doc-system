@@ -10109,76 +10109,149 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   // P60K5Q10FG104C_PROOF_PAYLOAD_EXPORTER
 
 
+
+  /**
+   * @function scoreWilsyProofMissionControl
+   * @description Scores the active Proof Cockpit evidence packet.
+   * @param {object} packet Proof packet.
+   * @returns {object} Proof score and verdict.
+   * @collaboration Proof verdicts, evidence receipts, cursor proof, criteria hashes, membership overrides, and export readiness.
+   */
+  function scoreWilsyProofMissionControl(packet = {}) {
+    const checks = [
+      Boolean(packet.evidence?.backendViewId),
+      Boolean(packet.evidence?.criteriaHash),
+      Boolean(packet.evidence?.auditReceiptId),
+      Number(packet.returnedCount || 0) > 0,
+      Number(packet.totalCount || 0) >= Number(packet.returnedCount || 0),
+      String(packet.evidence?.membershipReceiptLabel || '').includes('include'),
+    ];
+    const passed = checks.filter(Boolean).length;
+    const score = Math.round((passed / checks.length) * 100);
+    const verdict = score >= 95 ? 'Sovereign Proof Sealed' : score >= 70 ? 'Proof Ready With Warnings' : 'Proof Incomplete';
+    const tone = score >= 95 ? 'sealed' : score >= 70 ? 'warning' : 'incomplete';
+
+    return { score, passed, total: checks.length, verdict, tone };
+  }
+
+  /**
+   * @function resolveWilsyProofMissionSteps
+   * @description Builds the mission-control steps for the active Proof Cockpit.
+   * @param {object} packet Proof packet.
+   * @param {object} score Proof score packet.
+   * @returns {Array<object>} Mission steps.
+   * @collaboration Resolve, verify, replay, export, approve workflow, and evidence cockpit productivity.
+   */
+  function resolveWilsyProofMissionSteps(packet = {}, score = {}) {
+    return [
+      {
+        label: 'Resolve',
+        status: packet.evidence?.backendViewId ? 'complete' : 'waiting',
+        detail: packet.evidence?.backendViewId || 'Saved view resolving',
+      },
+      {
+        label: 'Verify',
+        status: packet.evidence?.criteriaHash ? 'complete' : 'waiting',
+        detail: packet.evidence?.criteriaHash || 'Criteria hash pending',
+      },
+      {
+        label: 'Replay',
+        status: packet.evidence?.auditReceiptId ? 'complete' : 'waiting',
+        detail: packet.evidence?.auditReceiptId || 'Run receipt pending',
+      },
+      {
+        label: 'Export',
+        status: score.score >= 95 ? 'complete' : 'waiting',
+        detail: score.score >= 95 ? 'Proof packet export-ready' : 'Complete proof before export',
+      },
+    ];
+  }
+
+  /**
+   * @function renderWilsyProofMissionStep
+   * @description Renders a compact mission-control step.
+   * @param {object} step Mission step.
+   * @param {number} index Mission step index.
+   * @returns {JSX.Element} Mission step node.
+   * @collaboration Proof mission strip, operator workflow, verification state, and export readiness.
+   */
+  function renderWilsyProofMissionStep(step = {}, index = 0) {
+    return (
+      <article key={step.label} data-status={step.status || 'waiting'}>
+        <b>{index + 1}</b>
+        <span>
+          <strong>{step.label}</strong>
+          <em>{step.detail}</em>
+        </span>
+      </article>
+    );
+  }
+
+  /**
+   * @function renderWilsyProofExceptionRail
+   * @description Renders proof exceptions and readiness blockers.
+   * @param {object} packet Proof packet.
+   * @returns {JSX.Element} Proof exception rail.
+   * @collaboration Proof readiness, missing evidence, operator guidance, and production verification flow.
+   */
+  function renderWilsyProofExceptionRail(packet = {}) {
+    const exceptions = [
+      !packet.evidence?.backendViewId ? 'Saved custom view registry not resolved.' : '',
+      !packet.evidence?.criteriaHash ? 'Criteria hash not sealed.' : '',
+      !packet.evidence?.auditReceiptId ? 'Latest backend run receipt not sealed.' : '',
+      Number(packet.returnedCount || 0) <= 0 ? 'No returned rows in current proof page.' : '',
+    ].filter(Boolean);
+
+    return (
+      <section className={styles.leadProofExceptionRail} data-wilsy-proof-exceptions="FG104E">
+        <header>
+          <small>Exception Rail</small>
+          <strong>{exceptions.length ? `${exceptions.length} blocker${exceptions.length === 1 ? '' : 's'}` : 'No proof blockers'}</strong>
+        </header>
+        <div>
+          {(exceptions.length ? exceptions : ['Proof chain sealed. Ready for operator export and review.']).map((exception) => (
+            <article key={exception} data-status={exceptions.length ? 'blocked' : 'clear'}>
+              {exception}
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // P60K5Q10FG104E_PROOF_MISSION_HELPERS
+
+
   /**
    * @function renderWilsyProductionProofCockpit
-   * @description Renders the production-grade Leads Proof Cockpit with compact workspace density, action rail, evidence receipts, cursor run proof, membership ledger, and source authority.
+   * @description Renders the production-grade Leads Proof Cockpit with verdict, mission control, evidence receipts, cursor run proof, membership ledger, and source authority.
    * @returns {JSX.Element} Production Proof Cockpit.
-   * @collaboration Active Proof tab, backend view registry, audit receipts, criteria hashes, membership overrides, saved-view proof loading, source routes, compliance telemetry, and global Wilsy AI boundary.
+   * @collaboration Active Proof tab, proof score, backend view registry, audit receipts, criteria hashes, membership overrides, saved-view proof loading, source routes, compliance telemetry, and global Wilsy AI boundary.
    */
   function renderWilsyProductionProofCockpit() {
     const packet = resolveWilsyProductionProofCockpitPacket();
+    const score = scoreWilsyProofMissionControl(packet);
+    const missionSteps = resolveWilsyProofMissionSteps(packet, score);
     const evidenceValues = [
-      {
-        label: 'backendViewId',
-        value: packet.evidence.backendViewId || 'Load saved custom view',
-        copyValue: packet.evidence.backendViewId,
-        marker: 'backend-view-id',
-      },
-      {
-        label: 'criteriaHash',
-        value: packet.evidence.criteriaHash || 'Hash appears after saved-view proof',
-        copyValue: packet.evidence.criteriaHash,
-        marker: 'criteria-hash',
-      },
-      {
-        label: 'auditReceiptId',
-        value: packet.evidence.auditReceiptId || 'Receipt appears after backend /run',
-        copyValue: packet.evidence.auditReceiptId,
-        marker: 'audit-receipt-id',
-      },
-      {
-        label: 'membership overrides',
-        value: packet.evidence.membershipReceiptLabel,
-        copyValue: packet.evidence.backendViewId ? packet.evidence.membershipReceiptLabel : '',
-        marker: 'membership-overrides',
-      },
+      { label: 'backendViewId', value: packet.evidence.backendViewId || 'Resolving saved view', copyValue: packet.evidence.backendViewId, marker: 'backend-view-id' },
+      { label: 'criteriaHash', value: packet.evidence.criteriaHash || 'Hash appears after saved-view proof', copyValue: packet.evidence.criteriaHash, marker: 'criteria-hash' },
+      { label: 'auditReceiptId', value: packet.evidence.auditReceiptId || 'Receipt appears after backend /run', copyValue: packet.evidence.auditReceiptId, marker: 'audit-receipt-id' },
+      { label: 'membership overrides', value: packet.evidence.membershipReceiptLabel, copyValue: packet.evidence.backendViewId ? packet.evidence.membershipReceiptLabel : '', marker: 'membership-overrides' },
     ];
-
     const runValues = [
-      {
-        label: 'exact range',
-        value: `${formatWilsyExactRunCount(packet.visibleStart)}-${formatWilsyExactRunCount(packet.visibleEnd)} / ${formatWilsyExactRunCount(packet.totalCount)}`,
-        marker: 'exact-range',
-      },
-      {
-        label: 'returned rows',
-        value: `${formatWilsyExactRunCount(packet.returnedCount)} returned · ${formatWilsyExactRunCount(packet.visibleRows)} visible`,
-        marker: 'returned-rows',
-      },
-      {
-        label: 'cursor state',
-        value: `${packet.cursorLabel} · ${packet.previousCursorLabel} · ${packet.nextCursorLabel}`,
-        marker: 'cursor-state',
-      },
-      {
-        label: 'scope integrity',
-        value: `${formatWilsyExactRunCount(packet.filteredRows)} filtered · ${formatWilsyExactRunCount(packet.totalCount)} backend total`,
-        marker: 'scope-integrity',
-      },
+      { label: 'exact range', value: `${formatWilsyExactRunCount(packet.visibleStart)}-${formatWilsyExactRunCount(packet.visibleEnd)} / ${formatWilsyExactRunCount(packet.totalCount)}`, marker: 'exact-range' },
+      { label: 'returned rows', value: `${formatWilsyExactRunCount(packet.returnedCount)} returned · ${formatWilsyExactRunCount(packet.visibleRows)} visible`, marker: 'returned-rows' },
+      { label: 'cursor state', value: `${packet.cursorLabel} · ${packet.previousCursorLabel} · ${packet.nextCursorLabel}`, marker: 'cursor-state' },
+      { label: 'scope integrity', value: `${formatWilsyExactRunCount(packet.filteredRows)} filtered · ${formatWilsyExactRunCount(packet.totalCount)} backend total`, marker: 'scope-integrity' },
     ];
-
-    const authorityItems = [
-      packet.sourceRoutes,
-      packet.sovereignRoot,
-      packet.compliance,
-      packet.themeAuthority,
-    ];
+    const authorityItems = [packet.sourceRoutes, packet.sovereignRoot, packet.compliance, packet.themeAuthority];
 
     return (
       <section
         className={styles.leadProductionProofCockpit}
         data-wilsy-production-proof-cockpit="FG104A"
-        data-wilsy-production-proof-density="FG104C"
+        data-wilsy-production-proof-density="FG104E"
+        data-wilsy-proof-verdict={score.tone}
         data-wilsy-proof-backend-view-id={packet.evidence.backendViewId || undefined}
         data-wilsy-proof-criteria-hash={packet.evidence.criteriaHash || undefined}
         data-wilsy-proof-audit-receipt={packet.evidence.auditReceiptId || undefined}
@@ -10191,132 +10264,67 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <em>{packet.proofScopeLabel}</em>
           </span>
           <div>
-            <button type="button" onClick={() => setActiveTopTab('records')}>
-              Records
-            </button>
-            <button
-              type="button"
-              onClick={() => packet.preferredCustomViewId ? void handleSelectLeadListView(packet.preferredCustomViewId) : setLeadToolbarCommandFeedback('Create a saved view first')}
-              disabled={!packet.preferredCustomViewId || packet.registryProofReady}
-            >
-              Load saved proof view
-            </button>
-            <button
-              type="button"
-              onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)}
-              disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}
-            >
-              Run proof
-            </button>
+            <button type="button" onClick={() => setActiveTopTab('records')}>Records</button>
+            <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>Export packet</button>
           </div>
         </header>
 
-        <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104C">
-          <header>
-            <small>Operator Actions</small>
-            <strong>{packet.proofActionLabel}</strong>
-          </header>
-          <div>
-            <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
-            <button
-              type="button"
-              onClick={() => packet.preferredCustomViewId ? void handleSelectLeadListView(packet.preferredCustomViewId) : setLeadToolbarCommandFeedback('No saved proof view available')}
-              disabled={!packet.preferredCustomViewId || packet.registryProofReady}
-            >
-              Activate saved proof
-            </button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>
-              Copy proof packet
-            </button>
-            <button
-              type="button"
-              onClick={() => copyWilsyProofCockpitValue(packet.evidence.backendViewId, 'backendViewId')}
-              disabled={!packet.evidence.backendViewId}
-            >
-              Copy backendViewId
-            </button>
-            <button
-              type="button"
-              onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')}
-              disabled={!packet.evidence.criteriaHash}
-            >
-              Copy criteriaHash
-            </button>
-            <button
-              type="button"
-              onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')}
-              disabled={!packet.evidence.auditReceiptId}
-            >
-              Copy auditReceiptId
-            </button>
-          </div>
-        </section>
-
-        <section className={styles.leadProofCockpitStatusRail} data-wilsy-proof-status-rail="FG104B">
-          <article data-status={packet.registryProofReady ? 'sealed' : 'scope-required'}>
-            <small>Proof Scope</small>
-            <strong>{packet.registryProofReady ? 'Registry sealed' : 'Saved view required'}</strong>
-            <em>{packet.exactCountLabel}</em>
+        <section className={styles.leadProofVerdictRail} data-wilsy-proof-verdict-rail="FG104E">
+          <article data-tone={score.tone}>
+            <small>Proof Verdict</small>
+            <strong>{score.verdict}</strong>
+            <em>{score.score}/100 · {score.passed}/{score.total} checks sealed</em>
           </article>
-          <article data-status={packet.evidence.auditReceiptId ? 'sealed' : 'pending'}>
+          <article>
             <small>Run Receipt</small>
             <strong>{packet.evidence.auditReceiptId ? 'Sealed' : 'Waiting'}</strong>
-            <em>{packet.evidence.auditReceiptId || 'Run a saved custom view to seal audit receipt.'}</em>
+            <em>{packet.evidence.auditReceiptId || 'Backend run receipt pending'}</em>
           </article>
-          <article data-status={packet.evidence.criteriaHash ? 'sealed' : 'pending'}>
-            <small>Criteria Hash</small>
-            <strong>{packet.evidence.criteriaHash ? 'Verified' : 'Not available'}</strong>
-            <em>{packet.evidence.criteriaHash || 'All Leads has no saved criteria hash.'}</em>
+          <article>
+            <small>Export Posture</small>
+            <strong>{score.score >= 95 ? 'Export-ready' : 'Hold export'}</strong>
+            <em>{score.score >= 95 ? 'Evidence packet can be copied for review.' : 'Resolve blockers before final export.'}</em>
           </article>
+        </section>
+
+        <section className={styles.leadProofMissionStrip} data-wilsy-proof-mission-strip="FG104E">
+          {missionSteps.map(renderWilsyProofMissionStep)}
+        </section>
+
+        <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104E">
+          <header><small>Mission Control</small><strong>{packet.proofActionLabel}</strong></header>
+          <div>
+            <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.backendViewId, 'backendViewId')} disabled={!packet.evidence.backendViewId}>Copy backendViewId</button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')} disabled={!packet.evidence.criteriaHash}>Copy criteriaHash</button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')} disabled={!packet.evidence.auditReceiptId}>Copy auditReceiptId</button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>Copy proof packet</button>
+          </div>
         </section>
 
         <div className={styles.leadProofCockpitGrid}>
           <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="receipt-spine">
-            <header>
-              <small>Receipt Spine</small>
-              <strong>Backend Authority</strong>
-            </header>
-            <div className={styles.leadProofCockpitValueGrid}>
-              {evidenceValues.map(renderWilsyProofCockpitValue)}
-            </div>
+            <header><small>Receipt Spine</small><strong>Backend Authority</strong></header>
+            <div className={styles.leadProofCockpitValueGrid}>{evidenceValues.map(renderWilsyProofCockpitValue)}</div>
           </section>
 
           <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="run-integrity">
-            <header>
-              <small>Run Integrity</small>
-              <strong>Cursor-backed Execution</strong>
-            </header>
-            <div className={styles.leadProofCockpitValueGrid}>
-              {runValues.map(renderWilsyProofCockpitValue)}
-            </div>
+            <header><small>Run Integrity</small><strong>Cursor Execution</strong></header>
+            <div className={styles.leadProofCockpitValueGrid}>{runValues.map(renderWilsyProofCockpitValue)}</div>
           </section>
 
           <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="membership-ledger">
-            <header>
-              <small>Override Ledger</small>
-              <strong>Manual Membership Controls</strong>
-            </header>
+            <header><small>Override Ledger</small><strong>Membership Controls</strong></header>
             <div className={styles.leadProofCockpitTimeline}>
-              <article>
-                <b>{formatWilsyExactRunCount(packet.evidence.includeCount)}</b>
-                <span>Manual include receipts</span>
-              </article>
-              <article>
-                <b>{formatWilsyExactRunCount(packet.evidence.excludeCount)}</b>
-                <span>Manual exclude receipts</span>
-              </article>
-              <article>
-                <b>{packet.evidence.auditReceiptId ? 'sealed' : 'pending'}</b>
-                <span>Latest run audit receipt</span>
-              </article>
+              <article><b>{formatWilsyExactRunCount(packet.evidence.includeCount)}</b><span>Manual include receipts</span></article>
+              <article><b>{formatWilsyExactRunCount(packet.evidence.excludeCount)}</b><span>Manual exclude receipts</span></article>
+              <article><b>{packet.evidence.auditReceiptId ? 'sealed' : 'pending'}</b><span>Latest run audit receipt</span></article>
             </div>
           </section>
 
           <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="source-authority">
-            <header>
-              <small>Source Authority</small>
-              <strong>Operating Telemetry</strong>
-            </header>
+            <header><small>Source Authority</small><strong>Operating Telemetry</strong></header>
             <div className={styles.leadProofAuthorityGrid}>
               {authorityItems.map((item) => (
                 <article key={item.label} data-status={item.status || 'waiting'}>
@@ -10329,23 +10337,24 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           </section>
 
           <section className={styles.leadProofCockpitPanel} data-wilsy-proof-panel="proof-timeline">
-            <header>
-              <small>Proof Timeline</small>
-              <strong>Operational Chain</strong>
-            </header>
+            <header><small>Proof Timeline</small><strong>Operational Chain</strong></header>
             <ol className={styles.leadProofCockpitTimelineList}>
               <li><span>1</span><strong>Proof target selected</strong><em>{packet.proofModeLabel}</em></li>
-              <li><span>2</span><strong>Saved view resolved</strong><em>{packet.evidence.backendViewId || 'Load saved proof view'}</em></li>
+              <li><span>2</span><strong>Saved view resolved</strong><em>{packet.evidence.backendViewId || 'Auto-target running'}</em></li>
               <li><span>3</span><strong>Criteria hash verified</strong><em>{packet.evidence.criteriaHash || 'criteriaHash pending'}</em></li>
               <li><span>4</span><strong>Backend /run executed</strong><em>{packet.evidence.auditReceiptId || 'audit receipt pending'}</em></li>
               <li><span>5</span><strong>Cursor page hydrated</strong><em>{packet.cursorLabel} · offset {formatWilsyExactRunCount(packet.offset)}</em></li>
               <li><span>6</span><strong>Membership overrides applied</strong><em>{packet.evidence.membershipReceiptLabel}</em></li>
             </ol>
           </section>
+
+          {renderWilsyProofExceptionRail(packet)}
         </div>
       </section>
     );
   }
+
+  // P60K5Q10FG104E_PROOF_MISSION_CONTROL_VERDICT
 
   // P60K5Q10FG104C_PROOF_DENSITY_ACTION_SYSTEM
 

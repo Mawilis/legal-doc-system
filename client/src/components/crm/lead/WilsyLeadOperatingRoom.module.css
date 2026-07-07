@@ -12856,3 +12856,164 @@ td[data-wilsy-lead-empty-state="records"] {
     grid-column: span 1 !important;
   }
 }
+
+/* P60K5Q10FG104E_PROOF_MISSION_CONTROL_VERDICT */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] {
+  gap: 8px;
+  min-height: calc(100dvh - 58px);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  padding: 10px;
+}
+
+.leadProofVerdictRail {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr 0.95fr;
+  gap: 8px;
+}
+
+.leadProofVerdictRail article,
+.leadProofExceptionRail {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(126, 255, 188, 0.2);
+  border-radius: 14px;
+  background: rgba(3, 12, 18, 0.74);
+}
+
+.leadProofVerdictRail article[data-tone="sealed"] {
+  border-color: rgba(62, 255, 154, 0.42);
+  background: rgba(4, 34, 18, 0.78);
+}
+
+.leadProofVerdictRail article[data-tone="warning"] {
+  border-color: rgba(246, 231, 151, 0.38);
+}
+
+.leadProofVerdictRail small,
+.leadProofExceptionRail small {
+  color: rgba(246, 231, 151, 0.92);
+  font-size: 0.61rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.leadProofVerdictRail strong,
+.leadProofExceptionRail strong {
+  display: block;
+  margin-top: 4px;
+  color: rgba(248, 255, 251, 0.98);
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.leadProofVerdictRail em {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  color: rgba(174, 190, 217, 0.84);
+  font-size: 0.7rem;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadProofMissionStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.leadProofMissionStrip article {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(126, 255, 188, 0.18);
+  border-radius: 14px;
+  background: rgba(5, 13, 22, 0.78);
+}
+
+.leadProofMissionStrip article[data-status="complete"] {
+  border-color: rgba(62, 255, 154, 0.42);
+  background: rgba(5, 30, 18, 0.74);
+}
+
+.leadProofMissionStrip b {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(126, 255, 188, 0.16);
+  color: rgba(190, 255, 219, 0.96);
+  font-size: 0.72rem;
+}
+
+.leadProofMissionStrip span {
+  min-width: 0;
+}
+
+.leadProofMissionStrip strong {
+  display: block;
+  color: rgba(248, 255, 251, 0.96);
+  font-size: 0.78rem;
+  font-weight: 940;
+}
+
+.leadProofMissionStrip em {
+  display: block;
+  overflow: hidden;
+  color: rgba(166, 181, 211, 0.84);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.66rem;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadProofExceptionRail {
+  grid-column: 1 / -1;
+}
+
+.leadProofExceptionRail header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.leadProofExceptionRail > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.leadProofExceptionRail article {
+  padding: 6px 8px;
+  border: 1px solid rgba(246, 231, 151, 0.22);
+  border-radius: 999px;
+  color: rgba(226, 235, 255, 0.88);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.leadProofExceptionRail article[data-status="clear"] {
+  border-color: rgba(62, 255, 154, 0.32);
+  color: rgba(190, 255, 219, 0.94);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 1180px) {
+  .leadProofVerdictRail,
+  .leadProofMissionStrip {
+    grid-template-columns: 1fr;
+  }
+}
