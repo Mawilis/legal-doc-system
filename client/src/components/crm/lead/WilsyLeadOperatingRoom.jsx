@@ -3391,6 +3391,30 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     buildWilsyFG92BLiveLeadOrganizerViews(leads, leadOrganizerViewDefinitions)
   ), [leads, leadOrganizerViewDefinitions]);
 
+
+  /**
+   * @function handleWilsyLeadOrganizerMenuWheel
+   * @description Keeps wheel and trackpad scrolling inside the compact Lead view menu without changing approved geometry.
+   * @param {WheelEvent} event - Browser wheel event.
+   * @returns {void}
+   * @collaboration Compact Lead organizer, saved custom views, live view navigation, and production viewport containment.
+   */
+  const handleWilsyLeadOrganizerMenuWheel = (event) => {
+    const node = event.currentTarget;
+
+    if (!node) {
+      return;
+    }
+
+    const canScroll = node.scrollHeight > node.clientHeight;
+
+    if (!canScroll) {
+      return;
+    }
+
+    event.stopPropagation();
+  };
+
   const activeLeadOrganizerView = useMemo(() => {
     /* P60K5Q10FG92B_LIVE_BACKEND_ORGANIZER_MEMO */
     return leadOrganizerLiveViews.find(view => view.id === activeListViewId) || leadOrganizerLiveViews[0] || activeListView;
@@ -5275,7 +5299,9 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
               {viewMenuOpen ? (
                 <section className={styles.leadOrganizerCompactMenu} data-wilsy-leads-organizer-compact-menu="FG97" aria-label="Lead list views"
-              data-wilsy-leads-organizer-menu="true">
+                  data-wilsy-compact-organizer-scroll="FG102E_SCROLL_ONLY"
+                  tabIndex={0}
+                  onWheel={handleWilsyLeadOrganizerMenuWheel}>
                   {/* P60K5Q10FG92G_DROPDOWN_LIVE_COMPACT_SOURCE */}
                   {leadOrganizerLiveViews.map(view => (
                     <button

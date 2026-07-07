@@ -11377,112 +11377,24 @@ td[data-wilsy-lead-empty-state="records"] {
   color: rgba(255, 195, 205, 0.98);
 }
 
-/* P60K5Q10FG102D_BOUNDED_COMPACT_ORGANIZER_SCROLL
-   Keeps the approved compact Lead view menu size while preventing vertical bleed. */
-.leadDropdownWrap:has(.leadOrganizerCompactMenu),
-.leadViewCluster:has(.leadOrganizerCompactMenu) {
-  position: relative !important;
-  overflow: visible !important;
-  isolation: isolate !important;
-}
-
+/* P60K5Q10FG102E_SCROLL_ONLY_COMPACT_ORGANIZER
+   Approved geometry is preserved: 220px menu, 42px rows. This only enables menu-local scrolling. */
 .leadOrganizerCompactMenu {
-  position: absolute !important;
-  top: calc(100% + 8px) !important;
-  left: 0 !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-
   width: 220px !important;
   min-width: 220px !important;
   max-width: 220px !important;
-
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: clamp(214px, 34dvh, 294px) !important;
-
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  align-content: start !important;
-  gap: 6px !important;
-  padding: 8px !important;
-  margin: 0 !important;
-
+  max-height: 390px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-y !important;
   pointer-events: auto !important;
-  box-sizing: border-box !important;
-
-  border: 1px solid rgba(156, 126, 255, 0.72) !important;
-  border-radius: 14px !important;
-  background: #090e19 !important;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.52) !important;
-  backdrop-filter: none !important;
-  z-index: 260 !important;
-
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(156, 126, 255, 0.86) rgba(9, 14, 25, 0.92) !important;
-}
-
-.leadOrganizerCompactMenu::-webkit-scrollbar {
-  width: 6px !important;
-}
-
-.leadOrganizerCompactMenu::-webkit-scrollbar-track {
-  background: rgba(9, 14, 25, 0.92) !important;
-  border-radius: 999px !important;
-}
-
-.leadOrganizerCompactMenu::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(156, 126, 255, 0.94), rgba(126, 255, 188, 0.76)) !important;
-  border-radius: 999px !important;
 }
 
 .leadOrganizerCompactMenu > button {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-
   height: 42px !important;
   min-height: 42px !important;
   max-height: 42px !important;
-
-  margin: 0 !important;
-  padding: 7px 11px !important;
-
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  grid-template-rows: 18px 14px !important;
-  align-items: center !important;
-  justify-items: start !important;
-  gap: 1px !important;
-
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-
-.leadOrganizerCompactMenu > button span,
-.leadOrganizerCompactMenu > button strong,
-.leadOrganizerCompactMenu > button em {
-  display: block !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-.leadOrganizerCompactMenu > button span,
-.leadOrganizerCompactMenu > button strong {
-  font-size: 13px !important;
-  line-height: 1.1 !important;
-}
-
-.leadOrganizerCompactMenu > button em {
-  font-size: 11px !important;
-  line-height: 1.1 !important;
 }
