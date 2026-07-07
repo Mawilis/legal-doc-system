@@ -2919,6 +2919,9 @@ export default function WilsyLeadOperatingRoom({
   const [leadCollectionSourceSelectedIds, setLeadCollectionSourceSelectedIds] = useState([]);
   const [leadCollectionSourceQuery, setLeadCollectionSourceQuery] = useState('');
   const [leadViewActionConfirmation, setLeadViewActionConfirmation] = useState(null);
+  const [leadBackendRunRowsByViewId, setLeadBackendRunRowsByViewId] = useState({});
+  const [leadBackendRunPaginationByViewId, setLeadBackendRunPaginationByViewId] = useState({});
+  const [leadBackendRunStatusByViewId, setLeadBackendRunStatusByViewId] = useState({});
   /* P60K5Q10FG93I_CUSTOM_VIEW_STATE */
   const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
   const [leadCustomViews, setLeadCustomViews] = useState(() => {
@@ -3555,10 +3558,10 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function refreshWilsyToolbarCollectionSummary
-   * @description Runs the active custom Lead view and stores its membership summary for visible custom view refresh.
+   * @description Runs the active custom Lead view and hydrates backend rows, cursor metadata, and membership summary.
    * @param {object} view Active organizer view.
    * @returns {Promise<void>} Summary refresh completion.
-   * @collaboration Backend run endpoint, toolbar compact count, effective membership, Sync button, and visible custom collection rows.
+   * @collaboration Backend run endpoint, toolbar compact count, effective membership, Sync button, visible custom collection rows, and cursor pagination.
    */
   async function refreshWilsyToolbarCollectionSummary(view = activeLeadOrganizerView) {
     const backendViewId = resolveWilsyToolbarViewBackendId(view);
@@ -3567,46 +3570,16 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
       return;
     }
 
-    setLeadToolbarCommandBusy('sync');
-    setLeadToolbarCommandFeedback('');
-
-    try {
-      const route = `/api/crm/leads/views/${backendViewId}/run`;
-      const result = await requestWilsyToolbarCollectionCommand(route, 'RUN_LEAD_VIEW', {}, 'POST');
-      const membership = result?.result?.membership || result?.membership || {};
-      const effectiveLeads = result?.result?.effectiveLeads
-        || result?.effectiveLeads
-        || result?.result?.leads
-        || result?.leads
-        || result?.result?.records
-        || result?.records
-        || [];
-
-      const effectiveLeadIds = Array.isArray(effectiveLeads)
-        ? effectiveLeads.map((record, index) => resolveLeadRecordId(record, index)).filter(Boolean)
-        : [];
-
-      setLeadToolbarMembershipById((previous) => ({
-        ...previous,
-        [view.id]: {
-          ...(previous?.[view.id] || {}),
-          ...membership,
-          effectiveLeadIds: normalizeWilsyLeadMembershipIdList(effectiveLeadIds),
-        },
-        [backendViewId]: {
-          ...(previous?.[backendViewId] || {}),
-          ...membership,
-          effectiveLeadIds: normalizeWilsyLeadMembershipIdList(effectiveLeadIds),
-        },
-      }));
-
-      setLeadToolbarCommandFeedback('Collection synced');
-    } catch (error) {
-      setLeadToolbarCommandFeedback(error?.message || 'Collection sync failed');
-    } finally {
-      setLeadToolbarCommandBusy('');
-    }
+    await hydrateWilsyBackendRunRowsForView(view, {
+      cursor: '',
+      limit: resolveWilsyBackendRunLimit(),
+      reason: 'FG103U2 Sync backend run hydration',
+      busyLabel: 'sync',
+      feedback: 'Syncing live backend view…',
+    });
   }
+
+  // P60K5Q10FG103U2_SYNC_HYDRATES_BACKEND_ROWS
 
   // P60K5Q10FG103Q_SYNC_LIVE_EFFECTIVE_MEMBERSHIP
 
@@ -4657,6 +4630,233 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     return doesWilsyLeadMatchCustomViewCriteria(record, activeLeadOrganizerView.criteria || {});
   }
 
+
+  /**
+   * @function resolveWilsyBackendRunViewKey
+   * @description Resolves a stable frontend key for backend-hydrated custom Lead view rows.
+   * @param {object} view Active organizer view.
+   * @returns {string} View key.
+   * @collaboration Backend run endpoint, cursor state, local custom views, and active table hydration.
+   */
+  function resolveWilsyBackendRunViewKey(view = activeLeadOrganizerView) {
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+
+    return String(
+      backendViewId
+      || view?.id
+      || view?.backendViewId
+      || view?.backendId
+      || view?.registryViewId
+      || view?._id
+      || ''
+    ).trim();
+  }
+
+  /**
+   * @function normalizeWilsyBackendRunRows
+   * @description Normalizes rows from the backend Lead view /run response.
+   * @param {object} result Backend run result.
+   * @returns {Array<object>} Backend rows.
+   * @collaboration FG103T run response, visible records table, custom view hydration, and cursor pagination.
+   */
+  function normalizeWilsyBackendRunRows(result = {}) {
+    const rows =
+      result?.rows
+      || result?.records
+      || result?.leads
+      || result?.run?.rows
+      || result?.run?.records
+      || result?.run?.leads
+      || result?.result?.rows
+      || result?.result?.records
+      || result?.result?.leads
+      || [];
+
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  /**
+   * @function normalizeWilsyBackendRunPagination
+   * @description Normalizes cursor pagination from the backend Lead view /run response.
+   * @param {object} result Backend run result.
+   * @param {Array<object>} rows Normalized row fallback.
+   * @returns {object} Pagination metadata.
+   * @collaboration FG103T cursor response, Sync, selector hydration, and future Next/Previous backend paging.
+   */
+  function normalizeWilsyBackendRunPagination(result = {}, rows = []) {
+    const pagination =
+      result?.pagination
+      || result?.run?.pagination
+      || result?.result?.pagination
+      || {};
+
+    return {
+      mode: pagination?.mode || 'cursor',
+      cursor: pagination?.cursor || result?.cursor || result?.run?.cursor || result?.result?.cursor || '',
+      nextCursor: pagination?.nextCursor || result?.nextCursor || result?.run?.nextCursor || result?.result?.nextCursor || '',
+      previousCursor: pagination?.previousCursor || result?.previousCursor || result?.run?.previousCursor || result?.result?.previousCursor || '',
+      returnedCount: Number(pagination?.returnedCount || result?.returnedCount || result?.run?.returnedCount || rows.length || 0),
+      totalCount: Number(pagination?.totalCount || result?.count || result?.run?.count || result?.result?.count || rows.length || 0),
+      hasNextPage: Boolean(pagination?.hasNextPage || result?.nextCursor || result?.run?.nextCursor || result?.result?.nextCursor),
+      hasPreviousPage: Boolean(pagination?.hasPreviousPage || result?.previousCursor || result?.run?.previousCursor || result?.result?.previousCursor),
+      limit: Number(pagination?.limit || 25),
+      generatedAt: pagination?.generatedAt || new Date().toISOString(),
+    };
+  }
+
+  /**
+   * @function resolveWilsyBackendRunLimit
+   * @description Resolves a safe backend run page size for custom Lead view hydration.
+   * @returns {number} Backend run limit.
+   * @collaboration Cursor pagination, backend run endpoint, table hydration, and production-safe request sizing.
+   */
+  function resolveWilsyBackendRunLimit() {
+    return 25;
+  }
+
+  /**
+   * @function hydrateWilsyBackendRunRowsForView
+   * @description Runs a saved custom Lead view on the backend and hydrates visible rows plus cursor metadata.
+   * @param {object} view Saved custom view.
+   * @param {object} options Hydration options.
+   * @returns {Promise<object|null>} Backend run result.
+   * @collaboration Selector-driven backend run, FG103T cursor response, visible rows, Sync button, and membership summary.
+   */
+  async function hydrateWilsyBackendRunRowsForView(view = activeLeadOrganizerView, options = {}) {
+    const backendViewId = resolveWilsyToolbarViewBackendId(view);
+    const viewKey = resolveWilsyBackendRunViewKey(view);
+
+    if (!backendViewId || !isWilsyToolbarCustomCollectionView(view)) {
+      return null;
+    }
+
+    const cursor = String(options.cursor || '').trim();
+    const limit = Number(options.limit || resolveWilsyBackendRunLimit());
+
+    setLeadToolbarCommandBusy(options.busyLabel || 'run');
+    setLeadToolbarCommandFeedback(options.feedback || 'Loading live backend view…');
+    setLeadBackendRunStatusByViewId((previous) => ({
+      ...previous,
+      [viewKey]: {
+        status: 'loading',
+        generatedAt: new Date().toISOString(),
+      },
+      [backendViewId]: {
+        status: 'loading',
+        generatedAt: new Date().toISOString(),
+      },
+    }));
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}/run`;
+      const result = await requestWilsyToolbarCollectionCommand(
+        route,
+        'RUN_LEAD_VIEW',
+        {
+          cursor,
+          limit,
+          reason: options.reason || 'FG103U2 selector-handler backend Lead view hydration',
+        },
+        'POST'
+      );
+
+      const rows = normalizeWilsyBackendRunRows(result);
+      const pagination = normalizeWilsyBackendRunPagination(result, rows);
+      const membership = result?.run?.membership || result?.result?.membership || result?.membership || {};
+
+      setLeadBackendRunRowsByViewId((previous) => ({
+        ...previous,
+        [viewKey]: rows,
+        [backendViewId]: rows,
+      }));
+
+      setLeadBackendRunPaginationByViewId((previous) => ({
+        ...previous,
+        [viewKey]: pagination,
+        [backendViewId]: pagination,
+      }));
+
+      setLeadBackendRunStatusByViewId((previous) => ({
+        ...previous,
+        [viewKey]: {
+          status: 'hydrated',
+          rowCount: rows.length,
+          totalCount: pagination.totalCount,
+          generatedAt: new Date().toISOString(),
+        },
+        [backendViewId]: {
+          status: 'hydrated',
+          rowCount: rows.length,
+          totalCount: pagination.totalCount,
+          generatedAt: new Date().toISOString(),
+        },
+      }));
+
+      setLeadToolbarMembershipById((previous) => ({
+        ...previous,
+        [view?.id]: {
+          ...(previous?.[view?.id] || {}),
+          ...membership,
+        },
+        [backendViewId]: {
+          ...(previous?.[backendViewId] || {}),
+          ...membership,
+        },
+      }));
+
+      setLeadToolbarCommandFeedback(`Live view loaded · ${pagination.returnedCount}/${pagination.totalCount}`);
+      return result;
+    } catch (error) {
+      setLeadBackendRunStatusByViewId((previous) => ({
+        ...previous,
+        [viewKey]: {
+          status: 'error',
+          error: error?.message || 'Backend run failed',
+          generatedAt: new Date().toISOString(),
+        },
+        [backendViewId]: {
+          status: 'error',
+          error: error?.message || 'Backend run failed',
+          generatedAt: new Date().toISOString(),
+        },
+      }));
+      setLeadToolbarCommandFeedback(error?.message || 'Backend run failed');
+      return null;
+    } finally {
+      setLeadToolbarCommandBusy('');
+    }
+  }
+
+  /**
+   * @function resolveWilsyBackendHydratedRowsForActiveView
+   * @description Resolves backend-hydrated rows for the active saved custom view.
+   * @returns {object} Hydrated row state.
+   * @collaboration Active records table, backend run state, cursor pagination, and custom view selector.
+   */
+  function resolveWilsyBackendHydratedRowsForActiveView() {
+    const viewKey = resolveWilsyBackendRunViewKey(activeLeadOrganizerView);
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const rows = leadBackendRunRowsByViewId?.[viewKey]
+      || leadBackendRunRowsByViewId?.[backendViewId]
+      || [];
+    const pagination = leadBackendRunPaginationByViewId?.[viewKey]
+      || leadBackendRunPaginationByViewId?.[backendViewId]
+      || null;
+    const status = leadBackendRunStatusByViewId?.[viewKey]
+      || leadBackendRunStatusByViewId?.[backendViewId]
+      || null;
+
+    return {
+      rows: Array.isArray(rows) ? rows : [],
+      pagination,
+      status,
+      hydrated: Boolean(activeLeadOrganizerView?.custom && status?.status === 'hydrated'),
+    };
+  }
+
+  // P60K5Q10FG103U2_SELECTOR_HANDLER_RUN_HYDRATION_HELPERS
+
+
   // P60K5Q10FG103Q_EFFECTIVE_MEMBERSHIP_FILTER_HELPERS
 
 
@@ -4670,16 +4870,21 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }, [leads]);
 
   const baseFilteredLeads = useMemo(() => {
-    /* P60K5Q10FG103Q_EFFECTIVE_CUSTOM_VIEW_RECORD_FILTER */
+    /* P60K5Q10FG103U2_BACKEND_RUN_TABLE_SOURCE */
+    const backendHydration = resolveWilsyBackendHydratedRowsForActiveView();
+    const useBackendRows = Boolean(activeLeadOrganizerView?.custom && backendHydration.hydrated);
+    const sourceRows = useBackendRows ? backendHydration.rows : leads;
     const query = String(searchTerm || '').trim().toLowerCase();
 
-    const matchedLeads = leads.filter((record, index) => {
+    const matchedLeads = sourceRows.filter((record, index) => {
       const matchesSearch = !query || JSON.stringify(record || {}).toLowerCase().includes(query);
       const status = getComplianceStatus(record);
       const matchesFilter = activeFilter === 'ALL' || status === activeFilter;
-      const matchesListView = activeLeadOrganizerView?.custom
-        ? doesWilsyLeadMatchEffectiveCustomViewMembership(record, index)
-        : doesLeadMatchListView(record, activeListViewId);
+      const matchesListView = useBackendRows
+        ? true
+        : activeLeadOrganizerView?.custom
+          ? doesWilsyLeadMatchEffectiveCustomViewMembership(record, index)
+          : doesLeadMatchListView(record, activeListViewId);
 
       return matchesSearch && matchesFilter && matchesListView;
     });
@@ -4689,6 +4894,9 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     activeFilter,
     activeLeadOrganizerView,
     activeListViewId,
+    leadBackendRunPaginationByViewId,
+    leadBackendRunRowsByViewId,
+    leadBackendRunStatusByViewId,
     leadToolbarMembershipById,
     leads,
     searchTerm,
@@ -5577,19 +5785,37 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
   /**
    * @function handleSelectLeadListView
-   * @description Applies a Lead list view from the module dropdown.
-   * @param {string} listViewId - List view id.
+   * @description Selects a Lead list view and hydrates saved custom views from the backend run endpoint.
+   * @param {string} viewId View identifier.
    * @returns {void}
-   * @collaboration Converts the Zoho-inspired dropdown into source-backed Wilsy OS filtering.
+   * @collaboration Compact view selector, backend /run endpoint, cursor metadata, custom view rows, and existing local fallback filtering.
    */
-  function handleSelectLeadListView(listViewId) {
-    const nextView = resolveLeadListView(listViewId);
-    setActiveListViewId(nextView.id);
-    setActiveFilter(nextView.filter || 'ALL');
+  function handleSelectLeadListView(viewId) {
+    const nextViewId = String(viewId || 'all').trim() || 'all';
+    const selectedView = leadOrganizerLiveViews.find((view) => view.id === nextViewId)
+      || leadCustomViews.find((view) => view.id === nextViewId || view.backendViewId === nextViewId || view.backendId === nextViewId || view.registryViewId === nextViewId || view._id === nextViewId)
+      || null;
+
+    setActiveListViewId(nextViewId);
     setCurrentLeadPage(1);
-    setViewMenuOpen(false);
-    setOpenRowActionId('');
+    setSelectedRowIds([]);
+
+    if (typeof setViewMenuOpen === 'function') {
+      setViewMenuOpen(false);
+    }
+
+    if (selectedView && isWilsyToolbarCustomCollectionView(selectedView)) {
+      void hydrateWilsyBackendRunRowsForView(selectedView, {
+        cursor: '',
+        limit: resolveWilsyBackendRunLimit(),
+        reason: 'FG103U2 selector-handler backend run hydration',
+        busyLabel: 'run',
+        feedback: 'Loading live backend view…',
+      });
+    }
   }
+
+  // P60K5Q10FG103U2_SELECTOR_HANDLER_HYDRATES_RUN
 
   /**
    * @function canCommitWilsyLeadSelectionEvent
