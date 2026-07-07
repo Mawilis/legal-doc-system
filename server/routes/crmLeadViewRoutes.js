@@ -134,26 +134,39 @@ async function archiveLeadViewHandler(req, res) {
 
 /**
  * @function runLeadViewHandler
- * @description Runs a saved Lead view against live backend Leads.
- * @collaboration Wilsy AI, analytics, view execution, audit receipts, and live counts.
+ * @description Executes a saved Lead view and returns cursor-paginated effective rows.
  * @param {object} req Express request.
  * @param {object} res Express response.
- * @returns {Promise<object>} Express response.
+ * @returns {Promise<object>} JSON response.
+ * @collaboration Lead View Registry run endpoint, cursor pagination, frontend hydration, membership summary, and institutional evidence.
  */
 async function runLeadViewHandler(req, res) {
   try {
     const context = resolveRequestContext(req);
-    const result = await runLeadView(req.params.viewId, context);
+    const result = await runLeadView(req.params.viewId, context, req.body || {});
 
     if (!result) {
-      return sendLeadViewError(res, new Error('Lead view not found'), 404);
+      return res.status(404).json({ ok: false, success: false, error: 'LEAD_VIEW_NOT_FOUND' });
     }
 
-    return sendLeadViewSuccess(res, result);
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      ...result,
+      run: result.result,
+      rows: result.result?.rows || [],
+      records: result.result?.records || [],
+      leads: result.result?.leads || [],
+      pagination: result.result?.pagination || null,
+      nextCursor: result.result?.nextCursor || '',
+      previousCursor: result.result?.previousCursor || '',
+    });
   } catch (error) {
-    return sendLeadViewError(res, error);
+    return sendError(res, error);
   }
 }
+
+// P60K5Q10FG103T_RUN_ROUTE_CURSOR_RESPONSE
 
 /**
  * @function previewLeadViewHandler

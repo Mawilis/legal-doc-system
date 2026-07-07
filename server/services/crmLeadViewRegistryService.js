@@ -403,6 +403,109 @@ function buildLeadViewMembershipSummary(params = {}) {
 }
 
 /**
+ * @function encodeLeadViewRunCursor
+ * @description Encodes an opaque cursor for Lead View run pagination.
+ * @param {number} offset Cursor offset.
+ * @returns {string} Encoded cursor.
+ * @collaboration Backend run endpoint, cursor pagination, frontend view hydration, and million-record-safe response contracts.
+ */
+function encodeLeadViewRunCursor(offset = 0) {
+  const safeOffset = Math.max(0, Number(offset || 0));
+
+  return Buffer.from(
+    JSON.stringify({
+      offset: safeOffset,
+      version: 'P60K5Q10FG103T',
+    })
+  ).toString('base64url');
+}
+
+/**
+ * @function decodeLeadViewRunCursor
+ * @description Decodes an opaque Lead View run cursor.
+ * @param {string} cursor Encoded cursor.
+ * @returns {number} Decoded offset.
+ * @collaboration Cursor pagination, backend run endpoint, Next/Previous controls, and safe fallback pagination.
+ */
+function decodeLeadViewRunCursor(cursor = '') {
+  const candidate = String(cursor || '').trim();
+
+  if (!candidate) return 0;
+
+  try {
+    const parsed = JSON.parse(Buffer.from(candidate, 'base64url').toString('utf8'));
+    return Math.max(0, Number(parsed?.offset || 0));
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * @function normalizeLeadViewRunPaginationOptions
+ * @description Normalizes pagination request options supplied to the Lead View run endpoint.
+ * @param {object} options Raw run options.
+ * @returns {object} Normalized pagination options.
+ * @collaboration POST /run payload, cursor pagination, page size control, and frontend hydration.
+ */
+function normalizeLeadViewRunPaginationOptions(options = {}) {
+  const requestedLimit = Number(
+    options.limit || options.pageSize || options.perPage || options.first || 25
+  );
+
+  const limit = Math.min(100, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 25));
+  const cursor = String(options.cursor || options.after || options.nextCursor || '').trim();
+  const offsetFromCursor = decodeLeadViewRunCursor(cursor);
+  const requestedOffset = Number(options.offset || 0);
+  const offset = cursor
+    ? offsetFromCursor
+    : Math.max(0, Number.isFinite(requestedOffset) ? requestedOffset : 0);
+
+  return {
+    cursor,
+    limit,
+    offset,
+  };
+}
+
+/**
+ * @function paginateLeadViewRunRecords
+ * @description Slices effective Lead View rows into an opaque cursor response.
+ * @param {Array<object>} records Effective rows.
+ * @param {object} options Pagination options.
+ * @returns {object} Paginated rows and metadata.
+ * @collaboration Backend row hydration, cursor metadata, frontend pagination, and custom view runtime results.
+ */
+function paginateLeadViewRunRecords(records = [], options = {}) {
+  const safeRecords = Array.isArray(records) ? records : [];
+  const { cursor, limit, offset } = normalizeLeadViewRunPaginationOptions(options);
+  const boundedOffset = Math.min(offset, safeRecords.length);
+  const rows = safeRecords.slice(boundedOffset, boundedOffset + limit);
+  const nextOffset = boundedOffset + rows.length;
+  const previousOffset = Math.max(0, boundedOffset - limit);
+  const hasNextPage = nextOffset < safeRecords.length;
+  const hasPreviousPage = boundedOffset > 0;
+
+  return {
+    rows,
+    pagination: {
+      mode: 'cursor',
+      cursor,
+      offset: boundedOffset,
+      limit,
+      returnedCount: rows.length,
+      totalCount: safeRecords.length,
+      hasNextPage,
+      hasPreviousPage,
+      nextCursor: hasNextPage ? encodeLeadViewRunCursor(nextOffset) : '',
+      previousCursor: hasPreviousPage ? encodeLeadViewRunCursor(previousOffset) : '',
+      generatedAt: new Date().toISOString(),
+    },
+  };
+}
+
+// P60K5Q10FG103T_RUN_CURSOR_PAGINATION_HELPERS
+
+/**
  * @function listLeadViewMembershipOverrides
  * @description Lists active membership overrides for a Lead view.
  * @param {string} viewId Lead view id.
@@ -685,13 +788,14 @@ async function clearLeadViewMembershipOverride(viewId, leadId, context = {}) {
 
 /**
  * @function runLeadView
- * @description Executes a saved Lead view against live backend Lead records.
- * @collaboration Live counts, custom views, Wilsy AI answer tools, audit receipts, and backend analytics.
+ * @description Executes a saved Lead view against live backend Lead records and returns cursor-paginated effective rows.
+ * @collaboration Live counts, custom views, Wilsy AI answer tools, audit receipts, backend analytics, cursor pagination, and frontend row hydration.
  * @param {string} viewId View id.
  * @param {object} context Request context.
+ * @param {object} options Run options including cursor and limit.
  * @returns {Promise<object|null>} Run result.
  */
-async function runLeadView(viewId, context = {}) {
+async function runLeadView(viewId, context = {}, options = {}) {
   const view = await CrmLeadView.findOne({
     _id: viewId,
     tenantId: context.tenantId,
@@ -705,14 +809,24 @@ async function runLeadView(viewId, context = {}) {
   const ruleMatchedLeads = leads.filter((lead) => doesLeadMatchCustomCriteria(lead, view.criteria));
   const membership = await applyLeadViewMembershipOverrides(view, ruleMatchedLeads, leads, context);
   const matchedLeads = membership.effectiveLeads;
+  const page = paginateLeadViewRunRecords(matchedLeads, options);
   const durationMs = Date.now() - startedAt;
   const auditReceiptId = createAuditReceiptId('run');
 
   view.lastRun = {
     count: matchedLeads.length,
     totalScopeCount: leads.length,
+    returnedCount: page.rows.length,
     sampleLeadIds: matchedLeads.slice(0, 25).map((lead) => String(lead._id || lead.id || '')),
     durationMs,
+    pagination: {
+      mode: page.pagination.mode,
+      limit: page.pagination.limit,
+      returnedCount: page.pagination.returnedCount,
+      totalCount: page.pagination.totalCount,
+      hasNextPage: page.pagination.hasNextPage,
+      hasPreviousPage: page.pagination.hasPreviousPage,
+    },
     executedAt: new Date(),
   };
 
@@ -726,7 +840,14 @@ async function runLeadView(viewId, context = {}) {
       criteriaHash: view.criteriaHash,
       resultCount: matchedLeads.length,
       institutionalHeaders: context.institutionalHeaders,
-      strikePayload: context.strikePayload,
+      strikePayload: {
+        ...context.strikePayload,
+        pagination: {
+          limit: page.pagination.limit,
+          offset: page.pagination.offset,
+          cursor: page.pagination.cursor,
+        },
+      },
     })
   );
 
@@ -737,14 +858,24 @@ async function runLeadView(viewId, context = {}) {
     result: {
       count: matchedLeads.length,
       totalScopeCount: leads.length,
+      returnedCount: page.rows.length,
+      rows: page.rows,
+      records: page.rows,
+      leads: page.rows,
       sampleLeadIds: matchedLeads.slice(0, 25).map((lead) => String(lead._id || lead.id || '')),
       ruleEngineVersion: RULE_ENGINE_VERSION,
       auditReceiptId,
       durationMs,
       membership: membership.summary,
+      pagination: page.pagination,
+      cursor: page.pagination.cursor,
+      nextCursor: page.pagination.nextCursor,
+      previousCursor: page.pagination.previousCursor,
     },
   };
 }
+
+// P60K5Q10FG103T_RUN_EFFECTIVE_ROWS_CURSOR_RESPONSE
 
 /**
  * @function previewLeadViewCriteria
