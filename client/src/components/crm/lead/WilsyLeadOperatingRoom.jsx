@@ -4943,7 +4943,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
               </button>
 
               {viewMenuOpen ? (
-                <section className={styles.leadDropdownMenu} data-wilsy-leads-organizer-menu="true" aria-label="Lead list views">
+                <section className={styles.leadOrganizerCompactMenu} data-wilsy-leads-organizer-compact-menu="FG97" aria-label="Lead list views">
                   {/* P60K5Q10FG92G_DROPDOWN_LIVE_COMPACT_SOURCE */}
                   {leadOrganizerLiveViews.map(view => (
                     <button
@@ -5630,7 +5630,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             </button>
 
             {viewMenuOpen ? (
-              <section className={styles.leadDropdownMenu} data-wilsy-leads-organizer-menu="true" aria-label="Lead list views">
+              <section className={styles.leadOrganizerCompactMenu} data-wilsy-leads-organizer-compact-menu="FG97" aria-label="Lead list views">
                 {leadOrganizerLiveViews.map(view => (
                   <button
                     key={view.id}
@@ -7840,3 +7840,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     </section>
   );
 }
+
+// P60K5Q10FG97_UNIQUE_COMPACT_ORGANIZER_MENU_SOURCE
