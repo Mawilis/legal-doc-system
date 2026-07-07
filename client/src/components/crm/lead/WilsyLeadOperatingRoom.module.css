@@ -11573,3 +11573,21 @@ td[data-wilsy-lead-empty-state="records"] {
     justify-items: start;
   }
 }
+
+/* P60K5Q10FG103D_VISIBLE_COMMAND_STRIP_MOUNT
+   Mounts FG103C command strip in the visible records work area.
+   Dropdown organizer geometry is not changed. */
+.leadViewCommandStripMount {
+  position: relative;
+  z-index: 24;
+  width: 100%;
+  padding: 0.72rem 0.75rem 0.78rem;
+  border-bottom: 1px solid rgba(125, 232, 255, 0.14);
+  background:
+    linear-gradient(135deg, rgba(4, 10, 22, 0.72), rgba(10, 21, 39, 0.58)),
+    radial-gradient(circle at 14% 0%, rgba(124, 92, 255, 0.12), transparent 36%);
+}
+
+.leadViewCommandStripMount .leadViewCommandStrip {
+  margin-top: 0;
+}

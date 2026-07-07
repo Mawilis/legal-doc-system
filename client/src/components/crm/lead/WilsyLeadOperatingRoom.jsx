@@ -6562,7 +6562,6 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             </section>
           ) : null}
         </div>
-        {renderWilsyLeadViewCommandStrip()}
       </section>
     );
   }
@@ -6784,6 +6783,12 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"
         data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW" data-wilsy-lead-records="tabbed-list-view">
         {renderLeadRecordsCommandBar()}
+        <div
+          className={styles.leadViewCommandStripMount}
+          data-wilsy-lead-view-command-strip-mount="FG103D_VISIBLE"
+        >
+          {renderWilsyLeadViewCommandStrip()}
+        </div>
         {renderLeadFilterRail()}
 
         <section className={styles.leadRecordsPanel}>
