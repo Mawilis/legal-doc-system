@@ -11169,3 +11169,18 @@ td[data-wilsy-lead-empty-state="records"] {
   font-weight: 800 !important;
   line-height: 1.1 !important;
 }
+
+
+/* P60K5Q10FG97B_FINAL_SIZE_TUNE */
+.leadOrganizerCompactMenu {
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  max-height: 390px !important;
+}
+
+.leadOrganizerCompactMenu > button {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+}
