@@ -5998,6 +5998,43 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
   // P60K5Q10FG103U2_SELECTOR_HANDLER_HYDRATES_RUN
 
+
+  /**
+   * @description Automatically hydrates an already-selected custom Lead view from backend /run.
+   * @collaboration Active custom view persistence, browser refresh, selector state, backend cursor rows, and runtime proof.
+   */
+  useEffect(() => {
+    const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const viewKey = resolveWilsyBackendRunViewKey(activeLeadOrganizerView);
+    const existingStatus = leadBackendRunStatusByViewId?.[viewKey]
+      || leadBackendRunStatusByViewId?.[backendViewId]
+      || null;
+
+    if (!backendViewId || !isWilsyToolbarCustomCollectionView(activeLeadOrganizerView)) {
+      return;
+    }
+
+    if (existingStatus?.status === 'loading' || existingStatus?.status === 'hydrated') {
+      return;
+    }
+
+    void hydrateWilsyBackendRunRowsForView(activeLeadOrganizerView, {
+      cursor: '',
+      limit: resolveWilsyBackendRunLimit(),
+      reason: 'FG103W auto hydrate active custom view',
+      busyLabel: 'run',
+      feedback: 'Loading live backend view…',
+    });
+  }, [
+    activeListViewId,
+    activeLeadOrganizerView,
+    leadBackendRunStatusByViewId,
+  ]);
+
+  // P60K5Q10FG103W_AUTO_HYDRATE_ACTIVE_CUSTOM_VIEW
+
+
+
   /**
    * @function canCommitWilsyLeadSelectionEvent
    * @description Allows Leads row selection only when the interaction is not a side-rail collapse click-through.
