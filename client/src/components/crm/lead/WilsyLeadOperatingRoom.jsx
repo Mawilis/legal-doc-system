@@ -9963,9 +9963,9 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
   /**
    * @function resolveWilsyProductionProofCockpitPacket
-   * @description Builds the production proof packet from backend run evidence, cursor state, and authority telemetry.
+   * @description Builds the production proof packet from backend run evidence, cursor state, authority telemetry, and proof target state.
    * @returns {object} Proof packet.
-   * @collaboration Backend /run, evidence receipts, criteria hash, membership overrides, cursor pagination, source authority, and compliance telemetry.
+   * @collaboration Backend /run, evidence receipts, criteria hash, membership overrides, cursor pagination, source authority, saved custom views, and compliance telemetry.
    */
   function resolveWilsyProductionProofCockpitPacket() {
     const evidence = resolveWilsyActiveViewRunEvidence(activeLeadOrganizerView);
@@ -9980,14 +9980,29 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const offset = Number(pagination.offset || 0);
     const visibleStart = returnedCount ? offset + 1 : 0;
     const visibleEnd = returnedCount ? offset + returnedCount : 0;
-
+    const preferredCustomView = activeLeadOrganizerView?.custom
+      ? activeLeadOrganizerView
+      : leadCustomViews.find((view) => isWilsyToolbarCustomCollectionView(view) && resolveWilsyToolbarViewBackendId(view))
+        || leadCustomViews.find((view) => resolveWilsyToolbarViewBackendId(view))
+        || null;
+    const preferredCustomViewId = preferredCustomView?.id
+      || preferredCustomView?.backendViewId
+      || preferredCustomView?.backendId
+      || preferredCustomView?.registryViewId
+      || preferredCustomView?._id
+      || '';
     const registryProofReady = Boolean(evidence.backendViewId && evidence.criteriaHash);
     const proofScopeLabel = registryProofReady
       ? 'Saved-view registry proof sealed'
-      : 'Global Lead scope · select a saved custom view for registry receipts';
+      : 'Global Lead scope · load a saved custom view to seal registry receipts';
     const proofModeLabel = activeLeadOrganizerView?.custom
       ? resolveLeadOperatingCopyLabel(activeLeadOrganizerView?.label || 'Custom View', activeLeadOrganizerView?.id || 'custom')
       : 'All Leads source scope';
+    const proofActionLabel = registryProofReady
+      ? 'Proof sealed and ready to export'
+      : preferredCustomView
+        ? `Load ${resolveLeadOperatingCopyLabel(preferredCustomView.label || 'saved view', preferredCustomView.id || 'saved view')} to activate full proof`
+        : 'Create a saved custom view to activate registry proof';
 
     return {
       evidence,
@@ -10007,15 +10022,20 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       cursorLabel: pagination?.cursor ? 'cursor page' : 'first page',
       nextCursorLabel: pagination?.nextCursor ? 'next ready' : 'end reached',
       previousCursorLabel: pagination?.previousCursor ? 'previous ready' : 'start reached',
+      preferredCustomView,
+      preferredCustomViewId,
       registryProofReady,
       proofScopeLabel,
       proofModeLabel,
+      proofActionLabel,
     };
   }
 
+  // P60K5Q10FG104C_PROOF_TARGET_PACKET
+
   /**
    * @function renderWilsyProofCockpitValue
-   * @description Renders a copyable value row for the production Proof Cockpit.
+   * @description Renders a compact copyable value row for the production Proof Cockpit.
    * @param {object} item Value item.
    * @returns {JSX.Element} Proof value row.
    * @collaboration Receipt spine, criteria hashes, audit receipts, clipboard proof actions, saved-view scope detection, and operator audit review.
@@ -10045,32 +10065,74 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     );
   }
 
+  // P60K5Q10FG104C_COMPACT_COPYABLE_PROOF_VALUES
+
   // P60K5Q10FG104B_COPY_BUTTONS_REQUIRE_REAL_PROOF_VALUES
+
+
+  /**
+   * @function formatWilsyProductionProofPayload
+   * @description Formats the current Proof Cockpit packet into a copyable evidence payload.
+   * @param {object} packet Proof cockpit packet.
+   * @returns {string} JSON proof payload.
+   * @collaboration Proof Cockpit actions, evidence copy workflow, audit receipts, criteria hashes, cursor state, and operator handoff.
+   */
+  function formatWilsyProductionProofPayload(packet = {}) {
+    return JSON.stringify({
+      scope: packet.proofScopeLabel || '',
+      mode: packet.proofModeLabel || '',
+      evidence: {
+        backendViewId: packet.evidence?.backendViewId || '',
+        criteriaHash: packet.evidence?.criteriaHash || '',
+        auditReceiptId: packet.evidence?.auditReceiptId || '',
+        membership: packet.evidence?.membershipReceiptLabel || '',
+      },
+      cursor: {
+        offset: packet.offset || 0,
+        returnedCount: packet.returnedCount || 0,
+        totalCount: packet.totalCount || 0,
+        cursorLabel: packet.cursorLabel || '',
+        next: packet.nextCursorLabel || '',
+        previous: packet.previousCursorLabel || '',
+      },
+      authority: {
+        sourceRoutes: packet.sourceRoutes || {},
+        sovereignRoot: packet.sovereignRoot || {},
+        compliance: packet.compliance || {},
+        themeAuthority: packet.themeAuthority || {},
+      },
+      generatedAt: new Date().toISOString(),
+      signature: 'WILSY_OS_PROOF_COCKPIT_FG104C',
+    }, null, 2);
+  }
+
+  // P60K5Q10FG104C_PROOF_PAYLOAD_EXPORTER
+
 
   /**
    * @function renderWilsyProductionProofCockpit
-   * @description Renders the production-grade Leads Proof Cockpit with evidence receipts, cursor run proof, membership ledger, and source authority.
+   * @description Renders the production-grade Leads Proof Cockpit with compact workspace density, action rail, evidence receipts, cursor run proof, membership ledger, and source authority.
    * @returns {JSX.Element} Production Proof Cockpit.
-   * @collaboration Active Proof tab, backend view registry, audit receipts, criteria hashes, membership overrides, source routes, compliance telemetry, and global Wilsy AI boundary.
+   * @collaboration Active Proof tab, backend view registry, audit receipts, criteria hashes, membership overrides, saved-view proof loading, source routes, compliance telemetry, and global Wilsy AI boundary.
    */
   function renderWilsyProductionProofCockpit() {
     const packet = resolveWilsyProductionProofCockpitPacket();
     const evidenceValues = [
       {
         label: 'backendViewId',
-        value: packet.evidence.backendViewId || 'Saved custom-view registry required',
+        value: packet.evidence.backendViewId || 'Load saved custom view',
         copyValue: packet.evidence.backendViewId,
         marker: 'backend-view-id',
       },
       {
         label: 'criteriaHash',
-        value: packet.evidence.criteriaHash || 'Criteria hash appears after saved-view proof',
+        value: packet.evidence.criteriaHash || 'Hash appears after saved-view proof',
         copyValue: packet.evidence.criteriaHash,
         marker: 'criteria-hash',
       },
       {
         label: 'auditReceiptId',
-        value: packet.evidence.auditReceiptId || 'Run receipt appears after backend /run',
+        value: packet.evidence.auditReceiptId || 'Receipt appears after backend /run',
         copyValue: packet.evidence.auditReceiptId,
         marker: 'audit-receipt-id',
       },
@@ -10116,6 +10178,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       <section
         className={styles.leadProductionProofCockpit}
         data-wilsy-production-proof-cockpit="FG104A"
+        data-wilsy-production-proof-density="FG104C"
         data-wilsy-proof-backend-view-id={packet.evidence.backendViewId || undefined}
         data-wilsy-proof-criteria-hash={packet.evidence.criteriaHash || undefined}
         data-wilsy-proof-audit-receipt={packet.evidence.auditReceiptId || undefined}
@@ -10123,51 +10186,76 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       >
         <header className={styles.leadProofCockpitHero}>
           <span>
-            <small>Proof Cockpit · {packet.proofModeLabel}</small>
-            <strong>Evidence Ledger Command Surface</strong>
+            <small>Proof Workspace · {packet.proofModeLabel}</small>
+            <strong>Evidence Ledger</strong>
             <em>{packet.proofScopeLabel}</em>
           </span>
           <div>
             <button type="button" onClick={() => setActiveTopTab('records')}>
-              Back to records
+              Records
             </button>
             <button
               type="button"
-              onClick={() => {
-                setActiveTopTab('records');
-                setViewMenuOpen(true);
-              }}
+              onClick={() => packet.preferredCustomViewId ? void handleSelectLeadListView(packet.preferredCustomViewId) : setLeadToolbarCommandFeedback('Create a saved view first')}
+              disabled={!packet.preferredCustomViewId || packet.registryProofReady}
             >
-              Select view
-            </button>
-            <button
-              type="button"
-              onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')}
-              disabled={!packet.evidence.auditReceiptId}
-            >
-              Copy receipt
-            </button>
-            <button
-              type="button"
-              onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')}
-              disabled={!packet.evidence.criteriaHash}
-            >
-              Copy hash
+              Load saved proof view
             </button>
             <button
               type="button"
               onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)}
               disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}
             >
-              Refresh proof
+              Run proof
             </button>
           </div>
         </header>
 
+        <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104C">
+          <header>
+            <small>Operator Actions</small>
+            <strong>{packet.proofActionLabel}</strong>
+          </header>
+          <div>
+            <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
+            <button
+              type="button"
+              onClick={() => packet.preferredCustomViewId ? void handleSelectLeadListView(packet.preferredCustomViewId) : setLeadToolbarCommandFeedback('No saved proof view available')}
+              disabled={!packet.preferredCustomViewId || packet.registryProofReady}
+            >
+              Activate saved proof
+            </button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>
+              Copy proof packet
+            </button>
+            <button
+              type="button"
+              onClick={() => copyWilsyProofCockpitValue(packet.evidence.backendViewId, 'backendViewId')}
+              disabled={!packet.evidence.backendViewId}
+            >
+              Copy backendViewId
+            </button>
+            <button
+              type="button"
+              onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')}
+              disabled={!packet.evidence.criteriaHash}
+            >
+              Copy criteriaHash
+            </button>
+            <button
+              type="button"
+              onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')}
+              disabled={!packet.evidence.auditReceiptId}
+            >
+              Copy auditReceiptId
+            </button>
+          </div>
+        </section>
+
         <section className={styles.leadProofCockpitStatusRail} data-wilsy-proof-status-rail="FG104B">
           <article data-status={packet.registryProofReady ? 'sealed' : 'scope-required'}>
             <small>Proof Scope</small>
-            <strong>{packet.proofScopeLabel}</strong>
+            <strong>{packet.registryProofReady ? 'Registry sealed' : 'Saved view required'}</strong>
             <em>{packet.exactCountLabel}</em>
           </article>
           <article data-status={packet.evidence.auditReceiptId ? 'sealed' : 'pending'}>
@@ -10246,17 +10334,20 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
               <strong>Operational Chain</strong>
             </header>
             <ol className={styles.leadProofCockpitTimelineList}>
-              <li><span>1</span><strong>Saved view resolved</strong><em>{packet.evidence.backendViewId || 'backendViewId pending'}</em></li>
-              <li><span>2</span><strong>Criteria hash verified</strong><em>{packet.evidence.criteriaHash || 'criteriaHash pending'}</em></li>
-              <li><span>3</span><strong>Backend /run executed</strong><em>{packet.evidence.auditReceiptId || 'audit receipt pending'}</em></li>
-              <li><span>4</span><strong>Cursor page hydrated</strong><em>{packet.cursorLabel} · offset {formatWilsyExactRunCount(packet.offset)}</em></li>
-              <li><span>5</span><strong>Membership overrides applied</strong><em>{packet.evidence.membershipReceiptLabel}</em></li>
+              <li><span>1</span><strong>Proof target selected</strong><em>{packet.proofModeLabel}</em></li>
+              <li><span>2</span><strong>Saved view resolved</strong><em>{packet.evidence.backendViewId || 'Load saved proof view'}</em></li>
+              <li><span>3</span><strong>Criteria hash verified</strong><em>{packet.evidence.criteriaHash || 'criteriaHash pending'}</em></li>
+              <li><span>4</span><strong>Backend /run executed</strong><em>{packet.evidence.auditReceiptId || 'audit receipt pending'}</em></li>
+              <li><span>5</span><strong>Cursor page hydrated</strong><em>{packet.cursorLabel} · offset {formatWilsyExactRunCount(packet.offset)}</em></li>
+              <li><span>6</span><strong>Membership overrides applied</strong><em>{packet.evidence.membershipReceiptLabel}</em></li>
             </ol>
           </section>
         </div>
       </section>
     );
   }
+
+  // P60K5Q10FG104C_PROOF_DENSITY_ACTION_SYSTEM
 
   // P60K5Q10FG104A_PRODUCTION_PROOF_COCKPIT
 
