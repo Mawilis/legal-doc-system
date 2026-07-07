@@ -11432,3 +11432,24 @@ td[data-wilsy-lead-empty-state="records"] {
   background: linear-gradient(180deg, rgba(156, 126, 255, 0.94), rgba(126, 255, 188, 0.76)) !important;
   border-radius: 999px !important;
 }
+
+/* P60K5Q10FG102N_CLIPPING_CHAIN_NO_GEOMETRY_CHANGE
+   Verified fix only:
+   - Release clipping parents around the visible Lead list view dropdown.
+   - Do not change compact menu width, row height, labels, or saved-view behavior. */
+.leadTabbedShell {
+  overflow: visible !important;
+  overflow-y: visible !important;
+}
+
+.leadRecordsWorkspace {
+  overflow: visible !important;
+  overflow-y: visible !important;
+  contain: none !important;
+}
+
+.leadRecordsCommandBar,
+.leadViewCluster,
+.leadDropdownWrap {
+  overflow: visible !important;
+}
