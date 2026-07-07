@@ -11245,3 +11245,89 @@ td[data-wilsy-lead-empty-state="records"] {
     padding-bottom: 0.85rem;
   }
 }
+
+/* P60K5Q10FG100F_OPERATOR_GRADE_CUSTOM_VIEW_HEADER_ACTIONS
+   Promotes Save Custom View into a clear first-class operator action and separates it from the close control. */
+.leadCustomViewHeader {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 1.25rem !important;
+}
+
+.leadCustomViewHeader > div:first-child {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.leadCustomViewHeaderActions {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.65rem !important;
+  margin-left: auto !important;
+}
+
+.leadCustomViewHeaderSave {
+  width: auto !important;
+  min-width: 12.75rem !important;
+  max-width: none !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  padding: 0 1.05rem !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.55rem !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(118, 255, 184, 0.62) !important;
+  background:
+    linear-gradient(135deg, rgba(37, 255, 151, 0.24), rgba(77, 119, 255, 0.22)),
+    rgba(9, 18, 22, 0.96) !important;
+  color: rgba(231, 255, 243, 0.98) !important;
+  box-shadow: 0 0 28px rgba(41, 255, 154, 0.18) !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.055em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+.leadCustomViewHeaderSave svg,
+.leadCustomViewHeaderSave span {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+.leadCustomViewHeaderClose {
+  width: 2.75rem !important;
+  min-width: 2.75rem !important;
+  max-width: 2.75rem !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 1rem !important;
+}
+
+@media (max-width: 920px) {
+  .leadCustomViewHeader {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .leadCustomViewHeaderActions {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .leadCustomViewHeaderSave {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+}
