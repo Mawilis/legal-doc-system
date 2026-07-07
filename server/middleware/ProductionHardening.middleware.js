@@ -182,6 +182,93 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
  * @returns {Promise<void>} Continues valid or read-only bridge requests and blocks failed integrity checks.
  * @collaboration Protects production mutation paths while allowing backend-owned Compliance, Identity and Source Registry read-only command surfaces to hydrate safely.
  */
+/**
+ * @function shouldContinueWilsyLeadViewRegistryAfterHardening
+ * @description Allows audited CRM Lead View Registry commands to continue through production hardening when they carry tenant, operator, surface, timestamp, and nested institutional evidence.
+ * @param {object} req Express request.
+ * @returns {boolean} Whether the Lead View Registry request qualifies for governed continuation.
+ * @collaboration Production hardening, CRM Lead View Registry, institutionalHeaders, strikePayload evidence, and tenant-safe saved view CRUD.
+ */
+function shouldContinueWilsyLeadViewRegistryAfterHardening(req = {}) {
+  const method = String(req.method || '').toUpperCase();
+  const route = String(req.originalUrl || req.path || req.url || '');
+
+  if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
+    return false;
+  }
+
+  if (!route.startsWith('/api/crm/leads/views')) {
+    return false;
+  }
+
+  const body = req.body || {};
+  const institutionalHeaders = body.institutionalHeaders || {};
+  const strikePayload = body.strikePayload || {};
+  const strikeHeaders = strikePayload.institutionalHeaders || {};
+  const headers = req.headers || {};
+
+  const tenantId =
+    body.tenantId ||
+    headers['x-tenant-id'] ||
+    institutionalHeaders.tenantId ||
+    strikeHeaders.tenantId;
+
+  const operatorId =
+    body.operatorId ||
+    body.operatorUserId ||
+    body.userId ||
+    headers['x-operator-id'] ||
+    headers['x-operator-user-id'] ||
+    headers['x-user-id'] ||
+    institutionalHeaders.operatorId ||
+    institutionalHeaders.operatorUserId ||
+    institutionalHeaders.userId ||
+    strikeHeaders.operatorId ||
+    strikeHeaders.operatorUserId ||
+    strikeHeaders.userId;
+
+  const commandSurface =
+    body.commandSurface ||
+    headers['x-command-surface'] ||
+    institutionalHeaders.commandSurface ||
+    strikePayload.commandSurface ||
+    strikeHeaders.commandSurface;
+
+  const generatedAt =
+    body.generatedAt ||
+    body.timestamp ||
+    institutionalHeaders.generatedAt ||
+    institutionalHeaders.timestamp ||
+    strikePayload.generatedAt ||
+    strikePayload.timestamp ||
+    strikeHeaders.generatedAt ||
+    strikeHeaders.timestamp;
+
+  const hasNestedInstitutionalEvidence = Boolean(
+    institutionalHeaders.tenantId &&
+    strikeHeaders.tenantId &&
+    (institutionalHeaders.operatorId ||
+      institutionalHeaders.operatorUserId ||
+      institutionalHeaders.userId) &&
+    (strikeHeaders.operatorId || strikeHeaders.operatorUserId || strikeHeaders.userId)
+  );
+
+  return Boolean(
+    tenantId && operatorId && commandSurface && generatedAt && hasNestedInstitutionalEvidence
+  );
+}
+
+// P60K5Q10FG98G_LEAD_VIEW_REGISTRY_HARDENING_CONTINUATION
+
+/**
+ * @function integrityShield
+ * @description Verifies production hardening integrity for governed requests while allowing documented CRM Lead View Registry continuation envelopes to pass through safely.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @param {Function} next Express next middleware callback.
+ * @returns {Promise<void>} Continues valid requests or returns a hardening violation response.
+ * @collaboration Production hardening, tenant guard, CRM Lead View Registry, institutionalHeaders, strikePayload evidence, and sovereign request integrity.
+ */
 export const integrityShield = async (req, res, next) => {
   const start = process.hrtime();
   const url = (req.originalUrl || req.url || '').toLowerCase();
@@ -385,6 +472,7 @@ export const integrityShield = async (req, res, next) => {
     if (!isBusinessArtifactStrike || !businessArtifactHeadersPresent) {
       if (
         shouldContinueWilsyCrmCommandAfterHardening(req) ||
+        shouldContinueWilsyLeadViewRegistryAfterHardening(req) ||
         (['POST', 'PATCH', 'PUT'].includes(String(req.method || '').toUpperCase()) &&
           String(req.originalUrl || req.path || req.url || '').includes(
             '/api/crm/command/meetings'
