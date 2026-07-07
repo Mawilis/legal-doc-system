@@ -2912,6 +2912,10 @@ export default function WilsyLeadOperatingRoom({
   const [splitView, setSplitView] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(true);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+
+  const [leadViewMembershipById, setLeadViewMembershipById] = useState({});
+  const [leadViewCommandBusy, setLeadViewCommandBusy] = useState('');
+  const [leadViewCommandFeedback, setLeadViewCommandFeedback] = useState('');
   /* P60K5Q10FG93I_CUSTOM_VIEW_STATE */
   const [leadCustomViewBuilderOpen, setLeadCustomViewBuilderOpen] = useState(false);
   const [leadCustomViews, setLeadCustomViews] = useState(() => {
@@ -3342,6 +3346,443 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
   }
 
   // P60K5Q10FG99F_SIGNED_LEAD_VIEW_REGISTRY_CLIENT
+
+
+  /**
+   * @function formatWilsyLeadViewOperatingCount
+   * @description Formats large Lead View counts for million-record-safe display text.
+   * @param {number} count Raw count.
+   * @returns {string} Compact count label.
+   * @collaboration Lead View Command Strip, million-record UX, saved collections, and list-view organizer copy.
+   */
+  function formatWilsyLeadViewOperatingCount(count = 0) {
+    const value = Number(count || 0);
+
+    if (!Number.isFinite(value) || value <= 0) return '0';
+    if (value < 1000) return String(value);
+    if (value < 1000000) {
+      const display = value < 10000 ? (value / 1000).toFixed(1) : Math.round(value / 1000);
+      return `${display}K`;
+    }
+
+    const display = value < 10000000 ? (value / 1000000).toFixed(1) : Math.round(value / 1000000);
+    return `${display}M`;
+  }
+
+  /**
+   * @function resolveWilsyLeadViewBackendId
+   * @description Resolves the backend Lead View Registry id for the active custom view.
+   * @param {object} view Active organizer view.
+   * @returns {string} Backend view id.
+   * @collaboration Lead View Registry, membership overrides, command strip actions, and saved custom views.
+   */
+  function resolveWilsyLeadViewBackendId(view = {}) {
+    return String(
+      view.backendViewId
+      || view.backendId
+      || view.registryViewId
+      || view._id
+      || view.id
+      || ''
+    ).trim();
+  }
+
+  /**
+   * @function resolveWilsySelectedLeadIdsForMembership
+   * @description Normalizes selected Lead row ids from existing row-selection state.
+   * @returns {string[]} Selected Lead ids.
+   * @collaboration Existing selectedRowIds state, Add selected, Remove selected, and backend membership overrides.
+   */
+  function resolveWilsySelectedLeadIdsForMembership() {
+    if (selectedRowIds instanceof Set) {
+      return Array.from(selectedRowIds).map((leadId) => String(leadId || '').trim()).filter(Boolean);
+    }
+
+    if (Array.isArray(selectedRowIds)) {
+      return selectedRowIds.map((leadId) => String(leadId || '').trim()).filter(Boolean);
+    }
+
+    if (selectedRowIds && typeof selectedRowIds === 'object') {
+      return Object.entries(selectedRowIds)
+        .filter(([, selected]) => Boolean(selected))
+        .map(([leadId]) => String(leadId || '').trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  /**
+   * @function resolveWilsyLeadViewMembershipSummary
+   * @description Resolves the current membership summary for the active Lead view.
+   * @param {object} view Active organizer view.
+   * @returns {object} Membership summary.
+   * @collaboration Backend run endpoint, View Command Strip, manual include/exclude telemetry, and collection explanation.
+   */
+  function resolveWilsyLeadViewMembershipSummary(view = {}) {
+    const activeSummary = leadViewMembershipById[view.id]
+      || leadViewMembershipById[resolveWilsyLeadViewBackendId(view)]
+      || view.membership
+      || view.membershipSummary
+      || view.lastRun?.membership
+      || {};
+
+    return {
+      effectiveCount: Number(activeSummary.effectiveCount ?? view.count ?? 0),
+      ruleMatchCount: Number(activeSummary.ruleMatchCount ?? view.count ?? 0),
+      manualIncludeCount: Number(activeSummary.manualIncludeCount ?? activeSummary.includeCount ?? 0),
+      manualExcludeCount: Number(activeSummary.manualExcludeCount ?? activeSummary.excludeCount ?? 0),
+      algorithm: activeSummary.algorithm || 'rule_matches_plus_manual_includes_minus_manual_excludes',
+      formula: activeSummary.formula || 'effective = ruleMatches + manualIncludes - manualExcludes',
+    };
+  }
+
+  /**
+   * @function isWilsyCustomLeadCollectionView
+   * @description Determines whether the active organizer view is a saved backend custom collection.
+   * @param {object} view Active organizer view.
+   * @returns {boolean} Whether command strip CRUD/membership actions should activate.
+   * @collaboration Built-in views, custom views, backend registry ids, and safe disabled states.
+   */
+  function isWilsyCustomLeadCollectionView(view = {}) {
+    return Boolean(
+      view?.persistedBackend
+      || view?.backendViewId
+      || view?.criteriaHash
+      || leadCustomViews.some((customView) => customView.id === view.id)
+    );
+  }
+
+  /**
+   * @function buildWilsyLeadViewCommandPayload
+   * @description Builds institutional evidence payloads for frontend Lead View membership and archive commands.
+   * @param {string} route Backend route.
+   * @param {string} action Command action.
+   * @param {object} body Command body.
+   * @returns {object} Signed command payload.
+   * @collaboration Institutional headers, strike payload, selected Lead rows, and FG103B backend routes.
+   */
+  function buildWilsyLeadViewCommandPayload(route = '/api/crm/leads/views', action = 'RUN_LEAD_VIEW', body = {}) {
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const generatedAt = new Date().toISOString();
+    const requestId = `REQ-FG103C-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const institutionalHeaders = {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorUserId,
+      operatorUserId: identity.operatorUserId,
+      userId: identity.operatorUserId,
+      route,
+      commandSurface: 'CRM_LEADS_VIEW_COMMAND_STRIP',
+      timestamp: generatedAt,
+      generatedAt,
+      requestId,
+    };
+
+    return {
+      ...body,
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorUserId,
+      operatorUserId: identity.operatorUserId,
+      userId: identity.operatorUserId,
+      commandSurface: 'CRM_LEADS_VIEW_COMMAND_STRIP',
+      generatedAt,
+      requestId,
+      institutionalHeaders,
+      strikePayload: {
+        action,
+        tenantId: identity.tenantId,
+        operatorId: identity.operatorUserId,
+        operatorUserId: identity.operatorUserId,
+        userId: identity.operatorUserId,
+        route,
+        commandSurface: 'CRM_LEADS_VIEW_COMMAND_STRIP',
+        timestamp: generatedAt,
+        generatedAt,
+        requestId,
+        institutionalHeaders,
+      },
+    };
+  }
+
+  /**
+   * @function requestWilsyLeadViewCommand
+   * @description Executes a signed Lead View Registry command from the frontend command strip.
+   * @param {string} route Backend route path.
+   * @param {string} action Command action.
+   * @param {object} body Command body.
+   * @param {string} method HTTP method.
+   * @returns {Promise<object>} Backend JSON response.
+   * @collaboration FG103B membership endpoints, signed headers, browser JWT, and frontend productivity controls.
+   */
+  async function requestWilsyLeadViewCommand(route = '/api/crm/leads/views', action = 'RUN_LEAD_VIEW', body = {}, method = 'POST') {
+    const token = resolveWilsyLeadViewRegistryAuthToken();
+    const payload = buildWilsyLeadViewCommandPayload(route, action, body);
+    const sealContract = buildWilsyLeadViewRegistrySealHeaders(payload);
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const registryUrl = resolveWilsyLeadViewRegistryUrl();
+    const endpoint = `${registryUrl}${route.replace('/api/crm/leads/views', '')}`;
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Tenant-Id': identity.tenantId,
+        'X-Operator-Id': identity.operatorUserId,
+        'X-Operator-User-Id': identity.operatorUserId,
+        'X-User-Id': identity.operatorUserId,
+        'X-Command-Surface': 'CRM_LEADS_VIEW_COMMAND_STRIP',
+        'X-Request-ID': payload.requestId,
+        'X-Trace-ID': payload.requestId,
+        'X-Correlation-ID': payload.requestId,
+        'X-Forensic-Timestamp': payload.generatedAt,
+        'X-Timestamp': payload.generatedAt,
+        'X-Generated-At': payload.generatedAt,
+        'X-Cryptographic-Nonce': sealContract.nonce,
+        'X-Request-Seal': sealContract.requestSeal,
+        'X-Wilsy-Lead-View-Seal': 'P60K5Q10FG103C_VIEW_COMMAND_STRIP',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(json?.message || json?.error || `Lead View command failed: ${response.status}`);
+    }
+
+    return json;
+  }
+
+  /**
+   * @function refreshWilsyLeadViewMembershipSummary
+   * @description Runs the active saved Lead view and stores membership summary for the command strip.
+   * @param {object} view Active organizer view.
+   * @returns {Promise<void>} Refresh completion.
+   * @collaboration Backend run endpoint, membership summary, View Command Strip, and live custom collections.
+   */
+  async function refreshWilsyLeadViewMembershipSummary(view = activeLeadOrganizerView) {
+    const backendViewId = resolveWilsyLeadViewBackendId(view);
+
+    if (!backendViewId || !isWilsyCustomLeadCollectionView(view)) {
+      return;
+    }
+
+    const route = `/api/crm/leads/views/${backendViewId}/run`;
+    const result = await requestWilsyLeadViewCommand(route, 'RUN_LEAD_VIEW', {}, 'POST');
+    const membership = result?.result?.membership || result?.membership || {};
+
+    setLeadViewMembershipById((previous) => ({
+      ...previous,
+      [view.id]: membership,
+      [backendViewId]: membership,
+    }));
+  }
+
+  /**
+   * @function applyWilsyLeadViewMembershipCommand
+   * @description Adds or removes selected Lead rows from the active saved Lead view.
+   * @param {string} mode Membership mode.
+   * @returns {Promise<void>} Command completion.
+   * @collaboration Existing row selection, FG103B include/exclude routes, membership summary, and collection actions.
+   */
+  async function applyWilsyLeadViewMembershipCommand(mode = 'include') {
+    const backendViewId = resolveWilsyLeadViewBackendId(activeLeadOrganizerView);
+    const selectedLeadIds = resolveWilsySelectedLeadIdsForMembership();
+    const normalizedMode = mode === 'exclude' ? 'exclude' : 'include';
+
+    if (!backendViewId || !isWilsyCustomLeadCollectionView(activeLeadOrganizerView)) {
+      setLeadViewCommandFeedback('Select a saved custom view before changing membership.');
+      return;
+    }
+
+    if (!selectedLeadIds.length) {
+      setLeadViewCommandFeedback('Select one or more leads first.');
+      return;
+    }
+
+    setLeadViewCommandBusy(normalizedMode);
+    setLeadViewCommandFeedback('');
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}/overrides/${normalizedMode}`;
+      const result = await requestWilsyLeadViewCommand(
+        route,
+        normalizedMode === 'include' ? 'INCLUDE_LEADS_IN_VIEW' : 'EXCLUDE_LEADS_FROM_VIEW',
+        {
+          leadIds: selectedLeadIds,
+          reason: `FG103C ${normalizedMode} selected leads from View Command Strip`,
+        },
+        'POST'
+      );
+
+      const summary = result?.membership?.summary || result?.summary || {};
+      setLeadViewMembershipById((previous) => ({
+        ...previous,
+        [activeLeadOrganizerView.id]: summary,
+        [backendViewId]: summary,
+      }));
+      setLeadViewCommandFeedback(`${selectedLeadIds.length} lead${selectedLeadIds.length === 1 ? '' : 's'} ${normalizedMode === 'include' ? 'added to' : 'removed from'} this view.`);
+      await refreshWilsyLeadViewMembershipSummary(activeLeadOrganizerView);
+    } catch (error) {
+      setLeadViewCommandFeedback(error?.message || 'Lead View membership command failed.');
+    } finally {
+      setLeadViewCommandBusy('');
+    }
+  }
+
+  /**
+   * @function archiveWilsyActiveLeadView
+   * @description Archives the active custom Lead view through the backend registry and removes it from local workspace state.
+   * @returns {Promise<void>} Archive completion.
+   * @collaboration Backend archive route, custom view lifecycle, audit history, and local organizer state.
+   */
+  async function archiveWilsyActiveLeadView() {
+    const backendViewId = resolveWilsyLeadViewBackendId(activeLeadOrganizerView);
+
+    if (!backendViewId || !isWilsyCustomLeadCollectionView(activeLeadOrganizerView)) {
+      setLeadViewCommandFeedback('Select a saved custom view before archiving.');
+      return;
+    }
+
+    setLeadViewCommandBusy('archive');
+    setLeadViewCommandFeedback('');
+
+    try {
+      const route = `/api/crm/leads/views/${backendViewId}`;
+      await requestWilsyLeadViewCommand(route, 'ARCHIVE_LEAD_VIEW', {}, 'DELETE');
+
+      const nextViews = leadCustomViews.filter((view) => view.id !== activeLeadOrganizerView.id);
+      setLeadCustomViews(nextViews);
+      setActiveListViewId('ALL');
+      setLeadPage(1);
+
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
+      }
+
+      setLeadViewCommandFeedback('Custom view archived with backend audit history retained.');
+    } catch (error) {
+      setLeadViewCommandFeedback(error?.message || 'Archive command failed.');
+    } finally {
+      setLeadViewCommandBusy('');
+    }
+  }
+
+  /**
+   * @function openWilsyActiveLeadViewRulesEditor
+   * @description Opens the existing custom view builder surface for rule editing workflow continuity.
+   * @returns {void}
+   * @collaboration Existing Custom View Builder, active custom view context, rule editing, and saved collection UX.
+   */
+  function openWilsyActiveLeadViewRulesEditor() {
+    setLeadViewCommandFeedback('Rule editor opened. Save will create/update the custom view criteria.');
+    if (typeof setLeadCustomViewBuilderOpen === 'function') {
+      setLeadCustomViewBuilderOpen(true);
+      return;
+    }
+
+    if (typeof setCommandOpen === 'function') {
+      setCommandOpen(true);
+    }
+  }
+
+  /**
+   * @function renderWilsyLeadViewCommandStrip
+   * @description Renders the selected custom Lead view command strip for membership and lifecycle controls.
+   * @returns {JSX.Element|null} Command strip.
+   * @collaboration View Organizer, selected rows, membership overrides, edit rules, archive, and membership summary.
+   */
+  function renderWilsyLeadViewCommandStrip() {
+    const isCustomView = isWilsyCustomLeadCollectionView(activeLeadOrganizerView);
+    const backendViewId = resolveWilsyLeadViewBackendId(activeLeadOrganizerView);
+    const selectedLeadIds = resolveWilsySelectedLeadIdsForMembership();
+    const membership = resolveWilsyLeadViewMembershipSummary(activeLeadOrganizerView);
+    const disabled = !isCustomView || !backendViewId;
+
+    if (!activeLeadOrganizerView) {
+      return null;
+    }
+
+    return (
+      <section
+        className={styles.leadViewCommandStrip}
+        data-wilsy-lead-view-command-strip="FG103C"
+        data-wilsy-custom-view-active={String(isCustomView)}
+      >
+        <div className={styles.leadViewCommandStripIdentity}>
+          <span>Live Collection</span>
+          <strong>{resolveLeadOperatingCopyLabel(activeLeadOrganizerView.label, activeLeadOrganizerView.id)}</strong>
+          <em>
+            {disabled
+              ? 'Built-in view · select or create a custom view for collection controls'
+              : `${formatWilsyLeadViewOperatingCount(membership.effectiveCount)} effective · ${formatWilsyLeadViewOperatingCount(membership.ruleMatchCount)} rule · ${formatWilsyLeadViewOperatingCount(membership.manualIncludeCount)} manual adds · ${formatWilsyLeadViewOperatingCount(membership.manualExcludeCount)} excluded`}
+          </em>
+        </div>
+
+        <div className={styles.leadViewCommandStripMeta}>
+          <span>{selectedLeadIds.length} selected</span>
+          <span>{backendViewId ? `Registry ${backendViewId.slice(0, 8)}` : 'No registry id'}</span>
+        </div>
+
+        <div className={styles.leadViewCommandStripActions}>
+          <button
+            type="button"
+            disabled={disabled || !selectedLeadIds.length || Boolean(leadViewCommandBusy)}
+            onClick={() => applyWilsyLeadViewMembershipCommand('include')}
+          >
+            {leadViewCommandBusy === 'include' ? 'Adding…' : 'Add selected'}
+          </button>
+          <button
+            type="button"
+            disabled={disabled || !selectedLeadIds.length || Boolean(leadViewCommandBusy)}
+            onClick={() => applyWilsyLeadViewMembershipCommand('exclude')}
+          >
+            {leadViewCommandBusy === 'exclude' ? 'Removing…' : 'Remove selected'}
+          </button>
+          <button
+            type="button"
+            disabled={!isCustomView || Boolean(leadViewCommandBusy)}
+            onClick={openWilsyActiveLeadViewRulesEditor}
+          >
+            Edit rules
+          </button>
+          <button
+            type="button"
+            disabled={disabled || Boolean(leadViewCommandBusy)}
+            onClick={() => refreshWilsyLeadViewMembershipSummary(activeLeadOrganizerView)}
+          >
+            Refresh summary
+          </button>
+          <button
+            type="button"
+            disabled={disabled || Boolean(leadViewCommandBusy)}
+            onClick={archiveWilsyActiveLeadView}
+          >
+            {leadViewCommandBusy === 'archive' ? 'Archiving…' : 'Archive'}
+          </button>
+        </div>
+
+        {leadViewCommandFeedback ? (
+          <p className={styles.leadViewCommandStripFeedback}>{leadViewCommandFeedback}</p>
+        ) : null}
+      </section>
+    );
+  }
+
+  // P60K5Q10FG103C_VIEW_COMMAND_STRIP_ENGINE
+
+  useEffect(() => {
+    if (!activeLeadOrganizerView || !isWilsyCustomLeadCollectionView(activeLeadOrganizerView)) {
+      return;
+    }
+
+    refreshWilsyLeadViewMembershipSummary(activeLeadOrganizerView).catch((error) => {
+      setLeadViewCommandFeedback(error?.message || 'Lead View summary refresh failed.');
+    });
+  }, [activeListViewId]);
+
+
 
 /**
    * @function handleSaveLeadCustomView
@@ -6121,6 +6562,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             </section>
           ) : null}
         </div>
+        {renderWilsyLeadViewCommandStrip()}
       </section>
     );
   }
