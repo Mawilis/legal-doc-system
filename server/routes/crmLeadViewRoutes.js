@@ -162,7 +162,7 @@ async function runLeadViewHandler(req, res) {
       previousCursor: result.result?.previousCursor || '',
     });
   } catch (error) {
-    return sendError(res, error);
+    return sendLeadViewError(res, error);
   }
 }
 
