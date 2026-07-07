@@ -3638,15 +3638,16 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function archiveWilsyToolbarActiveCollectionView
-   * @description Archives the active custom Lead view through the backend registry.
-   * @returns {Promise<void>} Archive completion.
-   * @collaboration Existing archive route, audit retention, toolbar lifecycle controls, and local view state.
+   * @description Deletes the active custom Lead view from the operator UI; archives backend registry state when a backend id exists.
+   * @returns {Promise<void>} Delete/archive completion.
+   * @collaboration Custom view lifecycle, backend audit retention, local fallback delete, toolbar actions, and Lead View Registry.
    */
   async function archiveWilsyToolbarActiveCollectionView() {
     const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
+    const isCustomView = isWilsyToolbarCustomCollectionView(activeLeadOrganizerView);
 
-    if (!backendViewId || !isWilsyToolbarCustomCollectionView(activeLeadOrganizerView)) {
-      setLeadToolbarCommandFeedback('Select a custom view');
+    if (!isCustomView) {
+      setLeadToolbarCommandFeedback('Select a custom view to delete');
       return;
     }
 
@@ -3654,25 +3655,47 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
     setLeadToolbarCommandFeedback('');
 
     try {
-      const route = `/api/crm/leads/views/${backendViewId}`;
-      await requestWilsyToolbarCollectionCommand(route, 'ARCHIVE_LEAD_VIEW', {}, 'DELETE');
+      if (backendViewId) {
+        const route = `/api/crm/leads/views/${backendViewId}`;
+        await requestWilsyToolbarCollectionCommand(route, 'ARCHIVE_LEAD_VIEW', {}, 'DELETE');
+      }
 
-      const nextViews = leadCustomViews.filter((view) => view.id !== activeLeadOrganizerView.id);
+      const activeViewId = String(activeLeadOrganizerView?.id || '');
+      const nextViews = leadCustomViews.filter((view) => {
+        const candidateIds = [
+          view?.id,
+          view?.backendViewId,
+          view?.backendId,
+          view?.registryViewId,
+          view?._id,
+        ].map((value) => String(value || ''));
+
+        return !candidateIds.includes(activeViewId)
+          && (!backendViewId || !candidateIds.includes(String(backendViewId)));
+      });
+
       setLeadCustomViews(nextViews);
+      setSelectedRowIds([]);
       setActiveListViewId('ALL');
-      setLeadPage(1);
+      setCurrentLeadPage(1);
 
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem('wilsy.crm.leads.customViews.v1', JSON.stringify(nextViews));
       }
 
-      setLeadToolbarCommandFeedback('Archived');
+      setLeadToolbarCommandFeedback(
+        backendViewId
+          ? 'Custom view deleted from workspace · backend audit archived'
+          : 'Local custom view deleted'
+      );
     } catch (error) {
-      setLeadToolbarCommandFeedback(error?.message || 'Archive failed');
+      setLeadToolbarCommandFeedback(error?.message || 'Delete custom view failed');
     } finally {
       setLeadToolbarCommandBusy('');
     }
   }
+
+  // P60K5Q10FG103M_DELETE_CUSTOM_VIEW_WORKFLOW
 
   /**
    * @function openWilsyToolbarCollectionEditor
@@ -3687,17 +3710,18 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
 
   /**
    * @function renderWilsyToolbarCollectionActions
-   * @description Renders compact collection controls inside the existing Records toolbar.
+   * @description Renders compact collection controls inside the existing Records toolbar with custom-view delete available even when the view is empty.
    * @returns {JSX.Element|null} Toolbar actions.
-   * @collaboration Existing toolbar, selected rows, custom views, membership overrides, and non-invasive frontend UX.
+   * @collaboration Existing toolbar, selected rows, custom views, membership overrides, delete view, and non-invasive frontend UX.
    */
   function renderWilsyToolbarCollectionActions() {
     const selectedLeadIds = resolveWilsyToolbarSelectedLeadIds();
     const isCustomView = isWilsyToolbarCustomCollectionView(activeLeadOrganizerView);
     const backendViewId = resolveWilsyToolbarViewBackendId(activeLeadOrganizerView);
     const membership = resolveWilsyToolbarMembershipSummary(activeLeadOrganizerView);
-    const disabled = !isCustomView || !backendViewId;
+    const hasCollectionTarget = Boolean(isCustomView && backendViewId);
     const shouldRender = isCustomView || selectedLeadIds.length > 0;
+    const busy = Boolean(leadToolbarCommandBusy);
 
     if (!shouldRender) {
       return null;
@@ -3708,49 +3732,60 @@ const [coreToolsOpen, setCoreToolsOpen] = useState(false);
         className={styles.leadToolbarCollectionActions}
         data-wilsy-lead-toolbar-collection-actions="FG103G"
         data-wilsy-custom-view-active={String(isCustomView)}
+        data-wilsy-collection-target-ready={String(hasCollectionTarget)}
+        data-wilsy-fg103m-delete-view-actions="true"
       >
         <span className={styles.leadToolbarCollectionStatus}>
           {leadToolbarCommandFeedback
-            || `${selectedLeadIds.length} selected · ${formatWilsyToolbarCollectionCount(membership.manualIncludeCount)} add · ${formatWilsyToolbarCollectionCount(membership.manualExcludeCount)} out`}
+            || (isCustomView
+              ? `${selectedLeadIds.length} selected · ${formatWilsyToolbarCollectionCount(membership.manualIncludeCount)} add · ${formatWilsyToolbarCollectionCount(membership.manualExcludeCount)} out`
+              : `${selectedLeadIds.length} selected`)}
         </span>
         <button
           type="button"
-          disabled={disabled || !selectedLeadIds.length || Boolean(leadToolbarCommandBusy)}
+          disabled={!hasCollectionTarget || !selectedLeadIds.length || busy}
           onClick={() => applyWilsyToolbarMembershipCommand('include')}
+          title={hasCollectionTarget ? 'Add selected leads to this custom view' : 'Select a saved custom view with backend registry id'}
         >
           {leadToolbarCommandBusy === 'include' ? 'Adding…' : '+ Add'}
         </button>
         <button
           type="button"
-          disabled={disabled || !selectedLeadIds.length || Boolean(leadToolbarCommandBusy)}
+          disabled={!hasCollectionTarget || !selectedLeadIds.length || busy}
           onClick={() => applyWilsyToolbarMembershipCommand('exclude')}
+          title="Remove selected leads from this custom view"
         >
           {leadToolbarCommandBusy === 'exclude' ? 'Removing…' : '− Remove'}
         </button>
         <button
           type="button"
-          disabled={!isCustomView || Boolean(leadToolbarCommandBusy)}
+          disabled={!isCustomView || busy}
           onClick={openWilsyToolbarCollectionEditor}
+          title="Edit this custom view"
         >
           Edit
         </button>
         <button
           type="button"
-          disabled={disabled || Boolean(leadToolbarCommandBusy)}
+          disabled={!hasCollectionTarget || busy}
           onClick={() => refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)}
+          title={hasCollectionTarget ? 'Refresh backend membership summary' : 'Backend registry id required'}
         >
           {leadToolbarCommandBusy === 'sync' ? 'Syncing…' : 'Sync'}
         </button>
         <button
           type="button"
-          disabled={disabled || Boolean(leadToolbarCommandBusy)}
+          disabled={!isCustomView || busy}
           onClick={archiveWilsyToolbarActiveCollectionView}
+          title={hasCollectionTarget ? 'Delete entire custom view and preserve backend audit' : 'Delete local custom view'}
         >
-          {leadToolbarCommandBusy === 'archive' ? 'Archiving…' : 'Archive'}
+          {leadToolbarCommandBusy === 'archive' ? 'Deleting…' : 'Delete'}
         </button>
       </div>
     );
   }
+
+  // P60K5Q10FG103M_ACTIVE_EMPTY_CUSTOM_VIEW_ACTIONS
 
   // P60K5Q10FG103G_TOOLBAR_COLLECTION_ACTIONS_ENGINE
 
@@ -5367,7 +5402,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     setSelectedLeadId('');
 
     if (typeof setLeadPage === 'function') {
-      setLeadPage(1);
+      setCurrentLeadPage(1);
     }
 
     if (typeof setLeadCurrentPage === 'function') {
@@ -5768,7 +5803,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                       onClick={() => {
                       setActiveListViewId(view.id || 'ALL');
                       setCurrentLeadPage(1);
-                      setLeadPage(1);
+                      setCurrentLeadPage(1);
                       setViewMenuOpen(false);
                     }}
                     >
@@ -6459,7 +6494,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                     onClick={() => {
                       setActiveListViewId(view.id || 'ALL');
                       setCurrentLeadPage(1);
-                      setLeadPage(1);
+                      setCurrentLeadPage(1);
                       setViewMenuOpen(false);
                     }}
                   >
