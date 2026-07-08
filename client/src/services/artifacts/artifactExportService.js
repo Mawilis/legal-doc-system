@@ -62,6 +62,11 @@ function getBrowserToken() {
   const keys = ['token', 'accessToken', 'wilsy_token', 'wilsyAuthToken', 'sovereignToken', 'authToken'];
 
   for (const key of keys) {
+    /**
+     * @function value
+     * @description Resolves a display-safe artifact value with a fallback.
+     * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, and Wilsy OS export workflows.
+     */
     const value = localStorage.getItem(key) || sessionStorage.getItem(key);
     if (value && value.length > 10) return value.replace(/^Bearer\s+/i, '');
   }
@@ -102,6 +107,14 @@ function blobToBase64(blob) {
     const reader = new FileReader();
 
     reader.onload = () => {
+      /**
+       * @function value
+       * @description Resolves a display-safe artifact value with a fallback.
+       * @param {unknown} candidate - Candidate value from artifact payloads.
+       * @param {unknown} fallback - Fallback value when the candidate is empty.
+       * @returns {unknown} Candidate or fallback value for artifact export rendering.
+       * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, DOCX export helpers, JSON export helpers, and Wilsy OS export workflows.
+       */
       const value = String(reader.result || '');
       resolve(value.includes(',') ? value.split(',')[1] : value);
     };
@@ -158,6 +171,30 @@ function createPayload(artifact, tenantId, tenantConfig = {}) {
  * @collaboration Keeps PDF generation on the branded Wilsy OS backend renderer.
  */
 async function createPdfBlob(artifact, payload) {
+  // P60K5Q10FG106F_CRM_PROOF_PACK_PDF_PAYLOAD_BRIDGE
+  const crmProofPackPayload =
+    artifact?.crmProofPack ||
+    artifact?.proofPackSections ||
+    artifact?.data?.crmProofPack ||
+    payload?.crmProofPack ||
+    payload?.proofPackSections ||
+    payload?.data?.crmProofPack ||
+    null;
+
+  const pdfPayload = crmProofPackPayload
+    ? {
+        ...payload,
+        crmProofPack: crmProofPackPayload,
+        proofPackSections: artifact?.proofPackSections || artifact?.sections || payload?.proofPackSections || crmProofPackPayload,
+        sections: artifact?.sections || payload?.sections || [],
+        sourcePosture: artifact?.sourcePosture || payload?.sourcePosture || 'SOURCE_AWARE_CRM_PROOF',
+        issuingEntity: artifact?.issuingEntity || payload?.issuingEntity || '',
+        counterparty: artifact?.counterparty || payload?.counterparty || '',
+        authorityLine: artifact?.authorityLine || payload?.authorityLine || '',
+        reviewNotice: artifact?.reviewNotice || payload?.reviewNotice || '',
+      }
+    : payload;
+
   const type = payload.type;
   const tenantId = payload.tenantId;
   const timestamp = new Date().toISOString();
@@ -186,8 +223,8 @@ async function createPdfBlob(artifact, payload) {
       artifactType: type,
       title: artifact.title,
       tenantId,
-      payload,
-      data: payload,
+      payload: pdfPayload,
+      data: pdfPayload,
       metadata: {
         type,
         artifactType: type,
@@ -243,6 +280,14 @@ async function loadWilsyDocxLogoImage() {
  */
 
 async function createDocxBlob(artifact, payload) {
+  /**
+   * @function value
+   * @description Resolves a display-safe artifact value with a fallback.
+   * @param {unknown} candidate - Candidate value from artifact payloads.
+   * @param {unknown} fallback - Fallback value when the candidate is empty.
+   * @returns {unknown} Candidate or fallback value for artifact export rendering.
+   * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, DOCX export helpers, JSON export helpers, and Wilsy OS export workflows.
+   */
   const value = (input, fallback = '') => String(input ?? fallback);
   const generatedAt = value(payload.generatedAt, new Date().toISOString());
   const wilsyLogoImage = await loadWilsyDocxLogoImage();
@@ -278,6 +323,11 @@ async function createDocxBlob(artifact, payload) {
     ['GENERATED AT', generatedAt]
   ];
 
+  /**
+   * @function p
+   * @description Creates a paragraph node for editable artifact exports.
+   * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, and Wilsy OS export workflows.
+   */
   const p = (textValue, options = {}) => new Paragraph({
     heading: options.heading,
     alignment: options.alignment,
@@ -292,6 +342,11 @@ async function createDocxBlob(artifact, payload) {
     ]
   });
 
+  /**
+   * @function cell
+   * @description Creates a table cell node for editable artifact exports.
+   * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, and Wilsy OS export workflows.
+   */
   const cell = (children, options = {}) => new TableCell({
     width: options.width ? { size: options.width, type: WidthType.DXA } : undefined,
     shading: options.fill ? { fill: options.fill } : undefined,
@@ -371,6 +426,11 @@ async function createDocxBlob(artifact, payload) {
     ]
   });
 
+  /**
+   * @function sectionTitle
+   * @description Creates a section title paragraph for artifact export documents.
+   * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, and Wilsy OS export workflows.
+   */
   const sectionTitle = (textValue) => p(textValue, {
     heading: HeadingLevel.HEADING_1,
     bold: true,
@@ -380,6 +440,11 @@ async function createDocxBlob(artifact, payload) {
     after: 160
   });
 
+  /**
+   * @function bullet
+   * @description Creates a bullet paragraph for artifact export documents.
+   * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, and Wilsy OS export workflows.
+   */
   const bullet = (textValue) => new Paragraph({
     bullet: { level: 0 },
     spacing: { after: 120 },
@@ -488,6 +553,11 @@ async function createEmailPackBlob(artifact, payload, attachments = []) {
   const boundary = `wilsy_mixed_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   const htmlBoundary = `wilsy_alt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
+  /**
+   * @function escapeHtml
+   * @description Escapes artifact text before HTML or email package rendering.
+   * @collaboration Artifact export service, CRM Proof Pack PDF payload bridge, and Wilsy OS export workflows.
+   */
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

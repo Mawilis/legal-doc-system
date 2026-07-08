@@ -177,6 +177,363 @@ const formatMetricValue = (value) => {
 };
 
 /**
+ * @function isCrmLeadProofPackArtifact
+ * @description Detects CRM Lead Proof Pack artifact requests inside the existing artifactController pipeline.
+ * @param {string} type - Artifact type.
+ * @param {object} payloadData - Artifact payload data.
+ * @returns {boolean} Whether the payload is a CRM Lead Proof Pack.
+ * @collaboration FG106F CRM Proof Pack adapter, generateArtifactExport, and the existing /api/generate/pdf route.
+ */
+const isCrmLeadProofPackArtifact = (type, payloadData = {}) => {
+  const fingerprint = [
+    type,
+    payloadData?.type,
+    payloadData?.artifactType,
+    payloadData?.templateType,
+    payloadData?.crmProofPack?.type,
+    payloadData?.proofPackSections?.type,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ');
+
+  return (
+    fingerprint.includes('crm') && fingerprint.includes('proof') && fingerprint.includes('pack')
+  );
+};
+
+/**
+ * @function resolveCrmLeadProofPackData
+ * @description Resolves CRM Proof Pack payload fields preserved by artifactExportService.
+ * @param {object} payloadData - Artifact payload data.
+ * @returns {object} CRM Proof Pack data.
+ * @collaboration Existing artifactController renderer, generateArtifactExport, and CRM proof payload passthrough.
+ */
+const resolveCrmLeadProofPackData = (payloadData = {}) =>
+  payloadData.crmProofPack || payloadData.proofPackSections || payloadData.data?.crmProofPack || {};
+
+/**
+ * @function normalizeCrmLeadProofRows
+ * @description Normalizes proof-pack rows into two-column PDF rows.
+ * @param {unknown} rows - Candidate rows.
+ * @returns {Array<Array<string>>} Normalized rows.
+ * @collaboration CRM Proof Pack PDF sections, safe PDF text, and audit payload rendering.
+ */
+const normalizeCrmLeadProofRows = (rows) => {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((row) => {
+      if (Array.isArray(row)) {
+        return [safeText(row[0], 'Label'), safeText(row[1], 'N/A')];
+      }
+
+      if (row && typeof row === 'object') {
+        return [
+          safeText(row.label || row.title || row.name || row.key, 'Label'),
+          safeText(row.value || row.status || row.reason || row.detail, 'N/A'),
+        ];
+      }
+
+      return ['Value', safeText(row, 'N/A')];
+    })
+    .filter((row) => row[0] || row[1]);
+};
+
+/**
+ * @function resolveCrmLeadProofBottomY
+ * @description Resolves the safe bottom boundary for CRM Proof Pack PDF page flow.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @returns {number} Bottom y coordinate.
+ * @collaboration CRM Proof Pack renderer and PDFKit page geometry.
+ */
+const resolveCrmLeadProofBottomY = (doc) => Number(doc?.page?.height || 792) - 72;
+
+/**
+ * @function ensureCrmLeadProofPageRoom
+ * @description Adds a page when the CRM Proof Pack section needs space.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {number} y - Current y coordinate.
+ * @param {number} room - Required room.
+ * @returns {number} Safe y coordinate.
+ * @collaboration CRM Proof Pack section renderer and PDFKit page flow.
+ */
+const ensureCrmLeadProofPageRoom = (doc, y, room = 92) => {
+  if (y <= resolveCrmLeadProofBottomY(doc) - room) return y;
+  doc.addPage();
+  return 72;
+};
+
+/**
+ * @function drawCrmLeadProofPackHeader
+ * @description Draws a CRM Proof Pack title block without legal execution wording.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {object} proofPack - Proof pack payload.
+ * @param {string} tenantId - Tenant identifier.
+ * @returns {number} Next y coordinate.
+ * @collaboration CRM Evidence Ledger, Wilsy OS proof exports, and existing artifactController PDF stream.
+ */
+const drawCrmLeadProofPackHeader = (doc, proofPack = {}, tenantId = '') => {
+  doc.rect(50, 50, 512, 98).fill('#020617');
+  doc.rect(50, 146, 512, 4).fill('#10B981');
+
+  doc
+    .fillColor('#34D399')
+    .fontSize(10)
+    .font('Helvetica-Bold')
+    .text('WILSY OS CRM EVIDENCE ARTIFACT', 72, 70);
+
+  doc
+    .fillColor('#FFFFFF')
+    .fontSize(24)
+    .font('Helvetica-Bold')
+    .text(safeText(proofPack.title, 'Lead Evidence Ledger Proof Pack').toUpperCase(), 72, 88, {
+      width: 350,
+      lineGap: 2,
+    });
+
+  doc
+    .fillColor('#CBD5E1')
+    .fontSize(9)
+    .font('Helvetica')
+    .text(safeText(proofPack.subtitle, 'CRM evidence packet sealed by Wilsy OS'), 72, 126, {
+      width: 350,
+    });
+
+  doc.roundedRect(442, 72, 96, 42, 10).strokeColor('#10B981').lineWidth(1.2).stroke();
+
+  doc.fillColor('#FFFFFF').fontSize(12).font('Helvetica-Bold').text('WILSY OS', 456, 82);
+
+  doc.fillColor('#94A3B8').fontSize(7).font('Helvetica').text('LEGAL SOVEREIGNTY', 456, 100);
+
+  doc
+    .fillColor('#10B981')
+    .fontSize(11)
+    .font('Helvetica-Bold')
+    .text('TENANT BRANDED PROOF PACK', 72, 166);
+
+  doc
+    .fillColor('#0F172A')
+    .fontSize(9)
+    .font('Helvetica')
+    .text(safeText(tenantId, safeText(proofPack.tenantId, 'TENANT_PENDING')), 72, 184);
+
+  return 216;
+};
+
+/**
+ * @function drawCrmLeadProofRows
+ * @description Draws two-column CRM Proof Pack rows.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {Array<Array<string>>} rows - Rows to draw.
+ * @param {number} y - Start y.
+ * @returns {number} Next y coordinate.
+ * @collaboration CRM proof summary, authority seals, metrics, and source-aware evidence fields.
+ */
+const drawCrmLeadProofRows = (doc, rows = [], y = 0) => {
+  let cursorY = y;
+
+  rows.forEach(([label, value], index) => {
+    cursorY = ensureCrmLeadProofPageRoom(doc, cursorY, 40);
+    doc.roundedRect(72, cursorY, 438, 30, 4).fill(index % 2 === 0 ? '#F8FAFC' : '#FFFFFF');
+
+    doc
+      .fillColor('#64748B')
+      .fontSize(7.5)
+      .font('Helvetica-Bold')
+      .text(safeText(label, 'Label').toUpperCase(), 84, cursorY + 8, { width: 138 });
+
+    doc
+      .fillColor('#0F172A')
+      .fontSize(8.5)
+      .font('Helvetica')
+      .text(safeText(value, 'N/A'), 228, cursorY + 8, { width: 262, lineGap: 1 });
+
+    cursorY += 35;
+  });
+
+  return cursorY;
+};
+
+/**
+ * @function drawCrmLeadProofSection
+ * @description Draws a named CRM Proof Pack section.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {string} title - Section title.
+ * @param {Array<Array<string>>} rows - Section rows.
+ * @param {number} y - Start y.
+ * @returns {number} Next y coordinate.
+ * @collaboration CRM Proof Pack sections and existing artifactController PDF output.
+ */
+const drawCrmLeadProofSection = (doc, title, rows, y) => {
+  if (!rows.length) return y;
+
+  let cursorY = ensureCrmLeadProofPageRoom(doc, y, 82);
+
+  doc
+    .fillColor('#059669')
+    .fontSize(13)
+    .font('Helvetica-Bold')
+    .text(safeText(title, 'SECTION').toUpperCase(), 72, cursorY);
+
+  cursorY += 20;
+
+  return drawCrmLeadProofRows(doc, rows, cursorY) + 8;
+};
+
+/**
+ * @function drawCrmLeadProofChecks
+ * @description Draws numbered CRM Proof Pack checks.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {Array<object>} checks - Proof checks.
+ * @param {number} y - Start y.
+ * @returns {number} Next y coordinate.
+ * @collaboration CRM access control, export control, receipt persistence, and source authority checks.
+ */
+const drawCrmLeadProofChecks = (doc, checks = [], y = 0) => {
+  if (!Array.isArray(checks) || !checks.length) return y;
+
+  let cursorY = ensureCrmLeadProofPageRoom(doc, y, 84);
+
+  doc.fillColor('#059669').fontSize(13).font('Helvetica-Bold').text('PROOF CHECKS', 72, cursorY);
+
+  cursorY += 22;
+
+  checks.forEach((check, index) => {
+    cursorY = ensureCrmLeadProofPageRoom(doc, cursorY, 54);
+    doc.roundedRect(72, cursorY, 438, 42, 6).fill('#F8FAFC');
+
+    doc
+      .fillColor('#10B981')
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .text(`${index + 1}.`, 84, cursorY + 9, { width: 20 });
+
+    doc
+      .fillColor('#0F172A')
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .text(safeText(check.label, 'Proof Check'), 108, cursorY + 8, { width: 170 });
+
+    doc
+      .fillColor('#334155')
+      .fontSize(8)
+      .font('Helvetica')
+      .text(`status: ${safeText(check.status, 'Pending')}`, 108, cursorY + 21, { width: 170 });
+
+    doc
+      .fillColor('#475569')
+      .fontSize(8)
+      .font('Helvetica')
+      .text(`reason: ${safeText(check.reason, 'N/A')}`, 284, cursorY + 8, {
+        width: 206,
+        lineGap: 1,
+      });
+
+    cursorY += 50;
+  });
+
+  return cursorY + 8;
+};
+
+/**
+ * @function drawCrmLeadProofPackArtifactPdf
+ * @description Draws a CRM Proof Pack PDF inside the existing artifactController route without recreating FG105 Tenant PDF.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {object} args - Render arguments.
+ * @returns {object} Theme object for existing footer drawing.
+ * @collaboration /api/generate/pdf, artifactController, generateArtifactExport, CRM Evidence Ledger, and FG106F payload support.
+ */
+const drawCrmLeadProofPackArtifactPdf = (
+  doc,
+  {
+    type,
+    payloadData = {},
+    metadata = {},
+    tenantId = '',
+    userEmail = '',
+    traceId = '',
+    clientSeal = '',
+  }
+) => {
+  const proofPack = resolveCrmLeadProofPackData(payloadData);
+  let y = drawCrmLeadProofPackHeader(doc, proofPack, tenantId);
+
+  const summaryRows = normalizeCrmLeadProofRows(proofPack.proofSummaryRows || []);
+  const authorityRows = normalizeCrmLeadProofRows(proofPack.authoritySealRows || []);
+  const timelineRows = normalizeCrmLeadProofRows(proofPack.operationalTimeline || []);
+  const scopedRows = normalizeCrmLeadProofRows(
+    Array.isArray(proofPack.scopedRecords)
+      ? proofPack.scopedRecords.map((item) => [item.label, item.value])
+      : []
+  );
+  const metricsRows = normalizeCrmLeadProofRows(proofPack.metricsRows || []);
+
+  y = drawCrmLeadProofSection(doc, 'Proof Summary', summaryRows, y);
+  y = drawCrmLeadProofSection(doc, 'Authority Seals', authorityRows, y);
+  y = drawCrmLeadProofChecks(doc, proofPack.proofChecks || [], y);
+  y = drawCrmLeadProofSection(doc, 'Operational Timeline', timelineRows, y);
+  y = drawCrmLeadProofSection(doc, 'Scoped Records', scopedRows, y);
+  y = drawCrmLeadProofSection(doc, 'Metrics', metricsRows, y);
+
+  y = ensureCrmLeadProofPageRoom(doc, y, 86);
+
+  doc.roundedRect(72, y, 438, 54, 6).fill('#ECFDF5');
+
+  doc
+    .fillColor('#047857')
+    .fontSize(10)
+    .font('Helvetica-Bold')
+    .text('REVIEW AND RETENTION', 88, y + 10);
+
+  doc
+    .fillColor('#0F172A')
+    .fontSize(8.5)
+    .font('Helvetica')
+    .text(
+      safeText(
+        proofPack.notice,
+        'Retain this CRM Proof Pack with the saved-view registry proof, access receipt, export authority, source routes, cursor evidence and Wilsy OS proof trail.'
+      ),
+      88,
+      y + 25,
+      { width: 404, lineGap: 1 }
+    );
+
+  doc
+    .fillColor('#64748B')
+    .fontSize(7)
+    .font('Helvetica')
+    .text(
+      `Generated by Wilsy OS · FG106F_CRM_PROOF_PACK_ARTIFACT_CONTROLLER_SUPPORT · ${safeText(
+        proofPack.generatedAt || metadata?.timestamp,
+        new Date().toISOString()
+      )}`,
+      72,
+      resolveCrmLeadProofBottomY(doc) - 14,
+      { width: 438, align: 'center' }
+    );
+
+  return {
+    primary: '#020617',
+    accent: '#10B981',
+    gold: '#D4AF37',
+    text: '#0F172A',
+    muted: '#64748B',
+    border: '#CBD5E1',
+    background: '#FFFFFF',
+    success: '#10B981',
+    traceId,
+    clientSeal,
+    type,
+    userEmail,
+  };
+};
+
+// P60K5Q10FG106F_CRM_PROOF_PACK_ARTIFACT_CONTROLLER_SUPPORT
+
+/**
  * @function collectMetrics
  * @description Extracts high-signal dashboard metrics from an artifact payload.
  * @param {Object} payload - Artifact payload data.
@@ -1043,12 +1400,10 @@ export const generateSovereignArtifact = async (req, res, next) => {
           type,
         }
       );
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Artifact timestamp missing. Request proof cannot be verified.',
-        });
+      return res.status(400).json({
+        success: false,
+        message: 'Artifact timestamp missing. Request proof cannot be verified.',
+      });
     }
 
     if (!clientSeal && !clientProof) {
@@ -1066,12 +1421,10 @@ export const generateSovereignArtifact = async (req, res, next) => {
           type,
         }
       );
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: 'Cryptographic request proof missing. Artifact generation denied.',
-        });
+      return res.status(401).json({
+        success: false,
+        message: 'Cryptographic request proof missing. Artifact generation denied.',
+      });
     }
 
     if (forceProceedOverride) {
@@ -1108,13 +1461,11 @@ export const generateSovereignArtifact = async (req, res, next) => {
             type,
           }
         );
-        return res
-          .status(401)
-          .json({
-            success: false,
-            message:
-              'Cryptographic seal invalid or tampered. Boardroom access revoked for this request.',
-          });
+        return res.status(401).json({
+          success: false,
+          message:
+            'Cryptographic seal invalid or tampered. Boardroom access revoked for this request.',
+        });
       }
     } else {
       const acceptedProofs = new Set(
@@ -1271,17 +1622,29 @@ export const generateSovereignArtifact = async (req, res, next) => {
     // Pipe PDF directly to response
     doc.pipe(res);
 
-    const theme = drawArtifactPdf(doc, {
-      type,
-      payloadData,
-      metadata,
-      tenantId,
-      userEmail,
-      traceId,
-      clientSeal,
-      signature,
-      bankDetails,
-    });
+    const theme = isCrmLeadProofPackArtifact(type, payloadData)
+      ? drawCrmLeadProofPackArtifactPdf(doc, {
+          type,
+          payloadData,
+          metadata,
+          tenantId,
+          userEmail,
+          traceId,
+          clientSeal,
+          signature,
+          bankDetails,
+        })
+      : drawArtifactPdf(doc, {
+          type,
+          payloadData,
+          metadata,
+          tenantId,
+          userEmail,
+          traceId,
+          clientSeal,
+          signature,
+          bankDetails,
+        });
 
     drawFootersOnAllPages(doc, theme, traceId);
 
