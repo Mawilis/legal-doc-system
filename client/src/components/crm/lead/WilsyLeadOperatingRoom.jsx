@@ -10277,13 +10277,47 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
 
 
+
+  /**
+   * @function downloadWilsyProofCockpitFile
+   * @description Downloads the active sealed Proof Pack as a JSON evidence file.
+   * @param {object} packet Proof cockpit packet.
+   * @returns {void}
+   * @collaboration Proof Pack file export, operator evidence handoff, audit receipt portability, cursor proof, and production review workflows.
+   */
+  function downloadWilsyProofCockpitFile(packet = {}) {
+    const payload = formatWilsyProductionProofPayload(packet);
+    const receiptSeed = String(
+      packet.evidence?.auditReceiptId
+      || packet.evidence?.backendViewId
+      || 'proof-pack'
+    ).replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 80) || 'proof-pack';
+    const fileName = `wilsy-proof-pack-${receiptSeed}.json`;
+    const blob = new Blob([payload], { type: 'application/json;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+
+    anchor.href = objectUrl;
+    anchor.download = fileName;
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+    setLeadToolbarCommandFeedback(`Proof Pack file exported · ${fileName}`);
+  }
+
+  // P60K5Q10FG104L3_PROOF_PACK_FILE_EXPORT
+
+
   /**
    * @function renderWilsyProofPackSurface
    * @description Renders a visible Proof Pack artifact capsule for sealed evidence export.
    * @param {object} packet Proof cockpit packet.
    * @param {object} score Proof score packet.
    * @returns {JSX.Element} Proof Pack surface.
-   * @collaboration Proof Pack, evidence receipts, backend view id, criteria hash, cursor proof, membership overrides, and export readiness.
+   * @collaboration Proof Pack, evidence receipts, backend view id, criteria hash, cursor proof, membership overrides, downloadable proof files, and export readiness.
    */
   function renderWilsyProofPackSurface(packet = {}, score = {}) {
     const proofPackCells = [
@@ -10300,6 +10334,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         className={styles.leadProofPackSurface}
         data-wilsy-proof-pack="FG104H2"
         data-wilsy-proof-pack-artifact="FG104I"
+        data-wilsy-proof-pack-file-export="FG104L3"
         data-wilsy-proof-pack-ready={score.score >= 95 ? 'ready' : 'blocked'}
       >
         <header>
@@ -10307,9 +10342,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <small>Proof Pack</small>
             <strong>{score.score >= 95 ? 'Export-ready evidence artifact' : 'Evidence artifact assembling'}</strong>
           </span>
-          <button type="button" data-wilsy-proof-pack-primary-action="FG104I" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof pack')}>
-            Copy Proof Pack
-          </button>
+          <div className={styles.leadProofPackActions} data-wilsy-proof-pack-actions="FG104L3">
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof pack')}>
+              Copy Pack
+            </button>
+            <button type="button" data-wilsy-proof-pack-primary-action="FG104L3" onClick={() => downloadWilsyProofCockpitFile(packet)}>
+              Download File
+            </button>
+          </div>
         </header>
         <div>
           {proofPackCells.map((cell) => (
@@ -10322,6 +10362,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       </section>
     );
   }
+
+  // P60K5Q10FG104L3_VISIBLE_FILE_EXPORT_PROOF_PACK
 
   // P60K5Q10FG104H2_VISIBLE_PROOF_PACK_SURFACE
   // P60K5Q10FG104I_PROOF_PACK_ARTIFACT_DOCK
@@ -10371,7 +10413,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           <div>
             <button type="button" onClick={() => setActiveTopTab('records')}>Records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>Export packet</button>
+            <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
           </div>
         </header>
 
@@ -10404,7 +10446,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           <div>
             <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>Export packet</button>
+            <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
           </div>
         </section>
 

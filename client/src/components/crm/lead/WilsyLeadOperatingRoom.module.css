@@ -13970,3 +13970,59 @@ td[data-wilsy-lead-empty-state="records"] {
     flex-wrap: wrap !important;
   }
 }
+
+/* P60K5Q10FG104L3_PROOF_PACK_FILE_EXPORT */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofPackSurface[data-wilsy-proof-pack-file-export="FG104L3"] {
+  min-height: 76px !important;
+  grid-template-columns: minmax(280px, 0.34fr) minmax(0, 1fr) !important;
+}
+
+.leadProofPackActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.leadProofPackActions button {
+  min-height: 28px;
+  border: 1px solid rgba(126, 255, 188, 0.32);
+  border-radius: 999px;
+  background: rgba(4, 22, 14, 0.82);
+  color: rgba(248, 255, 251, 0.94);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 940;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+.leadProofPackActions [data-wilsy-proof-pack-primary-action="FG104L3"] {
+  border-color: rgba(246, 231, 151, 0.5);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(246, 231, 151, 0.18), transparent 58%),
+    rgba(32, 26, 8, 0.94);
+  color: rgba(255, 247, 202, 0.98);
+  box-shadow: 0 0 24px rgba(246, 231, 151, 0.12);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail[data-wilsy-proof-command-rail="FG104I"] button:last-child {
+  border-color: rgba(246, 231, 151, 0.42) !important;
+  color: rgba(255, 247, 202, 0.98) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofPackSurface[data-wilsy-proof-pack-file-export="FG104L3"] article {
+  min-height: 50px !important;
+}
+
+@media (max-width: 1360px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofPackSurface[data-wilsy-proof-pack-file-export="FG104L3"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .leadProofPackActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
