@@ -398,6 +398,255 @@ function drawSection(doc, cursor, section) {
 }
 
 /**
+ * @function resolveCrmProofPackFromIdentity
+ * @description Resolves CRM Proof Pack evidence from the already-adapted enterprise identity.
+ * @param {object} identity Enterprise identity.
+ * @returns {object} CRM proof pack evidence object.
+ * @collaboration businessArtifactPdfController, CRM proof adapter, and enterprise PDF renderer.
+ */
+function resolveCrmProofPackFromIdentity(identity = {}) {
+  const data = identity.data || {};
+  const payload = identity.payload || {};
+  const payloadData = identity.payloadData || {};
+
+  return (
+    identity.crmProofPack ||
+    identity.proofPackSections ||
+    payloadData.crmProofPack ||
+    payloadData.proofPackSections ||
+    payload.crmProofPack ||
+    payload.proofPackSections ||
+    data.crmProofPack ||
+    data.proofPackSections ||
+    {}
+  );
+}
+
+/**
+ * @function hasCrmProofPackEvidence
+ * @description Detects whether a CRM proof pack contains exportable evidence rows.
+ * @param {object} proofPack CRM proof pack object.
+ * @returns {boolean} True when CRM evidence rows exist.
+ * @collaboration CRM Proof Pack adapter and enterprise PDF section routing.
+ */
+function hasCrmProofPackEvidence(proofPack = {}) {
+  return Boolean(
+    Array.isArray(proofPack.proofSummaryRows) ||
+    Array.isArray(proofPack.authoritySealRows) ||
+    Array.isArray(proofPack.proofChecks) ||
+    Array.isArray(proofPack.operationalTimeline) ||
+    Array.isArray(proofPack.scopedRecords) ||
+    Array.isArray(proofPack.metricsRows)
+  );
+}
+
+/**
+ * @function hydrateCrmProofPackState
+ * @description Adds CRM Proof Pack evidence to the normal enterprise render state without replacing buildState.
+ * @param {object} state Existing enterprise render state.
+ * @param {object} identity Enterprise identity.
+ * @param {object} proof Forensic proof context.
+ * @returns {object} Hydrated render state.
+ * @collaboration Preserves branded/security chrome while replacing only CRM payload content.
+ */
+function hydrateCrmProofPackState(state = {}, identity = {}, proof = {}) {
+  const proofPack = resolveCrmProofPackFromIdentity(identity);
+
+  if (!hasCrmProofPackEvidence(proofPack)) {
+    return state;
+  }
+
+  const tenantId = textValue(proofPack.tenantId || identity.tenantId || state.tenantId || 'MASTER');
+  const generatedBy = textValue(
+    proofPack.generatedBy ||
+      identity.generatedBy ||
+      identity.userEmail ||
+      identity.email ||
+      state.generatedBy ||
+      'wilsonkhanyezi@gmail.com'
+  );
+
+  const sourcePosture = textValue(
+    proofPack.sourcePosture ||
+      (identity.sourcePosture && identity.sourcePosture !== 'SOURCE_REPAIR_REQUIRED'
+        ? identity.sourcePosture
+        : '') ||
+      (proof.sourcePosture && proof.sourcePosture !== 'SOURCE_REPAIR_REQUIRED'
+        ? proof.sourcePosture
+        : '') ||
+      'SOURCE_LIVE'
+  );
+
+  return {
+    ...state,
+    tenantId,
+    counterparty: textValue(proofPack.counterparty || tenantId),
+    generatedBy,
+    operatorEmail: textValue(identity.userEmail || identity.email || generatedBy),
+    sourcePosture,
+    generatedAt: textValue(proofPack.generatedAt || identity.generatedAt || state.generatedAt),
+    crmProofPack: proofPack,
+    hasCrmProofPack: true,
+    proofSummaryRows: proofPack.proofSummaryRows || [],
+    authoritySealRows: proofPack.authoritySealRows || [],
+    proofChecks: proofPack.proofChecks || [],
+    operationalTimeline: proofPack.operationalTimeline || [],
+    scopedRecords: proofPack.scopedRecords || [],
+    metricsRows: proofPack.metricsRows || [],
+  };
+}
+
+/**
+ * @function isCrmProofPackState
+ * @description Detects CRM Proof Pack state inside the enterprise branded PDF renderer.
+ * @param {object} state Render state.
+ * @returns {boolean} True when CRM proof evidence is present.
+ * @collaboration businessArtifactPdfController, CRM proof adapter, and Wilsy enterprise PDF shell.
+ */
+function isCrmProofPackState(state = {}) {
+  return Boolean(state.hasCrmProofPack);
+}
+
+/**
+ * @function normalizeCrmProofPackText
+ * @description Converts CRM proof evidence values into compact PDF-safe text.
+ * @param {unknown} value Source value.
+ * @returns {string} PDF-safe text.
+ * @collaboration CRM evidence rows and enterprise PDF section writer.
+ */
+function normalizeCrmProofPackText(value = '') {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeCrmProofPackText(item))
+      .filter(Boolean)
+      .join(' - ');
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, itemValue]) => `${textValue(key)}: ${normalizeCrmProofPackText(itemValue)}`)
+      .filter(Boolean)
+      .join(' - ');
+  }
+
+  return textValue(value);
+}
+
+/**
+ * @function normalizeCrmProofPackRowsForPdf
+ * @description Converts CRM Proof Pack rows into narrative bullets for the branded renderer.
+ * @param {unknown} rows Source rows.
+ * @returns {string[]} PDF paragraph rows.
+ * @collaboration CRM proof rows, story sections, and Wilsy enterprise PDF renderer.
+ */
+function normalizeCrmProofPackRowsForPdf(rows = []) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows
+    .map((row) => {
+      if (Array.isArray(row)) {
+        return `${textValue(row[0])}: ${normalizeCrmProofPackText(row[1])}`;
+      }
+
+      if (row && typeof row === 'object') {
+        const label = textValue(row.label || row.title || row.key || row.name || 'Evidence');
+        const detail = normalizeCrmProofPackText(
+          [row.status, row.reason, row.value, row.detail].filter(Boolean)
+        );
+
+        return detail ? `${label}: ${detail}` : label;
+      }
+
+      return normalizeCrmProofPackText(row);
+    })
+    .filter(Boolean);
+}
+
+/**
+ * @function getCrmProofPackSections
+ * @description Builds CRM Proof Pack sections while preserving the Wilsy enterprise PDF chrome.
+ * @param {object} state Render state.
+ * @returns {Array<object>} CRM-specific artifact sections.
+ * @collaboration Replaces generic legal artifact payload with CRM proof narrative.
+ */
+function getCrmProofPackSections(state = {}) {
+  return [
+    {
+      title: '1. PROOF SUMMARY AND OPERATING CONTEXT',
+      paragraphs: [
+        'This Lead Evidence Ledger Proof Pack records the saved-view proof, ledger access decision, export authority, source-route posture, membership overrides and run receipt that support the CRM operating decision.',
+        ...normalizeCrmProofPackRowsForPdf(state.proofSummaryRows),
+      ],
+    },
+    {
+      title: '2. TENANT, OPERATOR AND AUTHORITY SEALS',
+      paragraphs: [
+        `Tenant: ${state.tenantId}`,
+        `Generated by: ${state.generatedBy}`,
+        `Operator email: ${state.operatorEmail}`,
+        `Source posture: ${state.sourcePosture}`,
+        ...normalizeCrmProofPackRowsForPdf(state.authoritySealRows),
+      ],
+    },
+    {
+      title: '3. PROOF CHECKS, CONTROLS AND EXCEPTIONS',
+      paragraphs: [
+        'The checks below show what was validated before this proof pack was exported.',
+        ...normalizeCrmProofPackRowsForPdf(state.proofChecks),
+      ],
+    },
+    {
+      title: '4. OPERATIONAL TIMELINE AND SCOPED RECORDS',
+      paragraphs: [
+        'The timeline and scoped-record evidence below explain what happened, what data was in scope, and how the proof can be reconstructed.',
+        ...normalizeCrmProofPackRowsForPdf(state.operationalTimeline),
+        ...normalizeCrmProofPackRowsForPdf(state.scopedRecords),
+      ],
+    },
+    {
+      title: '5. METRICS AND DECISION SUPPORT',
+      paragraphs: [
+        'The metrics below summarize the exported CRM proof result.',
+        ...normalizeCrmProofPackRowsForPdf(state.metricsRows),
+      ],
+    },
+  ];
+}
+
+/**
+ * @function getCrmProofPackScheduleSections
+ * @description Builds CRM Proof Pack appendix sections for the branded enterprise schedule area.
+ * @param {object} state Render state.
+ * @returns {Array<object>} CRM proof schedule sections.
+ * @collaboration Preserves forensic appendix posture without showing generic missing-source legal fields.
+ */
+function getCrmProofPackScheduleSections(state = {}) {
+  return [
+    {
+      title: 'SCHEDULE A - CRM PROOF EVIDENCE LEDGER',
+      paragraphs: [
+        ...normalizeCrmProofPackRowsForPdf(state.proofSummaryRows),
+        ...normalizeCrmProofPackRowsForPdf(state.authoritySealRows),
+        ...normalizeCrmProofPackRowsForPdf(state.proofChecks),
+      ],
+    },
+    {
+      title: 'SCHEDULE B - FORENSIC PROOF APPENDIX',
+      paragraphs: [
+        `Trace ID: ${state.traceId}`,
+        `Merkle Root: ${state.merkleRoot}`,
+        `SHA3 / Seal: ${state.sha3}`,
+        `Source Posture: ${state.sourcePosture}`,
+        `Generated At: ${state.generatedAt}`,
+        'This appendix supports audit reconstruction, version comparison, dispute response, investor diligence and internal control review.',
+      ],
+    },
+  ];
+}
+
+/**
  * @function getNdaSections
  * @description Returns deeper enterprise NDA clauses.
  * @param {object} state - Render state.
@@ -492,6 +741,10 @@ function getGenericSections(state) {
  * @collaboration Provides a safe expansion path for legal, HR, finance and operational documents.
  */
 function buildSections(state) {
+  if (isCrmProofPackState(state)) {
+    return getCrmProofPackSections(state);
+  }
+
   const type = state.type.toLowerCase();
 
   if (type.includes('nda') || type.includes('non-disclosure')) {
@@ -579,6 +832,13 @@ function drawDocumentControl(doc, cursor, state) {
  * @collaboration Adds audit and source-control depth to generated artifacts.
  */
 function drawProofSchedule(doc, cursor, state) {
+  if (isCrmProofPackState(state)) {
+    return getCrmProofPackScheduleSections(state).reduce(
+      (nextCursor, section) => drawSection(doc, nextCursor, section),
+      cursor
+    );
+  }
+
   doc.addPage();
   cursor.y = PAGE.top;
 
@@ -609,6 +869,21 @@ function drawProofSchedule(doc, cursor, state) {
  * @collaboration Produces a boardroom-ready execution page for tenant-facing artifacts.
  */
 function drawExecution(doc, cursor, state) {
+  if (isCrmProofPackState(state)) {
+    return drawSection(doc, cursor, {
+      title: 'PROOF AUTHORITY AND RETENTION',
+      paragraphs: [
+        `Tenant authority: ${state.tenantId}`,
+        `Generated by: ${state.generatedBy}`,
+        `Operator email: ${state.operatorEmail}`,
+        `Trace ID: ${state.traceId}`,
+        `Merkle Root: ${state.merkleRoot}`,
+        `SHA3 / Seal: ${state.sha3}`,
+        'This CRM Proof Pack is retained as Wilsy OS proof-ledger evidence. It supports audit, investor diligence, compliance review, operational reconstruction and controlled internal reliance.',
+      ],
+    });
+  }
+
   doc.addPage();
   cursor.y = PAGE.top;
 
@@ -700,7 +975,7 @@ function applyChrome(doc, state) {
  * @collaboration Replaces shallow draft documents with tenant-facing enterprise artifact output.
  */
 export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
-  const state = buildState(identity, proof);
+  const state = hydrateCrmProofPackState(buildState(identity, proof), identity, proof);
   const fileName = `WILSY-OS-${safeFileName(state.title)}-${state.tenantId}-${Date.now()}.pdf`;
 
   res.setHeader('Content-Type', 'application/pdf');
@@ -736,3 +1011,5 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
 }
 
 export default streamEnterpriseArtifactPdf;
+
+// P60K5Q10FG106O_ENTERPRISE_RENDERER_CRM_PROOF_STORY
