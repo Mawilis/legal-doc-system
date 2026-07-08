@@ -11197,31 +11197,86 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       'X-Tenant-Id': artifactPayload.tenantId || tenantId || 'wilsy-sovereign-root',
       'X-Wilsy-Tenant-ID': artifactPayload.tenantId || tenantId || 'wilsy-sovereign-root',
       'X-Wilsy-Command-Surface': 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT',
-      'X-Wilsy-Artifact-Adapter': 'P60K5Q10FG106Q',
+      'X-Wilsy-Artifact-Adapter': 'P60K5Q10FG106R',
     };
 
     if (token) {
       headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/generate/pdf', {
+    if (typeof window !== 'undefined') {
+      window.__wilsyCrmProofPackArtifactPdfLastRun = {
+        phase: 'REQUEST_STARTED',
+        adapter: 'P60K5Q10FG106R',
+        filename,
+        tenantId: artifactPayload.tenantId || tenantId || 'wilsy-sovereign-root',
+        startedAt: new Date().toISOString(),
+      };
+    }
+
+    return fetch('/api/generate/pdf', {
       method: 'POST',
       headers,
       body: JSON.stringify(artifactPayload),
-    });
+    })
+      .then(async (response) => {
+        if (typeof window !== 'undefined') {
+          window.__wilsyCrmProofPackArtifactPdfLastRun = {
+            ...(window.__wilsyCrmProofPackArtifactPdfLastRun || {}),
+            phase: 'FETCH_RESOLVED',
+            status: response.status,
+            ok: response.ok,
+            contentType: response.headers.get('content-type') || '',
+            fetchedAt: new Date().toISOString(),
+          };
+        }
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(errorText || `Artifact PDF export failed with HTTP ${response.status}`);
-    }
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          throw new Error(errorText || `Artifact PDF export failed with HTTP ${response.status}`);
+        }
 
-    const blob = await response.blob();
+        const pdfBlob = await response.clone().blob();
 
-    if (!(blob instanceof Blob) || blob.size < 128) {
-      throw new Error('Artifact PDF export returned an invalid PDF blob.');
-    }
+        if (typeof window !== 'undefined') {
+          window.__wilsyCrmProofPackArtifactPdfLastRun = {
+            ...(window.__wilsyCrmProofPackArtifactPdfLastRun || {}),
+            phase: 'BLOB_READY',
+            blobSize: pdfBlob?.size || 0,
+            blobType: pdfBlob?.type || '',
+            blobReadyAt: new Date().toISOString(),
+          };
+        }
 
-    downloadWilsyCrmProofPackArtifactBlob(blob, filename);
+        if (!(pdfBlob instanceof Blob) || pdfBlob.size < 128) {
+          throw new Error('Artifact PDF export returned an invalid PDF blob.');
+        }
+
+        const delivery = downloadWilsyCrmProofPackArtifactBlob(pdfBlob, filename);
+
+        if (typeof window !== 'undefined') {
+          window.__wilsyCrmProofPackArtifactPdfLastRun = {
+            ...(window.__wilsyCrmProofPackArtifactPdfLastRun || {}),
+            phase: 'DOWNLOAD_DISPATCHED',
+            delivery,
+            completedAt: new Date().toISOString(),
+          };
+        }
+
+        return delivery;
+      })
+      .catch((error) => {
+        if (typeof window !== 'undefined') {
+          window.__wilsyCrmProofPackArtifactPdfLastRun = {
+            ...(window.__wilsyCrmProofPackArtifactPdfLastRun || {}),
+            phase: 'FAILED',
+            error: String(error?.message || error),
+            failedAt: new Date().toISOString(),
+          };
+        }
+
+        throw error;
+      });
   }
 
   /**
@@ -11838,3 +11893,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 // P60K5Q10FG97_UNIQUE_COMPACT_ORGANIZER_MENU_SOURCE\n
 
   // P60K5Q10FG106Q_REAL_ARTIFACT_BUTTON_DIRECT_BLOB_DOWNLOAD
+
+  // P60K5Q10FG106R_PROMISE_CHAIN_ARTIFACT_PDF_DELIVERY
