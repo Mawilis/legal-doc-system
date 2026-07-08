@@ -13381,3 +13381,118 @@ td[data-wilsy-lead-empty-state="records"] {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* P60K5Q10FG104H2_PROOF_PACK_SURFACE */
+.leadProofPackSurface {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.28fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(126, 255, 188, 0.24);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at left, rgba(62, 255, 154, 0.11), transparent 34%),
+    rgba(3, 11, 18, 0.78);
+}
+
+.leadProofPackSurface[data-wilsy-proof-pack-ready="ready"] {
+  border-color: rgba(62, 255, 154, 0.4);
+  background:
+    radial-gradient(circle at left, rgba(62, 255, 154, 0.16), transparent 36%),
+    rgba(4, 30, 17, 0.72);
+}
+
+.leadProofPackSurface header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.leadProofPackSurface header span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.leadProofPackSurface small {
+  color: rgba(246, 231, 151, 0.92);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.leadProofPackSurface strong {
+  overflow: hidden;
+  color: rgba(248, 255, 251, 0.96);
+  font-size: 0.72rem;
+  font-weight: 930;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leadProofPackSurface button {
+  flex: 0 0 auto;
+  min-height: 26px;
+  border: 1px solid rgba(126, 255, 188, 0.32);
+  border-radius: 999px;
+  background: rgba(4, 22, 14, 0.82);
+  color: rgba(248, 255, 251, 0.94);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 940;
+  padding: 0 8px;
+}
+
+.leadProofPackSurface > div {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  min-width: 0;
+}
+
+.leadProofPackSurface article {
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.leadProofPackSurface article strong {
+  display: block;
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit {
+  gap: 7px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofAuthorityGrid article[data-status="ready"] {
+  border-color: rgba(62, 255, 154, 0.32) !important;
+  background: rgba(4, 29, 17, 0.72) !important;
+}
+
+@media (max-width: 1360px) {
+  .leadProofPackSurface {
+    grid-template-columns: 1fr;
+  }
+
+  .leadProofPackSurface > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .leadProofPackSurface > div {
+    grid-template-columns: 1fr;
+  }
+}

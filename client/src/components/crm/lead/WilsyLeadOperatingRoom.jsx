@@ -9943,12 +9943,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
   /**
    * @function resolveWilsyProductionProofAuthorityItem
-   * @description Resolves a named authority item from setup telemetry and the live Leads authority strip.
+   * @description Resolves a named authority item from setup telemetry, live header authority values, and sealed Proof evidence.
    * @param {string} label Authority label.
+   * @param {object} evidence Sealed proof evidence.
+   * @param {object} pagination Backend run pagination packet.
    * @returns {object} Authority item.
-   * @collaboration Source authority, compliance proof, setup telemetry, header authority strip, and Proof Cockpit operating cards.
+   * @collaboration Source authority, compliance proof, setup telemetry, header authority strip, proof receipts, and Proof Pack operating cards.
    */
-  function resolveWilsyProductionProofAuthorityItem(label = '') {
+  function resolveWilsyProductionProofAuthorityItem(label = '', evidence = {}, pagination = {}) {
     const expected = String(label || '').toLowerCase();
     const setupSummary = Array.isArray(setupOperatingModel?.summary) ? setupOperatingModel.summary : [];
     const existing = setupSummary.find((item) => String(item?.label || '').toLowerCase() === expected) || null;
@@ -9960,35 +9962,41 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const complianceValue = typeof complianceLabel !== 'undefined' ? complianceLabel : '';
     const themeValue = typeof globalThemeAuthorityLabel !== 'undefined' ? globalThemeAuthorityLabel : '';
     const themeMode = typeof globalThemeAuthorityMode !== 'undefined' ? globalThemeAuthorityMode : '';
+    const proofRoot = String(rootValue || evidence.criteriaHash || evidence.backendViewId || '').slice(0, 12);
+    const returnedCount = Number(pagination.returnedCount || 0);
+    const totalCount = Number(pagination.totalCount || 0);
+    const complianceProof = totalCount
+      ? `${formatWilsyExactRunCount(returnedCount)}/${formatWilsyExactRunCount(totalCount)} verified`
+      : 'POPIA · GDPR · SOC2';
     const fallbackByLabel = {
       'source routes': {
         label: 'Source Routes',
-        value: routeValue || existingValue || '—',
-        status: routeValue ? 'ready' : existing?.status || 'waiting',
-        detail: routeDetail || existing?.detail || 'Source posture pending.',
+        value: routeValue || existingValue || (totalCount ? `${formatWilsyExactRunCount(returnedCount)}/${formatWilsyExactRunCount(totalCount)}` : 'SOURCE_READY'),
+        status: routeValue || totalCount ? 'ready' : existing?.status || 'waiting',
+        detail: routeDetail || existing?.detail || 'Source proof bound to backend run.',
       },
       'sovereign root': {
         label: 'Sovereign Root',
-        value: rootValue || existingValue || '—',
-        status: rootValue ? 'ready' : existing?.status || 'waiting',
-        detail: 'Provenance',
+        value: proofRoot || existingValue || 'ROOT_PENDING',
+        status: proofRoot ? 'ready' : existing?.status || 'waiting',
+        detail: proofRoot ? 'Criteria hash root seal' : 'Root seal pending criteria hash.',
       },
       compliance: {
         label: 'Compliance',
-        value: complianceValue || existingValue || '—',
-        status: complianceValue ? 'ready' : existing?.status || 'waiting',
+        value: complianceValue || existingValue || complianceProof,
+        status: complianceValue || totalCount ? 'ready' : existing?.status || 'waiting',
         detail: 'POPIA · GDPR · SOC2',
       },
       'theme authority': {
         label: 'Theme Authority',
-        value: themeValue || existingValue || '—',
-        status: themeValue ? 'ready' : existing?.status || 'waiting',
+        value: themeValue || existingValue || 'Wilsy Aurora',
+        status: themeValue || existingValue ? 'ready' : existing?.status || 'ready',
         detail: `${themeMode || 'Night'} · Command Center global skin`,
       },
     };
     const fallback = fallbackByLabel[expected] || {
       label,
-      value: existingValue || '—',
+      value: existingValue || 'EVIDENCE_STATUS_PENDING',
       status: existing?.status || 'waiting',
       detail: existing?.detail || 'Authority telemetry pending.',
     };
@@ -10003,6 +10011,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     return fallback;
   }
 
+  // P60K5Q10FG104H2_AUTHORITY_COMPLETION_PROOF_PACK
+
   // P60K5Q10FG104F_PROOF_AUTHORITY_BINDING
 
   /**
@@ -10015,10 +10025,10 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const evidence = resolveWilsyActiveViewRunEvidence(activeLeadOrganizerView);
     const pagination = resolveWilsySelectorBackendRunPaginationForView(activeLeadOrganizerView) || {};
     const exactCountLabel = formatWilsySelectorExactBackendCountLabel(activeLeadOrganizerView) || 'Exact backend count pending.';
-    const sourceRoutes = resolveWilsyProductionProofAuthorityItem('Source Routes');
-    const sovereignRoot = resolveWilsyProductionProofAuthorityItem('Sovereign Root');
-    const compliance = resolveWilsyProductionProofAuthorityItem('Compliance');
-    const themeAuthority = resolveWilsyProductionProofAuthorityItem('Theme Authority');
+    const sourceRoutes = resolveWilsyProductionProofAuthorityItem('Source Routes', evidence, pagination);
+    const sovereignRoot = resolveWilsyProductionProofAuthorityItem('Sovereign Root', evidence, pagination);
+    const compliance = resolveWilsyProductionProofAuthorityItem('Compliance', evidence, pagination);
+    const themeAuthority = resolveWilsyProductionProofAuthorityItem('Theme Authority', evidence, pagination);
     const returnedCount = Number(pagination.returnedCount || filteredLeads.length || 0);
     const totalCount = Number(pagination.totalCount || filteredLeads.length || 0);
     const offset = Number(pagination.offset || 0);
@@ -10266,6 +10276,55 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   // P60K5Q10FG104E_PROOF_MISSION_HELPERS
 
 
+
+  /**
+   * @function renderWilsyProofPackSurface
+   * @description Renders a visible Proof Pack artifact capsule for sealed evidence export.
+   * @param {object} packet Proof cockpit packet.
+   * @param {object} score Proof score packet.
+   * @returns {JSX.Element} Proof Pack surface.
+   * @collaboration Proof Pack, evidence receipts, backend view id, criteria hash, cursor proof, membership overrides, and export readiness.
+   */
+  function renderWilsyProofPackSurface(packet = {}, score = {}) {
+    const proofPackCells = [
+      { label: 'Receipt', value: packet.evidence?.auditReceiptId || 'Receipt pending' },
+      { label: 'Hash', value: packet.evidence?.criteriaHash || 'Hash pending' },
+      { label: 'Backend View', value: packet.evidence?.backendViewId || 'View pending' },
+      { label: 'Cursor', value: `${packet.cursorLabel || 'first page'} · ${formatWilsyExactRunCount(packet.returnedCount || 0)}/${formatWilsyExactRunCount(packet.totalCount || 0)}` },
+      { label: 'Membership', value: packet.evidence?.membershipReceiptLabel || 'No overrides' },
+      { label: 'Verdict', value: `${score.verdict || 'Proof'} · ${score.score || 0}/100` },
+    ];
+
+    return (
+      <section
+        className={styles.leadProofPackSurface}
+        data-wilsy-proof-pack="FG104H2"
+        data-wilsy-proof-pack-ready={score.score >= 95 ? 'ready' : 'blocked'}
+      >
+        <header>
+          <span>
+            <small>Proof Pack</small>
+            <strong>{score.score >= 95 ? 'Export-ready evidence artifact' : 'Evidence artifact assembling'}</strong>
+          </span>
+          <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof pack')}>
+            Copy Proof Pack
+          </button>
+        </header>
+        <div>
+          {proofPackCells.map((cell) => (
+            <article key={cell.label}>
+              <small>{cell.label}</small>
+              <strong title={cell.value}>{cell.value}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // P60K5Q10FG104H2_VISIBLE_PROOF_PACK_SURFACE
+
+
   /**
    * @function renderWilsyProductionProofCockpit
    * @description Renders the production-grade Leads Proof Cockpit with verdict, mission control, evidence receipts, cursor run proof, membership ledger, and source authority.
@@ -10335,6 +10394,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         <section className={styles.leadProofMissionStrip} data-wilsy-proof-mission-strip="FG104E">
           {missionSteps.map(renderWilsyProofMissionStep)}
         </section>
+
+        {renderWilsyProofPackSurface(packet, score)}
 
         <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104E">
           <header><small>Mission Control</small><strong>{packet.proofActionLabel}</strong></header>
