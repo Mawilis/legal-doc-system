@@ -276,7 +276,7 @@ function resolveUserIdFromDocument(user = {}) {
  * @description Produces a minimal safe user selector record.
  * @param {object} user User-like document.
  * @returns {object} Sanitized user record.
- * @collaboration User selector, privacy minimization, tenant access, and Proof Ledger delegation.
+ * @collaboration User selector, privacy minimization, tenant access, directory authority source, and Proof Ledger delegation.
  */
 function sanitizeProofLedgerUser(user = {}) {
   const userId = resolveUserIdFromDocument(user);
@@ -293,11 +293,15 @@ function sanitizeProofLedgerUser(user = {}) {
     name,
     email,
     role,
+    headerRole: normalizeProofLedgerRole(user.headerRole || ''),
     managerId: normalizeProofLedgerText(
       user.managerId || user.reportsTo || user.supervisorId || user.teamLeadId || ''
     ),
     teamId: normalizeProofLedgerText(user.teamId || user.departmentId || user.groupId || ''),
     status: normalizeProofLedgerText(user.status || user.accountStatus || 'active'),
+    directorySource: normalizeProofLedgerText(
+      user.directorySource || user.proofLedgerDirectorySource || 'TENANT_DIRECTORY'
+    ),
   };
 }
 
@@ -333,11 +337,23 @@ function documentBelongsToTenant(user = {}, tenantId = '') {
  * @description Resolves tenant users from available user-like collections without leaking cross-tenant data.
  * @param {object} context Request context.
  * @returns {Promise<Array<object>>} Sanitized tenant users.
- * @collaboration Tenant user selector, admin delegation, manager/team proof visibility, and minimal PII exposure.
+ * @collaboration Tenant user selector, admin delegation, manager/team proof visibility, anti-spoof directory source, and minimal PII exposure.
  */
 async function queryTenantProofLedgerUsers(context = {}) {
   if (mongoose.connection.readyState !== 1) {
-    return [];
+    return [
+      {
+        userId: context.operatorUserId,
+        name: context.operatorEmail || context.operatorUserId,
+        email: context.operatorEmail || '',
+        role: 'operator',
+        headerRole: context.operatorRole || 'operator',
+        managerId: '',
+        teamId: '',
+        status: 'active',
+        directorySource: 'SYNTHETIC_OPERATOR_FALLBACK',
+      },
+    ];
   }
 
   const tenantId = context.tenantId || 'MASTER';
@@ -362,7 +378,10 @@ async function queryTenantProofLedgerUsers(context = {}) {
 
       for (const candidate of candidates) {
         if (!documentBelongsToTenant(candidate, tenantId)) continue;
-        const sanitized = sanitizeProofLedgerUser(candidate);
+        const sanitized = sanitizeProofLedgerUser({
+          ...candidate,
+          directorySource: `TENANT_DIRECTORY:${collectionName}`,
+        });
         if (sanitized.userId) {
           collected.set(sanitized.userId, sanitized);
         }
@@ -377,10 +396,12 @@ async function queryTenantProofLedgerUsers(context = {}) {
       userId: context.operatorUserId,
       name: context.operatorEmail || context.operatorUserId,
       email: context.operatorEmail || '',
-      role: context.operatorRole || 'operator',
+      role: 'operator',
+      headerRole: context.operatorRole || 'operator',
       managerId: '',
       teamId: '',
       status: 'active',
+      directorySource: 'SYNTHETIC_OPERATOR_FALLBACK',
     });
   }
 
@@ -393,7 +414,7 @@ async function queryTenantProofLedgerUsers(context = {}) {
  * @param {object} context Proof Ledger request context.
  * @param {Array<object>} users Sanitized tenant users.
  * @returns {object} Verified authority packet.
- * @collaboration Tenant directory, role hardening, anti-spoofing policy, Proof Ledger export controls, and access receipts.
+ * @collaboration Tenant directory, synthetic fallback anti-spoofing, role hardening, Proof Ledger export controls, and access receipts.
  */
 function resolveProofLedgerOperatorAuthority(context = {}, users = []) {
   const operatorUserId = normalizeProofLedgerText(context.operatorUserId);
@@ -413,18 +434,21 @@ function resolveProofLedgerOperatorAuthority(context = {}, users = []) {
     }) || null;
 
   const directoryRole = normalizeProofLedgerRole(matchedUser?.role || '');
+  const matchedDirectorySource = normalizeProofLedgerText(matchedUser?.directorySource || '');
+  const matchedIsSyntheticFallback = matchedDirectorySource === 'SYNTHETIC_OPERATOR_FALLBACK';
   const productionMode = process.env.NODE_ENV === 'production';
 
-  if (directoryRole) {
+  if (directoryRole && !matchedIsSyntheticFallback) {
     return {
       role: directoryRole,
-      authoritySource: 'TENANT_DIRECTORY',
+      authoritySource: matchedDirectorySource || 'TENANT_DIRECTORY',
       matchedUser: matchedUser
         ? {
             userId: matchedUser.userId,
             email: matchedUser.email,
             name: matchedUser.name,
             status: matchedUser.status,
+            directorySource: matchedDirectorySource || 'TENANT_DIRECTORY',
           }
         : null,
       headerRole,
@@ -436,7 +460,15 @@ function resolveProofLedgerOperatorAuthority(context = {}, users = []) {
     return {
       role: headerRole,
       authoritySource: 'REQUEST_HEADER_DEV_FALLBACK',
-      matchedUser: null,
+      matchedUser: matchedUser
+        ? {
+            userId: matchedUser.userId,
+            email: matchedUser.email,
+            name: matchedUser.name,
+            status: matchedUser.status,
+            directorySource: matchedDirectorySource || 'UNKNOWN',
+          }
+        : null,
       headerRole,
       productionFallbackUsed: true,
     };
@@ -447,11 +479,21 @@ function resolveProofLedgerOperatorAuthority(context = {}, users = []) {
     authoritySource: productionMode
       ? 'PRODUCTION_DIRECTORY_MISS_DENY_ELEVATION'
       : 'DIRECTORY_MISS_DEFAULT_OPERATOR',
-    matchedUser: null,
+    matchedUser: matchedUser
+      ? {
+          userId: matchedUser.userId,
+          email: matchedUser.email,
+          name: matchedUser.name,
+          status: matchedUser.status,
+          directorySource: matchedDirectorySource || 'UNKNOWN',
+        }
+      : null,
     headerRole,
     productionFallbackUsed: false,
   };
 }
+
+// P60K5Q10FG104N3B_SYNTHETIC_FALLBACK_ANTI_SPOOF
 
 // P60K5Q10FG104N2_AUTHORITY_SOURCE_HARDENING
 
@@ -562,7 +604,7 @@ async function recordProofLedgerAccessReceipt(params = {}) {
  * @description Resolves Proof Ledger policy, selectable users, decision, and access receipt.
  * @param {object} req Express request.
  * @returns {Promise<object>} Policy packet.
- * @collaboration Backend-enforced permissions, tenant user selector, selected-user proof ledger, and audit receipts.
+ * @collaboration Backend-enforced permissions, tenant user selector, selected-user proof ledger, authority source hardening, and audit receipts.
  */
 async function resolveProofLedgerAccessPolicy(req = {}) {
   const context = resolveProofLedgerRequestContext(req);
@@ -606,6 +648,7 @@ async function resolveProofLedgerAccessPolicy(req = {}) {
       email: user.email,
       role: user.role,
       status: user.status,
+      directorySource: user.directorySource || 'UNKNOWN',
       accessScope:
         user.userId === context.operatorUserId
           ? 'OWN'
@@ -626,10 +669,14 @@ async function resolveProofLedgerAccessPolicy(req = {}) {
       authoritySource: authority.authoritySource,
       headerRole: authority.headerRole,
       productionFallbackUsed: authority.productionFallbackUsed,
+      matchedUser: authority.matchedUser,
     },
     target: {
       userId: targetUserId,
-      existsInTenantDirectory: Boolean(targetUser),
+      existsInTenantDirectory: Boolean(
+        targetUser && targetUser.directorySource !== 'SYNTHETIC_OPERATOR_FALLBACK'
+      ),
+      directorySource: targetUser?.directorySource || 'UNKNOWN',
     },
     capabilities,
     decision,
