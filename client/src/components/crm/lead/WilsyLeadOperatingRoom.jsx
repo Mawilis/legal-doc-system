@@ -2945,6 +2945,21 @@ export default function WilsyLeadOperatingRoom({
   const [commandOpen, setCommandOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
 const [coreToolsOpen, setCoreToolsOpen] = useState(false);
+const [proofLedgerAccessPolicy, setProofLedgerAccessPolicy] = useState(null);
+const [proofLedgerAccessBusy, setProofLedgerAccessBusy] = useState(false);
+const [proofLedgerAccessError, setProofLedgerAccessError] = useState('');
+const [proofLedgerSelectedUserId, setProofLedgerSelectedUserId] = useState('');
+
+/* P60K5Q10FG104O2_PROOF_LEDGER_ACCESS_STATE */
+useEffect(() => {
+  if (activeTopTab !== 'proof' || proofLedgerAccessPolicy || proofLedgerAccessBusy) {
+    return undefined;
+  }
+
+  void resolveWilsyProofLedgerAccessPolicy();
+
+  return undefined;
+}, [activeTopTab]);
   const [draft, setDraft] = useState(() => createEmptyLeadDraft({}));
   const [saveStatus, setSaveStatus] = useState('');
   const [syncStatus, setSyncStatus] = useState('SOURCE_READY_UPSTREAM');
@@ -10273,6 +10288,302 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     );
   }
 
+
+  /**
+   * @function resolveWilsyProofLedgerAccessUrl
+   * @description Resolves the signed backend Proof Ledger access policy route.
+   * @returns {string} Proof Ledger access route.
+   * @collaboration Lead Proof workspace, CRM Lead View Registry route mount, backend permission spine, and tenant-safe access receipts.
+   */
+  function resolveWilsyProofLedgerAccessUrl() {
+    return `${resolveWilsyLeadViewRegistryUrl()}/proof-ledger/access/resolve`;
+  }
+
+  /**
+   * @function buildWilsyProofLedgerAccessPayload
+   * @description Builds a signed institutional Proof Ledger access payload for selected-user policy resolution.
+   * @param {string} targetUserId Selected tenant user id.
+   * @param {string} reason Access reason.
+   * @returns {object} Proof Ledger access payload.
+   * @collaboration Proof Ledger backend policy, institutionalHeaders, strikePayload evidence, selected-user access, and export authority.
+   */
+  function buildWilsyProofLedgerAccessPayload(targetUserId = '', reason = 'VIEW_PROOF_LEDGER_FROM_WORKSPACE') {
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const generatedAt = new Date().toISOString();
+    const requestId = `REQ-WILSY-PROOF-LEDGER-CLIENT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const route = '/api/crm/leads/views/proof-ledger/access/resolve';
+    const commandSurface = 'CRM_PROOF_LEDGER_ACCESS';
+    const resolvedTargetUserId = String(targetUserId || identity.operatorUserId || identity.userId || '').trim();
+
+    const institutionalHeaders = {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorId,
+      operatorUserId: identity.operatorUserId,
+      userId: identity.userId,
+      operatorEmail: identity.operatorEmail,
+      operatorRole: identity.operatorRole || 'operator',
+      route,
+      commandSurface,
+      generatedAt,
+      timestamp: generatedAt,
+      requestId,
+    };
+
+    return {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorId,
+      operatorUserId: identity.operatorUserId,
+      userId: identity.userId,
+      operatorEmail: identity.operatorEmail,
+      operatorRole: identity.operatorRole || 'operator',
+      targetUserId: resolvedTargetUserId,
+      reason,
+      route,
+      commandSurface,
+      generatedAt,
+      timestamp: generatedAt,
+      requestId,
+      institutionalHeaders,
+      strikePayload: {
+        tenantId: identity.tenantId,
+        operatorId: identity.operatorId,
+        operatorUserId: identity.operatorUserId,
+        userId: identity.userId,
+        operatorEmail: identity.operatorEmail,
+        operatorRole: identity.operatorRole || 'operator',
+        targetUserId: resolvedTargetUserId,
+        reason,
+        route,
+        commandSurface,
+        generatedAt,
+        timestamp: generatedAt,
+        requestId,
+        institutionalHeaders,
+      },
+    };
+  }
+
+  /**
+   * @function resolveWilsyProofLedgerAccessPolicy
+   * @description Resolves backend-enforced Proof Ledger access policy and records a selected-user access receipt.
+   * @param {string} targetUserId Selected tenant user id.
+   * @returns {Promise<object|null>} Proof Ledger policy packet.
+   * @collaboration Signed frontend request, backend permission spine, tenant user selector, access receipts, and export policy.
+   */
+  async function resolveWilsyProofLedgerAccessPolicy(targetUserId = '') {
+    const identity = resolveWilsyLeadViewRegistryIdentity();
+    const token = resolveWilsyLeadViewRegistryAuthToken();
+    const selectedTargetUserId = String(targetUserId || proofLedgerSelectedUserId || identity.operatorUserId || identity.userId || '').trim();
+
+    if (!token) {
+      setProofLedgerAccessError('Authenticated browser session required for Proof Ledger access.');
+      return null;
+    }
+
+    setProofLedgerAccessBusy(true);
+    setProofLedgerAccessError('');
+
+    try {
+      const payload = buildWilsyProofLedgerAccessPayload(selectedTargetUserId, 'VIEW_PROOF_LEDGER_FROM_WORKSPACE');
+      const sealContract = buildWilsyLeadViewRegistrySealHeaders(payload);
+
+      const response = await fetch(resolveWilsyProofLedgerAccessUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'X-Tenant-Id': identity.tenantId,
+          'X-Operator-Id': identity.operatorId,
+          'X-Operator-User-Id': identity.operatorUserId,
+          'X-User-Id': identity.userId,
+          'X-Operator-Role': identity.operatorRole || 'operator',
+          'X-Command-Surface': 'CRM_PROOF_LEDGER_ACCESS',
+          'X-Binary-Strike': 'true',
+          'X-Business-Artifact-Strike': 'true',
+          'X-Quantum-Verified': 'true',
+          'X-Wilsy-Artifact-Type': 'CRM_PROOF_LEDGER_ACCESS',
+          'X-Wilsy-Proof-Ledger-Seal': 'P60K5Q10FG104O2_PROOF_LEDGER_ACCESS_RAIL',
+          ...sealContract.headers,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let packet = {};
+      try {
+        packet = await response.json();
+      } catch {
+        packet = {};
+      }
+
+      if (!response.ok || (!packet.ok && !packet.success)) {
+        throw new Error(packet.message || packet.error || packet.code || `Proof Ledger policy failed: ${response.status}`);
+      }
+
+      setProofLedgerAccessPolicy(packet);
+      setProofLedgerSelectedUserId(String(packet?.target?.userId || selectedTargetUserId || packet?.selectableUsers?.[0]?.userId || '').trim());
+
+      return packet;
+    } catch (error) {
+      setProofLedgerAccessError(error?.message || 'Proof Ledger access policy failed.');
+      return null;
+    } finally {
+      setProofLedgerAccessBusy(false);
+    }
+  }
+
+  /**
+   * @function resolveWilsyProofLedgerExportAllowed
+   * @description Resolves whether Proof Pack file export is currently authorized by backend policy.
+   * @returns {boolean} True when backend exportPolicy allows export.
+   * @collaboration Proof Pack file export, backend role authority, tenant directory source, and access receipt discipline.
+   */
+  function resolveWilsyProofLedgerExportAllowed() {
+    return Boolean(proofLedgerAccessPolicy?.exportPolicy?.enabled);
+  }
+
+  /**
+   * @function resolveWilsyProofLedgerTargetUsers
+   * @description Resolves selectable tenant users returned by the backend Proof Ledger policy.
+   * @returns {Array<object>} Selectable users.
+   * @collaboration Backend policy users, tenant-scoped selector, compliance access, and operator delegation controls.
+   */
+  function resolveWilsyProofLedgerTargetUsers() {
+    return Array.isArray(proofLedgerAccessPolicy?.selectableUsers)
+      ? proofLedgerAccessPolicy.selectableUsers
+      : [];
+  }
+
+  /**
+   * @function resolveWilsyProofLedgerUserLabel
+   * @description Formats a tenant user label for the Proof Ledger access selector.
+   * @param {object} user Selectable user packet.
+   * @returns {string} Display label.
+   * @collaboration Tenant user selector, minimized PII, directory authority source, and proof access scope.
+   */
+  function resolveWilsyProofLedgerUserLabel(user = {}) {
+    const name = String(user.name || user.email || user.userId || 'Tenant user').trim();
+    const roleLabel = String(user.role || 'operator').replace(/_/g, ' ');
+    const scopeLabel = String(user.accessScope || 'OWN').toUpperCase();
+
+    return `${name} · ${roleLabel} · ${scopeLabel}`;
+  }
+
+  /**
+   * @function handleWilsyProofLedgerSelectedUserChange
+   * @description Resolves Proof Ledger policy when an authorized operator selects a tenant user.
+   * @param {object} event Select change event.
+   * @returns {void}
+   * @collaboration Tenant user selector, backend access receipt, selected-user proof ledger, and no-silent-impersonation policy.
+   */
+  function handleWilsyProofLedgerSelectedUserChange(event) {
+    const nextUserId = String(event?.target?.value || '').trim();
+    setProofLedgerSelectedUserId(nextUserId);
+    void resolveWilsyProofLedgerAccessPolicy(nextUserId);
+  }
+
+  /**
+   * @function renderWilsyProofLedgerAccessRail
+   * @description Renders the backend-driven Proof Ledger access rail and tenant user selector.
+   * @param {object} packet Proof cockpit packet.
+   * @returns {JSX.Element} Access rail.
+   * @collaboration Proof workspace, backend permission spine, role authority, tenant user selector, export policy, and access receipts.
+   */
+  function renderWilsyProofLedgerAccessRail(packet = {}) {
+    const policy = proofLedgerAccessPolicy || {};
+    const capabilities = policy.capabilities || {};
+    const operator = policy.operator || {};
+    const decision = policy.decision || {};
+    const receipt = policy.receipt || {};
+    const exportPolicy = policy.exportPolicy || {};
+    const selectableUsers = resolveWilsyProofLedgerTargetUsers();
+    const selectedUserId = proofLedgerSelectedUserId || policy?.target?.userId || selectableUsers[0]?.userId || '';
+    const selectedUser = selectableUsers.find((user) => user.userId === selectedUserId) || {};
+    const accessReady = Boolean(policy.ok || policy.success);
+    const exportAllowed = resolveWilsyProofLedgerExportAllowed();
+
+    return (
+      <section
+        className={styles.leadProofLedgerAccessRail}
+        data-wilsy-proof-ledger-access-rail="FG104O2"
+        data-wilsy-proof-ledger-access-ready={accessReady ? 'ready' : 'pending'}
+        data-wilsy-proof-ledger-export-policy={exportAllowed ? 'allowed' : 'blocked'}
+      >
+        <header>
+          <span>
+            <small>Proof Ledger Access</small>
+            <strong>{accessReady ? `${operator.role || 'operator'} · ${decision.scope || 'OWN'}` : 'Resolving authority'}</strong>
+            <em>{operator.authoritySource || proofLedgerAccessError || 'Backend policy receipt pending'}</em>
+          </span>
+          <button
+            type="button"
+            onClick={() => resolveWilsyProofLedgerAccessPolicy(selectedUserId)}
+            disabled={proofLedgerAccessBusy}
+          >
+            {proofLedgerAccessBusy ? 'Checking…' : 'Refresh policy'}
+          </button>
+        </header>
+
+        <div className={styles.leadProofLedgerAccessGrid}>
+          <article data-status={decision.allowed ? 'allowed' : 'pending'}>
+            <small>Access Decision</small>
+            <strong>{decision.allowed ? 'Allowed' : accessReady ? 'Blocked' : 'Pending'}</strong>
+            <em>{decision.reasonCode || 'Policy not loaded'}</em>
+          </article>
+
+          <article data-status={exportAllowed ? 'allowed' : 'blocked'}>
+            <small>Export Control</small>
+            <strong>{exportAllowed ? 'Export enabled' : 'Export locked'}</strong>
+            <em>{exportPolicy.reasonCode || 'Backend exportPolicy pending'}</em>
+          </article>
+
+          <article data-status={receipt.receiptId ? 'allowed' : 'pending'}>
+            <small>Access Receipt</small>
+            <strong title={receipt.receiptId || ''}>{receipt.receiptId || 'Receipt pending'}</strong>
+            <button
+              type="button"
+              onClick={() => copyWilsyProofCockpitValue(receipt.receiptId, 'proof ledger access receipt')}
+              disabled={!receipt.receiptId}
+            >
+              Copy
+            </button>
+          </article>
+
+          <article data-status={selectedUser.userId ? 'allowed' : 'pending'}>
+            <small>Selected Ledger</small>
+            <strong title={selectedUser.email || selectedUser.userId || ''}>
+              {selectedUser.name || policy?.target?.userId || 'Own ledger'}
+            </strong>
+            <em>{selectedUser.directorySource || policy?.target?.directorySource || 'Directory pending'}</em>
+          </article>
+        </div>
+
+        <div className={styles.leadProofLedgerSelectorRow}>
+          {capabilities.canSelectProofLedgerUser ? (
+            <label>
+              <span>Tenant user ledger</span>
+              <select value={selectedUserId} onChange={handleWilsyProofLedgerSelectedUserChange} disabled={proofLedgerAccessBusy}>
+                {selectableUsers.map((user) => (
+                  <option key={user.userId} value={user.userId}>
+                    {resolveWilsyProofLedgerUserLabel(user)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p>Own Proof Ledger only. Select-user access requires tenant, team, compliance, auditor, admin or sovereign authority.</p>
+          )}
+
+          {proofLedgerAccessError ? <p data-status="error">{proofLedgerAccessError}</p> : null}
+          {!exportAllowed ? <p data-status="blocked">Proof Pack file export is disabled until backend exportPolicy allows it.</p> : null}
+          {packet?.evidence?.auditReceiptId ? <p data-status="sealed">Active run receipt: {packet.evidence.auditReceiptId}</p> : null}
+        </div>
+      </section>
+    );
+  }
+
+  // P60K5Q10FG104O2_PROOF_LEDGER_ACCESS_RAIL
+
+
   // P60K5Q10FG104E_PROOF_MISSION_HELPERS
 
 
@@ -10346,9 +10657,9 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof pack')}>
               Copy Pack
             </button>
-            <button type="button" data-wilsy-proof-pack-primary-action="FG104L3" onClick={() => downloadWilsyProofCockpitFile(packet)}>
-              Download File
-            </button>
+            <button type="button" data-wilsy-proof-pack-primary-action="FG104L3" onClick={() => downloadWilsyProofCockpitFile(packet)}
+              disabled={!resolveWilsyProofLedgerExportAllowed()}
+              data-wilsy-proof-ledger-export-gate="FG104O2">Download File</button>
           </div>
         </header>
         <div>
@@ -10439,7 +10750,10 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           {missionSteps.map(renderWilsyProofMissionStep)}
         </section>
 
-        {renderWilsyProofPackSurface(packet, score)}
+
+        {renderWilsyProofLedgerAccessRail(packet)}
+        {/* P60K5Q10FG104O2_PROOF_LEDGER_ACCESS_RAIL_MOUNT */}
+{renderWilsyProofPackSurface(packet, score)}
 
         <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104I">
           <header><small>Mission Control</small><strong>{packet.proofActionLabel}</strong></header>
