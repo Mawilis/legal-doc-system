@@ -13017,3 +13017,260 @@ td[data-wilsy-lead-empty-state="records"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* P60K5Q10FG104F_FIRST_VIEWPORT_PROOF_GRID */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] {
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  gap: 6px;
+  min-height: calc(100dvh - 54px);
+  max-height: calc(100dvh - 34px);
+  overflow: hidden;
+  padding: 8px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] .leadProofCockpitHero {
+  min-height: 64px;
+  padding: 8px 10px;
+  border-radius: 16px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] .leadProofCockpitHero strong {
+  font-size: clamp(1.35rem, 1.75vw, 2rem) !important;
+  line-height: 0.95 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] .leadProofCockpitHero small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] .leadProofCockpitHero em {
+  font-size: 0.66rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail {
+  gap: 6px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip article,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail {
+  padding: 6px 8px;
+  border-radius: 12px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail small {
+  font-size: 0.56rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail strong {
+  font-size: 0.74rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail em,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip em {
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip b {
+  width: 22px;
+  height: 22px;
+  font-size: 0.66rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip article {
+  grid-template-columns: 22px minmax(0, 1fr);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip strong {
+  font-size: 0.7rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail {
+  grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr);
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail button {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitGrid {
+  min-height: 0;
+  overflow: hidden;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, auto);
+  gap: 6px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitPanel,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail {
+  min-height: 0;
+  padding: 7px;
+  border-radius: 12px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitPanel header strong {
+  font-size: 0.76rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitPanel header small {
+  font-size: 0.56rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="receipt-spine"] {
+  grid-column: span 4;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="run-integrity"] {
+  grid-column: span 4;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="membership-ledger"] {
+  grid-column: span 3;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="source-authority"] {
+  grid-column: span 3;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="proof-timeline"] {
+  grid-column: span 10;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail {
+  grid-column: span 4;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitValueGrid {
+  gap: 4px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitValue {
+  grid-template-columns: minmax(78px, 0.48fr) minmax(0, 1fr) auto;
+  gap: 5px;
+  padding: 5px 6px;
+  border-radius: 9px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitValue small {
+  font-size: 0.52rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitValue strong {
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitValue button {
+  min-height: 24px;
+  padding: 0 7px;
+  font-size: 0.58rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimeline {
+  gap: 5px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimeline article {
+  padding: 6px;
+  border-radius: 9px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimeline b {
+  font-size: 0.95rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimeline span {
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofAuthorityGrid {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofAuthorityGrid article {
+  padding: 6px;
+  border-radius: 9px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofAuthorityGrid small {
+  font-size: 0.52rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofAuthorityGrid strong {
+  font-size: 0.82rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofAuthorityGrid em {
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimelineList {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimelineList li {
+  grid-template-columns: 20px minmax(0, 0.72fr) minmax(0, 1.05fr);
+  gap: 5px;
+  padding: 5px;
+  border-radius: 9px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimelineList li span {
+  width: 20px;
+  height: 20px;
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimelineList li strong,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimelineList li em {
+  font-size: 0.62rem;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail header {
+  align-items: center;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail > div {
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail article {
+  padding: 5px 7px;
+  font-size: 0.62rem;
+}
+
+@media (max-width: 1360px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="receipt-spine"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="run-integrity"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="membership-ledger"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="source-authority"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="proof-timeline"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail {
+    grid-column: span 7;
+  }
+}
+
+@media (max-width: 980px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit[data-wilsy-production-proof-density="FG104E"] {
+    overflow: auto;
+  }
+
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitGrid,
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitTimelineList {
+    grid-template-columns: 1fr;
+  }
+
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail {
+    grid-column: span 1 !important;
+  }
+}

@@ -9943,23 +9943,67 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
   /**
    * @function resolveWilsyProductionProofAuthorityItem
-   * @description Resolves a named authority item from setup operating telemetry.
+   * @description Resolves a named authority item from setup telemetry and the live Leads authority strip.
    * @param {string} label Authority label.
    * @returns {object} Authority item.
-   * @collaboration Source authority, compliance proof, setup telemetry, and Proof Cockpit operating cards.
+   * @collaboration Source authority, compliance proof, setup telemetry, header authority strip, and Proof Cockpit operating cards.
    */
   function resolveWilsyProductionProofAuthorityItem(label = '') {
     const expected = String(label || '').toLowerCase();
-
-    return (setupOperatingModel?.summary || []).find((item) => (
-      String(item?.label || '').toLowerCase() === expected
-    )) || {
-      label,
-      value: '—',
-      status: 'waiting',
-      detail: 'Authority telemetry pending.',
+    const setupSummary = Array.isArray(setupOperatingModel?.summary) ? setupOperatingModel.summary : [];
+    const existing = setupSummary.find((item) => String(item?.label || '').toLowerCase() === expected) || null;
+    const existingValue = String(existing?.value || '').trim();
+    const existingIsReal = existingValue && existingValue !== '—' && !/pending/i.test(existingValue);
+    const routeValue = typeof routeLabel !== 'undefined' ? routeLabel : '';
+    const routeDetail = typeof sourcePosture !== 'undefined' ? sourcePosture : '';
+    const rootValue = typeof rootLabel !== 'undefined' ? rootLabel : '';
+    const complianceValue = typeof complianceLabel !== 'undefined' ? complianceLabel : '';
+    const themeValue = typeof globalThemeAuthorityLabel !== 'undefined' ? globalThemeAuthorityLabel : '';
+    const themeMode = typeof globalThemeAuthorityMode !== 'undefined' ? globalThemeAuthorityMode : '';
+    const fallbackByLabel = {
+      'source routes': {
+        label: 'Source Routes',
+        value: routeValue || existingValue || '—',
+        status: routeValue ? 'ready' : existing?.status || 'waiting',
+        detail: routeDetail || existing?.detail || 'Source posture pending.',
+      },
+      'sovereign root': {
+        label: 'Sovereign Root',
+        value: rootValue || existingValue || '—',
+        status: rootValue ? 'ready' : existing?.status || 'waiting',
+        detail: 'Provenance',
+      },
+      compliance: {
+        label: 'Compliance',
+        value: complianceValue || existingValue || '—',
+        status: complianceValue ? 'ready' : existing?.status || 'waiting',
+        detail: 'POPIA · GDPR · SOC2',
+      },
+      'theme authority': {
+        label: 'Theme Authority',
+        value: themeValue || existingValue || '—',
+        status: themeValue ? 'ready' : existing?.status || 'waiting',
+        detail: `${themeMode || 'Night'} · Command Center global skin`,
+      },
     };
+    const fallback = fallbackByLabel[expected] || {
+      label,
+      value: existingValue || '—',
+      status: existing?.status || 'waiting',
+      detail: existing?.detail || 'Authority telemetry pending.',
+    };
+
+    if (existingIsReal) {
+      return {
+        ...existing,
+        detail: existing.detail || fallback.detail,
+      };
+    }
+
+    return fallback;
   }
+
+  // P60K5Q10FG104F_PROOF_AUTHORITY_BINDING
 
   /**
    * @function resolveWilsyProductionProofCockpitPacket
