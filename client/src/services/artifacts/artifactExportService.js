@@ -176,25 +176,59 @@ async function createPdfBlob(artifact, payload) {
     artifact?.crmProofPack ||
     artifact?.proofPackSections ||
     artifact?.data?.crmProofPack ||
-    payload?.crmProofPack ||
-    payload?.proofPackSections ||
-    payload?.data?.crmProofPack ||
+    artifact?.payload?.crmProofPack ||
     null;
+
+  const crmProofPackRequestBridge = crmProofPackPayload
+    ? {
+        payloadData: {
+          ...artifact,
+          crmProofPack: crmProofPackPayload,
+          proofPackSections: artifact?.proofPackSections || crmProofPackPayload,
+        },
+        crmProofPack: crmProofPackPayload,
+        proofPackSections: artifact?.proofPackSections || crmProofPackPayload,
+        templateType: 'CRM_LEAD_PROOF_PACK',
+        artifactType: 'CRM_LEAD_PROOF_PACK',
+      }
+    : {};
 
   const pdfPayload = crmProofPackPayload
     ? {
-        ...payload,
-        crmProofPack: crmProofPackPayload,
-        proofPackSections: artifact?.proofPackSections || artifact?.sections || payload?.proofPackSections || crmProofPackPayload,
-        sections: artifact?.sections || payload?.sections || [],
-        sourcePosture: artifact?.sourcePosture || payload?.sourcePosture || 'SOURCE_AWARE_CRM_PROOF',
-        issuingEntity: artifact?.issuingEntity || payload?.issuingEntity || '',
-        counterparty: artifact?.counterparty || payload?.counterparty || '',
-        authorityLine: artifact?.authorityLine || payload?.authorityLine || '',
-        reviewNotice: artifact?.reviewNotice || payload?.reviewNotice || '',
+        type: 'CRM_LEAD_PROOF_PACK',
+        artifactType: 'CRM_LEAD_PROOF_PACK',
+        templateType: 'CRM_LEAD_PROOF_PACK',
+        title: artifact?.title || crmProofPackPayload?.title || 'Lead Evidence Ledger Proof Pack',
+        tenantId: artifact?.tenantId || crmProofPackPayload?.tenantId || tenantId,
+        payload: {
+          ...artifact,
+          crmProofPack: crmProofPackPayload,
+          proofPackSections: artifact?.proofPackSections || crmProofPackPayload,
+        },
+        data: {
+          ...(artifact?.data || {}),
+          crmProofPack: crmProofPackPayload,
+          proofPackSections: artifact?.proofPackSections || crmProofPackPayload,
+        },
+        metadata: {
+          ...(artifact?.metadata || {}),
+          route: '/api/generate/pdf',
+          renderer: 'artifactController',
+          crmProofPackBridge: 'FG106H',
+        },
+        ...crmProofPackRequestBridge,
       }
-    : payload;
+    : {
+        type,
+        artifactType: type,
+        title: artifact?.title || 'Wilsy OS Artifact',
+        tenantId,
+        payload: artifact,
+        data: artifact?.data || {},
+        metadata: artifact?.metadata || {},
+      };
 
+  // P60K5Q10FG106H_CRM_PROOF_PACK_PAYLOADDATA_BRIDGE
   const type = payload.type;
   const tenantId = payload.tenantId;
   const timestamp = new Date().toISOString();
