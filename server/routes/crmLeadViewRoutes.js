@@ -1,5 +1,7 @@
 /* eslint-disable */
 import express from 'express';
+import { handleProofLedgerAccessPolicy } from '../services/crmLeadProofLedgerPermissionService.js';
+
 import {
   clearLeadViewMembershipOverride,
   excludeLeadViewMembers,
@@ -327,6 +329,11 @@ router.get('/:viewId/overrides', listLeadViewMembershipOverridesHandler); // P60
 router.post('/:viewId/overrides/include', includeLeadViewMembersHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
 router.post('/:viewId/overrides/exclude', excludeLeadViewMembersHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
 router.delete('/:viewId/overrides/:leadId', clearLeadViewMembershipOverrideHandler); // P60K5Q10FG103B_VIEW_MEMBERSHIP_ROUTES
+
+// P60K5Q10FG104N1_PROOF_LEDGER_PERMISSION_ROUTES
+router.get('/proof-ledger/access/policy', handleProofLedgerAccessPolicy);
+router.post('/proof-ledger/access/resolve', handleProofLedgerAccessPolicy);
+
 router.post('/:viewId/run', runLeadViewHandler);
 
 export default router;
