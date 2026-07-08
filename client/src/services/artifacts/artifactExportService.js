@@ -83,16 +83,40 @@ function getBrowserToken() {
  * @collaboration Provides a consistent delivery layer for all artifact outputs.
  */
 function downloadBlob(blob, filename) {
+  if (!(blob instanceof Blob)) {
+    throw new Error('Artifact PDF delivery failed: response was not a browser Blob.');
+  }
+
+  if (blob.size < 128) {
+    throw new Error('Artifact PDF delivery failed: PDF blob was empty or too small.');
+  }
+
+  const resolvedFilename = String(filename || `wilsy-os-artifact-${Date.now()}.pdf`).endsWith('.pdf')
+    ? String(filename || `wilsy-os-artifact-${Date.now()}.pdf`)
+    : `${String(filename || `wilsy-os-artifact-${Date.now()}`)}.pdf`;
+
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
 
   anchor.href = url;
-  anchor.download = filename;
+  anchor.download = resolvedFilename;
+  anchor.rel = 'noopener';
+  anchor.style.display = 'none';
+
   document.body.appendChild(anchor);
   anchor.click();
-  anchor.remove();
 
-  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  window.setTimeout(() => {
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, 1500);
+
+  return {
+    delivery: 'BROWSER_DOWNLOAD_DISPATCHED',
+    filename: resolvedFilename,
+    size: blob.size,
+    contentType: blob.type || 'application/pdf',
+  };
 }
 
 /**
@@ -276,7 +300,19 @@ async function createPdfBlob(artifact, payload) {
     throw new Error(errorText || `PDF generation failed: ${response.status}`);
   }
 
-  return response.blob();
+  const pdfBlob = await response.blob();
+  const artifactTitle = artifact?.title || payload?.title || payload?.crmProofPack?.title || 'wilsy-os-artifact';
+  const artifactTenant =
+    artifact?.tenantId ||
+    payload?.tenantId ||
+    payload?.metadata?.tenantId ||
+    payload?.crmProofPack?.tenantId ||
+    'tenant';
+
+  const filename = `WILSY-OS-${safeFileName(artifactTitle)}-${safeFileName(artifactTenant)}-${Date.now()}.pdf`;
+  downloadBlob(pdfBlob, filename);
+
+  return pdfBlob;
 }
 
 
@@ -855,3 +891,5 @@ export async function generateArtifactExport({ artifact, format, tenantId, tenan
 }
 
 export default generateArtifactExport;
+
+// P60K5Q10FG106P_ARTIFACT_PDF_BROWSER_DELIVERY
