@@ -997,7 +997,18 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
     },
   });
 
-  doc.pipe(res);
+  const pdfChunks = [];
+  const pdfBufferReady = new Promise((resolve, reject) => {
+    doc.on('data', (chunk) => {
+      if (chunk) pdfChunks.push(Buffer.from(chunk));
+    });
+
+    doc.on('end', () => {
+      resolve(Buffer.concat(pdfChunks));
+    });
+
+    doc.on('error', reject);
+  });
 
   const cursor = { y: PAGE.top };
 
@@ -1008,8 +1019,17 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
   applyChrome(doc, state);
 
   doc.end();
+
+  const pdfBuffer = await pdfBufferReady;
+
+  if (!pdfBuffer || pdfBuffer.length < 128) {
+    throw new Error('Enterprise PDF renderer produced an incomplete PDF buffer.');
+  }
+
+  res.setHeader('Content-Length', String(pdfBuffer.length));
+  res.end(pdfBuffer);
 }
 
 export default streamEnterpriseArtifactPdf;
 
-// P60K5Q10FG106O_ENTERPRISE_RENDERER_CRM_PROOF_STORY
+// P60K5Q10FG106O_ENTERPRISE_RENDERER_CRM_PROOF_STORY\n\n// P60K5Q10FG106S_BUFFER_ENTERPRISE_PDF_FINALIZATION\n
