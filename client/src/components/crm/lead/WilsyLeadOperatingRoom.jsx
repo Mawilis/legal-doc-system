@@ -11060,24 +11060,19 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const filename = resolveWilsyCrmProofPackArtifactFilename(packet);
 
     const exportRequest = {
-      ...artifactPayload,
-      format: 'pdf',
-      output: 'pdf',
-      filename,
-      payload: artifactPayload,
       artifact: artifactPayload,
+      format: 'PDF',
+      tenantId: artifactPayload.tenantId,
+      tenantConfig: {
+        tenantId: artifactPayload.tenantId,
+        generatedBy: artifactPayload.generatedBy,
+        sourceComponent: 'WilsyLeadOperatingRoom',
+        commandSurface: 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT',
+        adapter: 'P60K5Q10FG106E',
+      },
     };
 
-    const result = await generateArtifactExport(exportRequest, {
-      format: 'pdf',
-      filename,
-      responseType: 'blob',
-      headers: {
-        'X-Tenant-Id': artifactPayload.tenantId,
-        'X-Wilsy-Command-Surface': 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT',
-        'X-Wilsy-Artifact-Adapter': 'P60K5Q10FG106C',
-      },
-    });
+    const result = await generateArtifactExport(exportRequest);
 
     const blob = await resolveWilsyCrmProofPackArtifactBlob(result);
 
