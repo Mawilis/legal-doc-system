@@ -10299,6 +10299,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       <section
         className={styles.leadProofPackSurface}
         data-wilsy-proof-pack="FG104H2"
+        data-wilsy-proof-pack-artifact="FG104I"
         data-wilsy-proof-pack-ready={score.score >= 95 ? 'ready' : 'blocked'}
       >
         <header>
@@ -10306,7 +10307,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <small>Proof Pack</small>
             <strong>{score.score >= 95 ? 'Export-ready evidence artifact' : 'Evidence artifact assembling'}</strong>
           </span>
-          <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof pack')}>
+          <button type="button" data-wilsy-proof-pack-primary-action="FG104I" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof pack')}>
             Copy Proof Pack
           </button>
         </header>
@@ -10323,6 +10324,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   }
 
   // P60K5Q10FG104H2_VISIBLE_PROOF_PACK_SURFACE
+  // P60K5Q10FG104I_PROOF_PACK_ARTIFACT_DOCK
 
 
   /**
@@ -10397,14 +10399,12 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
         {renderWilsyProofPackSurface(packet, score)}
 
-        <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104E">
+        <section className={styles.leadProofCommandRail} data-wilsy-proof-command-rail="FG104I">
           <header><small>Mission Control</small><strong>{packet.proofActionLabel}</strong></header>
           <div>
             <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.backendViewId, 'backendViewId')} disabled={!packet.evidence.backendViewId}>Copy backendViewId</button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.criteriaHash, 'criteriaHash')} disabled={!packet.evidence.criteriaHash}>Copy criteriaHash</button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(packet.evidence.auditReceiptId, 'auditReceiptId')} disabled={!packet.evidence.auditReceiptId}>Copy auditReceiptId</button>
-            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>Copy proof packet</button>
+            <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
+            <button type="button" onClick={() => copyWilsyProofCockpitValue(formatWilsyProductionProofPayload(packet), 'proof packet')}>Export packet</button>
           </div>
         </section>
 
