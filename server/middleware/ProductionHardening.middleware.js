@@ -184,10 +184,10 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
  */
 /**
  * @function shouldContinueWilsyLeadViewRegistryAfterHardening
- * @description Allows audited CRM Lead View Registry commands to continue through production hardening using either parsed body evidence or header-carried institutional continuation evidence.
+ * @description Allows audited CRM Lead View Registry and Proof Ledger policy commands to continue through production hardening when they carry tenant, operator, command surface, timestamp, request id, and institutional evidence.
  * @param {object} req Express request.
- * @returns {boolean} Whether the Lead View Registry request qualifies for governed continuation.
- * @collaboration Production hardening, CRM Lead View Registry, institutionalHeaders, strikePayload evidence, header fallback evidence, and tenant-safe saved view CRUD.
+ * @returns {boolean} Whether the CRM Lead View request qualifies for governed hardening continuation.
+ * @collaboration Production hardening, CRM Lead View Registry, Proof Ledger access policy, institutionalHeaders, strikePayload evidence, header evidence, and tenant-safe audit controls.
  */
 function shouldContinueWilsyLeadViewRegistryAfterHardening(req = {}) {
   const method = String(req.method || '').toUpperCase();
@@ -203,67 +203,90 @@ function shouldContinueWilsyLeadViewRegistryAfterHardening(req = {}) {
     return false;
   }
 
-  const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const institutionalHeaders = body.institutionalHeaders || {};
-  const strikePayload = body.strikePayload || {};
-  const strikeHeaders = strikePayload.institutionalHeaders || {};
   const headers = req.headers || {};
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const institutionalHeaders =
+    body.institutionalHeaders && typeof body.institutionalHeaders === 'object'
+      ? body.institutionalHeaders
+      : {};
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : {};
+  const strikeHeaders =
+    strikePayload.institutionalHeaders && typeof strikePayload.institutionalHeaders === 'object'
+      ? strikePayload.institutionalHeaders
+      : {};
 
   const tenantId =
-    body.tenantId ||
+    req.tenantId ||
     headers['x-tenant-id'] ||
+    body.tenantId ||
     institutionalHeaders.tenantId ||
-    strikeHeaders.tenantId;
+    strikeHeaders.tenantId ||
+    '';
 
   const operatorId =
-    body.operatorId ||
-    body.operatorUserId ||
-    body.userId ||
     headers['x-operator-id'] ||
     headers['x-operator-user-id'] ||
     headers['x-user-id'] ||
+    body.operatorId ||
+    body.operatorUserId ||
+    body.userId ||
     institutionalHeaders.operatorId ||
     institutionalHeaders.operatorUserId ||
     institutionalHeaders.userId ||
     strikeHeaders.operatorId ||
     strikeHeaders.operatorUserId ||
-    strikeHeaders.userId;
+    strikeHeaders.userId ||
+    '';
 
-  const commandSurface =
-    body.commandSurface ||
+  const surface =
     headers['x-command-surface'] ||
+    headers['x-wilsy-command-surface'] ||
+    body.commandSurface ||
     institutionalHeaders.commandSurface ||
-    strikePayload.commandSurface ||
-    strikeHeaders.commandSurface;
+    strikeHeaders.commandSurface ||
+    '';
 
   const generatedAt =
-    body.generatedAt ||
-    body.timestamp ||
     headers['x-generated-at'] ||
     headers['x-timestamp'] ||
     headers['x-forensic-timestamp'] ||
+    body.generatedAt ||
+    body.timestamp ||
     institutionalHeaders.generatedAt ||
     institutionalHeaders.timestamp ||
-    strikePayload.generatedAt ||
-    strikePayload.timestamp ||
     strikeHeaders.generatedAt ||
-    strikeHeaders.timestamp;
+    strikeHeaders.timestamp ||
+    '';
 
   const requestId =
-    body.requestId ||
     headers['x-request-id'] ||
+    headers['x-requestid'] ||
+    headers['x-trace-id'] ||
+    headers['x-correlation-id'] ||
+    body.requestId ||
     institutionalHeaders.requestId ||
-    strikePayload.requestId ||
-    strikeHeaders.requestId;
+    strikeHeaders.requestId ||
+    '';
 
-  const surface = String(commandSurface || '');
+  const normalizedSurface = String(surface || '')
+    .trim()
+    .toUpperCase();
+  const isProofLedgerAccessRoute =
+    route === '/api/crm/leads/views/proof-ledger/access/resolve' ||
+    route === '/api/crm/leads/views/proof-ledger/access/policy' ||
+    route.includes('/proof-ledger/access/');
+
+  const allowedSurfaces = new Set([
+    'CRM_LEADS_CUSTOM_VIEW_BUILDER',
+    'CRM_LEADS_VIEW_REGISTRY_SMOKE',
+    'CRM_LEADS_VIEW_COMMAND_STRIP',
+    'CRM_PROOF_LEDGER_ACCESS',
+  ]);
+
   const hasAllowedSurface =
-    [
-      'CRM_LEADS_VIEW_REGISTRY_SMOKE',
-      'CRM_LEADS_CUSTOM_VIEW_BUILDER',
-      'CRM_LEADS_VIEW_REGISTRY',
-      'CRM_LEADS_VIEW_REGISTRY_QUERY',
-    ].includes(surface) || surface.startsWith('CRM_LEADS_');
+    allowedSurfaces.has(normalizedSurface) ||
+    (isProofLedgerAccessRoute && normalizedSurface === 'CRM_PROOF_LEDGER_ACCESS');
 
   const hasBodyInstitutionalEvidence = Boolean(
     institutionalHeaders.tenantId &&
@@ -272,49 +295,24 @@ function shouldContinueWilsyLeadViewRegistryAfterHardening(req = {}) {
       institutionalHeaders.operatorUserId ||
       institutionalHeaders.userId) &&
     (strikeHeaders.operatorId || strikeHeaders.operatorUserId || strikeHeaders.userId) &&
-    (institutionalHeaders.commandSurface ||
-      strikeHeaders.commandSurface ||
-      strikePayload.commandSurface) &&
-    (institutionalHeaders.generatedAt ||
-      institutionalHeaders.timestamp ||
-      strikeHeaders.generatedAt ||
-      strikeHeaders.timestamp ||
-      strikePayload.generatedAt ||
-      strikePayload.timestamp)
+    institutionalHeaders.commandSurface &&
+    strikeHeaders.commandSurface &&
+    (institutionalHeaders.generatedAt || institutionalHeaders.timestamp) &&
+    (strikeHeaders.generatedAt || strikeHeaders.timestamp)
   );
 
   const hasHeaderInstitutionalEvidence = Boolean(
     headers['x-tenant-id'] &&
     (headers['x-operator-id'] || headers['x-operator-user-id'] || headers['x-user-id']) &&
-    headers['x-command-surface'] &&
+    (headers['x-command-surface'] || headers['x-wilsy-command-surface']) &&
     (headers['x-generated-at'] || headers['x-timestamp'] || headers['x-forensic-timestamp']) &&
-    headers['x-request-id']
+    (headers['x-request-id'] ||
+      headers['x-requestid'] ||
+      headers['x-trace-id'] ||
+      headers['x-correlation-id'])
   );
 
-  if (
-    !req.wilsyLeadViewRegistryHardeningContinuation &&
-    tenantId &&
-    operatorId &&
-    generatedAt &&
-    requestId &&
-    hasAllowedSurface
-  ) {
-    req.wilsyLeadViewRegistryHardeningContinuation = {
-      authority: 'P60K5Q10FG98J_LEAD_VIEW_REGISTRY_HARDENING_CONTINUATION',
-      route,
-      method,
-      tenantId,
-      operatorId,
-      commandSurface: surface,
-      generatedAt,
-      requestId,
-      bodyEvidence: hasBodyInstitutionalEvidence,
-      headerEvidence: hasHeaderInstitutionalEvidence,
-      continuedAt: new Date().toISOString(),
-    };
-  }
-
-  return Boolean(
+  const shouldContinue = Boolean(
     tenantId &&
     operatorId &&
     generatedAt &&
@@ -322,7 +320,30 @@ function shouldContinueWilsyLeadViewRegistryAfterHardening(req = {}) {
     hasAllowedSurface &&
     (hasBodyInstitutionalEvidence || hasHeaderInstitutionalEvidence)
   );
+
+  if (!req.wilsyLeadViewRegistryHardeningContinuation && shouldContinue) {
+    req.wilsyLeadViewRegistryHardeningContinuation = {
+      authority: isProofLedgerAccessRoute
+        ? 'P60K5Q10FG104N4B_PROOF_LEDGER_HARDENING_CONTINUATION_SAFE'
+        : 'P60K5Q10FG98J_LEAD_VIEW_REGISTRY_HARDENING_CONTINUATION',
+      route,
+      method,
+      tenantId,
+      operatorId,
+      commandSurface: normalizedSurface,
+      generatedAt,
+      requestId,
+      proofLedgerAccessRoute: isProofLedgerAccessRoute,
+      bodyEvidence: hasBodyInstitutionalEvidence,
+      headerEvidence: hasHeaderInstitutionalEvidence,
+      continuedAt: new Date().toISOString(),
+    };
+  }
+
+  return shouldContinue;
 }
+
+// P60K5Q10FG104N4B_PROOF_LEDGER_HARDENING_CONTINUATION_SAFE
 
 // P60K5Q10FG98J_LEAD_VIEW_REGISTRY_HARDENING_HEADER_CONTINUATION
 
