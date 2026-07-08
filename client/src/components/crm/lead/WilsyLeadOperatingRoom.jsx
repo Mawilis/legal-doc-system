@@ -2978,6 +2978,13 @@ useEffect(() => {
     const receiptButton = rail?.querySelector('button:not(:disabled)');
     const policy = proofLedgerAccessPolicy || {};
     const receipt = policy.receipt || {};
+    const receiptPersisted = receipt.persisted === true;
+    const receiptPersistenceError = String(receipt.persistenceError || '').trim();
+    const receiptPersistenceState = receiptPersisted
+      ? 'persisted'
+      : receiptPersistenceError
+        ? 'not_persisted'
+        : 'unknown';
     const decision = policy.decision || {};
     const exportPolicy = policy.exportPolicy || {};
     const selectableUsers = Array.isArray(policy.selectableUsers) ? policy.selectableUsers : [];
@@ -3005,6 +3012,12 @@ useEffect(() => {
       exportReason: exportPolicy.reasonCode || '',
       receiptPresent: Boolean(receipt.receiptId),
       receiptId: receipt.receiptId || '',
+
+      receiptPersisted,
+
+      receiptPersistenceError,
+
+      receiptPersistenceState,
       selectorPresent: Boolean(selector),
       selectedUserId: selector?.value || proofLedgerSelectedUserId || '',
       selectableUserCount: selectableUsers.length,
@@ -10531,6 +10544,49 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   }
 
   /**
+   * @function resolveWilsyProofLedgerReceiptPersistence
+   * @description Resolves receipt persistence visibility from the backend Proof Ledger access receipt packet.
+   * @returns {object} Receipt persistence diagnostic packet.
+   * @collaboration Backend receipt packet, persistence truth surface, Access History readiness, and no-false-audit UI.
+   */
+  function resolveWilsyProofLedgerReceiptPersistence() {
+    const receipt = proofLedgerAccessPolicy?.receipt || {};
+    const persisted = receipt.persisted === true;
+    const persistenceError = String(receipt.persistenceError || '').trim();
+    const state = persisted ? 'persisted' : persistenceError ? 'not_persisted' : 'unknown';
+
+    if (persisted) {
+      return {
+        persisted,
+        persistenceError,
+        state,
+        label: 'Receipt persisted',
+        support: 'Access receipt stored',
+      };
+    }
+
+    if (persistenceError) {
+      return {
+        persisted,
+        persistenceError,
+        state,
+        label: 'Receipt not persisted',
+        support: persistenceError,
+      };
+    }
+
+    return {
+      persisted,
+      persistenceError,
+      state,
+      label: 'Receipt persistence unknown',
+      support: 'Backend did not report persistence state',
+    };
+  }
+
+  // P60K5Q10FG104S1D_PROOF_LEDGER_RECEIPT_PERSISTENCE_DIAGNOSTIC_HELPER
+
+  /**
    * @function resolveWilsyProofLedgerDelegationReadiness
    * @description Resolves delegation readiness messaging for the Proof Ledger selector when only one user is selectable.
    * @returns {object} Delegation readiness packet.
@@ -10635,6 +10691,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const accessReady = Boolean(policy.ok || policy.success);
     const exportAllowed = resolveWilsyProofLedgerExportAllowed();
     const delegationReadiness = resolveWilsyProofLedgerDelegationReadiness();
+    const receiptPersistence = resolveWilsyProofLedgerReceiptPersistence();
 
     return (
       <section
@@ -10642,6 +10699,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
         data-wilsy-proof-ledger-access-rail="FG104O2"
         data-wilsy-proof-ledger-access-polish="FG104P"
         data-wilsy-proof-ledger-delegation-ready={delegationReadiness.ready ? 'ready' : 'empty'}
+        data-wilsy-proof-ledger-receipt-persistence-state={receiptPersistence.state}
         data-wilsy-proof-ledger-access-ready={accessReady ? 'ready' : 'pending'}
         data-wilsy-proof-ledger-export-policy={exportAllowed ? 'allowed' : 'blocked'}
       >
@@ -10711,7 +10769,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           )}
 
           {proofLedgerAccessError ? <p data-status="error">{proofLedgerAccessError}</p> : null}
-          {!exportAllowed ? <p data-status="blocked">Proof Pack file export is disabled until backend exportPolicy allows it.</p> : null}
+          {!exportAllowed ? <p data-status="blocked">Proof Pack file export is disabled until backend exportPolicy allows it.</p> : null}          <p
+            data-status={receiptPersistence.persisted ? 'sealed' : receiptPersistence.persistenceError ? 'blocked' : 'pending'}
+            data-wilsy-proof-ledger-receipt-persistence="FG104S1D"
+            title={receiptPersistence.persistenceError || receiptPersistence.state}
+          >
+            {receiptPersistence.label} · {receiptPersistence.support}
+          </p>
+
           <p
             data-status={delegationReadiness.ready ? 'sealed' : 'blocked'}
             data-wilsy-proof-ledger-delegation-readiness="FG104R"

@@ -14349,3 +14349,50 @@ td[data-wilsy-lead-empty-state="records"] {
     justify-content: center !important;
   }
 }
+
+
+/* P60K5Q10FG104S1D_PROOF_LEDGER_RECEIPT_PERSISTENCE_DIAGNOSTIC_SURFACE
+   Shows whether the Proof Ledger access receipt was actually persisted before Access History UI is built. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] [data-wilsy-proof-ledger-receipt-persistence="FG104S1D"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  min-height: 24px !important;
+  padding: 5px 8px !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 999px !important;
+  background: rgba(15, 23, 42, 0.42) !important;
+  color: rgba(226, 232, 240, 0.92) !important;
+  font-size: 0.68rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-receipt-persistence-state="persisted"] [data-wilsy-proof-ledger-receipt-persistence="FG104S1D"] {
+  border-color: rgba(45, 212, 191, 0.18) !important;
+  background: rgba(20, 184, 166, 0.08) !important;
+  color: rgba(204, 251, 241, 0.92) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-receipt-persistence-state="not_persisted"] [data-wilsy-proof-ledger-receipt-persistence="FG104S1D"] {
+  border-color: rgba(251, 191, 36, 0.22) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  color: rgba(254, 243, 199, 0.92) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow p[data-wilsy-proof-ledger-receipt-persistence="FG104S1D"] {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] [data-wilsy-proof-ledger-receipt-persistence="FG104S1D"] {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
