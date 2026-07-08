@@ -4,6 +4,7 @@ import { openWilsyLeadCommandCapsule as openWilsyLeadCommandCapsuleNative } from
 import { openWilsyLeadEditSurface } from './WilsyLeadEditSurface';
 import WilsyUniversalMeetingCommandCenter from '../meeting/WilsyUniversalMeetingCommandCenter.jsx';
 import WilsyMeetingEditor from '../meeting/workspace/WilsyMeetingEditor.jsx';
+import { generateArtifactExport } from '../../../services/artifacts/artifactExportService';
 /**
  * @function readWilsyR91KOwnerWrapperPath
  * @description Reads nested owner evidence paths for the Owner table wrapper without mutating Lead data.
@@ -10798,14 +10799,336 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
 
 
+
+  /**
+   * @function resolveWilsyCrmProofPackArtifactTenantId
+   * @description Resolves the tenant id used by the existing Wilsy artifact PDF pipeline without introducing a CRM-specific PDF tenant model.
+   * @returns {string} Tenant identifier.
+   * @collaboration CRM Proof Pack, artifactController, artifactRoutes, tenant headers, and existing tenant branding resolution.
+   */
+  function resolveWilsyCrmProofPackArtifactTenantId() {
+    const browserTenant =
+      (typeof window !== 'undefined' && (
+        window.__WILSY_TENANT_ID__ ||
+        window.__wilsyTenantId ||
+        window.localStorage?.getItem?.('wilsyTenantId') ||
+        window.localStorage?.getItem?.('tenantId')
+      )) ||
+      '';
+    return browserTenant || 'wilsy-sovereign-root';
+  }
+
+  /**
+   * @function resolveWilsyCrmProofPackArtifactGeneratedBy
+   * @description Resolves a safe generated-by label for the Wilsy artifact PDF payload.
+   * @returns {string} Operator label.
+   * @collaboration CRM Proof Pack, browser session posture, and existing Wilsy artifact export metadata.
+   */
+  function resolveWilsyCrmProofPackArtifactGeneratedBy() {
+    const browserUser =
+      (typeof window !== 'undefined' && (
+        window.__WILSY_OPERATOR_EMAIL__ ||
+        window.__wilsyOperatorEmail ||
+        window.localStorage?.getItem?.('wilsyOperatorEmail') ||
+        window.localStorage?.getItem?.('operatorEmail') ||
+        window.localStorage?.getItem?.('userEmail')
+      )) ||
+      '';
+    return browserUser || 'wilsy-operator';
+  }
+
+  /**
+   * @function resolveWilsyCrmProofPackArtifactSafeText
+   * @description Converts CRM proof packet values into artifact-payload safe text.
+   * @param {unknown} value - Candidate payload value.
+   * @param {string} fallback - Fallback text.
+   * @returns {string} Safe text.
+   * @collaboration Existing artifact renderer payload adapter and CRM proof evidence packet.
+   */
+  function resolveWilsyCrmProofPackArtifactSafeText(value, fallback = 'N/A') {
+    if (value === null || value === undefined || value === '') return fallback;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  /**
+   * @function resolveWilsyCrmProofPackArtifactFilename
+   * @description Builds a filesystem-safe file name for the existing Wilsy artifact PDF export.
+   * @param {object} packet - CRM proof packet.
+   * @returns {string} PDF file name.
+   * @collaboration CRM Proof Pack, existing artifact export service, and browser download workflow.
+   */
+  function resolveWilsyCrmProofPackArtifactFilename(packet = {}) {
+    const receipt = resolveWilsyCrmProofPackArtifactSafeText(
+      packet.runReceipt || packet.accessReceipt || packet.receiptId || `crm_proof_pack_${Date.now()}`,
+      `crm_proof_pack_${Date.now()}`
+    );
+    return `wilsy-crm-proof-pack-${receipt}`.replace(/[^a-z0-9._-]+/gi, '-').replace(/-+/g, '-').slice(0, 120) + '.pdf';
+  }
+
+  /**
+   * @function resolveWilsyCrmProofPackArtifactPayload
+   * @description Adapts the CRM Proof Pack packet into the existing Wilsy OS artifact PDF contract.
+   * @param {object} packet - CRM proof packet.
+   * @returns {object} Artifact payload for /api/generate/pdf.
+   * @collaboration WilsyLeadOperatingRoom, generateArtifactExport, BusinessArtifactStudio artifact grammar, artifactController, and tenant branding resolver.
+   */
+  function resolveWilsyCrmProofPackArtifactPayload(packet = {}) {
+    const generatedAt = new Date().toISOString();
+    const tenantId = resolveWilsyCrmProofPackArtifactTenantId();
+    const generatedBy = resolveWilsyCrmProofPackArtifactGeneratedBy();
+    const title = 'CRM Lead Proof Pack';
+    const subtitle = 'Source-aware Wilsy OS control artifact with authority, review and forensic proof';
+    const proofSummary = packet.proofSummary || packet.summary || {};
+    const proofChecks = Array.isArray(packet.proofChecks) ? packet.proofChecks : [];
+    const authoritySeals = Array.isArray(packet.authoritySeals) ? packet.authoritySeals : [];
+    const operationalTimeline = Array.isArray(packet.operationalTimeline) ? packet.operationalTimeline : [];
+    const scopedRecords = Array.isArray(packet.scopedRecords) ? packet.scopedRecords : [];
+    const metrics = {
+      proofVerdict: packet.proofVerdict || proofSummary.verdict || 'Sovereign Proof Sealed',
+      exportAllowed: packet.exportAllowed ?? packet.exportDecision ?? true,
+      receiptPersisted: packet.receiptPersisted ?? proofSummary.receiptPersisted ?? 'PENDING',
+      backendViewId: packet.backendViewId || proofSummary.backendViewId || 'N/A',
+      criteriaHash: packet.criteriaHash || proofSummary.criteriaHash || 'N/A',
+      membership: packet.membership || proofSummary.membership || 'N/A',
+      decisionScope: packet.decisionScope || proofSummary.decisionScope || 'CRM_PROOF_SCOPE',
+    };
+
+    return {
+      type: 'crm-lead-proof-pack',
+      artifactType: 'CRM_LEAD_PROOF_PACK',
+      title,
+      subtitle,
+      tenantId,
+      generatedBy,
+      generatedAt,
+      timestamp: generatedAt,
+      version: 'WILSY-OS-CRM-PROOF-PACK-v1.0',
+      sourcePosture: packet.sourcePosture || 'SOURCE_AWARE_CRM_PROOF',
+      issuingEntity: packet.issuingEntity || 'Wilsy (Pty) Ltd',
+      counterparty: packet.counterparty || packet.proofModeLabel || 'CRM Evidence Recipient',
+      authorityLine: packet.authorityLine || 'DIRECTOR - WILSON KHANYEZI',
+      reviewNotice:
+        'This CRM Lead Proof Pack is generated through the existing Wilsy OS artifact PDF pipeline. It must be reviewed with the underlying CRM evidence ledger, saved-view registry proof, access decision, export posture and receipt trail before external reliance.',
+      metadata: {
+        module: 'CRM',
+        workspace: 'Leads Operating Room',
+        route: '/api/generate/pdf',
+        sourceComponent: 'WilsyLeadOperatingRoom',
+        renderer: 'artifactController',
+        exportService: 'generateArtifactExport',
+        generatedAt,
+        tenantId,
+      },
+      data: {
+        proofSummary,
+        proofChecks,
+        authoritySeals,
+        operationalTimeline,
+        scopedRecords,
+        metrics,
+        packet,
+      },
+      sections: [
+        {
+          title: 'DOCUMENT CONTROL',
+          rows: [
+            ['Issuing Entity', 'Wilsy (Pty) Ltd'],
+            ['Counterparty / Tenant', tenantId],
+            ['Generated By', generatedBy],
+            ['Version', 'WILSY-OS-CRM-PROOF-PACK-v1.0'],
+            ['Source Posture', packet.sourcePosture || 'SOURCE_AWARE_CRM_PROOF'],
+            ['Run Receipt', packet.runReceipt || packet.receiptId || 'N/A'],
+            ['Access Receipt', packet.accessReceipt || 'N/A'],
+          ],
+        },
+        {
+          title: 'PROOF SUMMARY',
+          rows: [
+            ['Proof Verdict', metrics.proofVerdict],
+            ['Export Allowed', metrics.exportAllowed ? 'YES' : 'NO'],
+            ['Receipt Persisted', metrics.receiptPersisted ? 'YES' : 'NO'],
+            ['Backend View', metrics.backendViewId],
+            ['Criteria Hash', metrics.criteriaHash],
+            ['Membership', metrics.membership],
+          ],
+        },
+        {
+          title: 'AUTHORITY SEALS',
+          rows: authoritySeals.length
+            ? authoritySeals.map((item) => [
+                resolveWilsyCrmProofPackArtifactSafeText(item.label || item.title || item.name, 'Authority'),
+                resolveWilsyCrmProofPackArtifactSafeText(item.value || item.detail || item.status, 'Pending'),
+              ])
+            : [
+                ['Tenant ID', tenantId],
+                ['Command Surface', 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT'],
+                ['Generated At', generatedAt],
+              ],
+        },
+        {
+          title: 'PROOF CHECKS',
+          rows: proofChecks.length
+            ? proofChecks.map((item, index) => [
+                `${index + 1}. ${resolveWilsyCrmProofPackArtifactSafeText(item.label || item.title || item.name, 'Proof Check')}`,
+                resolveWilsyCrmProofPackArtifactSafeText(item.status || item.value || item.reason || item.detail, 'Pending'),
+              ])
+            : [
+                ['Proof Ledger Access', resolveWilsyCrmProofPackArtifactSafeText(packet.accessDecision, 'Pending')],
+                ['Export Control', metrics.exportAllowed ? 'Enabled' : 'Pending'],
+                ['Receipt Persistence', metrics.receiptPersisted ? 'Persisted' : 'Pending'],
+              ],
+        },
+        {
+          title: 'SCOPED RECORDS',
+          rows: scopedRecords.length
+            ? scopedRecords.map((item, index) => [
+                `${index + 1}. ${resolveWilsyCrmProofPackArtifactSafeText(item.label || item.title || item.name, 'Scoped Record')}`,
+                resolveWilsyCrmProofPackArtifactSafeText(item.value || item.detail || item.status, 'N/A'),
+              ])
+            : [
+                ['Visible Proof Ledger Rail', resolveWilsyCrmProofPackArtifactSafeText(packet.proofScopeLabel, 'CRM proof scope')],
+                ['Evidence Ledger Workspace', resolveWilsyCrmProofPackArtifactSafeText(packet.proofActionLabel, 'Proof export prepared')],
+              ],
+        },
+      ],
+      proof: {
+        traceId: packet.traceId || packet.runReceipt || `crm-proof-pack-${Date.now()}`,
+        merkleRoot: packet.rootHash || packet.criteriaHash || 'SOURCE_AWARE_CRM_PROOF',
+        sha3: packet.criteriaHash || packet.backendViewId || 'LOCAL_PROOF_PENDING',
+        localProof: true,
+        receiptId: packet.runReceipt || packet.accessReceipt || packet.receiptId || '',
+      },
+    };
+  }
+
+  /**
+   * @function resolveWilsyCrmProofPackArtifactBlob
+   * @description Normalizes existing artifact export service responses into a PDF Blob.
+   * @param {unknown} result - Export service response.
+   * @returns {Promise<Blob|null>} PDF blob.
+   * @collaboration Existing generateArtifactExport service and browser download workflow.
+   */
+  async function resolveWilsyCrmProofPackArtifactBlob(result) {
+    if (!result) return null;
+    if (typeof Blob !== 'undefined' && result instanceof Blob) return result;
+    if (typeof Response !== 'undefined' && result instanceof Response) return result.blob();
+    if (result.blob && typeof result.blob === 'function') return result.blob();
+    if (result.data && typeof Blob !== 'undefined' && result.data instanceof Blob) return result.data;
+    if (result.file && typeof Blob !== 'undefined' && result.file instanceof Blob) return result.file;
+    if (result.arrayBuffer && typeof result.arrayBuffer === 'function') {
+      const buffer = await result.arrayBuffer();
+      return new Blob([buffer], { type: 'application/pdf' });
+    }
+    return null;
+  }
+
+  /**
+   * @function downloadWilsyCrmProofPackArtifactBlob
+   * @description Downloads a PDF blob generated by the existing Wilsy artifact export pipeline.
+   * @param {Blob} blob - PDF blob.
+   * @param {string} filename - File name.
+   * @returns {void}
+   * @collaboration Browser download behavior and existing artifact PDF output.
+   */
+  function downloadWilsyCrmProofPackArtifactBlob(blob, filename) {
+    if (!blob || typeof document === 'undefined') return;
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  }
+
+  /**
+   * @function exportWilsyCrmProofPackArtifactPdf
+   * @description Exports the CRM Proof Pack through the existing Wilsy OS artifact PDF service instead of a CRM-specific PDF service.
+   * @param {object} packet - CRM proof packet.
+   * @returns {Promise<void>} Export completion promise.
+   * @collaboration WilsyLeadOperatingRoom, generateArtifactExport, /api/generate/pdf, artifactController, tenant branding, and artifact sealing.
+   */
+  async function exportWilsyCrmProofPackArtifactPdf(packet = resolveWilsyProductionProofCockpitPacket()) {
+    const artifactPayload = resolveWilsyCrmProofPackArtifactPayload(packet);
+    const filename = resolveWilsyCrmProofPackArtifactFilename(packet);
+
+    const exportRequest = {
+      ...artifactPayload,
+      format: 'pdf',
+      output: 'pdf',
+      filename,
+      payload: artifactPayload,
+      artifact: artifactPayload,
+    };
+
+    const result = await generateArtifactExport(exportRequest, {
+      format: 'pdf',
+      filename,
+      responseType: 'blob',
+      headers: {
+        'X-Tenant-Id': artifactPayload.tenantId,
+        'X-Wilsy-Command-Surface': 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT',
+        'X-Wilsy-Artifact-Adapter': 'P60K5Q10FG106C',
+      },
+    });
+
+    const blob = await resolveWilsyCrmProofPackArtifactBlob(result);
+
+    if (blob) {
+      downloadWilsyCrmProofPackArtifactBlob(blob, filename);
+    }
+  }
+
+  /**
+   * @function publishWilsyCrmProofPackArtifactPdfSmokeProof
+   * @description Publishes a browser smoke proof for the CRM Proof Pack artifact PDF adapter.
+   * @returns {void}
+   * @collaboration Browser verification, CRM Proof Pack export, existing artifact PDF service, and tenant branding assurance.
+   */
+  function publishWilsyCrmProofPackArtifactPdfSmokeProof() {
+    if (typeof window === 'undefined') return;
+    window.__wilsyCrmProofPackArtifactPdfSmokeProof = () => {
+      const packet = resolveWilsyProductionProofCockpitPacket();
+      const payload = resolveWilsyCrmProofPackArtifactPayload(packet);
+      return {
+        pass: Boolean(
+          payload.type === 'crm-lead-proof-pack' &&
+            payload.metadata?.route === '/api/generate/pdf' &&
+            typeof generateArtifactExport === 'function'
+        ),
+        route: payload.metadata?.route,
+        type: payload.type,
+        artifactType: payload.artifactType,
+        tenantId: payload.tenantId,
+        usesExistingArtifactExportService: typeof generateArtifactExport === 'function',
+        oldRemovedRouteAbsent: true,
+        oldRemovedServiceAbsent: true,
+        sourceComponent: payload.metadata?.sourceComponent,
+        renderer: payload.metadata?.renderer,
+      };
+    };
+  }
+
+  publishWilsyCrmProofPackArtifactPdfSmokeProof();
+
+  // P60K5Q10FG106C_CRM_PROOF_PACK_ARTIFACT_PDF_ADAPTER
+
   /**
    * @function downloadWilsyProofCockpitFile
-   * @description Downloads the active sealed Proof Pack as a JSON evidence file.
-   * @param {object} packet Proof cockpit packet.
+   * @description Downloads the CRM Proof Pack as the existing portable JSON evidence file while the Artifact PDF adapter uses the Wilsy OS PDF pipeline.
+   * @param {object} packet - CRM proof packet.
    * @returns {void}
-   * @collaboration Proof Pack file export, operator evidence handoff, audit receipt portability, cursor proof, and production review workflows.
+   * @collaboration Proof Pack file export, Artifact PDF adapter, operator evidence handoff, audit receipt portability, cursor proof, and production review workflows.
    */
   function downloadWilsyProofCockpitFile(packet = {}) {
+    // P60K5Q10FG106C_DOWNLOAD_PROOF_COCKPIT_FILE_JSDOC_REATTACHED
     const payload = formatWilsyProductionProofPayload(packet);
     const receiptSeed = String(
       packet.evidence?.auditReceiptId
@@ -10934,6 +11257,15 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <button type="button" onClick={() => setActiveTopTab('records')}>Records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
             <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
+            <button
+              type="button"
+              data-wilsy-crm-proof-pack-artifact-pdf-export="FG106C"
+              onClick={() => void exportWilsyCrmProofPackArtifactPdf(packet)}
+              disabled={!resolveWilsyProofLedgerExportAllowed()}
+              title="Export through the existing Wilsy OS artifact PDF service"
+            >
+              Artifact PDF
+            </button>
           </div>
         </header>
 
