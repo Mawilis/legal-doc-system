@@ -14212,3 +14212,99 @@ td[data-wilsy-lead-empty-state="records"] {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* P60K5Q10FG104P_PROOF_LEDGER_ACCESS_RAIL_MICRO_POLISH
+   Compact strip posture for backend-policy Proof Ledger access controls. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] {
+  grid-template-columns: minmax(206px, 0.38fr) minmax(0, 1fr) !important;
+  gap: 7px !important;
+  min-height: 54px !important;
+  padding: 7px 8px !important;
+  border-radius: 13px !important;
+  align-items: center !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] header {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 6px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] small {
+  font-size: 0.58rem !important;
+  letter-spacing: 0.13em !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] strong {
+  font-size: 0.82rem !important;
+  line-height: 1.08 !important;
+  margin-top: 1px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] em {
+  font-size: 0.65rem !important;
+  margin-top: 2px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] header button {
+  height: 27px !important;
+  padding: 0 9px !important;
+  font-size: 0.66rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerAccessGrid {
+  grid-template-columns: repeat(4, minmax(118px, 1fr)) !important;
+  gap: 6px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerAccessGrid article {
+  min-height: 42px !important;
+  padding: 6px 7px !important;
+  border-radius: 11px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerAccessGrid article button {
+  height: 24px !important;
+  padding: 0 8px !important;
+  margin-top: 2px !important;
+  font-size: 0.63rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow {
+  grid-template-columns: minmax(360px, 0.46fr) minmax(0, 1fr) !important;
+  gap: 7px !important;
+  margin-top: -1px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow label {
+  grid-template-columns: 88px minmax(0, 1fr) !important;
+  gap: 7px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow label span {
+  font-size: 0.61rem !important;
+  letter-spacing: 0.12em !important;
+  line-height: 1.05 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow select {
+  height: 29px !important;
+  border-radius: 10px !important;
+  font-size: 0.72rem !important;
+  padding: 0 8px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow p {
+  font-size: 0.69rem !important;
+  line-height: 1.15 !important;
+}
+
+@media (max-width: 1280px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow {
+    grid-template-columns: 1fr !important;
+  }
+}

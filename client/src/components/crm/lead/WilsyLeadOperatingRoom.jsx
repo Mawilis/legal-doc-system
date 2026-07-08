@@ -2960,6 +2960,64 @@ useEffect(() => {
 
   return undefined;
 }, [activeTopTab]);
+
+/**
+ * @function publishWilsyProofLedgerBrowserSmokeProof
+ * @description Publishes a browser-console verifier for Proof Ledger rail, receipt, export policy, selector, and backend policy state.
+ * @returns {Function|undefined} Cleanup handler.
+ * @collaboration Lead Proof workspace, FG104O2 Proof Ledger access rail, backend policy receipt, export control, selector state, and browser smoke verification.
+ */
+useEffect(() => {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  window.__wilsyProofLedgerAccessSmokeProof = () => {
+    const rail = document.querySelector('[data-wilsy-proof-ledger-access-rail="FG104O2"]');
+    const selector = rail?.querySelector('select');
+    const receiptButton = rail?.querySelector('button:not(:disabled)');
+    const policy = proofLedgerAccessPolicy || {};
+    const receipt = policy.receipt || {};
+    const decision = policy.decision || {};
+    const exportPolicy = policy.exportPolicy || {};
+    const selectableUsers = Array.isArray(policy.selectableUsers) ? policy.selectableUsers : [];
+
+    return {
+      version: 'P60K5Q10FG104P_PROOF_LEDGER_BROWSER_SMOKE_PROOF',
+      railPresent: Boolean(rail),
+      ready: rail?.getAttribute('data-wilsy-proof-ledger-access-ready') || 'missing',
+      exportPolicyDom: rail?.getAttribute('data-wilsy-proof-ledger-export-policy') || 'missing',
+      accessAllowed: Boolean(decision.allowed),
+      decisionScope: decision.scope || '',
+      decisionReason: decision.reasonCode || '',
+      exportEnabled: Boolean(exportPolicy.enabled),
+      exportReason: exportPolicy.reasonCode || '',
+      receiptPresent: Boolean(receipt.receiptId),
+      receiptId: receipt.receiptId || '',
+      selectorPresent: Boolean(selector),
+      selectedUserId: selector?.value || proofLedgerSelectedUserId || '',
+      selectableUserCount: selectableUsers.length,
+      authoritySource: policy.operator?.authoritySource || exportPolicy.authoritySource || '',
+      text: rail?.innerText || '',
+      pass: Boolean(
+        rail &&
+          receipt.receiptId &&
+          decision.allowed &&
+          exportPolicy.enabled &&
+          selector &&
+          selectableUsers.length
+      ),
+    };
+  };
+
+  return () => {
+    if (window.__wilsyProofLedgerAccessSmokeProof) {
+      delete window.__wilsyProofLedgerAccessSmokeProof;
+    }
+  };
+}, [proofLedgerAccessPolicy, proofLedgerSelectedUserId]);
+
+// P60K5Q10FG104P_PROOF_LEDGER_BROWSER_SMOKE_PROOF
   const [draft, setDraft] = useState(() => createEmptyLeadDraft({}));
   const [saveStatus, setSaveStatus] = useState('');
   const [syncStatus, setSyncStatus] = useState('SOURCE_READY_UPSTREAM');
@@ -10505,6 +10563,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       <section
         className={styles.leadProofLedgerAccessRail}
         data-wilsy-proof-ledger-access-rail="FG104O2"
+        data-wilsy-proof-ledger-access-polish="FG104P"
         data-wilsy-proof-ledger-access-ready={accessReady ? 'ready' : 'pending'}
         data-wilsy-proof-ledger-export-policy={exportAllowed ? 'allowed' : 'blocked'}
       >
