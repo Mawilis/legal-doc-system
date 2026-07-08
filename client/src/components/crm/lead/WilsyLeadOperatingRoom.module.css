@@ -13593,3 +13593,106 @@ td[data-wilsy-lead-empty-state="records"] {
     justify-content: flex-start !important;
   }
 }
+
+/* P60K5Q10FG104J_PROOF_STORY_FIRST_LAYOUT
+   Proof Pack is the artifact, Mission Control is the action rail, Source Authority + Timeline tell the proof story before deep receipt detail. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProductionProofCockpit {
+  gap: 7px !important;
+  padding-top: 8px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero {
+  min-height: 58px !important;
+  padding: 8px 12px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero > div {
+  display: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero strong {
+  font-size: clamp(1.25rem, 1.55vw, 1.72rem) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero small,
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitHero em {
+  font-size: 0.62rem !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofVerdictRail article {
+  min-height: 54px !important;
+  padding: 6px 8px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofMissionStrip article {
+  min-height: 42px !important;
+  padding: 6px 8px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofPackSurface[data-wilsy-proof-pack-artifact="FG104I"] {
+  min-height: 52px !important;
+  order: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCommandRail[data-wilsy-proof-command-rail="FG104I"] {
+  min-height: 46px !important;
+  order: 1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofCockpitGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="source-authority"] {
+  order: 1 !important;
+  grid-column: span 4 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="proof-timeline"] {
+  order: 2 !important;
+  grid-column: span 8 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="receipt-spine"] {
+  order: 3 !important;
+  grid-column: span 4 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="run-integrity"] {
+  order: 4 !important;
+  grid-column: span 4 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="membership-ledger"] {
+  order: 5 !important;
+  grid-column: span 4 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail {
+  order: 6 !important;
+  grid-column: 1 / -1 !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="source-authority"] .leadProofAuthorityGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="proof-timeline"] .leadProofCockpitTimelineList {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofPackSurface[data-wilsy-proof-pack-artifact="FG104I"]::before {
+  top: -8px !important;
+}
+
+@media (max-width: 1360px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="source-authority"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="proof-timeline"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="receipt-spine"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="run-integrity"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] [data-wilsy-proof-panel="membership-ledger"],
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofExceptionRail {
+    grid-column: 1 / -1 !important;
+  }
+}
