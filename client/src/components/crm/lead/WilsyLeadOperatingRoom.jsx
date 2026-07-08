@@ -2981,6 +2981,17 @@ useEffect(() => {
     const decision = policy.decision || {};
     const exportPolicy = policy.exportPolicy || {};
     const selectableUsers = Array.isArray(policy.selectableUsers) ? policy.selectableUsers : [];
+    const delegationPolicy = policy.delegationPolicy || {};
+    const operatorUserId = String(
+      policy.operator?.matchedUser?.userId || policy.operator?.userId || proofLedgerSelectedUserId || ''
+    ).trim();
+    const delegatedUsers = selectableUsers.filter((user) => {
+      const userId = String(user?.userId || '').trim();
+      return Boolean(userId && userId !== operatorUserId && user?.accessScope !== 'OWN');
+    });
+    const delegationReady = Boolean(
+      delegationPolicy.enabled || policy.capabilities?.canDelegateProofLedgerAccess
+    );
 
     return {
       version: 'P60K5Q10FG104P_PROOF_LEDGER_BROWSER_SMOKE_PROOF',
@@ -2998,6 +3009,14 @@ useEffect(() => {
       selectedUserId: selector?.value || proofLedgerSelectedUserId || '',
       selectableUserCount: selectableUsers.length,
       authoritySource: policy.operator?.authoritySource || exportPolicy.authoritySource || '',
+      delegationReady,
+      delegationReason: delegationPolicy.reasonCode || '',
+      delegatedUserCount: delegatedUsers.length,
+      delegationReadiness: delegationReady
+        ? delegatedUsers.length
+          ? 'Delegated users available'
+          : 'Delegation ready / no delegated users yet'
+        : 'Delegation locked',
       text: rail?.innerText || '',
       pass: Boolean(
         rail &&
@@ -10512,6 +10531,63 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   }
 
   /**
+   * @function resolveWilsyProofLedgerDelegationReadiness
+   * @description Resolves delegation readiness messaging for the Proof Ledger selector when only one user is selectable.
+   * @returns {object} Delegation readiness packet.
+   * @collaboration Backend delegationPolicy, selector count, tenant directory readiness, no-false-expansion UX, and Proof Ledger operator guidance.
+   */
+  function resolveWilsyProofLedgerDelegationReadiness() {
+    const policy = proofLedgerAccessPolicy || {};
+    const delegationPolicy = policy.delegationPolicy || {};
+    const selectableUsers = resolveWilsyProofLedgerTargetUsers();
+    const operatorUserId = String(
+      policy.operator?.matchedUser?.userId || policy.operator?.userId || proofLedgerSelectedUserId || ''
+    ).trim();
+
+    const delegatedUsers = selectableUsers.filter((user) => {
+      const userId = String(user?.userId || '').trim();
+      return Boolean(userId && userId !== operatorUserId && user?.accessScope !== 'OWN');
+    });
+
+    const ready = Boolean(delegationPolicy.enabled || policy.capabilities?.canDelegateProofLedgerAccess);
+    const delegatedUserCount = delegatedUsers.length;
+    const selectorCount = selectableUsers.length;
+
+    if (delegatedUserCount > 0) {
+      return {
+        ready,
+        delegatedUserCount,
+        selectorCount,
+        label: 'Delegated users available',
+        support: `${delegatedUserCount} delegated ledger ${delegatedUserCount === 1 ? 'user' : 'users'} visible`,
+        reasonCode: delegationPolicy.reasonCode || 'DELEGATED_LEDGER_USERS_AVAILABLE',
+      };
+    }
+
+    if (ready) {
+      return {
+        ready,
+        delegatedUserCount,
+        selectorCount,
+        label: 'Delegation ready',
+        support: selectorCount <= 1 ? 'No delegated users yet' : 'Tenant ledgers available',
+        reasonCode: delegationPolicy.reasonCode || 'DELEGATION_READY_EMPTY',
+      };
+    }
+
+    return {
+      ready: false,
+      delegatedUserCount,
+      selectorCount,
+      label: 'Delegation locked',
+      support: delegationPolicy.reasonCode || 'Role cannot delegate Proof Ledger access',
+      reasonCode: delegationPolicy.reasonCode || 'DELEGATION_LOCKED',
+    };
+  }
+
+  // P60K5Q10FG104R_PROOF_LEDGER_DELEGATION_READINESS_HELPER
+
+  /**
    * @function resolveWilsyProofLedgerUserLabel
    * @description Formats a tenant user label for the Proof Ledger access selector.
    * @param {object} user Selectable user packet.
@@ -10558,12 +10634,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const selectedUser = selectableUsers.find((user) => user.userId === selectedUserId) || {};
     const accessReady = Boolean(policy.ok || policy.success);
     const exportAllowed = resolveWilsyProofLedgerExportAllowed();
+    const delegationReadiness = resolveWilsyProofLedgerDelegationReadiness();
 
     return (
       <section
         className={styles.leadProofLedgerAccessRail}
         data-wilsy-proof-ledger-access-rail="FG104O2"
         data-wilsy-proof-ledger-access-polish="FG104P"
+        data-wilsy-proof-ledger-delegation-ready={delegationReadiness.ready ? 'ready' : 'empty'}
         data-wilsy-proof-ledger-access-ready={accessReady ? 'ready' : 'pending'}
         data-wilsy-proof-ledger-export-policy={exportAllowed ? 'allowed' : 'blocked'}
       >
@@ -10634,6 +10712,13 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
           {proofLedgerAccessError ? <p data-status="error">{proofLedgerAccessError}</p> : null}
           {!exportAllowed ? <p data-status="blocked">Proof Pack file export is disabled until backend exportPolicy allows it.</p> : null}
+          <p
+            data-status={delegationReadiness.ready ? 'sealed' : 'blocked'}
+            data-wilsy-proof-ledger-delegation-readiness="FG104R"
+            title={delegationReadiness.reasonCode}
+          >
+            {delegationReadiness.label} · {delegationReadiness.support}
+          </p>
           {packet?.evidence?.auditReceiptId ? <p data-status="sealed">Active run receipt: {packet.evidence.auditReceiptId}</p> : null}
         </div>
       </section>

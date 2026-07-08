@@ -14308,3 +14308,44 @@ td[data-wilsy-lead-empty-state="records"] {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* P60K5Q10FG104R_PROOF_LEDGER_DELEGATION_READINESS_SURFACE
+   Explains empty delegated-user state without expanding backend selector sources. */
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] [data-wilsy-proof-ledger-delegation-readiness="FG104R"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  min-height: 24px !important;
+  padding: 5px 8px !important;
+  border: 1px solid rgba(45, 212, 191, 0.18) !important;
+  border-radius: 999px !important;
+  background: rgba(20, 184, 166, 0.08) !important;
+  color: rgba(204, 251, 241, 0.92) !important;
+  font-size: 0.68rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-delegation-ready="empty"] [data-wilsy-proof-ledger-delegation-readiness="FG104R"] {
+  border-color: rgba(125, 211, 252, 0.18) !important;
+  background: rgba(14, 165, 233, 0.08) !important;
+  color: rgba(224, 242, 254, 0.9) !important;
+}
+
+.leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] .leadProofLedgerSelectorRow p[data-wilsy-proof-ledger-delegation-readiness="FG104R"] {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  .leadOperatingRoom[data-wilsy-active-lead-tab="proof"] .leadProofLedgerAccessRail[data-wilsy-proof-ledger-access-polish="FG104P"] [data-wilsy-proof-ledger-delegation-readiness="FG104R"] {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
