@@ -11149,15 +11149,35 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
    * @collaboration Browser download behavior and existing artifact PDF output.
    */
   function downloadWilsyCrmProofPackArtifactBlob(blob, filename) {
-    if (!blob || typeof document === 'undefined') return;
+    if (!(blob instanceof Blob) || typeof document === 'undefined') {
+      throw new Error('CRM Proof Pack Artifact PDF download failed: invalid browser blob.');
+    }
+
+    const resolvedFilename = String(filename || `wilsy-crm-proof-pack-${Date.now()}.pdf`).endsWith('.pdf')
+      ? String(filename || `wilsy-crm-proof-pack-${Date.now()}.pdf`)
+      : `${String(filename || `wilsy-crm-proof-pack-${Date.now()}`)}.pdf`;
     const objectUrl = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
+
     anchor.href = objectUrl;
-    anchor.download = filename;
+    anchor.download = resolvedFilename;
+    anchor.rel = 'noopener';
+    anchor.style.display = 'none';
+
     document.body.appendChild(anchor);
     anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+    setTimeout(() => {
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    }, 1500);
+
+    return {
+      delivery: 'CRM_PROOF_PACK_ARTIFACT_PDF_DOWNLOAD_DISPATCHED',
+      filename: resolvedFilename,
+      size: blob.size,
+      contentType: blob.type || 'application/pdf',
+    };
   }
 
   /**
@@ -11170,27 +11190,38 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   async function exportWilsyCrmProofPackArtifactPdf(packet = resolveWilsyProductionProofCockpitPacket()) {
     const artifactPayload = resolveWilsyCrmProofPackArtifactPayload(packet);
     const filename = resolveWilsyCrmProofPackArtifactFilename(packet);
-
-    const exportRequest = {
-      artifact: artifactPayload,
-      format: 'PDF',
-      tenantId: artifactPayload.tenantId,
-      tenantConfig: {
-        tenantId: artifactPayload.tenantId,
-        generatedBy: artifactPayload.generatedBy,
-        sourceComponent: 'WilsyLeadOperatingRoom',
-        commandSurface: 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT',
-        adapter: 'P60K5Q10FG106E',
-      },
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || sessionStorage.getItem('token') || sessionStorage.getItem('accessToken') || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/pdf',
+      'X-Tenant-Id': artifactPayload.tenantId || tenantId || 'wilsy-sovereign-root',
+      'X-Wilsy-Tenant-ID': artifactPayload.tenantId || tenantId || 'wilsy-sovereign-root',
+      'X-Wilsy-Command-Surface': 'CRM_LEAD_PROOF_PACK_ARTIFACT_EXPORT',
+      'X-Wilsy-Artifact-Adapter': 'P60K5Q10FG106Q',
     };
 
-    const result = await generateArtifactExport(exportRequest);
-
-    const blob = await resolveWilsyCrmProofPackArtifactBlob(result);
-
-    if (blob) {
-      downloadWilsyCrmProofPackArtifactBlob(blob, filename);
+    if (token) {
+      headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     }
+
+    const response = await fetch('/api/generate/pdf', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(artifactPayload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(errorText || `Artifact PDF export failed with HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+
+    if (!(blob instanceof Blob) || blob.size < 128) {
+      throw new Error('Artifact PDF export returned an invalid PDF blob.');
+    }
+
+    downloadWilsyCrmProofPackArtifactBlob(blob, filename);
   }
 
   /**
@@ -11805,3 +11836,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 }
 
 // P60K5Q10FG97_UNIQUE_COMPACT_ORGANIZER_MENU_SOURCE\n
+
+  // P60K5Q10FG106Q_REAL_ARTIFACT_BUTTON_DIRECT_BLOB_DOWNLOAD
