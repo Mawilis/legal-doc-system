@@ -11257,15 +11257,6 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <button type="button" onClick={() => setActiveTopTab('records')}>Records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
             <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
-            <button
-              type="button"
-              data-wilsy-crm-proof-pack-artifact-pdf-export="FG106C"
-              onClick={() => void exportWilsyCrmProofPackArtifactPdf(packet)}
-              disabled={!resolveWilsyProofLedgerExportAllowed()}
-              title="Export through the existing Wilsy OS artifact PDF service"
-            >
-              Artifact PDF
-            </button>
           </div>
         </header>
 
@@ -11302,6 +11293,16 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
             <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
+            <button
+              type="button"
+              data-wilsy-crm-proof-pack-artifact-pdf-export="FG106C"
+              data-wilsy-crm-proof-pack-artifact-pdf-placement="FG106D-MISSION-CONTROL"
+              onClick={() => void exportWilsyCrmProofPackArtifactPdf(packet)}
+              disabled={!resolveWilsyProofLedgerExportAllowed()}
+              title="Export through the existing Wilsy OS artifact PDF service"
+            >
+              Artifact PDF
+            </button>
           </div>
         </section>
 
