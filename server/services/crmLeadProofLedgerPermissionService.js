@@ -388,6 +388,74 @@ async function queryTenantProofLedgerUsers(context = {}) {
 }
 
 /**
+ * @function resolveProofLedgerOperatorAuthority
+ * @description Resolves operator role authority from tenant user records before accepting request fallback.
+ * @param {object} context Proof Ledger request context.
+ * @param {Array<object>} users Sanitized tenant users.
+ * @returns {object} Verified authority packet.
+ * @collaboration Tenant directory, role hardening, anti-spoofing policy, Proof Ledger export controls, and access receipts.
+ */
+function resolveProofLedgerOperatorAuthority(context = {}, users = []) {
+  const operatorUserId = normalizeProofLedgerText(context.operatorUserId);
+  const operatorEmail = normalizeProofLedgerText(context.operatorEmail).toLowerCase();
+  const headerRole = normalizeProofLedgerRole(context.operatorRole || 'operator');
+
+  const matchedUser =
+    users.find((user) => {
+      const userId = normalizeProofLedgerText(user.userId);
+      const userEmail = normalizeProofLedgerText(user.email).toLowerCase();
+      return Boolean(
+        operatorUserId &&
+        (userId === operatorUserId ||
+          userEmail === operatorUserId.toLowerCase() ||
+          (operatorEmail && userEmail === operatorEmail))
+      );
+    }) || null;
+
+  const directoryRole = normalizeProofLedgerRole(matchedUser?.role || '');
+  const productionMode = process.env.NODE_ENV === 'production';
+
+  if (directoryRole) {
+    return {
+      role: directoryRole,
+      authoritySource: 'TENANT_DIRECTORY',
+      matchedUser: matchedUser
+        ? {
+            userId: matchedUser.userId,
+            email: matchedUser.email,
+            name: matchedUser.name,
+            status: matchedUser.status,
+          }
+        : null,
+      headerRole,
+      productionFallbackUsed: false,
+    };
+  }
+
+  if (!productionMode && headerRole) {
+    return {
+      role: headerRole,
+      authoritySource: 'REQUEST_HEADER_DEV_FALLBACK',
+      matchedUser: null,
+      headerRole,
+      productionFallbackUsed: true,
+    };
+  }
+
+  return {
+    role: 'operator',
+    authoritySource: productionMode
+      ? 'PRODUCTION_DIRECTORY_MISS_DENY_ELEVATION'
+      : 'DIRECTORY_MISS_DEFAULT_OPERATOR',
+    matchedUser: null,
+    headerRole,
+    productionFallbackUsed: false,
+  };
+}
+
+// P60K5Q10FG104N2_AUTHORITY_SOURCE_HARDENING
+
+/**
  * @function isProofLedgerSubordinate
  * @description Checks if target user reports to the operator using known manager fields.
  * @param {object} params Check params.
@@ -498,8 +566,13 @@ async function recordProofLedgerAccessReceipt(params = {}) {
  */
 async function resolveProofLedgerAccessPolicy(req = {}) {
   const context = resolveProofLedgerRequestContext(req);
-  const capabilities = resolveProofLedgerCapabilities(context.operatorRole);
   const users = await queryTenantProofLedgerUsers(context);
+  const authority = resolveProofLedgerOperatorAuthority(context, users);
+  context.operatorRole = authority.role;
+  context.institutionalHeaders.operatorRole = authority.role;
+  context.institutionalHeaders.authoritySource = authority.authoritySource;
+
+  const capabilities = resolveProofLedgerCapabilities(authority.role);
   const usersById = new Map(users.map((user) => [user.userId, user]));
   const targetUserId = context.targetUserId || context.operatorUserId;
   const targetUser = usersById.get(targetUserId) || null;
@@ -550,6 +623,9 @@ async function resolveProofLedgerAccessPolicy(req = {}) {
       userId: context.operatorUserId,
       email: context.operatorEmail,
       role: context.operatorRole,
+      authoritySource: authority.authoritySource,
+      headerRole: authority.headerRole,
+      productionFallbackUsed: authority.productionFallbackUsed,
     },
     target: {
       userId: targetUserId,
@@ -566,6 +642,7 @@ async function resolveProofLedgerAccessPolicy(req = {}) {
           ? 'EXPORT_ALLOWED'
           : 'ROLE_CANNOT_EXPORT_PROOF_LEDGER'
         : decision.reasonCode,
+      authoritySource: authority.authoritySource,
     },
     delegationPolicy: {
       enabled: Boolean(capabilities.canDelegateProofLedgerAccess),
@@ -605,5 +682,6 @@ export {
   queryTenantProofLedgerUsers,
   resolveProofLedgerAccessPolicy,
   resolveProofLedgerCapabilities,
+  resolveProofLedgerOperatorAuthority,
   resolveProofLedgerRequestContext,
 };
