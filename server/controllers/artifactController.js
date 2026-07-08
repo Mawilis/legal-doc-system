@@ -185,13 +185,29 @@ const formatMetricValue = (value) => {
  * @collaboration FG106F CRM Proof Pack adapter, generateArtifactExport, and the existing /api/generate/pdf route.
  */
 const isCrmLeadProofPackArtifact = (type, payloadData = {}) => {
+  const proofPackCandidate =
+    payloadData?.crmProofPack ||
+    payloadData?.proofPackSections ||
+    payloadData?.payload?.crmProofPack ||
+    payloadData?.payload?.proofPackSections ||
+    payloadData?.data?.crmProofPack ||
+    payloadData?.data?.payload?.crmProofPack ||
+    null;
+
   const fingerprint = [
     type,
     payloadData?.type,
     payloadData?.artifactType,
     payloadData?.templateType,
+    payloadData?.payload?.type,
+    payloadData?.payload?.artifactType,
     payloadData?.crmProofPack?.type,
     payloadData?.proofPackSections?.type,
+    payloadData?.payload?.crmProofPack?.type,
+    payloadData?.payload?.proofPackSections?.type,
+    payloadData?.data?.crmProofPack?.type,
+    payloadData?.data?.payload?.crmProofPack?.type,
+    proofPackCandidate?.type,
   ]
     .filter(Boolean)
     .join(' ')
@@ -199,7 +215,8 @@ const isCrmLeadProofPackArtifact = (type, payloadData = {}) => {
     .replace(/[_-]+/g, ' ');
 
   return (
-    fingerprint.includes('crm') && fingerprint.includes('proof') && fingerprint.includes('pack')
+    Boolean(proofPackCandidate) ||
+    (fingerprint.includes('crm') && fingerprint.includes('proof') && fingerprint.includes('pack'))
   );
 };
 
@@ -211,7 +228,13 @@ const isCrmLeadProofPackArtifact = (type, payloadData = {}) => {
  * @collaboration Existing artifactController renderer, generateArtifactExport, and CRM proof payload passthrough.
  */
 const resolveCrmLeadProofPackData = (payloadData = {}) =>
-  payloadData.crmProofPack || payloadData.proofPackSections || payloadData.data?.crmProofPack || {};
+  payloadData.crmProofPack ||
+  payloadData.proofPackSections ||
+  payloadData.payload?.crmProofPack ||
+  payloadData.payload?.proofPackSections ||
+  payloadData.data?.crmProofPack ||
+  payloadData.data?.payload?.crmProofPack ||
+  {};
 
 /**
  * @function normalizeCrmLeadProofRows
@@ -1622,10 +1645,16 @@ export const generateSovereignArtifact = async (req, res, next) => {
     // Pipe PDF directly to response
     doc.pipe(res);
 
-    const theme = isCrmLeadProofPackArtifact(type, payloadData)
+    const crmProofPackPayloadData = isCrmLeadProofPackArtifact(type, payloadData)
+      ? payloadData
+      : isCrmLeadProofPackArtifact(type, req.body)
+        ? req.body
+        : payloadData;
+
+    const theme = isCrmLeadProofPackArtifact(type, crmProofPackPayloadData)
       ? drawCrmLeadProofPackArtifactPdf(doc, {
           type,
-          payloadData,
+          payloadData: crmProofPackPayloadData,
           metadata,
           tenantId,
           userEmail,
@@ -1714,3 +1743,5 @@ export const generateSovereignArtifact = async (req, res, next) => {
 };
 
 export default { generateSovereignArtifact };
+
+// P60K5Q10FG106G_CRM_PROOF_PACK_BODY_PAYLOAD_BRIDGE
