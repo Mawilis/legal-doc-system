@@ -237,6 +237,78 @@ const resolveCrmLeadProofPackData = (payloadData = {}) =>
   {};
 
 /**
+ * @function resolveCrmLeadProofPackRuntimeEnvelope
+ * @description Resolves CRM Proof Pack evidence from every body shape used by the artifact export pipeline.
+ * @param {object} requestBody - Full Express request body.
+ * @param {object} payloadData - Data payload extracted by generateSovereignArtifact.
+ * @param {object} payload - Payload object extracted by generateSovereignArtifact.
+ * @returns {object} CRM Proof Pack envelope and renderer decision.
+ * @collaboration Existing /api/generate/pdf route, artifactController, CRM Proof Pack adapter, and Wilsy artifact export service.
+ */
+const resolveCrmLeadProofPackRuntimeEnvelope = (
+  requestBody = {},
+  payloadData = {},
+  payload = {}
+) => {
+  const candidates = [
+    payloadData?.crmProofPack,
+    payloadData?.proofPackSections,
+    payloadData?.payload?.crmProofPack,
+    payloadData?.payload?.proofPackSections,
+    payloadData?.data?.crmProofPack,
+    payloadData?.data?.payload?.crmProofPack,
+    payload?.crmProofPack,
+    payload?.proofPackSections,
+    payload?.payload?.crmProofPack,
+    payload?.payload?.proofPackSections,
+    payload?.data?.crmProofPack,
+    requestBody?.crmProofPack,
+    requestBody?.proofPackSections,
+    requestBody?.payloadData?.crmProofPack,
+    requestBody?.payloadData?.proofPackSections,
+    requestBody?.payload?.crmProofPack,
+    requestBody?.payload?.proofPackSections,
+    requestBody?.payload?.payloadData?.crmProofPack,
+    requestBody?.payload?.payloadData?.proofPackSections,
+    requestBody?.payload?.payload?.crmProofPack,
+    requestBody?.payload?.data?.crmProofPack,
+    requestBody?.data?.crmProofPack,
+    requestBody?.data?.proofPackSections,
+    requestBody?.data?.payload?.crmProofPack,
+    requestBody?.data?.payload?.proofPackSections,
+    requestBody?.data?.payloadData?.crmProofPack,
+  ].filter(Boolean);
+
+  const proofPack =
+    candidates.find(
+      (candidate) =>
+        Array.isArray(candidate?.proofSummaryRows) ||
+        Array.isArray(candidate?.authoritySealRows) ||
+        Array.isArray(candidate?.proofChecks) ||
+        Array.isArray(candidate?.metricsRows)
+    ) || {};
+
+  const forcedByEvidence = Boolean(
+    Array.isArray(proofPack?.proofSummaryRows) ||
+    Array.isArray(proofPack?.authoritySealRows) ||
+    Array.isArray(proofPack?.proofChecks) ||
+    Array.isArray(proofPack?.metricsRows)
+  );
+
+  return {
+    proofPack,
+    forcedByEvidence,
+    proofSummaryRows: Array.isArray(proofPack?.proofSummaryRows)
+      ? proofPack.proofSummaryRows.length
+      : 0,
+    authoritySealRows: Array.isArray(proofPack?.authoritySealRows)
+      ? proofPack.authoritySealRows.length
+      : 0,
+    proofChecks: Array.isArray(proofPack?.proofChecks) ? proofPack.proofChecks.length : 0,
+  };
+};
+
+/**
  * @function normalizeCrmLeadProofRows
  * @description Normalizes proof-pack rows into two-column PDF rows.
  * @param {unknown} rows - Candidate rows.
@@ -1645,15 +1717,59 @@ export const generateSovereignArtifact = async (req, res, next) => {
     // Pipe PDF directly to response
     doc.pipe(res);
 
-    const crmProofPackPayloadData = isCrmLeadProofPackArtifact(type, payloadData)
-      ? payloadData
-      : isCrmLeadProofPackArtifact(type, req.body)
-        ? req.body
-        : payloadData;
+    const crmProofPackRuntimeEnvelope = resolveCrmLeadProofPackRuntimeEnvelope(
+      req.body,
+      payloadData,
+      payload
+    );
+    const crmProofPackDetected =
+      crmProofPackRuntimeEnvelope.forcedByEvidence ||
+      isCrmLeadProofPackArtifact(type, payloadData) ||
+      isCrmLeadProofPackArtifact(type, payload) ||
+      isCrmLeadProofPackArtifact(type, req.body);
 
-    const theme = isCrmLeadProofPackArtifact(type, crmProofPackPayloadData)
+    const crmProofPackPayloadData = crmProofPackDetected
+      ? {
+          ...req.body,
+          ...payloadData,
+          ...payload,
+          crmProofPack:
+            crmProofPackRuntimeEnvelope.proofPack ||
+            payloadData?.crmProofPack ||
+            payload?.crmProofPack,
+          proofPackSections:
+            crmProofPackRuntimeEnvelope.proofPack ||
+            payloadData?.proofPackSections ||
+            payload?.proofPackSections ||
+            payloadData?.crmProofPack ||
+            payload?.crmProofPack,
+          payloadData,
+          payload,
+          data: {
+            ...(req.body?.data || {}),
+            ...(payloadData?.data || {}),
+            crmProofPack:
+              crmProofPackRuntimeEnvelope.proofPack ||
+              req.body?.data?.crmProofPack ||
+              payloadData?.data?.crmProofPack ||
+              payloadData?.crmProofPack,
+          },
+        }
+      : payloadData;
+
+    res.setHeader(
+      'X-Wilsy-Pdf-Renderer',
+      crmProofPackDetected ? 'CRM_PROOF_PACK' : 'GENERIC_ARTIFACT'
+    );
+    res.setHeader('X-Wilsy-Crm-Proof-Pack-Detected', crmProofPackDetected ? 'true' : 'false');
+    res.setHeader(
+      'X-Wilsy-Crm-Proof-Pack-Rows',
+      `${crmProofPackRuntimeEnvelope.proofSummaryRows}:${crmProofPackRuntimeEnvelope.authoritySealRows}:${crmProofPackRuntimeEnvelope.proofChecks}`
+    );
+
+    const theme = crmProofPackDetected
       ? drawCrmLeadProofPackArtifactPdf(doc, {
-          type,
+          type: 'CRM_LEAD_PROOF_PACK',
           payloadData: crmProofPackPayloadData,
           metadata,
           tenantId,
@@ -1745,3 +1861,5 @@ export const generateSovereignArtifact = async (req, res, next) => {
 export default { generateSovereignArtifact };
 
 // P60K5Q10FG106G_CRM_PROOF_PACK_BODY_PAYLOAD_BRIDGE
+
+// P60K5Q10FG106I_FORCE_CRM_PROOF_PACK_RENDERER
