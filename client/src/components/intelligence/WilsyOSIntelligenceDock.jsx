@@ -3836,7 +3836,7 @@ export function WilsyOSIntelligenceDock() {
               <strong>Route work through the cockpit</strong>
             </div>
             <div className={styles.actionList}>
-              {liveOperatorModel.actions.map((action) => (
+              {(Array.isArray(liveOperatorModel.actions) ? liveOperatorModel.actions : []).map((action) => (
                 <button
                   key={`${action.rank}-${action.title}`}
                   type="button"
@@ -3863,7 +3863,7 @@ export function WilsyOSIntelligenceDock() {
               <strong>Ready for operator review</strong>
             </div>
             <ol>
-              {liveOperatorModel.checklist.map((item) => (
+              {(Array.isArray(liveOperatorModel.checklist) ? liveOperatorModel.checklist : []).map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ol>
@@ -3919,3 +3919,5 @@ export function mountWilsyOSIntelligenceDock() {
 }
 
 export default WilsyOSIntelligenceDock;
+
+// P60K5Q10FG107M_INTELLIGENCE_DOCK_ARRAY_GUARD
