@@ -370,6 +370,8 @@ function writeParagraph(doc, cursor, paragraph, index) {
     });
 
   cursor.y = doc.y + 10;
+
+  return cursor;
 }
 
 /**
@@ -395,9 +397,12 @@ function drawSection(doc, cursor, section) {
 
   cursor.y = doc.y + 14;
 
-  section.paragraphs.forEach((paragraph, index) => writeParagraph(doc, cursor, paragraph, index));
+  const paragraphs = Array.isArray(section.paragraphs) ? section.paragraphs : [];
+  paragraphs.forEach((paragraph, index) => writeParagraph(doc, cursor, paragraph, index));
 
-  cursor.y += 6;
+  cursor.y += 10;
+
+  return cursor;
 }
 
 /**
@@ -824,6 +829,23 @@ function drawDocumentControl(doc, cursor, state) {
     );
 
   cursor.y += 106;
+
+  return cursor;
+}
+
+/**
+ * @function startEnterprisePdfBodyPage
+ * @description Starts a clean body page below the enterprise chrome-safe area and returns the active cursor.
+ * @param {PDFDocument} doc - PDF document.
+ * @param {object} cursor - Cursor state.
+ * @returns {object} Cursor positioned at the protected body top.
+ * @collaboration CRM Proof Pack layout, enterprise PDF chrome, pagination safety, and proof-readable export output.
+ */
+function startEnterprisePdfBodyPage(doc, cursor) {
+  const nextCursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
+  doc.addPage();
+  nextCursor.y = PAGE.top;
+  return nextCursor;
 }
 
 /**
@@ -837,17 +859,24 @@ function drawDocumentControl(doc, cursor, state) {
  */
 function drawProofSchedule(doc, cursor, state) {
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
+
   if (isCrmProofPackState(state)) {
-    return getCrmProofPackScheduleSections(state).reduce(
-      (nextCursor, section) => drawSection(doc, nextCursor, section),
-      cursor
-    );
+    cursor = startEnterprisePdfBodyPage(doc, cursor);
+
+    getCrmProofPackScheduleSections(state).forEach((section, index) => {
+      if (index > 0) {
+        cursor = startEnterprisePdfBodyPage(doc, cursor);
+      }
+
+      cursor = drawSection(doc, cursor, section);
+    });
+
+    return cursor;
   }
 
-  doc.addPage();
-  cursor.y = PAGE.top;
+  cursor = startEnterprisePdfBodyPage(doc, cursor);
 
-  drawSection(doc, cursor, {
+  cursor = drawSection(doc, cursor, {
     title: 'Schedule A — Source Fields Requiring Completion',
     paragraphs: [
       'Counterparty legal name, registration number, registered address, representative name, representative authority, commercial purpose, governing law deviations, signature method, approval owner and execution date must be completed or connected from source systems before final reliance.',
@@ -855,13 +884,15 @@ function drawProofSchedule(doc, cursor, state) {
     ],
   });
 
-  drawSection(doc, cursor, {
+  cursor = drawSection(doc, cursor, {
     title: 'Schedule B — Forensic Proof Appendix',
     paragraphs: [
       `Trace ID: ${state.traceId}. Merkle Root: ${state.merkleRoot}. SHA3 / Seal: ${state.sha3}. Source Posture: ${state.sourcePosture}. Generated At: ${state.generatedAt}.`,
       'The proof appendix supports reconstruction, version comparison, audit evidence, dispute response, investor diligence and internal control review.',
     ],
   });
+
+  return cursor;
 }
 
 /**
@@ -875,7 +906,10 @@ function drawProofSchedule(doc, cursor, state) {
  */
 function drawExecution(doc, cursor, state) {
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
+
   if (isCrmProofPackState(state)) {
+    cursor = startEnterprisePdfBodyPage(doc, cursor);
+
     return drawSection(doc, cursor, {
       title: 'PROOF AUTHORITY AND RETENTION',
       paragraphs: [
@@ -890,8 +924,7 @@ function drawExecution(doc, cursor, state) {
     });
   }
 
-  doc.addPage();
-  cursor.y = PAGE.top;
+  cursor = startEnterprisePdfBodyPage(doc, cursor);
 
   doc
     .fillColor(BRAND.black)
@@ -1063,3 +1096,5 @@ export default streamEnterpriseArtifactPdf;
 // P60K5Q10FG106T3_CURSOR_ORDER_RESCUE
 
 // P60K5Q10FG106U_ENTERPRISE_PDF_ALL_CURSOR_READ_GUARDS
+
+// P60K5Q10FG106X_CRM_PROOF_PACK_PDF_LAYOUT_FLOW
