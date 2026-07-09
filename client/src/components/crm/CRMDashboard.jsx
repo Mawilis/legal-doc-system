@@ -1672,6 +1672,12 @@ function normalizeBackendOperatorProfile(payload = {}, fallback = {}) {
  */
 async function fetchBackendOperatorProfile(tenantId, signal, fallback = {}) {
   const fallbackProfile = normalizeBackendOperatorProfile(fallback, fallback);
+  const profileLookupEnabled = Boolean(window?.__WILSY_ENABLE_CRM_BACKEND_PROFILE_LOOKUP);
+
+  if (!profileLookupEnabled) {
+    return fallbackProfile;
+  }
+
   const headers = buildAuthHeaders(tenantId);
   const authHeader = String(headers.Authorization || '').trim();
   const tokenHeader = String(headers['X-Auth-Token'] || headers['X-Wilsy-Auth-Token'] || '').trim();
@@ -1711,7 +1717,6 @@ async function fetchBackendOperatorProfile(tenantId, signal, fallback = {}) {
     return fallbackProfile;
   }
 }
-
 /**
  * @function useBackendOperatorIdentity
  * @description Hydrates operator identity from backend profile routes with safe fallback.
@@ -6651,3 +6656,5 @@ return (
 export default CRMDashboard;
 
 // P60K5Q10FG106V_STOP_OPERATOR_PROFILE_403_CASCADE
+
+// P60K5Q10FG106W_GATE_FINAL_PROFILE_PROBE
