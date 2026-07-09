@@ -1671,24 +1671,45 @@ function normalizeBackendOperatorProfile(payload = {}, fallback = {}) {
  * @collaboration Starts the CRM identity chain from backend/DB data without breaking when a route is unavailable.
  */
 async function fetchBackendOperatorProfile(tenantId, signal, fallback = {}) {
-  for (const endpoint of USER_PROFILE_ENDPOINTS) {
-    try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'GET',
-        headers: buildAuthHeaders(tenantId),
-        signal
-      });
+  const fallbackProfile = normalizeBackendOperatorProfile(fallback, fallback);
+  const headers = buildAuthHeaders(tenantId);
+  const authHeader = String(headers.Authorization || '').trim();
+  const tokenHeader = String(headers['X-Auth-Token'] || headers['X-Wilsy-Auth-Token'] || '').trim();
+  const hasBearer = authHeader.startsWith('Bearer ') && !authHeader.includes('undefined') && !authHeader.includes('null');
+  const hasTokenHeader = tokenHeader && tokenHeader !== 'undefined' && tokenHeader !== 'null';
 
-      if (!response.ok) continue;
-
-      const payload = await response.json();
-      return normalizeBackendOperatorProfile(payload, fallback);
-    } catch (error) {
-      if (error?.name === 'AbortError') return fallback;
-    }
+  if (!hasBearer && !hasTokenHeader) {
+    return fallbackProfile;
   }
 
-  return fallback;
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      method: 'GET',
+      headers,
+      signal,
+      credentials: 'include'
+    });
+
+    if (response.status === 401 || response.status === 403 || response.status === 404) {
+      return fallbackProfile;
+    }
+
+    if (!response.ok) {
+      return fallbackProfile;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return fallbackProfile;
+    }
+
+    const payload = await response.json();
+    return normalizeBackendOperatorProfile(payload, fallbackProfile);
+  } catch (error) {
+    if (error?.name === 'AbortError') return fallbackProfile;
+
+    return fallbackProfile;
+  }
 }
 
 /**
@@ -6628,3 +6649,5 @@ return (
 }
 
 export default CRMDashboard;
+
+// P60K5Q10FG106V_STOP_OPERATOR_PROFILE_403_CASCADE
