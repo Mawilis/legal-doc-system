@@ -968,6 +968,24 @@ function applyChrome(doc, state) {
 }
 
 /**
+ * @function normalizeEnterprisePdfCursor
+ * @description Guarantees the enterprise PDF renderer always has a mutable cursor before draw functions read cursor.y.
+ * @param {object} cursor - Cursor returned by chrome/layout setup.
+ * @param {number} fallbackY - Safe vertical position below the document chrome.
+ * @returns {object} Mutable cursor with a numeric y value.
+ * @collaboration Enterprise PDF renderer, CRM Proof Pack PDF adapter, PDFKit layout safety, and browser-complete artifact delivery.
+ */
+function normalizeEnterprisePdfCursor(cursor = {}, fallbackY = PAGE.top) {
+  const resolvedCursor = cursor && typeof cursor === 'object' ? cursor : {};
+  const numericY = Number(resolvedCursor.y);
+
+  return {
+    ...resolvedCursor,
+    y: Number.isFinite(numericY) ? numericY : fallbackY,
+  };
+}
+
+/**
  * @function streamEnterpriseArtifactPdf
  * @description Streams a Wilsy OS enterprise PDF artifact with stable branding, pagination and deeper content.
  * @param {object} args - Render arguments.
@@ -1010,7 +1028,7 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
     doc.on('error', reject);
   });
 
-  const cursor = { y: PAGE.top };
+  const cursor = normalizeEnterprisePdfCursor({ y: PAGE.top }, PAGE.top);
 
   drawDocumentControl(doc, cursor, state);
   buildSections(state).forEach((section) => drawSection(doc, cursor, section));
@@ -1033,3 +1051,7 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
 export default streamEnterpriseArtifactPdf;
 
 // P60K5Q10FG106O_ENTERPRISE_RENDERER_CRM_PROOF_STORY\n\n// P60K5Q10FG106S_BUFFER_ENTERPRISE_PDF_FINALIZATION\n
+
+// P60K5Q10FG106T_ENTERPRISE_PDF_CURSOR_GUARD
+
+// P60K5Q10FG106T3_CURSOR_ORDER_RESCUE
