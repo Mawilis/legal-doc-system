@@ -398,7 +398,9 @@ function drawSection(doc, cursor, section) {
   cursor.y = doc.y + 14;
 
   const paragraphs = Array.isArray(section.paragraphs) ? section.paragraphs : [];
-  paragraphs.forEach((paragraph, index) => writeParagraph(doc, cursor, paragraph, index));
+  paragraphs.forEach((paragraph, index) => {
+    cursor = writeParagraph(doc, cursor, paragraph, index);
+  });
 
   cursor.y += 10;
 
@@ -1017,11 +1019,9 @@ function applyChrome(doc, state) {
 function normalizeEnterprisePdfCursor(cursor = {}, fallbackY = PAGE.top) {
   const resolvedCursor = cursor && typeof cursor === 'object' ? cursor : {};
   const numericY = Number(resolvedCursor.y);
+  resolvedCursor.y = Number.isFinite(numericY) ? numericY : fallbackY;
 
-  return {
-    ...resolvedCursor,
-    y: Number.isFinite(numericY) ? numericY : fallbackY,
-  };
+  return resolvedCursor;
 }
 
 /**
@@ -1067,12 +1067,14 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
     doc.on('error', reject);
   });
 
-  const cursor = normalizeEnterprisePdfCursor({ y: PAGE.top }, PAGE.top);
+  let cursor = normalizeEnterprisePdfCursor({ y: PAGE.top }, PAGE.top);
 
-  drawDocumentControl(doc, cursor, state);
-  buildSections(state).forEach((section) => drawSection(doc, cursor, section));
-  drawProofSchedule(doc, cursor, state);
-  drawExecution(doc, cursor, state);
+  cursor = drawDocumentControl(doc, cursor, state);
+  buildSections(state).forEach((section) => {
+    cursor = drawSection(doc, cursor, section);
+  });
+  cursor = drawProofSchedule(doc, cursor, state);
+  cursor = drawExecution(doc, cursor, state);
   applyChrome(doc, state);
 
   doc.end();
@@ -1098,3 +1100,5 @@ export default streamEnterpriseArtifactPdf;
 // P60K5Q10FG106U_ENTERPRISE_PDF_ALL_CURSOR_READ_GUARDS
 
 // P60K5Q10FG106X_CRM_PROOF_PACK_PDF_LAYOUT_FLOW
+
+// P60K5Q10FG106Y_PDF_CURSOR_MUTATION_FLOW
