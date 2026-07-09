@@ -70,6 +70,41 @@ function createRequestProof(type = '', tenantId = '', generatedAt = '') {
 // WILSY_FG108O3M3_TITLE_HELPER_RUNTIME_RESCUE
 
 /**
+ * @function createMerkleRoot
+ * @description Creates a deterministic Merkle-style evidence root from artifact identity and request evidence values.
+ * @param {Array<string>} values Evidence values to hash into a Merkle root.
+ * @returns {string} Deterministic SHA-512 Merkle-style root hash.
+ * @collaboration Artifact PDF evidence receipts, Knowledge Base export integrity, and enterprise renderer audit metadata.
+ */
+function createMerkleRoot(values = []) {
+  const normalizedValues = (Array.isArray(values) ? values : [values])
+    .map((value) => clean(value, ''))
+    .filter(Boolean);
+
+  if (!normalizedValues.length) {
+    return hashHex('WILSY_EMPTY_MERKLE_ROOT', 'sha512');
+  }
+
+  let level = normalizedValues.map((value) => hashHex(value, 'sha512'));
+
+  while (level.length > 1) {
+    const nextLevel = [];
+
+    for (let index = 0; index < level.length; index += 2) {
+      const left = level[index];
+      const right = level[index + 1] || left;
+      nextLevel.push(hashHex(`${left}|${right}`, 'sha512'));
+    }
+
+    level = nextLevel;
+  }
+
+  return level[0];
+}
+
+// WILSY_FG108O3M4_MERKLE_ROOT_RUNTIME_RESCUE
+
+/**
  * @function isWilsyKnowledgeBaseArtifactRequest
  * @description Detects Knowledge Base PDF export requests that must fail closed when live user identity is unresolved.
  * @param {object} body Request body.
