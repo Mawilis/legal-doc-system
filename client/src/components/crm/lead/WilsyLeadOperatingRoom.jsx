@@ -11968,6 +11968,8 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       {renderWilsyViewActionConfirmation()}
       {activeTopTab === 'proof' ? null : renderHeader()}
       {mode === 'create' ? renderCreateMode() : renderListMode()}
+      {mode !== 'create' && activeTopTab === 'proof' ? renderWilsyLeadAIResponseSurface() : null}
+      {/* P60K5Q10FG107Q_PROOF_AI_SURFACE_MOUNTED */}
       {/* P60K5Q10FG104B_PROOF_WORKSPACE_ISOLATION */}
       {renderCalendarDrawer()}
       {renderCommandDrawer()}
@@ -11986,3 +11988,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 // P60K5Q10FG107E_PROOF_EXPORT_CONTROL_CLARITY
 
   // P60K5Q10FG107J_FRONTEND_INLINE_COMMAND_ROUTER
+
+// P60K5Q10FG107Q_PROOF_AI_SURFACE_MOUNTED
