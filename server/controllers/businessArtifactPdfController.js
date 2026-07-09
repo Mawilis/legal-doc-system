@@ -1,6 +1,7 @@
 /* eslint-disable */
 import crypto from 'node:crypto';
 import streamEnterpriseArtifactPdf from '../services/artifacts/wilsyEnterprisePdfRenderer.js';
+import mongoose from 'mongoose';
 
 /**
  * @function readHeader
@@ -34,6 +35,238 @@ function clean(value, fallback = '') {
 
   return result || fallback;
 }
+
+/**
+ * @function isWilsyKnowledgeBaseArtifactRequest
+ * @description Detects Knowledge Base PDF export requests that must fail closed when live user identity is unresolved.
+ * @param {object} body Request body.
+ * @param {object} payload Artifact payload.
+ * @param {object} payloadData Explicit payloadData envelope.
+ * @returns {boolean} True when the request is a Knowledge Base artifact.
+ * @collaboration Knowledge Base PDFs, /api/generate/pdf, live user identity governance, and release guard enforcement.
+ */
+function isWilsyKnowledgeBaseArtifactRequest(body = {}, payload = {}, payloadData = {}) {
+  const candidates = [
+    body.type,
+    body.artifactType,
+    body.templateType,
+    payload.type,
+    payload.artifactType,
+    payload.templateType,
+    payloadData.type,
+    payloadData.artifactType,
+    payloadData.templateType,
+    body.knowledgeBase?.templateType,
+    body.playbook?.templateType,
+    body.playbookPayload?.templateType,
+    payload.knowledgeBase?.templateType,
+    payload.playbook?.templateType,
+    payload.playbookPayload?.templateType,
+    payloadData.knowledgeBase?.templateType,
+    payloadData.playbook?.templateType,
+    payloadData.playbookPayload?.templateType,
+  ].map((item) => clean(item, '').toUpperCase());
+
+  return candidates.some(
+    (item) => item.includes('KNOWLEDGE_BASE') || item.includes('PLAYBOOK_FG108')
+  );
+}
+
+/**
+ * @function resolveWilsyProfessionalDisplayNameCandidate
+ * @description Validates an authenticated profile display-name candidate without deriving identity from handles or emails.
+ * @param {unknown} value Candidate display value.
+ * @returns {string} Professional display name or empty string.
+ * @collaboration Live auth profile, tenant account identity, and generated artifact document control.
+ */
+function resolveWilsyProfessionalDisplayNameCandidate(value = '') {
+  const raw = clean(value, '').replace(/^@/, '').trim();
+
+  if (!raw || raw.includes('@')) return '';
+  if (raw === raw.toLowerCase()) return '';
+  if (/^[a-z0-9_.-]+$/.test(raw)) return '';
+  if (!/[A-Z]/.test(raw) || !/[a-z]/.test(raw)) return '';
+
+  return raw;
+}
+
+/**
+ * @function extractWilsyLiveUserProfileIdentity
+ * @description Extracts live authenticated user/profile identity from request user objects and optional database user document.
+ * @param {object} req Express request.
+ * @param {object|null} profileDoc Optional database profile document.
+ * @returns {object} Normalized live user identity.
+ * @collaboration Auth middleware, Mongoose user profiles, account identity posture, and PDF document control.
+ */
+function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
+  const user = req.user || {};
+  const profile = user.profile || {};
+  const doc = profileDoc || {};
+  const docProfile = doc.profile || {};
+  const docAccount = doc.account || {};
+
+  const displayCandidates = [
+    user.displayName,
+    user.fullName,
+    user.name,
+    user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '',
+    profile.displayName,
+    profile.fullName,
+    profile.name,
+    profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : '',
+    doc.displayName,
+    doc.fullName,
+    doc.name,
+    doc.firstName && doc.lastName ? `${doc.firstName} ${doc.lastName}` : '',
+    docProfile.displayName,
+    docProfile.fullName,
+    docProfile.name,
+    docProfile.firstName && docProfile.lastName
+      ? `${docProfile.firstName} ${docProfile.lastName}`
+      : '',
+    docAccount.displayName,
+    docAccount.fullName,
+    docAccount.name,
+  ];
+
+  const emailCandidates = [
+    user.email,
+    user.userEmail,
+    user.primaryEmail,
+    profile.email,
+    profile.userEmail,
+    doc.email,
+    doc.userEmail,
+    doc.primaryEmail,
+    docProfile.email,
+    docProfile.userEmail,
+  ];
+
+  const idCandidates = [user.id, user._id, user.userId, user.sub, doc._id, doc.id, doc.userId];
+
+  const displayName =
+    displayCandidates.map(resolveWilsyProfessionalDisplayNameCandidate).find(Boolean) || '';
+
+  const email =
+    emailCandidates.map((item) => clean(item, '')).find((item) => item && item.includes('@')) || '';
+
+  const userId = idCandidates.map((item) => clean(item, '')).find(Boolean) || '';
+
+  return {
+    userId,
+    email,
+    displayName,
+    source: profileDoc ? 'LIVE_DATABASE_PROFILE' : 'LIVE_REQUEST_USER',
+    hasProfessionalDisplayName: Boolean(displayName),
+  };
+}
+
+/**
+ * @function findWilsyLiveUserProfileDocument
+ * @description Looks up the authenticated user in registered Mongoose user/profile models without hard-coded user identifiers.
+ * @param {object} req Express request.
+ * @returns {Promise<object|null>} User/profile document or null.
+ * @collaboration MongoDB, Mongoose models, auth middleware, tenant profile data, and live Generated By resolution.
+ */
+async function findWilsyLiveUserProfileDocument(req = {}) {
+  if (!mongoose?.connection?.readyState) return null;
+
+  const user = req.user || {};
+  const profile = user.profile || {};
+  const rawIds = [user._id, user.id, user.userId, user.sub]
+    .map((item) => clean(item, ''))
+    .filter(Boolean);
+  const emails = [user.email, user.userEmail, user.primaryEmail, profile.email, profile.userEmail]
+    .map((item) => clean(item, ''))
+    .filter((item) => item && item.includes('@'));
+
+  const modelNames = Object.keys(mongoose.models || {}).filter((name) =>
+    /user|profile|account|operator|member/i.test(name)
+  );
+
+  for (const modelName of modelNames) {
+    const Model = mongoose.models[modelName];
+
+    for (const rawId of rawIds) {
+      if (!mongoose.Types.ObjectId.isValid(rawId)) continue;
+
+      try {
+        const found = await Model.findById(rawId).lean().exec();
+        if (found) return found;
+      } catch {
+        // Continue across models.
+      }
+    }
+
+    for (const email of emails) {
+      try {
+        const found = await Model.findOne({
+          $or: [
+            { email },
+            { userEmail: email },
+            { primaryEmail: email },
+            { 'profile.email': email },
+            { 'profile.userEmail': email },
+          ],
+        })
+          .lean()
+          .exec();
+
+        if (found) return found;
+      } catch {
+        // Continue across models.
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @function resolveWilsyLiveAuthenticatedUserIdentity
+ * @description Resolves live backend authenticated user identity from req.user and registered database profile models without hard-coded names or emails.
+ * @param {object} req Express request.
+ * @returns {Promise<object>} Live authenticated user identity.
+ * @collaboration PDF controller, auth middleware, MongoDB profile records, and no-hardcode Generated By governance.
+ */
+async function resolveWilsyLiveAuthenticatedUserIdentity(req = {}) {
+  const profileDoc = await findWilsyLiveUserProfileDocument(req);
+  const identity = extractWilsyLiveUserProfileIdentity(req, profileDoc);
+
+  return {
+    ...identity,
+    generatedByDisplayName: identity.displayName,
+    operatorDisplayName: identity.displayName,
+    ownerDisplayName: identity.displayName,
+    displayName: identity.displayName,
+  };
+}
+
+/**
+ * @function assertWilsyKnowledgeBaseLiveUserIdentity
+ * @description Fails closed when a Knowledge Base PDF export cannot prove a live professional user display name.
+ * @param {boolean} isKnowledgeBaseRequest Whether this request is a Knowledge Base export.
+ * @param {object} liveIdentity Live authenticated user identity.
+ * @returns {void}
+ * @collaboration Knowledge Base export safety, generated-by identity proof, and prevention of fallback operator labels.
+ */
+function assertWilsyKnowledgeBaseLiveUserIdentity(
+  isKnowledgeBaseRequest = false,
+  liveIdentity = {}
+) {
+  if (!isKnowledgeBaseRequest) return;
+
+  if (!liveIdentity?.hasProfessionalDisplayName) {
+    const error = new Error('LIVE_USER_DISPLAY_NAME_REQUIRED');
+    error.statusCode = 422;
+    error.code = 'LIVE_USER_DISPLAY_NAME_REQUIRED';
+    error.publicMessage =
+      'Knowledge Base PDF export requires a live authenticated user profile display name. Update the user profile identity before exporting.';
+    throw error;
+  }
+}
+
+// WILSY_FG108O3E3K3C_LIVE_USER_IDENTITY_BUILDER
 
 /**
  * @function resolveWilsyLiveAuthenticatedUserEmail
@@ -258,26 +491,39 @@ function requireBearerToken(req) {
  * @returns {object} Enterprise renderer identity.
  * @collaboration Connects BusinessArtifactStudio payloads to wilsyEnterprisePdfRenderer.js.
  */
-function buildArtifactIdentity(req) {
+/**
+ * @function buildArtifactIdentity
+ * @description Builds enterprise PDF identity from request payload plus live authenticated backend user/profile data.
+ * @param {object} req Express request.
+ * @returns {Promise<object>} Artifact identity for the enterprise PDF renderer.
+ * @collaboration /api/generate/pdf, auth middleware, live user profile data, Knowledge Base exports, and no-hardcode document control.
+ */
+async function buildArtifactIdentity(req) {
   const body = req.body || {};
-  const metadata = body.metadata || {};
+  const metadata = body.metadata && typeof body.metadata === 'object' ? body.metadata : {};
   const payload = body.data || body.payload || body.artifact || {};
   const payloadData =
     body.payloadData && typeof body.payloadData === 'object' ? body.payloadData : {};
-  const generatedByDisplayName = resolveWilsyArtifactProfessionalGeneratedBy(
-    req,
-    body,
-    metadata,
-    payload,
-    payloadData
-  );
-  const liveAuthenticatedUserEmail = resolveWilsyLiveAuthenticatedUserEmail(
-    req,
-    body,
-    metadata,
-    payload,
-    payloadData
-  );
+  const isKnowledgeBaseRequest = isWilsyKnowledgeBaseArtifactRequest(body, payload, payloadData);
+  const liveAuthenticatedUserIdentity = await resolveWilsyLiveAuthenticatedUserIdentity(req);
+
+  assertWilsyKnowledgeBaseLiveUserIdentity(isKnowledgeBaseRequest, liveAuthenticatedUserIdentity);
+
+  const generatedByDisplayName =
+    liveAuthenticatedUserIdentity.generatedByDisplayName ||
+    resolveWilsyArtifactProfessionalGeneratedBy(req, body, metadata, payload, payloadData);
+
+  const liveAuthenticatedUserEmail =
+    liveAuthenticatedUserIdentity.email ||
+    resolveWilsyLiveAuthenticatedUserEmail(req, body, metadata, payload, payloadData);
+
+  const mergedPayloadData = {
+    ...payload,
+    ...payloadData,
+    knowledgeBase: body.knowledgeBase || payload.knowledgeBase || payloadData.knowledgeBase,
+    playbook: body.playbook || payload.playbook || payloadData.playbook,
+    playbookPayload: body.playbookPayload || payload.playbookPayload || payloadData.playbookPayload,
+  };
 
   const type = clean(
     body.type ||
@@ -285,125 +531,209 @@ function buildArtifactIdentity(req) {
       body.templateType ||
       metadata.type ||
       metadata.artifactType ||
-      payload.type ||
-      readHeader(req, ['X-Artifact-Type', 'X-Wilsy-Artifact-Type']),
-    'enterprise-artifact'
-  );
-
-  const title = clean(
-    body.title ||
-      metadata.title ||
-      payload.title ||
-      type.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
-    'Wilsy OS Enterprise Artifact'
+      metadata.templateType ||
+      mergedPayloadData.type ||
+      mergedPayloadData.artifactType ||
+      mergedPayloadData.templateType,
+    'WILSY-ENTERPRISE-ARTIFACT'
   );
 
   const tenantId = clean(
     body.tenantId ||
       metadata.tenantId ||
-      payload.tenantId ||
-      readHeader(req, ['X-Tenant-Id', 'X-Tenant-ID', 'X-Wilsy-Tenant-ID']),
+      mergedPayloadData.tenantId ||
+      req.tenantId ||
+      req.user?.tenantId,
     'MASTER'
   );
 
   const generatedAt = clean(
-    body.timestamp ||
+    body.generatedAt ||
+      body.timestamp ||
+      metadata.generatedAt ||
       metadata.timestamp ||
-      payload.generatedAt ||
-      readHeader(req, ['X-Artifact-Timestamp', 'X-Forensic-Timestamp']),
+      mergedPayloadData.generatedAt ||
+      mergedPayloadData.timestamp,
     new Date().toISOString()
+  );
+
+  const effectiveDate = clean(
+    body.effectiveDate || metadata.effectiveDate || mergedPayloadData.effectiveDate,
+    generatedAt.slice(0, 10)
+  );
+
+  const title = clean(body.title || metadata.title || mergedPayloadData.title, titleFromType(type));
+
+  const subtitle = clean(
+    body.subtitle || metadata.subtitle || mergedPayloadData.subtitle,
+    'Authority • Review • Execution • Forensic Proof • Source-Aware Control'
+  );
+
+  const issuingEntity = clean(
+    body.issuingEntity || metadata.issuingEntity || mergedPayloadData.issuingEntity,
+    'Wilsy (Pty) Ltd'
+  );
+
+  const counterparty = clean(
+    body.counterparty || metadata.counterparty || mergedPayloadData.counterparty || tenantId,
+    tenantId
+  );
+
+  const jurisdiction = clean(
+    body.jurisdiction || metadata.jurisdiction || mergedPayloadData.jurisdiction,
+    'Republic of South Africa'
+  );
+
+  const version = clean(
+    body.version || metadata.version || mergedPayloadData.version,
+    'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'
+  );
+
+  const sourcePosture = clean(
+    body.sourcePosture || metadata.sourcePosture || mergedPayloadData.sourcePosture,
+    'SOURCE_LIVE'
   );
 
   const requestProof = clean(
     body.requestProof ||
+      body.proof ||
       metadata.requestProof ||
-      readHeader(req, ['X-Artifact-Proof', 'X-Request-Proof']),
-    createBrowserProof(type, tenantId, generatedAt)
-  );
-
-  const sourcePosture = clean(
-    body.sourcePosture || metadata.sourcePosture || payload.sourcePosture,
-    'SOURCE_REPAIR_REQUIRED'
+      metadata.proof ||
+      mergedPayloadData.requestProof,
+    createRequestProof(type, tenantId, generatedAt)
   );
 
   const traceId = clean(
-    body.traceId || metadata.traceId || readHeader(req, ['X-Wilsy-Trace-ID']),
-    hashHex(`${tenantId}|${type}|${generatedAt}|${requestProof}`, 'sha256').slice(0, 16)
+    body.traceId ||
+      body.traceID ||
+      metadata.traceId ||
+      metadata.traceID ||
+      mergedPayloadData.traceId ||
+      req.headers?.['x-trace-id'] ||
+      req.headers?.['x-request-id'],
+    `TRACE-${hashHex(`${type}|${tenantId}|${generatedAt}`).slice(0, 16)}`
   );
 
-  const issuingEntity = clean(payload.issuingEntity || body.issuingEntity, 'Wilsy (Pty) Ltd');
-  const counterparty = clean(
-    payload.counterparty || body.counterparty,
-    'Counterparty To Be Completed'
-  );
-
-  return {
-    ...payload,
-    ...body,
-    type,
-    artifactType: type,
-    title,
-    tenantId,
-    tenant: tenantId,
-    generatedAt,
-    timestamp: generatedAt,
-    effectiveDate: clean(
-      payload.effectiveDate || body.effectiveDate,
-      new Date().toISOString().slice(0, 10)
-    ),
-    userEmail: clean(
-      body.userEmail ||
-        metadata.userEmail ||
-        payload.userEmail ||
-        payloadData.userEmail ||
-        req.user?.email,
-      'unknown@wilsy.os'
-    ),
-    generatedBy: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-    generatedByDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-    operatorDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-    ownerDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-    displayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-    issuingEntity,
-    counterparty,
-    jurisdiction: clean(payload.jurisdiction || body.jurisdiction, 'Republic of South Africa'),
-    sourcePosture,
-    version: clean(payload.version || body.version, 'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'),
-    requestProof,
-    clientProof: requestProof,
-    traceId,
-    director: 'DIRECTOR - WILSON KHANYEZI',
-    classification: 'WILSY OS ENTERPRISE ARTIFACT',
-    lifecycle: payload.lifecycle ||
-      body.lifecycle || ['Draft', 'Review', 'Approve', 'Send', 'Sign', 'Vault'],
-    approvals: payload.approvals || body.approvals || ['Owner', 'Legal'],
-    clausePack: clean(payload.clausePack || body.clausePack, 'Wilsy Enterprise v1'),
-    signatureRoute: clean(
-      payload.signatureRoute || body.signatureRoute,
-      'Wilsy Sign / DocuSign-ready handoff'
-    ),
-    metadata: {
-      ...metadata,
+  const merkleRoot = clean(
+    body.merkleRoot || metadata.merkleRoot || mergedPayloadData.merkleRoot,
+    createMerkleRoot({
       type,
       tenantId,
+      generatedAt,
+      requestProof,
+      sourcePosture,
+      title,
+    })
+  );
+
+  const professionalGeneratedBy = clean(generatedByDisplayName, 'Wilsy OS Operator');
+
+  return {
+    id: clean(
+      body.id || metadata.id || mergedPayloadData.id,
+      hashHex(`${type}|${tenantId}|${generatedAt}`).slice(0, 18)
+    ),
+    type,
+    artifactType: clean(
+      body.artifactType || metadata.artifactType || mergedPayloadData.artifactType,
+      type
+    ),
+    templateType: clean(
+      body.templateType || metadata.templateType || mergedPayloadData.templateType,
+      type
+    ),
+    title,
+    subtitle,
+    tenantId,
+    generatedAt,
+    timestamp: generatedAt,
+    effectiveDate,
+    userEmail: clean(liveAuthenticatedUserEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
+    generatedBy: professionalGeneratedBy,
+    generatedByDisplayName: professionalGeneratedBy,
+    operatorDisplayName: professionalGeneratedBy,
+    ownerDisplayName: professionalGeneratedBy,
+    displayName: professionalGeneratedBy,
+    liveUserIdentitySource: clean(
+      liveAuthenticatedUserIdentity.source,
+      'LIVE_USER_IDENTITY_UNRESOLVED'
+    ),
+    liveUserId: clean(liveAuthenticatedUserIdentity.userId, 'LIVE_USER_ID_UNRESOLVED'),
+    issuingEntity,
+    counterparty,
+    jurisdiction,
+    version,
+    sourcePosture,
+    requestProof,
+    traceId,
+    merkleRoot,
+    payload: {
+      ...mergedPayloadData,
+      generatedBy: professionalGeneratedBy,
+      generatedByDisplayName: professionalGeneratedBy,
+      operatorDisplayName: professionalGeneratedBy,
+      ownerDisplayName: professionalGeneratedBy,
+      displayName: professionalGeneratedBy,
+      liveUserIdentitySource: clean(
+        liveAuthenticatedUserIdentity.source,
+        'LIVE_USER_IDENTITY_UNRESOLVED'
+      ),
+    },
+    data: {
+      ...mergedPayloadData,
+      generatedBy: professionalGeneratedBy,
+      generatedByDisplayName: professionalGeneratedBy,
+      operatorDisplayName: professionalGeneratedBy,
+      ownerDisplayName: professionalGeneratedBy,
+      displayName: professionalGeneratedBy,
+      liveUserIdentitySource: clean(
+        liveAuthenticatedUserIdentity.source,
+        'LIVE_USER_IDENTITY_UNRESOLVED'
+      ),
+    },
+    payloadData: {
+      ...mergedPayloadData,
+      generatedBy: professionalGeneratedBy,
+      generatedByDisplayName: professionalGeneratedBy,
+      operatorDisplayName: professionalGeneratedBy,
+      ownerDisplayName: professionalGeneratedBy,
+      displayName: professionalGeneratedBy,
+      liveUserIdentitySource: clean(
+        liveAuthenticatedUserIdentity.source,
+        'LIVE_USER_IDENTITY_UNRESOLVED'
+      ),
+    },
+    metadata: {
+      ...metadata,
+      id: clean(
+        metadata.id || body.id || mergedPayloadData.id,
+        hashHex(`${type}|${tenantId}|${generatedAt}`).slice(0, 18)
+      ),
+      type,
+      artifactType: clean(
+        body.artifactType || metadata.artifactType || mergedPayloadData.artifactType,
+        type
+      ),
+      templateType: clean(
+        body.templateType || metadata.templateType || mergedPayloadData.templateType,
+        type
+      ),
+      tenantId,
+      generatedAt,
       timestamp: generatedAt,
       requestProof,
       traceId,
+      merkleRoot,
       sourcePosture,
-      generatedBy: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      generatedByDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      operatorDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      ownerDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      displayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-    },
-    payloadData: {
-      ...payload,
-      ...payloadData,
-      generatedBy: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      generatedByDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      operatorDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      ownerDisplayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
-      displayName: clean(generatedByDisplayName, 'Wilsy OS Operator'),
+      generatedBy: professionalGeneratedBy,
+      generatedByDisplayName: professionalGeneratedBy,
+      operatorDisplayName: professionalGeneratedBy,
+      ownerDisplayName: professionalGeneratedBy,
+      displayName: professionalGeneratedBy,
+      liveUserIdentitySource: clean(
+        liveAuthenticatedUserIdentity.source,
+        'LIVE_USER_IDENTITY_UNRESOLVED'
+      ),
     },
   };
 }
@@ -701,7 +1031,7 @@ export async function generateSovereignArtifactPdf(req, res, next) {
   try {
     requireBearerToken(req);
 
-    const identity = buildArtifactIdentity(req);
+    const identity = await buildArtifactIdentity(req);
     const crmProofPackPayload = resolveCrmProofPackCandidate(req.body || {}, identity);
     const enterpriseIdentity = crmProofPackPayload
       ? buildCrmProofPackEnterpriseIdentity(identity, crmProofPackPayload)
