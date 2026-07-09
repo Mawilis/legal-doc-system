@@ -7164,21 +7164,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       timestamp: generatedAt,
       generatedAt,
     };
-    const strikePayload = {
-      institutionalHeaders,
-      operatorQuestion,
-      workspaceRoute: '/crm/leads',
-      workspaceSurface: wilsyLeadAiEvidencePacket.workspaceSurface,
-      crmLeadsContext: wilsyLeadAiEvidencePacket.crmLeadsContext,
-      institutionalHeaders: wilsyLeadAiEvidencePacket.institutionalHeaders,
-      strikePayload: wilsyLeadAiEvidencePacket.strikePayload,
-      tenantId: wilsyLeadAiEvidencePacket.tenantId,
-      operatorId: wilsyLeadAiEvidencePacket.operatorId,
-      route: wilsyLeadAiEvidencePacket.route,
-      commandSurface: wilsyLeadAiEvidencePacket.commandSurface,
-      mutation: false,
-      generatedAt,
-    };
+    const strikePayload = wilsyLeadAiEvidencePacket.strikePayload;
 
     setWilsyLeadAiLoading(true);
     setWilsyLeadAiError('');
@@ -7190,22 +7176,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           ...headers,
           'X-Wilsy-Command-Surface': 'CRM_LEADS_WILSY_AI_TYPOGRAPHIC_SURFACE',
         },
-        body: JSON.stringify({
-          tenantId,
-          operatorId,
-          wilsyAiContext: 'ASK',
-          operatorQuestion,
-          workspaceRoute: '/crm/leads',
-          workspaceSurface: wilsyLeadAiEvidencePacket.workspaceSurface,
-          crmLeadsContext: wilsyLeadAiEvidencePacket.crmLeadsContext,
-          institutionalHeaders: wilsyLeadAiEvidencePacket.institutionalHeaders,
-          strikePayload: wilsyLeadAiEvidencePacket.strikePayload,
-          tenantId: wilsyLeadAiEvidencePacket.tenantId,
-          operatorId: wilsyLeadAiEvidencePacket.operatorId,
-          route: wilsyLeadAiEvidencePacket.route,
-          commandSurface: wilsyLeadAiEvidencePacket.commandSurface,
-          mutation: false,
-        }),
+        body: JSON.stringify(wilsyLeadAiEvidencePacket),
       });
       const packet = await response.json().catch(() => ({}));
 
@@ -12134,3 +12105,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 // P60K5Q10FG107U_AI_OPERATOR_EVIDENCE_PACKET
 
 // P60K5Q10FG107W_AI_QUESTION_VARIABLE_FIX
+
+// P60K5Q10FG107X_AI_EVIDENCE_DUPLICATE_KEY_CLEAN
