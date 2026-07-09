@@ -7101,7 +7101,93 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     }
   }
 
+
   /**
+   * @function handleWilsyLeadAIInlineCommand
+   * @description Routes Wilsy AI inline command links into existing CRM Leads workspace actions without adding panels, chips, shelves, or silent mutations.
+   * @param {Object} link - Inline command link emitted by the Wilsy AI Operator Kernel.
+   * @returns {Promise<void>} Inline command routing completion.
+   * @collaboration Continuous typographic Wilsy AI response surface, CRM Leads Proof Trail, Artifact PDF control, Evidence JSON control, Source Authority, Sort Command, and governed operator-click execution.
+   */
+  async function handleWilsyLeadAIInlineCommand(link = {}) {
+    const id = String(link?.id || '').trim();
+    const command = String(link?.command || '').trim();
+    const action = String(link?.action || '').trim();
+    const focusControl = String(link?.payload?.focusControl || '').trim();
+    const label = String(link?.label || '').trim();
+    const commandKey = [id, command, action, focusControl, label].join(' ').toLowerCase();
+
+    if (
+      commandKey.includes('open_artifact_pdf_control') ||
+      commandKey.includes('artifact pdf')
+    ) {
+      setActiveTopTab('proof');
+      setLeadToolbarCommandFeedback('Wilsy AI opened the governed Artifact PDF control.');
+      try {
+        await exportWilsyCrmProofPackArtifactPdf(resolveWilsyProductionProofCockpitPacket());
+      } catch (error) {
+        setLeadToolbarCommandFeedback(error?.message || 'Artifact PDF export failed.');
+      }
+      return;
+    }
+
+    if (
+      commandKey.includes('open_evidence_json_control') ||
+      commandKey.includes('evidence json')
+    ) {
+      setActiveTopTab('proof');
+      setLeadToolbarCommandFeedback('Wilsy AI opened the Evidence JSON handoff.');
+      downloadWilsyProofCockpitFile(resolveWilsyProductionProofCockpitPacket());
+      return;
+    }
+
+    if (commandKey.includes('run_proof_before_export')) {
+      setActiveTopTab('proof');
+      setLeadToolbarCommandFeedback('Wilsy AI opened Proof Trail. Run proof from Mission Control, then use Evidence JSON or Artifact PDF when export readiness is sealed.');
+      return;
+    }
+
+    if (
+      commandKey.includes('review_compliance_gaps') ||
+      commandKey.includes('crm.leads.reviewcompliancegaps')
+    ) {
+      setActiveTopTab('proof');
+      setLeadToolbarCommandFeedback('Wilsy AI opened Proof Trail for compliance gap review.');
+      return;
+    }
+
+    if (
+      commandKey.includes('inspect_source_authority') ||
+      commandKey.includes('crm.leads.opensourceauthority')
+    ) {
+      setActiveTopTab('sources');
+      setLeadToolbarCommandFeedback('Wilsy AI opened Source Authority from the inline response.');
+      return;
+    }
+
+    if (
+      commandKey.includes('open_sort_command') ||
+      commandKey.includes('crm.leads.opensortcommand') ||
+      commandKey.includes('crm.leads.sort.latestactivity')
+    ) {
+      setActiveTopTab('sort');
+      setLeadToolbarCommandFeedback('Wilsy AI opened Sort Command from the inline response.');
+      return;
+    }
+
+    if (
+      commandKey.includes('open_proof_trail') ||
+      commandKey.includes('crm.leads.openprooftrail')
+    ) {
+      setActiveTopTab('proof');
+      setLeadToolbarCommandFeedback('Wilsy AI opened Proof Trail from the inline response.');
+      return;
+    }
+
+    setLeadToolbarCommandFeedback(`Wilsy AI command ready for governed routing · ${label || command || id || 'inline command'}`);
+  }
+
+/**
    * @function renderWilsyLeadAIResponseSurface
    * @description Renders a single continuous typographic Wilsy AI response surface with inline command links.
    * @returns {JSX.Element} Continuous typographic response surface.
@@ -7143,9 +7229,10 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                     <button
                       key={command.id || command.label || command.command || command.action}
                       type="button"
+                      data-wilsy-ai-inline-command-router="FG107J"
                       className={styles.leadAIInlineCommandLink}
                       data-wilsy-ai-inline-command={command.command || command.action || command.id || 'inline'}
-                      onClick={() => setWilsyLeadAiQuestion(command.prompt || command.label || command.command || '')}
+                      onClick={() => void handleWilsyLeadAIInlineCommand(command)}
                     >
                       {command.label || command.title || command.command || 'Use command'}
                     </button>
@@ -11897,3 +11984,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   // P60K5Q10FG106R_PROMISE_CHAIN_ARTIFACT_PDF_DELIVERY
 
 // P60K5Q10FG107E_PROOF_EXPORT_CONTROL_CLARITY
+
+  // P60K5Q10FG107J_FRONTEND_INLINE_COMMAND_ROUTER
