@@ -42,6 +42,7 @@ import { integrityShield } from './middleware/ProductionHardening.middleware.js'
 
 import metrics from './utils/metrics.js';
 import routes from './routes/api.js';
+import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
 import forensicRoutes from './routes/forensicRoutes.js';
 import sovereignRoutes from './routes/sovereignRoutes.js'; // 🆕 Sovereign monitoring & regulator API
 import auditLogger from './utils/auditLogger.js';
@@ -605,6 +606,16 @@ app.use((req, res, next) => {
 // ============================================================================
 // 🚀 MASTER ROUTE DISPATCH
 // ============================================================================
+/**
+ * WILSY_P60K5Q10FG108I_PRE_API_WILSY_AI_ROUTE_BOUNDARY
+ * @middleware wilsyAIPreApiRouterBoundary
+ * @description Mounts Wilsy AI routes before the generic /api router so health, context, and operator routes are not swallowed by the legacy API router.
+ * @param {Object} app - Express application route stack.
+ * @returns {void}
+ * @collaboration Wilsy AI Operator Kernel, direct bridge health, ProductionHardening continuation, and CRM Leads continuous typographic AI surface.
+ */
+app.use('/api/wilsy/ai', wilsyAIRoutes);
+
 app.use('/api', routes);
 app.use('/api/forensics', forensicRoutes);
 
