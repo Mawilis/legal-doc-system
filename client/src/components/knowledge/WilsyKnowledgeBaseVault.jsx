@@ -305,7 +305,7 @@ async function createVaultInstitutionalBody(route, commandSurface) {
  * @function resolveVaultAuthHeaders
  * @description Resolves Vault fetch headers using the live Wilsy OS browser token keys while preserving cookie authentication.
  * @returns {object} Fetch headers.
- * @collaboration Knowledge Base Vault authenticated reads, authContext token storage, sovereignClient compatibility, and protected backend registry search.
+ * @collaboration Knowledge Base Vault authenticated reads, authContext token storage, sovereignClient compatibility, and protected sovereign library search.
  */
 function resolveVaultAuthHeaders() {
   const rawToken =
@@ -1260,13 +1260,16 @@ function resolveVaultDocumentSummary(entry = {}) {
  */
 export default function WilsyKnowledgeBaseVault() {
   const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [searchNonce, setSearchNonce] = useState(0);
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [actionReceipt, setActionReceipt] = useState(null);
   const backendFilters = useMemo(() => ({
-    query,
+    query: submittedQuery,
     category: activeCategory,
-  }), [query, activeCategory]);
+    searchNonce,
+  }), [submittedQuery, activeCategory, searchNonce]);
   const { loading, error, vault, reload } = useKnowledgeBaseVaultData(backendFilters);
 
   const entries = vault?.entries || [];
@@ -1274,7 +1277,10 @@ export default function WilsyKnowledgeBaseVault() {
     () => vault?.facets?.categories || resolveVaultCategoryFilters(entries),
     [vault?.facets, entries]
   );
-  const filteredEntries = entries;
+  const filteredEntries = useMemo(
+    () => resolveVaultWorkspaceEntries(entries, submittedQuery, activeCategory),
+    [entries, submittedQuery, activeCategory]
+  );
   const selectedEntry = useMemo(
     () => resolveSelectedVaultEntry(filteredEntries, selectedEntryId),
     [filteredEntries, selectedEntryId]
@@ -1321,7 +1327,9 @@ export default function WilsyKnowledgeBaseVault() {
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault();
-                  reload();
+                  setSubmittedQuery(query.trim());
+                  setQuery('');
+                  setSearchNonce((current) => current + 1);
                 }
               }}
               placeholder="Search saved documents, categories, owners, releases, fingerprints, or access"
@@ -1329,7 +1337,15 @@ export default function WilsyKnowledgeBaseVault() {
             />
           </label>
 
-          <button type="button" className={styles.searchButton} onClick={reload}>
+          <button
+            type="button"
+            className={styles.searchButton}
+            onClick={() => {
+              setSubmittedQuery(query.trim());
+              setQuery('');
+              setSearchNonce((current) => current + 1);
+            }}
+          >
             <Search size={16} aria-hidden="true" />
             Search Vault
           </button>
@@ -1342,7 +1358,7 @@ export default function WilsyKnowledgeBaseVault() {
 
       <section className={styles.workspaceStats} aria-label="Vault workspace summary">
         <div>
-          <span>Documents</span>
+          <span>Matches</span>
           <strong>{filteredEntries.length}</strong>
         </div>
         <div>
@@ -1361,10 +1377,10 @@ export default function WilsyKnowledgeBaseVault() {
 
         <section className={styles.searchStatus} aria-live="polite" aria-label="Vault backend search status">
           <strong>
-            {loading ? 'Searching backend registry' : `${filteredEntries.length} backend result${filteredEntries.length === 1 ? '' : 's'}`}
+            {loading ? 'Searching the sovereign library' : filteredEntries.length === 0 ? 'No verified knowledge match' : filteredEntries.length === 1 ? '1 verified artifact ready' : `${filteredEntries.length} verified artifacts ready`}
           </strong>
           <span>
-            {query.trim() ? `Query: ${query.trim()}` : 'Showing all saved documents'} • {activeCategory === 'all' ? 'All categories' : activeCategory}
+            {submittedQuery ? `Search signal: ${submittedQuery}` : 'Vault view: all saved knowledge'} • {activeCategory === 'all' ? 'All categories' : activeCategory}
           </span>
         </section>
 
@@ -1410,7 +1426,7 @@ export default function WilsyKnowledgeBaseVault() {
 
           <div className={styles.documentList} aria-label="Filtered documents">
             {!loading && !error && filteredEntries.length === 0 ? (
-              <div className={styles.emptyState}>No documents match this search or category.</div>
+              <div className={styles.emptyState}>No verified Vault match for this signal. Try a title, owner, release, category, or fingerprint.</div>
             ) : null}
 
             {filteredEntries.map((entry) => {
@@ -1454,7 +1470,7 @@ export default function WilsyKnowledgeBaseVault() {
                 <section className={styles.naturalOperatorSurface} aria-label="Wilsy AI natural Vault response">
                   <p>
                     <strong>Wilsy AI:</strong> I found this verified saved document in the Knowledge Base Vault. You are viewing
-                    <span> {selectedEntry.title}</span>. It is {resolveVaultDocumentVerificationLabel(selectedEntry).toLowerCase()} and
+                    <span> {selectedEntry.title}</span>. It is {resolveVaultDocumentVerificationLabel(selectedEntry).toLowerCase()} and{' '}
                     {displayVaultLockStatus(selectedEntry.lockStatus).toLowerCase()}. You can open the saved PDF, print it, download it,
                     inspect the evidence record, or copy the fingerprint without regenerating the artifact.
                   </p>
@@ -1634,7 +1650,7 @@ export default function WilsyKnowledgeBaseVault() {
               </section>
             </>
           ) : (
-            <section className={styles.emptyState}>Select a document to begin operating.</section>
+            <section className={styles.emptyState}>{submittedQuery ? 'Wilsy AI: I could not verify a saved Knowledge Base artifact for this search. Try another signal or clear the search.' : 'Wilsy AI: Select a verified artifact to begin operating.'}</section>
           )}
         </section>
       </section>
