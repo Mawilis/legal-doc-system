@@ -37,6 +37,39 @@ function clean(value, fallback = '') {
 }
 
 /**
+ * @function titleFromType
+ * @description Converts an artifact type into a professional document title without hard-coded user identity.
+ * @param {string} type Artifact type.
+ * @returns {string} Human-readable artifact title.
+ * @collaboration Business artifact PDF identity builder, Knowledge Base exports, and renderer document control.
+ */
+function titleFromType(type = '') {
+  const raw = clean(type, 'WILSY ENTERPRISE ARTIFACT');
+
+  return raw
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+/**
+ * @function createRequestProof
+ * @description Creates a deterministic request proof hash for artifact identity when the request does not provide one.
+ * @param {string} type Artifact type.
+ * @param {string} tenantId Tenant identifier.
+ * @param {string} generatedAt Artifact generation timestamp.
+ * @returns {string} Deterministic SHA-512 request proof.
+ * @collaboration /api/generate/pdf, artifact request evidence, and Knowledge Base export reconstruction.
+ */
+function createRequestProof(type = '', tenantId = '', generatedAt = '') {
+  return hashHex(`${clean(type)}|${clean(tenantId)}|${clean(generatedAt)}`, 'sha512');
+}
+
+// WILSY_FG108O3M3_TITLE_HELPER_RUNTIME_RESCUE
+
+/**
  * @function isWilsyKnowledgeBaseArtifactRequest
  * @description Detects Knowledge Base PDF export requests that must fail closed when live user identity is unresolved.
  * @param {object} body Request body.
