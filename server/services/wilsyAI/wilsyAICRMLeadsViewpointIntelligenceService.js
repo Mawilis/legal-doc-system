@@ -244,14 +244,19 @@ export function resolveWilsyAICRMLeadsViewpointModel(request = {}) {
     1400
   );
   const context = readWilsyCRMLeadsContext(request);
-  const intent = resolveWilsyCRMLeadsIntent(question, context);
+  const resolvedIntent = resolveWilsyCRMLeadsIntent(question, context);
+  const intent = resolveWilsyCRMLeadsIntentPrecedence(resolvedIntent, question, context);
 
   if (!intent) {
     return null;
   }
 
   const answer = buildWilsyCRMLeadsAnswer(intent, context);
-  const inlineCommandLinks = buildWilsyCRMLeadsInlineCommands(intent);
+  const inlineCommandLinks = buildWilsyCRMLeadsProofAwareInlineCommandLinks(
+    intent,
+    context,
+    buildWilsyCRMLeadsInlineCommands(intent)
+  );
 
   return {
     result: 'WILSY_AI_OPERATOR_MODEL_RESOLVED',
@@ -286,3 +291,228 @@ export function resolveWilsyAICRMLeadsViewpointModel(request = {}) {
     ],
   };
 }
+
+/**
+ * @function buildWilsyCRMLeadsProofAwareInlineCommandLinks
+ * @description Extends the existing CRM Leads inline command suggestions with live Proof Pack context while preserving the canonical suggestion engine.
+ * @param {Object} intent - Resolved CRM Leads intent.
+ * @param {Object} context - Live CRM Leads workspace and Proof Pack context.
+ * @param {Array<Object>} baseLinks - Existing inline command links from buildWilsyCRMLeadsInlineCommands.
+ * @returns {Array<Object>} Proof-aware no-mutation inline command links.
+ * @collaboration Existing dynamic predefined suggestions, Wilsy AI Operator Kernel, CRM Proof Pack, Artifact PDF, Evidence JSON, membership receipts, source authority, and continuous typographic response surface.
+ */
+function buildWilsyCRMLeadsProofAwareInlineCommandLinks(intent = {}, context = {}, baseLinks = []) {
+  const linkMap = new Map();
+  const normalizedIntent = String(intent.intent || '').toLowerCase();
+  const activeTopTab = String(context.activeTopTab || context.activeTab || '').toLowerCase();
+  const evidence = context.evidence || context.proofEvidence || context.proofPack || {};
+  const criteriaHash = String(
+    context.criteriaHash || evidence.criteriaHash || context.rootHash || ''
+  ).trim();
+  const auditReceiptId = String(
+    context.auditReceiptId || context.runReceipt || evidence.auditReceiptId || ''
+  ).trim();
+  const membership = String(
+    context.membership || context.membershipReceiptLabel || evidence.membershipReceiptLabel || ''
+  ).trim();
+  const sourceRouteCount = Number(context.sourceRouteCount || context.sourceRoutes?.total || 0);
+  const sourceRouteLiveCount = Number(
+    context.sourceRouteLiveCount || context.sourceRoutes?.live || 0
+  );
+  const compliancePending = Number(context.compliancePending || context.compliance?.pending || 0);
+  const complianceFailed = Number(context.complianceFailed || context.compliance?.failed || 0);
+  const receiptPersisted =
+    context.receiptPersisted === true ||
+    String(context.receiptPersisted || '').toLowerCase() === 'true' ||
+    Boolean(auditReceiptId);
+  const exportBlocked =
+    context.exportAllowed === false ||
+    String(context.exportAllowed || '').toLowerCase() === 'false' ||
+    String(context.exportAllowed || '').toUpperCase() === 'NO';
+  const proofActive =
+    activeTopTab === 'proof' ||
+    normalizedIntent === 'crm_leads_proof_trail_summary' ||
+    Boolean(criteriaHash || auditReceiptId);
+  const exportReady =
+    proofActive &&
+    !exportBlocked &&
+    (receiptPersisted ||
+      Boolean(criteriaHash) ||
+      context.exportAllowed === true ||
+      String(context.exportAllowed || '').toUpperCase() === 'YES');
+
+  /**
+   * @function addWilsyCRMLeadsProofAwareInlineLink
+   * @description Adds one de-duplicated no-mutation inline command link.
+   * @param {Object} link - Inline command link candidate.
+   * @returns {void}
+   * @collaboration Inline command rendering, proof-aware suggestions, and no-silent-mutation posture.
+   */
+  function addWilsyCRMLeadsProofAwareInlineLink(link = {}) {
+    const id = String(link.id || link.command || link.label || '').trim();
+    if (!id || linkMap.has(id)) return;
+
+    linkMap.set(id, {
+      mutation: false,
+      ...link,
+      id,
+      payload: {
+        targetWorkspace: 'CRM_LEADS',
+        requiresOperatorAction: true,
+        ...(link.payload || {}),
+      },
+    });
+  }
+
+  (Array.isArray(baseLinks) ? baseLinks : []).forEach(addWilsyCRMLeadsProofAwareInlineLink);
+
+  if (proofActive && exportReady) {
+    addWilsyCRMLeadsProofAwareInlineLink({
+      id: 'open_artifact_pdf_control',
+      label: 'Open Artifact PDF control',
+      command: 'crm.leads.openProofTrail',
+      action: 'open_artifact_pdf_control',
+      payload: {
+        targetTopTab: 'proof',
+        focusControl: 'Artifact PDF',
+        criteriaHash,
+        auditReceiptId,
+      },
+    });
+
+    addWilsyCRMLeadsProofAwareInlineLink({
+      id: 'open_evidence_json_control',
+      label: 'Open Evidence JSON control',
+      command: 'crm.leads.openProofTrail',
+      action: 'open_evidence_json_control',
+      payload: {
+        targetTopTab: 'proof',
+        focusControl: 'Evidence JSON',
+        criteriaHash,
+        auditReceiptId,
+      },
+    });
+  }
+
+  if (proofActive && (!receiptPersisted || !criteriaHash)) {
+    addWilsyCRMLeadsProofAwareInlineLink({
+      id: 'run_proof_before_export',
+      label: 'Run proof before export',
+      command: 'crm.leads.openProofTrail',
+      action: 'run_proof_before_export',
+      payload: {
+        targetTopTab: 'proof',
+        missingReceipt: !receiptPersisted,
+        missingCriteriaHash: !criteriaHash,
+      },
+    });
+  }
+
+  if (membership) {
+    addWilsyCRMLeadsProofAwareInlineLink({
+      id: 'review_membership_overrides',
+      label: 'Review membership overrides',
+      command: 'crm.leads.openProofTrail',
+      action: 'review_membership_overrides',
+      payload: { targetTopTab: 'proof', membership },
+    });
+  }
+
+  if (
+    normalizedIntent === 'crm_leads_compliance_gap_next_action' ||
+    compliancePending > 0 ||
+    complianceFailed > 0
+  ) {
+    addWilsyCRMLeadsProofAwareInlineLink({
+      id: 'review_compliance_gaps',
+      label: 'Review compliance gaps',
+      command: 'crm.leads.reviewComplianceGaps',
+      action: 'review_compliance_gaps',
+      payload: { targetTopTab: 'proof', compliancePending, complianceFailed },
+    });
+  }
+
+  if (
+    normalizedIntent === 'crm_leads_source_risk_analysis' ||
+    (sourceRouteCount > 0 && sourceRouteLiveCount < sourceRouteCount)
+  ) {
+    addWilsyCRMLeadsProofAwareInlineLink({
+      id: 'inspect_source_authority',
+      label: 'Inspect source authority',
+      command: 'crm.leads.openSourceAuthority',
+      action: 'inspect_source_authority',
+      payload: { targetTopTab: 'sources', sourceRouteCount, sourceRouteLiveCount },
+    });
+  }
+
+  return Array.from(linkMap.values());
+}
+
+/**
+ * @function resolveWilsyCRMLeadsIntentPrecedence
+ * @description Applies explicit CRM Leads surface precedence after the base intent resolver so Source Authority and Sort Command do not collapse into generic Proof Trail.
+ * @param {Object} resolvedIntent - Intent returned by resolveWilsyCRMLeadsIntent.
+ * @param {string} question - Operator question.
+ * @param {Object} context - CRM Leads viewpoint context.
+ * @returns {Object} Final CRM Leads intent descriptor.
+ * @collaboration Wilsy AI Operator Kernel, CRM Leads Source Authority, Proof Trail, Sort Command, Compliance Gap, and dynamic inline command routing.
+ */
+function resolveWilsyCRMLeadsIntentPrecedence(resolvedIntent = {}, question = '', context = {}) {
+  const text = String(question || '').toLowerCase();
+  const activeTopTab = String(context.activeTopTab || context.activeTab || '').toLowerCase();
+  const workspaceSurface = String(context.workspaceSurface || '').toLowerCase();
+  const base = resolvedIntent && typeof resolvedIntent === 'object' ? resolvedIntent : {};
+
+  const sourceAuthorityActive =
+    text.includes('source authority') ||
+    activeTopTab === 'sources' ||
+    workspaceSurface.startsWith('crm leads source authority');
+
+  const sortCommandActive =
+    text.includes('sort command') ||
+    activeTopTab === 'sort' ||
+    workspaceSurface.startsWith('crm leads sort command');
+
+  const complianceGapActive =
+    text.includes('compliance gap') || workspaceSurface.startsWith('crm leads compliance gap');
+
+  const proofTrailExplicit =
+    text.includes('proof trail') ||
+    activeTopTab === 'proof' ||
+    workspaceSurface.startsWith('crm leads proof trail');
+
+  if (sortCommandActive) {
+    return {
+      ...base,
+      intent: 'crm_leads_sort_strategy',
+      label: 'Sort Command Strategy',
+      title: 'CRM Leads Sort Strategy',
+    };
+  }
+
+  if (sourceAuthorityActive && !proofTrailExplicit) {
+    return {
+      ...base,
+      intent: 'crm_leads_source_risk_analysis',
+      label: 'Source Authority Risk',
+      title: 'CRM Leads Source Authority',
+    };
+  }
+
+  if (complianceGapActive && !proofTrailExplicit && !sourceAuthorityActive) {
+    return {
+      ...base,
+      intent: 'crm_leads_compliance_gap_next_action',
+      label: 'Compliance Gap Next Action',
+      title: 'CRM Leads Compliance Gap',
+    };
+  }
+
+  return base;
+}
+
+// P60K5Q10FG107H_PROOF_AWARE_AI_INLINE_SUGGESTIONS
+
+// P60K5Q10FG107H13_ROOT_HASH_EXPORT_FALLBACK
+
+// P60K5Q10FG107H14_SOURCE_AUTHORITY_INTENT_PRECEDENCE

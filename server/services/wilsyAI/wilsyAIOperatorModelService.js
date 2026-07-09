@@ -1583,6 +1583,15 @@ export async function resolveWilsyAIOperatorModel(req = {}) {
     return wilsyFG83BCreateLeadPriorityResponse;
   }
 
+  const operatorQuestion =
+    req?.query?.operatorQuestion ||
+    req?.body?.operatorQuestion ||
+    req?.body?.question ||
+    req?.query?.question ||
+    '';
+
+  /* P60K5Q10FG107H_OPERATOR_QUESTION_RESOLVER_RESCUE */
+
   /* WILSY_P60K5Q10FG43_CRM_LEADS_VIEWPOINT_AI */
   const wilsyFG82CreateLeadPriorityResponse = buildWilsyFG81LeadCreateOperatorResponse({
     operatorQuestion:

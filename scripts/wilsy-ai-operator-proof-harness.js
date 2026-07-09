@@ -25,6 +25,14 @@ function buildCRMLeadsHarnessOverrides(question = '') {
     activeSortField: 'lastActivity',
     activeSortDirection: 'desc',
     rootHash: 'p60k5q10fg45-root',
+    proofVerdict: 'Sovereign Proof Sealed',
+    receiptPersisted: true,
+    exportAllowed: true,
+    criteriaHash: 'p60k5q10fg107h-criteria-hash',
+    auditReceiptId: 'lead_view_run_fg107h_ai_proof',
+    membership: '4 include · 1 exclude',
+    membershipReceiptLabel: '4 include · 1 exclude',
+
   };
 
   if (text.includes('sort command')) {
@@ -58,7 +66,7 @@ function buildCRMLeadsHarnessOverrides(question = '') {
     };
   }
 
-  if (text.includes('compliance gap')) {
+  if (text.includes('compliance gap') && !text.includes('proof trail')) {
     return {
       query: {
         workspaceRoute: '/crm/leads',
@@ -216,7 +224,7 @@ function assertCRMLeadsProofResult(question = '', result = {}) {
     throw new Error('CRM Leads Source Authority did not route to crm_leads_source_risk_analysis.');
   }
 
-  if (text.includes('compliance gap') && result.operatorModel?.intent !== 'crm_leads_compliance_gap_next_action') {
+  if (text.includes('compliance gap') && !text.includes('proof trail') && result.operatorModel?.intent !== 'crm_leads_compliance_gap_next_action') {
     throw new Error('CRM Leads Compliance Gap did not route to crm_leads_compliance_gap_next_action.');
   }
 
@@ -226,6 +234,19 @@ function assertCRMLeadsProofResult(question = '', result = {}) {
 
   if (!Array.isArray(result.operatorModel?.inlineCommandLinks)) {
     throw new Error('CRM Leads AI response did not include inline command links.');
+  }
+
+  const inlineLabels = result.operatorModel.inlineCommandLinks
+    .map((link) => `${link.label || ''} ${link.command || ''} ${link.action || ''}`)
+    .join(' ')
+    .toLowerCase();
+
+  if (text.includes('artifact pdf') && !inlineLabels.includes('artifact pdf')) {
+    throw new Error('CRM Leads Proof Trail did not expose the dynamic Artifact PDF inline suggestion.');
+  }
+
+  if (text.includes('evidence json') && !inlineLabels.includes('evidence json')) {
+    throw new Error('CRM Leads Proof Trail did not expose the dynamic Evidence JSON inline suggestion.');
   }
 }
 
@@ -261,6 +282,9 @@ export async function runWilsyOperatorProofHarness() {
     'Generate a business meeting memo for Wilsy AI prices and tiers',
     'How many leads do we have?',
     'In CRM Leads Proof Trail, summarize source risk and compliance gaps.',
+    'In CRM Leads Proof Trail, which governed Artifact PDF control should I use?',
+    'In CRM Leads Proof Trail, prepare the Evidence JSON handoff.',
+
     'In CRM Leads Sort Command, recommend the best lead ordering strategy.',
     'In CRM Leads Source Authority, what evidence route should I repair first.',
     'In CRM Leads Compliance Gap, tell me what to fix next.',
@@ -293,3 +317,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exitCode = 1;
     });
 }
+
+// P60K5Q10FG107H_PROOF_AWARE_AI_INLINE_SUGGESTIONS_HARNESS
+
+// P60K5Q10FG107H12_PROOF_TRAIL_COMPLIANCE_OVERLAP_HARNESS_RESCUE
