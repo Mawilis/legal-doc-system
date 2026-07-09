@@ -175,13 +175,15 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
   }
 
   const directName = textValue(
-    proofPack.generatedByName ||
+    proofPack.generatedByDisplayName ||
+      proofPack.generatedByName ||
       proofPack.generatorName ||
       proofPack.operatorName ||
       proofPack.operatorDisplayName ||
       proofPack.displayName ||
       proofUser.name ||
       proofUser.displayName ||
+      identity.generatedByDisplayName ||
       identity.generatedByName ||
       identity.generatorName ||
       identity.operatorName ||
@@ -190,6 +192,10 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
       identity.name ||
       nestedUser.name ||
       nestedUser.displayName ||
+      state.generatedByDisplayName ||
+      state.operatorDisplayName ||
+      state.ownerDisplayName ||
+      state.displayName ||
       state.generatedByName
   );
 
@@ -225,7 +231,15 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
     }
   }
 
-  return directName || state.generatedBy || 'Verified Wilsy Operator';
+  if (isWilsyProfessionalDisplayName(directName)) {
+    return directName;
+  }
+
+  if (isWilsyProfessionalDisplayName(state.generatedBy)) {
+    return textValue(state.generatedBy);
+  }
+
+  return 'Verified Wilsy Operator';
 }
 
 /**
@@ -307,7 +321,29 @@ function buildState(identity = {}, proof = {}) {
     generatedBy: resolveHumanGeneratedByName({
       proofPack: data.crmProofPack || data.proofPackSections || {},
       identity,
-      state: { generatedBy: data.generatedBy },
+      state: {
+        generatedByDisplayName:
+          identity.generatedByDisplayName ||
+          identity.payloadData?.generatedByDisplayName ||
+          identity.metadata?.generatedByDisplayName ||
+          data.generatedByDisplayName,
+        operatorDisplayName:
+          identity.operatorDisplayName ||
+          identity.payloadData?.operatorDisplayName ||
+          identity.metadata?.operatorDisplayName ||
+          data.operatorDisplayName,
+        ownerDisplayName:
+          identity.ownerDisplayName ||
+          identity.payloadData?.ownerDisplayName ||
+          identity.metadata?.ownerDisplayName ||
+          data.ownerDisplayName,
+        displayName:
+          identity.displayName ||
+          identity.payloadData?.displayName ||
+          identity.metadata?.displayName ||
+          data.displayName,
+        generatedBy: data.generatedBy,
+      },
     }),
     effectiveDate: textValue(data.effectiveDate || new Date().toISOString().slice(0, 10)),
     version: textValue(data.version || 'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'),
