@@ -7231,6 +7231,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     return command || id || label;
   }
   // P60K5Q10FG108L3_AI_INLINE_COMMAND_DOM_ACTION
+  // P60K5Q10FG108L4_RUNTIME_COMMAND_VARIABLE_RESCUE
 
   /**
    * @function handleWilsyLeadAIInlineCommand
@@ -7361,10 +7362,10 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                       type="button"
                       data-wilsy-ai-inline-command-router="FG107J"
                       className={styles.leadAIInlineCommandLink}
-                      data-wilsy-ai-inline-command={resolveWilsyLeadAIInlineCommandDomAction(link)}
-                      data-wilsy-ai-inline-command-action={resolveWilsyLeadAIInlineCommandDomAction(link)}
-                      data-wilsy-ai-inline-command-route={String(link?.command || '')}
-                      data-wilsy-ai-inline-command-id={String(link?.id || '')}
+                      data-wilsy-ai-inline-command={resolveWilsyLeadAIInlineCommandDomAction(command)}
+                      data-wilsy-ai-inline-command-action={resolveWilsyLeadAIInlineCommandDomAction(command)}
+                      data-wilsy-ai-inline-command-route={String(command?.command || '')}
+                      data-wilsy-ai-inline-command-id={String(command?.id || '')}
                       onClick={() => void handleWilsyLeadAIInlineCommand(command)}
                     >
                       {command.label || command.title || command.command || 'Use command'}
