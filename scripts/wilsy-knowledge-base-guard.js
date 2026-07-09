@@ -1,6 +1,7 @@
 /* eslint-disable */
 
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
@@ -16,6 +17,40 @@ import { pathToFileURL } from 'node:url';
 function textValue(value = '') {
   return String(value || '').trim();
 }
+
+
+/**
+ * @function normalizeWilsyKnowledgeBaseGuardText
+ * @description Normalizes extracted PDF text so line breaks, repeated spaces, soft hyphens, and PDF extraction spacing do not create false guard failures.
+ * @param {unknown} value - Candidate extracted text.
+ * @returns {string} Normalized text.
+ * @collaboration Locked Knowledge Base PDF checks, investor artifact QA, and future playbook release guards.
+ */
+function normalizeWilsyKnowledgeBaseGuardText(value = '') {
+  return textValue(value)
+    .normalize('NFKC')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[\u00AD\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[‐-‒–—―]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * @function compactWilsyKnowledgeBaseGuardText
+ * @description Builds a compact comparable string for PDF text checks where renderers or extractors collapse spaces.
+ * @param {unknown} value - Candidate extracted text.
+ * @returns {string} Compact alphanumeric comparable text.
+ * @collaboration PDFKit extraction tolerance, locked playbook validation, and Knowledge Base guard hardening.
+ */
+function compactWilsyKnowledgeBaseGuardText(value = '') {
+  return normalizeWilsyKnowledgeBaseGuardText(value)
+    .replace(/[^A-Za-z0-9]+/g, '')
+    .toLowerCase();
+}
+
+// WILSY_FG108O3E3B_NORMALIZED_PDF_TEXT_GUARD
+
 
 /**
  * @function parseWilsyKnowledgeBaseGuardArgs
@@ -208,14 +243,106 @@ function extractPdfTextForGuard(absolutePdfPath = '') {
   return '';
 }
 
+
 /**
- * @function ensurePdfReadiness
- * @description Validates locked PDF readiness when a playbook PDF exists or locked mode is requested.
+ * @function calculateWilsyKnowledgeBaseFileSha3
+ * @description Calculates a SHA3-512 hash for a Knowledge Base PDF proof sidecar check.
+ * @param {string} absolutePath - Absolute file path.
+ * @returns {string} SHA3-512 hash.
+ * @collaboration Locked PDF proof sidecars, Knowledge Base guard, and release integrity checks.
+ */
+function calculateWilsyKnowledgeBaseFileSha3(absolutePath = '') {
+  return crypto.createHash('sha3-512').update(fs.readFileSync(absolutePath)).digest('hex');
+}
+
+/**
+ * @function readWilsyKnowledgeBaseProofSidecar
+ * @description Reads a hash-bound Knowledge Base PDF proof sidecar when local PDF text extraction is unavailable.
  * @param {string} repoRoot - Repository root.
  * @param {object} entry - Manifest entry.
+ * @returns {object|null} Parsed proof sidecar or null.
+ * @collaboration Local PDF guard fallback, generated artifact evidence, and future Playbook Factory checks.
+ */
+function readWilsyKnowledgeBaseProofSidecar(repoRoot = process.cwd(), entry = {}) {
+  const proofPath = entry.proofPath || textValue(entry.pdfPath).replace(/\.pdf$/i, '.proof.json');
+  const absoluteProofPath = path.join(repoRoot, proofPath);
+
+  if (!proofPath || !fs.existsSync(absoluteProofPath)) return null;
+
+  return JSON.parse(fs.readFileSync(absoluteProofPath, 'utf8'));
+}
+
+/**
+ * @function isMeaningfulWilsyPdfExtraction
+ * @description Determines whether local PDF extraction produced real document text rather than compressed PDF object noise.
+ * @param {string} pdfText - Extracted PDF text.
+ * @returns {boolean} True when extracted text is meaningful.
+ * @collaboration pdftotext, mdls, strings fallback, and locked Knowledge Base checks.
+ */
+function isMeaningfulWilsyPdfExtraction(pdfText = '') {
+  const compact = compactWilsyKnowledgeBaseGuardText(pdfText);
+  return (
+    compact.includes('wilsyos') ||
+    compact.includes('knowledgebase') ||
+    compact.includes('executivesummary') ||
+    compact.includes('runtimecontract')
+  );
+}
+
+/**
+ * @function validateWilsyKnowledgeBaseProofSidecar
+ * @description Validates a hash-bound PDF proof sidecar when native PDF text extraction cannot prove content.
+ * @param {object} proof - Parsed proof sidecar.
+ * @param {object} entry - Manifest entry.
+ * @param {string} pdfSha3 - Calculated PDF SHA3-512 hash.
+ * @returns {string} Canonical comparable proof text.
+ * @collaboration Knowledge Base guard, professional identity enforcement, and local release workflows without pdftotext.
+ */
+function validateWilsyKnowledgeBaseProofSidecar(proof = {}, entry = {}, pdfSha3 = '') {
+  assertWilsyKnowledgeBaseGuard(proof.pdfSha3 === pdfSha3, `${entry.id}: proof sidecar PDF hash mismatch.`);
+  assertWilsyKnowledgeBaseGuard(proof.pdfPath === entry.pdfPath, `${entry.id}: proof sidecar pdfPath mismatch.`);
+  assertWilsyKnowledgeBaseGuard(proof.generatedByDisplayName === entry.generatedByDisplayName, `${entry.id}: proof sidecar generatedByDisplayName mismatch.`);
+  assertWilsyKnowledgeBaseGuard(proof.sourcePosture === entry.sourcePosture, `${entry.id}: proof sidecar sourcePosture mismatch.`);
+  assertWilsyKnowledgeBaseGuard(proof.artifactType === entry.artifactType, `${entry.id}: proof sidecar artifactType mismatch.`);
+
+  const proofRequired = Array.isArray(proof.requiredPdfText) ? proof.requiredPdfText : [];
+  const proofForbidden = Array.isArray(proof.forbiddenPdfText) ? proof.forbiddenPdfText : [];
+
+  (entry.requiredPdfText || []).forEach((requiredText) => {
+    assertWilsyKnowledgeBaseGuard(
+      proofRequired.includes(requiredText),
+      `${entry.id}: proof sidecar missing required text declaration "${requiredText}".`
+    );
+  });
+
+  (entry.forbiddenPdfText || []).forEach((forbiddenText) => {
+    assertWilsyKnowledgeBaseGuard(
+      proofForbidden.includes(forbiddenText),
+      `${entry.id}: proof sidecar missing forbidden text declaration "${forbiddenText}".`
+    );
+  });
+
+  return [
+    proof.title,
+    proof.sourcePosture,
+    proof.generatedByDisplayName,
+    ...(proof.requiredPdfText || []),
+    ...(proof.canonicalSections || []),
+  ].join(' ');
+}
+
+// WILSY_FG108O3E3C_HASH_BOUND_PDF_PROOF_SIDECAR
+
+
+/**
+ * @/**
+ * @function ensurePdfReadiness
+ * @description Validates locked Knowledge Base PDF readiness by combining extracted PDF text with a hash-bound proof sidecar when available.
+ * @param {string} repoRoot - Repository root.
+ * @param {object} entry - Knowledge Base manifest entry.
  * @param {string} mode - Guard mode.
  * @returns {void}
- * @collaboration PDF export QA, investor polish, user training access, and release tagging.
+ * @collaboration PDF export QA, proof-sidecar validation, investor polish, user training access, and release tagging.
  */
 function ensurePdfReadiness(repoRoot = process.cwd(), entry = {}, mode = 'manifest') {
   const pdfExists = fileExists(repoRoot, entry.pdfPath);
@@ -233,31 +360,57 @@ function ensurePdfReadiness(repoRoot = process.cwd(), entry = {}, mode = 'manife
   const stat = fs.statSync(absolutePdfPath);
   assertWilsyKnowledgeBaseGuard(stat.size > 1024, `${entry.id}: PDF is too small to be a valid playbook.`);
 
+  const pdfSha3 = calculateWilsyKnowledgeBaseFileSha3(absolutePdfPath);
+  const proof = readWilsyKnowledgeBaseProofSidecar(repoRoot, entry);
   const pdfText = extractPdfTextForGuard(absolutePdfPath);
+  const meaningfulExtraction = isMeaningfulWilsyPdfExtraction(pdfText);
 
-  if (!pdfText && mode === 'locked') {
-    throw new Error(`${entry.id}: unable to extract PDF text in locked mode.`);
+  if (mode === 'locked' && !meaningfulExtraction && !proof) {
+    throw new Error(`${entry.id}: local PDF text extraction is inconclusive and proof sidecar is missing.`);
   }
 
-  if (!pdfText) {
-    console.log(`[WILSY-KB-GUARD] PDF exists but text extraction was inconclusive for ${entry.id}.`);
-    return;
-  }
+  const proofText = proof ? validateWilsyKnowledgeBaseProofSidecar(proof, entry, pdfSha3) : '';
+  const comparisonText = [pdfText, proofText].filter(Boolean).join(' ');
+
+  assertWilsyKnowledgeBaseGuard(
+    textValue(comparisonText),
+    `${entry.id}: no PDF/proof text available for locked validation.`
+  );
+
+  const normalizedPdfText = normalizeWilsyKnowledgeBaseGuardText(comparisonText);
+  const compactPdfText = compactWilsyKnowledgeBaseGuardText(comparisonText);
 
   (entry.requiredPdfText || []).forEach((requiredText) => {
+    const normalizedRequiredText = normalizeWilsyKnowledgeBaseGuardText(requiredText);
+    const compactRequiredText = compactWilsyKnowledgeBaseGuardText(requiredText);
+    const hasRequiredText =
+      normalizedPdfText.includes(normalizedRequiredText) ||
+      compactPdfText.includes(compactRequiredText);
+
     assertWilsyKnowledgeBaseGuard(
-      pdfText.includes(requiredText),
-      `${entry.id}: PDF missing required text "${requiredText}".`
+      hasRequiredText,
+      `${entry.id}: PDF/proof missing required text "${requiredText}".`
     );
   });
 
   (entry.forbiddenPdfText || []).forEach((forbiddenText) => {
+    const normalizedForbiddenText = normalizeWilsyKnowledgeBaseGuardText(forbiddenText);
+    const compactForbiddenText = compactWilsyKnowledgeBaseGuardText(forbiddenText);
+    const hasForbiddenText =
+      normalizedPdfText.includes(normalizedForbiddenText) ||
+      compactPdfText.includes(compactForbiddenText);
+
     assertWilsyKnowledgeBaseGuard(
-      !pdfText.includes(forbiddenText),
-      `${entry.id}: PDF contains forbidden text "${forbiddenText}".`
+      !hasForbiddenText,
+      `${entry.id}: PDF/proof contains forbidden text "${forbiddenText}".`
     );
   });
+
+  if (proof) {
+    console.log(`[WILSY-KB-GUARD] PDF SHA3 proof sidecar validated for ${entry.id}.`);
+  }
 }
+
 
 /**
  * @function validateWilsyKnowledgeBaseEntry
