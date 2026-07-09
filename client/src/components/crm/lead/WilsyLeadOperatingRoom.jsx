@@ -7214,6 +7214,25 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
 
   /**
+   * @function resolveWilsyLeadAIInlineCommandDomAction
+   * @description Resolves the DOM-visible Wilsy AI inline command action without changing FG107J execution behavior.
+   * @param {Object} link - Wilsy AI inline command link emitted by the Operator Kernel.
+   * @returns {string} DOM-visible action identifier for browser proof and QA assertions.
+   * @collaboration CRM Leads continuous typographic AI surface, FG107J inline router, FG108K artifact export proof, and governed PDF/Evidence JSON controls.
+   */
+  function resolveWilsyLeadAIInlineCommandDomAction(link = {}) {
+    const action = String(link?.action || '').trim();
+    const id = String(link?.id || '').trim();
+    const command = String(link?.command || '').trim();
+    const label = String(link?.label || '').trim();
+
+    if (action) return action;
+    if (/^(open_|run_|review_|inspect_)/i.test(id)) return id;
+    return command || id || label;
+  }
+  // P60K5Q10FG108L3_AI_INLINE_COMMAND_DOM_ACTION
+
+  /**
    * @function handleWilsyLeadAIInlineCommand
    * @description Routes Wilsy AI inline command links into existing CRM Leads workspace actions without adding panels, chips, shelves, or silent mutations.
    * @param {Object} link - Inline command link emitted by the Wilsy AI Operator Kernel.
@@ -7342,7 +7361,10 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
                       type="button"
                       data-wilsy-ai-inline-command-router="FG107J"
                       className={styles.leadAIInlineCommandLink}
-                      data-wilsy-ai-inline-command={command.command || command.action || command.id || 'inline'}
+                      data-wilsy-ai-inline-command={resolveWilsyLeadAIInlineCommandDomAction(link)}
+                      data-wilsy-ai-inline-command-action={resolveWilsyLeadAIInlineCommandDomAction(link)}
+                      data-wilsy-ai-inline-command-route={String(link?.command || '')}
+                      data-wilsy-ai-inline-command-id={String(link?.id || '')}
                       onClick={() => void handleWilsyLeadAIInlineCommand(command)}
                     >
                       {command.label || command.title || command.command || 'Use command'}
