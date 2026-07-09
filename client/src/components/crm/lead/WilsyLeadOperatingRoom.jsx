@@ -7155,7 +7155,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const generatedAt = new Date().toISOString();
     const { tenantId, operatorId, headers } = resolveWilsyLeadOperatorHeaders();
     const crmLeadsContext = buildWilsyLeadAIContext();
-    const wilsyLeadAiEvidencePacket = buildWilsyLeadAIOperatorEvidencePacket(question, crmLeadsContext);
+    const wilsyLeadAiEvidencePacket = buildWilsyLeadAIOperatorEvidencePacket(operatorQuestion, crmLeadsContext);
     const institutionalHeaders = {
       tenantId,
       operatorId,
@@ -7205,8 +7205,6 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           route: wilsyLeadAiEvidencePacket.route,
           commandSurface: wilsyLeadAiEvidencePacket.commandSurface,
           mutation: false,
-          institutionalHeaders,
-          strikePayload,
         }),
       });
       const packet = await response.json().catch(() => ({}));
@@ -12134,3 +12132,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 // P60K5Q10FG107Q_PROOF_AI_SURFACE_MOUNTED
 
 // P60K5Q10FG107U_AI_OPERATOR_EVIDENCE_PACKET
+
+// P60K5Q10FG107W_AI_QUESTION_VARIABLE_FIX
