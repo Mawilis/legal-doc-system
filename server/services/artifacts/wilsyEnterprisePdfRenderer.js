@@ -380,7 +380,14 @@ function drawHeader(doc, state, pageNumber, totalPages) {
     .fillColor(BRAND.gold)
     .font('Helvetica-Bold')
     .fontSize(8.5)
-    .text('WILSY OS ENTERPRISE ARTIFACT', 140, 52, { width: 300, lineBreak: false });
+    .text(
+      isWilsyKnowledgeBaseState(state)
+        ? 'WILSY OS KNOWLEDGE BASE ARTIFACT'
+        : 'WILSY OS ENTERPRISE ARTIFACT',
+      140,
+      52,
+      { width: 300, lineBreak: false }
+    );
 
   doc
     .fillColor('#FFFFFF')
@@ -917,6 +924,341 @@ function getGenericSections(state) {
 }
 
 /**
+ * @function resolveWilsyKnowledgeBaseFromIdentity
+ * @description Resolves a Wilsy knowledge-base/playbook payload from the enterprise PDF identity envelope.
+ * @param {object} identity Enterprise artifact identity.
+ * @returns {object} Knowledge-base payload candidate.
+ * @collaboration FG108O3B2, Wilsy AI playbook exports, and the active enterprise PDF renderer.
+ */
+function resolveWilsyKnowledgeBaseFromIdentity(identity = {}) {
+  const data = identity.data || {};
+  const payload = identity.payload || {};
+  const payloadData = identity.payloadData || {};
+  const metadata = identity.metadata || payload.metadata || data.metadata || {};
+
+  return (
+    identity.knowledgeBase ||
+    identity.playbook ||
+    identity.playbookPayload ||
+    payloadData.knowledgeBase ||
+    payloadData.playbook ||
+    payloadData.playbookPayload ||
+    payload.knowledgeBase ||
+    payload.playbook ||
+    payload.playbookPayload ||
+    data.knowledgeBase ||
+    data.playbook ||
+    data.playbookPayload || {
+      type:
+        identity.type ||
+        identity.artifactType ||
+        payloadData.type ||
+        payloadData.artifactType ||
+        payload.type ||
+        payload.artifactType ||
+        data.type ||
+        metadata.type,
+      artifactType:
+        identity.artifactType ||
+        payloadData.artifactType ||
+        payload.artifactType ||
+        data.artifactType ||
+        metadata.artifactType,
+      title: identity.title || payloadData.title || payload.title || data.title || metadata.title,
+      subtitle: payloadData.subtitle || payload.subtitle || data.subtitle || metadata.subtitle,
+      summary: payloadData.summary || payload.summary || data.summary || metadata.summary,
+      markdown: payloadData.markdown || payload.markdown || data.markdown || metadata.markdown,
+      sections:
+        payloadData.playbookSections ||
+        payloadData.knowledgeBaseSections ||
+        payloadData.sections ||
+        payload.sections ||
+        data.sections,
+      metrics: payloadData.metrics || payload.metrics || data.metrics,
+      tenantId:
+        identity.tenantId ||
+        payloadData.tenantId ||
+        payload.tenantId ||
+        data.tenantId ||
+        metadata.tenantId,
+      generatedBy:
+        identity.generatedBy ||
+        identity.userEmail ||
+        identity.email ||
+        payloadData.generatedBy ||
+        payload.generatedBy ||
+        data.generatedBy ||
+        metadata.generatedBy,
+      generatedAt:
+        identity.generatedAt ||
+        payloadData.generatedAt ||
+        payloadData.timestamp ||
+        payload.generatedAt ||
+        data.generatedAt ||
+        metadata.generatedAt ||
+        metadata.timestamp,
+      sourcePosture:
+        identity.sourcePosture ||
+        payloadData.sourcePosture ||
+        payload.sourcePosture ||
+        data.sourcePosture ||
+        metadata.sourcePosture,
+    }
+  );
+}
+
+/**
+ * @function isWilsyKnowledgeBaseCandidate
+ * @description Detects Wilsy knowledge-base/playbook artifacts before the generic legal renderer is selected.
+ * @param {object} candidate Knowledge-base candidate.
+ * @returns {boolean} True when the artifact is a Wilsy knowledge-base/playbook export.
+ * @collaboration FG108O3B2 renderer routing and /api/generate/pdf knowledge-base exports.
+ */
+function isWilsyKnowledgeBaseCandidate(candidate = {}) {
+  const values = [
+    candidate.type,
+    candidate.artifactType,
+    candidate.templateType,
+    candidate.title,
+    candidate.subtitle,
+  ]
+    .map((value) => textValue(value).toUpperCase())
+    .filter(Boolean);
+
+  return values.some(
+    (value) =>
+      value.includes('WILSY_AI_INLINE_COMMAND_PLAYBOOK_FG108') ||
+      value.includes('WILSY KNOWLEDGE BASE') ||
+      value.includes('KNOWLEDGE_BASE') ||
+      value.includes('KNOWLEDGE BASE') ||
+      value.includes('PLAYBOOK')
+  );
+}
+
+/**
+ * @function normalizeWilsyKnowledgeBaseText
+ * @description Converts knowledge-base payload values into safe enterprise-renderer paragraph text.
+ * @param {unknown} value Source value.
+ * @returns {string} PDF-safe text.
+ * @collaboration FG108O3B2 knowledge-base sections and Wilsy enterprise PDF text flow.
+ */
+function normalizeWilsyKnowledgeBaseText(value = '') {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeWilsyKnowledgeBaseText(item))
+      .filter(Boolean)
+      .join(' - ');
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, itemValue]) => `${textValue(key)}: ${normalizeWilsyKnowledgeBaseText(itemValue)}`)
+      .filter(Boolean)
+      .join(' - ');
+  }
+
+  return textValue(value);
+}
+
+/**
+ * @function normalizeWilsyKnowledgeBaseSection
+ * @description Converts a playbook section payload into the enterprise renderer section contract.
+ * @param {unknown} section Source section.
+ * @param {number} index Section index.
+ * @returns {object} Enterprise renderer section.
+ * @collaboration FG108O3B2 markdown/section payloads and drawSection compatibility.
+ */
+function normalizeWilsyKnowledgeBaseSection(section = {}, index = 0) {
+  if (typeof section === 'string') {
+    return {
+      title: `SECTION ${index + 1}`,
+      paragraphs: [normalizeWilsyKnowledgeBaseText(section)],
+    };
+  }
+
+  const title = normalizeWilsyKnowledgeBaseText(
+    section.title || section.heading || section.label || `Section ${index + 1}`
+  );
+
+  const body =
+    section.paragraphs ||
+    section.body ||
+    section.summary ||
+    section.content ||
+    section.description ||
+    '';
+
+  const paragraphs = Array.isArray(body)
+    ? body.map((item) => normalizeWilsyKnowledgeBaseText(item)).filter(Boolean)
+    : normalizeWilsyKnowledgeBaseText(body)
+        .split(/\n+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+  return {
+    title,
+    paragraphs: paragraphs.length
+      ? paragraphs
+      : ['Wilsy OS knowledge-base section retained for controlled review.'],
+  };
+}
+
+/**
+ * @function resolveWilsyKnowledgeBaseMarkdownSections
+ * @description Converts markdown headings into enterprise renderer sections when structured sections are absent.
+ * @param {string} markdown Playbook markdown.
+ * @returns {Array<object>} Enterprise renderer sections.
+ * @collaboration FG108O3B2 markdown payloads and investor-readable PDF sections.
+ */
+function resolveWilsyKnowledgeBaseMarkdownSections(markdown = '') {
+  const value = textValue(markdown);
+  if (!value) return [];
+
+  return value
+    .split(/\n(?=##\s+)/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .slice(0, 14)
+    .map((chunk, index) => {
+      const lines = chunk
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const title = textValue(lines.shift() || `Section ${index + 1}`).replace(/^#+\s*/, '');
+      const paragraphs = lines
+        .join(' ')
+        .split(/\s{2,}|---/)
+        .map((line) => textValue(line))
+        .filter(Boolean)
+        .slice(0, 8);
+
+      return {
+        title,
+        paragraphs: paragraphs.length
+          ? paragraphs
+          : ['Wilsy OS knowledge-base content retained for review.'],
+      };
+    });
+}
+
+/**
+ * @function hydrateWilsyKnowledgeBaseState
+ * @description Adds Wilsy knowledge-base playbook content to the enterprise render state without bypassing the branded PDF engine.
+ * @param {object} state Existing render state.
+ * @param {object} identity Enterprise artifact identity.
+ * @param {object} proof Forensic proof context.
+ * @returns {object} Hydrated render state.
+ * @collaboration FG108O3B2, streamEnterpriseArtifactPdf, and Wilsy AI knowledge-base exports.
+ */
+function hydrateWilsyKnowledgeBaseState(state = {}, identity = {}, proof = {}) {
+  const knowledgeBase = resolveWilsyKnowledgeBaseFromIdentity(identity);
+
+  if (!isWilsyKnowledgeBaseCandidate(knowledgeBase)) {
+    return state;
+  }
+
+  const structuredSections =
+    Array.isArray(knowledgeBase.sections) && knowledgeBase.sections.length > 0
+      ? knowledgeBase.sections.map((section, index) =>
+          normalizeWilsyKnowledgeBaseSection(section, index)
+        )
+      : resolveWilsyKnowledgeBaseMarkdownSections(knowledgeBase.markdown);
+
+  return {
+    ...state,
+    title: textValue(
+      knowledgeBase.title || state.title || 'WILSY OS AI INLINE COMMAND PLAYBOOK - FG108'
+    ),
+    type: textValue(
+      knowledgeBase.type ||
+        knowledgeBase.artifactType ||
+        state.type ||
+        'WILSY_AI_INLINE_COMMAND_PLAYBOOK_FG108'
+    ),
+    tenantId: textValue(knowledgeBase.tenantId || state.tenantId || 'wilsy-sovereign-root'),
+    counterparty: textValue(knowledgeBase.tenantId || state.tenantId || 'wilsy-sovereign-root'),
+    generatedBy: textValue(knowledgeBase.generatedBy || state.generatedBy || 'Wilson Khanyezi'),
+    generatedAt: textValue(
+      knowledgeBase.generatedAt || state.generatedAt || new Date().toISOString()
+    ),
+    sourcePosture: textValue(knowledgeBase.sourcePosture || 'KNOWLEDGE_BASE_VERIFIED'),
+    version: textValue(knowledgeBase.version || 'WILSY-OS-KNOWLEDGE-BASE-FG108-v1.0'),
+    hasWilsyKnowledgeBase: true,
+    wilsyKnowledgeBase: knowledgeBase,
+    knowledgeBaseSections: structuredSections.length
+      ? structuredSections
+      : [
+          {
+            title: 'Executive Summary',
+            paragraphs: [
+              textValue(
+                knowledgeBase.summary ||
+                  'Wilsy OS knowledge-base playbook generated through the governed enterprise PDF renderer.'
+              ),
+            ],
+          },
+        ],
+  };
+}
+
+/**
+ * @function isWilsyKnowledgeBaseState
+ * @description Detects a hydrated Wilsy knowledge-base state inside the enterprise PDF renderer.
+ * @param {object} state Render state.
+ * @returns {boolean} True when the render state is a knowledge-base playbook.
+ * @collaboration FG108O3B2 renderer routing and generic legal-section suppression.
+ */
+function isWilsyKnowledgeBaseState(state = {}) {
+  return Boolean(state.hasWilsyKnowledgeBase);
+}
+
+/**
+ * @function getWilsyKnowledgeBaseSections
+ * @description Builds primary Wilsy knowledge-base sections while preserving enterprise PDF chrome.
+ * @param {object} state Render state.
+ * @returns {Array<object>} Primary knowledge-base sections.
+ * @collaboration FG108O3B2 playbook content and buildSections routing.
+ */
+function getWilsyKnowledgeBaseSections(state = {}) {
+  return [
+    {
+      title: '1. KNOWLEDGE BASE PURPOSE AND OPERATING CONTEXT',
+      paragraphs: [
+        'This artifact is a Wilsy OS knowledge-base playbook for investor review, user enablement, engineering continuity and controlled product governance.',
+        `Tenant: ${state.tenantId}`,
+        `Generated by: ${state.generatedBy}`,
+        `Source posture: ${state.sourcePosture}`,
+      ],
+    },
+    ...state.knowledgeBaseSections,
+  ];
+}
+
+/**
+ * @function getWilsyKnowledgeBaseScheduleSections
+ * @description Builds non-legal appendix sections for Wilsy knowledge-base artifacts.
+ * @param {object} state Render state.
+ * @returns {Array<object>} Knowledge-base appendix sections.
+ * @collaboration FG108O3B2 proof appendix, investor diligence, and future engineer handoff.
+ */
+function getWilsyKnowledgeBaseScheduleSections(state = {}) {
+  return [
+    {
+      title: 'APPENDIX A - KNOWLEDGE BASE PROOF CONTEXT',
+      paragraphs: [
+        `Trace ID: ${state.traceId}`,
+        `Merkle root: ${compactProof(state.merkleRoot)}`,
+        `Source posture: ${state.sourcePosture}`,
+        `Route: /api/generate/pdf`,
+        'This appendix supports reconstruction, version comparison, investor diligence, user training and future engineering continuity.',
+      ],
+    },
+  ];
+}
+
+// WILSY_FG108O3B2_ENTERPRISE_KNOWLEDGE_RENDERER
+
+/**
  * @function buildSections
  * @description Selects the appropriate clause library for the artifact type.
  * @param {object} state - Render state.
@@ -924,6 +1266,10 @@ function getGenericSections(state) {
  * @collaboration Provides a safe expansion path for legal, HR, finance and operational documents.
  */
 function buildSections(state) {
+  if (isWilsyKnowledgeBaseState(state)) {
+    return getWilsyKnowledgeBaseSections(state);
+  }
+
   if (isCrmProofPackState(state)) {
     return getCrmProofPackSections(state);
   }
@@ -1033,6 +1379,13 @@ function startEnterprisePdfBodyPage(doc, cursor) {
  * @collaboration Adds audit and source-control depth to generated artifacts.
  */
 function drawProofSchedule(doc, cursor, state) {
+  if (isWilsyKnowledgeBaseState(state)) {
+    return getWilsyKnowledgeBaseScheduleSections(state).reduce(
+      (nextCursor, section) => drawSection(doc, nextCursor, section),
+      cursor
+    );
+  }
+
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
 
   if (isCrmProofPackState(state)) {
@@ -1080,6 +1433,16 @@ function drawProofSchedule(doc, cursor, state) {
  * @collaboration Produces a boardroom-ready execution page for tenant-facing artifacts.
  */
 function drawExecution(doc, cursor, state) {
+  if (isWilsyKnowledgeBaseState(state)) {
+    return drawSection(doc, cursor, {
+      title: 'KNOWLEDGE BASE AUTHORITY AND RETENTION',
+      paragraphs: [
+        'This Wilsy OS knowledge-base playbook is retained for investor review, user enablement, future engineering continuity and internal product governance.',
+        'It is not a counterparty execution artifact and must not display generic counterparty signature blocks.',
+      ],
+    });
+  }
+
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
 
   if (isCrmProofPackState(state)) {
@@ -1205,7 +1568,11 @@ function normalizeEnterprisePdfCursor(cursor = {}, fallbackY = PAGE.top) {
  * @collaboration Replaces shallow draft documents with tenant-facing enterprise artifact output.
  */
 export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
-  const state = hydrateCrmProofPackState(buildState(identity, proof), identity, proof);
+  const state = hydrateWilsyKnowledgeBaseState(
+    hydrateCrmProofPackState(buildState(identity, proof), identity, proof),
+    identity,
+    proof
+  );
   const fileName = `WILSY-OS-${safeFileName(state.title)}-${state.tenantId}-${Date.now()}.pdf`;
 
   res.setHeader('Content-Type', 'application/pdf');
