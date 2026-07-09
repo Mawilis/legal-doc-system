@@ -174,6 +174,233 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
 };
 
 /**
+ * @function parseWilsyKnowledgeBaseVaultHeaderEvidence
+ * @description Decodes Knowledge Base Vault institutional evidence carried through request headers.
+ * @param {unknown} value Encoded JSON header value.
+ * @returns {object} Decoded evidence object.
+ * @collaboration FG108O3N2H2 ProductionHardening, Knowledge Base Vault, institutionalHeaders, strikePayload, and saved PDF access.
+ */
+function parseWilsyKnowledgeBaseVaultHeaderEvidence(value) {
+  const raw = String(value || '').trim();
+
+  if (!raw) {
+    return {};
+  }
+
+  const candidates = [raw];
+
+  try {
+    candidates.push(decodeURIComponent(raw));
+  } catch (error) {
+    return {};
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (error) {
+      // Try the next candidate.
+    }
+  }
+
+  return {};
+}
+
+/**
+ * @function resolveWilsyKnowledgeBaseVaultHeaderValue
+ * @description Resolves a request header value for Knowledge Base Vault hardening continuation.
+ * @param {object} headers Express request headers.
+ * @param {string[]} keys Candidate header names.
+ * @returns {string} Header value.
+ * @collaboration FG108O3N2H2 browser evidence headers, backend hardening, and Vault route access.
+ */
+function resolveWilsyKnowledgeBaseVaultHeaderValue(headers = {}, keys = []) {
+  for (const key of keys) {
+    const value = headers[String(key).toLowerCase()];
+
+    if (Array.isArray(value)) {
+      return String(value[0] || '');
+    }
+
+    if (value) {
+      return String(value);
+    }
+  }
+
+  return '';
+}
+
+/**
+ * @function shouldContinueWilsyKnowledgeBaseVaultAfterHardening
+ * @description Allows the read-only Knowledge Base Vault through ProductionHardening only when saved artifact access carries institutional evidence.
+ * @param {object} req Express request.
+ * @returns {boolean} Whether the governed Vault request may continue.
+ * @collaboration FG108O3N2H2 Global Knowledge Base Vault, ProductionHardening, saved PDFs only, proof sidecars, and no-regeneration route discipline.
+ */
+function shouldContinueWilsyKnowledgeBaseVaultAfterHardening(req = {}) {
+  const method = String(req.method || '').toUpperCase();
+  const route = String(req.originalUrl || req.url || req.path || '').split('?')[0];
+  const normalizedRoute = route.toLowerCase();
+
+  if (!['POST', 'GET'].includes(method)) {
+    return false;
+  }
+
+  if (!normalizedRoute.startsWith('/api/knowledge-base/vault')) {
+    return false;
+  }
+
+  const headers = req.headers || {};
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+
+  const headerInstitutionalHeaders = parseWilsyKnowledgeBaseVaultHeaderEvidence(
+    resolveWilsyKnowledgeBaseVaultHeaderValue(headers, ['x-wilsy-institutional-headers'])
+  );
+
+  const headerStrikePayload = parseWilsyKnowledgeBaseVaultHeaderEvidence(
+    resolveWilsyKnowledgeBaseVaultHeaderValue(headers, ['x-wilsy-strike-payload'])
+  );
+
+  const institutionalHeaders =
+    body.institutionalHeaders && typeof body.institutionalHeaders === 'object'
+      ? body.institutionalHeaders
+      : headerInstitutionalHeaders;
+
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object'
+      ? body.strikePayload
+      : headerStrikePayload;
+
+  const strikeHeaders =
+    strikePayload.institutionalHeaders && typeof strikePayload.institutionalHeaders === 'object'
+      ? strikePayload.institutionalHeaders
+      : {};
+
+  const commandSurface = String(
+    body.commandSurface ||
+      institutionalHeaders.commandSurface ||
+      strikePayload.commandSurface ||
+      strikeHeaders.commandSurface ||
+      resolveWilsyKnowledgeBaseVaultHeaderValue(headers, [
+        'x-command-surface',
+        'x-wilsy-command-surface',
+      ]) ||
+      ''
+  );
+
+  const declaredRoute = String(
+    body.route ||
+      institutionalHeaders.route ||
+      strikePayload.route ||
+      strikeHeaders.route ||
+      resolveWilsyKnowledgeBaseVaultHeaderValue(headers, ['x-route', 'x-wilsy-route']) ||
+      ''
+  ).split('?')[0];
+
+  const tenantId = String(
+    body.tenantId ||
+      institutionalHeaders.tenantId ||
+      strikePayload.tenantId ||
+      strikeHeaders.tenantId ||
+      resolveWilsyKnowledgeBaseVaultHeaderValue(headers, ['x-tenant-id', 'x-wilsy-tenant-id']) ||
+      ''
+  );
+
+  const operatorId = String(
+    body.operatorId ||
+      body.userId ||
+      institutionalHeaders.operatorId ||
+      institutionalHeaders.userId ||
+      strikePayload.operatorId ||
+      strikePayload.userId ||
+      strikeHeaders.operatorId ||
+      strikeHeaders.userId ||
+      resolveWilsyKnowledgeBaseVaultHeaderValue(headers, [
+        'x-operator-id',
+        'x-wilsy-operator-id',
+        'x-user-id',
+      ]) ||
+      ''
+  );
+
+  const generatedAt = String(
+    body.generatedAt ||
+      institutionalHeaders.generatedAt ||
+      strikePayload.generatedAt ||
+      strikeHeaders.generatedAt ||
+      resolveWilsyKnowledgeBaseVaultHeaderValue(headers, [
+        'x-generated-at',
+        'x-timestamp',
+        'x-forensic-timestamp',
+      ]) ||
+      ''
+  );
+
+  const requestId = String(
+    body.requestId ||
+      institutionalHeaders.requestId ||
+      strikePayload.requestId ||
+      strikeHeaders.requestId ||
+      resolveWilsyKnowledgeBaseVaultHeaderValue(headers, ['x-request-id', 'x-wilsy-request-id']) ||
+      ''
+  );
+
+  const savedArtifactsOnly =
+    body.savedArtifactsOnly === true ||
+    strikePayload.savedArtifactsOnly === true ||
+    String(body.sourceMode || strikePayload.sourceMode || '').includes(
+      'KNOWLEDGE_BASE_VAULT_READ_ONLY'
+    );
+
+  const allowedSurface = [
+    'knowledge_base_vault_list',
+    'knowledge_base_vault_open_pdf',
+    'knowledge_base_vault_download_pdf',
+    'knowledge_base_vault_print_pdf',
+    'knowledge_base_vault_open_proof',
+  ].includes(commandSurface);
+
+  const routeMatches =
+    declaredRoute === route ||
+    declaredRoute === '/api/knowledge-base/vault' ||
+    declaredRoute.startsWith('/api/knowledge-base/vault/');
+
+  const nestedHeadersPresent =
+    Boolean(institutionalHeaders && Object.keys(institutionalHeaders).length) &&
+    Boolean(strikeHeaders && Object.keys(strikeHeaders).length);
+
+  const allowed =
+    allowedSurface &&
+    routeMatches &&
+    Boolean(tenantId) &&
+    Boolean(operatorId) &&
+    Boolean(generatedAt) &&
+    Boolean(requestId) &&
+    nestedHeadersPresent &&
+    savedArtifactsOnly;
+
+  if (allowed) {
+    req.wilsyKnowledgeBaseVaultHardeningContinuation = {
+      authority: 'P60K5Q10FG108O3N2H2_KNOWLEDGE_BASE_VAULT_HARDENING_CONTINUATION',
+      route,
+      method,
+      tenantId,
+      operatorId,
+      commandSurface,
+      continuedAt: new Date().toISOString(),
+    };
+  }
+
+  return allowed;
+}
+
+// P60K5Q10FG108O3N2H2_KNOWLEDGE_BASE_VAULT_HARDENING_CONTINUATION
+
+/**
  * @function integrityShield
  * @description Enforces Wilsy OS institutional request-integrity validation while allowing explicitly registered read-only operating bridge routes.
  * @param {Object} req - Express request carrying forensic headers, tenant metadata and request body.
@@ -677,6 +904,7 @@ export const integrityShield = async (req, res, next) => {
 
     if (!isBusinessArtifactStrike || !businessArtifactHeadersPresent) {
       if (
+        shouldContinueWilsyKnowledgeBaseVaultAfterHardening(req) ||
         shouldContinueWilsyCrmCommandAfterHardening(req) ||
         shouldContinueWilsyAIOperatorAfterHardening(req) ||
         shouldContinueWilsyLeadViewRegistryAfterHardening(req) ||

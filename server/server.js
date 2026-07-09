@@ -160,6 +160,7 @@ import { resolveWilsyAIOperatorModel } from './services/wilsyAI/wilsyAIOperatorM
 
 import express from 'express';
 import crmControlStateRoutes from './routes/crmControlStateRoutes.js';
+import knowledgeBaseVaultRoutes from './routes/knowledgeBaseVaultRoutes.js';
 const server = http.createServer(app);
 const PORT = validatedEnv.PORT;
 const VERSION = '48.6.0-MARS-GENERATIONAL';
@@ -1356,6 +1357,7 @@ app.use('/api/statements', statementsRoutes);
  * @example POST /api/generate/pdf
  */
 app.use('/api/generate', artifactRoutes);
+app.use('/api/knowledge-base/vault', knowledgeBaseVaultRoutes);
 // ============================================================================
 // 🏛️ SOVEREIGN MONITORING ROUTER (ADDITIVE – no existing code removed)
 // ============================================================================

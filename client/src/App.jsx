@@ -43,6 +43,7 @@ import SovereignDashboardController from './components/sovereign/SovereignDashbo
 // 🚀 SOVEREIGN MESH INTEGRATION
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
+import WilsyKnowledgeBaseVault from './components/knowledge/WilsyKnowledgeBaseVault';
 
 /**
  * @function SovereignRouter
@@ -195,7 +196,8 @@ const SovereignRouter = () => {
         }
       />
       <Route path="/*" element={<Navigate to="/" />} />
-    </Routes>
+            <Route path="/knowledge-base/vault" element={<WilsyKnowledgeBaseVault />} />
+      </Routes>
   );
 };
 
