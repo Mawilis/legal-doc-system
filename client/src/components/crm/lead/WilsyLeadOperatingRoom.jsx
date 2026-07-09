@@ -11384,7 +11384,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
             </button>
             <button type="button" data-wilsy-proof-pack-primary-action="FG104L3" onClick={() => downloadWilsyProofCockpitFile(packet)}
               disabled={!resolveWilsyProofLedgerExportAllowed()}
-              data-wilsy-proof-ledger-export-gate="FG104O2">Download File</button>
+              data-wilsy-proof-ledger-export-gate="FG104O2" title="Download the portable raw proof evidence JSON file">Evidence JSON</button>
           </div>
         </header>
         <div>
@@ -11449,7 +11449,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           <div>
             <button type="button" onClick={() => setActiveTopTab('records')}>Records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
-            <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
+            <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)} title="Download the portable raw proof evidence JSON file">Evidence JSON</button>
           </div>
         </header>
 
@@ -11485,14 +11485,14 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           <div>
             <button type="button" onClick={() => setActiveTopTab('records')}>Open records</button>
             <button type="button" onClick={() => void refreshWilsyToolbarCollectionSummary(activeLeadOrganizerView)} disabled={Boolean(leadToolbarCommandBusy) || !packet.evidence.backendViewId}>Run proof</button>
-            <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)}>Export file</button>
+            <button type="button" onClick={() => downloadWilsyProofCockpitFile(packet)} title="Download the portable raw proof evidence JSON file">Evidence JSON</button>
             <button
               type="button"
               data-wilsy-crm-proof-pack-artifact-pdf-export="FG106C"
               data-wilsy-crm-proof-pack-artifact-pdf-placement="FG106D-MISSION-CONTROL"
               onClick={() => void exportWilsyCrmProofPackArtifactPdf(packet)}
               disabled={!resolveWilsyProofLedgerExportAllowed()}
-              title="Export through the existing Wilsy OS artifact PDF service"
+              title="Generate the governed branded CRM Proof Pack Artifact PDF through /api/generate/pdf"
             >
               Artifact PDF
             </button>
@@ -11895,3 +11895,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   // P60K5Q10FG106Q_REAL_ARTIFACT_BUTTON_DIRECT_BLOB_DOWNLOAD
 
   // P60K5Q10FG106R_PROMISE_CHAIN_ARTIFACT_PDF_DELIVERY
+
+// P60K5Q10FG107E_PROOF_EXPORT_CONTROL_CLARITY
