@@ -327,6 +327,7 @@ function drawFooter(doc, state) {
  * @collaboration Maintains professional page flow and protects the footer zone.
  */
 function ensureSpace(doc, cursor, required) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
   if (cursor.y + required <= PAGE.bottom) return;
 
   doc.addPage();
@@ -344,6 +345,7 @@ function ensureSpace(doc, cursor, required) {
  * @collaboration Produces readable legal instrument body copy.
  */
 function writeParagraph(doc, cursor, paragraph, index) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
   const paragraphWidth = PAGE.contentWidth - 32;
   const paragraphHeight = doc.heightOfString(textValue(paragraph), {
     width: paragraphWidth,
@@ -380,6 +382,7 @@ function writeParagraph(doc, cursor, paragraph, index) {
  * @collaboration Creates dense but readable enterprise legal and business artifacts.
  */
 function drawSection(doc, cursor, section) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
   ensureSpace(doc, cursor, 72);
 
   doc
@@ -764,6 +767,7 @@ function buildSections(state) {
  * @collaboration Provides tenant-facing document identity, source posture and proof metadata.
  */
 function drawDocumentControl(doc, cursor, state) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
   doc
     .fillColor(BRAND.black)
     .font('Helvetica-Bold')
@@ -832,6 +836,7 @@ function drawDocumentControl(doc, cursor, state) {
  * @collaboration Adds audit and source-control depth to generated artifacts.
  */
 function drawProofSchedule(doc, cursor, state) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
   if (isCrmProofPackState(state)) {
     return getCrmProofPackScheduleSections(state).reduce(
       (nextCursor, section) => drawSection(doc, nextCursor, section),
@@ -869,6 +874,7 @@ function drawProofSchedule(doc, cursor, state) {
  * @collaboration Produces a boardroom-ready execution page for tenant-facing artifacts.
  */
 function drawExecution(doc, cursor, state) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
   if (isCrmProofPackState(state)) {
     return drawSection(doc, cursor, {
       title: 'PROOF AUTHORITY AND RETENTION',
@@ -1055,3 +1061,5 @@ export default streamEnterpriseArtifactPdf;
 // P60K5Q10FG106T_ENTERPRISE_PDF_CURSOR_GUARD
 
 // P60K5Q10FG106T3_CURSOR_ORDER_RESCUE
+
+// P60K5Q10FG106U_ENTERPRISE_PDF_ALL_CURSOR_READ_GUARDS
