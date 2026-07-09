@@ -91,6 +91,58 @@ function resolveWilsyProfessionalDisplayNameCandidate(value = '') {
 }
 
 /**
+ * @function resolveWilsyAuthorizationBearerToken
+ * @description Extracts the Bearer token from request headers without logging or exposing token content.
+ * @param {object} req Express request.
+ * @returns {string} Bearer token without the Bearer prefix.
+ * @collaboration Artifact PDF route authentication, live identity resolution, and no-secret logging discipline.
+ */
+function resolveWilsyAuthorizationBearerToken(req = {}) {
+  const authorization = clean(req.headers?.authorization || req.headers?.Authorization, '');
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+
+  return match ? clean(match[1], '') : '';
+}
+
+/**
+ * @function decodeWilsyBase64UrlJsonSegment
+ * @description Decodes a JWT base64url JSON segment for identity claim discovery without logging token content.
+ * @param {string} segment JWT segment.
+ * @returns {object} Decoded JSON object or an empty object.
+ * @collaboration Bearer token identity bridge, PDF live user resolver, and profile lookup.
+ */
+function decodeWilsyBase64UrlJsonSegment(segment = '') {
+  try {
+    const normalized = clean(segment, '').replace(/-/g, '+').replace(/_/g, '/');
+    const padded = `${normalized}${'='.repeat((4 - (normalized.length % 4)) % 4)}`;
+    const decoded = Buffer.from(padded, 'base64').toString('utf8');
+    const parsed = JSON.parse(decoded);
+
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * @function resolveWilsyBearerTokenClaims
+ * @description Reads identity claims from the provided Bearer token so the controller can find the live database profile.
+ * @param {object} req Express request.
+ * @returns {object} Bearer token claims or an empty object.
+ * @collaboration /api/generate/pdf, token-backed user identity, MongoDB profile lookup, and fail-closed Knowledge Base export.
+ */
+function resolveWilsyBearerTokenClaims(req = {}) {
+  const token = resolveWilsyAuthorizationBearerToken(req);
+  const parts = token.split('.');
+
+  if (parts.length < 2) return {};
+
+  return decodeWilsyBase64UrlJsonSegment(parts[1]);
+}
+
+// WILSY_FG108O3M2D_BEARER_IDENTITY_BRIDGE
+
+/**
  * @function extractWilsyLiveUserProfileIdentity
  * @description Extracts live authenticated user/profile identity from request user objects and optional database user document.
  * @param {object} req Express request.
@@ -101,6 +153,8 @@ function resolveWilsyProfessionalDisplayNameCandidate(value = '') {
 function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
   const user = req.user || {};
   const profile = user.profile || {};
+  const tokenClaims = resolveWilsyBearerTokenClaims(req);
+  const tokenProfile = tokenClaims.profile || tokenClaims.user || tokenClaims.account || {};
   const doc = profileDoc || {};
   const docProfile = doc.profile || {};
   const docAccount = doc.account || {};
@@ -114,6 +168,18 @@ function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
     profile.fullName,
     profile.name,
     profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : '',
+    tokenClaims.displayName,
+    tokenClaims.fullName,
+    tokenClaims.name,
+    tokenClaims.given_name && tokenClaims.family_name
+      ? `${tokenClaims.given_name} ${tokenClaims.family_name}`
+      : '',
+    tokenProfile.displayName,
+    tokenProfile.fullName,
+    tokenProfile.name,
+    tokenProfile.firstName && tokenProfile.lastName
+      ? `${tokenProfile.firstName} ${tokenProfile.lastName}`
+      : '',
     doc.displayName,
     doc.fullName,
     doc.name,
@@ -135,6 +201,11 @@ function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
     user.primaryEmail,
     profile.email,
     profile.userEmail,
+    tokenClaims.email,
+    tokenClaims.userEmail,
+    tokenClaims.primaryEmail,
+    tokenProfile.email,
+    tokenProfile.userEmail,
     doc.email,
     doc.userEmail,
     doc.primaryEmail,
@@ -142,7 +213,22 @@ function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
     docProfile.userEmail,
   ];
 
-  const idCandidates = [user.id, user._id, user.userId, user.sub, doc._id, doc.id, doc.userId];
+  const idCandidates = [
+    user.id,
+    user._id,
+    user.userId,
+    user.sub,
+    tokenClaims.sub,
+    tokenClaims.id,
+    tokenClaims._id,
+    tokenClaims.userId,
+    tokenProfile.id,
+    tokenProfile._id,
+    tokenProfile.userId,
+    doc._id,
+    doc.id,
+    doc.userId,
+  ];
 
   const displayName =
     displayCandidates.map(resolveWilsyProfessionalDisplayNameCandidate).find(Boolean) || '';
@@ -156,7 +242,11 @@ function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
     userId,
     email,
     displayName,
-    source: profileDoc ? 'LIVE_DATABASE_PROFILE' : 'LIVE_REQUEST_USER',
+    source: profileDoc
+      ? 'LIVE_DATABASE_PROFILE'
+      : Object.keys(tokenClaims || {}).length
+        ? 'LIVE_BEARER_TOKEN_CLAIMS'
+        : 'LIVE_REQUEST_USER',
     hasProfessionalDisplayName: Boolean(displayName),
   };
 }
@@ -173,10 +263,37 @@ async function findWilsyLiveUserProfileDocument(req = {}) {
 
   const user = req.user || {};
   const profile = user.profile || {};
-  const rawIds = [user._id, user.id, user.userId, user.sub]
+  const tokenClaims = resolveWilsyBearerTokenClaims(req);
+  const tokenProfile = tokenClaims.profile || tokenClaims.user || tokenClaims.account || {};
+
+  const rawIds = [
+    user._id,
+    user.id,
+    user.userId,
+    user.sub,
+    tokenClaims.sub,
+    tokenClaims.id,
+    tokenClaims._id,
+    tokenClaims.userId,
+    tokenProfile.id,
+    tokenProfile._id,
+    tokenProfile.userId,
+  ]
     .map((item) => clean(item, ''))
     .filter(Boolean);
-  const emails = [user.email, user.userEmail, user.primaryEmail, profile.email, profile.userEmail]
+
+  const emails = [
+    user.email,
+    user.userEmail,
+    user.primaryEmail,
+    profile.email,
+    profile.userEmail,
+    tokenClaims.email,
+    tokenClaims.userEmail,
+    tokenClaims.primaryEmail,
+    tokenProfile.email,
+    tokenProfile.userEmail,
+  ]
     .map((item) => clean(item, ''))
     .filter((item) => item && item.includes('@'));
 
@@ -207,6 +324,10 @@ async function findWilsyLiveUserProfileDocument(req = {}) {
             { primaryEmail: email },
             { 'profile.email': email },
             { 'profile.userEmail': email },
+            { 'account.email': email },
+            { 'auth.email': email },
+            { 'local.email': email },
+            { 'contact.email': email },
           ],
         })
           .lean()
