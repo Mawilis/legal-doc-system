@@ -7009,6 +7009,133 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
 
 
   /**
+   * @function readWilsyLeadAIOperatorStorageValue
+   * @description Reads browser storage for the read-only Leads Wilsy AI operator request without exposing credentials in source.
+   * @param {string} key Browser storage key.
+   * @returns {string} Stored value or empty string.
+   * @collaboration Browser auth session, CRM Leads AI surface, tenant evidence, and Operator Kernel request construction.
+   */
+  function readWilsyLeadAIOperatorStorageValue(key = '') {
+    try {
+      if (typeof window === 'undefined') {
+        return '';
+      }
+
+      return window.localStorage?.getItem(key) || window.sessionStorage?.getItem(key) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * @function resolveWilsyLeadAIOperatorIdentity
+   * @description Resolves tenant and operator identity for the read-only Leads Wilsy AI operator request.
+   * @returns {object} Tenant/operator identity.
+   * @collaboration CRM Leads workspace, browser auth state, Wilsy AI Operator Kernel, and institutional evidence posture.
+   */
+  function resolveWilsyLeadAIOperatorIdentity() {
+    const tenantSource = typeof tenantConfig !== 'undefined' && tenantConfig ? tenantConfig : {};
+    const tenantId = String(
+      tenantSource.tenantId ||
+        tenantSource.id ||
+        readWilsyLeadAIOperatorStorageValue('wilsy-tenant-id') ||
+        readWilsyLeadAIOperatorStorageValue('wilsy.tenantId') ||
+        readWilsyLeadAIOperatorStorageValue('tenantId') ||
+        readWilsyLeadAIOperatorStorageValue('selectedTenantId') ||
+        readWilsyLeadAIOperatorStorageValue('activeTenantId') ||
+        'MASTER'
+    ).trim();
+
+    const operatorId = String(
+      readWilsyLeadAIOperatorStorageValue('wilsy-operator-id') ||
+        readWilsyLeadAIOperatorStorageValue('wilsy.operatorUserId') ||
+        readWilsyLeadAIOperatorStorageValue('operatorUserId') ||
+        readWilsyLeadAIOperatorStorageValue('operatorId') ||
+        readWilsyLeadAIOperatorStorageValue('userId') ||
+        readWilsyLeadAIOperatorStorageValue('email') ||
+        'WILSY_LEADS_OPERATOR'
+    ).trim();
+
+    return {
+      tenantId: tenantId || 'MASTER',
+      operatorId: operatorId || 'WILSY_LEADS_OPERATOR',
+    };
+  }
+
+  /**
+   * @function buildWilsyLeadAIOperatorEvidencePacket
+   * @description Builds institutional evidence for the read-only Leads Wilsy AI Operator request so ProductionHardening and the AI route validator receive the same governed contract.
+   * @param {string} question Operator question.
+   * @param {object} crmLeadsContext Live CRM Leads context.
+   * @returns {object} Read-only operator evidence packet.
+   * @collaboration CRM Leads Proof Workspace, Wilsy AI Operator Kernel, ProductionHardening continuation, inline command links, and no-mutation AI posture.
+   */
+  function buildWilsyLeadAIOperatorEvidencePacket(question = '', crmLeadsContext = {}) {
+    const generatedAt = new Date().toISOString();
+    const identity = resolveWilsyLeadAIOperatorIdentity();
+    const route = '/api/wilsy/ai/operator/resolve';
+    const commandSurface = 'CRM_LEADS_PROOF_WORKSPACE_WILSY_AI';
+    const workspaceSurface = crmLeadsContext.workspaceSurface || resolveWilsyLeadAIWorkspaceSurface(activeTopTab);
+
+    const institutionalHeaders = {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorId,
+      operatorUserId: identity.operatorId,
+      userId: identity.operatorId,
+      route,
+      commandSurface,
+      workspaceRoute: '/crm/leads',
+      workspaceSurface,
+      generatedAt,
+      timestamp: generatedAt,
+      contractVersion: 'P60K5Q10FG107U_AI_OPERATOR_EVIDENCE_PACKET',
+    };
+
+    const strikePayload = {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorId,
+      operatorUserId: identity.operatorId,
+      userId: identity.operatorId,
+      route,
+      commandSurface,
+      workspaceRoute: '/crm/leads',
+      workspaceSurface,
+      generatedAt,
+      timestamp: generatedAt,
+      commandType: 'READ_ONLY_WILSY_AI_OPERATOR_RESOLVE',
+      mutation: false,
+      operatorQuestion: question,
+      question,
+      crmLeadsContext,
+      institutionalHeaders,
+      payload: {
+        institutionalHeaders,
+      },
+      evidence: {
+        institutionalHeaders,
+      },
+    };
+
+    return {
+      tenantId: identity.tenantId,
+      operatorId: identity.operatorId,
+      operatorQuestion: question,
+      question,
+      workspaceRoute: '/crm/leads',
+      workspaceSurface,
+      wilsyAiContext: 'ASK',
+      crmLeadsContext,
+      route,
+      commandSurface,
+      generatedAt,
+      mutation: false,
+      institutionalHeaders,
+      strikePayload,
+    };
+  }
+
+
+  /**
    * @function handleWilsyLeadAIQuestionSubmit
    * @description Sends the operator question and live CRM Leads context to the Wilsy AI Operator Kernel.
    * @param {Event} event - Form submit event.
@@ -7028,6 +7155,7 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
     const generatedAt = new Date().toISOString();
     const { tenantId, operatorId, headers } = resolveWilsyLeadOperatorHeaders();
     const crmLeadsContext = buildWilsyLeadAIContext();
+    const wilsyLeadAiEvidencePacket = buildWilsyLeadAIOperatorEvidencePacket(question, crmLeadsContext);
     const institutionalHeaders = {
       tenantId,
       operatorId,
@@ -7040,8 +7168,15 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
       institutionalHeaders,
       operatorQuestion,
       workspaceRoute: '/crm/leads',
-      workspaceSurface: crmLeadsContext.workspaceSurface,
-      crmLeadsContext,
+      workspaceSurface: wilsyLeadAiEvidencePacket.workspaceSurface,
+      crmLeadsContext: wilsyLeadAiEvidencePacket.crmLeadsContext,
+      institutionalHeaders: wilsyLeadAiEvidencePacket.institutionalHeaders,
+      strikePayload: wilsyLeadAiEvidencePacket.strikePayload,
+      tenantId: wilsyLeadAiEvidencePacket.tenantId,
+      operatorId: wilsyLeadAiEvidencePacket.operatorId,
+      route: wilsyLeadAiEvidencePacket.route,
+      commandSurface: wilsyLeadAiEvidencePacket.commandSurface,
+      mutation: false,
       generatedAt,
     };
 
@@ -7061,8 +7196,15 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
           wilsyAiContext: 'ASK',
           operatorQuestion,
           workspaceRoute: '/crm/leads',
-          workspaceSurface: crmLeadsContext.workspaceSurface,
-          crmLeadsContext,
+          workspaceSurface: wilsyLeadAiEvidencePacket.workspaceSurface,
+          crmLeadsContext: wilsyLeadAiEvidencePacket.crmLeadsContext,
+          institutionalHeaders: wilsyLeadAiEvidencePacket.institutionalHeaders,
+          strikePayload: wilsyLeadAiEvidencePacket.strikePayload,
+          tenantId: wilsyLeadAiEvidencePacket.tenantId,
+          operatorId: wilsyLeadAiEvidencePacket.operatorId,
+          route: wilsyLeadAiEvidencePacket.route,
+          commandSurface: wilsyLeadAiEvidencePacket.commandSurface,
+          mutation: false,
           institutionalHeaders,
           strikePayload,
         }),
@@ -11990,3 +12132,5 @@ function resolveWilsyFG91FCurrentOwnerFallbackInitials() {
   // P60K5Q10FG107J_FRONTEND_INLINE_COMMAND_ROUTER
 
 // P60K5Q10FG107Q_PROOF_AI_SURFACE_MOUNTED
+
+// P60K5Q10FG107U_AI_OPERATOR_EVIDENCE_PACKET

@@ -182,6 +182,125 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
  * @returns {Promise<void>} Continues valid or read-only bridge requests and blocks failed integrity checks.
  * @collaboration Protects production mutation paths while allowing backend-owned Compliance, Identity and Source Registry read-only command surfaces to hydrate safely.
  */
+
+/**
+ * @function shouldContinueWilsyAIOperatorAfterHardening
+ * @description Allows the read-only Wilsy AI Operator resolve route to continue past artifact hardening only when exact route, command surface, tenant/operator identity, operator question, top-level institutional headers, strike payload, and nested strike institutional headers are present.
+ * @param {object} req Express request.
+ * @returns {boolean} Whether the governed read-only AI request may continue to the Wilsy AI evidence validator.
+ * @collaboration ProductionHardening, Wilsy AI Operator Kernel, CRM Leads continuous response surface, institutional evidence gate, and no-silent-mutation posture.
+ */
+function shouldContinueWilsyAIOperatorAfterHardening(req = {}) {
+  const route = String(req.originalUrl || req.url || req.path || '');
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const headers = req.headers || {};
+  const institutionalHeaders =
+    body.institutionalHeaders && typeof body.institutionalHeaders === 'object'
+      ? body.institutionalHeaders
+      : {};
+  const strikePayload =
+    body.strikePayload && typeof body.strikePayload === 'object' ? body.strikePayload : {};
+  const strikeHeaders =
+    strikePayload.institutionalHeaders && typeof strikePayload.institutionalHeaders === 'object'
+      ? strikePayload.institutionalHeaders
+      : {};
+
+  const declaredRoute = String(
+    body.route ||
+      institutionalHeaders.route ||
+      strikePayload.route ||
+      strikeHeaders.route ||
+      headers['x-wilsy-route'] ||
+      headers['x-route'] ||
+      ''
+  );
+
+  const commandSurface = String(
+    body.commandSurface ||
+      institutionalHeaders.commandSurface ||
+      strikePayload.commandSurface ||
+      strikeHeaders.commandSurface ||
+      headers['x-wilsy-command-surface'] ||
+      headers['x-command-surface'] ||
+      ''
+  );
+
+  const tenantId = String(
+    body.tenantId ||
+      institutionalHeaders.tenantId ||
+      strikePayload.tenantId ||
+      strikeHeaders.tenantId ||
+      headers['x-tenant-id'] ||
+      ''
+  );
+
+  const operatorId = String(
+    body.operatorId ||
+      institutionalHeaders.operatorId ||
+      institutionalHeaders.operatorUserId ||
+      strikePayload.operatorId ||
+      strikePayload.operatorUserId ||
+      strikeHeaders.operatorId ||
+      strikeHeaders.operatorUserId ||
+      headers['x-operator-id'] ||
+      headers['x-operator-user-id'] ||
+      ''
+  );
+
+  const operatorQuestion = String(
+    body.operatorQuestion ||
+      body.question ||
+      strikePayload.operatorQuestion ||
+      strikePayload.question ||
+      ''
+  ).trim();
+
+  const mutationDeclared =
+    String(
+      body.mutation === true ||
+        strikePayload.mutation === true ||
+        body.mutation === 'true' ||
+        strikePayload.mutation === 'true'
+    ) === 'true';
+
+  const routeMatches =
+    route.includes('/api/wilsy/ai/operator/resolve') &&
+    declaredRoute === '/api/wilsy/ai/operator/resolve';
+
+  const commandSurfaceMatches =
+    commandSurface === 'CRM_LEADS_PROOF_WORKSPACE_WILSY_AI' ||
+    commandSurface === 'CRM_LEADS_WILSY_AI_OPERATOR' ||
+    commandSurface === 'WILSY_OS_OPERATOR_MODEL' ||
+    commandSurface === 'WILSY_OS_INTELLIGENCE_DOCK';
+
+  const topLevelEvidencePresent = Boolean(
+    institutionalHeaders.tenantId &&
+    (institutionalHeaders.operatorId || institutionalHeaders.operatorUserId) &&
+    institutionalHeaders.route === '/api/wilsy/ai/operator/resolve' &&
+    institutionalHeaders.commandSurface
+  );
+
+  const nestedEvidencePresent = Boolean(
+    strikeHeaders.tenantId &&
+    (strikeHeaders.operatorId || strikeHeaders.operatorUserId) &&
+    strikeHeaders.route === '/api/wilsy/ai/operator/resolve' &&
+    strikeHeaders.commandSurface
+  );
+
+  return Boolean(
+    routeMatches &&
+    commandSurfaceMatches &&
+    tenantId &&
+    operatorId &&
+    operatorQuestion &&
+    topLevelEvidencePresent &&
+    nestedEvidencePresent &&
+    !mutationDeclared
+  );
+}
+
+// P60K5Q10FG107U_AI_OPERATOR_HARDENING_CONTINUATION
+
 /**
  * @function shouldContinueWilsyLeadViewRegistryAfterHardening
  * @description Allows audited CRM Lead View Registry and Proof Ledger policy commands to continue through production hardening when they carry tenant, operator, command surface, timestamp, request id, and institutional evidence.
@@ -559,6 +678,7 @@ export const integrityShield = async (req, res, next) => {
     if (!isBusinessArtifactStrike || !businessArtifactHeadersPresent) {
       if (
         shouldContinueWilsyCrmCommandAfterHardening(req) ||
+        shouldContinueWilsyAIOperatorAfterHardening(req) ||
         shouldContinueWilsyLeadViewRegistryAfterHardening(req) ||
         (['POST', 'PATCH', 'PUT'].includes(String(req.method || '').toUpperCase()) &&
           String(req.originalUrl || req.path || req.url || '').includes(
