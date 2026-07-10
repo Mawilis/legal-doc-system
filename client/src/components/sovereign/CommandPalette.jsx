@@ -87,6 +87,11 @@ const STATIC_DEPARTMENT_COMMANDS = Object.freeze([
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
  */
+/**
+ * @function generateSealHash
+ * @description Generates a deterministic local seal hash for Command Palette evidence.
+ * @collaboration Command Palette telemetry, sealed command exports, and founder-visible proof artifacts.
+ */
 const generateSealHash = async (buffer) => {
   try {
     if (!window.crypto?.subtle) {
@@ -116,6 +121,11 @@ const generateSealHash = async (buffer) => {
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
  */
+/**
+ * @function sendTelemetry
+ * @description Sends Command Palette usage telemetry without blocking local command execution.
+ * @collaboration Command usage context, Founder operating memory, and safe local command analytics.
+ */
 const sendTelemetry = async (endpoint, data, signal) => {
   try {
     const response = await fetch(endpoint, {
@@ -142,6 +152,11 @@ const sendTelemetry = async (endpoint, data, signal) => {
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ */
+/**
+ * @function downloadPDF
+ * @description Downloads a command capability artifact for executive or investor review.
+ * @collaboration Command Palette exports, artifact proof, and boardroom-ready evidence packaging.
  */
 const downloadPDF = (buffer, filename) => {
   const blob = new Blob([buffer], { type: 'application/pdf' });
@@ -275,6 +290,11 @@ const serialiseCommands = (commands = []) => commands.map((command) => ({
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
  */
+/**
+ * @function CommandPalette
+ * @description Renders the sovereign Command K palette and executes selected Wilsy OS commands.
+ * @collaboration Global Command K, Founder Dashboard, visible command registry, and Knowledge Base Vault launch.
+ */
 const CommandPalette = ({
   isOpen,
   onClose,
@@ -334,13 +354,33 @@ const CommandPalette = ({
     }, icon: <Activity size={18}/>, description: 'Institutional Growth Rate Strike', type: 'metric', contextKey: 'REVENUE_LEDGER' },
   ], [metrics, currentTenantId, tenantName]);
 
-  const complianceCommands = useMemo(() => [{
-    id: 'compliance-report', label: `Compliance: ${complianceMetrics.regulatoryCheck || 'Pending'}`,
-    handler: async () => {
-      const pdfBuffer = await SovereignPdfService.generateInstitutionalPDF('compliance', { audit: complianceMetrics }, currentTenantId);
-      downloadPDF(pdfBuffer, `WilsyOS-${tenantName}-Compliance.pdf`);
-    }, icon: <ShieldCheck size={18}/>, description: 'Live Audit Validation Strike', type: 'compliance_metric', contextKey: 'COMPLIANCE_HUD'
-  }], [complianceMetrics, currentTenantId, tenantName]);
+  const complianceCommands = useMemo(() => [
+    {
+      id: 'compliance-report',
+      label: `Compliance: ${complianceMetrics.regulatoryCheck || 'Pending'}`,
+      handler: async () => {
+        const pdfBuffer = await SovereignPdfService.generateInstitutionalPDF('compliance', { audit: complianceMetrics }, currentTenantId);
+        downloadPDF(pdfBuffer, `WilsyOS-${tenantName}-Compliance.pdf`);
+      },
+      icon: <ShieldCheck size={18}/>,
+      description: 'Live Audit Validation Strike',
+      type: 'compliance_metric',
+      contextKey: 'COMPLIANCE_HUD'
+    },
+    {
+      id: 'KNOWLEDGE_BASE_VAULT',
+      label: 'Global Knowledge Vault',
+      description: 'Open verified saved knowledge artifacts, proof records and playbooks.',
+      route: '/knowledge-base/vault',
+      type: 'navigation',
+      handler: () => {
+        window.history.pushState({}, '', '/knowledge-base/vault');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      },
+      icon: <FileText size={18}/>,
+      contextKey: 'KNOWLEDGE_BASE_VAULT'
+    }
+  ], [complianceMetrics, currentTenantId, tenantName]);
 
   const forensicsCommands = useMemo(() => [{
     id: 'forensics-report', label: `Forensics: ${forensicsMetrics.custody || 'No entries'}`,
@@ -670,6 +710,11 @@ const CommandPalette = ({
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ */
+/**
+ * @function handleGlobalKeys
+ * @description Handles global keyboard shortcuts for opening and closing the Command K surface.
+ * @collaboration Command K keyboard loop, modal focus state, and operating-system navigation.
  */
 const handleGlobalKeys = (e) => {
       if (!isOpen) return;

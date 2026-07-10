@@ -132,6 +132,11 @@ const FOUNDER_OPERATING_PRESETS = {
  * @param {string} value - Raw name, email handle or persisted preference.
  * @returns {string} Normalized display name.
  */
+/**
+ * @function normalizeFounderDisplayName
+ * @description Normalizes Founder identity text for boardroom-safe display.
+ * @collaboration Founder profile, account shell, investor presentation, and sovereign identity surfaces.
+ */
 const normalizeFounderDisplayName = (value = '') => {
   const raw = value.toString().trim();
   if (!raw) return 'Wilson Khanyezi';
@@ -151,6 +156,11 @@ const normalizeFounderDisplayName = (value = '') => {
  *
  * @param {Object} user - Authenticated user object.
  * @returns {string} Founder display name.
+ */
+/**
+ * @function resolveFounderDisplayName
+ * @description Resolves the best Founder display name from authenticated user state and persisted preferences.
+ * @collaboration Authentication context, Founder profile preferences, and investor-grade dashboard identity.
  */
 const resolveFounderDisplayName = (user) => normalizeFounderDisplayName(
   user?.name || user?.fullName || user?.displayName || user?.email || 'Wilson Khanyezi'
@@ -210,6 +220,11 @@ const exportCSV = (data, filename) => {
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ */
+/**
+ * @function exportPDF
+ * @description Exports the active Founder surface into a PDF artifact for executive review.
+ * @collaboration Founder command center, institutional reporting, and investor-ready evidence packages.
  */
 const exportPDF = async (elementRef, filename) => {
   if (!elementRef?.current) {
@@ -435,6 +450,11 @@ const MODULE_OPERATING_MAP = {
  *   const token = getActiveToken();
  *   if (!token) redirectToLogin();
  */
+/**
+ * @function getActiveToken
+ * @description Retrieves the active browser authentication token without mutating login state.
+ * @collaboration Omega Strike execution, API client security, and no-bypass authentication posture.
+ */
 const getActiveToken = () => {
   const token = localStorage.getItem('wilsy_auth_token') ||
                 localStorage.getItem('sovereignToken') ||
@@ -459,6 +479,11 @@ const getActiveToken = () => {
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ */
+/**
+ * @function useDynamicNarrative
+ * @description Builds the live Founder narrative used by the sovereign command cockpit.
+ * @collaboration Founder dashboard, telemetry context, investor proof surfaces, and operating-mode messaging.
  */
 const useDynamicNarrative = () => {
   const [narrativeIndex, setNarrativeIndex] = useState(0);
@@ -491,6 +516,11 @@ const useDynamicNarrative = () => {
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ */
+/**
+ * @function getModuleIcon
+ * @description Returns the visual icon component for a Founder module command.
+ * @collaboration Command palette, module launcher, Founder cockpit navigation, and visual operating grammar.
  */
 const getModuleIcon = (key) => {
   if (iconManifest && iconManifest[key]) {
@@ -546,10 +576,11 @@ const getModuleIcon = (key) => {
  */
 
 /**
+ /**
+/**
  * @function FounderDashboard
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @description Renders the Founder Command Center and its sovereign Command K operating surface.
+ * @collaboration Founder OS, Command Palette, module routing, tenant context, telemetry, and Knowledge Base Vault launch.
  */
 const FounderDashboard = ({ onSwitchDashboard }) => {
   // --------------------------------------------------------------------------
@@ -933,6 +964,11 @@ const FounderDashboard = ({ onSwitchDashboard }) => {
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
  */
+/**
+ * @function fetchBilling
+ * @description Fetches live billing metrics for the active tenant without fabricating fallback values.
+ * @collaboration Billing HUD, Founder Matrix, live revenue posture, and source-visible operating status.
+ */
 const fetchBilling = async () => {
       try {
         const token = getActiveToken();
@@ -970,6 +1006,11 @@ const fetchBilling = async () => {
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ */
+/**
+ * @function handleKeyDown
+ * @description Handles global Founder keyboard shortcuts including Command K palette toggling and Escape closure.
+ * @collaboration Founder Command Palette, keyboard productivity loop, and sovereign workspace navigation.
  */
 const handleKeyDown = (e) => {
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
@@ -1156,7 +1197,30 @@ const handleKeyDown = (e) => {
     { id: 'MODULE_AI_ETHICS_DASHBOARD', label: 'AI Ethics', icon: <Brain size={16} />, handler: () => setActiveModule('AI_ETHICS_DASHBOARD') },
     { id: 'MODULE_QUANTUM_COMPUTING_DASHBOARD', label: 'Quantum Computing', icon: <CpuIcon size={16} />, handler: () => setActiveModule('QUANTUM_COMPUTING_DASHBOARD') },
     { id: 'MODULE_LONGEVITY_SCIENCES_DASHBOARD', label: 'Longevity Sciences', icon: <Dna size={16} />, handler: () => setActiveModule('LONGEVITY_SCIENCES_DASHBOARD') },
-  ], []);
+      {
+        id: 'MODULE_KNOWLEDGE_BASE_VAULT',
+        label: 'Global Knowledge Vault',
+        icon: <FileCheck2 size={16} />,
+        handler: () => {
+          const requestPacket = {
+            dashboardKey: 'KNOWLEDGE_BASE_VAULT',
+            moduleKey: 'KNOWLEDGE_BASE_VAULT',
+            route: '/knowledge-base/vault',
+            source: 'FounderDashboard.CommandPalette',
+            requestedAt: new Date().toISOString()
+          };
+
+          window.localStorage.setItem('wilsy_last_dashboard', 'KNOWLEDGE_BASE_VAULT');
+          window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify(requestPacket));
+          window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', { detail: requestPacket }));
+          window.dispatchEvent(new CustomEvent('wilsy:switch-dashboard', { detail: requestPacket }));
+          window.history.pushState({}, '', '/knowledge-base/vault');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+          setIsCommandPaletteOpen(false);
+        },
+        description: 'Verified saved knowledge artifacts, proof records and playbooks'
+      },
+], []);
 
   const actionCommands = useMemo(() => [
     { id: 'ACTION_STMT_REVENUE', label: 'Mathematics: Revenue Artifact', icon: <FileText size={16} />, handler: () => executeOmegaStrike('STMT_REVENUE', '/statements/revenue'), description: 'PDF download' },
@@ -1916,6 +1980,11 @@ const handleKeyDown = (e) => {
     }
   };
 
+  /**
+   * @function getHealthColor
+   * @description Resolves the Founder system-health color used by the sovereign cockpit.
+   * @collaboration Founder health telemetry, visual command state, and operating-status presentation.
+   */
   const getHealthColor = () => {
     if (systemHealth.includes('FRACTURE')) return '#ff3333';
     if (systemHealth.includes('HYDRATING')) return '#D4AF37';

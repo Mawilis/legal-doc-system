@@ -53,6 +53,7 @@ export const EXECUTIVE_FUNCTION_ROUTES = Object.freeze({
   donor_management: { route: '/donors', command: 'EXEC_OPEN_DONORS', channel: 'Finance' },
   reports: { route: '/reports', command: 'EXEC_OPEN_REPORTS', channel: 'Executive' },
   documents: { route: '/documents', command: 'EXEC_OPEN_DOCUMENTS', channel: 'Administration' },
+  knowledge_base_vault: { route: '/knowledge-base/vault', command: 'EXEC_OPEN_KNOWLEDGE_BASE_VAULT', channel: 'Knowledge Base' },
   subscriptions: { route: '/billing/subscriptions', command: 'EXEC_OPEN_SUBSCRIPTIONS', channel: 'Finance' },
   security: { route: '/security', command: 'EXEC_OPEN_SECURITY', channel: 'Risk' },
   product: { route: '/product', command: 'EXEC_OPEN_PRODUCT', channel: 'Delivery' },
@@ -347,3 +348,4 @@ export default {
   buildTenantBrandingConfig,
   buildExecutiveSourceRepairQueue
 };
+

@@ -20,6 +20,40 @@ import {
   X
 } from 'lucide-react';
 
+/**
+ * @function openWilsyGlobalCommandRoute
+ * @description Opens a route-backed global Command K result through Wilsy OS dashboard events and browser history.
+ * @param {Object} command Selected global command result.
+ * @returns {boolean} True when a route was opened.
+ * @collaboration Visible Command K, Knowledge Base Vault, dashboard route switching, click execution, and Enter execution.
+ */
+function openWilsyGlobalCommandRoute(command = {}) {
+  const route = command?.route || command?.path || command?.href || command?.to;
+
+  if (!route) {
+    return false;
+  }
+
+  const dashboardKey = command.dashboardKey || command.contextKey || command.id || 'GLOBAL_COMMAND_ROUTE';
+  const requestPacket = {
+    dashboardKey,
+    moduleKey: dashboardKey,
+    command: command.command || command.id || 'OPEN_GLOBAL_COMMAND_ROUTE',
+    route,
+    source: 'WilsyGlobalCommandSearch.CommandK',
+    requestedAt: new Date().toISOString()
+  };
+
+  window.localStorage.setItem('wilsy_last_dashboard', dashboardKey);
+  window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify(requestPacket));
+  window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', { detail: requestPacket }));
+  window.dispatchEvent(new CustomEvent('wilsy:switch-dashboard', { detail: requestPacket }));
+  window.history.pushState({}, '', route);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+
+  return true;
+}
+
 const WILSY_SEARCH_REGISTRY = Object.freeze([
   { id: 'founder', label: 'Founder Dashboard', type: 'Dashboard', dashboardKey: 'FOUNDER_DASHBOARD', route: '/founder', keywords: 'founder root omega sovereign admin command center', icon: Crown },
   { id: 'executive', label: 'Executive Dashboard', type: 'Dashboard', dashboardKey: 'EXECUTIVE_DASHBOARD', route: '/executive', keywords: 'ceo executive boardroom arr kpi decision command', icon: LayoutDashboard },
@@ -31,6 +65,7 @@ const WILSY_SEARCH_REGISTRY = Object.freeze([
   { id: 'revenue-ledger', label: 'Revenue Ledger', type: 'Forensic Ledger', route: '/revenue-ledger', keywords: 'ledger revenue proof invoice evidence fiscal trail', icon: FileText },
   { id: 'documents', label: 'Document Vault', type: 'Document System', route: '/documents', keywords: 'documents vault versions audit verify share watermark lock', icon: FolderOpen },
   { id: 'artifacts', label: 'Artifact Studio', type: 'Artifact System', route: '/artifacts', keywords: 'artifact board pack nda agreement evidence pack invoice pdf docx json', icon: FileText },
+  { id: 'knowledge-base-vault', label: 'Global Knowledge Vault', type: 'Knowledge Base', dashboardKey: 'KNOWLEDGE_BASE_VAULT', command: 'OPEN_KNOWLEDGE_BASE_VAULT', route: '/knowledge-base/vault', keywords: 'knowledge vault global vault playbook proof saved pdf document artifact evidence library', icon: FileText },
   { id: 'legal', label: 'Legal and Compliance', type: 'Legal System', route: '/legal', keywords: 'legal compliance popia forensic evidence risk contracts', icon: ShieldCheck },
   { id: 'client-portal', label: 'Client Portal', type: 'Client System', route: '/client-portal', keywords: 'client portal messages matters invoices documents activity', icon: Building2 },
   { id: 'settings', label: 'Account Settings', type: 'Command', command: 'OPEN_ACCOUNT_SETTINGS', route: '/account', keywords: 'settings account theme security compliance profile mfa sessions', icon: Terminal },
@@ -336,7 +371,7 @@ Object} row - Selected search row.
                 key={row.id}
                 type="button"
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => handleResultActivation(row)}
+                onClick={() => openWilsyGlobalCommandRoute(row) || handleResultActivation(row)}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '40px minmax(0, 1fr) max-content',
@@ -407,7 +442,7 @@ Object} row - Selected search row.
                 fontFamily: 'JetBrains Mono, IBM Plex Mono, ui-monospace, monospace'
               }}
             >
-              No Wilsy OS result found. Try HR, client, invoice, document, artifact, billing, compliance or settings.
+              No Wilsy OS result found. Try knowledge, vault, client, invoice, document, artifact, billing, compliance or settings.
             </article>
           )}
         </div>
