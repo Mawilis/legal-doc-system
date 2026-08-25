@@ -22,6 +22,8 @@ const VERIFIED_POSTURES = new Set([
   'LOCKED',
   'VERIFIED',
   'LOCKED_AFTER_VISUAL_PROOF_AND_MANIFEST_PROOF_CONTRACT',
+  'JSON_VERIFIED',
+  'COMPLETE_SET_VERIFIED',
 ]);
 
 /**
@@ -177,6 +179,8 @@ function createVaultRoutes(id = '') {
   return {
     pdfOpenUrl: `/api/knowledge-base/vault/${encodedId}/pdf`,
     pdfDownloadUrl: `/api/knowledge-base/vault/${encodedId}/pdf?download=true`,
+    jsonUrl: `/api/knowledge-base/vault/${encodedId}/json`,
+    jsonDownloadUrl: `/api/knowledge-base/vault/${encodedId}/json?download=true`,
     proofUrl: `/api/knowledge-base/vault/${encodedId}/proof`,
   };
 }
@@ -195,15 +199,20 @@ async function normalizeVaultEntry(entry = {}, permission = {}) {
 
   const pdfPath = textValue(entry.pdfPath);
   const proofPath = textValue(entry.proofPath);
+  const jsonPath = textValue(entry.jsonPath);
   const publicPdfPath = textValue(entry.publicPdfPath);
+  const publicJsonPath = textValue(entry.publicJsonPath);
 
   const pdfFile = safeRepoFile(pdfPath);
   const proofFile = safeRepoFile(proofPath);
+  const jsonFile = jsonPath ? safeRepoFile(jsonPath) : '';
   const pdfPresent = fileExists(pdfFile);
   const proofPresent = fileExists(proofFile);
+  const jsonPresent = jsonPath ? fileExists(jsonFile) : false;
 
   let proof = {};
   let computedPdfSha3 = '';
+  let computedJsonSha3 = '';
   let proofMatches = false;
 
   if (proofPresent) {
@@ -214,7 +223,12 @@ async function normalizeVaultEntry(entry = {}, permission = {}) {
     computedPdfSha3 = await digestPdfSha3(pdfFile);
   }
 
+  if (jsonPresent) {
+    computedJsonSha3 = await digestPdfSha3(jsonFile);
+  }
+
   const declaredPdfSha3 = textValue(proof.pdfSha3 || entry.pdfSha3);
+  const declaredJsonSha3 = textValue(proof.jsonSha3 || entry.jsonSha3);
   proofMatches = Boolean(declaredPdfSha3 && computedPdfSha3 && declaredPdfSha3 === computedPdfSha3);
 
   const approved = isApprovedVaultEntry(entry, proof, proofMatches);
@@ -247,12 +261,22 @@ async function normalizeVaultEntry(entry = {}, permission = {}) {
     ),
     pdfPath,
     proofPath,
+    jsonPath,
     publicPdfPath,
+    publicJsonPath,
     pdfSha3: declaredPdfSha3,
+    jsonSha3: declaredJsonSha3,
     computedPdfSha3,
+    computedJsonSha3,
     proofStatus: proofMatches ? 'SHA3_PROOF_MATCH' : 'SHA3_PROOF_REVIEW_REQUIRED',
     pdfPresent,
     proofPresent,
+    jsonPresent,
+    jsonStatus: jsonPresent && declaredJsonSha3 && declaredJsonSha3 === computedJsonSha3
+      ? 'JSON_SHA3_PROOF_MATCH'
+      : jsonPresent
+        ? 'JSON_AVAILABLE'
+        : 'JSON_NOT_DECLARED',
     requiredPdfTextCount: Number(proof.requiredPdfTextCount || proof.requiredPdfText?.length || 0),
     forbiddenPdfTextCount: Number(
       proof.forbiddenPdfTextCount || proof.forbiddenPdfText?.length || 0
@@ -273,6 +297,7 @@ async function normalizeVaultEntry(entry = {}, permission = {}) {
       open: pdfPresent,
       print: pdfPresent,
       download: pdfPresent,
+      json: jsonPresent,
       proof: proofPresent,
     },
     routes: createVaultRoutes(id),
@@ -369,5 +394,37 @@ export async function resolveKnowledgeBaseVaultPdfFile(id = '', user = {}) {
     entry,
     absolutePath: pdfFile,
     filename: `${entry.id}.pdf`,
+  };
+}
+
+/**
+ * @function resolveKnowledgeBaseVaultJsonFile
+ * @description Resolves one saved machine-readable Knowledge Base JSON companion without regenerating artifacts.
+ * @param {string} id Artifact id.
+ * @param {object} user Authenticated user or admin context.
+ * @returns {Promise<object>} Saved JSON file payload.
+ * @collaboration Knowledge Base Vault JSON action, manifest jsonPath, proof sidecar JSON SHA3, and future AI retrieval.
+ */
+export async function resolveKnowledgeBaseVaultJsonFile(id = '', user = {}) {
+  const entry = await resolveKnowledgeBaseVaultEntryById(id, user);
+
+  if (!entry.jsonPath) {
+    const error = new Error('KNOWLEDGE_BASE_JSON_NOT_FOUND');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const jsonFile = safeRepoFile(entry.jsonPath);
+
+  if (!fileExists(jsonFile)) {
+    const error = new Error('KNOWLEDGE_BASE_JSON_NOT_FOUND');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return {
+    entry,
+    absolutePath: jsonFile,
+    filename: `${entry.id}.json`,
   };
 }

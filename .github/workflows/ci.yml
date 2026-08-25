@@ -1,20 +1,21 @@
 # ============================================================================
 # WILSY OS 2050 - UNIFIED PRODUCTION CI/CD INFRASTRUCTURE
 # 41/41 TESTS | HARDENED REFUGE GATEWAY | INVESTOR-GRADE
+# Now with Frontend Sovereign Tests (BusinessContext & Cross‑Dashboard)
 # ============================================================================
 
 name: 🏛️ WILSY OS 2050 Unified Pipeline
 
 on:
   push:
-    branches: [ main, master, develop, production ]
-    tags: [ 'v*' ]
+    branches: [main, master, develop, production]
+    tags: ["v*"]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '20.x'
+  NODE_VERSION: "20.x"
   NODE_ENV: test
 
 permissions:
@@ -53,17 +54,18 @@ jobs:
     services:
       redis:
         image: redis:7-alpine
-        ports: [ "6379:6379" ]
+        ports: ["6379:6379"]
     strategy:
       fail-fast: false
       matrix:
-        test-group: [
-          "security.secrets.test.mjs",
-          "tenants.enhanced-complete.test.js",
-          "end-to-end.tampering.test.js",
-          "enterprise-cache.test.js",
-          "super-admin-auth.test.js"
-        ]
+        test-group:
+          [
+            "security.secrets.test.mjs",
+            "tenants.enhanced-complete.test.js",
+            "end-to-end.tampering.test.js",
+            "enterprise-cache.test.js",
+            "super-admin-auth.test.js",
+          ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -71,13 +73,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
         run: npm install || npm install --legacy-peer-deps
-        
+
       - name: Create local environment fallback matrices
         run: |
           echo "NODE_ENV=test" > .env
           echo "TEST_MONGODB_URI=${{ secrets.TEST_MONGODB_URI }}" >> .env
           cp .env .env.test
-          
+
       - name: Run ${{ matrix.test-group }}
         env:
           NODE_OPTIONS: --experimental-vm-modules
@@ -103,3 +105,53 @@ jobs:
         with:
           name: test-results-${{ matrix.test-group }}
           path: server/test-results/
+
+  # ─── NEW: Frontend Sovereign Tests ──────────────────────────────────────
+  frontend-tests:
+    name: 🖥️ Frontend BusinessContext & Cross-Dashboard Tests
+    runs-on: ubuntu-latest
+    needs: [security-scan] # optional, can run in parallel
+    defaults:
+      run:
+        working-directory: ./client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install client dependencies
+        run: npm install || npm install --legacy-peer-deps
+      - name: Run Vitest tests
+        run: npm test -- --run
+        env:
+          NODE_ENV: test
+          VITE_API_URL: http://localhost:9095 # optional, for real calls
+          VITE_EOS_KERNEL_URL: http://localhost:9095/kernel
+      - name: Upload frontend test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results
+          path: client/test-results/ # adjust if you configure Vitest to output junit
+
+  # ─── (Optional) Integration Tests that require both backend & frontend ──
+  # For now, crossFlow is already covered by frontend-tests, so we skip this.
+  # If you later add E2E tests with Playwright/Cypress, add a job here.
+
+  # Final gate: ensure all tests passed
+  final-verification:
+    name: ✅ All Tests Passed
+    runs-on: ubuntu-latest
+    needs: [test-suite, frontend-tests]
+    if: always()
+    steps:
+      - name: Check test suite status
+        run: |
+          echo "All backend and frontend tests have completed."
+          # Optionally fail if any job failed
+          if [ "${{ needs.test-suite.result }}" != "success" ] || [ "${{ needs.frontend-tests.result }}" != "success" ]; then
+            echo "❌ Some tests failed!"
+            exit 1
+          else
+            echo "✅ All tests passed!"
+          fi

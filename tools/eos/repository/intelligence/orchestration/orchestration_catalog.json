@@ -1,0 +1,90 @@
+{
+  "total_workflows": 1,
+  "workflows": {
+    "WF-NERVOUS-SYSTEM-PIPELINE": {
+      "workflow_id": "WF-NERVOUS-SYSTEM-PIPELINE",
+      "name": "Enterprise Nervous System Synchronization Pipeline",
+      "purpose": "Orchestrates full-cycle capability invocation, event propagation, governance validation, and executive control dispatch.",
+      "steps": [
+        {
+          "step_id": "STEP-101",
+          "capability_id": "CAP-REPOSITORY-SCAN",
+          "description": "Scan repository assets, update AST structural models, and emit REPOSITORY_CHANGED.",
+          "timeout_ms": 5000,
+          "retry_limit": 3,
+          "required_for_success": true
+        },
+        {
+          "step_id": "STEP-102",
+          "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+          "description": "Synchronize semantic knowledge nodes and build cross-module semantic edges.",
+          "timeout_ms": 3000,
+          "retry_limit": 3,
+          "required_for_success": true
+        },
+        {
+          "step_id": "STEP-103",
+          "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
+          "description": "Evaluate blast radius and compute architectural complexity vector risk scores.",
+          "timeout_ms": 4000,
+          "retry_limit": 2,
+          "required_for_success": true
+        },
+        {
+          "step_id": "STEP-104",
+          "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+          "description": "Enforce cryptographic policies and generate compliance ledger attestations.",
+          "timeout_ms": 2000,
+          "retry_limit": 1,
+          "required_for_success": true
+        },
+        {
+          "step_id": "STEP-105",
+          "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
+          "description": "Dispatch real-time updates to Executive Control Interface and update Digital Twin.",
+          "timeout_ms": 2000,
+          "retry_limit": 3,
+          "required_for_success": true
+        }
+      ],
+      "status": "COMPLETED"
+    }
+  },
+  "last_execution_trace": {
+    "workflow_id": "WF-NERVOUS-SYSTEM-PIPELINE",
+    "final_status": "COMPLETED",
+    "total_steps_executed": 5,
+    "trace": [
+      {
+        "step_id": "STEP-101",
+        "capability_id": "CAP-REPOSITORY-SCAN",
+        "status": "SUCCESS",
+        "latency_ms": 1.2
+      },
+      {
+        "step_id": "STEP-102",
+        "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+        "status": "SUCCESS",
+        "latency_ms": 1.2
+      },
+      {
+        "step_id": "STEP-103",
+        "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
+        "status": "SUCCESS",
+        "latency_ms": 1.2
+      },
+      {
+        "step_id": "STEP-104",
+        "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+        "status": "SUCCESS",
+        "latency_ms": 1.2
+      },
+      {
+        "step_id": "STEP-105",
+        "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
+        "status": "SUCCESS",
+        "latency_ms": 1.2
+      }
+    ]
+  }
+}

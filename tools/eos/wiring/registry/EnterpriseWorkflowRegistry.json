@@ -1,0 +1,20 @@
+{
+  "total_executions": 1,
+  "execution_log": [
+    {
+      "action": "APPROVE_CONTRACT",
+      "payload": {
+        "contract_id": "CTR-BILLION-001"
+      },
+      "handlers_executed": 1,
+      "results": [
+        {
+          "status": "SUCCESS",
+          "result": "Contract CTR-BILLION-001 approved across CRM & Legal."
+        }
+      ],
+      "executed_at": "2026-07-26T21:45:50.637695+00:00"
+    }
+  ],
+  "exported_at": "2026-07-26T21:45:50.637730+00:00"
+}

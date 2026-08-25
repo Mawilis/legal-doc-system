@@ -14,7 +14,7 @@
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Briefcase,
   Plus,
@@ -22,11 +22,12 @@ import {
   Search,
   UserCog
 } from 'lucide-react';
+import { useAuth } from '../../contexts/authContext';
+import { useTenants } from '../../contexts/tenantContext';
 import {
-  buildWilsyDashboardOperatorIdentity,
-  buildWilsyDashboardTenantIdentity,
   compactWilsyDashboardSignal,
-  normalizeWilsyDashboardText
+  normalizeWilsyDashboardText,
+  resolveWilsyChromeIdentitySources
 } from './wilsyDashboardChromeConfig';
 import './WilsyOSDashboardChrome.module.css';
 
@@ -76,16 +77,26 @@ const buildWilsyTopRailPayload = ({
   posture = 'SOURCE_REQUIRED',
   tenant = {},
   operator = {},
+  authUser = {},
+  activeTenant = {},
   storyMessages = [],
   search = {},
   account = {},
   actions = {}
 } = {}) => {
-  const tenantIdentity = buildWilsyDashboardTenantIdentity(tenant);
+  const identity = resolveWilsyChromeIdentitySources({
+    tenant,
+    operator,
+    authUser,
+    activeTenant,
+    dashboard: { role: operator.role || 'OPERATOR', posture },
+    storyMessages
+  });
+  const tenantIdentity = identity.tenant;
   tenantIdentity.logo = !tenantIdentity.logo || String(tenantIdentity.logo).startsWith('/src/assets/')
     ? WILSY_OS_DEFAULT_MARK
     : tenantIdentity.logo;
-  const operatorIdentity = buildWilsyDashboardOperatorIdentity(operator, operator.role || 'OPERATOR');
+  const operatorIdentity = identity.operator;
   const normalizedStory = normalizeWilsyTopRailStory(storyMessages, {
     tenant: tenantIdentity,
     operator: operatorIdentity,
@@ -143,13 +154,40 @@ const WilsyOSDashboardTopRail = ({
   className = '',
   style = {}
 }) => {
+  const { user: authUser, tenant: authTenant } = useAuth();
+  const { activeTenant: activeTenantCode, tenants = [] } = useTenants();
+
+  const activeTenantContext = useMemo(() => {
+    if (authTenant && typeof authTenant === 'object' && Object.keys(authTenant).length) {
+      return authTenant;
+    }
+
+    if (tenant && typeof tenant === 'object' && Object.keys(tenant).length) {
+      return tenant;
+    }
+
+    if (typeof activeTenantCode === 'object' && activeTenantCode) {
+      return activeTenantCode;
+    }
+
+    const resolvedTenant = tenants.find(candidate =>
+      candidate?.code?.toLowerCase() === String(activeTenantCode || '').toLowerCase() ||
+      candidate?.id?.toLowerCase() === String(activeTenantCode || '').toLowerCase() ||
+      candidate?.tenantId?.toLowerCase() === String(activeTenantCode || '').toLowerCase()
+    );
+
+    return resolvedTenant || {};
+  }, [activeTenantCode, authTenant, tenant, tenants]);
+
   const payload = buildWilsyTopRailPayload({
     commandLabel,
     title,
     dashboardKey,
     posture,
-    tenant,
+    tenant: tenant && typeof tenant === 'object' && Object.keys(tenant).length ? tenant : authTenant || {},
     operator,
+    authUser,
+    activeTenant: activeTenantContext,
     storyMessages,
     search,
     account,
@@ -202,6 +240,7 @@ const WilsyOSDashboardTopRail = ({
           <div>
             <strong>{payload.operator.displayName}</strong>
             <small>{payload.operator.roleLabel}</small>
+            {payload.operator.email ? <small>{payload.operator.email}</small> : null}
           </div>
         </div>
 
@@ -215,28 +254,28 @@ const WilsyOSDashboardTopRail = ({
           />
         </label>
 
-                {accountTrigger || (
-<button
-          type="button"
-          className="wilsyOsChromeSecondaryButton"
-          data-wilsy-command-center-trigger="true"
-          onMouseDown={event => {
-            event.preventDefault();
+        {accountTrigger || (
+          <button
+            type="button"
+            className="wilsyOsChromeSecondaryButton"
+            data-wilsy-command-center-trigger="true"
+            onMouseDown={event => {
+              event.preventDefault();
 
-            if (typeof payload.account.onOpen === 'function') {
-              payload.account.onOpen(event);
-            }
-          }}
-          onClick={event => {
-            event.preventDefault();
-            if (typeof payload.account.onOpen === 'function') {
-              payload.account.onOpen(event);
-            }
-          }}
-          title="Open Wilsy Account Command Center"
-        >
-          <UserCog size={13} /> {payload.account.label}
-        </button>
+              if (typeof payload.account.onOpen === 'function') {
+                payload.account.onOpen(event);
+              }
+            }}
+            onClick={event => {
+              event.preventDefault();
+              if (typeof payload.account.onOpen === 'function') {
+                payload.account.onOpen(event);
+              }
+            }}
+            title="Open Wilsy Account Command Center"
+          >
+            <UserCog size={13} /> {payload.account.label}
+          </button>
         )}
 
         <button

@@ -1,20 +1,32 @@
-#!/* eslint-disable */
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
-  ║ WILSY OS: SUPER ADMIN GUARD - ONLY WILSON CAN PASS                                    ║
-  ║ Protects the War Room and other sensitive endpoints                                    ║
-  ║ Multi-factor authentication required for $5B+ infrastructure access                   ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
-
+/* eslint-disable */
 /**
- * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/superAdminGuard.js
- * VERSION: 1.0.0-GUARD
- * CREATED: 2026-02-26
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Wilsy OS — Sovereign Super Admin Guard
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * File:           server/middleware/superAdminGuard.js
+ * Version:        v1.0.1-SOVEREIGN-INSTITUTIONAL-FIX
+ * Authority:      Wilsy OS Core Governance
+ * Epitome:        Protects the War Room and executive endpoints. Ensures only Founder-level identity (Wilson Khanyezi) can gain supreme access using multi-factor authentication.
+ * Classification: Production Artifact
  *
- * PURPOSE: Ensures only Wilson Khanyezi can access the War Room
- * METHOD: Multi-factor verification (JWT + Email + Device fingerprint)
+ * Contributors:
+ *   - Wilson Khanyezi (CEO/Lead Architect) — Mandated multi-factor authentication for $5B+ infrastructure access.
+ *   - AI Engineering — Rectified: Corrected the import path for jsonwebtoken to resolve `ERR_MODULE_NOT_FOUND`.
+ *
+ * Change Log:
+ *   2026-07-30 v1.0.1-SOVEREIGN-INSTITUTIONAL-FIX — Fixed import syntax: replaced `jsonwebtoken.js` with `jsonwebtoken`.
+ *   2026-02-26 v1.0.0-GUARD — Baseline creation.
+ *
+ * Forensic Relationships:
+ *   Upstream:   jsonwebtoken, crypto, ../utils/redisClient.js, ../utils/logger.js
+ *   Downstream: ../routes/superAdminRoutes.js
+ *   Shared Crypto / Events / Config: JWT_SECRET, superadmin:session Redis keys, Hardcoded Wilson Email/IDs.
+ *
+ * Certification Seal: PRODUCTION_READY_v1.0.1-SOVEREIGN
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import jwt from 'jsonwebtoken.js';
+import jwt from 'jsonwebtoken'; // 🛡️ RECTIFIED: Removed erroneous `.js` extension to resolve package.
 import crypto from 'crypto';
 import { redisClient } from '../utils/redisClient.js';
 import loggerRaw from '../utils/logger.js';

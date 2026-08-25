@@ -1,0 +1,73 @@
+{
+  "total_links": 5,
+  "links": {
+    "CAP-REPOSITORY-SCAN": {
+      "capability_id": "CAP-REPOSITORY-SCAN",
+      "domain": "CORE_PLATFORM",
+      "doc_references": [
+        "docs/architecture/repository_scanner.md",
+        "docs/ast/python_parser_spec.md"
+      ],
+      "semantic_tags": [
+        "ast",
+        "parser",
+        "inspection",
+        "repository"
+      ],
+      "author": "Wilson Khanyezi"
+    },
+    "CAP-KNOWLEDGE-SYNCHRONIZATION": {
+      "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "domain": "DATA_INTELLIGENCE",
+      "doc_references": [
+        "docs/knowledge_graph/semantic_indexing.md"
+      ],
+      "semantic_tags": [
+        "knowledge-graph",
+        "ontology",
+        "taxonomy"
+      ],
+      "author": "Wilson Khanyezi"
+    },
+    "CAP-PREDICTION-RISK-ASSESSMENT": {
+      "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
+      "domain": "DATA_INTELLIGENCE",
+      "doc_references": [
+        "docs/prediction/blast_radius_analysis.md"
+      ],
+      "semantic_tags": [
+        "predictive-risk",
+        "blast-radius",
+        "drift-detection"
+      ],
+      "author": "Wilson Khanyezi"
+    },
+    "CAP-GOVERNANCE-COMPLIANCE": {
+      "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+      "domain": "GOVERNANCE_COMPLIANCE",
+      "doc_references": [
+        "docs/security/zero_trust_governance.md"
+      ],
+      "semantic_tags": [
+        "governance",
+        "compliance",
+        "policy",
+        "attestation"
+      ],
+      "author": "Wilson Khanyezi"
+    },
+    "CAP-CONTROL-ROOM-DISPATCH": {
+      "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
+      "domain": "RUNTIME_OPERATIONS",
+      "doc_references": [
+        "docs/telemetry/control_room_specs.md"
+      ],
+      "semantic_tags": [
+        "telemetry",
+        "control-room",
+        "executive-dispatch"
+      ],
+      "author": "Wilson Khanyezi"
+    }
+  }
+}

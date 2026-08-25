@@ -1,0 +1,53 @@
+client/src/services/itService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/billing/BillingHUD.jsx:  const amount = parseBillingMoneyInput(value);
+client/src/components/billing/BillingHUD.jsx:    const amount = parseBillingMoneyInput(manualInvoice.amount);
+client/src/components/billing/BillingHUD.jsx:  const manualInvoiceAmount = parseBillingMoneyInput(manualInvoice.amount);
+client/src/components/billing/BillingHUD.jsx:    const amount = parseBillingMoneyInput(manualInvoice.amount);
+client/src/components/billing/BillingHUD.jsx:                    onChange={event => setManualInvoice(prev => ({ ...prev, amount: sanitizeBillingMoneyInput(event.target.value) }))}
+client/src/components/billing/BillingHUD.jsx:                    onBlur={() => setManualInvoice(prev => ({ ...prev, amount: formatBillingMoneyInput(prev.amount) }))}
+client/src/services/legalService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/researchService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/hooks/useComplianceMetrics.js:  async call(tenantId, category, event, source, metadata = {}, startTime = null) {
+client/src/hooks/useComplianceMetrics.js:        telemetryBreaker.call(tenantId, 'COMPLIANCE_EVENT', 'SYNC_SUCCESS', 'useComplianceMetrics', data);
+client/src/hooks/useComplianceMetrics.js:        telemetryBreaker.call(tenantId, 'COMPLIANCE_EVENT', 'SYNC_FAILURE', 'useComplianceMetrics', { error: err.message });
+client/src/services/quantumService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/aiEthicsService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/customerSuccessService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/cooService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/financeService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/auth/TenantDiscovery.jsx:          onChange={(e) => setTenantInput(e.target.value)}
+client/src/services/hrService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/spaceService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/account/wilsyAccountThemeTokens.js:  const parsed = resolveThemeRuntimeInput(input);
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:function normalizeContactPhoneInput(value = '') {
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:  const editableValue = normalizeContactPhoneInput(value).trim();
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:    const nextValue = phoneFields.includes(field) ? normalizeContactPhoneInput(value) : value;
+client/src/services/marketingService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      return Object.prototype.hasOwnProperty.call(cursor, segment) ? cursor[segment] : undefined;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    descriptor.set.call(input, Boolean(checked));
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    if (Object.prototype.hasOwnProperty.call(record, alias)) {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    if (Object.prototype.hasOwnProperty.call(record, camelAlias)) {
+client/src/services/longevityService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/crm/CrmSearchOutcomeRuntime.js:function createDeckForInput(input) {
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  function bindInput(input, index) {
+client/src/components/crm/CrmSearchOutcomeRuntime.js:      const deck = createDeckForInput(input);
+client/src/components/crm/CrmSearchOutcomeRuntime.js:      const deck = createDeckForInput(input);
+client/src/components/crm/CrmSearchOutcomeRuntime.js:    getSearchInputs(doc).forEach((input, index) => bindInput(input, index));
+client/src/services/salesService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/dataService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/procurementService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/securityService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/engineeringService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/crmService.js:    const response = await api.put(endpoint, sanitized, {
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    setParticipantInput('');
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    setParticipantInput('');
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    setRelatedInput(''); /* R91K179E24P56E_CLEAR_STALE_RELATED_SEARCH */
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    setRelatedInput('');
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:                  setRelatedInput(candidate.title);
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:                onChange={(event) => setRelatedInput(event.target.value)}
+client/src/services/productService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:      setExternalInput('');
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:                  <textarea value={externalInput} onChange={(event) => setExternalInput(event.target.value)} placeholder="name@company.com, second@company.com" />
+client/src/components/sovereign/DemoIgnitionButton.jsx:        setDemoOutput(result.data);
+client/src/components/sovereign/DemoIgnitionButton.jsx:              onClick={() => setDemoOutput(null)}
+client/src/components/sovereign/TenantDiscovery.jsx:    setTenantInput(val);

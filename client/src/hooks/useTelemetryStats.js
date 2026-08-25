@@ -1,10 +1,11 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FORENSIC STATS INTELLIGENCE HOOK [V1.0.1-OMEGA]                                                                             ║
+ * ║ WILSY OS - FORENSIC STATS INTELLIGENCE HOOK [V1.1.0-KENNEL-BINDING]                                                                    ║
  * ║ [LIVE AGGREGATION STREAM | FRACTURE CONTAINMENT | BEHAVIORAL TRENDS | INVESTOR-READY]                                                  ║
+ * ║ [RECONNECTED TO KENNEL: /api/v1/dashboard]                                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.0.1-OMEGA | PRODUCTION READY | BILLION DOLLAR SPEC                                                                          ║
+ * ║ VERSION: 1.1.0-KENNEL-BINDING | PRODUCTION READY | BILLION DOLLAR SPEC                                                                 ║
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/hooks/useTelemetryStats.js                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -12,6 +13,7 @@
  * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated live aggregated stat tracking for dashboard charting.                                ║
  * ║ • AI Engineering (Gemini) - RECTIFIED: Purged naked fetch. Anchored to Unified api.js bridge for SHA3-512 Seal integrity. [2026-05-06]    ║
  * ║ • AI Engineering (Gemini) - RECTIFIED: Injected Token Sanitizer to prevent 401 Identity Gate fractures. [2026-05-06]                   ║
+ * ║ • Cline (Executor) - RECONNECTED: Changed endpoint to /api/v1/dashboard and mapped response to stat format.                           ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -27,6 +29,7 @@ const getSanitizedToken = () => {
 /**
  * @function useTelemetryStats
  * @description Aggregates behavioral trends via the Unified Sovereign Bridge.
+ * Now fetches from /api/v1/dashboard and maps high-level metrics to a stat array.
  */
 export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterval = 30000) => {
   const [stats, setStats] = useState([]);
@@ -40,7 +43,6 @@ export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterva
     : tenantId;
 
   const fetchStats = useCallback(async () => {
-    if (!resolvedId) return;
     if (Date.now() < cooldownUntilRef.current) return;
     if (stats.length === 0) setIsSyncing(true);
     setError(null);
@@ -48,8 +50,8 @@ export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterva
     try {
       const cleanToken = getSanitizedToken();
 
-      // 🚀 RE-ANCHORED: Using 'api' instance to trigger the SHA3-512 Sealing Interceptor
-      const response = await api.get(`/telemetry/${resolvedId}/stats`, {
+      // 🚀 RE-ANCHORED: Use /api/v1/dashboard to get health and metrics
+      const response = await api.get('/api/v1/dashboard', {
         headers: {
           'Authorization': `Bearer ${cleanToken}`
         }
@@ -58,7 +60,34 @@ export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterva
       const result = response.data;
       const data = result.data || result;
 
-      setStats(Array.isArray(data) ? data : []);
+      // Transform dashboard data into a stats array suitable for charts
+      const statEntry = {
+        _id: {
+          day: new Date().toISOString().split('T')[0],
+          type: 'DASHBOARD_SNAPSHOT'
+        },
+        count: data.active_tenants || 0,
+        health: parseFloat(data.system_health) || 0,
+        securityTier: data.security_tier || 'SOVEREIGN',
+        auditChain: data.kernel_audit_chain || 'SECURED'
+      };
+
+      // Maintain array of stats (we keep last 7 days, but we only have current snapshot)
+      // For simplicity, replace with a single entry or maintain history by storing in ref.
+      // We'll keep a rolling 7-day history based on previous stats.
+      setStats(prev => {
+        const newStats = [statEntry, ...prev];
+        // Keep only unique days (last 7)
+        const uniqueDays = new Map();
+        newStats.forEach(s => {
+          const day = s._id.day;
+          if (!uniqueDays.has(day)) {
+            uniqueDays.set(day, s);
+          }
+        });
+        return Array.from(uniqueDays.values()).slice(0, 7);
+      });
+
       setIsSyncing(false);
     } catch (err) {
       const isCanceled = err.name === 'CanceledError'
@@ -95,7 +124,7 @@ export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterva
       }
       setIsSyncing(false);
     }
-  }, [resolvedId, stats.length]);
+  }, [stats.length]);
 
   useEffect(() => {
     fetchStats();

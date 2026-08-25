@@ -42,7 +42,7 @@ import loggerRaw from '../utils/logger.js';
 import auditLogger from '../utils/auditLogger.js';
 import * as TenantContextImports from '../middleware/tenantContext.js';
 import * as redisClient_ns from '../config/redis.js';
-import { MetricsCollector } from '../monitoring/metrics.js';
+import { metrics } from './metricsCollector.js';
 import { CircuitBreaker } from '../utils/circuitBreaker.js';
 import { DocumentEncryption } from '../security/documentEncryption.js';
 import { DigitalSignatureService } from './digitalSignatureService.js';

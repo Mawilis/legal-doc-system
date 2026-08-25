@@ -2,194 +2,101 @@
   "dashboard": {
     "id": null,
     "uid": "wilsy-sovereign-master",
-    "title": "🏛️ WILSY OS - Sovereign Investor Dashboard",
+    "title": "WILSY OS - Runtime Observability",
+    "description": "Production dashboard backed exclusively by metrics exposed by the live Wilsy API at /metrics. Financial, audit, and compliance claims are intentionally omitted until their corresponding exporters exist.",
     "timezone": "browser",
-    "refresh": "5s",
+    "refresh": "15s",
     "theme": "dark",
     "schemaVersion": 36,
-    "version": 1,
+    "version": 2,
+    "time": { "from": "now-6h", "to": "now" },
     "panels": [
       {
         "type": "stat",
-        "title": "Cold Storage Replay Attempts",
+        "title": "Invoices Created",
+        "description": "Cumulative invoices created by the running Wilsy API process.",
         "id": 1,
-        "gridPos": { "x": 0, "y": 0, "w": 4, "h": 6 },
-        "targets": [
-          {
-            "expr": "wilsy_counter_telemetry_replay_attempts{tenantId=\"GLOBAL_ROOT\"}",
-            "legendFormat": "Attempts"
-          }
-        ],
-        "fieldConfig": { "defaults": { "unit": "short", "color": {"mode": "palette-classic"} } }
-      },
-      {
-        "type": "gauge",
-        "title": "Replay Latency SLA (p95)",
-        "id": 2,
-        "gridPos": { "x": 4, "y": 0, "w": 4, "h": 6 },
-        "targets": [
-          {
-            "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}",
-            "legendFormat": "p95 Latency"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "ms",
-            "min": 0, "max": 1000,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                { "color": "green", "value": 0 },
-                { "color": "orange", "value": 300 },
-                { "color": "red", "value": 500 }
-              ]
-            }
-          }
-        }
-      },
-      {
-        "type": "timeseries",
-        "title": "Singularity Nucleus Load",
-        "id": 3,
-        "gridPos": { "x": 8, "y": 0, "w": 12, "h": 6 },
-        "targets": [
-          { "expr": "wilsy_system_load", "legendFormat": "CPU Load Avg" }
-        ],
-        "fieldConfig": { "defaults": { "color": {"mode": "palette-classic"} } }
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "refId": "A", "expr": "sum(wilsy_invoices_created_total)", "instant": true, "legendFormat": "Invoices" }],
+        "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+        "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" }
       },
       {
         "type": "stat",
-        "title": "Hardware Logic Cores",
+        "title": "Redis Dependency Health",
+        "description": "1 means the Redis health gauge is available; 0 means the dependency is unavailable or degraded.",
+        "id": 2,
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "refId": "A", "expr": "max(wilsy_redis_health_status)", "instant": true, "legendFormat": "Redis" }],
+        "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "mappings": [{ "type": "value", "options": { "0": { "text": "DEGRADED", "color": "red", "index": 0 }, "1": { "text": "HEALTHY", "color": "green", "index": 1 } } }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+        "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "background", "graphMode": "none", "justifyMode": "auto" }
+      },
+      {
+        "type": "stat",
+        "title": "Logical CPU Cores",
+        "description": "Number of CPU cores observed by the Wilsy process exporter.",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "refId": "A", "expr": "count(wilsy_system_cpu_usage)", "instant": true, "legendFormat": "Cores" }],
+        "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+        "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto" }
+      },
+      {
+        "type": "stat",
+        "title": "Process Uptime",
+        "description": "Uptime reported by the Wilsy process exporter.",
         "id": 4,
-        "gridPos": { "x": 20, "y": 0, "w": 4, "h": 6 },
-        "targets": [
-          { "expr": "wilsy_system_cpu_cores", "legendFormat": "Cores" }
-        ],
-        "fieldConfig": { "defaults": { "unit": "none" } }
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "refId": "A", "expr": "wilsy_system_memory_bytes{type=\"uptime\"}", "instant": true, "legendFormat": "Uptime" }],
+        "fieldConfig": { "defaults": { "unit": "s", "decimals": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+        "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" }
       },
       {
         "type": "timeseries",
-        "title": "Telemetry Latency Histograms",
+        "title": "CPU Utilization by Core",
+        "description": "Per-core CPU utilization sampled by the Wilsy runtime exporter.",
         "id": 5,
         "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
-        "targets": [
-          { "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.5\"}", "legendFormat": "p50 (Median)" },
-          { "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}", "legendFormat": "p95" },
-          { "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.99\"}", "legendFormat": "p99 (Spikes)" }
-        ],
-        "fieldConfig": { "defaults": { "unit": "ms" } }
+        "targets": [{ "refId": "A", "expr": "wilsy_system_cpu_usage", "legendFormat": "Core {{core}}" }],
+        "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+        "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }
       },
       {
-        "type": "barchart",
-        "title": "Institutional Revenue Allocations (Live DB)",
+        "type": "timeseries",
+        "title": "Runtime Memory",
+        "description": "Heap and resident memory exposed by the Wilsy runtime exporter.",
         "id": 6,
         "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
-        "targets": [
-          { "expr": "wilsy_revenue_streams{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "{{stream}}" }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "currencyUSD",
-            "color": { "mode": "palette-classic" }
-          }
-        },
-        "options": {
-          "orientation": "horizontal",
-          "displayMode": "gradient",
-          "legend": { "showLegend": true, "placement": "bottom" },
-          "tooltip": { "mode": "single" }
-        }
+        "targets": [{ "refId": "A", "expr": "wilsy_system_memory_bytes{type=~\"heapUsed|heapTotal|rss\"}", "legendFormat": "{{type}}" }],
+        "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+        "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }
       },
       {
-        "type": "barchart",
-        "title": "Compliance Overlays (Live Ratios)",
+        "type": "timeseries",
+        "title": "Node.js Event-Loop Lag",
+        "description": "The p50, p90, and p99 event-loop lag from Prometheus default Node.js metrics.",
         "id": 7,
-        "gridPos": { "x": 0, "y": 14, "w": 8, "h": 10 },
+        "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
         "targets": [
-          { "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "{{overlay}}" }
+          { "refId": "A", "expr": "wilsynodejs_eventloop_lag_p50_seconds * 1000", "legendFormat": "p50" },
+          { "refId": "B", "expr": "wilsynodejs_eventloop_lag_p90_seconds * 1000", "legendFormat": "p90" },
+          { "refId": "C", "expr": "wilsynodejs_eventloop_lag_p99_seconds * 1000", "legendFormat": "p99" }
         ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "min": 0, "max": 100,
-            "color": { "mode": "thresholds" },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                { "color": "red", "value": 0 },
-                { "color": "orange", "value": 75 },
-                { "color": "green", "value": 90 }
-              ]
-            }
-          }
-        },
-        "options": {
-          "orientation": "vertical",
-          "displayMode": "gradient"
-        }
+        "fieldConfig": { "defaults": { "unit": "ms", "min": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+        "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }
       },
       {
         "type": "table",
-        "title": "Immutable Forensic Audit Ledger",
+        "title": "Live Runtime Capacity Inventory",
+        "description": "Current values emitted by the Wilsy runtime exporter; this is operational telemetry, not an audit ledger.",
         "id": 8,
-        "gridPos": { "x": 8, "y": 14, "w": 16, "h": 10 },
-        "targets": [
-          {
-            "expr": "wilsy_forensic_entry_info{tenantId=\"GLOBAL_ROOT\"}",
-            "format": "table",
-            "instant": true
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
-          },
-          "overrides": [
-            {
-              "matcher": { "id": "byName", "options": "Validation Status" },
-              "properties": [
-                { "id": "custom.cellOptions", "value": { "type": "color-background" } },
-                {
-                  "id": "mappings",
-                  "value": [
-                    {
-                      "type": "value",
-                      "options": {
-                        "VALID": { "color": "green", "index": 0 },
-                        "INVALID": { "color": "red", "index": 1 }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "options": {
-          "showHeader": true,
-          "sortBy": [{ "displayName": "Entry ID", "desc": true }]
-        },
-        "transformations": [
-          { "id": "labelsToFields", "options": {} },
-          {
-            "id": "organize",
-            "options": {
-              "excludeByName": { "Time": true, "Value": true, "tenantId": true, "__name__": true },
-              "renameByName": {
-                "entryId": "Entry ID",
-                "traceId": "Trace ID",
-                "action": "Action",
-                "performer": "Performer",
-                "sealHash": "Seal Hash",
-                "signature": "Signature",
-                "narrative": "Narrative",
-                "validation": "Validation Status"
-              }
-            }
-          }
-        ]
+        "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+        "targets": [{ "refId": "A", "expr": "wilsy_system_memory_bytes", "format": "table", "instant": true }],
+        "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "align": "auto", "cellOptions": { "type": "auto" } }, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "Value", "desc": true }] },
+        "transformations": [{ "id": "labelsToFields", "options": {} }]
       }
     ]
-  }
+  },
+  "overwrite": true
 }

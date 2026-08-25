@@ -1,0 +1,494 @@
+/* eslint-disable */
+/**
+ * WILSY OS - KNOWLEDGE OPERATING BAR STYLES [FG108O4B-PRODUCTION]
+ * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/knowledge/operating/KnowledgeOperatingBar.module.css
+ * PURPOSE: Styles the single KnowledgeOperatingBar ownership boundary for dense search,
+ * authority, live suggestions, workspace return, trust posture, and status lanes.
+ */
+
+.knowledgeOperatingBar {
+  box-sizing: border-box;
+  display: grid;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(146, 184, 222, 0.18);
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, rgba(74, 222, 128, 0.05), transparent 34%),
+    linear-gradient(135deg, rgba(7, 16, 29, 0.74), rgba(13, 29, 45, 0.52));
+  box-shadow: none;
+}
+
+.topAppBar {
+  display: grid;
+  grid-template-columns: minmax(178px, 280px) minmax(142px, 214px) minmax(260px, 1fr) auto auto minmax(150px, 210px);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.titleCell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.titleCell span,
+.suggestionRow > span,
+.badgeButton span,
+.badgeButtonActive span {
+  margin: 0;
+  color: #8fb6dc;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.titleCell strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.86rem;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchBox {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(146, 184, 222, 0.32);
+  border-radius: 0;
+  background: transparent;
+}
+
+.searchBox svg {
+  flex: 0 0 auto;
+  color: #8fb6dc;
+}
+
+.searchBox input {
+  width: 100%;
+  min-width: 0;
+  color: #f7fbff;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.searchBox input::placeholder {
+  color: rgba(184, 199, 216, 0.62);
+}
+
+.clearSearchButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  color: rgba(177, 214, 255, 0.82);
+  background: transparent;
+  cursor: pointer;
+}
+
+.clearSearchButton:hover,
+.clearSearchButton:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.searchButton,
+.refreshButton,
+.originReturnCommand {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 36px;
+  border: 1px solid rgba(146, 184, 222, 0.22);
+  border-radius: 6px;
+  color: #f7fbff;
+  background: rgba(24, 42, 64, 0.58);
+  font-size: 0.74rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.searchButton {
+  border-color: rgba(111, 214, 255, 0.38);
+  background: rgba(77, 166, 255, 0.1);
+}
+
+.searchButton:hover,
+.searchButton:focus-visible,
+.refreshButton:hover,
+.refreshButton:focus-visible,
+.originReturnCommand:hover,
+.originReturnCommand:focus-visible {
+  border-color: rgba(177, 214, 255, 0.54);
+  background: rgba(39, 69, 104, 0.9);
+  outline: none;
+}
+
+.originReturnCommand {
+  justify-content: flex-start;
+  padding: 0 10px;
+  border-color: rgba(255, 215, 94, 0.34);
+  background: rgba(255, 215, 94, 0.06);
+}
+
+.originReturnCommand svg {
+  color: #ffd75e;
+}
+
+.originReturnCommand span {
+  max-width: 150px;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signalCluster {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 0.65fr) minmax(0, 0.72fr) auto;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.signalPill {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(146, 184, 222, 0.22);
+}
+
+.signalPill small {
+  overflow: hidden;
+  color: #4ade80;
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.signalPill strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.62rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailToggleButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid rgba(146, 184, 222, 0.22);
+  border-radius: 6px;
+  color: #f7fbff;
+  background: rgba(24, 42, 64, 0.62);
+  font-size: 0.68rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.detailToggleButton span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailToggleButton svg {
+  flex: 0 0 auto;
+  color: #4ade80;
+}
+
+.detailToggleButton:hover,
+.detailToggleButton:focus-visible {
+  border-color: rgba(177, 214, 255, 0.52);
+  background: rgba(39, 69, 104, 0.88);
+  outline: none;
+}
+
+.badgeButton,
+.badgeButtonActive {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-bottom: 1px solid rgba(146, 184, 222, 0.2);
+  border-radius: 0;
+  color: rgba(231, 241, 255, 0.86);
+  background: transparent;
+  cursor: pointer;
+}
+
+.badgeButton span,
+.badgeButtonActive span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeButtonActive {
+  border-bottom-color: rgba(74, 222, 128, 0.72);
+  background: linear-gradient(180deg, transparent, rgba(74, 222, 128, 0.08));
+}
+
+.badgeButton strong,
+.badgeButtonActive strong {
+  overflow: hidden;
+  max-width: 64px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeDetailPanel {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 0 8px;
+  border-top: 1px solid rgba(74, 222, 128, 0.14);
+  color: rgba(231, 241, 255, 0.86);
+}
+
+.badgeDetailSummary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  min-height: 28px;
+}
+
+.badgeDetailSummary svg {
+  color: #4ade80;
+}
+
+.badgeDetailSummary strong,
+.badgeDetailSummary span,
+.badgeDetailSummary small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeDetailSummary strong {
+  color: #ffffff;
+  font-size: 0.78rem;
+}
+
+.badgeDetailSummary small {
+  color: rgba(255, 215, 94, 0.74);
+  font-size: 0.66rem;
+}
+
+.closeDetailButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(146, 184, 222, 0.18);
+  border-radius: 6px;
+  color: rgba(231, 241, 255, 0.86);
+  background: transparent;
+  cursor: pointer;
+}
+
+.closeDetailButton:hover,
+.closeDetailButton:focus-visible {
+  color: #ffffff;
+  border-color: rgba(177, 214, 255, 0.5);
+  outline: none;
+}
+
+.badgeDetailPicker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.suggestionRow {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 5px 0;
+  border: 0;
+  border-top: 1px solid rgba(74, 222, 128, 0.16);
+  background: transparent;
+}
+
+.suggestionRow > div {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.liveKnowledgeSuggestion {
+  flex: 0 0 min(330px, 72vw);
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 4px 12px;
+  border: 0;
+  border-left: 1px solid rgba(146, 184, 222, 0.18);
+  border-radius: 0;
+  color: #ffffff;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.liveKnowledgeSuggestion[aria-selected='true'] {
+  border-left-color: rgba(255, 215, 94, 0.72);
+  background: linear-gradient(90deg, rgba(255, 215, 94, 0.08), transparent);
+}
+
+.liveKnowledgeSuggestion strong,
+.liveKnowledgeSuggestion small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveKnowledgeSuggestion strong {
+  color: #ffffff;
+  font-size: 0.84rem;
+}
+
+.liveKnowledgeSuggestion small {
+  color: rgba(210, 228, 248, 0.72);
+}
+
+.statusRow {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 0 0;
+  border-radius: 0;
+  color: rgba(231, 241, 255, 0.86);
+}
+
+.statusRow strong,
+.statusRow span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusRow strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.statusRow span {
+  color: rgba(186, 203, 226, 0.82);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1180px) {
+  .topAppBar,
+  .suggestionRow,
+  .badgeDetailSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .statusRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .searchButton,
+  .refreshButton,
+  .originReturnCommand {
+    width: 100%;
+  }
+
+  .signalCluster {
+    width: 100%;
+  }
+}
+
+@media (min-width: 1181px) {
+  .badgeButton,
+  .badgeButtonActive {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .topAppBar {
+    gap: 8px;
+  }
+
+  .signalCluster,
+  .badgeDetailPicker {
+    grid-template-columns: 1fr;
+  }
+
+  .badgeButton,
+  .badgeButtonActive {
+    max-width: min(148px, 58vw);
+  }
+}

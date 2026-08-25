@@ -1,0 +1,958 @@
+/**
+ * =============================================================================
+ * Wilsy OS — Sovereign HR Operating Suite Styles
+ * =============================================================================
+ * File:           client/src/components/hr/HrDashboard.module.css
+ * Version:        v2.1.0-CHROME-PARITY
+ * Authority:      Wilsy OS Core Governance
+ * Epitome:        Billing-parity layout — top command bar, fixed vertical module
+ *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
+ *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Classification: Production Artifact
+ * =============================================================================
+ */
+
+.hrShell {
+  --hr-bg: #050505;
+  --hr-panel: #0c0c0c;
+  --hr-panel-2: #111111;
+  --hr-border: rgba(212, 175, 55, 0.22);
+  --hr-border-strong: rgba(212, 175, 55, 0.45);
+  --hr-gold: #d4af37;
+  --hr-gold-hi: #f0d78c;
+  --hr-text: #e8e8e8;
+  --hr-muted: #a3a3a3;
+  --hr-dim: #737373;
+  --hr-ok: #4ade80;
+  --hr-danger: #f87171;
+  --hr-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --hr-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --hr-rail-width: 220px;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  background: var(--hr-bg);
+  color: var(--hr-text);
+  font-family: var(--hr-sans);
+}
+
+/* ── Top bar (Billing chrome parity) ──────────────────────────────────────── */
+.hrTopbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.1fr) auto minmax(280px, 1.2fr);
+  align-items: center;
+  gap: 12px 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--hr-border);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.hrTopbarIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hrTopbarIdentity span {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+  font-weight: 700;
+}
+
+.hrTopbarIdentity h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.hrTopbarIdentity small {
+  color: var(--hr-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hrProfileButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hr-border);
+  background: rgba(12, 12, 12, 0.9);
+  color: var(--hr-gold-hi);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hrProfileButton:hover {
+  border-color: var(--hr-border-strong);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.hrActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.hrActions button,
+.hrHeroActions button,
+.hrPager button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--hr-border);
+  background: rgba(17, 17, 17, 0.95);
+  color: var(--hr-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hrActions button:hover,
+.hrHeroActions button:hover {
+  border-color: var(--hr-border-strong);
+}
+
+.hrActions button[data-primary='true'],
+.hrHeroActions button[data-primary='true'],
+.hrModal footer button[data-primary='true'] {
+  background: linear-gradient(135deg, #f0d78c, #d4af37);
+  color: #0a0a0a;
+  border-color: transparent;
+}
+
+/* ── Main frame: rail + workspace ─────────────────────────────────────────── */
+.hrFrame {
+  display: grid;
+  grid-template-columns: var(--hr-rail-width) minmax(0, 1fr);
+  grid-template-areas: "rail workspace";
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  transition: grid-template-columns 0.2s ease;
+}
+
+.hrShell[data-rail='closed'] .hrFrame {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+/* ── Vertical module rail (never stretch full width) ──────────────────────── */
+.hrRail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--hr-rail-width);
+  padding: 12px 10px;
+  background: linear-gradient(180deg, rgba(12, 12, 12, 0.98), rgba(6, 6, 6, 0.98));
+  border-right: 1px solid var(--hr-border);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.hrBrand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 4px 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--hr-border);
+}
+
+.hrBrand > div,
+.hrBrand > span,
+.hrBrand > strong,
+.hrBrand > small {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+.hrRailToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--hr-border);
+  background: rgba(212, 175, 55, 0.08);
+  color: var(--hr-gold-hi);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.hrRailToggle:hover {
+  background: rgba(212, 175, 55, 0.16);
+}
+
+.hrRail nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.hrRail nav button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--hr-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.hrRail nav button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hrRail nav button:hover {
+  color: var(--hr-text);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(212, 175, 55, 0.15);
+}
+
+.hrRail nav button[data-active='true'] {
+  color: #0a0a0a;
+  background: linear-gradient(135deg, #f0d78c, #d4af37);
+  border-color: transparent;
+  font-weight: 800;
+}
+
+/* Collapsed rail: icons only */
+.hrShell[data-rail='closed'] .hrRail {
+  max-width: 56px;
+  padding: 10px 6px;
+}
+
+.hrShell[data-rail='closed'] .hrBrand > *:not(.hrRailToggle),
+.hrShell[data-rail='closed'] .hrRail nav button span {
+  display: none;
+}
+
+.hrShell[data-rail='closed'] .hrRail nav button {
+  justify-content: center;
+  padding: 10px;
+}
+
+.hrShell[data-rail='closed'] .hrRailToggle {
+  justify-content: center;
+  padding: 8px;
+}
+
+/* ── Workspace ────────────────────────────────────────────────────────────── */
+.hrWorkspace {
+  grid-area: workspace;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 28px;
+  background: radial-gradient(ellipse at top, rgba(212, 175, 55, 0.04), transparent 45%),
+    var(--hr-bg);
+}
+
+.hrFeedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin: 14px 18px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fecaca;
+  font-size: 0.82rem;
+}
+
+.hrFeedback[data-tone='ok'],
+.hrFeedback[data-tone='success'] {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+  color: #bbf7d0;
+}
+
+.hrFeedback[data-tone='pending'],
+.hrFeedback[data-tone='warn'] {
+  border-color: rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.08);
+  color: var(--hr-gold-hi);
+}
+
+.hrFeedback strong {
+  font-weight: 800;
+}
+
+.hrFeedback em {
+  font-style: normal;
+  font-family: var(--hr-mono);
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.hrHero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 8px;
+}
+
+.hrHero span {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+  font-weight: 700;
+}
+
+.hrHero h2 {
+  margin: 4px 0 0;
+  font-size: 1.35rem;
+  color: #fff;
+}
+
+.hrHero p {
+  margin: 6px 0 0;
+  color: var(--hr-muted);
+  font-size: 0.85rem;
+  max-width: 40rem;
+  line-height: 1.45;
+}
+
+.hrHeroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.hrSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hr-border);
+  background: rgba(12, 12, 12, 0.9);
+}
+
+.hrSearch input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--hr-text);
+  font-size: 0.88rem;
+  min-width: 0;
+}
+
+.hrArtifactStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 18px 12px;
+}
+
+.hrArtifactStrip button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel);
+  color: var(--hr-text);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.hrArtifactStrip button:hover {
+  border-color: var(--hr-border-strong);
+}
+
+.hrKpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 4px 18px 14px;
+}
+
+.hrKpis article {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel);
+}
+
+.hrKpis span,
+.hrKpis small {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+  margin-bottom: 6px;
+}
+
+.hrKpis strong {
+  display: block;
+  font-size: 1.15rem;
+  color: #fff;
+}
+
+.hrKpis small {
+  margin-top: 4px;
+  margin-bottom: 0;
+  color: var(--hr-muted);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.72rem;
+}
+
+.hrGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 0 18px 12px;
+}
+
+.hrPanel {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel);
+}
+
+.hrPanel header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.hrPanel header span {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+}
+
+.hrPanel header strong {
+  display: block;
+  margin-top: 2px;
+  color: #fff;
+}
+
+.hrTableWrap {
+  margin: 0 18px 12px;
+  width: auto;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel);
+}
+
+.hrTableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.hrTableWrap th,
+.hrTableWrap td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: top;
+}
+
+.hrTableWrap th {
+  position: sticky;
+  top: 0;
+  background: #0a0a0a;
+  color: var(--hr-gold);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.hrTableWrap tr:hover td {
+  background: rgba(212, 175, 55, 0.04);
+}
+
+.hrPager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 18px 12px;
+}
+
+.hrProcess {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 18px 12px;
+}
+
+.hrProcess article {
+  flex: 1;
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel-2);
+  font-size: 0.78rem;
+  color: var(--hr-muted);
+}
+
+.hrProcess strong {
+  display: block;
+  color: var(--hr-text);
+  margin-bottom: 4px;
+}
+
+.hrTelemetry {
+  margin: 0 18px 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--hr-border);
+  font-family: var(--hr-mono);
+  font-size: 0.7rem;
+  color: var(--hr-dim);
+}
+
+.hrLoading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 18px 10px;
+  padding: 10px 12px;
+  color: var(--hr-muted);
+  font-size: 0.82rem;
+}
+
+/* ── Form controls ────────────────────────────────────────────────────────── */
+.hrFormGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 4px 0 12px;
+}
+
+.hrFormGrid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+}
+
+.hrFormGrid input,
+.hrFormGrid select,
+.hrFormGrid textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hr-border);
+  background: #0a0a0a;
+  color: var(--hr-text);
+  font-size: 0.88rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.hrFormGrid textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.moneyField div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.moneyField b {
+  color: var(--hr-gold);
+  font-size: 0.75rem;
+}
+
+.countryField,
+.addressField,
+.benefitPackageField {
+  position: relative;
+}
+
+.countryControl,
+.addressControl,
+.benefitPackageControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hr-border);
+  background: #0a0a0a;
+}
+
+.countryControl input,
+.addressControl input,
+.benefitPackageControl input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+}
+
+.countrySuggestionRail,
+.addressSuggestionRail,
+.benefitPackageRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.countrySuggestionRail button,
+.addressSuggestionRail button,
+.benefitPackageRail button {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel-2);
+  color: var(--hr-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.addressMeta,
+.benefitPackageMeta {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--hr-dim);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.benefitMathPanel {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--hr-border);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(0, 0, 0, 0.4));
+}
+
+.benefitMathPanel[data-state='risk'] {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.benefitMathPanel[data-state='ready'] {
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.benefitMathPanel span {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+}
+
+.benefitMathPanel strong {
+  display: block;
+  margin: 6px 0;
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.benefitMathPanel small {
+  display: block;
+  color: var(--hr-muted);
+  font-size: 0.75rem;
+}
+
+.benefitMathPanel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.benefitMathPanel b {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hr-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--hr-gold-hi);
+}
+
+.artifactTemplatePanel {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel-2);
+}
+
+.artifactTemplatePanel span {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+}
+
+.artifactTemplatePanel strong {
+  display: block;
+  margin: 6px 0;
+  color: var(--hr-text);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.artifactTemplatePanel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.artifactTemplatePanel small {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hr-border);
+  color: var(--hr-muted);
+}
+
+.performanceGraph {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.performanceGraph span {
+  position: relative;
+  height: 56px;
+  border-radius: 8px;
+  border: 1px solid var(--hr-border);
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.performanceGraph span::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: var(--score, 0%);
+  background: linear-gradient(180deg, #f0d78c, #d4af37);
+  opacity: 0.85;
+}
+
+.performanceGraph i {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 1;
+  font-style: normal;
+  font-size: 0.65rem;
+  color: var(--hr-text);
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.hrModal {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.hrModal > section {
+  width: min(920px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 16px 18px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--hr-border-strong);
+  background: #0a0a0a;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+.hrModal header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hr-border);
+}
+
+.hrModal header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hr-gold);
+}
+
+.hrModal header h2 {
+  margin: 4px 0 0;
+  font-size: 1.15rem;
+  color: #fff;
+}
+
+.hrModal header button {
+  border: 1px solid var(--hr-border);
+  background: transparent;
+  color: var(--hr-muted);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.hrModal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hr-border);
+}
+
+.hrModal footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--hr-border);
+  background: var(--hr-panel-2);
+  color: var(--hr-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hrWorkspace::-webkit-scrollbar,
+.hrTableWrap::-webkit-scrollbar,
+.hrRail::-webkit-scrollbar,
+.hrModal > section::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.hrWorkspace::-webkit-scrollbar-thumb,
+.hrTableWrap::-webkit-scrollbar-thumb,
+.hrRail::-webkit-scrollbar-thumb,
+.hrModal > section::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
+}
+
+@media (max-width: 960px) {
+  .hrTopbar {
+    grid-template-columns: 1fr;
+  }
+
+  .hrFrame {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "rail"
+      "workspace";
+  }
+
+  .hrRail {
+    max-width: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--hr-border);
+  }
+
+  .hrRail nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .hrShell[data-rail='closed'] .hrFrame {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ── Embedded under WilsyOSDashboardChrome ────────────────────────────────── */
+.hrShell {
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
+
+.hrFrame {
+  display: block; /* rail moved to OS chrome */
+  overflow: visible;
+}
+
+.hrWorkspace {
+  min-height: 0;
+}

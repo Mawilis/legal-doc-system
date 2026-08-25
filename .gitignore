@@ -55,6 +55,11 @@ certificates/
 .nyc_output/
 junit.xml
 test-results/
+# Python runtime artifacts
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
 # Quantum keys
 **/quantum-keys/
 **/pqc-keys/
@@ -166,3 +171,4 @@ forensic-fixes/
 WILSY_*.txt
 WILSY_*.md
 WILSY_*.json
+wilsy_private.pem

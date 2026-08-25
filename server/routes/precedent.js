@@ -175,7 +175,7 @@ import { rateLimiter, apiKeyRateLimiter } from '../middleware/rateLimiter.js';
 import { validateRequest, validateParams, validateQuery } from '../middleware/validator.js';
 import { cacheMiddleware, clearCache } from '../middleware/cache.js';
 import { auditMiddleware } from '../middleware/audit.js';
-import { metricsMiddleware } from '../middleware/metrics.js';
+import { metrics } from './metricsCollector.js';
 
 // QUANTUM UTILITIES
 import loggerRaw from '../utils/logger.js';

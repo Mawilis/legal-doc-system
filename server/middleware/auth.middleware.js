@@ -123,16 +123,16 @@ const wilsyVerifyArtifactBrowserProof = (req) => {
 
   const type = String(
     wilsyReadHeader(req, ['X-Artifact-Type', 'X-Wilsy-Artifact-Type']) ||
-      body.type ||
-      metadata.type ||
-      ''
+    body.type ||
+    metadata.type ||
+    ''
   ).trim();
 
   const tenantId = String(
     wilsyReadHeader(req, ['X-Tenant-ID', 'X-Wilsy-Tenant-ID']) ||
-      body.tenantId ||
-      metadata.tenantId ||
-      'MASTER'
+    body.tenantId ||
+    metadata.tenantId ||
+    'MASTER'
   ).trim();
 
   const timestamp = String(
@@ -364,7 +364,7 @@ const protect = async (req, res, next) => {
           role: req.user.role,
           reason: err.message,
         }
-      ).catch(() => {});
+      ).catch(() => { });
 
       return next();
     }
@@ -500,10 +500,12 @@ const admin = requireRole(['FOUNDER', 'ADMIN', 'OMEGA']);
 // 📤 EXPORTS (ensuring all required symbols are available)
 // ============================================================================
 
+const restrictTo = authorizeRoles;
 export {
   protect,
   requireRole,
   authorizeRoles,
+  restrictTo,
   requireSovereignAuth,
   admin,
   enforceMilitaryWhitelist,
@@ -514,6 +516,7 @@ export default {
   protect,
   requireRole,
   authorizeRoles,
+  restrictTo,
   requireSovereignAuth,
   admin,
   enforceMilitaryWhitelist,

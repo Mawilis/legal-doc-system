@@ -9,11 +9,12 @@
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  *
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/metricsCollector.js
- * VERSION: 7.0.0-QUANTUM-OMEGA
+ * VERSION: 7.3.0-INSTITUTIONAL-SEAL
  * CREATED: 2026-03-20
+ * UPDATED: 2026-08-14 – Added labels to invoicesCreated Counter for tenant, status, currency.
  *
  * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
- * COLLABORATION MANDATE - WILSY OS v7.0
+ * COLLABORATION MANDATE - WILSY OS v7.3.0
  * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
  *
  * TEAM OWNERSHIP STRUCTURE:
@@ -40,8 +41,11 @@
  * // COLLAB: Dr. Fatima Cassim 2026-03-20 Neural anomaly detection
  * // COLLAB: Johan Botha 2026-03-20 Compliance verification
  * // COLLAB: Sipho Dlamini 2026-03-20 Performance benchmarks: 50k metrics/sec
+ * // COLLAB: AI Engineering 2026-08-13 Added `wilsy_invoices_created_total` counter (v7.1.0)
+ * // COLLAB: AI Engineering 2026-08-13 Added named exports for metrics, register, invoicesCreated (v7.2.0)
+ * // COLLAB: AI Engineering 2026-08-14 Added labels to invoicesCreated for tenant, status, currency (v7.3.0)
  *
- * NEXT SCHEDULED REVIEW: 2026-04-20 (Monthly metrics audit)
+ * NEXT SCHEDULED REVIEW: 2026-09-13 (Monthly metrics audit)
  *
  * BUSINESS VALUE: $49M ANNUAL
  * • Uptime SLA: 99.99% ($24M/year value)
@@ -342,6 +346,15 @@ const slaCompliance = new promClient.Gauge({
   labelNames: ['sla_type'],
 });
 
+// ─── ADDED IN v7.1.0, UPDATED IN v7.3.0 ──────────────────────────────
+// Invoice Creation Counter – with labels for granular observability
+const invoicesCreated = new promClient.Counter({
+  name: `${METRICS_CONSTANTS.PREFIX}_invoices_created_total`,
+  help: 'Total number of invoices created (ACID-compliant)',
+  labelNames: ['tenantId', 'status', 'currency'],   // ← Added labels for Grafana panels
+});
+// ============================================================================
+
 // ============================================================================
 // METRICS COLLECTOR CLASS - Core Implementation
 // ============================================================================
@@ -524,6 +537,15 @@ class MetricsCollector extends EventEmitter {
   setSLACompliance(percentage, slaType = 'api') {
     slaCompliance.labels(slaType).set(percentage);
   }
+
+  // ─── ADDED IN v7.1.0, UPDATED IN v7.3.0 ──────────────────────────────
+  // Convenience method to increment invoice counter with labels
+  incrementInvoiceCreated(labels = {}) {
+    // Validate labels or use defaults
+    const { tenantId = 'system', status = 'ISSUED', currency = 'ZAR' } = labels;
+    invoicesCreated.labels(tenantId, status, currency).inc();
+  }
+  // =========================================================================
 
   // =========================================================================
   // System Metrics Collection
@@ -922,6 +944,7 @@ export default {
   activeSubscriptions,
   featureUsage,
   slaCompliance,
+  invoicesCreated,   // ← Named export with labels
 
   // Convenience methods
   trackHttpRequest: metrics.trackHttpRequest.bind(metrics),
@@ -948,6 +971,7 @@ export default {
   setActiveSubscriptions: metrics.setActiveSubscriptions.bind(metrics),
   trackFeatureUsage: metrics.trackFeatureUsage.bind(metrics),
   setSLACompliance: metrics.setSLACompliance.bind(metrics),
+  incrementInvoiceCreated: metrics.incrementInvoiceCreated.bind(metrics), // ← Updated to accept labels
   getMetrics: metrics.getMetrics.bind(metrics),
   getMetricsJSON: metrics.getMetricsJSON.bind(metrics),
   getAggregations: metrics.getAggregations.bind(metrics),
@@ -955,6 +979,9 @@ export default {
   getHealthStatus: metrics.getHealthStatus.bind(metrics),
   middleware: metrics.middleware.bind(metrics),
 };
+
+// ─── NAMED EXPORTS FOR DIRECT IMPORT ──────────────────────────────────────
+export { metrics, register, invoicesCreated };
 
 // ============================================================================
 // INVESTOR METRICS - FORTUNE 500 VALUATION
@@ -990,4 +1017,5 @@ export default {
  * • Dr. Fatima Cassim: 2026-03-20 - NEURAL ANALYTICS
  * • Johan Botha: 2026-03-20 - COMPLIANCE
  * • Sipho Dlamini: 2026-03-20 - PERFORMANCE
+ * • AI Engineering: 2026-08-14 - Added labels to invoicesCreated (v7.3.0)
  */

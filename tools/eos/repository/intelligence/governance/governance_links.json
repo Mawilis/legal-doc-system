@@ -1,0 +1,51 @@
+{
+  "total_links": 5,
+  "links": {
+    "CAP-REPOSITORY-SCAN": {
+      "capability_id": "CAP-REPOSITORY-SCAN",
+      "policy_id": "POL-GOV-001-AST-SCAN-INTEGRITY",
+      "compliance_tier": "SOVEREIGN_AUDIT",
+      "requires_attestation": true,
+      "security_boundary": "LEVEL_5_SOVEREIGN",
+      "created_at": "2026-07-26T21:03:50.039669+00:00"
+    },
+    "CAP-KNOWLEDGE-SYNCHRONIZATION": {
+      "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "policy_id": "POL-GOV-002-KNOWLEDGE-GRAPH-ISOLATION",
+      "compliance_tier": "HIGH_SECURITY",
+      "requires_attestation": true,
+      "security_boundary": "LEVEL_4_ENTERPRISE",
+      "created_at": "2026-07-26T21:03:50.039672+00:00"
+    },
+    "CAP-PREDICTION-RISK-ASSESSMENT": {
+      "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
+      "policy_id": "POL-GOV-003-PREDICTIVE-BLAST-RADIUS-BOUNDS",
+      "compliance_tier": "HIGH_SECURITY",
+      "requires_attestation": true,
+      "security_boundary": "LEVEL_4_ENTERPRISE",
+      "created_at": "2026-07-26T21:03:50.039674+00:00"
+    },
+    "CAP-GOVERNANCE-COMPLIANCE": {
+      "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+      "policy_id": "POL-GOV-004-SOVEREIGN-POLICY-ATTESTATION",
+      "compliance_tier": "SOVEREIGN_AUDIT",
+      "requires_attestation": true,
+      "security_boundary": "LEVEL_5_SOVEREIGN",
+      "created_at": "2026-07-26T21:03:50.039676+00:00"
+    },
+    "CAP-CONTROL-ROOM-DISPATCH": {
+      "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
+      "policy_id": "POL-GOV-005-EXECUTIVE-TELEMETRY-STREAMING",
+      "compliance_tier": "SOVEREIGN_AUDIT",
+      "requires_attestation": true,
+      "security_boundary": "LEVEL_5_SOVEREIGN",
+      "created_at": "2026-07-26T21:03:50.039677+00:00"
+    }
+  },
+  "audit_summary": {
+    "total_expected": 5,
+    "covered_capabilities": 5,
+    "uncovered_capabilities": [],
+    "compliance_percentage": 100.0
+  }
+}

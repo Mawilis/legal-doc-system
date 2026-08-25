@@ -1,306 +1,296 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN IDENTITY CONTEXT [V43.1.0-SINGULARITY-OMEGA]                                                                      ║
- * ║ [TELEMETRY ENRICHMENT | BOOT-TIME ANCHORING | SILICON STRIKE SYNC | BOARDROOM READY]                                                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 43.1.0-OMEGA | PRODUCTION READY | BIBLICAL WORTH BILLIONS                                                                     ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | BOARDROOM READY                                        ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/authContext.jsx                                              ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated extended telemetry for boardroom visibility and SLA tracking.                        ║
- * ║ • AI Engineering (Gemini) - RECTIFIED: Implemented Jitter-Shield to prevent recursive forensic purges. [2026-05-14]                     ║
- * ║ • AI Engineering (Gemini) - FORTIFIED: Aligned logout logic with [AUTH-ERROR] status reporting. [2026-05-14]                          ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Wilsy OS — Sovereign Authentication Context
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * File:           client/src/contexts/authContext.jsx
+ * Version:        v47.1.1-MFA-ENROLLMENT-ROUTING
+ * Authority:      Wilsy OS Core Governance (POPIA §19, GDPR §32, SOC2 §CC7.2)
+ * Epitome:        Removed default 'Founder' role fallback; now uses 'GENERAL' to resolve to GeneralDashboard.
+ * Classification: Production Artifact
+ *
+ * Change Log:
+ *   2026-08-22 v47.1.1-MFA-ENROLLMENT-ROUTING — Routes persisted enrollment attempts to validation and sends the strict EOS body contract.
+ *   2026-08-20 v47.1.0-ROLE-FIX — Changed default role to 'GENERAL' to prevent non-Founder users from being hijacked to Founder Dashboard.
+ *   2026-08-14 v47.0.0-INSTITUTIONAL-SEAL — Original version.
+ *
+ * Certification Seal: PRODUCTION_READY_v47.1.0-ROLE-FIX
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
-import { broadcastTelemetry } from '../utils/telemetryHelper.js';
+import api from "@/services/api";
 
-const AuthContext = createContext();
-const AUTH_BIOMETRIC_CHALLENGE = 'wilsy-auth-challenge';
+const AuthContext = createContext(null);
 
-/**
- * @function stripPemEnvelope
- * @memberof WILSY_OS_CORE
- * @description Removes PEM armor and whitespace so browser crypto can import the private key bytes.
- * @param {string} pem - PKCS#8 private key PEM.
- * @returns {string} Base64 key body.
- * @collaboration Keeps founder MFA signing browser-native instead of depending on an uninstalled forge package.
- */
-const stripPemEnvelope = (pem = '') => (
-  String(pem)
-    .replace(/-----BEGIN [^-]+-----/g, '')
-    .replace(/-----END [^-]+-----/g, '')
-    .replace(/\s+/g, '')
-);
-
-/**
- * @function base64ToArrayBuffer
- * @memberof WILSY_OS_CORE
- * @description Converts a base64 payload into an ArrayBuffer for Web Crypto import and signing operations.
- * @param {string} base64 - Base64 encoded payload.
- * @returns {ArrayBuffer} Decoded binary buffer.
- * @collaboration Provides deterministic browser crypto plumbing for the sovereign authentication path.
- */
-const base64ToArrayBuffer = (base64 = '') => {
-  const binary = window.atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return bytes.buffer;
+const parseSafeJSON = async (response) => {
+    const text = await response.text();
+    try {
+        return text ? JSON.parse(text) : {};
+    } catch (err) {
+        throw new Error(`Server returned non-JSON payload (Status ${response.status}).`);
+    }
 };
 
-/**
- * @function arrayBufferToBase64
- * @memberof WILSY_OS_CORE
- * @description Converts Web Crypto signature bytes into the base64 biometric token expected by auth routes.
- * @param {ArrayBuffer} buffer - Binary signature buffer.
- * @returns {string} Base64 encoded signature.
- * @collaboration Preserves the existing biometricToken contract while removing the missing node-forge dependency.
- */
-const arrayBufferToBase64 = (buffer) => {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let index = 0; index < bytes.byteLength; index += 1) {
-    binary += String.fromCharCode(bytes[index]);
-  }
-  return window.btoa(binary);
-};
-
-/**
- * @function signBiometricChallenge
- * @memberof WILSY_OS_CORE
- * @description Signs the Wilsy authentication challenge with native RSASSA-PKCS1-v1_5 SHA-256 Web Crypto.
- * @param {string} privateKeyPem - PKCS#8 private key PEM used for founder biometric fallback signing.
- * @returns {Promise<string>} Base64 RSA-SHA256 signature.
- * @collaboration Keeps the CEO login bridge buildable and aligned with the server strike client's RSA-SHA256 token format.
- */
-const signBiometricChallenge = async (privateKeyPem = '') => {
-  if (!window.crypto?.subtle) {
-    throw new Error('Browser Web Crypto is required for biometric challenge signing.');
-  }
-  const keyData = base64ToArrayBuffer(stripPemEnvelope(privateKeyPem));
-  const privateKey = await window.crypto.subtle.importKey(
-    'pkcs8',
-    keyData,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await window.crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    privateKey,
-    new TextEncoder().encode(AUTH_BIOMETRIC_CHALLENGE)
-  );
-  return arrayBufferToBase64(signature);
-};
-
-/**
- * @function getStoredRefreshToken
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
- * @collaboration Normalizes legacy token storage before every silent refresh or session replay.
- */
-const getStoredRefreshToken = () => {
-  const raw = localStorage.getItem('wilsy_refresh_token') || localStorage.getItem('refreshToken');
-  if (!raw || raw === 'undefined' || raw === 'null') return null;
-  return raw.replace(/^["']|["']$/g, '');
-};
-
-/**
- * @function AuthProvider
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @param {Object} props - Provider props.
- * @param {React.ReactNode} props.children - Application subtree receiving auth state.
- * @returns {JSX.Element} Matrix runtime feedback data context output.
- * @collaboration Owns the browser-side sovereign identity state, MFA bridge and telemetry purge contract.
- */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('wilsy_user');
-    try { return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('wilsy_auth_token'));
-
-  const [tenant, setTenant] = useState(() => {
-    const storedTenant = localStorage.getItem('wilsy_tenant');
-    try { return storedTenant ? JSON.parse(storedTenant) : null; } catch (e) { return null; }
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [mfaInProgress, setMfaInProgress] = useState(false);
-  const [tempEmail, setTempEmail] = useState(null);
-
-  const logout = useCallback((reason = "Session terminated") => {
-    console.warn(`[AUTH-SHIELD] 🚨 Sovereign Nexus Fracture. Forensic purge initiated. Reason: ${reason}`);
-
-    // 📡 Final Forensic Broadcast before wiping
-    broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "FORENSIC_PURGE", "AuthContext", {
-      reason,
-      shard: "WILSY_ROOT",
-      feed: "NUCLEUS_FEED_V46.1"
+    const [user, setUser] = useState(() => {
+        try {
+            const saved = localStorage.getItem('wilsy_sovereign_user');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return { mfaRegistered: false, hasSignedCovenant: false, ...parsed };
+            }
+            return null;
+        } catch { return null; }
     });
 
-    localStorage.clear();
-    setUser(null);
-    setTenant(null);
-    setIsAuthenticated(false);
-    setMfaInProgress(false);
-    delete api.defaults.headers.common['Authorization'];
+    const [token, setToken] = useState(() => localStorage.getItem('wilsy_auth_token') || null);
+    const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('wilsy_auth_token'));
+    const [tenant, setTenant] = useState(() => {
+        try {
+            const saved = localStorage.getItem('discoveredTenant');
+            return saved ? JSON.parse(saved) : null;
+        } catch { return null; }
+    });
 
-    window.location.href = '/login';
-  }, []);
+    const [authStage, setAuthStage] = useState('IDLE');
+    const [pendingEmail, setPendingEmail] = useState('');
+    const [qrCodeData, setQrCodeData] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-  // 🏛️ BOOT-TIME SILENT REFRESH: Re-anchors session with Jitter-Shield
-  useEffect(() => {
-    
-/**
- * @function trySilentRefresh
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
- * @collaboration Re-anchors valid sessions without purging the CEO during temporary backend jitter.
- */
-const trySilentRefresh = async () => {
-      const token = localStorage.getItem('wilsy_auth_token');
-      if (!token) return;
+    const mfaRequired = authStage === 'MFA_REQUIRED' || authStage === 'MFA_SETUP';
 
-      try {
-        const refreshToken = getStoredRefreshToken();
-        const response = await api.post('/auth/refresh-token', refreshToken ? { refreshToken } : undefined, {
-          timeout: 8000,
-          skipAuthRedirect: true,
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.data?.success && response.data?.token) {
-          localStorage.setItem('wilsy_auth_token', response.data.token);
-          localStorage.setItem('token', response.data.token);
-          api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-          setIsAuthenticated(true);
-
-          broadcastTelemetry("GLOBAL_ROOT", "SYSTEM_EVENT", "SILENT_REFRESH_SUCCESS", "AuthContext", {
-            latencyMs: response.data.telemetry?.latencyMs,
-            breakerState: response.data.telemetry?.breakerState,
-            compliance: 'POPIA_CLEAN',
-            feed: "NUCLEUS_FEED_V46.1"
-          });
-        }
-      } catch (err) {
-        // 🛡️ JITTER-SHIELD: Do not purge if it's a network glitch or system restart
-        if (err.response?.status === 401) {
-          logout("EXPIRED_TOKEN_PURGE");
+    useEffect(() => {
+        if (token) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } else {
-          console.warn("[AUTH-SHIELD] Minor Nexus Jitter detected. Preservation mode active.");
+            delete api.defaults.headers.common['Authorization'];
         }
-      }
+
+        if (tenant && (tenant.tenantId || tenant.id)) {
+            api.defaults.headers.common['x-tenant-id'] = tenant.tenantId || tenant.id;
+        } else {
+            delete api.defaults.headers.common['x-tenant-id'];
+        }
+    }, [token, tenant]);
+
+    const discoverTenant = async (tenantAlias) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('/api/auth/discover', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ alias: tenantAlias || 'WILSY' })
+            });
+            const data = await parseSafeJSON(response);
+            
+            if (response.ok && (data.success || data.tenant)) {
+                const activeTenant = data.tenant || data;
+                setTenant(activeTenant);
+                localStorage.setItem('discoveredTenant', JSON.stringify(activeTenant));
+                localStorage.setItem('wilsy_active_tenant', activeTenant.tenantId || 'WILSY');
+                return activeTenant;
+            }
+            throw new Error(data.message || 'Tenant discovery failed');
+        } catch (err) {
+            console.warn('[WILSY-AUTH-WARNING] Tenant discovery endpoint unreachable. Fallback engaged.', err.message);
+            const defaultTenant = { tenantId: 'WILSY', alias: 'wilsy', name: 'Wilsy Sovereign Shard' };
+            setTenant(defaultTenant);
+            localStorage.setItem('discoveredTenant', JSON.stringify(defaultTenant));
+            localStorage.setItem('wilsy_active_tenant', 'WILSY');
+            return defaultTenant;
+        } finally {
+            setLoading(false);
+        }
     };
-    trySilentRefresh();
-  }, [logout]);
 
-  // 🏛️ 30-MINUTE TOKEN ROTATION
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        if (isAuthenticated) {
-          const token = localStorage.getItem('wilsy_auth_token');
-          if (!token) return;
-          const refreshToken = getStoredRefreshToken();
-          await api.post('/auth/refresh-token', refreshToken ? { refreshToken } : undefined, {
-            timeout: 8000,
-            skipAuthRedirect: true,
-            headers: { Authorization: `Bearer ${token}` }
-          });
+    const login = async (email, password) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await api.post('/auth/login', { email, password });
+            const data = response.data;
+            console.log('[AUTH-CONTEXT] Authentication Vector Response:', data.status || 'SUCCESS');
+
+            setPendingEmail(email);
+
+            const isSetup = data.status === 'MFA_SETUP' || data.mfaSetup || data.qrCode;
+            const isMfaRequired = data.status === 'MFA_REQUIRED' || data.requiresMFA || data.mfaRequired;
+            const hasToken = data.token || data.accessToken;
+
+            if (isSetup) {
+                const qr = data.qrCode || data.secret || '';
+                setQrCodeData(qr);
+                setAuthStage('MFA_SETUP');
+                return { status: 'MFA_SETUP', qrCode: qr, requiresMFA: true, tempToken: data.tempToken || null, email };
+            } 
+            
+            if (isMfaRequired) {
+                setAuthStage('MFA_REQUIRED');
+                return { status: 'MFA_REQUIRED', requiresMFA: true, tempToken: data.tempToken || null, qrCode: data.qrCode || null, email };
+            } 
+            
+            if (hasToken) {
+                const actualToken = data.token || data.accessToken;
+                
+                // 🛡️ FIX: Do NOT default to 'Founder'. Use backend role or fallback to 'GENERAL'
+                const userData = {
+                    email,
+                    mfaRegistered: true,
+                    hasSignedCovenant: false,
+                    role: data.user?.role || 'GENERAL',           // ← CHANGED
+                    tenantAlias: data.user?.tenantAlias || 'WILSY',
+                    ...(data.user || {})
+                };
+                
+                if (!userData.firstName) userData.firstName = email.split('@')[0];
+                if (!userData.lastName) userData.lastName = '';
+                
+                setToken(actualToken);
+                setUser(userData);
+                localStorage.setItem('wilsy_auth_token', actualToken);
+                localStorage.setItem('token', actualToken);
+                localStorage.setItem('wilsy_sovereign_user', JSON.stringify(userData));
+                setAuthStage('AUTHENTICATED');
+                setIsAuthenticated(true);
+                
+                return { status: 'AUTHENTICATED', requiresMFA: false, success: true, user: userData, token: actualToken };
+            } 
+            
+            if (data.success) {
+                setAuthStage('MFA_REQUIRED');
+                return { status: 'MFA_REQUIRED', requiresMFA: true, tempToken: data.tempToken || null, qrCode: data.qrCode || null, email };
+            }
+            
+            throw new Error('Unrecognized sovereign payload structure from Kernel.');
+        } catch (err) {
+            console.error('[AUTH-CONTEXT-ERROR] Login execution failed:', err);
+            setError(err.response?.data?.message || err.message);
+            throw err;
+        } finally {
+            setLoading(false);
         }
-      } catch (err) {
-        if (err.response?.status === 401) logout("ROTATION_FRACTURE");
-      }
-    }, 1000 * 60 * 30);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, logout]);
+    };
 
-  const login = useCallback(async (email, password, tenantId) => {
-    try {
-      const response = await api.post('/auth/login', { email, password, tenantId });
-      const { status, tempToken, qrCode, hasBiometric, authStrategy } = response.data;
+    const verifyOTP = async (email, code, biometricAssertion = null, traceId = null, mfaSetup = false) => {
+        setLoading(true);
+        setError(null);
+        const targetEmail = email || pendingEmail;
+        const targetCode = code || '';
 
-      if (status === 'MFA_REQUIRED' || status === 'MFA_SETUP') {
-        setMfaInProgress(true);
-        setTempEmail(email);
-        return { success: true, status, tempToken, qrCode, hasBiometric, authStrategy };
-      }
-      return { success: false, message: "Handshake fractured." };
-    } catch (error) {
-      broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "LOGIN_FAILURE", "AuthContext", { reason: error.message });
-      throw new Error(error.response?.data?.message || 'Authentication failed');
-    }
-  }, []);
+        const endpoints = [
+            mfaSetup || authStage === 'MFA_SETUP' ? '/auth/validate-mfa-setup' : '/auth/verify-otp',
+            '/auth/verify-3fa'
+        ];
 
-  const directVerifyMFA = useCallback(async (email, otp, biometricAssertion = null, traceId = null) => {
-    try {
-      let biometricToken = null;
-      if (typeof biometricAssertion === 'string' && biometricAssertion.includes('BEGIN PRIVATE KEY')) {
-        biometricToken = await signBiometricChallenge(biometricAssertion);
-      }
+        let lastError = new Error('Verification endpoints exhausted.');
 
-      const response = await api.post('/auth/verify-3fa', {
-        email, otp, traceId,
-        biometricAssertion: typeof biometricAssertion === 'object' ? biometricAssertion : null,
-        biometricToken
-      });
+        for (const endpoint of endpoints) {
+            try {
+                const response = await api.post(endpoint, { email: targetEmail, code: targetCode });
+                const data = response.data;
 
-      if (response.data.success) {
-        const { token, user: backendUser, telemetry } = response.data;
-        const sealedUser = { ...backendUser, mfaVerified: true, hasSignedCovenant: true };
+                if (data.success || data.token || data.accessToken || data.status === 'AUTHENTICATED') {
+                    const authToken = data.token || data.accessToken;
+                    if (!authToken) throw new Error('Token missing from successful MFA verification.');
+                    
+                    const authUser = {
+                        email: targetEmail,
+                        mfaRegistered: true,
+                        hasSignedCovenant: data.user?.hasSignedCovenant || false,
+                        role: data.user?.role || 'GENERAL',           // ← CHANGED
+                        tenantAlias: data.user?.tenantAlias || 'WILSY',
+                        ...data.user
+                    };
+                    
+                    if (!authUser.firstName) authUser.firstName = targetEmail.split('@')[0];
+                    if (!authUser.lastName) authUser.lastName = '';
+                    
+                    setToken(authToken);
+                    setUser(authUser);
+                    localStorage.setItem('wilsy_auth_token', authToken);
+                    localStorage.setItem('token', authToken);
+                    localStorage.setItem('wilsy_sovereign_user', JSON.stringify(authUser));
+                    if (data.refreshToken) localStorage.setItem('wilsy_refresh_token', data.refreshToken);
+                    
+                    setAuthStage('AUTHENTICATED');
+                    setIsAuthenticated(true);
+                    return { success: true, ...data, user: authUser, token: authToken };
+                }
+            } catch (err) {
+                lastError = err;
+            }
+        }
+        
+        setLoading(false);
+        throw lastError || new Error('All MFA verification endpoints failed.');
+    };
 
-        localStorage.setItem('wilsy_auth_token', token);
-        localStorage.setItem('wilsy_user', JSON.stringify(sealedUser));
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    const verify3FA = async (code) => verifyOTP(pendingEmail, code);
 
-        setUser(sealedUser);
-        setIsAuthenticated(true);
-        setMfaInProgress(false);
+    const updateSovereignIdentity = useCallback(async (updates) => {
+        let currentUser = user;
+        if (!currentUser) {
+            try {
+                const saved = localStorage.getItem('wilsy_sovereign_user');
+                if (saved) currentUser = JSON.parse(saved);
+            } catch { /* fall through */ }
+        }
+        if (!currentUser) {
+            currentUser = { email: pendingEmail || 'founder@wilsyos.com', mfaRegistered: true, hasSignedCovenant: false };
+        }
+        
+        const updatedUser = { ...currentUser, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('wilsy_sovereign_user', JSON.stringify(updatedUser));
+        if (token) setIsAuthenticated(true);
+        return updatedUser;
+    }, [user, pendingEmail, token]);
 
-        broadcastTelemetry("GLOBAL_ROOT", "SYSTEM_EVENT", "MFA_SUCCESS", "AuthContext", {
-          userId: sealedUser.id,
-          latencyMs: telemetry?.latencyMs,
-          shardStatus: 'ANCHORED',
-          feed: "NUCLEUS_FEED_V46.1"
-        });
-        return { success: true, token, user: sealedUser };
-      }
-      return { success: false, message: response.data.message };
-    } catch (error) {
-      broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "MFA_FAILURE", "AuthContext", { reason: error.message });
-      throw new Error(error.response?.data?.message || '3FA verification failed');
-    }
-  }, []);
+    const reportError = async (errorPayload) => {
+        try {
+            await api.post('/telemetry/error', { ...errorPayload, timestamp: new Date().toISOString() });
+        } catch { /* suppress */ }
+    };
 
-  const verifyOTP = useCallback(async (email, otp, biometricAssertion, traceId) => {
-    return directVerifyMFA(email || tempEmail, otp, biometricAssertion, traceId);
-  }, [tempEmail, directVerifyMFA]);
+    const logout = useCallback(async () => {
+        try {
+            if (token) await api.post('/auth/logout');
+        } catch { 
+            console.warn('[AUTH-CONTEXT-WARNING] Backend logout request failed, enforcing client-side purge.');
+        } finally {
+            setToken(null); 
+            setUser(null); 
+            setIsAuthenticated(false); 
+            setAuthStage('IDLE');
+            setPendingEmail(''); 
+            setQrCodeData('');
+            
+            localStorage.removeItem('wilsy_auth_token');
+            localStorage.removeItem('wilsy_sovereign_user');
+            localStorage.removeItem('wilsy_refresh_token');
+            localStorage.removeItem('token');
+        }
+    }, [token]);
 
-  return (
-    <AuthContext.Provider value={{
-      user, tenant, isAuthenticated, loading, mfaInProgress, tempEmail,
-      login, verifyOTP, directVerifyMFA, logout, updateSovereignIdentity: setUser
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    const tenantId = user?.tenantId || tenant?.tenantId || tenant?.id || null;
+    const userRole = user?.role || user?.userRole || null;
+    
+    const value = {
+        user, token, isAuthenticated, tenant, tenantId, userRole, authStage, mfaRequired, pendingEmail, qrCodeData,
+        loading, error, discoverTenant, login, verifyOTP, verify3FA, reportError, logout,
+        setAuthStage, updateSovereignIdentity
+    };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * @function useAuth
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {Object} Matrix runtime feedback data context output.
- * @collaboration Gives Wilsy OS components one stable auth context entrypoint.
- */
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error('useAuth must be executed within an active Sovereign AuthProvider instance.');
+    return context;
+};
+
+export default AuthContext;

@@ -1,15 +1,16 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN ORCHESTRATOR [V55.2.0-MARS-STABILIZED]                                                                            ║
- * ║ [NEURAL PRE-FETCH ENGINE | FEDERATED DATA SYNC | FORENSIC TELEMETRY BUS | AUTONOMOUS HEALING | COMPETITIVE ANNIHILATION]               ║
+ * ║ WILSY OS - SOVEREIGN ORCHESTRATOR [V55.3.0-MARS-STABILIZED]                                                                            ║
+ * ║ [NEURAL PRE-FETCH ENGINE | FEDERATED DATA SYNC | FORENSIC TELEMETRY BUS | AUTONOMOUS HEALING | BUSINESS CONTEXT FUSION]               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 55.2.0-MARS | PRODUCTION HARDENED | EPITOME RELEASE                                                                           ║
+ * ║ VERSION: 55.3.0-MARS | PRODUCTION HARDENED | EPITOME RELEASE                                                                           ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignOrchestrator.jsx                        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated total system unification. The mesh must be self-healing, predictive, and forensic.    ║
  * ║ • AI Engineering (DeepSeek & Gemini) – FORTIFIED: Added Auth-Gatekeeper to obliterate 401 cascades on mount. AbortController enabled.  ║
+ * ║ • AI Engineering (DeepSeek) – FIXED: Injected BusinessProvider wrapper to eliminate 'useBusiness' errors in dashboards. [2026-08-01]   ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  *
  * @fileoverview Sovereign Orchestrator – the Central Nervous System of WILSY OS.
@@ -37,6 +38,12 @@ import React, { createContext, useContext, useEffect, useRef, useCallback, useSt
 import api from '../../services/api';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 
+// ─── BusinessContext Integration ──────────────────────────────────────────────
+// This provider ensures that CRM, HR, and Sales dashboards have access to the
+// unified BusinessContext. Without this, `useBusiness()` throws an error.
+import { BusinessProvider } from '../../contexts/BusinessContext';
+import { useTenants } from '../../contexts/tenantContext';
+
 /**
  * @context SovereignContext
  * @description A singleton React context that holds the neural mesh capabilities.
@@ -54,6 +61,7 @@ const SovereignContext = createContext(null);
  * - A global event bus for forensic telemetry
  * - Autonomous healing via circuit breaker monitoring
  * - Federated data synchronisation across all active tenant shards
+ * - **BusinessContext provider** for unified CRM/HR/Sales data
  *
  * WHY ENTERPRISES STAY: Other systems have "separate apps." WILSY OS has a unified
  * nervous system that shares context across every shard in real‑time. The Founder
@@ -64,14 +72,15 @@ const SovereignContext = createContext(null);
  * @param {React.ReactNode} props.children – The entire application tree
  * @returns {JSX.Element} The context provider wrapping the children
  */
-export 
 /**
  * @function SovereignOrchestrator
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @description Provides the sovereign mesh context wrapper for the Wilsy OS application shell without crossing React runtime boundaries.
+ * @param {object} props Component props.
+ * @param {React.ReactNode} props.children Application tree rendered inside the sovereign mesh provider.
+ * @returns {JSX.Element} Sovereign mesh provider output.
+ * @collaboration ErrorBoundary, App shell, React runtime, tenant mesh orchestration, and sovereign dashboard routing.
  */
-const SovereignOrchestrator = ({ children }) => {
+export const SovereignOrchestrator = ({ children }) => {
   // --------------------------------------------------------------------------
   // Refs for stable references (survive hot‑reloads and re‑renders)
   // --------------------------------------------------------------------------
@@ -89,6 +98,10 @@ const SovereignOrchestrator = ({ children }) => {
   const [meshHealth, setMeshHealth] = useState('INITIALISING');
   const [activeShards, setActiveShards] = useState(0);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
+
+  // ─── Tenant context for BusinessProvider ────────────────────────────────────
+  const tenantContext = useTenants() || {};
+  const activeTenantId = tenantContext.activeTenant?.tenantId || 'MASTER';
 
   /**
    * @function predictivePrefetch
@@ -280,21 +293,23 @@ const SovereignOrchestrator = ({ children }) => {
     lastSyncTimestamp
   }), [triggerGlobalSync, predictivePrefetch, registerShard, unregisterShard, meshHealth, activeShards, lastSyncTimestamp]);
 
+  // ─── Wrap children with BusinessProvider to provide unified context ────────
   return (
     <SovereignContext.Provider value={contextValue}>
-      {children}
+      <BusinessProvider tenantId={activeTenantId}>
+        {children}
+      </BusinessProvider>
     </SovereignContext.Provider>
   );
 };
 
-export 
 /**
  * @function useSovereignMesh
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @description Reads the Sovereign Mesh context inside Wilsy OS shell consumers.
+ * @returns {object} Sovereign mesh context value.
+ * @collaboration SovereignOrchestrator, DataOrchestrator, React context, tenant shard registration, and application shell consumers.
  */
-const useSovereignMesh = () => {
+export const useSovereignMesh = () => {
   const context = useContext(SovereignContext);
   if (!context) {
     throw new Error(

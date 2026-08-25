@@ -1,21 +1,37 @@
 {
-  "github-actions.workflows.pinned": [
-    ".github/workflows/ci.yml"
-  ],
-  "github-actions.remote-features": true,
-  "yaml.customTags": [
-    "!reference",
-    "tag:yaml.org,2002:js/undefined"
-  ],
-  "github-actions.completion.use-secrets-from-github": true,
-  "github-actions.diagnostics.ignored-contexts": [
-    "secrets.TEST_MONGODB_URI",
-    "secrets.DOCKER_USERNAME",
-    "secrets.DOCKER_PASSWORD",
-    "secrets.SLACK_WEBHOOK"
-  ],
-  "files.associations": {
-    "*.js": "javascriptreact",
-    "*.jsx": "javascriptreact"
-  }
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.importFormat": "absolute",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.indexing": true,
+    "python.analysis.packageIndexDepth": 5,
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "warning",
+        "reportUndefinedVariable": "error"
+    },
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/.coverage": true
+    }
 }

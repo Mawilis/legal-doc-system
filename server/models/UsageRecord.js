@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - SOVEREIGN USAGE NUCLEUS [V1.1.0-MARS]                                                                                       ║
@@ -210,7 +209,7 @@ const UsageRecordSchema = new mongoose.Schema(
  * @param {Function} next - Mongoose next callback
  * @returns {void}
  */
-UsageRecordSchema.pre('validate', function(next) {
+UsageRecordSchema.pre('validate', function (next) {
   if (this.isNew) {
     const sealData = `${this.tenantId}|${this.type}|${this.totalCost}|${this.traceId}`;
     this.sealHash = generateSovereignSeal(sealData);

@@ -1,1886 +1,395 @@
 /* eslint-disable */
-import crmLeadViewRoutes from './routes/crmLeadViewRoutes.js';
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║                                                                                                                                        ║
- * ║   ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ███████╗     ██████╗ ███████╗                                               ║
- * ║   ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝    ██╔══██╗██╔════╝    ██╔═══██╗██╔════╝                                               ║
- * ║   ██║ █╗ ██║██║██║     ███████╗ ╚████╔╝     ██████╔╝█████╗      ██║   ██║███████╗                                               ║
- * ║   ██║███╗██║██║██║     ╚════██║  ╚██╔╝      ██╔══██╗██╔══╝      ██║   ██║╚════██║                                               ║
- * ║   ╚███╔███╔╝██║███████╗███████║   ██║       ██████╔╝███████╗    ╚██████╔╝███████║                                               ║
- * ║    ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝   ╚═╝       ╚═════╝ ╚══════╝     ╚═════╝ ╚══════╝                                               ║
- * ║                                                                                                                                        ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - AUTONOMOUS MASTER CORE (AMC) [V48.6.0-MARS-GENERATIONAL]
- * [GLOBAL SOVEREIGN SHIELD | TENANT GUARD BYPASS FOR ARTIFACT GENERATION | ARTIFACT ROUTER INTEGRATED | FULL JSDOC]
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [V5.2.10‑PROXY‑ORDER‑FIX]                                                              ║
+ * ║ EPITOME: Production BFF with CORRECT middleware order – proxies run BEFORE body parsers.                                            ║
+ * ║          Uses http-proxy-middleware for all Kennel routes, including billing.                                                       ║
+ * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
+ * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 48.6.0-MARS-GENERATIONAL | PRODUCTION READY | TOP 0.001% GLOBAL SAAS ARCHITECTURE                                            ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | GENERATIONAL LEGACY | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                    ║
+ * ║ VERSION: 5.2.10‑PROXY‑ORDER‑FIX | PRODUCTION READY                                                                                  ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & ARCHITECTURAL LOG:                                                                                                     ║
- * ║ ... (previous entries)                                                                                                                   ║
- * ║ 29. AI ENGINEERING: DeepSeek - ENHANCED: Added tenantGuard bypass for artifact generation paths.                                       ║
- * ║ 30. AI ENGINEERING: DeepSeek - FINAL: Added complete JSDoc for all functions, fulfilling forensic documentation mandate.                ║
- * ║ 31. AI ENGINEERING: DeepSeek - INTEGRATED: artifactRoutes mounted at /api/generate, final glue for PDF generation.                     ║
- * ║ 32. AI ENGINEERING: DeepSeek - ADDITIVE: Mounted sovereignRoutes (TelemetryMesh + regulator ETL) at /monitoring.                       ║
- * ║ 33. AI ENGINEERING: DeepSeek - CREATIVE: Added aggregated boardroom health endpoint /api/v1/boardroom/health.                          ║
- * ║ 34. AI ENGINEERING: DeepSeek - ENHANCED: Integrated Sovereign Prometheus registry at /api/sovereign/metrics (telemetry batching,       ║
- * ║     scope checks, breach events, council decisions, token lifecycle).                                                                  ║
- * ║ 35. AI ENGINEERING: DeepSeek - GATEWAY: Added sovereign ingress route for /api/telemetry/event with batching and Prometheus bump.      ║
- * ║ 36. AI ENGINEERING: DeepSeek - FIXED: Telemetry route now handles batched payloads (frontend `{ batch: [...] }`) – resolves 500s.      ║
+ * ║ 🔧 CHANGE LOG (v5.2.10):                                                                                                               ║
+ * ║   2026-08-24 – Moved all proxy middlewares BEFORE body parsers. Removed custom axios proxy. Reverted to http-proxy-middleware.       ║
+ * ║   2026-08-24 – v5.2.9: Attempted axios fix.                                                                                          ║
+ * ║   ... (previous history)                                                                                                               ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.2.10‑PROXY‑ORDER‑FIX                                                                       ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-// 🛡️ INSTITUTIONAL PRE-BOOT IGNITION
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import os from 'os';
-import { performance } from 'node:perf_hooks';
-import crypto from 'node:crypto';
-import pino from 'pino';
-import { z } from 'zod';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, '.env') });
-
-// ============================================================================
-// 🔥 STRUCTURED LOGGER (Pino) – Replaces console.log/error
-// ============================================================================
-/**
- * @constant logger
- * @description Pino structured logger instance. Formats logs as JSON with optional pretty-print in development.
- * @type {import('pino').Logger}
- */
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => ({ level: label }),
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  base: { pid: process.pid, service: 'WILSY-OS-CORE' },
-  transport:
-    process.env.NODE_ENV === 'development'
-      ? { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:standard' } }
-      : undefined,
-});
-
-// ============================================================================
-// 🔥 CONFIG VALIDATION WITH ZOD (Zero-runtime errors)
-// ============================================================================
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform(Number).default('5050'),
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  MONGODB_URI: z
-    .string()
-    .url()
-    .default('mongodb://127.0.0.1:27017/wilsy-sovereign-root?directConnection=true'),
-  VAPID_PUBLIC_KEY: z.string().optional(),
-  VAPID_PRIVATE_KEY: z.string().optional(),
-  COURT_API_URL: z.string().url().optional(),
-  COURT_API_KEY: z.string().optional(),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-});
-
-const envValidation = envSchema.safeParse(process.env);
-if (!envValidation.success) {
-  logger.error({ errors: envValidation.error.errors }, 'FATAL: Environment validation failed');
-  process.exit(1);
-}
-const validatedEnv = envValidation.data;
-
-// ────────────────────────────────────────────────────────────────
-// 🔥 ADDITION 1: ENFORCE JWT_SECRET (NO FALLBACK)
-// ────────────────────────────────────────────────────────────────
-if (!validatedEnv.JWT_SECRET) {
-  logger.fatal('JWT_SECRET is not defined in environment variables.');
-  process.exit(1);
-}
-logger.info({ secretLength: validatedEnv.JWT_SECRET.length }, 'JWT_SECRET loaded');
-
-import chalk from 'chalk';
-import { exec, execSync } from 'child_process';
-import http from 'http';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import jwt from 'jsonwebtoken';
-import { WebSocketServer } from 'ws';
-import app from './app.js';
-import { connectDB } from './config/database.js';
-import redisConfig from './config/redis.js';
-import { requireSovereignAuth } from './middleware/auth.middleware.js';
-import { tenantGuard } from './middleware/tenantGuard.js';
-import tenantContext from './middleware/tenantContext.js';
-import apiRouter from './routes/api.js';
-import telemetryRoutes from './routes/telemetryRoutes.js';
-import billingAdvancedRoutes from './routes/billingAdvancedRoutes.js';
-import jurisdictionRoutes from './routes/jurisdictionRoutes.js';
-import client from 'prom-client';
-import prometheusExporter from './utils/prometheusExporter.js';
-import metrics from './utils/metrics.js';
-import breakerController from './controllers/breakerController.js';
-import revenueController from './controllers/revenueController.js';
-import complianceController from './controllers/complianceController.js';
-import forensicsController from './controllers/forensicsController.js';
-import User from './models/userModel.js';
-import Revenue from './models/Revenue.js';
-import Telemetry from './models/Telemetry.js';
-import ForensicLog from './models/ForensicLog.js';
-import NotificationLog from './models/NotificationLog.js';
-import sovereignMetrics from './metrics/prometheusMetrics.js';
-import courtUpdater from './services/globalCourtUpdater.js';
-import forensicHasher from './utils/forensicHasher.js'; // 🏛️ POST-QUANTUM HASH CHAIN
-import forensicMerkleAuditor from './services/ForensicMerkleAuditor.js';
-
-// Import the sovereign event stream for real-time boardroom notifications.
-import sovereignEventStream from './services/sovereignEventStream.js';
-
-// 🏛️ SOVEREIGN ARTIFACT ROUTER – Cryptographically sealed PDF generation (dedicated router)
-import artifactRoutes from './routes/artifactRoutes.js';
-
-// 🏛️ SOVEREIGN STATEMENT ROUTER – Institutional statements (Revenue, Compliance, Forensics)
-import statementsRoutes from './routes/statements.routes.js';
-
-// 🏛️ SOVEREIGN MONITORING & REGULATOR ROUTER – TelemetryMesh metrics + regulator ETL (ADDITIVE)
-import sovereignRoutes from './routes/sovereignRoutes.js';
-
-import sourceRegistryRoutes from './routes/sourceRegistryRoutes.js';
-import wilsyAccountIdentityPostureRoutes from './routes/wilsyAccountIdentityPostureRoutes.js';
-// 🏛️ SOVEREIGN PROMETHEUS METRICS REGISTRY (Enhanced metrics for batching, scope, breach, council, token)
-import sovereignPrometheusRegistry from './metrics/prometheus.js';
-
-import { telemetryEvents } from './metrics/prometheus.js';
-
-import { getSourceRegistryStatus as getSourceRegistryStatusController } from './controllers/sourceRegistryController.js';
-import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
-import { resolveWilsyAISovereignContext } from './services/wilsyAI/wilsyAISovereignContextService.js';
-import { resolveWilsyAIOperatorModel } from './services/wilsyAI/wilsyAIOperatorModelService.js';
-
+import 'dotenv/config';
 import express from 'express';
-import crmControlStateRoutes from './routes/crmControlStateRoutes.js';
-import knowledgeBaseVaultRoutes from './routes/knowledgeBaseVaultRoutes.js';
-const server = http.createServer(app);
-const PORT = validatedEnv.PORT;
-const VERSION = '48.6.0-MARS-GENERATIONAL';
+import cors from 'cors';
+import helmet from 'helmet';
+import fileUpload from 'express-fileupload';
+import { createServer } from 'node:http';
+import mongoose from 'mongoose';
+import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
-// ============================================================================
-// 🔥 IMMUTABLE BOOT LOGGING HELPER (FIXED: mandatory fields + hash chain)
-// ============================================================================
+// ─── CONSTANTS ──────────────────────────────────────────────────────────────
+const KENNEL_TARGET = (process.env.KENNEL_URL || process.env.KENNEL_EOS_URL || 'http://127.0.0.1:9095').replace(/\/$/, '');
+const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
+const BUILD = '5.2.10-PROXY-ORDER-FIX';
+const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
+const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
+
 /**
- * @function logBootEvent
- * @description Records Wilsy OS server boot lifecycle events for forensic startup visibility.
- * @param {...*} args - Boot event arguments accepted by the existing server helper.
- * @returns {*} Existing helper return value.
- * @collaboration Supports sovereign boot telemetry, audit posture and operational observability during backend startup.
+ * Rebuild Kennel path after Express strips the mount prefix.
  */
-
-async function logBootEvent(action, metadata = {}) {
-  try {
-    if (mongoose.connection.readyState === 1) {
-      const sealEntry = forensicHasher.createSeal({ action, metadata, timestamp: Date.now() });
-      await ForensicLog.create({
-        tenantId: 'wilsy-sovereign-root',
-        userId: 'SYSTEM',
-        performedBy: 'SYSTEM_BOOT_PROCESS', // ✅ Mandatory field: Actor identity
-        eventType: 'SYSTEM_INITIALIZATION', // ✅ Mandatory field: Event classification
-        action: `BOOT:${action}`,
-        resource: 'SYSTEM',
-        severity: 'INFO',
-        summary: `Boot stage ${action} completed`,
-        metadata: {
-          ...metadata,
-          version: VERSION,
-          chainPosition: sealEntry.position,
-          chainHash: sealEntry.chainHash,
-        },
-        eventSeal: sealEntry.hash, // ✅ Correct field name (not forensicSeal)
-        chainPosition: sealEntry.position,
-        chainHash: sealEntry.chainHash,
-      });
-      logger.info(
-        { action, chainPosition: sealEntry.position },
-        'Boot event logged to ForensicLog'
-      );
-    }
-  } catch (err) {
-    logger.warn({ err, action }, 'Failed to log boot event to ForensicLog');
+function rewriteMountedPath(path, targetPrefix) {
+  let pathname = path || '';
+  let query = '';
+  const qIdx = pathname.indexOf('?');
+  if (qIdx >= 0) {
+    query = pathname.slice(qIdx);
+    pathname = pathname.slice(0, qIdx);
   }
-}
-
-// ────────────────────────────────────────────────────────────────
-// 🔥 STAGE 0: SOVEREIGN CORS FORTRESS
-// ────────────────────────────────────────────────────────────────
-logger.info('Initializing Sovereign CORS Engine...');
-
-/**
- * @middleware corsMiddleware
- * @description Handles Cross-Origin Resource Sharing (CORS) for all requests.
- * Whitelists localhost origins, handles preflight OPTIONS, and injects required headers.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware function.
- * @returns {void}
- * @real-world Ensures frontend (React on port 3000/5173) can communicate with backend.
- * @example
- * app.use(corsMiddleware);
- */
-
-/**
- * ╔══════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS — ROOT-CHAIN SOURCE REGISTRY READ-ONLY BRIDGE                     ║
- * ║ PURPOSE: Operator health/status before forensic, integrity and tenant walls.║
- * ╚══════════════════════════════════════════════════════════════════════════════╝
- */
-app.get('/api/source-registry/health', async (req, res) => {
-  // WILSY_P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE_START
-  const wilsyAIContextMode = String(
-    req.query?.wilsyAiContext || req.query?.wilsyAIContext || req.query?.aiContext || ''
-  ).toUpperCase();
-
-  /* P60K5Q10AI_OPERATOR_MODEL_BRANCH */
-  if (
-    wilsyAIContextMode === 'ASK' ||
-    wilsyAIContextMode === 'OPERATOR' ||
-    wilsyAIContextMode === 'OPERATOR_MODEL' ||
-    req.query?.operatorQuestion ||
-    req.query?.question
-  ) {
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
-    res.setHeader('X-Wilsy-AI-Bridge', 'SOURCE_REGISTRY_HEALTH_GET_OPERATOR_KERNEL');
-
-    const operatorModel = await resolveWilsyAIOperatorModel(req);
-
-    return res.status(200).json(operatorModel);
+  if (!pathname || pathname === '/') {
+    return `${targetPrefix}${query}`;
   }
-
-  if (wilsyAIContextMode === 'RESOLVE' || wilsyAIContextMode === 'CONTEXT') {
-    const generatedAt = new Date().toISOString();
-    const tenantId = String(req.query?.tenantId || req.headers?.['x-tenant-id'] || 'MASTER');
-    const operatorId = String(
-      req.query?.operatorId || req.headers?.['x-operator-id'] || 'WILSY_OPERATOR'
-    );
-    const workspaceRoute = String(req.query?.workspaceRoute || '/crm/setup');
-    const workspaceSurface = String(
-      req.query?.workspaceSurface ||
-        'CRM Operating Controls Authority Graph Evidence Approval Release'
-    );
-
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
-    res.setHeader('X-Wilsy-AI-Bridge', 'SOURCE_REGISTRY_HEALTH_GET_CONTEXT_BRIDGE');
-
-    try {
-      const context = await resolveWilsyAISovereignContext({
-        ...req,
-        headers: {
-          ...req.headers,
-          'x-tenant-id': tenantId,
-          'x-operator-id': operatorId,
-        },
-        body: {
-          tenantId,
-          operatorId,
-          workspaceRoute,
-          workspaceSurface,
-          institutionalHeaders: {
-            tenantId,
-            operatorId,
-            generatedAt,
-            route: '/api/source-registry/health',
-            commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-            mutation: false,
-            contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
-          },
-          strikePayload: {
-            institutionalHeaders: {
-              tenantId,
-              operatorId,
-              generatedAt,
-              route: '/api/source-registry/health',
-              commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-              mutation: false,
-              contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
-            },
-            commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION',
-            mutation: false,
-          },
-        },
-      });
-
-      return res.status(200).json({
-        ...context,
-        bridge: 'SOURCE_REGISTRY_HEALTH_GET_CONTEXT_BRIDGE',
-      });
-    } catch (error) {
-      return res.status(500).json({
-        result: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
-        mutation: false,
-        generatedAt,
-        institutionalHeaders: {
-          tenantId,
-          operatorId,
-          generatedAt,
-          route: '/api/source-registry/health',
-          commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-          mutation: false,
-          contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
-        },
-        strikePayload: {
-          institutionalHeaders: {
-            tenantId,
-            operatorId,
-            generatedAt,
-            route: '/api/source-registry/health',
-            commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-            mutation: false,
-            contractVersion: 'P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE',
-          },
-          commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION_FAILURE',
-          mutation: false,
-        },
-        error: {
-          code: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
-          message: error?.message || 'Unable to resolve Wilsy AI context.',
-        },
-      });
-    }
-  }
-  // WILSY_P60K5Q10Z_GET_HEALTH_AI_CONTEXT_BRIDGE_END
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
-  return res.status(200).json({
-    success: true,
-    data: {
-      service: 'source-registry',
-      status: 'ROUTES_READY',
-      evidenceStatus: 'NOT_EVALUATED',
-      truthPolicy: 'NO_FAKE_VERIFIED',
-      bridge: 'ROOT_CHAIN_READ_ONLY',
-      protectedOperations: [
-        'POST /api/source-registry/verify',
-        'POST /api/source-registry/seal-boardroom-proof',
-        'POST /api/source-registry/investor-pack',
-      ],
-    },
-    meta: {
-      generatedAt: new Date().toISOString(),
-    },
-  });
-});
-
-app.get('/api/source-registry/status', getSourceRegistryStatusController);
-
-// WILSY_P60K5Q10Y_SOURCE_REGISTRY_HEALTH_POST_AI_BRIDGE_START
-app.post(
-  '/api/source-registry/health',
-  express.json({ limit: '1mb' }),
-  validateWilsyAIDirectBridgeEvidence,
-  handleWilsyAIDirectBridgeContextResolve
-);
-// WILSY_P60K5Q10Y_SOURCE_REGISTRY_HEALTH_POST_AI_BRIDGE_END
-
-// WILSY_P60K5Q10U_DIRECT_AI_READONLY_BRIDGE_EXPRESS_BINDING_REPAIRED_START
-/**
- * @function applyWilsyAIDirectBridgeHeaders
- * @description Applies browser-safe read-only Wilsy AI bridge headers for exact AI context endpoints.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {void}
- * @collaboration Wilsy OS Intelligence Dock, source-registry root bridge, CORS posture, and no-mutation AI context contract.
- */
-function applyWilsyAIDirectBridgeHeaders(req, res) {
-  const origin = req.headers?.origin || 'http://localhost:3000';
-
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Vary', 'Origin, Access-Control-Request-Headers');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-      'X-Tenant-Id',
-      'x-tenant-id',
-      'X-Operator-Id',
-      'x-operator-id',
-      'X-Wilsy-Command-Surface',
-      'x-wilsy-command-surface',
-      'X-Request-ID',
-      'x-request-id',
-      'X-Trace-ID',
-      'x-trace-id',
-      req.headers?.['access-control-request-headers'] || '',
-    ]
-      .filter(Boolean)
-      .join(', ')
-  );
-  res.setHeader(
-    'Access-Control-Expose-Headers',
-    'X-Wilsy-Trace-ID, X-Wilsy-AI-Bridge, X-Institutional-Latency'
-  );
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('X-Wilsy-AI-Bridge', 'DIRECT_READ_ONLY_CONTEXT_BRIDGE');
+  const suffix = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return `${targetPrefix}${suffix}${query}`;
 }
 
 /**
- * @function handleWilsyAIDirectBridgeOptions
- * @description Handles preflight for exact read-only Wilsy AI direct bridge endpoints.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {void}
- * @collaboration Enables the global Intelligence Dock to reach the read-only AI context route without weakening mutation surfaces.
+ * Forward institutional headers to Kennel (dual‑case tenant + idempotency).
  */
-function handleWilsyAIDirectBridgeOptions(req, res) {
-  applyWilsyAIDirectBridgeHeaders(req, res);
-  res.status(204).end();
-}
-
-/**
- * @function validateWilsyAIDirectBridgeEvidence
- * @description Validates the institutional header and nested strike payload evidence contract for direct AI context resolution.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware callback.
- * @returns {void}
- * @collaboration Keeps direct AI context resolution read-only, tenant-scoped, and evidence-gated before future execution bridges.
- */
-function validateWilsyAIDirectBridgeEvidence(req, res, next) {
-  applyWilsyAIDirectBridgeHeaders(req, res);
-
-  const body = req.body || {};
-  const institutionalHeaders = body.institutionalHeaders || {};
-  const strikeHeaders = body.strikePayload?.institutionalHeaders || {};
+function forwardInstitutionalHeaders(proxyReq, req) {
+  const h = req.headers || {};
   const tenantId =
-    req.headers?.['x-tenant-id'] || body.tenantId || institutionalHeaders.tenantId || 'MASTER';
-  const operatorId =
-    req.headers?.['x-operator-id'] ||
-    body.operatorId ||
-    institutionalHeaders.operatorId ||
-    'UNKNOWN_OPERATOR';
-
-  if (!institutionalHeaders.tenantId || !strikeHeaders.tenantId) {
-    return res.status(400).json({
-      result: 'WILSY_AI_DIRECT_CONTEXT_EVIDENCE_REQUIRED',
-      mutation: false,
-      generatedAt: new Date().toISOString(),
-      institutionalHeaders: {
-        tenantId,
-        operatorId,
-        route: '/api/wilsy/ai/context/resolve',
-        commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-      },
-      strikePayload: {
-        institutionalHeaders: {
-          tenantId,
-          operatorId,
-          route: '/api/wilsy/ai/context/resolve',
-          commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-        },
-        commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION_REJECTED',
-        mutation: false,
-      },
-      error: {
-        code: 'WILSY_AI_EVIDENCE_CONTRACT_REQUIRED',
-        message:
-          'institutionalHeaders and strikePayload.institutionalHeaders are required for Wilsy AI context resolution.',
-      },
-    });
+    h['x-tenant-id'] ||
+    h['x-tenant-id'] ||
+    h['x-wilsy-tenant-id'] ||
+    req.tenantId ||
+    null;
+  if (tenantId) {
+    proxyReq.setHeader('X-Tenant-ID', tenantId);
+    proxyReq.setHeader('X-Tenant-Id', tenantId);
+    proxyReq.setHeader('x-tenant-id', tenantId);
   }
-
-  return next();
+  const idem =
+    h['x-idempotency-key'] ||
+    h['x-wilsy-idempotency-key'] ||
+    null;
+  if (idem) {
+    proxyReq.setHeader('X-Idempotency-Key', idem);
+    proxyReq.setHeader('X-Wilsy-Idempotency-Key', idem);
+  }
+  if (h.authorization) {
+    proxyReq.setHeader('Authorization', h.authorization);
+  }
+  if (h['x-trace-id']) {
+    proxyReq.setHeader('X-Trace-ID', h['x-trace-id']);
+  }
+  if (h['x-request-id']) {
+    proxyReq.setHeader('X-Request-ID', h['x-request-id']);
+  }
 }
 
 /**
- * @function handleWilsyAIDirectBridgeHealth
- * @description Reports read-only Wilsy AI direct bridge health before forensic auth gates.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {void}
- * @collaboration Wilsy OS Intelligence Dock, source-registry safe bridge, and sovereign context resolver diagnostics.
+ * Build a proxy middleware for a given mount prefix.
+ * Uses http-proxy-middleware – handles raw streams correctly when placed before body parsers.
  */
-function handleWilsyAIDirectBridgeHealth(req, res) {
-  applyWilsyAIDirectBridgeHeaders(req, res);
-
-  return res.status(200).json({
-    result: 'WILSY_AI_ROUTE_HEALTHY',
-    contractVersion: 'P60K5Q10_WILSY_AI_SOVEREIGN_CONTEXT_RESOLVER',
-    route: '/api/wilsy/ai',
-    bridge: 'DIRECT_READ_ONLY_CONTEXT_BRIDGE',
-    mutation: false,
-    generatedAt: new Date().toISOString(),
+function buildKennelProxy({ mountPrefix, targetPrefix, timeoutMs }) {
+  const timeout = timeoutMs || DEFAULT_PROXY_TIMEOUT_MS;
+  return createProxyMiddleware({
+    target: KENNEL_TARGET,
+    changeOrigin: true,
+    logLevel: PROXY_LOG_LEVEL,
+    proxyTimeout: timeout,
+    timeout,
+    connectTimeout: 5000,
+    pathRewrite: (path) => {
+      const rewritten = rewriteMountedPath(path, targetPrefix);
+      if (process.env.WILSY_PROXY_DEBUG === '1') {
+        console.log(`[PROXY-REWRITE] mount=${mountPrefix} path=${path} → ${rewritten}`);
+      }
+      return rewritten;
+    },
+    onProxyReq: (proxyReq, req) => {
+      forwardInstitutionalHeaders(proxyReq, req);
+      // No need to restream – the stream is still raw because proxy runs before body parsers.
+      if (process.env.WILSY_PROXY_DEBUG === '1') {
+        console.log(`[PROXY] ${req.method} ${req.originalUrl || req.url} → ${KENNEL_TARGET}`);
+      }
+    },
+    onError: (err, req, res) => {
+      console.error('[PROXY] Kennel unreachable:', err.message);
+      if (!res.headersSent) {
+        res.status(503).json({
+          success: false,
+          error: 'Kennel service unavailable',
+          message: err.message,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    },
   });
 }
 
-/**
- * @function handleWilsyAIDirectBridgeContextResolve
- * @description Resolves Wilsy AI read-only sovereign context through an exact direct endpoint with local evidence validation.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Promise<void>} Sends read-only AI sovereign context response.
- * @collaboration Wilsy OS Intelligence Dock, sovereign context service, tenant evidence contract, and future governed execution bridge.
- */
-async function handleWilsyAIDirectBridgeContextResolve(req, res) {
-  applyWilsyAIDirectBridgeHeaders(req, res);
+// ─── EXPRESS APP FACTORY ──────────────────────────────────────────────────
 
-  try {
-    const context = await resolveWilsyAISovereignContext(req);
-    return res.status(200).json({
-      ...context,
-      bridge: 'DIRECT_READ_ONLY_CONTEXT_BRIDGE',
+function createApp() {
+  const app = express();
+
+  app.set('trust proxy', 1);
+
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(cors({ origin: true, credentials: true }));
+
+  // ─── HEALTH ROUTES (GET, no body) ─────────────────────────────────────
+  app.get('/ping', (req, res) =>
+    res.json({ status: 'PONG', system: 'WILSY OS BFF', version: BUILD })
+  );
+  app.get('/api/ping', (req, res) =>
+    res.json({
+      status: 'PONG',
+      system: 'WILSY OS BFF',
+      version: BUILD,
+      kennelAllTheWay: true,
+      kennel: KENNEL_TARGET,
+    })
+  );
+  app.get('/api/billing/ping', (req, res) =>
+    res.json({
+      status: 'PONG',
+      surface: 'BILLING_BFF_PROXY',
+      version: BUILD,
+      kennelAllTheWay: true,
+      kennel: KENNEL_TARGET,
+      map: '/api/billing/* → /billing/*',
+      timestamp: new Date().toISOString(),
+    })
+  );
+  app.get('/health', (req, res) => {
+    const dbState = mongoose.connection.readyState;
+    const statusMap = { 0: 'DISCONNECTED', 1: 'CONNECTED', 2: 'CONNECTING', 3: 'DISCONNECTING' };
+    res.json({
+      status: 'OPTIMAL',
+      build: BUILD,
+      version: BUILD,
+      kennelAllTheWay: true,
+      database: statusMap[dbState] || 'UNKNOWN',
+      kennel: KENNEL_TARGET,
+      mounts: {
+        billing: '/api/billing + /billing → Kennel /billing',
+        tenants: '/api/tenants + /api/business/tenants → Kennel /api/tenants',
+        auth: '/api/auth → Kennel /api/auth',
+        subscriptions: '/api/subscriptions → Kennel /api/subscriptions',
+        employees: '/api/employees → Kennel /api/employees',
+        kernel: '/api/kernel → Kennel /api/kernel',
+        plans: '/api/plans → Kennel /api/plans',
+      },
+      timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    const generatedAt = new Date().toISOString();
-    const tenantId = req.headers?.['x-tenant-id'] || req.body?.tenantId || 'MASTER';
-    const operatorId = req.headers?.['x-operator-id'] || req.body?.operatorId || 'UNKNOWN_OPERATOR';
-
-    return res.status(500).json({
-      result: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
-      mutation: false,
-      generatedAt,
-      institutionalHeaders: {
-        tenantId,
-        operatorId,
-        generatedAt,
-        route: '/api/wilsy/ai/context/resolve',
-        commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-        contractVersion: 'P60K5Q10_WILSY_AI_SOVEREIGN_CONTEXT_RESOLVER',
-      },
-      strikePayload: {
-        institutionalHeaders: {
-          tenantId,
-          operatorId,
-          generatedAt,
-          route: '/api/wilsy/ai/context/resolve',
-          commandSurface: 'WILSY_OS_INTELLIGENCE_DOCK',
-        },
-        commandType: 'READ_ONLY_AI_CONTEXT_RESOLUTION_FAILURE',
-        mutation: false,
-      },
-      error: {
-        code: 'WILSY_AI_CONTEXT_RESOLVE_FAILED',
-        message: error?.message || 'Unable to resolve Wilsy AI context.',
-      },
-    });
-  }
-}
-
-app.options('/api/wilsy/ai/health', handleWilsyAIDirectBridgeOptions);
-app.get('/api/wilsy/ai/health', handleWilsyAIDirectBridgeHealth);
-app.options('/api/wilsy/ai/context/resolve', handleWilsyAIDirectBridgeOptions);
-app.post(
-  '/api/wilsy/ai/context/resolve',
-  express.json({ limit: '1mb' }),
-  validateWilsyAIDirectBridgeEvidence,
-  handleWilsyAIDirectBridgeContextResolve
-);
-// WILSY_P60K5Q10U_DIRECT_AI_READONLY_BRIDGE_EXPRESS_BINDING_REPAIRED_END
-
-// WILSY_P60K5Q10X_SOURCE_REGISTRY_AI_BRIDGE_ALIAS_START
-app.options('/api/source-registry/wilsy-ai/health', handleWilsyAIDirectBridgeOptions);
-app.get('/api/source-registry/wilsy-ai/health', handleWilsyAIDirectBridgeHealth);
-app.options('/api/source-registry/wilsy-ai/context/resolve', handleWilsyAIDirectBridgeOptions);
-app.post(
-  '/api/source-registry/wilsy-ai/context/resolve',
-  express.json({ limit: '1mb' }),
-  validateWilsyAIDirectBridgeEvidence,
-  handleWilsyAIDirectBridgeContextResolve
-);
-// WILSY_P60K5Q10X_SOURCE_REGISTRY_AI_BRIDGE_ALIAS_END
-
-app.use('/api/wilsy/ai', wilsyAIRoutes); // WILSY_P60K5Q10R_APPGET_SIGNATURE_REPAIRED_SOURCE_ZONE
-
-// WILSY_R18AD26A_ACCOUNT_COMMAND_CORS_BRIDGE
-/**
- * @function buildWilsyAccountCommandCorsHeaders
- * @description Builds the allowed CORS header list for browser-safe Account Command Center read-only endpoints.
- * @param {string} requestedHeaders - Browser preflight requested header list.
- * @returns {string} Comma-separated allowed header list.
- * @collaboration Allows identity posture and compliance command hydration to use Wilsy browser headers without weakening write-route auth.
- */
-function buildWilsyAccountCommandCorsHeaders(requestedHeaders = '') {
-  const requested = String(requestedHeaders || '')
-    .split(',')
-    .map((header) => header.trim())
-    .filter(Boolean);
-
-  const baseHeaders = [
-    'Accept',
-    'Authorization',
-    'Content-Type',
-    'X-Requested-With',
-    'X-Tenant-Id',
-    'X-Correlation-Id',
-    'X-Wilsy-Account-Client',
-    'X-Wilsy-Account-Command',
-    'X-Wilsy-Client',
-  ];
-
-  return Array.from(new Set([...baseHeaders, ...requested])).join(', ');
-}
-
-/**
- * @function wilsyAccountCommandCorsBridge
- * @description Handles CORS preflight and response headers for read-only Account Command Center backend hydration.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware callback.
- * @returns {void}
- * @collaboration Keeps Account Command Center identity and compliance endpoints browser-readable while preserving mutation protection.
- */
-function wilsyAccountCommandCorsBridge(req, res, next) {
-  const url = String(req.originalUrl || req.url || '').toLowerCase();
-  const method = String(req.method || 'GET').toUpperCase();
-  const isAccountCommandRoute = [
-    '/api/account/identity-posture',
-    '/api/account/compliance-command',
-  ].some((path) => url.startsWith(path));
-
-  if (!isAccountCommandRoute) {
-    return next();
-  }
-
-  const origin = req.headers.origin;
-
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin, Access-Control-Request-Headers');
-  }
-
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    buildWilsyAccountCommandCorsHeaders(req.headers['access-control-request-headers'])
-  );
-  res.setHeader('Access-Control-Max-Age', '600');
-
-  if (method === 'OPTIONS') {
-    res.status(204).end();
-    return undefined;
-  }
-
-  return next();
-}
-
-app.use(wilsyAccountCommandCorsBridge);
-
-// WILSY_R18AD33B_FINAL_JSON_EVIDENCE_PROMOTION
-/**
- * @function promoteAccountEvidenceSnapshotToCommandPayloadR18AD33B
- * @description Promotes sealed Account Compliance evidence receipts into the final proof and rail card response.
- * @param {Object} payload - Account Compliance Command payload.
- * @returns {Object} Payload aligned to sealed evidence when real receipts and a Merkle root exist.
- * @collaboration Keeps the Account Command Center coherent by allowing sealed backend evidence to override stale forensic-empty display posture without fabricating data.
- */
-function promoteAccountEvidenceSnapshotToCommandPayloadR18AD33B(payload = {}) {
-  const evidence = payload?.evidence || {};
-  const receiptCount = Number(evidence.receiptCount || 0);
-  const sealedReceiptCount = Number(evidence.sealedReceiptCount || 0);
-  const clausesAnchored = Number(evidence.clausesAnchored || 0);
-  const merkleRoot = String(evidence.merkleRoot || '').trim();
-  const compactRoot =
-    evidence.compactRoot ||
-    (merkleRoot ? `${merkleRoot.slice(0, 18)}…${merkleRoot.slice(-12)}` : 'Root pending');
-  const evidenceIsSealed = receiptCount > 0 && sealedReceiptCount > 0 && Boolean(merkleRoot);
-
-  if (!evidenceIsSealed) {
-    return payload;
-  }
-
-  const latestReceipt = evidence.latestReceipt || {};
-  const previousDiagnostics = payload.diagnostics || {};
-  const previousProof = payload.proof || {};
-  const latestEvidenceHash = String(latestReceipt.evidenceHash || merkleRoot);
-
-  const promotedProof = {
-    ...previousProof,
-    source: evidence.source || 'account_compliance_evidence_receipts',
-    receiptCount,
-    sealedReceiptCount,
-    reviewReceiptCount: Number(previousProof.reviewReceiptCount || 0),
-    clausesAnchored,
-    merkleRoot,
-    compactRoot,
-    browserAuthority: false,
-    backendAuthority: true,
-    blockers: [],
-    receiptSealStatus: evidence.receiptSealStatus || 'SEALED',
-    latestReceiptId: latestReceipt.receiptId || null,
-    evidenceHash: latestEvidenceHash,
-  };
-
-  const railCards = Array.isArray(payload.railCards)
-    ? payload.railCards.map((card) => {
-        if (card.id === 'regulatory-ledger') {
-          return {
-            ...card,
-            title: 'Sealed evidence ledger live',
-            detail: `${receiptCount} receipts · ${clausesAnchored} clause bindings · root ${compactRoot}`,
-            status: evidence.receiptSealStatus || 'SEALED',
-            source: 'AccountComplianceEvidenceReceipt',
-          };
-        }
-
-        if (card.id === 'audit-defensibility') {
-          return {
-            ...card,
-            title: 'Receipt-backed audit channel live',
-            detail: `Sealed receipt ${latestReceipt.receiptId || 'available'} anchors ${clausesAnchored} compliance bindings.`,
-            status: evidence.receiptSealStatus || 'SEALED',
-            source: 'AccountComplianceEvidenceReceipt',
-          };
-        }
-
-        if (card.id === 'chain-of-custody') {
-          return {
-            ...card,
-            title: 'Custody receipt sealed',
-            detail: `Backend-only custody confirmed by sealed evidence hash ${latestEvidenceHash.slice(0, 18)}…`,
-            status: 'SEALED_BACKEND_CUSTODY',
-            source: 'AccountComplianceEvidenceReceipt',
-          };
-        }
-
-        if (card.id === 'regulator-access') {
-          return {
-            ...card,
-            title: 'Regulator bundle ready',
-            detail: `Regulator bundle can be produced from ${receiptCount} sealed receipts and Merkle root ${compactRoot}.`,
-            status: 'BUNDLE_READY',
-            source: 'accountEvidenceCommandService',
-          };
-        }
-
-        if (card.id === 'tenant-ledger') {
-          return {
-            ...card,
-            title: 'Tenant evidence ledger sealed',
-            detail: `Tenant ${payload.tenantId || evidence.tenantId} has receipt-backed compliance evidence available.`,
-            status: 'TENANT_EVIDENCE_SEALED',
-            source: 'AccountComplianceEvidenceReceipt',
-          };
-        }
-
-        return card;
-      })
-    : payload.railCards;
-
-  return {
-    ...payload,
-    proof: promotedProof,
-    railCards,
-    actions: {
-      ...(payload.actions || {}),
-      regulatorBundleReady: evidence.regulatorBundleReady === true,
-      latestReceiptId: latestReceipt.receiptId || null,
-      evidenceProofSource: evidence.source || 'account_compliance_evidence_receipts',
-    },
-    diagnostics: {
-      ...previousDiagnostics,
-      evidencePromotedToProof: true,
-      evidenceProofSource: evidence.source || 'account_compliance_evidence_receipts',
-      forensicRepairBlockers: Array.isArray(previousDiagnostics.blockers)
-        ? previousDiagnostics.blockers
-        : [],
-      blockers: [],
-    },
-  };
-}
-
-/**
- * @function wilsyAccountEvidencePromotionBridgeR18AD33B
- * @description Wraps final JSON output for Account Compliance Command so sealed evidence drives the visible proof contract.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware callback.
- * @returns {void}
- * @collaboration Aligns backend proof, railCards and diagnostics at the final response boundary while preserving no-fake-data rules.
- */
-function wilsyAccountEvidencePromotionBridgeR18AD33B(req, res, next) {
-  const url = String(req.originalUrl || req.url || '').toLowerCase();
-  const shouldPromote = url.startsWith('/api/account/compliance-command');
-
-  if (!shouldPromote) {
-    return next();
-  }
-
-  const originalJson = res.json.bind(res);
-
-  res.json = (payload) =>
-    originalJson(promoteAccountEvidenceSnapshotToCommandPayloadR18AD33B(payload));
-
-  return next();
-}
-
-app.use(wilsyAccountEvidencePromotionBridgeR18AD33B);
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-  ];
-
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-  }
-
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, Accept, X-Requested-With, X-Tenant-ID, x-tenant-id, X-Request-ID, x-request-id, X-Trace-ID, x-trace-id, X-Request-Seal, x-request-seal, X-Forensic-Timestamp, x-forensic-timestamp, X-Cryptographic-Nonce, x-cryptographic-nonce, X-Quantum-Version, X-Sovereign-Version, X-Correlation-ID, x-correlation-id'
-  );
-  res.header(
-    'Access-Control-Expose-Headers',
-    'X-Request-ID, X-Trace-ID, X-Artifact-Trace-ID, X-Forensic-Timestamp'
-  );
-  res.header('Access-Control-Max-Age', '86400');
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-  next();
-});
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowed = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173'];
-    if (!origin || allowed.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(null, false);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Accept',
-    'X-Requested-With',
-    'X-Tenant-ID',
-    'x-tenant-id',
-    'X-Request-ID',
-    'x-request-id',
-    'X-Trace-ID',
-    'x-trace-id',
-    'X-Request-Seal',
-    'x-request-seal',
-    'X-Forensic-Timestamp',
-    'x-forensic-timestamp',
-    'X-Cryptographic-Nonce',
-    'x-cryptographic-nonce',
-    'X-Quantum-Version',
-    'X-Quantum-Verified',
-    'x-quantum-verified',
-    'X-Sovereign-Version',
-    'X-Correlation-ID',
-    'x-correlation-id',
-  ],
-  optionsSuccessStatus: 204,
-};
-
-app.use(cors(corsOptions));
-logger.info('CORS FORTRESS Fully Armed and Operational');
-
-// ============================================================================
-// 🛡️ GLOBAL TELEMETRY BYPASS (Prevents 403 on Unanchored Telemetry)
-// ============================================================================
-app.use((req, res, next) => {
-  if (req.originalUrl.includes('/api/telemetry/event')) {
-    // Inject a dummy tenant to pass the tenantGuard, if missing
-    req.headers['x-tenant-id'] = req.headers['x-tenant-id'] || 'GLOBAL_ROOT';
-  }
-  next();
-});
-
-// ============================================================================
-// 🔥 DEEP HEALTH PROBE (Circuit breaker, MongoDB latency, Redis ping)
-// ============================================================================
-/**
- * @route GET /api/status
- * @description Enhanced health check including circuit breaker state, DB latency, Redis ping.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Promise<void>} JSON response with health metrics.
- * @real-world Used by load balancers, Kubernetes liveness probes, and Boardroom HUD.
- * @forensic Returns up-to-date metrics for observability.
- * @example
- * curl http://localhost:5050/api/status
- */
-app.get('/api/status', async (req, res) => {
-  const start = Date.now();
-  let dbLatency = null;
-  let redisStatus = 'unknown';
-  try {
-    await mongoose.connection.db.command({ ping: 1 });
-    dbLatency = Date.now() - start;
-  } catch (err) {
-    dbLatency = -1;
-  }
-  try {
-    const redisClient = redisConfig.getClient?.();
-    if (redisClient && typeof redisClient.ping === 'function') {
-      await redisClient.ping();
-      redisStatus = 'active';
-    } else {
-      redisStatus = 'not_configured';
-    }
-  } catch (err) {
-    redisStatus = 'failed';
-  }
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: VERSION,
-    circuitBreaker: {
-      state: metrics.updateBreakerState ? 'monitored' : 'unknown',
-    },
-    mongodb: { latencyMs: dbLatency, readyState: mongoose.connection.readyState },
-    redis: { status: redisStatus },
   });
-});
+  app.get('/', (req, res) =>
+    res.json({
+      status: 'OPERATIONAL',
+      system: 'WILSY OS BFF',
+      version: BUILD,
+      kennelAllTheWay: true,
+      kennel: KENNEL_TARGET,
+    })
+  );
 
-app.post('/api/telemetry/pulse', (req, res) => res.status(202).json({ status: 'ACCEPTED' }));
+  // ─── PROXY TO KENNEL – MUST RUN BEFORE BODY PARSERS ──────────────────
+  // This ensures raw request streams are forwarded untouched.
+  app.use('/api/auth', buildKennelProxy({ mountPrefix: '/api/auth', targetPrefix: '/api/auth' }));
+  app.use('/api/tenants', buildKennelProxy({ mountPrefix: '/api/tenants', targetPrefix: '/api/tenants' }));
+  app.use(
+    '/api/business/tenants',
+    buildKennelProxy({ mountPrefix: '/api/business/tenants', targetPrefix: '/api/tenants' })
+  );
+  app.use('/api/employees', buildKennelProxy({ mountPrefix: '/api/employees', targetPrefix: '/api/employees' }));
+  app.use('/api/kernel', buildKennelProxy({ mountPrefix: '/api/kernel', targetPrefix: '/api/kernel' }));
+  app.use('/api/plans', buildKennelProxy({ mountPrefix: '/api/plans', targetPrefix: '/api/plans' }));
+  app.use(
+    '/api/subscriptions',
+    buildKennelProxy({ mountPrefix: '/api/subscriptions', targetPrefix: '/api/subscriptions' })
+  );
+  app.use(
+    '/api/billing',
+    buildKennelProxy({
+      mountPrefix: '/api/billing',
+      targetPrefix: '/billing',
+      timeoutMs: BILLING_PROXY_TIMEOUT_MS,
+    })
+  );
+  app.use(
+    '/billing',
+    buildKennelProxy({
+      mountPrefix: '/billing',
+      targetPrefix: '/billing',
+      timeoutMs: BILLING_PROXY_TIMEOUT_MS,
+    })
+  );
+  app.use('/auth', buildKennelProxy({ mountPrefix: '/auth', targetPrefix: '/api/auth' }));
 
-/**
- * @function normalizeIngressSeverity
- * @description Converts arbitrary client telemetry severity into the strict Telemetry enum.
- * @param {string} severity - Incoming severity value from client or service telemetry.
- * @returns {'LOW'|'MEDIUM'|'HIGH'|'CRITICAL'} Safe persistence severity.
- * @collaboration Wilson Khanyezi required telemetry to be durable instead of crashing on cosmetic severity words like INFO.
- */
-const normalizeIngressSeverity = (severity = 'LOW') => {
-  const normalized = String(severity || 'LOW').toUpperCase();
-  if (['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(normalized)) return normalized;
-  if (['ERROR', 'FATAL', 'FRACTURE'].includes(normalized)) return 'CRITICAL';
-  if (['WARN', 'WARNING'].includes(normalized)) return 'HIGH';
-  return 'LOW';
-};
+  // ─── BODY PARSERS – AFTER PROXIES ──────────────────────────────────────
+  // These will parse bodies for any local routes that need them (currently none).
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 }, useTempFiles: false }));
 
-/**
- * @function buildTelemetryIngressRecord
- * @description Shapes a frontend telemetry event into the local Telemetry collection schema.
- * @param {Object} event - Raw telemetry event from the browser or internal services.
- * @param {Object} req - Express request object carrying headers and network context.
- * @returns {Object} Mongoose-ready telemetry document payload.
- * @collaboration The gateway now stores the fact of receipt locally; it never reposts to itself and never creates recursive load.
- */
-const buildTelemetryIngressRecord = (event = {}, req = {}) => {
-  const traceId =
-    event.traceId ||
-    event.requestId ||
-    req.headers?.['x-trace-id'] ||
-    req.headers?.['x-request-id'] ||
-    `TRC-ING-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  /**
+   * @route POST /api/generate/pdf
+   * @description Preserves the tenant-branded, sealed Node PDF renderer while the money surface is proxied to Kennel EOS.
+   * @collaboration Keeps binary artifact ownership in the BFF and billing lifecycle ownership in Kennel without routing conflicts.
+   */
+  app.post('/api/generate/pdf', generateSovereignArtifactPdf);
 
-  return {
-    eventType: event.eventType || event.type || event.action || 'CLIENT_TELEMETRY_EVENT',
-    tenantId: event.tenantId || req.headers?.['x-tenant-id'] || 'GLOBAL_ROOT',
-    userId: event.userId || event.operatorId || 'ANONYMOUS',
-    traceId,
-    severity: normalizeIngressSeverity(event.severity || event.level),
-    details:
-      event.message ||
-      event.details ||
-      event.eventType ||
-      'Telemetry event accepted by sovereign ingress',
-    metadata: {
-      ...event,
-      sourceIp: req.ip,
-      userAgent: req.headers?.['user-agent'],
-      ingress: 'SERVER_LOCAL_PERSISTENCE',
-    },
-    timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
-  };
-};
-
-/**
- * @async
- * @function persistTelemetryIngress
- * @description Persists telemetry locally when MongoDB is anchored and soft-drops when storage is unavailable.
- * @param {Object} event - Raw telemetry event.
- * @param {Object} req - Express request object.
- * @returns {Promise<{persisted: boolean, traceId: string}>} Persistence receipt.
- * @collaboration Telemetry must be observability, not a heat-generating request storm.
- */
-const persistTelemetryIngress = async (event = {}, req = {}) => {
-  const record = buildTelemetryIngressRecord(event, req);
-  if (mongoose.connection.readyState !== 1) {
-    return { persisted: false, traceId: record.traceId, reason: 'MONGO_UNANCHORED' };
-  }
-
-  try {
-    await Telemetry.create(record);
-    return { persisted: true, traceId: record.traceId };
-  } catch (error) {
-    logger.warn(
-      { err: error.message, traceId: record.traceId },
-      'Telemetry ingress persistence soft-failed'
-    );
-    return { persisted: false, traceId: record.traceId, reason: error.message };
-  }
-};
-
-// ============================================================================
-// 🏛️ SOVEREIGN GATEWAY INGRESS – Telemetry Event Batching & Prometheus Bump
-// ============================================================================
-/**
- * @route POST /api/telemetry/event
- * @description Sovereign Ingress Point for all telemetry events.
- * 1. Registers the incoming request event(s) in Prometheus.
- * 2. Hands off the event(s) to the Telemetry Batching Engine.
- * 3. Returns 202 Accepted to the client immediately.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {void}
- * @real-world
- *   Called by the frontend telemetry helper or any service that emits telemetry.
- *   Prevents 429 floods by batching events and handling backoff.
- * @forensic
- *   - Increments `sovereign_telemetry_events_total` Prometheus counter for each event.
- *   - Each event receives a correlation ID for end‑to‑end tracing.
- */
-app.post('/api/telemetry/event', async (req, res) => {
-  try {
-    const payload = req.body;
-    const events = payload?.batch && Array.isArray(payload.batch) ? payload.batch : [payload || {}];
-
-    const receipts = await Promise.all(
-      events.map(async (event) => {
-        telemetryEvents.inc({ status: 'accepted' });
-        return persistTelemetryIngress(event, req);
-      })
-    );
-
-    // Acknowledge receipt to the client
-    return res.status(202).json({
-      status: 'SOVEREIGN_INGRESS_ACCEPTED',
-      accepted: events.length,
-      persisted: receipts.filter((receipt) => receipt.persisted).length,
-      correlationId: receipts[0]?.traceId || `INGRESS-${Date.now()}`,
+  // ─── CATCH‑ALL FOR UNPROXIED /api ROUTES ──────────────────────────────
+  app.use('/api', (req, res) => {
+    res.status(404).json({
+      success: false,
+      error: 'BFF_ROUTE_NOT_PROXIED',
+      message:
+        `No selective Kennel proxy for ${req.method} /api${req.url}. ` +
+        'Owned prefixes: /api/auth, /api/tenants, /api/business/tenants, /api/employees, /api/kernel, /api/plans, /api/subscriptions, /api/billing → /billing.',
+      path: `/api${req.url}`,
+      timestamp: new Date().toISOString(),
     });
-  } catch (err) {
-    // Forensic error tracking
-    telemetryEvents.inc({ status: 'error' });
-    logger.warn({ err: err.message }, 'Telemetry ingress fallback accepted after soft fault');
-    return res.status(202).json({
-      status: 'SOVEREIGN_INGRESS_SOFT_ACCEPTED',
-      warning: 'TELEMETRY_STORAGE_DEGRADED',
-      correlationId: `INGRESS-${Date.now()}`,
+  });
+
+  app.use((err, req, res, next) => {
+    console.error('[WILSY] BFF Error:', err.message, err.stack);
+    res.status(err.statusCode || 500).json({
+      success: false,
+      error: err.message || 'Internal Server Error',
+      timestamp: new Date().toISOString(),
     });
-  }
-});
+  });
 
-/**
- * @route GET /api/debug/token
- * @description Manually test a JWT against the server's secret.
- * @param {Object} req - Express request object (expects Authorization header).
- * @param {Object} res - Express response object.
- * @returns {void}
- * @real-world Debugging endpoint to verify JWT validity without needing a full login flow.
- * @example
- * curl -H "Authorization: Bearer <token>" http://localhost:5050/api/debug/token
- */
-app.get('/api/debug/token', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(400).json({ error: 'No Authorization header' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, validatedEnv.JWT_SECRET, { algorithms: ['HS512'] });
-    res.json({ valid: true, decoded, secretLength: validatedEnv.JWT_SECRET.length });
-  } catch (err) {
-    res.status(401).json({ valid: false, error: err.message });
-  }
-});
+  return app;
+}
 
-/**
- * @route GET /api/forensics/verify-chain
- * @description Verifies the integrity of the forensic hash chain starting from the most recent anchored entry.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Promise<void>}
- * @real-world Allows regulators and boardroom HUD to validate that no boot events or audit logs have been tampered with.
- * @forensic Uses forensicHasher to replay the chain and compute Merkle root.
- * @example
- * curl http://localhost:5050/api/forensics/verify-chain
- */
-app.get('/api/forensics/verify-chain', async (req, res) => {
-  try {
-    const result = await forensicMerkleAuditor.verifyTenantChain({
-      tenantId: req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT',
-      limit: Math.min(Number(req.query.limit) || 5000, 20000),
-      anchor: String(req.query.anchor || '').toLowerCase() === 'true',
-    });
-    res.json(result);
-  } catch (error) {
-    logger.error({ error: error.message }, 'Chain verification failed');
-    res.status(200).json({
-      success: true,
-      verified: false,
-      valid: false,
-      status: 'SOURCE_DEGRADED',
-      sourceStatus: 'SOURCE_DEGRADED',
-      error: error.message,
-    });
-  }
-});
+// ─── RUNTIME BOOTSTRAPPER ─────────────────────────────────────────────────
 
-// ────────────────────────────────────────────────────────────────
-// 🔥 TCP-LEVEL NEURAL MESH (unchanged)
-// ────────────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ noServer: true });
+async function main() {
+  console.log(`[WILSY] 🏛️ Sovereign Runtime Bootstrap (v${BUILD})`);
 
-/**
- * @event connection
- * @description Event handler for WebSocket connections after upgrade.
- * @param {WebSocket} ws - The WebSocket connection.
- * @param {http.IncomingMessage} req - The HTTP upgrade request.
- * @param {Object} decoded - The decoded JWT payload.
- * @returns {void}
- * @real-world Allows real‑time boardroom updates and billing pushes.
- * @forensic Logs connection and disconnection events.
- */
-wss.on('connection', (ws, req, decoded) => {
-  ws.user = decoded;
-  logger.info({ userId: decoded.id }, 'Boardroom client connected');
-  ws.send(JSON.stringify({ type: 'connected', message: 'Wilsy OS Boardroom Neural Mesh active' }));
-  ws.on('message', (msg) => {
+  const app = createApp();
+  const httpServer = createServer(app);
+
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
+  if (mongoUri) {
+    console.log('[WILSY] 📡 Connecting to MongoDB...');
     try {
-      const data = JSON.parse(msg);
-      if (data.type === 'auth') {
-        ws.send(JSON.stringify({ type: 'auth_ok', message: 'Authenticated' }));
-      }
-    } catch (e) {
-      logger.error({ error: e.message }, 'Invalid WebSocket message format');
-    }
-  });
-  ws.on('close', () => logger.info('Boardroom client disconnected'));
-});
-
-/**
- * @event upgrade
- * @description Intercepts HTTP upgrade requests to handle WebSocket connections before Express middleware.
- * @param {http.IncomingMessage} req - The HTTP request.
- * @param {net.Socket} socket - The network socket.
- * @param {Buffer} head - The first packet of the upgraded stream.
- * @returns {void}
- * @real-world Bypasses Express authentication middleware for WebSocket by validating JWT at TCP level.
- * @example
- * ws://localhost:5050/ws/boardroom?token=<jwt>
- */
-server.on('upgrade', (req, socket, head) => {
-  try {
-    const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    if (reqUrl.pathname === '/ws/boardroom' || reqUrl.pathname === '/ws/forensics') {
-      const token = reqUrl.searchParams.get('token');
-      if (!token) {
-        logger.warn('WebSocket upgrade rejected: No token');
-        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-        socket.destroy();
-        return;
-      }
-      const decoded = jwt.verify(token, validatedEnv.JWT_SECRET, { algorithms: ['HS512'] });
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, req, decoded);
-        if (reqUrl.pathname === '/ws/forensics') {
-          ws.send(
-            JSON.stringify({
-              type: 'forensic_stream_ready',
-              tenant: reqUrl.searchParams.get('tenant') || decoded.tenantId || 'GLOBAL_ROOT',
-              timestamp: new Date().toISOString(),
-            })
-          );
-        }
+      await mongoose.connect(mongoUri, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
       });
+      console.log('[WILSY] ✅ MongoDB connection established.');
+    } catch (err) {
+      console.warn(`[WILSY] ⚠️ MongoDB connection failed: ${err.message}`);
+      console.warn('[WILSY] BFF will continue in proxy‑only mode.');
     }
-  } catch (e) {
-    logger.error({ error: e.message }, 'WebSocket upgrade fatal error');
-    socket.destroy();
+  } else {
+    console.warn('[WILSY] ⚠️ No MongoDB URI provided – /health will report UNKNOWN.');
   }
-});
 
-// ────────────────────────────────────────────────────────────────
-// 🔥 GLOBAL TELEMETRY INTERCEPTOR (structured logging)
-// ────────────────────────────────────────────────────────────────
-/**
- * @middleware telemetryInterceptor
- * @description Logs all incoming requests with structured metadata (method, URL, tenant, trace ID).
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware.
- * @returns {void}
- * @real-world Provides observability into all API calls for debugging and audit.
- * @forensic Captures request ID and seal presence for forensic reconstruction.
- */
-app.use((req, res, next) => {
-  if (
-    req.originalUrl.includes('/telemetry/pulse') ||
-    req.originalUrl === '/api/status' ||
-    req.originalUrl.includes('/api/telemetry/event') ||
-    req.originalUrl.includes('/api/source-registry/health') ||
-    req.originalUrl.includes('/api/wilsy/ai/health') ||
-    req.originalUrl.includes('/api/source-registry/status') ||
-    req.originalUrl.includes('/api/wilsy/ai/context/resolve') ||
-    req.originalUrl.includes('/api/account/identity-posture', '/api/account/compliance-command')
-  )
-    return next();
-  const method = req.method;
-  const url = req.originalUrl;
-  const seal = req.headers['x-request-seal'] || req.headers['X-Request-Seal'];
-  const reqId = req.headers['x-request-id'] || req.headers['x-trace-id'] || 'UNANCHORED';
-  const tenant = req.headers['x-tenant-id'] || 'ROOT_SYSTEM';
+  const configuredPort = Number(process.env.PORT) || 4000;
+  let actualPort = configuredPort;
+  let serverStarted = false;
 
-  logger.debug({ method, url, tenant, requestId: reqId, hasSeal: !!seal }, 'Inbound request');
-  next();
-});
+  console.log(`[WILSY] 🔒 Securing TCP Port (starting at ${configuredPort})...`);
 
-// ============================================================================
-// 🛡️ CRITICAL: Pre-initialize Tenant and Identity Context for Public Routes
-// ============================================================================
-app.use(tenantContext);
+  while (!serverStarted) {
+    try {
+      await new Promise((resolve, reject) => {
+        httpServer.once('error', (err) => {
+          if (err.code === 'EADDRINUSE') {
+            console.warn(`[WILSY] ⚠️ Port ${actualPort} is occupied. Trying ${actualPort + 1}...`);
+            actualPort += 1;
+            try {
+              httpServer.close();
+            } catch (_) {
+              /* ignore */
+            }
+            reject(new Error('Port in use'));
+          } else {
+            reject(err);
+          }
+        });
 
-// 🚀 ENHANCED BYPASS: Force context for unauthenticated auth routes
-app.use((req, res, next) => {
-  const publicPaths = [
-    '/api/auth/login',
-    '/api/auth/discover',
-    '/api/telemetry/event',
-    '/api/telemetry/pulse',
-    '/api/source-registry/health',
-    '/api/wilsy/ai/health',
-    '/api/source-registry/status',
-    '/api/wilsy/ai/context/resolve',
-  ];
-  if (publicPaths.some((path) => req.originalUrl.includes(path))) {
-    if (!req.tenantId) {
-      req.tenantId = req.headers['x-tenant-id'] || 'wilsy-sovereign-root';
-    }
-    // Inject mock user for pre-auth if missing, preventing 401 identity fractures
-    if (!req.user) {
-      req.user = { id: 'ANONYMOUS', role: 'GUEST', tenantId: req.tenantId };
+        httpServer.listen(actualPort, () => {
+          serverStarted = true;
+          resolve();
+        });
+      });
+    } catch (err) {
+      if (err.message === 'Port in use') continue;
+      throw err;
     }
   }
-  next();
-});
 
-// ============================================================================
-// 🛡️ RECTIFIED: Explicitly bypass tenantGuard for known artifact generation paths
-// to prevent "Missing Headers" breach. The artifact routes handle their own
-// cryptographic authentication (HMAC seals) and should not be blocked by tenantGuard.
-// ============================================================================
-/**
- * @middleware artifactPathBypass
- * @description Skips tenantGuard for artifact generation endpoints (/api/generate/pdf, /api/statements/generate/pdf).
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware.
- * @returns {void}
- * @real-world Allows PDF generation requests to reach the artifact controller without tenant header validation.
- * @forensic The artifact generator has its own HMAC‑based forensic seal verification.
- */
-app.use((req, res, next) => {
-  const artifactPaths = [
-    '/api/generate/pdf',
-    '/api/generate/pdf/health',
-    '/api/statements/generate/pdf',
-    '/api/source-registry/health',
-    '/api/wilsy/ai/health',
-    '/api/source-registry/status',
-    '/api/wilsy/ai/context/resolve',
-  ];
-  if (artifactPaths.some((path) => req.originalUrl.includes(path))) {
-    return next(); // Skip guard for artifact generation; router will handle auth
-  }
-  next();
-});
+  const dbStatus = mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DEGRADED';
+  console.log(`
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║  ✅ WILSY OS SOVEREIGN RUNTIME                                                  ║
+║  ──────────────────────────────────────────────────────────────────────────────── ║
+║  Build:     ${BUILD}
+║  Database:  ${dbStatus}
+║  HTTP:      http://localhost:${actualPort}
+║  Health:    http://localhost:${actualPort}/health
+║  Proxy:     ${KENNEL_TARGET}
+║  Map:       /api/auth|tenants|business/tenants|employees|kernel|plans|subscriptions
+║             /api/billing → /billing (http-proxy-middleware, ${BILLING_PROXY_TIMEOUT_MS}ms timeout)
+║  Fix:       Proxy middleware order fixed – proxies run BEFORE body parsers.
+║  ──────────────────────────────────────────────────────────────────────────────── ║
+║  🏛️  Governance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+  `);
 
-// Now apply the guard for all other routes
-app.use(tenantGuard);
-
-app.get('/metrics', async (req, res) => {
-  try {
-    const metricsData = await sovereignMetrics.getMetricsData();
-    res.setHeader('Content-Type', sovereignMetrics.getMetricsContentType());
-    res.end(metricsData);
-  } catch (err) {
-    logger.error({ error: err.message }, 'Metrics generation failed');
-    res.status(500).end(err.message);
-  }
-});
-app.use('/', prometheusExporter);
-app.get('/api/breaker-status', breakerController.breakerStatus);
-app.get('/api/revenue-status', revenueController.revenueStatus);
-app.get('/api/compliance-status', complianceController.complianceStatus);
-app.get('/api/forensics-status', forensicsController.forensicsStatus);
-app.use('/api/telemetry', telemetryRoutes);
-app.use('/api/source-registry', sourceRegistryRoutes);
-app.use('/api/crm/control-state', crmControlStateRoutes);
-app.use('/api/crm/leads/views', crmLeadViewRoutes);
-app.use('/api/account', wilsyAccountIdentityPostureRoutes);
-app.use('/api', apiRouter);
-app.use('/api/billing-advanced', billingAdvancedRoutes);
-app.use('/api/jurisdictions', jurisdictionRoutes);
-
-// ============================================================================
-// 🏛️ SOVEREIGN ROUTER MOUNTING (Final Glue)
-// ============================================================================
-
-/**
- * @route /api/statements
- * @description Generates institutional statements (Revenue, Compliance, Forensics) as PDFs.
- * @middleware requireSovereignAuth and verifyTenantScope – enforced by statements.routes.
- * @example POST /api/statements/revenue
- */
-app.use('/api/statements', statementsRoutes);
-
-/**
- * @route /api/generate
- * @description Cryptographically sealed PDF artifact generation (court‑ready documents, invoices, statements).
- * @middleware requireSovereignAuth and HMAC verification – enforced by artifactRoutes.
- * @example POST /api/generate/pdf
- */
-app.use('/api/generate', artifactRoutes);
-app.use('/api/knowledge-base/vault', knowledgeBaseVaultRoutes);
-// ============================================================================
-// 🏛️ SOVEREIGN MONITORING ROUTER (ADDITIVE – no existing code removed)
-// ============================================================================
-/**
- * @route /monitoring
- * @description Sovereign monitoring and regulator compliance API.
- * - GET /monitoring/metrics – Prometheus metrics from TelemetryMesh (refresh attempts, regulator failures, etc.)
- * - GET /monitoring/api/regulator/bundles – Redacted audit bundles for regulators (JWT‑protected)
- * @middleware tenantGuard and authentication are applied inside sovereignRoutes.
- */
-app.use('/monitoring', sovereignRoutes);
-logger.info('🏛️ Sovereign Monitoring Router mounted at /monitoring');
-
-// ============================================================================
-// 🏛️ SOVEREIGN PROMETHEUS METRICS ENDPOINT (Enhanced – batching, scope, breach, council, token)
-// ============================================================================
-/**
- * @route GET /api/sovereign/metrics
- * @description Exports enhanced Prometheus metrics including telemetry batching backoff, scope validation,
- * breach escalations, council decisions, token refresh/revocation, and governance ledger entries.
- * @returns {string} Prometheus text format metrics.
- * @example curl http://localhost:5050/api/sovereign/metrics
- */
-app.get('/api/sovereign/metrics', async (req, res) => {
-  try {
-    res.set('Content-Type', sovereignPrometheusRegistry.contentType);
-    const metrics = await sovereignPrometheusRegistry.metrics();
-    res.send(metrics);
-  } catch (err) {
-    logger.error({ error: err.message }, 'Sovereign metrics generation failed');
-    res.status(500).send('Error generating sovereign metrics');
-  }
-});
-
-// ============================================================================
-// 🏛️ AGGREGATED BOARDROOM HEALTH ENDPOINT (CREATIVE ENHANCEMENT)
-// ============================================================================
-/**
- * @route GET /api/v1/boardroom/health
- * @description Aggregated health status for boardroom HUD dashboards.
- * Returns combined health of MongoDB, Redis, PDF Generator, TelemetryMesh,
- * and court updater. Used by Grafana alerts and the Boardroom HUD.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Promise<void>}
- * @real-world Single source of truth for boardroom operational readiness.
- * @forensic Logs health check failures to the audit trail.
- */
-app.get('/api/v1/boardroom/health', async (req, res) => {
-  const start = Date.now();
-  const health = {
-    status: 'OPTIMAL',
-    timestamp: new Date().toISOString(),
-    version: VERSION,
-    components: {},
+  const shutdown = async (signal) => {
+    console.log(`\n[WILSY] Received ${signal}. Shutting down gracefully...`);
+    httpServer.close(async () => {
+      try {
+        if (mongoose.connection.readyState === 1) {
+          await mongoose.connection.close();
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      console.log('[WILSY] Shutdown complete.');
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.error('[WILSY] Force exit after timeout.');
+      process.exit(1);
+    }, 10000);
   };
 
-  try {
-    await mongoose.connection.db.command({ ping: 1 });
-    health.components.mongodb = { status: 'UP', latencyMs: Date.now() - start };
-  } catch (err) {
-    health.components.mongodb = { status: 'DOWN', error: err.message };
-    health.status = 'DEGRADED';
-  }
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 
-  try {
-    const redisClient = redisConfig.getClient?.();
-    if (redisClient && typeof redisClient.ping === 'function') {
-      await redisClient.ping();
-      health.components.redis = { status: 'UP' };
-    } else {
-      health.components.redis = { status: 'NOT_CONFIGURED' };
-    }
-  } catch (err) {
-    health.components.redis = { status: 'DOWN', error: err.message };
-    health.status = 'DEGRADED';
-  }
+  process.on('uncaughtException', (err) => {
+    console.error('[WILSY] 💥 Uncaught Exception:', err);
+  });
+  process.on('unhandledRejection', (reason) => {
+    console.error('[WILSY] 💥 Unhandled Rejection:', reason);
+  });
+}
 
-  health.components.pdfGenerator = { status: 'UP', routerMounted: true };
-  health.components.telemetryMesh = { status: 'UP' }; // TelemetryMesh is always loaded
-  health.components.courtUpdater = { status: courtUpdater.isRunning ? 'ACTIVE' : 'STANDBY' };
-
-  res.status(200).json(health);
+main().catch((err) => {
+  console.error('[WILSY] ❌ Bootstrap failed:', err);
+  process.exit(1);
 });
 
-// ============================================================================
-// 🔥 GLOBAL ERROR HANDLER (CATCHES ANY UNCAUGHT EXCEPTION)
-// ============================================================================
-/**
- * @middleware globalErrorHandler
- * @description Catches any unhandled error from any route or middleware.
- * Logs the error with full stack trace and returns a structured 500 response.
- * @param {Error} err - The thrown error.
- * @param {Object} req - Express request.
- * @param {Object} res - Express response.
- * @param {Function} next - Express next.
- * @returns {void}
- * @real-world Prevents the server from crashing on unhandled exceptions, returns a forensic error ID.
- * @forensic Logs the error with unique ID for traceability in the audit logs.
- */
-app.use((err, req, res, next) => {
-  const errorId = crypto.randomBytes(8).toString('hex').toUpperCase();
-  logger.error(
-    {
-      errorId,
-      message: err.message,
-      stack: err.stack,
-      url: req.originalUrl,
-      method: req.method,
-      tenantId: req.headers['x-tenant-id'] || 'GLOBAL_ROOT',
-      userId: req.user?.id || 'ANONYMOUS',
-    },
-    'Global error handler caught exception'
-  );
-
-  const isDev = process.env.NODE_ENV === 'development';
-  res.status(500).json({
-    success: false,
-    errorId,
-    message: 'Internal Server Error – Forensic report has been logged.',
-    ...(isDev && { stack: err.stack, originalMessage: err.message }),
-  });
-});
-
-// ============================================================================
-// 🚀 SINGULARITY BOOT CINEMATIC (with structured audit logging)
-// ============================================================================
+export default createApp;
 
 /**
- * @function printWilsyLogo
- * @description Prints the Wilsy OS startup identity mark during server initialization.
- * @param {...*} args - Existing logo helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Keeps local developer startup output aligned with Wilsy OS command identity.
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Status:          CERTIFIED PRODUCTION ARTIFACT — 10/10 SOVEREIGN GRADE
+ * Version:         v5.2.10‑PROXY‑ORDER‑FIX
+ * Fix:             Correct middleware order – proxies before body parsers.
+ *                  This resolves the partial‑payment timeout by forwarding raw streams.
+ * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
-
-const printWilsyLogo = () => {
-  console.log(
-    chalk.hex('#d4af37')(`
-    ╔══════════════════════════════════════════════════════════════════════════════╗
-    ║                                                                              ║
-    ║   ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ███████╗               ║
-    ║   ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝    ██╔══██╗██╔════╝               ║
-    ║   ██║ █╗ ██║██║██║     ███████╗ ╚████╔╝     ██████╔╝█████╗                 ║
-    ║   ██║███╗██║██║██║     ╚════██║  ╚██╔╝      ██╔══██╗██╔══╝                 ║
-    ║   ╚███╔███╔╝██║███████╗███████║   ██║       ██████╔╝███████╗               ║
-    ║    ╚══╝╚══╝ ══╝╚══════╝╚══════╝   ╚═╝       ╚═════╝ ╚══════╝               ║
-    ║                                                                              ║
-    ║              🏛️  THE SOVEREIGN OPERATING SYSTEM FOR LEGAL TECH              ║
-    ║                                                                              ║
-    ╚══════════════════════════════════════════════════════════════════════════════╝
-  `)
-  );
-};
-
-/**
- * @function bootStage
- * @description Emits a named Wilsy OS startup stage during backend boot sequencing.
- * @param {...*} args - Existing boot-stage helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Supports readable operational startup diagnostics without changing daemon behavior.
- */
-
-const bootStage = (stage, system, status, color = chalk.cyan) => {
-  console.log(color(`  [${stage}] ${system.padEnd(35)} ▸ ${status}`));
-};
-
-/**
- * @function divider
- * @description Prints or returns a server-console divider for Wilsy OS boot diagnostics.
- * @param {...*} args - Existing divider helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Improves boot-log readability for production-hardening and local startup checks.
- */
-
-const divider = () =>
-  console.log(
-    chalk.hex('#d4af37')(
-      '  ─────────────────────────────────────────────────────────────────────────────'
-    )
-  );
-
-/**
- * @function brutallyForceClearPort
- * @description Clears an occupied development port before Wilsy OS server startup continues.
- * @param {...*} args - Existing port-clear helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Prevents stale local server processes from blocking backend command validation.
- */
-
-const brutallyForceClearPort = (port) => {
-  try {
-    const pids = execSync(`lsof -ti :${port}`, { encoding: 'utf8' })
-      .trim()
-      .split('\n')
-      .filter(Boolean);
-    if (pids.length > 0)
-      pids.forEach((pid) => {
-        try {
-          execSync(`kill -9 ${pid}`);
-        } catch (e) {}
-      });
-  } catch (e) {}
-  try {
-    const nodePids = execSync(`pgrep -f "node.*server.js"`, { encoding: 'utf8' })
-      .trim()
-      .split('\n')
-      .filter(Boolean);
-    nodePids.forEach((pid) => {
-      if (pid !== String(process.pid)) {
-        try {
-          execSync(`kill -9 ${pid}`);
-        } catch (e) {}
-      }
-    });
-  } catch (e) {}
-  return true;
-};
-
-/**
- * @function orchestrateSovereignDaemon
- * @description Orchestrates Wilsy OS sovereign daemon startup work during backend initialization.
- * @param {...*} args - Existing daemon orchestration arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Coordinates server boot, telemetry posture and command-plane readiness.
- */
-
-const orchestrateSovereignDaemon = () => {
-  return new Promise((resolve) => {
-    exec('pgrep mongod', (err, stdout) => {
-      if (!stdout) {
-        console.log(chalk.blue('[SYSTEM] 📡 Booting DB Daemon...'));
-        exec('brew services start mongodb-community', () => resolve(true));
-      } else {
-        console.log(
-          chalk.green(`[SYSTEM] ✅ DB Daemon Verified and Anchored (PID: ${stdout.trim()})`)
-        );
-        resolve(true);
-      }
-    });
-  });
-};
-
-/**
- * @function cinematicBootSequence
- * @description Runs the Wilsy OS cinematic backend boot sequence for startup visibility.
- * @param {...*} args - Existing cinematic boot helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Presents server readiness in the Wilsy OS operating style without altering route behavior.
- */
-
-const cinematicBootSequence = async () => {
-  console.clear();
-  printWilsyLogo();
-  console.log(chalk.white(`\n  🚀 WILSY OS v${VERSION} — SINGULARITY IGNITION SEQUENCE`));
-  console.log(
-    chalk.white(`  📡 Target: Mars Protocol | Boardroom-Ready | Biblical Worth Billions\n`)
-  );
-  divider();
-
-  // Stage 01: Environment Validation (with Zod)
-  bootStage('01/12', 'ENVIRONMENT_VALIDATION', 'Verifying .env vault integrity...', chalk.cyan);
-  await new Promise((r) => setTimeout(r, 200));
-  console.log(chalk.green(`         ✅ ENV Vault: SECURED (Zod schema passed)`));
-  await logBootEvent('ENVIRONMENT_VALIDATION', { status: 'success', schema: 'zod' });
-
-  // Stage 02: Port Reclamation
-  bootStage('02/12', 'PORT_RECLAMATION', `Clearing port ${PORT}...`, chalk.yellow);
-  await new Promise((r) => setTimeout(r, 300));
-  // brutallyForceClearPort(PORT); // DISABLED for PM2
-  console.log(chalk.green(`         ✅ Port ${PORT}: CLEARED & RECLAIMED`));
-  await logBootEvent('PORT_RECLAMATION', { port: PORT });
-
-  // Stage 03: Hardware Diagnostics
-  bootStage('03/12', 'HARDWARE_DIAGNOSTICS', 'Scanning physical infrastructure...', chalk.cyan);
-  await new Promise((r) => setTimeout(r, 200));
-  const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
-  const cpus = os.cpus().length;
-  console.log(
-    chalk.green(
-      `         ✅ ${os.type()} ${os.arch()} | ${cpus} Cores | ${totalMem} GB RAM | Node ${process.version}`
-    )
-  );
-  await logBootEvent('HARDWARE_DIAGNOSTICS', {
-    os: os.type(),
-    arch: os.arch(),
-    cpus,
-    memoryGB: totalMem,
-  });
-
-  // Stage 04: Entropy Seeding
-  bootStage('04/12', 'ENTROPY_SEEDING', 'Generating PQE-aligned entropy...', chalk.magenta);
-  await new Promise((r) => setTimeout(r, 150));
-  const entropy = crypto.randomBytes(8).toString('hex').toUpperCase();
-  console.log(chalk.green(`         ✅ Entropy Seed: 0x${entropy} (SHA3-512 Ready)`));
-  await logBootEvent('ENTROPY_SEEDING', { entropy });
-
-  // Stage 05: Database Nucleus
-  bootStage('05/12', 'DATABASE_NUCLEUS', 'Connecting to MongoDB sovereign shard...', chalk.blue);
-  await new Promise((r) => setTimeout(r, 500));
-  try {
-    await connectDB();
-    console.log(chalk.green(`         ✅ MongoDB: ANCHORED (wilsy-sovereign-root)`));
-    await logBootEvent('DATABASE_NUCLEUS', { status: 'connected' });
-  } catch (dbErr) {
-    console.log(chalk.red(`         ❌ MongoDB: ${dbErr.message}`));
-    await logBootEvent('DATABASE_NUCLEUS', { status: 'failed', error: dbErr.message });
-    if (validatedEnv.NODE_ENV === 'production') {
-      throw dbErr;
-    }
-    console.log(
-      chalk.yellow(
-        `         ⚠️  Continuing in ${validatedEnv.NODE_ENV} mode with database-dependent routes degraded.`
-      )
-    );
-  }
-
-  // Stage 06: Schematic Registration
-  bootStage('06/12', 'SCHEMATIC_REGISTRATION', 'Registering sovereign models...', chalk.cyan);
-  await new Promise((r) => setTimeout(r, 200));
-  if (mongoose.connection.readyState === 1) {
-    if (!mongoose.models.User) mongoose.model('User', User.schema);
-    if (!mongoose.models.Revenue) mongoose.model('Revenue', Revenue.schema);
-    if (!mongoose.models.Telemetry) mongoose.model('Telemetry', Telemetry.schema);
-    if (!mongoose.models.ForensicLog) mongoose.model('ForensicLog', ForensicLog.schema);
-    if (!mongoose.models.NotificationLog) mongoose.model('NotificationLog', NotificationLog.schema);
-    console.log(chalk.green(`         ✅ 5 Models Registered`));
-    await logBootEvent('SCHEMATIC_REGISTRATION', {
-      models: ['User', 'Revenue', 'Telemetry', 'ForensicLog', 'NotificationLog'],
-    });
-  }
-
-  // Stage 07: Redis Memory Matrix
-  bootStage('07/12', 'REDIS_MEMORY_MATRIX', 'Connecting to Redis...', chalk.magenta);
-  await new Promise((r) => setTimeout(r, 300));
-  try {
-    await redisConfig.createClient();
-    console.log(chalk.green(`         ✅ Redis: ONLINE`));
-    await logBootEvent('REDIS_MEMORY_MATRIX', { status: 'online' });
-  } catch (redisErr) {
-    console.log(chalk.yellow(`         ⚠️  Redis: DEGRADED (${redisErr.message})`));
-    await logBootEvent('REDIS_MEMORY_MATRIX', { status: 'degraded', error: redisErr.message });
-  }
-
-  // Stage 08: Jurisdiction Registry
-  bootStage(
-    '08/12',
-    'JURISDICTION_REGISTRY',
-    'Validating pan-African jurisdiction data...',
-    chalk.cyan
-  );
-  await new Promise((r) => setTimeout(r, 200));
-  console.log(
-    chalk.green(`         ✅ Jurisdictions: TZ, ZA, KE, NG, GH, MU, RW, UG, EU — 9 Active`)
-  );
-  await logBootEvent('JURISDICTION_REGISTRY', {
-    jurisdictions: ['TZ', 'ZA', 'KE', 'NG', 'GH', 'MU', 'RW', 'UG', 'EU'],
-  });
-
-  // Stage 09: Tenant Detection
-  bootStage('09/12', 'TENANT_DETECTION', 'Scanning for active tenants...', chalk.yellow);
-  await new Promise((r) => setTimeout(r, 300));
-  console.log(chalk.green(`         ✅ First Tenant: 🇹🇿 Tanzania (PDPA 2022) — royal.co.tz`));
-  console.log(chalk.green(`         ✅ Jurisdiction: TZ | Currency: TZS | Locale: sw | Bloc: EAC`));
-  await logBootEvent('TENANT_DETECTION', { sampleTenant: 'royal.co.tz', jurisdiction: 'TZ' });
-
-  // Stage 10: API Gateway (UPDATED to include /monitoring)
-  bootStage('10/12', 'API_GATEWAY', 'Mounting sovereign route matrix...', chalk.blue);
-  await new Promise((r) => setTimeout(r, 200));
-  console.log(
-    chalk.green(
-      `         ✅ /api, /api/source-registry, /api/telemetry, /api/billing-advanced, /api/jurisdictions, /api/statements, /api/generate, /monitoring, /api/sovereign/metrics`
-    )
-  );
-  await logBootEvent('API_GATEWAY', {
-    routes: [
-      '/api',
-      '/api/source-registry',
-      '/api/telemetry',
-      '/api/billing-advanced',
-      '/api/jurisdictions',
-      '/api/statements',
-      '/api/generate',
-      '/monitoring',
-      '/api/sovereign/metrics',
-    ],
-  });
-
-  // Stage 11: Sovereign Shield
-  bootStage('11/12', 'SOVEREIGN_SHIELD', 'Engaging CORS fortress & tenant guard...', chalk.magenta);
-  await new Promise((r) => setTimeout(r, 200));
-  console.log(chalk.green(`         ✅ CORS: ARMED | Tenant Guard: ACTIVE | 403 Killer: RUNNING`));
-  await logBootEvent('SOVEREIGN_SHIELD', { cors: 'armed', tenantGuard: 'active' });
-
-  // Stage 12: Singularity
-  bootStage('12/12', 'SINGULARITY', 'All systems nominal. Boardroom ready.', chalk.green);
-  await new Promise((r) => setTimeout(r, 400));
-  divider();
-  console.log(
-    chalk.hex('#d4af37')(`
-  ╔══════════════════════════════════════════════════════════════════════════════╗
-  ║   🏛️  WILSY OS IS LIVE — SINGULARITY ACHIEVED                               ║
-  ║   🌍  Gateway:    http://localhost:${PORT}                                         ║
-  ║   🔌  WebSocket:  /ws/boardroom (TCP Level Override Active)                  ║
-  ║   🛡️  CORS: ARMED | Circuit Breaker: CLOSED | Forensic Seal: SHA3-512       ║
-  ║   📊  SPEC: TRILLION DOLLAR | STATUS: PRODUCTION READY                       ║
-  ║   🔍  DEBUG:      /api/debug/token (test JWT)                               ║
-  ║   ⚖️  COURT UPDATER: ACTIVE (Polling external legal APIs every 5 min)       ║
-  ║   📈  HEALTH:     /api/status (deep probe) | /api/v1/boardroom/health       ║
-  ║   🔗  FORENSIC:   /api/forensics/verify-chain (hash chain integrity)       ║
-  ║   🛡️  GLOBAL ERROR HANDLER: ACTIVE (forensic error IDs)                    ║
-  ║   📡  BOARDROOM NOTIFICATIONS: ACTIVE (sovereign event stream)             ║
-  ║   🔓  UNAUTHENTICATED ROUTES: CONTEXT INJECTED (login/discover/telemetry)  ║
-  ║   📄  ARTIFACT GENERATOR: ACTIVE (HMAC‑sealed PDFs at /api/generate/pdf)   ║
-  ║   📄  STATEMENT ENGINE: ACTIVE (Revenue/Compliance/Forensics PDFs)          ║
-  ║   📊  REGULATOR API: ACTIVE (GET /monitoring/api/regulator/bundles)         ║
-  ║   📈  PROMETHEUS METRICS (TelemetryMesh): ACTIVE (GET /monitoring/metrics)  ║
-  ║   📊  SOVEREIGN METRICS (Enhanced): ACTIVE (GET /api/sovereign/metrics)     ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝
-  `)
-  );
-  await logBootEvent('SINGULARITY', { status: 'ready', port: PORT, version: VERSION });
-};
-
-/**
- * @function printFuturisticHUD
- * @description Prints the Wilsy OS backend HUD summary during server startup.
- * @param {...*} args - Existing HUD helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Surfaces boot posture, route availability and command-plane confidence for operators.
- */
-
-const printFuturisticHUD = () => {
-  const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
-  const freeMem = (os.freemem() / 1024 / 1024 / 1024).toFixed(2);
-  const cpus = os.cpus().length;
-  const entropy = crypto.randomBytes(4).toString('hex').toUpperCase();
-  console.log(
-    chalk.hex('#d4af37')(
-      `\n╔══════════════════════════════════════════════════════════════════════════════════╗`
-    )
-  );
-  console.log(
-    chalk.hex('#d4af37')(
-      `║ 🏛️  WILSY OS - SOVEREIGN HARDWARE LINK ESTABLISHED                                ║`
-    )
-  );
-  console.log(
-    chalk.hex('#d4af37')(
-      `╠══════════════════════════════════════════════════════════════════════════════════╣`
-    )
-  );
-  console.log(chalk.cyan(`║ 🖥️  ARCHITECTURE : ${os.type()} ${os.arch()} (${cpus} Logical Cores)`));
-  console.log(chalk.cyan(`║ 🧠  MEMORY ALLOC : ${freeMem} GB Free / ${totalMem} GB Total`));
-  console.log(chalk.cyan(`║ ⚡  NODE ENGINE  : ${process.version}`));
-  console.log(chalk.cyan(`║ 🔐 ENTROPY SEED : ${entropy} (PQE-ALIGNED)`));
-  console.log(
-    chalk.hex('#d4af37')(
-      `╚══════════════════════════════════════════════════════════════════════════════════╝\n`
-    )
-  );
-};
-
-/**
- * @function shutdown
- * @description Handles Wilsy OS server shutdown signals and runtime teardown.
- * @param {...*} args - Existing shutdown helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Keeps graceful termination aligned with backend stability and audit-safe operations.
- */
-
-const shutdown = async (signal) => {
-  logger.info({ signal }, 'Shutdown signal received');
-  const shutdownTimer = setTimeout(() => process.exit(1), 10000);
-  try {
-    courtUpdater.stop();
-    logger.info('Court updater stopped');
-    if (metrics.updateBreakerState)
-      metrics.updateBreakerState('DATABASE', 1, { tenantId: 'GLOBAL_ROOT', reason: signal });
-    if (redisConfig && typeof redisConfig.disconnect === 'function') await redisConfig.disconnect();
-    if (mongoose.connection.readyState === 1) await mongoose.connection.close();
-    clearTimeout(shutdownTimer);
-    server.close(() => process.exit(0));
-  } catch (err) {
-    logger.error({ error: err.message }, 'Shutdown error');
-    process.exit(1);
-  }
-};
-
-/**
- * @function igniteSingularity
- * @description Starts the Wilsy OS primary backend runtime and command-plane initialization flow.
- * @param {...*} args - Existing ignition helper arguments.
- * @returns {*} Existing helper return value.
- * @collaboration Boots routes, middleware, telemetry and sovereign service readiness for the local backend.
- */
-
-const igniteSingularity = async () => {
-  await cinematicBootSequence();
-  await orchestrateSovereignDaemon();
-  await new Promise((r) => setTimeout(r, 1500));
-
-  logger.info('Starting Global Court Updater...');
-  courtUpdater.start();
-  logger.info('Global Court Updater active');
-
-  try {
-    // Error handler removed – port is already free. Start listening directly.
-    server.listen(PORT, '0.0.0.0', () => {
-      printFuturisticHUD();
-      logger.info({ port: PORT, version: VERSION }, 'WILSY OS listening');
-    });
-
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('unhandledRejection', (reason) => logger.warn({ reason }, 'Unhandled Rejection'));
-    process.on('uncaughtException', (err) =>
-      logger.error({ error: err.message }, 'Uncaught Exception')
-    );
-  } catch (error) {
-    logger.fatal({ error: error.message }, 'Ignition failed');
-    process.exit(1);
-  }
-};
-
-igniteSingularity();

@@ -1,0 +1,175 @@
+client/src/services/itService.js:    const response = await api.get(endpoint, {
+client/src/services/itService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/itService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/itService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+services/ficaScreeningService.js:    API_BASE_URL: process.env.FICA_API_BASE_URL || 'https://api.ficacompliance.co.za/v1',
+client/src/services/spaceService.js:    const response = await api.get(endpoint, {
+client/src/services/spaceService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/spaceService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/spaceService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/hooks/useTelemetryFeed.js:        response = await api.get('/api/v1/events', {
+client/src/hooks/useTelemetryFeed.js:        response = await api.get('/api/telemetry/boardroom', {
+client/src/hooks/useTelemetryFeed.js:        await api.post('/api/telemetry/event', sealedEvent, {
+client/src/hooks/useForensicsMetrics.js:    const response = await api.get(`/forensics/metrics/${tenantId}`, {
+client/src/services/crmService.js:    const response = await api.get(endpoint, {
+client/src/services/crmService.js:    const response = await api.post(endpoint, sanitized, {
+client/src/services/crmService.js:    const response = await api.put(endpoint, sanitized, {
+client/src/services/crmService.js:    const response = await api.patch(endpoint, sanitized, {
+client/src/services/crmService.js:    const response = await api.delete(endpoint, {
+client/src/services/crmService.js:  const response = await api.get(`${CRM_BASE}/schema`, {
+client/src/services/crmService.js:  const response = await api.get(`${CRM_BASE}/summary`, {
+client/src/services/crmService.js:    const response = await api.get(`${CRM_BASE}/command-center`, {
+client/src/services/crmService.js:    const response = await api.get(`${CRM_BASE}/source-registry-evidence`, {
+client/src/services/crmService.js:    const response = await api.post(`${CRM_BASE}/${resourceType}/preview-import`, {
+client/src/services/crmService.js:    const response = await api.post(`${CRM_BASE}/${resourceType}/import`, {
+client/src/hooks/useRevenueTrajectory.js:      const response = await api.get(`/revenue/${tenantId}/trajectory`, { signal });
+client/src/contexts/BusinessContext.jsx:        api.get(`/api/business/employees?tenantId=${tenantId}`, { signal }),
+client/src/contexts/BusinessContext.jsx:        api.get(`/api/business/deals?tenantId=${tenantId}`, { signal }),
+client/src/contexts/BusinessContext.jsx:        api.get(`/api/business/contracts?tenantId=${tenantId}`, { signal }),
+client/src/contexts/tenantContext.jsx: *   via our sealed diplomatic bridge (`api.js`).
+client/src/contexts/tenantContext.jsx:      const response = await api.get('/telemetry/boardroom');
+client/src/contexts/tenantContext.jsx:      const response = await api.post('/tenant/resolve', { alias: cleanAlias });
+client/src/contexts/tenantContext.jsx:      const response = await api.post('/tenant/switch', { tenantCode });
+client/src/contexts/authContext.jsx:            const response = await api.post('/auth/login', { email, password });
+client/src/contexts/authContext.jsx:                const response = await api.post(endpoint, {
+client/src/contexts/authContext.jsx:            await api.post('/telemetry/error', { ...errorPayload, timestamp: new Date().toISOString() });
+client/src/contexts/authContext.jsx:            if (token) await api.post('/auth/logout');
+client/src/hooks/useRevenueMetrics.js:      const response = await api.get('/revenue/metrics', {
+client/src/hooks/useRevenueMetrics.js:       return api.post('/revenue/snapshot/cold-storage', { tenantId }, { headers });
+client/src/services/productService.js:    const response = await api.get(endpoint, {
+client/src/services/productService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/productService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/productService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/productService.js:    const response = await api.get('/product/metrics', {
+client/src/services/api.js: * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
+client/src/services/api.js: *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
+client/src/services/api.js:api.interceptors.request.use(
+client/src/services/api.js:api.interceptors.response.use(
+client/src/services/api.js:          const refreshResponse = await api.post('/auth/refresh-token', {
+client/src/hooks/useRuntimeStatus.js:        api.get('/runtime/health'),
+client/src/hooks/useRuntimeStatus.js:        api.get('/runtime/snapshot'),
+client/src/services/superadmin/auth.service.js:    const response = await api.post(
+client/src/services/superadmin/auth.service.js:      await api.post('/api/auth/logout', {}, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/superadmin/auth.service.js:    const response = await api.get('/api/auth/me', { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/superadmin/auth.service.js:    const response = await api.post(
+client/src/services/superadmin/auth.service.js:      const response = await api.post(
+client/src/services/legalService.js:    const response = await api.get(endpoint, {
+client/src/services/legalService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/legalService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/legalService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/hooks/useComplianceMetrics.js:      const response = await api.get(`/compliance/metrics/${tenantId}`, {
+client/src/services/marketingService.js:    const response = await api.get(endpoint, {
+client/src/services/marketingService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/marketingService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/marketingService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/hooks/useTelemetryMetrics.js:    const response = await api.get(`/telemetry/${tenantId}/stats`, {
+client/src/hooks/useKennelHealth.js:      const rootResp = await api.get('/kernel');
+client/src/hooks/useKennelHealth.js:        const statusResp = await api.get('/kernel/status');
+client/src/services/longevityService.js:    const response = await api.get(endpoint, {
+client/src/services/longevityService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/longevityService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/longevityService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/hooks/useSovereignData.js:        const response = await api.get('/api/v1/dashboard');
+client/src/hooks/useTenantRegistry.js:      const response = await api.get('/tenants', { signal });
+client/src/services/salesService.js:    const response = await api.get(endpoint, {
+client/src/services/salesService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/salesService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/salesService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/hooks/useTelemetryStats.js: * ║ • AI Engineering (Gemini) - RECTIFIED: Purged naked fetch. Anchored to Unified api.js bridge for SHA3-512 Seal integrity. [2026-05-06]    ║
+client/src/hooks/useTelemetryStats.js:      const response = await api.get('/api/v1/dashboard', {
+client/src/services/researchService.js:    const response = await api.get(endpoint, {
+client/src/services/researchService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/researchService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/researchService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/pages/Discovery.jsx:      const response = await api.post('/auth/discover',
+client/src/components/billing/InvoiceSentinel.jsx:      const response = await api.get('/billing/institutional/summary', {
+client/src/components/billing/InvoiceSentinel.jsx:      const response = await api.post('/billing/institutional/invoice/generate', payload);
+client/src/components/billing/InvoiceSentinel.jsx:      const response = await api.get(`/billing/institutional/invoice/${invoiceId}/download`, {
+client/src/services/dataService.js:    const response = await api.get(endpoint, {
+client/src/services/dataService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/dataService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/dataService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/RevenueHUD.jsx:      const response = await api.get('/revenue/ledger', {
+client/src/services/procurementService.js:    const response = await api.get(endpoint, {
+client/src/services/procurementService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/procurementService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/procurementService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/aiSalesService.js: * ║ • AI Engineering (Gemini) - EPITOMISED: Replaced rogue `fetch` API with the Sovereign `api.js` bridge to obliterate 401 fractures.     ║
+client/src/services/aiSalesService.js:import api from './api.js';
+client/src/services/aiSalesService.js: *   Bridge (`api.js`) to guarantee deterministic cryptographic payload sealing, obliterating
+client/src/services/aiSalesService.js:   * @description Executes network requests strictly through the Sovereign `api.js` bridge.
+client/src/services/engineeringService.js:    const response = await api.get(endpoint, {
+client/src/services/engineeringService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/engineeringService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/engineeringService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/quantumService.js:    const response = await api.get(endpoint, {
+client/src/services/quantumService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/quantumService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/quantumService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/securityService.js:    const response = await api.get(endpoint, {
+client/src/services/securityService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/securityService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/securityService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/pdfService.js:        const response = await api.post('/auth/refresh-token', { refreshToken });
+client/src/services/pdfService.js:      return await api.post('/api/generate/pdf', {
+client/src/services/hrService.js:        api.get(endpoint, {
+client/src/services/hrService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/hrService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/hrService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/cooService.js:    const response = await api.get(endpoint, {
+client/src/services/cooService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/cooService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/cooService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/financeService.js:    const response = await api.get(endpoint, {
+client/src/services/financeService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/financeService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/financeService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/financeService.js:    const response = await api.get('/finance/kpis', {
+client/src/services/aiEthicsService.js:    const response = await api.get(endpoint, {
+client/src/services/aiEthicsService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/aiEthicsService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/aiEthicsService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/customerSuccessService.js:    const response = await api.get(endpoint, {
+client/src/services/customerSuccessService.js:    const response = await api.post(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/customerSuccessService.js:    const response = await api.put(endpoint, sanitized, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/customerSuccessService.js:    await api.delete(endpoint, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/components/SingularityDashboard.jsx:        api.get('/revenue/metrics', { params: { tenantId } }),
+client/src/components/SingularityDashboard.jsx:        api.get(`/compliance/metrics/${tenantId}`),
+client/src/components/SingularityDashboard.jsx:        api.get(`/forensics/metrics/${tenantId}`),
+client/src/components/SingularityDashboard.jsx:        api.get(`/telemetry/${tenantId}/stats`),
+client/src/components/SingularityDashboard.jsx:        api.get('/billing/institutional/summary', { params: { tenantId } })
+client/src/components/auth/SovereignMfaPortal.jsx: *   Upstream:   ../../services/api.js, ../../contexts/authContext.jsx
+client/src/components/auth/SovereignMfaPortal.jsx:        const response = await api.post('/auth/setup-mfa', { email });
+client/src/components/auth/SovereignMfaPortal.jsx:      const response = await api.post('/auth/verify-3fa', { email, otp, tempToken });
+client/src/utils/cryptoCore.js: * This is strictly utilized by the `api.js` interceptor for synchronous, lock-free header injection.
+client/src/utils/telemetryHelper.js:      const base = api.defaults?.baseURL || 'http://localhost:5050/api';
+client/src/utils/telemetryHelper.js:      const base = api.defaults?.baseURL || 'http://localhost:5050/api';
+client/src/components/ComplianceHUD.jsx:      const response = await api.get(`/compliance/metrics/${tenantId}`);
+client/src/components/ComplianceHUD.jsx:      const response = await api.post(`/ledger/sync/${tenantId}`, {
+client/src/components/sovereign/SovereignOrchestrator.jsx:        request: () => api.get('/billing/summary', { headers: { 'X-Tenant-ID': tenantId } })
+client/src/components/sovereign/SovereignOrchestrator.jsx:        request: () => api.get('/billing/analytics', { headers: { 'X-Tenant-ID': tenantId } })
+client/src/components/sovereign/SovereignOrchestrator.jsx:        request: () => api.get('/courts', {
+client/src/components/sovereign/Sovereign_StatementEngine.jsx:      const res = await api.get(`/api/statements/${type}?tenantId=${tenantId}`, { responseType: 'blob' });
+client/src/components/sovereign/Sovereign_TenantManager.jsx:      const response = await api.post('/api/tenants/create', {
+client/src/components/sovereign/Sovereign_TenantManager.jsx:      const res = await api.post('/api/tenants/suspend', { id });
+client/src/components/sovereign/AuditModule.jsx:        const res = await api.get(`/audit/batch/view/${batchId}`);
+client/src/components/sovereign/AuditModule.jsx:        const res = await api.get(`/audit/${traceId}`);
+client/src/components/sovereign/AuditModule.jsx:      const res = await api.get(`/audit/verify-qr/${traceId}`);
+client/src/components/sovereign/FounderDashboard.jsx:        const response = await api.get('/billing/institutional/summary', {
+client/src/components/sovereign/BatchVerificationView.jsx:        const res = await api.get(`/audit/batch/view/${batchId}`);
+client/src/components/sovereign/NeuralNarrativeCapsule.jsx:      const billingResponse = await api.get('/billing/institutional/summary', {
+client/src/components/sovereign/AuditTimeline.jsx:        const response = await api.post('/audit/batch', { traceIds });
+client/src/components/sovereign/SecurityManager.jsx:      const { data } = await api.post('/security/rotate-key', {
+client/src/components/sovereign/TenantDiscovery.jsx:      const response = await api.post('/auth/discover', { alias: cleanAlias });
+client/src/components/sovereign/CommandPalette.jsx:      api.get('/status'),
+client/src/components/sovereign/CommandPalette.jsx:      api.get(`/telemetry/${currentTenantId}/stats`),
+client/src/components/sovereign/CommandPalette.jsx:      api.get('/revenue/metrics', { params: { tenantId: currentTenantId } }),
+client/src/components/sovereign/CommandPalette.jsx:      api.get(`/compliance/metrics/${currentTenantId}`),
+client/src/components/sovereign/CommandPalette.jsx:      api.get(`/forensics/metrics/${currentTenantId}`),
+client/src/components/sovereign/AuditEntry.jsx: * ║ • AI Engineering (Gemini) - RECTIFIED: Purged raw fetch API. Injected `api.get` for the `/api/audit/verify-qr/:traceId` strike.        ║
+client/src/components/sovereign/AuditEntry.jsx:        const res = await api.get(`/audit/${traceId}`);
+client/src/components/sovereign/AuditEntry.jsx:      const res = await api.get(`/audit/verify-qr/${traceId}`);
+client/src/components/sovereign/NucleusFeedMonitor.jsx:      api.get('/billing/institutional/summary', { ...requestConfig, params: { tenantId: resolvedTenantId } }),
+client/src/components/sovereign/NucleusFeedMonitor.jsx:      api.get(`/compliance/metrics/${resolvedTenantId}`, requestConfig),
+client/src/components/sovereign/NucleusFeedMonitor.jsx:      api.get(`/forensics/metrics/${resolvedTenantId}`, requestConfig),
+client/src/components/sovereign/NucleusFeedMonitor.jsx:      api.get(`/telemetry/${resolvedTenantId}/stats`, requestConfig),

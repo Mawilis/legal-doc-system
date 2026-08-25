@@ -1,0 +1,102 @@
+"""
+Wilsy Engineering Kernel
+Engineering Constitution Manager
+
+Constitution Parser
+
+Institutional Header Parsing
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from ..domain.models import Constitution
+
+
+class ConstitutionParser:
+    """
+    Read-only Engineering Constitution parser.
+    """
+
+    PART_PATTERN = re.compile(r"^# Part\b", re.MULTILINE)
+    ARTICLE_PATTERN = re.compile(r"^ARTICLE\s+\d+", re.MULTILINE)
+    LAW_PATTERN = re.compile(r"^LAW\s+EK-\d{3}", re.MULTILINE)
+
+    SPECIFICATION_PATTERN = re.compile(
+        r"^Specification ID:\s*(.+)$",
+        re.MULTILINE,
+    )
+
+    VERSION_PATTERN = re.compile(
+        r"^Version:\s*(.+)$",
+        re.MULTILINE,
+    )
+
+    TITLE_PATTERN = re.compile(
+        r"^#\s+(.+)$",
+        re.MULTILINE,
+    )
+
+    def load_document(
+        self,
+        path: Path,
+    ) -> str:
+        """
+        Load the Engineering Constitution from disk.
+        """
+
+        return path.read_text(encoding="utf-8")
+
+    def discover_structure(
+        self,
+        document: str,
+    ) -> dict:
+        """
+        Discover top-level constitutional structure.
+
+        Read-only.
+        """
+
+        return {
+            "parts": len(self.PART_PATTERN.findall(document)),
+            "articles": len(self.ARTICLE_PATTERN.findall(document)),
+            "laws": len(self.LAW_PATTERN.findall(document)),
+        }
+
+    def parse_header(
+        self,
+        document: str,
+    ) -> Constitution:
+        """
+        Parse the institutional header only.
+        """
+
+        specification = self.SPECIFICATION_PATTERN.search(document)
+        version = self.VERSION_PATTERN.search(document)
+        title = self.TITLE_PATTERN.search(document)
+
+        return Constitution(
+            specification_id=specification.group(1).strip() if specification else "",
+            version=version.group(1).strip() if version else "",
+            title=title.group(1).strip() if title else "",
+            mission="",
+            parts=[],
+        )
+
+    def parse(
+        self,
+        path: Path,
+    ) -> Constitution:
+        """
+        Parse the Engineering Constitution.
+
+        This packet constructs only the immutable Constitution header model.
+        """
+
+        document = self.load_document(path)
+
+        self.discover_structure(document)
+
+        return self.parse_header(document)

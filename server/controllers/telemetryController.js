@@ -20,7 +20,7 @@ import Telemetry from '../models/Telemetry.js';
 import ForensicLog from '../models/ForensicLog.js';
 import { redisClient } from '../config/redis.js';
 import logger from '../utils/logger.js';
-import metrics from '../utils/metrics.js';
+import { metrics } from './metricsCollector.js';
 import { performance } from 'node:perf_hooks';
 import { broadcastTelemetry, getTelemetryState } from '../utils/telemetryHelper.js';
 import chalk from 'chalk';

@@ -1874,3 +1874,1906 @@
     justify-content: start !important;
   }
 }
+
+/* ==========================================================================
+   WILSY OS R86A - CONTACTS REAL-WORLD ONE-SCREEN OPERATING ROOM
+   Purpose: make Contacts a dense, source-backed CRM cockpit with no page scroll.
+   ========================================================================== */
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] {
+  --r86a-header: clamp(14.25rem, 25.5vh, 15.65rem);
+  --r86a-metrics: clamp(4.25rem, 8.8vh, 5rem);
+  --r86a-gap: clamp(0.45rem, 0.8vh, 0.62rem);
+  height: calc(100dvh - 1rem) !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 1rem) !important;
+  position: relative !important;
+  display: grid !important;
+  grid-template-rows: var(--r86a-header) var(--r86a-metrics) minmax(0, 1fr) !important;
+  gap: var(--r86a-gap) !important;
+  padding: 0.55rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactAppHeader {
+  height: var(--r86a-header) !important;
+  min-height: 0 !important;
+  max-height: var(--r86a-header) !important;
+  display: grid !important;
+  grid-template-rows: minmax(3.6rem, 4.1rem) minmax(2.85rem, 3.2rem) minmax(2.25rem, 2.65rem) minmax(4rem, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactHeaderPrimary {
+  min-height: 0 !important;
+  padding: 0.72rem 0.88rem !important;
+  align-items: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTitleBlock {
+  gap: 0.15rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTitleBlock small {
+  font-size: 0.62rem !important;
+  letter-spacing: 0.22em !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTitleBlock strong {
+  font-size: clamp(1.65rem, 2.5vw, 2.42rem) !important;
+  line-height: 0.95 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTitleBlock em {
+  max-width: 64rem !important;
+  font-size: 0.72rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactHeaderUtilities {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 0.42rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactIconButton {
+  width: 2.55rem !important;
+  min-width: 2.55rem !important;
+  height: 2.55rem !important;
+  min-height: 2.55rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactThemeAuthority {
+  min-height: 2.55rem !important;
+  min-width: clamp(13rem, 23vw, 19rem) !important;
+  padding: 0.45rem 0.72rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactCommandRow {
+  min-height: 0 !important;
+  padding: 0.42rem 0.7rem !important;
+  grid-template-columns: minmax(18rem, 0.86fr) auto !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactSearch {
+  min-height: 2.35rem !important;
+  height: 2.35rem !important;
+  max-width: 31rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactToolbar {
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
+  gap: 0.36rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactToolbar button,
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactViewButton {
+  min-height: 2.3rem !important;
+  height: 2.3rem !important;
+  padding: 0.36rem 0.58rem !important;
+  font-size: 0.78rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactViewButton {
+  min-width: clamp(12rem, 18vw, 15.5rem) !important;
+}
+
+.contactCommandIntelligenceStrip {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 0.42rem !important;
+  padding: 0.36rem 0.7rem !important;
+  border-top: 1px solid rgba(126, 111, 179, 0.24) !important;
+  background: linear-gradient(90deg, rgba(6, 9, 14, 0.72), rgba(10, 16, 25, 0.86)) !important;
+  overflow: hidden !important;
+}
+
+.contactCommandIntelligenceStrip article {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "label value"
+    "detail detail" !important;
+  align-items: center !important;
+  gap: 0.1rem 0.45rem !important;
+  padding: 0.34rem 0.58rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.18) !important;
+  border-radius: 0.62rem !important;
+  background: rgba(4, 9, 13, 0.66) !important;
+  overflow: hidden !important;
+}
+
+.contactCommandIntelligenceStrip small {
+  grid-area: label !important;
+  min-width: 0 !important;
+  color: var(--r85a-gold, #eadf9f) !important;
+  font-size: 0.58rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactCommandIntelligenceStrip strong {
+  grid-area: value !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  font-size: 1rem !important;
+  line-height: 1 !important;
+  font-weight: 920 !important;
+}
+
+.contactCommandIntelligenceStrip em {
+  grid-area: detail !important;
+  min-width: 0 !important;
+  color: var(--r85a-muted, rgba(222,227,244,0.68)) !important;
+  font-size: 0.62rem !important;
+  font-style: normal !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTabBar {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: 2.16rem minmax(0, 1fr) !important;
+  gap: 0.42rem !important;
+  padding: 0.38rem 0.7rem 0.48rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTabs {
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTabs button {
+  min-height: 2.05rem !important;
+  min-width: 6.4rem !important;
+  padding: 0.28rem 0.58rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactInvestorStrip {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.42rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactInvestorStrip article {
+  min-height: 2.9rem !important;
+  padding: 0.4rem 0.58rem !important;
+  border-radius: 0.62rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactInvestorStrip small,
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactInvestorStrip em {
+  font-size: 0.56rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactInvestorStrip strong {
+  font-size: 0.98rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactMetricDeck {
+  min-height: 0 !important;
+  height: var(--r86a-metrics) !important;
+  max-height: var(--r86a-metrics) !important;
+  gap: 0.55rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactMetricDeck article {
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0.58rem 0.72rem !important;
+  align-content: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactMetricIcon {
+  width: 1.35rem !important;
+  height: 1.35rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactMetricCopy small {
+  font-size: 0.58rem !important;
+  letter-spacing: 0.18em !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactMetricCopy strong {
+  font-size: 1.12rem !important;
+  line-height: 1 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactMetricCopy em {
+  font-size: 0.62rem !important;
+  line-height: 1.12 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  grid-template-columns: clamp(15rem, 17vw, 18rem) minmax(0, 1fr) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: 3rem minmax(0, 1fr) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactFilterRail,
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactFilterRailCollapsed,
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsPanel {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactFilterRail {
+  grid-template-rows: 3.05rem 2.6rem minmax(0, 1fr) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactFilterRail header,
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsHeader {
+  min-height: 0 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactFilterSearch {
+  min-height: 2.18rem !important;
+  height: 2.18rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactFilterScroll {
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+.contactFilterGroup button[data-active="true"] {
+  background: color-mix(in srgb, var(--r85a-accent, #7af4c6) 18%, transparent) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+}
+
+.contactFilterGroup button[data-active="true"] span {
+  background: var(--r85a-accent, #7af4c6) !important;
+  border-color: color-mix(in srgb, var(--r85a-accent, #7af4c6) 72%, #ffffff 28%) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--r85a-accent, #7af4c6) 18%, transparent) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsPanel {
+  grid-template-rows: 3.3rem auto minmax(0, 1fr) 2.25rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsHeader {
+  padding: 0.44rem 0.72rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsHeader strong {
+  font-size: 0.95rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsHeader button {
+  min-height: 2.18rem !important;
+  height: 2.18rem !important;
+  padding: 0.32rem 0.58rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsTable {
+  min-width: 72rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsTable th {
+  height: 2.12rem !important;
+  padding: 0 0.55rem !important;
+  font-size: 0.62rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsTable td {
+  height: 2.32rem !important;
+  padding: 0 0.55rem !important;
+  font-size: 0.66rem !important;
+}
+
+.contactActionPill {
+  max-width: 8.5rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.22rem 0.48rem !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(122, 244, 198, 0.28) !important;
+  background: rgba(122, 244, 198, 0.08) !important;
+  color: #bffff0 !important;
+  font-size: 0.62rem !important;
+  line-height: 1 !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactEmptyRow td {
+  height: 4.6rem !important;
+  min-height: 4.6rem !important;
+  padding: 0.58rem 0.8rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsFooter {
+  min-height: 0 !important;
+  padding: 0.42rem 0.72rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactSourceWarning {
+  position: absolute !important;
+  right: 1rem !important;
+  bottom: 1rem !important;
+  z-index: 12 !important;
+  max-width: min(32rem, calc(100% - 2rem)) !important;
+}
+
+@media (max-width: 1320px) {
+  .contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] {
+    --r86a-header: 17.5rem;
+    grid-template-rows: var(--r86a-header) var(--r86a-metrics) minmax(0, 1fr) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactAppHeader {
+    grid-template-rows: 4.2rem 5.5rem 4.1rem 3.4rem !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactCommandRow,
+  .contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactHeaderPrimary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contactCommandIntelligenceStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: auto !important;
+  }
+}
+
+/* ==========================================================================
+   WILSY OS R86B - CONTACTS SECTION MAP AND BACKEND COMMAND REPAIR
+   Purpose: restore one-screen lanes, stop header/table overlap, and support
+   Contacts-owned backend create/export command surfaces.
+   ========================================================================== */
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+  --r86b-header: clamp(19.9rem, 34vh, 22.25rem);
+  --r86b-metrics: clamp(4.85rem, 8.8vh, 5.55rem);
+  --r86b-gap: clamp(0.48rem, 0.8vh, 0.66rem);
+  width: 100% !important;
+  height: calc(100dvh - 1rem) !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 1rem) !important;
+  display: grid !important;
+  grid-template-rows: var(--r86b-header) var(--r86b-metrics) minmax(0, 1fr) !important;
+  gap: var(--r86b-gap) !important;
+  padding: 0.55rem !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+  height: var(--r86b-header) !important;
+  min-height: var(--r86b-header) !important;
+  max-height: var(--r86b-header) !important;
+  display: grid !important;
+  grid-template-rows: minmax(5.6rem, 6.35rem) minmax(4.15rem, 4.8rem) minmax(3.15rem, 3.55rem) minmax(6.15rem, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderPrimary {
+  min-height: 0 !important;
+  padding: 1rem 1.15rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(28rem, 1fr) minmax(30rem, 37rem) !important;
+  gap: 1.1rem !important;
+  align-items: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock {
+  min-width: 0 !important;
+  gap: 0.28rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock small {
+  font-size: 0.65rem !important;
+  letter-spacing: 0.24em !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock strong {
+  font-size: clamp(2.25rem, 3vw, 3.15rem) !important;
+  line-height: 0.96 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock em {
+  max-width: 100% !important;
+  font-size: 0.78rem !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderUtilities {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, 3rem) minmax(20rem, 1fr) !important;
+  gap: 0.7rem !important;
+  align-items: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactIconButton {
+  width: 3rem !important;
+  min-width: 3rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactThemeAuthority {
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 4.05rem !important;
+  height: 4.05rem !important;
+  padding: 0.7rem 1rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow {
+  min-height: 0 !important;
+  padding: 0.7rem 1rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(26rem, 0.72fr) minmax(34rem, 1fr) !important;
+  gap: 0.78rem !important;
+  align-items: center !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 8 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactSearch {
+  width: 100% !important;
+  max-width: 38rem !important;
+  height: 3.05rem !important;
+  min-height: 3.05rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  gap: 0.56rem !important;
+  overflow: visible !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar button,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton {
+  height: 2.78rem !important;
+  min-height: 2.78rem !important;
+  padding: 0 0.82rem !important;
+  white-space: nowrap !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton {
+  width: clamp(15rem, 19vw, 22rem) !important;
+  min-width: clamp(15rem, 19vw, 22rem) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip {
+  min-height: 0 !important;
+  height: 100% !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 0.48rem !important;
+  padding: 0.42rem 1rem !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip article {
+  min-height: 0 !important;
+  padding: 0.42rem 0.65rem !important;
+  border-radius: 0.64rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip small {
+  font-size: 0.57rem !important;
+  letter-spacing: 0.18em !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip strong {
+  font-size: 1.05rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip em {
+  font-size: 0.61rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTabBar {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: 2.85rem minmax(0, 1fr) !important;
+  gap: 0.52rem !important;
+  padding: 0.55rem 1rem 0.7rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTabs {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTabs button {
+  min-width: clamp(7.25rem, 8.4vw, 10rem) !important;
+  min-height: 2.52rem !important;
+  height: 2.52rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactInvestorStrip {
+  min-height: 0 !important;
+  height: 100% !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.52rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactInvestorStrip article {
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0.55rem 0.72rem !important;
+  align-content: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactMetricDeck {
+  height: var(--r86b-metrics) !important;
+  min-height: 0 !important;
+  max-height: var(--r86b-metrics) !important;
+  gap: 0.62rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactMetricDeck article {
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0.68rem 0.84rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  display: grid !important;
+  grid-template-columns: clamp(15rem, 18vw, 19rem) minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: 3.2rem minmax(0, 1fr) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFilterRail,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFilterRailCollapsed,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  display: grid !important;
+  grid-template-rows: 3.8rem 2.2rem minmax(0, 1fr) 2.35rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel:has(.contactBulkActionBar) {
+  grid-template-rows: 3.8rem 2.2rem 2.7rem minmax(0, 1fr) 2.35rem !important;
+}
+
+.contactBackendStatus {
+  min-width: 0 !important;
+  min-height: 2.2rem !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.72rem !important;
+  padding: 0 0.92rem !important;
+  border-bottom: 1px solid rgba(122, 244, 198, 0.16) !important;
+  background: linear-gradient(90deg, rgba(4, 11, 12, 0.72), rgba(13, 18, 28, 0.82)) !important;
+  overflow: hidden !important;
+}
+
+.contactBackendStatus span {
+  min-width: max-content !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.42rem !important;
+  color: var(--r85a-accent, #7af4c6) !important;
+}
+
+.contactBackendStatus strong {
+  font-size: 0.62rem !important;
+  font-weight: 940 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+}
+
+.contactBackendStatus em {
+  min-width: 0 !important;
+  color: var(--r85a-muted, rgba(222,227,244,0.68)) !important;
+  font-size: 0.72rem !important;
+  font-style: normal !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsHeader {
+  min-height: 0 !important;
+  padding: 0.48rem 0.92rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTableFrame {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable {
+  min-width: 80rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow td {
+  height: 8.2rem !important;
+  min-height: 8.2rem !important;
+  padding: 0.8rem 1rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow section {
+  min-height: 6.4rem !important;
+  height: 100% !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 2.8rem minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.9rem !important;
+  padding: 0.86rem 1rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.18) !important;
+  border-radius: 0.8rem !important;
+  background: rgba(4, 11, 12, 0.42) !important;
+  text-align: left !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow svg {
+  display: block !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  color: var(--r85a-accent, #7af4c6) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow span {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.28rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow strong {
+  max-width: 100% !important;
+  font-size: 0.92rem !important;
+  line-height: 1.2 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow em {
+  max-width: 100% !important;
+  font-size: 0.74rem !important;
+  line-height: 1.34 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow div {
+  min-width: max-content !important;
+  display: flex !important;
+  gap: 0.5rem !important;
+  flex-wrap: nowrap !important;
+}
+
+.contactComposerOverlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 110 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 1rem !important;
+  background: rgba(0, 0, 0, 0.66) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.contactComposerPanel {
+  width: min(48rem, calc(100% - 1rem)) !important;
+  max-height: calc(100% - 1rem) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(122, 244, 198, 0.36) !important;
+  border-radius: 1rem !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(122, 244, 198, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(14, 22, 32, 0.98), rgba(3, 8, 12, 0.99)) !important;
+  box-shadow: 0 2rem 5.5rem rgba(0, 0, 0, 0.52) !important;
+}
+
+.contactComposerPanel header,
+.contactComposerPanel footer {
+  min-height: 4.4rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  padding: 1rem 1.15rem !important;
+  border-bottom: 1px solid rgba(122, 244, 198, 0.16) !important;
+}
+
+.contactComposerPanel footer {
+  border-top: 1px solid rgba(122, 244, 198, 0.16) !important;
+  border-bottom: 0 !important;
+  justify-content: flex-end !important;
+}
+
+.contactComposerPanel header span {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.25rem !important;
+}
+
+.contactComposerPanel header small,
+.contactComposerGrid span,
+.contactComposerPanel footer span {
+  color: var(--r85a-gold, #eadf9f) !important;
+  font-size: 0.64rem !important;
+  font-weight: 940 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+}
+
+.contactComposerPanel header strong {
+  color: var(--r85a-text, #f7f8ff) !important;
+  font-size: 1.35rem !important;
+  line-height: 1 !important;
+}
+
+.contactComposerPanel header em {
+  color: var(--r85a-muted, rgba(222,227,244,0.68)) !important;
+  font-size: 0.76rem !important;
+  font-style: normal !important;
+}
+
+.contactComposerPanel header button,
+.contactComposerPanel footer button {
+  min-height: 2.65rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.26) !important;
+  border-radius: 0.62rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  padding: 0 1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.45rem !important;
+  font: inherit !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+}
+
+.contactComposerPanel footer button[type="submit"] {
+  background: linear-gradient(135deg, #9ff29b, #75f2c8) !important;
+  color: #041008 !important;
+  border-color: rgba(159, 242, 155, 0.7) !important;
+}
+
+.contactComposerGrid {
+  min-height: 0 !important;
+  overflow: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.9rem !important;
+  padding: 1.15rem !important;
+}
+
+.contactComposerGrid label {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.42rem !important;
+}
+
+.contactComposerGrid input,
+.contactComposerGrid select {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 2.8rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.22) !important;
+  border-radius: 0.62rem !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  padding: 0 0.85rem !important;
+  font: inherit !important;
+}
+
+@media (max-width: 1560px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    --r86b-header: 23.7rem;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+    grid-template-rows: 6.4rem 7rem 4rem 6.3rem !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderPrimary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderUtilities,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+    justify-content: start !important;
+  }
+}
+
+@media (max-width: 1120px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: auto !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactMetricDeck,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"] {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .contactComposerGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* R86C CONTACTS_ZOHO_GRADE_RAIL_PARITY_CONTRACT
+   Keeps Contacts visually aligned with the stable Meetings workspace and the Zoho-style list pattern:
+   visible title, compact controls, left filter rail, records table, and no desktop command-row stacking under the open CRM rail. */
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+  --r86b-header: clamp(17.4rem, 29vh, 19.25rem) !important;
+  --r86b-metrics: clamp(4.65rem, 7.4vh, 5.25rem) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: calc(100dvh - 1.35rem) !important;
+  max-height: calc(100dvh - 1.35rem) !important;
+  grid-template-rows: var(--r86b-header) var(--r86b-metrics) minmax(0, 1fr) !important;
+  padding: 1.125rem 1.375rem 0.625rem !important;
+  gap: 0.75rem !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+  height: var(--r86b-header) !important;
+  min-height: var(--r86b-header) !important;
+  max-height: var(--r86b-header) !important;
+  grid-template-rows: minmax(4.45rem, 5.25rem) minmax(3.6rem, 4.1rem) minmax(2.7rem, 3.1rem) minmax(4.2rem, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderPrimary {
+  grid-template-columns: minmax(24rem, 1fr) minmax(26rem, 34rem) !important;
+  padding: 0.86rem 1.05rem !important;
+  gap: 0.95rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock strong {
+  font-size: clamp(2.45rem, 3vw, 3.55rem) !important;
+  letter-spacing: -0.025em !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderUtilities {
+  grid-template-columns: repeat(3, 2.7rem) minmax(17rem, 1fr) !important;
+  gap: 0.55rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactIconButton {
+  width: 2.7rem !important;
+  min-width: 2.7rem !important;
+  height: 2.7rem !important;
+  min-height: 2.7rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactThemeAuthority {
+  min-height: 3.55rem !important;
+  height: 3.55rem !important;
+  padding: 0.58rem 0.9rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow {
+  grid-template-columns: minmax(25rem, 0.86fr) minmax(33rem, 1.14fr) !important;
+  padding: 0.55rem 1rem !important;
+  gap: 0.72rem !important;
+  align-items: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactSearch {
+  max-width: none !important;
+  height: 2.95rem !important;
+  min-height: 2.95rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+  min-width: 0 !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0.52rem !important;
+  flex-wrap: nowrap !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar button,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton {
+  height: 2.7rem !important;
+  min-height: 2.7rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton {
+  width: clamp(14.25rem, 18vw, 21rem) !important;
+  min-width: clamp(14.25rem, 18vw, 21rem) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  padding: 0.38rem 1rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTabBar {
+  grid-template-rows: 2.65rem minmax(0, 1fr) !important;
+  padding: 0.48rem 1rem 0.58rem !important;
+  gap: 0.44rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTabs button {
+  min-height: 2.42rem !important;
+  height: 2.42rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactMetricDeck {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  height: var(--r86b-metrics) !important;
+  max-height: var(--r86b-metrics) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"] {
+  grid-template-columns: clamp(15.5rem, 18vw, 19.25rem) minmax(0, 1fr) !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  min-width: 0 !important;
+  grid-template-rows: 3.55rem 2.1rem minmax(0, 1fr) 2.3rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel:has(.contactBulkActionBar) {
+  grid-template-rows: 3.55rem 2.1rem 2.6rem minmax(0, 1fr) 2.3rem !important;
+}
+
+@media (max-width: 1560px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    --r86b-header: clamp(17.7rem, 30vh, 19.65rem) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+    grid-template-rows: minmax(4.45rem, 5.25rem) minmax(3.85rem, 4.35rem) minmax(2.65rem, 3rem) minmax(4.1rem, 1fr) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderPrimary {
+    grid-template-columns: minmax(22rem, 1fr) minmax(24rem, 31rem) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow {
+    grid-template-columns: minmax(24rem, 0.9fr) minmax(28rem, 1.1fr) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderUtilities,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+    justify-content: end !important;
+  }
+}
+
+@media (max-width: 1240px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: auto !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderPrimary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderUtilities,
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+    justify-content: start !important;
+  }
+}
+
+/* R87C CONTACTS_PRODUCTIVITY_RECORD_VIEW_AND_CREATE_CONTACT
+   Reclaims the records viewport by moving metric cards into the toolbar insight menu and upgrades Create Contact to a full CRM form. */
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+  --r87c-header: clamp(14.55rem, 23.2vh, 16.25rem) !important;
+  height: calc(100dvh - 1.35rem) !important;
+  max-height: calc(100dvh - 1.35rem) !important;
+  grid-template-rows: var(--r87c-header) minmax(0, 1fr) !important;
+  gap: 0.68rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+  height: var(--r87c-header) !important;
+  min-height: var(--r87c-header) !important;
+  max-height: var(--r87c-header) !important;
+  grid-template-rows: minmax(4.05rem, 4.8rem) minmax(3.35rem, 3.75rem) minmax(2.32rem, 2.65rem) minmax(3.2rem, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactHeaderPrimary {
+  padding: 0.72rem 1rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock strong {
+  font-size: clamp(2.25rem, 2.75vw, 3.15rem) !important;
+  line-height: 0.92 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip {
+  min-height: 0 !important;
+  padding: 0.28rem 1rem !important;
+  gap: 0.5rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip article {
+  min-height: 2.25rem !important;
+  padding: 0.35rem 0.62rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip small,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip em {
+  font-size: 0.56rem !important;
+  line-height: 1.1 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip strong {
+  font-size: 1rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactMetricDeck {
+  display: none !important;
+}
+
+.contactInsightWrap {
+  position: relative !important;
+  display: inline-flex !important;
+  min-width: 0 !important;
+}
+
+.contactInsightDropdown {
+  position: absolute !important;
+  top: calc(100% + 0.45rem) !important;
+  right: 0 !important;
+  z-index: 90 !important;
+  width: min(24rem, 78vw) !important;
+  display: grid !important;
+  gap: 0.42rem !important;
+  padding: 0.7rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.34) !important;
+  border-radius: 0.82rem !important;
+  background: linear-gradient(145deg, rgba(11, 18, 27, 0.98), rgba(3, 7, 12, 0.99)) !important;
+  box-shadow: 0 1.4rem 4rem rgba(0, 0, 0, 0.5) !important;
+}
+
+.contactInsightDropdown header {
+  display: grid !important;
+  gap: 0.18rem !important;
+  padding: 0.18rem 0.25rem 0.45rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.contactInsightDropdown header small,
+.contactInsightDropdown button em {
+  color: rgba(222, 227, 244, 0.68) !important;
+  font-size: 0.65rem !important;
+}
+
+.contactInsightDropdown header strong {
+  color: var(--r85a-text, #f7f8ff) !important;
+  font-size: 0.95rem !important;
+}
+
+.contactInsightDropdown button {
+  min-height: 3.15rem !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.62rem !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  padding: 0.55rem 0.65rem !important;
+  text-align: left !important;
+}
+
+.contactInsightDropdown button span {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.16rem !important;
+}
+
+.contactInsightDropdown button strong,
+.contactInsightDropdown button b {
+  color: var(--r85a-text, #f7f8ff) !important;
+  font-size: 0.76rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"] {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  grid-template-rows: 3.35rem 2.05rem minmax(0, 1fr) 2.75rem !important;
+  min-height: 0 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel:has(.contactBulkActionBar) {
+  grid-template-rows: 3.35rem 2.05rem 2.55rem minmax(0, 1fr) 2.75rem !important;
+}
+
+.contactRecordsFooter {
+  min-height: 2.75rem !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  padding: 0 0.82rem !important;
+}
+
+.contactRecordsFooter span,
+.contactRecordsFooter em {
+  min-width: 0 !important;
+  color: rgba(222, 227, 244, 0.72) !important;
+  font-style: normal !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactRecordsFooter span strong {
+  color: var(--r85a-text, #f7f8ff) !important;
+}
+
+.contactFooterPagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.34rem !important;
+}
+
+.contactFooterPagination button,
+.contactFooterPagination select,
+.contactFooterPagination strong {
+  min-width: 2.1rem !important;
+  height: 2rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.22) !important;
+  border-radius: 0.46rem !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font: inherit !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+}
+
+.contactFooterPagination strong {
+  background: linear-gradient(135deg, rgba(126, 99, 255, 0.9), rgba(95, 78, 236, 0.96)) !important;
+  border-color: rgba(164, 143, 255, 0.66) !important;
+}
+
+.contactFooterPagination select {
+  width: 5.7rem !important;
+  padding: 0 0.45rem !important;
+}
+
+.contactFooterPagination button:disabled {
+  opacity: 0.36 !important;
+  cursor: not-allowed !important;
+}
+
+.contactComposerOverlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 120 !important;
+  align-items: center !important;
+  justify-items: center !important;
+  padding: 0.9rem !important;
+}
+
+.contactComposerPanel {
+  width: min(92rem, calc(100% - 1rem)) !important;
+  height: min(86vh, 56rem) !important;
+  max-height: calc(100% - 0.5rem) !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  border-radius: 1.05rem !important;
+}
+
+.contactComposerBody {
+  min-height: 0 !important;
+  overflow: auto !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 1rem !important;
+  padding: 1.05rem 1.15rem !important;
+}
+
+.contactComposerSection {
+  display: grid !important;
+  gap: 0.8rem !important;
+  min-width: 0 !important;
+  padding: 0.9rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.085) !important;
+  border-radius: 0.82rem !important;
+  background: rgba(255, 255, 255, 0.028) !important;
+}
+
+.contactComposerSection h3,
+.contactComposerSectionHeader h3 {
+  margin: 0 !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  font-size: 0.95rem !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.contactComposerGrid {
+  padding: 0 !important;
+  overflow: visible !important;
+  grid-template-columns: repeat(2, minmax(18rem, 1fr)) !important;
+}
+
+.contactComposerGrid label,
+.contactAddressGrid label,
+.contactDescriptionField {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(8rem, 0.34fr) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.8rem !important;
+}
+
+.contactComposerGrid label > span:first-child,
+.contactAddressGrid label > span:first-child,
+.contactDescriptionField > span:first-child,
+.contactAddressCommandSearch > span {
+  color: rgba(222, 227, 244, 0.74) !important;
+  font-size: 0.75rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+}
+
+.contactComposerGrid input,
+.contactComposerGrid select,
+.contactAddressGrid input,
+.contactDescriptionField textarea,
+.contactAddressCommandSearch input {
+  min-height: 2.62rem !important;
+  border-radius: 0.45rem !important;
+  letter-spacing: 0 !important;
+}
+
+.contactComposerNameRow .contactNameInputGroup {
+  display: grid !important;
+  grid-template-columns: 8rem minmax(0, 1fr) !important;
+  gap: 0 !important;
+}
+
+.contactComposerNameRow .contactNameInputGroup select {
+  border-radius: 0.45rem 0 0 0.45rem !important;
+}
+
+.contactComposerNameRow .contactNameInputGroup input {
+  border-radius: 0 0.45rem 0.45rem 0 !important;
+}
+
+.contactComposerCheckbox {
+  grid-template-columns: 1.2rem minmax(0, 1fr) !important;
+  align-content: center !important;
+}
+
+.contactComposerCheckbox input {
+  width: 1rem !important;
+  min-height: 1rem !important;
+}
+
+.contactAddressCommandDeck {
+  display: grid !important;
+  gap: 0.62rem !important;
+  min-width: 0 !important;
+}
+
+.contactAddressCommandSearch {
+  display: grid !important;
+  grid-template-columns: minmax(12rem, 0.24fr) minmax(0, 1fr) !important;
+  gap: 0.8rem !important;
+  align-items: center !important;
+}
+
+.contactAddressEvidenceStrip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.48rem !important;
+}
+
+.contactAddressEvidenceStrip span {
+  min-width: 0 !important;
+  min-height: 2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  border: 1px solid rgba(122, 244, 198, 0.18) !important;
+  border-radius: 0.5rem !important;
+  color: rgba(222, 227, 244, 0.72) !important;
+  background: rgba(0, 0, 0, 0.18) !important;
+  padding: 0 0.58rem !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.contactAddressSuggestionRail {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.6rem !important;
+}
+
+.contactAddressSuggestionCard {
+  display: grid !important;
+  gap: 0.25rem !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(122, 244, 198, 0.24) !important;
+  border-radius: 0.62rem !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  padding: 0.65rem !important;
+  text-align: left !important;
+}
+
+.contactAddressSuggestionCard small,
+.contactAddressSuggestionCard span,
+.contactAddressSuggestionCard em,
+.contactAddressManualFallback {
+  color: rgba(222, 227, 244, 0.68) !important;
+  font-size: 0.72rem !important;
+  font-style: normal !important;
+}
+
+.contactAddressSuggestionCard strong {
+  overflow-wrap: anywhere !important;
+}
+
+.contactAddressManualFallback {
+  min-height: 2.15rem !important;
+  display: flex !important;
+  align-items: center !important;
+  border: 1px dashed rgba(122, 244, 198, 0.2) !important;
+  border-radius: 0.52rem !important;
+  padding: 0 0.7rem !important;
+}
+
+.contactComposerSectionHeader {
+  min-height: 2.6rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+.contactComposerSectionHeader button {
+  min-height: 2.35rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 0.5rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  padding: 0 0.8rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+}
+
+.contactAddressGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 1rem !important;
+}
+
+.contactAddressGrid section {
+  display: grid !important;
+  gap: 0.62rem !important;
+  min-width: 0 !important;
+}
+
+.contactAddressGrid section > strong {
+  color: var(--r85a-gold, #eadf9f) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.contactDescriptionField {
+  align-items: start !important;
+}
+
+.contactDescriptionField textarea {
+  min-height: 4.8rem !important;
+  resize: vertical !important;
+  padding: 0.75rem 0.85rem !important;
+}
+
+@media (max-width: 1560px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    --r87c-header: clamp(14.9rem, 24vh, 16.65rem) !important;
+  }
+
+  .contactComposerPanel {
+    width: min(82rem, calc(100% - 1rem)) !important;
+  }
+}
+
+@media (max-width: 1240px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    grid-template-rows: auto minmax(30rem, 1fr) !important;
+  }
+
+  .contactAddressGrid,
+  .contactAddressEvidenceStrip,
+  .contactAddressSuggestionRail,
+  .contactComposerGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* R88 CONTACTS_ALIGNMENT_AND_DROPDOWN_LOCK
+   Final containment pass: no floating insight cards, no toolbar collisions, no clipped record columns. */
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+  --r88-header: clamp(15.65rem, 24.4vh, 17.15rem) !important;
+  grid-template-rows: var(--r88-header) minmax(0, 1fr) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+  height: var(--r88-header) !important;
+  min-height: var(--r88-header) !important;
+  max-height: var(--r88-header) !important;
+  grid-template-rows: 4.65rem 3.25rem 2.55rem minmax(3.65rem, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow {
+  grid-template-columns: minmax(27rem, 0.92fr) minmax(44rem, 1.08fr) !important;
+  gap: 0.75rem !important;
+  padding: 0.42rem 1rem !important;
+  align-items: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactSearch {
+  width: 100% !important;
+  height: 2.8rem !important;
+  min-height: 2.8rem !important;
+  max-height: 2.8rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(13.4rem, 17.5rem) 6.05rem 5.65rem 8rem minmax(9.4rem, 10.8rem) !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 0.5rem !important;
+  overflow: visible !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar > button,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar > label,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar > div,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactSortWrap > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar button,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactInsightWrap {
+  height: 2.72rem !important;
+  min-height: 2.72rem !important;
+  max-height: 2.72rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton {
+  display: grid !important;
+  grid-template-columns: 1.1rem minmax(0, 1fr) 0.9rem !important;
+  padding: 0.36rem 0.68rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton span,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton strong,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactViewButton em {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.contactInsightWrap {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 1.15rem minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.28) !important;
+  border-radius: 0.72rem !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  padding: 0 0.62rem !important;
+}
+
+.contactInsightWrap select {
+  width: 100% !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  font: inherit !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.contactInsightWrap select option {
+  color: #111827 !important;
+  background: #f8fafc !important;
+}
+
+.contactInsightDropdown {
+  display: none !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactPrimaryAction {
+  padding: 0 0.72rem !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  padding: 0.24rem 1rem !important;
+  gap: 0.42rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandIntelligenceStrip article {
+  min-height: 2.05rem !important;
+  padding: 0.28rem 0.58rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTabBar {
+  grid-template-rows: 2.52rem minmax(0, 1fr) !important;
+  padding: 0.42rem 1rem 0.5rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"] {
+  grid-template-columns: clamp(16rem, 19vw, 19.5rem) minmax(0, 1fr) !important;
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFilterRail,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFilterRailCollapsed {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  position: relative !important;
+  z-index: 2 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTableFrame {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable {
+  min-width: 74rem !important;
+  table-layout: fixed !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th:first-child,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td:first-child {
+  width: 2.45rem !important;
+  min-width: 2.45rem !important;
+  max-width: 2.45rem !important;
+  padding: 0 0.45rem !important;
+  text-align: center !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th:nth-child(2),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td:nth-child(2) {
+  width: 13.8rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th:nth-child(3),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td:nth-child(3),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th:nth-child(4),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td:nth-child(4) {
+  width: 11rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th:nth-child(5),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td:nth-child(5),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th:nth-child(6),
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td:nth-child(6) {
+  width: 8.6rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable th,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTable td {
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+@media (max-width: 1540px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactCommandRow {
+    grid-template-columns: minmax(24rem, 0.78fr) minmax(41rem, 1.22fr) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar {
+    grid-template-columns: minmax(12rem, 15rem) 5.55rem 5.4rem 6.6rem minmax(8.9rem, 9.8rem) !important;
+    gap: 0.42rem !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactToolbar button,
+  .contactInsightWrap select {
+    font-size: 0.72rem !important;
+  }
+}
+
+/* R89 CONTACTS_GLOBAL_CREATOR_AND_RECORD_FOOTER_LOCK
+   Creator picklists, international phone capture, explicit text inputs, and Leads-grade footer visibility. */
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+  --r89-header: clamp(16.2rem, 25.2vh, 18.2rem) !important;
+  --r89-records-height: clamp(25.5rem, calc(100dvh - 29rem), 33.5rem) !important;
+  grid-template-rows: var(--r89-header) minmax(0, var(--r89-records-height)) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactAppHeader {
+  height: var(--r89-header) !important;
+  min-height: var(--r89-header) !important;
+  max-height: var(--r89-header) !important;
+  grid-template-rows: 4.8rem 3.25rem 2.55rem minmax(3.9rem, 1fr) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactTitleBlock em {
+  display: block !important;
+  max-width: min(54rem, 100%) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsWorkspace[data-wilsy-contact-listview-shell="R85A-LEADS-PARITY"],
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFilterRail,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFilterRailCollapsed,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  height: var(--r89-records-height) !important;
+  min-height: var(--r89-records-height) !important;
+  max-height: var(--r89-records-height) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel {
+  display: grid !important;
+  grid-template-rows: 3.25rem 2.15rem minmax(0, 1fr) 3.05rem !important;
+  overflow: hidden !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsPanel:has(.contactBulkActionBar) {
+  grid-template-rows: 3.25rem 2.15rem 2.45rem minmax(0, 1fr) 3.05rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsTableFrame {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: auto !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow td {
+  height: 8.4rem !important;
+  min-height: 8.4rem !important;
+  padding: 0.85rem 1.05rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow section {
+  display: grid !important;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  min-height: 6.4rem !important;
+  padding: 0.85rem 1.05rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.18) !important;
+  border-radius: 0.8rem !important;
+  background: rgba(2, 12, 12, 0.54) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow svg,
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow div {
+  display: flex !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow div {
+  gap: 0.52rem !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactEmptyRow div button {
+  min-height: 2.6rem !important;
+  white-space: nowrap !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsFooter {
+  position: relative !important;
+  z-index: 12 !important;
+  min-height: 3.05rem !important;
+  height: 3.05rem !important;
+  padding: 0 12.5rem 0 0.9rem !important;
+  border-top: 1px solid rgba(126, 111, 179, 0.62) !important;
+  background: linear-gradient(180deg, rgba(22, 29, 45, 0.98), rgba(16, 24, 39, 0.99)) !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactFooterPagination {
+  min-width: max-content !important;
+}
+
+.contactPhoneField {
+  min-width: 0 !important;
+}
+
+.contactPhoneInputGroup {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(6.4rem, 7.4rem) minmax(0, 1fr) !important;
+  gap: 0 !important;
+}
+
+.contactPhoneInputGroup select {
+  border-radius: 0.45rem 0 0 0.45rem !important;
+  border-right: 0 !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  background: rgba(4, 10, 14, 0.96) !important;
+}
+
+.contactPhoneInputGroup input {
+  border-radius: 0 0.45rem 0.45rem 0 !important;
+}
+
+.contactAddressCommandDeck {
+  padding: 0.85rem !important;
+  border: 1px solid rgba(122, 244, 198, 0.2) !important;
+  border-radius: 0.82rem !important;
+  background: rgba(3, 11, 14, 0.62) !important;
+}
+
+.contactAddressCommandSearch input,
+.contactDescriptionField textarea {
+  width: 100% !important;
+  border: 1px solid rgba(145, 198, 255, 0.66) !important;
+  background: rgba(2, 8, 13, 0.98) !important;
+  color: var(--r85a-text, #f7f8ff) !important;
+  box-shadow: inset 0 0 0 1px rgba(122, 244, 198, 0.08) !important;
+}
+
+.contactAddressCommandSearch input::placeholder,
+.contactDescriptionField textarea::placeholder {
+  color: rgba(234, 223, 159, 0.62) !important;
+}
+
+.contactAddressCommandSearch .contactFieldHint,
+.contactDescriptionField .contactFieldHint {
+  grid-column: 2 !important;
+  min-width: 0 !important;
+  color: rgba(184, 193, 222, 0.72) !important;
+  font-size: 0.7rem !important;
+  line-height: 1.32 !important;
+}
+
+.contactDescriptionField textarea {
+  min-height: 6.8rem !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 1540px) {
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] {
+    --r89-header: clamp(16rem, 25.8vh, 18rem) !important;
+    --r89-records-height: clamp(24rem, calc(100dvh - 30rem), 31rem) !important;
+  }
+
+  .contactOperatingRoom[data-wilsy-contact-section-map="header-command-intelligence-tabs-metrics-records-backend"] .contactRecordsFooter {
+    padding-right: 10.5rem !important;
+  }
+}

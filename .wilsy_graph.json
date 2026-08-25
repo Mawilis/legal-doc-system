@@ -1,0 +1,1352 @@
+{
+    "nodes": {
+        "/wilsy/system/test_1.py": {
+            "type": "module",
+            "hash": "1234abcd",
+            "status": "deleted",
+            "created_at": 1785326606.0866501,
+            "updated_at": 1785326606.089725
+        },
+        "/wilsy/system/test_2.py": {
+            "type": "module",
+            "hash": "5678efgh",
+            "status": "active",
+            "created_at": 1784568280.910422,
+            "updated_at": 1785326606.088259
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/test_1.py": {
+            "type": "module",
+            "hash": "b91067a57ba290ff346a48bec5216b570438ca84d7977ac258125d4828857dd2",
+            "status": "active",
+            "created_at": 1784568930.785107,
+            "updated_at": 1784569034.381354
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engine/wilsy_engine.py": {
+            "type": "module",
+            "hash": "60d912e25db32ff4c2a85266851be9d25763ba5bbb73bcdeb3e80e902ab696f1",
+            "status": "active",
+            "created_at": 1784569662.2181308,
+            "updated_at": 1784569662.2181308
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/__init__.py": {
+            "type": "module",
+            "hash": "afb24e6cde694666a4ac33855c5d756fe0d6d24a6471cb53201a6a57505937af",
+            "status": "active",
+            "created_at": 1784576506.947063,
+            "updated_at": 1784576506.9470642
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/context.py": {
+            "type": "module",
+            "hash": "34a97a872afe6b9508c15264d7e0838dd3ffa528617015308a7931573423227e",
+            "status": "active",
+            "created_at": 1784576588.773695,
+            "updated_at": 1784600105.1217449
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/builder.py": {
+            "type": "module",
+            "hash": "586e7e6411a0f27301dae5979ffb2c7e8f36b34b450b49a2ad00aaf026c2d006",
+            "status": "active",
+            "created_at": 1784576670.8973188,
+            "updated_at": 1784599601.2022772
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/domain/__init__.py": {
+            "type": "module",
+            "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "status": "active",
+            "created_at": 1784576778.867021,
+            "updated_at": 1784576778.867022
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/domain/models.py": {
+            "type": "module",
+            "hash": "3bc49d8596ab3a8b43fe492b98cc51de26ab2c94afed39adc6a88c6457362ef1",
+            "status": "active",
+            "created_at": 1784576797.062459,
+            "updated_at": 1784576797.062459
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/engine.py": {
+            "type": "module",
+            "hash": "a52a24e6e4eccc774701f3db5162ec2f82f89a4d24c64028912dc55c031dd95f",
+            "status": "deleted",
+            "created_at": 1784576869.670362,
+            "updated_at": 1784602612.871124
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/session.py": {
+            "type": "module",
+            "hash": "e7a9941921823a814f379ff7c6f8b505beb7596bb492ed3f99b0f1d4f69e19f7",
+            "status": "active",
+            "created_at": 1784576931.387638,
+            "updated_at": 1784576931.387638
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/main.py": {
+            "type": "module",
+            "hash": "d80856bf69c3ef495a334c8fb9ac5238c158fd162b61a7042cad58609c32a0aa",
+            "status": "active",
+            "created_at": 1784577205.116767,
+            "updated_at": 1784603035.414718
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/ai/models.py": {
+            "type": "module",
+            "hash": "3fb0e14bfff628c82ee03267d3f9a4df89074ce1cf04d7c9f1e6fc64f68683ae",
+            "status": "active",
+            "created_at": 1784577681.080532,
+            "updated_at": 1784577681.080532
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/ai/engine.py": {
+            "type": "module",
+            "hash": "086b64655aeb4e13f9e9c755192db31f19e3985db2bfa2d526dbc18160397e82",
+            "status": "active",
+            "created_at": 1784577703.130444,
+            "updated_at": 1784598173.143975
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/quality/models.py": {
+            "type": "module",
+            "hash": "7ec1c4715d0e806c78665a06a0a4344a304ec3523a714f2f9d16a7ddc68048ef",
+            "status": "active",
+            "created_at": 1784578033.761218,
+            "updated_at": 1784578033.761218
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/quality/engine.py": {
+            "type": "module",
+            "hash": "42a8b5ccf50833487d74cce176f7ef679d50c2ad7e9153211d864c71a8ef2874",
+            "status": "active",
+            "created_at": 1784578156.540499,
+            "updated_at": 1784578156.540499
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/review/models.py": {
+            "type": "module",
+            "hash": "d531775d5bbba3681effe359ed6f301b59f31dd30510f38cdf4265a69e6de49f",
+            "status": "active",
+            "created_at": 1784578400.0549161,
+            "updated_at": 1784578573.950397
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/review/engine.py": {
+            "type": "module",
+            "hash": "553a7a12471fea4253a4d08b49e4d4be081be8f2f8575ac6085b72a560c276e4",
+            "status": "active",
+            "created_at": 1784578400.059873,
+            "updated_at": 1784578662.586207
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/review/__init__.py": {
+            "type": "module",
+            "hash": "8fdaa87cf644bc3144361bb1d9d51f0418cd707e7c2401d65cd54fbe80ae9f99",
+            "status": "active",
+            "created_at": 1784578400.062005,
+            "updated_at": 1784578673.4072478
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/patch/models.py": {
+            "type": "module",
+            "hash": "7f315b7052fd23e0a47058eaccad23ced03fac953c6aeb5500d8b4565beda528",
+            "status": "active",
+            "created_at": 1784579020.3761349,
+            "updated_at": 1784579020.3761349
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/patch/engine.py": {
+            "type": "module",
+            "hash": "517ef01f04ebdd7cde63807f1ab7cf350b79b093aa89a28f2a2e0c73c7d147cd",
+            "status": "active",
+            "created_at": 1784579037.5394921,
+            "updated_at": 1784579037.5394921
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/patch/__init__.py": {
+            "type": "module",
+            "hash": "5b9ef35f8f30943253e47f2520044551c42035aac1535afe43b0704800d72905",
+            "status": "active",
+            "created_at": 1784579048.713876,
+            "updated_at": 1784579048.713877
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/release/models.py": {
+            "type": "module",
+            "hash": "caffce580c2d40a50acd772e381e1dfaad893005ca1b114442b2597ba325ce12",
+            "status": "active",
+            "created_at": 1784579115.36914,
+            "updated_at": 1784579115.36914
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/release/engine.py": {
+            "type": "module",
+            "hash": "48b7c2e77c62ce5d1500b506c05bb21fcfc9b8ab58ee6ceedb5bdd853c8194a0",
+            "status": "active",
+            "created_at": 1784579130.393625,
+            "updated_at": 1784579130.393625
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/release/__init__.py": {
+            "type": "module",
+            "hash": "4733dba3a785373790634770f4ff765af168e69d6eb35f55773934c06dc79c18",
+            "status": "active",
+            "created_at": 1784579137.614586,
+            "updated_at": 1784579137.6145868
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/runbook_diagnostic.py": {
+            "type": "module",
+            "hash": "6155e842ca0fde219bc109547302c90a7c7d2696238f734721ac238edc734a4e",
+            "status": "deleted",
+            "created_at": 1784579609.2433128,
+            "updated_at": 1784602511.2844439
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/report.py": {
+            "type": "module",
+            "hash": "6e6fd3e3181e2b702fe78d6dfac65d9544cce7f4f1dcf3da97eeed4563611102",
+            "status": "active",
+            "created_at": 1784580507.616128,
+            "updated_at": 1784601991.859078
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/engines/forensic/engine.py": {
+            "type": "module",
+            "hash": "e8b8266723f630bdb0b67485525444d4cd679b54d1bbb1900d465ce5a912d44e",
+            "status": "active",
+            "created_at": 1784580530.1870668,
+            "updated_at": 1784580530.1870668
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/execution_context.py": {
+            "type": "module",
+            "hash": "866d80244819cbe8ce6bc6f71d4083574caff618b3b75dc69cfe7976b4a3f54e",
+            "status": "deleted",
+            "created_at": 1784598997.139253,
+            "updated_at": 1784600105.120951
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/sentinel_runner.py": {
+            "type": "module",
+            "hash": "889337985171b78cc457c31dee838d33fdd7dce479730ae89b61d03e76413a84",
+            "status": "deleted",
+            "created_at": 1784599081.372993,
+            "updated_at": 1784599950.804346
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/dependency/dependency_intelligence.py": {
+            "type": "module",
+            "hash": "c2e6205cd0fcdc3c9eb1478433fffcc873769ac756bb83f1544ad4e8e7f7645a",
+            "status": "active",
+            "created_at": 1784601126.472172,
+            "updated_at": 1784601126.472172
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/orchestration/manifest_orchestrator.py": {
+            "type": "module",
+            "hash": "c3f95c6909300e4f1f8bdb065efb6178d6cef32869168fa3c984a0b3010f9881",
+            "status": "active",
+            "created_at": 1784601653.021879,
+            "updated_at": 1784601653.021879
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/.!46352!runbook_diagnostic.py": {
+            "type": "module",
+            "hash": "FILE_DELETED",
+            "status": "active",
+            "created_at": 1784602079.8596768,
+            "updated_at": 1784602079.8596768
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/.!46673!engine.py": {
+            "type": "module",
+            "hash": "FILE_DELETED",
+            "status": "active",
+            "created_at": 1784602091.128723,
+            "updated_at": 1784602091.1287239
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/__main__.py": {
+            "type": "module",
+            "hash": "d534b46cffcbcead7b7208bb20d6557a025fb5a6992d166cc9c1269b65c9f3a7",
+            "status": "active",
+            "created_at": 1784603004.599136,
+            "updated_at": 1784603004.599136
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/assurance/domain/contracts.py": {
+            "type": "module",
+            "hash": "1a98e767ceb849ff9136045f5a872b1c6b3fe93d85bfb54de51bbb2738f6bd7b",
+            "status": "active",
+            "created_at": 1784604135.1804328,
+            "updated_at": 1784604383.7039611
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/assurance/health/health_engine.py": {
+            "type": "module",
+            "hash": "59f7b346bbc366c70d6ff9329e5d74fbf3a2059e6e03d503b74e32bc06f56e70",
+            "status": "active",
+            "created_at": 1784604760.559943,
+            "updated_at": 1784604760.559944
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/assurance/health/health_metrics.py": {
+            "type": "module",
+            "hash": "0d3f77c4a837c771e7b14b3e4b6ff6ba659f7fcf58788041ce59c6581cfcfc7f",
+            "status": "active",
+            "created_at": 1784604867.492059,
+            "updated_at": 1784604867.492059
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/assurance/health/__init__.py": {
+            "type": "module",
+            "hash": "e2612a8654c94951dee8521a2fa72d808dd7e88fc71bdb507661e6abdabb0c11",
+            "status": "active",
+            "created_at": 1784605641.788212,
+            "updated_at": 1784605641.788212
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/__init__.py": {
+            "type": "module",
+            "hash": "a05010dbe7c12335ba6a6818531ac1ce22359845cc875f8afab8a4f6f8ce2861",
+            "status": "active",
+            "created_at": 1784605759.743348,
+            "updated_at": 1784605759.743348
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/__init__.py": {
+            "type": "module",
+            "hash": "3658ae314c1cadfec34dcafa042c1c10587d2abd78eaf014cc5b95e80a6309b0",
+            "status": "active",
+            "created_at": 1784605803.1013849,
+            "updated_at": 1784605803.1013849
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/execution_contract.py": {
+            "type": "module",
+            "hash": "3fb8ab9bf7b23d4225da8e45b6dc64e70b557626fc261d02244c16039b9e6f83",
+            "status": "active",
+            "created_at": 1784605827.723952,
+            "updated_at": 1784605827.723952
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/repository_contract.py": {
+            "type": "module",
+            "hash": "a91d3c5304a2f98b3ee7d04dc70eae7cd9dd031c0da7007062ab8f2eaf34cc52",
+            "status": "active",
+            "created_at": 1784605857.74352,
+            "updated_at": 1784605857.74352
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/report_contract.py": {
+            "type": "module",
+            "hash": "9c96f3d339dcdb3d857253e5c15035e69d6d5d7daa07846c4de9f089db0b6514",
+            "status": "active",
+            "created_at": 1784605939.820269,
+            "updated_at": 1784605939.82027
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/ai_contract.py": {
+            "type": "module",
+            "hash": "c0020aa57f475aaa7a6672252b3c81a41ea7ce86715b196a4fc81c87aaaee774",
+            "status": "active",
+            "created_at": 1784605964.478922,
+            "updated_at": 1784605964.478922
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/review_contract.py": {
+            "type": "module",
+            "hash": "2c16a8eef38ec6d1c1c15068c451ef8134a5578387158ebb87575a704ff89bd9",
+            "status": "active",
+            "created_at": 1784606010.3957,
+            "updated_at": 1784606010.3957
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/domain/release_contract.py": {
+            "type": "module",
+            "hash": "cc9123141bbdbe33b3446e44f63b0a06b42ce6570a8ed6bb88811590234f1403",
+            "status": "active",
+            "created_at": 1784606042.2416298,
+            "updated_at": 1784606042.2416298
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/contracts/validation.py": {
+            "type": "module",
+            "hash": "96dac53f5454874e8a51572c74088bff4b32f22e1fa429cb819ebba79ee043f7",
+            "status": "active",
+            "created_at": 1784606066.59979,
+            "updated_at": 1784606066.59979
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/registry/__init__.py": {
+            "type": "module",
+            "hash": "0fd44f8b1c41182a498f246f49090454351b2d6dd3d19e0505b3c83425b2e627",
+            "status": "active",
+            "created_at": 1784606610.744833,
+            "updated_at": 1784606610.744833
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/registry/engine_descriptor.py": {
+            "type": "module",
+            "hash": "e19263d24118c3490b009cb1651840662ffc995521d16a77bd0ee5e4af01d335",
+            "status": "active",
+            "created_at": 1784606728.901525,
+            "updated_at": 1784606728.901525
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/registry/dependency_graph.py": {
+            "type": "module",
+            "hash": "227ca963080ec831277bf6d8d1b3af3721bba4e765da3c7f61e22f66904aabdf",
+            "status": "active",
+            "created_at": 1784606769.6480598,
+            "updated_at": 1784606769.648061
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/registry/execution_order.py": {
+            "type": "module",
+            "hash": "b91deb5375e8f165e44117efaa10b4fbb4cfa242c8298c790ab475f99a0c19b5",
+            "status": "active",
+            "created_at": 1784606951.017187,
+            "updated_at": 1784606951.017187
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/registry/engine_registry.py": {
+            "type": "module",
+            "hash": "b8adcbec00ffcbf893fb12b3dafccb60444337a8b5e933246b076d9bf1ae3671",
+            "status": "active",
+            "created_at": 1784607054.47036,
+            "updated_at": 1784607054.470361
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/core/__init__.py": {
+            "type": "module",
+            "hash": "49731447f1602aef6fa3053542e9b1be5a85707ea5c985400d52947f0e2717ec",
+            "status": "active",
+            "created_at": 1784607493.391888,
+            "updated_at": 1784607493.391888
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/core/engine_status.py": {
+            "type": "module",
+            "hash": "8e6352365654b7fdc42d195de6f0681fcf14d967da5c6bd10dbbc9edabc63c70",
+            "status": "active",
+            "created_at": 1784607528.5947661,
+            "updated_at": 1784607528.5947661
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/core/engine_result.py": {
+            "type": "module",
+            "hash": "ccd054dddb66961419d4af7b10b90cdca4cfa5832c993c3a673c2d8eb5cfc497",
+            "status": "active",
+            "created_at": 1784607588.921412,
+            "updated_at": 1784607588.9214132
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/core/execution_timer.py": {
+            "type": "module",
+            "hash": "5dcf7548e15af10566015ed71dd3bd7fc19557478b89cb800bd0c6bd48f60ddb",
+            "status": "active",
+            "created_at": 1784607621.7919428,
+            "updated_at": 1784607621.7919428
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/core/lifecycle.py": {
+            "type": "module",
+            "hash": "2d0e7305ac610c0115f7269c0d8c64e71d3e19423a96ec308212c1fa89954495",
+            "status": "active",
+            "created_at": 1784607653.829045,
+            "updated_at": 1784607653.829046
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/core/engine.py": {
+            "type": "module",
+            "hash": "58c9db48427fefe189531a5e2c24318588e362b39459114529826ca1de2c3883",
+            "status": "active",
+            "created_at": 1784607688.9459488,
+            "updated_at": 1784607688.9459488
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/logging/__init__.py": {
+            "type": "module",
+            "hash": "a6dfcb3a011aaeff4cad5fb52a6c150e46b38e98c47dfc9a0f276bc952a8e25e",
+            "status": "active",
+            "created_at": 1784607924.852833,
+            "updated_at": 1784607924.852833
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/logging/formatter.py": {
+            "type": "module",
+            "hash": "bcd18403122181e52a93c8f98e8719e515397bf50403255c561205f4eb40ca4e",
+            "status": "active",
+            "created_at": 1784607948.5174131,
+            "updated_at": 1784607948.5174131
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/logging/logger.py": {
+            "type": "module",
+            "hash": "9c220f9638ab01d45f60145feea233cf6b760b11471e3dbac3b4c41c87e7499a",
+            "status": "active",
+            "created_at": 1784607993.487654,
+            "updated_at": 1784607993.487654
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/logging/execution_logger.py": {
+            "type": "module",
+            "hash": "292c150b5aedb043e0891a3011b3d59d8c88940b9e91d7c747ad39a555675041",
+            "status": "active",
+            "created_at": 1784608062.6702,
+            "updated_at": 1784608062.6702
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/logging/artifact_logger.py": {
+            "type": "module",
+            "hash": "30df5a1b86ad0baf784d7b9e3bea5df6dd71793df314522c86b590e089716182",
+            "status": "active",
+            "created_at": 1784608116.919703,
+            "updated_at": 1784608116.919703
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/metrics/__init__.py": {
+            "type": "module",
+            "hash": "b7b7643478708bcfb48ec351fe0ffbff1e755bc671bc1456d45dbb1f3241dbad",
+            "status": "active",
+            "created_at": 1784608272.24463,
+            "updated_at": 1784608272.24463
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/metrics/execution_metrics.py": {
+            "type": "module",
+            "hash": "bbfd99f0cc9de230952c279898d1f5ba602141a5bc6c49a824fccdfe0ea6c26e",
+            "status": "active",
+            "created_at": 1784608303.562353,
+            "updated_at": 1784608303.562353
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/metrics/performance_metrics.py": {
+            "type": "module",
+            "hash": "bb3c2aebbd5107d56346cba853d64cbdf9d64533f74f4022df5e2efd4944f051",
+            "status": "active",
+            "created_at": 1784608340.107975,
+            "updated_at": 1784608340.107975
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/metrics/memory_metrics.py": {
+            "type": "module",
+            "hash": "1ec00704f28670d28063ec5b88e0ce684767886d1b441f0a6cf1dd5974b5ab7b",
+            "status": "active",
+            "created_at": 1784608377.48256,
+            "updated_at": 1784608377.48256
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/metrics/timing_metrics.py": {
+            "type": "module",
+            "hash": "de3e50451a37f894c683177fafaf8356359cdeb6800ffe09d61a4c044789bd88",
+            "status": "active",
+            "created_at": 1784608412.8566232,
+            "updated_at": 1784608412.8566232
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/application/repository_classifier.py": {
+            "type": "module",
+            "hash": "3df587aa75c6cc2828c5263a024b91a7e370e7f3f03d3457814d95bb68276b4b",
+            "status": "active",
+            "created_at": 1784608594.658083,
+            "updated_at": 1784608594.658083
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/application/dependency_mapper.py": {
+            "type": "module",
+            "hash": "47246c6cde5100ecc529fec8dbb5980327dd5e76402c37efa679f108244e5592",
+            "status": "active",
+            "created_at": 1784608643.845941,
+            "updated_at": 1784608643.845941
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/application/repository_statistics.py": {
+            "type": "module",
+            "hash": "b18faf564c6bec671ca52d7f03c56ebf34504183e3f3d02c28070ef9666e4560",
+            "status": "active",
+            "created_at": 1784608682.1441112,
+            "updated_at": 1784608682.1441112
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/graph/dependency_graph.py": {
+            "type": "module",
+            "hash": "6c98f53acbd98c57a195f0d32621607a68341122f624067790a0e55b05ce5024",
+            "status": "active",
+            "created_at": 1784608751.823806,
+            "updated_at": 1784608751.823806
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/graph/module_graph.py": {
+            "type": "module",
+            "hash": "19ad93d53505b3874c7596f968d9578e0bcbe937e7b5f602ca51a7318cbf3965",
+            "status": "active",
+            "created_at": 1784608794.011151,
+            "updated_at": 1784608794.0111518
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/graph/package_graph.py": {
+            "type": "module",
+            "hash": "17cc9cb0ab9aed542966918ae1005325b0822e788766b24a758a01d6ec8f2655",
+            "status": "active",
+            "created_at": 1784608832.82824,
+            "updated_at": 1784608832.82824
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/repository/reporting/repository_dashboard.py": {
+            "type": "module",
+            "hash": "878865f3b84755480f8a4dc73ffb38f3f722fa1a3b39ffbf2ab97d3cf99e7207",
+            "status": "active",
+            "created_at": 1784608864.777899,
+            "updated_at": 1784608864.777899
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/knowledge/__init__.py": {
+            "type": "module",
+            "hash": "19b48d8d9ff56b1de67925de38a2cecd3a09dc4919b5a92cf76becd0a8c4efd9",
+            "status": "active",
+            "created_at": 1784609229.3764632,
+            "updated_at": 1784609229.3764632
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/knowledge/graph_snapshot.py": {
+            "type": "module",
+            "hash": "f46aef7cd69ec4ba754c38c20c9edcae7654b7a2bc15a51590f2ad02bfb22a09",
+            "status": "active",
+            "created_at": 1784609229.38014,
+            "updated_at": 1784609229.38014
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/knowledge/graph_loader.py": {
+            "type": "module",
+            "hash": "fcddaeada584de4c2893e5211e7a9fbb014ef339109df71509067181441e0cfa",
+            "status": "active",
+            "created_at": 1784609229.382059,
+            "updated_at": 1784609229.382059
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/knowledge/graph_validator.py": {
+            "type": "module",
+            "hash": "fb7ce8c6d670bc28a7303b78d0e17ff57ff441d3c0d50bc9af9662cb869dacda",
+            "status": "active",
+            "created_at": 1784609229.3834612,
+            "updated_at": 1784609229.3834612
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/knowledge/graph_serializer.py": {
+            "type": "module",
+            "hash": "07eae2c13a2d293c8b718dd1f5a261d2133bd29afe9551e855024e5e7476d0a9",
+            "status": "active",
+            "created_at": 1784609229.3855119,
+            "updated_at": 1784609229.3855119
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sentinel/__init__.py": {
+            "type": "module",
+            "hash": "aab8d65772cf182739ebf39725a57c27b3213df8e4bf5220b55bb0504d033db5",
+            "status": "active",
+            "created_at": 1784609486.955542,
+            "updated_at": 1784609486.955542
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sentinel/sentinel_adapter.py": {
+            "type": "module",
+            "hash": "7c48f053483f7419ee722d2dbdc761b036b683f0cf0a8bed53594a82abe7a9a0",
+            "status": "active",
+            "created_at": 1784609486.9617321,
+            "updated_at": 1784609486.9617321
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sentinel/baseline_snapshot.py": {
+            "type": "module",
+            "hash": "5a723df1a5eb0f00ae800d383d9b15b801afdf573602d7fc8a896673031f5921",
+            "status": "active",
+            "created_at": 1784609486.9640372,
+            "updated_at": 1784609486.964038
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sentinel/monitoring_session.py": {
+            "type": "module",
+            "hash": "538b3aaabbfcf6a8a67aa28a6c3488d126d4d63c71ce31f15d6ceadcf7124cf2",
+            "status": "active",
+            "created_at": 1784609486.965237,
+            "updated_at": 1784609486.965237
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sentinel/integrity_monitor.py": {
+            "type": "module",
+            "hash": "900e70ddd5015555f488db4dea06c99e349410c6aea33ed6dda08b50a8a3cc0b",
+            "status": "active",
+            "created_at": 1784609486.966154,
+            "updated_at": 1784609486.966154
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/ai/__init__.py": {
+            "type": "module",
+            "hash": "80a7d235f2fb3d4898647d6a7c0c06102c6ff43e72e4bf044d8455299cc1fc64",
+            "status": "active",
+            "created_at": 1784609640.7920582,
+            "updated_at": 1784609640.7920582
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/ai/context_provider.py": {
+            "type": "module",
+            "hash": "c18df74590278cefbe98627ec5e981761adbd8545b77bb211bdcc96716a53ffc",
+            "status": "active",
+            "created_at": 1784609640.794222,
+            "updated_at": 1784609640.794222
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/ai/synthesis_engine.py": {
+            "type": "module",
+            "hash": "2f1cd3602e1657e47fad26c5de9cf6565822f0b73175c8103e319afb498d3721",
+            "status": "active",
+            "created_at": 1784609640.7950249,
+            "updated_at": 1784609640.7950249
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/ai/recommendation_engine.py": {
+            "type": "module",
+            "hash": "e2e6da81469222196376f15a4c960757c51958a1f88df071d6c28fc2e89f818f",
+            "status": "active",
+            "created_at": 1784609640.7961469,
+            "updated_at": 1784609640.7961469
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/ai/explanation_engine.py": {
+            "type": "module",
+            "hash": "386c18be3087f801b8c9e0e9c5c89fc655bff9036925f36c5e278e22e07f57ee",
+            "status": "active",
+            "created_at": 1784609640.797141,
+            "updated_at": 1784609640.797141
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/quality/__init__.py": {
+            "type": "module",
+            "hash": "9a8988024393ede478d40b209873786bbc5ce6518f8a8b83d2bb2812036f29da",
+            "status": "active",
+            "created_at": 1784609939.009832,
+            "updated_at": 1784609939.009832
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/quality/quality_engine.py": {
+            "type": "module",
+            "hash": "ca70c655fbf4531df90d6a1a2681c90fb3945a4f529f4749e4028ef1a2beea71",
+            "status": "active",
+            "created_at": 1784609939.0118458,
+            "updated_at": 1784609939.0118458
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/quality/code_quality.py": {
+            "type": "module",
+            "hash": "a3d5eb1a48f87b068120abdf1e1984a0f1f54b50688d4b43e2581180372e4b44",
+            "status": "active",
+            "created_at": 1784609939.0131059,
+            "updated_at": 1784609939.0131059
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/quality/architecture_quality.py": {
+            "type": "module",
+            "hash": "0a2ca62c70f933a735e455e0ad66d5e48dfb69b2ec379383ad20e880f719e536",
+            "status": "active",
+            "created_at": 1784609939.01416,
+            "updated_at": 1784609939.01416
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/quality/security_quality.py": {
+            "type": "module",
+            "hash": "fec7691d854d5e3ce866357121022286be62f951cbf8c645581fab98de1b7749",
+            "status": "active",
+            "created_at": 1784609939.0165381,
+            "updated_at": 1784609939.0165381
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/__init__.py": {
+            "type": "module",
+            "hash": "e0cc712f5ab05010b608708d20ce99ef9bf1b6fa31f5f05fad422ae7bd8891c2",
+            "status": "active",
+            "created_at": 1784610053.9299798,
+            "updated_at": 1784610270.788975
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/review_engine.py": {
+            "type": "module",
+            "hash": "14c17f273b84e89a3ce73061b89e97282cbc8e2a9db8bb8c3f97dc2ab88c5eff",
+            "status": "active",
+            "created_at": 1784610053.932,
+            "updated_at": 1784610270.790421
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/code_review.py": {
+            "type": "module",
+            "hash": "1f9dbf0081563fa19a2f4d3e8083921f927f8e6afecf5c15863438546765d411",
+            "status": "active",
+            "created_at": 1784610053.934616,
+            "updated_at": 1784610053.934616
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/security_review.py": {
+            "type": "module",
+            "hash": "6140943b8a1a4b8f907fad9de1a01598431cbb634bae39b707b42dd1f6844394",
+            "status": "active",
+            "created_at": 1784610053.935612,
+            "updated_at": 1784610053.935612
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/compliance_review.py": {
+            "type": "module",
+            "hash": "1f35f25663b5898b05ede8c8701afe895c42798be81a0540be5609be555a3be9",
+            "status": "active",
+            "created_at": 1784610053.9367151,
+            "updated_at": 1784610053.9367151
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/patch/__init__.py": {
+            "type": "module",
+            "hash": "e52b3ead70c822414835e37f0a4d173b76b4bca856dcb87b6ee65d643c3a4edf",
+            "status": "active",
+            "created_at": 1784610197.569151,
+            "updated_at": 1784610197.569151
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/patch/patch_engine.py": {
+            "type": "module",
+            "hash": "c28987bfb020b26dee5b84278b2b1961cfe96aaa07ca08608e499a32dd004794",
+            "status": "active",
+            "created_at": 1784610197.571178,
+            "updated_at": 1784610197.571178
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/patch/patch_plan.py": {
+            "type": "module",
+            "hash": "cdc08961cdff5cc49227f9f338ededa4bba13c1885882310cad1f39a159336a9",
+            "status": "active",
+            "created_at": 1784610197.5724852,
+            "updated_at": 1784610197.5724852
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/patch/patch_validator.py": {
+            "type": "module",
+            "hash": "a9740db00260d50b78ec6c295f355d1ec0147334c7a9858bdc60fc738b64a89e",
+            "status": "active",
+            "created_at": 1784610197.573674,
+            "updated_at": 1784610197.573674
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/patch/patch_executor.py": {
+            "type": "module",
+            "hash": "a1ad9d9b7730de8c060f3114d1c85e21588269660bbd63db98e30fdb521ccb90",
+            "status": "active",
+            "created_at": 1784610197.574593,
+            "updated_at": 1784610197.574593
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/review_policy.py": {
+            "type": "module",
+            "hash": "c592902c8f269b37ec621fc19db6278dc6f3b8cd7f1519adeb0953fef50f9ebb",
+            "status": "active",
+            "created_at": 1784610270.791286,
+            "updated_at": 1784610270.791287
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/review/review_report.py": {
+            "type": "module",
+            "hash": "535d02fe873b174a50d6beb9a4cef25d02549d437141af0365068958439157e1",
+            "status": "active",
+            "created_at": 1784610270.792546,
+            "updated_at": 1784610270.792546
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/release/__init__.py": {
+            "type": "module",
+            "hash": "1c8dd3fdf241feb9f728074419d8e5820dfb387a290237a63179a5e1ac67470d",
+            "status": "active",
+            "created_at": 1784610433.588081,
+            "updated_at": 1784610433.5880818
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/release/release_engine.py": {
+            "type": "module",
+            "hash": "e9e19d9e036c16cb882236d65af8889d51880c540dca2698618b3454a19c3417",
+            "status": "active",
+            "created_at": 1784610433.591399,
+            "updated_at": 1784610433.591399
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/release/artifact_builder.py": {
+            "type": "module",
+            "hash": "96df86b87244b8aa65eabcc52a73f072a00ba5bc8df7afd04dfb4a9e6424d8eb",
+            "status": "active",
+            "created_at": 1784610433.592675,
+            "updated_at": 1784610433.592675
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/release/release_manifest.py": {
+            "type": "module",
+            "hash": "459935c6bde905c553beb58b2b6bd214c2626e0101c0248d15bbc27df727ef91",
+            "status": "active",
+            "created_at": 1784610433.593538,
+            "updated_at": 1784610433.593538
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/release/release_validator.py": {
+            "type": "module",
+            "hash": "bdd07ebfb748439e5797d7feb47f5aaa2e4deee9a76ed078fd4993f392ae5154",
+            "status": "active",
+            "created_at": 1784610433.594429,
+            "updated_at": 1784610433.594429
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/installer/__init__.py": {
+            "type": "module",
+            "hash": "9f57ac716d098d512ca10f935663282bdf898356c534ae9920dc07355d71a792",
+            "status": "active",
+            "created_at": 1784610548.480968,
+            "updated_at": 1784610548.480968
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/installer/installer_engine.py": {
+            "type": "module",
+            "hash": "43c499c834edec7e141432cb08113810a1dd8458836c7267e26ca95d053bb68d",
+            "status": "active",
+            "created_at": 1784610548.4848719,
+            "updated_at": 1784610548.484873
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/installer/installer_manifest.py": {
+            "type": "module",
+            "hash": "a7c348cc9c82b3ac5fe790667c6a7fc7e8eab0810ec22639ea160224a1a89eab",
+            "status": "active",
+            "created_at": 1784610548.485815,
+            "updated_at": 1784610548.485815
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/installer/installer_builder.py": {
+            "type": "module",
+            "hash": "22d35a66cdc7eff699d45679932f7ff3b849c5f2ae18386b962f9feb4b49a12e",
+            "status": "active",
+            "created_at": 1784610548.48861,
+            "updated_at": 1784610548.48861
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/reporting/__init__.py": {
+            "type": "module",
+            "hash": "7bcf87fcc6d52967d667263158cb3b24ffd49676a22ef2773f3a763de2fb9391",
+            "status": "active",
+            "created_at": 1784610648.505187,
+            "updated_at": 1784610648.505187
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/reporting/unified_report.py": {
+            "type": "module",
+            "hash": "6929245dac2dec9f511e43b99ba272d52a21b914d4fd864aba745319c7c5ff83",
+            "status": "active",
+            "created_at": 1784610648.5088398,
+            "updated_at": 1784610648.5088398
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/reporting/report_serializer.py": {
+            "type": "module",
+            "hash": "db6d78c2b1cb3a732bc392c38df3539b32f5e3ea3c0a8da40402b979e12b506e",
+            "status": "active",
+            "created_at": 1784610648.51363,
+            "updated_at": 1784610648.51363
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/reporting/report_dashboard.py": {
+            "type": "module",
+            "hash": "c09e61368084ae1f9f0985ba4ef76faaad31bebacbebe62a7df402416196bfe0",
+            "status": "active",
+            "created_at": 1784610648.5154471,
+            "updated_at": 1784610648.515448
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/reporting/artifact_catalog.py": {
+            "type": "module",
+            "hash": "fce2e2f75e200cc0ed1f8204e4ccebe653487392958bf690412462a1ccc079d3",
+            "status": "active",
+            "created_at": 1784610648.516844,
+            "updated_at": 1784610648.516844
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/history/__init__.py": {
+            "type": "module",
+            "hash": "d5865d6fa2cd8a505876c63d9929fdc5c0adb1df68d772ae78b74727efcf570b",
+            "status": "active",
+            "created_at": 1784610866.913876,
+            "updated_at": 1784610866.913876
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/history/execution_history.py": {
+            "type": "module",
+            "hash": "4ffd66f93b858bea72b19ceea6a74adbad5e5c2e73409e248cbcf773ac1acb74",
+            "status": "active",
+            "created_at": 1784610866.916419,
+            "updated_at": 1784610866.916419
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/history/artifact_history.py": {
+            "type": "module",
+            "hash": "069f059dae3fee43ede3e14eabc61066e1e276c81fd15011aaf72205b0486f24",
+            "status": "active",
+            "created_at": 1784610866.918298,
+            "updated_at": 1784610866.918298
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/history/repository_history.py": {
+            "type": "module",
+            "hash": "b6b860755f13967739a6afff6eb1b15d67a4b4cd0c1de79bd68faea3ee1ed204",
+            "status": "active",
+            "created_at": 1784610866.9192908,
+            "updated_at": 1784610866.9192908
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/policy/__init__.py": {
+            "type": "module",
+            "hash": "534ddc477e3bb638bf6e970895a13c2eb5c62ad84ac4427c23c2a1d169046e6c",
+            "status": "active",
+            "created_at": 1784610989.1900952,
+            "updated_at": 1784610989.190096
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/policy/policy_engine.py": {
+            "type": "module",
+            "hash": "d9983c4452ef735cd7019d92f6c441182ff096c935ebf698250c767a04633d41",
+            "status": "active",
+            "created_at": 1784610989.193344,
+            "updated_at": 1784610989.193344
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/policy/policy_loader.py": {
+            "type": "module",
+            "hash": "8c9fde21ae31c52aad2b96e4029f5da2ce3c96326c6195fdb892726f2532ce3e",
+            "status": "active",
+            "created_at": 1784610989.194499,
+            "updated_at": 1784610989.194499
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/policy/policy_validator.py": {
+            "type": "module",
+            "hash": "3995ff82314dab27569a4022a383afdc22ba45e33ca0087d0415abf9f4366453",
+            "status": "active",
+            "created_at": 1784610989.1956758,
+            "updated_at": 1784610989.1956758
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/risk/__init__.py": {
+            "type": "module",
+            "hash": "7f2b7dfddc66bd18a1fc2c229f29e88cb50ffa7aa3b175a60a621d3e8c72952e",
+            "status": "active",
+            "created_at": 1784611082.059805,
+            "updated_at": 1784611082.059805
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/risk/risk_engine.py": {
+            "type": "module",
+            "hash": "598089c41a3475b3614c28a272060f4ef679eb9e554e3d51f2c58752cb64c7d9",
+            "status": "active",
+            "created_at": 1784611082.062516,
+            "updated_at": 1784611082.062516
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/risk/risk_assessment.py": {
+            "type": "module",
+            "hash": "abf7f0aa3e9d4db00712961eae24d88dcfe2dd17c2b06938bf1bd91645f84db1",
+            "status": "active",
+            "created_at": 1784611082.063605,
+            "updated_at": 1784611082.063606
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/risk/risk_report.py": {
+            "type": "module",
+            "hash": "8eec2bae1bf34a0f4585392352b68c978d998ad5d246329bf0d26fb9e4147235",
+            "status": "active",
+            "created_at": 1784611082.064718,
+            "updated_at": 1784611082.064718
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/compliance/__init__.py": {
+            "type": "module",
+            "hash": "5f400c3b6759d044893741570d547a4e79cd184925cef4045f62824806bac303",
+            "status": "active",
+            "created_at": 1784611147.557396,
+            "updated_at": 1784611147.557396
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/compliance/compliance_engine.py": {
+            "type": "module",
+            "hash": "1261439d34394eac768149c736b3f5f18c7fc871df8f4d361dfdf03fd5d99378",
+            "status": "active",
+            "created_at": 1784611147.55905,
+            "updated_at": 1784611147.55905
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/compliance/compliance_report.py": {
+            "type": "module",
+            "hash": "879490b1caf5e744d922ebb2b6b478bf33b37ffd77da9b399bdc3fb8b36d43c4",
+            "status": "active",
+            "created_at": 1784611147.560072,
+            "updated_at": 1784611147.560072
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/compliance/compliance_rules.py": {
+            "type": "module",
+            "hash": "554bfe83f5ca4973b60ce8d6f684bacb4fb8fe56b3c14d6ceeb4161c8d4a7730",
+            "status": "active",
+            "created_at": 1784611147.561126,
+            "updated_at": 1784611147.561126
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/security/__init__.py": {
+            "type": "module",
+            "hash": "691c6244936cd582e9195656832ca0a9769c9756c796bd63b2999079aa7c48ef",
+            "status": "active",
+            "created_at": 1784611284.4628391,
+            "updated_at": 1784611284.4628391
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/security/integrity.py": {
+            "type": "module",
+            "hash": "b32ad78b3ccb106b09074a82f11ebddfd35f502b2390d9128a8b05dfb1536505",
+            "status": "active",
+            "created_at": 1784611284.465176,
+            "updated_at": 1784611284.465176
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/security/signing.py": {
+            "type": "module",
+            "hash": "760e9a1936aa705026e54813515fdff32ea87effafd6fd25a59ffb9d96e2dd37",
+            "status": "active",
+            "created_at": 1784611284.466413,
+            "updated_at": 1784611284.466413
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/security/verification.py": {
+            "type": "module",
+            "hash": "251de72959adc50dc7d0f94ed40340a12b916814bae680c105bbd48c36bffa3c",
+            "status": "active",
+            "created_at": 1784611284.467457,
+            "updated_at": 1784611284.467457
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/security/hashes.py": {
+            "type": "module",
+            "hash": "66586d0d16206e123d51698ff1875fdd05eaacaabdd4f8f01e23ef877abcd975",
+            "status": "active",
+            "created_at": 1784611284.4684968,
+            "updated_at": 1784611284.4684968
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/artifacts/__init__.py": {
+            "type": "module",
+            "hash": "68ed4b2be35e799f06ec4a85671aec4b088e033a439fc2a9a7cd38a93d71f893",
+            "status": "active",
+            "created_at": 1784611566.213315,
+            "updated_at": 1784611566.213315
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/artifacts/registry.py": {
+            "type": "module",
+            "hash": "37d14b571ff40d81b0d31fcff36892d3781ebc1cc052baff935130b4f8a4bb0b",
+            "status": "active",
+            "created_at": 1784611566.218325,
+            "updated_at": 1784611566.218325
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/artifacts/manifest.py": {
+            "type": "module",
+            "hash": "20511c0f6e50aab090f27a4b793aa07c81cc855a64888cbf0d77081f97757122",
+            "status": "active",
+            "created_at": 1784611566.221324,
+            "updated_at": 1784611566.221324
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/artifacts/checksum.py": {
+            "type": "module",
+            "hash": "cb7964866a15f039b166d8bb1e1e57dc0fdcdbeea26e06ef2760c1264d4fedff",
+            "status": "active",
+            "created_at": 1784611566.225198,
+            "updated_at": 1784611566.2251992
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/artifacts/storage.py": {
+            "type": "module",
+            "hash": "ab110e3b14860fde95bc92f05c892f13c8d7b46e73f5e82f318b0afa59b7536b",
+            "status": "active",
+            "created_at": 1784611566.227547,
+            "updated_at": 1784611566.227547
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sdk/__init__.py": {
+            "type": "module",
+            "hash": "49326f8626f421605bc91c3a3b0249f6f01ba0084061508a4e3a5a0a617bf521",
+            "status": "active",
+            "created_at": 1784611664.3315609,
+            "updated_at": 1784611664.3315609
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sdk/engine_sdk.py": {
+            "type": "module",
+            "hash": "d57445d85f39641150367937d495a087f76bb98e459ae5e6a32954053945adaf",
+            "status": "active",
+            "created_at": 1784611664.3347871,
+            "updated_at": 1784611664.3347871
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sdk/plugin_loader.py": {
+            "type": "module",
+            "hash": "a926e9aac383699732d62ed4545a80e276e27ff94fe254d3a3ad315acba12496",
+            "status": "active",
+            "created_at": 1784611664.335975,
+            "updated_at": 1784611664.335976
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sdk/extension_points.py": {
+            "type": "module",
+            "hash": "9a919160aed0f50eb80d9513df9e71c57e5582b0e73acfe8f2b46867aec11de3",
+            "status": "active",
+            "created_at": 1784611664.339348,
+            "updated_at": 1784611664.339348
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/automation/__init__.py": {
+            "type": "module",
+            "hash": "278c3a090cb62c8710cc443a4d8bb9fdc46e8dbad997ab6c6dfd804068ecb768",
+            "status": "active",
+            "created_at": 1784611855.9080262,
+            "updated_at": 1784611855.908027
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/automation/scheduler.py": {
+            "type": "module",
+            "hash": "c0d8bc65c5a483d28cc472db6bbdae04b02657377f997e6b56662e1413883eda",
+            "status": "active",
+            "created_at": 1784611855.91093,
+            "updated_at": 1784611855.91093
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/automation/workflow.py": {
+            "type": "module",
+            "hash": "3e47fbb7863590807d635a0f1aa79899e191f8c6e56abf4e5d0bca232f8e55a1",
+            "status": "active",
+            "created_at": 1784611855.912063,
+            "updated_at": 1784611855.912063
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/automation/pipeline_executor.py": {
+            "type": "module",
+            "hash": "d4753140b409facb5bcd974b3cac7c8dc886b0e9680d6465b717749ad8d8d424",
+            "status": "active",
+            "created_at": 1784611855.9132202,
+            "updated_at": 1784611855.9132202
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/cli/__init__.py": {
+            "type": "module",
+            "hash": "847df61f3579fe267e2c4ee2f22184ee79668060c6859923923492135f4cba66",
+            "status": "active",
+            "created_at": 1784612488.95446,
+            "updated_at": 1784612488.95446
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/cli/commands.py": {
+            "type": "module",
+            "hash": "0ff8188a645e7a162d12c944ed5dad90b2578aeb72552b121e7e2358e58de9e3",
+            "status": "active",
+            "created_at": 1784612488.957591,
+            "updated_at": 1784612488.957591
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/cli/status.py": {
+            "type": "module",
+            "hash": "9bba33593204dbc5e91aff5a7a6c2768c80870264c24f4ff8b505763489a986d",
+            "status": "active",
+            "created_at": 1784612488.96126,
+            "updated_at": 1784618295.374961
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/cli/doctor.py": {
+            "type": "module",
+            "hash": "3ceb85bdf648813b04ae1417c0417d7dcf9c2ca4132831909c6b3ad4b91c99c1",
+            "status": "active",
+            "created_at": 1784612488.962904,
+            "updated_at": 1784617979.914788
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/cli/report.py": {
+            "type": "module",
+            "hash": "14d35b2f9bd1f208d44bf3d08349cbf7c88252101ed75038a006a0ca1f97bd31",
+            "status": "active",
+            "created_at": 1784612488.96526,
+            "updated_at": 1784618138.481264
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_kernel.py": {
+            "type": "module",
+            "hash": "ae0f1e989154f9adfe04f0388ebdd82fadaa6880e19e0b83bf1abf9efcdb733e",
+            "status": "active",
+            "created_at": 1784615747.4253151,
+            "updated_at": 1784615747.425316
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_runtime.py": {
+            "type": "module",
+            "hash": "de8ea31d456aab845b2d846a37f86c234c09af9e24cacb391cab941bf80e7652",
+            "status": "active",
+            "created_at": 1784615747.435665,
+            "updated_at": 1784615747.4356658
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_repository.py": {
+            "type": "module",
+            "hash": "d6bd2e0f8627bdc586ed799aa5183e8d7c5f8a8b5226b7431f838eec5ced5324",
+            "status": "active",
+            "created_at": 1784615747.437276,
+            "updated_at": 1784615747.4372768
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_ai.py": {
+            "type": "module",
+            "hash": "39f2ee838e75c70d4a217bf283c983717598e341158808073bdbc40d4206993f",
+            "status": "active",
+            "created_at": 1784615747.438624,
+            "updated_at": 1784615747.438624
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_quality.py": {
+            "type": "module",
+            "hash": "184e7e1fcd90eb6f5e29f6d61c33a3fe557062932c747e9bc03b05d2af4bf12a",
+            "status": "active",
+            "created_at": 1784615747.439994,
+            "updated_at": 1784615747.439994
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_patch.py": {
+            "type": "module",
+            "hash": "429e8c518e4b657da5eae11c4fd6aa6f5ae23c0fb79aa5404bde3a9aa337c5bd",
+            "status": "active",
+            "created_at": 1784615747.441192,
+            "updated_at": 1784615747.441192
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_review.py": {
+            "type": "module",
+            "hash": "08403ee7b5c74969c86f1b51f1b716654a49a60acb17ee1b5e98f93e29efb6ca",
+            "status": "active",
+            "created_at": 1784615747.4425511,
+            "updated_at": 1784615747.4425511
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_release.py": {
+            "type": "module",
+            "hash": "1124f25bac48dcaf9152101dca3d1b75fa1b48af6877d4f625275ddf8f2da872",
+            "status": "active",
+            "created_at": 1784615747.444192,
+            "updated_at": 1784615747.444192
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_reporting.py": {
+            "type": "module",
+            "hash": "fc6d0218690d5f7616f29eeffbee4d9a2ecc72031973cb7313a27c6c813bc08d",
+            "status": "active",
+            "created_at": 1784615747.446322,
+            "updated_at": 1784615747.446322
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tests/eos/test_security.py": {
+            "type": "module",
+            "hash": "4459f0723963da2321f0581db7cd8b4ea221e2f2173b1d21377eb1efca58ccad",
+            "status": "active",
+            "created_at": 1784615747.453821,
+            "updated_at": 1784615747.453821
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/benchmark/__init__.py": {
+            "type": "module",
+            "hash": "a1a223d7a5f91ff994a9ba06c65605e92f7095078c8dade1ac69a06e3e20909c",
+            "status": "active",
+            "created_at": 1784615948.574147,
+            "updated_at": 1784615948.5741482
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/benchmark/benchmark.py": {
+            "type": "module",
+            "hash": "caf9502f5e5b338a2d1f9065a24529744b9771fc009b1bd77b05ebd103db4ef6",
+            "status": "active",
+            "created_at": 1784615948.576907,
+            "updated_at": 1784615948.576907
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/benchmark/profiler.py": {
+            "type": "module",
+            "hash": "6a5f8a4174426b779a1d9f76833f18507fd21d1e5a94f67758db110fb776d687",
+            "status": "active",
+            "created_at": 1784615948.5783198,
+            "updated_at": 1784615948.5783198
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/benchmark/scalability.py": {
+            "type": "module",
+            "hash": "8bbecb1fba482a7a8115f4db4407ae383e5ff5320c3526f2ae50811eabb96d6d",
+            "status": "active",
+            "created_at": 1784615948.57986,
+            "updated_at": 1784615948.57986
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/docs/__init__.py": {
+            "type": "module",
+            "hash": "06763ccd22f141f053c220c1a3f401b6f7a19f70a7fe6d9ec6abddf41730f03e",
+            "status": "active",
+            "created_at": 1784616053.997056,
+            "updated_at": 1784616053.997057
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/docs/architecture.py": {
+            "type": "module",
+            "hash": "078dee84f64f9e657c1acd9f4b4ec8ce4469bc2fe90dad00c5366fceda0db7da",
+            "status": "active",
+            "created_at": 1784616054.005305,
+            "updated_at": 1784616054.005305
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/docs/api_docs.py": {
+            "type": "module",
+            "hash": "b2c4816d184db3ae4f3a513cbf50e8146f1a25686b08921d6de4a08887cef5e5",
+            "status": "active",
+            "created_at": 1784616054.008091,
+            "updated_at": 1784616054.008091
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/docs/report_docs.py": {
+            "type": "module",
+            "hash": "301c0c1ac895cccea2f91df11a1efed6360328d7a6d9f2c7d849e3f17730d448",
+            "status": "active",
+            "created_at": 1784616054.011821,
+            "updated_at": 1784616054.011821
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/visualization/__init__.py": {
+            "type": "module",
+            "hash": "1a1513e9bb3c23411e6adedb2cceb5d3254f2c7631adc6276886f9ad452f4e2c",
+            "status": "active",
+            "created_at": 1784616179.536017,
+            "updated_at": 1784616179.536017
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/visualization/architecture_graph.py": {
+            "type": "module",
+            "hash": "9c097727318a7cf0160339c3589e67ac2ce5898f22a7ab3820890cb7382c23cb",
+            "status": "active",
+            "created_at": 1784616179.542892,
+            "updated_at": 1784616179.542892
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/visualization/dependency_graph.py": {
+            "type": "module",
+            "hash": "d9e40d82a7230ddd996f18bad980f03bc81b4955b757e911b756e63f37755778",
+            "status": "active",
+            "created_at": 1784616179.5504708,
+            "updated_at": 1784616179.5504708
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/visualization/execution_graph.py": {
+            "type": "module",
+            "hash": "368f1f5c27f700f11f3d9b1362a8f74b6ea97445d2c535b52a183ab860492edb",
+            "status": "active",
+            "created_at": 1784616179.554191,
+            "updated_at": 1784616179.554191
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/dashboard/__init__.py": {
+            "type": "module",
+            "hash": "ad701242f00942454c58ec4cf5c9f2aa183bd63b6d0e5e1d341053b63cb299d7",
+            "status": "active",
+            "created_at": 1784616319.115252,
+            "updated_at": 1784616319.115252
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/dashboard/dashboard.py": {
+            "type": "module",
+            "hash": "5fdebfda25198fbd465eaf1b57a0419e48aea47fcc8bacde8a01c94418ed2ebe",
+            "status": "active",
+            "created_at": 1784616319.12373,
+            "updated_at": 1784616319.12373
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/dashboard/widgets.py": {
+            "type": "module",
+            "hash": "bdff8d10cb1d376c4753824056241843dd47254f317baa1dfb1714cabb7ddf41",
+            "status": "active",
+            "created_at": 1784616319.126647,
+            "updated_at": 1784616319.126647
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/dashboard/execution_view.py": {
+            "type": "module",
+            "hash": "5aa5947c22e6f8512808095f34bd49a69d1c43e3c3ce41dc5d02736c981372cf",
+            "status": "active",
+            "created_at": 1784616319.129387,
+            "updated_at": 1784616319.129387
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/dashboard/repository_view.py": {
+            "type": "module",
+            "hash": "61b0c76678d14253db84ee6be3f1c88411d1f34090924f37fb64c6eee1b40dc7",
+            "status": "active",
+            "created_at": 1784616319.1329029,
+            "updated_at": 1784616319.1329029
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/benchmark/stress_suite.py": {
+            "type": "module",
+            "hash": "35da439ff9cd6f7c0735e4add85d15becf8410a199ac595469a1e3bc22534257",
+            "status": "active",
+            "created_at": 1784617108.2012649,
+            "updated_at": 1784617336.276323
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/security/cryptographic_audit.py": {
+            "type": "module",
+            "hash": "95e509f2b73158a7c9a72fc5f13a8101bcc9d8a4113fac4ae3df9453a1a83dd0",
+            "status": "active",
+            "created_at": 1784617482.644317,
+            "updated_at": 1784617482.6443179
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/sdk/enterprise_crm_sdk.py": {
+            "type": "module",
+            "hash": "32e910fad4de9d916f1b2ec9ba958b3a3484312bdc660ee95375f3faf732d4c9",
+            "status": "active",
+            "created_at": 1784617579.760821,
+            "updated_at": 1784617579.760821
+        },
+        "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/cli/forensic.py": {
+            "type": "module",
+            "hash": "f5604a5edc5489442ffaded45d3546f2ae549b8974a792b3ef8f565e34786b5d",
+            "status": "active",
+            "created_at": 1784618514.118685,
+            "updated_at": 1784618514.118685
+        }
+    },
+    "edges": [],
+    "metadata": {
+        "last_updated": 1785326606.089725
+    }
+}

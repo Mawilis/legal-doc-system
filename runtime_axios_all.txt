@@ -1,0 +1,19 @@
+services/ficaScreeningService.js:        this.httpClient = axios.create({
+client/src/hooks/useTelemetryFeed.js:      const isCanceled = axios.isCancel(err)
+client/src/hooks/useTelemetryFeed.js:        const isCanceled = axios.isCancel(err)
+client/src/services/api.js: * @constant {axios.AxiosInstance} api
+client/src/services/api.js:const api = axios.create({
+client/src/services/api.js:    const response = await axios.get('/api/kernel', { timeout: 5000 });
+client/src/services/api/tenantApi.js:    this.client = axios.create({
+client/src/components/RevenueHUD.jsx:      if (axios.isCancel(err) || err.name === 'AbortError' || err.name === 'CanceledError') {
+client/src/pages/superadmin/Dashboard.jsx:        const response = await axios.get('/api/superadmin/metrics');
+client/src/components/ForensicsHUD.jsx:        axios.get(`${apiUrl}/forensics/vault/${tenantId}`, {
+client/src/components/ForensicsHUD.jsx:        axios.get(`${apiUrl}/forensics/blockchain-verify`, {
+client/src/components/ForensicsHUD.jsx:        axios.get(`${apiUrl}/forensics/benchmark`, {
+client/src/components/ForensicsHUD.jsx:        ? await axios.post(`${apiUrl}/forensics/scan-anomalies`, { logs }, {
+client/src/components/ForensicsHUD.jsx:      if (axios.isCancel(err) || err.name === 'AbortError' || err.name === 'CanceledError') {
+client/src/hooks/useComplianceMetrics.js: *   axios.get('/compliance/metrics/ACME_CORP', { headers });
+client/src/utils/sovereignClient.js:const sovereignClient = axios.create({
+client/src/api/axiosConfig.js:const apiClient = axios.create({
+client/src/components/SovereignContractGenerator.jsx:      const response = await axios.post('/api/generate/pdf', payload, {
+client/src/components/ComplianceHUD.jsx:      if (axios.isCancel(error) || error.name === "AbortError" || error.name === "CanceledError") return;

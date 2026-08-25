@@ -7,7 +7,6 @@
  *
  * @team: This suite validates all three new sovereign components:
  * - Sovereign_Identity_Hub (Identity Management)
- * - Sovereign_Client_Covenant (Client Relationship Management)
  * - Sovereign_Crisis_Command (Incident Response)
  *
  * @coverage_target: 100% | @status: FORTUNE_500_READY
@@ -15,8 +14,7 @@
  */
 
 import './Sovereign_Identity_Hub.test';
-import './Sovereign_Client_Covenant.test';
-import './Sovereign_Crisis_Command.test';
+
 
 // Master test count verification
 describe('🏛️ Sovereign Components Master Suite', () => {

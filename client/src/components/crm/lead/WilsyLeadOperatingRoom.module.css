@@ -14396,3 +14396,106 @@ td[data-wilsy-lead-empty-state="records"] {
     justify-content: center !important;
   }
 }
+
+/* R91K179E27 LEADS_MEETINGS_RAIL_PARITY_CONTRACT
+   Keeps Leads on the same one-screen CRM geometry as Meetings when the left rail is opened or collapsed.
+   The title, toolbar and records shell stay inside the visible parent viewport instead of slipping under rail chrome. */
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: calc(100dvh - 1.35rem) !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 1.35rem) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  gap: 0.75rem !important;
+  padding: 1.125rem 1.375rem 0.625rem !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  contain: layout paint !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .appHeader {
+  grid-row: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 5.35rem !important;
+  max-height: 7.2rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 5.35rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(21rem, 0.82fr) minmax(35rem, 1.18fr) !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 0 0 0 0.16rem !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock strong,
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock strong {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: clamp(2.5rem, 3.2vw, 3.65rem) !important;
+  line-height: 0.95 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTitleBlock em,
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTitleBlock em {
+  max-width: min(100%, 44rem) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadTabbedShell {
+  grid-row: 2 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 1380px) {
+  .leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin="FORENSIC_VIOLET"] .leadModuleTopBar,
+  .leadOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"][data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"][data-wilsy-lead-vision-surface="R84A-LIVE-PIPELINE-VISION"][data-wilsy-lead-skin*="FORENSIC"] .leadModuleTopBar {
+    grid-template-columns: minmax(19rem, 0.72fr) minmax(29rem, 1fr) !important;
+  }
+}

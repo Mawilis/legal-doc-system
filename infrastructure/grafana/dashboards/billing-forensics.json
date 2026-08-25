@@ -1,0 +1,73 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-billing-forensics",
+    "title": "WILSY Billing Forensics",
+    "tags": ["wilsy-os", "billing", "forensics", "pki"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "label": "Prometheus",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": {},
+          "hide": 0
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "type": "timeseries",
+        "title": "Invoice Creation Rate",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "targets": [{ "refId": "A", "expr": "sum(rate(wilsy_invoices_created_total[$__rate_interval]))", "legendFormat": "invoices / second" }],
+        "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+      },
+      {
+        "id": 2,
+        "type": "stat",
+        "title": "Total Persisted Invoices Since Process Start",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "targets": [{ "refId": "A", "expr": "sum(wilsy_invoices_created_total)", "instant": true }],
+        "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto" },
+        "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 }
+      },
+      {
+        "id": 3,
+        "type": "stat",
+        "title": "PKI Signed Invoices",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "targets": [{ "refId": "A", "expr": "sum(pki_sign_success_total)", "instant": true }],
+        "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto" },
+        "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 }
+      },
+      {
+        "id": 4,
+        "type": "timeseries",
+        "title": "PKI Signing Failures",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "targets": [{ "refId": "A", "expr": "sum(rate(pki_sign_failure_total[$__rate_interval]))", "legendFormat": "failures / second" }],
+        "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "red" } }, "overrides": [] },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+      },
+      {
+        "id": 5,
+        "type": "timeseries",
+        "title": "Prometheus Scrape Health",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "targets": [{ "refId": "A", "expr": "up{job=\"wilsy-os-api\"}", "legendFormat": "{{instance}}" }],
+        "fieldConfig": { "defaults": { "unit": "bool" }, "overrides": [] },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+      }
+    ]
+  },
+  "overwrite": true
+}

@@ -17,7 +17,7 @@
 
 import express from 'express';
 import client from 'prom-client';
-import metrics from './metrics.js';
+import { metrics } from './metricsCollector.js';
 import { checkRedisHealth } from '../config/redis.js';
 import { sovereignTelemetryQueue } from './telemetryHelper.js';
 import Revenue from '../models/Revenue.js';

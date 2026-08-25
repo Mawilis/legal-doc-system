@@ -20,7 +20,7 @@ import TelemetryModel from '../models/Telemetry.js';
 import logger from '../utils/logger.js';
 import cryptoCore from '../utils/cryptoCore.js';
 import chalk from 'chalk';
-import metrics from '../utils/metrics.js'; // 🏛️ ANCHORED: Sovereign Metrics Nexus
+import { metrics } from './metricsCollector.js';
 
 /**
  * @function normalizeForensicSeverity

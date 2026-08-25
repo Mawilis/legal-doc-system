@@ -224,6 +224,50 @@ function ensureMarkdownReadiness(repoRoot = process.cwd(), entry = {}) {
 }
 
 /**
+ * @function ensureJsonCompanionReadiness
+ * @description Validates machine-readable Knowledge Base playbook JSON companions when a manifest entry declares JSON availability.
+ * @param {string} repoRoot - Repository root.
+ * @param {object} entry - Manifest entry.
+ * @returns {void}
+ * @collaboration Knowledge Base Vault JSON action, future AI retrieval, playbook release ritual, and hash-bound proof sidecars.
+ */
+function ensureJsonCompanionReadiness(repoRoot = process.cwd(), entry = {}) {
+  const jsonRequired = entry.requiresJsonCompanion === true || Boolean(entry.jsonPath);
+
+  if (!jsonRequired) return;
+
+  assertWilsyKnowledgeBaseGuard(Boolean(entry.jsonPath), `${entry.id}: requiresJsonCompanion needs jsonPath.`);
+  assertWilsyKnowledgeBaseGuard(fileExists(repoRoot, entry.jsonPath), `${entry.id}: missing jsonPath ${entry.jsonPath}`);
+
+  const json = JSON.parse(readWilsyKnowledgeBaseFile(repoRoot, entry.jsonPath));
+  const sections = Array.isArray(json.sections) ? json.sections : [];
+  const sources = Array.isArray(json.evidenceSources) ? json.evidenceSources : [];
+  const audiences = Array.isArray(json.preparedFor) ? json.preparedFor : [];
+  const routeText = JSON.stringify(json.routes || {});
+
+  assertWilsyKnowledgeBaseGuard(json.artifactId === entry.id, `${entry.id}: JSON artifactId must match manifest id.`);
+  assertWilsyKnowledgeBaseGuard(json.title === entry.title, `${entry.id}: JSON title must match manifest title.`);
+  assertWilsyKnowledgeBaseGuard(json.sourcePosture === entry.sourcePosture, `${entry.id}: JSON sourcePosture mismatch.`);
+  assertWilsyKnowledgeBaseGuard(sections.length >= 6, `${entry.id}: JSON companion must include substantial sections.`);
+  assertWilsyKnowledgeBaseGuard(sources.length >= 3, `${entry.id}: JSON companion must include external evidence sources.`);
+  assertWilsyKnowledgeBaseGuard(routeText.includes('/api/generate/pdf'), `${entry.id}: JSON routes must include /api/generate/pdf.`);
+
+  ['investors', 'users', 'future_engineers'].forEach((requiredAudience) => {
+    assertWilsyKnowledgeBaseGuard(
+      audiences.includes(requiredAudience),
+      `${entry.id}: JSON companion missing preparedFor audience "${requiredAudience}".`
+    );
+  });
+
+  const proof = readWilsyKnowledgeBaseProofSidecar(repoRoot, entry);
+  if (proof?.jsonSha3) {
+    const jsonSha3 = calculateWilsyKnowledgeBaseFileSha3(path.join(repoRoot, entry.jsonPath));
+    assertWilsyKnowledgeBaseGuard(proof.jsonPath === entry.jsonPath, `${entry.id}: proof sidecar jsonPath mismatch.`);
+    assertWilsyKnowledgeBaseGuard(proof.jsonSha3 === jsonSha3, `${entry.id}: proof sidecar JSON hash mismatch.`);
+  }
+}
+
+/**
  * @function extractPdfTextForGuard
  * @description Extracts readable text from a PDF using pdftotext when available, then strings as a fallback.
  * @param {string} absolutePdfPath - Absolute PDF path.
@@ -449,6 +493,7 @@ function validateWilsyKnowledgeBaseEntry(repoRoot = process.cwd(), entry = {}, m
   ensureManifestAudience(entry);
   ensurePermissionScope(entry);
   ensureMarkdownReadiness(repoRoot, entry);
+  ensureJsonCompanionReadiness(repoRoot, entry);
   ensurePdfReadiness(repoRoot, entry, mode);
 }
 

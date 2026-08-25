@@ -1,0 +1,155 @@
+{
+  "schema_version": "2.0.0",
+  "total_capabilities": 5,
+  "capabilities": {
+    "CAP-REPOSITORY-SCAN": {
+      "capability_id": "CAP-REPOSITORY-SCAN",
+      "name": "Repository Intelligence Engine",
+      "purpose": "Scans repository assets, AST structures, and dependency vectors across all code bases.",
+      "owner": "Repository Intelligence Subsystem",
+      "inputs": [
+        "Filesystem",
+        "Git HEAD Commit"
+      ],
+      "outputs": [
+        "Repository Inventory",
+        "AST Graph Index"
+      ],
+      "dependencies": [],
+      "produces_events": [
+        "REPOSITORY_CHANGED"
+      ],
+      "consumes_events": [
+        "SCAN_TRIGGERED"
+      ],
+      "business_value": "$1.0B Sovereign OS Asset Map",
+      "criticality": "SOVEREIGN",
+      "reuse_score": 0.98,
+      "execution_cost": "0.001 ms",
+      "lifecycle_state": "ACTIVE",
+      "security_level": "LEVEL_5_SOVEREIGN",
+      "confidence": 1.0,
+      "last_updated": "2026-07-26T21:03:50.037831+00:00"
+    },
+    "CAP-KNOWLEDGE-SYNCHRONIZATION": {
+      "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "name": "Knowledge Graph Engine",
+      "purpose": "Synchronizes enterprise semantic knowledge, concept bindings, and graph linkages.",
+      "owner": "Knowledge Subsystem",
+      "inputs": [
+        "Repository Inventory",
+        "Capability Registry"
+      ],
+      "outputs": [
+        "Knowledge Graph Index"
+      ],
+      "dependencies": [
+        "CAP-REPOSITORY-SCAN"
+      ],
+      "produces_events": [
+        "KNOWLEDGE_REFRESHED"
+      ],
+      "consumes_events": [
+        "REPOSITORY_CHANGED"
+      ],
+      "business_value": "$500M Enterprise Context Anchor",
+      "criticality": "HIGH",
+      "reuse_score": 0.95,
+      "execution_cost": "0.001 ms",
+      "lifecycle_state": "ACTIVE",
+      "security_level": "LEVEL_4_ENTERPRISE",
+      "confidence": 0.99,
+      "last_updated": "2026-07-26T21:03:50.038111+00:00"
+    },
+    "CAP-PREDICTIVE-RISK-ASSESSMENT": {
+      "capability_id": "CAP-PREDICTIVE-RISK-ASSESSMENT",
+      "name": "Predictive Risk Engine",
+      "purpose": "Calculates architectural blast radius, complexity metrics, and potential failure cascades.",
+      "owner": "Predictive Systems",
+      "inputs": [
+        "Dependency Graph",
+        "Change Vectors"
+      ],
+      "outputs": [
+        "Risk Assessment Matrix"
+      ],
+      "dependencies": [
+        "CAP-KNOWLEDGE-SYNCHRONIZATION"
+      ],
+      "produces_events": [
+        "RISK_ASSESSED"
+      ],
+      "consumes_events": [
+        "KNOWLEDGE_REFRESHED"
+      ],
+      "business_value": "$750M Sovereign Risk Mitigation",
+      "criticality": "MISSION_CRITICAL",
+      "reuse_score": 0.91,
+      "execution_cost": "0.001 ms",
+      "lifecycle_state": "ACTIVE",
+      "security_level": "LEVEL_4_ENTERPRISE",
+      "confidence": 0.97,
+      "last_updated": "2026-07-26T21:03:50.038115+00:00"
+    },
+    "CAP-GOVERNANCE-COMPLIANCE": {
+      "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+      "name": "Governance & Compliance Engine",
+      "purpose": "Verifies cryptographic integrity, policy adherence, and zero-trust attestation.",
+      "owner": "Governance Subsystem",
+      "inputs": [
+        "Repository Delta",
+        "Policy Contracts"
+      ],
+      "outputs": [
+        "Compliance Attestation"
+      ],
+      "dependencies": [
+        "CAP-PREDICTIVE-RISK-ASSESSMENT"
+      ],
+      "produces_events": [
+        "COMPLIANCE_ATTESTED"
+      ],
+      "consumes_events": [
+        "RISK_ASSESSED"
+      ],
+      "business_value": "$1.0B Sovereign OS Governance",
+      "criticality": "SOVEREIGN",
+      "reuse_score": 1.0,
+      "execution_cost": "0.001 ms",
+      "lifecycle_state": "ACTIVE",
+      "security_level": "LEVEL_5_SOVEREIGN",
+      "confidence": 1.0,
+      "last_updated": "2026-07-26T21:03:50.038118+00:00"
+    },
+    "CAP-EXECUTIVE-CONTROL-ROOM": {
+      "capability_id": "CAP-EXECUTIVE-CONTROL-ROOM",
+      "name": "Executive Control Room Engine",
+      "purpose": "Dispatches real-time telemetry, event notifications, and AI operator alerts.",
+      "owner": "Control Room Subsystem",
+      "inputs": [
+        "Event Graph Telemetry",
+        "Digital Twin State"
+      ],
+      "outputs": [
+        "Live Dashboard Telemetry"
+      ],
+      "dependencies": [
+        "CAP-GOVERNANCE-COMPLIANCE"
+      ],
+      "produces_events": [
+        "DASHBOARD_UPDATED"
+      ],
+      "consumes_events": [
+        "COMPLIANCE_ATTESTED"
+      ],
+      "business_value": "$1.0B Real-Time OS Monitoring",
+      "criticality": "MISSION_CRITICAL",
+      "reuse_score": 0.96,
+      "execution_cost": "0.001 ms",
+      "lifecycle_state": "ACTIVE",
+      "security_level": "LEVEL_5_SOVEREIGN",
+      "confidence": 0.99,
+      "last_updated": "2026-07-26T21:03:50.038120+00:00"
+    }
+  }
+}

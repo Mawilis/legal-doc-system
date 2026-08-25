@@ -1,0 +1,63 @@
+--- a/src/components/sovereign/Sovereign_Node_Registry.jsx
++++ b/src/components/sovereign/Sovereign_Node_Registry.jsx
+@@ -1,7 +1,7 @@
+- <div className="_metricCard_b1e675">...</div>
++ <div className="_metricCard_b1e675" data-testid="metric-card">...</div>
+
+--- a/tests/client/Sovereign_Node_Registry.test.jsx
++++ b/tests/client/Sovereign_Node_Registry.test.jsx
+@@ -1,7 +1,7 @@
+- const metricCards = document.querySelectorAll('.bg-stone-950\\/70');
+- expect(metricCards.length).toBeGreaterThan(0);
++ const metricCards = screen.getAllByTestId('metric-card');
++ expect(metricCards.length).toBeGreaterThan(0);
+
+@@ -8,7 +8,7 @@
+- const nodes = screen.getAllByText(/SHA512/i);
+- expect(nodes.length).toBeGreaterThan(0);
++ const nodes = screen.getAllByText((content) => content.includes('SHA512'));
++ expect(nodes.length).toBeGreaterThan(0);
+
+@@ -15,7 +15,7 @@
+- expect(screen.getByPlaceholderText(/QUERY REGISTRY\.\.\./i)).toBeDefined();
++ expect(screen.getByPlaceholderText(/Search Registry/i)).toBeDefined();
+
+--- a/tests/client/Sovereign_Revenue_Ledger.test.jsx
++++ b/tests/client/Sovereign_Revenue_Ledger.test.jsx
+@@ -1,7 +1,11 @@
+- render(<Sovereign_Revenue_Ledger />);
++ import { TenantProvider } from 'src/context/TenantContext';
++ 
++ render(
++   <TenantProvider>
++     <Sovereign_Revenue_Ledger />
++   </TenantProvider>
++ );
+
+--- a/src/logger/AuditLogger.js
++++ b/src/logger/AuditLogger.js
+@@ -1,7 +1,15 @@
+- const forensicHash = "00000000" + crypto.randomBytes(4).toString('hex');
++ const forensicHash = crypto.createHash('sha512')
++  .update(JSON.stringify(entry))
++  .digest('hex');
+
+@@ -8,7 +16,15 @@
+- entry.data = { encrypted: true };
++ const iv = crypto.randomBytes(16);
++ const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
++ const encrypted = Buffer.concat([cipher.update(JSON.stringify(payload)), cipher.final()]);
++ const tag = cipher.getAuthTag();
++ 
++ entry.data = {
++   encrypted: true,
++   iv: iv.toString('hex'),
++   tag: tag.toString('hex'),
++   data: encrypted.toString('hex')
++ };
+
+--- a/tests/client/superadminAPI.test.js
++++ b/tests/client/superadminAPI.test.js
+@@ -1,7 +1,7 @@
+- const res = await fetch('/api/v1/superadmin/stats');
++ const res = await fetch(new URL('/api/v1/superadmin/stats', 'http://localhost'));

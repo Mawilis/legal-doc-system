@@ -1,0 +1,63 @@
+"""
+Wilsy Engineering Kernel
+Engineering Constitution Manager
+
+Constitution Parser
+
+Purpose
+-------
+Convert the Engineering Constitution into immutable institutional models.
+
+Responsibilities
+----------------
+* Read the Constitution.
+* Preserve document order.
+* Construct immutable institutional models.
+
+The parser SHALL NEVER:
+
+* modify repository files
+* validate constitutional rules
+* normalize documents
+* serialize output
+* generate repository evidence
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from .domain.models import Constitution
+
+
+class ConstitutionParser:
+    """
+    Public parser contract.
+    """
+
+    def parse(
+        self,
+        path: Path,
+    ) -> Constitution:
+        """
+        Parse the Engineering Constitution.
+
+        Parameters
+        ----------
+        path
+            Path to ENGINEERING_CONSTITUTION.md
+
+        Returns
+        -------
+        Constitution
+            Immutable institutional model.
+
+        Raises
+        ------
+        NotImplementedError
+            Implemented during FG132C Packet 2.
+        """
+
+        raise NotImplementedError(
+            "FG132C Packet 2 implements parsing."
+        )

@@ -46,7 +46,7 @@ import {
   ResourceNotFoundError,
 } from '../utils/errors.js';
 import loggerRaw from '../utils/logger.js';
-import * as metricsModule from '../utils/metrics.js';
+import { metrics } from './metricsCollector.js';
 import documentVerificationWorker from '../workers/documentVerificationWorker.js';
 import ficaService from './ficaScreeningService.js';
 import notificationService from './notificationService.js';
@@ -1704,7 +1704,7 @@ class ClientOnboardingService extends EventEmitter {
     this.modelRegistry.clear();
 
     // Shutdown metrics
-    const metrics = await import('../utils/metrics.js');
+    const metrics = await import { metrics } from './metricsCollector.js';
     if (metrics && typeof metrics.shutdown === 'function') {
       metrics.shutdown();
     }

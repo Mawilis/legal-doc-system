@@ -1,0 +1,26 @@
+{
+  "ASSET-CRM-001": {
+    "asset_id": "ASSET-CRM-001",
+    "name": "CRM Core",
+    "asset_type": "APPLICATION",
+    "subsystem": "CRM",
+    "owner": "Wilson Khanyezi",
+    "capability": "CORE",
+    "routes": [],
+    "connectors": [],
+    "events_produced": [],
+    "events_consumed": [],
+    "dependencies": [],
+    "security_level": "ENTERPRISE",
+    "tenant_scope": "GLOBAL",
+    "runtime_state": "ACTIVE",
+    "dashboard_visibility": true,
+    "digital_twin_mapping": null,
+    "ai_context": {},
+    "business_criticality": "CRITICAL",
+    "lifecycle": "PRODUCTION",
+    "health": "HEALTHY",
+    "metadata": {},
+    "registered_at": "2026-07-26T21:20:59.329750+00:00"
+  }
+}

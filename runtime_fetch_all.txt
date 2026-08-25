@@ -1,0 +1,92 @@
+client/src/services/runtimeApi.js:    const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+client/src/services/revenueService.js:      const response = await fetch(url, {
+client/src/utils/sovereignClient.js:  fetch(`${import.meta.env.VITE_API_URL || '/api'}/telemetry/event`, {
+client/src/services/wilsyAccountIdentityPostureClient.js:  const response = await fetch(buildWilsyAccountIdentityPostureUrl(safeTenantId, baseUrl), {
+client/src/services/wilsyAccountIdentityPostureClient.js:    response = await fetch(endpoint, {
+client/src/hooks/useEosKernelTelemetry.js:    const response = await fetch(EOS_KERNEL_ENDPOINT, {
+client/src/providers/DashboardStateProvider.jsx:        const response = await fetch(`${apiBaseUrl}/dashboard`);
+client/src/services/dashboardService.js:  const response = await fetch('/api/v1/dashboard', {
+client/src/utils/telemetryHelper.js:      const response = await fetch(url, {
+client/src/utils/telemetryHelper.js:      const response = await fetch(url, {
+client/src/bootstrap/EnterpriseBootstrap.jsx:      const response = await fetch('/api/auth/login', {
+client/src/services/wilsyCrmCommandClient.js:  const response = await fetch(url, {
+client/src/services/artifacts/artifactExportService.js:  const response = await fetch(PDF_ENDPOINT, {
+client/src/services/artifacts/artifactExportService.js:    const response = await fetch(wilsyDocxLogoUrl);
+client/src/services/sourceRegistryService.js:  const response = await fetch(`${SOURCE_REGISTRY_BASE}${path}`, {
+client/src/services/crmService.js:  const response = await fetch(`/api/crm/command${endpoint}`, {
+client/src/utils/DashboardRegistry.jsx:    fetch('/api/telemetry/dashboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+client/src/context/sovereignRuntime.jsx:      const response = await fetch('/api/telemetry/boardroom', { 
+client/src/services/executionService.js:  const response = await fetch('/api/v1/execution', {
+client/src/services/wilsyForensicMerkleClient.js:        const response = await fetch(url, {
+client/src/contexts/authContext.jsx:            const response = await fetch('/api/auth/discover', {
+client/src/components/intelligence/RepositoryPanel.jsx:        const response = await fetch('/api/v1/intelligence/repository-census');
+client/src/components/control-room/ExecutiveControlRoom.jsx:    const response = await fetch('/api/v1/dashboard');
+client/src/components/control-room/ExecutiveControlRoom.jsx:    const response = await fetch('/api/v1/execution', {
+client/src/components/sales/AISalesIntelligenceDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals?limit=20', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals?limit=100', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch(`http://localhost:5050/api/deals/${deal._id}/stage`, {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch(`http://localhost:5050/api/deals/${deal._id}`, {
+client/src/components/artifacts/BusinessArtifactStudio.jsx:    return await fetch(url, { ...options, signal: controller.signal });
+client/src/components/intelligence/WilsyOSIntelligenceDock.jsx:    fetch(WILSY_AI_CONTEXT_ROUTE)
+client/src/components/ErrorBoundary.jsx:      fetch(TELEMETRY_ENDPOINT, {
+client/src/components/auth/SovereignLogin.jsx:  const res = await fetch('/api/kernel', {
+client/src/components/auth/SovereignLogin.jsx:      await fetch('/api/telemetry/error', {
+client/src/components/auth/SovereignLogin.jsx:        const response = await fetch('/api/telemetry/boardroom', {
+client/src/components/sovereign/SovereignOrchestrator.jsx:      retryQueueRef.current.push({ fn: () => predictivePrefetch(tenantId), retries: 0 });
+client/src/components/sovereign/SovereignOrchestrator.jsx:        predictivePrefetch('GLOBAL_ROOT');
+client/src/components/sovereign/SovereignOrchestrator.jsx:    await predictivePrefetch(tenantId);
+client/src/components/industry/LogisticsDashboard.jsx:    const response = await fetch(url, { ...options, headers });
+client/src/components/industry/ProjectDashboard.jsx:    const response = await fetch(url, { ...options, headers });
+client/src/components/industry/LegalDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/legal/metrics?district=${selectedDistrict}`, {
+client/src/components/industry/LegalDashboard.jsx:      // const documentsRes = await fetch(`${API_BASE_URL}/api/legal/documents`, {
+client/src/components/knowledge/WilsyKnowledgeBaseVault.jsx:  const response = await fetch(url, {
+client/src/components/knowledge/WilsyKnowledgeBaseVault.jsx:  const response = await fetch(url, {
+client/src/components/industry/PropertyDashboard.jsx:    const response = await fetch(url, { ...options, headers });
+client/src/components/industry/EntertainmentDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/entertainment/metrics`, {
+client/src/components/industry/EntertainmentDashboard.jsx:      // const productionsRes = await fetch(`${API_BASE_URL}/api/entertainment/productions`, {
+client/src/components/account/WilsyAccountCommandCenter.jsx:        const response = await fetch(endpoint, {
+client/src/components/industry/EnergyDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/energy/metrics`, {
+client/src/components/industry/EnergyDashboard.jsx:      // const generationRes = await fetch(`${API_BASE_URL}/api/energy/generation`, {
+client/src/components/sovereign/CoverPage.jsx:    await fetch('/api/telemetry/event', {
+client/src/components/sovereign/SovereignDashboardController.jsx:    const response = await fetch('/api/kernel', {
+client/src/components/sovereign/DemoIgnitionButton.jsx:      const response = await fetch('/api/v2/sovereign/demo/ignite', {
+client/src/components/industry/SportsDashboard.jsx:    const response = await fetch(url, { headers });
+client/src/components/industry/TechDashboard.jsx:    const response = await fetch(url, { headers });
+client/src/components/sovereign/Sovereign_Onboarding_Wizard.jsx:      const response = await fetch('/api/v1/onboarding/initialize', {
+client/src/components/industry/FinanceDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/finance/metrics?range=${selectedTimeRange}`, {
+client/src/components/industry/FinanceDashboard.jsx:      // const portfolioRes = await fetch(`${API_BASE_URL}/api/finance/portfolio`, {
+client/src/components/crm/meeting/WilsyMeetingOperatingRoom.jsx:      const response = await fetch(`${resolveMeetingApiBase()}/api/crm/live/meetings`, {
+client/src/components/industry/PublicDashboard.jsx:    const response = await fetch(url, { ...options, headers });
+client/src/components/industry/RetailDashboard.jsx:    const response = await fetch(url, { headers });
+client/src/components/sovereign/SovereignNodeDashboard.jsx:        const response = await fetch('/api/auth/me', {
+client/src/components/industry/ProductionDashboard.jsx:    const response = await fetch(url, { ...options, headers });
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:          const response = await fetch(`${apiBase}${moduleConfig.route}?limit=24`, {
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:      const response = await fetch(`${apiBase}${route}`, {
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:          fetch(`${apiBase}/api/crm/live/leads`, { headers }),
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:          fetch(`${apiBase}/api/crm/live/contacts`, { headers }),
+client/src/components/sovereign/CommandPalette.jsx:    const response = await fetch(endpoint, {
+client/src/components/sovereign/CommandPalette.jsx:        fetch('/api/email/send', { method: 'POST', body: formData, signal }).catch(e => console.warn(e));
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:  const response = await fetch(`${resolveWilsyMeetingApiBase()}${endpoint}`, {
+client/src/components/crm/CrmSearchOutcomeRuntime.js:    const response = await fetch(`${source.endpoint}?${params.toString()}`, {
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:      const response = await fetch(`${apiBase}/api/crm/live/meetings`, {
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:      const response = await fetch(`${apiBase}/api/crm/command/meetings/${encodeURIComponent(id)}`, {
+client/src/components/crm/SovereignCRMClient.jsx:    const response = await fetch('/api/v1/crm/dashboard');
+client/src/components/crm/SovereignCRMClient.jsx:    const response = await fetch('/api/v1/crm/execution', {
+client/src/components/crm/CRMDashboard.jsx:    const response = await fetch(`${API_BASE}${endpoint}`, {
+client/src/components/crm/CRMDashboard.jsx:    const response = await fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}`, {
+client/src/components/crm/CRMDashboard.jsx:    const response = await fetch(`${API_BASE}/api/auth/me`, {
+client/src/components/crm/CRMDashboard.jsx:  const response = await fetch(`${apiBase}${endpoint}`, {
+client/src/components/crm/CRMDashboard.jsx:    railCache.promise = fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}?railCounts=R91K179E24P45B&generatedAt=${Date.now()}`, {
+client/src/components/crm/lead/WilsyLeadEditSurface.js:      const response = await fetch(endpoint, {
+client/src/components/crm/lead/WilsyLeadEditSurface.js:      const response = await fetch(endpoint, {
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:  const response = await fetch(endpoint, {
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:  const response = await fetch(endpoint, {
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:    const response = await fetch(`/api/crm/command/leads/${encodeURIComponent(resolvedRecordId)}`, {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    const response = await fetch(resolveWilsyLeadViewRegistryUrl(), {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    const response = await fetch(endpoint, {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const response = await fetch(resolveWilsyLeadApiBase() + WILSY_LEADS_AI_OPERATOR_ENDPOINT, {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const response = await fetch('/api/crm/command/address/suggest', {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const response = await fetch(resolveWilsyProofLedgerAccessUrl(), {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    return fetch('/api/generate/pdf', {
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:  const response = await fetch(`${apiBase}${route}`, {

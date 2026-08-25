@@ -1,37 +1,40 @@
 /* eslint-disable */
 /**
  * @file ErrorBoundary.jsx
- * @version 2.0.1
- * @lastModified 2026-05-24
+ * @version 2.1.0
+ * @lastModified 2026-07-29
  * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
  * @reviewers Siybonga Khanyezi, Wilsy OS Architecture Board
  * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
- * * @description
+ * @description
  * ENTERPRISE-GRADE React Error Boundary for Wilsy OS.
- * Implements defensive programming, automatic recovery, multi‑channel telemetry,
- * and full observability. Designed for 100+ years of operation.
- * * CAPABILITIES:
+ * Implements defensive programming, automatic recovery, and full observability.
+ * Designed for 100+ years of operation.
+ *
+ * CAPABILITIES:
  * - Catches JavaScript errors in child component tree without crashing the app
  * - Automatic retry mechanism (up to 3 attempts) with exponential backoff
- * - Multi‑channel error reporting: console, telemetry API, and optional Sentry
+ * - Multi‑channel error reporting: console only (telemetry disabled by default)
  * - Full accessibility (ARIA labels, keyboard navigation)
  * - Custom fallback UI with detailed error information in development
  * - Support for error boundary reset via user action or programmatic reset
  * - Performance monitoring (time to recover, error frequency)
- * - Integration with Wilsy OS global state (if Redux/Zustand present)
- * * @collaboration
+ *
+ * @collaboration
  * - Any change requires signoff from two sovereign architects.
- * - Telemetry endpoint must be configured in .env: VITE_TELEMETRY_ERROR_ENDPOINT
+ * - Telemetry endpoint can be enabled via .env: VITE_TELEMETRY_ERROR_ENDPOINT
  * - See CONFLUENCE://WilsyOS/ErrorHandling for incident response runbooks.
- * - AI Engineering (Gemini) - FORTIFIED: Added JWT and Tenant ID injection to telemetry fetch to bypass backend 403. [2026-05-24]
- * * @example
+ * - FG238S: Telemetry POST disabled to prevent 404 errors. Re‑enable by setting
+ *   VITE_TELEMETRY_ERROR_ENDPOINT in your .env file.
+ *
+ * @example
  * <ErrorBoundary
- * fallback={<MyCustomErrorPage />}
- * onError={(error, errorInfo) => myLogger(error)}
- * resetKeys={[someStateVariable]}
- * maxRetries={3}
+ *   fallback={<MyCustomErrorPage />}
+ *   onError={(error, errorInfo) => myLogger(error)}
+ *   resetKeys={[someStateVariable]}
+ *   maxRetries={3}
  * >
- * <SingularityDashboard />
+ *   <SingularityDashboard />
  * </ErrorBoundary>
  */
 
@@ -41,9 +44,11 @@ import PropTypes from 'prop-types';
 // ----------------------------------------------------------------------
 // 1. TELEMETRY CONFIGURATION (production ready)
 // ----------------------------------------------------------------------
-const TELEMETRY_ENDPOINT = import.meta.env.VITE_TELEMETRY_ERROR_ENDPOINT || '/api/telemetry/error';
+const TELEMETRY_ENDPOINT = import.meta.env.VITE_TELEMETRY_ERROR_ENDPOINT || '';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const IS_DEVELOPMENT = !IS_PRODUCTION;
+// Only enable telemetry if a valid endpoint is explicitly set
+const TELEMETRY_ENABLED = TELEMETRY_ENDPOINT && TELEMETRY_ENDPOINT.length > 0;
 
 // ----------------------------------------------------------------------
 // 2. ERROR LOGGER (abstraction for multi‑channel reporting)
@@ -77,8 +82,8 @@ class ErrorLogger {
       if (error.fatal) console.error('[ErrorBoundary] Fatal error:', error.message);
     }
 
-    // 2. Telemetry API (fire-and-forget, never block UI)
-    if (navigator.onLine) {
+    // 2. Telemetry API – only if explicitly enabled and endpoint is set
+    if (TELEMETRY_ENABLED && navigator.onLine) {
       // Retrieve forensic authentication tokens for secure backend transit
       const authToken = localStorage.getItem('wilsy_auth_token');
       const tenantId = localStorage.getItem('discoveredTenant') || 'GLOBAL_ROOT';
@@ -104,6 +109,15 @@ class ErrorLogger {
           console.warn('[ErrorBoundary] Telemetry failed:', fetchError);
         }
       });
+    } else {
+      // Telemetry disabled – silently skip (avoids 404 errors)
+      if (IS_DEVELOPMENT && !TELEMETRY_ENABLED) {
+        // Optional: log that telemetry is off (only once per session)
+        if (!window.__WILSY_TELEMETRY_WARNED) {
+          console.info('[ErrorBoundary] Telemetry reporting is disabled. Set VITE_TELEMETRY_ERROR_ENDPOINT to enable.');
+          window.__WILSY_TELEMETRY_WARNED = true;
+        }
+      }
     }
 
     // 3. Optional Sentry integration (if available globally)

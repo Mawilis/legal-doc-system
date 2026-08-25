@@ -11,7 +11,9 @@
  *
  * Security:
  * - Never log full tokens; only safe preview (first 8 chars)
- * * 🛡️ PRODUCTION READY v2.67.0:
+ * * 🛡️ PRODUCTION READY v2.67.1:
+ * • FIXED: verifyMFA body uses `otp` (server contract) + `code` alias
+ * • FIXED: login always persists loginEmail for MFA step
  * • FIXED: Dynamic Tenant Resolution to prevent [GATEWAY] Sovereign breach.
  * • FIXED: 3FA endpoint now matches server (/api/auth/verify-3fa)
  * • Token persistence with proper key normalization
@@ -23,8 +25,8 @@
  * • Lead Architect: Wilson Khanyezi - Final approval
  * • Security: Dr. Priya Naidoo - Token management
  * • Frontend: Gemini - Auth integration
+ * • AI Engineering (2026-08-20) — otp field parity with authController.verify3FA
  */
-
 import api from '../api';
 
 const TOKEN_KEY = 'sovereignToken';
@@ -42,7 +44,6 @@ const getTenantContext = () => {
   const host = window.location.hostname;
   const parts = host.split('.');
   if (parts.length > 2 && parts[0] !== 'www') return parts[0];
-
   // Check localStorage, then fallback to the Billion-Dollar Anchor 'wilsy'
   // RECTIFIED: Removed 'wilsy-sovereign-root' fallback as it conflicts with DB slug
   return localStorage.getItem(TENANT_KEY) || 'wilsy';
@@ -61,14 +62,15 @@ const writeTokenAndUser = (token, user) => {
     localStorage.setItem(TOKEN_KEY, normalized);
     localStorage.setItem('sovereign_token', normalized);
     localStorage.setItem('token', normalized);
-
     if (user) {
-      try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch (e) {}
+      try {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+      } catch (e) { }
       if (user.tenantId) {
         try {
           localStorage.setItem(TENANT_KEY, String(user.tenantId).trim());
           localStorage.setItem('tenant_id', String(user.tenantId).trim());
-        } catch (e) {}
+        } catch (e) { }
       }
       if (user.id || user._id) {
         localStorage.setItem('user_id', user.id || user._id);
@@ -79,10 +81,16 @@ const writeTokenAndUser = (token, user) => {
       if (user.firstName) {
         localStorage.setItem(OPERATOR_KEY, String(user.firstName).toUpperCase());
       }
+      if (user.email) {
+        try {
+          localStorage.setItem('loginEmail', String(user.email).trim().toLowerCase());
+        } catch (e) { }
+      }
     }
-
     const preview = safePreview(normalized);
-    try { window.dispatchEvent(new CustomEvent('sovereign:token-saved', { detail: { preview } })); } catch (e) {}
+    try {
+      window.dispatchEvent(new CustomEvent('sovereign:token-saved', { detail: { preview } }));
+    } catch (e) { }
     console.info('[SOVEREIGN] ✅ Token saved (preview):', preview);
   } catch (e) {
     console.warn('[SOVEREIGN] ⚠️ Failed to persist token/user', e);
@@ -91,9 +99,21 @@ const writeTokenAndUser = (token, user) => {
 
 const clearAuthLocal = () => {
   try {
-    [TOKEN_KEY, 'sovereign_token', 'token', TENANT_KEY, 'tenant_id', USER_KEY, ROLE_KEY, OPERATOR_KEY, 'user_id']
-      .forEach(k => localStorage.removeItem(k));
-    try { window.dispatchEvent(new CustomEvent('sovereign:token-cleared')); } catch (e) {}
+    [
+      TOKEN_KEY,
+      'sovereign_token',
+      'token',
+      TENANT_KEY,
+      'tenant_id',
+      USER_KEY,
+      ROLE_KEY,
+      OPERATOR_KEY,
+      'user_id',
+      'loginEmail',
+    ].forEach((k) => localStorage.removeItem(k));
+    try {
+      window.dispatchEvent(new CustomEvent('sovereign:token-cleared'));
+    } catch (e) { }
     console.info('[SOVEREIGN] 🧹 Auth state cleared');
   } catch (e) {
     console.warn('[SOVEREIGN] ⚠️ Failed to clear auth localStorage', e);
@@ -103,18 +123,29 @@ const clearAuthLocal = () => {
 export const authService = {
   login: async (email, password) => {
     const tenantId = getTenantContext();
+    const normalizedEmail = String(email || '')
+      .trim()
+      .toLowerCase();
+    // Persist email BEFORE login response so MFA step always has it
+    try {
+      localStorage.setItem('loginEmail', normalizedEmail);
+    } catch (e) { }
 
     // FORENSIC LOGGING TO PROVE CONTEXT TO GATEWAY
     console.info(`[SOVEREIGN] 🔍 Handshake: Resolving dynamic context for [${tenantId}]`);
-
     const response = await api.post(
       '/api/auth/login',
-      { email, password, tenantId }, // Body Injection
+      { email: normalizedEmail, password, tenantId }, // Body Injection
       { headers: { 'X-Tenant-ID': tenantId } } // Header Injection
     );
-
     const data = response?.data || {};
     if (data.token) writeTokenAndUser(data.token, data.user || null);
+    // Ensure email survives MFA_SETUP / MFA_REQUIRED (no token yet)
+    if (data.email) {
+      try {
+        localStorage.setItem('loginEmail', String(data.email).trim().toLowerCase());
+      } catch (e) { }
+    }
     return data;
   },
 
@@ -135,18 +166,44 @@ export const authService = {
     return response.data;
   },
 
+  /**
+   * Verify TOTP after MFA_REQUIRED / MFA_SETUP.
+   * Server contract (authController.verify3FA): { email, otp }
+   * Also sends `code` alias for any legacy handlers.
+   */
   verifyMFA: async (code) => {
     let email = localStorage.getItem('loginEmail');
     if (!email) {
       const userData = localStorage.getItem(USER_KEY);
       if (userData) {
-        try { email = JSON.parse(userData).email; } catch(e) {}
+        try {
+          email = JSON.parse(userData).email;
+        } catch (e) { }
       }
     }
+    email = String(email || '')
+      .trim()
+      .toLowerCase();
+    const otp = String(code ?? '')
+      .trim()
+      .replace(/\s/g, '');
+
+    if (!email) {
+      throw new Error('Missing login email for MFA. Please sign in again.');
+    }
+    if (!otp || otp.length < 6) {
+      throw new Error('Enter the 6-digit authenticator code.');
+    }
+
     const tenantId = getTenantContext();
     const response = await api.post(
       '/api/auth/verify-3fa',
-      { email, code, tenantId },
+      {
+        email,
+        otp, // ← server expects this (was `code` only → 400)
+        code: otp, // alias for any dual-field handlers
+        tenantId,
+      },
       { headers: { 'X-Tenant-ID': tenantId } }
     );
     const data = response?.data || {};
@@ -178,21 +235,26 @@ export const authService = {
     try {
       const raw = localStorage.getItem(TOKEN_KEY);
       return raw ? String(raw).trim().replace(/^Bearer\s+/i, '') : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   },
 
   getStoredUser: () => {
     try {
       const raw = localStorage.getItem(USER_KEY);
       return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   },
 
   getStoredTenant: () => getTenantContext(),
   getStoredRole: () => localStorage.getItem(ROLE_KEY),
   isAuthenticated: () => !!authService.getStoredToken(),
   clearLocalAuth: () => clearAuthLocal(),
-  setLoginEmail: (email) => localStorage.setItem('loginEmail', email)
+  setLoginEmail: (email) =>
+    localStorage.setItem('loginEmail', String(email || '').trim().toLowerCase()),
 };
 
 // Expose hooks for Window Engine
@@ -202,10 +264,10 @@ try {
       refreshToken: authService.refreshToken,
       getStoredToken: authService.getStoredToken,
       getStoredUser: authService.getStoredUser,
-      isAuthenticated: authService.isAuthenticated
+      isAuthenticated: authService.isAuthenticated,
     };
     console.info('[SOVEREIGN] 🔑 Auth service registered.');
   }
-} catch (e) {}
+} catch (e) { }
 
 export default authService;

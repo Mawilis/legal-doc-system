@@ -28,14 +28,6 @@
  */
 
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Command } from 'cmdk';
-import {
-  Search, AlertOctagon, Terminal, Zap, Sparkles, TrendingUp, BarChart3, PieChart, Activity,
-  ShieldCheck, Fingerprint, Lock, Globe, Scale, Crown, Briefcase, Users, MessageSquare, Server,
-  DollarSign, Gavel, Megaphone, Box, Code, BarChart, LockKeyhole, HeartHandshake, ShoppingCart,
-  FlaskConical, Satellite, Brain, Cpu, Dna, Database, Mic, MicOff, Hash, CheckCircle,
-  HeartPulse, FileJson, ClipboardCheck
-} from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
 import { useTenants } from '../../contexts/tenantContext';
 import { useCommandUsage } from '../../contexts/CommandUsageContext';
@@ -45,10 +37,47 @@ import { useForensicsMetrics } from '../../hooks/useForensicsMetrics';
 import SovereignPdfService from '../../services/pdfService';
 import api from '../../services/api';
 import styles from './CommandPalette.module.css';
+import { Command } from 'cmdk';
+import {
+  Activity,
+  AlertOctagon,
+  BarChart3,
+  Box,
+  Brain,
+  Briefcase,
+  CheckCircle,
+  ClipboardCheck,
+  Code,
+  Cpu,
+  Crown,
+  Database,
+  Dna,
+  DollarSign,
+  FileJson,
+  FileText,
+  Fingerprint,
+  FlaskConical,
+  Gavel,
+  Hash,
+  HeartHandshake,
+  HeartPulse,
+  LockKeyhole,
+  Megaphone,
+  MessageSquare,
+  Mic,
+  MicOff,
+  PieChart,
+  Satellite,
+  Scale,
+  Search,
+  Server,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  TrendingUp,
+  Users
+} from 'lucide-react';
 
-// ============================================================================
-// STATIC COMMAND REGISTRY (moved outside component – never re‑created)
-// ============================================================================
 const STATIC_DEPARTMENT_COMMANDS = Object.freeze([
   { id: 'dept-CEO_DASHBOARD', label: 'CEO Dashboard', icon: <Crown size={18}/>, description: 'Chief Executive Officer view', type: 'department', contextKey: 'CEO_DASHBOARD' },
   { id: 'dept-COO_DASHBOARD', label: 'COO Dashboard', icon: <Briefcase size={18}/>, description: 'Chief Operations Officer view', type: 'department', contextKey: 'COO_DASHBOARD' },
@@ -293,7 +322,7 @@ const serialiseCommands = (commands = []) => commands.map((command) => ({
 /**
  * @function CommandPalette
  * @description Renders the sovereign Command K palette and executes selected Wilsy OS commands.
- * @collaboration Global Command K, Founder Dashboard, visible command registry, and Knowledge Base Vault launch.
+ * @collaboration Global Command K, Founder Dashboard, visible command registry, and Wilsy Knowledge Base launch.
  */
 const CommandPalette = ({
   isOpen,
@@ -369,11 +398,22 @@ const CommandPalette = ({
     },
     {
       id: 'KNOWLEDGE_BASE_VAULT',
-      label: 'Global Knowledge Vault',
+      label: 'Wilsy Knowledge Base',
       description: 'Open verified saved knowledge artifacts, proof records and playbooks.',
       route: '/knowledge-base/vault',
       type: 'navigation',
       handler: () => {
+        try {
+          window.localStorage.setItem('wilsy:command-k-origin', JSON.stringify({
+            authority: 'WILSY_FG108O4B_COMMAND_PALETTE_KB_ORIGIN',
+            route: window.location.pathname || '/crm',
+            label: document.title || 'Previous workspace',
+            dashboardKey: 'COMMAND_PALETTE_ORIGIN',
+            generatedAt: new Date().toISOString(),
+          }));
+        } catch {
+          // Origin return is helpful but non-critical.
+        }
         window.history.pushState({}, '', '/knowledge-base/vault');
         window.dispatchEvent(new PopStateEvent('popstate'));
       },

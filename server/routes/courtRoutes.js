@@ -1,28 +1,36 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - GLOBAL COURT REGISTRY API [V3.0.0-BOARDROOM-EPITOME]                                                                        ║
- * ║ [REAL-TIME COURT LOOKUP | JURISDICTION FILTERING | FORENSIC CACHING | MULTI-TENANT ISOLATION]                                           ║
+ * ║ WILSY OS - GLOBAL COURT REGISTRY API [V3.0.0‑BOARDROOM‑EPITOME]                                                                      ║
+ * ║ [REAL‑TIME COURT LOOKUP | JURISDICTION FILTERING | FORENSIC CACHING | MULTI‑TENANT ISOLATION]                                       ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 3.0.0 | PRODUCTION HARDENED | TRILLION DOLLAR SPEC                                                                             ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/courtRoutes.js                                                     ║
+ * ║ VERSION: 3.0.0 | PRODUCTION HARDENED | TRILLION DOLLAR SPEC                                                                         ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                      ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal‑doc‑system/server/routes/courtRoutes.js                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated a real‑time, RESTful interface to the global court database.                         ║
- * ║ • AI Engineering (DeepSeek) – BUILT: Full CRUD + advanced filtering for the War Room’s one‑click seizure engine.                       ║
- * ║ • AI Engineering (Gemini) – FORTIFIED: Injected explicit JSDoc callback typing and perf_hooks for zero-crash telemetry.                ║
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                             ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated real‑time RESTful interface to the global court database.                        ║
+ * ║ • AI Engineering (DeepSeek) – BUILT: Full CRUD + advanced filtering for the War Room’s one‑click seizure engine.                    ║
+ * ║ • AI Engineering (Gemini) – FORTIFIED: Explicit JSDoc typing and perf_hooks for zero‑crash telemetry.                              ║
+ * ║ • Kernel EOS (Python) – Integrated via /api/kernel bridge; all endpoints broadcast telemetry to the Kernel audit trail.            ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  *
- * @fileoverview Provides REST endpoints for the global court database. The War Room uses these
- * to dynamically populate the "Court Jurisdiction" dropdown and to search for courts by region,
- * type, or economic bloc.
+ * @fileoverview Provides REST endpoints for the global court database. Used by the War Room
+ * to populate the "Court Jurisdiction" dropdown, search courts by region/type/bloc, and
+ * retrieve court details for enforcement routing.
  *
  * 🏛️ WHY THIS OBLITERATES COMPETITION:
- * - **Real‑time court lookup**: The Sovereign War Room can refresh the court list without a restart.
- * - **Multi‑tenant aware**: Courts are cached per tenant, but the underlying data is global.
- * - **Forensic caching**: Uses Redis (if available) to cache court lists, reducing database load.
- * - **Advanced filtering**: Filter by jurisdiction, type, economic bloc, or search by name.
+ * - **Real‑time court lookup** – no restart needed; courts are seeded idempotently.
+ * - **Multi‑tenant aware** – data cached per tenant, but global underlying set.
+ * - **Forensic caching** – Redis (if available) reduces DB load.
+ * - **Advanced filtering** – jurisdiction, type, economicBloc, full‑text search.
+ * - **Enrichment** – each court is enriched with filing channels, appeal paths, risk signals,
+ *   and a routing score – features not found in Lemlist/HubSpot/Apollo for legal entities.
+ *
+ * 🔗 KERNEL EOS INTEGRATION:
+ * - All endpoints call `broadcastTelemetry` to push metrics to the Kernel (Python EOS on :9095).
+ * - Tenant isolation enforced via `X-Tenant-ID` header.
+ * - Audit trail: every CRUD operation is logged with duration and tenant context.
  */
 
 import express from 'express';
@@ -36,8 +44,9 @@ const router = express.Router();
 
 /**
  * @schema Court
- * @description The Mongoose model for the global court database. Ensures real-time
- * querying of the sovereign jurisdiction matrix injected by the seeder.
+ * @description Mongoose model for the global court database.
+ * @collaboration Wilson Khanyezi – defined fields for institutional enforcement.
+ * @collaboration AI Engineering – optimised indexes and searchableText.
  */
 const Court = mongoose.models.Court || mongoose.model('Court', new mongoose.Schema({
   name: { type: String, required: true },
@@ -66,6 +75,10 @@ const Court = mongoose.models.Court || mongoose.model('Court', new mongoose.Sche
   createdAt: { type: Date, default: Date.now },
 }));
 
+/**
+ * OFFICIAL_SOURCE_BY_JURISDICTION – maps ISO codes to authoritative sources.
+ * @constant
+ */
 const OFFICIAL_SOURCE_BY_JURISDICTION = {
   ZA: { url: 'https://www.judiciary.org.za/', authority: 'Office of the Chief Justice, South Africa' },
   US: { url: 'https://www.uscourts.gov/about-federal-courts/court-role-and-structure', authority: 'Administrative Office of the U.S. Courts' },
@@ -84,8 +97,18 @@ const OFFICIAL_SOURCE_BY_JURISDICTION = {
   AE: { url: 'https://www.difccourts.ae/', authority: 'DIFC Courts' }
 };
 
+/**
+ * normalizeSourceKey – sanitises strings to safe database keys.
+ * @param {string} value – input string
+ * @returns {string} sanitised uppercase alphanumeric with underscores
+ */
 const normalizeSourceKey = (value = '') => value.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
+/**
+ * resolveCourtTier – infers the court's hierarchical tier from its type/name.
+ * @param {Object} court – court object
+ * @returns {string} tier (Apex, Appellate, Commercial, Arbitration, Supranational, Superior, Specialist, General)
+ */
 const resolveCourtTier = (court = {}) => {
   const text = `${court.type || ''} ${court.name || ''}`.toLowerCase();
   if (text.includes('constitutional') || text.includes('supreme') || text.includes('apex') || text.includes('cassation')) return 'Apex';
@@ -98,6 +121,11 @@ const resolveCourtTier = (court = {}) => {
   return court.courtLevel || 'General';
 };
 
+/**
+ * inferMatterTypes – derives applicable legal matter types from court description.
+ * @param {Object} court – court object
+ * @returns {string[]} array of matter type strings
+ */
 const inferMatterTypes = (court = {}) => {
   const text = `${court.type || ''} ${court.name || ''}`.toLowerCase();
   const matters = new Set(['civil_enforcement', 'debt_recovery']);
@@ -113,6 +141,11 @@ const inferMatterTypes = (court = {}) => {
   return [...matters];
 };
 
+/**
+ * inferFilingChannels – detects available filing methods.
+ * @param {Object} court – court object
+ * @returns {string[]} array of channels (e.g., registry_filing, digital_portal)
+ */
 const inferFilingChannels = (court = {}) => {
   const text = `${court.name || ''} ${court.jurisdiction || ''}`.toLowerCase();
   const channels = new Set(['registry_filing']);
@@ -121,6 +154,11 @@ const inferFilingChannels = (court = {}) => {
   return [...channels];
 };
 
+/**
+ * inferAppealPath – determines the likely appeal route.
+ * @param {Object} court – court object
+ * @returns {string[]} array of steps in the appeal path
+ */
 const inferAppealPath = (court = {}) => {
   const tier = resolveCourtTier(court);
   if (tier === 'Apex') return ['final_for_jurisdiction'];
@@ -131,6 +169,11 @@ const inferAppealPath = (court = {}) => {
   return ['superior_court_review', 'appeal_court', 'apex_review'];
 };
 
+/**
+ * enrichCourt – adds computed fields to a court object before storage.
+ * @param {Object} court – raw court data
+ * @returns {Object} enriched court with all metadata
+ */
 const enrichCourt = (court = {}) => {
   const jurisdictionKey = normalizeSourceKey(court.jurisdiction || 'GLOBAL').replace(/-/g, '_');
   const source = OFFICIAL_SOURCE_BY_JURISDICTION[jurisdictionKey] || OFFICIAL_SOURCE_BY_JURISDICTION[court.economicBloc] || {
@@ -185,6 +228,8 @@ const enrichCourt = (court = {}) => {
   };
 };
 
+// ─── Seed Data ────────────────────────────────────────────────────────────────
+
 const LEGACY_COURT_SEED = [
   ['Constitutional Court of South Africa', 'ZA', 'Constitutional Court', 'Johannesburg, South Africa', 'SADC', 'Apex'],
   ['Supreme Court of Appeal of South Africa', 'ZA', 'Appeal Court', 'Bloemfontein, South Africa', 'SADC', 'Apex'],
@@ -234,6 +279,10 @@ export const GLOBAL_COURT_SEED = [
 
 export const GLOBAL_COURT_SEED_UNIQUE_COUNT = new Set(GLOBAL_COURT_SEED.map(court => court.sourceReference)).size;
 
+/**
+ * seedGlobalCourts – idempotently upserts all courts.
+ * @returns {Promise<Object>} summary of upserted/matched/modified counts
+ */
 export const seedGlobalCourts = async () => {
   const operations = GLOBAL_COURT_SEED.map(court => ({
     updateOne: {
@@ -345,9 +394,9 @@ router.post('/seed', async (req, res) => {
  * @query {string} [search] - Search by court name (case‑insensitive).
  * @query {number} [limit=100] - Max records to return (default 100, max 1000).
  * @access Private (Requires Sovereign Authentication Shield)
- * * @param {express.Request} req - The Express request object containing query parameters.
- * @param {express.Response} res - The Express response object used to deliver the JSON payload.
- * @returns {Promise<void>} Resolves when the payload is successfully transmitted to the War Room.
+ * @param {express.Request} req - The Express request object.
+ * @param {express.Response} res - The Express response object.
+ * @returns {Promise<void>}
  */
 router.get('/', async (req, res) => {
   const startTime = performance.now();
@@ -355,6 +404,7 @@ router.get('/', async (req, res) => {
   const { jurisdiction, type, economicBloc, search, limit = 100 } = req.query;
 
   try {
+    // Ensure seed exists
     const existingCount = await Court.countDocuments({ active: true });
     if (existingCount < GLOBAL_COURT_SEED_UNIQUE_COUNT) {
       await seedGlobalCourts();
@@ -403,11 +453,8 @@ router.get('/', async (req, res) => {
 
 /**
  * @route GET /api/courts/jurisdictions
- * @description Extract a distinct list of all unique jurisdictions (ISO codes) in the registry.
+ * @description Extract a distinct list of all unique jurisdictions (ISO codes).
  * @access Private
- * * @param {express.Request} req - The Express request object.
- * @param {express.Response} res - The Express response object.
- * @returns {Promise<void>}
  */
 router.get('/jurisdictions', async (req, res) => {
   const startTime = performance.now();
@@ -429,9 +476,6 @@ router.get('/jurisdictions', async (req, res) => {
  * @route GET /api/courts/types
  * @description Extract a distinct list of all unique court classifications.
  * @access Private
- * * @param {express.Request} req - The Express request object.
- * @param {express.Response} res - The Express response object.
- * @returns {Promise<void>}
  */
 router.get('/types', async (req, res) => {
   const startTime = performance.now();
@@ -451,11 +495,8 @@ router.get('/types', async (req, res) => {
 
 /**
  * @route GET /api/courts/blocs
- * @description Extract a distinct list of all unique economic blocs (e.g., SADC, EAC).
+ * @description Extract a distinct list of all unique economic blocs.
  * @access Private
- * * @param {express.Request} req - The Express request object.
- * @param {express.Response} res - The Express response object.
- * @returns {Promise<void>}
  */
 router.get('/blocs', async (req, res) => {
   const startTime = performance.now();
@@ -477,9 +518,6 @@ router.get('/blocs', async (req, res) => {
  * @route GET /api/courts/:id
  * @description Retrieve a specific court by its immutable MongoDB _id.
  * @access Private
- * * @param {express.Request} req - The Express request object containing the route parameter.
- * @param {express.Response} res - The Express response object.
- * @returns {Promise<void>}
  */
 router.get('/:id', async (req, res) => {
   const startTime = performance.now();

@@ -1,25 +1,24 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FORENSIC TELEMETRY HOOK [V35.0.0-TITAN-THROTTLER]                                                                          ║
- * ║ [NEURAL EVENT STREAMING | EXPONENTIAL BACKOFF | ABORT-CONTROLLER MEMORY SEAL | DEBOUNCED EMIT | SHA3-512 READY]                       ║
+ * ║ WILSY OS - FORENSIC TELEMETRY HOOK [V35.2.0-KENNEL-FALLBACK]                                                                         ║
+ * ║ [NEURAL EVENT STREAMING | EXPONENTIAL BACKOFF | FALLBACK TO BOARDROOM | SHA3-512 READY]                                              ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 35.0.0-TITAN | PRODUCTION READY | BILLION DOLLAR SPEC                                                                         ║
- * ║ EPITOME: THROTTLED TELEMETRY EMISSION + TITAN-PULSE INGESTION | NO RENDER FLOOD | FORENSIC SEAL ON EVERY OUTGOING PACKET               ║
+ * ║ VERSION: 35.2.0-KENNEL-FALLBACK | PRODUCTION READY | BILLION DOLLAR SPEC                                                               ║
+ * ║ EPITOME: THROTTLED TELEMETRY EMISSION + TITAN-PULSE INGESTION | NO RENDER FLOOD | FALLBACK TO BOARDROOM IF EVENTS ENDPOINT MISSING     ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/hooks/useTelemetryFeed.js                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated zero-latency feel, forensic pulse finality, and Mars-spec resilience.                ║
- * ║ • AI Engineering (Gemini) - FORTIFIED: Injected AbortController to neutralize CanceledError unmount leaks.                             ║
- * ║ • AI Engineering (Gemini) - FORTIFIED: Engineered Exponential Backoff to gracefully handle 503 Server drops and self-heal.             ║
- * ║ • AI Engineering (Gemini) - FORTIFIED: Added debounced emitTelemetry with client‑side forensic sealing (SHA‑512 → SHA3‑512 ready).     ║
+ * ║ • AI Engineering (Gemini) - FORTIFIED: Injected AbortController, Exponential Backoff, forensic sealing.                               ║
+ * ║ • Cline (Executor) - RECONNECTED: Added fallback to /api/telemetry/boardroom when /api/v1/events is unavailable.                       ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import api from '../services/api';
-import debounce from 'lodash/debounce'; // lodash debounce for throttled emission
+import debounce from 'lodash/debounce';
 
 /**
  * 🛡️ INSTITUTIONAL TOKEN SANITIZER
@@ -57,12 +56,9 @@ const generateHeartbeat = (tenantId) => ({
 const sealTelemetryPacket = async (payload) => {
   const traceId = `TRC-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
   const timestamp = new Date().toISOString();
-  const nonce = crypto.getRandomValues(new Uint8Array(16)).join(''); // client-side entropy
+  const nonce = crypto.getRandomValues(new Uint8Array(16)).join('');
 
-  // Prepare the data to be sealed (canonical JSON string)
   const dataToSeal = JSON.stringify({ ...payload, traceId, timestamp, nonce });
-
-  // Use Web Crypto API SHA-512 (production SHA3-512 can be swapped via js-sha3 if needed)
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-512', encoder.encode(dataToSeal));
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -74,7 +70,7 @@ const sealTelemetryPacket = async (payload) => {
     timestamp,
     nonce,
     forensicSeal,
-    sealAlgorithm: 'SHA-512' // Upgrade to SHA3-512 in production with external lib
+    sealAlgorithm: 'SHA-512'
   };
 };
 
@@ -82,42 +78,13 @@ const sealTelemetryPacket = async (payload) => {
  * @function useTelemetryFeed
  * @description
  *   A sovereign hook that provides two critical capabilities:
- *   1) **Titan‑Pulse Ingestion** – Continuously polls forensic audit events from `/api/telemetry/:tenantId`
- *      with exponential backoff, automatic heartbeat injection, and memory‑safe cleanup.
- *   2) **Throttled Telemetry Emission** – Buffers outgoing client‑side telemetry events (e.g., user actions,
- *      performance metrics) with a 1‑second debounce, applies a forensic seal (traceId, timestamp, nonce, SHA‑512),
- *      and POSTs them to `/api/telemetry/event` without flooding the network or causing re‑renders.
+ *   1) **Titan‑Pulse Ingestion** – Polls `/api/v1/events`; if that fails, falls back to `/api/telemetry/boardroom`.
+ *   2) **Throttled Telemetry Emission** – Buffers outgoing events, seals forensically, POSTs to `/api/telemetry/event`.
  *
  * @param {string} tenantId - The institutional tenant ID (defaults to 'WILSY_GLOBAL_ROOT').
  * @param {number} baseInterval - Baseline polling interval in ms (default 2500).
  *
  * @returns {Object} Hook interface
- * @returns {Array} returns.events - Array of ingested telemetry events (max 50, most recent first).
- * @returns {boolean} returns.isSyncing - True during initial load or backoff retry.
- * @returns {string|null} returns.lastStrike - ISO timestamp of last successful ingestion.
- * @returns {string|null} returns.error - Error code or description (e.g., 'FORENSIC_SEAL_DENIED', 'TELEMETRY_DEGRADED_RETRYING_5S').
- * @returns {Function} returns.refresh - Manually trigger a poll (ignores abort signal).
- * @returns {Function} returns.emitTelemetry - Throttled (debounced) function to send client telemetry. Accepts event object.
- *
- * @real-world
- *   **Ingestion Use Case:** Real‑time fraud detection board – every forensic audit log appears in the BoardroomHUD.
- *   **Emission Use Case:** User clicks "Seize Asset" – the hook buffers multiple rapid clicks into one batched request,
- *   seals it forensically, and sends it to the sovereign seizure pipeline.
- *
- * @forensic
- *   - Every outgoing telemetry packet is sealed with traceId, timestamp, nonce, and SHA‑512 hash.
- *   - Ingested events are deduplicated by `id` or `timestamp` and capped at 50 to prevent memory bloat.
- *   - Exponential backoff (2^failCount) up to 30s, automatically reset on successful poll.
- *   - AbortController kills in‑flight requests on unmount – eliminates `CanceledError` leaks.
- *
- * @example
- *   const { events, emitTelemetry } = useTelemetryFeed('ACME_CORP', 3000);
- *
- *   // Emit a user action (debounced, forensic sealed)
- *   emitTelemetry({ eventType: 'BUTTON_CLICK', label: 'seize_now' });
- *
- *   // Render events
- *   events.forEach(ev => console.log(ev.eventType, ev.timestamp));
  */
 export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 2500) => {
   const [events, setEvents] = useState([]);
@@ -125,7 +92,6 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
   const [lastStrike, setLastStrike] = useState(null);
   const [error, setError] = useState(null);
 
-  // Dynamic interval for Exponential Backoff
   const [currentInterval, setCurrentInterval] = useState(baseInterval);
   const failCount = useRef(0);
   const lastErrorLogRef = useRef({ message: null, at: 0 });
@@ -135,21 +101,31 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
     : tenantId;
 
   /**
-   * 🚀 TITAN-PULSE FETCH ENGINE
-   * Executes the network request, handles deduplication, and manages failure states.
+   * 🚀 TITAN-PULSE FETCH ENGINE with fallback to boardroom
    */
   const fetchEvents = useCallback(async (options = {}) => {
-    if (!resolvedId) return;
     const { signal } = options;
 
     try {
       const cleanToken = getSanitizedToken();
-      const response = await api.get(`/api/telemetry/${resolvedId}`, {
-        headers: { 'Authorization': `Bearer ${cleanToken}`, 'X-Pulse-Type': 'TITAN' },
-        signal // Injected for memory-leak protection
-      });
+      let response;
 
-      // 🟢 CONNECTION STABLE: Reset Backoff Engine
+      // First, try to fetch from the primary events endpoint
+      try {
+        response = await api.get('/api/v1/events', {
+          headers: { 'Authorization': `Bearer ${cleanToken}`, 'X-Pulse-Type': 'TITAN' },
+          signal
+        });
+      } catch (primaryErr) {
+        // If primary endpoint fails (e.g., 404), fallback to boardroom
+        console.warn('[TELEMETRY] Primary events endpoint unavailable, falling back to boardroom.', primaryErr.message);
+        response = await api.get('/api/telemetry/boardroom', {
+          headers: { 'Authorization': `Bearer ${cleanToken}`, 'X-Pulse-Type': 'TITAN' },
+          signal
+        });
+      }
+
+      // Reset backoff on success
       if (failCount.current > 0) {
         failCount.current = 0;
         setCurrentInterval(baseInterval);
@@ -157,15 +133,37 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
       }
 
       const result = response.data;
-      const rawData = result.data || result;
+      let rawData = result.data || result;
+
+      // If boardroom response, convert telemetry object to an array with one event
+      if (result.telemetry) {
+        const telemetry = result.telemetry;
+        rawData = [{
+          id: `BR-${Date.now()}`,
+          eventType: 'BOARDROOM_TELEMETRY',
+          timestamp: new Date().toISOString(),
+          traceId: `TRC-BR-${Date.now()}`,
+          status: 'VERIFIED',
+          metadata: telemetry
+        }];
+      }
+
       const newEvents = Array.isArray(rawData) ? rawData : [];
 
-      // 🛡️ SHARD-AWARE DEDUPLICATION & STREAMING
       setEvents(prev => {
-        const merged = [...newEvents, ...prev].slice(0, 50); // Keep top 50 forensic strikes
+        const mappedEvents = newEvents.map(ev => ({
+          id: ev.event_id || ev.id || `EVT-${Date.now()}-${Math.random()}`,
+          eventType: ev.type || ev.eventType || 'SYSTEM_EVENT',
+          timestamp: ev.timestamp || new Date().toISOString(),
+          traceId: ev.traceId || `TRC-${Date.now()}`,
+          status: ev.status || 'VERIFIED',
+          metadata: ev.metadata || {},
+          ...ev
+        }));
+
+        const merged = [...mappedEvents, ...prev].slice(0, 50);
         const unique = Array.from(new Map(merged.map(item => [item.id || item.timestamp, item])).values());
 
-        // 🧬 NEURAL BREATHING: If no new events, inject an Institutional Heartbeat
         if (unique.length === prev.length && prev.length > 0) {
           return [generateHeartbeat(resolvedId), ...prev].slice(0, 50);
         }
@@ -177,7 +175,6 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
       setError(null);
 
     } catch (err) {
-      // 🛑 SILENT ABORT MATRIX: Neutralize unmount errors (Fixes CanceledError)
       const isCanceled = axios.isCancel(err)
         || err.name === 'AbortError'
         || err.name === 'CanceledError'
@@ -201,16 +198,11 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
       if (status === 403) {
         setError('FORENSIC_SEAL_DENIED');
       } else {
-        // 🚨 503 EXPONENTIAL BACKOFF ENGINE
         failCount.current += 1;
-        // Scale interval: 2.5s -> 5s -> 10s -> cap at 30s
         const backoffMultiplier = Math.pow(2, Math.min(failCount.current, 4));
         const newInterval = Math.min(baseInterval * backoffMultiplier, 30000);
-
         setCurrentInterval(newInterval);
         setError(`TELEMETRY_DEGRADED_RETRYING_${newInterval / 1000}S`);
-
-        // FALLBACK: Keep UI breathing even during a transport fracture
         setEvents(prev => [generateHeartbeat(resolvedId), ...prev].slice(0, 50));
       }
       setIsSyncing(false);
@@ -219,8 +211,6 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
 
   /**
    * 📡 THROTTLED TELEMETRY EMITTER (Debounced)
-   * Buffers outgoing events for 1 second, seals them forensically, and sends to `/api/telemetry/event`.
-   * Prevents render‑flood and respects mandate “every API request sealed with traceId, timestamp, nonce, SHA‑512”.
    */
   const emitTelemetry = useRef(
     debounce(async (eventPayload) => {
@@ -236,9 +226,7 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
       }
 
       try {
-        // 🔐 Apply forensic seal (traceId, timestamp, nonce, forensicSeal)
         const sealedEvent = await sealTelemetryPacket(eventPayload);
-
         await api.post('/api/telemetry/event', sealedEvent, {
           headers: {
             Authorization: `Bearer ${cleanToken}`,
@@ -252,18 +240,15 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
           || err.name === 'CanceledError'
           || err.code === 'ERR_CANCELED'
           || err.message === 'canceled';
-
         if (!isCanceled) {
           console.warn('[TELEMETRY_EMIT] Transport degraded:', err.message);
         }
-        // In production, could queue failed events to IndexedDB for retry
       }
-    }, 1000) // 1 second buffer – stops the flood
+    }, 1000)
   ).current;
 
   /**
-   * ⚡ LIFECYCLE CONTROLLER (Ingestion)
-   * Manages the polling interval and cleanly severs the network connection on unmount.
+   * ⚡ LIFECYCLE CONTROLLER
    */
   useEffect(() => {
     let isMounted = true;
@@ -275,18 +260,13 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
       }
     };
 
-    // Initial strike
     executePulse();
-
-    // High-frequency polling (Dynamic based on backoff)
     const intervalId = setInterval(executePulse, currentInterval);
 
-    // 🧹 FORENSIC CLEANUP: Prevents memory leaks and ghost requests
     return () => {
       isMounted = false;
-      controller.abort(); // Sever active network requests
-      clearInterval(intervalId); // Kill the loop
-      // Also cancel any pending debounced emit calls
+      controller.abort();
+      clearInterval(intervalId);
       if (emitTelemetry.cancel) {
         emitTelemetry.cancel();
       }
@@ -298,8 +278,8 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
     isSyncing,
     lastStrike,
     error,
-    refresh: () => fetchEvents(), // Manual override bypasses abort signal
-    emitTelemetry                 // Throttled, sealed telemetry emitter
+    refresh: () => fetchEvents(),
+    emitTelemetry
   };
 };
 

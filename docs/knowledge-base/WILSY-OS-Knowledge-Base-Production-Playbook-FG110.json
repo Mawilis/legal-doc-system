@@ -1,0 +1,134 @@
+{
+  "artifactId": "wilsy-os-knowledge-base-production-playbook-fg110",
+  "title": "WILSY OS Knowledge Base Production Playbook - FG110",
+  "subtitle": "User, investor, and future engineering release guide for production Knowledge Base",
+  "documentClass": "Investor, user, and engineering knowledge base",
+  "productSurface": "Global Knowledge Base Vault + Knowledge Operating Bar + saved PDF/JSON artifacts",
+  "sourcePosture": "KNOWLEDGE_BASE_VERIFIED",
+  "owner": "Wilsy (Pty) Ltd",
+  "generatedBy": "Wilson Khanyezi",
+  "preparedFor": [
+    "investors",
+    "tenant users",
+    "operators",
+    "auditors",
+    "future engineers"
+  ],
+  "routes": {
+    "pdfRoute": "/api/generate/pdf",
+    "vaultRoute": "/api/knowledge-base/vault",
+    "forbiddenLegacyPdfRoute": "/api/crm/leads/views/proof-pack/export/pdf"
+  },
+  "paths": {
+    "markdownPath": "docs/knowledge-base/WILSY-OS-Knowledge-Base-Production-Playbook-FG110.md",
+    "jsonPath": "docs/knowledge-base/WILSY-OS-Knowledge-Base-Production-Playbook-FG110.json",
+    "pdfPath": "docs/knowledge-base/WILSY-OS-Knowledge-Base-Production-Playbook-FG110.pdf",
+"proofPath": "docs/knowledge-base/WILSY-OS-Knowledge-Base-Production-Playbook-FG110.proof.json",
+"externalEvidenceSources": [
+  "https://www.nist.gov/topics/artificial-intelligence-risk-management",
+  "https://owasp.org/www-project-top-ten-for-large-language-models/",
+  "https://www.w3.org/WAI/standards-guidelines/WCAG/",
+  "https://www.iso.org/standard/75013.html",
+  "https://www.justice.gov.za/legislation/acts/2013-004.pdf"
+]
+  },
+  "externalEvidenceSources": [
+    "https://www.nist.gov/topics/artificial-intelligence-risk-management",
+    "https://owasp.org/www-project-top-ten-for-large-language-models/",
+    "https://www.w3.org/WAI/standards-guidelines/wcag/",
+    "https://www.iso.org/standard/79441.html",
+    "https://www.justice.gov.za/legislation/acts/2013-004.pdf"
+  ],
+  "requiredPdfText": [
+    "WILSY OS KNOWLEDGE BASE ARTIFACT",
+    "KNOWLEDGE_BASE_VERIFIED",
+    "WILSY OS KNOWLEDGE BASE PRODUCTION PLAYBOOK",
+    "WILSY OS KNOWLEDGE BASE AUTHORITY AND RETENTION",
+    "WILSY OS KNOWLEDGE BASE RUNTIME CONTRACT",
+    "WILSY OS KNOWLEDGE BASE PDF AND EVIDENCE ROUTE CONTRACT",
+    "WILSY OS KNOWLEDGE BASE FORENSIC INTERNET EVIDENCE"
+  ],
+  "forbiddenPdfText": [
+    "Counterparty To Be Completed",
+    "SOURCE_REPAIR_REQUIRED"
+  ],
+  "sections": [
+    {
+      "heading": "FORENSIC INTERNET EVIDENCE",
+      "paragraphs": [
+        "This playbook maps Wilsy OS Knowledge Base production behavior to primary external evidence from NIST, OWASP, W3C, ISO, and the South African Government."
+      ],
+      "bullets": [
+        "The point is not decorative citation; it is the foundation of our billion-dollar trust.",
+        "NIST AI Risk Management Framework: Govern, Map, Measure, and Manage.",
+        "OWASP Top 10 for LLM: Treat all GenAI risks as critical security vulnerabilities.",
+        "W3C WCAG 2.2: Ensure surfaces are perceivable, operable, understandable, and robust.",
+        "ISO/IEC 42001: Frame all AI governance as a maintained, auditable management system.",
+        "POPIA Compliance: Treat personal information as a sacred, non-negotiable asset."
+      ]
+    },
+    {
+      "heading": "KNOWLEDGE BASE PURPOSE",
+      "paragraphs": [
+        "Wilsy OS Knowledge Base is the production memory layer for the platform. It turns completed component work into a consolidated operating bar, live search, manifest-backed saved artifacts, and proof records."
+      ],
+      "bullets": [
+        "Release Integrity: Every UI component must produce a user guide, investor guide, engineering guide, JSON companion, PDF export, and proof sidecar before being marked 'Release Complete'."
+      ]
+    },
+    {
+      "heading": "EXECUTIVE SUMMARY",
+      "paragraphs": [
+        "The Knowledge Base is now a formal production operating surface, designed to obliterate competition through superior governance."
+      ],
+      "bullets": [
+        "FG110 establishes the mandatory production ritual for all future engineering releases."
+      ]
+    },
+    {
+      "heading": "USER OPERATING GUIDE",
+      "paragraphs": [
+        "Users interact with trusted, saved artifacts. The Vault provides deterministic answers from verified records only."
+      ],
+      "bullets": [
+        "Operators may open the PDF, inspect evidence, download files, or verify fingerprints in the companion JSON."
+      ]
+    },
+    {
+      "heading": "INVESTOR READINESS GUIDE",
+      "paragraphs": [
+        "Wilsy OS does not merely document; it transforms product execution into governed institutional memory."
+      ],
+      "bullets": [
+        "Investors have a direct path to audit the platform's knowledge posture via the proof sidecar."
+      ]
+    },
+    {
+      "heading": "ENGINEERING RELEASE GUIDE",
+      "paragraphs": [
+        "Knowledge creation is a core engineering requirement. Releases remain incomplete until artifacts are verified."
+      ],
+      "bullets": [
+        "This ensures that production knowledge is always ready for investor, user, and auditor consumption."
+      ]
+    },
+    {
+      "heading": "RUNTIME CONTRACT",
+      "paragraphs": [
+        "The runtime contract is built on strict source discipline."
+      ],
+      "bullets": [
+        "The Vault strictly reads saved artifacts from the verified manifest."
+      ]
+    },
+    {
+      "heading": "KNOWLEDGE BASE AUTHORITY AND RETENTION",
+      "paragraphs": [
+        "Authority belongs to the manifest, the saved files, and the proof sidecar. We maintain confidence by separating raw implementation from user-facing clarity."
+      ],
+      "bullets": [
+        "Backend implementation details are hidden by default, accessible only through deliberate operator action for forensic verification."
+      ]
+    }
+  ]
+}

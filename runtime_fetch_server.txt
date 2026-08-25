@@ -1,0 +1,25 @@
+server/sovereign_strike.js:    const response = await fetch(GATEWAY_URL, {
+server/middleware/emergencyKillSwitch.js:        await fetch('https://api.signal.org/v1/send', {
+server/middleware/emergencyKillSwitch.js:        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+server/middleware/activityLogger.js:      fetch(process.env.SIEM_ENDPOINT, {
+server/utils/securityAlerts.js:              // await fetch(process.env.SLACK_WEBHOOK_URL, { ... })
+server/utils/securityAlerts.js:              // await fetch('https://events.pagerduty.com/v2/enqueue', { ... })
+server/services/smsService.js:      const message = await this.client.messages(messageId).fetch();
+server/utils/passwordValidator.js:    const response = await fetch(`${PASSWORD_CONFIG.hibpApiUrl}${prefix}`);
+server/verify_strike.js:    const response = await fetch(GATEWAY_URL, {
+server/public/js/warroom.js:      const response = await fetch(CONFIG.apiBase + '/posture', {
+server/services/system/HealthService.js:      const response = await fetch(healthEndpoint, { method: 'GET', timeout: 5000 });
+server/services/sourceConnectors/complianceSourceConnector.js:  const response = await fetch(url, {
+server/services/wilsyAI/wilsyAICalendarExecutionBridge.js:  const response = await fetch(
+server/services/wilsyAI/wilsyAICalendarExecutionBridge.js:  const response = await fetch(`https://graph.microsoft.com/v1.0/${calendarUser}/events`, {
+server/services/sourceConnectors/hrSourceConnector.js:  const response = await fetch(url, {
+server/services/sourceConnectors/crmSourceConnector.js:  const response = await fetch(`${accountsDomain.replace(/\/$/, '')}/oauth/v2/token`, {
+server/services/sourceConnectors/crmSourceConnector.js:  const response = await fetch(url, {
+server/services/sourceConnectors/financeSourceConnector.js:  const response = await fetch(url, {
+server/services/sourceConnectors/telemetrySourceConnector.js:  const response = await fetch(url, {
+server/services/currencyIntelligenceService.js:    const response = await fetch(`${FX_SOURCE_URL}/rate/${baseCurrency}/${quoteCurrency}`, {
+server/services/threatIntelligenceService.js:      const response = await fetch(config.endpoint, {
+server/services/threatIntelligenceService.js:      const response = await fetch(`${THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS.SA_CERT.endpoint}/report`, {
+server/routes/wilsyCrmIntelligenceRoutes.js:    const response = await fetch(`${baseUrl}/api/crm/live/source-guide`, {
+server/routes/crmCommandRoutes.js:    const response = await fetch(`${baseUrl}/api/crm/live/source-guide`, {
+server/routes/crmCommandRoutes.js:    const response = await fetch(url, {

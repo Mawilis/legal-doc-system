@@ -1,0 +1,67 @@
+"""
+Wilsy Engineering Kernel
+Engineering Constitution Manager
+
+Constitution Parser
+
+Top-Level Structure Discovery
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from ..domain.models import Constitution
+
+
+class ConstitutionParser:
+    """
+    Read-only Engineering Constitution parser.
+    """
+
+    PART_PATTERN = re.compile(r"^# Part\b", re.MULTILINE)
+    ARTICLE_PATTERN = re.compile(r"^ARTICLE\s+\d+", re.MULTILINE)
+    LAW_PATTERN = re.compile(r"^LAW\s+EK-\d{3}", re.MULTILINE)
+
+    def load_document(
+        self,
+        path: Path,
+    ) -> str:
+        """
+        Load the Engineering Constitution from disk.
+        """
+
+        return path.read_text(encoding="utf-8")
+
+    def discover_structure(
+        self,
+        document: str,
+    ) -> dict:
+        """
+        Discover top-level constitutional structure.
+
+        Read-only.
+        """
+
+        return {
+            "parts": len(self.PART_PATTERN.findall(document)),
+            "articles": len(self.ARTICLE_PATTERN.findall(document)),
+            "laws": len(self.LAW_PATTERN.findall(document)),
+        }
+
+    def parse(
+        self,
+        path: Path,
+    ) -> Constitution:
+        """
+        Repository discovery only.
+        """
+
+        document = self.load_document(path)
+
+        self.discover_structure(document)
+
+        raise NotImplementedError(
+            "FG134C constructs immutable Constitution models."
+        )

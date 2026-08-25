@@ -1,0 +1,3 @@
+"""
+WILSY OS — EOS PACKAGE INIT (FG231B)
+"""

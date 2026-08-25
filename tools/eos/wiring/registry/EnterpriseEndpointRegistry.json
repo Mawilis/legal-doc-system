@@ -1,0 +1,14 @@
+{
+  "EP-CRM-001": {
+    "endpoint_id": "EP-CRM-001",
+    "path": "/api/v1/crm/leads",
+    "method": "POST",
+    "asset_id": "ASSET-CRM-001",
+    "handler": "create_lead",
+    "middleware": [],
+    "security_level": "SECURE",
+    "rate_limit": null,
+    "metadata": {},
+    "registered_at": "2026-07-26T21:30:58.726458+00:00"
+  }
+}

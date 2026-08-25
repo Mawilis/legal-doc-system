@@ -1,0 +1,33 @@
+"""
+Wilsy Engineering Kernel
+
+Engineering Kernel Bootstrap
+
+Initializes the Engineering Kernel Foundation.
+"""
+
+from __future__ import annotations
+
+from .registry import KernelRegistry
+
+
+class KernelBootstrap:
+    """
+    Read-only Engineering Kernel bootstrap.
+
+    Responsible only for preparing the Foundation layer.
+    """
+
+    def boot(
+        self,
+    ) -> KernelRegistry:
+        """
+        Initialize the Engineering Kernel.
+
+        Returns
+        -------
+        KernelRegistry
+            Initialized Foundation Registry.
+        """
+
+        return KernelRegistry()

@@ -20,20 +20,99 @@ import {
   X
 } from 'lucide-react';
 
+const WILSY_GLOBAL_KNOWLEDGE_BASE_ROUTE = '/knowledge-base/vault';
+const WILSY_COMMAND_K_ORIGIN_KEY = 'wilsy:command-k-origin';
+const WILSY_COMMAND_DASHBOARD_ORIGIN_LABELS = Object.freeze({
+  FOUNDER_DASHBOARD: 'Founder Command',
+  EXECUTIVE_DASHBOARD: 'Executive Dashboard',
+  CRM_DASHBOARD: 'CRM',
+  SALES_DASHBOARD: 'Sales Dashboard',
+  FINANCE_DASHBOARD: 'Finance Dashboard',
+  HR_DASHBOARD: 'HR Dashboard',
+  IT_DASHBOARD: 'IT Dashboard',
+  GENERAL_DASHBOARD: 'Tenant Command Center',
+});
+const WILSY_COMMAND_DASHBOARD_ORIGIN_ROUTES = Object.freeze({
+  FOUNDER_DASHBOARD: '/founder',
+  EXECUTIVE_DASHBOARD: '/executive',
+  CRM_DASHBOARD: '/crm',
+  SALES_DASHBOARD: '/sales',
+  FINANCE_DASHBOARD: '/finance',
+  HR_DASHBOARD: '/hr',
+  IT_DASHBOARD: '/it',
+  GENERAL_DASHBOARD: '/',
+});
+const WILSY_COMMAND_ROUTE_ORIGIN_LABELS = Object.freeze([
+  { signal: '/founder', label: 'Founder Command' },
+  { signal: '/executive', label: 'Executive Dashboard' },
+  { signal: '/crm', label: 'CRM' },
+  { signal: '/sales', label: 'Sales Dashboard' },
+  { signal: '/finance', label: 'Finance Dashboard' },
+  { signal: '/hr', label: 'HR Dashboard' },
+  { signal: '/documents', label: 'Documents' },
+  { signal: '/artifacts', label: 'Artifact Studio' },
+  { signal: '/billing', label: 'Billing' },
+  { signal: '/account', label: 'Account' },
+]);
+
+/**
+ * @function normalizeWilsyGlobalRoutePath
+ * @description Normalizes Command K route values for origin capture.
+ * @param {string} route Route candidate.
+ * @returns {string} Normalized path.
+ * @collaboration Global Command K routing, Knowledge Base origin packets, and browser history continuity.
+ */
+function normalizeWilsyGlobalRoutePath(route = '') {
+  const cleanRoute = String(route || '').trim();
+  if (!cleanRoute) return '';
+
+  try {
+    const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://wilsy.local';
+    return new URL(cleanRoute, baseOrigin).pathname || cleanRoute;
+  } catch {
+    return cleanRoute.split('?')[0].split('#')[0] || cleanRoute;
+  }
+}
+
+/**
+ * @function resolveWilsyCommandOriginLabel
+ * @description Resolves the workspace name that opened Command K without hard-coding CRM.
+ * @param {object} originContext Active Command K origin context.
+ * @returns {string} Human-readable workspace label.
+ * @collaboration Global Command K, Knowledge Base dynamic return button, and dashboard shard continuity.
+ */
+function resolveWilsyCommandOriginLabel(originContext = {}) {
+  const dashboardKey = String(originContext.currentDashboardKey || '').trim().toUpperCase();
+  const currentRoute = normalizeWilsyGlobalRoutePath(originContext.route || '');
+  const routeMatch = WILSY_COMMAND_ROUTE_ORIGIN_LABELS.find((item) => currentRoute.toLowerCase().startsWith(item.signal));
+
+  if (routeMatch) return routeMatch.label;
+  if (WILSY_COMMAND_DASHBOARD_ORIGIN_LABELS[dashboardKey]) return WILSY_COMMAND_DASHBOARD_ORIGIN_LABELS[dashboardKey];
+  return 'Previous workspace';
+}
+
 /**
  * @function openWilsyGlobalCommandRoute
  * @description Opens a route-backed global Command K result through Wilsy OS dashboard events and browser history.
  * @param {Object} command Selected global command result.
+ * @param {Object} originContext Current Command K origin context.
  * @returns {boolean} True when a route was opened.
- * @collaboration Visible Command K, Knowledge Base Vault, dashboard route switching, click execution, and Enter execution.
+ * @collaboration Visible Command K, Wilsy Knowledge Base, dashboard route switching, click execution, and Enter execution.
  */
-function openWilsyGlobalCommandRoute(command = {}) {
+function openWilsyGlobalCommandRoute(command = {}, originContext = {}) {
   const route = command?.route || command?.path || command?.href || command?.to;
 
   if (!route) {
     return false;
   }
 
+  const normalizedRoute = normalizeWilsyGlobalRoutePath(route);
+  const currentDashboardKey = String(originContext.currentDashboardKey || '').trim().toUpperCase();
+  const liveRoute = normalizeWilsyGlobalRoutePath(window.location.pathname || '/');
+  const inferredDashboardRoute = WILSY_COMMAND_DASHBOARD_ORIGIN_ROUTES[currentDashboardKey] || '';
+  const originRoute = liveRoute && liveRoute !== normalizedRoute
+    ? liveRoute
+    : inferredDashboardRoute || '/';
   const dashboardKey = command.dashboardKey || command.contextKey || command.id || 'GLOBAL_COMMAND_ROUTE';
   const requestPacket = {
     dashboardKey,
@@ -43,6 +122,24 @@ function openWilsyGlobalCommandRoute(command = {}) {
     source: 'WilsyGlobalCommandSearch.CommandK',
     requestedAt: new Date().toISOString()
   };
+
+  if (normalizedRoute === WILSY_GLOBAL_KNOWLEDGE_BASE_ROUTE) {
+    const originPacket = {
+      authority: 'WILSY_GLOBAL_COMMAND_K_KNOWLEDGE_BASE_ORIGIN',
+      route: originRoute,
+      label: resolveWilsyCommandOriginLabel({
+        ...originContext,
+        currentDashboardKey,
+        route: originRoute
+      }),
+      dashboardKey: currentDashboardKey || 'GLOBAL_COMMAND_SEARCH',
+      source: 'WilsyGlobalCommandSearch.CommandK',
+      generatedAt: requestPacket.requestedAt
+    };
+
+    window.sessionStorage.setItem(WILSY_COMMAND_K_ORIGIN_KEY, JSON.stringify(originPacket));
+    window.localStorage.setItem(WILSY_COMMAND_K_ORIGIN_KEY, JSON.stringify(originPacket));
+  }
 
   window.localStorage.setItem('wilsy_last_dashboard', dashboardKey);
   window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify(requestPacket));
@@ -65,7 +162,7 @@ const WILSY_SEARCH_REGISTRY = Object.freeze([
   { id: 'revenue-ledger', label: 'Revenue Ledger', type: 'Forensic Ledger', route: '/revenue-ledger', keywords: 'ledger revenue proof invoice evidence fiscal trail', icon: FileText },
   { id: 'documents', label: 'Document Vault', type: 'Document System', route: '/documents', keywords: 'documents vault versions audit verify share watermark lock', icon: FolderOpen },
   { id: 'artifacts', label: 'Artifact Studio', type: 'Artifact System', route: '/artifacts', keywords: 'artifact board pack nda agreement evidence pack invoice pdf docx json', icon: FileText },
-  { id: 'knowledge-base-vault', label: 'Global Knowledge Vault', type: 'Knowledge Base', dashboardKey: 'KNOWLEDGE_BASE_VAULT', command: 'OPEN_KNOWLEDGE_BASE_VAULT', route: '/knowledge-base/vault', keywords: 'knowledge vault global vault playbook proof saved pdf document artifact evidence library', icon: FileText },
+  { id: 'knowledge-base-vault', label: 'Wilsy Knowledge Base', type: 'Knowledge Base', dashboardKey: 'KNOWLEDGE_BASE_VAULT', command: 'OPEN_KNOWLEDGE_BASE_VAULT', route: '/knowledge-base/vault', keywords: 'knowledge base verified operating knowledge playbook proof saved pdf document artifact evidence training investor guide source', icon: FileText },
   { id: 'legal', label: 'Legal and Compliance', type: 'Legal System', route: '/legal', keywords: 'legal compliance popia forensic evidence risk contracts', icon: ShieldCheck },
   { id: 'client-portal', label: 'Client Portal', type: 'Client System', route: '/client-portal', keywords: 'client portal messages matters invoices documents activity', icon: Building2 },
   { id: 'settings', label: 'Account Settings', type: 'Command', command: 'OPEN_ACCOUNT_SETTINGS', route: '/account', keywords: 'settings account theme security compliance profile mfa sessions', icon: Terminal },

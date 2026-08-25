@@ -36,7 +36,7 @@
  */
 
 import logger from '../utils/logger.js';
-import metrics from '../utils/metrics.js';
+import { metrics } from './metricsCollector.js';
 import { getCurrentRequestId, getCurrentTenant } from './tenantContext.js';
 
 /**

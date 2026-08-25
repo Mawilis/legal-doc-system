@@ -3,7 +3,7 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'wilsy-os'
+  - job_name: 'wilsy-os-api'
     static_configs:
-      - targets: ['wilsy-os:9090']
+      - targets: ['host.docker.internal:4000']
     metrics_path: '/metrics'

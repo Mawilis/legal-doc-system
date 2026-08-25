@@ -1,5 +1,3 @@
-#!import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 /*
  * ████████████████████████████████████████████████████████████████████████████████
  * ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -233,9 +231,8 @@ class BillingValidator {
           .precision(2)
           .messages({
             'number.min': `Minimum invoice amount is ${process.env.MIN_INVOICE_AMOUNT || 1} ZAR`,
-            'number.max': `Maximum invoice amount is ${
-              process.env.MAX_INVOICE_AMOUNT || 1000000000
-            } ZAR`,
+            'number.max': `Maximum invoice amount is ${process.env.MAX_INVOICE_AMOUNT || 1000000000
+              } ZAR`,
           }),
 
         vatAmount: Joi.number()
@@ -302,9 +299,8 @@ class BillingValidator {
           .max(Joi.date().add(process.env.MAX_PAYMENT_TERM_DAYS || 90, 'days'))
           .messages({
             'date.greater': 'Due date must be after issue date',
-            'date.max': `Due date cannot exceed ${
-              process.env.MAX_PAYMENT_TERM_DAYS || 90
-            } days from issue`,
+            'date.max': `Due date cannot exceed ${process.env.MAX_PAYMENT_TERM_DAYS || 90
+              } days from issue`,
           }),
 
         // PAYMENT QUANTUM
@@ -1414,11 +1410,11 @@ class BillingValidator {
 /*
 describe('Quantum Billing Validator Tests', () => {
     let validator;
-    
+
     beforeAll(() => {
         validator = new BillingValidator();
     });
-    
+
     describe('Invoice Validation', () => {
         it('should validate compliant SA invoice', async () => {
             const invoice = {
@@ -1447,37 +1443,37 @@ describe('Quantum Billing Validator Tests', () => {
                 }],
                 containsPII: false
             };
-            
+
             const result = await validator.validateInvoice(invoice);
             expect(result.success).toBe(true);
         });
-        
+
         it('should reject invoice with invalid VAT number', async () => {
             const invoice = {
                 // ... invoice data with invalid VAT number
                 taxReferenceNumber: '1234567890' // Invalid format
             };
-            
+
             await expect(validator.validateInvoice(invoice))
                 .rejects.toThrow('Invalid VAT number');
         });
     });
-    
+
     describe('Payment Validation', () => {
         it('should validate FICA-compliant payment', async () => {
             // Test large transaction with source of funds
         });
-        
+
         it('should reject expired credit card', async () => {
             // Test credit card validation
         });
     });
-    
+
     describe('Compliance Validation', () => {
         it('should enforce POPIA PII declaration', async () => {
             // Test PII handling requirements
         });
-        
+
         it('should enforce CPA renewal notices', async () => {
             // Test subscription auto-renewal rules
         });

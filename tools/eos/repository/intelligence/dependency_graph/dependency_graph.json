@@ -1,0 +1,48 @@
+{
+  "node_count": 5,
+  "edge_count": 4,
+  "nodes": [
+    "CAP-REPOSITORY-SCAN",
+    "CAP-KNOWLEDGE-SYNCHRONIZATION",
+    "CAP-PREDICTIVE-RISK-ASSESSMENT",
+    "CAP-GOVERNANCE-COMPLIANCE",
+    "CAP-CONTROL-ROOM-DISPATCH"
+  ],
+  "edges": [
+    {
+      "source_capability": "CAP-REPOSITORY-SCAN",
+      "target_capability": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "relationship_type": "TRIGGERS",
+      "weight": 1.0,
+      "criticality": "SOVEREIGN"
+    },
+    {
+      "source_capability": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "target_capability": "CAP-PREDICTIVE-RISK-ASSESSMENT",
+      "relationship_type": "PROPAGATES_TO",
+      "weight": 0.95,
+      "criticality": "HIGH"
+    },
+    {
+      "source_capability": "CAP-PREDICTIVE-RISK-ASSESSMENT",
+      "target_capability": "CAP-GOVERNANCE-COMPLIANCE",
+      "relationship_type": "ENFORCES",
+      "weight": 1.0,
+      "criticality": "MISSION_CRITICAL"
+    },
+    {
+      "source_capability": "CAP-GOVERNANCE-COMPLIANCE",
+      "target_capability": "CAP-CONTROL-ROOM-DISPATCH",
+      "relationship_type": "DISPATCHES",
+      "weight": 1.0,
+      "criticality": "SOVEREIGN"
+    }
+  ],
+  "master_cascade_path": [
+    "CAP-REPOSITORY-SCAN",
+    "CAP-KNOWLEDGE-SYNCHRONIZATION",
+    "CAP-PREDICTIVE-RISK-ASSESSMENT",
+    "CAP-GOVERNANCE-COMPLIANCE",
+    "CAP-CONTROL-ROOM-DISPATCH"
+  ]
+}

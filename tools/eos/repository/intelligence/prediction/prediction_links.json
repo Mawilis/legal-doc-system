@@ -1,0 +1,57 @@
+{
+  "total_links": 5,
+  "links": {
+    "CAP-REPOSITORY-SCAN": {
+      "capability_id": "CAP-REPOSITORY-SCAN",
+      "predicted_blast_radius_nodes": [
+        "tools/eos/repository/intelligence/capability_registry/capability_registry_engine.py",
+        "tools/eos/repository/intelligence/dependency_graph/dependency_graph_engine.py"
+      ],
+      "complexity_vector_score": 0.85,
+      "risk_severity": "HIGH",
+      "drift_probability": 0.05
+    },
+    "CAP-KNOWLEDGE-SYNCHRONIZATION": {
+      "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "predicted_blast_radius_nodes": [
+        "tools/eos/repository/intelligence/knowledge/knowledge_engine.py"
+      ],
+      "complexity_vector_score": 0.62,
+      "risk_severity": "MEDIUM",
+      "drift_probability": 0.03
+    },
+    "CAP-PREDICTION-RISK-ASSESSMENT": {
+      "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
+      "predicted_blast_radius_nodes": [
+        "tools/eos/repository/intelligence/prediction/prediction_engine.py"
+      ],
+      "complexity_vector_score": 0.45,
+      "risk_severity": "LOW",
+      "drift_probability": 0.01
+    },
+    "CAP-GOVERNANCE-COMPLIANCE": {
+      "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+      "predicted_blast_radius_nodes": [
+        "tools/eos/repository/intelligence/governance/governance_engine.py"
+      ],
+      "complexity_vector_score": 0.78,
+      "risk_severity": "HIGH",
+      "drift_probability": 0.02
+    },
+    "CAP-CONTROL-ROOM-DISPATCH": {
+      "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
+      "predicted_blast_radius_nodes": [
+        "tools/eos/repository/intelligence/reports/fg231c_report_engine.py"
+      ],
+      "complexity_vector_score": 0.91,
+      "risk_severity": "CRITICAL",
+      "drift_probability": 0.04
+    }
+  },
+  "risk_evaluation_summary": {
+    "average_complexity_score": 0.722,
+    "critical_risk_capabilities": 3,
+    "total_capabilities_analyzed": 5,
+    "system_health_status": "STABLE"
+  }
+}

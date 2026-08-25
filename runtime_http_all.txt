@@ -1,0 +1,2 @@
+services/httpSetup.js: *   • Keeps http.js decoupled from Redux to avoid circular imports.
+services/httpSetup.js:    http.interceptors.response.use(

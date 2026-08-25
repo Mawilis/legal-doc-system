@@ -1,24 +1,35 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+const resolveSetupFile = () => {
+  const localSetup = path.resolve(__dirname, './tests/setup.js');
+  const rootSetup = path.resolve(__dirname, '../tests/setup.js');
+  if (fs.existsSync(localSetup)) return localSetup;
+  if (fs.existsSync(rootSetup)) return rootSetup;
+  return localSetup;
+};
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        path.resolve(__dirname, '..'),
+      ],
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './vitest.setup.js',
-    // 🛡️ Updated to capture the new forensic test directory
-    include: ['tests/client/**/*.{test,spec}.{js,jsx}'],
-    coverage: {
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'tests/setup.js'],
-    },
-  },
-  resolve: {
-    alias: {
-      // Allows for cleaner forensic imports if you choose to use them
-      '@': path.resolve(__dirname, './src'),
-    },
+    setupFiles: [resolveSetupFile()],
+    include: ['tests/**/*.{test,spec}.{js,jsx}', 'src/**/*.{test,spec}.{js,jsx}'],
   },
 });

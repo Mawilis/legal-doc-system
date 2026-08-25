@@ -2,16 +2,16 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - MASTER NODE ANCHOR SCRIPT [V40.1.0-SINGULARITY-FINALITY]                                                                    ║
- * ║ [UNIVERSAL MASTER SHARDING | CIPC LEGAL FINALITY | SHA3-512 SEAL | AUTH-READY]                                                         ║
+ * ║ [UNIVERSAL MASTER SHARDING | CIPC LEGAL FINALITY | SHA3-512 SEAL | AUTH-READY]                                                        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ VERSION: 40.1.0 | PRODUCTION READY | BIBLICAL WORTH BILLIONS                                                                           ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/scripts/seedMasterNode.js                                                 ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                         ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/scripts/seedMasterNode.js                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated absolute legal fidelity and multi-shard identity alignment. [2026-05-12]              ║
- * ║ • AI Engineering (Gemini) - RECTIFIED: Multi-identity loops implemented to resolve 401 "Unanchored" fractures in OS logs.               ║
- * ║ • AI Engineering (Gemini) - ENHANCED: Full V40 Universal Tenant Model field coverage for institutional finality.                       ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated absolute legal fidelity, primary email synchronization, and multi-shard identity.  ║
+ * ║ • AI Engineering (Gemini) - RECTIFIED: Synchronized verified email credentials (wilsonkhanyezi@gmail.com) across DPO & Tenant Config. ║
+ * ║ • AI Engineering (Gemini) - ENHANCED: Full V40 Universal Tenant Model field coverage for institutional finality.                      ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -41,7 +41,7 @@ const seedSingularity = async () => {
     console.log('📡 [SEEDER] Connected to Sovereign Database Shard.');
 
     // =========================================================================
-    //  🏛️ MASTER IDENTITY SHARDS (Resolves all 401 fractures in OS logs)
+    // 🏛️ MASTER IDENTITY SHARDS (Resolves all 401 fractures in OS logs)
     // =========================================================================
     const masterIds = ['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT'];
 
@@ -51,6 +51,7 @@ const seedSingularity = async () => {
     const taxNumber = '9395759229';
     const directorName = 'WILSON KHANYEZI';
     const directorID = '8811045971084';
+    const directorEmail = 'wilsonkhanyezi@gmail.com';
     const fullAddress = 'UNIT 29 SUMATRA ESTATE CNR 8TH RD AND 7TH RD NOORDWYK MIDRAND GAUTENG 1682';
 
     for (const tenantId of masterIds) {
@@ -65,7 +66,7 @@ const seedSingularity = async () => {
         tenantId,
         shardId: 'SHARD_01_RSA',
         name: legalName,
-        businessType: 'Sovereign Institution', // Matching V40 Rectification
+        businessType: 'Sovereign Institution',
         legalName: legalName,
         tradingName: 'WILSY OS',
         registrationNumber: registrationNumber,
@@ -74,7 +75,7 @@ const seedSingularity = async () => {
         businessStartDate: new Date('2024-10-02'),
         financialYearEnd: 'February',
         legalStatus: 'In Business',
-        contactEmail: 'wilson@wilsy.os',
+        contactEmail: directorEmail,
         tier: 'SOVEREIGN',
         status: 'ACTIVE',
         addresses: {
@@ -94,7 +95,7 @@ const seedSingularity = async () => {
           CIPC: 'REGISTERED',
           dataProtectionOfficer: {
             name: directorName,
-            email: 'wilson@wilsy.os'
+            email: directorEmail
           }
         },
         branding: {

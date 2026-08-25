@@ -1,0 +1,62 @@
+{
+  "total_links": 5,
+  "links": {
+    "CAP-REPOSITORY-SCAN": {
+      "capability_id": "CAP-REPOSITORY-SCAN",
+      "status": "HEALTHY",
+      "avg_latency_ms": 12.4,
+      "error_rate_percentage": 0.0,
+      "throughput_rps": 250.0,
+      "monitored_endpoints": [
+        "/api/v1/eos/scan",
+        "/api/v1/eos/ast"
+      ]
+    },
+    "CAP-KNOWLEDGE-SYNCHRONIZATION": {
+      "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "status": "HEALTHY",
+      "avg_latency_ms": 8.1,
+      "error_rate_percentage": 0.01,
+      "throughput_rps": 180.0,
+      "monitored_endpoints": [
+        "/api/v1/eos/knowledge/sync"
+      ]
+    },
+    "CAP-PREDICTION-RISK-ASSESSMENT": {
+      "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
+      "status": "HEALTHY",
+      "avg_latency_ms": 15.6,
+      "error_rate_percentage": 0.0,
+      "throughput_rps": 120.0,
+      "monitored_endpoints": [
+        "/api/v1/eos/prediction/evaluate"
+      ]
+    },
+    "CAP-GOVERNANCE-COMPLIANCE": {
+      "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
+      "status": "HEALTHY",
+      "avg_latency_ms": 6.3,
+      "error_rate_percentage": 0.0,
+      "throughput_rps": 310.0,
+      "monitored_endpoints": [
+        "/api/v1/eos/governance/attest"
+      ]
+    },
+    "CAP-CONTROL-ROOM-DISPATCH": {
+      "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
+      "status": "HEALTHY",
+      "avg_latency_ms": 22.8,
+      "error_rate_percentage": 0.02,
+      "throughput_rps": 95.0,
+      "monitored_endpoints": [
+        "/api/v1/eos/control-room/dispatch"
+      ]
+    }
+  },
+  "runtime_health_summary": {
+    "average_latency_ms": 13.04,
+    "unhealthy_nodes_count": 0,
+    "total_nodes_monitored": 5,
+    "operational_status": "OPTIMAL"
+  }
+}

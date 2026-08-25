@@ -6,9 +6,10 @@ import { createReadStream } from 'node:fs';
 import { authenticateToken } from '../middleware/auth.js';
 import {
   readKnowledgeBaseVaultProof,
-  resolveKnowledgeBaseVaultEntries,
+  resolveKnowledgeBaseVaultJsonFile,
   resolveKnowledgeBaseVaultPdfFile,
 } from '../services/knowledgeBase/wilsyKnowledgeBaseVaultService.js';
+import { createKnowledgeBaseVaultReceiptLedgerEntry, listKnowledgeBaseVaultReceiptLedgerEntries } from '../services/knowledgeBase/wilsyKnowledgeBaseReceiptLedgerService.js';
 
 const router = express.Router();
 
@@ -78,7 +79,10 @@ function resolveKnowledgeBaseVaultRouteFilters(req = {}) {
  */
 async function handleKnowledgeBaseVaultList(req, res) {
   try {
-    const vault = await resolveKnowledgeBaseVaultEntries(readAuthenticatedVaultUser(req));
+    const vault = await resolveKnowledgeBaseVaultSearch({
+      ...readAuthenticatedVaultUser(req),
+      filters: resolveKnowledgeBaseVaultRouteFilters(req),
+    });
 
     return res.json({
       success: true,
@@ -86,6 +90,35 @@ async function handleKnowledgeBaseVaultList(req, res) {
     });
   } catch (error) {
     return sendVaultError(res, error);
+  }
+}
+
+/**
+ * @function handleKnowledgeBaseVaultJson
+ * @description Streams a saved machine-readable Knowledge Base JSON companion without calling the PDF generator.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} JSON stream response.
+ * @collaboration FG109 Knowledge Base JSON companion route, manifest jsonPath, and Vault UI JSON action.
+ */
+async function handleKnowledgeBaseVaultJson(req, res) {
+  try {
+    const json = await resolveKnowledgeBaseVaultJsonFile(
+      req.params.id,
+      readAuthenticatedVaultUser(req)
+    );
+    const dispositionType = req.query.download === 'true' ? 'attachment' : 'inline';
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `${dispositionType}; filename="${json.filename}"`);
+    res.setHeader('X-Wilsy-Knowledge-Base-Source-Mode', 'SAVED_JSON_ONLY');
+    res.setHeader('X-Wilsy-Knowledge-Base-Json-Status', json.entry.jsonStatus);
+
+    const stream = createReadStream(json.absolutePath);
+    stream.on('error', () => sendVaultError(res, new Error('KNOWLEDGE_BASE_JSON_STREAM_FAILED')));
+    stream.pipe(res);
+  } catch (error) {
+    sendVaultError(res, error);
   }
 }
 
@@ -142,12 +175,76 @@ async function handleKnowledgeBaseVaultPdf(req, res) {
   }
 }
 
+
+// FG108O5B_RECEIPT_LEDGER_HANDLERS_START
+/**
+ * @function handleKnowledgeBaseVaultReceiptList
+ * @description Lists tenant-scoped persisted Knowledge Base Vault receipt ledger entries.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} Sends receipt ledger list response.
+ * @collaboration Knowledge Base Vault route, receipt ledger service, tenant evidence, and saved PDF/proof actions.
+ */
+async function handleKnowledgeBaseVaultReceiptList(req, res) {
+  try {
+    const ledger = await listKnowledgeBaseVaultReceiptLedgerEntries(req);
+
+    res.status(200).json({
+      ok: true,
+      mode: 'KNOWLEDGE_BASE_VAULT_RECEIPT_LEDGER',
+      ...ledger,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      code: 'KNOWLEDGE_BASE_RECEIPT_LEDGER_LIST_FAILED',
+      message: error?.message || 'Unable to list Knowledge Base receipt ledger entries.',
+    });
+  }
+}
+
+/**
+ * @function handleKnowledgeBaseVaultReceiptCreate
+ * @description Persists one tenant/operator-scoped Knowledge Base Vault action receipt with strike payload evidence.
+ * @param {object} req Express request.
+ * @param {object} res Express response.
+ * @returns {Promise<void>} Sends persisted receipt ledger response.
+ * @collaboration Knowledge Base Vault route, receipt ledger service, institutional headers, and action evidence.
+ */
+async function handleKnowledgeBaseVaultReceiptCreate(req, res) {
+  try {
+    const receipt = await createKnowledgeBaseVaultReceiptLedgerEntry(req);
+
+    res.status(201).json({
+      ok: true,
+      mode: 'KNOWLEDGE_BASE_VAULT_RECEIPT_LEDGER',
+      receipt,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      code: 'KNOWLEDGE_BASE_RECEIPT_LEDGER_CREATE_FAILED',
+      message: error?.message || 'Unable to persist Knowledge Base receipt ledger entry.',
+    });
+  }
+}
+// FG108O5B_RECEIPT_LEDGER_HANDLERS_END
+
 router.use(authenticateToken);
 
 router.get('/', handleKnowledgeBaseVaultList);
 router.post('/', handleKnowledgeBaseVaultList);
+
+
+// FG108O5B_RECEIPT_LEDGER_ROUTES_START
+router.get('/receipts', handleKnowledgeBaseVaultReceiptList);
+router.post('/receipts', handleKnowledgeBaseVaultReceiptCreate);
+// FG108O5B_RECEIPT_LEDGER_ROUTES_END
+
 router.get('/:id/proof', handleKnowledgeBaseVaultProof);
 router.post('/:id/proof', handleKnowledgeBaseVaultProof);
+router.get('/:id/json', handleKnowledgeBaseVaultJson);
+router.post('/:id/json', handleKnowledgeBaseVaultJson);
 router.get('/:id/pdf', handleKnowledgeBaseVaultPdf);
 router.post('/:id/pdf', handleKnowledgeBaseVaultPdf);
 

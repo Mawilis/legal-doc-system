@@ -1,20 +1,16 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN MASTER COCKPIT [V15.0.0-SINGULARITY-TITAN]                                                                        ║
+ * ║ WILSY OS - SOVEREIGN MASTER COCKPIT [V15.0.1-SINGULARITY-TITAN]                                                                        ║
  * ║ [NEURAL ORCHESTRATION | ROLE-BASED QUANTUM SHARDING | INSTITUTIONAL AUTHORITY | MARS-SPEC]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 15.0.0-TITAN | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                        ║
+ * ║ VERSION: 15.0.1-TITAN | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                        ║
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL DOMINANCE                                                          ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignNodeDashboard.jsx                      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated real-user context and role-based menu filtering with zero hardcoding.                ║
- * ║ • AI Engineering (Gemini) - ENGINEERED: Neural Shard Telemetry, Machined Obsidian physics, and Aerospace UI stabilization.             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useSovereignStore } from '../../store/sovereignStore';
 import { revenueService } from '../../services/revenueService';
 import useSovereignAccess from '../../hooks/useSovereignAccess';
@@ -22,31 +18,27 @@ import iconManifest from '../../assets/iconManifest';
 import wilsyLogo from '../../assets/logo/wilsy.jpeg';
 import {
   LogOut, TrendingUp, Shield, Globe, Download,
-  FileText, BarChart3, Lock, Activity, Zap, Award, Eye, User, Network, Cpu, Terminal
+  FileText, BarChart3, Lock, Activity, Zap, Award, Eye, User, Network, Cpu, Terminal, Fingerprint
 } from 'lucide-react';
 
 import '../../installHook';
 
-// 🏛️ SOVEREIGN CORE MODULES
-import Sovereign_Revenue_Ledger from './Sovereign_Revenue_Ledger';
-import RiskSentinel from './RiskSentinel';
-import Sovereign_Audit_Vault from './Sovereign_Audit_Vault';
-import Sovereign_Global_Topography from './Sovereign_Global_Topography';
-import Sovereign_Node_Registry from './Sovereign_Node_Registry';
-import Sovereign_Identity_Hub from './Sovereign_Identity_Hub';
-import Sovereign_Client_Covenant from './Sovereign_Client_Covenant';
-import Sovereign_Crisis_Command from './Sovereign_Crisis_Command';
+// 🏛️ SOVEREIGN CORE MODULES (EXPLICIT .JSX EXTENSIONS FOR VITE)
+import Sovereign_Revenue_Ledger from './Sovereign_Revenue_Ledger.jsx';
+import RiskSentinel from './RiskSentinel.jsx';
+import Sovereign_Audit_Vault from './Sovereign_Audit_Vault.jsx';
+import Sovereign_Global_Topography from './Sovereign_Global_Topography.jsx';
+import Sovereign_Node_Registry from './Sovereign_Node_Registry.jsx';
+import Sovereign_Identity_Hub from './Sovereign_Identity_Hub.jsx';
+import Sovereign_Client_Covenant from './Sovereign_Client_Covenant.jsx';
+import Sovereign_Crisis_Command from './Sovereign_Crisis_Command.jsx';
 
 // 📊 ANALYTICS SHARDS
-import InvestorKPIs from '../analytics/InvestorKPIs';
-import QuantumForecasts from '../analytics/QuantumForecasts';
-import UserActivity from '../analytics/UserActivity';
+import InvestorKPIs from '../analytics/InvestorKPIs.jsx';
+import QuantumForecasts from '../analytics/QuantumForecasts.jsx';
+import UserActivity from '../analytics/UserActivity.jsx';
 
 import styles from './SovereignNodeDashboard.module.css';
-
-// ============================================================================
-// 📊 ROLE-BASED ACCESS ARCHITECTURE
-// ============================================================================
 
 const ROLE_MENU_CONFIG = {
   super_admin: {
@@ -71,13 +63,6 @@ const ROLE_MENU_CONFIG = {
   }
 };
 
-
-/**
- * @function SovereignNodeDashboard
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
- */
 const SovereignNodeDashboard = ({ onLogout }) => {
   const { activeModule = 'REVENUE_LEDGER', setActiveModule } = useSovereignStore();
   const [selectedTimeframe, setSelectedTimeframe] = useState('30D');
@@ -87,7 +72,6 @@ const SovereignNodeDashboard = ({ onLogout }) => {
   const [authFailed, setAuthFailed] = useState(false);
   const [revenueData, setRevenueData] = useState(null);
 
-  // 🛰️ NEURAL TELEMETRY
   const [telemetry, setTelemetry] = useState({
     latency: 0,
     syncStatus: 'SYNCING',
@@ -97,7 +81,6 @@ const SovereignNodeDashboard = ({ onLogout }) => {
     quantumCircuits: 1024
   });
 
-  // 🔐 REAL USER CONTEXT (DE-HARDCODED)
   const [realUser, setRealUser] = useState({
     firstName: null,
     lastName: null,
@@ -109,21 +92,14 @@ const SovereignNodeDashboard = ({ onLogout }) => {
 
   const { userRole, isFounder, isExecutive, isSalesRep, canViewInvestorKPIs, canViewQuantumForecasts, canViewUserActivity } = useSovereignAccess();
 
-  // ============================================================================
-  // 🔐 NUCLEUS IDENTITY SYNC
-  // ============================================================================
   useEffect(() => {
-    
-/**
- * @function fetchIdentity
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
- */
-const fetchIdentity = async () => {
+    const fetchIdentity = async () => {
       try {
         const token = localStorage.getItem('sovereignToken');
-        if (!token) return setRealUser(p => ({...p, isLoading: false}));
+        if (!token) {
+          setRealUser(prev => ({ ...prev, isLoading: false }));
+          return;
+        }
 
         const response = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -141,15 +117,12 @@ const fetchIdentity = async () => {
       } catch (e) {
         console.error("[SINGULARITY_ERROR] Identity sync fractured.");
       } finally {
-        setRealUser(p => ({...p, isLoading: false}));
+        setRealUser(prev => ({ ...prev, isLoading: false }));
       }
     };
     fetchIdentity();
   }, []);
 
-  // ============================================================================
-  // 📡 TITAN-PULSE DATA HYDRATION
-  // ============================================================================
   const fetchData = useCallback(async () => {
     const start = performance.now();
     try {
@@ -163,7 +136,7 @@ const fetchIdentity = async () => {
         latency: Math.round(performance.now() - start)
       }));
     } catch (err) {
-      if (err.message.includes('401')) setAuthFailed(true);
+      if (err.message && err.message.includes('401')) setAuthFailed(true);
     } finally {
       setLoading(false);
     }
@@ -176,9 +149,6 @@ const fetchIdentity = async () => {
     return () => { clearInterval(timer); clearInterval(pulse); };
   }, [fetchData]);
 
-  // ============================================================================
-  // 🎨 MODULE ORCHESTRATOR
-  // ============================================================================
   const filteredModules = useMemo(() => {
     const role = realUser.role || userRole || 'user';
     return ROLE_MENU_CONFIG[role]?.modules || ROLE_MENU_CONFIG.user.modules;
@@ -217,7 +187,6 @@ const fetchIdentity = async () => {
 
   return (
     <div className={styles.cockpitHull}>
-      {/* 🏛️ SOVEREIGN NAVIGATION: MACHINED OBSIDIAN */}
       <aside className={styles.sidebar}>
         <div className={styles.logoSection}>
           <div className={styles.logoBezel}>
@@ -249,6 +218,7 @@ const fetchIdentity = async () => {
             return (
               <button
                 key={key}
+                aria-label={item.label}
                 onClick={() => setActiveModule(key)}
                 className={`${styles.navItem} ${activeModule === key ? styles.active : ''}`}
               >
@@ -282,7 +252,6 @@ const fetchIdentity = async () => {
         </div>
       </aside>
 
-      {/* 🚀 MASTER VIEWPORT */}
       <main className={styles.viewport}>
         <header className={styles.viewportHeader}>
           <div className="flex items-center gap-6">
@@ -312,7 +281,6 @@ const fetchIdentity = async () => {
         <section className={styles.contentScrollable}>
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div className="xl:col-span-2 space-y-8">
-              {/* 💰 REVENUE TITAN PANEL */}
               <div className={styles.revenuePanel}>
                 <div className="flex justify-between items-start">
                   <div>
@@ -330,7 +298,6 @@ const fetchIdentity = async () => {
                   </div>
                 </div>
 
-                {/* 🧬 MINI SPARKLINE */}
                 <div className="mt-10 h-12 flex items-end gap-1">
                   {revenueData?.historical?.map((val, i) => (
                     <div key={i} className={styles.sparkBar} style={{ height: `${(val / 1000000) * 100}%` }}></div>
@@ -338,13 +305,11 @@ const fetchIdentity = async () => {
                 </div>
               </div>
 
-              {/* 🧬 ACTIVE MODULE SHARD */}
               <div className={styles.moduleWrapper}>
                 {renderActiveModule}
               </div>
             </div>
 
-            {/* 🛡️ SIDEBAR INTELLIGENCE */}
             <div className="space-y-6">
               <div className={styles.sentinelPanel}>
                 <h4 className={styles.sidebarTitle}><Shield size={14} /> RISK SENTINEL</h4>

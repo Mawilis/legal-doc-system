@@ -1,0 +1,384 @@
+client/src/services/runtimeApi.js:    Consumes GET /api/v1/runtime, GET /api/v1/engines, and POST /api/v1/execution.
+client/src/services/runtimeApi.js:const API_BASE = "http://127.0.0.1:8000/api/v1";
+client/src/services/executionService.js:  const response = await fetch('/api/v1/execution', {
+client/src/services/dashboardService.js:  const response = await fetch('/api/v1/dashboard', {
+client/src/services/revenueService.js:      const url = `${API_BASE_URL}/api/analytics/revenue?period=${encodeURIComponent(period)}`;
+client/src/hooks/useTelemetryFeed.js: * ║ • Cline (Executor) - RECONNECTED: Added fallback to /api/telemetry/boardroom when /api/v1/events is unavailable.                       ║
+client/src/hooks/useTelemetryFeed.js: *   1) **Titan‑Pulse Ingestion** – Polls `/api/v1/events`; if that fails, falls back to `/api/telemetry/boardroom`.
+client/src/hooks/useTelemetryFeed.js: *   2) **Throttled Telemetry Emission** – Buffers outgoing events, seals forensically, POSTs to `/api/telemetry/event`.
+client/src/hooks/useTelemetryFeed.js:        response = await api.get('/api/v1/events', {
+client/src/hooks/useTelemetryFeed.js:        response = await api.get('/api/telemetry/boardroom', {
+client/src/hooks/useTelemetryFeed.js:        await api.post('/api/telemetry/event', sealedEvent, {
+client/src/services/api/tenantApi.js: * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api/tenantApi.js
+client/src/services/wilsyAccountIdentityPostureClient.js:  return `${String(baseUrl || '').replace(/\/$/, '')}/api/account/identity-posture?tenantId=${safeTenantId}`;
+client/src/services/wilsyAccountIdentityPostureClient.js: * @collaboration Connects the Account Compliance UI to /api/account/compliance-command without browser-generated proof authority.
+client/src/services/wilsyAccountIdentityPostureClient.js:  const endpoint = `${apiBase}/api/account/compliance-command?tenantId=${encodeURIComponent(safeTenantId)}&limit=${encodeURIComponent(String(safeLimit))}`;
+client/src/services/artifacts/artifactExportService.js:const PDF_ENDPOINT = '/api/generate/pdf';
+client/src/services/artifacts/artifactExportService.js:          route: '/api/generate/pdf',
+client/src/services/sourceRegistryService.js:const SOURCE_REGISTRY_BASE = `${String(API_BASE_URL).replace(/\/$/, '')}/api/source-registry`;
+client/src/services/crmService.js:  const response = await fetch(`/api/crm/command${endpoint}`, {
+client/src/bootstrap/EnterpriseBootstrap.jsx:      const response = await fetch('/api/auth/login', {
+client/src/services/pdfService.js:      return await api.post('/api/generate/pdf', {
+client/src/services/superadmin/auth.service.js: * • FIXED: 3FA endpoint now matches server (/api/auth/verify-3fa)
+client/src/services/superadmin/auth.service.js:      '/api/auth/login',
+client/src/services/superadmin/auth.service.js:      await api.post('/api/auth/logout', {}, { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/superadmin/auth.service.js:    const response = await api.get('/api/auth/me', { headers: { 'X-Tenant-ID': tenantId } });
+client/src/services/superadmin/auth.service.js:      '/api/auth/verify-3fa',
+client/src/services/superadmin/auth.service.js:        '/api/auth/refresh',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-launch-packet/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-release-brief/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-release-passport/verify/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-release-passport/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-release-readiness/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-api-surface-registry/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-cockpit-contract/latest',
+client/src/services/wilsyCrmTerminalEvidenceLaunchService.js:    '/api/crm/command/search/regulator-evidence/terminal-command-index/latest',
+client/src/services/wilsyCrmCommandClient.js:  commandCenter: '/api/crm/command-center',
+client/src/services/wilsyCrmCommandClient.js:  sourceRegistryEvidence: '/api/crm/source-registry/evidence',
+client/src/services/wilsyCrmCommandClient.js:  moduleBase: '/api/crm',
+client/src/services/wilsyCrmCommandClient.js:  importPreview: '/api/crm/import/preview',
+client/src/services/wilsyCrmCommandClient.js:  importCommit: '/api/crm/import',
+client/src/services/wilsyCrmCommandClient.js:  exportRecords: '/api/crm/export'
+client/src/context/sovereignRuntime.jsx:      const response = await fetch('/api/telemetry/boardroom', { 
+client/src/services/wilsyForensicMerkleClient.js: * @collaboration Powers the cockpit status tile from the existing /api/forensics/merkle-auditor/status endpoint.
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson('/api/forensics/merkle-auditor/status', options);
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson('/api/forensics/merkle-auditor/run', {
+client/src/services/wilsyForensicMerkleClient.js: * @collaboration Connects the showroom seal command to /api/forensics/merkle-auditor/seal-safe-window without allowing browser-side immutable seal claims.
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson('/api/forensics/merkle-auditor/seal-safe-window', {
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson(`/api/forensics/merkle-auditor/anchors?${params.toString()}`, {
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson(`/api/forensics/merkle-auditor/receipts?${params.toString()}`, {
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson(`/api/forensics/merkle-auditor/receipts/${encodeURIComponent(receiptId)}?${params.toString()}`, {
+client/src/services/wilsyForensicMerkleClient.js: * @collaboration Binds the cockpit proof view to the existing /api/forensics/verify-chain contract while allowing full replay depth.
+client/src/services/wilsyForensicMerkleClient.js:  return requestWilsyForensicJson(`/api/forensics/verify-chain?${params.toString()}`, {
+client/src/services/api.js:    const response = await axios.get('/api/kernel', { timeout: 5000 });
+client/src/contexts/authContext.jsx:            const response = await fetch('/api/auth/discover', {
+client/src/contexts/BusinessContext.jsx:        api.get(`/api/business/employees?tenantId=${tenantId}`, { signal }),
+client/src/contexts/BusinessContext.jsx:        api.get(`/api/business/deals?tenantId=${tenantId}`, { signal }),
+client/src/contexts/BusinessContext.jsx:        api.get(`/api/business/contracts?tenantId=${tenantId}`, { signal }),
+client/src/hooks/useTelemetryStats.js: * ║ [RECONNECTED TO KENNEL: /api/v1/dashboard]                                                                                            ║
+client/src/hooks/useTelemetryStats.js: * ║ • Cline (Executor) - RECONNECTED: Changed endpoint to /api/v1/dashboard and mapped response to stat format.                           ║
+client/src/hooks/useTelemetryStats.js: * Now fetches from /api/v1/dashboard and maps high-level metrics to a stat array.
+client/src/hooks/useTelemetryStats.js:      // 🚀 RE-ANCHORED: Use /api/v1/dashboard to get health and metrics
+client/src/hooks/useTelemetryStats.js:      const response = await api.get('/api/v1/dashboard', {
+client/src/pages/superadmin/System.jsx:import { fetchSystemSettings } from '../../api/superadmin';
+client/src/pages/superadmin/Audit.jsx:import superAdminAPI, { getAuditLogs } from '../../api/superadmin';
+client/src/hooks/useSovereignData.js:        const response = await api.get('/api/v1/dashboard');
+client/src/hooks/useKennelHealth.js: *                 `/api/kernel` and `/api/kernel/status` endpoints at a
+client/src/hooks/useKennelHealth.js:   * @description Performs the health check by calling `/api/kernel` and `/api/kernel/status`.
+client/src/pages/superadmin/Reports.jsx:import { fetchReports } from '../../api/superadmin';
+client/src/api/axiosConfig.js: * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/api/axiosConfig.js                                                    ║
+client/src/pages/superadmin/TemplatePage.jsx:import { superAdminAPI } from '../../api/superadmin';
+client/src/hooks/useTenantManagement.js:import { superAdminAPI } from '../api/superadmin.js';
+client/src/pages/superadmin/Dashboard.jsx:        const response = await axios.get('/api/superadmin/metrics');
+client/src/pages/superadmin/TEMPLATE.jsx:import { superAdminAPI } from '../../api/superadmin';
+client/src/pages/superadmin/Users.jsx:import { getFirms as fetchUsers } from '../../api/superadmin'; // Aligning naming with Billion-Dollar standards
+client/src/pages/superadmin/Security.jsx:import superAdminAPI, { fetchSecurityEvents, fetchSecurityStats, fetchSecurityPolicies } from '../../api/superadmin';
+client/src/components/control-room/ExecutiveControlRoom.jsx:    const response = await fetch('/api/v1/dashboard');
+client/src/components/control-room/ExecutiveControlRoom.jsx:    const response = await fetch('/api/v1/execution', {
+client/src/data/wilsyCrmModuleCatalog.js:    route: `/api/crm/${moduleConfig.route}`,
+client/src/components/artifacts/BusinessArtifactStudio.jsx:    const response = await fetchArtifactWithTimeout(resolveArtifactApiUrl('/api/generate/pdf'), {
+client/src/utils/DashboardRegistry.jsx:    fetch('/api/telemetry/dashboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+client/src/data/wilsyKnowledgeBaseManifest.js:    exportRoute: '/api/generate/pdf',
+client/src/data/wilsyKnowledgeBaseManifest.js:    exportRoute: '/api/generate/pdf',
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx: * @collaboration R87C Contacts address component reuse, /api/crm/command/address/suggest, provider-backed address capture.
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:  return wilsyCrmFetchJson('/api/crm/command/address/suggest', {
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx: * @collaboration R86B Contacts-to-backend link, /api/crm/command/contacts, live snapshot refresh.
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:  return wilsyCrmFetchJson('/api/crm/command/contacts', {
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:  return wilsyCrmFetchJson('/api/crm/export', {
+client/src/components/crm/contact/WilsyContactOperatingRoom.jsx:    message: 'Contacts command route mapped to /api/crm/command/contacts.',
+client/src/components/auth/SovereignLogin.jsx: *                 driven by the live Kennel bridge (GET /api/kernel). Zero
+client/src/components/auth/SovereignLogin.jsx: *   Upstream:   /api/kernel, /api/kernel/status, /api/telemetry/boardroom,
+client/src/components/auth/SovereignLogin.jsx: * @description Public GET /api/kernel — source of truth for version badge (Kennel Contract).
+client/src/components/auth/SovereignLogin.jsx:  const res = await fetch('/api/kernel', {
+client/src/components/auth/SovereignLogin.jsx:      await fetch('/api/telemetry/error', {
+client/src/components/auth/SovereignLogin.jsx:        const response = await fetch('/api/telemetry/boardroom', {
+client/src/components/crm/lead/WilsyLeadEditSurface.js:  return method === 'PATCH' && String(url).includes('/api/crm/command/leads/');
+client/src/components/crm/lead/WilsyLeadEditSurface.js: * @collaboration WilsyLeadEditSurface, collectWilsyLeadEditPayload, backend Lead PATCH /api/crm/command/leads/:id.
+client/src/components/crm/lead/WilsyLeadEditSurface.js:      const endpoint = `${apiBase}/api/crm/command/leads/${encodeURIComponent(recordId)}`;
+client/src/components/crm/lead/WilsyLeadEditSurface.js: * @collaboration WilsyLeadEditSurface, backend PATCH /api/crm/command/leads/:id, DB_PERSISTED save contract.
+client/src/components/crm/lead/WilsyLeadEditSurface.js:    candidates.push(`${configuredBase}/api/crm/command/leads/${encodedRecordId}`);
+client/src/components/crm/lead/WilsyLeadEditSurface.js:    candidates.push(`${envBase}/api/crm/command/leads/${encodedRecordId}`);
+client/src/components/crm/lead/WilsyLeadEditSurface.js:  candidates.push(`/api/crm/command/leads/${encodedRecordId}`);
+client/src/components/crm/lead/WilsyLeadEditSurface.js:  candidates.push(`http://localhost:5050/api/crm/command/leads/${encodedRecordId}`);
+client/src/components/crm/lead/WilsyLeadEditSurface.js:  candidates.push(`http://127.0.0.1:5050/api/crm/command/leads/${encodedRecordId}`);
+client/src/components/crm/meeting/WilsyMeetingOperatingRoom.jsx: * @collaboration CRMDashboard props, /api/crm/live/meetings, no-fake-data rendering.
+client/src/components/crm/meeting/WilsyMeetingOperatingRoom.jsx:      const response = await fetch(`${resolveMeetingApiBase()}/api/crm/live/meetings`, {
+client/src/components/crm/meeting/WilsyMeetingOperatingRoom.jsx:   * @collaboration WilsyMeetingEditor, /api/crm/live/meetings, Meeting records board.
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Leads', endpoint: '/api/crm/live/leads' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Contacts', endpoint: '/api/crm/live/contacts' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Accounts', endpoint: '/api/crm/live/accounts' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Deals', endpoint: '/api/crm/live/deals' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Tasks', endpoint: '/api/crm/live/tasks' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Meetings', endpoint: '/api/crm/live/meetings' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Evidence', endpoint: '/api/crm/live/evidence' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Connectors', endpoint: '/api/crm/live/connectors' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Intel Leads', endpoint: '/api/crm/intelligence/leads' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Intel Accounts', endpoint: '/api/crm/intelligence/accounts' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Intel Deals', endpoint: '/api/crm/intelligence/deals' },
+client/src/components/crm/CrmSearchOutcomeRuntime.js:  { label: 'Source Posture', endpoint: '/api/crm/live/source-posture' },
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js: * @collaboration /api/crm/command/meetings/:id, /api/crm/command/leads/:id, receipt bridge.
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:    return `/api/crm/command/meetings/${encodedRecordId}`;
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:  return `/api/crm/command/leads/${encodedRecordId}`;
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:  const defaultRoute = '/api/crm/command/leads';
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:    '/api/crm/command/protected'
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:  const commandRoute = metadata?.route || metadata?.commandRoute || `/api/crm/command/leads/${encodeURIComponent(recordId)}/action-receipt`;
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:  const commandRoute = route || lead?.route || lead?.commandRoute || `/api/crm/command/leads/${encodeURIComponent(recordId)}`;
+client/src/components/crm/lead/WilsyLeadCommandCapsule.js:    const response = await fetch(`/api/crm/command/leads/${encodeURIComponent(resolvedRecordId)}`, {
+client/src/components/crm/CRMDashboard.module.css:/* Source Live panel route cell: keep /api/crm/live/leads readable without vertical breaking. */
+client/src/components/intelligence/RepositoryPanel.jsx:        const response = await fetch('/api/v1/intelligence/repository-census');
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:const WILSY_LEADS_FILTER_CONTROL_STATE_ENDPOINT = '/api/crm/control-state/leads/filters';
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:const WILSY_LEADS_AI_OPERATOR_ENDPOINT = '/api/wilsy/ai/operator/resolve';
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:            value: '/api/crm/command',
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:            value: '/api/crm/live/leads',
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    return `${apiBase}/api/crm/leads/views`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    const route = '/api/crm/leads/views';
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:  function buildWilsyToolbarCollectionPayload(route = '/api/crm/leads/views', action = 'RUN_LEAD_VIEW', body = {}) {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:  async function requestWilsyToolbarCollectionCommand(route = '/api/crm/leads/views', action = 'RUN_LEAD_VIEW', body = {}, method = 'POST') {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    const endpoint = `${registryUrl}${route.replace('/api/crm/leads/views', '')}`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const route = `/api/crm/leads/views/${backendViewId}/overrides/${normalizedMode}`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:        const route = `/api/crm/leads/views/${backendViewId}`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const route = `/api/crm/leads/views/${backendViewId}/overrides/include`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const route = `/api/crm/leads/views/${backendViewId}/overrides/exclude`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const route = `/api/crm/leads/views/${backendViewId}/run`;
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    const route = '/api/wilsy/ai/operator/resolve';
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:   * @collaboration Allows /api/crm/command/address/suggest to pass the same shield as Lead Save.
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      const response = await fetch('/api/crm/command/address/suggest', {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    const route = '/api/crm/leads/views/proof-ledger/access/resolve';
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:      ['route', '/api/generate/pdf'],
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:        route: '/api/generate/pdf',
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:   * @collaboration WilsyLeadOperatingRoom, generateArtifactExport, /api/generate/pdf, artifactController, tenant branding, and artifact sealing.
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:    return fetch('/api/generate/pdf', {
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:            payload.metadata?.route === '/api/generate/pdf' &&
+client/src/components/crm/lead/WilsyLeadOperatingRoom.jsx:              title="Generate the governed branded CRM Proof Pack Artifact PDF through /api/generate/pdf"
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    const route = '/api/crm/command/setup/reviews/list';
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    '/api/crm/command/setup/control-surface/resolve';
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    const route = '/api/crm/command/setup/control-surface/resolve';
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:      route: '/api/crm/command/setup/reviews/evidence',
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:      route: '/api/crm/command/setup/reviews/approve',
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:      route: '/api/crm/command/setup/reviews/release',
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    const route = '/api/crm/command/setup/reviews';
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    const route = `/api/crm/command/setup/reviews/${encodeURIComponent(packetId)}`;
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    const route = '/api/crm/command/setup/reviews/clear';
+client/src/components/crm/setup/WilsyCrmSetupControlPlane.jsx:    const route = '/api/crm/command/setup/reviews/open';
+client/src/components/crm/SovereignCRMClient.jsx: * @description Fetches the unified CRM state contract from GET /api/v1/crm/dashboard.
+client/src/components/crm/SovereignCRMClient.jsx:    const response = await fetch('/api/v1/crm/dashboard');
+client/src/components/crm/SovereignCRMClient.jsx: * @description Dispatches CRM deal mutations via POST /api/v1/crm/execution to the kernel scheduler.
+client/src/components/crm/SovereignCRMClient.jsx:    const response = await fetch('/api/v1/crm/execution', {
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:      "apiCall": "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/auth/webauthn-challenge",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/users?tenant=${tenantId}",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/users/anchor-biometric",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/users/revoke",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/users/forensic/${userId}"
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/email/send",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/telemetry/dashboard",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "/api/generate/pdf",
+client/src/components/account/wilsyAccountCommandRouteContracts.js:        "${API_BASE_URL}/api/legal/documents",
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:    sourceRoute: '/api/crm/live/meetings',
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:      const data = await postWilsyMeetingCommand('/api/crm/command/meetings/import-preview', {
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:      const data = await postWilsyMeetingCommand('/api/crm/command/meetings', {
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:      const data = await postWilsyMeetingCommand('/api/crm/command/meetings', {
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:      const data = await postWilsyMeetingCommand('/api/crm/command/meetings/action', {
+client/src/components/crm/meeting/WilsyUniversalMeetingCommandCenter.jsx:                  <strong>/api/crm/live/meetings</strong>
+client/src/components/crm/CRMDashboard.jsx:  leads: '/api/crm/live/leads',
+client/src/components/crm/CRMDashboard.jsx:  contacts: '/api/crm/live/contacts',
+client/src/components/crm/CRMDashboard.jsx:  accounts: '/api/crm/live/accounts',
+client/src/components/crm/CRMDashboard.jsx:  deals: '/api/crm/live/deals',
+client/src/components/crm/CRMDashboard.jsx:  tasks: '/api/crm/live/tasks',
+client/src/components/crm/CRMDashboard.jsx:  meetings: '/api/crm/live/meetings',
+client/src/components/crm/CRMDashboard.jsx:  evidence: '/api/crm/live/evidence',
+client/src/components/crm/CRMDashboard.jsx:  connectors: '/api/crm/live/connectors'
+client/src/components/crm/CRMDashboard.jsx:const CRM_SOURCE_POSTURE_ENDPOINT = '/api/crm/live/source-posture';
+client/src/components/crm/CRMDashboard.jsx:  return String(CRM_SOURCE_POSTURE_ENDPOINT || '/api/crm/live/source-posture');
+client/src/components/crm/CRMDashboard.jsx:    const response = await fetch(`${API_BASE}/api/auth/me`, {
+client/src/components/crm/CRMDashboard.jsx:    endpoint: `/api/crm/live/${collection}?limit=24`,
+client/src/components/crm/CRMDashboard.jsx:    endpoint: `/api/crm/intelligence/${collection}?limit=24`,
+client/src/components/crm/CRMDashboard.jsx:   * @collaboration CRM left rail, /api/crm/live/source-posture, source-backed count badges.
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    sourceRoute: recordId ? `/api/crm/command/meetings/${recordId}` : '/api/crm/command/meetings',
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    liveRoute: '/api/crm/live/meetings',
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:    evidenceRoute: '/api/crm/live/evidence',
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:  { id: 'leads', label: 'Lead', route: '/api/crm/live/leads' },
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:  { id: 'meetings', label: 'Meeting', route: '/api/crm/live/meetings' },
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:   * @collaboration Related CRM linker modal, /api/crm/live/leads, /api/crm/live/meetings, evidence preview.
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:   * @collaboration /api/crm/live/leads, /api/crm/live/meetings, Meeting related-record evidence workflow.
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:      const route = saveMode === 'edit' && recordId ? `/api/crm/command/meetings/${encodeURIComponent(recordId)}` : '/api/crm/command/meetings';
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/metrics'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/shipments'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/vehicles'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/agri'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/parts'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/crm/customers'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/routes'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/ports'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/borders'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/logistics/alerts'),
+client/src/components/industry/LogisticsDashboard.jsx:        fetchAPI('/api/crm/activities')
+client/src/components/crm/meeting/workspace/WilsyMeetingEvidenceWorkspace.jsx:    ['Source route', '/api/crm/live/meetings', 'Meeting evidence must include source object, actor, tenant, timestamp and route proof.'],
+client/src/components/account/WilsyAccountCommandCenter.jsx:   * @collaboration Uses /api/generate/pdf instead of creating a second PDF engine.
+client/src/components/account/WilsyAccountCommandCenter.jsx:      const endpoint = `${candidate}/api/generate/pdf`;
+client/src/components/account/WilsyAccountCommandCenter.jsx:   * @collaboration Exports proof posture through /api/generate/pdf while preserving backend-only immutable seal authority.
+client/src/components/account/WilsyAccountCommandCenter.jsx:                      <span className="wac-compliance-production-source">/api/account/compliance-command</span>
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:          fetch(`${apiBase}/api/crm/live/leads`, { headers }),
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:          fetch(`${apiBase}/api/crm/live/contacts`, { headers }),
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx: * @collaboration /api/crm/live/meetings, CRMDashboard preloaded records, source-honest display.
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx: * @collaboration DELETE /api/crm/command/meetings/:id, ProductionHardening bridge, evidence trail.
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:    sourceRoute: `/api/crm/command/meetings/${recordId}`,
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:    liveRoute: '/api/crm/live/meetings',
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:    evidenceRoute: '/api/crm/live/evidence',
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:   * @collaboration /api/crm/live/meetings, source posture, records cockpit.
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:      const response = await fetch(`${apiBase}/api/crm/live/meetings`, {
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:   * @collaboration DELETE /api/crm/command/meetings/:id, CRM command authority, records refresh.
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:      const response = await fetch(`${apiBase}/api/crm/command/meetings/${encodeURIComponent(id)}`, {
+client/src/components/industry/ProjectDashboard.jsx:        fetchAPI('/api/project/metrics'),
+client/src/components/industry/ProjectDashboard.jsx:        fetchAPI('/api/project/list'),
+client/src/components/industry/ProjectDashboard.jsx:        fetchAPI('/api/project/milestones'),
+client/src/components/industry/ProjectDashboard.jsx:        fetchAPI('/api/project/risks'),
+client/src/components/industry/ProjectDashboard.jsx:        fetchAPI('/api/project/resources'),
+client/src/components/industry/ProjectDashboard.jsx:        fetchAPI('/api/project/alerts')
+client/src/components/SovereignContractGenerator.jsx:   * @description Executes the secure POST request to /api/generate/pdf.
+client/src/components/SovereignContractGenerator.jsx:      const response = await axios.post('/api/generate/pdf', payload, {
+client/src/components/intelligence/WilsyOSIntelligenceDock.jsx: *   - AI Engineering — RECTIFIED: Added strict `import.meta.env.DEV` guard to prevent raw fetch to `/api/source-registry/health`.
+client/src/components/intelligence/WilsyOSIntelligenceDock.jsx:const WILSY_AI_CONTEXT_ROUTE = '/api/source-registry/health?wilsyAiContext=RESOLVE';
+client/src/components/industry/LegalDashboard.jsx:   * In production: Fetches from /api/legal/documents, /api/legal/deputies, etc.
+client/src/components/industry/LegalDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/legal/metrics?district=${selectedDistrict}`, {
+client/src/components/industry/LegalDashboard.jsx:      // const documentsRes = await fetch(`${API_BASE_URL}/api/legal/documents`, {
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/metrics'),
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/services'),
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/requests'),
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/budget'),
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/projects'),
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/analytics'),
+client/src/components/industry/PublicDashboard.jsx:        fetchAPI('/api/public/alerts')
+client/src/components/knowledge/WilsyKnowledgeBaseVault.jsx:    const requestPromise = fetchVaultJson('/api/knowledge-base/vault', 'knowledge_base_vault_list', {
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/metrics'),
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/list'),
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/tenants'),
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/maintenance'),
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/financials'),
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/market-trends'),
+client/src/components/industry/PropertyDashboard.jsx:        fetchAPI('/api/property/alerts')
+client/src/components/industry/EducationDashboard.jsx:   * In production: Fetches from /api/education/metrics, /api/education/students, etc.
+client/src/components/industry/ConsultingDashboard.jsx:   * In production: Fetches from /api/consulting/metrics, /api/consulting/projects, etc.
+client/src/components/industry/EntertainmentDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/entertainment/metrics`, {
+client/src/components/industry/EntertainmentDashboard.jsx:      // const productionsRes = await fetch(`${API_BASE_URL}/api/entertainment/productions`, {
+client/src/components/industry/RetailDashboard.jsx:        fetchAPI('/api/retail/sales').catch(() => null),
+client/src/components/industry/RetailDashboard.jsx:        fetchAPI('/api/retail/products/top').catch(() => []),
+client/src/components/industry/RetailDashboard.jsx:        fetchAPI('/api/retail/inventory').catch(() => []),
+client/src/components/industry/RetailDashboard.jsx:        fetchAPI('/api/retail/alerts').catch(() => [])
+client/src/components/industry/TechDashboard.jsx:        fetchAPI('/api/tech/metrics').catch(() => null),
+client/src/components/industry/TechDashboard.jsx:        fetchAPI('/api/tech/services').catch(() => []),
+client/src/components/industry/TechDashboard.jsx:        fetchAPI('/api/tech/alerts').catch(() => [])
+client/src/components/industry/SportsDashboard.jsx:        fetchAPI('/api/sports/metrics').catch(() => null),
+client/src/components/industry/SportsDashboard.jsx:        fetchAPI('/api/sports/players').catch(() => []),
+client/src/components/industry/SportsDashboard.jsx:        fetchAPI('/api/sports/matches').catch(() => []),
+client/src/components/industry/SportsDashboard.jsx:        fetchAPI('/api/sports/standings').catch(() => []),
+client/src/components/industry/SportsDashboard.jsx:        fetchAPI('/api/sports/injuries').catch(() => []),
+client/src/components/industry/SportsDashboard.jsx:        fetchAPI('/api/sports/alerts').catch(() => [])
+client/src/components/industry/EnergyDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/energy/metrics`, {
+client/src/components/industry/EnergyDashboard.jsx:      // const generationRes = await fetch(`${API_BASE_URL}/api/energy/generation`, {
+client/src/components/industry/ProductionDashboard.jsx: * │ /api/production/metrics             │ GET    │ OEE, efficiency, quality, downtime, output      │ X-Tenant-Id + API Key        │
+client/src/components/industry/ProductionDashboard.jsx: * │ /api/production/live                │ WS/WSS │ WebSocket for real-time machine data             │ Tenant-scoped session        │
+client/src/components/industry/ProductionDashboard.jsx: * │ /api/production/oee/components      │ GET    │ Availability, Performance, Quality breakdown    │ X-Tenant-Id + API Key        │
+client/src/components/industry/ProductionDashboard.jsx: * │ /api/production/downtime/reasons    │ GET    │ Root cause analysis for downtime events          │ X-Tenant-Id + API Key        │
+client/src/components/industry/ProductionDashboard.jsx: * │ /api/production/quality/defects     │ GET    │ Defect Pareto analysis by category               │ X-Tenant-Id + API Key        │
+client/src/components/industry/ProductionDashboard.jsx: * │  fetchAPI() ────► /api/production/metrics (with X-Tenant-Id header)                                                               │
+client/src/components/industry/ProductionDashboard.jsx:        fetchAPI('/api/production/metrics'),
+client/src/components/industry/ProductionDashboard.jsx:        fetchAPI('/api/production/lines'),
+client/src/components/industry/ProductionDashboard.jsx:        fetchAPI('/api/production/quality/defects'),
+client/src/components/industry/ProductionDashboard.jsx:        fetchAPI('/api/production/downtime/events'),
+client/src/components/industry/ProductionDashboard.jsx:        fetchAPI('/api/production/shift/schedule'),
+client/src/components/industry/ProductionDashboard.jsx:        fetchAPI('/api/production/alerts')
+client/src/components/industry/FinanceDashboard.jsx:      // const metricsRes = await fetch(`${API_BASE_URL}/api/finance/metrics?range=${selectedTimeRange}`, {
+client/src/components/industry/FinanceDashboard.jsx:      // const portfolioRes = await fetch(`${API_BASE_URL}/api/finance/portfolio`, {
+client/src/components/sales/AISalesIntelligenceDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals?limit=20', {
+client/src/components/industry/AgricultureDashboard.jsx:   * In production: Fetches from /api/agriculture/metrics, /api/agriculture/fields, etc.
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals?limit=100', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch(`http://localhost:5050/api/deals/${deal._id}/stage`, {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch(`http://localhost:5050/api/deals/${deal._id}`, {
+client/src/components/sovereign/Sovereign_TenantManager.jsx:      const response = await api.post('/api/tenants/create', {
+client/src/components/sovereign/Sovereign_TenantManager.jsx:      const res = await api.post('/api/tenants/suspend', { id });
+client/src/components/sovereign/CommandPalette.jsx:        await sendTelemetry('/api/telemetry', {
+client/src/components/sovereign/CommandPalette.jsx:        fetch('/api/email/send', { method: 'POST', body: formData, signal }).catch(e => console.warn(e));
+client/src/components/sovereign/CommandPalette.jsx:        await sendTelemetry('/api/telemetry', {
+client/src/components/sovereign/CommandPalette.jsx:    sendTelemetry('/api/telemetry', {
+client/src/components/sovereign/AuditEntry.jsx: * ║ • AI Engineering (Gemini) - RECTIFIED: Purged raw fetch API. Injected `api.get` for the `/api/audit/verify-qr/:traceId` strike.        ║
+client/src/components/sovereign/Sovereign_StatementEngine.jsx:      const res = await api.get(`/api/statements/${type}?tenantId=${tenantId}`, { responseType: 'blob' });
+client/src/components/sovereign/TenantManagementGrid.jsx:                        onClick={() => onExecuteStrike('TENANT_VIEW', `/api/tenants/${tenant._id}`)}
+client/src/components/sovereign/TenantManagementGrid.jsx:                          onClick={() => onExecuteStrike('TENANT_SUSPEND', `/api/tenants/suspend/${tenant._id}`, 'POST')}
+client/src/components/sovereign/TenantManagementGrid.jsx:                          onClick={() => onExecuteStrike('TENANT_ACTIVATE', `/api/tenants/activate/${tenant._id}`, 'POST')}
+client/src/components/sovereign/SovereignDashboardController.jsx: * @description Lightweight public probe of GET /api/kernel (Kennel Integration Contract).
+client/src/components/sovereign/SovereignDashboardController.jsx:    const response = await fetch('/api/kernel', {
+client/src/components/sovereign/SovereignDashboardController.jsx:  // Kennel bridge health probe (Contract v1.1.0 — public /api/kernel)
+client/src/components/sovereign/SovereignDashboardController.jsx: * Kennel Bridge:   probeKernelBridge() → GET /api/kernel (public, Contract v1.1.0)
+client/src/components/sovereign/Sovereign_Onboarding_Wizard.jsx:      const response = await fetch('/api/v1/onboarding/initialize', {
+client/src/components/sovereign/DemoIgnitionButton.jsx:      const response = await fetch('/api/v2/sovereign/demo/ignite', {
+client/src/components/sovereign/CoverPage.jsx:    await fetch('/api/telemetry/event', {
+client/src/components/sovereign/SovereignNodeDashboard.jsx:        const response = await fetch('/api/auth/me', {
+client/src/services/wilsyAccountIdentityPostureClient.js:    isViteDevOrigin ? 'http://localhost:5050' : '',
+client/src/services/wilsyAccountIdentityPostureClient.js:  const apiBase = String(import.meta.env?.VITE_API_URL || 'http://localhost:5050').replace(/\/$/, '');
+client/src/services/wilsyCrmCommandClient.js:  return String(envBase || 'http://localhost:5050').replace(/\/+$/, '');
+services/ledger/repair_ledger_service.js:        await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/legal-tech', {
+services/ledger/fix_connection.js:const oldString = "mongodb://localhost:27017/legal-tech";
+client/src/services/wilsyForensicMerkleClient.js:    import.meta.env.DEV ? 'http://localhost:5050' : null,
+client/src/services/sourceRegistryService.js:  'http://localhost:5050';
+client/src/services/websocket/tenantWebSocket.js:const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:3002';
+client/src/components/sales/AISalesIntelligenceDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals?limit=20', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals?limit=100', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch('http://localhost:5050/api/deals', {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch(`http://localhost:5050/api/deals/${deal._id}/stage`, {
+client/src/components/sales/SalesRepresentativeDashboard.jsx:      const response = await fetch(`http://localhost:5050/api/deals/${deal._id}`, {
+client/src/utils/telemetryHelper.js:      const base = api.defaults?.baseURL || 'http://localhost:5050/api';
+client/src/utils/telemetryHelper.js:      const base = api.defaults?.baseURL || 'http://localhost:5050/api';
+client/src/components/ForensicsHUD.jsx:      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/artifacts/BusinessArtifactStudio.jsx:const ARTIFACT_API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5050').replace(/\/$/, '');
+client/src/components/crm/meeting/workspace/WilsyMeetingEditor.jsx:  return import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/crm/meeting/workspace/WilsyMeetingParticipantResolver.jsx:      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/NonprofitDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/LogisticsDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/ProjectDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/crm/meeting/workspace/WilsyMeetingsWorkspace.jsx:  return String(import.meta.env.VITE_API_URL || 'http://localhost:5050').replace(/\/$/, '');
+client/src/components/industry/ProductionDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/EducationDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/HospitalityDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/crm/lead/WilsyLeadEditSurface.js:  candidates.push(`http://localhost:5050/api/crm/command/leads/${encodedRecordId}`);
+client/src/components/crm/lead/WilsyLeadEditSurface.js:    nextBestActions: ['Trying configured API, Vite proxy, localhost:5050, and 127.0.0.1:5050.'],
+client/src/components/industry/SportsDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/LegalDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/TechDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/PropertyDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/EntertainmentDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/FinanceDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/EnergyDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/PublicDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/ConsultingDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/HealthcareDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/RetailDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/industry/AgricultureDashboard.jsx:const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+client/src/components/sovereign/BoardroomHUD.jsx:    // Use environment variable or fallback to localhost:5050
+client/src/components/sovereign/BoardroomHUD.jsx:    const wsBase = import.meta.env.VITE_WS_URL || 'ws://localhost:5050';

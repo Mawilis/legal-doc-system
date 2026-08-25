@@ -1,4 +1,36 @@
 /* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║                                                                                                                                        ║
+ * ║   ██████╗ ██╗██╗     ██╗     ██╗███╗   ██╗ ██████╗     ██████╗ ██╗   ██╗████████╗███████╗███████╗                               ║
+ * ║   ██╔══██╗██║██║     ██║     ██║████╗  ██║██╔════╝     ██╔══██╗██╔═══██╗██║   ██║╚══██╔══╝██╔════╝╚════██║                       ║
+ * ║   ██████╔╝██║██║     ██║     ██║██╔██╗ ██║██║  ███╗    ██████╔╝██║   ██║██║   ██║   ██║   █████╗   █████╔╝                       ║
+ * ║   ██╔══██╗██║██║     ██║     ██║██║╚██╗██║██║   ██║    ██╔══██╗██║   ██║██║   ██║   ██║   ██╔══╝  ██╔═══╝                        ║
+ * ║   ██████╔╝██║███████╗███████╗██║██║ ╚████║╚██████╔╝    ██║  ██║╚██████╔╝╚██████╔╝   ██║   ███████╗███████╗                       ║
+ * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
+ * ║                                                                                                                                        ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * 🏛️ WILSY OS - BUSINESS ARTIFACT PDF CONTROLLER [V9.0.0‑INVOICE‑PAYLOAD‑ENRICHED]
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ [FORENSIC PDF GENERATION | KNOWLEDGE BASE | CRM PROOF PACK | NDA | BILLING INVOICE]                                               ║
+ * ║ [KENNEL EOS AWARE | TENANT ISOLATION | CRYPTOGRAPHIC SEALING]                                                                           ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 9.0.0‑INVOICE‑PAYLOAD‑ENRICHED | PRODUCTION READY | INSTITUTIONAL GRADE                                                     ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/businessArtifactPdfController.js                           ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                              ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated explicit invoice payload enrichment to guarantee serviceType, metadata, and type.║
+ * ║ • AI Engineering – V9.0.0: Added `enrichBillingInvoiceIdentity` to normalise invoice fields for the enterprise renderer.           ║
+ * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 🔧 CHANGES (v9.0.0‑INVOICE‑PAYLOAD‑ENRICHED):                                                                                        ║
+ * ║   1. Added `enrichBillingInvoiceIdentity` – sets `type: 'billing-invoice'` and ensures all invoice fields are present.             ║
+ * ║   2. Integrated enrichment into `generateSovereignArtifactPdf` before passing identity to renderer.                                 ║
+ * ║   3. All existing Knowledge Base, CRM Proof Pack, NDA, and generic logic preserved unchanged.                                       ║
+ * ║   4. Full JSDoc and compliance references.                                                                                           ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
 import crypto from 'node:crypto';
 import streamEnterpriseArtifactPdf from '../services/artifacts/wilsyEnterprisePdfRenderer.js';
 import mongoose from 'mongoose';
@@ -674,12 +706,156 @@ function requireBearerToken(req) {
 }
 
 /**
- * @function buildArtifactIdentity
- * @description Builds the broad identity object consumed by the enterprise PDF renderer.
- * @param {object} req Express request.
- * @returns {object} Enterprise renderer identity.
- * @collaboration Connects BusinessArtifactStudio payloads to wilsyEnterprisePdfRenderer.js.
+ * @function isBillingInvoiceRequest
+ * @description Detects whether the request is for a billing invoice artifact.
+ * @param {object} body Request body.
+ * @param {object} metadata Request metadata.
+ * @param {object} payload Artifact payload.
+ * @param {object} payloadData Explicit payloadData envelope.
+ * @returns {boolean} True if the request is a billing invoice.
+ * @collaboration Enables invoice-specific enrichment before passing to the renderer.
  */
+function isBillingInvoiceRequest(body = {}, metadata = {}, payload = {}, payloadData = {}) {
+  const candidates = [
+    body.type,
+    body.artifactType,
+    body.templateType,
+    metadata.type,
+    metadata.artifactType,
+    metadata.templateType,
+    payload.type,
+    payload.artifactType,
+    payload.templateType,
+    payloadData.type,
+    payloadData.artifactType,
+    payloadData.templateType,
+    body.data?.type,
+    body.data?.artifactType,
+    body.payloadData?.type,
+    body.payloadData?.artifactType,
+  ].map((item) => clean(item, '').toLowerCase());
+
+  return candidates.some(
+    (item) =>
+      item === 'billing-invoice' ||
+      item === 'billing_invoice' ||
+      item === 'invoice' ||
+      item.includes('billing') ||
+      (item.includes('invoice') && !item.includes('knowledge'))
+  );
+}
+
+/**
+ * @function enrichBillingInvoiceIdentity
+ * @description Ensures that billing invoice requests have the correct `type`, `lineItems` (with `serviceType`), and `metadata` fields.
+ * @param {object} identity The base artifact identity.
+ * @param {object} body The raw request body.
+ * @param {object} metadata The request metadata.
+ * @param {object} payload The artifact payload.
+ * @param {object} payloadData The explicit payloadData.
+ * @returns {object} Enriched identity for invoice rendering.
+ * @collaboration Bridges the BillingHUD print payload to the enterprise renderer with all required invoice fields.
+ * @institutional Ensures every invoice PDF shows service type, line items, and forensic metadata.
+ * @compliance POPIA §19, GDPR §32, SOC2 §CC7.2 – full invoice data sealed and traceable.
+ */
+function enrichBillingInvoiceIdentity(identity = {}, body = {}, metadata = {}, payload = {}, payloadData = {}) {
+  // If not an invoice request, return identity unchanged
+  if (!isBillingInvoiceRequest(body, metadata, payload, payloadData)) {
+    return identity;
+  }
+
+  // Normalise the type to 'billing-invoice'
+  const enriched = {
+    ...identity,
+    type: 'billing-invoice',
+    artifactType: 'billing-invoice',
+    templateType: 'invoice',
+  };
+
+  // Extract line items from various sources
+  const lineItemsSource = payload.lineItems || payloadData.lineItems || body.data?.lineItems || body.lineItems || [];
+  const lineItems = Array.isArray(lineItemsSource) ? lineItemsSource : [];
+
+  // Enrich each line item with serviceType default
+  const enrichedLineItems = lineItems.map((item) => ({
+    serviceType: item.serviceType || item.category || item.type || 'General Service',
+    description: item.description || item.name || 'Wilsy OS service',
+    quantity: Number(item.quantity ?? 1),
+    unitPrice: Number(item.unitPrice ?? item.amount ?? 0),
+    lineTotal: Number(item.lineTotal ?? item.amount ?? (item.quantity || 1) * (item.unitPrice || 0)),
+    taxAmount: Number(item.taxAmount ?? 0),
+    currency: item.currency || payload.currency || payloadData.currency || body.currency || 'ZAR',
+    ...item, // Preserve any extra fields
+  }));
+
+  // Build comprehensive metadata
+  const totalAmount = Number(payload.totalAmount || payloadData.totalAmount || body.data?.totalAmount || body.totalAmount || 0);
+  const currency = String(payload.currency || payloadData.currency || body.data?.currency || body.currency || 'ZAR').toUpperCase();
+  const invoiceNumber = String(metadata.invoiceNumber || payload.invoiceNumber || payloadData.invoiceNumber || body.data?.invoiceNumber || body.invoiceNumber || identity.title || '');
+  const status = String(metadata.status || payload.status || payloadData.status || body.data?.status || body.status || 'ISSUED').toUpperCase();
+  const dueDate = metadata.dueDate || payload.dueDate || payloadData.dueDate || body.data?.dueDate || body.dueDate || null;
+  const issueDate = metadata.issueDate || payload.issueDate || payloadData.issueDate || body.data?.issueDate || body.issueDate || identity.effectiveDate || null;
+  const sealHash = metadata.sealHash || payload.sealHash || payloadData.sealHash || body.data?.sealHash || body.sealHash || null;
+
+  // Place enriched data into the identity's data and payloadData fields
+  enriched.data = {
+    ...(identity.data || {}),
+    ...(payload || {}),
+    ...(payloadData || {}),
+    type: 'billing-invoice',
+    lineItems: enrichedLineItems,
+    totalAmount,
+    currency,
+    status,
+    dueDate,
+    issueDate,
+    invoiceNumber,
+    sealHash,
+  };
+
+  enriched.payloadData = {
+    ...(identity.payloadData || {}),
+    ...(payloadData || {}),
+    ...(payload || {}),
+    type: 'billing-invoice',
+    lineItems: enrichedLineItems,
+    totalAmount,
+    currency,
+    status,
+    dueDate,
+    issueDate,
+    invoiceNumber,
+    sealHash,
+  };
+
+  enriched.metadata = {
+    ...(identity.metadata || {}),
+    ...(metadata || {}),
+    invoiceNumber,
+    amount: totalAmount,
+    currency,
+    status,
+    dueDate,
+    issueDate,
+    sealHash,
+    watermark: metadata.watermark || 'Wilsy OS Sovereign Copy',
+    print: metadata.print || false,
+    serviceType: enrichedLineItems.length ? enrichedLineItems[0].serviceType : '',
+  };
+
+  // Also set top-level fields for compatibility
+  enriched.invoiceNumber = invoiceNumber;
+  enriched.totalAmount = totalAmount;
+  enriched.currency = currency;
+  enriched.status = status;
+  enriched.dueDate = dueDate;
+  enriched.issueDate = issueDate;
+  enriched.sealHash = sealHash;
+  enriched.lineItems = enrichedLineItems;
+
+  return enriched;
+}
+
 /**
  * @function buildArtifactIdentity
  * @description Builds enterprise PDF identity from request payload plus live authenticated backend user/profile data.
@@ -716,33 +892,33 @@ async function buildArtifactIdentity(req) {
 
   const type = clean(
     body.type ||
-      body.artifactType ||
-      body.templateType ||
-      metadata.type ||
-      metadata.artifactType ||
-      metadata.templateType ||
-      mergedPayloadData.type ||
-      mergedPayloadData.artifactType ||
-      mergedPayloadData.templateType,
+    body.artifactType ||
+    body.templateType ||
+    metadata.type ||
+    metadata.artifactType ||
+    metadata.templateType ||
+    mergedPayloadData.type ||
+    mergedPayloadData.artifactType ||
+    mergedPayloadData.templateType,
     'WILSY-ENTERPRISE-ARTIFACT'
   );
 
   const tenantId = clean(
     body.tenantId ||
-      metadata.tenantId ||
-      mergedPayloadData.tenantId ||
-      req.tenantId ||
-      req.user?.tenantId,
+    metadata.tenantId ||
+    mergedPayloadData.tenantId ||
+    req.tenantId ||
+    req.user?.tenantId,
     'MASTER'
   );
 
   const generatedAt = clean(
     body.generatedAt ||
-      body.timestamp ||
-      metadata.generatedAt ||
-      metadata.timestamp ||
-      mergedPayloadData.generatedAt ||
-      mergedPayloadData.timestamp,
+    body.timestamp ||
+    metadata.generatedAt ||
+    metadata.timestamp ||
+    mergedPayloadData.generatedAt ||
+    mergedPayloadData.timestamp,
     new Date().toISOString()
   );
 
@@ -785,21 +961,21 @@ async function buildArtifactIdentity(req) {
 
   const requestProof = clean(
     body.requestProof ||
-      body.proof ||
-      metadata.requestProof ||
-      metadata.proof ||
-      mergedPayloadData.requestProof,
+    body.proof ||
+    metadata.requestProof ||
+    metadata.proof ||
+    mergedPayloadData.requestProof,
     createRequestProof(type, tenantId, generatedAt)
   );
 
   const traceId = clean(
     body.traceId ||
-      body.traceID ||
-      metadata.traceId ||
-      metadata.traceID ||
-      mergedPayloadData.traceId ||
-      req.headers?.['x-trace-id'] ||
-      req.headers?.['x-request-id'],
+    body.traceID ||
+    metadata.traceId ||
+    metadata.traceID ||
+    mergedPayloadData.traceId ||
+    req.headers?.['x-trace-id'] ||
+    req.headers?.['x-request-id'],
     `TRACE-${hashHex(`${type}|${tenantId}|${generatedAt}`).slice(0, 16)}`
   );
 
@@ -1221,10 +1397,20 @@ export async function generateSovereignArtifactPdf(req, res, next) {
     requireBearerToken(req);
 
     const identity = await buildArtifactIdentity(req);
-    const crmProofPackPayload = resolveCrmProofPackCandidate(req.body || {}, identity);
+
+    // ─── Enrich if this is a billing invoice request ──────────────────────────
+    const body = req.body || {};
+    const metadata = body.metadata && typeof body.metadata === 'object' ? body.metadata : {};
+    const payload = body.data || body.payload || body.artifact || {};
+    const payloadData =
+      body.payloadData && typeof body.payloadData === 'object' ? body.payloadData : {};
+    const enrichedIdentity = enrichBillingInvoiceIdentity(identity, body, metadata, payload, payloadData);
+
+    // ─── CRM Proof Pack detection (unchanged) ──────────────────────────────────
+    const crmProofPackPayload = resolveCrmProofPackCandidate(req.body || {}, enrichedIdentity);
     const enterpriseIdentity = crmProofPackPayload
-      ? buildCrmProofPackEnterpriseIdentity(identity, crmProofPackPayload)
-      : identity;
+      ? buildCrmProofPackEnterpriseIdentity(enrichedIdentity, crmProofPackPayload)
+      : enrichedIdentity;
 
     if (crmProofPackPayload) {
       res.setHeader('X-Wilsy-Pdf-Renderer', 'ENTERPRISE_ARTIFACT_CRM_PROOF_PACK');
@@ -1232,11 +1418,19 @@ export async function generateSovereignArtifactPdf(req, res, next) {
       res.setHeader('X-Wilsy-Artifact-Type', 'crm-lead-proof-pack');
     }
 
+    // ─── If invoice, set appropriate headers ──────────────────────────────────
+    if (isBillingInvoiceRequest(body, metadata, payload, payloadData)) {
+      res.setHeader('X-Wilsy-Pdf-Renderer', 'BILLING_INVOICE_ENTERPRISE');
+      res.setHeader('X-Wilsy-Artifact-Type', 'billing-invoice');
+      res.setHeader('X-Wilsy-Invoice-Number', clean(enterpriseIdentity.invoiceNumber || identity.title, ''));
+      res.setHeader('X-Wilsy-Total-Amount', String(enterpriseIdentity.totalAmount || 0));
+    }
+
     const proof = buildProof(enterpriseIdentity);
 
-    res.setHeader('X-Wilsy-Trace-ID', identity.traceId);
+    res.setHeader('X-Wilsy-Trace-ID', enterpriseIdentity.traceId);
     res.setHeader('X-Artifact-Proof-Status', proof.status);
-    res.setHeader('X-Request-Proof', identity.requestProof);
+    res.setHeader('X-Request-Proof', enterpriseIdentity.requestProof);
 
     await streamEnterpriseArtifactPdf({ res, identity: enterpriseIdentity, proof });
   } catch (error) {
@@ -1257,5 +1451,4 @@ export async function generateSovereignArtifactPdf(req, res, next) {
 export default generateSovereignArtifactPdf;
 
 // P60K5Q10FG106L_REAL_BUSINESS_PDF_CRM_PROOF_RENDERER
-
 // P60K5Q10FG106N_CRM_PROOF_PACK_ENTERPRISE_ENGINE_ADAPTER

@@ -1,0 +1,57 @@
+{
+  "total_registered_events": 6,
+  "registered_events": [
+    "SCAN_TRIGGERED",
+    "REPOSITORY_CHANGED",
+    "KNOWLEDGE_REFRESHED",
+    "RISK_RECALCULATED",
+    "GOVERNANCE_VERIFIED",
+    "TWIN_UPDATED"
+  ],
+  "subscriptions": {
+    "SCAN_TRIGGERED": [
+      "CAP-REPOSITORY-SCAN"
+    ],
+    "REPOSITORY_CHANGED": [
+      "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "CAP-PREDICTION-RISK-ASSESSMENT",
+      "CAP-GOVERNANCE-COMPLIANCE"
+    ],
+    "KNOWLEDGE_REFRESHED": [
+      "CAP-PREDICTION-RISK-ASSESSMENT"
+    ],
+    "RISK_RECALCULATED": [
+      "CAP-GOVERNANCE-COMPLIANCE"
+    ],
+    "GOVERNANCE_VERIFIED": [
+      "CAP-CONTROL-ROOM-DISPATCH"
+    ],
+    "TWIN_UPDATED": [
+      "CAP-CONTROL-ROOM-DISPATCH"
+    ]
+  },
+  "simulation_result": {
+    "simulation_event_id": "EVT-SIM-001",
+    "event_type": "REPOSITORY_CHANGED",
+    "target_count": 3,
+    "notified_capabilities": [
+      "CAP-KNOWLEDGE-SYNCHRONIZATION",
+      "CAP-PREDICTION-RISK-ASSESSMENT",
+      "CAP-GOVERNANCE-COMPLIANCE"
+    ]
+  },
+  "propagation_history": [
+    {
+      "event_id": "EVT-SIM-001",
+      "event_type": "REPOSITORY_CHANGED",
+      "source_capability": "CAP-REPOSITORY-SCAN",
+      "targets_notified": [
+        "CAP-KNOWLEDGE-SYNCHRONIZATION",
+        "CAP-PREDICTION-RISK-ASSESSMENT",
+        "CAP-GOVERNANCE-COMPLIANCE"
+      ],
+      "consumed_count": 3,
+      "timestamp": "2026-07-26T21:03:50.039025+00:00"
+    }
+  ]
+}

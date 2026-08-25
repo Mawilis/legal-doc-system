@@ -1,180 +1,180 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN HANDSHAKE ENGINE [V25.2.0-MARS]                                                                                   ║
- * ║ [VITE_PROXY_BRIDGE | AUTO-LAUNCH | OMEGA-LEVEL SYNC | DIAGNOSTIC LOGGING]                                                              ║
+ * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.3.8-KENNEL-AUTH-OWNER]                                                            ║
+ * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 25.2.0-MARS | BIBLICAL WORTH BILLIONS | PRODUCTION READY                                                                      ║
- * ║ EPITOME: NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | MARS-SPEC ENGINEERING                                                            ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                             ║
+ * ║ VERSION: 2.3.8-KENNEL-AUTH-OWNER | PRODUCTION READY                                                                               ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated auto-browser launch for boardroom workflow efficiency. [2026-05-15]                  ║
- * ║ • AI Engineering (DeepSeek) - RECTIFIED: Enabled 'open' server flag and preserved IPv4 127.0.0.1 anchoring. [2026-05-15]               ║
- * ║ • AI Engineering (DeepSeek) - FORTIFIED: Transparent proxy rewrite for seamless API handshake. [2026-05-15]                            ║
- * ║ • AI Engineering (DeepSeek) - EPITOMISED: Full JSDoc, added proxy diagnostic logging, version bump. [2026-05-16]                       ║
+ * ║ EPITOME:                                                                                                                             ║
+ * ║ Routes Node-owned /api traffic to port 4000 while explicitly rewriting EOS invoice paths to port 9095.                              ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 🔧 CHANGE LOG (v2.3.8):                                                                                                               ║
+ * ║   1. Routed /api/auth directly to the verified Kennel auth router; the live Node bootstrap was proxying it as /auth/login.         ║
+ * ║ 🔧 PRIOR CHANGE LOG (v2.3.7):                                                                                                        ║
+ * ║   1. Routed Kennel billing read models through /api/billing/* with the required /api removal only at the EOS boundary.             ║
+ * ║   2. Preserved the /api catch-all for Node-owned auth, business, telemetry, v1, treasury, subscriptions and partial payments.     ║
+ * ║ 🔧 PRIOR CHANGE LOG (v2.3.6):                                                                                                        ║
+ * ║   1. Preserved /api/auth → Node without rewriting.                                                                                  ║
+ * ║   2. Routed /api/billing/platform|client/invoices → Kennel /billing/* (Kennel has no /api prefix).                                 ║
+ * ║   3. Routed all remaining /api calls → Node, including /api/billing/invoices/:id/partial-payment.                                  ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-/**
- * @function resolveWilsyR91K179E27ClientModule
- * @description Resolves frontend dependencies from the client package boundary so the workspace root cannot inject a second React runtime.
- * @param {string} modulePath - Module path inside client node_modules.
- * @returns {string} Absolute module path.
- * @collaboration Vite React runtime, Sovereign dashboard error boundary, Meeting workspace development server.
- */
-function resolveWilsyR91K179E27ClientModule(modulePath) {
-  return path.resolve(__dirname, 'node_modules', modulePath);
-}
-
-/**
- * Vite configuration for WILSY OS frontend.
- *
- * **Features**:
- * - React plugin for JSX/TSX support.
- * - PostCSS configuration for Tailwind/CSS processing.
- * - Development server on port 3000 with auto‑launch.
- * - Proxy bridge: `/api` requests forwarded to backend on port 5050.
- * - Diagnostic logging for proxy events (error, proxyReq, proxyRes).
- *
- * @type {import('vite').UserConfig}
- */
 export default defineConfig({
-  // ============================================================================
-  // 🧩 PLUGINS
-  // ============================================================================
-  /**
-   * Vite plugins – React support.
-   * @type {Array}
-   */
   plugins: [react()],
-
-  // ============================================================================
-  // ⚛️ REACT RUNTIME SOVEREIGNTY
-  // ============================================================================
-  /**
-   * React runtime resolution – locks Vite to the client React 18 tree even when
-   * the monorepo root has a different React version for server-side tooling.
-   * @type {Object}
-   */
-  resolve: {
-    alias: {
-      react: resolveWilsyR91K179E27ClientModule('react'),
-      'react-dom': resolveWilsyR91K179E27ClientModule('react-dom'),
-      'react/jsx-dev-runtime': resolveWilsyR91K179E27ClientModule('react/jsx-dev-runtime.js'),
-      'react/jsx-runtime': resolveWilsyR91K179E27ClientModule('react/jsx-runtime.js'),
-    },
-    dedupe: ['react', 'react-dom', 'react/jsx-dev-runtime', 'react/jsx-runtime'],
-  },
-
-  /**
-   * Dependency pre-bundling – makes the dev server optimize the same React
-   * runtime that production build uses.
-   * @type {Object}
-   */
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-dev-runtime', 'react/jsx-runtime'],
+    include: ['js-sha3', 'axios', 'react', 'react-dom', 'react-router-dom']
   },
-
-  // ============================================================================
-  // 🎨 CSS CONFIGURATION
-  // ============================================================================
-  /**
-   * CSS processing options – points to PostCSS config file.
-   * @type {Object}
-   */
-  css: {
-    postcss: './postcss.config.js'
-  },
-
-  // ============================================================================
-  // 🖥️ DEVELOPMENT SERVER - MARS Protocol Bridge
-  // ============================================================================
-  /**
-   * Development server configuration.
-   * @type {Object}
-   */
   server: {
-    /**
-     * Frontend port – fixed to 3000.
-     * @type {number}
-     */
-    port: 3000,
-    /**
-     * Automatically open browser on start.
-     * @type {boolean}
-     */
+    port: 5173,
+    host: true,
+    strictPort: true,
     open: true,
-    /**
-     * Proxy configuration for API requests.
-     * @type {Object}
-     */
     proxy: {
-      '/api': {
-        /**
-         * Backend target URL.
-         * @type {string}
-         */
-        target: 'http://127.0.0.1:5050',
-        /**
-         * Preserve the original host header.
-         * @type {boolean}
-         */
+      // Kennel owns the live /api/auth router. Preserve its /api prefix.
+      '/api/auth': {
+        target: 'http://localhost:9095',
         changeOrigin: true,
-        /**
-         * Allow self‑signed certificates in development.
-         * @type {boolean}
-         */
         secure: false,
-        /**
-         * Enable WebSocket proxying.
-         * @type {boolean}
-         */
-        ws: true,
-        /**
-         * No rewrite – keep `/api` prefix.
-         * @param {string} path - Original request path
-         * @returns {string} Unmodified path
-         */
-        rewrite: (path) => path,
-        /**
-         * Configure proxy event handlers for diagnostics.
-         * @param {import('vite').ProxyOptions} proxy - The proxy instance
-         */
-        configure: (proxy) => {
-          // Log proxy errors
-          proxy.on('error', (err, req, res) => {
-            console.error('[VITE-PROXY] ❌ Proxy error:', err.message);
-            console.error('[VITE-PROXY] Request:', req.method, req.url);
-          });
-          // Log outgoing proxy requests
+        configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('[VITE-PROXY] 🚀', req.method, req.url, '→', proxyReq.path);
+            console.info(`[WILSY-PROXY-DISPATCH-AUTH-API] ${req.method} ${req.url} -> ${proxyReq.path}`);
           });
-          // Log proxy responses
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('[VITE-PROXY] ✅', req.method, req.url, '→', proxyRes.statusCode);
+            console.info(`[WILSY-PROXY-RETURN-AUTH-API] ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error('[WILSY-PROXY-FATAL-AUTH-API]', err.message);
+            if (!res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: false,
+                message: 'Auth backend unreachable – verify Kennel server on port 9095 is active.',
+                error: err.message
+              }));
+            }
+          });
+        }
+      },
+      // 👇 Fallback for /auth (without /api) – also to Node
+      '/auth': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.info(`[WILSY-PROXY-DISPATCH-AUTH] ${req.method} ${req.url}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.info(`[WILSY-PROXY-RETURN-AUTH] ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error('[WILSY-PROXY-FATAL-AUTH]', err.message);
+            if (!res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: false,
+                message: 'Auth backend unreachable – verify Node server on port 4000 is active.',
+                error: err.message
+              }));
+            }
+          });
+        }
+      },
+      // Kennel invoice lifecycle endpoints are mounted at /billing/*, not /api/billing/*.
+      // Keep these rules before the general /api BFF rule so compose/list reach EOS,
+      // while Node-owned actions (partial pay, PDF, audit) retain their correct owner.
+      '/api/billing/platform': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/api/billing/client': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      // Kennel billing read models are mounted at /billing/*, not /api/billing/*.
+      // This explicit rule must remain ahead of /api so Node-only routes retain Node ownership.
+      '^/api/billing/(plans|summary|analytics|credit-scores|forensic-status)(?:/|$)': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      // Kernel is an EOS service and is explicitly mounted at /api/kernel.
+      '/api/kernel': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Kennel owns the tenant and employee directories used by BillingHUD typeaheads.
+      '/api/tenants': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/employees': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
+      // All remaining API traffic belongs to the Node BFF (port 4000).
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.info(`[WILSY-PROXY-DISPATCH] ${req.method} ${req.url} -> ${proxyReq.path}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.info(`[WILSY-PROXY-RETURN] ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error('[WILSY-PROXY-FATAL]', err.message);
+            if (!res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: false,
+                message: 'Node BFF unreachable – verify port 4000 is active.',
+                error: err.message
+              }));
+            }
           });
         }
       }
     }
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
   }
 });
 
-// Display configuration summary on startup
-console.log(`
-╔══════════════════════════════════════════════════════════════════════════╗
-║           🔌 SOVEREIGN HANDSHAKE ENGINE ACTIVE - MARS PROTOCOL         ║
-║   Frontend: http://localhost:3000 | Backend: http://127.0.0.1:5050      ║
-║   Proxy: /api → /api | Auto-Launch: ENABLED | Status: BOARDROOM READY   ║
-║   Diagnostic Logging: ACTIVE                                            ║
-╚══════════════════════════════════════════════════════════════════════════╝
-`);
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════
+ * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.3.8-KENNEL-AUTH-OWNER
+ * ═══════════════════════════════════════════════════════════════════════════════════
+ * Status: CERTIFIED PRODUCTION ARTIFACT
+ * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
+ * Proxy Rules:
+ *   /api/auth → http://localhost:9095 (Kennel auth router) – no rewrite
+ *   /auth      → http://localhost:4000 (Node backend)
+ *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
+ *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
+ *   /api/kernel → http://localhost:9095/api/kernel
+ *   /api/tenants, /api/employees → http://localhost:9095
+ *   /api       → http://localhost:4000 (Node BFF)
+ * ═══════════════════════════════════════════════════════════════════════════════════
+ */

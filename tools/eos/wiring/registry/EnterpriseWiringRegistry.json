@@ -1,0 +1,13 @@
+{
+  "total_connections": 1,
+  "connections": [
+    {
+      "source": "ASSET-CRM-001",
+      "target": "ASSET-LEGAL-001",
+      "connection_type": "EVENT_PROPAGATION",
+      "metadata": {},
+      "wired_at": "2026-07-26T21:22:50.781845+00:00"
+    }
+  ],
+  "exported_at": "2026-07-26T21:22:50.782206+00:00"
+}

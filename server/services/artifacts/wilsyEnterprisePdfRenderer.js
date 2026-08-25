@@ -1,8 +1,43 @@
 /* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║                                                                                                                                        ║
+ * ║   ██████╗ ██╗██╗     ██╗     ██╗███╗   ██╗ ██████╗     ██████╗ ██╗   ██╗████████╗███████╗███████╗                               ║
+ * ║   ██╔══██╗██║██║     ██║     ██║████╗  ██║██╔════╝     ██╔══██╗██╔═══██╗██║   ██║╚══██╔══╝██╔════╝╚════██║                       ║
+ * ║   ██████╔╝██║██║     ██║     ██║██╔██╗ ██║██║  ███╗    ██████╔╝██║   ██║██║   ██║   ██║   █████╗   █████╔╝                       ║
+ * ║   ██╔══██╗██║██║     ██║     ██║██║╚██╗██║██║   ██║    ██╔══██╗██║   ██║██║   ██║   ██║   ██╔══╝  ██╔═══╝                        ║
+ * ║   ██████╔╝██║███████╗███████╗██║██║ ╚████║╚██████╔╝    ██║  ██║╚██████╔╝╚██████╔╝   ██║   ███████╗███████╗                       ║
+ * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
+ * ║                                                                                                                                        ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * 🏛️ WILSY OS - ENTERPRISE PDF RENDERER [v7.1.7‑QR‑INTEGRATION]
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ [SOVEREIGN INVOICE | EXECUTIVE DIGEST COVER | FORENSIC APPENDIX]                                                                     ║
+ * ║ [SARS‑COMPLIANT VAT | SERVICE TYPE | PREDICTIVE OVERLAYS | ANOMALY LOG]                                                              ║
+ * ║ [QR VERIFICATION INTEGRATION | TRACE ID EXPOSED | FORENSIC PROOF]                                                                    ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 7.1.7‑QR‑INTEGRATION | PRODUCTION READY | INSTITUTIONAL GRADE                                                               ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/artifacts/wilsyEnterprisePdfRenderer.js                       ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                              ║
+ * ║ • Wilson Khanyezi – Mandated prominent forensic footer with gold accents, monospaced identifiers, and QR/verify link.               ║
+ * ║ • AI Engineering – v7.1.7: Integrated qrGenerator.js (buildQRPayload, generateQRCode) for sovereign QR generation; removed legacy. ║
+ * ║ • Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · SARS VAT Act (No. 89 of 1991) · CIPC registration 2024/617944/07               ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 🔧 CHANGES (v7.1.7):                                                                                                                ║
+ * ║   1. Imported buildQRPayload and generateQRCode from ../qr/qrGenerator.js.                                                           ║
+ * ║   2. Replaced local buildQrPngBuffer with generateQRCode for both verification and payment QR codes.                                ║
+ * ║   3. Now generates a signed payload using buildQRPayload and encodes the verification URL in the QR.                                 ║
+ * ║   4. Added graceful fallback if QR generation fails (returns null buffer, renders placeholder).                                     ║
+ * ║   5. All existing invoice layout, forensic footer, and commercial logic preserved.                                                   ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
 import PDFDocument from 'pdfkit';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildQRPayload, generateQRCode } from '../qr/qrGenerator.js';
 
 const BRAND = Object.freeze({
   black: '#020403',
@@ -30,7 +65,6 @@ let LOGO_CACHE;
  * @description Converts unknown source values into safe PDF text.
  * @param {unknown} value - Unknown source value.
  * @returns {string} Clean text.
- * @collaboration Stabilizes artifact rendering when tenant source data is incomplete.
  */
 function textValue(value) {
   return String(value ?? '')
@@ -43,14 +77,11 @@ function textValue(value) {
  * @description Shortens long proof values for stable footer layout.
  * @param {string} value - Proof value.
  * @returns {string} Compact proof value.
- * @collaboration Preserves forensic visibility without proof-text collisions.
  */
 function compactProof(value = '') {
   const clean = textValue(value);
-
   if (!clean) return 'PENDING';
   if (clean.length <= 26) return clean;
-
   return `${clean.slice(0, 12)}...${clean.slice(-12)}`;
 }
 
@@ -59,7 +90,6 @@ function compactProof(value = '') {
  * @description Converts artifact type slugs into readable enterprise titles.
  * @param {string} type - Artifact type slug.
  * @returns {string} Readable title.
- * @collaboration Gives every artifact a tenant-facing title before source enrichment is complete.
  */
 function titleFromType(type = 'artifact') {
   return textValue(type)
@@ -77,7 +107,6 @@ function titleFromType(type = 'artifact') {
  * @description Creates safe artifact filenames.
  * @param {string} value - Raw filename value.
  * @returns {string} Safe filename.
- * @collaboration Prevents broken tenant downloads caused by unsafe document titles.
  */
 function safeFileName(value = 'artifact') {
   return (
@@ -92,7 +121,6 @@ function safeFileName(value = 'artifact') {
  * @function findLogoPath
  * @description Resolves the Wilsy OS logo from known client asset locations.
  * @returns {string} Existing logo path or empty string.
- * @collaboration Restores Wilsy OS branding inside backend-generated tenant PDFs.
  */
 function findLogoPath() {
   if (LOGO_CACHE !== undefined) return LOGO_CACHE;
@@ -119,7 +147,6 @@ function findLogoPath() {
  * @description Converts a low-trust identity token into a readable human name candidate.
  * @param {string} value - Raw identity text.
  * @returns {string} Title-cased human name candidate.
- * @collaboration PDF controls, operator identity evidence, CRM Proof Pack export, and sovereign accountability.
  */
 function titleCaseHumanName(value = '') {
   return textValue(value)
@@ -133,9 +160,6 @@ function titleCaseHumanName(value = '') {
 /**
  * @function resolveHumanGeneratedByName
  * @description Resolves the accountable human name/surname for Generated By controls without showing system slugs.
- * @param {object} args - Identity sources.
- * @returns {string} Human display name for control surfaces.
- * @collaboration Enterprise PDF renderer, CRM export proof pack, tenant identity, and audit control ownership.
  */
 function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {} } = {}) {
   const nestedUser =
@@ -144,28 +168,28 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
 
   const firstName = textValue(
     proofPack.firstName ||
-      proofPack.givenName ||
-      proofUser.firstName ||
-      proofUser.givenName ||
-      identity.firstName ||
-      identity.givenName ||
-      nestedUser.firstName ||
-      nestedUser.givenName
+    proofPack.givenName ||
+    proofUser.firstName ||
+    proofUser.givenName ||
+    identity.firstName ||
+    identity.givenName ||
+    nestedUser.firstName ||
+    nestedUser.givenName
   );
 
   const surname = textValue(
     proofPack.surname ||
-      proofPack.lastName ||
-      proofPack.familyName ||
-      proofUser.surname ||
-      proofUser.lastName ||
-      proofUser.familyName ||
-      identity.surname ||
-      identity.lastName ||
-      identity.familyName ||
-      nestedUser.surname ||
-      nestedUser.lastName ||
-      nestedUser.familyName
+    proofPack.lastName ||
+    proofPack.familyName ||
+    proofUser.surname ||
+    proofUser.lastName ||
+    proofUser.familyName ||
+    identity.surname ||
+    identity.lastName ||
+    identity.familyName ||
+    nestedUser.surname ||
+    nestedUser.lastName ||
+    nestedUser.familyName
   );
 
   const combinedName = textValue(`${firstName} ${surname}`);
@@ -176,27 +200,27 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
 
   const directName = textValue(
     proofPack.generatedByDisplayName ||
-      proofPack.generatedByName ||
-      proofPack.generatorName ||
-      proofPack.operatorName ||
-      proofPack.operatorDisplayName ||
-      proofPack.displayName ||
-      proofUser.name ||
-      proofUser.displayName ||
-      identity.generatedByDisplayName ||
-      identity.generatedByName ||
-      identity.generatorName ||
-      identity.operatorName ||
-      identity.operatorDisplayName ||
-      identity.displayName ||
-      identity.name ||
-      nestedUser.name ||
-      nestedUser.displayName ||
-      state.generatedByDisplayName ||
-      state.operatorDisplayName ||
-      state.ownerDisplayName ||
-      state.displayName ||
-      state.generatedByName
+    proofPack.generatedByName ||
+    proofPack.generatorName ||
+    proofPack.operatorName ||
+    proofPack.operatorDisplayName ||
+    proofPack.displayName ||
+    proofUser.name ||
+    proofUser.displayName ||
+    identity.generatedByDisplayName ||
+    identity.generatedByName ||
+    identity.generatorName ||
+    identity.operatorName ||
+    identity.operatorDisplayName ||
+    identity.displayName ||
+    identity.name ||
+    nestedUser.name ||
+    nestedUser.displayName ||
+    state.generatedByDisplayName ||
+    state.operatorDisplayName ||
+    state.ownerDisplayName ||
+    state.displayName ||
+    state.generatedByName
   );
 
   const forbiddenSlugs = new Set(['wilsy-operator', 'operator', 'system', 'wilsy', 'anonymous']);
@@ -208,13 +232,13 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
 
   const email = textValue(
     proofPack.operatorEmail ||
-      proofPack.email ||
-      proofUser.email ||
-      identity.userEmail ||
-      identity.email ||
-      nestedUser.email ||
-      state.operatorEmail ||
-      state.generatedBy
+    proofPack.email ||
+    proofUser.email ||
+    identity.userEmail ||
+    identity.email ||
+    nestedUser.email ||
+    state.operatorEmail ||
+    state.generatedBy
   );
 
   if (email.includes('@')) {
@@ -245,20 +269,12 @@ function resolveHumanGeneratedByName({ proofPack = {}, identity = {}, state = {}
 /**
  * @function replaceGeneratedBySlugRows
  * @description Rewrites proof-pack generated-by rows so audit PDFs show human accountability instead of system slugs.
- * @param {unknown[]} rows - Proof rows.
- * @param {string} generatedByName - Human generated-by name.
- * @returns {unknown[]} Rows with generated-by values corrected.
- * @collaboration CRM Proof Pack evidence rows, PDF document control, and operator accountability controls.
  */
 function replaceGeneratedBySlugRows(rows = [], generatedByName = '') {
-  if (!Array.isArray(rows)) {
-    return [];
-  }
-
+  if (!Array.isArray(rows)) return [];
   return rows.map((row) => {
     if (Array.isArray(row)) {
       const label = textValue(row[0]).toLowerCase();
-
       if (
         label === 'generated by' ||
         label === 'generatedby' ||
@@ -267,32 +283,20 @@ function replaceGeneratedBySlugRows(rows = [], generatedByName = '') {
       ) {
         return [row[0], generatedByName];
       }
-
       return row;
     }
-
     if (row && typeof row === 'object') {
       const label = textValue(row.label || row.title || row.key || row.name).toLowerCase();
-
       if (
         label === 'generated by' ||
         label === 'generatedby' ||
         label === 'operator' ||
         label === 'generated by:'
       ) {
-        return {
-          ...row,
-          value: generatedByName,
-          detail:
-            row.detail && textValue(row.detail).toLowerCase() !== 'wilsy-operator'
-              ? row.detail
-              : generatedByName,
-        };
+        return { ...row, value: generatedByName, detail: row.detail && textValue(row.detail).toLowerCase() !== 'wilsy-operator' ? row.detail : generatedByName };
       }
-
       return row;
     }
-
     return row;
   });
 }
@@ -300,10 +304,6 @@ function replaceGeneratedBySlugRows(rows = [], generatedByName = '') {
 /**
  * @function buildState
  * @description Builds normalized render state from verified request identity and proof context.
- * @param {object} identity - Verified artifact identity.
- * @param {object} proof - Forensic proof context.
- * @returns {object} Render state.
- * @collaboration Bridges request verification into the enterprise renderer.
  */
 function buildState(identity = {}, proof = {}) {
   const data = identity.data || identity.payload || {};
@@ -356,12 +356,566 @@ function buildState(identity = {}, proof = {}) {
   };
 }
 
+// ─── BILLING INVOICE HELPERS ────────────────────────────────────────────────
+
+/**
+ * @function isBillingInvoiceType
+ * @description Detects billing invoice / statement artifact types.
+ */
+
+/**
+ * @function buildVerifyAuditUrl
+ * @description Public forensic verification URL for the invoice trace.
+ * @param {object} state
+ * @returns {string}
+ * @collaboration Evidence vault, regulator instant verify, Kennel audit bridge
+ * @institutional POPIA §19 · GDPR §32 · SOC2 §CC7.2
+ */
+function buildVerifyAuditUrl(state = {}) {
+  const trace = textValue(state.traceId || state.requestProof || 'UNKNOWN').replace(/[^A-Za-z0-9._-]/g, '');
+  return `https://verify.wilsy.os/audit/${encodeURIComponent(trace || 'UNKNOWN')}`;
+}
+
+/**
+ * @function buildPaymentSettleUrl
+ * @description One-click settlement deep-link (PayShap / Zapper compatible landing).
+ *              Live rails resolve amount + reference server-side from invoice id.
+ * @param {object} state
+ * @returns {string}
+ * @collaboration Treasury, PayShap, Zapper, collections path
+ */
+function buildPaymentSettleUrl(state = {}) {
+  const inv = encodeURIComponent(textValue(state.invoiceNumber || state.title || 'INV'));
+  const amount = Number(state.totalAmount ?? state.amount ?? 0).toFixed(2);
+  const currency = encodeURIComponent(textValue(state.currency || 'ZAR'));
+  const tenant = encodeURIComponent(textValue(state.tenantId || 'MASTER'));
+  return `https://pay.wilsy.os/settle?ref=${inv}&amount=${amount}&currency=${currency}&tenant=${tenant}`;
+}
+
+/**
+ * @function resolveInvoicePaymentInstructions
+ * @description Resolves issuer-owned payment instructions without exposing platform banking details on tenant-issued invoices.
+ * @param {object} state Hydrated invoice state.
+ * @returns {{rail:string,bankName:string,accountName:string,accountNumber:string,branchCode:string,bicSwift:string,reference:string}|null} Printable settlement instructions.
+ * @collaboration Keeps Wilsy platform collection details separate from tenant-to-client branding and settlement rails.
+ */
+function resolveInvoicePaymentInstructions(state = {}) {
+  const issuerType = textValue(state.issuerType).toUpperCase();
+  const branding = state.brandingNexus || {};
+  if (issuerType === 'PLATFORM') {
+    const bankName = textValue(process.env.CAPITEC_BANK_NAME);
+    const accountName = textValue(process.env.CAPITEC_ACCOUNT_NAME);
+    const accountNumber = textValue(process.env.CAPITEC_ACCOUNT_NUMBER);
+    const branchCode = textValue(process.env.CAPITEC_BRANCH_CODE);
+    const bicSwift = textValue(process.env.CAPITEC_BIC_SWIFT);
+    if (!bankName || !accountName || !accountNumber || !branchCode) return null;
+    return {
+      rail: 'Bank transfer (EFT)',
+      bankName,
+      accountName,
+      accountNumber,
+      branchCode,
+      bicSwift,
+      reference: textValue(state.invoiceNumber || state.title),
+    };
+  }
+  const tenantPayment = branding.paymentInstructions || branding.payment_details || null;
+  if (!tenantPayment || typeof tenantPayment !== 'object') return null;
+  return {
+    rail: textValue(tenantPayment.rail || 'Bank transfer'),
+    bankName: textValue(tenantPayment.bankName || tenantPayment.bank_name),
+    accountName: textValue(tenantPayment.accountName || tenantPayment.account_name),
+    accountNumber: textValue(tenantPayment.accountNumber || tenantPayment.account_number),
+    branchCode: textValue(tenantPayment.branchCode || tenantPayment.branch_code),
+    bicSwift: textValue(tenantPayment.bicSwift || tenantPayment.bic_swift),
+    reference: textValue(tenantPayment.reference || state.invoiceNumber || state.title),
+  };
+}
+
+/**
+ * @function drawQrBlock
+ * @description Draws a labelled QR (or text fallback) inside a framed card.
+ * @param {PDFDocument} doc
+ * @param {number} x
+ * @param {number} y
+ * @param {number} size - image size in pt
+ * @param {Buffer|null} pngBuffer
+ * @param {string} label
+ * @param {string} caption - short URL/hint under label
+ * @returns {number} height consumed
+ */
+function drawQrBlock(doc, x, y, size, pngBuffer, label, caption) {
+  const framePad = 8;
+  const frameW = size + framePad * 2;
+  const frameH = size + framePad * 2 + 28;
+  doc.roundedRect(x, y, frameW, frameH, 4).strokeColor(BRAND.line).lineWidth(0.8).stroke();
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(7)
+    .text(textValue(label).toUpperCase(), x + 4, y + 5, { width: frameW - 8, align: 'center', lineBreak: false });
+
+  const imgY = y + 16;
+  if (pngBuffer && Buffer.isBuffer(pngBuffer) && pngBuffer.length > 32) {
+    try {
+      doc.image(pngBuffer, x + framePad, imgY, { width: size, height: size });
+    } catch {
+      doc.fillColor(BRAND.muted).font('Helvetica').fontSize(6.5)
+        .text('QR unavailable', x + framePad, imgY + size / 2 - 4, { width: size, align: 'center' });
+    }
+  } else {
+    doc.roundedRect(x + framePad, imgY, size, size, 2).fill(BRAND.panel);
+    doc.fillColor(BRAND.muted).font('Helvetica').fontSize(6)
+      .text('Install npm\npackage qrcode', x + framePad + 4, imgY + size / 2 - 10, {
+        width: size - 8,
+        align: 'center',
+      });
+  }
+
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(5.5)
+    .text(textValue(caption).slice(0, 42), x + 2, y + frameH - 12, {
+      width: frameW - 4,
+      align: 'center',
+      lineBreak: false,
+    });
+  return frameH;
+}
+
+function isBillingInvoiceType(type = '') {
+  const t = textValue(type).toLowerCase();
+  return (
+    t.includes('billing-invoice') ||
+    t.includes('billing_invoice') ||
+    t === 'invoice' ||
+    t.includes('billing-statement') ||
+    t.includes('billing_statement') ||
+    t === 'statement'
+  );
+}
+
+/**
+ * @function formatInvoiceMoney
+ * @description Formats invoice amounts for PDF (ZAR-first, multi-currency safe).
+ */
+function formatInvoiceMoney(amount = 0, currency = 'ZAR') {
+  const n = Number(amount);
+  const cur = textValue(currency) || 'ZAR';
+  if (!Number.isFinite(n)) return `${cur} 0.00`;
+  try {
+    return new Intl.NumberFormat('en-ZA', {
+      style: 'currency',
+      currency: cur,
+      minimumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return `${cur} ${n.toFixed(2)}`;
+  }
+}
+
+/**
+ * @function formatEnterpriseDate
+ * @description Converts ISO date strings to "DD MMM YYYY" format (e.g., "08 SEP 2026").
+ * @param {string} isoString - ISO date string.
+ * @returns {string} Formatted date or original if invalid.
+ */
+function formatEnterpriseDate(isoString) {
+  if (!isoString) return '—';
+  try {
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return isoString;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = date.toLocaleString('en-ZA', { month: 'short' }).toUpperCase();
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch {
+    return isoString;
+  }
+}
+
+/**
+ * @function getBusinessPostureLabel
+ * @description Maps technical source posture codes to business‑friendly labels.
+ * @param {string} posture - Technical posture value (e.g., "SOURCE_LIVE").
+ * @returns {string} Business‑friendly label.
+ * @collaboration Wilson Khanyezi – mandated removal of backend jargon.
+ * @institutional Ensures regulators and clients see enterprise‑grade terminology.
+ */
+function getBusinessPostureLabel(posture) {
+  const map = {
+    'SOURCE_LIVE': 'LIVE LEDGER',
+    'SOURCE_REPAIR_REQUIRED': 'REPAIR REQUIRED',
+    'SOURCE_SILENT': 'VERIFICATION PENDING',
+    'SOURCE_ERROR': 'INTEGRITY CHECK FAILED',
+    'SOURCE_STANDBY': 'AWAITING CONFIRMATION',
+  };
+  return map[posture] || posture;
+}
+
+/**
+ * @function hydrateBillingInvoiceState
+ * @description Maps BillingHUD / generate-pdf payload into commercial invoice state.
+ * Extends with forecast, anomalies, escalation, compliance badges from identity metadata.
+ * 🆕 Injects Wilsy platform defaults (reg, VAT, address) for platform invoices.
+ * @collaboration Wilson Khanyezi – Mandated real Wilsy details on platform invoices.
+ * @institutional POPIA §19, GDPR §32, SOC2 §CC7.2, SARS VAT Act, CIPC registration 2024/617944/07
+ */
+function hydrateBillingInvoiceState(state = {}, identity = {}) {
+  const meta = identity.metadata || identity.payload?.metadata || {};
+  const data = identity.data || identity.payload || identity.payloadData || {};
+  const type = textValue(state.type || identity.type || identity.artifactType || '');
+
+  if (!isBillingInvoiceType(type)) {
+    return state;
+  }
+
+  // Extract line items from multiple sources
+  let lineItems = [];
+  if (Array.isArray(data.lineItems) && data.lineItems.length) {
+    lineItems = data.lineItems;
+  } else if (Array.isArray(meta.lineItems) && meta.lineItems.length) {
+    lineItems = meta.lineItems;
+  } else if (Array.isArray(data.items) && data.items.length) {
+    lineItems = data.items;
+  }
+
+  const amount = Number(
+    meta.amount ?? data.totalAmount ?? data.amount ?? identity.amount ?? 0
+  );
+  const currency = textValue(meta.currency || data.currency || 'ZAR') || 'ZAR';
+  const invoiceNumber = textValue(
+    meta.invoiceNumber ||
+    data.invoiceNumber ||
+    meta.invoiceId ||
+    data.invoiceId ||
+    identity.title ||
+    state.title
+  );
+  const status = textValue(meta.status || data.status || 'ISSUED').toUpperCase();
+  const dueDate = textValue(meta.dueDate || data.dueDate || '');
+  const issueDate = textValue(
+    meta.issueDate || data.issueDate || state.effectiveDate || ''
+  );
+  const sealHash = textValue(meta.sealHash || data.sealHash || state.sha3 || '');
+  const branding = data.brandingNexus || meta.brandingNexus || null;
+  const issuerTypeRaw = textValue(
+    meta.issuerType || data.issuerType || meta.invoiceScope || data.invoiceScope || ''
+  ).toUpperCase();
+
+  // ─── WILSY PLATFORM DEFAULTS ──────────────────────────────────────────────
+  const WILSY_DEFAULTS = {
+    issuerRegNumber: '2024/617944/07',
+    supplierVatNumber: '9395759229',
+    supplierAddress: 'UNIT 29 SUMATRA ESTATE, CNR 8TH RD AND 7TH RD, NOORDWYK MIDRAND, GAUTENG, 1682'
+  };
+
+  const isPlatform = issuerTypeRaw === 'PLATFORM' ||
+    issuerTypeRaw === 'WILSY_PLATFORM' ||
+    textValue(state.tenantId).toUpperCase() === 'GLOBAL_ROOT' ||
+    textValue(state.tenantId).toUpperCase() === 'WILSY_PLATFORM';
+
+  const regNumber = textValue(
+    meta.issuerRegNumber ||
+    data.issuerRegNumber ||
+    branding?.registrationNumber ||
+    branding?.companyReg ||
+    (isPlatform ? WILSY_DEFAULTS.issuerRegNumber : '')
+  );
+
+  const vatNumber = textValue(
+    meta.supplierVatNumber ||
+    data.supplierVatNumber ||
+    branding?.vatNumber ||
+    branding?.vatNo ||
+    (isPlatform ? WILSY_DEFAULTS.supplierVatNumber : '')
+  );
+
+  const address = textValue(
+    meta.supplierAddress ||
+    data.supplierAddress ||
+    branding?.address ||
+    branding?.businessAddress ||
+    (isPlatform ? WILSY_DEFAULTS.supplierAddress : '')
+  );
+
+  // ─── Forensic enhancements ──────────────────────────────────────────────
+  const forecast = meta.forecast || data.forecast || null;
+  const anomalies = Array.isArray(meta.anomalies)
+    ? meta.anomalies
+    : Array.isArray(data.anomalies)
+      ? data.anomalies
+      : [];
+  const escalation = meta.escalation || data.escalation || null;
+  const complianceBadges = meta.complianceBadges || data.complianceBadges || ['POPIA', 'GDPR', 'SOC2'];
+
+  // ─── SARS‑Compliant VAT Calculation ────────────────────────────
+  const VAT_RATE = 0.15;
+  let subtotalExclVAT = 0;
+  let totalVAT = 0;
+  const enrichedItems = [];
+
+  if (lineItems.length) {
+    const hasTaxAmounts = lineItems.some(li => Number(li.taxAmount) > 0);
+
+    for (const li of lineItems) {
+      const qty = Number(li.quantity ?? 1);
+      let lineTotalIncl = Number(li.lineTotal ?? li.amount ?? qty * (li.unitPrice ?? 0));
+      if (lineTotalIncl === 0 && li.unitPrice) {
+        lineTotalIncl = qty * Number(li.unitPrice);
+      }
+
+      let vatAmount = 0;
+      let lineExcl = lineTotalIncl;
+
+      if (hasTaxAmounts) {
+        vatAmount = Number(li.taxAmount || 0);
+        lineExcl = lineTotalIncl - vatAmount;
+      } else if (lineTotalIncl > 0) {
+        vatAmount = lineTotalIncl / (1 + VAT_RATE) * VAT_RATE;
+        lineExcl = lineTotalIncl - vatAmount;
+      }
+
+      subtotalExclVAT += lineExcl;
+      totalVAT += vatAmount;
+
+      enrichedItems.push({
+        ...li,
+        _vatExclusivePrice: lineExcl / qty,
+        _calculatedTaxAmount: vatAmount,
+        _lineExclTotal: lineExcl,
+        _lineInclTotal: lineTotalIncl,
+        serviceType: textValue(li.serviceType || li.category || li.type || ''),
+      });
+    }
+  } else {
+    const totalIncl = amount || 0;
+    if (totalIncl > 0) {
+      totalVAT = totalIncl / (1 + VAT_RATE) * VAT_RATE;
+      subtotalExclVAT = totalIncl - totalVAT;
+    }
+  }
+
+  const totalAmount = subtotalExclVAT + totalVAT;
+
+  return {
+    ...state,
+    hasBillingInvoice: true,
+    title: invoiceNumber || state.title || 'Sovereign Invoice',
+    type: textValue(identity.type || identity.artifactType || state.type || 'billing-invoice'),
+    invoiceNumber,
+    status,
+    amount: totalAmount,
+    currency,
+    dueDate,
+    issueDate,
+    sealHash,
+    lineItems: enrichedItems,
+    subtotalExclVAT,
+    totalVAT,
+    totalAmount,
+    vatRate: VAT_RATE,
+    subtotal: subtotalExclVAT,
+    taxAmount: totalVAT,
+    taxRate: VAT_RATE,
+    brandingNexus: branding,
+    issuerType: issuerTypeRaw || (isPlatform ? 'PLATFORM' : 'TENANT'),
+    issuingEntity: textValue(
+      branding?.legalEntity || state.issuingEntity || identity.issuingEntity || 'Wilsy (Pty) Ltd'
+    ),
+    issuerRegNumber: regNumber,
+    supplierVatNumber: vatNumber,
+    supplierAddress: address,
+    paymentInstructions: resolveInvoicePaymentInstructions({
+      issuerType: issuerTypeRaw || (isPlatform ? 'PLATFORM' : 'TENANT'),
+      brandingNexus: branding || {},
+      invoiceNumber,
+      title: state.title,
+    }),
+    counterparty: textValue(
+      identity.counterparty || data.counterparty || meta.counterparty || state.counterparty
+    ),
+    forecast,
+    anomalies,
+    escalation,
+    complianceBadges,
+  };
+}
+
+/**
+ * @function isBillingInvoiceState
+ * @param {object} state
+ * @returns {boolean}
+ */
+function isBillingInvoiceState(state = {}) {
+  return Boolean(state.hasBillingInvoice);
+}
+
+/**
+ * @function drawLineItemTable
+ * @description Draws a structured table for invoice line items.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {object} cursor - Cursor object with y.
+ * @param {Array} lineItems - Array of line items.
+ * @param {string} currency - Currency code.
+ * @returns {object} Updated cursor.
+ */
+function drawLineItemTable(doc, cursor, lineItems, currency) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
+  const tableLeft = PAGE.left + 10;
+  const tableWidth = PAGE.contentWidth - 20;
+  const colDesc = tableWidth * 0.45;
+  const colQty = tableWidth * 0.12;
+  const colUnit = tableWidth * 0.18;
+  const colTotal = tableWidth * 0.25;
+
+  // Table header
+  const headerY = cursor.y;
+  doc.rect(tableLeft, headerY, tableWidth, 20).fill(BRAND.black);
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(8);
+  const headerTexts = ['Description', 'Qty', 'Unit Price', 'Total'];
+  const xPositions = [tableLeft, tableLeft + colDesc, tableLeft + colDesc + colQty, tableLeft + colDesc + colQty + colUnit];
+  headerTexts.forEach((text, i) => {
+    doc.text(text, xPositions[i] + 6, headerY + 4, { width: xPositions[i + 1] ? xPositions[i + 1] - xPositions[i] - 12 : tableWidth - xPositions[i] - 6, lineBreak: false });
+  });
+  cursor.y = headerY + 20;
+
+  // Rows
+  lineItems.forEach((item, index) => {
+    const y = cursor.y;
+    const bg = index % 2 === 0 ? '#FFFFFF' : BRAND.band;
+    doc.rect(tableLeft, y, tableWidth, 18).fill(bg);
+    doc.fillColor(BRAND.black).font('Helvetica').fontSize(8);
+
+    const desc = textValue(item.description || item.name || 'Service');
+    const qty = Number(item.quantity ?? 1);
+    const unit = Number(item.unitPrice ?? item.amount ?? 0);
+    const lineTotal = Number(item.lineTotal ?? qty * unit);
+    const money = (v) => formatInvoiceMoney(v, currency);
+
+    doc.text(desc, tableLeft + 6, y + 2, { width: colDesc - 12, lineBreak: true });
+    doc.text(String(qty), tableLeft + colDesc + 6, y + 2, { width: colQty - 12, lineBreak: false });
+    doc.text(money(unit), tableLeft + colDesc + colQty + 6, y + 2, { width: colUnit - 12, lineBreak: false });
+    doc.text(money(lineTotal), tableLeft + colDesc + colQty + colUnit + 6, y + 2, { width: colTotal - 12, lineBreak: false });
+
+    cursor.y = y + 18;
+  });
+
+  // Bottom border
+  doc.rect(tableLeft, cursor.y, tableWidth, 1).fill(BRAND.line);
+  cursor.y += 2;
+
+  return cursor;
+}
+
+/**
+ * @function getBillingInvoiceSections
+ * @description Commercial sections for tax-grade invoices – now with service type, prominent amounts, and SARS‑compliant VAT breakdown.
+ */
+function getBillingInvoiceSections(state = {}) {
+  const money = (v) => formatInvoiceMoney(v, state.currency);
+  const date = (iso) => formatEnterpriseDate(iso);
+
+  // Build line items as a structured object to be rendered as a table later
+  const lineItems = Array.isArray(state.lineItems) && state.lineItems.length
+    ? state.lineItems.map((li) => ({
+      description: textValue(li.description || li.name || 'Service'),
+      serviceType: textValue(li.serviceType || li.category || li.type || ''),
+      quantity: Number(li.quantity ?? 1),
+      unitPrice: Number(li.unitPrice ?? li.amount ?? 0),
+      lineTotal: Number(li.lineTotal ?? li.amount ?? (li.quantity || 1) * (li.unitPrice || 0)),
+      taxAmount: Number(li._calculatedTaxAmount ?? li.taxAmount ?? 0),
+    }))
+    : [];
+
+  // Build sections – we will handle the line items table separately
+  const sections = [
+    {
+      title: '1. COMMERCIAL SUMMARY',
+      paragraphs: [
+        `Invoice: ${state.invoiceNumber}  •  Status: ${state.status}`,
+        `Issue: ${date(state.issueDate)}  •  Due: ${date(state.dueDate)}`,
+        `Currency: ${state.currency}`,
+        `▶  TOTAL AMOUNT DUE: ${money(state.totalAmount)} (VAT INCLUSIVE)`,
+        `   Subtotal (excl. VAT): ${money(state.subtotalExclVAT)}`,
+        `   VAT (${Math.round(state.vatRate * 100)}%): ${money(state.totalVAT)}`,
+      ],
+    },
+    {
+      title: '2. PARTIES',
+      paragraphs: [
+        `Supplier: ${state.issuingEntity}`,
+        `Customer: ${state.counterparty}`,
+        `Jurisdiction: ${state.jurisdiction}`,
+        // Add VAT numbers if present
+        ...(state.supplierVatNumber ? [`Supplier VAT No.: ${state.supplierVatNumber}`] : []),
+        ...(state.customerVatNumber ? [`Customer VAT No.: ${state.customerVatNumber}`] : []),
+        ...(state.supplierAddress ? [`Supplier Address: ${state.supplierAddress}`] : []),
+      ],
+    },
+    {
+      title: '3. LINE ITEMS (VAT INCLUSIVE PRICES SHOWN)',
+      lineItemsTable: true,
+      lineItemsData: lineItems,
+    },
+    {
+      title: '4. COMPLIANCE BADGES',
+      paragraphs: state.complianceBadges && state.complianceBadges.length
+        ? state.complianceBadges.map((badge) => `✅ ${badge} compliant`)
+        : ['✅ POPIA compliant', '✅ GDPR compliant', '✅ SOC2 compliant'],
+    },
+  ];
+
+  // Predictive overlay
+  if (state.forecast) {
+    sections.push({
+      title: '5. PREDICTIVE FORECAST',
+      paragraphs: [
+        `Payment probability: ${state.forecast.prediction}  •  Confidence: ${state.forecast.confidence}%`,
+        `Expected settlement: ${date(state.forecast.expectedDate)}`,
+      ],
+    });
+  }
+
+  // Anomaly detection
+  if (state.anomalies && state.anomalies.length > 0) {
+    sections.push({
+      title: '6. ANOMALY DETECTION',
+      paragraphs: state.anomalies.map((a) => `⚠️ ${a.description}`),
+    });
+  }
+
+  // Escalation automation
+  if (state.escalation) {
+    const tickets = Array.isArray(state.escalation.tickets) ? state.escalation.tickets.join(', ') : '—';
+    const alerts = Array.isArray(state.escalation.alerts) ? state.escalation.alerts.join(', ') : '—';
+    sections.push({
+      title: '7. ESCALATION LOG',
+      paragraphs: [
+        `Tickets: ${tickets}`,
+        `Alerts: ${alerts}`,
+        `History: ${(state.escalation.history || []).map((e) => `${date(e.timestamp)} – ${e.action}`).join('; ')}`,
+      ],
+    });
+  }
+
+  // Forensic seal
+  sections.push({
+    title: '8. FORENSIC SEAL',
+    paragraphs: [
+      `Seal: ${compactProof(state.sealHash || state.sha3)}`,
+      `Trace: ${state.traceId}`,
+      `Merkle: ${compactProof(state.merkleRoot)}`,
+      `Source: ${state.sourcePosture}`,
+      'This invoice is generated under Wilsy OS Billing Nucleus. Commercial figures are from the live ledger at print time.',
+    ],
+  });
+
+  return sections;
+}
+
+// ─── END BILLING INVOICE HELPERS ───────────────────────────────────────────
+
+// ─── DRAWING FUNCTIONS ──────────────────────────────────────────────────────
+
 /**
  * @function drawLogo
  * @description Draws the Wilsy logo optically centered inside the enterprise header badge.
- * @param {PDFDocument} doc - PDF document.
- * @returns {void}
- * @collaboration Ensures every generated artifact has precise institutional branding.
  */
 function drawLogo(doc) {
   const logoPath = findLogoPath();
@@ -392,82 +946,399 @@ function drawLogo(doc) {
 }
 
 /**
+ * @function drawComplianceBadge
+ * @description Draws a fixed-size gold outline badge with text optically centered.
+ * @param {PDFDocument} doc
+ * @param {number} x
+ * @param {number} y
+ * @param {string} label
+ * @returns {number} width consumed including gap
+ * @collaboration Invoice header compliance strip
+ */
+function drawComplianceBadge(doc, x, y, label) {
+  const text = textValue(label).toUpperCase().slice(0, 12);
+  const padX = 10;
+  doc.font('Helvetica-Bold').fontSize(6.5);
+  const textW = Math.min(72, Math.max(36, doc.widthOfString(text) + padX * 2));
+  const h = 15;
+  doc
+    .roundedRect(x, y, textW, h, 2)
+    .strokeColor(BRAND.gold)
+    .lineWidth(1)
+    .stroke();
+  const textY = y + (h - 7) / 2;
+  doc
+    .fillColor(BRAND.gold)
+    .font('Helvetica-Bold')
+    .fontSize(6.5)
+    .text(text, x, textY, { width: textW, align: 'center', lineBreak: false });
+  return textW + 6;
+}
+
+/**
+ * @function resolveInvoiceIssuerIdentity
+ * @description Platform invoices/statements → Wilsy (Pty) Ltd with reg/VAT/address; tenant invoices → tenant business name.
+ * @param {object} state
+ * @returns {{ issuerType: string, legalName: string, regLine: string, detailLine: string }}
+ * @collaboration Branding nexus, businessArtifactPdfController, multi-tenant statements
+ * @institutional SARS issuer identity · POPIA §19
+ */
+function resolveInvoiceIssuerIdentity(state = {}) {
+  const typeHint = textValue(state.issuerType || state.invoiceScope || '').toUpperCase();
+  const branding = state.brandingNexus || {};
+  const legalFromBrand = textValue(branding.legalEntity || branding.businessName || '');
+  const issuing = textValue(state.issuingEntity || '');
+  const platformNames = ['WILSY (PTY) LTD', 'WILSY OS', 'WILSY', 'WILSY_PLATFORM', 'Wilsy (Pty) Ltd'];
+
+  let issuerType = typeHint;
+  if (!issuerType) {
+    const candidate = (legalFromBrand || issuing).toUpperCase();
+    const isPlatform =
+      !candidate ||
+      platformNames.some((n) => candidate.includes(String(n).toUpperCase())) ||
+      textValue(state.tenantId).toUpperCase() === 'GLOBAL_ROOT' ||
+      textValue(state.tenantId).toUpperCase() === 'WILSY_PLATFORM';
+    issuerType = isPlatform ? 'PLATFORM' : 'TENANT';
+  }
+
+  const legalName =
+    issuerType === 'PLATFORM'
+      ? textValue(legalFromBrand || issuing || 'Wilsy (Pty) Ltd') || 'Wilsy (Pty) Ltd'
+      : textValue(legalFromBrand || issuing || state.counterparty || 'Tenant') || 'Tenant';
+
+  // Build reg line from state fields (which now include defaults for platform)
+  const regParts = [
+    textValue(state.supplierVatNumber || branding.vatNumber || branding.vatNo || ''),
+    textValue(state.issuerRegNumber || branding.registrationNumber || branding.companyReg || ''),
+  ].filter(Boolean);
+  const regLine = regParts.length
+    ? regParts.join('  ·  ')
+    : issuerType === 'PLATFORM'
+      ? 'Wilsy OS · Institutional billing nucleus'
+      : 'Tenant-issued sovereign invoice';
+
+  const detailLine =
+    textValue(state.supplierAddress || branding.address || branding.footer || '') ||
+    (issuerType === 'PLATFORM' ? 'Registered company · Republic of South Africa' : '');
+
+  return { issuerType, legalName, regLine, detailLine };
+}
+
+/**
  * @function drawHeader
- * @description Draws a non-overlapping Wilsy OS enterprise header with logo and accurate pagination.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} state - Render state.
- * @param {number} pageNumber - Page number.
- * @param {number} totalPages - Total pages.
- * @returns {void}
- * @collaboration Produces tenant-facing header quality for legal, HR, finance and invoice artifacts.
+ * @description Header hierarchy: logo · doc type · issuer legal name · invoice no · centred badges.
+ *              Platform artifacts show Wilsy (Pty) Ltd with reg/VAT/address; tenant artifacts show tenant business name.
+ *              Invoice number is never concatenated into the title string (avoids ugly wrap).
  */
 function drawHeader(doc, state, pageNumber, totalPages) {
   doc.save();
 
-  doc.rect(42, 34, 512, 126).fill(BRAND.black);
-  doc.rect(42, 160, 512, 5).fill(BRAND.gold);
+  // Header band
+  doc.rect(42, 34, 512, 88).fill(BRAND.black);
+  doc.rect(42, 122, 512, 4).fill(BRAND.gold);
 
   drawLogo(doc);
 
-  const title = textValue(state.title || 'Wilsy OS Artifact').toUpperCase();
-  const titleSize = title.length > 48 ? 14.5 : title.length > 34 ? 17 : title.length > 22 ? 20 : 22;
+  const contentX = 140;
+  const contentW = 280;
+  const issuer = isBillingInvoiceState(state)
+    ? resolveInvoiceIssuerIdentity(state)
+    : {
+      issuerType: 'PLATFORM',
+      legalName: textValue(state.issuingEntity || 'Wilsy (Pty) Ltd'),
+      regLine: '',
+      detailLine: '',
+    };
 
+  // Line 1 — document type (gold micro-label)
   doc
     .fillColor(BRAND.gold)
     .font('Helvetica-Bold')
-    .fontSize(8.5)
+    .fontSize(8)
     .text(
-      isWilsyKnowledgeBaseState(state)
-        ? 'WILSY OS KNOWLEDGE BASE ARTIFACT'
-        : 'WILSY OS ENTERPRISE ARTIFACT',
-      140,
-      52,
-      { width: 300, lineBreak: false }
+      isBillingInvoiceState(state) ? 'TAX INVOICE' : 'ENTERPRISE ARTIFACT',
+      contentX,
+      48,
+      { width: contentW, lineBreak: false }
     );
 
+  // Line 2 — issuer legal name (primary, white) — company identity, not the long invoice id
   doc
     .fillColor('#FFFFFF')
     .font('Helvetica-Bold')
-    .fontSize(titleSize)
-    .text(title, 140, 72, { width: 300, lineGap: 0 });
-
-  doc
-    .fillColor(BRAND.ivory)
-    .font('Helvetica')
-    .fontSize(7)
-    .text('Authority • Review • Execution • Forensic Proof • Source-Aware Control', 140, 134, {
-      width: 338,
+    .fontSize(13)
+    .text(issuer.legalName, contentX, 60, {
+      width: contentW,
       lineBreak: false,
     });
 
+  // Line 3 — invoice number OR artifact title as secondary mono-style row
+  const secondary = isBillingInvoiceState(state)
+    ? `No.  ${textValue(state.invoiceNumber || state.title || '—')}`
+    : textValue(state.title || 'Wilsy OS Artifact');
+  doc
+    .fillColor('#C9C3B4')
+    .font('Helvetica')
+    .fontSize(8)
+    .text(secondary, contentX, 78, { width: contentW, lineBreak: false });
+
+  // Line 4 — issuer registration / VAT / address (very compact)
+  if (issuer.regLine) {
+    doc
+      .fillColor('#8A8578')
+      .font('Helvetica')
+      .fontSize(6.5)
+      .text(issuer.regLine, contentX, 90, { width: contentW, lineBreak: false });
+  }
+
+  // Compliance badges — fixed height, text centred in frame
+  if (isBillingInvoiceState(state) && state.complianceBadges && state.complianceBadges.length) {
+    let badgeX = contentX;
+    const badgeY = 102;
+    state.complianceBadges.slice(0, 5).forEach((badge) => {
+      badgeX += drawComplianceBadge(doc, badgeX, badgeY, badge);
+    });
+  }
+
+  // Right meta
   doc
     .fillColor(BRAND.gold)
     .font('Helvetica-Bold')
     .fontSize(8)
-    .text('VERIFIED', 424, 54, { width: 66, align: 'right', lineBreak: false });
+    .text('VERIFIED', 420, 52, { width: 70, align: 'right', lineBreak: false });
 
   doc
     .fillColor('#FFFFFF')
     .font('Helvetica-Bold')
     .fontSize(8)
-    .text(`PAGE ${pageNumber}/${totalPages}`, 494, 54, {
-      width: 48,
+    .text(`PAGE ${pageNumber}/${totalPages}`, 490, 52, {
+      width: 52,
       align: 'right',
       lineBreak: false,
     });
+
+  // Issuer scope chip (PLATFORM / TENANT)
+  if (isBillingInvoiceState(state)) {
+    doc
+      .fillColor(BRAND.gold)
+      .font('Helvetica-Bold')
+      .fontSize(7)
+      .text(issuer.issuerType === 'TENANT' ? 'TENANT ISSUE' : 'PLATFORM ISSUE', 420, 68, {
+        width: 122,
+        align: 'right',
+        lineBreak: false,
+      });
+  }
 
   doc.restore();
 }
 
 /**
+ * @function drawCoverPage
+ * @description Draws the Executive Digest Cover (Page 1) – total box, forecast, escalation, forensic footer.
+ */
+function drawCoverPage(doc, state) {
+  const money = (v) => formatInvoiceMoney(v, state.currency);
+  const date = (iso) => formatEnterpriseDate(iso);
+
+  // ─── Total Amount Box ──────────────────────────────────────────────────
+  const boxY = 140;
+  const boxX = PAGE.left;
+  const boxWidth = PAGE.contentWidth;
+  const boxHeight = 90;
+
+  // Gold border and background
+  doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 6)
+    .fill(BRAND.panel)
+    .strokeColor(BRAND.gold)
+    .lineWidth(2)
+    .stroke();
+
+  // Label
+  doc
+    .fillColor(BRAND.muted)
+    .font('Helvetica')
+    .fontSize(10)
+    .text('TOTAL AMOUNT DUE', boxX + 20, boxY + 14, { width: boxWidth - 40, align: 'center' });
+
+  // Amount
+  doc
+    .fillColor(BRAND.gold)
+    .font('Helvetica-Bold')
+    .fontSize(26)
+    .text(money(state.totalAmount), boxX + 20, boxY + 30, { width: boxWidth - 40, align: 'center' });
+
+  // VAT breakdown
+  doc
+    .fillColor(BRAND.muted)
+    .font('Helvetica')
+    .fontSize(8.5)
+    .text(
+      `Subtotal: ${money(state.subtotalExclVAT)}  |  VAT (${Math.round(state.vatRate * 100)}%): ${money(state.totalVAT)}`,
+      boxX + 20,
+      boxY + 68,
+      { width: boxWidth - 40, align: 'center' }
+    );
+
+  let cursorY = boxY + boxHeight + 24;
+
+  // ─── Predictive Forecast ──────────────────────────────────────────────
+  if (state.forecast) {
+    doc
+      .fillColor(BRAND.black)
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .text('PREDICTIVE FORECAST', PAGE.left, cursorY);
+    cursorY += 16;
+
+    doc
+      .fillColor(BRAND.muted)
+      .font('Helvetica')
+      .fontSize(9)
+      .text(
+        `Payment probability: ${state.forecast.prediction}  •  Confidence: ${state.forecast.confidence}%  •  Expected settlement: ${date(state.forecast.expectedDate)}`,
+        PAGE.left + 10,
+        cursorY,
+        { width: PAGE.contentWidth - 20 }
+      );
+    cursorY += 22;
+  }
+
+  // ─── Escalation Summary ──────────────────────────────────────────────
+  if (state.escalation) {
+    doc
+      .fillColor(BRAND.black)
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .text('ESCALATION OVERVIEW', PAGE.left, cursorY);
+    cursorY += 16;
+
+    const tickets = Array.isArray(state.escalation.tickets) ? state.escalation.tickets.join(', ') : '—';
+    const alerts = Array.isArray(state.escalation.alerts) ? state.escalation.alerts.join(', ') : '—';
+    doc
+      .fillColor(BRAND.muted)
+      .font('Helvetica')
+      .fontSize(9)
+      .text(
+        `Tickets: ${tickets}  •  Alerts: ${alerts}`,
+        PAGE.left + 10,
+        cursorY,
+        { width: PAGE.contentWidth - 20 }
+      );
+    cursorY += 22;
+  }
+
+  // ─── Forensic Footer ──────────────────────────────────────────────────
+  cursorY = Math.max(cursorY, 650);
+  drawForensicFooter(doc, state, cursorY);
+}
+
+/**
+ * @function drawForensicFooter
+ * @description Draws a prominent forensic footer block with SEAL, MERKLE, TRACE, and SOURCE labels, and a QR code at the bottom‑right.
+ * @param {PDFDocument} doc - PDFKit document.
+ * @param {object} state - Hydrated state.
+ * @param {number} y - Y-coordinate to place the footer.
+ * @returns {number} Updated Y-coordinate after footer.
+ * @collaboration Wilson Khanyezi – mandated prominent, gold-accented forensic block.
+ * @institutional Provides instant visual identification of cryptographic identifiers.
+ */
+function drawForensicFooter(doc, state, y) {
+  const startY = y;
+  const blockHeight = 120;
+  const blockX = PAGE.left;
+  const blockWidth = PAGE.contentWidth;
+
+  // Draw a dark panel with gold top border
+  doc.rect(blockX, startY, blockWidth, blockHeight)
+    .fill(BRAND.black)
+    .rect(blockX, startY, blockWidth, 3)
+    .fill(BRAND.gold);
+
+  // Title
+  doc
+    .fillColor(BRAND.gold)
+    .font('Helvetica-Bold')
+    .fontSize(9)
+    .text('FORENSIC PROOF TRAIL', blockX + 12, startY + 12, { width: blockWidth - 24, align: 'left' });
+
+  // Grid: 2 columns
+  const col1 = blockX + 20;
+  const col2 = blockX + blockWidth / 2 + 10;
+  const rowHeight = 20;
+  let rowY = startY + 32;
+
+  const items = [
+    { label: 'SEAL:', value: compactProof(state.sha3 || state.sealHash || 'PENDING') },
+    { label: 'MERKLE ROOT:', value: compactProof(state.merkleRoot || 'PENDING') },
+    { label: 'TRACE ID:', value: state.traceId || 'PENDING' },
+    { label: 'SOURCE:', value: getBusinessPostureLabel(state.sourcePosture) || 'UNKNOWN' },
+  ];
+
+  // Draw each item in two columns
+  items.forEach((item, index) => {
+    const col = index % 2 === 0 ? col1 : col2;
+    const row = Math.floor(index / 2);
+    const yPos = rowY + row * rowHeight;
+
+    doc
+      .fillColor(BRAND.gold)
+      .font('Helvetica-Bold')
+      .fontSize(8)
+      .text(item.label, col, yPos, { width: 90, lineBreak: false });
+
+    doc
+      .fillColor('#FFFFFF')
+      .font('Helvetica')
+      .fontSize(8)
+      .text(item.value, col + 95, yPos, { width: blockWidth / 2 - 110, lineBreak: false });
+  });
+
+  // ─── QR Code (bottom‑right corner) ───────────────────────────────────
+  if (state._qrVerifyPng && Buffer.isBuffer(state._qrVerifyPng) && state._qrVerifyPng.length > 32) {
+    try {
+      const qrSize = 36;
+      const qrX = blockX + blockWidth - qrSize - 20;
+      const qrY = startY + blockHeight - qrSize - 24; // 24pt above the bottom, above the verify link
+      doc.image(state._qrVerifyPng, qrX, qrY, { width: qrSize, height: qrSize });
+      // Gold border around QR
+      doc.rect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4)
+        .strokeColor(BRAND.gold)
+        .lineWidth(0.8)
+        .stroke();
+    } catch {
+      // QR rendering failed, ignore
+    }
+  }
+
+  // ─── Verify Online link ──────────────────────────────────────────────
+  const verifyUrl = state._verifyUrl || buildVerifyAuditUrl(state);
+  const linkY = startY + blockHeight - 18;
+  doc
+    .fillColor(BRAND.gold)
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text('VERIFY ONLINE →', blockX + 20, linkY, { width: blockWidth - 40, align: 'right' })
+    .link(blockX + blockWidth - 160, linkY, 150, 14, verifyUrl);
+
+  return startY + blockHeight + 10;
+}
+
+/**
  * @function drawFooter
- * @description Draws a non-overlapping proof footer.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} state - Render state.
- * @returns {void}
- * @collaboration Prevents forensic proof collisions in production tenant-facing documents.
+ * @description Draws a non-overlapping proof footer (used on all pages except cover? we'll use custom footer on cover).
+ * For simplicity, we'll keep the same footer on all pages, but the cover already has its own footer.
  */
 function drawFooter(doc, state) {
+  // Use the new forensic footer for invoice pages
+  if (isBillingInvoiceState(state) && state.type === 'billing-invoice') {
+    // Determine Y position – place it near the bottom of the page
+    const y = Math.min(PAGE.bottom - 140, 720);
+    drawForensicFooter(doc, state, y);
+    return;
+  }
+
+  // Fallback: original simple footer
   doc.save();
 
   doc.moveTo(PAGE.left, 762).lineTo(543, 762).strokeColor(BRAND.line).lineWidth(0.6).stroke();
@@ -477,20 +1348,19 @@ function drawFooter(doc, state) {
     .font('Helvetica')
     .fontSize(6.2)
     .text(
-      'Legally non-final until reviewed and approved. Retain with the Wilsy OS proof trail.',
+      isBillingInvoiceState(state)
+        ? 'Commercial figures are taken from the live ledger at print time. Retain with the Wilsy OS proof trail.'
+        : 'Legally non-final until reviewed and approved. Retain with the Wilsy OS proof trail.',
       PAGE.left,
       773,
-      {
-        width: 282,
-        lineBreak: false,
-      }
+      { width: 282, lineBreak: false }
     );
 
   doc
     .fillColor(BRAND.black)
     .font('Helvetica-Bold')
     .fontSize(6.2)
-    .text('DIRECTOR - WILSON KHANYEZI', PAGE.left, 792, { width: 282, lineBreak: false });
+    .text(isBillingInvoiceState(state) ? 'PAYMENT & AUTHORITY' : 'DIRECTOR - WILSON KHANYEZI', PAGE.left, 792, { width: 282, lineBreak: false });
 
   doc
     .fillColor(BRAND.gold)
@@ -522,11 +1392,12 @@ function drawFooter(doc, state) {
       lineBreak: false,
     });
 
+  const businessLabel = getBusinessPostureLabel(state.sourcePosture);
   doc
     .fillColor(BRAND.muted)
     .font('Helvetica')
     .fontSize(5.3)
-    .text(state.sourcePosture, 344, 802, { width: 199, align: 'right', lineBreak: false });
+    .text(businessLabel, 344, 802, { width: 199, align: 'right', lineBreak: false });
 
   doc.restore();
 }
@@ -534,11 +1405,6 @@ function drawFooter(doc, state) {
 /**
  * @function ensureSpace
  * @description Adds a page when the remaining content area is too small.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @param {number} required - Required height.
- * @returns {void}
- * @collaboration Maintains professional page flow and protects the footer zone.
  */
 function ensureSpace(doc, cursor, required) {
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
@@ -551,12 +1417,6 @@ function ensureSpace(doc, cursor, required) {
 /**
  * @function writeParagraph
  * @description Writes a numbered paragraph and updates the cursor.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @param {string} paragraph - Paragraph text.
- * @param {number} index - Paragraph index.
- * @returns {void}
- * @collaboration Produces readable legal instrument body copy.
  */
 function writeParagraph(doc, cursor, paragraph, index) {
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
@@ -591,11 +1451,7 @@ function writeParagraph(doc, cursor, paragraph, index) {
 /**
  * @function drawSection
  * @description Draws a controlled enterprise section.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @param {object} section - Section definition.
- * @returns {void}
- * @collaboration Creates dense but readable enterprise legal and business artifacts.
+ * 🆕 If the section has `lineItemsTable: true`, it renders a table instead of paragraphs.
  */
 function drawSection(doc, cursor, section) {
   cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
@@ -611,6 +1467,15 @@ function drawSection(doc, cursor, section) {
 
   cursor.y = doc.y + 14;
 
+  // Check if this section should render a line‑item table
+  if (section.lineItemsTable && Array.isArray(section.lineItemsData)) {
+    const state = section._state || {};
+    const currency = state.currency || 'ZAR';
+    cursor = drawLineItemTable(doc, cursor, section.lineItemsData, currency);
+    cursor.y += 10;
+    return cursor;
+  }
+
   const paragraphs = Array.isArray(section.paragraphs) ? section.paragraphs : [];
   paragraphs.forEach((paragraph, index) => {
     cursor = writeParagraph(doc, cursor, paragraph, index);
@@ -622,11 +1487,86 @@ function drawSection(doc, cursor, section) {
 }
 
 /**
+ * @function drawDocumentControl
+ * @description Draws the document control section (used in appendix pages).
+ */
+function drawDocumentControl(doc, cursor, state) {
+  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
+  doc
+    .fillColor(BRAND.black)
+    .font('Helvetica-Bold')
+    .fontSize(15)
+    .text('FORENSIC APPENDIX — DOCUMENT CONTROL', PAGE.left, cursor.y);
+  cursor.y = doc.y + 22;
+
+  let rows = [
+    ['Issuing Entity', state.issuingEntity],
+    ['Counterparty / Tenant', state.counterparty],
+    ['Effective Date', state.effectiveDate],
+    ['Generated By', state.generatedBy],
+    ['Version', state.version],
+    ['Jurisdiction', state.jurisdiction],
+    ['Source Posture', state.sourcePosture],
+    ['Trace ID', state.traceId],
+    ['Merkle Root', compactProof(state.merkleRoot)],
+  ];
+
+  if (isBillingInvoiceState(state)) {
+    rows = [
+      ['Invoice Number', state.invoiceNumber || state.title],
+      ['Status', state.status],
+      ['TOTAL AMOUNT DUE (VAT INCL)', formatInvoiceMoney(state.totalAmount, state.currency)],
+      ['Subtotal (excl. VAT)', formatInvoiceMoney(state.subtotalExclVAT, state.currency)],
+      [`VAT (${Math.round(state.vatRate * 100)}%)`, formatInvoiceMoney(state.totalVAT, state.currency)],
+      ['Due Date', state.dueDate || '—'],
+      ...rows,
+    ];
+  }
+
+  rows.forEach((row, index) => {
+    const y = cursor.y + index * 21;
+    doc.rect(PAGE.left, y, PAGE.contentWidth, 20).fill(index % 2 === 0 ? '#FFFFFF' : BRAND.band);
+    doc
+      .fillColor(BRAND.muted)
+      .font('Helvetica-Bold')
+      .fontSize(6.8)
+      .text(row[0].toUpperCase(), PAGE.left + 10, y + 7, { width: 160, lineBreak: false });
+    doc
+      .fillColor(BRAND.black)
+      .font('Helvetica')
+      .fontSize(7.8)
+      .text(row[1], PAGE.left + 190, y + 7, { width: 280, lineBreak: false });
+  });
+
+  cursor.y += rows.length * 21 + 26;
+
+  doc.roundedRect(PAGE.left, cursor.y, PAGE.contentWidth, 82, 8).fill(BRAND.panel);
+  doc.rect(PAGE.left, cursor.y, 5, 82).fill(BRAND.gold);
+
+  doc
+    .fillColor(BRAND.gold)
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text('RELIANCE NOTICE', PAGE.left + 18, cursor.y + 14);
+  doc
+    .fillColor(BRAND.black)
+    .font('Helvetica')
+    .fontSize(8.1)
+    .text(
+      'This forensic appendix provides the complete audit trail and commercial breakdown. The amounts shown are commercially binding. Disputes must be raised through the Wilsy OS war-room / collections path.',
+      PAGE.left + 18,
+      cursor.y + 31,
+      { width: 450, lineGap: 2.2 }
+    );
+
+  cursor.y += 106;
+
+  return cursor;
+}
+
+/**
  * @function resolveCrmProofPackFromIdentity
  * @description Resolves CRM Proof Pack evidence from the already-adapted enterprise identity.
- * @param {object} identity Enterprise identity.
- * @returns {object} CRM proof pack evidence object.
- * @collaboration businessArtifactPdfController, CRM proof adapter, and enterprise PDF renderer.
  */
 function resolveCrmProofPackFromIdentity(identity = {}) {
   const data = identity.data || {};
@@ -649,9 +1589,6 @@ function resolveCrmProofPackFromIdentity(identity = {}) {
 /**
  * @function hasCrmProofPackEvidence
  * @description Detects whether a CRM proof pack contains exportable evidence rows.
- * @param {object} proofPack CRM proof pack object.
- * @returns {boolean} True when CRM evidence rows exist.
- * @collaboration CRM Proof Pack adapter and enterprise PDF section routing.
  */
 function hasCrmProofPackEvidence(proofPack = {}) {
   return Boolean(
@@ -666,12 +1603,7 @@ function hasCrmProofPackEvidence(proofPack = {}) {
 
 /**
  * @function hydrateCrmProofPackState
- * @description Adds CRM Proof Pack evidence to the normal enterprise render state without replacing buildState.
- * @param {object} state Existing enterprise render state.
- * @param {object} identity Enterprise identity.
- * @param {object} proof Forensic proof context.
- * @returns {object} Hydrated render state.
- * @collaboration Preserves branded/security chrome while replacing only CRM payload content.
+ * @description Adds CRM Proof Pack evidence to the normal enterprise render state.
  */
 function hydrateCrmProofPackState(state = {}, identity = {}, proof = {}) {
   const proofPack = resolveCrmProofPackFromIdentity(identity);
@@ -684,23 +1616,23 @@ function hydrateCrmProofPackState(state = {}, identity = {}, proof = {}) {
   const generatedBy = resolveHumanGeneratedByName({ proofPack, identity, state });
   const operatorEmail = textValue(
     proofPack.operatorEmail ||
-      proofPack.email ||
-      identity.userEmail ||
-      identity.email ||
-      identity.user?.email ||
-      state.operatorEmail ||
-      ''
+    proofPack.email ||
+    identity.userEmail ||
+    identity.email ||
+    identity.user?.email ||
+    state.operatorEmail ||
+    ''
   );
 
   const sourcePosture = textValue(
     proofPack.sourcePosture ||
-      (identity.sourcePosture && identity.sourcePosture !== 'SOURCE_REPAIR_REQUIRED'
-        ? identity.sourcePosture
-        : '') ||
-      (proof.sourcePosture && proof.sourcePosture !== 'SOURCE_REPAIR_REQUIRED'
-        ? proof.sourcePosture
-        : '') ||
-      'SOURCE_LIVE'
+    (identity.sourcePosture && identity.sourcePosture !== 'SOURCE_REPAIR_REQUIRED'
+      ? identity.sourcePosture
+      : '') ||
+    (proof.sourcePosture && proof.sourcePosture !== 'SOURCE_REPAIR_REQUIRED'
+      ? proof.sourcePosture
+      : '') ||
+    'SOURCE_LIVE'
   );
 
   return {
@@ -725,9 +1657,6 @@ function hydrateCrmProofPackState(state = {}, identity = {}, proof = {}) {
 /**
  * @function isCrmProofPackState
  * @description Detects CRM Proof Pack state inside the enterprise branded PDF renderer.
- * @param {object} state Render state.
- * @returns {boolean} True when CRM proof evidence is present.
- * @collaboration businessArtifactPdfController, CRM proof adapter, and Wilsy enterprise PDF shell.
  */
 function isCrmProofPackState(state = {}) {
   return Boolean(state.hasCrmProofPack);
@@ -736,9 +1665,6 @@ function isCrmProofPackState(state = {}) {
 /**
  * @function normalizeCrmProofPackText
  * @description Converts CRM proof evidence values into compact PDF-safe text.
- * @param {unknown} value Source value.
- * @returns {string} PDF-safe text.
- * @collaboration CRM evidence rows and enterprise PDF section writer.
  */
 function normalizeCrmProofPackText(value = '') {
   if (Array.isArray(value)) {
@@ -761,14 +1687,9 @@ function normalizeCrmProofPackText(value = '') {
 /**
  * @function normalizeCrmProofPackRowsForPdf
  * @description Converts CRM Proof Pack rows into narrative bullets for the branded renderer.
- * @param {unknown} rows Source rows.
- * @returns {string[]} PDF paragraph rows.
- * @collaboration CRM proof rows, story sections, and Wilsy enterprise PDF renderer.
  */
 function normalizeCrmProofPackRowsForPdf(rows = []) {
-  if (!Array.isArray(rows)) {
-    return [];
-  }
+  if (!Array.isArray(rows)) return [];
 
   return rows
     .map((row) => {
@@ -793,9 +1714,6 @@ function normalizeCrmProofPackRowsForPdf(rows = []) {
 /**
  * @function getCrmProofPackSections
  * @description Builds CRM Proof Pack sections while preserving the Wilsy enterprise PDF chrome.
- * @param {object} state Render state.
- * @returns {Array<object>} CRM-specific artifact sections.
- * @collaboration Replaces generic legal artifact payload with CRM proof narrative.
  */
 function getCrmProofPackSections(state = {}) {
   return [
@@ -844,9 +1762,6 @@ function getCrmProofPackSections(state = {}) {
 /**
  * @function getCrmProofPackScheduleSections
  * @description Builds CRM Proof Pack appendix sections for the branded enterprise schedule area.
- * @param {object} state Render state.
- * @returns {Array<object>} CRM proof schedule sections.
- * @collaboration Preserves forensic appendix posture without showing generic missing-source legal fields.
  */
 function getCrmProofPackScheduleSections(state = {}) {
   return [
@@ -875,9 +1790,6 @@ function getCrmProofPackScheduleSections(state = {}) {
 /**
  * @function getNdaSections
  * @description Returns deeper enterprise NDA clauses.
- * @param {object} state - Render state.
- * @returns {Array<object>} NDA sections.
- * @collaboration Upgrades NDA output beyond shallow prototype clauses.
  */
 function getNdaSections(state) {
   return [
@@ -922,9 +1834,6 @@ function getNdaSections(state) {
 /**
  * @function getGenericSections
  * @description Returns enterprise fallback sections for non-NDA artifacts.
- * @param {object} state - Render state.
- * @returns {Array<object>} Generic enterprise sections.
- * @collaboration Gives every catalog artifact a serious baseline until type-specific libraries are completed.
  */
 function getGenericSections(state) {
   return [
@@ -962,9 +1871,6 @@ function getGenericSections(state) {
 /**
  * @function resolveWilsyKnowledgeBaseFromIdentity
  * @description Resolves a Wilsy knowledge-base/playbook payload from the enterprise PDF identity envelope.
- * @param {object} identity Enterprise artifact identity.
- * @returns {object} Knowledge-base payload candidate.
- * @collaboration FG108O3B2, Wilsy AI playbook exports, and the active enterprise PDF renderer.
  */
 function resolveWilsyKnowledgeBaseFromIdentity(identity = {}) {
   const data = identity.data || {};
@@ -1070,9 +1976,6 @@ function resolveWilsyKnowledgeBaseFromIdentity(identity = {}) {
 /**
  * @function isWilsyKnowledgeBaseCandidate
  * @description Detects Wilsy knowledge-base/playbook artifacts before the generic legal renderer is selected.
- * @param {object} candidate Knowledge-base candidate.
- * @returns {boolean} True when the artifact is a Wilsy knowledge-base/playbook export.
- * @collaboration FG108O3B2 renderer routing and /api/generate/pdf knowledge-base exports.
  */
 function isWilsyKnowledgeBaseCandidate(candidate = {}) {
   const values = [
@@ -1098,9 +2001,6 @@ function isWilsyKnowledgeBaseCandidate(candidate = {}) {
 /**
  * @function normalizeWilsyKnowledgeBaseText
  * @description Converts knowledge-base payload values into safe enterprise-renderer paragraph text.
- * @param {unknown} value Source value.
- * @returns {string} PDF-safe text.
- * @collaboration FG108O3B2 knowledge-base sections and Wilsy enterprise PDF text flow.
  */
 function normalizeWilsyKnowledgeBaseText(value = '') {
   if (Array.isArray(value)) {
@@ -1123,10 +2023,6 @@ function normalizeWilsyKnowledgeBaseText(value = '') {
 /**
  * @function normalizeWilsyKnowledgeBaseSection
  * @description Converts a playbook section payload into the enterprise renderer section contract.
- * @param {unknown} section Source section.
- * @param {number} index Section index.
- * @returns {object} Enterprise renderer section.
- * @collaboration FG108O3B2 markdown/section payloads and drawSection compatibility.
  */
 function normalizeWilsyKnowledgeBaseSection(section = {}, index = 0) {
   if (typeof section === 'string') {
@@ -1151,9 +2047,9 @@ function normalizeWilsyKnowledgeBaseSection(section = {}, index = 0) {
   const paragraphs = Array.isArray(body)
     ? body.map((item) => normalizeWilsyKnowledgeBaseText(item)).filter(Boolean)
     : normalizeWilsyKnowledgeBaseText(body)
-        .split(/\n+/)
-        .map((item) => item.trim())
-        .filter(Boolean);
+      .split(/\n+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
 
   return {
     title,
@@ -1166,9 +2062,6 @@ function normalizeWilsyKnowledgeBaseSection(section = {}, index = 0) {
 /**
  * @function resolveWilsyKnowledgeBaseMarkdownSections
  * @description Converts markdown headings into enterprise renderer sections when structured sections are absent.
- * @param {string} markdown Playbook markdown.
- * @returns {Array<object>} Enterprise renderer sections.
- * @collaboration FG108O3B2 markdown payloads and investor-readable PDF sections.
  */
 function resolveWilsyKnowledgeBaseMarkdownSections(markdown = '') {
   const value = textValue(markdown);
@@ -1203,10 +2096,7 @@ function resolveWilsyKnowledgeBaseMarkdownSections(markdown = '') {
 
 /**
  * @function isWilsyProfessionalDisplayName
- * @description Validates that a display-name candidate looks like a professional human or institutional name, not a lowercase handle.
- * @param {unknown} value - Candidate value.
- * @returns {boolean} True when the value is acceptable for document control display.
- * @collaboration Knowledge Base PDFs, artifact document control, tenant user profiles, and professional identity governance.
+ * @description Validates that a display-name candidate looks like a professional human or institutional name.
  */
 function isWilsyProfessionalDisplayName(value = '') {
   const candidate = textValue(value);
@@ -1221,10 +2111,7 @@ function isWilsyProfessionalDisplayName(value = '') {
 
 /**
  * @function formatWilsyDisplayNameFromIdentityCandidate
- * @description Builds a generic display-name candidate from profile-style identity fields without person-specific mappings.
- * @param {unknown} value - Raw identity candidate.
- * @returns {string} Display-name candidate or empty string.
- * @collaboration Tenant user profile names, operator display metadata, and non-hardcoded artifact rendering.
+ * @description Builds a generic display-name candidate from profile-style identity fields.
  */
 function formatWilsyDisplayNameFromIdentityCandidate(value = '') {
   const raw = textValue(value).replace(/^@/, '');
@@ -1249,11 +2136,7 @@ function formatWilsyDisplayNameFromIdentityCandidate(value = '') {
 
 /**
  * @function resolveWilsyProfessionalGeneratedBy
- * @description Resolves a professional Generated By display name from explicit payload, profile, or state fields without hard-coded user mappings.
- * @param {object} knowledgeBase Knowledge-base payload candidate.
- * @param {object} state Existing enterprise render state.
- * @returns {string} Professional display name.
- * @collaboration FG108O3E3H, Knowledge Base guard, Document Control, user profile identity, and investor-grade artifact identity.
+ * @description Resolves a professional Generated By display name from explicit payload, profile, or state fields.
  */
 function resolveWilsyProfessionalGeneratedBy(knowledgeBase = {}, state = {}) {
   const explicitCandidates = [
@@ -1305,16 +2188,9 @@ function resolveWilsyProfessionalGeneratedBy(knowledgeBase = {}, state = {}) {
   return 'Wilsy OS Operator';
 }
 
-// WILSY_FG108O3H_GENERIC_GENERATED_BY_IDENTITY_RESOLVER
-
 /**
  * @function hydrateWilsyKnowledgeBaseState
- * @description Adds Wilsy knowledge-base playbook content to the enterprise render state without bypassing the branded PDF engine.
- * @param {object} state Existing render state.
- * @param {object} identity Enterprise artifact identity.
- * @param {object} proof Forensic proof context.
- * @returns {object} Hydrated render state.
- * @collaboration FG108O3B2, streamEnterpriseArtifactPdf, and Wilsy AI knowledge-base exports.
+ * @description Adds Wilsy knowledge-base playbook content to the enterprise render state.
  */
 function hydrateWilsyKnowledgeBaseState(state = {}, identity = {}, proof = {}) {
   const knowledgeBase = resolveWilsyKnowledgeBaseFromIdentity(identity);
@@ -1326,8 +2202,8 @@ function hydrateWilsyKnowledgeBaseState(state = {}, identity = {}, proof = {}) {
   const structuredSections =
     Array.isArray(knowledgeBase.sections) && knowledgeBase.sections.length > 0
       ? knowledgeBase.sections.map((section, index) =>
-          normalizeWilsyKnowledgeBaseSection(section, index)
-        )
+        normalizeWilsyKnowledgeBaseSection(section, index)
+      )
       : resolveWilsyKnowledgeBaseMarkdownSections(knowledgeBase.markdown);
 
   return {
@@ -1337,9 +2213,9 @@ function hydrateWilsyKnowledgeBaseState(state = {}, identity = {}, proof = {}) {
     ),
     type: textValue(
       knowledgeBase.type ||
-        knowledgeBase.artifactType ||
-        state.type ||
-        'WILSY_AI_INLINE_COMMAND_PLAYBOOK_FG108'
+      knowledgeBase.artifactType ||
+      state.type ||
+      'WILSY_AI_INLINE_COMMAND_PLAYBOOK_FG108'
     ),
     tenantId: textValue(knowledgeBase.tenantId || state.tenantId || 'wilsy-sovereign-root'),
     counterparty: textValue(knowledgeBase.tenantId || state.tenantId || 'wilsy-sovereign-root'),
@@ -1355,25 +2231,22 @@ function hydrateWilsyKnowledgeBaseState(state = {}, identity = {}, proof = {}) {
     knowledgeBaseSections: structuredSections.length
       ? structuredSections
       : [
-          {
-            title: 'Executive Summary',
-            paragraphs: [
-              textValue(
-                knowledgeBase.summary ||
-                  'Wilsy OS knowledge-base playbook generated through the governed enterprise PDF renderer.'
-              ),
-            ],
-          },
-        ],
+        {
+          title: 'Executive Summary',
+          paragraphs: [
+            textValue(
+              knowledgeBase.summary ||
+              'Wilsy OS knowledge-base playbook generated through the governed enterprise PDF renderer.'
+            ),
+          ],
+        },
+      ],
   };
 }
 
 /**
  * @function isWilsyKnowledgeBaseState
  * @description Detects a hydrated Wilsy knowledge-base state inside the enterprise PDF renderer.
- * @param {object} state Render state.
- * @returns {boolean} True when the render state is a knowledge-base playbook.
- * @collaboration FG108O3B2 renderer routing and generic legal-section suppression.
  */
 function isWilsyKnowledgeBaseState(state = {}) {
   return Boolean(state.hasWilsyKnowledgeBase);
@@ -1382,9 +2255,6 @@ function isWilsyKnowledgeBaseState(state = {}) {
 /**
  * @function getWilsyKnowledgeBaseSections
  * @description Builds primary Wilsy knowledge-base sections while preserving enterprise PDF chrome.
- * @param {object} state Render state.
- * @returns {Array<object>} Primary knowledge-base sections.
- * @collaboration FG108O3B2 playbook content and buildSections routing.
  */
 function getWilsyKnowledgeBaseSections(state = {}) {
   return [
@@ -1404,9 +2274,6 @@ function getWilsyKnowledgeBaseSections(state = {}) {
 /**
  * @function getWilsyKnowledgeBaseScheduleSections
  * @description Builds non-legal appendix sections for Wilsy knowledge-base artifacts.
- * @param {object} state Render state.
- * @returns {Array<object>} Knowledge-base appendix sections.
- * @collaboration FG108O3B2 proof appendix, investor diligence, and future engineer handoff.
  */
 function getWilsyKnowledgeBaseScheduleSections(state = {}) {
   return [
@@ -1423,14 +2290,9 @@ function getWilsyKnowledgeBaseScheduleSections(state = {}) {
   ];
 }
 
-// WILSY_FG108O3B2_ENTERPRISE_KNOWLEDGE_RENDERER
-
 /**
  * @function buildSections
  * @description Selects the appropriate clause library for the artifact type.
- * @param {object} state - Render state.
- * @returns {Array<object>} Sections.
- * @collaboration Provides a safe expansion path for legal, HR, finance and operational documents.
  */
 function buildSections(state) {
   if (isWilsyKnowledgeBaseState(state)) {
@@ -1439,6 +2301,11 @@ function buildSections(state) {
 
   if (isCrmProofPackState(state)) {
     return getCrmProofPackSections(state);
+  }
+
+  // INVOICE BRANCH
+  if (isBillingInvoiceState(state)) {
+    return getBillingInvoiceSections(state);
   }
 
   const type = state.type.toLowerCase();
@@ -1451,273 +2318,28 @@ function buildSections(state) {
 }
 
 /**
- * @function drawDocumentControl
- * @description Draws the document control section.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @param {object} state - Render state.
- * @returns {void}
- * @collaboration Provides tenant-facing document identity, source posture and proof metadata.
- */
-function drawDocumentControl(doc, cursor, state) {
-  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
-  doc
-    .fillColor(BRAND.black)
-    .font('Helvetica-Bold')
-    .fontSize(15)
-    .text('DOCUMENT CONTROL', PAGE.left, cursor.y);
-  cursor.y = doc.y + 22;
-
-  const rows = [
-    ['Issuing Entity', state.issuingEntity],
-    ['Counterparty / Tenant', state.counterparty],
-    ['Effective Date', state.effectiveDate],
-    ['Generated By', state.generatedBy],
-    ['Version', state.version],
-    ['Jurisdiction', state.jurisdiction],
-    ['Source Posture', state.sourcePosture],
-    ['Trace ID', state.traceId],
-    ['Merkle Root', compactProof(state.merkleRoot)],
-  ];
-
-  rows.forEach((row, index) => {
-    const y = cursor.y + index * 21;
-    doc.rect(PAGE.left, y, PAGE.contentWidth, 20).fill(index % 2 === 0 ? '#FFFFFF' : BRAND.band);
-    doc
-      .fillColor(BRAND.muted)
-      .font('Helvetica-Bold')
-      .fontSize(6.8)
-      .text(row[0].toUpperCase(), PAGE.left + 10, y + 7, { width: 160, lineBreak: false });
-    doc
-      .fillColor(BRAND.black)
-      .font('Helvetica')
-      .fontSize(7.8)
-      .text(row[1], PAGE.left + 190, y + 7, { width: 280, lineBreak: false });
-  });
-
-  cursor.y += rows.length * 21 + 26;
-
-  doc.roundedRect(PAGE.left, cursor.y, PAGE.contentWidth, 82, 8).fill(BRAND.panel);
-  doc.rect(PAGE.left, cursor.y, 5, 82).fill(BRAND.gold);
-
-  doc
-    .fillColor(BRAND.gold)
-    .font('Helvetica-Bold')
-    .fontSize(8)
-    .text('REVIEW AND RELIANCE NOTICE', PAGE.left + 18, cursor.y + 14);
-  doc
-    .fillColor(BRAND.black)
-    .font('Helvetica')
-    .fontSize(8.1)
-    .text(
-      'This artifact is generated by Wilsy OS as an enterprise source-aware control document. It is not final for signature, external circulation, filing, regulatory submission, investor diligence, litigation or commercial reliance until reviewed by the responsible business owner and, where appropriate, legal, finance, security, privacy, compliance or executive leadership.',
-      PAGE.left + 18,
-      cursor.y + 31,
-      { width: 450, lineGap: 2.2 }
-    );
-
-  cursor.y += 106;
-
-  return cursor;
-}
-
-/**
- * @function startEnterprisePdfBodyPage
- * @description Starts a clean body page below the enterprise chrome-safe area and returns the active cursor.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @returns {object} Cursor positioned at the protected body top.
- * @collaboration CRM Proof Pack layout, enterprise PDF chrome, pagination safety, and proof-readable export output.
- */
-function startEnterprisePdfBodyPage(doc, cursor) {
-  const nextCursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
-  doc.addPage();
-  nextCursor.y = PAGE.top;
-  return nextCursor;
-}
-
-/**
- * @function drawProofSchedule
- * @description Draws a proof and source completion appendix.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @param {object} state - Render state.
- * @returns {void}
- * @collaboration Adds audit and source-control depth to generated artifacts.
- */
-function drawProofSchedule(doc, cursor, state) {
-  if (isWilsyKnowledgeBaseState(state)) {
-    return getWilsyKnowledgeBaseScheduleSections(state).reduce(
-      (nextCursor, section) => drawSection(doc, nextCursor, section),
-      cursor
-    );
-  }
-
-  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
-
-  if (isCrmProofPackState(state)) {
-    cursor = startEnterprisePdfBodyPage(doc, cursor);
-
-    getCrmProofPackScheduleSections(state).forEach((section, index) => {
-      if (index > 0) {
-        cursor = startEnterprisePdfBodyPage(doc, cursor);
-      }
-
-      cursor = drawSection(doc, cursor, section);
-    });
-
-    return cursor;
-  }
-
-  cursor = startEnterprisePdfBodyPage(doc, cursor);
-
-  cursor = drawSection(doc, cursor, {
-    title: 'Schedule A — Source Fields Requiring Completion',
-    paragraphs: [
-      'Counterparty legal name, registration number, registered address, representative name, representative authority, commercial purpose, governing law deviations, signature method, approval owner and execution date must be completed or connected from source systems before final reliance.',
-      'Where any field remains incomplete, Wilsy OS must preserve the placeholder visibly and retain the source posture so reviewers can distinguish draft automation from verified legal facts.',
-    ],
-  });
-
-  cursor = drawSection(doc, cursor, {
-    title: 'Schedule B — Forensic Proof Appendix',
-    paragraphs: [
-      `Trace ID: ${state.traceId}. Merkle Root: ${state.merkleRoot}. SHA3 / Seal: ${state.sha3}. Source Posture: ${state.sourcePosture}. Generated At: ${state.generatedAt}.`,
-      'The proof appendix supports reconstruction, version comparison, audit evidence, dispute response, investor diligence and internal control review.',
-    ],
-  });
-
-  return cursor;
-}
-
-/**
- * @function drawExecution
- * @description Draws premium execution blocks.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} cursor - Cursor state.
- * @param {object} state - Render state.
- * @returns {void}
- * @collaboration Produces a boardroom-ready execution page for tenant-facing artifacts.
- */
-function drawExecution(doc, cursor, state) {
-  if (isWilsyKnowledgeBaseState(state)) {
-    return drawSection(doc, cursor, {
-      title: 'KNOWLEDGE BASE AUTHORITY AND RETENTION',
-      paragraphs: [
-        'This Wilsy OS knowledge-base playbook is retained for investor review, user enablement, future engineering continuity and internal product governance.',
-        'It is not a counterparty execution artifact and must not display generic counterparty signature blocks.',
-      ],
-    });
-  }
-
-  cursor = normalizeEnterprisePdfCursor(cursor, PAGE.top);
-
-  if (isCrmProofPackState(state)) {
-    cursor = startEnterprisePdfBodyPage(doc, cursor);
-
-    return drawSection(doc, cursor, {
-      title: 'PROOF AUTHORITY AND RETENTION',
-      paragraphs: [
-        `Tenant authority: ${state.tenantId}`,
-        `Generated by: ${state.generatedBy}`,
-        `Operator email: ${state.operatorEmail}`,
-        `Trace ID: ${state.traceId}`,
-        `Merkle Root: ${state.merkleRoot}`,
-        `SHA3 / Seal: ${state.sha3}`,
-        'This CRM Proof Pack is retained as Wilsy OS proof-ledger evidence. It supports audit, investor diligence, compliance review, operational reconstruction and controlled internal reliance.',
-      ],
-    });
-  }
-
-  cursor = startEnterprisePdfBodyPage(doc, cursor);
-
-  doc
-    .fillColor(BRAND.black)
-    .font('Helvetica-Bold')
-    .fontSize(15)
-    .text('EXECUTION AND AUTHORITY', PAGE.left, cursor.y);
-  cursor.y = doc.y + 28;
-
-  doc
-    .fillColor(BRAND.black)
-    .font('Helvetica')
-    .fontSize(9)
-    .text(
-      'IN WITNESS WHEREOF, the parties execute this artifact through authorised representatives. Electronic signatures, wet-ink signatures and system-generated proof records may be used subject to applicable law, internal approval requirements and the Wilsy OS proof trail.',
-      PAGE.left,
-      cursor.y,
-      { width: PAGE.contentWidth, lineGap: 3 }
-    );
-
-  cursor.y = doc.y + 42;
-
-  const blocks = [
-    ['WILSY EXECUTION', state.issuingEntity, 'DIRECTOR - WILSON KHANYEZI'],
-    ['COUNTERPARTY EXECUTION', state.counterparty, 'Name / Title / Authority'],
-  ];
-
-  blocks.forEach((block) => {
-    ensureSpace(doc, cursor, 118);
-
-    doc
-      .fillColor(BRAND.black)
-      .font('Helvetica-Bold')
-      .fontSize(10)
-      .text(block[0], PAGE.left, cursor.y);
-    cursor.y += 24;
-    doc
-      .fillColor(BRAND.black)
-      .font('Helvetica')
-      .fontSize(8.7)
-      .text(`Entity: ${block[1]}`, PAGE.left + 18, cursor.y);
-    cursor.y += 38;
-    doc
-      .moveTo(PAGE.left + 18, cursor.y)
-      .lineTo(PAGE.left + 255, cursor.y)
-      .strokeColor(BRAND.black)
-      .lineWidth(0.7)
-      .stroke();
-    cursor.y += 7;
-    doc
-      .fillColor(BRAND.black)
-      .font('Helvetica-Bold')
-      .fontSize(8.1)
-      .text(block[2], PAGE.left + 18, cursor.y);
-    cursor.y += 16;
-    doc
-      .fillColor(BRAND.black)
-      .font('Helvetica')
-      .fontSize(8)
-      .text(`Date: ${state.effectiveDate}`, PAGE.left + 18, cursor.y);
-    cursor.y += 34;
-  });
-}
-
-/**
  * @function applyChrome
  * @description Applies headers and footers after final page count is known.
- * @param {PDFDocument} doc - PDF document.
- * @param {object} state - Render state.
- * @returns {void}
- * @collaboration Guarantees accurate page count and consistent enterprise document chrome.
  */
 function applyChrome(doc, state) {
   const range = doc.bufferedPageRange();
-
+  // Page 1 is cover – use header with no total (handled by drawHeader)
+  // Pages 2+ are appendix – same header
   for (let pageIndex = range.start; pageIndex < range.start + range.count; pageIndex += 1) {
     doc.switchToPage(pageIndex);
+    // Header is the same for all pages (no total inside)
     drawHeader(doc, state, pageIndex - range.start + 1, range.count);
-    drawFooter(doc, state);
+    // Footer – we'll use a consistent footer, but cover already has its own special footer.
+    // We'll skip footer on cover because we already drew one.
+    if (pageIndex > range.start) {
+      drawFooter(doc, state);
+    }
   }
 }
 
 /**
  * @function normalizeEnterprisePdfCursor
  * @description Guarantees the enterprise PDF renderer always has a mutable cursor before draw functions read cursor.y.
- * @param {object} cursor - Cursor returned by chrome/layout setup.
- * @param {number} fallbackY - Safe vertical position below the document chrome.
- * @returns {object} Mutable cursor with a numeric y value.
- * @collaboration Enterprise PDF renderer, CRM Proof Pack PDF adapter, PDFKit layout safety, and browser-complete artifact delivery.
  */
 function normalizeEnterprisePdfCursor(cursor = {}, fallbackY = PAGE.top) {
   const resolvedCursor = cursor && typeof cursor === 'object' ? cursor : {};
@@ -1727,20 +2349,370 @@ function normalizeEnterprisePdfCursor(cursor = {}, fallbackY = PAGE.top) {
   return resolvedCursor;
 }
 
+
+/**
+ * @function drawCommercialInvoicePage
+ * @description World-class single-page tax invoice. Content is spaced across the
+ *              page (not bunched at the top). Parties, meta strip, line table,
+ *              gold total, payment terms; forensic strip sits near the foot when
+ *              the invoice is short so the sheet does not look empty.
+ * @param {PDFDocument} doc
+ * @param {object} state - Hydrated billing invoice state
+ * @returns {object} cursor
+ * @collaboration BillingHUD print, SARS VAT layout, Kennel-sealed commercial PDF
+ * @institutional POPIA §19 · GDPR §32 · SARS VAT Act 89 of 1991
+ */
+function drawCommercialInvoicePage(doc, state) {
+  const money = (v) => formatInvoiceMoney(v, state.currency);
+  const date = (iso) => formatEnterpriseDate(iso);
+  const usableBottom = 718; // leave room for global chrome footer
+  let y = 138;
+
+  // ── Invoice identity (under header band) ─────────────────────────────
+  doc
+    .fillColor(BRAND.black)
+    .font('Helvetica-Bold')
+    .fontSize(20)
+    .text('TAX INVOICE', PAGE.left, y, { width: 220, lineBreak: false });
+  doc
+    .fillColor(BRAND.gold)
+    .font('Helvetica-Bold')
+    .fontSize(10)
+    .text(textValue(state.invoiceNumber || state.title), PAGE.left + 220, y + 6, {
+      width: PAGE.contentWidth - 220,
+      align: 'right',
+      lineBreak: false,
+    });
+  y += 32;
+
+  // ── Status / issue / due strip ───────────────────────────────────────
+  doc.roundedRect(PAGE.left, y, PAGE.contentWidth, 30, 4).fill(BRAND.band);
+  doc
+    .fillColor(BRAND.black)
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text(
+      `STATUS  ${textValue(state.status || 'ISSUED')}    ·    ISSUE  ${date(state.issueDate)}    ·    DUE  ${date(state.dueDate)}    ·    ${textValue(state.currency || 'ZAR')}`,
+      PAGE.left + 14,
+      y + 10,
+      { width: PAGE.contentWidth - 28, lineBreak: false }
+    );
+  y += 46;
+
+  // ── Parties — two equal cards with light panel ───────────────────────
+  const colGap = 18;
+  const colW = (PAGE.contentWidth - colGap) / 2;
+  const partyH = 72;
+
+  doc.roundedRect(PAGE.left, y, colW, partyH, 5).fill(BRAND.panel);
+  doc.roundedRect(PAGE.left + colW + colGap, y, colW, partyH, 5).fill(BRAND.panel);
+  doc.rect(PAGE.left, y, 4, partyH).fill(BRAND.gold);
+  doc.rect(PAGE.left + colW + colGap, y, 4, partyH).fill(BRAND.gold);
+
+  const leftX = PAGE.left + 14;
+  const rightX = PAGE.left + colW + colGap + 14;
+  const labelY = y + 12;
+  const nameY = y + 28;
+  const metaY = y + 48;
+
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(7).text('FROM / SUPPLIER', leftX, labelY, { width: colW - 24 });
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(7).text('BILL TO / CUSTOMER', rightX, labelY, { width: colW - 24 });
+
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(11)
+    .text(textValue(state.issuingEntity), leftX, nameY, { width: colW - 24, lineBreak: false });
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(11)
+    .text(textValue(state.counterparty), rightX, nameY, { width: colW - 24, lineBreak: false });
+
+  // Supplier address (if available) – shown under the supplier name
+  if (state.supplierAddress) {
+    doc.fillColor(BRAND.muted).font('Helvetica').fontSize(7.5)
+      .text(textValue(state.supplierAddress), leftX, metaY + 10, { width: colW - 24, lineBreak: true });
+  } else {
+    doc.fillColor(BRAND.muted).font('Helvetica').fontSize(8)
+      .text(`Tenant: ${textValue(state.tenantId)}`, leftX, metaY, { width: colW - 24, lineBreak: false });
+  }
+
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(8)
+    .text(`Jurisdiction: ${textValue(state.jurisdiction)}`, rightX, metaY, { width: colW - 24, lineBreak: false });
+
+  y += partyH + 28;
+
+  // ── Line items ───────────────────────────────────────────────────────
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(10).text('LINE ITEMS', PAGE.left, y);
+  y += 16;
+
+  const colDesc = PAGE.contentWidth * 0.48;
+  const colQty = PAGE.contentWidth * 0.12;
+  const colUnit = PAGE.contentWidth * 0.20;
+  const colTot = PAGE.contentWidth * 0.20;
+  const rowH = 26;
+
+  doc.rect(PAGE.left, y, PAGE.contentWidth, rowH).fill(BRAND.black);
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(8);
+  doc.text('Description', PAGE.left + 12, y + 9, { width: colDesc - 16, lineBreak: false });
+  doc.text('Qty', PAGE.left + colDesc, y + 9, { width: colQty - 8, align: 'right', lineBreak: false });
+  doc.text('Unit Price', PAGE.left + colDesc + colQty, y + 9, { width: colUnit - 8, align: 'right', lineBreak: false });
+  doc.text('Total', PAGE.left + colDesc + colQty + colUnit, y + 9, { width: colTot - 12, align: 'right', lineBreak: false });
+  y += rowH;
+
+  const items = Array.isArray(state.lineItems) && state.lineItems.length
+    ? state.lineItems
+    : [{ description: textValue(state.title) || 'Sovereign service', quantity: 1, unitPrice: state.subtotal || state.amount, lineTotal: state.subtotal || state.amount }];
+
+  items.forEach((item, idx) => {
+    if (y + rowH > usableBottom - 160) return;
+    if (idx % 2 === 0) {
+      doc.rect(PAGE.left, y, PAGE.contentWidth, rowH).fill('#FFFFFF');
+    } else {
+      doc.rect(PAGE.left, y, PAGE.contentWidth, rowH).fill(BRAND.panel);
+    }
+    doc.moveTo(PAGE.left, y + rowH).lineTo(PAGE.left + PAGE.contentWidth, y + rowH).strokeColor(BRAND.line).lineWidth(0.4).stroke();
+
+    doc.fillColor(BRAND.black).font('Helvetica').fontSize(9)
+      .text(textValue(item.description || item.name || 'Line'), PAGE.left + 12, y + 8, { width: colDesc - 16, lineBreak: false });
+    doc.font('Helvetica').fontSize(9)
+      .text(String(item.quantity ?? 1), PAGE.left + colDesc, y + 8, { width: colQty - 8, align: 'right', lineBreak: false });
+    doc.font('Helvetica').fontSize(9)
+      .text(money(item.unitPrice ?? item.unit_price ?? 0), PAGE.left + colDesc + colQty, y + 8, { width: colUnit - 8, align: 'right', lineBreak: false });
+    doc.font('Helvetica-Bold').fontSize(9)
+      .text(money(item.lineTotal ?? item.total ?? item.unitPrice ?? 0), PAGE.left + colDesc + colQty + colUnit, y + 8, { width: colTot - 12, align: 'right', lineBreak: false });
+    y += rowH;
+  });
+
+  y += 22;
+
+  // ── Totals block (right-aligned, full commercial weight) ─────────────
+  const totalsW = 240;
+  const totalsX = PAGE.left + PAGE.contentWidth - totalsW;
+  const lineGap = 18;
+
+  const subtotalExcl = Number(state.subtotalExclVAT ?? state.subtotal ?? 0);
+  const vatAmount = Number(state.totalVAT ?? state.taxAmount ?? 0);
+  const vatPct = Math.round(Number(state.vatRate ?? state.taxRate ?? 0.15) * 100);
+
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(9)
+    .text('Subtotal (excl. VAT)', totalsX, y, { width: 130, lineBreak: false });
+  doc.fillColor(BRAND.black).font('Helvetica').fontSize(9)
+    .text(money(subtotalExcl), totalsX + 130, y, { width: 110, align: 'right', lineBreak: false });
+  y += lineGap;
+
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(9)
+    .text(`VAT (${vatPct}%)`, totalsX, y, { width: 130, lineBreak: false });
+  doc.fillColor(BRAND.black).font('Helvetica').fontSize(9)
+    .text(money(vatAmount), totalsX + 130, y, { width: 110, align: 'right', lineBreak: false });
+  y += lineGap + 6;
+
+  // Gold-edge total bar
+  doc.roundedRect(totalsX, y, totalsW, 44, 6).fill(BRAND.black);
+  doc.rect(totalsX, y, 5, 44).fill(BRAND.gold);
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(8)
+    .text('TOTAL DUE (VAT INCL.)', totalsX + 16, y + 10, { width: totalsW - 28, lineBreak: false });
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(16)
+    .text(money(state.totalAmount), totalsX + 16, y + 22, { width: totalsW - 28, align: 'right', lineBreak: false });
+  y += 58;
+
+  // ── Verification + payment QRs (left of residual space under totals) ──
+  const qrSize = 72;
+  const qrGap = 14;
+  const verifyBuf = state._qrVerifyPng || null;
+  const payBuf = state._qrPayPng || null;
+  const verifyUrl = state._verifyUrl || buildVerifyAuditUrl(state);
+  const payUrl = state._payUrl || buildPaymentSettleUrl(state);
+
+  const qrBlockY = y;
+  let qrConsumed = 0;
+  qrConsumed = Math.max(
+    qrConsumed,
+    drawQrBlock(doc, PAGE.left, qrBlockY, qrSize, verifyBuf, 'VERIFY', 'verify.wilsy.os/audit')
+  );
+  qrConsumed = Math.max(
+    qrConsumed,
+    drawQrBlock(
+      doc,
+      PAGE.left + qrSize + 16 + qrGap,
+      qrBlockY,
+      qrSize,
+      payBuf,
+      'PAY NOW',
+      'PayShap / Zapper'
+    )
+  );
+  // Keep totals column clear; advance y past QR cards
+  y = Math.max(y, qrBlockY + qrConsumed + 16);
+
+  // ── Payment terms ────────────────────────────────────────────────────
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(9).text('PAYMENT TERMS', PAGE.left, y);
+  y += 14;
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(9)
+    .text(
+      `Payment due by ${date(state.dueDate)}. Scan PAY NOW for PayShap/Zapper settlement, or VERIFY for the live audit seal. Disputes follow the Wilsy OS collections path.`,
+      PAGE.left,
+      y,
+      { width: PAGE.contentWidth, lineGap: 3 }
+    );
+  y = Math.max(doc.y + 18, y + 28);
+
+  const paymentInstructions = state.paymentInstructions;
+  if (paymentInstructions) {
+    const bankDetails = [
+      `${paymentInstructions.rail}: ${paymentInstructions.bankName}`,
+      `Account holder: ${paymentInstructions.accountName} · Account: ${paymentInstructions.accountNumber}`,
+      `Branch: ${paymentInstructions.branchCode}${paymentInstructions.bicSwift ? ` · BIC/SWIFT: ${paymentInstructions.bicSwift}` : ''}`,
+      `Mandatory reference: ${paymentInstructions.reference}`,
+    ].filter(Boolean).join('\n');
+    doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(8).text('BANK TRANSFER (EFT)', PAGE.left, y, { width: PAGE.contentWidth });
+    y += 12;
+    doc.fillColor(BRAND.muted).font('Helvetica').fontSize(8)
+      .text(bankDetails, PAGE.left, y, { width: PAGE.contentWidth, lineGap: 2 });
+    y = Math.max(doc.y + 12, y + 38);
+  }
+
+  // Optional compact forecast
+  if (state.forecast && state.forecast.prediction) {
+    doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(8).text('FORECAST', PAGE.left, y);
+    y += 12;
+    doc.fillColor(BRAND.muted).font('Helvetica').fontSize(8)
+      .text(
+        `${state.forecast.prediction} · confidence ${state.forecast.confidence ?? '—'}% · expected ${date(state.forecast.expectedDate)}`,
+        PAGE.left,
+        y,
+        { width: PAGE.contentWidth }
+      );
+    y += 20;
+  }
+
+  // ── Forensic strip: pin near foot when short so page is not top-heavy ─
+  if (y < usableBottom - 36) {
+    y = usableBottom - 28;
+  }
+  drawForensicFooter(doc, state, y);
+
+  return { y: y + 20 };
+}
+
+
+/**
+ * @function drawInvoiceDigestCover
+ * @description Multi-page invoices only — executive cover: identity, gold total,
+ *              forecast, dual QR (verify + pay), seal strip. Commercial detail
+ *              and forensic appendix follow on subsequent pages.
+ * @param {PDFDocument} doc
+ * @param {object} state
+ * @returns {object} cursor
+ * @collaboration Boardroom-ready multi-page invoice package
+ */
+function drawInvoiceDigestCover(doc, state) {
+  const money = (v) => formatInvoiceMoney(v, state.currency);
+  const date = (iso) => formatEnterpriseDate(iso);
+  let y = 138;
+
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(22)
+    .text('EXECUTIVE DIGEST', PAGE.left, y, { width: PAGE.contentWidth * 0.55, lineBreak: false });
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(10)
+    .text(textValue(state.invoiceNumber || state.title), PAGE.left + PAGE.contentWidth * 0.55, y + 8, {
+      width: PAGE.contentWidth * 0.45,
+      align: 'right',
+      lineBreak: false,
+    });
+  y += 34;
+
+  doc.roundedRect(PAGE.left, y, PAGE.contentWidth, 28, 4).fill(BRAND.band);
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(8)
+    .text(
+      `STATUS  ${textValue(state.status || 'ISSUED')}    ·    ISSUE  ${date(state.issueDate)}    ·    DUE  ${date(state.dueDate)}    ·    ${textValue(state.currency || 'ZAR')}`,
+      PAGE.left + 14,
+      y + 9,
+      { width: PAGE.contentWidth - 28, lineBreak: false }
+    );
+  y += 44;
+
+  // Parties summary
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(7).text('FROM', PAGE.left, y);
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(7).text('BILL TO', PAGE.left + PAGE.contentWidth / 2, y);
+  y += 12;
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(11)
+    .text(textValue(state.issuingEntity), PAGE.left, y, { width: PAGE.contentWidth / 2 - 10, lineBreak: false });
+  doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(11)
+    .text(textValue(state.counterparty), PAGE.left + PAGE.contentWidth / 2, y, {
+      width: PAGE.contentWidth / 2 - 10,
+      lineBreak: false,
+    });
+  y += 28;
+
+  // Gold total hero box
+  doc.roundedRect(PAGE.left, y, PAGE.contentWidth, 96, 8).fill(BRAND.panel);
+  doc.roundedRect(PAGE.left, y, PAGE.contentWidth, 96, 8).strokeColor(BRAND.gold).lineWidth(2).stroke();
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(10)
+    .text('TOTAL AMOUNT DUE (VAT INCL.)', PAGE.left + 16, y + 16, {
+      width: PAGE.contentWidth - 32,
+      align: 'center',
+    });
+  doc.fillColor(BRAND.gold).font('Helvetica-Bold').fontSize(28)
+    .text(money(state.totalAmount), PAGE.left + 16, y + 36, {
+      width: PAGE.contentWidth - 32,
+      align: 'center',
+    });
+  const sub = Number(state.subtotalExclVAT ?? state.subtotal ?? 0);
+  const vat = Number(state.totalVAT ?? state.taxAmount ?? 0);
+  const pct = Math.round(Number(state.vatRate ?? state.taxRate ?? 0.15) * 100);
+  doc.fillColor(BRAND.muted).font('Helvetica').fontSize(8.5)
+    .text(
+      `Subtotal ${money(sub)}   ·   VAT (${pct}%) ${money(vat)}`,
+      PAGE.left + 16,
+      y + 72,
+      { width: PAGE.contentWidth - 32, align: 'center' }
+    );
+  y += 112;
+
+  if (state.forecast && state.forecast.prediction) {
+    doc.fillColor(BRAND.black).font('Helvetica-Bold').fontSize(9).text('PREDICTIVE FORECAST', PAGE.left, y);
+    y += 14;
+    doc.fillColor(BRAND.muted).font('Helvetica').fontSize(9)
+      .text(
+        `${state.forecast.prediction} · confidence ${state.forecast.confidence ?? '—'}% · expected ${date(state.forecast.expectedDate)}`,
+        PAGE.left,
+        y,
+        { width: PAGE.contentWidth }
+      );
+    y += 24;
+  }
+
+  // Dual QR on cover
+  const qrSize = 88;
+  const verifyBuf = state._qrVerifyPng || null;
+  const payBuf = state._qrPayPng || null;
+  drawQrBlock(doc, PAGE.left, y, qrSize, verifyBuf, 'VERIFY AUDIT', 'verify.wilsy.os');
+  drawQrBlock(doc, PAGE.left + qrSize + 28, y, qrSize, payBuf, 'PAY NOW', 'PayShap / Zapper');
+  y += qrSize + 48;
+
+  // Draw the forensic footer for the cover
+  drawForensicFooter(doc, state, Math.min(y + 20, 700));
+
+  return { y: Math.min(y + 20, 700) + 40 };
+}
+
+function shouldAttachInvoiceAppendix(state = {}) {
+  const items = Array.isArray(state.lineItems) ? state.lineItems.length : 0;
+  const anomalies = Array.isArray(state.anomalies) ? state.anomalies.length : 0;
+  // Appendix for dense line lists or explicit forensic payloads — not for simple single-line invoices
+  return items > 12 || anomalies > 0 || Boolean(state.forceAppendix);
+}
+
+
 /**
  * @function streamEnterpriseArtifactPdf
- * @description Streams a Wilsy OS enterprise PDF artifact with stable branding, pagination and deeper content.
- * @param {object} args - Render arguments.
- * @returns {Promise<void>} Streams the PDF response.
- * @collaboration Replaces shallow draft documents with tenant-facing enterprise artifact output.
+ * @description Streams a Wilsy OS enterprise PDF artifact with sovereign cover + forensic appendix.
  */
 export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
-  const state = hydrateWilsyKnowledgeBaseState(
-    hydrateCrmProofPackState(buildState(identity, proof), identity, proof),
-    identity,
-    proof
-  );
-  const fileName = `WILSY-OS-${safeFileName(state.title)}-${state.tenantId}-${Date.now()}.pdf`;
+  // Build base state, hydrate knowledge base, CRM, and then billing invoice (order matters for precedence)
+  const baseState = buildState(identity, proof);
+  const withKnowledgeBase = hydrateWilsyKnowledgeBaseState(baseState, identity, proof);
+  const withCrm = hydrateCrmProofPackState(withKnowledgeBase, identity, proof);
+  const state = hydrateBillingInvoiceState(withCrm, identity);
+
+  const fileName = isBillingInvoiceState(state)
+    ? `WILSY-INV-${safeFileName(state.invoiceNumber || state.title)}-${state.tenantId}.pdf`
+    : `WILSY-OS-${safeFileName(state.title)}-${state.tenantId}-${Date.now()}.pdf`;
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
@@ -1754,7 +2726,7 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
     bufferPages: true,
     margins: { top: 0, bottom: 0, left: 0, right: 0 },
     info: {
-      Title: state.title,
+      Title: isBillingInvoiceState(state) ? `Invoice ${state.invoiceNumber}` : state.title,
       Author: 'Wilsy OS',
       Subject: `Wilsy OS Enterprise Artifact - ${state.type}`,
       Keywords: `Wilsy OS, ${state.type}, ${state.tenantId}, ${state.traceId}`,
@@ -1774,15 +2746,90 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
     doc.on('error', reject);
   });
 
-  let cursor = normalizeEnterprisePdfCursor({ y: PAGE.top }, PAGE.top);
+  if (isBillingInvoiceState(state)) {
+    // ─── SOVEREIGN QR GENERATION (using qrGenerator.js) ─────────────────
+    try {
+      // Build a signed payload for verification
+      const qrPayload = buildQRPayload({
+        invoiceId: state.invoiceNumber || state.title,
+        tenantId: state.tenantId,
+        amount: state.totalAmount,
+        currency: state.currency,
+        traceId: state.traceId,
+        merkleRoot: state.merkleRoot,
+        sealHash: state.sealHash || state.sha3,
+      });
+      // Verification URL contains the signed payload
+      state._verifyUrl = qrPayload.verificationUrl;
+      // Generate QR code for verification
+      state._qrVerifyPng = await generateQRCode(qrPayload.verificationUrl, { width: 180 });
+    } catch (qrError) {
+      // Fallback: generate a simple URL QR if sovereign generation fails
+      console.warn('Sovereign QR generation failed, falling back to simple URL:', qrError.message);
+      state._verifyUrl = buildVerifyAuditUrl(state);
+      try {
+        state._qrVerifyPng = await generateQRCode(state._verifyUrl, { width: 180 });
+      } catch {
+        state._qrVerifyPng = null;
+      }
+    }
 
-  cursor = drawDocumentControl(doc, cursor, state);
-  buildSections(state).forEach((section) => {
-    cursor = drawSection(doc, cursor, section);
-  });
-  cursor = drawProofSchedule(doc, cursor, state);
-  cursor = drawExecution(doc, cursor, state);
-  applyChrome(doc, state);
+    // Payment QR (still using a simple URL)
+    state._payUrl = buildPaymentSettleUrl(state);
+    try {
+      state._qrPayPng = await generateQRCode(state._payUrl, { width: 180 });
+    } catch {
+      state._qrPayPng = null;
+    }
+
+    const multiPage = shouldAttachInvoiceAppendix(state) || Boolean(state.forceCoverDigest);
+
+    if (multiPage) {
+      // Page 1 — Executive digest cover (logo via header + total + forecast + QRs)
+      drawHeader(doc, state, 1, 2);
+      drawInvoiceDigestCover(doc, state);
+
+      // Page 2 — Full commercial tax invoice body
+      doc.addPage();
+      drawHeader(doc, state, 2, 2);
+      drawCommercialInvoicePage(doc, state);
+
+      // Optional deeper forensic appendix when anomalies / dense lines force it
+      if (shouldAttachInvoiceAppendix(state)) {
+        doc.addPage();
+        let cursor = normalizeEnterprisePdfCursor({ y: PAGE.top }, PAGE.top);
+        cursor = drawDocumentControl(doc, cursor, state);
+        const sections = buildSections(state) || [];
+        sections.forEach((section) => {
+          section._state = state;
+          section._currency = state.currency || 'ZAR';
+          cursor = drawSection(doc, cursor, section);
+        });
+      }
+    } else {
+      // Single-page commercial tax invoice with embedded QRs
+      drawHeader(doc, state, 1, 1);
+      drawCommercialInvoicePage(doc, state);
+    }
+
+    applyChrome(doc, state);
+  } else {
+    // ─── NON-INVOICE ENTERPRISE ARTIFACTS ────────────────────────────
+    drawHeader(doc, state, 1, 1);
+    drawCoverPage(doc, state);
+
+    doc.addPage();
+    let cursor = normalizeEnterprisePdfCursor({ y: PAGE.top }, PAGE.top);
+    cursor = drawDocumentControl(doc, cursor, state);
+    const sections = buildSections(state) || [];
+    sections.forEach((section) => {
+      section._state = state;
+      section._currency = state.currency || 'ZAR';
+      cursor = drawSection(doc, cursor, section);
+    });
+
+    applyChrome(doc, state);
+  }
 
   doc.end();
 
@@ -1798,16 +2845,12 @@ export async function streamEnterpriseArtifactPdf({ res, identity, proof }) {
 
 export default streamEnterpriseArtifactPdf;
 
-// P60K5Q10FG106O_ENTERPRISE_RENDERER_CRM_PROOF_STORY\n\n// P60K5Q10FG106S_BUFFER_ENTERPRISE_PDF_FINALIZATION\n
-
+// P60K5Q10FG106O_ENTERPRISE_RENDERER_CRM_PROOF_STORY
+// P60K5Q10FG106S_BUFFER_ENTERPRISE_PDF_FINALIZATION
 // P60K5Q10FG106T_ENTERPRISE_PDF_CURSOR_GUARD
-
 // P60K5Q10FG106T3_CURSOR_ORDER_RESCUE
-
 // P60K5Q10FG106U_ENTERPRISE_PDF_ALL_CURSOR_READ_GUARDS
-
 // P60K5Q10FG106X_CRM_PROOF_PACK_PDF_LAYOUT_FLOW
-
 // P60K5Q10FG106Y_PDF_CURSOR_MUTATION_FLOW
-
 // P60K5Q10FG106Z_GENERATED_BY_HUMAN_CONTROL_NAME
+// Q7.1.7_QR_INTEGRATION_SOVEREIGN_GENERATEQRCODE_CALL

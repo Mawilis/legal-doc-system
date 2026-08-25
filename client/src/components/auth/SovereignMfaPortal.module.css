@@ -1,0 +1,409 @@
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS – SOVEREIGN MFA PORTAL STYLING [V30.0.0-GOLD-ENHANCED]                                                ║
+ * ║ [QUANTUM GRID | BREATHING GOLD HALO | BOARDROOM FINALITY]                                                       ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/SovereignMfaPortal.module.css ║
+ * ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+/* ─── CSS Variables ─── */
+:root {
+  --gold: #D4AF37;
+  --gold-dim: rgba(212, 175, 55, 0.4);
+  --gold-glow: rgba(212, 175, 55, 0.15);
+  --bg-deep: #000;
+  --bg-panel: #0c0c0c;
+  --bg-card: #0a0a0a;
+  --border-subtle: #1a1a1a;
+  --text-primary: #fff;
+  --text-secondary: #888;
+  --text-muted: #444;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 0;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-heavy: 0 40px 80px rgba(0, 0, 0, 1);
+  --shadow-inset: inset 0 4px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* ─── Portal Container ─── */
+.portalContainer {
+  background: radial-gradient(circle at 50% 50%, #080703 0%, #000000 85%);
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'JetBrains Mono', 'Inter', sans-serif;
+  overflow: hidden;
+  position: relative;
+  perspective: 2000px;
+}
+
+/* ─── Quantum Grid Overlay ─── */
+.quantumGridOverlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: center center;
+  pointer-events: none;
+  z-index: 1;
+  animation: gridDrift 40s linear infinite;
+}
+
+@keyframes gridDrift {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(10px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ─── Nebula Glow ─── */
+.nebulaGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(212, 175, 55, 0.08) 0%, rgba(138, 110, 30, 0.02) 45%, transparent 75%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Scanline ─── */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent 50%, rgba(212,175,55,0.012) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 2;
+  animation: scanMove 12s linear infinite;
+  opacity: 0.3;
+}
+
+@keyframes scanMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+/* ─── MFA Card ─── */
+.mfaCard {
+  width: clamp(360px, 92vw, 480px);
+  max-height: 92vh;
+  background: rgba(3, 3, 3, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 8px;
+  padding: clamp(28px, 5vh, 48px);
+  box-shadow:
+    0 70px 140px rgba(0, 0, 0, 0.98),
+    0 0 50px rgba(212, 175, 55, 0.15),
+    inset 0 0 25px rgba(212, 175, 55, 0.04);
+  backdrop-filter: blur(80px) saturate(220%);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  animation: cardEntrance 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d4af37 transparent;
+}
+
+.mfaCard::-webkit-scrollbar {
+  width: 4px;
+}
+.mfaCard::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mfaCard::-webkit-scrollbar-thumb {
+  background: #d4af37;
+  border-radius: 2px;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(30px) rotateX(-10deg) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) rotateX(0) scale(1); }
+}
+
+/* ─── Kinetic Border ─── */
+.kineticBorder {
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-image: linear-gradient(135deg, #d4af37, #362908, #d4af37) 1;
+  pointer-events: none;
+  animation: borderBreath 6s ease-in-out infinite alternate;
+}
+
+@keyframes borderBreath {
+  from { opacity: 0.6; }
+  to { opacity: 1; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
+}
+
+.cornerAccentTL,
+.cornerAccentBR {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+}
+.cornerAccentTL {
+  top: -2px;
+  left: -2px;
+  border-top: 2px solid #d4af37;
+  border-left: 2px solid #d4af37;
+}
+.cornerAccentBR {
+  bottom: -2px;
+  right: -2px;
+  border-bottom: 2px solid #d4af37;
+  border-right: 2px solid #d4af37;
+}
+
+/* ─── Header ─── */
+.headerSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.titleStyle {
+  color: #fff;
+  font-size: 0.9rem;
+  letter-spacing: 4px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.subtitleStyle {
+  color: #888;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+/* ─── Error Banner ─── */
+.errorBanner {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 12px 16px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* ─── Step Content ─── */
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* ─── Instruction Text ─── */
+.instructionText {
+  color: #aaa;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* ─── QR Container ─── */
+.qrContainer {
+  background: #fff;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 25px;
+  display: inline-block;
+  box-shadow: 0 0 30px rgba(212,175,55,0.2);
+}
+
+.qrImage {
+  width: 180px;
+  height: 180px;
+  display: block;
+}
+
+.qrPlaceholder {
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-weight: bold;
+}
+
+/* ─── Manual Entry Box ─── */
+.manualEntryBox {
+  width: 100%;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 15px;
+  margin-bottom: 30px;
+  text-align: left;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.labelStyle {
+  color: #666;
+  font-size: 0.6rem;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.keyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #d4af37;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.keyRow code {
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.iconBtn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 4px;
+}
+
+.iconBtn:hover {
+  color: var(--gold);
+}
+
+/* ─── OTP Input ─── */
+.otpInput {
+  width: 100%;
+  background: #000;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 18px;
+  color: #d4af37;
+  font-size: 2rem;
+  text-align: center;
+  letter-spacing: 12px;
+  outline: none;
+  margin-bottom: 30px;
+  font-family: 'JetBrains Mono', monospace;
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition: var(--transition);
+}
+
+.otpInput:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 40px rgba(212, 175, 55, 0.2);
+}
+
+/* ─── Primary Button ─── */
+.primaryBtn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #d4af37 0%, #aa8c2c 100%);
+  color: #000;
+  border: none;
+  font-weight: 900;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.3);
+}
+
+.primaryBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.6);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Link Button ─── */
+.linkBtn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.65rem;
+  margin-top: 20px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: var(--transition);
+}
+
+.linkBtn:hover {
+  color: var(--gold);
+}
+
+/* ─── Loading Spinner ─── */
+.loadingFlex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.spin {
+  animation: deterministicRotation 1.1s linear infinite;
+}
+
+@keyframes deterministicRotation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Completion ─── */
+.completionIcon {
+  margin-bottom: 20px;
+  color: #10b981;
+  filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.5));
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .mfaCard {
+    padding: 20px;
+  }
+  .qrImage {
+    width: 140px;
+    height: 140px;
+  }
+  .otpInput {
+    font-size: 1.5rem;
+    letter-spacing: 8px;
+    padding: 14px;
+  }
+}

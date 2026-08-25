@@ -1,0 +1,26 @@
+{
+  "total_nodes": 2,
+  "total_edges": 1,
+  "nodes": {
+    "ASSET-CRM-001": {
+      "name": "Enterprise CRM",
+      "status": "ACTIVE"
+    },
+    "ASSET-LEGAL-001": {
+      "name": "Legal SaaS Core",
+      "status": "ACTIVE"
+    }
+  },
+  "edges": [
+    {
+      "source_id": "ASSET-CRM-001",
+      "target_id": "ASSET-LEGAL-001",
+      "relation_type": "PROPAGATES_TO",
+      "weight": 1.0,
+      "governance_status": "APPROVED",
+      "metadata": {},
+      "created_at": "2026-07-26T21:45:50.636994+00:00"
+    }
+  ],
+  "compiled_at": "2026-07-26T21:45:50.637192+00:00"
+}

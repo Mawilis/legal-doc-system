@@ -21,7 +21,8 @@
     "monitor": "../monitor-production.sh",
     "test:helpers": "NODE_ENV=test mocha --experimental-specifier-resolution=node tests/helpers/testDatabaseHelper.test.js --exit",
     "test:pipeline": "node scripts/testOnboardingPipeline.js",
-    "onboard": "node scripts/onboardTenant.js"
+    "onboard": "node scripts/onboardTenant.js",
+    "predev": "lsof -ti:4000 | xargs kill -9 2>/dev/null || true"
   },
   "dependencies": {
     "@babel/core": "^7.24.0",
@@ -60,6 +61,7 @@
     "exceljs": "4.4.0",
     "express": "^4.22.2",
     "express-async-handler": "1.2.0",
+    "express-fileupload": "1.5.2",
     "express-mongo-sanitize": "2.2.0",
     "express-rate-limit": "7.5.0",
     "express-validator": "7.3.1",
@@ -72,6 +74,7 @@
     "handlebars": "^4.7.9",
     "helmet": "7.1.0",
     "hpp": "0.2.3",
+    "http-proxy-middleware": "3.0.7",
     "ical-generator": "10.1.0",
     "ioredis": "5.10.0",
     "joi": "^17.13.3",
@@ -88,7 +91,6 @@
     "mammoth": "1.12.0",
     "merkle-tree-stream": "4.0.0",
     "merkletreejs": "0.6.0",
-    "mocha": "^10.3.0",
     "mocha-junit-reporter": "^2.2.1",
     "moment": "2.30.1",
     "moment-timezone": "0.6.1",
@@ -161,7 +163,7 @@
     "glob": "13.0.6",
     "ioredis-mock": "8.13.1",
     "jest": "29.7.0",
-    "mocha": "^11.3.0",
+    "mocha": "11.8.0",
     "mongodb-memory-server": "9.4.1",
     "mongoose": "9.2.3",
     "natural": "8.0.1",

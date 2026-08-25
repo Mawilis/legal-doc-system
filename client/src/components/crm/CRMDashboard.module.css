@@ -14029,3 +14029,155 @@
     margin-bottom: 0.75rem;
   }
 }
+
+/* ==========================================================================
+   R90 CRM CREATE WORKSPACE PRODUCTION COMPOSER
+   Maps Accounts, Deals and Tasks into one backend-backed create viewport.
+   ========================================================================== */
+
+.crmShell[data-wilsy-active-home-tab='create'] .crmCreateWorkspace.crmOsModeScreen {
+  height: calc(100dvh - 2rem) !important;
+  max-height: calc(100dvh - 2rem) !important;
+  overflow: hidden !important;
+}
+
+.crmShell[data-wilsy-active-home-tab='create'] .crmCreateWorkspace.crmOsModeScreen .crmCreateStage {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.crmCreateComposer {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.86rem;
+  overflow: hidden;
+}
+
+.crmCreateFieldGrid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(14rem, 1fr));
+  gap: 0.78rem 0.92rem;
+  align-content: start;
+  overflow: auto;
+  padding: 0.92rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(132, 240, 200, 0.18);
+  background: rgba(3, 7, 15, 0.56);
+}
+
+.crmCreateFormTitle {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+  padding-bottom: 0.42rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.crmCreateFormTitle strong {
+  font-size: 1.08rem;
+}
+
+.crmCreateField,
+.crmCreateFieldWide {
+  min-width: 0;
+  display: grid;
+  gap: 0.38rem;
+}
+
+.crmCreateFieldWide {
+  grid-column: 1 / -1;
+}
+
+.crmCreateField span,
+.crmCreateFieldWide span {
+  color: rgba(231, 201, 86, 0.9);
+  font-size: 0.68rem;
+  font-weight: 920;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.crmCreateField input,
+.crmCreateField select,
+.crmCreateFieldWide input,
+.crmCreateFieldWide select,
+.crmCreateFieldWide textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.8rem;
+  border: 1px solid rgba(132, 240, 200, 0.24);
+  border-radius: 0.72rem;
+  background: rgba(2, 6, 12, 0.86);
+  color: rgba(255, 255, 255, 0.94);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 760;
+  outline: none;
+  padding: 0 0.88rem;
+}
+
+.crmCreateFieldWide textarea {
+  min-height: 6.2rem;
+  padding: 0.8rem 0.88rem;
+  resize: vertical;
+}
+
+.crmCreateField input:focus,
+.crmCreateField select:focus,
+.crmCreateFieldWide input:focus,
+.crmCreateFieldWide select:focus,
+.crmCreateFieldWide textarea:focus {
+  border-color: rgba(147, 197, 253, 0.84);
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.16);
+}
+
+.crmCreateField input::placeholder,
+.crmCreateFieldWide input::placeholder,
+.crmCreateFieldWide textarea::placeholder {
+  color: rgba(203, 213, 225, 0.46);
+}
+
+.crmCreateUnsupported {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.82rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(132, 240, 200, 0.2);
+  background: rgba(3, 7, 15, 0.58);
+}
+
+.crmCreateUnsupported span {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.crmCreateUnsupported em {
+  color: rgba(203, 213, 225, 0.68);
+  font-style: normal;
+}
+
+.crmCreateCommandBar {
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  padding-top: 0.74rem;
+}
+
+.crmCreateCommandBar button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+@media (max-width: 1180px) {
+  .crmCreateFieldGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

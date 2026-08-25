@@ -74,8 +74,8 @@
  * • Insurance Premium Reduction: $500M/year
  * • Total Value: $4B/year
  *
- * @version 42.0.0 (10-Year Future-Proof Edition)
- * @collaboration: AI Research Team, Security Council, Fraud Investigation Unit
+ * @version 42.0.3 (Duplicate export fix, production stable)
+ * @collaboration: AI Research Team, Security Council, Fraud Investigation Unit, Wilson Khanyezi
  * @valuation: $4B+ annual risk prevention
  * ============================================================================
  */
@@ -85,13 +85,13 @@
   ║ 95% fraud prevention | Real-time detection | AI-powered                  ║
   ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
+import crypto, { createHmac } from 'crypto';
 import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid.js';
+import { v4 as uuidv4 } from 'uuid';
 import EventEmitter from 'events';
-import * as tf from '@tensorflow/tfjs-node.js';
-import { RandomForest } from 'ml-random-forest.js';
-import { IsolationForest } from 'isolation-forest.js';
-import { createHmac } from 'crypto';
+import * as tf from '@tensorflow/tfjs-node';
+import { RandomForest } from 'ml-random-forest';
+import { IsolationForest } from 'isolation-forest';
 
 // WILSY OS CORE IMPORTS
 import mongoose from 'mongoose';
@@ -101,6 +101,10 @@ import { redisClient } from '../cache/redisClient.js';
 import { AuditLedger } from '../models/AuditLedger.js';
 import { TenantConfig } from '../models/TenantConfig.js';
 import { User } from '../models/User.js';
+import auditLogger from './AuditLogger.js';
+import { getCurrentTenantId } from '../middleware/tenantContext.js';
+import Invoice from '../models/Invoice.js';
+import Statement from '../models/Statement.js';
 
 // =============================================================================
 // ANOMALY MODEL (for database storage)
@@ -1424,6 +1428,322 @@ class AnomalyDetectionServiceFactory {
 }
 
 // =============================================================================
+// ADDED: LIGHTWEIGHT ANOMALY FUNCTIONS FOR QR CONTROLLER
+// =============================================================================
+
+/**
+ * @function getTenantInvoiceModel
+ * @param {string} tenantId - Tenant identifier.
+ * @returns {Model} Mongoose model for Invoice in tenant database.
+ */
+function getTenantInvoiceModel(tenantId) {
+  const tenantDb = mongoose.connection.useDb(String(tenantId).toLowerCase(), { useCache: true });
+  return tenantDb.models.Invoice || tenantDb.model('Invoice', Invoice.schema);
+}
+
+/**
+ * @function getTenantStatementModel
+ * @param {string} tenantId - Tenant identifier.
+ * @returns {Model} Mongoose model for Statement in tenant database.
+ */
+function getTenantStatementModel(tenantId) {
+  const tenantDb = mongoose.connection.useDb(String(tenantId).toLowerCase(), { useCache: true });
+  return tenantDb.models.Statement || tenantDb.model('Statement', Statement.schema);
+}
+
+/**
+ * @function computeSeal
+ * @param {object} data - Object to seal.
+ * @returns {string} SHA3‑512 hash.
+ */
+function computeSeal(data) {
+  return crypto.createHash('sha3-512').update(JSON.stringify(data)).digest('hex');
+}
+
+/**
+ * @function checkSeal
+ * @param {object} document - Document with `sealHash` field.
+ * @param {string} type - 'INVOICE' or 'STATEMENT'.
+ * @returns {object|null} Anomaly object if mismatch.
+ */
+function checkSeal(document, type) {
+  if (!document.sealHash) {
+    return {
+      type: 'MISSING_SEAL',
+      severity: 'HIGH',
+      description: `${type} is missing a cryptographic seal.`,
+      remediation: 'Re‑generate the document with a valid SHA3‑512 seal.',
+    };
+  }
+
+  const { sealHash, ...docWithoutSeal } = document;
+  const recalculated = computeSeal(docWithoutSeal);
+
+  if (sealHash !== recalculated) {
+    return {
+      type: 'SEAL_MISMATCH',
+      severity: 'CRITICAL',
+      description: `${type} seal does not match recalculated hash. Possible tampering.`,
+      remediation: 'Investigate immediately; the document may have been altered.',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * @function checkDuplicateTrace
+ * @param {string} traceId - Trace ID to check.
+ * @param {string} tenantId - Tenant ID for isolation.
+ * @param {string} [excludeId] - Optional document ID to exclude from check.
+ * @returns {Promise<object|null>} Anomaly object if duplicate exists.
+ */
+async function checkDuplicateTrace(traceId, tenantId, excludeId = null) {
+  const invoiceModel = getTenantInvoiceModel(tenantId);
+  const statementModel = getTenantStatementModel(tenantId);
+
+  const invoice = await invoiceModel.findOne({ traceId, _id: { $ne: excludeId } }).lean();
+  if (invoice) {
+    return {
+      type: 'DUPLICATE_TRACE',
+      severity: 'MEDIUM',
+      description: `Trace ID ${traceId} already exists in invoice ledger.`,
+      remediation: 'Use a unique trace ID; duplicate IDs may indicate replay or error.',
+    };
+  }
+
+  const statement = await statementModel.findOne({ traceId, _id: { $ne: excludeId } }).lean();
+  if (statement) {
+    return {
+      type: 'DUPLICATE_TRACE',
+      severity: 'MEDIUM',
+      description: `Trace ID ${traceId} already exists in statement ledger.`,
+      remediation: 'Use a unique trace ID.',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * @function checkAmount
+ * @param {number} amount - The amount to check.
+ * @param {string} currency - Currency code.
+ * @param {string} tenantId - Tenant ID.
+ * @returns {object|null} Anomaly object if amount is abnormal.
+ */
+function checkAmount(amount, currency, tenantId) {
+  if (amount < 0) {
+    return {
+      type: 'NEGATIVE_AMOUNT',
+      severity: 'CRITICAL',
+      description: `Amount ${amount} ${currency} is negative.`,
+      remediation: 'Correct the amount; negative values are not permitted.',
+    };
+  }
+
+  const threshold = 1000000;
+  if (amount > threshold) {
+    return {
+      type: 'ABNORMAL_AMOUNT',
+      severity: 'MEDIUM',
+      description: `Amount ${amount} ${currency} exceeds threshold of ${threshold}.`,
+      remediation: 'Verify this amount is legitimate; may require escalation.',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * @function checkTenantMatch
+ * @param {string} documentTenant - Tenant ID from document.
+ * @param {string} requestTenant - Tenant ID from request.
+ * @returns {object|null} Anomaly object if mismatch.
+ */
+function checkTenantMatch(documentTenant, requestTenant) {
+  if (documentTenant && requestTenant && documentTenant !== requestTenant) {
+    return {
+      type: 'TENANT_MISMATCH',
+      severity: 'CRITICAL',
+      description: `Document tenant (${documentTenant}) does not match request tenant (${requestTenant}).`,
+      remediation: 'Tenant isolation violation; investigate immediately.',
+    };
+  }
+  return null;
+}
+
+/**
+ * @function checkDocument
+ * @description Comprehensive anomaly check for an invoice or statement.
+ * @param {object} document - Document object (Invoice or Statement).
+ * @param {string} type - 'INVOICE' or 'STATEMENT'.
+ * @param {object} options - Options object.
+ * @param {string} [options.tenantId] - Tenant ID for isolation (if not in document).
+ * @param {boolean} [options.checkSeal=true] - Whether to check seal.
+ * @param {boolean} [options.checkDuplicateTrace=true] - Whether to check duplicate trace.
+ * @param {boolean} [options.checkAmount=true] - Whether to check amount.
+ * @param {string} [options.excludeId] - Document ID to exclude from duplicate check.
+ * @returns {Promise<Array>} Array of anomaly objects.
+ */
+async function checkDocument(document, type, options = {}) {
+  const anomalies = [];
+  const {
+    tenantId = document.recipientTenantId || document.tenantId || 'MASTER',
+    checkSeal: checkSealFlag = true,
+    checkDuplicateTrace: checkDuplicateTraceFlag = true,
+    checkAmount: checkAmountFlag = true,
+    excludeId = null,
+  } = options;
+
+  const requestTenant = getCurrentTenantId() || 'MASTER';
+  const tenantMismatch = checkTenantMatch(tenantId, requestTenant);
+  if (tenantMismatch) {
+    anomalies.push(tenantMismatch);
+    return anomalies;
+  }
+
+  if (checkSealFlag) {
+    const sealAnomaly = checkSeal(document, type);
+    if (sealAnomaly) anomalies.push(sealAnomaly);
+  }
+
+  if (checkDuplicateTraceFlag && document.traceId) {
+    const duplicateAnomaly = await checkDuplicateTrace(document.traceId, tenantId, excludeId);
+    if (duplicateAnomaly) anomalies.push(duplicateAnomaly);
+  }
+
+  if (checkAmountFlag && document.totalAmount != null) {
+    const amountAnomaly = checkAmount(document.totalAmount, document.currency || 'ZAR', tenantId);
+    if (amountAnomaly) anomalies.push(amountAnomaly);
+  }
+
+  if (!document.traceId) {
+    anomalies.push({
+      type: 'MISSING_TRACE',
+      severity: 'HIGH',
+      description: `${type} is missing a trace ID.`,
+      remediation: 'Generate a trace ID for auditability.',
+    });
+  }
+
+  if (anomalies.length > 0) {
+    try {
+      await auditLogger.log({
+        action: 'ANOMALY_DETECTED',
+        actorId: 'system',
+        tenantId,
+        resourceType: type,
+        resourceId: document._id || document.invoiceNumber || document.statementNumber,
+        details: { anomalies, documentId: document._id },
+        severity: anomalies.some(a => a.severity === 'CRITICAL') ? 'ERROR' : 'WARNING',
+        metadata: { count: anomalies.length, types: anomalies.map(a => a.type) },
+      });
+    } catch (_) {}
+  }
+
+  return anomalies;
+}
+
+/**
+ * @function checkPayload
+ * @description Validates a QR payload (decoded) for anomalies.
+ * @param {object} payload - Decoded QR payload.
+ * @param {object} options - Options object.
+ * @param {string} [options.tenantId] - Tenant ID for isolation.
+ * @param {boolean} [options.checkExpiry=true] - Whether to check expiry.
+ * @returns {Array} Array of anomaly objects.
+ */
+async function checkPayload(payload, options = {}) {
+  const anomalies = [];
+  const { tenantId = payload.tenantId || 'MASTER', checkExpiry = true } = options;
+
+  const requestTenant = getCurrentTenantId() || 'MASTER';
+  const tenantMismatch = checkTenantMatch(tenantId, requestTenant);
+  if (tenantMismatch) {
+    anomalies.push(tenantMismatch);
+    return anomalies;
+  }
+
+  const required = ['documentId', 'tenantId', 'amount', 'currency', 'traceId', 'sealHash'];
+  for (const field of required) {
+    if (!payload[field]) {
+      anomalies.push({
+        type: `MISSING_${field.toUpperCase()}`,
+        severity: 'HIGH',
+        description: `Payload missing required field: ${field}.`,
+        remediation: 'Ensure QR payload includes all required fields.',
+      });
+    }
+  }
+
+  if (payload.amount < 0) {
+    anomalies.push({
+      type: 'NEGATIVE_AMOUNT',
+      severity: 'CRITICAL',
+      description: `Payload amount ${payload.amount} is negative.`,
+      remediation: 'Correct the payload amount.',
+    });
+  }
+
+  if (checkExpiry && payload.expiresAt && Date.now() > payload.expiresAt) {
+    anomalies.push({
+      type: 'EXPIRED_PAYLOAD',
+      severity: 'MEDIUM',
+      description: 'Payload has expired.',
+      remediation: 'Generate a new QR with an updated expiry date.',
+    });
+  }
+
+  if (payload.sealHash && payload.sealHash.length < 64) {
+    anomalies.push({
+      type: 'SEAL_MISMATCH',
+      severity: 'HIGH',
+      description: 'Payload seal hash is malformed (expected length 64).',
+      remediation: 'Regenerate payload with a valid SHA3‑512 seal.',
+    });
+  }
+
+  if (anomalies.length > 0) {
+    try {
+      await auditLogger.log({
+        action: 'PAYLOAD_ANOMALY_DETECTED',
+        actorId: 'system',
+        tenantId,
+        resourceType: 'QR_PAYLOAD',
+        details: { anomalies, payloadId: payload.documentId },
+        severity: anomalies.some(a => a.severity === 'CRITICAL') ? 'ERROR' : 'WARNING',
+        metadata: { count: anomalies.length, types: anomalies.map(a => a.type) },
+      });
+    } catch (_) {}
+  }
+
+  return anomalies;
+}
+
+/**
+ * @function checkSealHash
+ * @description Standalone seal check for a document.
+ * @param {object} document - Document with `sealHash` field.
+ * @param {string} type - 'INVOICE' or 'STATEMENT'.
+ * @returns {object|null} Anomaly object if mismatch.
+ */
+function checkSealHash(document, type) {
+  return checkSeal(document, type);
+}
+
+/**
+ * @function checkForDuplicateTrace
+ * @param {string} traceId - Trace ID to check.
+ * @param {string} tenantId - Tenant ID.
+ * @param {string} [excludeId] - Document ID to exclude.
+ * @returns {Promise<object|null>}
+ */
+async function checkForDuplicateTrace(traceId, tenantId, excludeId = null) {
+  return checkDuplicateTrace(traceId, tenantId, excludeId);
+}
+
+// =============================================================================
 // EXPORTS
 // =============================================================================
 
@@ -1435,6 +1755,10 @@ export {
   Anomaly,
   Investigation,
   ANOMALY_CONSTANTS,
+  checkDocument,
+  checkPayload,
+  checkSealHash,
+  checkForDuplicateTrace,
 };
 
 // =============================================================================

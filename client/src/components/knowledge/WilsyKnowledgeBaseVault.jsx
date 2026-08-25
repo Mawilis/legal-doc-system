@@ -3,14 +3,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import * as WilsyKnowledgeBaseVaultSha3 from 'js-sha3';
 import {
+  ChevronDown,
+  ChevronUp,
   Download,
   Eye,
   FileJson,
+  FileText,
+  Library,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelTopClose,
+  PanelTopOpen,
   Printer,
-  RefreshCw,
-  Search,
-  ShieldCheck,
+  X,
 } from 'lucide-react';
+import { buildWilsyDynamicSuggestions } from '../intelligence/wilsyAIDynamicSuggestionEngine';
+import KnowledgeOperatingBar from './operating/KnowledgeOperatingBar';
 import styles from './WilsyKnowledgeBaseVault.module.css';
 
 /**
@@ -38,6 +46,119 @@ function shortenDigest(digest = '') {
   const value = normalizeVaultText(digest, '');
   if (value.length <= 22) return value || 'Not recorded';
   return `${value.slice(0, 12)}...${value.slice(-10)}`;
+}
+
+const WILSY_KNOWLEDGE_BASE_ROUTE = '/knowledge-base/vault';
+const WILSY_COMMAND_K_ORIGIN_KEY = 'wilsy:command-k-origin';
+const WILSY_KNOWLEDGE_BASE_ORIGIN_TTL_MS = 1000 * 60 * 60 * 6;
+const WILSY_KNOWLEDGE_BASE_ROUTE_LABELS = Object.freeze([
+  { signal: '/founder', label: 'Founder Command' },
+  { signal: '/executive', label: 'Executive Dashboard' },
+  { signal: '/crm', label: 'CRM' },
+  { signal: '/sales', label: 'Sales Dashboard' },
+  { signal: '/finance', label: 'Finance Dashboard' },
+  { signal: '/hr', label: 'HR Dashboard' },
+  { signal: '/documents', label: 'Documents' },
+  { signal: '/artifacts', label: 'Artifact Studio' },
+  { signal: '/billing', label: 'Billing' },
+  { signal: '/revenue-ledger', label: 'Revenue Ledger' },
+  { signal: '/account', label: 'Account' },
+  { signal: '/legal', label: 'Legal' },
+  { signal: '/client-portal', label: 'Client Portal' },
+]);
+const WILSY_KNOWLEDGE_BASE_DASHBOARD_LABELS = Object.freeze({
+  FOUNDER_DASHBOARD: 'Founder Command',
+  EXECUTIVE_DASHBOARD: 'Executive Dashboard',
+  CRM_DASHBOARD: 'CRM',
+  SALES_DASHBOARD: 'Sales Dashboard',
+  FINANCE_DASHBOARD: 'Finance Dashboard',
+  HR_DASHBOARD: 'HR Dashboard',
+  IT_DASHBOARD: 'IT Dashboard',
+  GENERAL_DASHBOARD: 'Tenant Command Center',
+  TENANT_COMMAND_CENTER: 'Tenant Command Center',
+});
+
+/**
+ * @function normalizeKnowledgeBaseRoutePath
+ * @description Normalizes route strings before Knowledge Base origin comparison.
+ * @param {string} route Runtime route candidate.
+ * @returns {string} Normalized route.
+ * @collaboration Knowledge Base return button, Command K origin packets, and workspace route matching.
+ */
+function normalizeKnowledgeBaseRoutePath(route = '') {
+  const cleanRoute = String(route || '').trim();
+  if (!cleanRoute) return '';
+
+  try {
+    const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://wilsy.local';
+    return new URL(cleanRoute, baseOrigin).pathname || cleanRoute;
+  } catch {
+    return cleanRoute.split('?')[0].split('#')[0] || cleanRoute;
+  }
+}
+
+/**
+ * @function resolveKnowledgeBaseWorkspaceLabel
+ * @description Resolves a readable workspace label from a route, dashboard key, or safe display label without defaulting to CRM.
+ * @param {object} origin Command K origin packet.
+ * @returns {string} Workspace label.
+ * @collaboration Dynamic Knowledge Base return command, global Command K, Founder Command K, and direct route fallback.
+ */
+function resolveKnowledgeBaseWorkspaceLabel(origin = {}) {
+  const route = normalizeKnowledgeBaseRoutePath(origin.route);
+  const dashboardKey = String(origin.dashboardKey || origin.currentDashboardKey || '').trim().toUpperCase();
+  const genericLabels = new Set(['', 'WILSY OS 2050', 'PREVIOUS WORKSPACE', 'COMMAND PALETTE ORIGIN']);
+  const explicitLabel = String(origin.label || origin.workspaceLabel || '').trim();
+
+  const routeMatch = WILSY_KNOWLEDGE_BASE_ROUTE_LABELS.find((item) => route.toLowerCase().startsWith(item.signal));
+  if (routeMatch) return routeMatch.label;
+  if (WILSY_KNOWLEDGE_BASE_DASHBOARD_LABELS[dashboardKey]) return WILSY_KNOWLEDGE_BASE_DASHBOARD_LABELS[dashboardKey];
+  if (!genericLabels.has(explicitLabel.toUpperCase())) return explicitLabel;
+
+  return 'Previous workspace';
+}
+
+/**
+ * @function resolveStoredKnowledgeBaseOrigin
+ * @description Reads the Command K origin packet and rejects stale, malformed, or self-referential Knowledge Base origins.
+ * @returns {object} Safe origin packet.
+ * @collaboration Knowledge Base dynamic return button, global Command K launch packets, and stale-origin protection.
+ */
+function resolveStoredKnowledgeBaseOrigin() {
+  if (typeof window === 'undefined') {
+    return {
+      route: '/',
+      label: 'Previous workspace',
+      dashboardKey: 'GLOBAL_WORKSPACE',
+    };
+  }
+
+  try {
+    const rawOrigin = window.sessionStorage.getItem(WILSY_COMMAND_K_ORIGIN_KEY)
+      || window.localStorage.getItem(WILSY_COMMAND_K_ORIGIN_KEY);
+    const parsedOrigin = rawOrigin ? JSON.parse(rawOrigin) : null;
+    const route = normalizeKnowledgeBaseRoutePath(parsedOrigin?.route || '');
+    const generatedAt = Date.parse(parsedOrigin?.generatedAt || parsedOrigin?.requestedAt || '');
+    const stale = Number.isFinite(generatedAt)
+      ? Date.now() - generatedAt > WILSY_KNOWLEDGE_BASE_ORIGIN_TTL_MS
+      : false;
+
+    if (parsedOrigin?.route && route !== WILSY_KNOWLEDGE_BASE_ROUTE && !stale) {
+      return {
+        ...parsedOrigin,
+        route,
+        label: resolveKnowledgeBaseWorkspaceLabel({ ...parsedOrigin, route }),
+      };
+    }
+  } catch {
+    // A malformed optional origin packet should never block the Knowledge Base.
+  }
+
+  return {
+    route: '/',
+    label: 'Previous workspace',
+    dashboardKey: 'GLOBAL_WORKSPACE',
+  };
 }
 
 /**
@@ -390,13 +511,14 @@ async function fetchVaultJson(url, commandSurface, extraBody = {}) {
 
 /**
  * @function fetchVaultBlob
- * @description Fetches saved Vault document data through POST with institutional evidence.
- * @param {string} url Vault document URL.
+ * @description Fetches saved Vault document or JSON data through POST with institutional evidence.
+ * @param {string} url Vault artifact URL.
  * @param {string} commandSurface Command surface.
- * @returns {Promise<Blob>} document blob.
- * @collaboration Knowledge Base VaultE2 saved document actions and no-regeneration Vault contract.
+ * @param {string} acceptMime Accept MIME type.
+ * @returns {Promise<Blob>} Artifact blob.
+ * @collaboration Knowledge Base VaultE2 saved document actions, JSON companion actions, and no-regeneration Vault contract.
  */
-async function fetchVaultBlob(url, commandSurface) {
+async function fetchVaultBlob(url, commandSurface, acceptMime = 'application/pdf') {
   const evidenceBody = await createVaultInstitutionalBody(url, commandSurface);
   const sealContract = buildVaultRequestSealHeaders(evidenceBody);
   const response = await fetch(url, {
@@ -405,7 +527,7 @@ async function fetchVaultBlob(url, commandSurface) {
     headers: {
       ...resolveVaultAuthHeaders(),
       ...sealContract.headers,
-      Accept: 'application/pdf',
+      Accept: acceptMime,
       'X-Wilsy-Institutional-Headers': encodeURIComponent(JSON.stringify(evidenceBody.institutionalHeaders)),
       'X-Wilsy-Strike-Payload': encodeURIComponent(JSON.stringify(evidenceBody.strikePayload)),
       'X-Request-Proof': evidenceBody.requestProof,
@@ -441,56 +563,152 @@ async function fetchVaultBlob(url, commandSurface) {
   return response.blob();
 }
 
+// FG108O5C9B_VAULT_INVALID_TOKEN_RACE_GUARD
+let wilsyKnowledgeVaultListInFlight = null;
+let wilsyKnowledgeVaultLastPayload = null;
+let wilsyKnowledgeVaultLastFiltersKey = '';
+
 /**
  * @function useKnowledgeBaseVaultData
- * @description Loads the permissioned Knowledge Base Vault list from the read-only backend resolver.
- * @returns {object} Vault state and reload action.
- * @collaboration Knowledge Base Vault global Vault UI and saved artifact resolver route.
+ * @description Loads the Knowledge Base Vault through a single in-flight request and preserves the last valid payload when a later auth race returns INVALID_TOKEN.
+ * @param {object} filters Active Vault search and category filters.
+ * @returns {object} Vault loader state and reload command.
+ * @collaboration Knowledge Base Vault, restored advanced receipt cockpit, auth refresh race protection, and saved-document backend resolver.
  */
 function useKnowledgeBaseVaultData(filters = {}) {
+  const filtersKey = JSON.stringify({
+    query: filters?.query || '',
+    category: filters?.category || 'all',
+    lifecycle: filters?.lifecycle || 'all',
+    module: filters?.module || 'all',
+    playbookType: filters?.playbookType || 'all',
+  });
+
   const [state, setState] = useState({
-    loading: true,
+    loading: !wilsyKnowledgeVaultLastPayload,
     error: '',
-    vault: null,
+    vault: wilsyKnowledgeVaultLastPayload?.vault || null,
   });
 
   /**
    * @function loadVault
-   * @description Loads the permissioned Knowledge Base Vault list without regenerating documents.
-   * @returns {Promise<void>} Vault state update.
-   * @collaboration Knowledge Base Vault Vault UI, saved artifacts only, and manifest-backed resolver.
+   * @description Executes a deduplicated Vault list request and keeps the last successful Vault payload if a duplicate auth validation race fails.
+   * @param {object} options Loader options.
+   * @returns {Promise<object|null>} Loaded Vault payload or cached payload.
+   * @collaboration Knowledge Base Vault loader, auth-shield race protection, and frontend state integrity.
    */
-  const loadVault = async () => {
-    setState((current) => ({ ...current, loading: true, error: '' }));
+  const loadVault = async (options = {}) => {
+    const cachedForKey = wilsyKnowledgeVaultLastPayload && wilsyKnowledgeVaultLastFiltersKey === filtersKey
+      ? wilsyKnowledgeVaultLastPayload
+      : null;
+
+    setState((current) => ({
+      ...current,
+      loading: true,
+      error: '',
+      vault: current.vault || cachedForKey?.vault || wilsyKnowledgeVaultLastPayload?.vault || null,
+    }));
+
+    if (wilsyKnowledgeVaultListInFlight && wilsyKnowledgeVaultListInFlight.key === filtersKey) {
+      try {
+        const payload = await wilsyKnowledgeVaultListInFlight.promise;
+
+        wilsyKnowledgeVaultLastPayload = payload;
+        wilsyKnowledgeVaultLastFiltersKey = filtersKey;
+
+        setState({
+          loading: false,
+          error: '',
+          vault: payload?.vault || null,
+        });
+
+        return payload;
+      } catch (error) {
+        const message = error?.message || String(error || 'Knowledge Base Vault request failed');
+        const fallback = cachedForKey || wilsyKnowledgeVaultLastPayload;
+        const isInvalidTokenRace = /INVALID_TOKEN|invalid token|Token validation fracture/i.test(message);
+
+        if (isInvalidTokenRace && fallback?.vault) {
+          setState({
+            loading: false,
+            error: '',
+            vault: fallback.vault,
+          });
+
+          return fallback;
+        }
+
+        setState({
+          loading: false,
+          error: message,
+          vault: fallback?.vault || null,
+        });
+
+        return fallback || null;
+      }
+    }
+
+    const requestPromise = fetchVaultJson('/api/knowledge-base/vault', 'knowledge_base_vault_list', {
+      filters,
+      query: filters?.query || '',
+      category: filters?.category || 'all',
+    });
+
+    wilsyKnowledgeVaultListInFlight = {
+      key: filtersKey,
+      promise: requestPromise,
+      startedAt: Date.now(),
+    };
 
     try {
-      const payload = await fetchVaultJson('/api/knowledge-base/vault', 'knowledge_base_vault_list', {
-        filters,
-        query: filters.query || '',
-        category: filters.category || 'all',
-      });
+      const payload = await requestPromise;
+
+      wilsyKnowledgeVaultLastPayload = payload;
+      wilsyKnowledgeVaultLastFiltersKey = filtersKey;
 
       setState({
         loading: false,
         error: '',
-        vault: payload.vault,
+        vault: payload?.vault || null,
       });
+
+      return payload;
     } catch (error) {
+      const message = error?.message || String(error || 'Knowledge Base Vault request failed');
+      const fallback = cachedForKey || wilsyKnowledgeVaultLastPayload;
+      const isInvalidTokenRace = /INVALID_TOKEN|invalid token|Token validation fracture/i.test(message);
+
+      if (isInvalidTokenRace && fallback?.vault) {
+        setState({
+          loading: false,
+          error: '',
+          vault: fallback.vault,
+        });
+
+        return fallback;
+      }
+
       setState({
         loading: false,
-        error: error.message || 'KNOWLEDGE_BASE_VAULT_LOAD_FAILED',
-        vault: null,
+        error: message,
+        vault: fallback?.vault || null,
       });
+
+      return fallback || null;
+    } finally {
+      if (wilsyKnowledgeVaultListInFlight?.promise === requestPromise) {
+        wilsyKnowledgeVaultListInFlight = null;
+      }
     }
   };
 
   useEffect(() => {
-    loadVault();
-  }, [JSON.stringify(filters)]);
+    void loadVault({ forceLive: true });
+  }, [filtersKey]);
 
   return {
     ...state,
-    reload: loadVault,
+    reload: () => loadVault({ forceLive: true }),
   };
 }
 
@@ -516,6 +734,8 @@ function resolveFilteredVaultEntries(entries = [], query = '') {
       entry.sourceTag,
       entry.sourceCommit,
       entry.pdfSha3,
+      entry.jsonSha3,
+      entry.jsonStatus,
       entry.proofStatus,
       entry.lockStatus,
       entry.permissionMode,
@@ -529,17 +749,50 @@ function resolveFilteredVaultEntries(entries = [], query = '') {
 
 /**
  * @function openVaultUrl
- * @description Opens a Vault route in a new browser tab without regenerating an artifact.
+ * @description Opens a saved Vault route in a browser tab without regenerating the artifact.
  * @param {string} url Saved artifact route.
- * @returns {void}
- * @collaboration Knowledge Base Vault open saved document and proof verification record actions.
+ * @returns {Promise<string>} Object URL opened for the saved artifact.
+ * @collaboration Knowledge Base Vault saved PDF controls, receipt cockpit actions, and no-regeneration route contract.
  */
 async function openVaultUrl(url = '') {
-  if (!url) return;
+  if (!url) {
+    throw new Error('KNOWLEDGE_BASE_VAULT_URL_MISSING');
+  }
 
   const blob = await fetchVaultBlob(url, 'knowledge_base_vault_open_pdf');
   const objectUrl = URL.createObjectURL(blob);
-  window.open(objectUrl, '_blank', 'noopener,noreferrer');
+  const openedWindow = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+
+  if (!openedWindow) {
+    throw new Error('KNOWLEDGE_BASE_VAULT_POPUP_BLOCKED');
+  }
+
+  return objectUrl;
+}
+
+/**
+ * @function createVaultPdfPreview
+ * @description Creates a controlled in-workspace PDF preview URL from a saved Vault document route without regenerating the artifact.
+ * @param {object} entry Vault entry.
+ * @returns {Promise<object>} PDF preview descriptor.
+ * @collaboration Knowledge Base Vault document workspace, controlled PDF container, saved artifact routes, and MDN object URL lifecycle guidance.
+ */
+async function createVaultPdfPreview(entry = {}) {
+  const url = entry.routes?.pdfOpenUrl || entry.pdfOpenUrl;
+
+  if (!url) {
+    throw new Error('KNOWLEDGE_BASE_VAULT_PDF_URL_MISSING');
+  }
+
+  const blob = await fetchVaultBlob(url, 'knowledge_base_vault_preview_pdf');
+  const objectUrl = URL.createObjectURL(blob);
+
+  return {
+    objectUrl,
+    title: entry.title || 'Knowledge Base document',
+    artifactId: entry.id || '',
+    openedAt: new Date().toISOString(),
+  };
 }
 
 /**
@@ -622,7 +875,7 @@ function displayVaultSourceMode(value = '') {
   const normalized = String(value || '').toUpperCase();
 
   if (normalized.includes('MANIFEST') && normalized.includes('SAVED')) {
-    return 'Verified saved library';
+    return 'Source Authority';
   }
 
   if (normalized.includes('SAVED')) {
@@ -679,6 +932,27 @@ function displayVaultProofStatus(value = '') {
 }
 
 /**
+ * @function displayVaultJsonStatus
+ * @description Converts saved JSON companion state into customer-facing Knowledge Base language.
+ * @param {object} entry Vault entry.
+ * @returns {string} JSON companion status.
+ * @collaboration Knowledge Base Vault JSON companion action, selected summary, and user-facing evidence posture.
+ */
+function displayVaultJsonStatus(entry = {}) {
+  const status = String(entry?.jsonStatus || '').toUpperCase();
+
+  if (status.includes('MATCH')) {
+    return 'JSON verified';
+  }
+
+  if (entry?.jsonPresent || status.includes('AVAILABLE')) {
+    return 'JSON ready';
+  }
+
+  return 'PDF only';
+}
+
+/**
  * @function displayVaultSourcePosture
  * @description Converts source posture into customer-facing verification language.
  * @param {string} value Source posture token.
@@ -725,6 +999,10 @@ function displayVaultLockStatus(value = '') {
  */
 function displayVaultArtifactType(value = '') {
   const normalized = String(value || '').toUpperCase();
+
+  if (normalized.includes('KNOWLEDGE_BASE_PRODUCTION_PLAYBOOK')) {
+    return 'Production Knowledge Base playbook';
+  }
 
   if (normalized.includes('INLINE_COMMAND_PLAYBOOK')) {
     return 'AI command playbook';
@@ -844,6 +1122,7 @@ function buildVaultComplianceSeals(entry = {}) {
   const founderAccess = String(entry?.permissionMode || '').toUpperCase().includes('FOUNDER');
   const savedDocument = Boolean(entry?.pdfPresent);
   const evidenceRecord = Boolean(entry?.proofPresent);
+  const jsonCompanion = Boolean(entry?.jsonPresent);
 
   return [
     {
@@ -863,8 +1142,13 @@ function buildVaultComplianceSeals(entry = {}) {
     },
     {
       label: 'Evidence set',
-      value: savedDocument && evidenceRecord ? 'Complete' : 'Incomplete',
-      tone: savedDocument && evidenceRecord ? 'gold' : 'risk',
+      value: savedDocument && evidenceRecord && jsonCompanion ? 'Complete' : 'Review',
+      tone: savedDocument && evidenceRecord && jsonCompanion ? 'gold' : 'risk',
+    },
+    {
+      label: 'JSON companion',
+      value: displayVaultJsonStatus(entry),
+      tone: jsonCompanion ? 'gold' : 'blue',
     },
   ];
 }
@@ -972,7 +1256,7 @@ function buildVaultIntelligenceSignals(entry = {}, receipt = null) {
     },
     {
       label: 'Audit Sentinel',
-      value: ready ? 'Access protected by proof trail' : 'Proof trail requires review',
+      value: ready ? 'Access protected by verified evidence' : 'Source evidence requires review',
       detail: 'Every visible action stays tied to the selected document context.',
     },
     {
@@ -1002,6 +1286,121 @@ function resolveSelectedVaultEntry(entries = [], selectedEntryId = '') {
   }
 
   return entries.find((entry) => entry?.id === selectedEntryId) || entries[0] || null;
+}
+
+
+const WILSY_KNOWLEDGE_RECEIPT_CACHE_KEY = 'wilsy.knowledgeBase.vault.receiptCockpit.v1';
+
+/**
+ * @function createKnowledgeBaseReceiptCockpitEntry
+ * @description Creates a contained Receipt Cockpit record from the latest UI action receipt and selected saved artifact.
+ * @param {object} actionReceipt Latest action receipt.
+ * @param {object} entry Selected Knowledge Base artifact.
+ * @returns {object} Receipt cockpit record.
+ * @collaboration Wilsy Knowledge Base Vault, saved PDF/proof routes, and future backend receipt ledger persistence.
+ */
+function createKnowledgeBaseReceiptCockpitEntry(actionReceipt = {}, entry = {}) {
+  const generatedAt = new Date().toISOString();
+  const action = String(actionReceipt.action || 'Vault action').trim();
+  const artifactTitle = String(actionReceipt.artifactTitle || entry.title || 'Knowledge Base artifact').trim();
+  const artifactId = String(entry.id || entry.artifactId || artifactTitle).trim();
+
+  return {
+    id: `${artifactId}-${action}-${generatedAt}`,
+    artifactId,
+    artifactTitle,
+    action,
+    detail: String(actionReceipt.detail || 'Receipt captured from this operating session.').trim(),
+    at: String(actionReceipt.at || generatedAt).trim(),
+    generatedAt,
+    category: resolveVaultDocumentCategory(entry),
+    status: displayVaultProofStatus(entry.proofStatus),
+    lock: displayVaultLockStatus(entry.lockStatus),
+    owner: String(entry.generatedByDisplayName || 'Owner recorded').trim(),
+    fingerprint: String(entry.pdfSha3 || '').trim(),
+    sourceTag: String(entry.sourceTag || '').trim(),
+    sourceCommit: String(entry.sourceCommit || '').trim(),
+    routes: {
+      pdfOpenUrl: entry.routes?.pdfOpenUrl || entry.pdfOpenUrl || '',
+      pdfDownloadUrl: entry.routes?.pdfDownloadUrl || entry.pdfDownloadUrl || '',
+      jsonUrl: entry.routes?.jsonUrl || entry.jsonUrl || '',
+      jsonDownloadUrl: entry.routes?.jsonDownloadUrl || entry.jsonDownloadUrl || '',
+      proofUrl: entry.routes?.proofUrl || entry.proofUrl || '',
+    },
+  };
+}
+
+/**
+ * @function readKnowledgeBaseReceiptCockpitCache
+ * @description Reads the temporary local Receipt Cockpit cache until the backend receipt ledger is added.
+ * @returns {Array<object>} Cached receipt cockpit records.
+ * @collaboration Wilsy Knowledge Base Vault, operator continuity, and future server-persisted receipts.
+ */
+function readKnowledgeBaseReceiptCockpitCache() {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const payload = window.localStorage.getItem(WILSY_KNOWLEDGE_RECEIPT_CACHE_KEY);
+    const parsed = JSON.parse(payload || '[]');
+    return Array.isArray(parsed) ? parsed.slice(0, 18) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @function persistKnowledgeBaseReceiptCockpitCache
+ * @description Persists a bounded local Receipt Cockpit cache without claiming backend receipt persistence.
+ * @param {Array<object>} receipts Receipt cockpit records.
+ * @returns {Array<object>} Bounded receipt cockpit records.
+ * @collaboration Wilsy Knowledge Base Vault, local continuity cache, and backend receipt ledger follow-up.
+ */
+function persistKnowledgeBaseReceiptCockpitCache(receipts = []) {
+  const bounded = Array.isArray(receipts) ? receipts.slice(0, 18) : [];
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(WILSY_KNOWLEDGE_RECEIPT_CACHE_KEY, JSON.stringify(bounded));
+    } catch {
+      // Local cache is a convenience only; saved PDF/proof routes remain the source of truth.
+    }
+  }
+
+  return bounded;
+}
+
+/**
+ * @function mergeKnowledgeBaseReceiptCockpitEntry
+ * @description Prepends a new receipt while avoiding repeated identical action bursts.
+ * @param {Array<object>} receipts Existing receipt cockpit records.
+ * @param {object} receipt New receipt cockpit record.
+ * @returns {Array<object>} Bounded merged receipt cockpit records.
+ * @collaboration Wilsy Knowledge Base Vault, action receipts, and contained receipt cockpit.
+ */
+function mergeKnowledgeBaseReceiptCockpitEntry(receipts = [], receipt = {}) {
+  if (!receipt.id) return Array.isArray(receipts) ? receipts.slice(0, 18) : [];
+
+  const signature = `${receipt.artifactId}-${receipt.action}-${receipt.detail}`;
+  const filtered = (Array.isArray(receipts) ? receipts : []).filter((item) => {
+    const itemSignature = `${item.artifactId}-${item.action}-${item.detail}`;
+    return itemSignature !== signature;
+  });
+
+  return [receipt, ...filtered].slice(0, 18);
+}
+
+/**
+ * @function compactKnowledgeBaseReceiptFingerprint
+ * @description Produces a short readable fingerprint for the Receipt Cockpit.
+ * @param {string} value Fingerprint value.
+ * @returns {string} Compact fingerprint.
+ * @collaboration Wilsy Knowledge Base Vault, evidence controls, and receipt cockpit proof display.
+ */
+function compactKnowledgeBaseReceiptFingerprint(value = '') {
+  const clean = String(value || '').trim();
+  if (!clean) return 'Fingerprint pending';
+  if (clean.length <= 20) return clean;
+  return `${clean.slice(0, 10)}…${clean.slice(-8)}`;
 }
 
 /**
@@ -1080,6 +1479,56 @@ async function openVaultProofJson(entry = {}) {
     payload,
     objectUrl,
   };
+}
+
+/**
+ * @function openVaultPlaybookJson
+ * @description Opens the saved machine-readable playbook JSON companion through the Vault read-only JSON route.
+ * @param {object} entry Vault entry.
+ * @returns {Promise<object>} JSON companion object URL.
+ * @collaboration Knowledge Base Vault FG109 JSON action, manifest jsonPath, and future AI retrieval/playbook automation.
+ */
+async function openVaultPlaybookJson(entry = {}) {
+  const jsonUrl = entry.routes?.jsonUrl;
+
+  if (!jsonUrl) {
+    throw new Error('KNOWLEDGE_BASE_VAULT_JSON_URL_MISSING');
+  }
+
+  const blob = await fetchVaultBlob(jsonUrl, 'knowledge_base_vault_open_json', 'application/json');
+  const objectUrl = URL.createObjectURL(blob);
+  const openedWindow = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+
+  if (!openedWindow) {
+    throw new Error('KNOWLEDGE_BASE_VAULT_JSON_POPUP_BLOCKED');
+  }
+
+  return {
+    objectUrl,
+  };
+}
+
+/**
+ * @function downloadVaultPlaybookJson
+ * @description Downloads the saved machine-readable playbook JSON companion through the Vault route.
+ * @param {object} entry Vault entry.
+ * @returns {Promise<void>} Resolves when browser download is triggered.
+ * @collaboration Knowledge Base Vault JSON companion download, manifest-backed saved artifacts, and no-regeneration route contract.
+ */
+async function downloadVaultPlaybookJson(entry = {}) {
+  const jsonUrl = entry.routes?.jsonDownloadUrl || entry.routes?.jsonUrl;
+  if (!jsonUrl) return;
+
+  const blob = await fetchVaultBlob(jsonUrl, 'knowledge_base_vault_download_json', 'application/json');
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = objectUrl;
+  link.download = `${entry.id || 'knowledge-base-artifact'}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 
@@ -1187,7 +1636,7 @@ function resolveVaultDocumentTaskQueue(entry = {}) {
     tasks.push({
       key: 'open',
       label: 'Open document',
-      detail: 'Review the saved document in a new tab.',
+      detail: 'Review the saved document inside the controlled workspace viewer.',
     });
   }
 
@@ -1253,18 +1702,178 @@ function resolveVaultDocumentSummary(entry = {}) {
 }
 
 /**
+ * @function resolveKnowledgeOperatingBarSuggestions
+ * @description Converts filtered Vault entries and Wilsy AI dynamic prompts into executable instant suggestion rows for the consolidated Knowledge Operating Bar.
+ * @param {Array<object>} entries Filtered Vault entries.
+ * @param {object|null} selectedEntry Selected Vault entry.
+ * @param {Function} onSelectEntry Artifact selection handler.
+ * @param {Array<object>} dynamicSuggestions Wilsy AI dynamic suggestion rows.
+ * @param {Function} onSelectSuggestion Wilsy AI prompt selection handler.
+ * @returns {Array<object>} Display-ready suggestion rows.
+ * @collaboration KnowledgeOperatingBar, WilsyKnowledgeBaseVault search state, dynamic Vault entries, Wilsy AI dynamic suggestion engine, and customer-safe proof status display.
+ */
+function resolveKnowledgeOperatingBarSuggestions(
+  entries = [],
+  selectedEntry = null,
+  onSelectEntry = () => undefined,
+  dynamicSuggestions = [],
+  onSelectSuggestion = () => undefined,
+) {
+  const documentRows = entries.slice(0, 3).map((entry, index) => ({
+    key: entry?.id || entry?.title || entry?.pdfSha3 || `knowledge-suggestion-${index}`,
+    title: entry?.title || 'Verified artifact',
+    detail: `${resolveVaultDocumentVerificationLabel(entry)} | ${entry?.generatedByDisplayName || 'Owner recorded'}`,
+    selected: selectedEntry?.id === entry?.id,
+    onSelect: () => onSelectEntry(entry?.id || ''),
+  }));
+  const aiRows = dynamicSuggestions.slice(0, 3).map((suggestion, index) => ({
+    key: suggestion?.id || suggestion?.stableId || `knowledge-ai-suggestion-${index}`,
+    title: suggestion?.label || 'Ask Wilsy AI',
+    detail: suggestion?.intent ? toVaultTitleCase(suggestion.intent) : 'Dynamic workspace suggestion',
+    selected: false,
+    onSelect: () => onSelectSuggestion(suggestion),
+  }));
+
+  return [...documentRows, ...aiRows].slice(0, 6);
+}
+
+/**
+ * @function resolveKnowledgeVaultAIResponse
+ * @description Builds the live Wilsy AI written response from the current verified Vault query, selected artifact, load state, and workspace category.
+ * @param {object} payload Live Vault response payload.
+ * @returns {string} Customer-facing Wilsy AI written response.
+ * @collaboration WilsyKnowledgeBaseVault live search, KnowledgeOperatingBar query state, dynamic suggestions, selected artifact controls, and no-regeneration Vault contract.
+ */
+function resolveKnowledgeVaultAIResponse(payload = {}) {
+  const query = String(payload.query || '').trim();
+  const entries = Array.isArray(payload.entries) ? payload.entries : [];
+  const selectedEntry = payload.selectedEntry || null;
+  const category = payload.activeCategory && payload.activeCategory !== 'all' ? payload.activeCategory : 'all saved knowledge';
+
+  if (payload.loading) {
+    return 'Wilsy AI: I am verifying the saved Knowledge Base before answering, keeping the workspace usable while the Vault confirms the latest artifact list.';
+  }
+
+  if (payload.error && entries.length > 0) {
+    const fallbackTitle = selectedEntry?.title || entries[0]?.title || 'the cached verified artifact';
+    return `Wilsy AI: The live Vault is restoring, but I can still work from the last verified library state. Start with ${fallbackTitle}; it remains controlled by saved-document access until the Vault refresh completes.`;
+  }
+
+  if (query && entries.length > 0) {
+    const leadEntry = selectedEntry || entries[0];
+    const owner = leadEntry?.generatedByDisplayName || 'the recorded owner';
+    const posture = resolveVaultDocumentVerificationLabel(leadEntry).toLowerCase();
+    return `Wilsy AI: I found ${entries.length} verified artifact${entries.length === 1 ? '' : 's'} for "${query}" in ${category}. Start with ${leadEntry?.title || 'the selected artifact'} because it is ${posture} and owned by ${owner}. Open it in the workspace viewer, inspect evidence, download, print, or copy the fingerprint without regenerating the document.`;
+  }
+
+  if (query) {
+    return `Wilsy AI: I cannot verify a saved artifact for "${query}" yet. Try a title, owner, release label, category, or fingerprint; I will only answer from artifacts the Knowledge Base can prove.`;
+  }
+
+  if (selectedEntry) {
+    return `Wilsy AI: ${selectedEntry.title} is selected. It is ${resolveVaultDocumentVerificationLabel(selectedEntry).toLowerCase()} and ${displayVaultLockStatus(selectedEntry.lockStatus).toLowerCase()}; use the workspace controls to view, prove, print, download, or copy evidence on demand.`;
+  }
+
+  return 'Wilsy AI: Select a verified artifact or start typing. I will search the saved Knowledge Base live and return an answer only from proven workspace knowledge.';
+}
+
+/**
+ * @function resolveKnowledgeVaultAIBriefs
+ * @description Builds context-aware Knowledge Base suggestion briefs from the selected artifact, live task queue, summary facts, and Wilsy AI dynamic prompts.
+ * @param {object} payload Selected artifact, summary, task, suggestion, and search state.
+ * @returns {Array<object>} Four source-aware Wilsy AI brief rows.
+ * @collaboration Knowledge Base Vault dynamic guidance, selected artifact source posture, Wilsy AI suggestions, and no hard-coded unrelated teaching copy.
+ */
+function resolveKnowledgeVaultAIBriefs(payload = {}) {
+  const entry = payload.selectedEntry || {};
+  const selectedSummary = Array.isArray(payload.selectedSummary) ? payload.selectedSummary : [];
+  const selectedTasks = Array.isArray(payload.selectedTasks) ? payload.selectedTasks : [];
+  const dynamicSuggestions = Array.isArray(payload.dynamicSuggestions) ? payload.dynamicSuggestions : [];
+  const firstSuggestion = dynamicSuggestions[0] || null;
+  const firstTask = selectedTasks[0] || null;
+  const owner = normalizeVaultText(entry.generatedByDisplayName, 'Recorded owner');
+  const category = entry?.id ? resolveVaultDocumentCategory(entry) : normalizeVaultText(payload.activeCategory, 'Knowledge Base');
+  const proofSummary = selectedSummary
+    .slice(0, 3)
+    .map((item) => `${item.label}: ${item.value}`)
+    .join(' | ');
+
+  return [
+    {
+      label: 'Selected knowledge',
+      title: entry?.title || normalizeVaultText(payload.query, 'Awaiting verified Knowledge Base content'),
+      detail: entry?.id
+        ? `${resolveVaultDocumentVerificationLabel(entry)} | ${displayVaultLockStatus(entry.lockStatus)} | ${owner}`
+        : 'Start a search or choose a saved artifact before Wilsy AI recommends source-bound content.',
+    },
+    {
+      label: 'Suggested question',
+      title: firstSuggestion?.label || 'Ask from the selected Knowledge Base artifact',
+      detail: firstSuggestion?.prompt || 'Wilsy AI will suggest prompts from the current document, source posture, evidence, and active category.',
+    },
+    {
+      label: 'Evidence posture',
+      title: entry?.id ? displayVaultDigest(entry.pdfSha3) : 'Evidence waits for selection',
+      detail: proofSummary || 'Proof, owner, access, release, and fingerprint facts appear when the Vault has a selected source.',
+    },
+    {
+      label: 'Next safe action',
+      title: firstTask?.label || `Review ${category}`,
+      detail: firstTask?.detail || 'Choose a verified source first; Wilsy AI will route open, proof, print, download, or copy actions from that source only.',
+    },
+  ];
+}
+
+/**
  * @function WilsyKnowledgeBaseVault
  * @description Renders the global Knowledge Base Vault as a scalable document operating workspace with dynamic categories, selected-document tasks, and contained work areas.
  * @returns {JSX.Element} Knowledge Base Vault workspace.
  * @collaboration Knowledge Base VaultF multi-document Knowledge Base, productivity-first document operations, proof evidence, and runtime-passed request sealing.
  */
 export default function WilsyKnowledgeBaseVault() {
+  const [knowledgeBaseOrigin, setKnowledgeBaseOrigin] = useState(null);
+
+  useEffect(() => {
+    setKnowledgeBaseOrigin(resolveStoredKnowledgeBaseOrigin());
+  }, []);
+
+  /**
+   * @function resolveKnowledgeBaseOriginLabel
+   * @description Resolves a human-safe return label for the Knowledge Base operating corridor.
+   * @returns {string} Return command label.
+   * @collaboration FG108O4B Knowledge Base Operating Room, Command K origin packet, CRM workspace, and global operating fallback.
+   */
+  const resolveKnowledgeBaseOriginLabel = () => {
+    return `Return to ${resolveKnowledgeBaseWorkspaceLabel(knowledgeBaseOrigin || {})}`;
+  };
+
+  /**
+   * @function handleKnowledgeBaseOriginReturn
+   * @description Sends the operator back to the workspace that opened the Knowledge Base, with a CRM fallback.
+   * @returns {void}
+   * @collaboration FG108O4B Knowledge Base Operating Room, Command K origin packet, BrowserRouter, and workspace continuity.
+   */
+  const handleKnowledgeBaseOriginReturn = () => {
+    const route = normalizeKnowledgeBaseRoutePath(knowledgeBaseOrigin?.route || '/') || '/';
+
+    window.history.pushState({}, '', route);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const knowledgeBaseOriginLabel = resolveKnowledgeBaseOriginLabel();
+
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [searchNonce, setSearchNonce] = useState(0);
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [actionReceipt, setActionReceipt] = useState(null);
+  const [receiptCockpitOpen, setReceiptCockpitOpen] = useState(false);
+  const [receiptCockpitEntries, setReceiptCockpitEntries] = useState(() => readKnowledgeBaseReceiptCockpitCache());
+  const [documentNavigatorOpen, setDocumentNavigatorOpen] = useState(true);
+  const [knowledgeInsightsOpen, setKnowledgeInsightsOpen] = useState(true);
+  const [pdfPreview, setPdfPreview] = useState(null);
+  const [vaultErrorVisible, setVaultErrorVisible] = useState(false);
   const backendFilters = useMemo(() => ({
     query: submittedQuery,
     category: activeCategory,
@@ -1287,6 +1896,183 @@ export default function WilsyKnowledgeBaseVault() {
   );
   const selectedSummary = useMemo(() => resolveVaultDocumentSummary(selectedEntry || {}), [selectedEntry]);
   const selectedTasks = useMemo(() => resolveVaultDocumentTaskQueue(selectedEntry || {}), [selectedEntry]);
+  const dynamicOperatingSuggestions = useMemo(() => buildWilsyDynamicSuggestions({
+    promptText: query || submittedQuery,
+    model: {
+      workspace: 'Knowledge Base',
+      commandTokens: selectedTasks.map((task) => ({
+        label: task.label,
+        intent: task.key,
+      })),
+      sourceTrace: selectedSummary.map((item) => ({
+        label: item.label,
+        statusLabel: item.value,
+      })),
+      evidenceAnchors: selectedEntry
+        ? [
+            {
+              label: 'Selected fingerprint',
+              statusLabel: displayVaultDigest(selectedEntry.pdfSha3),
+            },
+          ]
+        : [],
+    },
+    context: {
+      workspace: 'Knowledge Base',
+      focus: selectedEntry?.title || 'Saved knowledge',
+    },
+    refreshKey: searchNonce,
+    storage: typeof window !== 'undefined' ? window.localStorage : null,
+  }), [query, submittedQuery, searchNonce, selectedEntry, selectedSummary, selectedTasks]);
+  const operatingBarSuggestions = useMemo(
+    () => resolveKnowledgeOperatingBarSuggestions(
+      filteredEntries,
+      selectedEntry,
+      setSelectedEntryId,
+      dynamicOperatingSuggestions,
+      handleKnowledgeSuggestionSelect,
+    ),
+    [dynamicOperatingSuggestions, filteredEntries, selectedEntry]
+  );
+  const knowledgeVaultAIResponse = useMemo(() => resolveKnowledgeVaultAIResponse({
+    query: submittedQuery,
+    entries: filteredEntries,
+    selectedEntry,
+    activeCategory,
+    loading,
+    error,
+  }), [activeCategory, error, filteredEntries, loading, selectedEntry, submittedQuery]);
+  const knowledgeVaultAIResponseBody = knowledgeVaultAIResponse.replace(/^Wilsy AI:\s*/i, '');
+  const knowledgeVaultAIBriefs = useMemo(() => resolveKnowledgeVaultAIBriefs({
+    selectedEntry,
+    selectedSummary,
+    selectedTasks,
+    dynamicSuggestions: dynamicOperatingSuggestions,
+    query: submittedQuery || query,
+    activeCategory,
+  }), [activeCategory, dynamicOperatingSuggestions, query, selectedEntry, selectedSummary, selectedTasks, submittedQuery]);
+
+  /**
+   * @function handleKnowledgeOperatingSearchSubmit
+   * @description Commits the current Knowledge Base search draft into the backend-backed Vault filters and resets the draft command field.
+   * @returns {void}
+   * @collaboration KnowledgeOperatingBar search controls, WilsyKnowledgeBaseVault backendFilters, useKnowledgeBaseVaultData, and dynamic suggestion continuity.
+   */
+  function handleKnowledgeOperatingSearchSubmit() {
+    setSubmittedQuery(query.trim());
+    setQuery('');
+    setSearchNonce((current) => current + 1);
+  }
+
+  /**
+   * @function handleKnowledgeOperatingClearSearch
+   * @description Clears both draft and submitted Knowledge Base searches so the operating bar clear button is executable.
+   * @returns {void}
+   * @collaboration KnowledgeOperatingBar clear command, backendFilters state, and selected artifact continuity.
+   */
+  function handleKnowledgeOperatingClearSearch() {
+    setQuery('');
+    setSubmittedQuery('');
+    setSearchNonce((current) => current + 1);
+  }
+
+  /**
+   * @function handleKnowledgeSuggestionSelect
+   * @description Executes a dynamic Knowledge Base suggestion by turning its prompt into the next verified search.
+   * @param {object} suggestion Suggestion row.
+   * @returns {void}
+   * @collaboration KnowledgeOperatingBar live suggestions, Wilsy AI dynamic suggestions, and backend-backed Vault filtering.
+   */
+  function handleKnowledgeSuggestionSelect(suggestion = {}) {
+    const prompt = String(suggestion.prompt || suggestion.label || '').trim();
+    if (!prompt) return;
+
+    setQuery('');
+    setSubmittedQuery(prompt);
+    setSearchNonce((current) => current + 1);
+  }
+
+  /**
+   * @function handleVaultActionCommand
+   * @description Runs a Vault action and converts success or failure into a visible receipt instead of a silent console error.
+   * @param {string} action Receipt action label.
+   * @param {object} entry Selected Vault entry.
+   * @param {string} successDetail Success receipt detail.
+   * @param {Function} command Action command.
+   * @returns {void}
+   * @collaboration Knowledge Base action buttons, receipt cockpit feedback, and saved artifact route reliability.
+   */
+  function handleVaultActionCommand(action = 'Vault action', entry = selectedEntry, successDetail = '', command = async () => undefined) {
+    void (async () => {
+      try {
+        await command();
+        setActionReceipt(buildVaultActionReceipt(action, entry, successDetail));
+      } catch (error) {
+        const message = error?.message || String(error || 'Browser action failed');
+        setActionReceipt(buildVaultActionReceipt(
+          `${action} failed`,
+          entry,
+          `${toVaultTitleCase(action)} could not complete: ${message}.`,
+        ));
+      }
+    })();
+  }
+
+  /**
+   * @function handleVaultPreviewCommand
+   * @description Opens a saved Knowledge Base PDF inside the controlled workspace viewer instead of a detached browser tab.
+   * @param {object} entry Selected Vault entry.
+   * @param {string} successDetail Visible receipt detail.
+   * @returns {void}
+   * @collaboration Knowledge Base in-app PDF preview, no-popup open command, object URL cleanup, and operator-contained document review.
+   */
+  function handleVaultPreviewCommand(entry = selectedEntry, successDetail = 'Saved document opened inside the Knowledge Base workspace.') {
+    void (async () => {
+      try {
+        const preview = await createVaultPdfPreview(entry);
+        setPdfPreview(preview);
+        setActionReceipt(buildVaultActionReceipt('Document opened', entry, successDetail));
+      } catch (error) {
+        const message = error?.message || String(error || 'Document preview failed');
+        setActionReceipt(buildVaultActionReceipt(
+          'Document preview failed',
+          entry,
+          `Document preview could not complete: ${message}.`,
+        ));
+      }
+    })();
+  }
+
+  /**
+   * @function closeVaultPdfPreview
+   * @description Closes the in-workspace PDF preview and lets the object URL cleanup effect revoke the browser URL.
+   * @returns {void}
+   * @collaboration Knowledge Base viewer hide control, PDF object URL lifecycle, and contained document review.
+   */
+  function closeVaultPdfPreview() {
+    setPdfPreview(null);
+  }
+
+  /**
+   * @function handleVaultCopyCommand
+   * @description Copies a Vault evidence value and surfaces the resulting receipt.
+   * @param {string} value Evidence value.
+   * @param {string} label Evidence label.
+   * @returns {void}
+   * @collaboration Knowledge Base copy buttons, clipboard fallback, and receipt cockpit feedback.
+   */
+  function handleVaultCopyCommand(value = '', label = 'Evidence') {
+    void copyVaultClipboardText(value, label)
+      .then(setActionReceipt)
+      .catch((error) => {
+        const message = error?.message || String(error || 'Clipboard copy failed');
+        setActionReceipt(buildVaultActionReceipt(
+          `${label} copy failed`,
+          selectedEntry || { title: label },
+          `${label} could not be copied: ${message}.`,
+        ));
+      });
+  }
 
   useEffect(() => {
     if (!filteredEntries.length) {
@@ -1299,115 +2085,178 @@ export default function WilsyKnowledgeBaseVault() {
     }
   }, [filteredEntries, selectedEntryId]);
 
+  useEffect(() => {
+    if (!actionReceipt || !selectedEntry?.id) return;
+
+    const nextReceipt = createKnowledgeBaseReceiptCockpitEntry(actionReceipt, selectedEntry);
+    setReceiptCockpitOpen(true);
+    setReceiptCockpitEntries((previousReceipts) => {
+      const mergedReceipts = mergeKnowledgeBaseReceiptCockpitEntry(previousReceipts, nextReceipt);
+      return persistKnowledgeBaseReceiptCockpitCache(mergedReceipts);
+    });
+  }, [actionReceipt, selectedEntry]);
+
+  useEffect(() => {
+    if (!actionReceipt) return undefined;
+
+    const receiptTimer = window.setTimeout(() => {
+      setActionReceipt(null);
+    }, 6200);
+
+    return () => window.clearTimeout(receiptTimer);
+  }, [actionReceipt]);
+
+  useEffect(() => {
+    if (!error) {
+      setVaultErrorVisible(false);
+      return undefined;
+    }
+
+    setVaultErrorVisible(true);
+    const errorTimer = window.setTimeout(() => {
+      setVaultErrorVisible(false);
+    }, 7200);
+
+    return () => window.clearTimeout(errorTimer);
+  }, [error]);
+
+  useEffect(() => {
+    if (!pdfPreview?.objectUrl) return undefined;
+
+    return () => {
+      URL.revokeObjectURL(pdfPreview.objectUrl);
+    };
+  }, [pdfPreview?.objectUrl]);
+
+  useEffect(() => {
+    if (!pdfPreview?.artifactId) return;
+    if (!selectedEntry?.id || pdfPreview.artifactId !== selectedEntry.id) {
+      setPdfPreview(null);
+    }
+  }, [pdfPreview?.artifactId, selectedEntry?.id]);
+
+  const activeReceiptCockpitEntries = useMemo(() => {
+    if (!selectedEntry?.id) return receiptCockpitEntries.slice(0, 8);
+
+    return receiptCockpitEntries
+      .filter((receipt) => String(receipt.artifactId || '') === String(selectedEntry.id || ''))
+      .slice(0, 8);
+  }, [receiptCockpitEntries, selectedEntry?.id]);
+
+  const latestReceiptCockpitEntry = activeReceiptCockpitEntries[0] || (
+    actionReceipt && selectedEntry
+      ? createKnowledgeBaseReceiptCockpitEntry(actionReceipt, selectedEntry)
+      : null
+  );
+
+
+  /**
+   * @function handleKnowledgeBaseExit
+   * @description Returns the operator from the Knowledge Base Vault to the previous workspace using browser history with a safe root fallback.
+   * @returns {void}
+   * @collaboration Wilsy Knowledge Base Vault, Command K route entry, and dynamic workspace return flow.
+   */
+  function handleKnowledgeBaseExit() {
+    if (typeof window === 'undefined') return;
+
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.location.assign('/');
+  }
+
+  const receiptCockpitVisible = Boolean(receiptCockpitOpen && latestReceiptCockpitEntry);
+  const vaultWorkspaceClassName = [
+    styles.vaultWorkspace,
+    receiptCockpitVisible ? styles.vaultWorkspaceReceiptOpen : '',
+    !documentNavigatorOpen ? styles.vaultWorkspaceNavigatorClosed : '',
+    !documentNavigatorOpen && receiptCockpitVisible ? styles.vaultWorkspaceNavigatorClosedReceiptOpen : '',
+  ].filter(Boolean).join(' ');
+
+
   return (
     <main className={styles.vaultShell} data-wilsy-surface="global-knowledge-base-vault">
-      <section className={styles.vaultTopbar}>
-        <div>
-          <p className={styles.eyebrow}>WILSY OS KNOWLEDGE BASE</p>
-          <h1>Global Vault</h1>
-          <p className={styles.lede}>
-            Search, classify, verify, open, print, download, and inspect permissioned documents from one operating workspace.
-          </p>
-        </div>
+      <KnowledgeOperatingBar
+        query={query}
+        onQueryChange={setQuery}
+        onSubmitSearch={handleKnowledgeOperatingSearchSubmit}
+        onClearSearch={handleKnowledgeOperatingClearSearch}
+        onRefresh={reload}
+        loading={loading}
+        matchesCount={filteredEntries.length}
+        libraryLabel={displayVaultManifestSource(vault?.manifestSource)}
+        authoritySourceLabel={displayVaultSourceMode(vault?.sourceMode)}
+        authorityAccessLabel={displayVaultPermissionMode(vault?.permission?.mode)}
+        originLabel={knowledgeBaseOriginLabel}
+        originRoute={knowledgeBaseOrigin?.route || '/'}
+        onReturn={handleKnowledgeBaseOriginReturn}
+        suggestions={operatingBarSuggestions}
+        selectedTitle={selectedEntry?.title || 'Awaiting artifact'}
+        selectedOwner={selectedEntry?.generatedByDisplayName || 'Verified owner required'}
+        trustPosture={selectedEntry ? resolveVaultDocumentVerificationLabel(selectedEntry) : 'Permissioned'}
+        submittedQuery={submittedQuery}
+        activeCategoryLabel={activeCategory === 'all' ? 'All categories' : activeCategory}
+      />
 
-        <div className={styles.authorityPill} aria-label="Vault authority posture">
-          <span>{displayVaultSourceMode(vault?.sourceMode)}</span>
-          <strong>{displayVaultPermissionMode(vault?.permission?.mode)}</strong>
-          <small>Saved document access only. No document regeneration.</small>
-        </div>
+      <section className={styles.vaultRuntimeNotices} aria-label="Vault runtime notices">
+        {actionReceipt ? (
+          <section className={styles.actionReceipt} aria-live="polite" aria-label="Latest Vault action receipt">
+            <div>
+              <span>{toVaultTitleCase(actionReceipt.action)}</span>
+              <strong>{actionReceipt.artifactTitle}</strong>
+              <small>{actionReceipt.detail} | {actionReceipt.at}</small>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActionReceipt(null)}
+              aria-label="Hide latest Vault action receipt"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          </section>
+        ) : null}
+
+        {loading ? (
+          <section className={styles.emptyState}>Loading Knowledge Base Vault.</section>
+        ) : null}
+
+        {error && vaultErrorVisible ? (
+          <section className={styles.errorState}>
+            <div>
+              <strong>Vault load failed</strong>
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setVaultErrorVisible(false)}
+              aria-label="Hide Vault load failure"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          </section>
+        ) : null}
       </section>
 
-        <section className={styles.commandStrip} aria-label="Knowledge Base Vault command strip">
-          <label className={styles.searchBox}>
-            <Search size={16} aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  setSubmittedQuery(query.trim());
-                  setQuery('');
-                  setSearchNonce((current) => current + 1);
-                }
-              }}
-              placeholder="Search saved documents, categories, owners, releases, fingerprints, or access"
-              aria-label="Search Knowledge Base Vault documents"
-            />
-          </label>
+      <section className={vaultWorkspaceClassName} aria-label="Scalable Knowledge Base workspace">
 
-          <button
-            type="button"
-            className={styles.searchButton}
-            onClick={() => {
-              setSubmittedQuery(query.trim());
-              setQuery('');
-              setSearchNonce((current) => current + 1);
-            }}
-          >
-            <Search size={16} aria-hidden="true" />
-            Search Vault
-          </button>
-
-          <button type="button" className={styles.refreshButton} onClick={reload}>
-            <RefreshCw size={16} aria-hidden="true" />
-            Refresh
-          </button>
-        </section>
-
-      <section className={styles.workspaceStats} aria-label="Vault workspace summary">
-        <div>
-          <span>Matches</span>
-          <strong>{filteredEntries.length}</strong>
-        </div>
-        <div>
-          <span>Library</span>
-          <strong>{displayVaultManifestSource(vault?.manifestSource)}</strong>
-        </div>
-        <div>
-          <span>Verification</span>
-          <strong>Proof record</strong>
-        </div>
-        <div>
-          <span>Access</span>
-          <strong>Read-only</strong>
-        </div>
-      </section>
-
-        <section className={styles.searchStatus} aria-live="polite" aria-label="Vault backend search status">
-          <strong>
-            {loading ? 'Searching the sovereign library' : filteredEntries.length === 0 ? 'No verified knowledge match' : filteredEntries.length === 1 ? '1 verified artifact ready' : `${filteredEntries.length} verified artifacts ready`}
-          </strong>
-          <span>
-            {submittedQuery ? `Search signal: ${submittedQuery}` : 'Vault view: all saved knowledge'} • {activeCategory === 'all' ? 'All categories' : activeCategory}
-          </span>
-        </section>
-
-      {actionReceipt ? (
-        <section className={styles.actionReceipt} aria-live="polite" aria-label="Latest Vault action receipt">
-          <span>{toVaultTitleCase(actionReceipt.action)}</span>
-          <strong>{actionReceipt.artifactTitle}</strong>
-          <small>{actionReceipt.detail} • {actionReceipt.at}</small>
-        </section>
-      ) : null}
-
-      {loading ? (
-        <section className={styles.emptyState}>Loading Knowledge Base Vault.</section>
-      ) : null}
-
-      {error ? (
-        <section className={styles.errorState}>
-          <strong>Vault load failed</strong>
-          <span>{error}</span>
-        </section>
-      ) : null}
-
-      <section className={styles.vaultWorkspace} aria-label="Scalable Knowledge Base workspace">
+        {documentNavigatorOpen ? (
         <aside className={styles.documentNavigator} aria-label="Document list and categories">
           <div className={styles.navigatorHeader}>
-            <span>Document Library</span>
-            <strong>{entries.length} total</strong>
+            <div className={styles.navigatorTitle}>
+              <span><Library size={14} aria-hidden="true" /> Document Library</span>
+              <strong>{entries.length} total</strong>
+            </div>
+            <button
+              type="button"
+              className={styles.navigatorToggleButton}
+              onClick={() => setDocumentNavigatorOpen(false)}
+              aria-label="Close document library"
+              title="Close document library"
+            >
+              <PanelLeftClose size={16} aria-hidden="true" />
+            </button>
           </div>
 
           <div className={styles.categoryRail} aria-label="Dynamic document categories">
@@ -1447,17 +2296,31 @@ export default function WilsyKnowledgeBaseVault() {
             })}
           </div>
         </aside>
+        ) : null}
 
         <section className={styles.documentWorkbench} aria-label="Selected document workspace">
+          {!documentNavigatorOpen ? (
+            <button
+              type="button"
+              className={styles.libraryRailOpenButton}
+              onClick={() => setDocumentNavigatorOpen(true)}
+              aria-label="Open document library"
+            >
+              <PanelLeftOpen size={16} aria-hidden="true" />
+              <span>Open library</span>
+              <strong>{filteredEntries.length} match{filteredEntries.length === 1 ? '' : 'es'}</strong>
+            </button>
+          ) : null}
+
           {selectedEntry ? (
             <>
               <div className={styles.workbenchHeader}>
                 <div>
                   <span>{resolveVaultDocumentCategory(selectedEntry)}</span>
-                    <h2>Document Workbench</h2>
+                    <h2>{displayVaultArtifactType(selectedEntry.artifactType)}</h2>
                     <p className={styles.selectedDocumentTitle}>{selectedEntry.title}</p>
                   <p>
-                    This workspace selects one document at a time so operators can complete review, evidence, download, print, and copy tasks without leaving the Vault.
+                    {resolveVaultDocumentVerificationLabel(selectedEntry)} | {displayVaultLockStatus(selectedEntry.lockStatus)} | {selectedEntry.generatedByDisplayName || 'Recorded owner'}
                   </p>
                 </div>
 
@@ -1468,45 +2331,64 @@ export default function WilsyKnowledgeBaseVault() {
               </div>
 
                 <section className={styles.naturalOperatorSurface} aria-label="Wilsy AI natural Vault response">
-                  <p>
-                    <strong>Wilsy AI:</strong> I found this verified saved document in the Knowledge Base Vault. You are viewing
-                    <span> {selectedEntry.title}</span>. It is {resolveVaultDocumentVerificationLabel(selectedEntry).toLowerCase()} and{' '}
-                    {displayVaultLockStatus(selectedEntry.lockStatus).toLowerCase()}. You can open the saved PDF, print it, download it,
-                    inspect the evidence record, or copy the fingerprint without regenerating the artifact.
-                  </p>
+                  <header className={styles.operatorSurfaceHeader}>
+                    <p>
+                      <strong>Wilsy AI:</strong> {knowledgeVaultAIResponseBody}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setKnowledgeInsightsOpen((current) => !current)}
+                      aria-expanded={knowledgeInsightsOpen}
+                      aria-controls="wilsy-knowledge-source-brief"
+                    >
+                      {knowledgeInsightsOpen ? <PanelTopClose size={14} aria-hidden="true" /> : <PanelTopOpen size={14} aria-hidden="true" />}
+                      <span>{knowledgeInsightsOpen ? 'Hide brief' : 'Show brief'}</span>
+                    </button>
+                  </header>
+
+                {knowledgeInsightsOpen ? (
+                  <section
+                    className={styles.knowledgeSourceBrief}
+                    aria-label="Selected artifact source intelligence"
+                    id="wilsy-knowledge-source-brief"
+                  >
+                    {knowledgeVaultAIBriefs.map((brief) => (
+                      <div tabIndex={0} key={`${brief.label}-${brief.title}`}>
+                        <span>{brief.label}</span>
+                        <strong>{brief.title}</strong>
+                        <p>{brief.detail}</p>
+                      </div>
+                    ))}
+                  </section>
+                ) : null}
+
                   <div className={styles.inlineOperatorActions} aria-label="Inline Vault operator actions">
                     <button
                       type="button"
-                      onClick={() => {
-                        void (async () => {
-                          await openVaultUrl(selectedEntry.routes?.pdfOpenUrl);
-                          setActionReceipt(buildVaultActionReceipt('Document opened', selectedEntry, 'Saved document opened from the natural operator response.'));
-                        })();
-                      }}
+                      onClick={() => handleVaultPreviewCommand(
+                        selectedEntry,
+                        'Saved document opened from the natural operator response.',
+                      )}
                       disabled={!selectedEntry.allowedActions?.open}
                     >
                       Open saved PDF
                     </button>
+<button
+  type="button"
+  onClick={() => handleVaultActionCommand(
+    'JSON companion opened',
+    selectedEntry,
+    'Machine-readable JSON companion opened from the Vault.',
+    () => openVaultPlaybookJson(selectedEntry),
+  )}
+  disabled={!selectedEntry.allowedActions?.json}
+>
+  JSON Companion
+</button>
                     <button
                       type="button"
-                      onClick={() => {
-                        void (async () => {
-                          await openVaultProofJson(selectedEntry);
-                          setActionReceipt(buildVaultActionReceipt('Evidence opened', selectedEntry, 'Verification record opened from the natural operator response.'));
-                        })();
-                      }}
-                      disabled={!selectedEntry.allowedActions?.proof}
-                    >
-                      Show evidence
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void (async () => {
-                          const receipt = await copyVaultClipboardText(selectedEntry.pdfSha3, 'Document fingerprint');
-                          setActionReceipt(receipt);
-                        })();
-                      }}
+                      onClick={() => handleVaultCopyCommand(selectedEntry.pdfSha3, 'Document fingerprint')}
+                      disabled={!selectedEntry?.pdfSha3}
                     >
                       Copy fingerprint
                     </button>
@@ -1516,12 +2398,10 @@ export default function WilsyKnowledgeBaseVault() {
               <div className={styles.taskBar} aria-label={`Tasks for ${selectedEntry.title}`}>
                 <button
                   type="button"
-                  onClick={() => {
-                    void (async () => {
-                      await openVaultUrl(selectedEntry.routes?.pdfOpenUrl);
-                      setActionReceipt(buildVaultActionReceipt('Document opened', selectedEntry, 'Saved document opened from the Vault.'));
-                    })();
-                  }}
+                  onClick={() => handleVaultPreviewCommand(
+                    selectedEntry,
+                    'Saved document opened from the Vault.',
+                  )}
                   disabled={!selectedEntry.allowedActions?.open}
                 >
                   <Eye size={15} aria-hidden="true" />
@@ -1529,12 +2409,12 @@ export default function WilsyKnowledgeBaseVault() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    void (async () => {
-                      await printVaultPdf(selectedEntry);
-                      setActionReceipt(buildVaultActionReceipt('Print prepared', selectedEntry, 'Saved document prepared for printing.'));
-                    })();
-                  }}
+                  onClick={() => handleVaultActionCommand(
+                    'Print prepared',
+                    selectedEntry,
+                    'Saved document prepared for printing.',
+                    () => printVaultPdf(selectedEntry),
+                  )}
                   disabled={!selectedEntry.allowedActions?.print}
                 >
                   <Printer size={15} aria-hidden="true" />
@@ -1542,12 +2422,12 @@ export default function WilsyKnowledgeBaseVault() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    void (async () => {
-                      await downloadVaultPdf(selectedEntry);
-                      setActionReceipt(buildVaultActionReceipt('Download started', selectedEntry, 'Saved document download started.'));
-                    })();
-                  }}
+                  onClick={() => handleVaultActionCommand(
+                    'Download started',
+                    selectedEntry,
+                    'Saved document download started.',
+                    () => downloadVaultPdf(selectedEntry),
+                  )}
                   disabled={!selectedEntry.allowedActions?.download}
                 >
                   <Download size={15} aria-hidden="true" />
@@ -1555,12 +2435,12 @@ export default function WilsyKnowledgeBaseVault() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    void (async () => {
-                      await openVaultProofJson(selectedEntry);
-                      setActionReceipt(buildVaultActionReceipt('Evidence opened', selectedEntry, 'Verification record opened from the Vault.'));
-                    })();
-                  }}
+                  onClick={() => handleVaultActionCommand(
+                    'Evidence opened',
+                    selectedEntry,
+                    'Verification record opened from the Vault.',
+                    () => openVaultProofJson(selectedEntry),
+                  )}
                   disabled={!selectedEntry.allowedActions?.proof}
                 >
                   <FileJson size={15} aria-hidden="true" />
@@ -1568,14 +2448,35 @@ export default function WilsyKnowledgeBaseVault() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    void copyVaultClipboardText(selectedEntry.pdfSha3, 'Document fingerprint')
-                      .then(setActionReceipt);
-                  }}
+                  onClick={() => handleVaultCopyCommand(selectedEntry.pdfSha3, 'Document fingerprint')}
+                  disabled={!selectedEntry?.pdfSha3}
                 >
                   Copy fingerprint
                 </button>
               </div>
+
+              {pdfPreview ? (
+                <section className={styles.pdfPreviewPanel} aria-label="In-workspace Knowledge Base PDF preview">
+                  <header>
+                    <div>
+                      <span><FileText size={14} aria-hidden="true" /> Workspace viewer</span>
+                      <strong>{pdfPreview.title}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeVaultPdfPreview}
+                      aria-label="Hide PDF preview"
+                    >
+                      <X size={15} aria-hidden="true" />
+                    </button>
+                  </header>
+                  <iframe
+                    src={pdfPreview.objectUrl}
+                    title={`Knowledge Base PDF preview: ${pdfPreview.title}`}
+                    loading="lazy"
+                  />
+                </section>
+              ) : null}
 
               <section className={styles.summaryTable} aria-label="Selected document summary">
                 {selectedSummary.map((item) => (
@@ -1611,10 +2512,8 @@ export default function WilsyKnowledgeBaseVault() {
                   <strong>{displayVaultDigest(selectedEntry.pdfSha3)}</strong>
                   <button
                     type="button"
-                    onClick={() => {
-                      void copyVaultClipboardText(selectedEntry.pdfSha3, 'Document fingerprint')
-                        .then(setActionReceipt);
-                    }}
+                    onClick={() => handleVaultCopyCommand(selectedEntry.pdfSha3, 'Document fingerprint')}
+                    disabled={!selectedEntry?.pdfSha3}
                   >
                     Copy full value
                   </button>
@@ -1625,10 +2524,8 @@ export default function WilsyKnowledgeBaseVault() {
                   <strong>{displayVaultSourceTag(selectedEntry.sourceTag || selectedEntry.sourceCommit)}</strong>
                   <button
                     type="button"
-                    onClick={() => {
-                      void copyVaultClipboardText(selectedEntry.sourceTag || selectedEntry.sourceCommit, 'Release evidence')
-                        .then(setActionReceipt);
-                    }}
+                    onClick={() => handleVaultCopyCommand(selectedEntry.sourceTag || selectedEntry.sourceCommit, 'Release evidence')}
+                    disabled={!(selectedEntry?.sourceTag || selectedEntry?.sourceCommit)}
                   >
                     Copy full value
                   </button>
@@ -1639,10 +2536,8 @@ export default function WilsyKnowledgeBaseVault() {
                   <strong>{displayVaultArtifactIdentity(selectedEntry)}</strong>
                   <button
                     type="button"
-                    onClick={() => {
-                      void copyVaultClipboardText(selectedEntry.id, 'Document ID')
-                        .then(setActionReceipt);
-                    }}
+                    onClick={() => handleVaultCopyCommand(selectedEntry.id, 'Document ID')}
+                    disabled={!selectedEntry?.id}
                   >
                     Copy ID
                   </button>
@@ -1650,13 +2545,129 @@ export default function WilsyKnowledgeBaseVault() {
               </section>
             </>
           ) : (
-            <section className={styles.emptyState}>{submittedQuery ? 'Wilsy AI: I could not verify a saved Knowledge Base artifact for this search. Try another signal or clear the search.' : 'Wilsy AI: Select a verified artifact to begin operating.'}</section>
+            <section className={styles.emptyState}>{submittedQuery ? 'Wilsy AI: I could not verify a matching operating artifact for this signal. Adjust the question, search by release, or clear the search.' : 'Wilsy AI: Select a verified artifact to ask, inspect, prove, print, or copy evidence from this Knowledge Base.'}</section>
           )}
         </section>
-      </section>
+
+          {receiptCockpitOpen && latestReceiptCockpitEntry ? (
+            <aside className={styles.receiptCockpit} aria-label="Knowledge Base receipt cockpit">
+              <header className={styles.receiptCockpitHeader}>
+                <div>
+                  <span>Receipt cockpit</span>
+                  <strong>{latestReceiptCockpitEntry.action}</strong>
+                  <small>{latestReceiptCockpitEntry.artifactTitle}</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReceiptCockpitOpen(false)}
+                  aria-label="Collapse receipt cockpit"
+                >
+                  Collapse
+                </button>
+              </header>
+
+              <div className={styles.receiptCockpitCommandRow} aria-label="Receipt cockpit actions">
+                <button
+                  type="button"
+                  onClick={() => handleVaultActionCommand(
+                    'Reprint prepared',
+                    selectedEntry,
+                    'Saved document prepared for printing from the receipt cockpit.',
+                    () => printVaultPdf(selectedEntry),
+                  )}
+                  disabled={!selectedEntry?.allowedActions?.print}
+                >
+                  Reprint
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleVaultPreviewCommand(
+                    selectedEntry,
+                    'Saved PDF reopened from the receipt cockpit.',
+                  )}
+                  disabled={!selectedEntry?.allowedActions?.open}
+                >
+                  Reopen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleVaultActionCommand(
+                    'Download restarted',
+                    selectedEntry,
+                    'Saved document download restarted from the receipt cockpit.',
+                    () => downloadVaultPdf(selectedEntry),
+                  )}
+                  disabled={!selectedEntry?.allowedActions?.download}
+                >
+                  Download again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleVaultActionCommand(
+                    'Evidence opened',
+                    selectedEntry,
+                    'Verification record opened from the receipt cockpit.',
+                    () => openVaultProofJson(selectedEntry),
+                  )}
+                  disabled={!selectedEntry?.allowedActions?.proof}
+                >
+                  Evidence
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleVaultCopyCommand(selectedEntry.pdfSha3, 'Document fingerprint')}
+                  disabled={!selectedEntry?.pdfSha3}
+                >
+                  Copy fingerprint
+                </button>
+              </div>
+
+              <section className={styles.receiptCockpitProof} aria-label="Receipt proof summary">
+                <div>
+                  <span>Status</span>
+                  <strong>{latestReceiptCockpitEntry.status}</strong>
+                </div>
+                <div>
+                  <span>Lock</span>
+                  <strong>{latestReceiptCockpitEntry.lock}</strong>
+                </div>
+                <div>
+                  <span>Fingerprint</span>
+                  <strong>{compactKnowledgeBaseReceiptFingerprint(latestReceiptCockpitEntry.fingerprint)}</strong>
+                </div>
+              </section>
+
+              <section className={styles.receiptCockpitList} aria-label="Contained receipt history">
+                <header>
+                  <span>Contained receipt list</span>
+                  <strong>{activeReceiptCockpitEntries.length} session receipts</strong>
+                </header>
+                {activeReceiptCockpitEntries.map((receipt) => (
+                  <button
+                    type="button"
+                    key={receipt.id}
+                    onClick={() => setActionReceipt({
+                      action: receipt.action,
+                      artifactTitle: receipt.artifactTitle,
+                      detail: receipt.detail,
+                      at: receipt.at,
+                    })}
+                    aria-label={`Open receipt ${receipt.action}`}
+                  >
+                    <span>{receipt.action}</span>
+                    <strong>{receipt.artifactTitle}</strong>
+                    <small>{receipt.detail}</small>
+                  </button>
+                ))}
+              </section>
+
+              <p className={styles.receiptCockpitPersistenceNote}>
+                Receipt captured for this saved document. Verified PDF and proof record remain available.
+              </p>
+            </aside>
+          ) : null}
+
+</section>
     </main>
   );
 }
-
-
-

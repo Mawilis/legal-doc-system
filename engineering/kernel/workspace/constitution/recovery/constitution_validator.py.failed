@@ -1,0 +1,55 @@
+"""
+Wilsy Engineering Kernel
+
+Engineering Constitution Manager
+
+Constitution Validator
+
+Purpose:
+Validate immutable Constitution models.
+
+This module is read-only.
+
+It shall never modify repository artifacts.
+
+It shall only inspect immutable institutional models and return
+validation findings.
+"""
+
+from __future__ import annotations
+
+from typing import List
+
+from .models import Constitution
+from .models import ValidationFinding
+
+
+class ConstitutionValidator:
+    """
+    Public validation contract.
+
+    Concrete validation rules are implemented during FG132C.
+    """
+
+    def validate(
+        self,
+        constitution: Constitution,
+    ) -> List[ValidationFinding]:
+        """
+        Validate an immutable Constitution model.
+
+        Parameters
+        ----------
+        constitution
+            Parsed institutional Constitution.
+
+        Returns
+        -------
+        List[ValidationFinding]
+            Validation findings produced by the Engineering Kernel.
+        """
+
+        raise NotImplementedError(
+            "FG132C implements validation."
+        )
+

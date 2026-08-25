@@ -1,0 +1,97 @@
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js.map
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.js.map
+server/manifest.txt:axios.cjs
+server/manifest.txt:axios.cjs.map
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js.map
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.js.map
+server/manifest.txt:axios.cjs
+server/manifest.txt:axios.cjs.map
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js
+server/manifest.txt:axios.map
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.map
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.js.map
+server/manifest.txt:axios.cjs
+server/manifest.txt:axios.js
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.js.map
+server/manifest.txt:axios.cjs
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js.map
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.js.map
+server/manifest.txt:axios.cjs
+server/manifest.txt:axios.cjs.map
+server/manifest.txt:axios.js
+server/manifest.txt:axios.js.map
+server/manifest.txt:axios.min.js
+server/manifest.txt:axios.min.js.map
+server/manifest.txt:axios.cjs
+server/manifest.txt:axios.cjs.map
+server/manifest.txt:axios.js
+server/models/MagisterialDistrict.js:    const response = await axios.get(url, {
+server/models/Sheriff.js:    const response = await axios.post(
+server/utils/sendMail.js:    await axios.post(process.env.SLACK_WEBHOOK_URL, { text: message });
+server/utils/complianceIntelligence.js:    this.cipcClient = axios.create({
+server/utils/complianceIntelligence.js:    this.datanamixClient = axios.create({
+server/utils/complianceIntelligence.js:    this.lawsAfricaClient = axios.create({
+server/utils/complianceIntelligence.js:    this.webhookClient = axios.create({
+server/middleware/complianceMiddleware.js:      await axios.post(EOS_KERNEL_URL, payload, {
+server/services/AIDrivenOutreachEngine.js:      await axios.post(EOS_KERNEL_URL, payload, {
+server/services/AIDrivenOutreachEngine.js:      await axios.post(EOS_KERNEL_URL, payload, {
+server/services/AIDrivenOutreachEngine.js:      await axios.post(EOS_KERNEL_URL, payload, {
+server/services/complianceEngine.js:      const response = await axios.post(
+server/utils/auditLogger.js:      await axios.post(EOS_KERNEL_URL, payload, {
+server/services/billingComplianceOrchestrator.js:    this.httpClient = axios.create({
+server/services/blockchainAnchor.js:      const response = await axios.get(endpoint, {
+server/services/blockchainAnchor.js:        return await axios.post(endpoint, payload, {
+server/utils/quantumLogger.js:        await axios.post(process.env.ALERT_WEBHOOK_URL, {
+server/utils/billingCalculations.js:      const response = await axios.get(provider.endpoint, {
+server/utils/billingCalculations.js:      const response = await axios.get(provider.endpoint, {
+server/utils/billingCalculations.js:      const response = await axios.get(provider.endpoint, { timeout: 5000 });
+server/services/saLegalServices.js:      const response = await axios.get(`${this.baseUrls.JUSTICE_GOV_ZA}/legislation/acts/`, {
+server/services/saLegalServices.js:      const response = await axios.get(`${this.baseUrls.LAWS_AFRICA}/za/updates`, {
+server/services/saLegalServices.js:      const response = await axios.get(
+server/services/ForensicMerkleAuditor.js:    const response = await axios.post(this.externalAnchorUrl, packet, {
+server/integrations/ficaVerificationService.js:import axios from 'axios.js';
+server/services/dataAnonymizationService.js:        const response = await axios.get(process.env.QUANTUM_RNG_PROVIDER, {
+server/services/dataAnonymizationService.js:      const response = await axios.post(
+server/services/dataAnonymizationService.js:      const response = await axios.post(
+server/services/dataAnonymizationService.js:      const response = await axios.post(
+server/services/regulationSync.js:    return axios.create({
+server/controllers/complianceExportController.js:        await axios.post(process.env.SLACK_COMPLIANCE_WEBHOOK, slackMessage);
+server/services/alerting/AlertService.js:    await axios.post(process.env.SLACK_WEBHOOK_URL, payload);
+server/services/globalCourtUpdater.js:    const retryClient = axios.create();
+server/services/circuitBreakerEnhanced.js:   * const data = await breaker.execute(() => axios.get('/api/external'));
+server/services/signatureService.js:    const tokenResponse = await axios.post(this.config.authUrl, null, {
+server/services/signatureService.js:    this.client = axios.create({
+server/services/signatureService.js:    this.client = axios.create({
+server/services/fricaVerificationService.js:    this.apiClient = axios.create({
+server/services/regulatorReportingService.js:    this.httpClient = axios.create({
+server/services/cipcReportingService.js:    this.axiosInstance = axios.create({
+server/controllers/standardsController.js:    const response = await axios.post(
+server/controllers/standardsController.js:    const response = await axios.get(`${STANDARDS_SERVICE_URL}/rules`, {
+server/controllers/standardsController.js:    const response = await axios.get(`${STANDARDS_SERVICE_URL}/requirements/fica`, {
+server/services/complianceRuleEngine.js:      regulatory: axios.create({
+server/services/complianceRuleEngine.js:      validation: axios.create({
+server/services/complianceRuleEngine.js:          await axios.post(process.env.LOG_WEBHOOK_URL, logEntry, {
+server/services/telemetryInterceptor.js:    await axios.post('/api/telemetry/event', payload, {
+server/services/sarsComplianceService.js:    this.apiClient = axios.create({
+server/services/sarsComplianceService.js:      const response = await axios.post(
+server/services/ectSignatureService.js:      const response = await axios.post(ECT_QUANTUM_CONFIG.TIMESTAMP_AUTHORITY_URL, timestampRequest, {
+server/routes/business.js:    await axios.post(EOS_KERNEL_URL, payload, {
+server/services/languageService.js:      const response = await axios.post(
+server/services/complianceReportService.js:      const verificationResponse = await axios.post(
+server/controllers/cryptoController.js:const vaultClient = axios.create({
+server/routes/importRoutes.js:    await axios.post(url, data, {
+server/routes/webhookRoutes.js:        testResult = await axios.post(url, testPayload, {
+server/routes/webhookRoutes.js:          deliveryResult = await axios.post(webhook.url, testPayload, {

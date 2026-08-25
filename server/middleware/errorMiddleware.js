@@ -17,7 +17,7 @@
 import crypto from 'node:crypto';
 import auditLogger from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
-import metrics from '../utils/metrics.js';
+import { metrics } from './metricsCollector.js';
 import cryptoUtils from '../utils/cryptoUtils.js';
 import { getCurrentTenant, getCurrentUser, getCurrentRequestId } from './tenantContext.js';
 

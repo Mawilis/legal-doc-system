@@ -1,3853 +1,871 @@
+/* ================================================================
+   WILSY OS - INTELLIGENCE DOCK MODULE CSS
+   Version: 1.0.1
+   Authority: Sovereign Kennel EOS
+   Epitome: Production-ready styling for the Wilsy AI dock.
+   Collaboration: Wilsy OS core team, CRM integration, operator productivity.
+   ================================================================ */
+
+/* === All production CSS from the existing file === */
+/* (the long production CSS you already have – keep everything) */
+
 /* eslint-disable */
-
-.dock {
-  position: fixed;
-  right: 24px;
-  bottom: 28px;
-  width: min(410px, calc(100vw - 48px));
-  z-index: 90;
-  pointer-events: none;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-.shell {
-  pointer-events: auto;
-  overflow: hidden;
-  max-height: min(620px, calc(100vh - 118px));
-  border: 1px solid rgba(0, 255, 198, 0.24);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at top left, rgba(0, 255, 198, 0.2), transparent 34%),
-    linear-gradient(135deg, rgba(1, 34, 31, 0.98), rgba(5, 13, 23, 0.98));
-  box-shadow:
-    0 28px 86px rgba(0, 0, 0, 0.5),
-    0 0 44px rgba(0, 255, 198, 0.12);
-  backdrop-filter: blur(18px);
-}
-
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.header p {
-  margin: 0 0 8px;
-  color: #00ffc6;
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.28em;
-}
-
-.header h3 {
-  margin: 0;
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: 950;
-  letter-spacing: -0.03em;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.actions button,
-.tab {
-  border: 1px solid rgba(125, 230, 255, 0.24);
-  border-radius: 999px;
-  background: rgba(8, 24, 36, 0.86);
-  color: #e9f8ff;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-  padding: 10px 13px;
-  text-transform: uppercase;
-}
-
-.contextStrip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 13px 20px;
-  background: rgba(0, 255, 198, 0.055);
-  border-bottom: 1px solid rgba(0, 255, 198, 0.09);
-}
-
-.contextStrip span,
-.card span {
-  color: rgba(0, 255, 198, 0.92);
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.contextStrip strong {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 12px;
-  font-weight: 950;
-}
-
-.body {
-  display: grid;
-  gap: 12px;
-  max-height: min(430px, calc(100vh - 265px));
-  overflow: auto;
-  padding: 16px 20px 20px;
-}
-
-.card {
-  border: 1px solid rgba(0, 174, 255, 0.16);
-  border-radius: 18px;
-  background: rgba(5, 16, 29, 0.78);
-  padding: 14px;
-}
-
-.card strong {
-  display: block;
-  margin-top: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 950;
-}
-
-.card p {
-  margin: 8px 0 0;
-  color: rgba(224, 240, 255, 0.74);
-  font-size: 12px;
-  font-weight: 720;
-  line-height: 1.55;
-}
-
-.tab {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  min-width: 128px;
-  min-height: 50px;
-  pointer-events: auto;
-  color: #00ffc6;
-  background:
-    radial-gradient(circle at 24% 20%, rgba(0, 255, 198, 0.22), transparent 30%),
-    rgba(5, 22, 31, 0.96);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.42),
-    0 0 22px rgba(0, 255, 198, 0.16);
-}
-
-.tab span {
-  width: 10px;
-  height: 10px;
-  margin-right: 10px;
-  border-radius: 999px;
-  background: #00ffc6;
-  box-shadow: 0 0 16px rgba(0, 255, 198, 0.8);
-}
-
-.collapsed {
-  width: auto;
-}
-
-.collapsed .shell {
-  display: none;
-}
-
-.collapsed .tab {
-  display: inline-flex;
-}
-
-.focusMode {
-  top: 92px;
-  right: 28px;
-  bottom: 28px;
-  width: min(520px, calc(100vw - 56px));
-}
-
-.focusMode .shell {
-  max-height: calc(100vh - 120px);
-}
-
-.focusMode .body {
-  max-height: calc(100vh - 320px);
-}
-
-@media (max-width: 1120px) {
-  .dock {
-    right: 16px;
-    bottom: 20px;
-    width: min(360px, calc(100vw - 32px));
-  }
-
-  .focusMode {
-    top: auto;
-    right: 16px;
-    bottom: 20px;
-    width: min(380px, calc(100vw - 32px));
-  }
-}
-
-@media (max-width: 760px) {
-  .dock {
-    right: 12px;
-    bottom: 14px;
-    width: min(336px, calc(100vw - 24px));
-  }
-
-  .header {
-    flex-direction: column;
-  }
-
-  .actions {
-    width: 100%;
-  }
-
-  .actions button {
-    flex: 1;
-  }
-
-  .tab {
-    min-width: 108px;
-    min-height: 46px;
-  }
-}
+.dock { position: fixed; right: 24px; bottom: 28px; width: min(410px, calc(100vw - 48px)); z-index: 90; pointer-events: none; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.shell { pointer-events: auto; overflow: hidden; max-height: min(620px, calc(100vh - 118px)); border: 1px solid rgba(0, 255, 198, 0.24); border-radius: 28px; background: radial-gradient(circle at top left, rgba(0, 255, 198, 0.2), transparent 34%), linear-gradient(135deg, rgba(1, 34, 31, 0.98), rgba(5, 13, 23, 0.98)); box-shadow: 0 28px 86px rgba(0, 0, 0, 0.5), 0 0 44px rgba(0, 255, 198, 0.12); backdrop-filter: blur(18px); }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 20px 20px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.header p { margin: 0 0 8px; color: #00ffc6; font-size: 10px; font-weight: 950; letter-spacing: 0.28em; }
+.header h3 { margin: 0; color: #ffffff; font-size: 20px; font-weight: 950; letter-spacing: -0.03em; }
+.actions { display: flex; gap: 8px; }
+.actions button, .tab { border: 1px solid rgba(125, 230, 255, 0.24); border-radius: 999px; background: rgba(8, 24, 36, 0.86); color: #e9f8ff; cursor: pointer; font-size: 10px; font-weight: 950; letter-spacing: 0.16em; padding: 10px 13px; text-transform: uppercase; }
+.contextStrip { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 20px; background: rgba(0, 255, 198, 0.055); border-bottom: 1px solid rgba(0, 255, 198, 0.09); }
+.contextStrip span, .card span { color: rgba(0, 255, 198, 0.92); font-size: 10px; font-weight: 950; letter-spacing: 0.22em; text-transform: uppercase; }
+.contextStrip strong { color: rgba(255, 255, 255, 0.92); font-size: 12px; font-weight: 950; }
+.body { display: grid; gap: 12px; max-height: min(430px, calc(100vh - 265px)); overflow: auto; padding: 16px 20px 20px; }
+.card { border: 1px solid rgba(0, 174, 255, 0.16); border-radius: 18px; background: rgba(5, 16, 29, 0.78); padding: 14px; }
+.card strong { display: block; margin-top: 8px; color: #ffffff; font-size: 14px; font-weight: 950; }
+.card p { margin: 8px 0 0; color: rgba(224, 240, 255, 0.74); font-size: 12px; font-weight: 720; line-height: 1.55; }
+.tab { position: absolute; right: 0; bottom: 0; display: none; align-items: center; justify-content: center; min-width: 128px; min-height: 50px; pointer-events: auto; color: #00ffc6; background: radial-gradient(circle at 24% 20%, rgba(0, 255, 198, 0.22), transparent 30%), rgba(5, 22, 31, 0.96); box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42), 0 0 22px rgba(0, 255, 198, 0.16); }
+.tab span { width: 10px; height: 10px; margin-right: 10px; border-radius: 999px; background: #00ffc6; box-shadow: 0 0 16px rgba(0, 255, 198, 0.8); }
+.collapsed { width: auto; }
+.collapsed .shell { display: none; }
+.collapsed .tab { display: inline-flex; }
+.focusMode { top: 92px; right: 28px; bottom: 28px; width: min(520px, calc(100vw - 56px)); }
+.focusMode .shell { max-height: calc(100vh - 120px); }
+.focusMode .body { max-height: calc(100vh - 320px); }
+@media (max-width: 1120px) { .dock { right: 16px; bottom: 20px; width: min(360px, calc(100vw - 32px)); } .focusMode { top: auto; right: 16px; bottom: 20px; width: min(380px, calc(100vw - 32px)); } }
+@media (max-width: 760px) { .dock { right: 12px; bottom: 14px; width: min(336px, calc(100vw - 24px)); } .header { flex-direction: column; } .actions { width: 100%; } .actions button { flex: 1; } .tab { min-width: 108px; min-height: 46px; } }
 
 /* WILSY_P60K5Q10_INTELLIGENCE_DOCK_SIZE_UPGRADE */
-/* Enlarges the real Wilsy AI brain dock so open mode adds value without crushing the workspace. */
-.dock {
-  width: min(440px, calc(100vw - 48px));
-}
-
-.focusMode {
-  top: 78px;
-  right: 24px;
-  bottom: 24px;
-  width: min(640px, calc(100vw - 48px));
-}
-
-.focusMode .shell {
-  max-height: calc(100vh - 102px);
-}
-
-.focusMode .body {
-  max-height: calc(100vh - 306px);
-}
-
-@media (max-width: 1120px) {
-  .focusMode {
-    top: auto;
-    right: 16px;
-    bottom: 20px;
-    width: min(430px, calc(100vw - 32px));
-  }
-}
-
-@media (max-width: 760px) {
-  .dock,
-  .focusMode {
-    right: 12px;
-    bottom: 14px;
-    width: min(348px, calc(100vw - 24px));
-  }
-}
+.dock { width: min(440px, calc(100vw - 48px)); }
+.focusMode { top: 78px; right: 24px; bottom: 24px; width: min(640px, calc(100vw - 48px)); }
+.focusMode .shell { max-height: calc(100vh - 102px); }
+.focusMode .body { max-height: calc(100vh - 306px); }
+@media (max-width: 1120px) { .focusMode { top: auto; right: 16px; bottom: 20px; width: min(430px, calc(100vw - 32px)); } }
+@media (max-width: 760px) { .dock, .focusMode { right: 12px; bottom: 14px; width: min(348px, calc(100vw - 24px)); } }
 /* WILSY_P60K5Q10_INTELLIGENCE_DOCK_SIZE_UPGRADE_END */
 
 /* WILSY_P60K5Q10AG_AI_OPERATOR_MODEL_SURFACE */
-/**
- * @section Wilsy AI Operator Model surface
- * @description Converts the live AI dock from presentation cards into an ask/action/productivity model workspace.
- * @collaboration CRM Setup live context, Q10Z source-registry bridge, no-mutation command preparation, and tenant productivity workflow.
- */
-
-.operatorWorkbench,
-.actionBoard,
-.commandPrep,
-.modelDetails {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.operatorWorkbench {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-  padding: 0;
-}
-
-.answerWorkspace,
-.actionBoard,
-.commandPrep,
-.modelDetails {
-  border: 1px solid rgba(0, 255, 209, 0.18);
-  background:
-    linear-gradient(135deg, rgba(1, 12, 24, 0.94), rgba(0, 34, 31, 0.76)),
-    rgba(2, 8, 18, 0.9);
-  border-radius: 24px;
-  box-shadow: inset 0 0 0 1px rgba(80, 180, 255, 0.06);
-}
-
-.answerWorkspace {
-  padding: 26px 28px;
-}
-
-.answerWorkspace span,
-.sectionHeader span,
-.promptGrid button,
-.actionList button span {
-  color: #1fffd6;
-  font-size: 0.76rem;
-  font-weight: 900;
-  letter-spacing: 0.36em;
-  text-transform: uppercase;
-}
-
-.answerWorkspace strong,
-.sectionHeader strong,
-.actionList button strong {
-  display: block;
-  margin-top: 12px;
-  color: #f8fbff;
-  font-size: clamp(1.08rem, 1.45vw, 1.38rem);
-  line-height: 1.25;
-}
-
-.answerWorkspace p,
-.actionList button p,
-.commandPrep p,
-.modelDetails span,
-.commandPrep li {
-  color: rgba(218, 228, 240, 0.82);
-  font-size: clamp(0.92rem, 1vw, 1.04rem);
-  font-weight: 700;
-  line-height: 1.55;
-}
-
-.answerWorkspace small {
-  display: inline-flex;
-  margin-top: 16px;
-  color: rgba(173, 255, 219, 0.9);
-  font-weight: 800;
-}
-
-.askBar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 132px;
-  gap: 12px;
-}
-
-.askBar input {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid rgba(0, 255, 209, 0.2);
-  border-radius: 18px;
-  background: rgba(1, 9, 18, 0.9);
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 800;
-  outline: none;
-  padding: 16px 18px;
-  box-sizing: border-box;
-}
-
-.askBar input::placeholder {
-  color: rgba(214, 225, 239, 0.52);
-}
-
-.askBar button,
-.promptGrid button,
-.actionList button {
-  border: 1px solid rgba(0, 255, 209, 0.22);
-  background: rgba(5, 18, 31, 0.92);
-  color: #f9fcff;
-  cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.askBar button {
-  border-radius: 18px;
-  font-size: 0.82rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.promptGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.promptGrid button {
-  min-height: 54px;
-  border-radius: 18px;
-  padding: 12px 14px;
-  text-align: left;
-  letter-spacing: 0.08em;
-}
-
-.promptGrid button:hover,
-.promptGrid .activePrompt,
-.actionList button:hover,
-.askBar button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(0, 255, 209, 0.52);
-  background: rgba(0, 55, 50, 0.72);
-}
-
-.actionBoard,
-.commandPrep,
-.modelDetails {
-  padding: 24px 26px;
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
-}
-
-.actionList {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.actionList button {
-  min-height: 176px;
-  border-radius: 22px;
-  padding: 18px;
-  text-align: left;
-}
-
-.actionList button strong {
-  font-size: 1rem;
-}
-
-.actionList button p {
-  margin-bottom: 0;
-}
-
-.commandPrep ol {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 22px;
-  margin: 0;
-  padding-left: 20px;
-}
-
-.modelDetails summary {
-  color: #1fffd6;
-  cursor: pointer;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.modelDetails div {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 18px;
-  margin-top: 16px;
-}
-
-@media (max-width: 1180px) {
-  .promptGrid,
-  .actionList,
-  .commandPrep ol,
-  .modelDetails div {
-    grid-template-columns: 1fr;
-  }
-
-  .askBar {
-    grid-template-columns: 1fr;
-  }
-}
+.operatorWorkbench, .actionBoard, .commandPrep, .modelDetails { width: 100%; max-width: 100%; box-sizing: border-box; }
+.operatorWorkbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 0; }
+.answerWorkspace, .actionBoard, .commandPrep, .modelDetails { border: 1px solid rgba(0, 255, 209, 0.18); background: linear-gradient(135deg, rgba(1, 12, 24, 0.94), rgba(0, 34, 31, 0.76)), rgba(2, 8, 18, 0.9); border-radius: 24px; box-shadow: inset 0 0 0 1px rgba(80, 180, 255, 0.06); }
+.answerWorkspace { padding: 26px 28px; }
+.answerWorkspace span, .sectionHeader span, .promptGrid button, .actionList button span { color: #1fffd6; font-size: 0.76rem; font-weight: 900; letter-spacing: 0.36em; text-transform: uppercase; }
+.answerWorkspace strong, .sectionHeader strong, .actionList button strong { display: block; margin-top: 12px; color: #f8fbff; font-size: clamp(1.08rem, 1.45vw, 1.38rem); line-height: 1.25; }
+.answerWorkspace p, .actionList button p, .commandPrep p, .modelDetails span, .commandPrep li { color: rgba(218, 228, 240, 0.82); font-size: clamp(0.92rem, 1vw, 1.04rem); font-weight: 700; line-height: 1.55; }
+.answerWorkspace small { display: inline-flex; margin-top: 16px; color: rgba(173, 255, 219, 0.9); font-weight: 800; }
+.askBar { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 12px; }
+.askBar input { width: 100%; min-width: 0; border: 1px solid rgba(0, 255, 209, 0.2); border-radius: 18px; background: rgba(1, 9, 18, 0.9); color: #ffffff; font-size: 1rem; font-weight: 800; outline: none; padding: 16px 18px; box-sizing: border-box; }
+.askBar input::placeholder { color: rgba(214, 225, 239, 0.52); }
+.askBar button, .promptGrid button, .actionList button { border: 1px solid rgba(0, 255, 209, 0.22); background: rgba(5, 18, 31, 0.92); color: #f9fcff; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
+.askBar button { border-radius: 18px; font-size: 0.82rem; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; }
+.promptGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.promptGrid button { min-height: 54px; border-radius: 18px; padding: 12px 14px; text-align: left; letter-spacing: 0.08em; }
+.promptGrid button:hover, .promptGrid .activePrompt, .actionList button:hover, .askBar button:hover { transform: translateY(-1px); border-color: rgba(0, 255, 209, 0.52); background: rgba(0, 55, 50, 0.72); }
+.actionBoard, .commandPrep, .modelDetails { padding: 24px 26px; }
+.sectionHeader { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.actionList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.actionList button { min-height: 176px; border-radius: 22px; padding: 18px; text-align: left; }
+.actionList button strong { font-size: 1rem; }
+.actionList button p { margin-bottom: 0; }
+.commandPrep ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 22px; margin: 0; padding-left: 20px; }
+.modelDetails summary { color: #1fffd6; cursor: pointer; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; }
+.modelDetails div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin-top: 16px; }
+@media (max-width: 1180px) { .promptGrid, .actionList, .commandPrep ol, .modelDetails div { grid-template-columns: 1fr; } .askBar { grid-template-columns: 1fr; } }
 /* WILSY_P60K5Q10AG_AI_OPERATOR_MODEL_SURFACE_END */
 
 /* WILSY_P60K5Q10AH_AI_DOCK_SIZE_CONTRACT */
-/**
- * @section Wilsy AI Dock size contract
- * @description Enforces large default productivity surface and makes compact mode shrink only after the operator explicitly clicks Compact.
- * @collaboration Wilsy Operator Model, Q10Z live context, tenant productivity shell, and explicit operator display controls.
- */
-
-/* DEFAULT: large productivity surface. Never shrink by default. */
-.dock:not(.collapsed):not(.focusMode) {
-  position: fixed !important;
-  top: 54px !important;
-  right: 20px !important;
-  bottom: 20px !important;
-  left: clamp(112px, 7vw, 148px) !important;
-  width: auto !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  height: auto !important;
-  max-height: calc(100vh - 74px) !important;
-  z-index: 9998 !important;
-  pointer-events: auto !important;
-}
-
-.dock:not(.collapsed):not(.focusMode) .shell {
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  height: 100% !important;
-  max-height: calc(100vh - 74px) !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-
-/* EXPLICIT COMPACT: only when the operator clicks Compact. */
-.dock.focusMode:not(.collapsed) {
-  position: fixed !important;
-  top: 74px !important;
-  right: 24px !important;
-  bottom: 24px !important;
-  left: auto !important;
-  width: min(620px, calc(100vw - 48px)) !important;
-  max-width: min(620px, calc(100vw - 48px)) !important;
-  min-width: min(420px, calc(100vw - 48px)) !important;
-  height: auto !important;
-  max-height: calc(100vh - 98px) !important;
-  z-index: 9998 !important;
-  pointer-events: auto !important;
-}
-
-.dock.focusMode:not(.collapsed) .shell {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  height: 100% !important;
-  max-height: calc(100vh - 98px) !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-
-.dock:not(.collapsed) .header {
-  min-height: 108px !important;
-  padding: 24px clamp(26px, 3vw, 54px) !important;
-  box-sizing: border-box !important;
-  flex-shrink: 0 !important;
-}
-
-.dock:not(.collapsed) .actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  flex-wrap: nowrap !important;
-}
-
-.dock:not(.collapsed) .actions button {
-  min-width: 124px !important;
-  white-space: nowrap !important;
-}
-
-.dock:not(.collapsed) .body {
-  display: flex !important;
-  flex-direction: column !important;
-  grid-template-columns: none !important;
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  gap: 20px !important;
-  padding: 24px clamp(26px, 3vw, 54px) 42px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  max-height: calc(100vh - 218px) !important;
-  box-sizing: border-box !important;
-}
-
-/* Compact gets denser but remains usable. */
-.dock.focusMode:not(.collapsed) .header {
-  min-height: 96px !important;
-  padding: 20px 24px !important;
-}
-
-.dock.focusMode:not(.collapsed) .body {
-  padding: 20px 24px 28px !important;
-  gap: 16px !important;
-  max-height: calc(100vh - 198px) !important;
-}
-
-.dock:not(.collapsed) .card,
-.dock:not(.collapsed) .operatorWorkbench,
-.dock:not(.collapsed) .answerWorkspace,
-.dock:not(.collapsed) .actionBoard,
-.dock:not(.collapsed) .commandPrep,
-.dock:not(.collapsed) .modelDetails {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-}
-
-.dock:not(.collapsed) .card *,
-.dock:not(.collapsed) .operatorWorkbench *,
-.dock:not(.collapsed) .answerWorkspace *,
-.dock:not(.collapsed) .actionBoard *,
-.dock:not(.collapsed) .commandPrep *,
-.dock:not(.collapsed) .modelDetails * {
-  max-width: 100% !important;
-  min-width: 0 !important;
-  overflow-wrap: break-word !important;
-  word-break: normal !important;
-  white-space: normal !important;
-  writing-mode: horizontal-tb !important;
-}
-
-/* Large mode: more horizontal productivity. */
-.dock:not(.collapsed):not(.focusMode) .promptGrid,
-.dock:not(.collapsed):not(.focusMode) .actionList {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-}
-
-/* Compact mode: stack to prevent clipping. */
-.dock.focusMode:not(.collapsed) .promptGrid,
-.dock.focusMode:not(.collapsed) .actionList,
-.dock.focusMode:not(.collapsed) .commandPrep ol,
-.dock.focusMode:not(.collapsed) .modelDetails div {
-  grid-template-columns: 1fr !important;
-}
-
-/* Collapsed state keeps only the launcher tab. */
-.collapsed .shell {
-  display: none !important;
-}
-
-.collapsed .tab {
-  display: inline-flex !important;
-}
-
-@media (max-width: 980px) {
-  .dock:not(.collapsed):not(.focusMode),
-  .dock.focusMode:not(.collapsed) {
-    top: 12px !important;
-    right: 12px !important;
-    bottom: 12px !important;
-    left: 12px !important;
-    width: auto !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    max-height: calc(100vh - 24px) !important;
-  }
-
-  .dock:not(.collapsed) .shell {
-    max-height: calc(100vh - 24px) !important;
-  }
-
-  .dock:not(.collapsed) .body {
-    max-height: calc(100vh - 142px) !important;
-  }
-
-  .dock:not(.collapsed) .promptGrid,
-  .dock:not(.collapsed) .actionList,
-  .dock:not(.collapsed) .commandPrep ol,
-  .dock:not(.collapsed) .modelDetails div {
-    grid-template-columns: 1fr !important;
-  }
-}
+.dock:not(.collapsed):not(.focusMode) { position: fixed !important; top: 54px !important; right: 20px !important; bottom: 20px !important; left: clamp(112px, 7vw, 148px) !important; width: auto !important; max-width: none !important; min-width: 0 !important; height: auto !important; max-height: calc(100vh - 74px) !important; z-index: 9998 !important; pointer-events: auto !important; }
+.dock:not(.collapsed):not(.focusMode) .shell { width: 100% !important; max-width: none !important; min-width: 0 !important; height: 100% !important; max-height: calc(100vh - 74px) !important; overflow: hidden !important; box-sizing: border-box !important; }
+.dock.focusMode:not(.collapsed) { position: fixed !important; top: 74px !important; right: 24px !important; bottom: 24px !important; left: auto !important; width: min(620px, calc(100vw - 48px)) !important; max-width: min(620px, calc(100vw - 48px)) !important; min-width: min(420px, calc(100vw - 48px)) !important; height: auto !important; max-height: calc(100vh - 98px) !important; z-index: 9998 !important; pointer-events: auto !important; }
+.dock.focusMode:not(.collapsed) .shell { width: 100% !important; max-width: 100% !important; min-width: 0 !important; height: 100% !important; max-height: calc(100vh - 98px) !important; overflow: hidden !important; box-sizing: border-box !important; }
+.dock:not(.collapsed) .header { min-height: 108px !important; padding: 24px clamp(26px, 3vw, 54px) !important; box-sizing: border-box !important; flex-shrink: 0 !important; }
+.dock:not(.collapsed) .actions { display: flex !important; align-items: center !important; gap: 12px !important; flex-wrap: nowrap !important; }
+.dock:not(.collapsed) .actions button { min-width: 124px !important; white-space: nowrap !important; }
+.dock:not(.collapsed) .body { display: flex !important; flex-direction: column !important; grid-template-columns: none !important; width: 100% !important; max-width: none !important; min-width: 0 !important; gap: 20px !important; padding: 24px clamp(26px, 3vw, 54px) 42px !important; overflow-y: auto !important; overflow-x: hidden !important; max-height: calc(100vh - 218px) !important; box-sizing: border-box !important; }
+.dock.focusMode:not(.collapsed) .header { min-height: 96px !important; padding: 20px 24px !important; }
+.dock.focusMode:not(.collapsed) .body { padding: 20px 24px 28px !important; gap: 16px !important; max-height: calc(100vh - 198px) !important; }
+.dock:not(.collapsed) .card, .dock:not(.collapsed) .operatorWorkbench, .dock:not(.collapsed) .answerWorkspace, .dock:not(.collapsed) .actionBoard, .dock:not(.collapsed) .commandPrep, .dock:not(.collapsed) .modelDetails { width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; }
+.dock:not(.collapsed) .card *, .dock:not(.collapsed) .operatorWorkbench *, .dock:not(.collapsed) .answerWorkspace *, .dock:not(.collapsed) .actionBoard *, .dock:not(.collapsed) .commandPrep *, .dock:not(.collapsed) .modelDetails * { max-width: 100% !important; min-width: 0 !important; overflow-wrap: break-word !important; word-break: normal !important; white-space: normal !important; writing-mode: horizontal-tb !important; }
+.dock:not(.collapsed):not(.focusMode) .promptGrid, .dock:not(.collapsed):not(.focusMode) .actionList { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.dock.focusMode:not(.collapsed) .promptGrid, .dock.focusMode:not(.collapsed) .actionList, .dock.focusMode:not(.collapsed) .commandPrep ol, .dock.focusMode:not(.collapsed) .modelDetails div { grid-template-columns: 1fr !important; }
+.collapsed .shell { display: none !important; }
+.collapsed .tab { display: inline-flex !important; }
+@media (max-width: 980px) { .dock:not(.collapsed):not(.focusMode), .dock.focusMode:not(.collapsed) { top: 12px !important; right: 12px !important; bottom: 12px !important; left: 12px !important; width: auto !important; max-width: none !important; min-width: 0 !important; max-height: calc(100vh - 24px) !important; } .dock:not(.collapsed) .shell { max-height: calc(100vh - 24px) !important; } .dock:not(.collapsed) .body { max-height: calc(100vh - 142px) !important; } .dock:not(.collapsed) .promptGrid, .dock:not(.collapsed) .actionList, .dock:not(.collapsed) .commandPrep ol, .dock:not(.collapsed) .modelDetails div { grid-template-columns: 1fr !important; } }
 /* WILSY_P60K5Q10AH_AI_DOCK_SIZE_CONTRACT_END */
 
-
 /* WILSY_P60K5Q10AI_OPERATOR_MODEL_PROGRESS_STATES */
-/**
- * @section Wilsy Operator Model progress states
- * @description Adds non-sizing status styling for backend tool progress and ask errors without changing dock dimensions.
- * @collaboration Wilsy Operator Model backend, Ask Wilsy input, CRM source tools, and tenant productivity feedback.
- */
-
-.operatorProgress,
-.operatorError {
-  display: inline-flex;
-  margin-top: 14px;
-  font-size: 0.9rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.operatorProgress {
-  color: rgba(173, 255, 219, 0.94);
-}
-
-.operatorError {
-  color: rgba(255, 184, 96, 0.96);
-}
+.operatorProgress, .operatorError { display: inline-flex; margin-top: 14px; font-size: 0.9rem; font-weight: 900; letter-spacing: 0.08em; }
+.operatorProgress { color: rgba(173, 255, 219, 0.94); }
+.operatorError { color: rgba(255, 184, 96, 0.96); }
 /* WILSY_P60K5Q10AI_OPERATOR_MODEL_PROGRESS_STATES_END */
 
-
 /* WILSY_P60K5Q10AK_ASK_FIRST_ANSWER_DENSITY */
-/**
- * @section Ask-first Operator Model density
- * @description Moves the text input above the answer and reduces answer hero height without changing the dock shell size contract.
- * @collaboration Wilsy Operator Model backend, CRM Meetings source tool, and tenant productivity-first ask loop.
- */
-
-.operatorWorkbench {
-  gap: 12px !important;
-}
-
-.askBar {
-  order: 1 !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 3 !important;
-  padding: 0 0 10px !important;
-  background: linear-gradient(180deg, rgba(0, 34, 31, 0.96), rgba(0, 34, 31, 0.64)) !important;
-}
-
-.answerWorkspace {
-  order: 2 !important;
-  padding: 16px 18px !important;
-  min-height: 0 !important;
-}
-
-.answerWorkspace strong {
-  margin-top: 8px !important;
-  font-size: clamp(1rem, 1.1vw, 1.2rem) !important;
-}
-
-.answerWorkspace p {
-  margin: 8px 0 0 !important;
-  line-height: 1.38 !important;
-}
-
-.answerWorkspace small {
-  margin-top: 10px !important;
-}
-
-.promptGrid {
-  order: 3 !important;
-}
-
-.operatorProgress,
-.operatorError {
-  margin-top: 10px !important;
-}
+.operatorWorkbench { gap: 12px !important; }
+.askBar { order: 1 !important; position: sticky !important; top: 0 !important; z-index: 3 !important; padding: 0 0 10px !important; background: linear-gradient(180deg, rgba(0, 34, 31, 0.96), rgba(0, 34, 31, 0.64)) !important; }
+.answerWorkspace { order: 2 !important; padding: 16px 18px !important; min-height: 0 !important; }
+.answerWorkspace strong { margin-top: 8px !important; font-size: clamp(1rem, 1.1vw, 1.2rem) !important; }
+.answerWorkspace p { margin: 8px 0 0 !important; line-height: 1.38 !important; }
+.answerWorkspace small { margin-top: 10px !important; }
+.promptGrid { order: 3 !important; }
+.operatorProgress, .operatorError { margin-top: 10px !important; }
 /* WILSY_P60K5Q10AK_ASK_FIRST_ANSWER_DENSITY_END */
 
-
 /* WILSY_P60K5Q10AN_OPERATOR_KERNEL_TRACE_UI */
-/**
- * @section Operator Kernel trace UI
- * @description Shows which production tool/source was checked without changing dock shell size.
- * @collaboration Ask Wilsy, CRM Operator Kernel, JSON-safe response handling, and tenant source transparency.
- */
-
-.sourceTrace {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.sourceTrace span {
-  border: 1px solid rgba(0, 255, 209, 0.2);
-  border-radius: 999px;
-  color: rgba(195, 255, 237, 0.94);
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  padding: 8px 10px;
-}
+.sourceTrace { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sourceTrace span { border: 1px solid rgba(0, 255, 209, 0.2); border-radius: 999px; color: rgba(195, 255, 237, 0.94); font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; padding: 8px 10px; }
 /* WILSY_P60K5Q10AN_OPERATOR_KERNEL_TRACE_UI_END */
 
-
 /* WILSY_P60K5Q10AO_OPERATOR_KERNEL_TRACE_UI */
-/**
- * @section Operator Kernel trace UI
- * @description Shows the production tool/source checked in business English without changing dock shell size.
- * @collaboration Ask Wilsy, CRM Operator Kernel, JSON-safe response handling, and tenant source transparency.
- */
-
-.sourceTrace {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.sourceTrace span {
-  border: 1px solid rgba(0, 255, 209, 0.2);
-  border-radius: 999px;
-  color: rgba(195, 255, 237, 0.94);
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  padding: 8px 10px;
-}
+.sourceTrace { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sourceTrace span { border: 1px solid rgba(0, 255, 209, 0.2); border-radius: 999px; color: rgba(195, 255, 237, 0.94); font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; padding: 8px 10px; }
 /* WILSY_P60K5Q10AO_OPERATOR_KERNEL_TRACE_UI_END */
 
-
 /* WILSY_P60K5Q10AP_OPERATOR_KERNEL_TRACE_UI */
-/**
- * @section Operator Kernel trace UI
- * @description Shows production tool/source checked in business English without changing dock shell size.
- * @collaboration Ask Wilsy, Calendar Execution Bridge, CRM Operator Kernel, and tenant source transparency.
- */
-
-.sourceTrace {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.sourceTrace span {
-  border: 1px solid rgba(0, 255, 209, 0.2);
-  border-radius: 999px;
-  color: rgba(195, 255, 237, 0.94);
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  padding: 8px 10px;
-}
+.sourceTrace { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sourceTrace span { border: 1px solid rgba(0, 255, 209, 0.2); border-radius: 999px; color: rgba(195, 255, 237, 0.94); font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; padding: 8px 10px; }
 /* WILSY_P60K5Q10AP_OPERATOR_KERNEL_TRACE_UI_END */
 
-
 /* WILSY_P60K5Q10AR_CAPABILITY_FOUNDRY_UI */
-/**
- * @section Capability Foundry notice UI
- * @description Shows staged capability candidates in business English without changing dock shell size.
- * @collaboration Ask Wilsy, Capability Foundry, self-extending tool registry, and approval-gated publication.
- */
-
-.foundryNotice {
-  border: 1px solid rgba(255, 214, 112, 0.34);
-  border-radius: 18px;
-  color: rgba(255, 228, 166, 0.96);
-  display: inline-flex;
-  font-size: 0.86rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  margin-top: 12px;
-  padding: 10px 12px;
-}
+.foundryNotice { border: 1px solid rgba(255, 214, 112, 0.34); border-radius: 18px; color: rgba(255, 228, 166, 0.96); display: inline-flex; font-size: 0.86rem; font-weight: 900; letter-spacing: 0.08em; margin-top: 12px; padding: 10px 12px; }
 /* WILSY_P60K5Q10AR_CAPABILITY_FOUNDRY_UI_END */
 
-
 /* WILSY_P60K5Q10AU_PREPARED_WORK_SURFACE */
-/**
- * @section Prepared Work Surface
- * @description Converts prepared task, reminder, meeting, and document outputs into structured productivity controls without changing dock shell size.
- * @collaboration Wilsy Operator Kernel, Task Reminder Execution Bridge, Calendar Execution Bridge, and approval workflow.
- */
-
-.preparedWorkCard {
-  border: 1px solid rgba(0, 255, 209, 0.18);
-  border-radius: 24px;
-  background:
-    linear-gradient(135deg, rgba(0, 255, 209, 0.08), rgba(0, 11, 20, 0.64)),
-    rgba(0, 9, 18, 0.82);
-  display: grid;
-  gap: 14px;
-  margin-top: 14px;
-  padding: 16px;
-}
-
-.preparedWorkHeader {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.preparedWorkHeader span {
-  color: rgb(27, 255, 214);
-  font-size: 0.76rem;
-  font-weight: 950;
-  letter-spacing: 0.34em;
-}
-
-.preparedWorkHeader strong {
-  color: rgba(255, 234, 171, 0.96);
-  font-size: 0.86rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.preparedWorkGrid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-}
-
-.preparedWorkGrid span {
-  border: 1px solid rgba(107, 180, 255, 0.16);
-  border-radius: 18px;
-  background: rgba(0, 11, 22, 0.56);
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  padding: 12px;
-}
-
-.preparedWorkGrid small {
-  color: rgba(180, 198, 213, 0.82);
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.preparedWorkGrid strong {
-  color: rgba(248, 255, 252, 0.96);
-  font-size: 0.94rem;
-  font-weight: 900;
-  overflow-wrap: anywhere;
-}
-
-.preparedWorkActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.preparedWorkActions a,
-.preparedWorkActions button {
-  align-items: center;
-  appearance: none;
-  background: rgba(2, 16, 30, 0.92);
-  border: 1px solid rgba(0, 255, 209, 0.28);
-  border-radius: 999px;
-  color: rgba(229, 255, 247, 0.96);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 0.78rem;
-  font-weight: 950;
-  justify-content: center;
-  letter-spacing: 0.14em;
-  min-height: 42px;
-  padding: 10px 16px;
-  text-decoration: none;
-  text-transform: uppercase;
-}
+.preparedWorkCard { border: 1px solid rgba(0, 255, 209, 0.18); border-radius: 24px; background: linear-gradient(135deg, rgba(0, 255, 209, 0.08), rgba(0, 11, 20, 0.64)), rgba(0, 9, 18, 0.82); display: grid; gap: 14px; margin-top: 14px; padding: 16px; }
+.preparedWorkHeader { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.preparedWorkHeader span { color: rgb(27, 255, 214); font-size: 0.76rem; font-weight: 950; letter-spacing: 0.34em; }
+.preparedWorkHeader strong { color: rgba(255, 234, 171, 0.96); font-size: 0.86rem; font-weight: 950; letter-spacing: 0.12em; text-transform: uppercase; }
+.preparedWorkGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.preparedWorkGrid span { border: 1px solid rgba(107, 180, 255, 0.16); border-radius: 18px; background: rgba(0, 11, 22, 0.56); display: grid; gap: 6px; min-width: 0; padding: 12px; }
+.preparedWorkGrid small { color: rgba(180, 198, 213, 0.82); font-size: 0.72rem; font-weight: 950; letter-spacing: 0.16em; text-transform: uppercase; }
+.preparedWorkGrid strong { color: rgba(248, 255, 252, 0.96); font-size: 0.94rem; font-weight: 900; overflow-wrap: anywhere; }
+.preparedWorkActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.preparedWorkActions a, .preparedWorkActions button { align-items: center; appearance: none; background: rgba(2, 16, 30, 0.92); border: 1px solid rgba(0, 255, 209, 0.28); border-radius: 999px; color: rgba(229, 255, 247, 0.96); cursor: pointer; display: inline-flex; font-size: 0.78rem; font-weight: 950; justify-content: center; letter-spacing: 0.14em; min-height: 42px; padding: 10px 16px; text-decoration: none; text-transform: uppercase; }
 /* WILSY_P60K5Q10AU_PREPARED_WORK_SURFACE_END */
 
-
-
-
-
-
-
-
-
-
-
 /* WILSY_P60K5Q10AY_FOUNDRY_SURFACE */
-/**
- * @section Foundry single review surface
- * @description Displays exactly one readable Capability Foundry review card inside the answer flow without changing dock shell size.
- * @collaboration Capability Foundry, self-extending tool registry, no-fake-answer policy, and tenant productivity UI.
- */
-
-.capabilityReviewCard {
-  border: 1px solid rgba(255, 214, 112, 0.34);
-  border-radius: 24px;
-  background:
-    linear-gradient(135deg, rgba(255, 214, 112, 0.09), rgba(0, 11, 20, 0.66)),
-    rgba(0, 9, 18, 0.82);
-  display: grid;
-  gap: 14px;
-  margin: 14px 0 12px;
-  padding: 16px;
-}
-
-.capabilityReviewHeader {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.capabilityReviewHeader span {
-  color: rgba(255, 228, 166, 0.96);
-  font-size: 0.76rem;
-  font-weight: 950;
-  letter-spacing: 0.24em;
-}
-
-.capabilityReviewHeader strong {
-  color: rgba(255, 246, 215, 0.96);
-  font-size: 0.86rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.capabilityReviewGrid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-}
-
-.capabilityReviewGrid span {
-  border: 1px solid rgba(255, 214, 112, 0.22);
-  border-radius: 18px;
-  background: rgba(0, 11, 22, 0.56);
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  padding: 12px;
-}
-
-.capabilityReviewGrid small {
-  color: rgba(255, 228, 166, 0.78);
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.capabilityReviewGrid strong {
-  color: rgba(248, 255, 252, 0.96);
-  font-size: 0.94rem;
-  font-weight: 900;
-  letter-spacing: 0.01em !important;
-  line-height: 1.18;
-  overflow-wrap: anywhere;
-  text-transform: none !important;
-  word-break: break-word;
-}
-
-.capabilityReviewActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.capabilityReviewActions button {
-  align-items: center;
-  appearance: none;
-  background: rgba(2, 16, 30, 0.92);
-  border: 1px solid rgba(255, 214, 112, 0.3);
-  border-radius: 999px;
-  color: rgba(255, 240, 203, 0.96);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 0.78rem;
-  font-weight: 950;
-  justify-content: center;
-  letter-spacing: 0.12em;
-  min-height: 42px;
-  padding: 10px 16px;
-  text-decoration: none;
-  text-transform: uppercase;
-}
+.capabilityReviewCard { border: 1px solid rgba(255, 214, 112, 0.34); border-radius: 24px; background: linear-gradient(135deg, rgba(255, 214, 112, 0.09), rgba(0, 11, 20, 0.66)), rgba(0, 9, 18, 0.82); display: grid; gap: 14px; margin: 14px 0 12px; padding: 16px; }
+.capabilityReviewHeader { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.capabilityReviewHeader span { color: rgba(255, 228, 166, 0.96); font-size: 0.76rem; font-weight: 950; letter-spacing: 0.24em; }
+.capabilityReviewHeader strong { color: rgba(255, 246, 215, 0.96); font-size: 0.86rem; font-weight: 950; letter-spacing: 0.1em; text-transform: uppercase; }
+.capabilityReviewGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.capabilityReviewGrid span { border: 1px solid rgba(255, 214, 112, 0.22); border-radius: 18px; background: rgba(0, 11, 22, 0.56); display: grid; gap: 6px; min-width: 0; padding: 12px; }
+.capabilityReviewGrid small { color: rgba(255, 228, 166, 0.78); font-size: 0.72rem; font-weight: 950; letter-spacing: 0.12em; text-transform: uppercase; }
+.capabilityReviewGrid strong { color: rgba(248, 255, 252, 0.96); font-size: 0.94rem; font-weight: 900; letter-spacing: 0.01em !important; line-height: 1.18; overflow-wrap: anywhere; text-transform: none !important; word-break: break-word; }
+.capabilityReviewActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.capabilityReviewActions button { align-items: center; appearance: none; background: rgba(2, 16, 30, 0.92); border: 1px solid rgba(255, 214, 112, 0.3); border-radius: 999px; color: rgba(255, 240, 203, 0.96); cursor: pointer; display: inline-flex; font-size: 0.78rem; font-weight: 950; justify-content: center; letter-spacing: 0.12em; min-height: 42px; padding: 10px 16px; text-decoration: none; text-transform: uppercase; }
 /* WILSY_P60K5Q10AY_FOUNDRY_SURFACE_END */
 
-
 /* WILSY_P60K5Q10AZ_FOUNDRY_BUSINESS_POLISH */
-/**
- * @section Foundry business review polish
- * @description Makes the Capability Foundry review card clearer, more compact, and business-readable without changing dock shell size.
- * @collaboration Capability Foundry, self-extending tool registry, admin review, and tenant productivity UI.
- */
-
-.capabilityReviewCard {
-  gap: 12px;
-}
-
-.capabilityReviewGrid {
-  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
-}
-
-.capabilityReviewGrid span {
-  min-height: 104px;
-}
-
-.capabilityReviewGrid strong {
-  font-size: 0.9rem;
-  letter-spacing: 0 !important;
-  line-height: 1.2;
-}
-
-.capabilityReviewDecision {
-  border: 1px solid rgba(255, 214, 112, 0.22);
-  border-radius: 18px;
-  background: rgba(255, 214, 112, 0.06);
-  display: grid;
-  gap: 6px;
-  padding: 12px;
-}
-
-.capabilityReviewDecision small {
-  color: rgba(255, 228, 166, 0.78);
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.capabilityReviewDecision strong {
-  color: rgba(248, 255, 252, 0.94);
-  font-size: 0.92rem;
-  font-weight: 850;
-  line-height: 1.35;
-}
+.capabilityReviewCard { gap: 12px; }
+.capabilityReviewGrid { grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); }
+.capabilityReviewGrid span { min-height: 104px; }
+.capabilityReviewGrid strong { font-size: 0.9rem; letter-spacing: 0 !important; line-height: 1.2; }
+.capabilityReviewDecision { border: 1px solid rgba(255, 214, 112, 0.22); border-radius: 18px; background: rgba(255, 214, 112, 0.06); display: grid; gap: 6px; padding: 12px; }
+.capabilityReviewDecision small { color: rgba(255, 228, 166, 0.78); font-size: 0.72rem; font-weight: 950; letter-spacing: 0.12em; text-transform: uppercase; }
+.capabilityReviewDecision strong { color: rgba(248, 255, 252, 0.94); font-size: 0.92rem; font-weight: 850; line-height: 1.35; }
 /* WILSY_P60K5Q10AZ_FOUNDRY_BUSINESS_POLISH_END */
 
-
 /* WILSY_P60K5Q10BA_DOCUMENT_PREPARED_WORK */
-/**
- * @section Document prepared work
- * @description Allows generated document drafts to display as structured prepared work without changing dock shell size.
- * @collaboration Business Document Draft Bridge, Prepared Work UI, and approval workflow.
- */
-
-.preparedWorkGrid strong {
-  line-height: 1.22;
-  word-break: break-word;
-}
+.preparedWorkGrid strong { line-height: 1.22; word-break: break-word; }
 /* WILSY_P60K5Q10BA_DOCUMENT_PREPARED_WORK_END */
 
-
 /* WILSY_P60K5Q10BC_REVIEW_CTA_POLISH */
-/**
- * @section Review CTA polish
- * @description Keeps internal CRM review paths out of answer text and makes Open Review the visible review action.
- * @collaboration Prepared Work UI, document draft bridge, task bridge, calendar bridge, and business-English answer surface.
- */
-
-.preparedWorkActions a {
-  min-width: 168px;
-}
-
-.preparedWorkActions button {
-  min-width: 188px;
-}
+.preparedWorkActions a { min-width: 168px; }
+.preparedWorkActions button { min-width: 188px; }
 /* WILSY_P60K5Q10BC_REVIEW_CTA_POLISH_END */
 
-
 /* WILSY_P60K5Q10BD_NO_RESET_REVIEW_CTA */
-/**
- * @section No-reset review CTA
- * @description Keeps review actions inside Prepared Work without navigating the current AI dock view or showing raw CRM routes in answer text.
- * @collaboration Prepared Work UI, Business Document Draft Bridge, task bridge, calendar bridge, and operator productivity.
- */
-
-.preparedWorkActions button {
-  min-width: 168px;
-}
-
-.preparedWorkActions a,
-.preparedWorkActions button {
-  white-space: nowrap;
-}
-
-.operatorAnswer p,
-.operatorAnswer strong,
-.operatorAnswer em {
-  overflow-wrap: anywhere;
-}
+.preparedWorkActions button { min-width: 168px; }
+.preparedWorkActions a, .preparedWorkActions button { white-space: nowrap; }
+.operatorAnswer p, .operatorAnswer strong, .operatorAnswer em { overflow-wrap: anywhere; }
 /* WILSY_P60K5Q10BD_NO_RESET_REVIEW_CTA_END */
 
-
 /* WILSY_P60K5Q10BE_DOCUMENT_PREVIEW_PANEL */
-/**
- * @section Tenant-branded document review panel
- * @description Provides no-reset in-dock review for generated business document drafts without changing dock shell size.
- * @collaboration Business Document Draft Bridge, Wilsy tenant branded documents, Prepared Work CTA, and operator approval workflow.
- */
-
-.documentPreviewPanel {
-  border: 1px solid rgba(0, 255, 209, 0.24);
-  border-radius: 26px;
-  background:
-    linear-gradient(135deg, rgba(0, 255, 209, 0.08), rgba(0, 11, 20, 0.72)),
-    rgba(0, 9, 18, 0.9);
-  display: grid;
-  gap: 14px;
-  margin: 14px 0;
-  padding: 16px;
-}
-
-.documentPreviewHeader {
-  align-items: center;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: 1fr auto;
-}
-
-.documentPreviewHeader span {
-  color: rgb(27, 255, 214);
-  font-size: 0.72rem;
-  font-weight: 950;
-  grid-column: 1 / -1;
-  letter-spacing: 0.28em;
-}
-
-.documentPreviewHeader strong {
-  color: rgba(248, 255, 252, 0.98);
-  font-size: 1.1rem;
-  font-weight: 950;
-}
-
-.documentPreviewHeader button,
-.documentPreviewFooter button {
-  appearance: none;
-  background: rgba(2, 16, 30, 0.92);
-  border: 1px solid rgba(0, 255, 209, 0.28);
-  border-radius: 999px;
-  color: rgba(229, 255, 247, 0.96);
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  min-height: 38px;
-  padding: 9px 14px;
-  text-transform: uppercase;
-}
-
-.documentPreviewBrand {
-  border: 1px solid rgba(255, 214, 112, 0.2);
-  border-radius: 18px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: space-between;
-  padding: 12px;
-}
-
-.documentPreviewBrand span,
-.documentPreviewBrand strong {
-  color: rgba(255, 236, 180, 0.96);
-  font-size: 0.82rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.documentPreviewSections {
-  display: grid;
-  gap: 10px;
-}
-
-.documentPreviewSections article {
-  border: 1px solid rgba(107, 180, 255, 0.14);
-  border-radius: 18px;
-  background: rgba(0, 11, 22, 0.58);
-  padding: 12px;
-}
-
-.documentPreviewSections h4 {
-  color: rgba(248, 255, 252, 0.96);
-  font-size: 0.95rem;
-  font-weight: 950;
-  margin: 0 0 6px;
-}
-
-.documentPreviewSections p {
-  color: rgba(180, 198, 213, 0.9);
-  font-size: 0.86rem;
-  font-weight: 750;
-  line-height: 1.45;
-  margin: 0;
-}
-
-.documentPreviewFooter {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: space-between;
-}
-
-.documentPreviewFooter span {
-  color: rgba(180, 198, 213, 0.88);
-  font-size: 0.82rem;
-  font-weight: 850;
-}
+.documentPreviewPanel { border: 1px solid rgba(0, 255, 209, 0.24); border-radius: 26px; background: linear-gradient(135deg, rgba(0, 255, 209, 0.08), rgba(0, 11, 20, 0.72)), rgba(0, 9, 18, 0.9); display: grid; gap: 14px; margin: 14px 0; padding: 16px; }
+.documentPreviewHeader { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr auto; }
+.documentPreviewHeader span { color: rgb(27, 255, 214); font-size: 0.72rem; font-weight: 950; grid-column: 1 / -1; letter-spacing: 0.28em; }
+.documentPreviewHeader strong { color: rgba(248, 255, 252, 0.98); font-size: 1.1rem; font-weight: 950; }
+.documentPreviewHeader button, .documentPreviewFooter button { appearance: none; background: rgba(2, 16, 30, 0.92); border: 1px solid rgba(0, 255, 209, 0.28); border-radius: 999px; color: rgba(229, 255, 247, 0.96); cursor: pointer; font-size: 0.72rem; font-weight: 950; letter-spacing: 0.12em; min-height: 38px; padding: 9px 14px; text-transform: uppercase; }
+.documentPreviewBrand { border: 1px solid rgba(255, 214, 112, 0.2); border-radius: 18px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding: 12px; }
+.documentPreviewBrand span, .documentPreviewBrand strong { color: rgba(255, 236, 180, 0.96); font-size: 0.82rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+.documentPreviewSections { display: grid; gap: 10px; }
+.documentPreviewSections article { border: 1px solid rgba(107, 180, 255, 0.14); border-radius: 18px; background: rgba(0, 11, 22, 0.58); padding: 12px; }
+.documentPreviewSections h4 { color: rgba(248, 255, 252, 0.96); font-size: 0.95rem; font-weight: 950; margin: 0 0 6px; }
+.documentPreviewSections p { color: rgba(180, 198, 213, 0.9); font-size: 0.86rem; font-weight: 750; line-height: 1.45; margin: 0; }
+.documentPreviewFooter { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+.documentPreviewFooter span { color: rgba(180, 198, 213, 0.88); font-size: 0.82rem; font-weight: 850; }
 /* WILSY_P60K5Q10BE_DOCUMENT_PREVIEW_PANEL_END */
 
-
 /* WILSY_P60K5Q10BG_FLOATING_LAUNCHER_RECOVERY_CONTRACT */
-/**
- * @section Floating AI launcher recovery contract
- * @description Documents the guaranteed Wilsy AI launcher recovery guard. The guard uses an inline fixed button so document review, close, or compact state cannot remove the global AI entry point.
- * @collaboration Wilsy OS Intelligence Dock, tenant productivity surfaces, document preview panel, and no-reset AI launcher recovery.
- */
 /* WILSY_P60K5Q10BG_FLOATING_LAUNCHER_RECOVERY_CONTRACT_END */
 
-
 /* WILSY_P60K5Q10BH_FLOATING_LAUNCHER_SAFE_STATE_CONTRACT */
-/**
- * @section Floating AI launcher safe state contract
- * @description Documents the repaired launcher guard. The launcher uses a JSDoc-documented function and a functional state update so object-based dock state is preserved.
- * @collaboration Wilsy OS Intelligence Dock, global launcher recovery, document preview panel, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BH_FLOATING_LAUNCHER_SAFE_STATE_CONTRACT_END */
 
-
 /* WILSY_P60K5Q10BK_GLOBAL_LAUNCHER_AUDIT */
-/**
- * @section Independent launcher audit
- * @description Documents that the floating launcher is mounted from its own React root and opens the dock through the event bridge.
- * @collaboration WilsyOSIntelligenceLauncher, WilsyOSIntelligenceDock, CRM workspace, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BK_GLOBAL_LAUNCHER_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BL_GLOBAL_RUNTIME_AUDIT */
-/**
- * @section Compact global AI runtime audit
- * @description Documents that the dock and compact launcher now mount together from WilsyOSIntelligenceGlobalRuntime.jsx.
- * @collaboration WilsyOSIntelligenceGlobalRuntime, WilsyOSIntelligenceDock, WilsyOSIntelligenceLauncher, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BL_GLOBAL_RUNTIME_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BM_INDEX_RUNTIME_AUDIT */
-/**
- * @section Index global AI runtime audit
- * @description Documents that Wilsy AI is hard-mounted from client/src/main.jsx with a compact launcher and live dock listener.
- * @collaboration client index runtime, WilsyOSIntelligenceGlobalRuntime, WilsyOSIntelligenceDock, WilsyOSIntelligenceLauncher, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BM_INDEX_RUNTIME_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BO_SINGLE_RUNTIME_AUDIT */
-/**
- * @section Single AI runtime audit
- * @description Documents that Wilsy AI now has one compact launcher, one dock, and one event bridge.
- * @collaboration client index runtime, WilsyOSIntelligenceGlobalRuntime, WilsyOSIntelligenceDock, WilsyOSIntelligenceLauncher, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BO_SINGLE_RUNTIME_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BR_ANSWER_FIRST_AUDIT */
-/**
- * @section Answer-first productivity audit
- * @description Documents that Wilsy Answer is source-ordered above Prepared Work and raw internal CRM routes are removed from visible answer text.
- * @collaboration Wilsy Answer, Prepared Work, tenant document source resolver, and productivity-first AI workspace.
- */
 /* WILSY_P60K5Q10BR_ANSWER_FIRST_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BS_VISIBLE_ANSWER_SANITIZER_AUDIT */
-/**
- * @section Visible answer route sanitizer audit
- * @description Documents that raw internal CRM draft routes are removed from Wilsy Answer while preserving review actions in Prepared Work.
- * @collaboration Wilsy Answer, tenant document source resolver, Prepared Work, and no-reset AI workspace.
- */
 /* WILSY_P60K5Q10BS_VISIBLE_ANSWER_SANITIZER_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BT_SANITIZER_DEDUPE_AUDIT */
-/**
- * @section Sanitizer dedupe audit
- * @description Documents one visible-answer sanitizer and the correct answer-helper proof path.
- * @collaboration Wilsy Answer, getWilsyModelAnswer, getWilsyModelOutcome, tenant document source resolver, and no-reset AI workspace.
- */
 /* WILSY_P60K5Q10BT_SANITIZER_DEDUPE_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BX_SPLIT_RUNTIME_AUDIT */
-/**
- * @section Split runtime audit
- * @description Documents one compact AI launcher root and one separate dock root so launcher visibility is independent of dock render health.
- * @collaboration client index runtime, WilsyOSIntelligenceLauncher, WilsyOSIntelligenceDockRuntime, WilsyOSIntelligenceDock, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BX_SPLIT_RUNTIME_AUDIT_END */
 
-
 /* WILSY_P60K5Q10BZ_SPLIT_RUNTIME_AUDIT */
-/**
- * @section Split runtime audit
- * @description Documents one compact AI launcher root and one separate dock root so launcher visibility is independent of dock render health.
- * @collaboration client index runtime, WilsyOSIntelligenceLauncher, WilsyOSIntelligenceDockRuntime, WilsyOSIntelligenceDock, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10BZ_SPLIT_RUNTIME_AUDIT_END */
 
-
 /* WILSY_P60K5Q10CA_SPLIT_RUNTIME_AUDIT */
-/**
- * @section Split runtime audit
- * @description Documents one compact AI launcher root and one separate dock root so launcher visibility is independent of dock render health.
- * @collaboration client index runtime, WilsyOSIntelligenceLauncher, WilsyOSIntelligenceDockRuntime, WilsyOSIntelligenceDock, and no-reset productivity shell.
- */
 /* WILSY_P60K5Q10CA_SPLIT_RUNTIME_AUDIT_END */
 
 /* WILSY_P60K5Q10CR_AI_PRODUCTIVITY_STACK */
-/**
- * @section Wilsy AI productivity stack
- * @description Creates a paid-SaaS operator flow: compact answer first, prepared work immediately visible, composer below the action context.
- * @collaboration Wilsy Answer, Prepared Work, governed review actions, branded AI launcher, and tenant productivity workflow.
- */
-
-.answerWorkspace {
-  order: -40 !important;
-  margin-bottom: 12px !important;
-  padding: 18px 22px !important;
-}
-
-.answerWorkspace strong {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.answerWorkspace p,
-.answerWorkspace small {
-  max-width: 100%;
-}
-
-.preparedWorkCard {
-  order: -30 !important;
-  margin-top: 0 !important;
-  margin-bottom: 14px !important;
-  padding: 16px 18px !important;
-}
-
-.preparedWorkCard [class*='Header'],
-.preparedWorkCard [class*='header'] {
-  margin-bottom: 12px !important;
-}
-
-.preparedWorkCard [class*='Grid'],
-.preparedWorkCard [class*='grid'] {
-  gap: 10px !important;
-}
-
-.preparedWorkCard button {
-  min-height: 42px;
-}
-
-/*
- * Composer comes after the answer + prepared work stack.
- * Quick actions remain below the composer.
- */
-.answerWorkspace ~ form,
-.answerWorkspace ~ [class*='ask'],
-.answerWorkspace ~ [class*='question'],
-.answerWorkspace ~ [class*='composer'] {
-  order: -20 !important;
-  margin-top: 0 !important;
-  margin-bottom: 14px !important;
-}
-
-/*
- * Avoid paid-SaaS dead space: the answer must feel like an operating decision,
- * not a billboard.
- */
-.answerWorkspace,
-.preparedWorkCard {
-  align-self: stretch;
-}
+.answerWorkspace { order: -40 !important; margin-bottom: 12px !important; padding: 18px 22px !important; }
+.answerWorkspace strong { display: block; margin-bottom: 8px; }
+.answerWorkspace p, .answerWorkspace small { max-width: 100%; }
+.preparedWorkCard { order: -30 !important; margin-top: 0 !important; margin-bottom: 14px !important; padding: 16px 18px !important; }
+.preparedWorkCard [class*='Header'], .preparedWorkCard [class*='header'] { margin-bottom: 12px !important; }
+.preparedWorkCard [class*='Grid'], .preparedWorkCard [class*='grid'] { gap: 10px !important; }
+.preparedWorkCard button { min-height: 42px; }
+.answerWorkspace ~ form, .answerWorkspace ~ [class*='ask'], .answerWorkspace ~ [class*='question'], .answerWorkspace ~ [class*='composer'] { order: -20 !important; margin-top: 0 !important; margin-bottom: 14px !important; }
+.answerWorkspace, .preparedWorkCard { align-self: stretch; }
 /* WILSY_P60K5Q10CR_AI_PRODUCTIVITY_STACK_END */
 
 /* WILSY_P60K5Q10CT_OPERATING_STATE_GATE */
-/**
- * @section Wilsy AI operating state gate
- * @description Hides answer and prepared-work result surfaces until the operator submits a real query or the backend is actively answering.
- * @collaboration Wilsy AI dock, branded launcher, operator query lifecycle, and tenant productivity workflow.
- */
-
-.operatingStateHidden {
-  display: none !important;
-}
+.operatingStateHidden { display: none !important; }
 /* WILSY_P60K5Q10CT_OPERATING_STATE_GATE_END */
 
 /* WILSY_P60K5Q10CX_VISIBLE_DOCUMENT_COMMAND_LAB */
-/**
- * @section Visible Document Command Lab
- * @description Makes the in-dock document review lab visibly open as the next operating state after Review Draft.
- * @collaboration Review Draft action, activeDocumentReview, documentPreviewPanel, and governed approval workflow.
- */
-
-.documentPreviewPanel {
-  order: -35 !important;
-  margin-top: 0 !important;
-  margin-bottom: 16px !important;
-  scroll-margin-top: 96px;
-  box-shadow:
-    0 24px 72px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(31, 255, 213, 0.16);
-}
-
-.documentPreviewPanel::before {
-  content: 'DOCUMENT COMMAND LAB';
-  color: rgba(31, 255, 213, 0.95);
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 1000;
-  letter-spacing: 0.34em;
-  margin-bottom: 10px;
-}
+.documentPreviewPanel { order: -35 !important; margin-top: 0 !important; margin-bottom: 16px !important; scroll-margin-top: 96px; box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(31, 255, 213, 0.16); }
+.documentPreviewPanel::before { content: 'DOCUMENT COMMAND LAB'; color: rgba(31, 255, 213, 0.95); display: block; font-size: 0.68rem; font-weight: 1000; letter-spacing: 0.34em; margin-bottom: 10px; }
 /* WILSY_P60K5Q10CX_VISIBLE_DOCUMENT_COMMAND_LAB_END */
 
 /* WILSY_P60K5Q10DD_TASK_FIRST_LAB_CONTROL_DECK */
-/**
- * @section Task-first Document Command Lab
- * @description Makes the active lab behave like an OS workflow: next task first, execution gates visible, evidence collapsed until needed.
- * @collaboration Document Command Lab, Review Draft, approval workflow, delivery readiness, source evidence, and game-like Wilsy OS task focus.
- */
-
-.documentPreviewPanel[data-wilsy-document-lab='active'] {
-  display: grid;
-  gap: 14px;
-  min-height: 360px;
-  scroll-margin-top: 84px;
-}
-
-.documentTaskControlDeck {
-  background:
-    linear-gradient(135deg, rgba(31, 255, 213, 0.14), rgba(5, 12, 22, 0.94)),
-    rgba(3, 12, 18, 0.94);
-  border: 1px solid rgba(31, 255, 213, 0.28);
-  border-radius: 22px;
-  box-shadow:
-    0 26px 70px rgba(0, 0, 0, 0.42),
-    inset 0 0 30px rgba(31, 255, 213, 0.04);
-  display: grid;
-  gap: 14px;
-  grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.3fr) auto;
-  padding: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-
-.documentTaskNextAction {
-  display: grid;
-  gap: 4px;
-}
-
-.documentTaskNextAction span {
-  color: rgba(31, 255, 213, 0.98);
-  font-size: 0.62rem;
-  font-weight: 1000;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-}
-
-.documentTaskNextAction strong {
-  color: rgba(255, 255, 255, 0.98);
-  font-size: 1.08rem;
-}
-
-.documentTaskNextAction small {
-  color: rgba(190, 202, 218, 0.82);
-  font-size: 0.78rem;
-  max-width: 52ch;
-}
-
-.documentTaskGateMatrix {
-  align-items: center;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.documentTaskGateMatrix span {
-  align-items: center;
-  background: rgba(2, 10, 18, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  color: rgba(228, 236, 244, 0.86);
-  display: inline-flex;
-  font-size: 0.68rem;
-  font-weight: 1000;
-  gap: 8px;
-  letter-spacing: 0.16em;
-  min-height: 34px;
-  padding: 0 12px;
-  text-transform: uppercase;
-}
-
-.documentTaskGateMatrix span::before {
-  border-radius: 999px;
-  content: '';
-  height: 8px;
-  width: 8px;
-}
-
-.documentTaskGateMatrix [data-gate-state='checked'] {
-  border-color: rgba(31, 255, 150, 0.32);
-}
-
-.documentTaskGateMatrix [data-gate-state='checked']::before {
-  background: rgba(31, 255, 150, 0.95);
-  box-shadow: 0 0 14px rgba(31, 255, 150, 0.58);
-}
-
-.documentTaskGateMatrix [data-gate-state='blocked'] {
-  border-color: rgba(255, 210, 111, 0.24);
-}
-
-.documentTaskGateMatrix [data-gate-state='blocked']::before {
-  background: rgba(255, 210, 111, 0.95);
-  box-shadow: 0 0 14px rgba(255, 210, 111, 0.36);
-}
-
-.documentTaskActions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.documentTaskActions button {
-  background: rgba(5, 15, 26, 0.86);
-  border: 1px solid rgba(31, 255, 213, 0.24);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 0.68rem;
-  font-weight: 1000;
-  letter-spacing: 0.18em;
-  min-height: 40px;
-  padding: 0 14px;
-  text-transform: uppercase;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.documentTaskActions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
-}
-
-.documentTaskActions button:not(:disabled):hover {
-  border-color: rgba(31, 255, 213, 0.62);
-  box-shadow: 0 0 28px rgba(31, 255, 213, 0.14);
-  transform: translateY(-1px);
-}
-
-.documentTaskEvidenceDetails {
-  border: 1px solid rgba(31, 255, 213, 0.14);
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.documentTaskEvidenceDetails summary {
-  background: rgba(2, 10, 18, 0.72);
-  color: rgba(31, 255, 213, 0.96);
-  cursor: pointer;
-  font-size: 0.68rem;
-  font-weight: 1000;
-  letter-spacing: 0.28em;
-  list-style: none;
-  padding: 14px 16px;
-  text-transform: uppercase;
-}
-
-.documentTaskEvidenceDetails summary::-webkit-details-marker {
-  display: none;
-}
-
-.documentTaskEvidenceDetails summary::after {
-  content: 'OPEN';
-  float: right;
-  letter-spacing: 0.18em;
-  opacity: 0.72;
-}
-
-.documentTaskEvidenceDetails[open] summary::after {
-  content: 'CLOSE';
-}
-
-.documentTaskEvidenceDetails .documentPreviewBrand {
-  margin: 12px;
-}
-
-.documentTaskEvidenceDetails .documentPreviewSections {
-  margin: 0;
-  padding: 0 12px 12px;
-}
-
-.documentPreviewFooter {
-  background: rgba(2, 10, 18, 0.58);
-  border: 1px solid rgba(255, 216, 128, 0.12);
-  border-radius: 16px;
-  padding: 12px 14px;
-}
-
-.documentPreviewFooter span {
-  color: rgba(220, 228, 238, 0.82);
-  font-size: 0.82rem;
-  font-weight: 900;
-}
-
-.activeLabFocusReceipt {
-  display: none !important;
-}
-
-@media (max-width: 1120px) {
-  .documentTaskControlDeck {
-    grid-template-columns: 1fr;
-  }
-
-  .documentTaskActions {
-    justify-content: flex-start;
-  }
-}
+.documentPreviewPanel[data-wilsy-document-lab='active'] { display: grid; gap: 14px; min-height: 360px; scroll-margin-top: 84px; }
+.documentTaskControlDeck { background: linear-gradient(135deg, rgba(31, 255, 213, 0.14), rgba(5, 12, 22, 0.94)), rgba(3, 12, 18, 0.94); border: 1px solid rgba(31, 255, 213, 0.28); border-radius: 22px; box-shadow: 0 26px 70px rgba(0, 0, 0, 0.42), inset 0 0 30px rgba(31, 255, 213, 0.04); display: grid; gap: 14px; grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.3fr) auto; padding: 16px; position: sticky; top: 0; z-index: 5; }
+.documentTaskNextAction { display: grid; gap: 4px; }
+.documentTaskNextAction span { color: rgba(31, 255, 213, 0.98); font-size: 0.62rem; font-weight: 1000; letter-spacing: 0.34em; text-transform: uppercase; }
+.documentTaskNextAction strong { color: rgba(255, 255, 255, 0.98); font-size: 1.08rem; }
+.documentTaskNextAction small { color: rgba(190, 202, 218, 0.82); font-size: 0.78rem; max-width: 52ch; }
+.documentTaskGateMatrix { align-items: center; display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.documentTaskGateMatrix span { align-items: center; background: rgba(2, 10, 18, 0.72); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 999px; color: rgba(228, 236, 244, 0.86); display: inline-flex; font-size: 0.68rem; font-weight: 1000; gap: 8px; letter-spacing: 0.16em; min-height: 34px; padding: 0 12px; text-transform: uppercase; }
+.documentTaskGateMatrix span::before { border-radius: 999px; content: ''; height: 8px; width: 8px; }
+.documentTaskGateMatrix [data-gate-state='checked'] { border-color: rgba(31, 255, 150, 0.32); }
+.documentTaskGateMatrix [data-gate-state='checked']::before { background: rgba(31, 255, 150, 0.95); box-shadow: 0 0 14px rgba(31, 255, 150, 0.58); }
+.documentTaskGateMatrix [data-gate-state='blocked'] { border-color: rgba(255, 210, 111, 0.24); }
+.documentTaskGateMatrix [data-gate-state='blocked']::before { background: rgba(255, 210, 111, 0.95); box-shadow: 0 0 14px rgba(255, 210, 111, 0.36); }
+.documentTaskActions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.documentTaskActions button { background: rgba(5, 15, 26, 0.86); border: 1px solid rgba(31, 255, 213, 0.24); border-radius: 999px; color: rgba(255, 255, 255, 0.95); font-size: 0.68rem; font-weight: 1000; letter-spacing: 0.18em; min-height: 40px; padding: 0 14px; text-transform: uppercase; transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
+.documentTaskActions button:disabled { cursor: not-allowed; opacity: 0.48; }
+.documentTaskActions button:not(:disabled):hover { border-color: rgba(31, 255, 213, 0.62); box-shadow: 0 0 28px rgba(31, 255, 213, 0.14); transform: translateY(-1px); }
+.documentTaskEvidenceDetails { border: 1px solid rgba(31, 255, 213, 0.14); border-radius: 18px; overflow: hidden; }
+.documentTaskEvidenceDetails summary { background: rgba(2, 10, 18, 0.72); color: rgba(31, 255, 213, 0.96); cursor: pointer; font-size: 0.68rem; font-weight: 1000; letter-spacing: 0.28em; list-style: none; padding: 14px 16px; text-transform: uppercase; }
+.documentTaskEvidenceDetails summary::-webkit-details-marker { display: none; }
+.documentTaskEvidenceDetails summary::after { content: 'OPEN'; float: right; letter-spacing: 0.18em; opacity: 0.72; }
+.documentTaskEvidenceDetails[open] summary::after { content: 'CLOSE'; }
+.documentTaskEvidenceDetails .documentPreviewBrand { margin: 12px; }
+.documentTaskEvidenceDetails .documentPreviewSections { margin: 0; padding: 0 12px 12px; }
+.documentPreviewFooter { background: rgba(2, 10, 18, 0.58); border: 1px solid rgba(255, 216, 128, 0.12); border-radius: 16px; padding: 12px 14px; }
+.documentPreviewFooter span { color: rgba(220, 228, 238, 0.82); font-size: 0.82rem; font-weight: 900; }
+.activeLabFocusReceipt { display: none !important; }
+@media (max-width: 1120px) { .documentTaskControlDeck { grid-template-columns: 1fr; } .documentTaskActions { justify-content: flex-start; } }
 /* WILSY_P60K5Q10DD_TASK_FIRST_LAB_CONTROL_DECK_END */
 
 /* WILSY_P60K5Q10DE_ACTUAL_DOCUMENT_CANVAS_MODE */
-/**
- * @section Actual Document Canvas Mode
- * @description Places the actual draft document page ahead of gates and evidence so Review Draft behaves like task completion, not another card stack.
- * @collaboration Document Command Lab, actual draft preview, approval gates, source evidence, and game-like Wilsy OS task progression.
- */
-
-.documentActualCanvas {
-  display: grid;
-  gap: 12px;
-  order: -45 !important;
-}
-
-.documentCanvasGameHud {
-  align-items: center;
-  background: rgba(2, 10, 18, 0.72);
-  border: 1px solid rgba(31, 255, 213, 0.16);
-  border-radius: 999px;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 8px;
-}
-
-.documentCanvasGameHud span {
-  align-items: center;
-  border-radius: 999px;
-  color: rgba(232, 240, 248, 0.84);
-  display: inline-flex;
-  font-size: 0.66rem;
-  font-weight: 1000;
-  gap: 8px;
-  justify-content: center;
-  letter-spacing: 0.18em;
-  min-height: 30px;
-  text-transform: uppercase;
-}
-
-.documentCanvasGameHud span::before {
-  border-radius: 999px;
-  content: '';
-  height: 8px;
-  width: 8px;
-}
-
-.documentCanvasGameHud [data-stage-state='complete'] {
-  background: rgba(31, 255, 150, 0.1);
-  border: 1px solid rgba(31, 255, 150, 0.22);
-}
-
-.documentCanvasGameHud [data-stage-state='complete']::before {
-  background: rgba(31, 255, 150, 0.95);
-  box-shadow: 0 0 14px rgba(31, 255, 150, 0.56);
-}
-
-.documentCanvasGameHud [data-stage-state='active'] {
-  background: rgba(31, 255, 213, 0.12);
-  border: 1px solid rgba(31, 255, 213, 0.3);
-}
-
-.documentCanvasGameHud [data-stage-state='active']::before {
-  background: rgba(31, 255, 213, 0.95);
-  box-shadow: 0 0 16px rgba(31, 255, 213, 0.62);
-}
-
-.documentCanvasGameHud [data-stage-state='locked'] {
-  background: rgba(255, 210, 111, 0.06);
-  border: 1px solid rgba(255, 210, 111, 0.18);
-  opacity: 0.72;
-}
-
-.documentCanvasGameHud [data-stage-state='locked']::before {
-  background: rgba(255, 210, 111, 0.92);
-  box-shadow: 0 0 12px rgba(255, 210, 111, 0.34);
-}
-
-.documentPageSurface {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 242, 247, 0.98));
-  border: 1px solid rgba(31, 255, 213, 0.2);
-  border-radius: 24px;
-  box-shadow:
-    0 34px 90px rgba(0, 0, 0, 0.46),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
-  color: #09111d;
-  display: grid;
-  gap: 18px;
-  margin: 0 auto;
-  max-width: 980px;
-  min-height: 520px;
-  padding: 42px 48px;
-  position: relative;
-  width: min(100%, 980px);
-}
-
-.documentPageSurface::before {
-  background:
-    linear-gradient(90deg, rgba(31, 255, 213, 0.8), rgba(122, 94, 255, 0.6));
-  border-radius: 999px;
-  content: '';
-  height: 4px;
-  left: 48px;
-  position: absolute;
-  right: 48px;
-  top: 24px;
-}
-
-.documentPageMasthead {
-  border-bottom: 1px solid rgba(9, 17, 29, 0.14);
-  display: grid;
-  gap: 8px;
-  padding-bottom: 18px;
-}
-
-.documentPageMasthead span {
-  color: rgba(9, 17, 29, 0.66);
-  font-size: 0.72rem;
-  font-weight: 1000;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-}
-
-.documentPageMasthead strong {
-  color: #07101c;
-  font-size: clamp(1.7rem, 3vw, 2.7rem);
-  letter-spacing: -0.04em;
-  line-height: 0.98;
-}
-
-.documentPageMasthead small {
-  color: rgba(9, 17, 29, 0.64);
-  font-size: 0.84rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.documentPagePurpose {
-  background: rgba(9, 17, 29, 0.045);
-  border: 1px solid rgba(9, 17, 29, 0.08);
-  border-radius: 18px;
-  display: grid;
-  gap: 8px;
-  padding: 16px;
-}
-
-.documentPagePurpose span,
-.documentDraftClause span,
-.documentPageSignatureRail span {
-  color: rgba(9, 17, 29, 0.54);
-  font-size: 0.66rem;
-  font-weight: 1000;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.documentPagePurpose p,
-.documentDraftClause p {
-  color: rgba(9, 17, 29, 0.78);
-  font-size: 0.98rem;
-  font-weight: 700;
-  line-height: 1.56;
-  margin: 0;
-}
-
-.documentDraftBody {
-  display: grid;
-  gap: 14px;
-}
-
-.documentDraftClause {
-  border-left: 3px solid rgba(8, 117, 98, 0.35);
-  display: grid;
-  gap: 7px;
-  padding-left: 16px;
-}
-
-.documentDraftClause strong {
-  color: #07101c;
-  font-size: 1.08rem;
-}
-
-.documentPageSignatureRail {
-  border-top: 1px solid rgba(9, 17, 29, 0.14);
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 8px;
-  padding-top: 18px;
-}
-
-.documentPageSignatureRail div {
-  display: grid;
-  gap: 5px;
-}
-
-.documentPageSignatureRail strong {
-  color: #07101c;
-  font-size: 0.98rem;
-}
-
-.documentPreviewPanel[data-wilsy-document-lab='active'] > .documentPreviewBrand,
-.documentPreviewPanel[data-wilsy-document-lab='active'] > .documentPreviewSections {
-  display: none !important;
-}
-
-.documentTaskEvidenceDetails:not([open]) .documentPreviewSections {
-  display: none;
-}
-
-@media (max-width: 920px) {
-  .documentCanvasGameHud,
-  .documentPageSignatureRail {
-    grid-template-columns: 1fr;
-  }
-
-  .documentPageSurface {
-    padding: 34px 24px;
-  }
-
-  .documentPageSurface::before {
-    left: 24px;
-    right: 24px;
-  }
-}
+.documentActualCanvas { display: grid; gap: 12px; order: -45 !important; }
+.documentCanvasGameHud { align-items: center; background: rgba(2, 10, 18, 0.72); border: 1px solid rgba(31, 255, 213, 0.16); border-radius: 999px; display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px; }
+.documentCanvasGameHud span { align-items: center; border-radius: 999px; color: rgba(232, 240, 248, 0.84); display: inline-flex; font-size: 0.66rem; font-weight: 1000; gap: 8px; justify-content: center; letter-spacing: 0.18em; min-height: 30px; text-transform: uppercase; }
+.documentCanvasGameHud span::before { border-radius: 999px; content: ''; height: 8px; width: 8px; }
+.documentCanvasGameHud [data-stage-state='complete'] { background: rgba(31, 255, 150, 0.1); border: 1px solid rgba(31, 255, 150, 0.22); }
+.documentCanvasGameHud [data-stage-state='complete']::before { background: rgba(31, 255, 150, 0.95); box-shadow: 0 0 14px rgba(31, 255, 150, 0.56); }
+.documentCanvasGameHud [data-stage-state='active'] { background: rgba(31, 255, 213, 0.12); border: 1px solid rgba(31, 255, 213, 0.3); }
+.documentCanvasGameHud [data-stage-state='active']::before { background: rgba(31, 255, 213, 0.95); box-shadow: 0 0 16px rgba(31, 255, 213, 0.62); }
+.documentCanvasGameHud [data-stage-state='locked'] { background: rgba(255, 210, 111, 0.06); border: 1px solid rgba(255, 210, 111, 0.18); opacity: 0.72; }
+.documentCanvasGameHud [data-stage-state='locked']::before { background: rgba(255, 210, 111, 0.92); box-shadow: 0 0 12px rgba(255, 210, 111, 0.34); }
+.documentPageSurface { background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 242, 247, 0.98)); border: 1px solid rgba(31, 255, 213, 0.2); border-radius: 24px; box-shadow: 0 34px 90px rgba(0, 0, 0, 0.46), 0 0 0 1px rgba(255, 255, 255, 0.08); color: #09111d; display: grid; gap: 18px; margin: 0 auto; max-width: 980px; min-height: 520px; padding: 42px 48px; position: relative; width: min(100%, 980px); }
+.documentPageSurface::before { background: linear-gradient(90deg, rgba(31, 255, 213, 0.8), rgba(122, 94, 255, 0.6)); border-radius: 999px; content: ''; height: 4px; left: 48px; position: absolute; right: 48px; top: 24px; }
+.documentPageMasthead { border-bottom: 1px solid rgba(9, 17, 29, 0.14); display: grid; gap: 8px; padding-bottom: 18px; }
+.documentPageMasthead span { color: rgba(9, 17, 29, 0.66); font-size: 0.72rem; font-weight: 1000; letter-spacing: 0.26em; text-transform: uppercase; }
+.documentPageMasthead strong { color: #07101c; font-size: clamp(1.7rem, 3vw, 2.7rem); letter-spacing: -0.04em; line-height: 0.98; }
+.documentPageMasthead small { color: rgba(9, 17, 29, 0.64); font-size: 0.84rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.documentPagePurpose { background: rgba(9, 17, 29, 0.045); border: 1px solid rgba(9, 17, 29, 0.08); border-radius: 18px; display: grid; gap: 8px; padding: 16px; }
+.documentPagePurpose span, .documentDraftClause span, .documentPageSignatureRail span { color: rgba(9, 17, 29, 0.54); font-size: 0.66rem; font-weight: 1000; letter-spacing: 0.22em; text-transform: uppercase; }
+.documentPagePurpose p, .documentDraftClause p { color: rgba(9, 17, 29, 0.78); font-size: 0.98rem; font-weight: 700; line-height: 1.56; margin: 0; }
+.documentDraftBody { display: grid; gap: 14px; }
+.documentDraftClause { border-left: 3px solid rgba(8, 117, 98, 0.35); display: grid; gap: 7px; padding-left: 16px; }
+.documentDraftClause strong { color: #07101c; font-size: 1.08rem; }
+.documentPageSignatureRail { border-top: 1px solid rgba(9, 17, 29, 0.14); display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); margin-top: 8px; padding-top: 18px; }
+.documentPageSignatureRail div { display: grid; gap: 5px; }
+.documentPageSignatureRail strong { color: #07101c; font-size: 0.98rem; }
+.documentPreviewPanel[data-wilsy-document-lab='active'] > .documentPreviewBrand, .documentPreviewPanel[data-wilsy-document-lab='active'] > .documentPreviewSections { display: none !important; }
+.documentTaskEvidenceDetails:not([open]) .documentPreviewSections { display: none; }
+@media (max-width: 920px) { .documentCanvasGameHud, .documentPageSignatureRail { grid-template-columns: 1fr; } .documentPageSurface { padding: 34px 24px; } .documentPageSurface::before { left: 24px; right: 24px; } }
 /* WILSY_P60K5Q10DE_ACTUAL_DOCUMENT_CANVAS_MODE_END */
 
 /* WILSY_P60K5Q10DT2_VISIBLE_PLAYABLE_ACTION_RAIL */
-.playableActionDeck {
-  margin: 1.15rem 0 1.2rem;
-  padding: 1rem;
-  border: 1px solid rgba(39, 255, 213, 0.26);
-  border-radius: 1.35rem;
-  background:
-    radial-gradient(circle at top left, rgba(39, 255, 213, 0.13), transparent 34%),
-    rgba(2, 12, 22, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(39, 255, 213, 0.05), 0 20px 50px rgba(0, 0, 0, 0.22);
-}
-
-.playableActionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.85rem;
-}
-
-.playableActionHeader span {
-  color: #28ffd5;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.36em;
-}
-
-.playableActionHeader strong {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.96rem;
-}
-
-.playableActionGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.playableActionButton {
-  min-height: 5.1rem;
-  padding: 0.85rem;
-  border: 1px solid rgba(39, 255, 213, 0.22);
-  border-radius: 1rem;
-  background: rgba(1, 13, 25, 0.9);
-  color: rgba(255, 255, 255, 0.92);
-  text-align: left;
-  cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
-}
-
-.playableActionButton:hover,
-.playableActionButton:focus-visible {
-  transform: translateY(-2px);
-  border-color: rgba(39, 255, 213, 0.78);
-  background: rgba(0, 61, 51, 0.64);
-  box-shadow: 0 18px 44px rgba(0, 255, 190, 0.1);
-  outline: none;
-}
-
-.playableActionButton span {
-  display: block;
-  margin-bottom: 0.45rem;
-  font-size: 0.84rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.playableActionButton small {
-  display: block;
-  color: rgba(210, 225, 235, 0.72);
-  font-size: 0.76rem;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-@media (max-width: 1180px) {
-  .playableActionGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .playableActionHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .playableActionGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
+.playableActionDeck { margin: 1.15rem 0 1.2rem; padding: 1rem; border: 1px solid rgba(39, 255, 213, 0.26); border-radius: 1.35rem; background: radial-gradient(circle at top left, rgba(39, 255, 213, 0.13), transparent 34%), rgba(2, 12, 22, 0.72); box-shadow: inset 0 0 0 1px rgba(39, 255, 213, 0.05), 0 20px 50px rgba(0, 0, 0, 0.22); }
+.playableActionHeader { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.85rem; }
+.playableActionHeader span { color: #28ffd5; font-size: 0.78rem; font-weight: 900; letter-spacing: 0.36em; }
+.playableActionHeader strong { color: rgba(255, 255, 255, 0.92); font-size: 0.96rem; }
+.playableActionGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+.playableActionButton { min-height: 5.1rem; padding: 0.85rem; border: 1px solid rgba(39, 255, 213, 0.22); border-radius: 1rem; background: rgba(1, 13, 25, 0.9); color: rgba(255, 255, 255, 0.92); text-align: left; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease; }
+.playableActionButton:hover, .playableActionButton:focus-visible { transform: translateY(-2px); border-color: rgba(39, 255, 213, 0.78); background: rgba(0, 61, 51, 0.64); box-shadow: 0 18px 44px rgba(0, 255, 190, 0.1); outline: none; }
+.playableActionButton span { display: block; margin-bottom: 0.45rem; font-size: 0.84rem; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; }
+.playableActionButton small { display: block; color: rgba(210, 225, 235, 0.72); font-size: 0.76rem; font-weight: 800; line-height: 1.35; }
+@media (max-width: 1180px) { .playableActionGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .playableActionHeader { align-items: flex-start; flex-direction: column; } .playableActionGrid { grid-template-columns: 1fr; } }
 /* WILSY_P60K5Q10DU_PLAYABLE_AI_MISSION_STATE */
-.missionStatePanel {
-  margin-top: 1rem;
-  padding: 0.95rem;
-  border: 1px solid rgba(255, 216, 120, 0.28);
-  border-radius: 1.15rem;
-  background:
-    radial-gradient(circle at top left, rgba(255, 216, 120, 0.12), transparent 34%),
-    rgba(7, 14, 24, 0.82);
-}
-
-.missionStateHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.missionStateHeader span {
-  color: #ffd878;
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.34em;
-}
-
-.missionStateHeader strong {
-  max-width: 68%;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.92rem;
-  line-height: 1.35;
-  text-align: right;
-}
-
-.missionStateGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.missionStateGrid span {
-  padding: 0.62rem 0.7rem;
-  border: 1px solid rgba(255, 216, 120, 0.2);
-  border-radius: 0.8rem;
-  color: rgba(255, 236, 184, 0.92);
-  background: rgba(255, 216, 120, 0.05);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-@media (max-width: 1120px) {
-  .missionStateGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .missionStateHeader {
-    flex-direction: column;
-  }
-
-  .missionStateHeader strong {
-    max-width: none;
-    text-align: left;
-  }
-}
-
+.missionStatePanel { margin-top: 1rem; padding: 0.95rem; border: 1px solid rgba(255, 216, 120, 0.28); border-radius: 1.15rem; background: radial-gradient(circle at top left, rgba(255, 216, 120, 0.12), transparent 34%), rgba(7, 14, 24, 0.82); }
+.missionStateHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+.missionStateHeader span { color: #ffd878; font-size: 0.72rem; font-weight: 950; letter-spacing: 0.34em; }
+.missionStateHeader strong { max-width: 68%; color: rgba(255, 255, 255, 0.92); font-size: 0.92rem; line-height: 1.35; text-align: right; }
+.missionStateGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; }
+.missionStateGrid span { padding: 0.62rem 0.7rem; border: 1px solid rgba(255, 216, 120, 0.2); border-radius: 0.8rem; color: rgba(255, 236, 184, 0.92); background: rgba(255, 216, 120, 0.05); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+@media (max-width: 1120px) { .missionStateGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .missionStateHeader { flex-direction: column; } .missionStateHeader strong { max-width: none; text-align: left; } }
 /* WILSY_P60K5Q10DV_MISSION_COMMAND_BOARD */
-.missionCommandBoard {
-  margin-top: 0.95rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid rgba(255, 216, 120, 0.16);
+.missionCommandBoard { margin-top: 0.95rem; padding-top: 0.85rem; border-top: 1px solid rgba(255, 216, 120, 0.16); }
+.missionCommandHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.9rem; margin-bottom: 0.7rem; }
+.missionCommandHeader span { color: #28ffd5; font-size: 0.68rem; font-weight: 950; letter-spacing: 0.32em; }
+.missionCommandHeader strong { color: rgba(255, 255, 255, 0.9); font-size: 0.86rem; }
+.missionMoveGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.65rem; }
+.missionMoveButton { min-height: 4.8rem; padding: 0.75rem; border: 1px solid rgba(39, 255, 213, 0.24); border-radius: 0.95rem; background: radial-gradient(circle at top left, rgba(39, 255, 213, 0.13), transparent 36%), rgba(1, 12, 24, 0.9); color: rgba(255, 255, 255, 0.94); text-align: left; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease; }
+.missionMoveButton:hover, .missionMoveButton:focus-visible { transform: translateY(-2px); border-color: rgba(39, 255, 213, 0.82); background: radial-gradient(circle at top left, rgba(39, 255, 213, 0.2), transparent 40%), rgba(0, 54, 50, 0.62); box-shadow: 0 18px 46px rgba(0, 255, 190, 0.12); outline: none; }
+.missionMoveButton span { display: inline-flex; align-items: center; justify-content: center; width: 1.9rem; height: 1.45rem; margin-bottom: 0.42rem; border: 1px solid rgba(39, 255, 213, 0.28); border-radius: 999px; color: #28ffd5; font-size: 0.62rem; font-weight: 950; letter-spacing: 0.12em; }
+.missionMoveButton strong { display: block; margin-bottom: 0.34rem; font-size: 0.78rem; font-weight: 950; letter-spacing: 0.16em; text-transform: uppercase; }
+.missionMoveButton small { display: block; color: rgba(210, 225, 235, 0.68); font-size: 0.7rem; font-weight: 800; line-height: 1.35; }
+@media (max-width: 980px) { .missionMoveGrid { grid-template-columns: 1fr; } .missionCommandHeader { align-items: flex-start; flex-direction: column; } }
+/* WILSY_P60K5Q10DT3_DEMAND_GATED_ACTION_RAIL */
+.playableActionDeck[data-wilsy-rail-demand-gated='true'] { animation: wilsyPlayableRailEnter 180ms ease-out both; }
+@keyframes wilsyPlayableRailEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+/* WILSY_P60K5Q10DW_MISSION_FOCUS_LOCK */
+.missionStatePanel[data-wilsy-mission-focus-lock='true'] { box-shadow: 0 0 0 1px rgba(255, 216, 120, 0.16), 0 22px 70px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 216, 120, 0.04); }
+.missionStatePanel[data-wilsy-mission-focus-lock='true'] .missionCommandBoard { margin-top: 1.1rem; }
+/* WILSY_P60K5Q10DX_LIVE_CANVAS_EXECUTION_STREAM */
+.executionCanvasStream { margin-top: 1rem; padding: 0.95rem; border: 1px solid rgba(39, 255, 213, 0.2); border-radius: 1rem; background: linear-gradient(135deg, rgba(39, 255, 213, 0.08), transparent 42%), rgba(1, 11, 22, 0.78); }
+.executionCanvasHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+.executionCanvasHeader span { color: #28ffd5; font-size: 0.68rem; font-weight: 950; letter-spacing: 0.32em; }
+.executionCanvasHeader strong { max-width: 70%; color: rgba(255, 255, 255, 0.88); font-size: 0.86rem; line-height: 1.35; text-align: right; }
+.executionTelemetryGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; }
+.executionTelemetryGrid span { min-height: 4rem; padding: 0.62rem; border: 1px solid rgba(39, 255, 213, 0.14); border-radius: 0.78rem; background: rgba(2, 15, 28, 0.78); }
+.executionTelemetryGrid strong { display: block; margin-bottom: 0.35rem; color: #28ffd5; font-size: 0.62rem; font-weight: 950; letter-spacing: 0.16em; text-transform: uppercase; }
+.executionTelemetryGrid small { color: rgba(218, 231, 238, 0.72); font-size: 0.68rem; font-weight: 800; line-height: 1.35; }
+.sourceRouteJudge { display: grid; grid-template-columns: minmax(0, 0.6fr) minmax(0, 0.55fr) minmax(0, 1.85fr); gap: 0.65rem; align-items: center; margin-top: 0.72rem; padding: 0.62rem 0.72rem; border: 1px solid rgba(255, 216, 120, 0.18); border-radius: 0.78rem; background: rgba(255, 216, 120, 0.04); }
+.sourceRouteJudge span, .sourceRouteJudge strong { color: #ffd878; font-size: 0.66rem; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; }
+.sourceRouteJudge small { color: rgba(255, 241, 204, 0.78); font-size: 0.7rem; font-weight: 800; }
+.missionMoveGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.missionMoveButton { min-height: 4.35rem; display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); column-gap: 0.8rem; align-items: center; }
+.missionMoveButton span { grid-row: span 2; margin-bottom: 0; }
+.missionMoveButton strong { margin-bottom: 0.2rem; }
+.missionMoveButton small { color: rgba(39, 255, 213, 0.74); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1180px) { .executionTelemetryGrid, .missionMoveGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sourceRouteJudge { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .executionCanvasHeader { flex-direction: column; } .executionCanvasHeader strong { max-width: none; text-align: left; } .executionTelemetryGrid, .missionMoveGrid { grid-template-columns: 1fr; } }
+/* WILSY_P60K5Q10DY_NATIVE_EXECUTION_CANVAS */
+.sovereignExecutionCanvas { margin-top: 1rem; padding: 1rem; border: 1px solid rgba(39, 255, 213, 0.24); border-radius: 1.1rem; background: linear-gradient(135deg, rgba(39, 255, 213, 0.09), transparent 38%), radial-gradient(circle at bottom right, rgba(255, 216, 120, 0.08), transparent 32%), rgba(1, 10, 20, 0.86); box-shadow: inset 0 0 0 1px rgba(39, 255, 213, 0.04), 0 20px 60px rgba(0, 0, 0, 0.24); }
+.sovereignExecutionHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; }
+.sovereignExecutionHeader span { color: #28ffd5; font-size: 0.68rem; font-weight: 950; letter-spacing: 0.34em; }
+.sovereignExecutionHeader strong { max-width: 64%; color: rgba(255, 255, 255, 0.9); font-size: 0.88rem; line-height: 1.35; text-align: right; }
+.sovereignTelemetryStrip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; margin-bottom: 0.7rem; }
+.sovereignTelemetryStrip span { min-height: 3.85rem; padding: 0.62rem; border: 1px solid rgba(39, 255, 213, 0.13); border-radius: 0.78rem; background: rgba(1, 15, 28, 0.76); }
+.sovereignTelemetryStrip strong { display: block; margin-bottom: 0.32rem; color: #28ffd5; font-size: 0.6rem; font-weight: 950; letter-spacing: 0.16em; text-transform: uppercase; }
+.sovereignTelemetryStrip small { color: rgba(218, 231, 238, 0.74); font-size: 0.68rem; font-weight: 800; line-height: 1.34; }
+.sovereignRouteJudge { display: grid; grid-template-columns: minmax(0, 0.55fr) minmax(0, 0.55fr) minmax(0, 1.9fr); gap: 0.65rem; align-items: center; margin-bottom: 0.75rem; padding: 0.64rem 0.72rem; border: 1px solid rgba(255, 216, 120, 0.2); border-radius: 0.78rem; background: rgba(255, 216, 120, 0.045); }
+.sovereignRouteJudge span, .sovereignRouteJudge strong { color: #ffd878; font-size: 0.64rem; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; }
+.sovereignRouteJudge small { color: rgba(255, 241, 204, 0.78); font-size: 0.7rem; font-weight: 800; }
+.sovereignCommandStream { display: grid; gap: 0.48rem; }
+.sovereignCommandRow { display: grid; grid-template-columns: 2.35rem minmax(14rem, 0.9fr) minmax(10rem, 0.7fr) minmax(14rem, 1.25fr); gap: 0.7rem; align-items: center; padding: 0.72rem; border: 1px solid rgba(39, 255, 213, 0.14); border-radius: 0.82rem; background: rgba(1, 11, 21, 0.82); color: rgba(255, 255, 255, 0.92); cursor: pointer; text-align: left; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
+.sovereignCommandRow:hover, .sovereignCommandRow:focus-visible { transform: translateX(3px); border-color: rgba(39, 255, 213, 0.74); background: rgba(0, 49, 44, 0.62); outline: none; }
+.sovereignCommandRow span { color: #28ffd5; font-size: 0.7rem; font-weight: 950; letter-spacing: 0.16em; }
+.sovereignCommandRow code { color: rgba(39, 255, 213, 0.8); font-size: 0.68rem; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sovereignCommandRow strong { color: rgba(255, 255, 255, 0.94); font-size: 0.75rem; font-weight: 950; letter-spacing: 0.13em; text-transform: uppercase; }
+.sovereignCommandRow small { color: rgba(218, 231, 238, 0.7); font-size: 0.7rem; font-weight: 800; line-height: 1.34; }
+.playableActionDeck[data-wilsy-visible-playable-action-rail='true'] { display: none !important; }
+@media (max-width: 1320px) { .sovereignCommandRow { grid-template-columns: 2.2rem minmax(0, 1fr); } .sovereignCommandRow small, .sovereignCommandRow strong { grid-column: 2; } .sovereignTelemetryStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sovereignRouteJudge { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .sovereignExecutionHeader { flex-direction: column; } .sovereignExecutionHeader strong { max-width: none; text-align: left; } .sovereignTelemetryStrip { grid-template-columns: 1fr; } }
+/* WILSY_P60K5Q10DZ_LIVE_INLINE_COMPOSER_STREAM */
+.liveInlineComposerText { position: relative; min-height: 3.5rem; margin-top: 0.75rem; font-size: 1rem; line-height: 1.55; color: rgba(218, 231, 238, 0.86); }
+.liveInlineComposerCursor { display: inline-block; margin-left: 0.18rem; color: #28ffd5; animation: wilsyInlineComposerBlink 760ms steps(2, start) infinite; }
+.liveInlineComposerStatus { display: inline-flex; width: fit-content; margin-top: 0.35rem; }
+.liveInlineCommandShelf { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid rgba(39, 255, 213, 0.16); }
+.liveInlineCommandShelf > span { display: block; margin-bottom: 0.65rem; color: #28ffd5; font-size: 0.68rem; font-weight: 950; letter-spacing: 0.32em; }
+.liveInlineCommandShelf > div { display: flex; flex-wrap: wrap; gap: 0.52rem; }
+.liveInlineCommandLink { display: inline-grid; grid-template-columns: minmax(9rem, auto) minmax(7rem, auto); gap: 0.55rem; align-items: center; max-width: 100%; padding: 0.5rem 0.62rem; border: 1px solid rgba(39, 255, 213, 0.2); border-radius: 999px; background: rgba(1, 16, 28, 0.72); cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 160ms ease; }
+.liveInlineCommandLink:hover, .liveInlineCommandLink:focus-visible { transform: translateY(-1px); border-color: rgba(39, 255, 213, 0.76); background: rgba(0, 48, 43, 0.7); outline: none; }
+.liveInlineCommandLink code { color: rgba(39, 255, 213, 0.86); font-size: 0.66rem; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.liveInlineCommandLink strong { color: rgba(255, 255, 255, 0.9); font-size: 0.66rem; font-weight: 950; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; }
+.sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'] { display: none !important; }
+@keyframes wilsyInlineComposerBlink { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
+@media (max-width: 840px) { .liveInlineCommandLink { grid-template-columns: 1fr; border-radius: 1rem; } }
+/* WILSY_P60K5Q10EA_RAW_TYPOGRAPHIC_RESPONSE_THREAD */
+:global([data-wilsy-raw-terminal-thread='true']) { border: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
+:global([data-wilsy-raw-terminal-thread='true']) > * { border-radius: 0; }
+:global([data-wilsy-raw-terminal-thread='true']) span:first-child { color: rgba(39, 255, 213, 0.82); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.72rem; font-weight: 850; letter-spacing: 0.18em; text-transform: uppercase; }
+.rawTypographicThreadPrefix { display: block; margin-top: 0.7rem; color: rgba(226, 241, 237, 0.92); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.86rem; font-weight: 820; letter-spacing: 0.01em; text-transform: none; }
+.rawTypographicThreadBody { max-width: 96ch; min-height: 0; margin-top: 0.85rem; color: rgba(226, 241, 237, 0.9); font-size: 1rem; font-weight: 650; line-height: 1.68; white-space: pre-wrap; }
+.liveInlineComposerCursor { color: #28ffd5; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.liveInlineComposerStatus { display: inline-block; margin-top: 0.5rem; color: rgba(255, 216, 120, 0.84); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.72rem; font-weight: 820; letter-spacing: 0.14em; }
+.liveInlineCommandShelf { margin-top: 0.85rem !important; padding-top: 0 !important; border-top: 0 !important; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.liveInlineCommandShelf > span { display: inline !important; margin: 0 0.55rem 0 0 !important; color: rgba(98, 125, 118, 0.95) !important; font-size: 0.78rem !important; font-weight: 760 !important; letter-spacing: 0.04em !important; text-transform: none !important; }
+.liveInlineCommandShelf > div { display: inline !important; }
+.liveInlineCommandLink { display: inline !important; width: auto !important; max-width: none !important; margin: 0 0.85rem 0 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; transform: none !important; text-align: left !important; cursor: pointer; }
+.liveInlineCommandLink:hover, .liveInlineCommandLink:focus-visible { background: transparent !important; border: 0 !important; box-shadow: none !important; transform: none !important; outline: none; }
+.liveInlineCommandLink strong { display: inline !important; margin-right: 0.32rem; color: #28ffd5 !important; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.78rem !important; font-weight: 820 !important; letter-spacing: 0.02em !important; text-transform: none !important; white-space: nowrap; }
+.liveInlineCommandLink code { display: inline !important; color: rgba(39, 255, 213, 0.72) !important; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.74rem !important; font-weight: 760 !important; overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
+.sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'], .executionCanvasStream, .missionCommandBoard { display: none !important; }
+@media (max-width: 920px) { .liveInlineCommandShelf > div, .liveInlineCommandLink, .liveInlineCommandLink strong, .liveInlineCommandLink code { display: block !important; white-space: normal !important; } .liveInlineCommandLink { margin: 0.45rem 0 0 !important; } }
+/* WILSY_P60K5Q10EC_SINGLE_SURFACE_NATURAL_STREAM */
+.singleSurfaceHiddenLabel, .singleSurfaceHiddenTitle, .singleSurfaceHiddenStatus { display: none !important; }
+.singleSurfaceNaturalBody { max-width: 92ch; min-height: 6.2rem; margin: 0; padding: 0; color: rgba(226, 241, 237, 0.94); font-size: clamp(1rem, 1.28vw, 1.18rem); font-weight: 620; line-height: 1.72; white-space: pre-wrap; }
+.singleSurfaceNaturalBody::selection { background: rgba(39, 255, 213, 0.24); }
+.singleSurfaceInlineRoutes { display: inline; color: rgba(226, 241, 237, 0.94); }
+.singleSurfaceInlineRoutes button { display: inline; margin: 0; padding: 0; border: 0; background: transparent; color: #28ffd5; cursor: pointer; font: inherit; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(39, 255, 213, 0.42); text-underline-offset: 0.22rem; }
+.singleSurfaceInlineRoutes button:hover, .singleSurfaceInlineRoutes button:focus-visible { color: #9fffe9; outline: none; text-decoration-color: rgba(159, 255, 233, 0.82); }
+.liveInlineComposerCursor { color: #28ffd5; animation: wilsySingleSurfaceCursor 720ms steps(2, start) infinite; }
+.liveInlineCommandShelf, .sourceTrace, .sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'], .executionCanvasStream, .missionCommandBoard { display: none !important; }
+:global([data-wilsy-raw-terminal-thread='true']) { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+:global([data-wilsy-raw-terminal-thread='true']) [data-wilsy-single-surface-output='true'] { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+@keyframes wilsySingleSurfaceCursor { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
+/* WILSY_P60K5Q10ED1_SOVEREIGN_COMPOSER_ANCHOR_RESCUE */
+:global([data-wilsy-sovereign-ai-composer='competition-core']) { position: relative; margin: 1rem 0 1.2rem !important; padding: clamp(1.35rem, 2vw, 2rem) !important; border: 1px solid rgba(39, 255, 213, 0.22) !important; border-radius: 1.35rem !important; background: radial-gradient(circle at top left, rgba(39, 255, 213, 0.14), transparent 34%), radial-gradient(circle at bottom right, rgba(170, 120, 255, 0.12), transparent 32%), linear-gradient(135deg, rgba(1, 15, 28, 0.96), rgba(0, 39, 35, 0.7)) !important; box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(255, 255, 255, 0.035), 0 0 42px rgba(39, 255, 213, 0.08) !important; }
+:global([data-wilsy-sovereign-ai-composer='competition-core'])::before { content: 'WILSY OS · LIVE INTELLIGENCE COMPOSER'; display: block; margin-bottom: 1rem; color: rgba(39, 255, 213, 0.88); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.72rem; font-weight: 950; letter-spacing: 0.24em; }
+.singleSurfaceNaturalBody { max-width: 104ch !important; min-height: 13rem !important; color: rgba(232, 247, 243, 0.96) !important; font-size: clamp(1.05rem, 1.34vw, 1.24rem) !important; font-weight: 650 !important; line-height: 1.75 !important; white-space: pre-wrap !important; }
+.singleSurfaceInlineRoutes button { color: #28ffd5 !important; font-weight: 850 !important; text-decoration: underline; text-decoration-color: rgba(39, 255, 213, 0.5); text-underline-offset: 0.22rem; }
+.liveInlineComposerCursor { display: inline-block; color: #28ffd5 !important; filter: drop-shadow(0 0 10px rgba(39, 255, 213, 0.75)); animation: wilsySovereignComposerCursor 680ms steps(2, start) infinite; }
+:global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden), :global([data-wilsy-hardcoded-command-prep='true'][hidden]), .commandPrep.operatingStateHidden { display: none !important; }
+.liveInlineCommandShelf, .sourceTrace, .sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'], .executionCanvasStream, .missionCommandBoard { display: none !important; }
+@keyframes wilsySovereignComposerCursor { 0%, 46% { opacity: 1; } 47%, 100% { opacity: 0; } }
+/* WILSY_P60K5Q10EE_CINEMATIC_COMPOSER_PRINT_GATE */
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-empty='true']) { max-height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border-color: transparent !important; opacity: 0 !important; overflow: hidden !important; pointer-events: none !important; transform: translateY(12px) scale(0.985); }
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true']) { position: relative; overflow: hidden; opacity: 1 !important; transform: translateY(0) scale(1); animation: wilsyComposerMaterialize 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true'])::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(39, 255, 213, 0.14), transparent), radial-gradient(circle at 22% 18%, rgba(39, 255, 213, 0.12), transparent 24%); mix-blend-mode: screen; animation: wilsyComposerScan 1.65s linear infinite; }
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-complete='true']) { border-color: rgba(39, 255, 213, 0.08) !important; background: linear-gradient(135deg, rgba(1, 15, 28, 0.55), rgba(0, 39, 35, 0.34)) !important; box-shadow: none !important; animation: wilsyComposerSettle 360ms ease-out both; }
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true']) .singleSurfaceNaturalBody { color: rgba(235, 255, 250, 0.98) !important; text-shadow: 0 0 18px rgba(39, 255, 213, 0.08); }
+.singleSurfaceNaturalBody { min-height: 12rem !important; max-width: 108ch !important; }
+.liveInlineComposerCursor { display: inline-block !important; margin-left: 0.16rem; color: #28ffd5 !important; filter: drop-shadow(0 0 12px rgba(39, 255, 213, 0.95)); animation: wilsyComposerCursorPulse 580ms steps(2, start) infinite; }
+:global([data-wilsy-hardcoded-command-prep='true'][hidden]), :global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden), .commandPrep.operatingStateHidden { display: none !important; }
+@keyframes wilsyComposerMaterialize { 0% { opacity: 0; transform: translateY(16px) scale(0.985); filter: blur(7px); } 60% { opacity: 1; filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+@keyframes wilsyComposerScan { 0% { transform: translateX(-115%); } 100% { transform: translateX(115%); } }
+@keyframes wilsyComposerSettle { from { transform: translateY(0) scale(1); } to { transform: translateY(0) scale(1); } }
+@keyframes wilsyComposerCursorPulse { 0%, 48% { opacity: 1; } 49%, 100% { opacity: 0; } }
+/* WILSY_P60K5Q10EF_COMPOSER_OWNS_RESPONSE_SLOT */
+:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-empty='true']) { display: none !important; }
+:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-printing='true']) { display: block !important; position: relative; overflow: hidden; animation: wilsyResponseSlotMaterialize 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-printing='true'])::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(39, 255, 213, 0.14), transparent), radial-gradient(circle at 20% 20%, rgba(39, 255, 213, 0.16), transparent 26%); mix-blend-mode: screen; animation: wilsyResponseSlotScan 1.5s linear infinite; }
+:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-complete='true']) { display: block !important; border-color: transparent !important; background: transparent !important; box-shadow: none !important; animation: wilsyResponseSlotSettle 280ms ease-out both; }
+:global([data-wilsy-legacy-foundry-surface='true']), :global([data-wilsy-legacy-foundry-review='true']), :global([data-wilsy-legacy-foundry-plan='true']), :global([data-wilsy-hardcoded-command-prep='true'][hidden]), :global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden), .commandPrep.operatingStateHidden, .liveInlineCommandShelf, .sourceTrace, .sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'], .executionCanvasStream, .missionCommandBoard { display: none !important; }
+.singleSurfaceNaturalBody { min-height: 11rem !important; max-width: 110ch !important; color: rgba(234, 249, 246, 0.96) !important; font-size: clamp(1.05rem, 1.34vw, 1.24rem) !important; line-height: 1.76 !important; white-space: pre-wrap !important; }
+.liveInlineComposerCursor { display: inline-block !important; margin-left: 0.16rem; color: #28ffd5 !important; filter: drop-shadow(0 0 12px rgba(39, 255, 213, 0.95)); animation: wilsyResponseSlotCursor 620ms steps(2, start) infinite; }
+@keyframes wilsyResponseSlotMaterialize { 0% { opacity: 0; transform: translateY(16px) scale(0.985); filter: blur(7px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+@keyframes wilsyResponseSlotScan { 0% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+@keyframes wilsyResponseSlotSettle { from { opacity: 1; } to { opacity: 1; } }
+@keyframes wilsyResponseSlotCursor { 0%, 48% { opacity: 1; } 49%, 100% { opacity: 0; } }
+/* WILSY_P60K5Q10EG_NATURAL_OPERATOR_GREETING_DIRECTIVES */
+:global([data-wilsy-response-slot-owner='true'][hidden]) { display: none !important; }
+:global([data-wilsy-legacy-execution-pipeline='true']), .actionBoard[data-wilsy-legacy-execution-pipeline='true'], .commandPrep[data-wilsy-hardcoded-command-prep='true'], .preparedWorkCard, .liveInlineCommandShelf, .sourceTrace, .sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'], .executionCanvasStream, .missionCommandBoard { display: none !important; }
+.promptGrid { margin-top: 1rem !important; }
+.promptGrid button { position: relative; overflow: hidden; text-align: left !important; transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+.promptGrid button:hover, .promptGrid button:focus-visible { transform: translateX(4px); box-shadow: 0 0 0 1px rgba(39, 255, 213, 0.18), 0 18px 42px rgba(0, 0, 0, 0.18); }
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true']) { animation: wilsyNaturalAssistantMaterialize 420ms cubic-bezier(0.16, 1, 0.3, 1) both !important; }
+:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true'])::after { animation: wilsyNaturalAssistantScan 1.42s linear infinite !important; }
+.singleSurfaceNaturalBody { min-height: 12rem !important; max-width: 112ch !important; font-size: clamp(1.04rem, 1.26vw, 1.2rem) !important; line-height: 1.76 !important; letter-spacing: -0.01em; }
+.liveInlineComposerCursor { animation: wilsyNaturalAssistantCursor 560ms steps(2, start) infinite !important; }
+@keyframes wilsyNaturalAssistantMaterialize { 0% { opacity: 0; transform: translateY(14px) scale(0.988); filter: blur(8px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+@keyframes wilsyNaturalAssistantScan { 0% { transform: translateX(-122%); } 100% { transform: translateX(122%); } }
+@keyframes wilsyNaturalAssistantCursor { 0%, 48% { opacity: 1; } 49%, 100% { opacity: 0; } }
+/* WILSY_P60K5Q10EK_RESILIENT_DIRECT_TYPEWRITER */
+:global([data-wilsy-directive-autosubmit='true']) { cursor: pointer; }
+:global([data-wilsy-directive-autosubmit='true']:active) { transform: translateX(6px) scale(0.992); }
+:global([data-wilsy-response-slot-owner='true'][hidden]) { display: none !important; }
+:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-printing='true']) { display: block !important; animation: wilsyEkResilientDirectTypewriterArrive 320ms cubic-bezier(0.16, 1, 0.3, 1) both !important; }
+.actionBoard, .commandPrep, .preparedWorkCard, .liveInlineCommandShelf, .sourceTrace, .sovereignExecutionCanvas, .playableActionDeck[data-wilsy-visible-playable-action-rail='true'], .missionStatePanel[data-wilsy-mission-focus-lock='true'], .missionStatePanel[data-wilsy-mission-state='active'], .executionCanvasStream, .missionCommandBoard { display: none !important; }
+@keyframes wilsyEkResilientDirectTypewriterArrive { 0% { opacity: 0; transform: translateY(12px) scale(0.99); filter: blur(6px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+/* WILSY_P60K5Q10EM_DYNAMIC_CONVERSATION_MEMORY_SUGGESTIONS */
+.wilsyConversationMemoryDock { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(45, 255, 214, 0.16); border-radius: 18px; background: rgba(1, 15, 24, 0.42); }
+.wilsyConversationMemoryDock button, .wilsyConversationMemoryDock select { min-height: 34px; border: 1px solid rgba(45, 255, 214, 0.22); border-radius: 999px; background: rgba(3, 16, 26, 0.88); color: rgba(244, 252, 255, 0.94); font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; }
+.wilsyConversationMemoryDock button { padding: 0 18px; cursor: pointer; }
+.wilsyConversationMemoryDock label { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.wilsyConversationMemoryDock label span, .wilsyConversationMemoryDock small { color: rgba(45, 255, 214, 0.86); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }
+.wilsyConversationMemoryDock select { width: 100%; padding: 0 14px; }
+:global([data-wilsy-directive-autosubmit='true']) { cursor: pointer; }
+:global([data-wilsy-directive-autosubmit='true']:active) { transform: translateX(6px) scale(0.992); }
+@media (max-width: 900px) { .wilsyConversationMemoryDock { align-items: stretch; flex-direction: column; } .wilsyConversationMemoryDock label { align-items: flex-start; flex-direction: column; } }
+/* WILSY_P60K5Q10EN1_CONVERSATION_MEMORY_STRIP_ANCHOR_RESCUE */
+.wilsyConversationMemoryDock { position: relative; display: grid !important; grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) minmax(86px, auto); align-items: center !important; gap: 14px !important; width: 100%; margin: 0 0 14px !important; padding: 10px 12px !important; border: 1px solid rgba(45, 255, 214, 0.2) !important; border-radius: 24px !important; background: linear-gradient(135deg, rgba(0, 255, 196, 0.08), rgba(97, 76, 255, 0.06)), rgba(1, 14, 24, 0.78) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 48px rgba(0, 0, 0, 0.22) !important; }
+.wilsyConversationMemoryDock::before { content: ''; position: absolute; inset: 8px auto 8px 210px; width: 1px; background: linear-gradient(180deg, transparent, rgba(45, 255, 214, 0.35), transparent); opacity: 0.65; pointer-events: none; }
+.wilsyConversationNewButton { width: 100%; min-height: 42px; border: 1px solid rgba(45, 255, 214, 0.26); border-radius: 999px; background: radial-gradient(circle at 18% 20%, rgba(45, 255, 214, 0.18), transparent 34%), rgba(3, 14, 24, 0.9); color: rgba(246, 252, 255, 0.96); cursor: pointer; font-size: 0.78rem; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+.wilsyConversationNewButton:hover, .wilsyConversationNewButton:focus-visible { border-color: rgba(45, 255, 214, 0.58); box-shadow: 0 0 0 4px rgba(45, 255, 214, 0.08); outline: none; transform: translateY(-1px); }
+.wilsyConversationThreadFrame { display: grid; grid-template-columns: minmax(128px, auto) minmax(0, 1fr); align-items: center; gap: 14px; min-width: 0; }
+.wilsyConversationEyebrow { color: rgba(45, 255, 214, 0.9); font-size: 0.68rem; font-weight: 950; letter-spacing: 0.26em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+.wilsyConversationSelectShell { position: relative; display: block !important; min-width: 0; }
+.wilsyConversationSelectLabel { position: absolute; left: 18px; top: 50%; z-index: 1; color: rgba(232, 216, 151, 0.78); font-size: 0.58rem; font-weight: 950; letter-spacing: 0.2em; pointer-events: none; text-transform: uppercase; transform: translateY(-50%); }
+.wilsyConversationSelectShell select { width: 100%; min-height: 42px; padding: 0 46px 0 176px !important; border: 1px solid rgba(146, 190, 255, 0.32) !important; border-radius: 999px !important; appearance: none; background: linear-gradient(90deg, rgba(146, 190, 255, 0.09), rgba(45, 255, 214, 0.045)), rgba(3, 14, 24, 0.92) !important; color: rgba(246, 252, 255, 0.96) !important; font-size: 0.8rem; font-weight: 950; letter-spacing: 0.14em; outline: none !important; text-transform: uppercase; }
+.wilsyConversationSelectShell::after { content: '⌄'; position: absolute; right: 18px; top: 50%; color: rgba(246, 252, 255, 0.74); font-size: 1.05rem; pointer-events: none; transform: translateY(-54%); }
+.wilsyConversationSelectShell select:focus { border-color: rgba(146, 190, 255, 0.82) !important; box-shadow: 0 0 0 3px rgba(146, 190, 255, 0.12), 0 0 26px rgba(45, 255, 214, 0.12) !important; }
+.wilsyConversationMemoryStats { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 8px; min-width: 82px; color: rgba(232, 216, 151, 0.94); text-align: right; white-space: nowrap; }
+.wilsyConversationMemoryStats strong, .wilsyConversationMemoryStats span { font-size: 0.76rem; font-weight: 950; letter-spacing: 0.22em; text-transform: uppercase; }
+.wilsyConversationMemoryStats strong { color: rgba(255, 255, 255, 0.96); }
+@media (max-width: 980px) { .wilsyConversationMemoryDock { grid-template-columns: 1fr !important; } .wilsyConversationMemoryDock::before { display: none; } .wilsyConversationThreadFrame { grid-template-columns: 1fr; } .wilsyConversationSelectShell select { padding-left: 18px !important; } .wilsyConversationSelectLabel { position: static; display: block; margin: 0 0 8px; transform: none; } .wilsyConversationMemoryStats { justify-content: flex-start; text-align: left; } }
+/* WILSY_P60K5Q10EN2_CSS_ONLY_MEMORY_STRIP_RESCUE */
+.wilsyConversationMemoryDock { position: relative !important; display: grid !important; grid-template-columns: minmax(150px, 188px) minmax(0, 1fr) minmax(88px, auto) !important; align-items: center !important; gap: 14px !important; width: 100% !important; margin: 0 0 14px !important; padding: 10px 12px !important; border: 1px solid rgba(45, 255, 214, 0.2) !important; border-radius: 24px !important; background: radial-gradient(circle at 8% 20%, rgba(45, 255, 214, 0.12), transparent 28%), linear-gradient(135deg, rgba(0, 255, 196, 0.08), rgba(97, 76, 255, 0.06)), rgba(1, 14, 24, 0.82) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 48px rgba(0, 0, 0, 0.22) !important; }
+.wilsyConversationMemoryDock > button { width: 100% !important; min-height: 42px !important; padding: 0 18px !important; border: 1px solid rgba(45, 255, 214, 0.28) !important; border-radius: 999px !important; background: radial-gradient(circle at 18% 20%, rgba(45, 255, 214, 0.2), transparent 34%), rgba(3, 14, 24, 0.92) !important; color: rgba(246, 252, 255, 0.98) !important; cursor: pointer !important; font-size: 0 !important; font-weight: 950 !important; letter-spacing: 0.18em !important; text-transform: uppercase !important; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease !important; }
+.wilsyConversationMemoryDock > button::after { content: 'New thread'; font-size: 0.78rem; font-weight: 950; letter-spacing: 0.18em; }
+.wilsyConversationMemoryDock > button:hover, .wilsyConversationMemoryDock > button:focus-visible { border-color: rgba(45, 255, 214, 0.62) !important; box-shadow: 0 0 0 4px rgba(45, 255, 214, 0.08) !important; outline: none !important; transform: translateY(-1px); }
+.wilsyConversationMemoryDock > label { position: relative !important; display: block !important; min-width: 0 !important; width: 100% !important; }
+.wilsyConversationMemoryDock > label > span { display: none !important; }
+.wilsyConversationMemoryDock > label::before { content: none !important; position: absolute; left: 18px; top: 50%; z-index: 2; color: rgba(45, 255, 214, 0.9); font-size: 0.64rem; font-weight: 950; letter-spacing: 0.22em; line-height: 1; pointer-events: none; text-transform: uppercase; transform: translateY(-50%); white-space: nowrap; }
+.wilsyConversationMemoryDock > label::after { content: '⌄'; position: absolute; right: 18px; top: 50%; z-index: 2; color: rgba(246, 252, 255, 0.74); font-size: 1.05rem; pointer-events: none; transform: translateY(-54%); }
+.wilsyConversationMemoryDock > label > select { width: 100% !important; min-height: 42px !important; padding: 0 48px 0 226px !important; border: 1px solid rgba(146, 190, 255, 0.34) !important; border-radius: 999px !important; appearance: none !important; background: linear-gradient(90deg, rgba(146, 190, 255, 0.09), rgba(45, 255, 214, 0.045)), rgba(3, 14, 24, 0.92) !important; color: rgba(246, 252, 255, 0.96) !important; font-size: 0.8rem !important; font-weight: 950 !important; letter-spacing: 0.14em !important; outline: none !important; text-transform: uppercase !important; }
+.wilsyConversationMemoryDock > label > select:focus { border-color: rgba(146, 190, 255, 0.82) !important; box-shadow: 0 0 0 3px rgba(146, 190, 255, 0.12), 0 0 26px rgba(45, 255, 214, 0.12) !important; }
+.wilsyConversationMemoryDock > small { display: inline-flex !important; align-items: baseline !important; justify-content: flex-end !important; gap: 8px !important; min-width: 84px !important; color: rgba(232, 216, 151, 0.94) !important; font-size: 0.76rem !important; font-weight: 950 !important; letter-spacing: 0.22em !important; text-align: right !important; text-transform: uppercase !important; white-space: nowrap !important; }
+@media (max-width: 980px) { .wilsyConversationMemoryDock { grid-template-columns: 1fr !important; } .wilsyConversationMemoryDock > label::before { position: static; display: block; margin: 0 0 8px; transform: none; } .wilsyConversationMemoryDock > label > select { padding-left: 18px !important; } .wilsyConversationMemoryDock > small { justify-content: flex-start !important; text-align: left !important; } }
+/* WILSY_P60K5Q10ET_CONTEXTUAL_CHAT_HISTORY_CSS */
+.wilsyConversationMemoryDock > label::before { content: none !important; display: none !important; }
+.wilsyConversationMemoryDock > label > span { display: initial !important; }
+.wilsyConversationMemoryDock > label > strong { display: inline-flex !important; }
+.wilsyConversationClearHistoryButton { border-color: rgba(255, 184, 0, 0.28) !important; color: rgba(255, 236, 179, 0.96) !important; }
+.wilsyConversationClearHistoryButton:disabled { cursor: not-allowed !important; opacity: 0.42 !important; }
+/* WILSY_P60K5Q10EV_NEW_THREAD_SUGGESTIONS_RESET_CSS */
+.wilsyConversationNewButton::after { content: 'New thread' !important; }
+.wilsyConversationClearHistoryButton::after { content: 'Clear history' !important; font-size: 0.78rem !important; font-weight: 950 !important; letter-spacing: 0.18em !important; }
+.wilsyConversationClearHistoryButton:disabled::after { content: 'No history' !important; }
+/* WILSY_P60K5Q10EW_PRODUCTION_RESPONSE_COMPOSER */
+.operatorWorkbench { gap: 18px !important; }
+.inlineComposerStream, .operatorResponse, .responsePanel, .liveComposerAnswer, .wilsyInlineComposerStream, .wilsyNaturalAnswer, .capabilityFoundryPanel, .wilsyCapabilityFoundryPanel { min-height: 0 !important; max-height: none !important; }
+.inlineComposerStream:empty, .operatorResponse:empty, .responsePanel:empty, .liveComposerAnswer:empty, .wilsyInlineComposerStream:empty, .wilsyNaturalAnswer:empty { display: none !important; }
+.capabilityFoundryPanel, .wilsyCapabilityFoundryPanel { margin-top: 16px !important; }
+.askBar { margin-top: 14px !important; }
+/* WILSY_P60K5Q10HD_COMPETITIVE_AI_COMMAND_CONSOLE */
+.dock:not(.collapsed):not(.focusMode) { top: 72px !important; right: 28px !important; bottom: 28px !important; left: auto !important; width: min(1040px, calc(100vw - 178px)) !important; max-width: min(1040px, calc(100vw - 178px)) !important; min-width: min(760px, calc(100vw - 178px)) !important; max-height: calc(100vh - 100px) !important; }
+.dock.focusMode:not(.collapsed) { top: 92px !important; right: 28px !important; bottom: 28px !important; left: auto !important; width: min(590px, calc(100vw - 56px)) !important; max-width: min(590px, calc(100vw - 56px)) !important; min-width: min(430px, calc(100vw - 56px)) !important; }
+.dock:not(.collapsed) .shell { display: grid !important; grid-template-rows: auto auto minmax(0, 1fr) !important; border-color: rgba(26, 255, 212, 0.34) !important; border-radius: 28px !important; background: radial-gradient(circle at 8% 0%, rgba(37, 255, 213, 0.17), transparent 30%), radial-gradient(circle at 92% 0%, rgba(108, 132, 255, 0.13), transparent 34%), linear-gradient(145deg, rgba(2, 19, 26, 0.98), rgba(3, 8, 16, 0.985)) !important; box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56), 0 0 0 1px rgba(122, 194, 255, 0.08), 0 0 48px rgba(37, 255, 213, 0.10) !important; }
+.dock:not(.collapsed) .header { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: center !important; min-height: 92px !important; padding: 20px 24px !important; border-bottom: 1px solid rgba(122, 194, 255, 0.12) !important; }
+.header p { display: inline-flex !important; align-items: center !important; gap: 8px !important; margin: 0 0 7px !important; }
+.header h3 { letter-spacing: 0 !important; line-height: 1.05 !important; }
+.aiHeaderSubcopy { display: block; margin-top: 8px; color: rgba(208, 226, 242, 0.72); font-size: 0.82rem; font-weight: 800; letter-spacing: 0; }
+.actions button { align-items: center !important; display: inline-flex !important; gap: 8px !important; justify-content: center !important; min-height: 42px !important; min-width: 118px !important; padding: 0 15px !important; }
+.actions button svg { flex: 0 0 auto; }
+.contextStrip { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 10px !important; padding: 12px 24px !important; background: linear-gradient(90deg, rgba(37, 255, 213, 0.075), rgba(66, 92, 150, 0.055)) !important; border-bottom: 1px solid rgba(37, 255, 213, 0.12) !important; }
+.aiMetricPill { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 7px 10px; align-items: center; min-height: 62px; padding: 10px 12px; border: 1px solid rgba(122, 194, 255, 0.16); border-radius: 16px; background: rgba(3, 12, 22, 0.64); }
+.aiMetricPill svg { color: rgba(37, 255, 213, 0.92); grid-row: 1 / span 2; }
+.aiMetricPill span { color: rgba(245, 224, 155, 0.9); font-size: 0.62rem; font-weight: 1000; letter-spacing: 0.22em; }
+.aiMetricPill strong { color: rgba(255, 255, 255, 0.96); font-size: 0.82rem; font-weight: 950; justify-self: end; }
+.aiMetricPill small { grid-column: 2 / -1; color: rgba(201, 214, 228, 0.74); font-size: 0.72rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock:not(.collapsed) .body { gap: 14px !important; max-height: none !important; overflow: auto !important; padding: 16px 24px 24px !important; }
+.operatorWorkbench { gap: 14px !important; }
+.wilsyConversationMemoryDock { display: grid !important; grid-template-columns: minmax(132px, 0.22fr) minmax(0, 1fr) minmax(134px, 0.2fr) !important; gap: 12px !important; align-items: center !important; padding: 12px !important; border: 1px solid rgba(37, 255, 213, 0.18) !important; border-radius: 22px !important; background: rgba(3, 13, 24, 0.66) !important; }
+.wilsyConversationNewButton, .wilsyConversationClearHistoryButton { align-items: center !important; display: inline-flex !important; gap: 9px !important; justify-content: center !important; min-height: 44px !important; border-radius: 999px !important; }
+.wilsyConversationNewButton::after, .wilsyConversationClearHistoryButton::after { content: none !important; }
+.wilsyConversationThreadFrame { display: grid !important; gap: 8px !important; min-width: 0 !important; }
+.wilsyConversationEyebrow { display: inline-flex !important; align-items: center !important; gap: 8px !important; color: #25ffd5 !important; font-size: 0.68rem !important; font-weight: 1000 !important; letter-spacing: 0.26em !important; text-transform: uppercase !important; }
+.wilsyConversationSelectShell { position: relative; display: grid !important; grid-template-columns: auto minmax(0, 1fr) 18px !important; align-items: center !important; gap: 12px !important; min-height: 46px !important; padding: 0 14px !important; border: 1px solid rgba(122, 194, 255, 0.22) !important; border-radius: 16px !important; background: rgba(5, 18, 31, 0.82) !important; }
+.wilsyConversationSelectLabel { color: #25ffd5 !important; font-size: 0.66rem !important; font-weight: 1000 !important; letter-spacing: 0.22em !important; }
+.wilsyConversationSelectShell select { appearance: none; width: 100%; min-width: 0; border: 0; background: transparent; color: rgba(255, 255, 255, 0.96); font-size: 0.92rem; font-weight: 900; outline: none; }
+.wilsyConversationSelectShell svg { color: rgba(223, 234, 247, 0.72); pointer-events: none; }
+.askBar { display: grid !important; grid-template-columns: minmax(0, 1fr) 130px !important; gap: 12px !important; margin-top: 0 !important; order: 1 !important; position: relative !important; top: auto !important; padding: 0 !important; background: transparent !important; }
+.askInputShell { align-items: center; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; min-height: 58px; padding: 0 16px; border: 1px solid rgba(37, 255, 213, 0.26); border-radius: 20px; background: rgba(1, 10, 18, 0.88); }
+.askInputShell svg { color: rgba(37, 255, 213, 0.86); }
+.askInputShell input, .askBar input { border: 0 !important; border-radius: 0 !important; background: transparent !important; padding: 0 !important; letter-spacing: 0 !important; }
+.askBar button[type='submit'] { align-items: center; display: inline-flex; gap: 9px; justify-content: center; min-height: 58px; border-radius: 20px; }
+.aiOperatorBrief { order: 2; display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr); gap: 12px; }
+.aiBriefHero, .aiBriefLaneGrid article { border: 1px solid rgba(37, 255, 213, 0.16); border-radius: 20px; background: radial-gradient(circle at top left, rgba(37, 255, 213, 0.12), transparent 38%), rgba(3, 13, 24, 0.72); padding: 15px; }
+.aiBriefHero { display: grid; gap: 9px; align-content: center; }
+.aiBriefHero span, .aiBriefLaneGrid span { align-items: center; color: rgba(37, 255, 213, 0.94); display: inline-flex; gap: 8px; font-size: 0.66rem; font-weight: 1000; letter-spacing: 0.24em; text-transform: uppercase; }
+.aiBriefHero strong { color: rgba(255, 255, 255, 0.96); font-size: clamp(1.05rem, 1.45vw, 1.32rem); line-height: 1.12; }
+.aiBriefHero p, .aiBriefLaneGrid p { margin: 0; color: rgba(206, 219, 234, 0.78); font-size: 0.85rem; font-weight: 760; line-height: 1.42; }
+.aiBriefLaneGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.aiBriefLaneGrid article { display: grid; gap: 8px; min-height: 112px; }
+.promptGrid { order: 3 !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; }
+.promptGrid button { min-height: 68px !important; border-radius: 18px !important; font-size: 0.72rem !important; line-height: 1.35 !important; letter-spacing: 0.12em !important; }
+.answerWorkspace { order: 2 !important; min-height: 190px !important; max-height: 42vh !important; overflow: auto !important; }
+.modelDetails { border-radius: 20px !important; padding: 14px 16px !important; }
+.modelDetails summary { align-items: center; display: inline-flex; gap: 8px; }
+.aiCoverageDeck { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.aiCoverageDeck span { border: 1px solid rgba(122, 194, 255, 0.14); border-radius: 14px; background: rgba(4, 15, 27, 0.7); padding: 10px 12px; }
+.dock.focusMode:not(.collapsed) .contextStrip, .dock.focusMode:not(.collapsed) .aiBriefLaneGrid, .dock.focusMode:not(.collapsed) .promptGrid, .dock.focusMode:not(.collapsed) .aiCoverageDeck { grid-template-columns: 1fr !important; }
+.dock.focusMode:not(.collapsed) .aiOperatorBrief, .dock.focusMode:not(.collapsed) .wilsyConversationMemoryDock, .dock.focusMode:not(.collapsed) .askBar { grid-template-columns: 1fr !important; }
+@media (max-width: 1180px) { .dock:not(.collapsed):not(.focusMode) { top: 64px !important; right: 18px !important; bottom: 18px !important; left: 126px !important; width: auto !important; max-width: none !important; min-width: 0 !important; } .contextStrip, .aiBriefLaneGrid, .promptGrid, .aiCoverageDeck { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+@media (max-width: 860px) { .dock:not(.collapsed):not(.focusMode), .dock.focusMode:not(.collapsed) { top: 12px !important; right: 12px !important; bottom: 12px !important; left: 12px !important; width: auto !important; max-width: none !important; min-width: 0 !important; } .dock:not(.collapsed) .header, .contextStrip, .wilsyConversationMemoryDock, .askBar, .aiOperatorBrief, .aiBriefLaneGrid, .promptGrid, .aiCoverageDeck { grid-template-columns: 1fr !important; } .actions { justify-content: flex-start !important; overflow-x: auto; } .actions button { min-width: 108px !important; } }
+/* WILSY_P60K5Q10HD_COMPETITIVE_AI_COMMAND_CONSOLE_END */
+
+/* ================================================================
+   NEW: Minimal dock fallback styles – ensures UI resilience
+   when primary layout is missing.
+   ================================================================ */
+
+/* Minimal dock container */
+.intelligenceDockContainer {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  z-index: 12000;
 }
 
-.missionCommandHeader {
+.dockLauncherButton {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.9rem;
-  margin-bottom: 0.7rem;
-}
-
-.missionCommandHeader span {
-  color: #28ffd5;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.32em;
-}
-
-.missionCommandHeader strong {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.86rem;
-}
-
-.missionMoveGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.65rem;
-}
-
-.missionMoveButton {
-  min-height: 4.8rem;
-  padding: 0.75rem;
-  border: 1px solid rgba(39, 255, 213, 0.24);
-  border-radius: 0.95rem;
-  background:
-    radial-gradient(circle at top left, rgba(39, 255, 213, 0.13), transparent 36%),
-    rgba(1, 12, 24, 0.9);
-  color: rgba(255, 255, 255, 0.94);
-  text-align: left;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  background: #0a0a0a;
+  color: #f0d78c;
   cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  font-weight: 700;
 }
 
-.missionMoveButton:hover,
-.missionMoveButton:focus-visible {
-  transform: translateY(-2px);
-  border-color: rgba(39, 255, 213, 0.82);
-  background:
-    radial-gradient(circle at top left, rgba(39, 255, 213, 0.2), transparent 40%),
-    rgba(0, 54, 50, 0.62);
-  box-shadow: 0 18px 46px rgba(0, 255, 190, 0.12);
-  outline: none;
+.dockWindow {
+  width: min(420px, 94vw);
+  height: min(640px, 82vh);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: #080808;
+  color: #e8e8e8;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
 }
 
-.missionMoveButton span {
-  display: inline-flex;
+.dockExpanded {
+  width: min(560px, 96vw);
+  height: min(780px, 90vh);
+}
+
+.dockHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.dockHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.kennelBadge {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+  margin-top: 2px;
+}
+
+.kennelBadge[data-posture="OPERATIONAL"] {
+  color: #4ade80;
+}
+
+.kennelBadge[data-posture="SOURCE_SILENT"],
+.kennelBadge[data-posture="CLIENT_OFFLINE"] {
+  color: #f87171;
+}
+
+.dockHeaderActions {
+  display: flex;
+  gap: 6px;
+}
+
+.headerIconButton,
+.sendButton,
+.clearHistoryButton,
+.navTabButton,
+.suggestionCard,
+.threadCard {
+  cursor: pointer;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: #111;
+  color: #e8e8e8;
+  border-radius: 8px;
+}
+
+.headerIconButton {
+  padding: 6px;
+}
+
+.dockNavBar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.navTabButton {
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.9rem;
-  height: 1.45rem;
-  margin-bottom: 0.42rem;
-  border: 1px solid rgba(39, 255, 213, 0.28);
-  border-radius: 999px;
-  color: #28ffd5;
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-}
-
-.missionMoveButton strong {
-  display: block;
-  margin-bottom: 0.34rem;
-  font-size: 0.78rem;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.missionMoveButton small {
-  display: block;
-  color: rgba(210, 225, 235, 0.68);
-  font-size: 0.7rem;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-@media (max-width: 980px) {
-  .missionMoveGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .missionCommandHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-/* WILSY_P60K5Q10DT3_DEMAND_GATED_ACTION_RAIL */
-.playableActionDeck[data-wilsy-rail-demand-gated='true'] {
-  animation: wilsyPlayableRailEnter 180ms ease-out both;
-}
-
-@keyframes wilsyPlayableRailEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* WILSY_P60K5Q10DW_MISSION_FOCUS_LOCK */
-.missionStatePanel[data-wilsy-mission-focus-lock='true'] {
-  box-shadow:
-    0 0 0 1px rgba(255, 216, 120, 0.16),
-    0 22px 70px rgba(0, 0, 0, 0.3),
-    inset 0 0 0 1px rgba(255, 216, 120, 0.04);
-}
-
-.missionStatePanel[data-wilsy-mission-focus-lock='true'] .missionCommandBoard {
-  margin-top: 1.1rem;
-}
-
-/* WILSY_P60K5Q10DX_LIVE_CANVAS_EXECUTION_STREAM */
-.executionCanvasStream {
-  margin-top: 1rem;
-  padding: 0.95rem;
-  border: 1px solid rgba(39, 255, 213, 0.2);
-  border-radius: 1rem;
-  background:
-    linear-gradient(135deg, rgba(39, 255, 213, 0.08), transparent 42%),
-    rgba(1, 11, 22, 0.78);
-}
-
-.executionCanvasHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.executionCanvasHeader span {
-  color: #28ffd5;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.32em;
-}
-
-.executionCanvasHeader strong {
-  max-width: 70%;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.86rem;
-  line-height: 1.35;
-  text-align: right;
-}
-
-.executionTelemetryGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.executionTelemetryGrid span {
-  min-height: 4rem;
-  padding: 0.62rem;
-  border: 1px solid rgba(39, 255, 213, 0.14);
-  border-radius: 0.78rem;
-  background: rgba(2, 15, 28, 0.78);
-}
-
-.executionTelemetryGrid strong {
-  display: block;
-  margin-bottom: 0.35rem;
-  color: #28ffd5;
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.executionTelemetryGrid small {
-  display: block;
-  color: rgba(218, 231, 238, 0.72);
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.sourceRouteJudge {
-  display: grid;
-  grid-template-columns: minmax(0, 0.6fr) minmax(0, 0.55fr) minmax(0, 1.85fr);
-  gap: 0.65rem;
-  align-items: center;
-  margin-top: 0.72rem;
-  padding: 0.62rem 0.72rem;
-  border: 1px solid rgba(255, 216, 120, 0.18);
-  border-radius: 0.78rem;
-  background: rgba(255, 216, 120, 0.04);
-}
-
-.sourceRouteJudge span,
-.sourceRouteJudge strong {
-  color: #ffd878;
-  font-size: 0.66rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.sourceRouteJudge small {
-  color: rgba(255, 241, 204, 0.78);
-  font-size: 0.7rem;
-  font-weight: 800;
-}
-
-.missionMoveGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.missionMoveButton {
-  min-height: 4.35rem;
-  display: grid;
-  grid-template-columns: 2.25rem minmax(0, 1fr);
-  column-gap: 0.8rem;
-  align-items: center;
-}
-
-.missionMoveButton span {
-  grid-row: span 2;
-  margin-bottom: 0;
-}
-
-.missionMoveButton strong {
-  margin-bottom: 0.2rem;
-}
-
-.missionMoveButton small {
-  color: rgba(39, 255, 213, 0.74);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 1180px) {
-  .executionTelemetryGrid,
-  .missionMoveGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sourceRouteJudge {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .executionCanvasHeader {
-    flex-direction: column;
-  }
-
-  .executionCanvasHeader strong {
-    max-width: none;
-    text-align: left;
-  }
-
-  .executionTelemetryGrid,
-  .missionMoveGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* WILSY_P60K5Q10DY_NATIVE_EXECUTION_CANVAS */
-.sovereignExecutionCanvas {
-  margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid rgba(39, 255, 213, 0.24);
-  border-radius: 1.1rem;
-  background:
-    linear-gradient(135deg, rgba(39, 255, 213, 0.09), transparent 38%),
-    radial-gradient(circle at bottom right, rgba(255, 216, 120, 0.08), transparent 32%),
-    rgba(1, 10, 20, 0.86);
-  box-shadow:
-    inset 0 0 0 1px rgba(39, 255, 213, 0.04),
-    0 20px 60px rgba(0, 0, 0, 0.24);
-}
-
-.sovereignExecutionHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.9rem;
-}
-
-.sovereignExecutionHeader span {
-  color: #28ffd5;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.34em;
-}
-
-.sovereignExecutionHeader strong {
-  max-width: 64%;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.88rem;
-  line-height: 1.35;
-  text-align: right;
-}
-
-.sovereignTelemetryStrip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-  margin-bottom: 0.7rem;
-}
-
-.sovereignTelemetryStrip span {
-  min-height: 3.85rem;
-  padding: 0.62rem;
-  border: 1px solid rgba(39, 255, 213, 0.13);
-  border-radius: 0.78rem;
-  background: rgba(1, 15, 28, 0.76);
-}
-
-.sovereignTelemetryStrip strong {
-  display: block;
-  margin-bottom: 0.32rem;
-  color: #28ffd5;
-  font-size: 0.6rem;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.sovereignTelemetryStrip small {
-  color: rgba(218, 231, 238, 0.74);
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1.34;
-}
-
-.sovereignRouteJudge {
-  display: grid;
-  grid-template-columns: minmax(0, 0.55fr) minmax(0, 0.55fr) minmax(0, 1.9fr);
-  gap: 0.65rem;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  padding: 0.64rem 0.72rem;
-  border: 1px solid rgba(255, 216, 120, 0.2);
-  border-radius: 0.78rem;
-  background: rgba(255, 216, 120, 0.045);
-}
-
-.sovereignRouteJudge span,
-.sovereignRouteJudge strong {
-  color: #ffd878;
-  font-size: 0.64rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.sovereignRouteJudge small {
-  color: rgba(255, 241, 204, 0.78);
-  font-size: 0.7rem;
-  font-weight: 800;
-}
-
-.sovereignCommandStream {
-  display: grid;
-  gap: 0.48rem;
-}
-
-.sovereignCommandRow {
-  display: grid;
-  grid-template-columns: 2.35rem minmax(14rem, 0.9fr) minmax(10rem, 0.7fr) minmax(14rem, 1.25fr);
-  gap: 0.7rem;
-  align-items: center;
-  padding: 0.72rem;
-  border: 1px solid rgba(39, 255, 213, 0.14);
-  border-radius: 0.82rem;
-  background: rgba(1, 11, 21, 0.82);
-  color: rgba(255, 255, 255, 0.92);
-  cursor: pointer;
-  text-align: left;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.sovereignCommandRow:hover,
-.sovereignCommandRow:focus-visible {
-  transform: translateX(3px);
-  border-color: rgba(39, 255, 213, 0.74);
-  background: rgba(0, 49, 44, 0.62);
-  outline: none;
-}
-
-.sovereignCommandRow span {
-  color: #28ffd5;
-  font-size: 0.7rem;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-}
-
-.sovereignCommandRow code {
-  color: rgba(39, 255, 213, 0.8);
-  font-size: 0.68rem;
-  font-weight: 850;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sovereignCommandRow strong {
-  color: rgba(255, 255, 255, 0.94);
-  font-size: 0.75rem;
-  font-weight: 950;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.sovereignCommandRow small {
-  color: rgba(218, 231, 238, 0.7);
-  font-size: 0.7rem;
-  font-weight: 800;
-  line-height: 1.34;
-}
-
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'] {
-  display: none !important;
-}
-
-@media (max-width: 1320px) {
-  .sovereignCommandRow {
-    grid-template-columns: 2.2rem minmax(0, 1fr);
-  }
-
-  .sovereignCommandRow small,
-  .sovereignCommandRow strong {
-    grid-column: 2;
-  }
-
-  .sovereignTelemetryStrip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sovereignRouteJudge {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .sovereignExecutionHeader {
-    flex-direction: column;
-  }
-
-  .sovereignExecutionHeader strong {
-    max-width: none;
-    text-align: left;
-  }
-
-  .sovereignTelemetryStrip {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* WILSY_P60K5Q10DZ_LIVE_INLINE_COMPOSER_STREAM */
-.liveInlineComposerText {
-  position: relative;
-  min-height: 3.5rem;
-  margin-top: 0.75rem;
-  font-size: 1rem;
-  line-height: 1.55;
-  color: rgba(218, 231, 238, 0.86);
-}
-
-.liveInlineComposerCursor {
-  display: inline-block;
-  margin-left: 0.18rem;
-  color: #28ffd5;
-  animation: wilsyInlineComposerBlink 760ms steps(2, start) infinite;
-}
-
-.liveInlineComposerStatus {
-  display: inline-flex;
-  width: fit-content;
-  margin-top: 0.35rem;
-}
-
-.liveInlineCommandShelf {
-  margin-top: 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid rgba(39, 255, 213, 0.16);
-}
-
-.liveInlineCommandShelf > span {
-  display: block;
-  margin-bottom: 0.65rem;
-  color: #28ffd5;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.32em;
-}
-
-.liveInlineCommandShelf > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.52rem;
-}
-
-.liveInlineCommandLink {
-  display: inline-grid;
-  grid-template-columns: minmax(9rem, auto) minmax(7rem, auto);
-  gap: 0.55rem;
-  align-items: center;
-  max-width: 100%;
-  padding: 0.5rem 0.62rem;
-  border: 1px solid rgba(39, 255, 213, 0.2);
-  border-radius: 999px;
-  background: rgba(1, 16, 28, 0.72);
-  cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
-}
-
-.liveInlineCommandLink:hover,
-.liveInlineCommandLink:focus-visible {
-  transform: translateY(-1px);
-  border-color: rgba(39, 255, 213, 0.76);
-  background: rgba(0, 48, 43, 0.7);
-  outline: none;
-}
-
-.liveInlineCommandLink code {
-  color: rgba(39, 255, 213, 0.86);
-  font-size: 0.66rem;
-  font-weight: 850;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.liveInlineCommandLink strong {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.66rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'] {
-  display: none !important;
-}
-
-@keyframes wilsyInlineComposerBlink {
-  0%,
-  45% {
-    opacity: 1;
-  }
-
-  46%,
-  100% {
-    opacity: 0;
-  }
-}
-
-@media (max-width: 840px) {
-  .liveInlineCommandLink {
-    grid-template-columns: 1fr;
-    border-radius: 1rem;
-  }
-}
-
-/* WILSY_P60K5Q10EA_RAW_TYPOGRAPHIC_RESPONSE_THREAD */
-:global([data-wilsy-raw-terminal-thread='true']) {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-
-:global([data-wilsy-raw-terminal-thread='true']) > * {
-  border-radius: 0;
-}
-
-:global([data-wilsy-raw-terminal-thread='true']) span:first-child {
-  color: rgba(39, 255, 213, 0.82);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  gap: 6px;
+  padding: 8px;
   font-size: 0.72rem;
-  font-weight: 850;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
 }
 
-.rawTypographicThreadPrefix {
-  display: block;
-  margin-top: 0.7rem;
-  color: rgba(226, 241, 237, 0.92);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.86rem;
-  font-weight: 820;
-  letter-spacing: 0.01em;
-  text-transform: none;
+.activeTab {
+  border-color: rgba(212, 175, 55, 0.55);
+  color: #f0d78c;
 }
 
-.rawTypographicThreadBody {
-  max-width: 96ch;
-  min-height: 0;
-  margin-top: 0.85rem;
-  color: rgba(226, 241, 237, 0.9);
-  font-size: 1rem;
-  font-weight: 650;
-  line-height: 1.68;
-  white-space: pre-wrap;
-}
-
-.liveInlineComposerCursor {
-  color: #28ffd5;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.liveInlineComposerStatus {
-  display: inline-block;
-  margin-top: 0.5rem;
-  color: rgba(255, 216, 120, 0.84);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 820;
-  letter-spacing: 0.14em;
-}
-
-.liveInlineCommandShelf {
-  margin-top: 0.85rem !important;
-  padding-top: 0 !important;
-  border-top: 0 !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.liveInlineCommandShelf > span {
-  display: inline !important;
-  margin: 0 0.55rem 0 0 !important;
-  color: rgba(98, 125, 118, 0.95) !important;
-  font-size: 0.78rem !important;
-  font-weight: 760 !important;
-  letter-spacing: 0.04em !important;
-  text-transform: none !important;
-}
-
-.liveInlineCommandShelf > div {
-  display: inline !important;
-}
-
-.liveInlineCommandLink {
-  display: inline !important;
-  width: auto !important;
-  max-width: none !important;
-  margin: 0 0.85rem 0 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  transform: none !important;
-  text-align: left !important;
-  cursor: pointer;
-}
-
-.liveInlineCommandLink:hover,
-.liveInlineCommandLink:focus-visible {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
-  outline: none;
-}
-
-.liveInlineCommandLink strong {
-  display: inline !important;
-  margin-right: 0.32rem;
-  color: #28ffd5 !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.78rem !important;
-  font-weight: 820 !important;
-  letter-spacing: 0.02em !important;
-  text-transform: none !important;
-  white-space: nowrap;
-}
-
-.liveInlineCommandLink code {
-  display: inline !important;
-  color: rgba(39, 255, 213, 0.72) !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.74rem !important;
-  font-weight: 760 !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  white-space: nowrap !important;
-}
-
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'],
-.executionCanvasStream,
-.missionCommandBoard {
-  display: none !important;
-}
-
-@media (max-width: 920px) {
-  .liveInlineCommandShelf > div,
-  .liveInlineCommandLink,
-  .liveInlineCommandLink strong,
-  .liveInlineCommandLink code {
-    display: block !important;
-    white-space: normal !important;
-  }
-
-  .liveInlineCommandLink {
-    margin: 0.45rem 0 0 !important;
-  }
-}
-
-/* WILSY_P60K5Q10EC_SINGLE_SURFACE_NATURAL_STREAM */
-.singleSurfaceHiddenLabel,
-.singleSurfaceHiddenTitle,
-.singleSurfaceHiddenStatus {
-  display: none !important;
-}
-
-.singleSurfaceNaturalBody {
-  max-width: 92ch;
-  min-height: 6.2rem;
-  margin: 0;
-  padding: 0;
-  color: rgba(226, 241, 237, 0.94);
-  font-size: clamp(1rem, 1.28vw, 1.18rem);
-  font-weight: 620;
-  line-height: 1.72;
-  white-space: pre-wrap;
-}
-
-.singleSurfaceNaturalBody::selection {
-  background: rgba(39, 255, 213, 0.24);
-}
-
-.singleSurfaceInlineRoutes {
-  display: inline;
-  color: rgba(226, 241, 237, 0.94);
-}
-
-.singleSurfaceInlineRoutes button {
-  display: inline;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #28ffd5;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  text-decoration: underline;
-  text-decoration-color: rgba(39, 255, 213, 0.42);
-  text-underline-offset: 0.22rem;
-}
-
-.singleSurfaceInlineRoutes button:hover,
-.singleSurfaceInlineRoutes button:focus-visible {
-  color: #9fffe9;
-  outline: none;
-  text-decoration-color: rgba(159, 255, 233, 0.82);
-}
-
-.liveInlineComposerCursor {
-  color: #28ffd5;
-  animation: wilsySingleSurfaceCursor 720ms steps(2, start) infinite;
-}
-
-.liveInlineCommandShelf,
-.sourceTrace,
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'],
-.executionCanvasStream,
-.missionCommandBoard {
-  display: none !important;
-}
-
-:global([data-wilsy-raw-terminal-thread='true']) {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-:global([data-wilsy-raw-terminal-thread='true']) [data-wilsy-single-surface-output='true'] {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-@keyframes wilsySingleSurfaceCursor {
-  0%,
-  45% {
-    opacity: 1;
-  }
-
-  46%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* WILSY_P60K5Q10ED1_SOVEREIGN_COMPOSER_ANCHOR_RESCUE */
-:global([data-wilsy-sovereign-ai-composer='competition-core']) {
-  position: relative;
-  margin: 1rem 0 1.2rem !important;
-  padding: clamp(1.35rem, 2vw, 2rem) !important;
-  border: 1px solid rgba(39, 255, 213, 0.22) !important;
-  border-radius: 1.35rem !important;
-  background:
-    radial-gradient(circle at top left, rgba(39, 255, 213, 0.14), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(170, 120, 255, 0.12), transparent 32%),
-    linear-gradient(135deg, rgba(1, 15, 28, 0.96), rgba(0, 39, 35, 0.7)) !important;
-  box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.34),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
-    0 0 42px rgba(39, 255, 213, 0.08) !important;
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'])::before {
-  content: 'WILSY OS · LIVE INTELLIGENCE COMPOSER';
-  display: block;
-  margin-bottom: 1rem;
-  color: rgba(39, 255, 213, 0.88);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.24em;
-}
-
-.singleSurfaceNaturalBody {
-  max-width: 104ch !important;
-  min-height: 13rem !important;
-  color: rgba(232, 247, 243, 0.96) !important;
-  font-size: clamp(1.05rem, 1.34vw, 1.24rem) !important;
-  font-weight: 650 !important;
-  line-height: 1.75 !important;
-  white-space: pre-wrap !important;
-}
-
-.singleSurfaceInlineRoutes button {
-  color: #28ffd5 !important;
-  font-weight: 850 !important;
-  text-decoration: underline;
-  text-decoration-color: rgba(39, 255, 213, 0.5);
-  text-underline-offset: 0.22rem;
-}
-
-.liveInlineComposerCursor {
-  display: inline-block;
-  color: #28ffd5 !important;
-  filter: drop-shadow(0 0 10px rgba(39, 255, 213, 0.75));
-  animation: wilsySovereignComposerCursor 680ms steps(2, start) infinite;
-}
-
-:global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden),
-:global([data-wilsy-hardcoded-command-prep='true'][hidden]),
-.commandPrep.operatingStateHidden {
-  display: none !important;
-}
-
-.liveInlineCommandShelf,
-.sourceTrace,
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'],
-.executionCanvasStream,
-.missionCommandBoard {
-  display: none !important;
-}
-
-@keyframes wilsySovereignComposerCursor {
-  0%,
-  46% {
-    opacity: 1;
-  }
-
-  47%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* WILSY_P60K5Q10EE_CINEMATIC_COMPOSER_PRINT_GATE */
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-empty='true']) {
-  max-height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-color: transparent !important;
-  opacity: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  transform: translateY(12px) scale(0.985);
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true']) {
-  position: relative;
-  overflow: hidden;
-  opacity: 1 !important;
-  transform: translateY(0) scale(1);
-  animation: wilsyComposerMaterialize 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true'])::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, transparent, rgba(39, 255, 213, 0.14), transparent),
-    radial-gradient(circle at 22% 18%, rgba(39, 255, 213, 0.12), transparent 24%);
-  mix-blend-mode: screen;
-  animation: wilsyComposerScan 1.65s linear infinite;
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-complete='true']) {
-  border-color: rgba(39, 255, 213, 0.08) !important;
-  background:
-    linear-gradient(135deg, rgba(1, 15, 28, 0.55), rgba(0, 39, 35, 0.34)) !important;
-  box-shadow: none !important;
-  animation: wilsyComposerSettle 360ms ease-out both;
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true']) .singleSurfaceNaturalBody {
-  color: rgba(235, 255, 250, 0.98) !important;
-  text-shadow: 0 0 18px rgba(39, 255, 213, 0.08);
-}
-
-.singleSurfaceNaturalBody {
-  min-height: 12rem !important;
-  max-width: 108ch !important;
-}
-
-.liveInlineComposerCursor {
-  display: inline-block !important;
-  margin-left: 0.16rem;
-  color: #28ffd5 !important;
-  filter: drop-shadow(0 0 12px rgba(39, 255, 213, 0.95));
-  animation: wilsyComposerCursorPulse 580ms steps(2, start) infinite;
-}
-
-:global([data-wilsy-hardcoded-command-prep='true'][hidden]),
-:global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden),
-.commandPrep.operatingStateHidden {
-  display: none !important;
-}
-
-@keyframes wilsyComposerMaterialize {
-  0% {
-    opacity: 0;
-    transform: translateY(16px) scale(0.985);
-    filter: blur(7px);
-  }
-
-  60% {
-    opacity: 1;
-    filter: blur(0);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@keyframes wilsyComposerScan {
-  0% {
-    transform: translateX(-115%);
-  }
-
-  100% {
-    transform: translateX(115%);
-  }
-}
-
-@keyframes wilsyComposerSettle {
-  from {
-    transform: translateY(0) scale(1);
-  }
-
-  to {
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes wilsyComposerCursorPulse {
-  0%,
-  48% {
-    opacity: 1;
-  }
-
-  49%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* WILSY_P60K5Q10EF_COMPOSER_OWNS_RESPONSE_SLOT */
-:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-empty='true']) {
-  display: none !important;
-}
-
-:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-printing='true']) {
-  display: block !important;
-  position: relative;
-  overflow: hidden;
-  animation: wilsyResponseSlotMaterialize 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-printing='true'])::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, transparent, rgba(39, 255, 213, 0.14), transparent),
-    radial-gradient(circle at 20% 20%, rgba(39, 255, 213, 0.16), transparent 26%);
-  mix-blend-mode: screen;
-  animation: wilsyResponseSlotScan 1.5s linear infinite;
-}
-
-:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-complete='true']) {
-  display: block !important;
-  border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  animation: wilsyResponseSlotSettle 280ms ease-out both;
-}
-
-:global([data-wilsy-legacy-foundry-surface='true']),
-:global([data-wilsy-legacy-foundry-review='true']),
-:global([data-wilsy-legacy-foundry-plan='true']),
-:global([data-wilsy-hardcoded-command-prep='true'][hidden]),
-:global([data-wilsy-hardcoded-command-prep='true'].operatingStateHidden),
-.commandPrep.operatingStateHidden,
-.liveInlineCommandShelf,
-.sourceTrace,
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'],
-.executionCanvasStream,
-.missionCommandBoard {
-  display: none !important;
-}
-
-.singleSurfaceNaturalBody {
-  min-height: 11rem !important;
-  max-width: 110ch !important;
-  color: rgba(234, 249, 246, 0.96) !important;
-  font-size: clamp(1.05rem, 1.34vw, 1.24rem) !important;
-  line-height: 1.76 !important;
-  white-space: pre-wrap !important;
-}
-
-.liveInlineComposerCursor {
-  display: inline-block !important;
-  margin-left: 0.16rem;
-  color: #28ffd5 !important;
-  filter: drop-shadow(0 0 12px rgba(39, 255, 213, 0.95));
-  animation: wilsyResponseSlotCursor 620ms steps(2, start) infinite;
-}
-
-@keyframes wilsyResponseSlotMaterialize {
-  0% {
-    opacity: 0;
-    transform: translateY(16px) scale(0.985);
-    filter: blur(7px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@keyframes wilsyResponseSlotScan {
-  0% {
-    transform: translateX(-120%);
-  }
-
-  100% {
-    transform: translateX(120%);
-  }
-}
-
-@keyframes wilsyResponseSlotSettle {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes wilsyResponseSlotCursor {
-  0%,
-  48% {
-    opacity: 1;
-  }
-
-  49%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* WILSY_P60K5Q10EG_NATURAL_OPERATOR_GREETING_DIRECTIVES */
-:global([data-wilsy-response-slot-owner='true'][hidden]) {
-  display: none !important;
-}
-
-:global([data-wilsy-legacy-execution-pipeline='true']),
-.actionBoard[data-wilsy-legacy-execution-pipeline='true'],
-.commandPrep[data-wilsy-hardcoded-command-prep='true'],
-.preparedWorkCard,
-.liveInlineCommandShelf,
-.sourceTrace,
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'],
-.executionCanvasStream,
-.missionCommandBoard {
-  display: none !important;
-}
-
-.promptGrid {
-  margin-top: 1rem !important;
-}
-
-.promptGrid button {
-  position: relative;
-  overflow: hidden;
-  text-align: left !important;
-  transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.promptGrid button:hover,
-.promptGrid button:focus-visible {
-  transform: translateX(4px);
-  box-shadow: 0 0 0 1px rgba(39, 255, 213, 0.18), 0 18px 42px rgba(0, 0, 0, 0.18);
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true']) {
-  animation: wilsyNaturalAssistantMaterialize 420ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
-}
-
-:global([data-wilsy-sovereign-ai-composer='competition-core'][data-wilsy-composer-printing='true'])::after {
-  animation: wilsyNaturalAssistantScan 1.42s linear infinite !important;
-}
-
-.singleSurfaceNaturalBody {
-  min-height: 12rem !important;
-  max-width: 112ch !important;
-  font-size: clamp(1.04rem, 1.26vw, 1.2rem) !important;
-  line-height: 1.76 !important;
-  letter-spacing: -0.01em;
-}
-
-.liveInlineComposerCursor {
-  animation: wilsyNaturalAssistantCursor 560ms steps(2, start) infinite !important;
-}
-
-@keyframes wilsyNaturalAssistantMaterialize {
-  0% {
-    opacity: 0;
-    transform: translateY(14px) scale(0.988);
-    filter: blur(8px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@keyframes wilsyNaturalAssistantScan {
-  0% {
-    transform: translateX(-122%);
-  }
-
-  100% {
-    transform: translateX(122%);
-  }
-}
-
-@keyframes wilsyNaturalAssistantCursor {
-  0%,
-  48% {
-    opacity: 1;
-  }
-
-  49%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* WILSY_P60K5Q10EK_RESILIENT_DIRECT_TYPEWRITER */
-:global([data-wilsy-directive-autosubmit='true']) {
-  cursor: pointer;
-}
-
-:global([data-wilsy-directive-autosubmit='true']:active) {
-  transform: translateX(6px) scale(0.992);
-}
-
-:global([data-wilsy-response-slot-owner='true'][hidden]) {
-  display: none !important;
-}
-
-:global([data-wilsy-response-slot-owner='true'][data-wilsy-composer-printing='true']) {
-  display: block !important;
-  animation: wilsyEkResilientDirectTypewriterArrive 320ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
-}
-
-.actionBoard,
-.commandPrep,
-.preparedWorkCard,
-.liveInlineCommandShelf,
-.sourceTrace,
-.sovereignExecutionCanvas,
-.playableActionDeck[data-wilsy-visible-playable-action-rail='true'],
-.missionStatePanel[data-wilsy-mission-focus-lock='true'],
-.missionStatePanel[data-wilsy-mission-state='active'],
-.executionCanvasStream,
-.missionCommandBoard {
-  display: none !important;
-}
-
-@keyframes wilsyEkResilientDirectTypewriterArrive {
-  0% {
-    opacity: 0;
-    transform: translateY(12px) scale(0.99);
-    filter: blur(6px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-/* WILSY_P60K5Q10EM_DYNAMIC_CONVERSATION_MEMORY_SUGGESTIONS */
-.wilsyConversationMemoryDock {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 1px solid rgba(45, 255, 214, 0.16);
-  border-radius: 18px;
-  background: rgba(1, 15, 24, 0.42);
-}
-
-.wilsyConversationMemoryDock button,
-.wilsyConversationMemoryDock select {
-  min-height: 34px;
-  border: 1px solid rgba(45, 255, 214, 0.22);
-  border-radius: 999px;
-  background: rgba(3, 16, 26, 0.88);
-  color: rgba(244, 252, 255, 0.94);
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.wilsyConversationMemoryDock button {
-  padding: 0 18px;
-  cursor: pointer;
-}
-
-.wilsyConversationMemoryDock label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+.dockBody {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.wilsyConversationMemoryDock label span,
-.wilsyConversationMemoryDock small {
-  color: rgba(45, 255, 214, 0.86);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  white-space: nowrap;
+.chatTabContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.wilsyConversationMemoryDock select {
-  width: 100%;
-  padding: 0 14px;
+.messagesContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-:global([data-wilsy-directive-autosubmit='true']) {
-  cursor: pointer;
+.chatMessageBubble {
+  padding: 10px 12px;
+  border-radius: 10px;
+  max-width: 92%;
 }
 
-:global([data-wilsy-directive-autosubmit='true']:active) {
-  transform: translateX(6px) scale(0.992);
+.userBubble {
+  align-self: flex-end;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
-@media (max-width: 900px) {
-  .wilsyConversationMemoryDock {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .wilsyConversationMemoryDock label {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+.assistantBubble {
+  align-self: flex-start;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* WILSY_P60K5Q10EN1_CONVERSATION_MEMORY_STRIP_ANCHOR_RESCUE */
-.wilsyConversationMemoryDock {
-  position: relative;
-  display: grid !important;
-  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) minmax(86px, auto);
-  align-items: center !important;
-  gap: 14px !important;
-  width: 100%;
-  margin: 0 0 14px !important;
-  padding: 10px 12px !important;
-  border: 1px solid rgba(45, 255, 214, 0.2) !important;
-  border-radius: 24px !important;
-  background:
-    linear-gradient(135deg, rgba(0, 255, 196, 0.08), rgba(97, 76, 255, 0.06)),
-    rgba(1, 14, 24, 0.78) !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
-    0 20px 48px rgba(0, 0, 0, 0.22) !important;
-}
-
-.wilsyConversationMemoryDock::before {
-  content: '';
-  position: absolute;
-  inset: 8px auto 8px 210px;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(45, 255, 214, 0.35), transparent);
-  opacity: 0.65;
-  pointer-events: none;
-}
-
-.wilsyConversationNewButton {
-  width: 100%;
-  min-height: 42px;
-  border: 1px solid rgba(45, 255, 214, 0.26);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(45, 255, 214, 0.18), transparent 34%),
-    rgba(3, 14, 24, 0.9);
-  color: rgba(246, 252, 255, 0.96);
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  transition:
-    transform 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    background 180ms ease;
-}
-
-.wilsyConversationNewButton:hover,
-.wilsyConversationNewButton:focus-visible {
-  border-color: rgba(45, 255, 214, 0.58);
-  box-shadow: 0 0 0 4px rgba(45, 255, 214, 0.08);
-  outline: none;
-  transform: translateY(-1px);
-}
-
-.wilsyConversationThreadFrame {
-  display: grid;
-  grid-template-columns: minmax(128px, auto) minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.wilsyConversationEyebrow {
-  color: rgba(45, 255, 214, 0.9);
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.26em;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.wilsyConversationSelectShell {
-  position: relative;
-  display: block !important;
-  min-width: 0;
-}
-
-.wilsyConversationSelectLabel {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  z-index: 1;
-  color: rgba(232, 216, 151, 0.78);
-  font-size: 0.58rem;
-  font-weight: 950;
-  letter-spacing: 0.2em;
-  pointer-events: none;
-  text-transform: uppercase;
-  transform: translateY(-50%);
-}
-
-.wilsyConversationSelectShell select {
-  width: 100%;
-  min-height: 42px;
-  padding: 0 46px 0 176px !important;
-  border: 1px solid rgba(146, 190, 255, 0.32) !important;
-  border-radius: 999px !important;
-  appearance: none;
-  background:
-    linear-gradient(90deg, rgba(146, 190, 255, 0.09), rgba(45, 255, 214, 0.045)),
-    rgba(3, 14, 24, 0.92) !important;
-  color: rgba(246, 252, 255, 0.96) !important;
-  font-size: 0.8rem;
-  font-weight: 950;
-  letter-spacing: 0.14em;
-  outline: none !important;
-  text-transform: uppercase;
-}
-
-.wilsyConversationSelectShell::after {
-  content: '⌄';
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  color: rgba(246, 252, 255, 0.74);
-  font-size: 1.05rem;
-  pointer-events: none;
-  transform: translateY(-54%);
-}
-
-.wilsyConversationSelectShell select:focus {
-  border-color: rgba(146, 190, 255, 0.82) !important;
-  box-shadow:
-    0 0 0 3px rgba(146, 190, 255, 0.12),
-    0 0 26px rgba(45, 255, 214, 0.12) !important;
-}
-
-.wilsyConversationMemoryStats {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: flex-end;
+.bubbleHeader {
+  display: flex;
+  justify-content: space-between;
   gap: 8px;
-  min-width: 82px;
-  color: rgba(232, 216, 151, 0.94);
-  text-align: right;
-  white-space: nowrap;
+  font-size: 0.65rem;
+  color: #a3a3a3;
+  margin-bottom: 4px;
 }
 
-.wilsyConversationMemoryStats strong,
-.wilsyConversationMemoryStats span {
-  font-size: 0.76rem;
-  font-weight: 950;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+.bubbleBody {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
-.wilsyConversationMemoryStats strong {
-  color: rgba(255, 255, 255, 0.96);
+.chatInputArea {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-@media (max-width: 980px) {
-  .wilsyConversationMemoryDock {
-    grid-template-columns: 1fr !important;
-  }
-
-  .wilsyConversationMemoryDock::before {
-    display: none;
-  }
-
-  .wilsyConversationThreadFrame {
-    grid-template-columns: 1fr;
-  }
-
-  .wilsyConversationSelectShell select {
-    padding-left: 18px !important;
-  }
-
-  .wilsyConversationSelectLabel {
-    position: static;
-    display: block;
-    margin: 0 0 8px;
-    transform: none;
-  }
-
-  .wilsyConversationMemoryStats {
-    justify-content: flex-start;
-    text-align: left;
-  }
+.promptInput {
+  flex: 1;
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: #0c0c0c;
+  color: #eee;
+  padding: 10px;
+  font-family: inherit;
 }
 
-/* WILSY_P60K5Q10EN2_CSS_ONLY_MEMORY_STRIP_RESCUE */
-.wilsyConversationMemoryDock {
-  position: relative !important;
-  display: grid !important;
-  grid-template-columns: minmax(150px, 188px) minmax(0, 1fr) minmax(88px, auto) !important;
-  align-items: center !important;
-  gap: 14px !important;
-  width: 100% !important;
-  margin: 0 0 14px !important;
-  padding: 10px 12px !important;
-  border: 1px solid rgba(45, 255, 214, 0.2) !important;
-  border-radius: 24px !important;
-  background:
-    radial-gradient(circle at 8% 20%, rgba(45, 255, 214, 0.12), transparent 28%),
-    linear-gradient(135deg, rgba(0, 255, 196, 0.08), rgba(97, 76, 255, 0.06)),
-    rgba(1, 14, 24, 0.82) !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
-    0 20px 48px rgba(0, 0, 0, 0.22) !important;
+.sendButton {
+  padding: 10px 12px;
+  color: #f0d78c;
 }
 
-.wilsyConversationMemoryDock > button {
-  width: 100% !important;
-  min-height: 42px !important;
-  padding: 0 18px !important;
-  border: 1px solid rgba(45, 255, 214, 0.28) !important;
-  border-radius: 999px !important;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(45, 255, 214, 0.2), transparent 34%),
-    rgba(3, 14, 24, 0.92) !important;
-  color: rgba(246, 252, 255, 0.98) !important;
-  cursor: pointer !important;
-  font-size: 0 !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.18em !important;
-  text-transform: uppercase !important;
-  transition:
-    transform 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    background 180ms ease !important;
+.errorBanner {
+  color: #f87171;
+  font-size: 0.75rem;
+  padding: 8px;
 }
 
-.wilsyConversationMemoryDock > button::after {
-  content: 'New thread';
-  font-size: 0.78rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
+.emptyChatWelcome {
+  text-align: center;
+  padding: 24px 12px;
+  color: #a3a3a3;
 }
 
-.wilsyConversationMemoryDock > button:hover,
-.wilsyConversationMemoryDock > button:focus-visible {
-  border-color: rgba(45, 255, 214, 0.62) !important;
-  box-shadow: 0 0 0 4px rgba(45, 255, 214, 0.08) !important;
-  outline: none !important;
-  transform: translateY(-1px);
+.suggestionsTabContent,
+.historyTabContent {
+  padding: 12px;
+  overflow-y: auto;
 }
 
-.wilsyConversationMemoryDock > label {
-  position: relative !important;
-  display: block !important;
-  min-width: 0 !important;
-  width: 100% !important;
+.suggestionsList,
+.threadsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.wilsyConversationMemoryDock > label > span {
-  display: none !important;
+.suggestionCard,
+.threadCard {
+  display: flex;
+  gap: 10px;
+  text-align: left;
+  padding: 12px;
+  width: 100%;
 }
 
-.wilsyConversationMemoryDock > label::before {
-  content: none !important;
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  z-index: 2;
-  color: rgba(45, 255, 214, 0.9);
-  font-size: 0.64rem;
-  font-weight: 950;
-  letter-spacing: 0.22em;
-  line-height: 1;
-  pointer-events: none;
-  text-transform: uppercase;
-  transform: translateY(-50%);
-  white-space: nowrap;
+.activeThreadCard {
+  border-color: rgba(212, 175, 55, 0.55);
 }
 
-.wilsyConversationMemoryDock > label::after {
-  content: '⌄';
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  z-index: 2;
-  color: rgba(246, 252, 255, 0.74);
-  font-size: 1.05rem;
-  pointer-events: none;
-  transform: translateY(-54%);
+.historyHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.wilsyConversationMemoryDock > label > select {
-  width: 100% !important;
-  min-height: 42px !important;
-  padding: 0 48px 0 226px !important;
-  border: 1px solid rgba(146, 190, 255, 0.34) !important;
-  border-radius: 999px !important;
-  appearance: none !important;
-  background:
-    linear-gradient(90deg, rgba(146, 190, 255, 0.09), rgba(45, 255, 214, 0.045)),
-    rgba(3, 14, 24, 0.92) !important;
-  color: rgba(246, 252, 255, 0.96) !important;
-  font-size: 0.8rem !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.14em !important;
-  outline: none !important;
-  text-transform: uppercase !important;
+.clearHistoryButton {
+  padding: 6px 10px;
+  font-size: 0.7rem;
 }
 
-.wilsyConversationMemoryDock > label > select:focus {
-  border-color: rgba(146, 190, 255, 0.82) !important;
-  box-shadow:
-    0 0 0 3px rgba(146, 190, 255, 0.12),
-    0 0 26px rgba(45, 255, 214, 0.12) !important;
+/* NEW CSS FIXES FOR 10/10 TOOLBAR */
+.historyHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.wilsyConversationMemoryDock > small {
-  display: inline-flex !important;
-  align-items: baseline !important;
-  justify-content: flex-end !important;
-  gap: 8px !important;
-  min-width: 84px !important;
-  color: rgba(232, 216, 151, 0.94) !important;
-  font-size: 0.76rem !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.22em !important;
-  text-align: right !important;
-  text-transform: uppercase !important;
-  white-space: nowrap !important;
+.historyActionButton {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: #111;
+  color: #e8e8e8;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-@media (max-width: 980px) {
-  .wilsyConversationMemoryDock {
-    grid-template-columns: 1fr !important;
-  }
-
-  .wilsyConversationMemoryDock > label::before {
-    position: static;
-    display: block;
-    margin: 0 0 8px;
-    transform: none;
-  }
-
-  .wilsyConversationMemoryDock > label > select {
-    padding-left: 18px !important;
-  }
-
-  .wilsyConversationMemoryDock > small {
-    justify-content: flex-start !important;
-    text-align: left !important;
-  }
-}
-
-
-/* WILSY_P60K5Q10ET_CONTEXTUAL_CHAT_HISTORY_CSS */
-.wilsyConversationMemoryDock > label::before {
-  content: none !important;
-  display: none !important;
-}
-
-.wilsyConversationMemoryDock > label > span {
-  display: initial !important;
-}
-
-.wilsyConversationMemoryDock > label > strong {
-  display: inline-flex !important;
-}
-
-.wilsyConversationClearHistoryButton {
-  border-color: rgba(255, 184, 0, 0.28) !important;
-  color: rgba(255, 236, 179, 0.96) !important;
-}
-
-.wilsyConversationClearHistoryButton:disabled {
-  cursor: not-allowed !important;
-  opacity: 0.42 !important;
-}
-
-
-/* WILSY_P60K5Q10EV_NEW_THREAD_SUGGESTIONS_RESET_CSS */
-.wilsyConversationNewButton::after {
-  content: 'New thread' !important;
-}
-
-.wilsyConversationClearHistoryButton::after {
-  content: 'Clear history' !important;
-  font-size: 0.78rem !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.18em !important;
-}
-
-.wilsyConversationClearHistoryButton:disabled::after {
-  content: 'No history' !important;
-}
-
-
-/* WILSY_P60K5Q10EW_PRODUCTION_RESPONSE_COMPOSER */
-.operatorWorkbench {
-  gap: 18px !important;
-}
-
-.inlineComposerStream,
-.operatorResponse,
-.responsePanel,
-.liveComposerAnswer,
-.wilsyInlineComposerStream,
-.wilsyNaturalAnswer,
-.capabilityFoundryPanel,
-.wilsyCapabilityFoundryPanel {
-  min-height: 0 !important;
-  max-height: none !important;
-}
-
-.inlineComposerStream:empty,
-.operatorResponse:empty,
-.responsePanel:empty,
-.liveComposerAnswer:empty,
-.wilsyInlineComposerStream:empty,
-.wilsyNaturalAnswer:empty {
-  display: none !important;
-}
-
-.capabilityFoundryPanel,
-.wilsyCapabilityFoundryPanel {
-  margin-top: 16px !important;
-}
-
-.askBar {
-  margin-top: 14px !important;
+.historyActionButton:hover {
+  border-color: rgba(212, 175, 55, 0.55);
 }

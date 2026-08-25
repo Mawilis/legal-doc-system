@@ -1,0 +1,20 @@
+client/tests/client/Sovereign_Crisis_Command.test.jsx:19:    test('[1.1] Renders the main header with crisis command title', () => {
+client/tests/client/Sovereign_Crisis_Command.test.jsx:20:      const header = screen.getByTestId('crisis-header');
+client/tests/client/Sovereign_Crisis_Command.test.jsx:21:      expect(header).toBeInTheDocument();
+client/tests/client/Sovereign_Crisis_Command.test.jsx:22:      expect(header).toHaveTextContent('SOVEREIGN CRISIS COMMAND');
+client/tests/client/Audit.test.jsx:46:  it('renders audit trail header', () => {
+client/tests/client/Users.test.jsx:11:    const header = await screen.findByText(/User Management/i);
+client/tests/client/Users.test.jsx:12:    expect(header).toBeDefined();
+client/tests/client/Tenants.test.jsx:36:  it('renders tenants header', () => {
+client/tests/client/SovereignNodeDashboard.test.jsx:9: * @description Validates the three-pane architecture and asset-based navigation labels.
+client/tests/client/FirmDashboard.test.jsx:8:  it('renders firm-specific stats and workspace header', () => {
+client/tests/client/Dashboard.test.jsx:70:  it('renders header with company & slogan', async () => {
+client/tests/client/FirmSidebar.test.jsx:8:  it('renders firm operator identity and navigation engine', () => {
+client/tests/client/Sovereign_Covenant.test.jsx:54:      expect(screen.getByTestId('dashboard-header')).toBeInTheDocument();
+client/tests/client/Sovereign_Client_Covenant.test.jsx:26:    test('[1.1] Renders the main header with client covenant title', () => {
+client/tests/client/Sovereign_Client_Covenant.test.jsx:27:      const header = screen.getByTestId('covenant-header');
+client/tests/client/Sovereign_Client_Covenant.test.jsx:28:      expect(header).toBeInTheDocument();
+client/tests/client/Sovereign_Client_Covenant.test.jsx:29:      expect(header).toHaveTextContent('CLIENT COVENANT BOARD');
+client/tests/client/Sovereign_Client_Covenant.test.jsx:30:      expect(header).toHaveClass('text-gold');
+client/tests/client/System.test.jsx:30:  it('renders system settings header', () => {
+client/tests/client/Sovereign_Identity_Hub.test.jsx:144:    test('[1.1] Renders the main header with sovereign identity title', () => {
