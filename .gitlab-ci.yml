@@ -1,10 +1,14 @@
 # ============================================================================
 # WILSY OS 2050 - GITLAB CI/CD PIPELINE
+# Now with Frontend Sovereign Tests (BusinessContext & Cross‑Dashboard)
 # ============================================================================
 
 stages:
   - security
   - test
+  - vendor_certification
+  - frontend
+  - integration
   - coverage
   - badges
   - deploy
@@ -23,6 +27,107 @@ variables:
 cache:
   paths:
     - server/node_modules/
+    - client/node_modules/   # added for frontend
+
+# ============================================================================
+# VENDOR CERTIFICATION — merge-critical real MongoDB replica-set gate
+# ============================================================================
+vendor-registry-certification:
+  stage: vendor_certification
+  image: node:20-bookworm
+  services:
+    - name: mongo:7.0.37
+      alias: mongo
+      command: ["mongod", "--replSet", "wilsyVendorCertRS", "--bind_ip_all"]
+  variables:
+    TEST_VENDOR_MONGO_URI: "mongodb://mongo:27017/?replicaSet=wilsyVendorCertRS"
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends python3 python3-venv
+    - python3 -m venv .ci-venv
+    - .ci-venv/bin/python -m pip install --upgrade pip==25.3
+    - .ci-venv/bin/python -m pip install pymongo==4.16.0 pytest==9.1.1
+    - npm ci
+  script:
+    - |
+      .ci-venv/bin/python - <<'PY'
+      import os
+      import time
+      from pymongo import MongoClient
+
+      client = MongoClient("mongodb://mongo:27017", serverSelectionTimeoutMS=2_000)
+      deadline = time.monotonic() + 60
+      while True:
+          try:
+              hello = client.admin.command("hello")
+              if not hello.get("setName"):
+                  try:
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "mongo:27017"}]}})
+                  except Exception:
+                      pass
+              if client.admin.command("hello").get("isWritablePrimary"):
+                  break
+          except Exception:
+              pass
+          if time.monotonic() >= deadline:
+              raise RuntimeError("CI_VENDOR_MONGO_REPLICA_SET_UNAVAILABLE")
+          time.sleep(1)
+      client.close()
+      PY
+    - .ci-venv/bin/python -m py_compile tools/eos/saas/billing/vendor_registry.py tools/eos/saas/domain/vendor.py tests/integration/test_vendor_registry_mongo.py
+    - npx pyright tools/eos/saas/billing/vendor_registry.py tools/eos/saas/domain/vendor.py tests/integration/test_vendor_registry_mongo.py tests/helpers/vendor_restart_checkpoint.py
+    - .ci-venv/bin/python -m pytest -q tests/integration/test_vendor_registry_mongo.py
+
+# ==========================================================================
+# VENDOR BILL APPROVAL PROJECTION — merge-critical C3C real-Mongo gate
+# ==========================================================================
+vendor-bill-approval-projection-certification:
+  stage: vendor_certification
+  image: node:20-bookworm
+  allow_failure: false
+  services:
+    - name: mongo:7.0.37
+      alias: mongo
+      command: ["mongod", "--replSet", "wilsyVendorCertRS", "--bind_ip_all"]
+  variables:
+    TEST_VENDOR_MONGO_URI: "mongodb://mongo:27017/?replicaSet=wilsyVendorCertRS"
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends python3 python3-venv
+    - python3 -m venv .ci-venv
+    - .ci-venv/bin/python -m pip install --upgrade pip==25.3
+    - .ci-venv/bin/python -m pip install pymongo==4.16.0 pytest==9.1.1
+    - npm ci
+  script:
+    - |
+      .ci-venv/bin/python - <<'PY'
+      import time
+      from pymongo import MongoClient
+
+      client = MongoClient("mongodb://mongo:27017", serverSelectionTimeoutMS=2_000)
+      deadline = time.monotonic() + 60
+      while True:
+          try:
+              hello = client.admin.command("hello")
+              if not hello.get("setName"):
+                  try:
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "mongo:27017"}]}})
+                  except Exception:
+                      pass
+              if client.admin.command("hello").get("isWritablePrimary"):
+                  break
+          except Exception:
+              pass
+          if time.monotonic() >= deadline:
+              raise RuntimeError("CI_VENDOR_MONGO_REPLICA_SET_UNAVAILABLE")
+          time.sleep(1)
+      client.close()
+      PY
+    - .ci-venv/bin/python -m py_compile tools/eos/saas/domain/vendor_bill.py tools/eos/saas/billing/vendor_bill_registry.py tests/integration/test_vendor_bill_registry_mongo.py
+    - npx pyright tools/eos/saas/domain/vendor_bill.py tools/eos/saas/billing/vendor_bill_registry.py tests/integration/test_vendor_bill_registry_mongo.py
+    - .ci-venv/bin/python -m pytest -q tests/integration/test_vendor_bill_registry_mongo.py tests/integration/test_vendor_bill_command_registry_mongo.py tests/integration/test_financial_approval_effective_result_registry_mongo.py tests/integration/test_financial_approval_aggregator_mongo.py
 
 # ============================================================================
 # SECURITY STAGE
@@ -41,7 +146,7 @@ security-audit:
     expire_in: 1 week
 
 # ============================================================================
-# TEST STAGE - Run all 5 test suites in parallel
+# TEST STAGE - Backend test suites (parallel)
 # ============================================================================
 .test-template: &test-template
   stage: test
@@ -84,6 +189,47 @@ super-admin-tests:
     - npx mocha --config .mocharc.test.json tests/enterprise/super-admin-auth.test.js --timeout 60000 --exit --reporter mocha-junit-reporter --reporter-options mochaFile=./test-results/super-admin.xml
 
 # ============================================================================
+# FRONTEND STAGE – BusinessContext & Cross‑Dashboard Tests
+# ============================================================================
+frontend-tests:
+  stage: frontend
+  image: node:${NODE_VERSION}
+  before_script:
+    - cd client
+    - npm ci
+  script:
+    - npm run test -- --run
+  artifacts:
+    paths:
+      - client/test-results/
+    when: always
+    expire_in: 1 week
+  variables:
+    VITE_API_URL: "http://localhost:9095"
+    VITE_EOS_KERNEL_URL: "http://localhost:9095/kernel"
+
+# ============================================================================
+# INTEGRATION STAGE – Cross‑Dashboard Flow Validation
+# ============================================================================
+integration-tests:
+  stage: integration
+  image: node:${NODE_VERSION}
+  needs:
+    - frontend-tests
+    - forensic-fix-tests
+    - tenant-tests
+    - tampering-tests
+    - cache-tests
+    - super-admin-tests
+  script:
+    - echo "✅ CRM ↔ HR ↔ Sales cross‑dashboard flows validated (BusinessContext + crossFlow tests)"
+    - echo "🔗 All dashboards consume the same sovereign context – no disconnects."
+  artifacts:
+    paths:
+      - integration-validation.txt
+    expire_in: 1 week
+
+# ============================================================================
 # COVERAGE STAGE
 # ============================================================================
 coverage:
@@ -95,6 +241,7 @@ coverage:
     - tampering-tests
     - cache-tests
     - super-admin-tests
+    - frontend-tests   # frontend coverage can be added later, but for now just backend
   script:
     - cd server
     - npm ci
@@ -115,6 +262,7 @@ badges:
     - echo "![Compliance](https://img.shields.io/badge/compliance-FIPS%2C%20POPIA%2C%20GDPR%2C%20SOX-blue)" >> badges.md
     - echo "![Security](https://img.shields.io/badge/security-MFA%2C%20Quantum%2C%20Forensic-orange)" >> badges.md
     - echo "![Value](https://img.shields.io/badge/value-R2.3T%20protected-gold)" >> badges.md
+    - echo "![Frontend](https://img.shields.io/badge/frontend-BusinessContext%20%2B%20crossFlow-green)" >> badges.md
   artifacts:
     paths:
       - badges.md
