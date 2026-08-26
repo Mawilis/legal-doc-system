@@ -5,12 +5,12 @@
  * -----------------------------------------------------------------------------
  * PURPOSE:
  * - Robust job orchestration layer for Wilsy OS.
- * - Lightweight wrapper around a Redis-backed queue (Bull or BullMQ).
+ * - Lightweight wrapper around the Redis-backed BullMQ queue runtime.
  * - Ensures durable Job documents in MongoDB, emits forensic AuditEvents,
  *   supports graceful shutdown, health checks, metrics hooks, and safe defaults.
  *
  * FEATURES:
- * - Pluggable queue backend: Bull (v3) by default; auto-detects BullMQ if installed.
+ * - Deterministic BullMQ backend with explicit Queue and Worker ownership.
  * - Creates a Job document before enqueueing so UI can poll immediately.
  * - Correlation IDs for traceability; best-effort audit writes.
  * - Worker registration helper that updates Job documents (progress/status).
@@ -38,7 +38,7 @@
  * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
  *
  * @description
- * Job orchestration layer with Redis-backed queue (Bull/BullMQ), MongoDB job persistence,
+ * Job orchestration layer with Redis-backed BullMQ, MongoDB job persistence,
  * audit logging, and graceful shutdown.
  *
  * @collaboration
@@ -53,6 +53,7 @@
  * • Johan Botha – Compliance: 2026-04-07
  */
 
+import { Queue, Worker } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import AuditEvent from '../models/auditEventModel.js';
 import JobModel from '../models/jobModel.js';
@@ -66,34 +67,11 @@ const DEFAULT_QUEUE_NAME = 'default';
 const DEFAULT_ATTEMPTS = parseInt(process.env.JOB_DEFAULT_ATTEMPTS || '3', 10);
 const DEFAULT_BACKOFF = { type: 'exponential', delay: 5000 };
 
-let QueueImpl;
-let isBullMQ = false;
-
-// Dynamically detect queue backend
-(async () => {
-  try {
-    // Prefer BullMQ if available (modern)
-    const { Queue } = await import('bullmq');
-    QueueImpl = { type: 'bullmq', Queue };
-    isBullMQ = true;
-    logger.info('jobService: using BullMQ as queue backend');
-  } catch (e) {
-    try {
-      // Fallback to bull v3
-      const Bull = await import('bull');
-      QueueImpl = { type: 'bull', Bull: Bull.default };
-      logger.info('jobService: using Bull (v3) as queue backend');
-    } catch (err) {
-      logger.error('jobService: no queue backend available (install bull or bullmq)', {
-        err: err && err.message ? err.message : err,
-      });
-      throw new Error('No queue backend available. Install bull or bullmq.');
-    }
-  }
-})();
-
-// Map of queueName -> queue instance
+// Map of queueName -> BullMQ queue instance
 const queues = new Map();
+
+// Active BullMQ workers owned by this service
+const workers = new Set();
 
 /* -------------------------
    Queue Factory
@@ -103,31 +81,20 @@ function getQueueKey(name) {
   return `${DEFAULT_QUEUE_PREFIX}:${name}`;
 }
 
-function createBullQueue(name) {
-  const { Bull } = QueueImpl;
-  // Bull v3 constructor: new Bull(name, redisUrl, opts)
-  return new Bull(name, REDIS_URL, { prefix: DEFAULT_QUEUE_PREFIX });
-}
-
-function createBullMQQueue(name) {
-  const { Queue } = QueueImpl;
-  // BullMQ constructor: new Queue(name, { connection: { url } })
-  return new Queue(name, { connection: { url: REDIS_URL }, prefix: DEFAULT_QUEUE_PREFIX });
+function createQueue(name) {
+  return new Queue(name, {
+    connection: { url: REDIS_URL },
+    prefix: DEFAULT_QUEUE_PREFIX,
+  });
 }
 
 function getQueue(name = DEFAULT_QUEUE_NAME) {
   const key = getQueueKey(name);
   if (queues.has(key)) return queues.get(key);
 
-  let q;
-  if (isBullMQ) {
-    q = createBullMQQueue(name);
-  } else {
-    q = createBullQueue(name);
-  }
-
-  queues.set(key, q);
-  return q;
+  const queue = createQueue(name);
+  queues.set(key, queue);
+  return queue;
 }
 
 /* -------------------------
@@ -171,7 +138,6 @@ async function enqueue(jobName, payload = {}, opts = {}) {
     backoff = DEFAULT_BACKOFF,
     removeOnComplete = true,
     removeOnFail = false,
-    timeout = 0,
     metadata = {},
     actorEmail = null,
     actorRole = null,
@@ -198,37 +164,24 @@ async function enqueue(jobName, payload = {}, opts = {}) {
   const corr = correlationId || jobDoc.correlationId || uuidv4();
 
   try {
-    let queuedJob;
-    if (isBullMQ) {
-      // BullMQ: queue.add(name, data, opts)
-      queuedJob = await q.add(
-        jobName,
-        { payload, meta: { initiatedBy, correlationId: corr, jobDocId: jobDoc._id } },
-        {
-          jobId: effectiveJobId,
-          attempts,
-          backoff,
-          removeOnComplete,
-          removeOnFail,
-          timeout,
-        }
-      );
-      // queuedJob.id is string
-    } else {
-      // Bull v3: queue.add(name, data, opts)
-      queuedJob = await q.add(
-        jobName,
-        { payload, meta: { initiatedBy, correlationId: corr, jobDocId: jobDoc._id } },
-        {
-          jobId: effectiveJobId,
-          attempts,
-          backoff,
-          removeOnComplete,
-          removeOnFail,
-          timeout,
-        }
-      );
-    }
+    const queuedJob = await q.add(
+      jobName,
+      {
+        payload,
+        meta: {
+          initiatedBy,
+          correlationId: corr,
+          jobDocId: jobDoc._id,
+        },
+      },
+      {
+        jobId: effectiveJobId,
+        attempts,
+        backoff,
+        removeOnComplete,
+        removeOnFail,
+      }
+    );
 
     // 3) Emit audit (best-effort)
     try {
@@ -295,13 +248,7 @@ async function getJob(jobId, { queueName = DEFAULT_QUEUE_NAME } = {}) {
   // Try to fetch from queue first (if available), then from JobModel
   try {
     const q = getQueue(queueName);
-    let qJob = null;
-    if (isBullMQ) {
-      // BullMQ: q.getJob(jobId)
-      qJob = await q.getJob(jobId);
-    } else {
-      qJob = await q.getJob(jobId);
-    }
+    const qJob = await q.getJob(jobId);
 
     const jobDoc = await JobModel.findById(jobId)
       .lean()
@@ -357,7 +304,7 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
   const { concurrency = 1, metricsClient = null, heartbeatIntervalMs = 30000 } = opts;
   const q = getQueue(queueName);
 
-  // Worker wrapper for Bull v3
+  // Shared BullMQ worker wrapper
   const workerFn = async (job) => {
     const data = job.data || {};
     const payload = data.payload || {};
@@ -496,46 +443,37 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
     }
   };
 
-  // Register processor depending on backend
-  if (isBullMQ) {
-    // BullMQ: create Worker separately to process jobs (avoid circular import)
-    import('bullmq').then(({ Worker }) => {
-      const worker = new Worker(queueName, async (job) => workerFn(job), {
-        connection: { url: REDIS_URL },
-        concurrency,
-      });
-      worker.on('failed', (job, err) => {
-        logger.error('jobService.worker.failed', {
-          queue: queueName,
-          jobId: job.id,
-          err: err && err.message ? err.message : err,
-        });
-      });
-      worker.on('completed', (job) => {
-        logger.info('jobService.worker.completed', { queue: queueName, jobId: job.id });
-      });
-      return worker;
-    }).catch(err => {
-      logger.error('jobService: Failed to load BullMQ Worker', err);
-    });
-  } else {
-    // Bull v3
-    q.process(concurrency, async (job) => workerFn(job));
+  const worker = new Worker(queueName, async (job) => workerFn(job), {
+    connection: { url: REDIS_URL },
+    prefix: DEFAULT_QUEUE_PREFIX,
+    concurrency,
+  });
 
-    q.on('failed', (job, err) => {
-      logger.error('jobService.queue.failed', {
-        queue: queueName,
-        jobId: job.id,
-        err: err && err.message ? err.message : err,
-      });
-    });
+  workers.add(worker);
 
-    q.on('completed', (job) => {
-      logger.info('jobService.queue.completed', { queue: queueName, jobId: job.id });
+  worker.on('failed', (job, err) => {
+    logger.error('jobService.worker.failed', {
+      queue: queueName,
+      jobId: job?.id || null,
+      err: err && err.message ? err.message : err,
     });
+  });
 
-    return q;
-  }
+  worker.on('completed', (job) => {
+    logger.info('jobService.worker.completed', {
+      queue: queueName,
+      jobId: job.id,
+    });
+  });
+
+  worker.on('error', (err) => {
+    logger.error('jobService.worker.error', {
+      queue: queueName,
+      err: err && err.message ? err.message : err,
+    });
+  });
+
+  return worker;
 }
 
 /* -------------------------
@@ -544,21 +482,19 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
 
 async function health() {
   const info = { queues: [] };
+
   for (const [key, q] of queues.entries()) {
     try {
-      if (isBullMQ) {
-        // BullMQ: q.getJobCounts()
-        const counts = await q.getJobCounts();
-        info.queues.push({ key, counts });
-      } else {
-        // Bull v3: q.getJobCounts()
-        const counts = await q.getJobCounts();
-        info.queues.push({ key, counts });
-      }
+      const counts = await q.getJobCounts();
+      info.queues.push({ key, counts });
     } catch (e) {
-      info.queues.push({ key, error: e && e.message ? e.message : String(e) });
+      info.queues.push({
+        key,
+        error: e && e.message ? e.message : String(e),
+      });
     }
   }
+
   return info;
 }
 
@@ -567,43 +503,43 @@ async function health() {
    ------------------------- */
 
 let shuttingDown = false;
+
 async function shutdown() {
   if (shuttingDown) return;
+
   shuttingDown = true;
-  logger.info('jobService.shutdown: closing queues');
+
+  logger.info('jobService.shutdown: closing workers and queues');
+
   const closePromises = [];
-  for (const [key, q] of queues.entries()) {
-    try {
-      if (isBullMQ) {
-        // BullMQ: q.close()
-        closePromises.push(
-          q.close().catch((e) =>
-            logger.warn('jobService.shutdown: queue close failed', {
-              key,
-              err: e && e.message ? e.message : e,
-            })
-          )
-        );
-      } else {
-        // Bull v3: q.close()
-        closePromises.push(
-          q.close().catch((e) =>
-            logger.warn('jobService.shutdown: queue close failed', {
-              key,
-              err: e && e.message ? e.message : e,
-            })
-          )
-        );
-      }
-    } catch (e) {
-      logger.warn('jobService.shutdown: error closing queue', {
-        key,
-        err: e && e.message ? e.message : e,
-      });
-    }
+
+  for (const worker of workers) {
+    closePromises.push(
+      worker.close().catch((e) =>
+        logger.warn('jobService.shutdown: worker close failed', {
+          err: e && e.message ? e.message : e,
+        })
+      )
+    );
   }
+
+  for (const [key, q] of queues.entries()) {
+    closePromises.push(
+      q.close().catch((e) =>
+        logger.warn('jobService.shutdown: queue close failed', {
+          key,
+          err: e && e.message ? e.message : e,
+        })
+      )
+    );
+  }
+
   await Promise.all(closePromises);
-  logger.info('jobService.shutdown: all queues closed');
+
+  workers.clear();
+  queues.clear();
+
+  logger.info('jobService.shutdown: all workers and queues closed');
 }
 
 /* -------------------------
