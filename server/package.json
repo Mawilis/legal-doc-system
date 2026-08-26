@@ -57,7 +57,6 @@
     "csv-parser": "3.2.0",
     "docxtemplater": "3.68.3",
     "dotenv": "16.6.1",
-    "elliptic": "6.6.1",
     "exceljs": "4.4.0",
     "express": "^4.22.2",
     "express-async-handler": "1.2.0",
