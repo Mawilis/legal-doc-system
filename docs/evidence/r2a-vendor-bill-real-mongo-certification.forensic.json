@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "evidenceType": "REAL_MONGO_CERTIFICATION",
+    "classification": "CERTIFIED",
+    "system": "Wilsy OS",
+    "scope": "R2A Vendor Bill command and financial approval persistence",
+    "generatedAt": "2026-08-26T17:47:33Z",
+    "head": "ad7bc482f79204b8cfeb3ce419b9b64bd9d02ea2"
+  },
+  "certification": {
+    "workflow": "🏛️ WILSY OS 2050 Unified Pipeline",
+    "job": "🧾 R2A Vendor Bill Real-Mongo Certification",
+    "githubRunId": 32995592924,
+    "githubJobId": 98264079764,
+    "result": "PASSED",
+    "collectedTests": 52,
+    "passedTests": 52,
+    "failedTests": 0,
+    "durationSeconds": 15.85,
+    "summary": "52 passed in 15.85s"
+  },
+  "environment": {
+    "runner": "GitHub Actions ubuntu-latest",
+    "python": "3.12.3",
+    "pytest": "9.1.1",
+    "pymongo": "4.16.0",
+    "mongo": "7.0.37",
+    "replicaSet": "wilsyVendorCertRS",
+    "pyright": "1.1.413"
+  },
+  "certifiedSuites": [
+    "tests/integration/test_vendor_bill_registry_mongo.py",
+    "tests/integration/test_vendor_bill_command_registry_mongo.py",
+    "tests/integration/test_financial_approval_effective_result_registry_mongo.py",
+    "tests/integration/test_financial_approval_aggregator_mongo.py"
+  ],
+  "certificationStages": {
+    "pythonEnvironment": "PASSED",
+    "mongoReplicaSetStartup": "PASSED",
+    "mongoReplicaSetInitialization": "PASSED",
+    "pythonCompilation": "PASSED",
+    "pyright": "PASSED",
+    "realMongoTests": "PASSED",
+    "cleanup": "PASSED"
+  },
+  "decision": {
+    "status": "CERTIFIED",
+    "r2aGateSatisfied": true,
+    "r2bMayProceed": true,
+    "requiredNextAction": "Preserve this evidence with the certified commit and begin R2B only from the sealed R2A baseline."
+  },
+  "evidenceCommands": [
+    "gh run view 32995592924 --json status,conclusion,jobs",
+    "gh run view 32995592924 --job 98264079764 --log",
+    "gh run view 32995592924 --job 98264079764 --log | grep -E 'collected|passed in|52 passed'",
+    "git rev-parse HEAD"
+  ],
+  "hash": "20e583bf85caebc047bab07365ef9ac30470fe75467a2c27e4bfad0a0831da31"
+}
