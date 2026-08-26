@@ -1,0 +1,22 @@
+{
+  "schema": "WILSY-R2B-VENDOR-BILL-RELEASE-AUTHORIZATION-REAL-MONGO-CERTIFICATION/V1",
+  "version": "v1.0.0-R2B-RELEASE-AUTHORIZATION-REAL-MONGO-EVIDENCE",
+  "authority": "Wilsy OS Core Governance",
+  "classification": "Institutional Forensic Evidence — Production Certification",
+  "epitome": "Authoritative real-Mongo evidence for tenant-scoped immutable release authorization persistence.",
+  "evidence_date": "2026-08-26",
+  "source": {"branch": "fg108o4b-knowledge-operating-room", "commit": "8fe81a0add048932f8813af4cbbfdc2a4fca9d84"},
+  "workflow": {"name": "🏛️ WILSY OS 2050 Unified Pipeline", "run_id": 33010399619, "status": "completed", "conclusion": "failure", "created_at": "2026-08-26T20:26:20Z", "updated_at": "2026-08-26T20:28:36Z"},
+  "authoritative_job": {"id": 98315132366, "name": "🧾 R2A Vendor Bill Real-Mongo Certification", "status": "completed", "conclusion": "success", "started_at": "2026-08-26T20:27:22Z", "completed_at": "2026-08-26T20:28:31Z", "pytest": "61 passed in 24.65s"},
+  "mongo_environment": {"image": "mongo:7.0.37", "replica_set": "wilsyVendorCertRS", "endpoint": "localhost:27017", "uri": "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS", "initialization": "replSetInitiate", "primary_readiness": "hello.isWritablePrimary", "pymongo": "4.16.0", "pytest": "9.1.1", "python": "3.12.3"},
+  "certified_artifacts": ["tools/eos/saas/domain/vendor_bill_release_authorization.py", "tools/eos/saas/billing/vendor_bill_release_authorization_registry.py", "tests/unit/test_vendor_bill_release_authorization.py", "tests/integration/test_vendor_bill_release_authorization_registry_mongo.py", ".github/workflows/ci.yml"],
+  "integration_artifact_version": "v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY-MONGO-CERT",
+  "certified_surfaces": ["exact tenant-scoped release authorization unique identity", "tenant + payable + idempotency unique identity", "immutable persistence", "deterministic SHA3-512 create fingerprint", "create classification", "idempotent replay", "idempotency-key reuse conflict", "release-identity conflict", "tenant isolation", "payable-scoped idempotency", "persisted corruption detection", "corruption precedence", "not-found behavior", "lookup validation", "concurrent exact-create convergence", "concurrent release-identity conflict", "caller-owned transaction abort", "caller-owned transaction commit", "session-aware reads", "absence of execution/settlement/banking fields"],
+  "architecture_locks": ["APPROVED != RELEASE AUTHORIZED", "RELEASE AUTHORIZED != EXECUTED", "EXECUTED != SETTLED"],
+  "kennel_eos": {"exclusive_financial_execution_authority": true, "registry_executes_money": false, "registry_proves_settlement": false, "registry_mutates_vendor_bill_truth": false},
+  "regression_context": {"same_job_reran_r2a_suites": true, "aggregate_result": "61 passed in 24.65s", "no_regression_claim_scope": "included R2A Mongo suites"},
+  "prior_attempt_traceability": {"run_id": 33009184345, "job_id": 98310974439, "source": "8acb15c5eeb17f60d00db819a7d6d9976ba7082c", "result": "60 passed, 1 failed in 17.69s", "failure": "test_session_aware_release_authorization_reads", "root_cause": "TEST_ARTIFACT_DEFECT", "correction_commit": "8fe81a0add048932f8813af4cbbfdc2a4fca9d84"},
+  "scope_limitations": ["Certification is scoped to authoritative job 98315132366.", "Unified workflow conclusion was failure due to unrelated jobs.", "No whole-system certification is claimed."],
+  "compliance": ["POPIA §19", "GDPR §32", "SOC2 CC7.2"],
+  "certification": {"authoritative_job_certified": true, "workflow_run_green": false, "r2b02_real_mongo_certified": true, "claim": "R2B-02 real-Mongo persistence certification PASSED for authoritative job 98315132366 at source commit 8fe81a0add048932f8813af4cbbfdc2a4fca9d84.", "external_seal_algorithm": "SHA3-512", "external_seal_status": "PENDING"}
+}
