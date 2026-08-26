@@ -80,7 +80,7 @@
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { WebAuthn } from '@simplewebauthn/server';
-import Bull from 'bull';
+import { Queue, QueueEvents } from 'bullmq';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
 import { v4 as uuidv4 } from 'uuid';
@@ -237,6 +237,8 @@ const CONSENT_STATUS = {
 let redisClient = null;
 let consentQueue = null;
 let complianceQueue = null;
+let consentQueueEvents = null;
+let complianceQueueEvents = null;
 
 const initializeQuantumInfrastructure = async () => {
   try {
@@ -261,21 +263,36 @@ const initializeQuantumInfrastructure = async () => {
     await redisClient.connect();
     console.log('✅ QUANTUM CACHE: Redis connection established');
 
-    consentQueue = new Bull('consent-operations', process.env.QUEUE_REDIS_URL);
-    complianceQueue = new Bull('compliance-workflows', process.env.QUEUE_REDIS_URL);
+    const queueConnection = {
+      url: process.env.QUEUE_REDIS_URL,
+    };
 
-    consentQueue.on('failed', (job, err) => {
-      console.error(`QUANTUM ALERT: Consent job ${job.id} failed:`, err);
+    consentQueue = new Queue('consent-operations', {
+      connection: queueConnection,
+    });
+    complianceQueue = new Queue('compliance-workflows', {
+      connection: queueConnection,
+    });
+
+    consentQueueEvents = new QueueEvents('consent-operations', {
+      connection: queueConnection,
+    });
+    complianceQueueEvents = new QueueEvents('compliance-workflows', {
+      connection: queueConnection,
+    });
+
+    consentQueueEvents.on('failed', ({ jobId, failedReason }) => {
+      console.error(`QUANTUM ALERT: Consent job ${jobId} failed:`, failedReason);
       sendBreachAlert({
         severity: 'HIGH',
         component: 'ConsentQueue',
-        error: err.message,
-        jobId: job.id,
+        error: failedReason,
+        jobId,
       });
     });
 
-    complianceQueue.on('completed', (job) => {
-      console.log(`✅ Compliance job ${job.id} completed successfully`);
+    complianceQueueEvents.on('completed', ({ jobId }) => {
+      console.log(`✅ Compliance job ${jobId} completed successfully`);
     });
 
     console.log('✅ QUANTUM QUEUES: BullMQ queues initialized');
@@ -1170,7 +1187,12 @@ class ConsentManagementService {
   async initiateConsentCascade(userId, consentDetails, reason, withdrawalId) {
     const cascadeTasks = [
       this.flagDataForDeletion(userId, consentDetails.type, withdrawalId),
-      this.notifyThirdParties(userId, consentDetails.thirdParties, 'CONSENT_WITHDRAWN', withdrawalId),
+      this.notifyThirdParties(
+        userId,
+        consentDetails.thirdParties,
+        'CONSENT_WITHDRAWN',
+        withdrawalId
+      ),
       this.updateMarketingPreferences(userId, 'OPT_OUT', withdrawalId),
       this.clearUserCookies(userId, withdrawalId),
       this.archiveConsentRecord(userId, consentDetails.consentId, withdrawalId),
