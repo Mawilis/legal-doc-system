@@ -205,6 +205,8 @@ jobs:
       - name: Type-check R2A contracts
         run: |
           npx --yes pyright@1.1.413 \
+            --venvpath . \
+            --venv .ci-venv \
             tools/eos/saas/domain/vendor_bill.py \
             tools/eos/saas/billing/vendor_bill_registry.py \
             tests/integration/test_vendor_bill_registry_mongo.py
