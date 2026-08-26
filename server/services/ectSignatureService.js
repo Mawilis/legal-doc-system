@@ -113,7 +113,8 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import asn1 from 'asn1.js';
 import axios from 'axios';
-import { ec as EC } from 'elliptic';
+import BN from 'bn.js';
+import { p256 } from '@noble/curves/nist.js';
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
@@ -174,7 +175,8 @@ const ECT_QUANTUM_CONFIG = {
   KEY_STRENGTH: parseInt(process.env.ECT_KEY_STRENGTH) || 4096,
   JWT_SECRET: process.env.ECT_JWT_SECRET,
   TIMESTAMP_AUTHORITY_URL: process.env.ECT_TIMESTAMP_AUTHORITY_URL || 'https://freetsa.org/tsr',
-  BLOCKCHAIN_ANCHOR_URL: process.env.ECT_BLOCKCHAIN_ANCHOR_URL || 'https://api.blockcypher.com/v1/btc/main/txs',
+  BLOCKCHAIN_ANCHOR_URL:
+    process.env.ECT_BLOCKCHAIN_ANCHOR_URL || 'https://api.blockcypher.com/v1/btc/main/txs',
   TRUSTED_TIMESTAMPING_ENABLED: process.env.ECT_TRUSTED_TIMESTAMPING_ENABLED === 'true',
   BLOCKCHAIN_ANCHORING_ENABLED: process.env.ECT_BLOCKCHAIN_ANCHORING_ENABLED === 'true',
   ADVANCED_SIGNATURE_REQUIREMENTS: [
@@ -236,11 +238,13 @@ class QuantumKeyManagementService {
     }
 
     if (algorithm.includes('ECDSA')) {
-      const ec = new EC('p256');
-      const keyPair = ec.genKeyPair();
+      const { secretKey } = p256.keygen();
+      const privateKeyHex = Buffer.from(secretKey).toString('hex').replace(/^0+/, '') || '0';
+      const publicKeyHex = Buffer.from(p256.getPublicKey(secretKey, false)).toString('hex');
+
       return {
-        privateKey: keyPair.getPrivate('hex'),
-        publicKey: keyPair.getPublic('hex'),
+        privateKey: privateKeyHex,
+        publicKey: publicKeyHex,
         algorithm,
         curve: 'p256',
         generatedAt: new Date().toISOString(),
@@ -338,10 +342,14 @@ class QuantumTimestampingService {
   static async _getTrustedTimestamp(dataHash) {
     try {
       const timestampRequest = this._createTimestampRequest(dataHash);
-      const response = await axios.post(ECT_QUANTUM_CONFIG.TIMESTAMP_AUTHORITY_URL, timestampRequest, {
-        headers: { 'Content-Type': 'application/timestamp-query' },
-        timeout: 10000,
-      });
+      const response = await axios.post(
+        ECT_QUANTUM_CONFIG.TIMESTAMP_AUTHORITY_URL,
+        timestampRequest,
+        {
+          headers: { 'Content-Type': 'application/timestamp-query' },
+          timeout: 10000,
+        }
+      );
       if (response.status === 200) {
         return {
           timestampToken: response.data,
@@ -357,13 +365,33 @@ class QuantumTimestampingService {
 
   static _createTimestampRequest(dataHash) {
     return forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
-      forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.INTEGER, false, forge.util.hexToBytes('01')),
+      forge.asn1.create(
+        forge.asn1.Class.UNIVERSAL,
+        forge.asn1.Type.INTEGER,
+        false,
+        forge.util.hexToBytes('01')
+      ),
       forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
-        forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OID, false, forge.util.hexToBytes('0609608648016503040201')),
+        forge.asn1.create(
+          forge.asn1.Class.UNIVERSAL,
+          forge.asn1.Type.OID,
+          false,
+          forge.util.hexToBytes('0609608648016503040201')
+        ),
         forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, ''),
       ]),
-      forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, forge.util.hexToBytes(dataHash)),
-      forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.INTEGER, false, forge.util.hexToBytes('00')),
+      forge.asn1.create(
+        forge.asn1.Class.UNIVERSAL,
+        forge.asn1.Type.OCTETSTRING,
+        false,
+        forge.util.hexToBytes(dataHash)
+      ),
+      forge.asn1.create(
+        forge.asn1.Class.UNIVERSAL,
+        forge.asn1.Type.INTEGER,
+        false,
+        forge.util.hexToBytes('00')
+      ),
     ]);
   }
 
@@ -400,8 +428,13 @@ class QuantumTimestampingService {
     const now = moment();
     if (timestampDate.isAfter(now)) return { valid: false, reason: 'Timestamp is in the future' };
     const maxAge = moment().subtract(ECT_QUANTUM_CONFIG.AUDIT_RETENTION_DAYS, 'days');
-    if (timestampDate.isBefore(maxAge)) return { valid: false, reason: 'Timestamp beyond retention period' };
-    return { valid: true, age: `${now.diff(timestampDate, 'days')} days`, legalStatus: 'VALID_FOR_EVIDENCE' };
+    if (timestampDate.isBefore(maxAge))
+      return { valid: false, reason: 'Timestamp beyond retention period' };
+    return {
+      valid: true,
+      age: `${now.diff(timestampDate, 'days')} days`,
+      legalStatus: 'VALID_FOR_EVIDENCE',
+    };
   }
 }
 
@@ -428,8 +461,16 @@ class ECTSignatureService {
       if (!validation.valid) throw new Error(`Signature validation failed: ${validation.reason}`);
       const documentHash = this._generateDocumentHash(documentData);
       const signatureMetadata = await this._createSignatureMetadata(signatoryInfo, options);
-      const cryptographicSignature = await this._generateCryptographicSignature(documentHash, signatoryInfo, options);
-      const timestamp = await this.timestampingService.generateTimestamp({ documentHash: documentHash.sha256, signatoryId: signatoryInfo.id, metadata: signatureMetadata });
+      const cryptographicSignature = await this._generateCryptographicSignature(
+        documentHash,
+        signatoryInfo,
+        options
+      );
+      const timestamp = await this.timestampingService.generateTimestamp({
+        documentHash: documentHash.sha256,
+        signatoryId: signatoryInfo.id,
+        metadata: signatureMetadata,
+      });
       const advancedSignature = {
         signatureId: `ASIG-${uuidv4()}`,
         documentHash,
@@ -445,7 +486,11 @@ class ECTSignatureService {
         createdAt: new Date().toISOString(),
         expiresAt: moment().add(ECT_QUANTUM_CONFIG.SIGNATURE_VALIDITY_DAYS, 'days').toISOString(),
       };
-      this.signatureCache.set(`signature:${advancedSignature.signatureId}`, advancedSignature, 86400);
+      this.signatureCache.set(
+        `signature:${advancedSignature.signatureId}`,
+        advancedSignature,
+        86400
+      );
       await this._logSignatureCreation(advancedSignature);
       return {
         success: true,
@@ -458,38 +503,86 @@ class ECTSignatureService {
     } catch (error) {
       console.error('Advanced signature creation failed:', error);
       await this._logSignatureError(error, documentData, signatoryInfo);
-      return { success: false, error: 'SIGNATURE_CREATION_FAILED', message: error.message, timestamp: new Date().toISOString() };
+      return {
+        success: false,
+        error: 'SIGNATURE_CREATION_FAILED',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
   async verifySignature(signaturePackage, originalDocument = null) {
     try {
-      if (!signaturePackage || !signaturePackage.signatureId) throw new Error('Invalid signature package');
+      if (!signaturePackage || !signaturePackage.signatureId)
+        throw new Error('Invalid signature package');
       const cachedSignature = this.signatureCache.get(`signature:${signaturePackage.signatureId}`);
       if (cachedSignature) return this._performVerification(cachedSignature, originalDocument);
-      const verificationResult = await this._performVerification(signaturePackage, originalDocument);
-      if (verificationResult.valid) this.signatureCache.set(`verification:${signaturePackage.signatureId}`, verificationResult, 3600);
+      const verificationResult = await this._performVerification(
+        signaturePackage,
+        originalDocument
+      );
+      if (verificationResult.valid)
+        this.signatureCache.set(
+          `verification:${signaturePackage.signatureId}`,
+          verificationResult,
+          3600
+        );
       return verificationResult;
     } catch (error) {
       console.error('Signature verification failed:', error);
-      return { valid: false, verificationId: `VERIFY-ERR-${uuidv4()}`, error: error.message, timestamp: new Date().toISOString(), legalStatus: 'VERIFICATION_FAILED' };
+      return {
+        valid: false,
+        verificationId: `VERIFY-ERR-${uuidv4()}`,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        legalStatus: 'VERIFICATION_FAILED',
+      };
     }
   }
 
   async batchSignDocuments(documents, signatoryInfo, options = {}) {
     const batchId = `BATCH-${uuidv4()}`;
-    const results = [], errors = [];
+    const results = [],
+      errors = [];
     console.log(`Starting batch signature: ${batchId} for ${documents.length} documents`);
     for (const [index, document] of documents.entries()) {
       try {
-        const result = await this.createAdvancedSignature(document.data, signatoryInfo, { ...options, batchId, documentIndex: index });
-        if (result.success) results.push({ documentId: document.id || `DOC-${index}`, signatureId: result.signatureId, timestamp: result.timestamp, status: 'SIGNED' });
-        else errors.push({ documentId: document.id || `DOC-${index}`, error: result.error, message: result.message });
+        const result = await this.createAdvancedSignature(document.data, signatoryInfo, {
+          ...options,
+          batchId,
+          documentIndex: index,
+        });
+        if (result.success)
+          results.push({
+            documentId: document.id || `DOC-${index}`,
+            signatureId: result.signatureId,
+            timestamp: result.timestamp,
+            status: 'SIGNED',
+          });
+        else
+          errors.push({
+            documentId: document.id || `DOC-${index}`,
+            error: result.error,
+            message: result.message,
+          });
       } catch (error) {
-        errors.push({ documentId: document.id || `DOC-${index}`, error: 'BATCH_SIGN_ERROR', message: error.message });
+        errors.push({
+          documentId: document.id || `DOC-${index}`,
+          error: 'BATCH_SIGN_ERROR',
+          message: error.message,
+        });
       }
     }
-    const batchSummary = { batchId, totalDocuments: documents.length, successfulSignatures: results.length, failedSignatures: errors.length, startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), signatory: _.omit(signatoryInfo, ['privateKey', 'password']) };
+    const batchSummary = {
+      batchId,
+      totalDocuments: documents.length,
+      successfulSignatures: results.length,
+      failedSignatures: errors.length,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      signatory: _.omit(signatoryInfo, ['privateKey', 'password']),
+    };
     this.signatureCache.set(`batch:${batchId}`, batchSummary, 86400);
     return { batchId, success: errors.length === 0, results, errors, summary: batchSummary };
   }
@@ -508,7 +601,11 @@ class ECTSignatureService {
         revocationReason,
         revoker: _.omit(revokerInfo, ['privateKey', 'password']),
         legalBasis: this._determineRevocationLegalBasis(revocationReason),
-        timestamp: await this.timestampingService.generateTimestamp({ action: 'SIGNATURE_REVOCATION', signatureId, revokerId: revokerInfo.id }),
+        timestamp: await this.timestampingService.generateTimestamp({
+          action: 'SIGNATURE_REVOCATION',
+          signatureId,
+          revokerId: revokerInfo.id,
+        }),
       };
       signature.status = 'REVOKED';
       signature.revocation = revocationRecord;
@@ -516,36 +613,85 @@ class ECTSignatureService {
       this.signatureCache.set(`signature:${signatureId}`, signature);
       this.signatureCache.set(`revocation:${signatureId}`, revocationRecord);
       await this._logSignatureRevocation(revocationRecord);
-      return { success: true, revocationId: revocationRecord.revocationId, signatureId, revokedAt: revocationRecord.revokedAt, legalStatus: 'SIGNATURE_LEGALLY_REVOKED', timestamp: revocationRecord.timestamp.timestamp };
+      return {
+        success: true,
+        revocationId: revocationRecord.revocationId,
+        signatureId,
+        revokedAt: revocationRecord.revokedAt,
+        legalStatus: 'SIGNATURE_LEGALLY_REVOKED',
+        timestamp: revocationRecord.timestamp.timestamp,
+      };
     } catch (error) {
       console.error('Signature revocation failed:', error);
-      return { success: false, error: 'REVOCATION_FAILED', message: error.message, timestamp: new Date().toISOString() };
+      return {
+        success: false,
+        error: 'REVOCATION_FAILED',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
   validateECTCompliance(signaturePackage) {
-    const complianceChecks = [], violations = [];
+    const complianceChecks = [],
+      violations = [];
     const uniqueLinkage = this._verifyUniqueLinkage(signaturePackage);
     if (uniqueLinkage.valid) complianceChecks.push('UNIQUE_LINKAGE_TO_SIGNATORY');
-    else violations.push({ requirement: 'ECT_ACT_SECTION_13_1_A', violation: 'Signature not uniquely linked to signatory', details: uniqueLinkage.reason });
+    else
+      violations.push({
+        requirement: 'ECT_ACT_SECTION_13_1_A',
+        violation: 'Signature not uniquely linked to signatory',
+        details: uniqueLinkage.reason,
+      });
     const identification = this._verifySignatoryIdentification(signaturePackage);
     if (identification.valid) complianceChecks.push('CAPABLE_OF_IDENTIFYING_SIGNATORY');
-    else violations.push({ requirement: 'ECT_ACT_SECTION_13_1_B', violation: 'Signature cannot identify signatory', details: identification.reason });
+    else
+      violations.push({
+        requirement: 'ECT_ACT_SECTION_13_1_B',
+        violation: 'Signature cannot identify signatory',
+        details: identification.reason,
+      });
     const soleControl = this._verifySoleControl(signaturePackage);
     if (soleControl.valid) complianceChecks.push('CREATED_UNDER_SIGNATORY_SOLE_CONTROL');
-    else violations.push({ requirement: 'ECT_ACT_SECTION_13_1_C', violation: 'Signature not created under signatory sole control', details: soleControl.reason });
+    else
+      violations.push({
+        requirement: 'ECT_ACT_SECTION_13_1_C',
+        violation: 'Signature not created under signatory sole control',
+        details: soleControl.reason,
+      });
     const changeDetection = this._verifyChangeDetection(signaturePackage);
     if (changeDetection.valid) complianceChecks.push('LINKED_TO_DETECT_CHANGES');
-    else violations.push({ requirement: 'ECT_ACT_SECTION_13_1_D', violation: 'Signature not properly linked to detect changes', details: changeDetection.reason });
+    else
+      violations.push({
+        requirement: 'ECT_ACT_SECTION_13_1_D',
+        violation: 'Signature not properly linked to detect changes',
+        details: changeDetection.reason,
+      });
     const timestampCheck = QuantumTimestampingService.validateTimestamp(signaturePackage.timestamp);
     if (timestampCheck.valid) complianceChecks.push('VALID_TIMESTAMP');
-    else violations.push({ requirement: 'ECT_ACT_SECTION_15', violation: 'Invalid timestamp', details: timestampCheck.reason });
-    return { compliant: violations.length === 0, complianceChecks, violations, timestamp: new Date().toISOString(), legalReference: 'ECT_ACT_25_OF_2002_SECTION_13' };
+    else
+      violations.push({
+        requirement: 'ECT_ACT_SECTION_15',
+        violation: 'Invalid timestamp',
+        details: timestampCheck.reason,
+      });
+    return {
+      compliant: violations.length === 0,
+      complianceChecks,
+      violations,
+      timestamp: new Date().toISOString(),
+      legalReference: 'ECT_ACT_25_OF_2002_SECTION_13',
+    };
   }
 
   generateLegalAdmissibilityReport(signatureId, documentContext) {
     const signature = this.signatureCache.get(`signature:${signatureId}`);
-    if (!signature) return { valid: false, reason: 'Signature not found', legalStatus: 'CANNOT_DETERMINE_ADMISSIBILITY' };
+    if (!signature)
+      return {
+        valid: false,
+        reason: 'Signature not found',
+        legalStatus: 'CANNOT_DETERMINE_ADMISSIBILITY',
+      };
     const compliance = this.validateECTCompliance(signature);
     const evidenceActCompliance = this._checkEvidenceActCompliance(signature);
     const caseLawPrecedents = this._getCaseLawPrecedents(signature);
@@ -562,10 +708,18 @@ class ECTSignatureService {
       cryptographicIntegrity: this._verifyCryptographicIntegrity(signature),
       documentContext,
       signatoryVerification: this._verifySignatoryIdentity(signature.signatory),
-      overallAdmissibility: compliance.compliant && evidenceActCompliance.compliant && technicalValidation.valid,
-      legalOpinion: compliance.compliant ? 'This electronic signature meets all requirements of the ECT Act 25 of 2002 and is admissible as evidence in South African courts.' : 'This electronic signature does not fully comply with ECT Act requirements and may face admissibility challenges.',
-      recommendations: compliance.violations.length > 0 ? compliance.violations.map((v) => `Address: ${v.violation}`) : ['Signature is legally compliant and ready for use'],
-      evidentialWeight: compliance.compliant ? 'PRESUMPTION_OF_VALIDITY' : 'REQUIRES_ADDITIONAL_PROOF',
+      overallAdmissibility:
+        compliance.compliant && evidenceActCompliance.compliant && technicalValidation.valid,
+      legalOpinion: compliance.compliant
+        ? 'This electronic signature meets all requirements of the ECT Act 25 of 2002 and is admissible as evidence in South African courts.'
+        : 'This electronic signature does not fully comply with ECT Act requirements and may face admissibility challenges.',
+      recommendations:
+        compliance.violations.length > 0
+          ? compliance.violations.map((v) => `Address: ${v.violation}`)
+          : ['Signature is legally compliant and ready for use'],
+      evidentialWeight: compliance.compliant
+        ? 'PRESUMPTION_OF_VALIDITY'
+        : 'REQUIRES_ADDITIONAL_PROOF',
     };
     return report;
   }
@@ -589,11 +743,26 @@ class ECTSignatureService {
         verificationReference: `SAAA-REF-${crypto.randomBytes(8).toString('hex')}`,
         estimatedCompletion: moment().add(7, 'days').toISOString(),
       };
-      this.signatureCache.set(`saaa:${saaSubmission.submissionId}`, { submission: saaSubmission, response: saaResponse, timestamp: new Date().toISOString() }, 604800);
-      return { success: true, integrated: true, saaResponse, legalEffect: 'ENHANCED_EVIDENTIAL_WEIGHT', timestamp: new Date().toISOString() };
+      this.signatureCache.set(
+        `saaa:${saaSubmission.submissionId}`,
+        { submission: saaSubmission, response: saaResponse, timestamp: new Date().toISOString() },
+        604800
+      );
+      return {
+        success: true,
+        integrated: true,
+        saaResponse,
+        legalEffect: 'ENHANCED_EVIDENTIAL_WEIGHT',
+        timestamp: new Date().toISOString(),
+      };
     } catch (error) {
       console.error('SAAA integration failed:', error);
-      return { success: false, integrated: false, error: error.message, timestamp: new Date().toISOString() };
+      return {
+        success: false,
+        integrated: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
@@ -617,7 +786,11 @@ class ECTSignatureService {
         verificationToken: signature.verification.publicVerificationToken,
         verificationInstructions: 'Visit URL with token to verify signature',
       },
-      legalContext: { act: 'ECT_ACT_25_OF_2002', jurisdiction: 'SOUTH_AFRICA', evidentialPresumption: 'VALID_UNLESS_PROVEN_OTHERWISE' },
+      legalContext: {
+        act: 'ECT_ACT_25_OF_2002',
+        jurisdiction: 'SOUTH_AFRICA',
+        evidentialPresumption: 'VALID_UNLESS_PROVEN_OTHERWISE',
+      },
       expiresAt: signature.expiresAt,
       watermark: this._generateDigitalWatermark(signatureId, recipientInfo),
     };
@@ -627,17 +800,26 @@ class ECTSignatureService {
 
   // Private methods (abbreviated for brevity but functionally complete)
   _validateSignatureInput(documentData, signatoryInfo) {
-    if (!documentData || (typeof documentData !== 'string' && typeof documentData !== 'object')) return { valid: false, reason: 'Invalid document data' };
-    if (!signatoryInfo || !signatoryInfo.id || !signatoryInfo.name) return { valid: false, reason: 'Invalid signatory information' };
-    if (signatoryInfo.signingAuthority === false) return { valid: false, reason: 'Signatory lacks signing authority' };
+    if (!documentData || (typeof documentData !== 'string' && typeof documentData !== 'object'))
+      return { valid: false, reason: 'Invalid document data' };
+    if (!signatoryInfo || !signatoryInfo.id || !signatoryInfo.name)
+      return { valid: false, reason: 'Invalid signatory information' };
+    if (signatoryInfo.signingAuthority === false)
+      return { valid: false, reason: 'Signatory lacks signing authority' };
     return { valid: true };
   }
 
   _generateDocumentHash(documentData) {
-    const documentString = typeof documentData === 'string' ? documentData : JSON.stringify(documentData);
+    const documentString =
+      typeof documentData === 'string' ? documentData : JSON.stringify(documentData);
     const firstHash = crypto.createHash('sha256').update(documentString).digest('hex');
     const finalHash = crypto.createHash('sha512').update(firstHash).digest('hex');
-    return { sha256: firstHash, sha512: finalHash, generatedAt: new Date().toISOString(), algorithm: 'SHA-512(SHA-256)' };
+    return {
+      sha256: firstHash,
+      sha512: finalHash,
+      generatedAt: new Date().toISOString(),
+      algorithm: 'SHA-512(SHA-256)',
+    };
   }
 
   async _createSignatureMetadata(signatoryInfo, options) {
@@ -653,8 +835,14 @@ class ECTSignatureService {
       workflowId: options.workflowId,
       batchId: options.batchId,
     };
-    if (options.biometricData && this._validateBiometricData(options.biometricData)) metadata.biometricHash = this._hashBiometricData(options.biometricData);
-    if (options.twoFactorVerified) metadata.twoFactor = { verified: true, method: options.twoFactorMethod || 'TOTP', verifiedAt: new Date().toISOString() };
+    if (options.biometricData && this._validateBiometricData(options.biometricData))
+      metadata.biometricHash = this._hashBiometricData(options.biometricData);
+    if (options.twoFactorVerified)
+      metadata.twoFactor = {
+        verified: true,
+        method: options.twoFactorMethod || 'TOTP',
+        verifiedAt: new Date().toISOString(),
+      };
     return metadata;
   }
 
@@ -662,89 +850,288 @@ class ECTSignatureService {
     const algorithm = ECT_QUANTUM_CONFIG.ALGORITHM;
     const privateKey = signatoryInfo.privateKey || this.systemKeys.privateKey;
     if (!privateKey) throw new Error('No private key available for signing');
-    const signingData = { documentHash: documentHash.sha256, signatoryId: signatoryInfo.id, timestamp: new Date().toISOString(), purpose: options.purpose || 'LEGAL_EXECUTION' };
+    const signingData = {
+      documentHash: documentHash.sha256,
+      signatoryId: signatoryInfo.id,
+      timestamp: new Date().toISOString(),
+      purpose: options.purpose || 'LEGAL_EXECUTION',
+    };
     const dataToSign = JSON.stringify(signingData);
     let signature, signatureDetails;
     if (algorithm.includes('RSA')) {
       const key = new NodeRSA(privateKey);
       signature = key.sign(dataToSign, 'base64', 'utf8');
-      signatureDetails = { algorithm, keyStrength: ECT_QUANTUM_CONFIG.KEY_STRENGTH, padding: 'PSS', encoding: 'base64' };
+      signatureDetails = {
+        algorithm,
+        keyStrength: ECT_QUANTUM_CONFIG.KEY_STRENGTH,
+        padding: 'PSS',
+        encoding: 'base64',
+      };
     } else if (algorithm.includes('ECDSA')) {
-      const ec = new EC('p256');
-      const keyPair = ec.keyFromPrivate(privateKey, 'hex');
-      const signatureObj = keyPair.sign(dataToSign);
-      signature = { r: signatureObj.r.toString('hex'), s: signatureObj.s.toString('hex'), recoveryParam: signatureObj.recoveryParam };
-      signatureDetails = { algorithm, curve: 'P-256', encoding: 'hex' };
+      const normalizedPrivateKey = privateKey.padStart(64, '0');
+      const privateKeyBytes = Uint8Array.from(Buffer.from(normalizedPrivateKey, 'hex'));
+
+      const byteLength = (dataToSign.length + 1) >>> 1;
+      let legacyScalar = new BN(dataToSign, 16);
+
+      const p256Order = new BN(
+        'ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551',
+        16
+      );
+
+      const delta = byteLength * 8 - p256Order.bitLength();
+
+      if (delta > 0) {
+        legacyScalar = legacyScalar.ushrn(delta);
+      }
+
+      if (legacyScalar.cmp(p256Order) >= 0) {
+        legacyScalar = legacyScalar.sub(p256Order);
+      }
+
+      const legacyDigest = Uint8Array.from(legacyScalar.toArray('be', 32));
+
+      const signatureBytes = p256.sign(legacyDigest, privateKeyBytes, {
+        prehash: false,
+        lowS: false,
+      });
+
+      const signatureObject = p256.Signature.fromBytes(signatureBytes);
+
+      const expectedPublicKey = Buffer.from(p256.getPublicKey(privateKeyBytes, false)).toString(
+        'hex'
+      );
+
+      let recoveryParam = null;
+
+      for (const recovery of [0, 1, 2, 3]) {
+        try {
+          const candidate = signatureObject.addRecoveryBit(recovery).recoverPublicKey(legacyDigest);
+
+          const recoveredPublicKey = Buffer.from(candidate.toBytes(false)).toString('hex');
+
+          if (recoveredPublicKey === expectedPublicKey) {
+            recoveryParam = recovery;
+            break;
+          }
+        } catch {
+          // Invalid recovery candidates are expected for some signatures.
+        }
+      }
+
+      if (recoveryParam === null) {
+        throw new Error('Unable to derive ECDSA recovery parameter');
+      }
+
+      const rawSignature = Buffer.from(signatureBytes);
+
+      signature = {
+        r: rawSignature.subarray(0, 32).toString('hex'),
+        s: rawSignature.subarray(32, 64).toString('hex'),
+        recoveryParam,
+      };
+
+      signatureDetails = {
+        algorithm,
+        curve: 'P-256',
+        encoding: 'hex',
+      };
     } else throw new Error(`Unsupported signing algorithm: ${algorithm}`);
-    const verificationToken = jwt.sign({ signatureId: `SIG-${uuidv4()}`, documentHash: documentHash.sha256, signatoryId: signatoryInfo.id, timestamp: signingData.timestamp }, ECT_QUANTUM_CONFIG.JWT_SECRET, { expiresIn: '30d' });
-    return { signature, algorithm: signatureDetails, signedData: signingData, signatureId: `CRYPTO-SIG-${uuidv4()}`, publicVerificationToken: verificationToken, verificationMethod: 'JWT_VALIDATION', createdAt: new Date().toISOString() };
+    const verificationToken = jwt.sign(
+      {
+        signatureId: `SIG-${uuidv4()}`,
+        documentHash: documentHash.sha256,
+        signatoryId: signatoryInfo.id,
+        timestamp: signingData.timestamp,
+      },
+      ECT_QUANTUM_CONFIG.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    return {
+      signature,
+      algorithm: signatureDetails,
+      signedData: signingData,
+      signatureId: `CRYPTO-SIG-${uuidv4()}`,
+      publicVerificationToken: verificationToken,
+      verificationMethod: 'JWT_VALIDATION',
+      createdAt: new Date().toISOString(),
+    };
   }
 
   _generateComplianceProof(signatoryInfo) {
     return {
-      ectActCompliance: { section13: 'SATISFIED', section15: 'TIMESTAMPED', section20: 'AUTHENTICATION_VERIFIED', section23: 'INTEGRITY_ENSURED' },
-      signatoryVerification: { identityVerified: signatoryInfo.identityVerified || false, authorityVerified: signatoryInfo.authorityVerified || false, capacityVerified: signatoryInfo.capacityVerified || false },
-      technicalCompliance: { cryptographicStrength: 'QUANTUM_RESISTANT', timestamping: 'TRUSTED_AUTHORITY', nonRepudiation: 'ENSURED', integrityProtection: 'HASH_CHAIN' },
+      ectActCompliance: {
+        section13: 'SATISFIED',
+        section15: 'TIMESTAMPED',
+        section20: 'AUTHENTICATION_VERIFIED',
+        section23: 'INTEGRITY_ENSURED',
+      },
+      signatoryVerification: {
+        identityVerified: signatoryInfo.identityVerified || false,
+        authorityVerified: signatoryInfo.authorityVerified || false,
+        capacityVerified: signatoryInfo.capacityVerified || false,
+      },
+      technicalCompliance: {
+        cryptographicStrength: 'QUANTUM_RESISTANT',
+        timestamping: 'TRUSTED_AUTHORITY',
+        nonRepudiation: 'ENSURED',
+        integrityProtection: 'HASH_CHAIN',
+      },
     };
   }
 
   async _performVerification(signaturePackage, originalDocument) {
     const verificationId = `VERIFY-${uuidv4()}`;
     const cryptoVerification = await this._verifyCryptographicSignature(signaturePackage);
-    if (!cryptoVerification.valid) return { valid: false, verificationId, reason: 'Cryptographic verification failed', details: cryptoVerification.details, timestamp: new Date().toISOString() };
+    if (!cryptoVerification.valid)
+      return {
+        valid: false,
+        verificationId,
+        reason: 'Cryptographic verification failed',
+        details: cryptoVerification.details,
+        timestamp: new Date().toISOString(),
+      };
     if (originalDocument) {
-      const integrityCheck = this._verifyDocumentIntegrity(signaturePackage.documentHash, originalDocument);
-      if (!integrityCheck.valid) return { valid: false, verificationId, reason: 'Document integrity check failed', details: integrityCheck.details, timestamp: new Date().toISOString() };
+      const integrityCheck = this._verifyDocumentIntegrity(
+        signaturePackage.documentHash,
+        originalDocument
+      );
+      if (!integrityCheck.valid)
+        return {
+          valid: false,
+          verificationId,
+          reason: 'Document integrity check failed',
+          details: integrityCheck.details,
+          timestamp: new Date().toISOString(),
+        };
     }
-    const timestampVerification = QuantumTimestampingService.validateTimestamp(signaturePackage.timestamp);
-    if (!timestampVerification.valid) return { valid: false, verificationId, reason: 'Timestamp verification failed', details: timestampVerification.reason, timestamp: new Date().toISOString() };
+    const timestampVerification = QuantumTimestampingService.validateTimestamp(
+      signaturePackage.timestamp
+    );
+    if (!timestampVerification.valid)
+      return {
+        valid: false,
+        verificationId,
+        reason: 'Timestamp verification failed',
+        details: timestampVerification.reason,
+        timestamp: new Date().toISOString(),
+      };
     const complianceVerification = this.validateECTCompliance(signaturePackage);
-    if (!complianceVerification.compliant) return { valid: false, verificationId, reason: 'ECT Act compliance check failed', violations: complianceVerification.violations, timestamp: new Date().toISOString() };
-    return { valid: true, verificationId, signatureId: signaturePackage.signatureId, signatory: signaturePackage.signatory, documentHash: signaturePackage.documentHash, timestamp: signaturePackage.timestamp, compliance: complianceVerification, legalStatus: 'VALID_ADVANCED_ELECTRONIC_SIGNATURE', verificationDate: new Date().toISOString(), expiresAt: signaturePackage.expiresAt, recommendation: 'SIGNATURE_IS_LEGALLY_BINDING' };
+    if (!complianceVerification.compliant)
+      return {
+        valid: false,
+        verificationId,
+        reason: 'ECT Act compliance check failed',
+        violations: complianceVerification.violations,
+        timestamp: new Date().toISOString(),
+      };
+    return {
+      valid: true,
+      verificationId,
+      signatureId: signaturePackage.signatureId,
+      signatory: signaturePackage.signatory,
+      documentHash: signaturePackage.documentHash,
+      timestamp: signaturePackage.timestamp,
+      compliance: complianceVerification,
+      legalStatus: 'VALID_ADVANCED_ELECTRONIC_SIGNATURE',
+      verificationDate: new Date().toISOString(),
+      expiresAt: signaturePackage.expiresAt,
+      recommendation: 'SIGNATURE_IS_LEGALLY_BINDING',
+    };
   }
 
   async _verifyCryptographicSignature(signaturePackage) {
     try {
       const { cryptographicSignature, documentHash, signatory } = signaturePackage;
-      if (!cryptographicSignature || !documentHash || !signatory) return { valid: false, details: 'Missing signature components' };
+      if (!cryptographicSignature || !documentHash || !signatory)
+        return { valid: false, details: 'Missing signature components' };
       const publicKey = signatory.publicKey || this.systemKeys.publicKey;
       if (!publicKey) return { valid: false, details: 'No public key available for verification' };
       if (cryptographicSignature.algorithm.algorithm.includes('RSA')) {
         const key = new NodeRSA(publicKey);
-        const isValid = key.verify(cryptographicSignature.signedData, cryptographicSignature.signature, 'utf8', 'base64');
-        return { valid: isValid, details: isValid ? 'RSA signature verified' : 'RSA signature invalid', algorithm: 'RSA' };
+        const isValid = key.verify(
+          cryptographicSignature.signedData,
+          cryptographicSignature.signature,
+          'utf8',
+          'base64'
+        );
+        return {
+          valid: isValid,
+          details: isValid ? 'RSA signature verified' : 'RSA signature invalid',
+          algorithm: 'RSA',
+        };
       }
       return { valid: false, details: 'Unsupported algorithm for verification' };
-    } catch (error) { return { valid: false, details: `Verification error: ${error.message}` }; }
+    } catch (error) {
+      return { valid: false, details: `Verification error: ${error.message}` };
+    }
   }
 
   _verifyDocumentIntegrity(storedHash, originalDocument) {
     const regeneratedHash = this._generateDocumentHash(originalDocument);
-    if (regeneratedHash.sha256 !== storedHash.sha256) return { valid: false, details: 'Document hash mismatch - document may have been altered', storedHash: `${storedHash.sha256.substring(0, 16)}...`, regeneratedHash: `${regeneratedHash.sha256.substring(0, 16)}...` };
-    return { valid: true, details: 'Document integrity verified - no alterations detected', hashAlgorithm: 'SHA-256' };
+    if (regeneratedHash.sha256 !== storedHash.sha256)
+      return {
+        valid: false,
+        details: 'Document hash mismatch - document may have been altered',
+        storedHash: `${storedHash.sha256.substring(0, 16)}...`,
+        regeneratedHash: `${regeneratedHash.sha256.substring(0, 16)}...`,
+      };
+    return {
+      valid: true,
+      details: 'Document integrity verified - no alterations detected',
+      hashAlgorithm: 'SHA-256',
+    };
   }
 
   _verifyUniqueLinkage(signaturePackage) {
-    const uniqueMarkers = [signaturePackage.signatory.id, signaturePackage.signatory.publicKey, signaturePackage.cryptographicSignature.signatureId];
+    const uniqueMarkers = [
+      signaturePackage.signatory.id,
+      signaturePackage.signatory.publicKey,
+      signaturePackage.cryptographicSignature.signatureId,
+    ];
     const allUnique = _.uniq(uniqueMarkers).length === uniqueMarkers.length;
-    return { valid: allUnique, reason: allUnique ? 'Unique linkage established' : 'Duplicate identifiers detected' };
+    return {
+      valid: allUnique,
+      reason: allUnique ? 'Unique linkage established' : 'Duplicate identifiers detected',
+    };
   }
 
   _verifySignatoryIdentification(signaturePackage) {
     const { signatory } = signaturePackage;
     const requiredFields = ['id', 'name'];
     const missingFields = requiredFields.filter((field) => !signatory[field]);
-    if (missingFields.length > 0) return { valid: false, reason: `Missing identification fields: ${missingFields.join(', ')}` };
-    const identificationProofs = [signatory.identityVerified, signatory.emailVerified, signatory.phoneVerified, signatory.biometricVerified];
+    if (missingFields.length > 0)
+      return { valid: false, reason: `Missing identification fields: ${missingFields.join(', ')}` };
+    const identificationProofs = [
+      signatory.identityVerified,
+      signatory.emailVerified,
+      signatory.phoneVerified,
+      signatory.biometricVerified,
+    ];
     const hasProof = identificationProofs.some((proof) => proof === true);
-    return { valid: hasProof, reason: hasProof ? 'Signatory identification verified' : 'Insufficient identification proof' };
+    return {
+      valid: hasProof,
+      reason: hasProof ? 'Signatory identification verified' : 'Insufficient identification proof',
+    };
   }
 
   _verifySoleControl(signaturePackage) {
     const metadata = signaturePackage.metadata || {};
-    const soleControlIndicators = [metadata.deviceFingerprint, metadata.sessionId, metadata.ipAddress, metadata.biometricHash];
-    const hasControlIndicators = soleControlIndicators.some((indicator) => indicator && indicator !== 'NOT_CAPTURED');
-    return { valid: hasControlIndicators, reason: hasControlIndicators ? 'Sole control indicators present' : 'No sole control indicators captured' };
+    const soleControlIndicators = [
+      metadata.deviceFingerprint,
+      metadata.sessionId,
+      metadata.ipAddress,
+      metadata.biometricHash,
+    ];
+    const hasControlIndicators = soleControlIndicators.some(
+      (indicator) => indicator && indicator !== 'NOT_CAPTURED'
+    );
+    return {
+      valid: hasControlIndicators,
+      reason: hasControlIndicators
+        ? 'Sole control indicators present'
+        : 'No sole control indicators captured',
+    };
   }
 
   _verifyChangeDetection(signaturePackage) {
@@ -752,36 +1139,80 @@ class ECTSignatureService {
     const hasTimestamp = !!signaturePackage.timestamp;
     const hasCryptographicSignature = !!signaturePackage.cryptographicSignature;
     const allPresent = hasDocumentHash && hasTimestamp && hasCryptographicSignature;
-    return { valid: allPresent, reason: allPresent ? 'Change detection mechanisms in place' : 'Missing change detection components' };
+    return {
+      valid: allPresent,
+      reason: allPresent
+        ? 'Change detection mechanisms in place'
+        : 'Missing change detection components',
+    };
   }
 
   _checkEvidenceActCompliance(signature) {
-    return { compliant: true, sections: ['SECTION_15_ADMISSIBILITY_OF_ELECTRONIC_EVIDENCE', 'SECTION_16_PRESUMPTION_OF_INTEGRITY', 'SECTION_17_RELIABILITY_OF_ELECTRONIC_EVIDENCE'], presumptions: ['PRESUMPTION_OF_INTEGRITY', 'PRESUMPTION_OF_RELIABILITY'], timestamp: new Date().toISOString() };
+    return {
+      compliant: true,
+      sections: [
+        'SECTION_15_ADMISSIBILITY_OF_ELECTRONIC_EVIDENCE',
+        'SECTION_16_PRESUMPTION_OF_INTEGRITY',
+        'SECTION_17_RELIABILITY_OF_ELECTRONIC_EVIDENCE',
+      ],
+      presumptions: ['PRESUMPTION_OF_INTEGRITY', 'PRESUMPTION_OF_RELIABILITY'],
+      timestamp: new Date().toISOString(),
+    };
   }
 
   _getCaseLawPrecedents(signature) {
     return [
-      { case: 'Ntshangase v MEC for Health, KwaZulu-Natal 2019 (1) SA 462 (SCA)', principle: 'Electronic communications are admissible as evidence', relevance: 'HIGH' },
-      { case: 'Cool Ideas 1186 CC v Hubbard 2014 (4) SA 474 (CC)', principle: 'Courts recognize digital transactions', relevance: 'MEDIUM' },
-      { case: 'Knight v Pillemer 2019 (3) SA 405 (SCA)', principle: 'Electronic signatures satisfy writing requirement', relevance: 'HIGH' },
+      {
+        case: 'Ntshangase v MEC for Health, KwaZulu-Natal 2019 (1) SA 462 (SCA)',
+        principle: 'Electronic communications are admissible as evidence',
+        relevance: 'HIGH',
+      },
+      {
+        case: 'Cool Ideas 1186 CC v Hubbard 2014 (4) SA 474 (CC)',
+        principle: 'Courts recognize digital transactions',
+        relevance: 'MEDIUM',
+      },
+      {
+        case: 'Knight v Pillemer 2019 (3) SA 405 (SCA)',
+        principle: 'Electronic signatures satisfy writing requirement',
+        relevance: 'HIGH',
+      },
     ];
   }
 
   _performTechnicalValidation(signature) {
     const checks = [];
-    if (signature.documentHash.algorithm.includes('SHA-256')) checks.push({ check: 'HASH_ALGORITHM', status: 'VALID', strength: 'QUANTUM_RESISTANT' });
-    if (signature.timestamp && signature.timestamp.timestamp) checks.push({ check: 'TIMESTAMP_PRESENT', status: 'VALID' });
-    if (signature.cryptographicSignature.algorithm) checks.push({ check: 'SIGNATURE_ALGORITHM', status: 'VALID', algorithm: signature.cryptographicSignature.algorithm.algorithm });
+    if (signature.documentHash.algorithm.includes('SHA-256'))
+      checks.push({ check: 'HASH_ALGORITHM', status: 'VALID', strength: 'QUANTUM_RESISTANT' });
+    if (signature.timestamp && signature.timestamp.timestamp)
+      checks.push({ check: 'TIMESTAMP_PRESENT', status: 'VALID' });
+    if (signature.cryptographicSignature.algorithm)
+      checks.push({
+        check: 'SIGNATURE_ALGORITHM',
+        status: 'VALID',
+        algorithm: signature.cryptographicSignature.algorithm.algorithm,
+      });
     const expiresAt = moment(signature.expiresAt);
     const now = moment();
     if (expiresAt.isAfter(now)) checks.push({ check: 'SIGNATURE_NOT_EXPIRED', status: 'VALID' });
-    else checks.push({ check: 'SIGNATURE_NOT_EXPIRED', status: 'INVALID', reason: 'Signature expired' });
+    else
+      checks.push({
+        check: 'SIGNATURE_NOT_EXPIRED',
+        status: 'INVALID',
+        reason: 'Signature expired',
+      });
     const allValid = checks.every((c) => c.status === 'VALID');
     return { valid: allValid, checks, performedAt: new Date().toISOString() };
   }
 
   _verifyCryptographicIntegrity(signature) {
-    return { integrity: 'VERIFIED', hashChain: 'INTACT', signatureChain: 'VALID', timestampChain: 'VERIFIED', overall: 'CRYPTOGRAPHICALLY_SOUND' };
+    return {
+      integrity: 'VERIFIED',
+      hashChain: 'INTACT',
+      signatureChain: 'VALID',
+      timestampChain: 'VERIFIED',
+      overall: 'CRYPTOGRAPHICALLY_SOUND',
+    };
   }
 
   _verifySignatoryIdentity(signatory) {
@@ -790,11 +1221,22 @@ class ECTSignatureService {
     if (signatory.emailVerified) verificationMethods.push('EMAIL_VERIFICATION');
     if (signatory.phoneVerified) verificationMethods.push('PHONE_VERIFICATION');
     if (signatory.biometricVerified) verificationMethods.push('BIOMETRIC_VERIFICATION');
-    return { verified: verificationMethods.length > 0, verificationMethods, confidence: verificationMethods.length >= 2 ? 'HIGH' : 'MEDIUM' };
+    return {
+      verified: verificationMethods.length > 0,
+      verificationMethods,
+      confidence: verificationMethods.length >= 2 ? 'HIGH' : 'MEDIUM',
+    };
   }
 
   _generateSAAAComplianceMarkers(signatureData) {
-    return { ectActCompliance: 'ADVANCED_ELECTRONIC_SIGNATURE', technicalStandards: 'ISO_IEC_27001_2022', cryptographicStrength: 'QUANTUM_RESISTANT', timestamping: 'TRUSTED_AUTHORITY', auditTrail: 'COMPREHENSIVE', jurisdiction: 'SOUTH_AFRICA' };
+    return {
+      ectActCompliance: 'ADVANCED_ELECTRONIC_SIGNATURE',
+      technicalStandards: 'ISO_IEC_27001_2022',
+      cryptographicStrength: 'QUANTUM_RESISTANT',
+      timestamping: 'TRUSTED_AUTHORITY',
+      auditTrail: 'COMPREHENSIVE',
+      jurisdiction: 'SOUTH_AFRICA',
+    };
   }
 
   _maskSignatoryInfo(signatory) {
@@ -807,15 +1249,36 @@ class ECTSignatureService {
   }
 
   _generateDigitalWatermark(signatureId, recipientInfo) {
-    const watermarkData = { signatureId, recipientId: recipientInfo.id, generatedAt: new Date().toISOString(), uniqueSalt: crypto.randomBytes(16).toString('hex') };
-    const watermarkHash = crypto.createHash('sha256').update(JSON.stringify(watermarkData)).digest('hex');
-    return { hash: watermarkHash, algorithm: 'SHA-256', visible: false, purpose: 'TAMPER_DETECTION' };
+    const watermarkData = {
+      signatureId,
+      recipientId: recipientInfo.id,
+      generatedAt: new Date().toISOString(),
+      uniqueSalt: crypto.randomBytes(16).toString('hex'),
+    };
+    const watermarkHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(watermarkData))
+      .digest('hex');
+    return {
+      hash: watermarkHash,
+      algorithm: 'SHA-256',
+      visible: false,
+      purpose: 'TAMPER_DETECTION',
+    };
   }
 
   _signPresentation(presentation) {
     const presentationString = JSON.stringify(presentation);
-    const signature = crypto.createHmac('sha256', ECT_QUANTUM_CONFIG.JWT_SECRET).update(presentationString).digest('hex');
-    return { signature, algorithm: 'HMAC-SHA256', signedAt: new Date().toISOString(), verifier: 'WILSY_OS_SIGNATURE_SERVICE' };
+    const signature = crypto
+      .createHmac('sha256', ECT_QUANTUM_CONFIG.JWT_SECRET)
+      .update(presentationString)
+      .digest('hex');
+    return {
+      signature,
+      algorithm: 'HMAC-SHA256',
+      signedAt: new Date().toISOString(),
+      verifier: 'WILSY_OS_SIGNATURE_SERVICE',
+    };
   }
 
   _generateDeviceFingerprint(requestData = {}) {
@@ -845,13 +1308,25 @@ class ECTSignatureService {
   }
 
   _determineRevocationLegalBasis(reason) {
-    const legalBases = { MISTAKE: 'COMMON_LAW_MISTAKE', FRAUD: 'COMMON_LAW_FRAUD', DURESS: 'CONTRACT_LAW_DURESS', INCORRECT_PARTY: 'LACK_OF_CAPACITY', SYSTEM_ERROR: 'TECHNICAL_FAILURE', LEGAL_REQUIREMENT: 'STATUTORY_OBLIGATION' };
+    const legalBases = {
+      MISTAKE: 'COMMON_LAW_MISTAKE',
+      FRAUD: 'COMMON_LAW_FRAUD',
+      DURESS: 'CONTRACT_LAW_DURESS',
+      INCORRECT_PARTY: 'LACK_OF_CAPACITY',
+      SYSTEM_ERROR: 'TECHNICAL_FAILURE',
+      LEGAL_REQUIREMENT: 'STATUTORY_OBLIGATION',
+    };
     return legalBases[reason] || 'OTHER_VALID_GROUNDS';
   }
 
   _getInitials(fullName) {
     if (!fullName) return '??';
-    return fullName.split(' ').map((name) => name[0]).join('').toUpperCase().substring(0, 3);
+    return fullName
+      .split(' ')
+      .map((name) => name[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 3);
   }
 
   _validateBiometricData(biometricData) {
@@ -859,21 +1334,62 @@ class ECTSignatureService {
   }
 
   async _logSignatureCreation(signature) {
-    const auditLog = { event: 'SIGNATURE_CREATED', signatureId: signature.signatureId, signatoryId: signature.signatory.id, documentHash: `${signature.documentHash.sha256.substring(0, 16)}...`, timestamp: signature.createdAt, level: signature.metadata.signatureLevel, ipAddress: signature.metadata.ipAddress, userAgent: signature.metadata.userAgent, auditId: `AUDIT-${uuidv4()}` };
+    const auditLog = {
+      event: 'SIGNATURE_CREATED',
+      signatureId: signature.signatureId,
+      signatoryId: signature.signatory.id,
+      documentHash: `${signature.documentHash.sha256.substring(0, 16)}...`,
+      timestamp: signature.createdAt,
+      level: signature.metadata.signatureLevel,
+      ipAddress: signature.metadata.ipAddress,
+      userAgent: signature.metadata.userAgent,
+      auditId: `AUDIT-${uuidv4()}`,
+    };
     this.signatureCache.set(`audit:signature:${signature.signatureId}`, auditLog, 604800);
-    console.log('Signature created:', { signatureId: signature.signatureId, signatory: signature.signatory.name, timestamp: signature.createdAt });
+    console.log('Signature created:', {
+      signatureId: signature.signatureId,
+      signatory: signature.signatory.name,
+      timestamp: signature.createdAt,
+    });
   }
 
   async _logSignatureError(error, documentData, signatoryInfo) {
-    const errorLog = { event: 'SIGNATURE_ERROR', errorId: `ERR-${uuidv4()}`, error: error.message, signatoryId: signatoryInfo?.id || 'UNKNOWN', documentHash: documentData ? `${crypto.createHash('sha256').update(JSON.stringify(documentData)).digest('hex').substring(0, 16)}...` : 'NO_DOCUMENT', timestamp: new Date().toISOString(), stack: process.env.NODE_ENV === 'development' ? error.stack : undefined };
+    const errorLog = {
+      event: 'SIGNATURE_ERROR',
+      errorId: `ERR-${uuidv4()}`,
+      error: error.message,
+      signatoryId: signatoryInfo?.id || 'UNKNOWN',
+      documentHash: documentData
+        ? `${crypto.createHash('sha256').update(JSON.stringify(documentData)).digest('hex').substring(0, 16)}...`
+        : 'NO_DOCUMENT',
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    };
     this.signatureCache.set(`error:signature:${errorLog.errorId}`, errorLog, 86400);
     console.error('Signature error:', errorLog);
   }
 
   async _logSignatureRevocation(revocationRecord) {
-    const revocationLog = { event: 'SIGNATURE_REVOKED', revocationId: revocationRecord.revocationId, signatureId: revocationRecord.signatureId, revokerId: revocationRecord.revoker.id, reason: revocationRecord.revocationReason, timestamp: revocationRecord.revokedAt, legalBasis: revocationRecord.legalBasis, auditId: `AUDIT-REVOKE-${uuidv4()}` };
-    this.signatureCache.set(`audit:revocation:${revocationRecord.signatureId}`, revocationLog, 604800);
-    console.log('Signature revoked:', { signatureId: revocationRecord.signatureId, reason: revocationRecord.revocationReason, timestamp: revocationRecord.revokedAt });
+    const revocationLog = {
+      event: 'SIGNATURE_REVOKED',
+      revocationId: revocationRecord.revocationId,
+      signatureId: revocationRecord.signatureId,
+      revokerId: revocationRecord.revoker.id,
+      reason: revocationRecord.revocationReason,
+      timestamp: revocationRecord.revokedAt,
+      legalBasis: revocationRecord.legalBasis,
+      auditId: `AUDIT-REVOKE-${uuidv4()}`,
+    };
+    this.signatureCache.set(
+      `audit:revocation:${revocationRecord.signatureId}`,
+      revocationLog,
+      604800
+    );
+    console.log('Signature revoked:', {
+      signatureId: revocationRecord.signatureId,
+      reason: revocationRecord.revocationReason,
+      timestamp: revocationRecord.revokedAt,
+    });
   }
 }
 
@@ -886,7 +1402,9 @@ const ECTSignatureSchemas = {
     id: Joi.string().required(),
     name: Joi.string().min(2).max(100).required(),
     email: Joi.string().email().optional(),
-    phone: Joi.string().pattern(/^(\+27|0)[6-8][0-9]{8}$/).optional(),
+    phone: Joi.string()
+      .pattern(/^(\+27|0)[6-8][0-9]{8}$/)
+      .optional(),
     identityVerified: Joi.boolean().default(false),
     emailVerified: Joi.boolean().default(false),
     phoneVerified: Joi.boolean().default(false),
@@ -897,29 +1415,48 @@ const ECTSignatureSchemas = {
     publicKey: Joi.string().optional(),
     privateKey: Joi.string().optional(),
     capacityVerified: Joi.boolean().default(false),
-    capacityType: Joi.string().valid('INDIVIDUAL', 'REPRESENTATIVE', 'AGENT', 'OFFICER').default('INDIVIDUAL'),
+    capacityType: Joi.string()
+      .valid('INDIVIDUAL', 'REPRESENTATIVE', 'AGENT', 'OFFICER')
+      .default('INDIVIDUAL'),
     representedEntity: Joi.string().optional(),
     metadata: Joi.object().optional(),
   }),
   DOCUMENT_SCHEMA: Joi.object({
     content: Joi.alternatives().try(Joi.string(), Joi.object()).required(),
-    type: Joi.string().valid(...Object.values(ECT_QUANTUM_CONFIG.LEGAL_DOCUMENT_TYPES)).required(),
+    type: Joi.string()
+      .valid(...Object.values(ECT_QUANTUM_CONFIG.LEGAL_DOCUMENT_TYPES))
+      .required(),
     title: Joi.string().max(255).required(),
     description: Joi.string().max(1000).optional(),
     legalJurisdiction: Joi.string().default('ZA'),
     governingLaw: Joi.string().default('SOUTH_AFRICAN_LAW'),
     disputeResolution: Joi.string().optional(),
-    parties: Joi.array().items(Joi.object({ id: Joi.string().required(), name: Joi.string().required(), role: Joi.string().required() })).min(2).required(),
+    parties: Joi.array()
+      .items(
+        Joi.object({
+          id: Joi.string().required(),
+          name: Joi.string().required(),
+          role: Joi.string().required(),
+        })
+      )
+      .min(2)
+      .required(),
     effectiveDate: Joi.date().iso().required(),
     expiryDate: Joi.date().iso().greater(Joi.ref('effectiveDate')).optional(),
-    confidentialityLevel: Joi.string().valid('PUBLIC', 'CONFIDENTIAL', 'HIGHLY_CONFIDENTIAL').default('CONFIDENTIAL'),
+    confidentialityLevel: Joi.string()
+      .valid('PUBLIC', 'CONFIDENTIAL', 'HIGHLY_CONFIDENTIAL')
+      .default('CONFIDENTIAL'),
     encryptionRequired: Joi.boolean().default(true),
     version: Joi.string().default('1.0'),
     previousVersionId: Joi.string().optional(),
   }),
   SIGNATURE_OPTIONS_SCHEMA: Joi.object({
-    signatureLevel: Joi.string().valid(...Object.values(ECT_QUANTUM_CONFIG.SIGNATURE_LEVELS)).default('ADVANCED'),
-    documentType: Joi.string().valid(...Object.values(ECT_QUANTUM_CONFIG.LEGAL_DOCUMENT_TYPES)).default('LEGAL_DOCUMENT'),
+    signatureLevel: Joi.string()
+      .valid(...Object.values(ECT_QUANTUM_CONFIG.SIGNATURE_LEVELS))
+      .default('ADVANCED'),
+    documentType: Joi.string()
+      .valid(...Object.values(ECT_QUANTUM_CONFIG.LEGAL_DOCUMENT_TYPES))
+      .default('LEGAL_DOCUMENT'),
     purpose: Joi.string().max(500).default('LEGAL_EXECUTION'),
     location: Joi.string().default('SOUTH_AFRICA'),
     requireTwoFactor: Joi.boolean().default(false),
@@ -966,22 +1503,64 @@ const ECTSignatureUtils = {
       issuer: 'Wilsy OS ECT Signature Service',
       issueDate: new Date().toISOString(),
       validity: { from: verificationResult.verificationDate, to: verificationResult.expiresAt },
-      signature: { id: verificationResult.signatureId, signatory: verificationResult.signatory, timestamp: verificationResult.timestamp, documentHash: `${verificationResult.documentHash.sha256.substring(0, 32)}...` },
-      verification: { id: verificationResult.verificationId, date: verificationResult.verificationDate, result: verificationResult.valid ? 'VALID' : 'INVALID', compliance: verificationResult.compliance.compliant ? 'COMPLIANT' : 'NON_COMPLIANT' },
+      signature: {
+        id: verificationResult.signatureId,
+        signatory: verificationResult.signatory,
+        timestamp: verificationResult.timestamp,
+        documentHash: `${verificationResult.documentHash.sha256.substring(0, 32)}...`,
+      },
+      verification: {
+        id: verificationResult.verificationId,
+        date: verificationResult.verificationDate,
+        result: verificationResult.valid ? 'VALID' : 'INVALID',
+        compliance: verificationResult.compliance.compliant ? 'COMPLIANT' : 'NON_COMPLIANT',
+      },
       legalDeclaration: `This certificate confirms that the electronic signature referenced above has been verified against the requirements of the Electronic Communications and Transactions Act 25 of 2002 of South Africa. ${verificationResult.valid ? 'The signature is legally binding and admissible as evidence in South African courts.' : 'The signature does not meet legal requirements and may not be legally binding.'} Certificate issued by: Wilsy OS Quantum Signature Service Jurisdiction: Republic of South Africa Reference: ${certificateId}`,
-      proof: { certificateHash: crypto.createHash('sha256').update(certificateId).digest('hex'), verificationToken: crypto.randomBytes(32).toString('hex'), timestamp: new Date().toISOString() },
-      formats: { pdf: `/api/certificates/${certificateId}/pdf`, json: `/api/certificates/${certificateId}/json`, xml: `/api/certificates/${certificateId}/xml` },
+      proof: {
+        certificateHash: crypto.createHash('sha256').update(certificateId).digest('hex'),
+        verificationToken: crypto.randomBytes(32).toString('hex'),
+        timestamp: new Date().toISOString(),
+      },
+      formats: {
+        pdf: `/api/certificates/${certificateId}/pdf`,
+        json: `/api/certificates/${certificateId}/json`,
+        xml: `/api/certificates/${certificateId}/xml`,
+      },
     };
   },
   validateAgainstSALaw: (signature, context) => {
     const requirements = {
-      ectAct: { section13: true, section15: !!signature.timestamp, section20: !!signature.signatory.identityVerified, section23: !!signature.documentHash },
-      evidenceAct: { section15: true, section16: !!signature.timestamp?.trustedTimestamp, section17: true },
-      commonLaw: { intention: true, capacity: !!signature.signatory.capacityVerified, authority: !!signature.signatory.authorityVerified, consent: true },
+      ectAct: {
+        section13: true,
+        section15: !!signature.timestamp,
+        section20: !!signature.signatory.identityVerified,
+        section23: !!signature.documentHash,
+      },
+      evidenceAct: {
+        section15: true,
+        section16: !!signature.timestamp?.trustedTimestamp,
+        section17: true,
+      },
+      commonLaw: {
+        intention: true,
+        capacity: !!signature.signatory.capacityVerified,
+        authority: !!signature.signatory.authorityVerified,
+        consent: true,
+      },
       standards: { iso27001: true, iso27002: true, pki: !!signature.cryptographicSignature },
     };
-    const allRequirementsMet = Object.values(requirements).every((section) => Object.values(section).every((met) => met === true));
-    return { compliant: allRequirementsMet, requirements, context, timestamp: new Date().toISOString(), legalOpinion: allRequirementsMet ? 'Meets all South African legal requirements for electronic signatures' : 'Does not meet all South African legal requirements' };
+    const allRequirementsMet = Object.values(requirements).every((section) =>
+      Object.values(section).every((met) => met === true)
+    );
+    return {
+      compliant: allRequirementsMet,
+      requirements,
+      context,
+      timestamp: new Date().toISOString(),
+      legalOpinion: allRequirementsMet
+        ? 'Meets all South African legal requirements for electronic signatures'
+        : 'Does not meet all South African legal requirements',
+    };
   },
 };
 
@@ -1010,10 +1589,19 @@ export default {
     uptime: process.uptime(),
     compliance: 'ECT_ACT_25_OF_2002',
   }),
-  cleanupOnShutdown: () => { signatureCache.close(); console.log('ECT Signature Service cache closed gracefully'); },
+  cleanupOnShutdown: () => {
+    signatureCache.close();
+    console.log('ECT Signature Service cache closed gracefully');
+  },
 };
 
 if (process.env.NODE_ENV !== 'test') {
-  process.on('SIGTERM', () => { signatureCache.close(); console.log('ECT Signature Service shutting down gracefully'); });
-  process.on('SIGINT', () => { signatureCache.close(); console.log('ECT Signature Service interrupted'); });
+  process.on('SIGTERM', () => {
+    signatureCache.close();
+    console.log('ECT Signature Service shutting down gracefully');
+  });
+  process.on('SIGINT', () => {
+    signatureCache.close();
+    console.log('ECT Signature Service interrupted');
+  });
 }
