@@ -3,7 +3,7 @@
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ WILSY OS – CANONICAL VENDORBILL ACCOUNTS PAYABLE DOMAIN                                                         ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ VERSION:        v1.2.1-RELEASE-AUTHORITY-GUARD-DOMAIN                                                           ║
+║ VERSION:        v1.2.2-RELEASE-AUTHORITY-GUARD-DOMAIN                                                           ║
 ║ EPITOME:        Tenant-local AP obligation contract; execution and settlement authority remain Kennel EOS-only. ║
 ║ BIBLICAL ANCHOR: Psalm 1:3 — "And he shall be like a tree planted by the rivers of water..."                  ║
 ║ ABSOLUTE PATH:  /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/vendor_bill.py                    ║
@@ -21,6 +21,8 @@ excluded from evidence_payload(); future mutable guard integrity belongs to
 transactional CAS and immutable release-command/reservation evidence.
 v1.2.1 — sovereign source-quality correction only; preserves the v1.2.0
 release-authority guard, proof boundary, lifecycle rules, and runtime behavior.
+v1.2.2 — typographic and sovereign-documentation correction only; no runtime,
+proof-boundary, lifecycle, serialization-key, or guard semantic change.
 COMPLIANCE: POPIA §19 | GDPR §32 | SOC2 CC7.2
 """
 
@@ -207,7 +209,7 @@ class VendorBill:
 
 # INSTITUTIONAL CERTIFICATION SEAL
 # File: vendor_bill.py
-# Version: v1.2.1-RELEASE-AUTHORITY-GUARD-DOMAIN
+# Version: v1.2.2-RELEASE-AUTHORITY-GUARD-DOMAIN
 # Status: SOVEREIGN AP OBLIGATION DOMAIN — RELEASE-AUTHORITY COORDINATION
 # Authority: Wilsy OS Core Governance
 # Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
