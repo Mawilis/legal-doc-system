@@ -78,7 +78,7 @@ def test_vendor_bill_command_same_key_different_command_family_conflict_real_mon
 def test_vendor_bill_command_corruption_precedes_replay_and_sequence_lookup_real_mongo():
     client = MongoClient(os.environ["TEST_VENDOR_MONGO_URI"], serverSelectionTimeoutMS=5000, retryWrites=True); assert client.admin.command("hello")["isWritablePrimary"]
     db = client[f"vendor_bill_commands_corrupt_{uuid.uuid4().hex}"]; collection = db["vendor_bill_commands"]; VendorBillCommandRegistry.ensure_indexes(collection); command = _command(); VendorBillCommandRegistry.create_command(command, collection)
-    collection.update_one({"tenant_id": "tenant-a", "payable_id": "payable-a", "idempotency_key": "k"}, {"$set": {"command_sequence": True}})
+    collection.update_one({"tenant_id": "tenant-a", "payable_id": "payable-a", "idempotency_key": "k"}, {"$set": {"command_fingerprint": "bad"}})
     for action in (lambda: VendorBillCommandRegistry.create_command(command, collection), lambda: VendorBillCommandRegistry.get_by_sequence("tenant-a", "payable-a", 1, collection)):
         try: action()
         except Exception as error: assert "PERSISTED_RECORD_INVALID" in str(error)
@@ -87,7 +87,7 @@ def test_vendor_bill_command_corruption_precedes_replay_and_sequence_lookup_real
 
 def test_vendor_bill_command_corruption_precedes_idempotency_conflict_real_mongo():
     client = MongoClient(os.environ["TEST_VENDOR_MONGO_URI"], serverSelectionTimeoutMS=5000, retryWrites=True); assert client.admin.command("hello")["isWritablePrimary"]
-    db = client[f"vendor_bill_commands_corrupt_conflict_{uuid.uuid4().hex}"]; collection = db["vendor_bill_commands"]; VendorBillCommandRegistry.ensure_indexes(collection); command = _command(); VendorBillCommandRegistry.create_command(command, collection)
+    db = client[f"vbc_corrupt_conflict_{uuid.uuid4().hex}"]; collection = db["vendor_bill_commands"]; VendorBillCommandRegistry.ensure_indexes(collection); command = _command(); VendorBillCommandRegistry.create_command(command, collection)
     collection.update_one({"tenant_id": "tenant-a", "payable_id": "payable-a", "idempotency_key": "k"}, {"$set": {"command_fingerprint": "bad"}})
     try: VendorBillCommandRegistry.create_command(_command(fingerprint="b"*128), collection)
     except Exception as error: assert "PERSISTED_RECORD_INVALID" in str(error)
