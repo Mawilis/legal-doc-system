@@ -126,7 +126,11 @@ jobs:
         run: |
           python3 -m venv .ci-venv
           .ci-venv/bin/python -m pip install --upgrade pip==25.3
-          .ci-venv/bin/python -m pip install pymongo==4.16.0 pytest==9.1.1
+          .ci-venv/bin/python -m pip install \
+            pymongo==4.16.0 \
+            pytest==9.1.1 \
+            pydantic==2.13.4 \
+            pydantic_core==2.46.4
 
       - name: Start MongoDB replica-set container
         run: |
