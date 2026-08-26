@@ -16,10 +16,9 @@ secrets-backup-*.yaml
 # Version: 10.0.0-quantum-2050
 
 # Dependencies
+# Installed dependency trees are local/generated.
+# Lockfiles remain version-controlled to preserve deterministic installs and CI.
 node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
 # Environment
 .env
@@ -74,7 +73,8 @@ temp/
 .DS_Store
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo

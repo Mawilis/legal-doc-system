@@ -111,13 +111,10 @@ server/*.bak.*
 server/*.backup.*
 server/test-*.js
 server/test-*.sh
-server/__tests__/
 server/tests_backup/
 # Script directories
 server/scripts/audit/
 server/scripts/vetting/
-server/scripts/emergency/
-server/k8s/
 # Model backups
 server/models/*.backup*
 server/models/*.bak
@@ -132,8 +129,6 @@ wilsy-os-2050/
 WILSY-OS-INVESTMENT-READY/
 WILSY-OS-INVESTMENT-SUITE/
 # Husky hooks
-.husky/
-server/.husky/
 # Test artifacts
 server/coverage/
 server/test-results/
@@ -170,5 +165,8 @@ reports/
 forensic-fixes/
 WILSY_*.txt
 WILSY_*.md
-WILSY_*.json
+/WILSY_*.json
 wilsy_private.pem
+
+# WILSY OS generated EOS digital-twin snapshot — machine-local forensic output
+/tools/eos/WILSY_OS_MASTER_PLAYBOOK.json
