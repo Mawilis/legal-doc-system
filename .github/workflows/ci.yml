@@ -205,7 +205,8 @@ jobs:
           .ci-venv/bin/python -m py_compile \
             tools/eos/saas/domain/vendor_bill.py \
             tools/eos/saas/billing/vendor_bill_registry.py \
-            tests/integration/test_vendor_bill_registry_mongo.py
+            tests/integration/test_vendor_bill_registry_mongo.py \
+            tests/integration/test_vendor_bill_release_authorization_registry_mongo.py
 
       - name: Type-check R2A contracts
         run: |
@@ -213,7 +214,8 @@ jobs:
             --pythonpath .ci-venv/bin/python \
             tools/eos/saas/domain/vendor_bill.py \
             tools/eos/saas/billing/vendor_bill_registry.py \
-            tests/integration/test_vendor_bill_registry_mongo.py
+            tests/integration/test_vendor_bill_registry_mongo.py \
+            tests/integration/test_vendor_bill_release_authorization_registry_mongo.py
 
       - name: Run R2A real-Mongo certification
         run: |
@@ -221,7 +223,8 @@ jobs:
             tests/integration/test_vendor_bill_registry_mongo.py \
             tests/integration/test_vendor_bill_command_registry_mongo.py \
             tests/integration/test_financial_approval_effective_result_registry_mongo.py \
-            tests/integration/test_financial_approval_aggregator_mongo.py
+            tests/integration/test_financial_approval_aggregator_mongo.py \
+            tests/integration/test_vendor_bill_release_authorization_registry_mongo.py
 
       - name: Stop MongoDB certification container
         if: always()
