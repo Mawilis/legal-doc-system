@@ -1,10 +1,15 @@
 """WILSY OS — VENDOR BILL RELEASE POLICY UNIT CERTIFICATION
-Version: v1.0.0-VENDOR-BILL-RELEASE-POLICY-UNIT-CERT
+Version: v1.0.1-VENDOR-BILL-RELEASE-POLICY-UNIT-CERT
 Authority: Wilsy OS Core Governance | Classification: Institutional Artifact — Production Certification
 EPITOME: Pure fail-closed financial-authority policy certification.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_vendor_bill_release_policy.py
 COLLABORATION: Wilson Khanyezi — Founder / Chief Architect; AI Engineering (Codex)
-Date: 2026-08-26 | CHANGELOG: initial R2B-03 policy suite
+Date: 2026-08-26 | CHANGELOG:
+v1.0.0: initial R2B-03 policy certification suite.
+v1.0.1: completed final certification matrix covering approval-state matrix,
+non-approved effective-result states, malformed projection/currency/reservation
+inputs, exact cumulative-authority boundaries, stable reason values, and the
+public API architecture-negative surface.
 COMPLIANCE: POPIA §19 | GDPR §32 | SOC2 CC7.2
 APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 """
@@ -205,5 +210,13 @@ def test_cumulative_authority_boundaries_and_public_api_surface():
 
 
 # INSTITUTIONAL CERTIFICATION SEAL
-# Runtime posture: PURE / NO DB / NO NETWORK / NO KENNEL EXECUTION
+# File: test_vendor_bill_release_policy.py
+# Version: v1.0.1-VENDOR-BILL-RELEASE-POLICY-UNIT-CERT
+# Status: SOVEREIGN UNIT CERTIFICATION — R2B-03
+# Authority: Wilsy OS Core Governance
+# Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
+# Kennel EOS: exclusive financial execution authority
+# Runtime posture: PURE / NO DB / NO NETWORK / NO EXECUTION
+# Compliance: POPIA §19 | GDPR §32 | SOC2 CC7.2
+# Certification date: 2026-08-26
 # Technical-control-only; no independent legal-compliance claim.
