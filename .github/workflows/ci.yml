@@ -148,45 +148,47 @@ jobs:
 
           client = MongoClient(
               "mongodb://localhost:27017",
+              directConnection=True,
               serverSelectionTimeoutMS=2_000,
           )
 
           deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
 
           while True:
               try:
                   hello = client.admin.command("hello")
 
-                  if not hello.get("setName"):
-                      try:
-                          client.admin.command(
-                              {
-                                  "replSetInitiate": {
-                                      "_id": "wilsyVendorCertRS",
-                                      "members": [
-                                          {
-                                              "_id": 0,
-                                              "host": "localhost:27017",
-                                          }
-                                      ],
-                                  }
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command(
+                          {
+                              "replSetInitiate": {
+                                  "_id": "wilsyVendorCertRS",
+                                  "members": [
+                                      {
+                                          "_id": 0,
+                                          "host": "localhost:27017",
+                                      }
+                                  ],
                               }
-                          )
-                      except Exception:
-                          pass
+                          }
+                      )
+                      initiated = True
 
                   if client.admin.command("hello").get(
                       "isWritablePrimary"
                   ):
                       break
 
-              except Exception:
-                  pass
+              except Exception as exc:
+                  last_error = exc
 
               if time.monotonic() >= deadline:
                   raise RuntimeError(
-                      "CI_VENDOR_MONGO_REPLICA_SET_UNAVAILABLE"
-                  )
+                      "CI_VENDOR_MONGO_REPLICA_SET_UNAVAILABLE: "
+                      f"{last_error!r}"
+                  ) from last_error
 
               time.sleep(1)
 
