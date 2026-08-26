@@ -43,7 +43,7 @@ import {
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import bcrypt from 'bcrypt';
-import Bull from 'bull';
+import { Queue } from 'bullmq';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
@@ -141,7 +141,6 @@ const AUTHENTICATION_LEVELS = {
 // =================================================================================
 let redisClient = null;
 let biometricQueue = null;
-let complianceQueue = null;
 
 const initializeBiometricInfrastructure = async () => {
   try {
@@ -160,20 +159,14 @@ const initializeBiometricInfrastructure = async () => {
     await redisClient.connect();
     console.log('✅ Redis connection established');
 
-    // Initialize Bull queues
-    biometricQueue = new Bull('biometric-operations', process.env.QUEUE_REDIS_URL);
-    complianceQueue = new Bull('biometric-compliance', process.env.QUEUE_REDIS_URL);
-
-    // Configure queue event listeners
-    biometricQueue.on('failed', (job, err) => {
-      console.error(`Biometric job ${job.id} failed:`, err);
+    // Initialize BullMQ producer queue
+    biometricQueue = new Queue('biometric-operations', {
+      connection: {
+        url: process.env.QUEUE_REDIS_URL,
+      },
     });
 
-    biometricQueue.on('completed', (job) => {
-      console.log(`✅ Biometric job ${job.id} completed`);
-    });
-
-    console.log('✅ BullMQ queues initialized');
+    console.log('✅ BullMQ queue initialized');
   } catch (error) {
     console.error('Biometric infrastructure initialization failed:', error.message);
   }
@@ -337,7 +330,6 @@ class BiometricCredentialService {
     this.jwtSecret = process.env.JWT_SECRET;
     this.redisClient = redisClient;
     this.biometricQueue = biometricQueue;
-    this.complianceQueue = complianceQueue;
     this.biometricThreshold = parseFloat(process.env.BIOMETRIC_THRESHOLD) || 0.75;
     this.maxFailedAttempts = parseInt(process.env.MAX_FAILED_ATTEMPTS) || 5;
     this.lockoutDuration = parseInt(process.env.LOCKOUT_DURATION) || 15;
