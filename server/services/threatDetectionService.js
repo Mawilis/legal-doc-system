@@ -49,7 +49,7 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { createHash } from 'crypto';
 import { EventEmitter } from 'events';
-import Bull from 'bull';
+import { Queue } from 'bullmq';
 import MerkleTree from 'merkle-tree-stream';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
@@ -321,7 +321,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // Distributed storage with Redis integration
     this.enforcementCache = null; // Will be Redis client
-    this.blockedRequestsQueue = null; // Bull queue for distributed blocking
+    this.blockedRequestsQueue = null; // BullMQ producer queue for distributed blocking
     this.modificationHistory = null;
     this.escalationQueue = null;
 
@@ -361,10 +361,14 @@ class QuantumComplianceEnforcer extends EventEmitter {
       // 1. Initialize Redis client for distributed state
       this.enforcementCache = redisClient;
 
-      // 2. Initialize Bull queue for distributed enforcement
-      this.blockedRequestsQueue = new Bull(
+      // 2. Initialize BullMQ producer queue for distributed enforcement
+      this.blockedRequestsQueue = new Queue(
         process.env.ENFORCEMENT_QUEUE_NAME || 'compliance-enforcement',
-        process.env.REDIS_URL
+        {
+          connection: {
+            url: process.env.REDIS_URL,
+          },
+        }
       );
 
       // 3. Initialize encryption engine
@@ -988,7 +992,6 @@ class QuantumComplianceEnforcer extends EventEmitter {
           },
           {
             jobId: `${enforcementId}_${action.action}`,
-            timeout: ENFORCEMENT_CONFIG.TIMEOUTS.MODIFICATION_TIMEOUT,
           }
         );
 
@@ -1282,20 +1285,44 @@ class QuantumComplianceEnforcer extends EventEmitter {
   _startHealthMonitoring() {}
   _loadThreatIntelligence() {}
   _validateLegalFramework() {}
-  _generateComplianceAssessment(req) { return {}; }
-  _getEnhancedPAIAEnforcementActions(validation, req) { return []; }
-  _getEnhancedFICAEnforcementActions(validation, req) { return []; }
-  _getEnhancedCompaniesActEnforcementActions(validation, req) { return []; }
-  _getEnhancedECTActEnforcementActions(validation, req) { return []; }
-  _getEnhancedCPAEnforcementActions(validation, req) { return []; }
-  _getEnhancedPEPUDAEnforcementActions(validation, req) { return []; }
-  _isExemptPath(path) { return false; }
-  _handleThreatBlock(res, threatAssessment, enforcementId) { res.status(403).json({ error: 'Threat blocked' }); }
-  _executeSingleActionWithTimeout(action, req, res) { return { blocked: false, modified: false }; }
+  _generateComplianceAssessment(req) {
+    return {};
+  }
+  _getEnhancedPAIAEnforcementActions(validation, req) {
+    return [];
+  }
+  _getEnhancedFICAEnforcementActions(validation, req) {
+    return [];
+  }
+  _getEnhancedCompaniesActEnforcementActions(validation, req) {
+    return [];
+  }
+  _getEnhancedECTActEnforcementActions(validation, req) {
+    return [];
+  }
+  _getEnhancedCPAEnforcementActions(validation, req) {
+    return [];
+  }
+  _getEnhancedPEPUDAEnforcementActions(validation, req) {
+    return [];
+  }
+  _isExemptPath(path) {
+    return false;
+  }
+  _handleThreatBlock(res, threatAssessment, enforcementId) {
+    res.status(403).json({ error: 'Threat blocked' });
+  }
+  _executeSingleActionWithTimeout(action, req, res) {
+    return { blocked: false, modified: false };
+  }
   _applyQuantumModifications(req, modifications) {}
   _addQuantumEnforcementHeaders(res, result, id) {}
-  _handleEnforcementError(error, req, res, next, id) { next(error); }
-  _sanitizeRequestForQueue(req) { return { path: req.path, method: req.method }; }
+  _handleEnforcementError(error, req, res, next, id) {
+    next(error);
+  }
+  _sanitizeRequestForQueue(req) {
+    return { path: req.path, method: req.method };
+  }
   _logBlockedRequest(req, action, id) {}
 }
 
@@ -1520,7 +1547,7 @@ console.log(`
  * STEP-BY-STEP DEPLOYMENT:
  * ========================
  * 1. Add the above variables to /server/.env
- * 2. Install dependencies: npm install rate-limiter-flexible@^7.0.1 bull@^4.11.5 merkle-tree-stream@^4.0.0
+ * 2. Install dependencies: npm install rate-limiter-flexible@^7.0.1 bullmq@^5.81.3 merkle-tree-stream@^4.0.0
  * 3. Ensure Redis is running: redis-server --port 6379
  * 4. Start the enforcer middleware in your Express app
  * 5. Verify health: GET /api/v1/compliance/health
