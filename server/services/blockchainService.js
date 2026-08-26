@@ -20,13 +20,6 @@
 
 import 'dotenv/config';
 import crypto from 'node:crypto';
-import pkg_ec from 'elliptic';
-const { ec: EC } = pkg_ec;
-const secp256k1 = new EC('secp256k1');
-
-import pkg_tx from 'ethereumjs-tx';
-const { Transaction } = pkg_tx;
-
 import { MerkleTree } from 'merkletreejs';
 import mongoose from 'mongoose';
 import { SHA3 } from 'sha3';
@@ -115,10 +108,14 @@ class BlockchainService {
   }
 
   initEthereum() {
-    const providerUrl = BLOCKCHAIN_CONFIG.rpcProviders[BLOCKCHAIN_CONFIG.network] || BLOCKCHAIN_CONFIG.rpcProviders.testnet;
+    const providerUrl =
+      BLOCKCHAIN_CONFIG.rpcProviders[BLOCKCHAIN_CONFIG.network] ||
+      BLOCKCHAIN_CONFIG.rpcProviders.testnet;
     this.web3 = new Web3(new Web3.providers.HttpProvider(providerUrl));
     if (BLOCKCHAIN_CONFIG.wallet.privateKey) {
-      const account = this.web3.eth.accounts.privateKeyToAccount(BLOCKCHAIN_CONFIG.wallet.privateKey);
+      const account = this.web3.eth.accounts.privateKeyToAccount(
+        BLOCKCHAIN_CONFIG.wallet.privateKey
+      );
       this.web3.eth.accounts.wallet.add(account);
     }
   }
@@ -131,13 +128,20 @@ class BlockchainService {
     if (!this.web3) return;
     const notarizationContractABI = [
       {
-        inputs: [{ internalType: 'string', name: 'documentHash', type: 'string' }, { internalType: 'string', name: 'metadata', type: 'string' }],
+        inputs: [
+          { internalType: 'string', name: 'documentHash', type: 'string' },
+          { internalType: 'string', name: 'metadata', type: 'string' },
+        ],
         name: 'notarizeDocument',
         outputs: [{ internalType: 'uint256', name: 'timestamp', type: 'uint256' }],
-        stateMutability: 'nonpayable', type: 'function',
-      }
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
     ];
-    this.notarizationContract = new this.web3.eth.Contract(notarizationContractABI, BLOCKCHAIN_CONFIG.contracts.notarization);
+    this.notarizationContract = new this.web3.eth.Contract(
+      notarizationContractABI,
+      BLOCKCHAIN_CONFIG.contracts.notarization
+    );
   }
 
   /**
@@ -157,7 +161,7 @@ class BlockchainService {
         if (attempt >= retries) throw err;
         const wait = delay * Math.pow(2, attempt - 1);
         logger.warn(`Retrying RPC call (${attempt}/${retries}) after ${wait}ms: ${err.message}`);
-        await new Promise(resolve => setTimeout(resolve, wait));
+        await new Promise((resolve) => setTimeout(resolve, wait));
       }
     }
   }
@@ -166,7 +170,9 @@ class BlockchainService {
    * Notarize a document with full latency metrics and evidence sealing.
    */
   async notarizeDocument(documentData, firmId, user) {
-    const traceId = cryptoNexus.generateForensicId ? cryptoNexus.generateForensicId('BC') : `TR-${Date.now()}`;
+    const traceId = cryptoNexus.generateForensicId
+      ? cryptoNexus.generateForensicId('BC')
+      : `TR-${Date.now()}`;
     const start = process.hrtime.bigint();
     try {
       this.validateNotarizationCompliance(documentData, firmId, user);
@@ -174,9 +180,10 @@ class BlockchainService {
       const metadata = this.prepareNotarizationMetadata(documentData, user, firmId);
 
       // Execute with retry
-      let transactionResult = this.isActive && this.notarizationContract
-        ? await this.withRetry(() => this.executeBlockchainNotarization(documentHash, metadata))
-        : await this.simulateBlockchainNotarization(documentHash, metadata);
+      let transactionResult =
+        this.isActive && this.notarizationContract
+          ? await this.withRetry(() => this.executeBlockchainNotarization(documentHash, metadata))
+          : await this.simulateBlockchainNotarization(documentHash, metadata);
 
       const savedTransaction = await this.saveBlockchainTransaction({
         type: 'DOCUMENT_NOTARIZATION',
@@ -191,11 +198,21 @@ class BlockchainService {
       });
 
       await Document.findByIdAndUpdate(documentData._id, {
-        $set: { blockchainNotarized: true, blockchainHash: documentHash, blockchainTransactionId: transactionResult.transactionHash }
+        $set: {
+          blockchainNotarized: true,
+          blockchainHash: documentHash,
+          blockchainTransactionId: transactionResult.transactionHash,
+        },
       });
 
       // Evidence seal
-      const evidenceSeal = this.generateEvidenceSeal({ documentHash, metadata, transactionResult, user, firmId });
+      const evidenceSeal = this.generateEvidenceSeal({
+        documentHash,
+        metadata,
+        transactionResult,
+        user,
+        firmId,
+      });
 
       const end = process.hrtime.bigint();
       const latencyMs = Number(end - start) / 1e6;
@@ -215,7 +232,7 @@ class BlockchainService {
         blockchainTxHash: transactionResult.transactionHash,
         documentHash,
         evidenceSeal,
-        latencyMs
+        latencyMs,
       };
     } catch (error) {
       const end = process.hrtime.bigint();
@@ -264,7 +281,9 @@ class BlockchainService {
       tenantId: user.tenantId,
     });
     // Encrypt using AES-256-GCM via cryptoNexus
-    return cryptoNexus.encrypt ? cryptoNexus.encrypt(payload, user.tenantId || 'GLOBAL_ROOT') : payload;
+    return cryptoNexus.encrypt
+      ? cryptoNexus.encrypt(payload, user.tenantId || 'GLOBAL_ROOT')
+      : payload;
   }
 
   /**
@@ -276,21 +295,29 @@ class BlockchainService {
   }
 
   async executeBlockchainNotarization(documentHash, metadata) {
-    const nonce = await this.web3.eth.getTransactionCount(BLOCKCHAIN_CONFIG.wallet.address, 'latest');
-    const txData = this.notarizationContract.methods.notarizeDocument(documentHash, metadata).encodeABI();
+    const nonce = await this.web3.eth.getTransactionCount(
+      BLOCKCHAIN_CONFIG.wallet.address,
+      'latest'
+    );
+    const txData = this.notarizationContract.methods
+      .notarizeDocument(documentHash, metadata)
+      .encodeABI();
     const txObject = {
       nonce,
       gasLimit: BLOCKCHAIN_CONFIG.gas.limit,
       to: BLOCKCHAIN_CONFIG.contracts.notarization,
       data: txData,
-      gasPrice: BLOCKCHAIN_CONFIG.gas.price
+      gasPrice: BLOCKCHAIN_CONFIG.gas.price,
     };
-    const signedTx = await this.web3.eth.accounts.signTransaction(txObject, BLOCKCHAIN_CONFIG.wallet.privateKey);
+    const signedTx = await this.web3.eth.accounts.signTransaction(
+      txObject,
+      BLOCKCHAIN_CONFIG.wallet.privateKey
+    );
     const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
     return {
       transactionHash: receipt.transactionHash,
       blockNumber: receipt.blockNumber,
-      status: true
+      status: true,
     };
   }
 
@@ -299,7 +326,7 @@ class BlockchainService {
     return {
       transactionHash: `sim_${crypto.randomBytes(32).toString('hex')}`,
       status: true,
-      simulated: true
+      simulated: true,
     };
   }
 
@@ -323,7 +350,12 @@ export const anchorToBlockchain = async (documentHash, metadata = {}) => {
   return await blockchainServiceInstance.notarizeDocument(
     { _id: metadata.documentId, contentHash: documentHash },
     metadata.firmId,
-    { _id: metadata.userId, role: 'firmAdmin', tenantId: metadata.tenantId, mfaEnabled: metadata.mfaEnabled || false }
+    {
+      _id: metadata.userId,
+      role: 'firmAdmin',
+      tenantId: metadata.tenantId,
+      mfaEnabled: metadata.mfaEnabled || false,
+    }
   );
 };
 
@@ -354,7 +386,10 @@ export const createSmartContractCompliance = async (recordId, terms) => {
   const start = process.hrtime.bigint();
   try {
     const contractAddress = `0x${crypto.randomBytes(20).toString('hex')}`;
-    const seal = crypto.createHash('sha3-512').update(JSON.stringify({ recordId, terms, contractAddress })).digest('hex');
+    const seal = crypto
+      .createHash('sha3-512')
+      .update(JSON.stringify({ recordId, terms, contractAddress }))
+      .digest('hex');
     const end = process.hrtime.bigint();
     const latencyMs = Number(end - start) / 1e6;
     logger.info(`[BLOCKCHAIN] Smart contract deployment latency: ${latencyMs.toFixed(3)}ms`);
