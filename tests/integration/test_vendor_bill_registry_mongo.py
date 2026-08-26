@@ -25,6 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 
 from pymongo import MongoClient
+from pymongo.errors import OperationFailure, PyMongoError
 import pytest
 
 from tools.eos.saas.billing.vendor_bill_registry import VendorBillCreateConflictError, VendorBillCreateOutcome, VendorBillIdempotencyKeyReuseError, VendorBillMutationOutcome, VendorBillNotFoundError, VendorBillObligationState, VendorBillPersistedRecordInvalidError, VendorBillRegistry, VendorBillRevisionConflictError
@@ -338,6 +339,48 @@ def test_release_authority_guard_rejects_stale_approval_projection_real_mongo():
     assert "PROJECTION" in str(error.value) or "REFERENCE" in str(error.value)
     fresh = VendorBillRegistry.get("t", "p", bills)
     assert fresh.approval_projection_revision == 2 and fresh.approval_effective_result_id == second.result_id and fresh.release_authority_guard_revision == 0
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_same_guard_independent_transaction_race_real_mongo():
+    """Two caller-owned transactions cannot both advance the same guard."""
+    client, database, bills, bill_factory = _fixture()
+    payable = "transaction-guard-race"
+    VendorBillRegistry.create(replace(bill_factory(), payable_id=payable), bills)
+    bills.update_one({"tenant_id": "tenant-a", "payable_id": payable}, {"$set": {"obligation_state": "OPEN", "approval_state": "APPROVED", "approval_projection_revision": 1, "approval_effective_result_id": "result-a"}})
+    barrier = threading.Barrier(2)
+    def worker():
+        with client.start_session() as session:
+            try:
+                session.start_transaction()
+                barrier.wait()
+                value = VendorBillRegistry.acquire_release_authority_guard("tenant-a", payable, 1, 1, "result-a", 0, bills, session=session)
+                session.commit_transaction()
+                return "committed", value
+            except (OperationFailure, PyMongoError, VendorBillRevisionConflictError) as error:
+                if session.in_transaction:
+                    session.abort_transaction()
+                return "lost", error
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(lambda _: worker(), (0, 1)))
+    assert sum(kind == "committed" for kind, _ in outcomes) == 1
+    raw = bills.find_one({"tenant_id": "tenant-a", "payable_id": payable})
+    assert raw is not None and raw["release_authority_guard_revision"] == 1
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_projection_overlap_transaction_real_mongo():
+    """A newer committed projection prevents stale guard admission."""
+    client, database, opened, first, second = _projection_fixture()
+    bills = database["vendor_bills"]
+    VendorBillRegistry.project_financial_approval_result("t", "p", first.result_id, opened.revision, 0, "tx-overlap-1", bills)
+    before = VendorBillRegistry.get("t", "p", bills)
+    VendorBillRegistry.project_financial_approval_result("t", "p", second.result_id, before.revision, 1, "tx-overlap-2", bills)
+    with pytest.raises(Exception) as error:
+        VendorBillRegistry.acquire_release_authority_guard("t", "p", before.revision, 1, first.result_id, 0, bills)
+    assert "PROJECTION" in str(error.value) or "REFERENCE" in str(error.value)
+    after = VendorBillRegistry.get("t", "p", bills)
+    assert after.approval_projection_revision == 2 and after.approval_effective_result_id == second.result_id and after.release_authority_guard_revision == 0
     client.drop_database(database.name); client.close()
 
 
