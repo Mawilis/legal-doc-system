@@ -106,6 +106,123 @@ jobs:
           name: test-results-${{ matrix.test-group }}
           path: server/test-results/
 
+  # ─── R2A: Vendor Bill Real-Mongo Certification ─────────────────────────
+  vendor-bill-r2a-certification:
+    name: 🧾 R2A Vendor Bill Real-Mongo Certification
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Create Python certification environment
+        run: |
+          python3 -m venv .ci-venv
+          .ci-venv/bin/python -m pip install --upgrade pip==25.3
+          .ci-venv/bin/python -m pip install pymongo==4.16.0 pytest==9.1.1
+
+      - name: Start MongoDB replica-set container
+        run: |
+          docker run \
+            --detach \
+            --name wilsy-vendor-cert-mongo \
+            --publish 27017:27017 \
+            mongo:7.0.37 \
+            mongod \
+            --replSet wilsyVendorCertRS \
+            --bind_ip_all
+
+      - name: Initialize MongoDB replica set
+        run: |
+          .ci-venv/bin/python - <<'PY'
+          import time
+
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              serverSelectionTimeoutMS=2_000,
+          )
+
+          deadline = time.monotonic() + 60
+
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+
+                  if not hello.get("setName"):
+                      try:
+                          client.admin.command(
+                              {
+                                  "replSetInitiate": {
+                                      "_id": "wilsyVendorCertRS",
+                                      "members": [
+                                          {
+                                              "_id": 0,
+                                              "host": "localhost:27017",
+                                          }
+                                      ],
+                                  }
+                              }
+                          )
+                      except Exception:
+                          pass
+
+                  if client.admin.command("hello").get(
+                      "isWritablePrimary"
+                  ):
+                      break
+
+              except Exception:
+                  pass
+
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      "CI_VENDOR_MONGO_REPLICA_SET_UNAVAILABLE"
+                  )
+
+              time.sleep(1)
+
+          client.close()
+          PY
+
+      - name: Compile R2A Python contracts
+        run: |
+          .ci-venv/bin/python -m py_compile \
+            tools/eos/saas/domain/vendor_bill.py \
+            tools/eos/saas/billing/vendor_bill_registry.py \
+            tests/integration/test_vendor_bill_registry_mongo.py
+
+      - name: Type-check R2A contracts
+        run: |
+          npx pyright \
+            tools/eos/saas/domain/vendor_bill.py \
+            tools/eos/saas/billing/vendor_bill_registry.py \
+            tests/integration/test_vendor_bill_registry_mongo.py
+
+      - name: Run R2A real-Mongo certification
+        run: |
+          .ci-venv/bin/python -m pytest -q \
+            tests/integration/test_vendor_bill_registry_mongo.py \
+            tests/integration/test_vendor_bill_command_registry_mongo.py \
+            tests/integration/test_financial_approval_effective_result_registry_mongo.py \
+            tests/integration/test_financial_approval_aggregator_mongo.py
+
+      - name: Stop MongoDB certification container
+        if: always()
+        run: |
+          docker rm -f wilsy-vendor-cert-mongo 2>/dev/null || true
+
   # ─── NEW: Frontend Sovereign Tests ──────────────────────────────────────
   frontend-tests:
     name: 🖥️ Frontend BusinessContext & Cross-Dashboard Tests
@@ -142,14 +259,16 @@ jobs:
   final-verification:
     name: ✅ All Tests Passed
     runs-on: ubuntu-latest
-    needs: [test-suite, frontend-tests]
+    needs: [test-suite, frontend-tests, vendor-bill-r2a-certification]
     if: always()
     steps:
       - name: Check test suite status
         run: |
           echo "All backend and frontend tests have completed."
           # Optionally fail if any job failed
-          if [ "${{ needs.test-suite.result }}" != "success" ] || [ "${{ needs.frontend-tests.result }}" != "success" ]; then
+          if [ "${{ needs.test-suite.result }}" != "success" ] || \
+             [ "${{ needs.frontend-tests.result }}" != "success" ] || \
+             [ "${{ needs.vendor-bill-r2a-certification.result }}" != "success" ]; then
             echo "❌ Some tests failed!"
             exit 1
           else
