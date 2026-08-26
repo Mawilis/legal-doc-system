@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Wilsy OS VendorBill persistence foundation: v1.1.0-APPROVAL-PROJECTION-CAS."""
+"""Wilsy OS VendorBill persistence foundation: v1.3.0-RELEASE-AUTHORITY-GUARD-CAS."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import StrEnum
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -55,6 +55,10 @@ class VendorBillApprovalProjectionConflictError(VendorBillRegistryError):
 
 class VendorBillApprovalProjectionReferenceError(VendorBillRegistryError):
     """Raised when an immutable effective result is not bound to this VendorBill."""
+
+
+class VendorBillReleaseAuthorityGuardConflictError(VendorBillRegistryError):
+    """Raised when release-authority freshness or lifecycle predicates fail."""
 
 class VendorBillApprovalProjectionIdempotencyKeyReuseError(VendorBillRegistryError):
     """Raised when a projection idempotency key is reused for a different command."""
@@ -204,11 +208,14 @@ def _hydrate_persisted_vendor_bill(document: Mapping[str, Any]) -> VendorBill:
         revision = document.get("revision")
         projection_revision = document.get("approval_projection_revision", 0)
         projection_result_id = document.get("approval_effective_result_id")
+        guard_revision = document.get("release_authority_guard_revision", 0)
         fingerprint = document.get("create_fingerprint")
         gross_amount_minor, outstanding_amount_minor = document.get("gross_amount_minor"), document.get("outstanding_amount_minor")
         if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
             raise VendorBillPersistedRecordInvalidError("VENDOR_BILL_PERSISTED_RECORD_INVALID")
         if not isinstance(projection_revision, int) or isinstance(projection_revision, bool) or projection_revision < 0:
+            raise VendorBillPersistedRecordInvalidError("VENDOR_BILL_PERSISTED_RECORD_INVALID")
+        if not isinstance(guard_revision, int) or isinstance(guard_revision, bool) or guard_revision < 0:
             raise VendorBillPersistedRecordInvalidError("VENDOR_BILL_PERSISTED_RECORD_INVALID")
         if projection_revision == 0 and projection_result_id is not None:
             raise VendorBillPersistedRecordInvalidError("VENDOR_BILL_PERSISTED_RECORD_INVALID")
@@ -227,6 +234,7 @@ def _hydrate_persisted_vendor_bill(document: Mapping[str, Any]) -> VendorBill:
             obligation_state=VendorBillObligationState(document.get("obligation_state")), approval_state=VendorBillApprovalState(document.get("approval_state")),
             approval_policy_reference=_optional_text(document, "approval_policy_reference"), revision=revision, created_at=_aware_timestamp(document.get("created_at")), updated_at=_aware_timestamp(document.get("updated_at")), proof_hash=_required_text(document, "proof_hash"),
             approval_projection_revision=projection_revision, approval_effective_result_id=projection_result_id,
+            release_authority_guard_revision=guard_revision,
         )
         _hydrate_command_receipts(document, bill.revision)
         return bill
@@ -238,7 +246,7 @@ def _hydrate_persisted_vendor_bill(document: Mapping[str, Any]) -> VendorBill:
 
 def _document_from_vendor_bill(bill: VendorBill, create_fingerprint: str) -> Dict[str, Any]:
     """Serializes one canonical obligation without release, execution, or payment-destination fields."""
-    return {"tenant_id": bill.tenant_id, "payable_id": bill.payable_id, "vendor_id": bill.vendor_id, "vendor_reference": bill.vendor_reference, "vendor_reference_normalized": (bill.vendor_reference or "").strip().casefold() or None, "source_document_reference": bill.source_document_reference, "currency": bill.currency, "gross_amount_minor": bill.gross_amount_minor, "outstanding_amount_minor": bill.outstanding_amount_minor, "issue_date": bill.issue_date.isoformat(), "due_date": bill.due_date.isoformat(), "received_at": bill.received_at.isoformat(), "obligation_state": bill.obligation_state.value, "approval_state": bill.approval_state.value, "approval_projection_revision": bill.approval_projection_revision, "approval_effective_result_id": bill.approval_effective_result_id, "approval_policy_reference": bill.approval_policy_reference, "revision": bill.revision, "created_at": bill.created_at.isoformat(), "updated_at": bill.updated_at.isoformat(), "proof_hash": bill.proof_hash, "create_fingerprint": create_fingerprint, "command_receipts": []}
+    return {"tenant_id": bill.tenant_id, "payable_id": bill.payable_id, "vendor_id": bill.vendor_id, "vendor_reference": bill.vendor_reference, "vendor_reference_normalized": (bill.vendor_reference or "").strip().casefold() or None, "source_document_reference": bill.source_document_reference, "currency": bill.currency, "gross_amount_minor": bill.gross_amount_minor, "outstanding_amount_minor": bill.outstanding_amount_minor, "issue_date": bill.issue_date.isoformat(), "due_date": bill.due_date.isoformat(), "received_at": bill.received_at.isoformat(), "obligation_state": bill.obligation_state.value, "approval_state": bill.approval_state.value, "approval_projection_revision": bill.approval_projection_revision, "approval_effective_result_id": bill.approval_effective_result_id, "release_authority_guard_revision": bill.release_authority_guard_revision, "approval_policy_reference": bill.approval_policy_reference, "revision": bill.revision, "created_at": bill.created_at.isoformat(), "updated_at": bill.updated_at.isoformat(), "proof_hash": bill.proof_hash, "create_fingerprint": create_fingerprint, "command_receipts": []}
 
 
 class VendorBillRegistry:
@@ -323,6 +331,62 @@ class VendorBillRegistry:
         if persisted.revision != expected_revision:
             raise VendorBillRevisionConflictError("VENDOR_BILL_REVISION_CONFLICT")
         raise VendorBillRevisionConflictError("VENDOR_BILL_REVISION_CONFLICT")
+
+    @staticmethod
+    def acquire_release_authority_guard(
+        tenant_id: str,
+        payable_id: str,
+        expected_revision: int,
+        expected_approval_projection_revision: int,
+        expected_approval_effective_result_id: str,
+        expected_release_authority_guard_revision: int,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> VendorBill:
+        """Advance the release-authority guard through a caller-owned CAS write."""
+        tenant, payable = str(tenant_id).strip(), str(payable_id).strip()
+        if not tenant or not payable:
+            raise VendorBillReleaseAuthorityGuardConflictError("VENDOR_BILL_RELEASE_AUTHORITY_GUARD_INVALID_IDENTITY")
+        if (not isinstance(expected_revision, int) or isinstance(expected_revision, bool) or expected_revision < 1
+                or not isinstance(expected_approval_projection_revision, int) or isinstance(expected_approval_projection_revision, bool) or expected_approval_projection_revision < 1
+                or not isinstance(expected_release_authority_guard_revision, int) or isinstance(expected_release_authority_guard_revision, bool) or expected_release_authority_guard_revision < 0
+                or not isinstance(expected_approval_effective_result_id, str) or not expected_approval_effective_result_id.strip()):
+            raise VendorBillReleaseAuthorityGuardConflictError("VENDOR_BILL_RELEASE_AUTHORITY_GUARD_INVALID_INPUT")
+        target = _collection_or_raise(collection)
+        predicate = {
+            "tenant_id": tenant,
+            "payable_id": payable,
+            "revision": expected_revision,
+            "approval_projection_revision": expected_approval_projection_revision,
+            "approval_effective_result_id": expected_approval_effective_result_id.strip(),
+            "release_authority_guard_revision": expected_release_authority_guard_revision,
+            "obligation_state": VendorBillObligationState.OPEN.value,
+            "approval_state": VendorBillApprovalState.APPROVED.value,
+        }
+        document = target.find_one_and_update(
+            predicate,
+            {"$inc": {"release_authority_guard_revision": 1}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}},
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+        if document is not None:
+            return _hydrate_persisted_vendor_bill(document)
+        existing = target.find_one({"tenant_id": tenant, "payable_id": payable}, session=session)
+        if existing is None:
+            raise VendorBillNotFoundError("VENDOR_BILL_NOT_FOUND")
+        current = _hydrate_persisted_vendor_bill(existing)
+        if current.revision != expected_revision:
+            raise VendorBillRevisionConflictError("VENDOR_BILL_REVISION_CONFLICT")
+        if current.approval_projection_revision != expected_approval_projection_revision:
+            raise VendorBillApprovalProjectionConflictError("VENDOR_BILL_APPROVAL_PROJECTION_CONFLICT")
+        if current.approval_effective_result_id != expected_approval_effective_result_id.strip():
+            raise VendorBillApprovalProjectionReferenceError("VENDOR_BILL_APPROVAL_PROJECTION_REFERENCE_MISMATCH")
+        if current.obligation_state is not VendorBillObligationState.OPEN:
+            raise VendorBillReleaseAuthorityGuardConflictError("VENDOR_BILL_RELEASE_AUTHORITY_GUARD_INVALID_OBLIGATION_STATE")
+        if current.approval_state is not VendorBillApprovalState.APPROVED:
+            raise VendorBillReleaseAuthorityGuardConflictError("VENDOR_BILL_RELEASE_AUTHORITY_GUARD_APPROVAL_NOT_APPROVED")
+        raise VendorBillReleaseAuthorityGuardConflictError("VENDOR_BILL_RELEASE_AUTHORITY_GUARD_STALE")
 
     @staticmethod
     def project_financial_approval_result(tenant_id: str, payable_id: str, effective_result_id: str, expected_revision: int, expected_approval_projection_revision: int, idempotency_key: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> VendorBillMutationResult:

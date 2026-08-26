@@ -1,3 +1,18 @@
+"""WILSY OS — VENDOR BILL RELEASE-AUTHORITY GUARD REAL-MONGO CERTIFICATION
+Version: v1.2.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-MONGO-CERT
+Authority: Wilsy OS Core Governance | Classification: Institutional Integration Certification
+Epitome: Real Mongo CAS proof for persisted release-authority coordination metadata.
+Absolute path: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_vendor_bill_registry_mongo.py
+Collaboration: Wilson Khanyezi — Founder / Chief Architect; AI Engineering (Codex)
+Date: 2026-08-27 | CHANGELOG: v1.1.0 added guard persistence and caller-session CAS certification.
+v1.2.0 adds stale-predicate, lifecycle/approval-gate, tenant-isolation,
+transaction abort/commit, same-guard race, projection-conflict, and corruption
+precedence certification. This artifact certifies release-authority coordination only.
+POPIA §19 | GDPR §32 | SOC2 CC7.2
+APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
+Kennel EOS remains the exclusive financial execution authority.
+"""
+
 import os
 import threading
 from dataclasses import replace
@@ -6,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 
 from pymongo import MongoClient
+import pytest
 
 from tools.eos.saas.billing.vendor_bill_registry import VendorBillCreateConflictError, VendorBillCreateOutcome, VendorBillIdempotencyKeyReuseError, VendorBillMutationOutcome, VendorBillNotFoundError, VendorBillObligationState, VendorBillPersistedRecordInvalidError, VendorBillRegistry, VendorBillRevisionConflictError
 from tools.eos.saas.billing.vendor_registry import VendorRegistry
@@ -164,6 +180,100 @@ def test_vendor_bill_create_open_projection_fields_regression_real_mongo():
     assert created.vendor_bill.approval_projection_revision == 0 and created.vendor_bill.approval_effective_result_id is None
     opened = VendorBillRegistry.open_bill("tenant-a", "payable-1", 1, "open-projection-regression", bills).vendor_bill
     assert opened.revision == 2 and opened.approval_projection_revision == 0 and opened.approval_effective_result_id is None
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_persistence_cas_real_mongo():
+    """Prove persisted guard defaults, strict corruption rejection, and CAS advancement."""
+    client, database, bills, bill = _fixture()
+    VendorBillRegistry.create(bill(), bills)
+    raw = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+    assert raw is not None and raw["release_authority_guard_revision"] == 0
+    bills.update_one(
+        {"tenant_id": "tenant-a", "payable_id": "payable-1"},
+        {"$set": {"obligation_state": "OPEN", "approval_state": "APPROVED", "approval_projection_revision": 1, "approval_effective_result_id": "result-a"}},
+    )
+    bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$unset": {"release_authority_guard_revision": ""}})
+    assert VendorBillRegistry.get("tenant-a", "payable-1", bills).release_authority_guard_revision == 0
+    bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"release_authority_guard_revision": 0}})
+    advanced = VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills)
+    assert advanced.release_authority_guard_revision == 1
+    persisted = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+    assert persisted is not None and persisted["release_authority_guard_revision"] == 1
+    try:
+        VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills)
+    except Exception as error:
+        assert "STALE" in str(error)
+    else:
+        raise AssertionError("stale release-authority guard unexpectedly advanced")
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_stale_predicates_and_gates_real_mongo():
+    """Certify every supported guard fallback classification without mutation."""
+    client, database, bills, bill = _fixture()
+    VendorBillRegistry.create(bill(), bills)
+    base = {"obligation_state": "OPEN", "approval_state": "APPROVED", "approval_projection_revision": 1, "approval_effective_result_id": "result-a"}
+    bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": base})
+    calls = ((2, 1, "result-a", 0, "VENDOR_BILL_REVISION_CONFLICT"), (1, 2, "result-a", 0, "VENDOR_BILL_APPROVAL_PROJECTION_CONFLICT"), (1, 1, "wrong", 0, "VENDOR_BILL_APPROVAL_PROJECTION_REFERENCE_MISMATCH"))
+    for revision, projection, result_id, guard, code in calls:
+        before = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+        try:
+            VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", revision, projection, result_id, guard, bills)
+        except Exception as error:
+            assert str(error) == code
+        else:
+            raise AssertionError("stale guard predicate unexpectedly succeeded")
+        assert bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}) == before
+    for state in ("DRAFT", "PARTIALLY_SETTLED", "SETTLED", "VOIDED"):
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": state}})
+        with pytest.raises(Exception, match="INVALID_OBLIGATION_STATE"):
+            VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills)
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": "OPEN"}})
+    for state in ("NOT_REQUIRED", "PENDING", "REJECTED"):
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"approval_state": state}})
+        with pytest.raises(Exception, match="APPROVAL_NOT_APPROVED"):
+            VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills)
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"approval_state": "APPROVED"}})
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_tenant_isolation_and_financial_boundary_real_mongo():
+    """Prove tenant scoping and coordination-only mutation boundaries."""
+    client, database, bills, bill = _fixture()
+    VendorRegistry.create(VendorIdentity(tenant_id="tenant-b", legal_name="Tenant B"), database["vendors"])
+    VendorBillRegistry.create(bill(), bills)
+    before = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+    assert before is not None
+    with pytest.raises(VendorBillNotFoundError, match="VENDOR_BILL_NOT_FOUND"):
+        VendorBillRegistry.acquire_release_authority_guard("tenant-b", "payable-1", 1, 1, "result-a", 0, bills)
+    assert bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}) == before
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_caller_owned_abort_and_commit_real_mongo():
+    """Prove caller-owned transactions control guard durability."""
+    client, database, bills, bill = _fixture()
+    VendorBillRegistry.create(bill(), bills)
+    bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": "OPEN", "approval_state": "APPROVED", "approval_projection_revision": 1, "approval_effective_result_id": "result-a"}})
+    with client.start_session() as session:
+        session.start_transaction()
+        changed = VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills, session=session)
+        assert changed.release_authority_guard_revision == 1
+        in_transaction = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, session=session)
+        assert in_transaction is not None
+        assert in_transaction["release_authority_guard_revision"] == 1
+        session.abort_transaction()
+    after_abort = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+    assert after_abort is not None
+    assert after_abort["release_authority_guard_revision"] == 0
+    with client.start_session() as session:
+        session.start_transaction()
+        VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills, session=session)
+        session.commit_transaction()
+    after_commit = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+    assert after_commit is not None
+    assert after_commit["release_authority_guard_revision"] == 1
     client.drop_database(database.name); client.close()
 
 
