@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE AUTHORIZATION REGISTRY REAL-MONGO CERTIFICATION
-Version: v1.0.0-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY-MONGO-CERT
+Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY-MONGO-CERT
 Authority: Wilsy OS Core Governance | Classification: Institutional Artifact — Production Certification
 EPITOME: Durable tenant-scoped immutable release evidence certification.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_vendor_bill_release_authorization_registry_mongo.py
@@ -7,6 +7,7 @@ PRIMARY CONTRACT: vendor_bill_release_authorization_registry.py
 ARCHITECTURE LOCK: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 COLLABORATION: Wilson Khanyezi — Founder / Chief Architect; AI Engineering (Codex)
 Date: 2026-08-26 | COMPLIANCE: POPIA §19 | GDPR §32 | SOC2 CC7.2
+CHANGELOG: 2026-08-26 — v1.0.1 removed duplicated concurrency from session-read certification.
 """
 
 import hashlib
@@ -216,21 +217,9 @@ def test_session_aware_release_authorization_reads(collection) -> None:
         assert VendorBillReleaseAuthorizationRegistry.get(authorization.tenant_id, authorization.release_authorization_id, collection, session=session) == authorization
         assert VendorBillReleaseAuthorizationRegistry.get_by_idempotency_key(authorization.tenant_id, authorization.payable_id, "session-key", collection, session=session) == authorization
 
-    def competing(index: int) -> str:
-        candidate = make_authorization(payable_id=f"payable-{index}", authorization_basis_reference=f"basis-{index}")
-        try:
-            return VendorBillReleaseAuthorizationRegistry.create(candidate, f"key-{index}", collection).outcome.value
-        except Exception as error:
-            return type(error).__name__
-    with ThreadPoolExecutor(max_workers=16) as workers:
-        conflict_outcomes = list(workers.map(competing, range(100)))
-    assert conflict_outcomes.count("VendorBillReleaseAuthorizationCreateConflictError") == 99
-    assert conflict_outcomes.count("CREATED") == 1
-    assert collection.count_documents({}) == 1
-
-
 # INSTITUTIONAL CERTIFICATION SEAL
 # File: test_vendor_bill_release_authorization_registry_mongo.py
+# Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY-MONGO-CERT
 # Status: SOVEREIGN REAL-MONGO CERTIFICATION — R2B-02
 # Runtime posture: PERSISTENCE ONLY / NO KENNEL EXECUTION
 # Real-Mongo certification is environment-dependent and not claimed offline.
