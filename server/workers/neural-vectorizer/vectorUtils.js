@@ -27,7 +27,7 @@ let legalEmbeddingPipeline = null;
  */
 async function getTransformers() {
   try {
-    const { pipeline } = await import('@xenova/transformers');
+    const { pipeline } = await import('@huggingface/transformers');
     return { pipeline };
   } catch (error) {
     logger.error('Failed to load transformers module', { error: error.message });
@@ -63,7 +63,7 @@ export async function getLegalEmbeddingPipeline() {
       const { pipeline } = await getTransformers();
       legalEmbeddingPipeline = await pipeline(
         'feature-extraction',
-        'Xenova/legal-bert-base-uncased',
+        'Xenova/legal-bert-base-uncased'
       );
       logger.info('✅ Legal embedding pipeline initialized');
     } catch (error) {
@@ -102,7 +102,9 @@ export async function getEmbedding(text, options = {}) {
     } else if (vector.length < MODEL_DIMENSIONS) {
       // Pad with zeros and add deterministic noise based on text hash
       const hash = crypto.createHash('sha256').update(text).digest();
-      const padding = new Array(MODEL_DIMENSIONS - vector.length).fill(0).map((_, i) => (hash[i % hash.length] / 255) * 0.01);
+      const padding = new Array(MODEL_DIMENSIONS - vector.length)
+        .fill(0)
+        .map((_, i) => (hash[i % hash.length] / 255) * 0.01);
       vector = [...vector, ...padding];
     }
 
@@ -112,7 +114,9 @@ export async function getEmbedding(text, options = {}) {
 
     // Fallback: deterministic hash-based vector
     const hash = crypto.createHash('sha256').update(text).digest();
-    const fallbackVector = new Array(MODEL_DIMENSIONS).fill(0).map((_, i) => (hash[i % hash.length] / 255) * 2 - 1);
+    const fallbackVector = new Array(MODEL_DIMENSIONS)
+      .fill(0)
+      .map((_, i) => (hash[i % hash.length] / 255) * 2 - 1);
 
     // Normalize
     const magnitude = Math.sqrt(fallbackVector.reduce((sum, val) => sum + val * val, 0));

@@ -113,7 +113,7 @@
  *   'ioredis',
  *   '@tensorflow/tfjs-node',
  *   '@tensorflow-models/universal-sentence-encoder',
- *   '@xenova/transformers',
+ *   '@huggingface/transformers',
  *   '../../config/embeddingConfig.js',
  *   '../../utils/logger.js',
  *   '../../utils/auditLogger.js',
@@ -356,7 +356,7 @@ class GPUManager {
       try {
         const nvidiaSmi = execSync(
           'nvidia-smi --query-gpu=index,name,memory.total,memory.free,temperature.gpu,utilization.gpu --format=csv,noheader,nounits',
-          { encoding: 'utf8' },
+          { encoding: 'utf8' }
         );
         const lines = nvidiaSmi.trim().split('\n');
 
@@ -408,7 +408,7 @@ class GPUManager {
           const { execSync } = require('child_process');
           const stats = execSync(
             `nvidia-smi --query-gpu=temperature.gpu,utilization.gpu,memory.used --format=csv,noheader,nounits -i ${gpu.id}`,
-            { encoding: 'utf8' },
+            { encoding: 'utf8' }
           );
           const [temperature, utilization, memoryUsed] = stats
             .trim()
@@ -554,7 +554,7 @@ const loadServices = async () => {
           logger.error('[PrecedentVectorizer] Failed to load embedding service:', error);
           throw error;
         }
-      })(),
+      })()
     );
   }
 
@@ -568,7 +568,7 @@ const loadServices = async () => {
         } catch (error) {
           logger.warn('[PrecedentVectorizer] Milvus connection failed:', error.message);
         }
-      })(),
+      })()
     );
   }
 
@@ -582,7 +582,7 @@ const loadServices = async () => {
           logger.error('[PrecedentVectorizer] Failed to load models:', error);
           throw error;
         }
-      })(),
+      })()
     );
   }
 
@@ -605,7 +605,7 @@ const embeddingBreaker = new CircuitBreaker(
     rollingCountTimeout: 30000,
     name: 'embedding-service',
     volumeThreshold: 5,
-  },
+  }
 );
 
 embeddingBreaker.on('open', () => {
@@ -631,7 +631,7 @@ const milvusBreaker = new CircuitBreaker(
     errorThresholdPercentage: 50,
     resetTimeout: 30000,
     name: 'milvus-service',
-  },
+  }
 );
 
 /* ---------------------------------------------------------------------------
@@ -717,7 +717,8 @@ const quantizeVector = (vector, bits = 8) => {
 /*
  * Dequantize vector
  */
-const dequantizeVector = (quantized, scale, zeroPoint) => quantized.map((q) => (q - zeroPoint) * scale);
+const dequantizeVector = (quantized, scale, zeroPoint) =>
+  quantized.map((q) => (q - zeroPoint) * scale);
 
 /*
  * Compress vector for storage
@@ -1170,7 +1171,7 @@ const worker = new Worker(
         } catch (dbError) {
           logger.warn(
             `[PrecedentVectorizer] Failed to update precedent ${precedentId}:`,
-            dbError.message,
+            dbError.message
           );
         }
       }
@@ -1304,9 +1305,9 @@ const worker = new Worker(
     concurrency: embeddingConfig.performance?.concurrency || 1,
     limiter: embeddingConfig.performance?.rateLimit
       ? {
-        max: embeddingConfig.performance.rateLimit.max,
-        duration: embeddingConfig.performance.rateLimit.duration,
-      }
+          max: embeddingConfig.performance.rateLimit.max,
+          duration: embeddingConfig.performance.rateLimit.duration,
+        }
       : undefined,
     settings: {
       stalledInterval: embeddingConfig.performance?.stalledInterval || 30000,
@@ -1314,7 +1315,7 @@ const worker = new Worker(
       lockDuration: embeddingConfig.performance?.lockDuration || 60000,
       lockRenewTime: embeddingConfig.performance?.lockRenewTime || 30000,
     },
-  },
+  }
 );
 
 /* ---------------------------------------------------------------------------
@@ -1334,7 +1335,7 @@ worker.on('failed', (job, error) => {
     logger.info(
       `[PrecedentVectorizer] Job ${job.id} will retry (attempt ${job.attemptsMade + 1}/${
         job.opts.attempts
-      })`,
+      })`
     );
   }
 });

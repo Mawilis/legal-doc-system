@@ -28,6 +28,7 @@
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
     "@babel/preset-react": "^7.23.3",
+    "@huggingface/transformers": "3.8.1",
     "@mongodb-js/zstd": "7.0.0",
     "@noble/post-quantum": "0.6.1",
     "@pagerduty/pdjs": "2.2.4",
@@ -35,7 +36,6 @@
     "@tensorflow/tfjs": "4.11.0",
     "@tensorflow/tfjs-backend-cpu": "4.22.0",
     "@tensorflow/tfjs-backend-webgl": "4.22.0",
-    "@xenova/transformers": "^2.5.4",
     "agenda": "^5.0.0",
     "async-mutex": "0.5.0",
     "axios": "^1.7.4",
@@ -187,6 +187,7 @@
     "axios": "^1.7.4",
     "@remix-run/router": "^1.19.0",
     "gpu.js": "^2.15.2",
-    "compromise": "^14.14.0"
+    "compromise": "^14.14.0",
+    "sharp": "0.35.3"
   }
 }
