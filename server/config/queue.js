@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* ╔═══════════════════════════════════════════════════════════════════════════╗
-  ║ QUEUE CONFIGURATION - INVESTOR-GRADE MODULE                               ║
-  ║ BullMQ configuration for all workers                                      ║
+  ║ QUEUE CONFIGURATION - INVESTOR-GRADE MODULE                              ║
+  ║ BullMQ configuration for all workers                                     ║
   ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
-import { Queue, Worker, QueueScheduler } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 
 export const redisConfig = {
   connection: {
@@ -26,26 +26,25 @@ export const defaultJobOptions = {
   removeOnFail: 500,
 };
 
-export const createQueue = (name) => new Queue(name, {
-  ...redisConfig,
-  defaultJobOptions,
-});
+export const createQueue = (name) =>
+  new Queue(name, {
+    ...redisConfig,
+    defaultJobOptions,
+  });
 
-export const createWorker = (name, processor) => new Worker(name, processor, {
-  ...redisConfig,
-  concurrency: 5,
-  limiter: {
-    max: 100,
-    duration: 1000,
-  },
-});
-
-export const createScheduler = (name) => new QueueScheduler(name, redisConfig);
+export const createWorker = (name, processor) =>
+  new Worker(name, processor, {
+    ...redisConfig,
+    concurrency: 5,
+    limiter: {
+      max: 100,
+      duration: 1000,
+    },
+  });
 
 export default {
   redisConfig,
   defaultJobOptions,
   createQueue,
   createWorker,
-  createScheduler,
 };
