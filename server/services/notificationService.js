@@ -16,7 +16,6 @@
  */
 
 import crypto from 'node:crypto';
-import Queue from 'bull';
 import { DateTime } from 'luxon';
 import nodemailer from 'nodemailer';
 import twilio from 'twilio';
@@ -38,12 +37,42 @@ const logger = loggerRaw.default || loggerRaw;
 // ============================================================================
 
 const NOTIFICATION_TYPES = {
-  COMPLIANCE_ALERT: { id: 'COMPLIANCE_ALERT', priority: 'HIGH', channels: ['EMAIL', 'SMS', 'PUSH', 'WEBHOOK'], retentionDays: 1825 },
-  HIGH_RISK_SCREENING: { id: 'HIGH_RISK_SCREENING', priority: 'CRITICAL', channels: ['EMAIL', 'SMS', 'PUSH', 'WHATSAPP'], retentionDays: 1825 },
-  SUSPICIOUS_ACTIVITY: { id: 'SUSPICIOUS_ACTIVITY', priority: 'CRITICAL', channels: ['EMAIL', 'SMS', 'WEBHOOK', 'FIC_PORTAL'], retentionDays: 1825 },
-  DATA_BREACH: { id: 'DATA_BREACH', priority: 'CRITICAL', channels: ['EMAIL', 'SMS', 'PUSH', 'REGULATOR_PORTAL'], retentionDays: 1825 },
-  COMPLIANCE_REPORT: { id: 'COMPLIANCE_REPORT', priority: 'MEDIUM', channels: ['EMAIL', 'DASHBOARD'], retentionDays: 2555 },
-  SYSTEM_ALERT: { id: 'SYSTEM_ALERT', priority: 'HIGH', channels: ['EMAIL', 'SMS', 'PUSH', 'SLACK'], retentionDays: 365 },
+  COMPLIANCE_ALERT: {
+    id: 'COMPLIANCE_ALERT',
+    priority: 'HIGH',
+    channels: ['EMAIL', 'SMS', 'PUSH', 'WEBHOOK'],
+    retentionDays: 1825,
+  },
+  HIGH_RISK_SCREENING: {
+    id: 'HIGH_RISK_SCREENING',
+    priority: 'CRITICAL',
+    channels: ['EMAIL', 'SMS', 'PUSH', 'WHATSAPP'],
+    retentionDays: 1825,
+  },
+  SUSPICIOUS_ACTIVITY: {
+    id: 'SUSPICIOUS_ACTIVITY',
+    priority: 'CRITICAL',
+    channels: ['EMAIL', 'SMS', 'WEBHOOK', 'FIC_PORTAL'],
+    retentionDays: 1825,
+  },
+  DATA_BREACH: {
+    id: 'DATA_BREACH',
+    priority: 'CRITICAL',
+    channels: ['EMAIL', 'SMS', 'PUSH', 'REGULATOR_PORTAL'],
+    retentionDays: 1825,
+  },
+  COMPLIANCE_REPORT: {
+    id: 'COMPLIANCE_REPORT',
+    priority: 'MEDIUM',
+    channels: ['EMAIL', 'DASHBOARD'],
+    retentionDays: 2555,
+  },
+  SYSTEM_ALERT: {
+    id: 'SYSTEM_ALERT',
+    priority: 'HIGH',
+    channels: ['EMAIL', 'SMS', 'PUSH', 'SLACK'],
+    retentionDays: 365,
+  },
 };
 
 const DELIVERY_STATUS = {
@@ -51,7 +80,7 @@ const DELIVERY_STATUS = {
   SENT: 'SENT',
   DELIVERED: 'DELIVERED',
   READ: 'READ',
-  FAILED: 'FAILED'
+  FAILED: 'FAILED',
 };
 
 // ============================================================================
@@ -60,7 +89,6 @@ const DELIVERY_STATUS = {
 class NotificationService {
   constructor() {
     this.initialized = false;
-    this.notificationQueue = null;
     this.emailTransporter = null;
     this.twilioClient = null;
 
@@ -73,12 +101,10 @@ class NotificationService {
   async initialize() {
     if (this.initialized) return;
     try {
-      this.notificationQueue = new Queue('notification-queue', process.env.REDIS_URL || 'redis://127.0.0.1:6379');
-
       this.emailTransporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       });
 
       this.twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -126,30 +152,56 @@ class NotificationService {
       const channels = notification.channels || typeConfig.channels;
 
       // Parallel institutional dispatch
-      const results = await Promise.allSettled(channels.map(channel =>
-        this._sendViaChannel(channel, notification, notificationId, correlationId, tenantId)
-      ));
+      const results = await Promise.allSettled(
+        channels.map((channel) =>
+          this._sendViaChannel(channel, notification, notificationId, correlationId, tenantId)
+        )
+      );
 
       // 🏛️ ANCHOR FORENSIC LOG
-      await this._logNotification(notification, results, notificationId, correlationId, tenantId, traceId);
+      await this._logNotification(
+        notification,
+        results,
+        notificationId,
+        correlationId,
+        tenantId,
+        traceId
+      );
 
-      await broadcastTelemetry(tenantId, 'NOTIFICATION_STRIKE_SUCCESS', userId, 'DISPATCH_COMPLETE', { traceId, notificationId });
+      await broadcastTelemetry(
+        tenantId,
+        'NOTIFICATION_STRIKE_SUCCESS',
+        userId,
+        'DISPATCH_COMPLETE',
+        { traceId, notificationId }
+      );
 
       return { success: true, notificationId, correlationId, traceId };
     } catch (error) {
       logger.error(`[HERALD-SEND-FAULT] Trace ${notificationId} failed:`, error.message);
-      await broadcastTelemetry(tenantId, 'NOTIFICATION_STRIKE_FAILURE', userId, 'DISPATCH_CRASHED', { traceId, error: error.message });
+      await broadcastTelemetry(
+        tenantId,
+        'NOTIFICATION_STRIKE_FAILURE',
+        userId,
+        'DISPATCH_CRASHED',
+        { traceId, error: error.message }
+      );
       return { success: false, error: error.message, traceId };
     }
   }
 
   async _sendViaChannel(channel, notification, notificationId, correlationId, tenantId) {
     switch (channel.toUpperCase()) {
-      case 'EMAIL': return this._sendViaEmail(notification);
-      case 'SMS': return this._sendViaSMS(notification);
-      case 'PUSH': return this._sendViaPush(notification);
-      case 'WHATSAPP': return this._sendViaWhatsApp(notification);
-      default: throw new Error(`[DISPATCH-FRACTURE] Channel ${channel} not supported in Omega-V33`);
+      case 'EMAIL':
+        return this._sendViaEmail(notification);
+      case 'SMS':
+        return this._sendViaSMS(notification);
+      case 'PUSH':
+        return this._sendViaPush(notification);
+      case 'WHATSAPP':
+        return this._sendViaWhatsApp(notification);
+      default:
+        throw new Error(`[DISPATCH-FRACTURE] Channel ${channel} not supported in Omega-V33`);
     }
   }
 
@@ -158,7 +210,7 @@ class NotificationService {
       from: `"Wilsy OS Citadel" <${process.env.SMTP_FROM}>`,
       to: notification.recipients.email,
       subject: `[Wilsy OS] ${notification.data.title || 'Compliance Alert'}`,
-      html: this._formatEmailBody(notification)
+      html: this._formatEmailBody(notification),
     };
     return this.emailTransporter.sendMail(mailOptions);
   }
@@ -167,7 +219,7 @@ class NotificationService {
     return this.twilioClient.messages.create({
       body: `[Wilsy OS] ${notification.data.body}`,
       to: notification.recipients.phone,
-      from: process.env.TWILIO_PHONE_NUMBER
+      from: process.env.TWILIO_PHONE_NUMBER,
     });
   }
 
@@ -175,13 +227,13 @@ class NotificationService {
     return this.twilioClient.messages.create({
       body: `*Wilsy OS Compliance*\n\n${notification.data.body}`,
       to: `whatsapp:${notification.recipients.phone}`,
-      from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`
+      from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
     });
   }
 
   async _sendViaPush(notification) {
     const payload = JSON.stringify({
-      notification: { title: notification.data.title, body: notification.data.body }
+      notification: { title: notification.data.title, body: notification.data.body },
     });
     return webpush.sendNotification(notification.recipients.pushSubscription, payload);
   }
@@ -191,7 +243,7 @@ class NotificationService {
   }
 
   async _logNotification(notification, results, notificationId, correlationId, tenantId, traceId) {
-    const status = results.some(r => r.status === 'fulfilled') ? 'SENT' : 'FAILED';
+    const status = results.some((r) => r.status === 'fulfilled') ? 'SENT' : 'FAILED';
 
     // Using the anchored model identified in NotificationLog.js
     const log = new NotificationLog({
@@ -205,7 +257,7 @@ class NotificationService {
       content: notification.data.body,
       correlationId,
       status: status === 'SENT' ? 'SENT' : 'FAILED',
-      metadata: { results }
+      metadata: { results },
     });
 
     return log.save();
