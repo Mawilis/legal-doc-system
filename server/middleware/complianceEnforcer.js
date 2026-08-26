@@ -45,7 +45,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import Bull from 'bull';
 import MerkleTree from 'merkle-tree-stream';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 import { v4 as uuidv4 } from 'uuid';
@@ -69,7 +68,6 @@ const REQUIRED_ENV_VARS = [
   'ENFORCEMENT_ENCRYPTION_KEY',
   'ENFORCEMENT_SALT',
   'REDIS_URL',
-  'ENFORCEMENT_QUEUE_NAME',
   'SA_COMPLIANCE_MODE',
   'AWS_CAPE_TOWN_REGION',
 ];
@@ -104,7 +102,11 @@ const ENFORCEMENT_ACTIONS = Object.freeze({
 });
 
 const SA_LEGAL_STATUTES = Object.freeze({
-  POPIA: { id: 'POPIA_2013', sections: ['SECTION_11', 'SECTION_14', 'SECTION_19', 'SECTION_22'], authority: 'INFORMATION_REGULATOR_SA' },
+  POPIA: {
+    id: 'POPIA_2013',
+    sections: ['SECTION_11', 'SECTION_14', 'SECTION_19', 'SECTION_22'],
+    authority: 'INFORMATION_REGULATOR_SA',
+  },
   PAIA: { id: 'PAIA_2000', sections: ['SECTION_14'], authority: 'SAHRC' },
   FICA: { id: 'FICA_2001', sections: ['SECTION_21', 'SECTION_28'], authority: 'FIC' },
   COMPANIES_ACT: { id: 'COMPANIES_ACT_2008', sections: ['SECTION_24'], authority: 'CIPC' },
@@ -144,28 +146,37 @@ class QuantumComplianceEnforcer extends EventEmitter {
     this._initialized = false;
 
     this._initializeQuantumComponents()
-      .then(() => logger.info('[QUANTUM ENFORCER] System online and linked to South African jurisprudence structures.'))
+      .then(() =>
+        logger.info(
+          '[QUANTUM ENFORCER] System online and linked to South African jurisprudence structures.'
+        )
+      )
       .catch((err) => logger.error('[QUANTUM ENFORCER CRITICAL FAULT]', err));
   }
 
   async _initializeQuantumComponents() {
     try {
-      this.blockedRequestsQueue = new Bull(
-        process.env.ENFORCEMENT_QUEUE_NAME || 'wilsy-compliance-enforcement',
-        process.env.REDIS_URL || 'redis://127.0.0.1:6379'
-      );
-
       // 🛡️ RECTIFIED HYPER-DEFENSIVE INITIALIZATION INTERFACE
       try {
         const MerkleConstructor = MerkleTree.default || MerkleTree;
         this.merkleTree = new MerkleConstructor({
           leaf: (node) => crypto.createHash('sha256').update(JSON.stringify(node)).digest(),
-          parent: (a, b) => crypto.createHash('sha256').update(Buffer.concat([a, b])).digest()
+          parent: (a, b) =>
+            crypto
+              .createHash('sha256')
+              .update(Buffer.concat([a, b]))
+              .digest(),
         });
       } catch (merkleErr) {
-        logger.warn('⚠️ [COMPLIANCE INITIALIZATION ALERT] Switching to built-in non-repudiation logging stream mapping.');
+        logger.warn(
+          '⚠️ [COMPLIANCE INITIALIZATION ALERT] Switching to built-in non-repudiation logging stream mapping.'
+        );
         this.merkleTree = {
-          write: (leaf) => logger.info('[IMMUTABLE-LEDGER-FALLBACK] Sealed transaction signature block leaf target.', leaf)
+          write: (leaf) =>
+            logger.info(
+              '[IMMUTABLE-LEDGER-FALLBACK] Sealed transaction signature block leaf target.',
+              leaf
+            ),
         };
       }
 
@@ -184,8 +195,15 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
   _loadEnhancedEnforcementRules() {
     return {
-      POPIA: { enabled: process.env.ENFORCE_POPIA !== 'false', strictMode: process.env.ENFORCE_POPIA_STRICT === 'true', informationOfficer: process.env.POPIA_INFORMATION_OFFICER || 'Wilson Khanyezi' },
-      GLOBAL: { jurisdiction: ENFORCEMENT_CONFIG.COMPLIANCE.JURISDICTION, dataResidency: ENFORCEMENT_CONFIG.COMPLIANCE.DATA_RESIDENCY },
+      POPIA: {
+        enabled: process.env.ENFORCE_POPIA !== 'false',
+        strictMode: process.env.ENFORCE_POPIA_STRICT === 'true',
+        informationOfficer: process.env.POPIA_INFORMATION_OFFICER || 'Wilson Khanyezi',
+      },
+      GLOBAL: {
+        jurisdiction: ENFORCEMENT_CONFIG.COMPLIANCE.JURISDICTION,
+        dataResidency: ENFORCEMENT_CONFIG.COMPLIANCE.DATA_RESIDENCY,
+      },
     };
   }
 
@@ -201,16 +219,29 @@ class QuantumComplianceEnforcer extends EventEmitter {
   _isExemptPath(pathString) {
     if (!pathString) return false;
     const pathLower = pathString.toLowerCase();
-    return pathLower.includes('/api/billing') || pathLower.includes('/api/telemetry') || pathLower.includes('/health');
+    return (
+      pathLower.includes('/api/billing') ||
+      pathLower.includes('/api/telemetry') ||
+      pathLower.includes('/health')
+    );
   }
 
   _generateRequestFingerprint(req) {
-    return crypto.createHash('sha256').update(`${req.ip}.${req.path}`).digest('hex').substring(0, 32);
+    return crypto
+      .createHash('sha256')
+      .update(`${req.ip}.${req.path}`)
+      .digest('hex')
+      .substring(0, 32);
   }
 
   async enforceCompliance(req, res, next) {
     if (this.circuitState === 'OPEN') {
-      return res.status(503).json({ success: false, error: 'Compliance enforcement sub-mesh circuit fallback active.' });
+      return res
+        .status(503)
+        .json({
+          success: false,
+          error: 'Compliance enforcement sub-mesh circuit fallback active.',
+        });
     }
 
     if (this._isExemptPath(req.path)) {
@@ -239,25 +270,31 @@ class QuantumComplianceEnforcer extends EventEmitter {
           error: 'Statutory data residency processing barrier triggered. Transfer must terminate.',
           enforcementId,
           statute: 'POPIA Section 72',
-          citation: 'Protection of Personal Information Act 4 of 2013'
+          citation: 'Protection of Personal Information Act 4 of 2013',
         });
       }
 
       if (this.merkleTree) {
-        this.merkleTree.write({ id: enforcementId, path: req.path, timestamp: new Date().toISOString() });
+        this.merkleTree.write({
+          id: enforcementId,
+          path: req.path,
+          timestamp: new Date().toISOString(),
+        });
       }
 
       res.set({
         'X-Compliance-Enforcement-ID': enforcementId,
         'X-Compliance-Status': 'VERIFIED',
         'X-Compliance-Jurisdiction': ENFORCEMENT_CONFIG.COMPLIANCE.JURISDICTION,
-        'X-Compliance-Residency': ENFORCEMENT_CONFIG.COMPLIANCE.DATA_RESIDENCY
+        'X-Compliance-Residency': ENFORCEMENT_CONFIG.COMPLIANCE.DATA_RESIDENCY,
       });
 
       next();
     } catch (error) {
       if (ENFORCEMENT_CONFIG.COMPLIANCE.STRICT_MODE) {
-        return res.status(503).json({ success: false, error: 'Sovereign boundary parsing failure.', enforcementId });
+        return res
+          .status(503)
+          .json({ success: false, error: 'Sovereign boundary parsing failure.', enforcementId });
       }
       next();
     }
