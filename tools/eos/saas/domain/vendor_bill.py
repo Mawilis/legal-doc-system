@@ -3,7 +3,7 @@
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ WILSY OS – CANONICAL VENDORBILL ACCOUNTS PAYABLE DOMAIN                                                         ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ VERSION:        v1.2.0-RELEASE-AUTHORITY-GUARD-DOMAIN                                                           ║
+║ VERSION:        v1.2.1-RELEASE-AUTHORITY-GUARD-DOMAIN                                                           ║
 ║ EPITOME:        Tenant-local AP obligation contract; execution and settlement authority remain Kennel EOS-only. ║
 ║ BIBLICAL ANCHOR: Psalm 1:3 — "And he shall be like a tree planted by the rivers of water..."                  ║
 ║ ABSOLUTE PATH:  /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/vendor_bill.py                    ║
@@ -19,6 +19,8 @@ settlement.
 proof_hash remains creation-time obligation evidence; the guard is deliberately
 excluded from evidence_payload(); future mutable guard integrity belongs to
 transactional CAS and immutable release-command/reservation evidence.
+v1.2.1 — sovereign source-quality correction only; preserves the v1.2.0
+release-authority guard, proof boundary, lifecycle rules, and runtime behavior.
 COMPLIANCE: POPIA §19 | GDPR §32 | SOC2 CC7.2
 """
 
@@ -175,12 +177,37 @@ class VendorBill:
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the AP obligation without inventing release, execution, payment-destination, or settlement records."""
-        return {"tenant_id": self.tenant_id, "tenantId": self.tenant_id, "payable_id": self.payable_id, "payableId": self.payable_id, "vendor_id": self.vendor_id, "vendorId": self.vendor_id, "vendor_reference": self.vendor_reference, "source_document_reference": self.source_document_reference, "currency": self.currency, "gross_amount_minor": self.gross_amount_minor, "outstanding_amount_minor": self.outstanding_amount_minor, "issue_date": self.issue_date.isoformat(), "due_date": self.due_date.isoformat(), "received_at": self.received_at.isoformat(), "obligation_state": self.obligation_state.value, "approval_state": self.approval_state.value, "approval_projection_revision": self.approval_projection_revision, "approval_effective_result_id": self.approval_effective_result_id, "release_authority_guard_revision": self.release_authority_guard_revision, "approval_policy_reference": self.approval_policy_reference, "revision": self.revision, "created_at": self.created_at.isoformat(), "updated_at": self.updated_at.isoformat(), "proof_hash": self.proof_hash}
+        return {
+            "tenant_id": self.tenant_id,
+            "tenantId": self.tenant_id,
+            "payable_id": self.payable_id,
+            "payableId": self.payable_id,
+            "vendor_id": self.vendor_id,
+            "vendorId": self.vendor_id,
+            "vendor_reference": self.vendor_reference,
+            "source_document_reference": self.source_document_reference,
+            "currency": self.currency,
+            "gross_amount_minor": self.gross_amount_minor,
+            "outstanding_amount_minor": self.outstanding_amount_minor,
+            "issue_date": self.issue_date.isoformat(),
+            "due_date": self.due_date.isoformat(),
+            "received_at": self.received_at.isoformat(),
+            "obligation_state": self.obligation_state.value,
+            "approval_state": self.approval_state.value,
+            "approval_projection_revision": self.approval_projection_revision,
+            "approval_effective_result_id": self.approval_effective_result_id,
+            "release_authority_guard_revision": self.release_authority_guard_revision,
+            "approval_policy_reference": self.approval_policy_reference,
+            "revision": self.revision,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "proof_hash": self.proof_hash,
+        }
 
 
 # INSTITUTIONAL CERTIFICATION SEAL
 # File: vendor_bill.py
-# Version: v1.2.0-RELEASE-AUTHORITY-GUARD-DOMAIN
+# Version: v1.2.1-RELEASE-AUTHORITY-GUARD-DOMAIN
 # Status: SOVEREIGN AP OBLIGATION DOMAIN — RELEASE-AUTHORITY COORDINATION
 # Authority: Wilsy OS Core Governance
 # Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
