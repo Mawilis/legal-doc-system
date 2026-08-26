@@ -1,12 +1,15 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORITY GUARD UNIT CERTIFICATION
-Version: v1.0.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-UNIT-CERT
+Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-UNIT-CERT
 Authority: Wilsy OS Core Governance
 Classification: Institutional Unit Certification Artifact
 Epitome: Certifies coordination-only VendorBill guard semantics.
 Absolute path: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_vendor_bill_release_authority_guard.py
 Collaboration: Wilson Khanyezi — Founder / Chief Architect; AI Engineering (Codex)
 Date: 2026-08-27
-CHANGELOG: v1.0.0 — initial release-authority guard certification matrix.
+CHANGELOG:
+v1.0.0 — initial release-authority guard certification matrix.
+v1.0.1 — sovereign source-quality and certification-metadata correction only;
+no behavioral coverage or assertion semantics changed.
 POPIA §19 | GDPR §32 | SOC2 CC7.2
 APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 Kennel EOS remains the exclusive financial execution authority.
@@ -119,7 +122,7 @@ def test_guard_public_surface_has_no_execution_authority_fields() -> None:
 
 # INSTITUTIONAL CERTIFICATION SEAL
 # File: test_vendor_bill_release_authority_guard.py
-# Version: v1.0.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-UNIT-CERT
+# Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-UNIT-CERT
 # Status: SOVEREIGN UNIT CERTIFICATION — R2B-03
 # Authority: Wilsy OS Core Governance
 # Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
