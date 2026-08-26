@@ -118,7 +118,6 @@
  *   '../utils/cryptoUtils.js',
  *   '../utils/metricsCollector.js',
  *   '../cache/redisClient.js',
- *   '../queue/bullProcessor.js',
  *   '../services/graph/neo4jClient.js',
  *   '../services/ai/graphNeuralNetwork.js',
  *   '../services/elasticsearch/client.js'
@@ -140,7 +139,6 @@
  *     "../utils/auditLogger",
  *     "../utils/quantumLogger",
  *     "../cache/redisClient",
- *     "../queue/bullProcessor",
  *     "../services/graph/neo4jClient",
  *     "../services/ai/graphNeuralNetwork",
  *     "../services/elasticsearch/client"
@@ -152,8 +150,7 @@
 const mongoose = require('mongoose');
 const { performance, PerformanceObserver } = require('perf_hooks');
 const crypto = require('crypto');
-const Redis = require('ioredis');
-const Bull = require('bull');
+const { Queue, QueueEvents, Worker } = require('bullmq');
 const promClient = require('prom-client');
 const { v4: uuidv4 } = require('uuid');
 const CircuitBreaker = require('opossum');
@@ -162,7 +159,6 @@ const LRU = require('lru-cache');
 const { EventEmitter } = require('events');
 const neo4j = require('neo4j-driver');
 const { Client } = require('@elastic/elasticsearch');
-const { Worker } = require('worker_threads');
 const os = require('os');
 
 // QUANTUM MODELS
@@ -181,7 +177,6 @@ const metricsCollector = require('../utils/metricsCollector');
 
 // QUANTUM CACHE & QUEUE
 const redisClient = require('../cache/redisClient');
-const bullProcessor = require('../queue/bullProcessor');
 
 // QUANTUM GRAPH SERVICES (lazy loaded with circuit breakers)
 let neo4jClient = null;
@@ -543,7 +538,7 @@ const initializeGraphServices = async () => {
             logger.error('[CitationNetworkIndexer] Neo4j connection failed:', error);
             throw error;
           }
-        })(),
+        })()
       );
     }
 
@@ -563,7 +558,7 @@ const initializeGraphServices = async () => {
             logger.error('[CitationNetworkIndexer] Elasticsearch connection failed:', error);
             throw error;
           }
-        })(),
+        })()
       );
     }
 
@@ -579,10 +574,10 @@ const initializeGraphServices = async () => {
           } catch (error) {
             logger.warn(
               '[CitationNetworkIndexer] Graph neural network init failed:',
-              error.message,
+              error.message
             );
           }
-        })(),
+        })()
       );
     }
 
@@ -694,8 +689,12 @@ const concurrencyLimiter = pLimit(CONCURRENCY_LIMIT);
    QUANTUM QUEUE DEFINITION - Enterprise-scale processing
    --------------------------------------------------------------------------- */
 
-const citationQueue = new Bull('citation-network-indexing', {
-  redis: REDIS_URL,
+const queueConnection = {
+  url: REDIS_URL,
+};
+
+const citationQueue = new Queue('citation-network-indexing', {
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -704,43 +703,45 @@ const citationQueue = new Bull('citation-network-indexing', {
     },
     removeOnComplete: 10000,
     removeOnFail: 50000,
-    timeout: 300000, // 5 minutes
   },
-  settings: {
-    maxStalledCount: 2,
-    stalledInterval: 30000,
-    lockDuration: 60000,
-    lockRenewTime: 30000,
-  },
+});
+
+const citationQueueEvents = new QueueEvents('citation-network-indexing', {
+  connection: queueConnection,
 });
 
 // Queue event handlers
-citationQueue.on('active', (job) => {
-  logger.debug(`[CitationNetworkIndexer] Job active: ${job.id}`);
+citationQueueEvents.on('active', ({ jobId }) => {
+  logger.debug(`[CitationNetworkIndexer] Job active: ${jobId}`);
   citationNetworkMetrics.queueSize.labels('active').inc();
 });
 
-citationQueue.on('completed', (job) => {
-  logger.debug(`[CitationNetworkIndexer] Job completed: ${job.id}`);
+citationQueueEvents.on('completed', ({ jobId }) => {
+  logger.debug(`[CitationNetworkIndexer] Job completed: ${jobId}`);
   citationNetworkMetrics.queueSize.labels('active').dec();
   citationNetworkMetrics.queueSize.labels('completed').inc();
 });
 
-citationQueue.on('failed', (job, error) => {
-  logger.error(`[CitationNetworkIndexer] Job failed: ${job.id}`, error);
+citationQueueEvents.on('failed', async ({ jobId, failedReason }) => {
+  const job = await citationQueue.getJob(jobId);
+
+  logger.error(`[CitationNetworkIndexer] Job failed: ${jobId}`, new Error(failedReason));
+
   citationNetworkMetrics.errorsTotal.inc({
     error_type: 'job_failed',
-    operation: job.data.operation,
+    operation: job?.data?.operation || 'unknown',
   });
   citationNetworkMetrics.queueSize.labels('active').dec();
   citationNetworkMetrics.queueSize.labels('failed').inc();
 });
 
-citationQueue.on('stalled', (job) => {
-  logger.warn(`[CitationNetworkIndexer] Job stalled: ${job.id}`);
+citationQueueEvents.on('stalled', async ({ jobId }) => {
+  const job = await citationQueue.getJob(jobId);
+
+  logger.warn(`[CitationNetworkIndexer] Job stalled: ${jobId}`);
   citationNetworkMetrics.errorsTotal.inc({
     error_type: 'job_stalled',
-    operation: job.data.operation,
+    operation: job?.data?.operation || 'unknown',
   });
 });
 
@@ -751,7 +752,8 @@ citationQueue.on('stalled', (job) => {
 /*
  * Generates a unique job ID for tracking
  */
-const generateJobId = (type) => `CITATION-${type}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
+const generateJobId = (type) =>
+  `CITATION-${type}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
 
 /*
  * Extracts citation type based on context
@@ -801,7 +803,8 @@ const calculateCitationStrength = (source, target, metadata = {}) => {
   strength += (targetCourtLevel - 50) * 0.2;
 
   // Factor 4: Recency
-  const yearsSinceCitation = (new Date() - new Date(metadata.date || source.date)) / (365 * 24 * 60 * 60 * 1000);
+  const yearsSinceCitation =
+    (new Date() - new Date(metadata.date || source.date)) / (365 * 24 * 60 * 60 * 1000);
   if (yearsSinceCitation < 2) {
     strength += 10;
   } else if (yearsSinceCitation < 5) {
@@ -849,7 +852,7 @@ const upsertGraphNode = async (node, type, tenantId) => {
        SET n.tenantId = $tenantId
        SET n.updatedAt = datetime()
        RETURN n`,
-      { id: properties.id, tenantId, properties },
+      { id: properties.id, tenantId, properties }
     );
 
     citationNetworkMetrics.graphNodesTotal.labels(nodeType).inc();
@@ -886,8 +889,11 @@ const upsertGraphEdge = async (sourceId, targetId, type, properties = {}, tenant
        SET r.updatedAt = datetime()
        RETURN r`,
       {
-        sourceId, targetId, tenantId, properties: edgeProperties,
-      },
+        sourceId,
+        targetId,
+        tenantId,
+        properties: edgeProperties,
+      }
     );
 
     citationNetworkMetrics.graphEdgesTotal.labels(edgeType).inc();
@@ -930,7 +936,9 @@ const indexCitationInSearch = async (citation, source, target, tenantId) => {
     // Add embedding if available
     if (ENABLE_AI_ENRICHMENT && graphNeuralNetwork) {
       try {
-        const embedding = await serviceBreakers.graphNeural.fire(async () => await graphNeuralNetwork.generateEdgeEmbedding(document));
+        const embedding = await serviceBreakers.graphNeural.fire(
+          async () => await graphNeuralNetwork.generateEdgeEmbedding(document)
+        );
         if (embedding) {
           document.embedding = embedding;
         }
@@ -971,7 +979,7 @@ const runGraphAlgorithms = async (tenantId, algorithm = GRAPH_ALGORITHMS.PAGERAN
            RETURN n.id as id, n.citation as citation, score
            ORDER BY score DESC
            LIMIT 100`,
-          { tenantId },
+          { tenantId }
         );
         break;
 
@@ -983,7 +991,7 @@ const runGraphAlgorithms = async (tenantId, algorithm = GRAPH_ALGORITHMS.PAGERAN
            RETURN n.id as id, n.citation as citation, score
            ORDER BY score DESC
            LIMIT 100`,
-          { tenantId },
+          { tenantId }
         );
         break;
 
@@ -994,7 +1002,7 @@ const runGraphAlgorithms = async (tenantId, algorithm = GRAPH_ALGORITHMS.PAGERAN
            MATCH (n) WHERE id(n) = nodeId AND n.tenantId = $tenantId
            RETURN communityId, collect(n.citation) as members
            ORDER BY size(members) DESC`,
-          { tenantId },
+          { tenantId }
         );
         break;
 
@@ -1083,7 +1091,7 @@ const indexCitation = async (citationId, tenantId, options = {}) => {
         reasoning: citation.reasoning,
         date: citation.createdAt,
       },
-      tenantId,
+      tenantId
     );
 
     // STEP 6: Index in Elasticsearch
@@ -1142,8 +1150,8 @@ const indexCitation = async (citationId, tenantId, options = {}) => {
 
     logger.info(
       `[CitationNetworkIndexer] Citation indexed: ${citationId}, time=${Math.round(
-        processingTime,
-      )}ms`,
+        processingTime
+      )}ms`
     );
 
     return {
@@ -1177,7 +1185,7 @@ const batchIndexCitations = async (citationIds, tenantId, options = {}) => {
   const batchId = `BATCH-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
   logger.info(
-    `[CitationNetworkIndexer] Starting batch indexing: ${batchId}, count=${citationIds.length}`,
+    `[CitationNetworkIndexer] Starting batch indexing: ${batchId}, count=${citationIds.length}`
   );
 
   const results = {
@@ -1322,7 +1330,7 @@ const updateCitationMetrics = async (tenantId, options = {}) => {
   const processingTime = performance.now() - startTime;
 
   logger.info(
-    `[CitationNetworkIndexer] Metrics updated: ${jobId}, time=${Math.round(processingTime)}ms`,
+    `[CitationNetworkIndexer] Metrics updated: ${jobId}, time=${Math.round(processingTime)}ms`
   );
 
   return {
@@ -1361,8 +1369,11 @@ const findCitationPaths = async (sourceId, targetId, tenantId, options = {}) => 
        RETURN path, length(path) as length
        LIMIT $limit`,
       {
-        sourceId, targetId, tenantId, limit,
-      },
+        sourceId,
+        targetId,
+        tenantId,
+        limit,
+      }
     );
 
     const paths = result.records.map((record) => {
@@ -1432,8 +1443,11 @@ const getCitationSubgraph = async (nodeId, tenantId, options = {}) => {
        YIELD nodes, relationships
        RETURN nodes, relationships`,
       {
-        nodeId, tenantId, depth, limit,
-      },
+        nodeId,
+        tenantId,
+        depth,
+        limit,
+      }
     );
 
     if (result.records.length === 0) {
@@ -1496,7 +1510,7 @@ const getNetworkStatistics = async (tenantId) => {
       `MATCH (n {tenantId: $tenantId})
        RETURN labels(n)[0] as type, count(n) as count
        ORDER BY count DESC`,
-      { tenantId },
+      { tenantId }
     );
 
     // Get edge counts
@@ -1504,7 +1518,7 @@ const getNetworkStatistics = async (tenantId) => {
       `MATCH (a {tenantId: $tenantId})-[r]->(b {tenantId: $tenantId})
        RETURN type(r) as type, count(r) as count
        ORDER BY count DESC`,
-      { tenantId },
+      { tenantId }
     );
 
     // Get degree distribution
@@ -1513,7 +1527,7 @@ const getNetworkStatistics = async (tenantId) => {
        RETURN avg(size((n)--())) as avgDegree,
               max(size((n)--())) as maxDegree,
               min(size((n)--())) as minDegree`,
-      { tenantId },
+      { tenantId }
     );
 
     // Get density
@@ -1525,7 +1539,7 @@ const getNetworkStatistics = async (tenantId) => {
        RETURN edgeCount, 
               nodeCount,
               toFloat(edgeCount) / (nodeCount * (nodeCount - 1)) as density`,
-      { tenantId },
+      { tenantId }
     );
 
     const duration = performance.now() - startTime;
@@ -1533,10 +1547,10 @@ const getNetworkStatistics = async (tenantId) => {
 
     const stats = {
       nodes: Object.fromEntries(
-        nodeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()]),
+        nodeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()])
       ),
       edges: Object.fromEntries(
-        edgeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()]),
+        edgeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()])
       ),
       degree: {
         avg: degreeDist.records[0]?.get('avgDegree')?.toNumber() || 0,
@@ -1613,7 +1627,7 @@ const detectCitationTrends = async (tenantId, options = {}) => {
             previousCount: precedent?.citationMetrics?.timesCited || 0,
             trend: count / (days / 30), // Citations per month
           };
-        }),
+        })
     );
 
     // Calculate velocity (citations per day)
@@ -1718,7 +1732,7 @@ const generateNetworkInsights = (stats, trends, pageRank) => {
       type: 'HIGH_ACTIVITY',
       severity: 'INFO',
       message: `High citation activity detected with ${Math.round(
-        trends.averageVelocity,
+        trends.averageVelocity
       )} citations per day.`,
       implication: 'Rapidly evolving area of law with frequent new citations.',
     });
@@ -1778,20 +1792,18 @@ const generateNetworkRecommendations = (stats, trends) => {
    QUANTUM WORKER PROCESSOR
    --------------------------------------------------------------------------- */
 
-const worker = new Bull(
+const worker = new Worker(
   'citation-network-indexing',
   async (job) => {
-    const {
-      operation, data, tenantId, options = {},
-    } = job.data;
+    const { operation, data, tenantId, options = {} } = job.data;
     const startTime = performance.now();
 
     logger.info(
-      `[CitationNetworkIndexer Worker] Processing job: ${job.id}, operation=${operation}`,
+      `[CitationNetworkIndexer Worker] Processing job: ${job.id}, operation=${operation}`
     );
 
     try {
-      await job.progress(10);
+      await job.updateProgress(10);
 
       let result;
 
@@ -1836,7 +1848,7 @@ const worker = new Bull(
           throw new Error(`Unknown operation: ${operation}`);
       }
 
-      await job.progress(100);
+      await job.updateProgress(100);
 
       const processingTime = performance.now() - startTime;
       citationNetworkMetrics.processingDurationSeconds
@@ -1865,25 +1877,24 @@ const worker = new Bull(
     }
   },
   {
-    connection: redisClient,
+    connection: queueConnection,
+    autorun: false,
     concurrency: WORKER_CONCURRENCY,
     limiter: {
       max: 1000, // Max 1000 jobs per second
       duration: 1000,
     },
-    settings: {
-      stalledInterval: 30000,
-      maxStalledCount: 2,
-      lockDuration: 60000,
-      lockRenewTime: 30000,
-    },
-  },
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+    lockDuration: 60000,
+    lockRenewTime: 30000,
+  }
 );
 
 // Worker event handlers
 worker.on('completed', (job) => {
   logger.info(
-    `[CitationNetworkIndexer Worker] Job completed: ${job.id}, operation=${job.data.operation}`,
+    `[CitationNetworkIndexer Worker] Job completed: ${job.id}, operation=${job.data.operation}`
   );
   citationNetworkMetrics.citationsProcessedPerSecond.labels(job.id).set(1);
 });
@@ -1917,7 +1928,7 @@ const queueCitationForIndexing = async (citationId, tenantId, options = {}) => {
       priority: options.priority || INDEXING_PRIORITY.NORMAL,
       attempts: options.attempts || 3,
       delay: options.delay || 0,
-    },
+    }
   );
 
   logger.info(`[CitationNetworkIndexer] Queued citation: ${citationId}, jobId=${job.id}`);
@@ -1945,7 +1956,7 @@ const queueBatchForIndexing = async (citationIds, tenantId, options = {}) => {
       jobId: generateJobId('batch'),
       priority: options.priority || INDEXING_PRIORITY.BULK,
       attempts: 2,
-    },
+    }
   );
 
   return {
@@ -1963,7 +1974,7 @@ const getIndexingStatus = async (jobId) => {
   if (!job) return null;
 
   const state = await job.getState();
-  const progress = job._progress;
+  const progress = job.progress;
 
   return {
     jobId,
@@ -1992,7 +2003,7 @@ const deleteFromGraph = async (citationId, tenantId) => {
       await session.run(
         `MATCH (a {id: $sourceId, tenantId: $tenantId})-[r]->(b {id: $targetId, tenantId: $tenantId})
          DELETE r`,
-        { sourceId, targetId, tenantId },
+        { sourceId, targetId, tenantId }
       );
     }
 
@@ -2075,7 +2086,7 @@ const getHealth = async () => {
     health.status = 'degraded';
   }
 
-  // Check Bull queue
+  // Check BullMQ queue
   const queueCounts = await citationQueue.getJobCounts();
   health.queue = queueCounts;
 
@@ -2116,8 +2127,16 @@ const initialize = async () => {
     // Initialize graph services
     await initializeGraphServices();
 
-    // Start queue processing
-    await citationQueue.isReady();
+    // Initialize queue infrastructure before starting the standalone worker
+    await Promise.all([
+      citationQueue.waitUntilReady(),
+      citationQueueEvents.waitUntilReady(),
+      worker.waitUntilReady(),
+    ]);
+
+    worker.run().catch((error) => {
+      logger.error('[CitationNetworkIndexer] Worker processing failed:', error);
+    });
 
     logger.info('[CitationNetworkIndexer] Initialized successfully');
   } catch (error) {
