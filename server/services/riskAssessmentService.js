@@ -58,7 +58,7 @@
  * Run in /server directory:
  * npm install @tensorflow/tfjs-node@^4.10.0 @tensorflow/tfjs@^4.10.0
  * npm install natural@^6.6.0 compromise@^14.0.0
- * npm install axios@^1.4.0 redis@^4.6.0 bull@^4.11.0
+ * npm install axios@^1.4.0 redis@^4.6.0
  * npm install -D @types/natural @types/redis
  *
  * ============================================================================
@@ -69,7 +69,6 @@ import dotenv from 'dotenv';
 import crypto from 'crypto';
 import * as tf from '@tensorflow/tfjs-node';
 import axios from 'axios';
-import Queue from 'bull';
 import nlp from 'compromise';
 import mongoose from 'mongoose';
 import natural from 'natural';
@@ -114,23 +113,6 @@ redisClient.on('error', (err) => {
 (async () => {
   await redisClient.connect();
 })();
-
-// Initialize risk assessment queue
-const riskAssessmentQueue = new Queue('risk-assessment', {
-  redis: {
-    url: process.env.REDIS_URL,
-    password: process.env.REDIS_PASSWORD,
-  },
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
-    removeOnComplete: true,
-    removeOnFail: false,
-  },
-});
 
 /*
  * ============================================================================
@@ -1556,7 +1538,6 @@ RiskAssessmentService.prototype.generateAssessmentHash = function (assessment) {
  * DEPLOYMENT CHECKLIST:
  * ✅ TensorFlow.js model trained and deployed
  * ✅ Redis caching configured
- * ✅ Bull queue for async processing
  * ✅ Compliance API integrations
  * ✅ Alerting system configured
  * ✅ Audit trail integration complete
