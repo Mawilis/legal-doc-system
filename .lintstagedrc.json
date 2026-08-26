@@ -1,5 +1,9 @@
 {
-  "server/**/*.{js,jsx}": [
-    "eslint --fix"
+  "server/**/*.{js,jsx,mjs,cjs}": [
+    "server/node_modules/.bin/prettier --config server/.prettierrc --write",
+    "server/node_modules/.bin/eslint --config server/eslint.config.cjs --fix"
+  ],
+  "server/**/*.{json,md,yml,yaml}": [
+    "server/node_modules/.bin/prettier --config server/.prettierrc --write"
   ]
 }

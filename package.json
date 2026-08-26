@@ -21,7 +21,9 @@
     "secrets:guard": "node scripts/wilsy-secret-guard.js",
     "pm2:deploy": "cd server && pm2 start ecosystem.config.js",
     "pm2:stop": "cd server && pm2 delete all && pm2 kill",
-    "pm2:status": "pm2 status"
+    "pm2:status": "pm2 status",
+    "prepare": "husky",
+    "precommit": "lint-staged"
   },
   "keywords": [
     "legal-tech",
@@ -40,8 +42,10 @@
     "@testing-library/react-hooks": "^8.0.1",
     "@vitest/ui": "^4.1.10",
     "chai": "^6.2.2",
+    "husky": "9.1.7",
     "jsdom": "^28.1.0",
     "jsdom-global": "^3.0.2",
+    "lint-staged": "16.4.0",
     "mocha": "^11.8.0",
     "mongodb-memory-server": "^11.2.0",
     "mongoose": "^9.9.1",
