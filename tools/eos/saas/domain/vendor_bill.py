@@ -3,13 +3,23 @@
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ WILSY OS – CANONICAL VENDORBILL ACCOUNTS PAYABLE DOMAIN                                                         ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ VERSION:        v1.1.0-APPROVAL-PROJECTION-DOMAIN                                                               ║
+║ VERSION:        v1.2.0-RELEASE-AUTHORITY-GUARD-DOMAIN                                                           ║
 ║ EPITOME:        Tenant-local AP obligation contract; execution and settlement authority remain Kennel EOS-only. ║
 ║ BIBLICAL ANCHOR: Psalm 1:3 — "And he shall be like a tree planted by the rivers of water..."                  ║
 ║ ABSOLUTE PATH:  /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/vendor_bill.py                    ║
 ║ COLLABORATION:  Wilson Khanyezi (Founder/Chief Architect) mandated distinct payable semantics.                 ║
-║                 AI Engineering (Codex) established the frozen AP obligation boundary.                           ║
+║                 AI Engineering (Codex) established the frozen AP obligation boundary and guard contract.       ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+CHANGELOG: v1.2.0 adds release_authority_guard_revision as coordination-only
+metadata for a future real-write CAS surface, preventing stale bill/approval
+snapshots from committing release authority. It is distinct from obligation
+revision, approval projection revision, reservation totals, execution, and
+settlement.
+proof_hash remains creation-time obligation evidence; the guard is deliberately
+excluded from evidence_payload(); future mutable guard integrity belongs to
+transactional CAS and immutable release-command/reservation evidence.
+COMPLIANCE: POPIA §19 | GDPR §32 | SOC2 CC7.2
 """
 
 from __future__ import annotations
@@ -103,6 +113,7 @@ class VendorBill:
     approval_state: VendorBillApprovalState = VendorBillApprovalState.NOT_REQUIRED
     approval_projection_revision: int = 0
     approval_effective_result_id: Optional[str] = None
+    release_authority_guard_revision: int = 0
     approval_policy_reference: Optional[str] = None
     revision: int = 1
     created_at: datetime = field(default_factory=_utc_now)
@@ -136,6 +147,8 @@ class VendorBill:
         object.__setattr__(self, "approval_policy_reference", _optional_text(self.approval_policy_reference, "approval_policy_reference"))
         if not isinstance(self.approval_projection_revision, int) or isinstance(self.approval_projection_revision, bool) or self.approval_projection_revision < 0:
             raise VendorBillDomainError("approval_projection_revision must be an integer of at least 0")
+        if not isinstance(self.release_authority_guard_revision, int) or isinstance(self.release_authority_guard_revision, bool) or self.release_authority_guard_revision < 0:
+            raise VendorBillDomainError("release_authority_guard_revision must be an integer of at least 0")
         object.__setattr__(self, "approval_effective_result_id", _optional_text(self.approval_effective_result_id, "approval_effective_result_id", 80))
         if self.approval_projection_revision == 0 and self.approval_effective_result_id is not None:
             raise VendorBillDomainError("approval_effective_result_id requires a positive approval_projection_revision")
@@ -162,4 +175,16 @@ class VendorBill:
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the AP obligation without inventing release, execution, payment-destination, or settlement records."""
-        return {"tenant_id": self.tenant_id, "tenantId": self.tenant_id, "payable_id": self.payable_id, "payableId": self.payable_id, "vendor_id": self.vendor_id, "vendorId": self.vendor_id, "vendor_reference": self.vendor_reference, "source_document_reference": self.source_document_reference, "currency": self.currency, "gross_amount_minor": self.gross_amount_minor, "outstanding_amount_minor": self.outstanding_amount_minor, "issue_date": self.issue_date.isoformat(), "due_date": self.due_date.isoformat(), "received_at": self.received_at.isoformat(), "obligation_state": self.obligation_state.value, "approval_state": self.approval_state.value, "approval_projection_revision": self.approval_projection_revision, "approval_effective_result_id": self.approval_effective_result_id, "approval_policy_reference": self.approval_policy_reference, "revision": self.revision, "created_at": self.created_at.isoformat(), "updated_at": self.updated_at.isoformat(), "proof_hash": self.proof_hash}
+        return {"tenant_id": self.tenant_id, "tenantId": self.tenant_id, "payable_id": self.payable_id, "payableId": self.payable_id, "vendor_id": self.vendor_id, "vendorId": self.vendor_id, "vendor_reference": self.vendor_reference, "source_document_reference": self.source_document_reference, "currency": self.currency, "gross_amount_minor": self.gross_amount_minor, "outstanding_amount_minor": self.outstanding_amount_minor, "issue_date": self.issue_date.isoformat(), "due_date": self.due_date.isoformat(), "received_at": self.received_at.isoformat(), "obligation_state": self.obligation_state.value, "approval_state": self.approval_state.value, "approval_projection_revision": self.approval_projection_revision, "approval_effective_result_id": self.approval_effective_result_id, "release_authority_guard_revision": self.release_authority_guard_revision, "approval_policy_reference": self.approval_policy_reference, "revision": self.revision, "created_at": self.created_at.isoformat(), "updated_at": self.updated_at.isoformat(), "proof_hash": self.proof_hash}
+
+
+# INSTITUTIONAL CERTIFICATION SEAL
+# File: vendor_bill.py
+# Version: v1.2.0-RELEASE-AUTHORITY-GUARD-DOMAIN
+# Status: SOVEREIGN AP OBLIGATION DOMAIN — RELEASE-AUTHORITY COORDINATION
+# Authority: Wilsy OS Core Governance
+# Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
+# Release-authority guard is coordination metadata only; Kennel EOS retains exclusive execution authority.
+# Runtime posture: PURE DOMAIN / NO I/O / NO DB / NO NETWORK / NO EXECUTION
+# POPIA §19 | GDPR §32 | SOC2 CC7.2 | Certification date: 2026-08-27
+# Technical-control-only; no independent legal-compliance claim.
