@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORITY GUARD REAL-MONGO CERTIFICATION
-Version: v1.2.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-MONGO-CERT
+Version: v1.4.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-MONGO-CERT
 Authority: Wilsy OS Core Governance | Classification: Institutional Integration Certification
 Epitome: Real Mongo CAS proof for persisted release-authority coordination metadata.
 Absolute path: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_vendor_bill_registry_mongo.py
@@ -7,7 +7,11 @@ Collaboration: Wilson Khanyezi — Founder / Chief Architect; AI Engineering (Co
 Date: 2026-08-27 | CHANGELOG: v1.1.0 added guard persistence and caller-session CAS certification.
 v1.2.0 adds stale-predicate, lifecycle/approval-gate, tenant-isolation,
 transaction abort/commit, same-guard race, projection-conflict, and corruption
-precedence certification. This artifact certifies release-authority coordination only.
+precedence certification. v1.3.0 corrects legal state fixtures and adds explicit
+corruption precedence, 100-race guard CAS, and projection-vs-guard stale proof.
+This artifact certifies release-authority coordination only.
+v1.4.0 adds a dedicated 100-race release-authority guard CAS matrix,
+double-admission prevention, and approval-projection stale-snapshot coverage.
 POPIA §19 | GDPR §32 | SOC2 CC7.2
 APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 Kennel EOS remains the exclusive financial execution authority.
@@ -225,11 +229,12 @@ def test_release_authority_guard_stale_predicates_and_gates_real_mongo():
         else:
             raise AssertionError("stale guard predicate unexpectedly succeeded")
         assert bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}) == before
-    for state in ("DRAFT", "PARTIALLY_SETTLED", "SETTLED", "VOIDED"):
-        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": state}})
+    state_amounts = (("DRAFT", 10000), ("PARTIALLY_SETTLED", 5000), ("SETTLED", 0), ("VOIDED", 0))
+    for state, outstanding in state_amounts:
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": state, "outstanding_amount_minor": outstanding}})
         with pytest.raises(Exception, match="INVALID_OBLIGATION_STATE"):
             VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills)
-        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": "OPEN"}})
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": "OPEN", "outstanding_amount_minor": 10000}})
     for state in ("NOT_REQUIRED", "PENDING", "REJECTED"):
         bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"approval_state": state}})
         with pytest.raises(Exception, match="APPROVAL_NOT_APPROVED"):
@@ -274,6 +279,65 @@ def test_release_authority_guard_caller_owned_abort_and_commit_real_mongo():
     after_commit = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
     assert after_commit is not None
     assert after_commit["release_authority_guard_revision"] == 1
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_corruption_precedes_classifier_real_mongo():
+    """Prove malformed persisted obligations fail as corruption before gating."""
+    client, database, bills, bill = _fixture()
+    VendorBillRegistry.create(bill(), bills)
+    bills.update_one({"tenant_id": "tenant-a", "payable_id": "payable-1"}, {"$set": {"obligation_state": "PARTIALLY_SETTLED", "outstanding_amount_minor": 10000}})
+    with pytest.raises(VendorBillPersistedRecordInvalidError, match="VENDOR_BILL_PERSISTED_RECORD_INVALID"):
+        VendorBillRegistry.acquire_release_authority_guard("tenant-a", "payable-1", 1, 1, "result-a", 0, bills)
+    raw = bills.find_one({"tenant_id": "tenant-a", "payable_id": "payable-1"})
+    assert raw is not None and raw["release_authority_guard_revision"] == 0
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_one_hundred_real_mongo_cas_races():
+    """Certify exactly-one-writer behavior for 100 synchronized guard races."""
+    client, database, bills, bill_factory = _fixture()
+    successes = conflicts = double_successes = double_conflicts = unexpected = 0
+    guard_mismatches = revision_mismatches = projection_mismatches = state_mismatches = record_mismatches = 0
+    for index in range(100):
+        payable = f"guard-race-{index}"
+        bill = replace(bill_factory(payable), payable_id=payable)
+        VendorBillRegistry.create(bill, bills)
+        bills.update_one({"tenant_id": "tenant-a", "payable_id": payable}, {"$set": {"obligation_state": "OPEN", "approval_state": "APPROVED", "approval_projection_revision": 1, "approval_effective_result_id": "result-a"}})
+        barrier = threading.Barrier(2)
+        def worker():
+            barrier.wait()
+            try:
+                return ("success", VendorBillRegistry.acquire_release_authority_guard("tenant-a", payable, 1, 1, "result-a", 0, bills))
+            except Exception as error:
+                return ("conflict", error) if "GUARD_STALE" in str(error) or "REVISION" in str(error) else ("unexpected", error)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(lambda _: worker(), (0, 1)))
+        kinds = [kind for kind, _ in outcomes]
+        successes += kinds.count("success"); conflicts += kinds.count("conflict")
+        double_successes += int(kinds.count("success") == 2); double_conflicts += int(kinds.count("conflict") == 2); unexpected += kinds.count("unexpected")
+        raw = bills.find_one({"tenant_id": "tenant-a", "payable_id": payable})
+        if raw is None: record_mismatches += 1; continue
+        guard_mismatches += int(raw.get("release_authority_guard_revision") != 1)
+        revision_mismatches += int(raw.get("revision") != 1); projection_mismatches += int(raw.get("approval_projection_revision") != 1)
+        state_mismatches += int(raw.get("obligation_state") != "OPEN" or raw.get("approval_state") != "APPROVED")
+        record_mismatches += int(bills.count_documents({"tenant_id": "tenant-a", "payable_id": payable}) != 1)
+    assert (successes, conflicts, double_successes, double_conflicts, unexpected, guard_mismatches, revision_mismatches, projection_mismatches, state_mismatches, record_mismatches) == (100, 100, 0, 0, 0, 0, 0, 0, 0, 0)
+    client.drop_database(database.name); client.close()
+
+
+def test_release_authority_guard_rejects_stale_approval_projection_real_mongo():
+    """Prove newer approval projection blocks stale release authority."""
+    client, database, opened, first, second = _projection_fixture()
+    bills = database["vendor_bills"]
+    VendorBillRegistry.project_financial_approval_result("t", "p", first.result_id, opened.revision, 0, "guard-projection-1", bills)
+    current = VendorBillRegistry.get("t", "p", bills)
+    VendorBillRegistry.project_financial_approval_result("t", "p", second.result_id, current.revision, 1, "guard-projection-2", bills)
+    with pytest.raises(Exception) as error:
+        VendorBillRegistry.acquire_release_authority_guard("t", "p", current.revision, 1, first.result_id, 0, bills)
+    assert "PROJECTION" in str(error.value) or "REFERENCE" in str(error.value)
+    fresh = VendorBillRegistry.get("t", "p", bills)
+    assert fresh.approval_projection_revision == 2 and fresh.approval_effective_result_id == second.result_id and fresh.release_authority_guard_revision == 0
     client.drop_database(database.name); client.close()
 
 
