@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "evidenceType": "VULNERABILITY_REMEDIATION_EXCEPTION",
+    "classification": "MIGRATION_BLOCKED",
+    "system": "Wilsy OS",
+    "scope": "server production dependency chain",
+    "generatedAt": "2026-08-26T15:27:43.184616+00:00",
+    "head": "dc7b50e616228d4f0330d987a93008ec8b09161d"
+  },
+  "finding": {
+    "package": "ip-address",
+    "installedVersion": "5.9.4",
+    "dependencyOwner": "geoip-lite",
+    "dependencyOwnerVersion": "1.4.10",
+    "dependencyChain": "geoip-lite@1.4.10 -> ip-address@5.9.4",
+    "productionAudit": {
+      "total": 2,
+      "moderate": 1,
+      "high": 1,
+      "critical": 0
+    },
+    "advisories": [
+      {
+        "id": "GHSA-v2v4-37r5-5v8g",
+        "summary": "Address6 HTML-emitting methods XSS"
+      },
+      {
+        "id": "GHSA-mwp4-54f8-5fhr",
+        "summary": "Address4 leading-zero parsing trust-boundary / SSRF bypass"
+      }
+    ]
+  },
+  "runtimeOwnership": [
+    {
+      "file": "server/middleware/ipMetadata.js",
+      "purpose": "public client IP geolocation metadata lookup",
+      "removable": false
+    },
+    {
+      "file": "server/middleware/geoBlock.js",
+      "purpose": "geographic access-control lookup",
+      "removable": false
+    }
+  ],
+  "remediationEvidence": {
+    "npmForceRecommendation": {
+      "suggestedResult": "geoip-lite@1.2.2",
+      "disposition": "REJECTED",
+      "reason": "breaking downgrade; not an acceptable security remediation"
+    },
+    "transitiveOverrideProbe": {
+      "package": "ip-address",
+      "version": "10.3.1",
+      "lookupRuntime": "PASSED",
+      "databaseUpdater": "FAILED",
+      "failure": "TypeError: a4.startAddress(...).bigInteger is not a function",
+      "disposition": "REVERTED_NOT_COMMITTED"
+    },
+    "upstreamMigration": {
+      "target": "geoip-lite@2.x",
+      "verifiedCandidate": "2.0.3",
+      "runtimeRequirement": "Node >=24",
+      "currentRuntime": "Node 20.20.0",
+      "status": "BLOCKED_BY_RUNTIME_BASELINE"
+    }
+  },
+  "decision": {
+    "status": "MIGRATION_BLOCKED",
+    "riskAccepted": false,
+    "remediationDeferred": true,
+    "unsafeOverrideAuthorized": false,
+    "forcedDowngradeAuthorized": false,
+    "reviewTrigger": [
+      "Wilsy OS server runtime migrates to Node >=24",
+      "geoip-lite publishes a secure Node 20-compatible release",
+      "a compatible upstream fix removes the vulnerable ip-address dependency"
+    ],
+    "requiredNextAction": "Re-certify geoip lookup, database updater compatibility, and npm --prefix server audit --omit=dev when a review trigger occurs."
+  },
+  "evidenceCommands": [
+    "npm --prefix server audit --omit=dev",
+    "npm --prefix server ls geoip-lite ip-address --all",
+    "rg -n \"geoip-lite\" server/middleware/ipMetadata.js server/middleware/geoBlock.js",
+    "node --version"
+  ],
+  "hash": "7d511704a45e81997fb9d3609b8fa71b9733f57af04de8c2fac9e75431db1b1e"
+}
