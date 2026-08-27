@@ -1,6 +1,6 @@
 # WILSY OS - SOVEREIGN CODEX GOVERNANCE CONTRACT
 
-VERSION: v1.1.1-SOVEREIGN-ENTERPRISE-CONSTITUTION-COMPLETION
+VERSION: v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION
 AUTHORITY: Wilsy OS Core Governance
 SCOPE: Entire repository tree rooted at this file
 STATUS: MANDATORY / FAIL-CLOSED
@@ -374,11 +374,43 @@ entitlement, payment, settlement, or accounting truth.
 Wilsy OS Intelligence Dock grows in parallel with every sovereign domain.
 
 ===============================================================================
+LEGAL OPERATIONS & PROCESS SERVICE CONSTITUTION
+===============================================================================
+
+Legal Operations work must evaluate tenant, organization/law firm, client,
+matter/case, district/jurisdiction, sheriff office, deputy, instruction,
+process document, custody, attempt, service execution, return, tariff,
+quotation, billing eligibility, invoice, courier, notifications, mobile/edge,
+evidence, Storefront, Intelligence Dock, Kennel EOS, settlement boundary, and
+backend/client parity.
+
+INSTRUCTION != DOCUMENT REGISTERED != DOCUMENT RECEIVED != ALLOCATED TO DEPUTY
+!= SERVICE ATTEMPTED != SERVICE COMPLETED != RETURN GENERATED != INVOICE GENERATED
+!= PAYMENT EXECUTED != SETTLED.
+ATTEMPT != SERVICE. SERVICE COMPLETED != RETURN GENERATED.
+RETURN GENERATED != TAX INVOICE. INVOICE GENERATED != PAYMENT EXECUTED.
+PAYMENT EXECUTED != SETTLED.
+DOCUMENT REGISTERED != DOCUMENT IN OFFICE != DOCUMENT WITH DEPUTY
+!= DOCUMENT RETURNED TO CLIENT.
+
+LegalInstruction is not proof of service; registration is not receipt; receipt
+is not allocation; allocation is not attempt; attempt is not successful service;
+completion is not automatically a return; a return is not a tax invoice; an
+invoice is not provider execution; provider execution is not settlement.
+Courier status and mobile location are evidence, not self-authenticating legal
+truth. AI drafting is not certified service evidence.
+
+Legal-service changes require backend/client/mobile parity across canonical
+domain, persistence, API, law-firm and sheriff/deputy clients, permissions,
+district authority, evidence, notifications, billing, Kennel boundary,
+observability, Intelligence Dock, and Storefront representation.
+
+===============================================================================
 WILSY OS SOVEREIGN GOVERNANCE SEAL
 ===============================================================================
 
 CONTRACT: WILSY OS - SOVEREIGN CODEX GOVERNANCE CONTRACT
-VERSION: v1.1.1-SOVEREIGN-ENTERPRISE-CONSTITUTION-COMPLETION
+VERSION: v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION
 SCOPE: Entire repository tree
 POSTURE: FAIL-CLOSED
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively

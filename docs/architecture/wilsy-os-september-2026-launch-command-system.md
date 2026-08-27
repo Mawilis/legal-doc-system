@@ -1,6 +1,6 @@
 # WILSY OS — SEPTEMBER 2026 LAUNCH COMMAND SYSTEM
 
-Version: v1.0.1-SEPTEMBER-2026-LAUNCH-COMMAND
+Version: v1.0.2-SEPTEMBER-2026-LAUNCH-COMMAND
 Authority: Wilsy OS Core Governance
 Target: online by 2026-09-30
 Status: executable program command; implementation gaps remain explicit
@@ -66,6 +66,14 @@ Wilsy-owned truth; it cannot authorize financial mutations or replace domain
 registries. Every domain launch wires an observable Dock projection with tenant
 scope and provenance.
 
+## Legal Operations launch vertical
+
+Legal Operations is first-class: instruction, document custody, deputy
+allocation, attempts, service, returns, tariff assessment and billing
+eligibility are operational truth. Billing owns invoice truth, Kennel EOS owns
+financial execution, settlement owns allocation, and the Ledger owns accounting
+postings. Courier and mobile signals are evidence, not legal completion truth.
+
 ## Program sequence and gates
 
 1. Discover and inventory every route, schema, persistence path, adapter,
@@ -102,7 +110,7 @@ NO-GO until resolved.
 ## Sovereign EOF seal
 
 Artifact: `wilsy-os-september-2026-launch-command-system.md`
-Version: `v1.0.1-SEPTEMBER-2026-LAUNCH-COMMAND`
+Version: `v1.0.2-SEPTEMBER-2026-LAUNCH-COMMAND`
 Authority: Wilsy OS Core Governance
 Runtime posture: implementation-aware; no runtime mutation
 Financial authority: Kennel EOS exclusively

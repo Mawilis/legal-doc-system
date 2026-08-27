@@ -1,6 +1,6 @@
 # WILSY OS — SOVEREIGN ENTERPRISE OPERATING SYSTEM
 
-Version: v1.0.1-WILSY-SOVEREIGN-ENTERPRISE-OPERATING-SYSTEM-CONSTITUTIONAL-COMPLETION
+Version: v1.1.0-WILSY-SOVEREIGN-ENTERPRISE-LEGAL-OPERATIONS
 Authority: Wilsy OS Core Governance
 Status: Constitutional architecture / implementation-aware
 Date: 2026-08-27
@@ -58,6 +58,17 @@ across every boundary.
 6. **Intelligence/Evolve:** derive analytics and recommendations from owned
    truth, then evolve through versioned, reversible, evidence-backed changes.
 
+## Legal Operations & Process Service Plane
+
+Legal Operations owns process-service operational truth: `LegalInstruction`,
+`ProcessDocument`, `DocumentCustodyEvent`, `ServiceAttempt`,
+`ServiceExecution`, `ReturnOfService`, and `TariffAssessment`. Billing owns
+invoice truth; Kennel EOS owns financial execution; Settlement owns allocation;
+the Ledger owns accounting postings; Intelligence Dock owns no canonical
+operational truth. This plane connects to identity, evidence, workflow, AR,
+notifications, search, files, mobile/edge, observability, Storefront, and
+tenant genesis without duplicating entity ownership.
+
 ## Constitutional boundaries
 
 - `APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED`.
@@ -76,7 +87,7 @@ Wilsy OS all-or-nothing means no orphaned architecture, not unsafe big-bang comm
 ## Certification seal
 
 Artifact: `wilsy-sovereign-enterprise-operating-system.md`
-Version: `v1.0.1-WILSY-SOVEREIGN-ENTERPRISE-OPERATING-SYSTEM-CONSTITUTIONAL-COMPLETION`
+Version: `v1.1.0-WILSY-SOVEREIGN-ENTERPRISE-LEGAL-OPERATIONS`
 Authority: Wilsy OS Core Governance
 Architecture: sovereign truth owned by Wilsy; capabilities externalized
 Financial authority: Kennel EOS exclusively
