@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORITY GUARD REAL-MONGO CERTIFICATION
-Version: v1.7.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
+Version: v1.7.1-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
 Authority: Wilsy OS Core Governance | Classification: Institutional Integration Certification
 Epitome: Real Mongo CAS proof for persisted release-authority coordination metadata.
 Absolute path: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_vendor_bill_registry_mongo.py
@@ -37,7 +37,7 @@ from tools.eos.saas.domain.vendor import VendorIdentity
 from tools.eos.saas.domain.vendor_bill import VendorBill, VendorBillDomainError, VendorBillApprovalState
 from tools.eos.saas.billing.financial_approval_aggregator import FinancialApprovalAggregator
 from tools.eos.saas.billing.financial_approval_effective_result_registry import FinancialApprovalEffectiveResultRegistry, FinancialApprovalEffectiveResultCreateOutcome
-from tests.integration.test_financial_approval_aggregator_mongo import fixture as approval_fixture
+from tests.integration.test_financial_approval_aggregator_mongo import add_evidence, fixture as approval_fixture
 
 
 def test_vendor_bill_approval_projection_domain_contract():
@@ -391,7 +391,7 @@ def test_release_authority_guard_same_guard_independent_transaction_race_real_mo
 
 def test_release_authority_guard_projection_overlap_transaction_real_mongo():
     """Independent transaction snapshots reject stale release authority."""
-    client, database, opened, first, second = _projection_fixture()
+    client, database, opened, first, second = _approved_projection_fixture()
     bills = database["vendor_bills"]
     VendorBillRegistry.project_financial_approval_result("t", "p", first.result_id, opened.revision, 0, "tx-overlap-1", bills)
     before = VendorBillRegistry.get("t", "p", bills)
@@ -418,20 +418,48 @@ def test_release_authority_guard_projection_overlap_transaction_real_mongo():
                 outcomes.append("mongo_write_conflict" if error.code == 112 or "TransientTransactionError" in labels else "unexpected")
                 if session_a.in_transaction: session_a.abort_transaction()
     def session_b_worker():
-        snapshot_ready.wait()
+        assert snapshot_ready.wait(timeout=30)
         with client.start_session() as session_b:
-            session_b.start_transaction()
-            VendorBillRegistry.project_financial_approval_result("t", "p", second.result_id, before.revision, 1, "tx-overlap-2", bills, session=session_b)
             try:
+                session_b.start_transaction()
+                VendorBillRegistry.project_financial_approval_result("t", "p", second.result_id, before.revision, 1, "tx-overlap-2", bills, session=session_b)
                 session_b.commit_transaction()
+            except Exception:
+                if session_b.in_transaction:
+                    session_b.abort_transaction()
+                raise
             finally:
                 projection_committed.set()
     with ThreadPoolExecutor(max_workers=2) as pool:
         list(pool.map(lambda worker: worker(), (session_a_worker, session_b_worker)))
-    assert len(outcomes) == 1 and outcomes[0] in ("stale_projection_conflict", "stale_projection_reference", "mongo_write_conflict")
+    assert sum(outcome in ("stale_projection_conflict", "stale_projection_reference", "mongo_write_conflict") for outcome in outcomes) == 1
+    assert sum(outcome == "unexpected" for outcome in outcomes) == 0
     after = VendorBillRegistry.get("t", "p", bills)
-    assert after.approval_projection_revision == 2 and after.approval_effective_result_id == second.result_id and after.release_authority_guard_revision == 0
+    assert len(outcomes) == 1
+    assert after.approval_state is VendorBillApprovalState.APPROVED
+    assert after.approval_projection_revision == 2 and after.approval_effective_result_id == second.result_id
+    assert after.release_authority_guard_revision == 0 and after.revision == before.revision
+    assert after.obligation_state is VendorBillObligationState.OPEN
+    assert bills.count_documents({"tenant_id": "t", "payable_id": "p"}) == 1
     client.drop_database(database.name); client.close()
+
+
+def _approved_projection_fixture():
+    """Build two APPROVED effective results from canonical persisted evidence."""
+    client, database, evaluations, decisions, authorizations, evaluation, opened = approval_fixture(1)
+    decisions = database["financial_approval_decisions"]
+    authorizations = database["financial_approval_actor_authorizations"]
+    add_evidence(decisions, authorizations, evaluation, opened, "A", "approved-overlap")
+    aggregator = FinancialApprovalAggregator(database=database)
+    first = aggregator.aggregate("t", "e", "approved-overlap-1", datetime(2026, 1, 2, tzinfo=timezone.utc), datetime(2026, 1, 2, tzinfo=timezone.utc))
+    second = aggregator.aggregate("t", "e", "approved-overlap-2", datetime(2026, 1, 3, tzinfo=timezone.utc), datetime(2026, 1, 3, tzinfo=timezone.utc))
+    assert first.effective_state.value == "APPROVED"
+    assert second.effective_state.value == "APPROVED"
+    results = database["financial_approval_effective_results"]
+    FinancialApprovalEffectiveResultRegistry.ensure_indexes(results)
+    FinancialApprovalEffectiveResultRegistry.create(first, "approved-overlap-key-1", results)
+    FinancialApprovalEffectiveResultRegistry.create(second, "approved-overlap-key-2", results)
+    return client, database, opened, first, second
 
 
 def _uri():
@@ -468,15 +496,6 @@ def test_vendor_bill_create_replay_and_conflict_real_mongo():
         raise AssertionError("different create command accepted")
     client.drop_database(db.name); client.close()
 
-
-# WILSY OS SOVEREIGN ARTIFACT SEAL
-# ARTIFACT: test_vendor_bill_registry_mongo.py
-# VERSION: v1.7.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
-# AUTHORITY BOUNDARY: real-Mongo VendorBill persistence and coordination certification only
-# TENANT POSTURE: all fixtures and assertions are tenant/payable scoped
-# FAIL-CLOSED POSTURE: unexpected, unstructured, and connectivity exceptions are never accepted
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; tests do not execute or settle payments
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 def test_vendor_bill_concurrent_identical_create_real_mongo():
@@ -723,3 +742,12 @@ def test_open_bill_one_hundred_identical_commands_real_mongo():
     assert bills.count_documents({"tenant_id": "tenant-a", "payable_id": "payable-1"}) == 1
     assert len(raw["command_receipts"]) == 1
     client.drop_database(db.name); client.close()
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_vendor_bill_registry_mongo.py
+# VERSION: v1.7.1-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
+# AUTHORITY BOUNDARY: tenant-scoped VendorBill certification only
+# TENANT POSTURE: all fixtures and assertions are tenant/payable scoped
+# FAIL-CLOSED POSTURE: unexpected outcomes are rejected
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
