@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE ORCHESTRATOR REAL-MONGO CERTIFICATION
-Version: v1.1.0-VENDOR-BILL-RELEASE-ORCHESTRATOR-CANONICAL-MONGO-CERT
+Version: v1.1.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-REMAINING-CAPACITY-RACE-MONGO-CERT
 Authority: Wilsy OS Core Governance
 Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 Runtime: caller-owned Mongo transactions; Kennel EOS exclusively executes money.
@@ -9,6 +9,8 @@ from typing import Any
 from dataclasses import replace
 import pytest
 import os, uuid
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pymongo import MongoClient
 from tools.eos.saas.domain.vendor import VendorIdentity
@@ -26,6 +28,7 @@ from unittest.mock import patch
 from tools.eos.saas.billing.vendor_bill_release_orchestrator import (
     VendorBillReleaseCommand, VendorBillReleaseOrchestrator,
     VendorBillReleaseOrchestrationOutcome, VendorBillReleaseOrchestrationIdempotencyError,
+    VendorBillReleaseOrchestrationError,
 )
 from tools.eos.saas.billing.vendor_bill_release_authorization_registry import VendorBillReleaseAuthorizationRegistry
 from pymongo import MongoClient
@@ -143,8 +146,54 @@ def _fixture(amount: int = 1000):
         client.close(); raise
 
 
+def test_vendor_bill_release_orchestrator_remaining_capacity_race_real_mongo():
+    client, db, bill = _fixture()
+    try:
+        auths = db["vendor_bill_release_authorizations"]
+        seed = VendorBillReleaseOrchestrator.authorize(_command(bill, "seed", 600), db)
+        assert seed.outcome is VendorBillReleaseOrchestrationOutcome.AUTHORIZED
+        assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor(bill.tenant_id, bill.payable_id, auths) == 600
+        barrier = threading.Barrier(2, timeout=30)
+        observed = []
+        real_sum_authorized_amount_minor = VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor
+        local = threading.local()
+
+        def synchronized_sum(*args, **kwargs):
+            amount = real_sum_authorized_amount_minor(*args, **kwargs)
+            if not getattr(local, "is_competing_worker", False) or getattr(local, "first_sum_seen", False):
+                return amount
+            local.first_sum_seen = True
+            observed.append(amount)
+            barrier.wait(timeout=30)
+            return amount
+
+        def invoke(command):
+            local.is_competing_worker = True
+            with patch.object(VendorBillReleaseAuthorizationRegistry, "sum_authorized_amount_minor", synchronized_sum):
+                try:
+                    return ("AUTHORIZED", VendorBillReleaseOrchestrator.authorize(command, db))
+                except VendorBillReleaseOrchestrationError as error:
+                    assert str(error) == "CUMULATIVE_AUTHORITY_EXCEEDED"
+                    return ("DENIED", error)
+                finally:
+                    local.is_competing_worker = False
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(invoke, _command(bill, "a", 300)), executor.submit(invoke, _command(bill, "b", 300))]
+            outcomes = [future.result(timeout=30) for future in futures]
+        assert len(observed) == 2
+        assert sorted(observed) == [600, 600]
+        assert [kind for kind, _ in outcomes].count("AUTHORIZED") == 1
+        assert [kind for kind, _ in outcomes].count("DENIED") == 1
+        assert auths.count_documents({"tenant_id": bill.tenant_id, "payable_id": bill.payable_id}) == 2
+        assert real_sum_authorized_amount_minor(bill.tenant_id, bill.payable_id, auths) == 900
+        assert VendorBillRegistry.get(bill.tenant_id, bill.payable_id, db["vendor_bills"]).release_authority_guard_revision == 2
+    finally:
+        client.drop_database(db.name); client.close()
+
+
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_vendor_bill_release_orchestrator_mongo.py
-# VERSION: v1.1.0-VENDOR-BILL-RELEASE-ORCHESTRATOR-CANONICAL-MONGO-CERT
+# VERSION: v1.1.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-REMAINING-CAPACITY-RACE-MONGO-CERT
 # AUTHORITY: Wilsy OS Core Governance
 # END OF WILSY OS SOVEREIGN ARTIFACT
