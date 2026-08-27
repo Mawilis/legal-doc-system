@@ -1,0 +1,64 @@
+{
+  "schema": "WILSY-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-CERTIFICATION/V1",
+  "version": "v1.0.0-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-EVIDENCE",
+  "authority": "Wilsy OS Core Governance",
+  "classification": "Institutional Forensic Evidence — Production Certification",
+  "evidence_date": "2026-08-27",
+  "source": {
+    "certification_artifact_commit": "731bd42837250d79404fe72a256db408929984a3",
+    "authoritative_ci_source_commit": "89dcef66593519e0777f0694ef6232378f03f79e",
+    "branch": "fg108o4b-knowledge-operating-room",
+    "test_artifact": "tests/integration/test_vendor_bill_release_orchestrator_mongo.py",
+    "test_artifact_version": "v1.2.0-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-MONGO-CERT",
+    "production_artifact": "tools/eos/saas/billing/vendor_bill_release_orchestrator.py",
+    "production_version": "v1.0.3-VENDOR-BILL-RELEASE-ORCHESTRATOR-BOUNDED-CONTENTION-CONVERGENCE"
+  },
+  "workflow": {
+    "name": "🏛️ WILSY OS 2050 Unified Pipeline",
+    "run_id": 33064334872,
+    "run_number": 174,
+    "event": "workflow_dispatch",
+    "head_sha": "89dcef66593519e0777f0694ef6232378f03f79e",
+    "status": "completed",
+    "conclusion": "failure",
+    "failure_scope": "Unified workflow failure was caused by unrelated frontend/server JavaScript jobs; the authoritative R2B Vendor Bill Release Real-Mongo Certification job completed successfully. No whole-workflow-green claim is made."
+  },
+  "authoritative_job": {
+    "id": 98490810411,
+    "name": "💸 R2B Vendor Bill Release Real-Mongo Certification",
+    "status": "completed",
+    "conclusion": "success",
+    "collection": 14,
+    "integration": "14 passed in 4.28s",
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "unit": "22 passed in 0.24s",
+    "unit_passed": 22,
+    "pyright": "0 errors, 0 warnings, 0 informations",
+    "py_compile": "passed"
+  },
+  "mongo_environment": {
+    "image": "mongo:7.0.37",
+    "replica_set": "wilsyVendorCertRS",
+    "endpoint": "localhost:27017",
+    "uri": "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS"
+  },
+  "certified_semantics": [
+    "Atomic authorization, exact durable replay, divergent same-key fail-closed behavior, cumulative reservation enforcement, and transaction abort atomicity",
+    "Remaining-capacity concurrent serialization and exact-command concurrent convergence",
+    "True stale approval-projection overlap: worker reads result A, result B commits while paused, worker resumes, and no stale A-bound release authority persists",
+    "Release authorization remains evidence/reservation authority only; no execution or settlement semantics cross this boundary"
+  ],
+  "architecture_locks": [
+    "APPROVED != RELEASE AUTHORIZED",
+    "RELEASE AUTHORIZED != EXECUTED",
+    "EXECUTED != SETTLED",
+    "Kennel EOS is the exclusive financial execution authority"
+  ],
+  "certification": {
+    "status": "CERTIFIED",
+    "technical_control_only": true,
+    "independent_legal_compliance_claim": false
+  }
+}
