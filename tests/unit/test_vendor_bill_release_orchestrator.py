@@ -6,9 +6,10 @@ Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 from pymongo.errors import OperationFailure
+import pytest
 from tools.eos.saas.domain.vendor_bill_release_policy import VendorBillReleaseIneligibilityReason
 from tools.eos.saas.billing.vendor_bill_registry import VendorBillReleaseAuthorityGuardConflictError, VendorBillPersistedRecordInvalidError
-from tools.eos.saas.billing.vendor_bill_release_orchestrator import _MAX_TRANSACTION_ATTEMPTS, VendorBillReleaseTransactionRetryExhaustedError, VendorBillReleaseOrchestrationError
+from tools.eos.saas.billing.vendor_bill_release_orchestrator import _MAX_TRANSACTION_ATTEMPTS, VendorBillReleaseTransactionRetryExhaustedError, VendorBillReleaseOrchestrationError, VendorBillReleaseOrchestrationIdempotencyError
 from datetime import date
 
 from tools.eos.saas.domain.vendor_bill import VendorBill, VendorBillObligationState, VendorBillApprovalState
@@ -58,7 +59,7 @@ class FakeDatabase:
 
 
 def command() -> VendorBillReleaseCommand:
-    return VendorBillReleaseCommand("t", "p", "ra", 10, "ZAR", "actor", "basis", datetime.now(timezone.utc), "key")
+    return VendorBillReleaseCommand("t", "p", "ra", 10, "ZAR", "actor", "basis", datetime(2026, 1, 1, tzinfo=timezone.utc), "key")
 
 
 def test_public_command_is_immutable_and_has_no_execution_fields():
@@ -81,7 +82,7 @@ def test_exact_replay_short_circuits_before_guard():
     session = Mock(); session.in_transaction = True
     client = Mock(); client.start_session.return_value = Mock(__enter__=Mock(return_value=session), __exit__=Mock(return_value=None))
     db = Mock(); db.client = client; db.__getitem__ = Mock(return_value=Mock())
-    replay = Mock(release_authorization_id="ra", authorized_amount_minor=10)
+    replay = VendorBillReleaseAuthorization("t", "ra", "p", 1, "result", "a" * 128, 10, "ZAR", "actor", "basis", command().authorized_at, command().authorized_at)
     with patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillReleaseAuthorizationRegistry.get_by_idempotency_key", return_value=replay) as lookup, patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillRegistry.get") as bill_read:
         result = VendorBillReleaseOrchestrator.authorize(command(), db)
     assert result.outcome is VendorBillReleaseOrchestrationOutcome.IDEMPOTENT_REPLAY
@@ -149,6 +150,17 @@ def test_authorize_replay_after_success_does_not_increment_guard_twice():
         first=VendorBillReleaseOrchestrator.authorize(command(),db); second=VendorBillReleaseOrchestrator.authorize(command(),db)
     assert first.outcome is VendorBillReleaseOrchestrationOutcome.AUTHORIZED and second.outcome is VendorBillReleaseOrchestrationOutcome.IDEMPOTENT_REPLAY
     assert guard.call_count == create.call_count == 1; assert br.call_count == 1
+
+
+@pytest.mark.parametrize("field", ["release_authorization_id", "requested_amount_minor", "currency", "authorized_by_actor_id", "authorization_basis_reference", "authorized_at"])
+def test_authorize_replay_rejects_same_key_with_divergent_command_semantics(field):
+    events=[]; db=FakeDatabase(events); cmd=command(); auth=VendorBillReleaseAuthorization("t","ra","p",1,"result","a"*128,10,"ZAR","actor","basis",cmd.authorized_at,cmd.authorized_at)
+    values={"release_authorization_id":"other","requested_amount_minor":11,"currency":"USD","authorized_by_actor_id":"other-actor","authorization_basis_reference":"other-basis","authorized_at":datetime(2026,1,2,tzinfo=timezone.utc)}
+    divergent=cmd.__class__(**{**cmd.__dict__, field: values[field]})
+    with patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillReleaseAuthorizationRegistry.get_by_idempotency_key",return_value=auth) as lookup, patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillRegistry.get") as bill_read:
+        with pytest.raises(VendorBillReleaseOrchestrationIdempotencyError, match="VENDOR_BILL_RELEASE_AUTHORIZATION_IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_COMMAND"):
+            VendorBillReleaseOrchestrator.authorize(divergent,db)
+    lookup.assert_called_once(); bill_read.assert_not_called()
 
 
 def test_authorize_success_constructs_exact_release_authorization_evidence():
