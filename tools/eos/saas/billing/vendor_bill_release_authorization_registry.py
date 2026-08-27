@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE AUTHORIZATION REGISTRY
-Version: v1.0.0-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY
+Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-RESERVATION-SUM
 Authority: Wilsy OS Core Governance | Classification: Institutional Artifact — Production Only
 EPITOME: Tenant-scoped durable immutable release evidence with deterministic
 SHA3-512 integrity and corruption-first hydration; persistence only.
@@ -12,6 +12,8 @@ CHANGELOG:
 - 2026-08-26 — v1.0.0-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY
   Initial sovereign tenant-scoped Mongo registry with deterministic SHA3-512
   idempotency evidence, corruption-first hydration, and caller-owned sessions.
+- 2026-08-27 — v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-RESERVATION-SUM
+  Added tenant/payable-scoped, session-aware corruption-first reservation sum.
 """
 
 from __future__ import annotations
@@ -250,10 +252,20 @@ class VendorBillReleaseAuthorizationRegistry:
             raise VendorBillReleaseAuthorizationNotFoundError("VENDOR_BILL_RELEASE_AUTHORIZATION_NOT_FOUND")
         return _hydrate(document)
 
+    @staticmethod
+    def sum_authorized_amount_minor(tenant_id: str, payable_id: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> int:
+        """Sum immutable reservation evidence via strict hydration; caller owns transactions."""
+        tenant = _require_text(tenant_id, "tenant_id", _MAX_TENANT_ID_LENGTH)
+        payable = _require_text(payable_id, "payable_id", _MAX_PAYABLE_ID_LENGTH)
+        total = 0
+        for document in _collection(collection).find({"tenant_id": tenant, "payable_id": payable}, session=session):
+            total += _hydrate(document).authorized_amount_minor
+        return total
+
 
 # INSTITUTIONAL CERTIFICATION SEAL
 # File: vendor_bill_release_authorization_registry.py
-# Version: v1.0.0-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY
+# Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-RESERVATION-SUM
 # Status: SOVEREIGN REGISTRY CONTRACT — R2B-02 | Authority: Wilsy OS Core Governance
 # Tenant isolation; unique identity/index posture; SHA3-512 create evidence;
 # corruption-first hydration; caller-owned sessions; Kennel EOS execution ownership.
