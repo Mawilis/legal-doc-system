@@ -1,6 +1,6 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORIZATION ORCHESTRATOR
 
-VERSION: v1.0.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-REPLAY
+VERSION: v1.0.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-PYMONGO-DATABASE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Caller-owned transaction orchestration that creates immutable release
 evidence only; Kennel EOS exclusively executes financial transactions.
@@ -8,6 +8,7 @@ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/ven
 ARCHITECTURE: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 CHANGELOG: v1.0.1 adds fail-closed exact replay comparison across all
 caller-controlled authorization command semantics.
+v1.0.2 uses explicit None handling for supplied PyMongo Database objects.
 """
 from __future__ import annotations
 
@@ -93,7 +94,7 @@ class VendorBillReleaseOrchestrator:
         """Run bounded whole-transaction attempts with fresh caller-owned sessions."""
         if not isinstance(command, VendorBillReleaseCommand):
             raise VendorBillReleaseOrchestrationError("invalid release command")
-        db = database or get_database()
+        db = database if database is not None else get_database()
         if db is None:
             raise VendorBillReleaseOrchestrationError("VENDOR_BILL_PERSISTENCE_UNAVAILABLE")
         bills = db["vendor_bills"]
@@ -143,7 +144,7 @@ class VendorBillReleaseOrchestrator:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: vendor_bill_release_orchestrator.py
-# VERSION: v1.0.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-REPLAY
+# VERSION: v1.0.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-PYMONGO-DATABASE
 # AUTHORITY BOUNDARY: release evidence orchestration only; no execution or settlement
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
