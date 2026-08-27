@@ -1,6 +1,6 @@
 # WILSY OS - SOVEREIGN CODEX GOVERNANCE CONTRACT
 
-VERSION: v1.0.0-CRITICAL-STAGE
+VERSION: v1.1.1-SOVEREIGN-ENTERPRISE-CONSTITUTION-COMPLETION
 AUTHORITY: Wilsy OS Core Governance
 SCOPE: Entire repository tree rooted at this file
 STATUS: MANDATORY / FAIL-CLOSED
@@ -240,6 +240,40 @@ Local infrastructure unavailability MUST NOT be represented as passing
 certification.
 
 ===============================================================================
+16A. SOVEREIGN ENTERPRISE OPERATING SYSTEM LIFECYCLE
+===============================================================================
+
+Every material feature follows DISCOVER -> MAP -> WIRE -> CLEAN -> CERTIFY ->
+OBSERVE -> INTELLIGENCE -> EVOLVE. Discover all implementations, routes,
+schemas, clients, tests, integrations and legacy paths; map canonical truth,
+authority, lifecycle and projections; wire consumers without duplicate truth;
+clean obsolete paths only after replacement is proven. A single-layer change is
+not complete.
+
+===============================================================================
+16B. SOVEREIGN TRUTH AND CAPABILITY RULE
+===============================================================================
+
+WILSY OWNS BUSINESS TRUTH, authority, lifecycle and evidence. External systems
+may provide capability, transport, standards compliance or evidence, but never
+silently become canonical authorities. Every surface is classified as CANONICAL,
+EMERGING CANONICAL, LEGACY / MIGRATION SOURCE, PROJECTION, CLIENT SURFACE,
+ADAPTER, EXTERNAL CAPABILITY, EVIDENCE SOURCE, DUPLICATE / OVERLAPPING,
+ORPHANED, or UNKNOWN / REQUIRES FORENSICS.
+
+===============================================================================
+16C. CAPABILITY MATRIX AND TARGET ARCHITECTURE
+===============================================================================
+
+Architecture records MUST distinguish WHAT EXISTS NOW, TARGET SOVEREIGN
+ARCHITECTURE, and MIGRATION PATH. Capability matrices MUST cover backend,
+client, Kennel EOS, legal/documents, billing/payments/accounting/invoicing,
+AP/AR, product/inventory/POS/tax, workforce/CRM/workflow/identity, audit,
+intelligence/analytics/notifications, integrations, website/storefront,
+CI/governance/observability, mobile/edge/offline, data/search/files/API,
+streaming/security, tenant/organization and subscriptions/entitlements.
+
+===============================================================================
 17. REQUIRED VERIFICATION
 ===============================================================================
 
@@ -320,11 +354,31 @@ Codex MUST dynamically apply this contract without requiring the user to
 repeat it.
 
 ===============================================================================
+16D. CONSTITUTIONAL COMMERCE, INTELLIGENCE, AND PARITY LOCKS
+===============================================================================
+
+SALE != PAYMENT. CART != SALE AUTHORIZED != SALE RECORDED != TENDER EXECUTED
+!= SETTLED != ACCOUNTED.
+
+OBSERVED FACT != DERIVED SIGNAL != AI INFERENCE != RECOMMENDATION
+!= AUTHORIZATION != EXECUTION.
+
+BACKEND / CLIENT PARITY is mandatory: canonical backend truth, persistence,
+API, client projection, permissions, audit/evidence, observability, and
+Intelligence Dock visibility must be traced for every user-facing domain.
+
+The Wilsy OS Storefront is the public entrance to the sovereign operating
+system. It is a public projection, not canonical tenant, pricing, subscription,
+entitlement, payment, settlement, or accounting truth.
+
+Wilsy OS Intelligence Dock grows in parallel with every sovereign domain.
+
+===============================================================================
 WILSY OS SOVEREIGN GOVERNANCE SEAL
 ===============================================================================
 
 CONTRACT: WILSY OS - SOVEREIGN CODEX GOVERNANCE CONTRACT
-VERSION: v1.0.0-CRITICAL-STAGE
+VERSION: v1.1.1-SOVEREIGN-ENTERPRISE-CONSTITUTION-COMPLETION
 SCOPE: Entire repository tree
 POSTURE: FAIL-CLOSED
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
