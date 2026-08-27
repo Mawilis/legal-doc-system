@@ -1,6 +1,6 @@
 {
   "schema": "WILSY-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-CERTIFICATION/V1",
-  "version": "v1.0.0-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-EVIDENCE",
+  "version": "v1.0.1-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-EVIDENCE",
   "authority": "Wilsy OS Core Governance",
   "classification": "Institutional Forensic Evidence — Production Certification",
   "evidence_date": "2026-08-27",
@@ -11,7 +11,8 @@
     "test_artifact": "tests/integration/test_vendor_bill_release_orchestrator_mongo.py",
     "test_artifact_version": "v1.2.0-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-MONGO-CERT",
     "production_artifact": "tools/eos/saas/billing/vendor_bill_release_orchestrator.py",
-    "production_version": "v1.0.3-VENDOR-BILL-RELEASE-ORCHESTRATOR-BOUNDED-CONTENTION-CONVERGENCE"
+    "production_version": "v1.0.3-VENDOR-BILL-RELEASE-ORCHESTRATOR-BOUNDED-CONTENTION-CONVERGENCE",
+    "unit_artifact": "tests/unit/test_vendor_bill_release_orchestrator.py"
   },
   "workflow": {
     "name": "🏛️ WILSY OS 2050 Unified Pipeline",
@@ -38,8 +39,26 @@
     "pyright": "0 errors, 0 warnings, 0 informations",
     "py_compile": "passed"
   },
+  "zero_skip_enforcement": {
+    "integration_output_captured": true,
+    "required_pass_summary": "14 passed",
+    "skipped_marker_rejected": true,
+    "certification_requires_zero_skips": true
+  },
+  "runner_environment": {
+    "runner_version": "2.336.0",
+    "operating_system": "Ubuntu 24.04.4 LTS",
+    "runner_image": "ubuntu-24.04",
+    "runner_image_version": "20260823.283.1",
+    "python": "3.12.3",
+    "pymongo": "4.16.0",
+    "pytest": "9.1.1",
+    "pydantic": "2.13.4",
+    "pydantic_core": "2.46.4"
+  },
   "mongo_environment": {
     "image": "mongo:7.0.37",
+    "image_digest": "sha256:340c1c56fb10e95cf79ff547f8664b96bc6ead9909bc355238cbf865a9695a6f",
     "replica_set": "wilsyVendorCertRS",
     "endpoint": "localhost:27017",
     "uri": "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS"
