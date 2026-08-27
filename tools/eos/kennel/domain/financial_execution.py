@@ -1,11 +1,11 @@
 """WILSY OS Kennel EOS financial execution truth domain contract.
 
-VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN
+VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Immutable, tenant-scoped execution evidence; execution never implies settlement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kennel/domain/financial_execution.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI engineering)
-CHANGELOG: v1.0.0 establishes pure Kennel EOS execution-truth vocabulary.
+CHANGELOG: v1.0.0 establishes pure Kennel EOS execution-truth vocabulary; v1.0.1 canonicalizes persisted status hydration without changing evidence semantics.
 COMPLIANCE: POPIA §19 | GDPR Art. 32 | SOC2 CC7.2
 SECURITY / PRIVACY: destination is an opaque reference; no credentials or account data.
 TENANT BOUNDARY: tenant_id and payable_id are mandatory and never inferred.
@@ -22,7 +22,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Mapping
 
-VERSION = "v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN"
+VERSION = "v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION"
 _HEX = re.compile(r"^[0-9a-f]{128}$")
 
 
@@ -98,12 +98,21 @@ class FinancialExecutionTruth:
         forbidden = {"bank_account", "bank_account_number", "card_number", "credentials", "paid", "settled", "settlement_id"}
         if forbidden.intersection(mapping):
             raise FinancialExecutionTruthError("forbidden financial fields")
-        return cls(**dict(mapping))
+        values = dict(mapping)
+        try:
+            if "execution_status" in values and not isinstance(values["execution_status"], FinancialExecutionStatus):
+                values["execution_status"] = FinancialExecutionStatus(values["execution_status"])
+            for field in ("executed_at", "created_at"):
+                if isinstance(values.get(field), str):
+                    values[field] = datetime.fromisoformat(values[field])
+        except (TypeError, ValueError) as error:
+            raise FinancialExecutionTruthError("invalid persisted execution mapping") from error
+        return cls(**values)
 
 
 # MANDATORY END SEAL
 # ARTIFACT: financial_execution.py
-# VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN
+# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION
 # AUTHORITY BOUNDARY: Kennel EOS exclusively owns provider execution truth.
 # TENANT POSTURE: tenant_id and payable_id required; no cross-tenant inference.
 # FAIL-CLOSED POSTURE: immutable validation rejects malformed or sensitive input.
