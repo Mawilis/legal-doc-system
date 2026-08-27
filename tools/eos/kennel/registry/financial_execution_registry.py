@@ -1,8 +1,9 @@
 """Wilsy OS Kennel EOS immutable financial execution truth registry.
 
-VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-PRE-MONGO-HARDENING
+VERSION: v1.0.3-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CORRUPTION-FIRST-RECONCILIATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Tenant-scoped append-only persistence; no transaction ownership or settlement.
+CHANGELOG: v1.0.3 corrects duplicate-key reconciliation by enforcing durable domain hydration first, registry metadata validation second, corruption checks before replay/reuse, separate execution identity collision handling, and unresolved duplicate conflict classification.
 """
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ..domain.financial_execution import FinancialExecutionTruth, FinancialExecutionTruthError
 
-VERSION = "v1.0.2-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-PRE-MONGO-HARDENING"
+VERSION = "v1.0.3-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CORRUPTION-FIRST-RECONCILIATION"
 COLLECTION = "kennel_financial_execution_truth"
 
 
@@ -76,6 +77,13 @@ def _key(value: str) -> str:
         raise FinancialExecutionRegistryError("invalid idempotency key")
     return key
 
+def _validate_persisted_registry_metadata(document: dict) -> tuple[str, str]:
+    key = document.get("create_idempotency_key")
+    fingerprint = document.get("create_fingerprint")
+    if not isinstance(key, str) or not key.strip() or len(key.strip()) > 128 or key != key.strip() or not isinstance(fingerprint, str) or len(fingerprint) != 128 or any(ch not in "0123456789abcdef" for ch in fingerprint):
+        raise FinancialExecutionPersistedRecordInvalidError("FINANCIAL_EXECUTION_PERSISTED_RECORD_INVALID")
+    return key, fingerprint
+
 def _text(value: object, field: str, max_length: int = 256) -> str:
     if not isinstance(value, str) or not value.strip() or len(value.strip()) > max_length:
         raise FinancialExecutionRegistryError(f"invalid {field}")
@@ -116,11 +124,20 @@ class FinancialExecutionTruthRegistry:
             return FinancialExecutionCreateResult(FinancialExecutionCreateOutcome.CREATED, execution_truth)
         except DuplicateKeyError as error:
             existing = target.find_one({"tenant_id": execution_truth.tenant_id, "payable_id": execution_truth.payable_id, "create_idempotency_key": key}, session=session)
-            if existing is None:
+            if existing is not None:
+                durable_truth = _hydrate(existing)
+                durable_key, durable_fingerprint = _validate_persisted_registry_metadata(existing)
+                if durable_key != key:
+                    raise FinancialExecutionPersistedRecordInvalidError("FINANCIAL_EXECUTION_PERSISTED_RECORD_INVALID") from error
+                if durable_fingerprint != fingerprint:
+                    raise FinancialExecutionIdempotencyKeyReuseError("FINANCIAL_EXECUTION_IDEMPOTENCY_KEY_REUSED") from error
+                return FinancialExecutionCreateResult(FinancialExecutionCreateOutcome.IDEMPOTENT_REPLAY, durable_truth)
+            identity_existing = target.find_one({"tenant_id": execution_truth.tenant_id, "execution_truth_id": execution_truth.execution_truth_id}, session=session)
+            if identity_existing is not None:
+                _hydrate(identity_existing)
+                _validate_persisted_registry_metadata(identity_existing)
                 raise FinancialExecutionCreateConflictError("FINANCIAL_EXECUTION_CREATE_CONFLICT") from error
-            if existing.get("create_fingerprint") != fingerprint:
-                raise FinancialExecutionIdempotencyKeyReuseError("FINANCIAL_EXECUTION_IDEMPOTENCY_KEY_REUSED") from error
-            return FinancialExecutionCreateResult(FinancialExecutionCreateOutcome.IDEMPOTENT_REPLAY, _hydrate(existing))
+            raise FinancialExecutionCreateConflictError("FINANCIAL_EXECUTION_CREATE_CONFLICT") from error
         except PyMongoError as error:
             raise FinancialExecutionRegistryError("FINANCIAL_EXECUTION_CREATE_FAILED") from error
 
@@ -155,6 +172,6 @@ class FinancialExecutionTruthRegistry:
 
 
 # ARTIFACT: financial_execution_registry.py
-# VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-PRE-MONGO-HARDENING
+# VERSION: v1.0.3-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CORRUPTION-FIRST-RECONCILIATION
 # AUTHORITY BOUNDARY: Kennel EOS owns execution truth; registry owns persistence only.
 # END OF WILSY OS SOVEREIGN ARTIFACT
