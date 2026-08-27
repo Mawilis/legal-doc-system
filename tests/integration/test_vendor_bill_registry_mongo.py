@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORITY GUARD REAL-MONGO CERTIFICATION
-Version: v1.6.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
+Version: v1.7.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
 Authority: Wilsy OS Core Governance | Classification: Institutional Integration Certification
 Epitome: Real Mongo CAS proof for persisted release-authority coordination metadata.
 Absolute path: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_vendor_bill_registry_mongo.py
@@ -14,6 +14,7 @@ v1.4.0 adds a dedicated 100-race release-authority guard CAS matrix,
 double-admission prevention, and approval-projection stale-snapshot coverage.
 v1.6.0 adds canonical stale-guard loser classification, strict Mongo conflict
 handling, and independent-session snapshot overlap invariants.
+v1.7.0 enforces exact structured overlap taxonomy and bounded synchronization.
 POPIA §19 | GDPR §32 | SOC2 CC7.2
 APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 Kennel EOS remains the exclusive financial execution authority.
@@ -30,7 +31,7 @@ from pymongo import MongoClient
 from pymongo.errors import OperationFailure, PyMongoError
 import pytest
 
-from tools.eos.saas.billing.vendor_bill_registry import VendorBillCreateConflictError, VendorBillCreateOutcome, VendorBillIdempotencyKeyReuseError, VendorBillMutationOutcome, VendorBillNotFoundError, VendorBillObligationState, VendorBillPersistedRecordInvalidError, VendorBillRegistry, VendorBillRevisionConflictError, VendorBillReleaseAuthorityGuardConflictError
+from tools.eos.saas.billing.vendor_bill_registry import VendorBillApprovalProjectionConflictError, VendorBillApprovalProjectionReferenceError, VendorBillCreateConflictError, VendorBillCreateOutcome, VendorBillIdempotencyKeyReuseError, VendorBillMutationOutcome, VendorBillNotFoundError, VendorBillObligationState, VendorBillPersistedRecordInvalidError, VendorBillRegistry, VendorBillRevisionConflictError, VendorBillReleaseAuthorityGuardConflictError
 from tools.eos.saas.billing.vendor_registry import VendorRegistry
 from tools.eos.saas.domain.vendor import VendorIdentity
 from tools.eos.saas.domain.vendor_bill import VendorBill, VendorBillDomainError, VendorBillApprovalState
@@ -355,7 +356,13 @@ def test_release_authority_guard_same_guard_independent_transaction_race_real_mo
         with client.start_session() as session:
             try:
                 session.start_transaction()
-                barrier.wait()
+                snapshot = bills.find_one({"tenant_id": "tenant-a", "payable_id": payable}, session=session)
+                assert snapshot is not None
+                assert snapshot["approval_projection_revision"] == 1
+                assert snapshot["approval_effective_result_id"] == "result-a"
+                assert snapshot["release_authority_guard_revision"] == 0
+                assert snapshot["obligation_state"] == "OPEN"
+                barrier.wait(timeout=30)
                 value = VendorBillRegistry.acquire_release_authority_guard("tenant-a", payable, 1, 1, "result-a", 0, bills, session=session)
                 session.commit_transaction()
                 return "committed", value
@@ -366,8 +373,8 @@ def test_release_authority_guard_same_guard_independent_transaction_race_real_mo
                     session.abort_transaction()
                 return "stale_guard_loser", error
             except (OperationFailure, PyMongoError, VendorBillRevisionConflictError) as error:
-                message = str(error)
-                if not any(token in message for token in ("WriteConflict", "TransientTransactionError", "transaction aborted")):
+                labels = error.details.get("errorLabels", []) if isinstance(error, OperationFailure) and isinstance(error.details, dict) else []
+                if not (isinstance(error, OperationFailure) and (error.code == 112 or "TransientTransactionError" in labels)):
                     return "unexpected", error
                 if session.in_transaction:
                     session.abort_transaction()
@@ -396,22 +403,32 @@ def test_release_authority_guard_projection_overlap_transaction_real_mongo():
             session_a.start_transaction()
             raw = bills.find_one({"tenant_id": "t", "payable_id": "p"}, session=session_a)
             assert raw is not None and raw["approval_projection_revision"] == 1
-            snapshot_ready.set(); projection_committed.wait()
+            snapshot_ready.set(); assert projection_committed.wait(timeout=30)
             try:
                 VendorBillRegistry.acquire_release_authority_guard("t", "p", before.revision, 1, first.result_id, 0, bills, session=session_a)
                 session_a.commit_transaction(); outcomes.append("committed")
-            except Exception as error:
-                outcomes.append("legitimate" if any(token in str(error) for token in ("PROJECTION", "REFERENCE", "WriteConflict", "TransientTransactionError")) else "unexpected")
+            except VendorBillApprovalProjectionConflictError as error:
+                outcomes.append("stale_projection_conflict" if str(error) == "VENDOR_BILL_APPROVAL_PROJECTION_CONFLICT" else "unexpected")
+                if session_a.in_transaction: session_a.abort_transaction()
+            except VendorBillApprovalProjectionReferenceError as error:
+                outcomes.append("stale_projection_reference" if str(error) == "VENDOR_BILL_APPROVAL_PROJECTION_REFERENCE_MISMATCH" else "unexpected")
+                if session_a.in_transaction: session_a.abort_transaction()
+            except OperationFailure as error:
+                labels = error.details.get("errorLabels", []) if isinstance(error.details, dict) else []
+                outcomes.append("mongo_write_conflict" if error.code == 112 or "TransientTransactionError" in labels else "unexpected")
                 if session_a.in_transaction: session_a.abort_transaction()
     def session_b_worker():
         snapshot_ready.wait()
         with client.start_session() as session_b:
             session_b.start_transaction()
             VendorBillRegistry.project_financial_approval_result("t", "p", second.result_id, before.revision, 1, "tx-overlap-2", bills, session=session_b)
-            session_b.commit_transaction(); projection_committed.set()
+            try:
+                session_b.commit_transaction()
+            finally:
+                projection_committed.set()
     with ThreadPoolExecutor(max_workers=2) as pool:
         list(pool.map(lambda worker: worker(), (session_a_worker, session_b_worker)))
-    assert outcomes == ["legitimate"]
+    assert len(outcomes) == 1 and outcomes[0] in ("stale_projection_conflict", "stale_projection_reference", "mongo_write_conflict")
     after = VendorBillRegistry.get("t", "p", bills)
     assert after.approval_projection_revision == 2 and after.approval_effective_result_id == second.result_id and after.release_authority_guard_revision == 0
     client.drop_database(database.name); client.close()
@@ -450,6 +467,16 @@ def test_vendor_bill_create_replay_and_conflict_real_mongo():
     else:
         raise AssertionError("different create command accepted")
     client.drop_database(db.name); client.close()
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_vendor_bill_registry_mongo.py
+# VERSION: v1.7.0-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT
+# AUTHORITY BOUNDARY: real-Mongo VendorBill persistence and coordination certification only
+# TENANT POSTURE: all fixtures and assertions are tenant/payable scoped
+# FAIL-CLOSED POSTURE: unexpected, unstructured, and connectivity exceptions are never accepted
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; tests do not execute or settle payments
+# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 def test_vendor_bill_concurrent_identical_create_real_mongo():
