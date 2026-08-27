@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE ORCHESTRATOR REAL-MONGO CERTIFICATION
-Version: v1.1.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-CONCURRENT-CONVERGENCE-MONGO-CERT
+Version: v1.2.0-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-MONGO-CERT
 Authority: Wilsy OS Core Governance
 Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 Runtime: caller-owned Mongo transactions; Kennel EOS exclusively executes money.
@@ -216,12 +216,12 @@ def test_vendor_bill_release_orchestrator_exact_command_concurrent_convergence_r
             raise state[1]
 
         def invoke():
-            with patch.object(VendorBillReleaseAuthorizationRegistry, "get_by_idempotency_key", synchronized_lookup):
-                return VendorBillReleaseOrchestrator.authorize(command, db).outcome
+            return VendorBillReleaseOrchestrator.authorize(command, db).outcome
 
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [executor.submit(invoke) for _ in range(20)]
-            outcomes = [future.result(timeout=30) for future in futures]
+        with patch.object(VendorBillReleaseAuthorizationRegistry, "get_by_idempotency_key", synchronized_lookup):
+            with ThreadPoolExecutor(max_workers=20) as executor:
+                futures = [executor.submit(invoke) for _ in range(20)]
+                outcomes = [future.result(timeout=30) for future in futures]
         assert len(states) == 20
         assert states == ["NOT_FOUND"] * 20
         assert all(outcome in (VendorBillReleaseOrchestrationOutcome.AUTHORIZED, VendorBillReleaseOrchestrationOutcome.IDEMPOTENT_REPLAY) for outcome in outcomes)
@@ -241,8 +241,57 @@ def test_vendor_bill_release_orchestrator_exact_command_concurrent_convergence_r
         client.drop_database(db.name); client.close()
 
 
+def test_vendor_bill_release_orchestrator_stale_projection_overlap_real_mongo():
+    client, db, bill = _fixture()
+    try:
+        result_a_id = bill.approval_effective_result_id
+        assert result_a_id is not None
+        result_a = FinancialApprovalEffectiveResultRegistry.get(bill.tenant_id, result_a_id, db["financial_approval_effective_results"])
+        result_b_id = f"{result_a_id}-overlap-b"
+        at = datetime(2026, 1, 3, tzinfo=timezone.utc)
+        result_b = FinancialApprovalAggregator(database=db).aggregate(bill.tenant_id, result_a.evaluation_id, result_b_id, at, at)
+        FinancialApprovalEffectiveResultRegistry.create(result_b, f"overlap-{uuid.uuid4().hex}", db["financial_approval_effective_results"])
+        local = threading.local(); a_read = threading.Event(); b_committed = threading.Event(); observed = []
+        real_get = FinancialApprovalEffectiveResultRegistry.get
+        def synchronized_get(*args, **kwargs):
+            result = real_get(*args, **kwargs)
+            if getattr(local, "release_worker", False) and not getattr(local, "first_result_read", False):
+                local.first_result_read = True; observed.append(result.result_id)
+                if result.result_id == result_a_id:
+                    a_read.set()
+                    assert b_committed.wait(timeout=30)
+            return result
+        def invoke():
+            local.release_worker = True
+            try:
+                with patch.object(FinancialApprovalEffectiveResultRegistry, "get", synchronized_get):
+                    return VendorBillReleaseOrchestrator.authorize(_command(bill, "stale-projection", 100), db)
+            finally:
+                local.release_worker = False
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(invoke)
+            assert a_read.wait(timeout=30)
+            with db.client.start_session() as session:
+                session.start_transaction()
+                VendorBillRegistry.project_financial_approval_result(bill.tenant_id, bill.payable_id, result_b_id, bill.revision, 1, f"h-overlap-projection-{uuid.uuid4().hex}", db["vendor_bills"], session=session)
+                session.commit_transaction()
+            after = VendorBillRegistry.get(bill.tenant_id, bill.payable_id, db["vendor_bills"])
+            assert after.approval_effective_result_id == result_b_id and after.approval_projection_revision == 2
+            b_committed.set()
+            outcome = future.result(timeout=30)
+            assert outcome.outcome in (VendorBillReleaseOrchestrationOutcome.AUTHORIZED, VendorBillReleaseOrchestrationOutcome.IDEMPOTENT_REPLAY)
+            final = VendorBillRegistry.get(bill.tenant_id, bill.payable_id, db["vendor_bills"])
+            assert final.approval_effective_result_id == result_b_id and final.approval_projection_revision == 2
+            assert final.approval_state is VendorBillApprovalState.APPROVED and final.obligation_state is VendorBillObligationState.OPEN
+            auths = db["vendor_bill_release_authorizations"]
+            assert auths.count_documents({"tenant_id": bill.tenant_id, "payable_id": bill.payable_id}) in (0, 1)
+            assert auths.count_documents({"tenant_id": bill.tenant_id, "payable_id": bill.payable_id, "approval_effective_result_id": result_a_id}) == 0
+    finally:
+        client.drop_database(db.name); client.close()
+
+
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_vendor_bill_release_orchestrator_mongo.py
-# VERSION: v1.1.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-CONCURRENT-CONVERGENCE-MONGO-CERT
+# VERSION: v1.2.0-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-MONGO-CERT
 # AUTHORITY: Wilsy OS Core Governance
 # END OF WILSY OS SOVEREIGN ARTIFACT
