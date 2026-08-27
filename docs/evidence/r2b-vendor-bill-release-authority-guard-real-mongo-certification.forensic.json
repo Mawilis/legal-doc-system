@@ -1,0 +1,163 @@
+{
+  "schema": "WILSY-R2B-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-REAL-MONGO-CERTIFICATION/V1",
+  "version": "v1.0.0-R2B-RELEASE-AUTHORITY-GUARD-REAL-MONGO-EVIDENCE",
+  "authority": "Wilsy OS Core Governance",
+  "classification": "Institutional Forensic Evidence — Production Certification",
+  "epitome": "Authoritative real-Mongo evidence that VendorBill release-authority guard coordination serializes same-snapshot release admission, rejects stale approval projection overlap, and preserves exact idempotent approval-projection replay without crossing the financial execution boundary.",
+  "evidence_date": "2026-08-27",
+  "source": {
+    "branch": "fg108o4b-knowledge-operating-room",
+    "commit": "8e9d952824848450759505c337368a9f70356516",
+    "test_artifact": "tests/integration/test_vendor_bill_registry_mongo.py",
+    "test_artifact_version": "v1.7.1-VENDOR-BILL-RELEASE-AUTHORITY-GUARD-TRANSACTION-MONGO-CERT"
+  },
+  "workflow": {
+    "name": "🏛️ WILSY OS 2050 Unified Pipeline",
+    "run_id": 33040291818,
+    "run_number": 172,
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "failure",
+    "created_at": "2026-08-27T04:43:56Z",
+    "updated_at": "2026-08-27T04:46:37Z",
+    "failure_scope": "Unified workflow failure was caused by unrelated frontend/server JavaScript jobs; the authoritative real-Mongo certification job independently completed successfully."
+  },
+  "authoritative_job": {
+    "id": 98412256777,
+    "name": "🧾 R2A Vendor Bill Real-Mongo Certification",
+    "status": "completed",
+    "conclusion": "success",
+    "pytest": "70 passed in 51.70s",
+    "collected": 70,
+    "passed": 70,
+    "failed": 0,
+    "pyright": "0 errors, 0 warnings, 0 informations",
+    "py_compile": "passed"
+  },
+  "runner_environment": {
+    "runner_version": "2.336.0",
+    "operating_system": "Ubuntu 24.04.4 LTS",
+    "runner_image": "ubuntu-24.04",
+    "runner_image_version": "20260823.283.1",
+    "python": "3.12.3",
+    "pymongo": "4.16.0",
+    "pytest": "9.1.1",
+    "pydantic": "2.13.4",
+    "pydantic_core": "2.46.4"
+  },
+  "mongo_environment": {
+    "image": "mongo:7.0.37",
+    "image_digest": "sha256:340c1c56fb10e95cf79ff547f8664b96bc6ead9909bc355238cbf865a9695a6f",
+    "replica_set": "wilsyVendorCertRS",
+    "endpoint": "localhost:27017",
+    "uri": "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS",
+    "initialization": "replSetInitiate",
+    "primary_readiness": "hello.isWritablePrimary"
+  },
+  "critical_proofs": [
+    {
+      "test": "test_vendor_bill_projection_one_hundred_identical_commands_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Exactly one approval projection command commits and ninety-nine identical commands resolve as idempotent replay against the durable receipt/fingerprint truth."
+    },
+    {
+      "test": "test_release_authority_guard_same_guard_independent_transaction_race_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Independent caller-owned transactions establish the same pre-write VendorBill snapshot and the persisted release_authority_guard_revision serializes admission so only one guard advancement can commit."
+    },
+    {
+      "test": "test_release_authority_guard_projection_overlap_transaction_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Session A holds a projection-revision-1 APPROVED snapshot while session B commits a second canonical APPROVED projection; stale release-authority acquisition cannot advance the guard and final projection truth remains revision 2 with guard revision 0."
+    }
+  ],
+  "certified_surfaces": [
+    "tenant-scoped VendorBill release-authority guard persistence",
+    "historical missing guard default to zero with malformed persisted values rejected",
+    "guard CAS bound to tenant_id, payable_id, VendorBill revision, approval projection revision, approval effective result id, OPEN obligation state, APPROVED approval state, and expected guard revision",
+    "one-hundred direct guard CAS race serialization",
+    "caller-owned transaction abort and commit behavior",
+    "same-snapshot independent-transaction double-admission prevention",
+    "approval projection overlap stale-snapshot rejection",
+    "canonical APPROVED evidence path through FinancialApprovalDecision, FinancialApprovalActorAuthorization, FinancialApprovalAggregator, and FinancialApprovalEffectiveResultRegistry",
+    "exact approval-projection idempotency reconciliation: one COMMITTED plus ninety-nine IDEMPOTENT_REPLAY",
+    "tenant/payable single-row invariant",
+    "obligation revision remains unchanged by approval projection and release-authority guard coordination",
+    "release-authority guard coordination does not execute, settle, or prove payment"
+  ],
+  "architecture_locks": [
+    "APPROVED != RELEASE AUTHORIZED",
+    "RELEASE AUTHORIZED != EXECUTED",
+    "EXECUTED != SETTLED",
+    "Vendor -> VendorBill -> Approval -> Release Authorization -> Kennel execution truth -> Settlement Allocation",
+    "payable_id is the canonical payable identity",
+    "release authorization is evidence/reservation authority only",
+    "Kennel EOS is the exclusive financial execution authority"
+  ],
+  "transaction_model_certified": {
+    "shared_guard": "VendorBill.release_authority_guard_revision",
+    "serialization_scope": "Every certified release-admission transaction coordinates on the same tenant/payable VendorBill guard predicate.",
+    "caller_owned_session": true,
+    "same_snapshot_race_proven": true,
+    "projection_overlap_race_proven": true,
+    "whole_transaction_fresh_state_retry_required_for_future_orchestration": true,
+    "mutable_parallel_reservation_counter_required_by_this_certification": false
+  },
+  "financial_boundary": {
+    "release_guard_executes_money": false,
+    "release_guard_proves_settlement": false,
+    "release_guard_sets_payment_destination": false,
+    "release_guard_marks_vendor_bill_paid": false,
+    "kennel_eos_exclusive_execution_authority": true
+  },
+  "correction_traceability": [
+    {
+      "run_id": 33023916031,
+      "job_id": 98360822958,
+      "result": "68 passed, 2 failed",
+      "classification": "CERTIFICATION GAPS EXPOSED",
+      "findings": [
+        "approval projection 100-command race exposed post-CAS durable receipt reconciliation gap",
+        "projection-overlap test taxonomy/snapshot proof was insufficient"
+      ]
+    },
+    {
+      "run_id": 33026176991,
+      "job_id": 98368089677,
+      "source": "03cc3d72da5cfe7e57fbc870f4cdb1656721916b",
+      "result": "69 passed, 1 failed in 20.97s",
+      "classification": "TEST FIXTURE DEFECT",
+      "failure": "test_release_authority_guard_projection_overlap_transaction_real_mongo",
+      "canonical_error": "VENDOR_BILL_RELEASE_AUTHORITY_GUARD_APPROVAL_NOT_APPROVED",
+      "root_cause": "Overlap fixture aggregated PENDING rather than canonically APPROVED effective results, so the fail-closed approval gate correctly rejected release-authority acquisition before the intended stale-snapshot conflict."
+    },
+    {
+      "run_id": 33040291818,
+      "job_id": 98412256777,
+      "source": "8e9d952824848450759505c337368a9f70356516",
+      "result": "70 passed in 51.70s",
+      "classification": "AUTHORITATIVE PASS"
+    }
+  ],
+  "scope_limitations": [
+    "Certification is scoped to authoritative real-Mongo job 98412256777 at source commit 8e9d952824848450759505c337368a9f70356516.",
+    "Unified workflow conclusion was failure due to unrelated frontend/server JavaScript jobs; no whole-workflow green claim is made.",
+    "This evidence certifies the release-authority guard transaction primitive and supporting projection/idempotency behavior, not the yet-to-be-implemented end-to-end release-authorization orchestration service.",
+    "No financial execution, banking destination mutation, payment execution, or settlement allocation is certified here.",
+    "No Atlas/network-path certification is claimed; the authoritative Mongo database was the isolated GitHub Actions replica-set container."
+  ],
+  "compliance": [
+    "POPIA §19",
+    "GDPR Art. 32",
+    "SOC2 CC7.2"
+  ],
+  "certification": {
+    "authoritative_job_certified": true,
+    "workflow_run_green": false,
+    "r2b_release_authority_guard_real_mongo_certified": true,
+    "primitive_rating": "10/10",
+    "claim": "R2B release-authority guard transaction primitive real-Mongo certification PASSED: 70/70 at source commit 8e9d952824848450759505c337368a9f70356516 in authoritative job 98412256777, workflow run 33040291818.",
+    "external_seal_algorithm": "SHA3-512",
+    "external_seal_status": "PENDING_POST_FINALIZATION"
+  }
+}
