@@ -2,7 +2,7 @@
 """WILSY OS — CANONICAL VENDORBILL REGISTRY
 
 TITLE: Tenant-scoped VendorBill persistence and coordination boundary
-VERSION: v1.4.0-RELEASE-AUTHORITY-GUARD-CAS
+VERSION: v1.4.1-RELEASE-AUTHORITY-GUARD-SESSION-READ
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns obligation truth, approval projection coordination, durable
 idempotency evidence, and release-authority guard coordination. Execution and
@@ -10,8 +10,8 @@ settlement remain exclusively outside this registry and belong to Kennel EOS.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/vendor_bill_registry.py
 COLLABORATION: Wilson Khanyezi (Founder/Chief Architect) and AI Engineering (Codex)
 CERTIFICATION DATE: 2026-08-27
-CHANGELOG: v1.4.0-RELEASE-AUTHORITY-GUARD-CAS — sovereign artifact structural
-certification; preserves post-CAS durable receipt reconciliation semantics.
+CHANGELOG: v1.4.1-RELEASE-AUTHORITY-GUARD-SESSION-READ — adds backward-compatible
+caller-owned session propagation to the canonical VendorBill get() read.
 COMPLIANCE: POPIA §19 | GDPR Article 32 | SOC 2 CC7.2; fail-closed validation,
 tenant isolation, majority/journal durability, structured errors, SHA3-512
 fingerprints, and caller-owned transaction boundaries.
@@ -309,8 +309,9 @@ class VendorBillRegistry:
         return VendorBillCreateResult(VendorBillCreateOutcome.CREATED, bill, bill.payable_id, fingerprint)
 
     @staticmethod
-    def get(tenant_id: str, payable_id: str, collection: Optional[Collection] = None) -> VendorBill:
-        document = _collection_or_raise(collection).find_one({"tenant_id": str(tenant_id).strip(), "payable_id": str(payable_id).strip()})
+    def get(tenant_id: str, payable_id: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> VendorBill:
+        """Read one tenant-scoped VendorBill using an optional caller session."""
+        document = _collection_or_raise(collection).find_one({"tenant_id": str(tenant_id).strip(), "payable_id": str(payable_id).strip()}, session=session)
         if document is None:
             raise VendorBillNotFoundError("VENDOR_BILL_NOT_FOUND")
         return _hydrate_persisted_vendor_bill(document)
@@ -468,7 +469,7 @@ class VendorBillRegistry:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: vendor_bill_registry.py
-# VERSION: v1.4.0-RELEASE-AUTHORITY-GUARD-CAS
+# VERSION: v1.4.1-RELEASE-AUTHORITY-GUARD-SESSION-READ
 # AUTHORITY BOUNDARY: tenant-scoped VendorBill persistence and coordination only
 # TENANT POSTURE: every read, mutation, receipt, and conflict is tenant-scoped
 # FAIL-CLOSED POSTURE: malformed persisted truth and unknown conflicts are rejected
