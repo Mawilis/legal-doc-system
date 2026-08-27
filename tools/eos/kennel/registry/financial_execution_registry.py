@@ -1,6 +1,6 @@
 """Wilsy OS Kennel EOS immutable financial execution truth registry.
 
-VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY
+VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-READ-CONTRACT-COMPLETION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Tenant-scoped append-only persistence; no transaction ownership or settlement.
 """
@@ -19,7 +19,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ..domain.financial_execution import FinancialExecutionTruth, FinancialExecutionTruthError
 
-VERSION = "v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY"
+VERSION = "v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-READ-CONTRACT-COMPLETION"
 COLLECTION = "kennel_financial_execution_truth"
 
 
@@ -70,6 +70,12 @@ def _fingerprint(truth: FinancialExecutionTruth, key: str) -> str:
     payload = {"execution_truth": truth.evidence_payload(), "create_idempotency_key": key}
     return hashlib.sha3_512(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")).hexdigest()
 
+def _key(value: str) -> str:
+    key = value.strip() if isinstance(value, str) else ""
+    if not key or len(key) > 128:
+        raise FinancialExecutionRegistryError("invalid idempotency key")
+    return key
+
 
 def _hydrate(document: dict) -> FinancialExecutionTruth:
     try:
@@ -97,9 +103,7 @@ class FinancialExecutionTruthRegistry:
     def create(execution_truth: FinancialExecutionTruth, idempotency_key: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> FinancialExecutionCreateResult:
         if not isinstance(execution_truth, FinancialExecutionTruth):
             raise FinancialExecutionRegistryError("execution_truth must be FinancialExecutionTruth")
-        key = idempotency_key.strip() if isinstance(idempotency_key, str) else ""
-        if not key or len(key) > 128:
-            raise FinancialExecutionRegistryError("invalid idempotency key")
+        key = _key(idempotency_key)
         target = _collection_or_raise(collection); fingerprint = _fingerprint(execution_truth, key)
         document = {**execution_truth.to_dict(), "create_idempotency_key": key, "create_fingerprint": fingerprint}
         try:
@@ -130,8 +134,22 @@ class FinancialExecutionTruthRegistry:
     def list_for_payable(tenant_id: str, payable_id: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionTruth, ...]:
         return FinancialExecutionTruthRegistry._list({"tenant_id": tenant_id, "payable_id": payable_id}, limit, collection, session)
 
+    @staticmethod
+    def get_by_idempotency_key(tenant_id: str, payable_id: str, idempotency_key: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> Optional[FinancialExecutionTruth]:
+        key = _key(idempotency_key)
+        document = _collection_or_raise(collection).find_one({"tenant_id": tenant_id, "payable_id": payable_id, "create_idempotency_key": key}, session=session)
+        return None if document is None else _hydrate(document)
+
+    @staticmethod
+    def list_for_provider_execution(tenant_id: str, provider: str, provider_execution_reference: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionTruth, ...]:
+        return FinancialExecutionTruthRegistry._list({"tenant_id": tenant_id, "provider": provider, "provider_execution_reference": provider_execution_reference}, limit, collection, session)
+
+    @staticmethod
+    def list_for_release_authorization(tenant_id: str, release_authorization_id: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionTruth, ...]:
+        return FinancialExecutionTruthRegistry._list({"tenant_id": tenant_id, "release_authorization_id": release_authorization_id}, limit, collection, session)
+
 
 # ARTIFACT: financial_execution_registry.py
-# VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY
+# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-READ-CONTRACT-COMPLETION
 # AUTHORITY BOUNDARY: Kennel EOS owns execution truth; registry owns persistence only.
 # END OF WILSY OS SOVEREIGN ARTIFACT
