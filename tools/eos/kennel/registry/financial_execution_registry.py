@@ -1,9 +1,9 @@
 """Wilsy OS Kennel EOS immutable financial execution truth registry.
 
-VERSION: v1.0.3-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CORRUPTION-FIRST-RECONCILIATION
+VERSION: v1.0.4-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CALLER-TRANSACTION-REPLAY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Tenant-scoped append-only persistence; no transaction ownership or settlement.
-CHANGELOG: v1.0.3 corrects duplicate-key reconciliation by enforcing durable domain hydration first, registry metadata validation second, corruption checks before replay/reuse, separate execution identity collision handling, and unresolved duplicate conflict classification.
+CHANGELOG: v1.0.3 corrects duplicate-key reconciliation by enforcing durable domain hydration first, registry metadata validation second, corruption checks before replay/reuse, separate execution identity collision handling, and unresolved duplicate conflict classification; v1.0.4 adds active caller-transaction preflight replay reconciliation without transaction ownership.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ..domain.financial_execution import FinancialExecutionTruth, FinancialExecutionTruthError
 
-VERSION = "v1.0.3-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CORRUPTION-FIRST-RECONCILIATION"
+VERSION = "v1.0.4-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CALLER-TRANSACTION-REPLAY"
 COLLECTION = "kennel_financial_execution_truth"
 
 
@@ -119,6 +119,21 @@ class FinancialExecutionTruthRegistry:
         key = _key(idempotency_key)
         target = _collection_or_raise(collection); fingerprint = _fingerprint(execution_truth, key)
         document = {**execution_truth.to_dict(), "create_idempotency_key": key, "create_fingerprint": fingerprint}
+        if session is not None and session.in_transaction:
+            existing = target.find_one({"tenant_id": execution_truth.tenant_id, "payable_id": execution_truth.payable_id, "create_idempotency_key": key}, session=session)
+            if existing is not None:
+                durable_truth = _hydrate(existing)
+                durable_key, durable_fingerprint = _validate_persisted_registry_metadata(existing)
+                if durable_key != key:
+                    raise FinancialExecutionPersistedRecordInvalidError("FINANCIAL_EXECUTION_PERSISTED_RECORD_INVALID")
+                if durable_fingerprint != fingerprint:
+                    raise FinancialExecutionIdempotencyKeyReuseError("FINANCIAL_EXECUTION_IDEMPOTENCY_KEY_REUSED")
+                return FinancialExecutionCreateResult(FinancialExecutionCreateOutcome.IDEMPOTENT_REPLAY, durable_truth)
+            identity_existing = target.find_one({"tenant_id": execution_truth.tenant_id, "execution_truth_id": execution_truth.execution_truth_id}, session=session)
+            if identity_existing is not None:
+                _hydrate(identity_existing)
+                _validate_persisted_registry_metadata(identity_existing)
+                raise FinancialExecutionCreateConflictError("FINANCIAL_EXECUTION_CREATE_CONFLICT")
         try:
             target.insert_one(document, session=session)
             return FinancialExecutionCreateResult(FinancialExecutionCreateOutcome.CREATED, execution_truth)
@@ -172,6 +187,6 @@ class FinancialExecutionTruthRegistry:
 
 
 # ARTIFACT: financial_execution_registry.py
-# VERSION: v1.0.3-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CORRUPTION-FIRST-RECONCILIATION
+# VERSION: v1.0.4-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CALLER-TRANSACTION-REPLAY
 # AUTHORITY BOUNDARY: Kennel EOS owns execution truth; registry owns persistence only.
 # END OF WILSY OS SOVEREIGN ARTIFACT
