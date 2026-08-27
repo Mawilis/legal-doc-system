@@ -1,11 +1,13 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORIZATION ORCHESTRATOR
 
-VERSION: v1.0.0-VENDOR-BILL-RELEASE-ORCHESTRATOR
+VERSION: v1.0.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-REPLAY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Caller-owned transaction orchestration that creates immutable release
 evidence only; Kennel EOS exclusively executes financial transactions.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/vendor_bill_release_orchestrator.py
 ARCHITECTURE: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
+CHANGELOG: v1.0.1 adds fail-closed exact replay comparison across all
+caller-controlled authorization command semantics.
 """
 from __future__ import annotations
 
@@ -26,6 +28,23 @@ from .vendor_bill_release_authorization_registry import VendorBillReleaseAuthori
 from .financial_approval_effective_result_registry import FinancialApprovalEffectiveResultRegistry
 
 _MAX_TRANSACTION_ATTEMPTS = 3
+
+
+def _authorization_matches_command(
+    authorization: VendorBillReleaseAuthorization,
+    command: VendorBillReleaseCommand,
+) -> bool:
+    """Compare every caller-controlled field represented by durable evidence."""
+    return (
+        authorization.tenant_id == command.tenant_id
+        and authorization.payable_id == command.payable_id
+        and authorization.release_authorization_id == command.release_authorization_id
+        and authorization.authorized_amount_minor == command.requested_amount_minor
+        and authorization.currency == command.currency
+        and authorization.authorized_by_actor_id == command.authorized_by_actor_id
+        and authorization.authorization_basis_reference == command.authorization_basis_reference
+        and authorization.authorized_at == command.authorized_at
+    )
 
 
 class VendorBillReleaseOrchestrationError(RuntimeError):
@@ -90,7 +109,7 @@ class VendorBillReleaseOrchestrator:
                     except VendorBillReleaseAuthorizationNotFoundError:
                         existing = None
                     if existing is not None:
-                        if existing.release_authorization_id != command.release_authorization_id or existing.authorized_amount_minor != command.requested_amount_minor:
+                        if not _authorization_matches_command(existing, command):
                             raise VendorBillReleaseOrchestrationIdempotencyError("VENDOR_BILL_RELEASE_AUTHORIZATION_IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_COMMAND")
                         session.commit_transaction()
                         return VendorBillReleaseResult(VendorBillReleaseOrchestrationOutcome.IDEMPOTENT_REPLAY, existing)
@@ -124,7 +143,7 @@ class VendorBillReleaseOrchestrator:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: vendor_bill_release_orchestrator.py
-# VERSION: v1.0.0-VENDOR-BILL-RELEASE-ORCHESTRATOR
+# VERSION: v1.0.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-REPLAY
 # AUTHORITY BOUNDARY: release evidence orchestration only; no execution or settlement
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
