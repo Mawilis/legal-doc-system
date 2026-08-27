@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE AUTHORIZATION REGISTRY REAL-MONGO CERTIFICATION
-Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY-MONGO-CERT
+Version: v1.0.2-VENDOR-BILL-RELEASE-AUTHORIZATION-RESERVATION-SUM-MONGO-CERT
 Authority: Wilsy OS Core Governance | Classification: Institutional Artifact — Production Certification
 EPITOME: Durable tenant-scoped immutable release evidence certification.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_vendor_bill_release_authorization_registry_mongo.py
@@ -8,6 +8,8 @@ ARCHITECTURE LOCK: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 COLLABORATION: Wilson Khanyezi — Founder / Chief Architect; AI Engineering (Codex)
 Date: 2026-08-26 | COMPLIANCE: POPIA §19 | GDPR §32 | SOC2 CC7.2
 CHANGELOG: 2026-08-26 — v1.0.1 removed duplicated concurrency from session-read certification.
+2026-08-27 — v1.0.2 certifies zero-row, exact multi-row, tenant/payable
+isolation, caller-session visibility/abort, and corruption-first reservation sums.
 """
 
 import hashlib
@@ -217,9 +219,50 @@ def test_session_aware_release_authorization_reads(collection) -> None:
         assert VendorBillReleaseAuthorizationRegistry.get(authorization.tenant_id, authorization.release_authorization_id, collection, session=session) == authorization
         assert VendorBillReleaseAuthorizationRegistry.get_by_idempotency_key(authorization.tenant_id, authorization.payable_id, "session-key", collection, session=session) == authorization
 
+
+def test_reservation_sum_zero_and_exact_multi_row_total(collection) -> None:
+    VendorBillReleaseAuthorizationRegistry.ensure_indexes(collection)
+    assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", "payable-a", collection) == 0
+    for index, amount in enumerate((100, 225, 375)):
+        VendorBillReleaseAuthorizationRegistry.create(make_authorization(release_authorization_id=f"sum-{index}", authorized_amount_minor=amount), f"sum-key-{index}", collection)
+    assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", "payable-a", collection) == 700
+
+
+def test_reservation_sum_tenant_and_payable_isolation(collection) -> None:
+    VendorBillReleaseAuthorizationRegistry.ensure_indexes(collection)
+    VendorBillReleaseAuthorizationRegistry.create(make_authorization(authorized_amount_minor=100), "iso-a", collection)
+    VendorBillReleaseAuthorizationRegistry.create(make_authorization(tenant_id="tenant-b", release_authorization_id="iso-b", authorized_amount_minor=200), "iso-b", collection)
+    VendorBillReleaseAuthorizationRegistry.create(make_authorization(release_authorization_id="iso-c", payable_id="payable-b", authorized_amount_minor=300), "iso-c", collection)
+    assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", "payable-a", collection) == 100
+    assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-b", "payable-a", collection) == 200
+
+
+def test_reservation_sum_caller_transaction_visibility_and_abort(collection) -> None:
+    VendorBillReleaseAuthorizationRegistry.ensure_indexes(collection)
+    client = collection.database.client
+    authorization = make_authorization(release_authorization_id="tx-sum", authorized_amount_minor=450)
+    with client.start_session() as session:
+        session.start_transaction()
+        VendorBillReleaseAuthorizationRegistry.create(authorization, "tx-sum-key", collection, session=session)
+        assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", "payable-a", collection, session=session) == 450
+        session.abort_transaction()
+    assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", "payable-a", collection) == 0
+
+
+def test_reservation_sum_corruption_and_identity_validation_fail_closed(collection) -> None:
+    VendorBillReleaseAuthorizationRegistry.ensure_indexes(collection)
+    VendorBillReleaseAuthorizationRegistry.create(make_authorization(), "valid-sum", collection)
+    collection.update_one({"tenant_id": "tenant-a"}, {"$set": {"create_fingerprint": "bad"}})
+    with pytest.raises(VendorBillReleaseAuthorizationPersistedRecordInvalidError):
+        VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", "payable-a", collection)
+    with pytest.raises(VendorBillReleaseAuthorizationRegistryError, match="tenant_id is invalid"):
+        VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor(" ", "payable-a", collection)
+    with pytest.raises(VendorBillReleaseAuthorizationRegistryError, match="payable_id is invalid"):
+        VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor("tenant-a", " ", collection)
+
 # INSTITUTIONAL CERTIFICATION SEAL
 # File: test_vendor_bill_release_authorization_registry_mongo.py
-# Version: v1.0.1-VENDOR-BILL-RELEASE-AUTHORIZATION-REGISTRY-MONGO-CERT
+# Version: v1.0.2-VENDOR-BILL-RELEASE-AUTHORIZATION-RESERVATION-SUM-MONGO-CERT
 # Status: SOVEREIGN REAL-MONGO CERTIFICATION — R2B-02
 # Runtime posture: PERSISTENCE ONLY / NO KENNEL EXECUTION
 # Real-Mongo certification is environment-dependent and not claimed offline.
