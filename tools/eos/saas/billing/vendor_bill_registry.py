@@ -1,5 +1,23 @@
 # -*- coding: utf-8 -*-
-"""Wilsy OS VendorBill persistence foundation: v1.3.0-RELEASE-AUTHORITY-GUARD-CAS."""
+"""WILSY OS — CANONICAL VENDORBILL REGISTRY
+
+TITLE: Tenant-scoped VendorBill persistence and coordination boundary
+VERSION: v1.4.0-RELEASE-AUTHORITY-GUARD-CAS
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Owns obligation truth, approval projection coordination, durable
+idempotency evidence, and release-authority guard coordination. Execution and
+settlement remain exclusively outside this registry and belong to Kennel EOS.
+ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/vendor_bill_registry.py
+COLLABORATION: Wilson Khanyezi (Founder/Chief Architect) and AI Engineering (Codex)
+CERTIFICATION DATE: 2026-08-27
+CHANGELOG: v1.4.0-RELEASE-AUTHORITY-GUARD-CAS — sovereign artifact structural
+certification; preserves post-CAS durable receipt reconciliation semantics.
+COMPLIANCE: POPIA §19 | GDPR Article 32 | SOC 2 CC7.2; fail-closed validation,
+tenant isolation, majority/journal durability, structured errors, SHA3-512
+fingerprints, and caller-owned transaction boundaries.
+FINANCIAL BOUNDARY: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED.
+No payment destination, bank, provider, settlement, or paid-state authority.
+"""
 
 from __future__ import annotations
 
@@ -250,7 +268,13 @@ def _document_from_vendor_bill(bill: VendorBill, create_fingerprint: str) -> Dic
 
 
 class VendorBillRegistry:
-    """Persists VendorBill obligations under tenant scope; later phases add idempotency, CAS, and audit delivery."""
+    """Persist and coordinate tenant-scoped VendorBill obligation truth.
+
+    The registry enforces strict hydration, durable command receipts, CAS
+    projection coordination, and release-authority guard freshness. It never
+    executes, settles, or owns payment transactions; Kennel EOS is exclusive
+    financial execution authority. Caller-owned sessions control transactions.
+    """
     @staticmethod
     def ensure_indexes(collection: Optional[Collection] = None) -> None:
         target = _collection_or_raise(collection)
@@ -427,7 +451,12 @@ class VendorBillRegistry:
         existing = target.find_one({"tenant_id": tenant, "payable_id": payable}, session=session)
         if existing is None:
             raise VendorBillNotFoundError("VENDOR_BILL_NOT_FOUND")
-        persisted, _ = _hydrate_persisted_vendor_bill_with_receipts(existing)
+        persisted, persisted_receipts = _hydrate_persisted_vendor_bill_with_receipts(existing)
+        for prior in persisted_receipts:
+            if prior["idempotency_key"] == receipt["idempotency_key"]:
+                if prior["command_fingerprint"] != receipt["command_fingerprint"]:
+                    raise VendorBillApprovalProjectionIdempotencyKeyReuseError("VENDOR_BILL_APPROVAL_PROJECTION_IDEMPOTENCY_KEY_REUSED")
+                return VendorBillMutationResult(VendorBillMutationOutcome.IDEMPOTENT_REPLAY, persisted, persisted.revision, persisted.revision, receipt["idempotency_key"])
         raise VendorBillApprovalProjectionConflictError("VENDOR_BILL_APPROVAL_PROJECTION_CONFLICT")
 
     @staticmethod
@@ -435,3 +464,13 @@ class VendorBillRegistry:
         bounded = min(max(int(limit), 1), 250)
         rows = _collection_or_raise(collection).find({"tenant_id": str(tenant_id).strip()}).sort([("due_date", ASCENDING), ("created_at", DESCENDING), ("payable_id", ASCENDING)]).limit(bounded)
         return [_hydrate_persisted_vendor_bill(row) for row in rows]
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: vendor_bill_registry.py
+# VERSION: v1.4.0-RELEASE-AUTHORITY-GUARD-CAS
+# AUTHORITY BOUNDARY: tenant-scoped VendorBill persistence and coordination only
+# TENANT POSTURE: every read, mutation, receipt, and conflict is tenant-scoped
+# FAIL-CLOSED POSTURE: malformed persisted truth and unknown conflicts are rejected
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; this registry never executes or settles
+# END OF WILSY OS SOVEREIGN ARTIFACT
