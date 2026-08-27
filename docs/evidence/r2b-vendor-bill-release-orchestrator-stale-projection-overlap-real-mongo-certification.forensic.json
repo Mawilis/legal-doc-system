@@ -1,9 +1,10 @@
 {
   "schema": "WILSY-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-CERTIFICATION/V1",
-  "version": "v1.0.1-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-EVIDENCE",
+  "version": "v1.0.2-R2B-VENDOR-BILL-RELEASE-ORCHESTRATOR-STALE-PROJECTION-OVERLAP-REAL-MONGO-EVIDENCE",
   "authority": "Wilsy OS Core Governance",
   "classification": "Institutional Forensic Evidence — Production Certification",
   "evidence_date": "2026-08-27",
+  "epitome": "Authoritative technical-control evidence that the Vendor Bill Release Orchestrator creates release authorization atomically, enforces exact idempotent replay and divergent same-key fail-closed behavior, enforces cumulative reservation capacity, preserves caller-owned transaction atomicity, serializes remaining-capacity races, converges concurrent exact-command callers, rejects stale approval-projection authority by converging to current durable approval result B, and does not cross into financial execution or settlement.",
   "source": {
     "certification_artifact_commit": "731bd42837250d79404fe72a256db408929984a3",
     "authoritative_ci_source_commit": "89dcef66593519e0777f0694ef6232378f03f79e",
@@ -20,6 +21,7 @@
     "run_number": 174,
     "event": "workflow_dispatch",
     "head_sha": "89dcef66593519e0777f0694ef6232378f03f79e",
+    "branch": "fg108o4b-knowledge-operating-room",
     "status": "completed",
     "conclusion": "failure",
     "failure_scope": "Unified workflow failure was caused by unrelated frontend/server JavaScript jobs; the authoritative R2B Vendor Bill Release Real-Mongo Certification job completed successfully. No whole-workflow-green claim is made."
@@ -59,25 +61,158 @@
   "mongo_environment": {
     "image": "mongo:7.0.37",
     "image_digest": "sha256:340c1c56fb10e95cf79ff547f8664b96bc6ead9909bc355238cbf865a9695a6f",
+    "container": "wilsy-vendor-r2b-cert-mongo",
     "replica_set": "wilsyVendorCertRS",
     "endpoint": "localhost:27017",
-    "uri": "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS"
+    "uri": "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS",
+    "initialization": "replSetInitiate",
+    "primary_readiness": "hello.isWritablePrimary",
+    "teardown": "successful"
   },
-  "certified_semantics": [
-    "Atomic authorization, exact durable replay, divergent same-key fail-closed behavior, cumulative reservation enforcement, and transaction abort atomicity",
-    "Remaining-capacity concurrent serialization and exact-command concurrent convergence",
-    "True stale approval-projection overlap: worker reads result A, result B commits while paused, worker resumes, and no stale A-bound release authority persists",
-    "Release authorization remains evidence/reservation authority only; no execution or settlement semantics cross this boundary"
+  "authoritative_log": {
+    "capture_path": "/tmp/wilsy-r2b-h-evidence/r2b-job-98490810411.log",
+    "capture_path_scope": "local capture location only; not a repository artifact URL",
+    "bytes": 40697,
+    "algorithm": "SHA3-512",
+    "sha3_512": "39fd986f3af33931209e77ddb5598bbdf7fc29e490278bdcd8f17592ddc1bc82f4fffd40ef68af32fbbbf571223da012e2e552c94d4fa6158bdf23caa8935db5",
+    "validation": "AUTHORITATIVE_R2B_JOB_LOG_CAPTURE_PASS"
+  },
+  "critical_proofs": [
+    {
+      "test": "test_vendor_bill_release_orchestrator_basic_atomic_authorization_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "One release authorization persists atomically; reservation and guard state reflect one valid authorization."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_exact_replay_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "The exact same durable command resolves idempotently without duplicate authority or second guard advancement."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_divergent_same_key_fails_closed_real_mongo",
+      "result": "PASSED",
+      "parameter_coverage": [
+        "release_authorization_id",
+        "requested_amount_minor",
+        "currency",
+        "authorized_by_actor_id",
+        "authorization_basis_reference",
+        "authorized_at"
+      ],
+      "certified_semantics": "The same idempotency key with changed caller-controlled durable semantics fails closed."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_cumulative_partial_reservations_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Partial release reservations accumulate correctly."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_over_reservation_denied_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Cumulative release authority cannot exceed payable capacity."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_transaction_abort_is_atomic_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Authorization-create failure rolls back transactionally coordinated release state."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_remaining_capacity_race_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Competing commands against limited remaining capacity serialize correctly and cannot over-reserve."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_exact_command_concurrent_convergence_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "20 concurrent exact-command callers converge on one durable authorization via AUTHORIZED / IDEMPOTENT_REPLAY behavior."
+    },
+    {
+      "test": "test_vendor_bill_release_orchestrator_stale_projection_overlap_real_mongo",
+      "result": "PASSED",
+      "certified_semantics": "Result A is current first; the worker real-reads A and pauses; canonical result B commits and is projected in a separate caller-owned Mongo transaction; B is durably current before the worker resumes; the worker resumes through production whole-transaction behavior; final release authority binds current B; zero stale A-bound authorization persists."
+    }
+  ],
+  "certified_surfaces": [
+    "tenant-scoped VendorBill release authorization orchestration",
+    "exact durable idempotent replay",
+    "divergent same-key fail-closed protection",
+    "caller-owned transaction/session propagation",
+    "bounded whole-transaction transient retry with fresh state",
+    "UnknownTransactionCommitResult fail-closed behavior",
+    "cumulative reservation enforcement",
+    "release-authority guard CAS coordination",
+    "same-payable remaining-capacity concurrency",
+    "20-caller exact-command convergence",
+    "stale approval-projection overlap convergence to current effective result",
+    "durable approval effective result evidence binding",
+    "no duplicate durable release authorization",
+    "no stale A-bound authority",
+    "no payment execution or settlement semantics"
   ],
   "architecture_locks": [
     "APPROVED != RELEASE AUTHORIZED",
     "RELEASE AUTHORIZED != EXECUTED",
     "EXECUTED != SETTLED",
+    "Vendor -> VendorBill -> Approval -> Release Authorization -> Kennel execution truth -> Settlement Allocation",
+    "payable_id is the canonical payable identity",
+    "release authorization is evidence/reservation authority only",
     "Kennel EOS is the exclusive financial execution authority"
   ],
+  "transaction_model_certified": {
+    "caller_owned_session": true,
+    "whole_transaction_retry": true,
+    "fresh_state_on_retry": true,
+    "bounded_retry_ceiling": 32,
+    "exact_replay_checked_before_mutation_each_attempt": true,
+    "remaining_capacity_race_proven": true,
+    "exact_command_convergence_proven": true,
+    "stale_projection_overlap_proven": true,
+    "approval_projection_guard_binding": true
+  },
+  "financial_boundary": {
+    "release_authorization_executes_money": false,
+    "release_authorization_proves_settlement": false,
+    "release_authorization_sets_payment_destination": false,
+    "release_authorization_marks_vendor_bill_paid": false,
+    "kennel_eos_exclusive_execution_authority": true
+  },
+  "correction_traceability": [
+    "PyMongo Database truthiness defect corrected before final certification.",
+    "Exact-command G contention exposed the original 3-attempt retry ceiling as insufficient under real contention.",
+    "Production bounded retry ceiling raised to 32 while preserving fresh-state whole-transaction retry and fail-closed UnknownTransactionCommitResult.",
+    "G durable-count assertion corrected to the physical create_idempotency_key field.",
+    "G per-worker process-global patch lifetime could leak into H; corrected to one controlling patch scope around all workers.",
+    "H canonical B projection lifecycle independently proven before true overlap.",
+    "H true overlap construction independently proven before final consolidation.",
+    "Final local v1.2.0 artifact passed 14/14.",
+    "Authoritative Linux CI R2B job passed 14/14 integration and 22/22 unit."
+  ],
+  "scope_limitations": [
+    "Certification is scoped to authoritative R2B job 98490810411 at CI source commit 89dcef66593519e0777f0694ef6232378f03f79e.",
+    "Certified H test bytes originated in frozen test commit 731bd42837250d79404fe72a256db408929984a3 and were included unchanged in the CI source commit.",
+    "Unified workflow conclusion was failure due to unrelated frontend/server jobs; no whole-workflow-green claim is made.",
+    "No Atlas/network-path certification is claimed.",
+    "Mongo authority is the isolated GitHub Actions replica-set container.",
+    "No payment execution, banking destination mutation, or settlement allocation is certified by this artifact.",
+    "No client deployment readiness is claimed solely from this R2B evidence."
+  ],
+  "compliance": [
+    "POPIA §19",
+    "GDPR Art. 32",
+    "SOC2 CC7.2"
+  ],
   "certification": {
-    "status": "CERTIFIED",
+    "authoritative_job_certified": true,
+    "workflow_run_green": false,
+    "r2b_vendor_bill_release_orchestrator_real_mongo_certified": true,
+    "stale_projection_overlap_certified": true,
     "technical_control_only": true,
-    "independent_legal_compliance_claim": false
+    "independent_legal_compliance_claim": false,
+    "integration_rating": "10/10",
+    "claim": "R2B Vendor Bill Release Orchestrator real-Mongo certification PASSED: 14/14 integration tests and 22/22 unit tests at CI source commit 89dcef66593519e0777f0694ef6232378f03f79e in authoritative job 98490810411, workflow run 33064334872.",
+    "external_job_log_seal_algorithm": "SHA3-512",
+    "external_job_log_seal": "39fd986f3af33931209e77ddb5598bbdf7fc29e490278bdcd8f17592ddc1bc82f4fffd40ef68af32fbbbf571223da012e2e552c94d4fa6158bdf23caa8935db5",
+    "evidence_file_external_seal_algorithm": "SHA3-512",
+    "evidence_file_external_seal_status": "PENDING_POST_FINALIZATION"
   }
 }
