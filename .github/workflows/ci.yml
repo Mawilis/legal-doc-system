@@ -231,6 +231,73 @@ jobs:
         run: |
           docker rm -f wilsy-vendor-cert-mongo 2>/dev/null || true
 
+  vendor-bill-r2b-release-certification:
+    name: 💸 R2B Vendor Bill Release Real-Mongo Certification
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Create Python certification environment
+        run: |
+          python3 -m venv .ci-r2b-venv
+          .ci-r2b-venv/bin/python -m pip install --upgrade pip==25.3
+          .ci-r2b-venv/bin/python -m pip install pymongo==4.16.0 pytest==9.1.1 pydantic==2.13.4 pydantic_core==2.46.4 python-dotenv==1.2.3
+      - name: Start MongoDB replica set
+        run: |
+          docker run \
+            --detach \
+            --name wilsy-vendor-r2b-cert-mongo \
+            --publish 27017:27017 \
+            mongo:7.0.37 \
+            mongod \
+            --replSet wilsyVendorCertRS \
+            --bind_ip_all
+      - name: Initialize MongoDB replica set
+        run: |
+          .ci-r2b-venv/bin/python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          c=MongoClient('mongodb://localhost:27017',directConnection=True,serverSelectionTimeoutMS=2000); deadline=time.monotonic()+60; initiated=False
+          while True:
+              try:
+                  h=c.admin.command('hello')
+                  if not initiated and not h.get('setName'):
+                      c.admin.command({'replSetInitiate':{'_id':'wilsyVendorCertRS','members':[{'_id':0,'host':'localhost:27017'}]}}); initiated=True
+                  if c.admin.command('hello').get('isWritablePrimary'): break
+              except Exception as e: last=e
+              if time.monotonic()>=deadline: raise RuntimeError(f'CI_VENDOR_MONGO_REPLICA_SET_UNAVAILABLE: {last!r}')
+              time.sleep(1)
+          c.close()
+          PY
+      - name: Compile R2B contracts
+        run: |
+          .ci-r2b-venv/bin/python -m py_compile \
+            tools/eos/saas/billing/vendor_bill_release_orchestrator.py \
+            tests/unit/test_vendor_bill_release_orchestrator.py \
+            tests/integration/test_vendor_bill_release_orchestrator_mongo.py
+      - name: Type-check R2B contracts
+        run: npx --yes pyright@1.1.413 --pythonpath .ci-r2b-venv/bin/python tools/eos/saas/billing/vendor_bill_release_orchestrator.py tests/unit/test_vendor_bill_release_orchestrator.py tests/integration/test_vendor_bill_release_orchestrator_mongo.py
+      - name: Run R2B real-Mongo certification
+        run: |
+          .ci-r2b-venv/bin/python -m pytest --collect-only -q tests/integration/test_vendor_bill_release_orchestrator_mongo.py
+          integration_output="$(${CI_PROJECT_DIR:-.}/.ci-r2b-venv/bin/python -m pytest -q tests/integration/test_vendor_bill_release_orchestrator_mongo.py)"
+          printf '%s\n' "$integration_output"
+          printf '%s\n' "$integration_output" | grep -Eq '(^|[ =])14 passed([, =]|$)'
+          if printf '%s\n' "$integration_output" | grep -q 'skipped'; then
+            echo "R2B certification invalid: skipped tests detected"
+            exit 1
+          fi
+          .ci-r2b-venv/bin/python -m pytest -q tests/unit/test_vendor_bill_release_orchestrator.py
+      - name: Stop MongoDB certification container
+        if: always()
+        run: docker rm -f wilsy-vendor-r2b-cert-mongo 2>/dev/null || true
+
   # ─── NEW: Frontend Sovereign Tests ──────────────────────────────────────
   frontend-tests:
     name: 🖥️ Frontend BusinessContext & Cross-Dashboard Tests
@@ -267,7 +334,7 @@ jobs:
   final-verification:
     name: ✅ All Tests Passed
     runs-on: ubuntu-latest
-    needs: [test-suite, frontend-tests, vendor-bill-r2a-certification]
+    needs: [test-suite, frontend-tests, vendor-bill-r2a-certification, vendor-bill-r2b-release-certification]
     if: always()
     steps:
       - name: Check test suite status
@@ -276,7 +343,8 @@ jobs:
           # Optionally fail if any job failed
           if [ "${{ needs.test-suite.result }}" != "success" ] || \
              [ "${{ needs.frontend-tests.result }}" != "success" ] || \
-             [ "${{ needs.vendor-bill-r2a-certification.result }}" != "success" ]; then
+             [ "${{ needs.vendor-bill-r2a-certification.result }}" != "success" ] || \
+             [ "${{ needs.vendor-bill-r2b-release-certification.result }}" != "success" ]; then
             echo "❌ Some tests failed!"
             exit 1
           else
