@@ -11,6 +11,7 @@ from tools.eos.saas.domain.vendor_bill_release_policy import VendorBillReleaseIn
 from tools.eos.saas.billing.vendor_bill_registry import VendorBillReleaseAuthorityGuardConflictError, VendorBillPersistedRecordInvalidError
 from tools.eos.saas.billing.vendor_bill_release_orchestrator import _MAX_TRANSACTION_ATTEMPTS, VendorBillReleaseTransactionRetryExhaustedError, VendorBillReleaseOrchestrationError, VendorBillReleaseOrchestrationIdempotencyError
 from datetime import date
+import inspect
 
 from tools.eos.saas.domain.vendor_bill import VendorBill, VendorBillObligationState, VendorBillApprovalState
 from tools.eos.saas.domain.financial_approval_effective_result import (
@@ -210,7 +211,7 @@ def test_authorize_write_conflict_code_112_retries_whole_transaction():
 def test_authorize_non_retryable_operation_failure_propagates_without_retry():
     events,db,bill,_,result,_,miss,_,created=_retry_setup(); error=OperationFailure("non-retryable",code=9,details={})
     with patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillReleaseAuthorizationRegistry.get_by_idempotency_key",side_effect=miss), patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillRegistry.get",return_value=bill), patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.FinancialApprovalEffectiveResultRegistry.get",return_value=result), patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor",return_value=0), patch("tools.eos.saas.billing.vendor_bill_release_orchestrator.evaluate_vendor_bill_release_eligibility",side_effect=error):
-        try: VendorBillReleaseOrchestrator.authorize(command(),db)
+        try: VendorBillReleaseOrchestrator.authorize(command(),db,max_attempts=3)
         except OperationFailure as actual: assert actual.code==9
         else: raise AssertionError("non-retryable failure was swallowed")
     assert len(db.client.sessions)==1
@@ -257,7 +258,13 @@ def test_authorize_retry_exhaustion_uses_fresh_attempts_and_stable_error():
         except VendorBillReleaseTransactionRetryExhaustedError as error: assert str(error)=="VENDOR_BILL_RELEASE_TRANSACTION_RETRY_EXHAUSTED"
         else: raise AssertionError("retry exhaustion did not fail closed")
     assert len(sessions)==_MAX_TRANSACTION_ATTEMPTS and len({id(s) for s in sessions})==_MAX_TRANSACTION_ATTEMPTS
-    assert events.count(("transaction_start",1))+events.count(("transaction_start",2))+events.count(("transaction_start",3))==_MAX_TRANSACTION_ATTEMPTS
+    assert events.count(("transaction_start",1))+events.count(("transaction_start",2))+events.count(("transaction_start",3))==3
+
+
+def test_authorize_default_retry_ceiling_is_sovereign_and_bounded():
+    default = inspect.signature(VendorBillReleaseOrchestrator.authorize).parameters["max_attempts"].default
+    assert default == _MAX_TRANSACTION_ATTEMPTS
+    assert isinstance(default, int) and not isinstance(default, bool) and 1 <= default <= 32
 
 
 def test_authorize_unknown_commit_result_fails_closed_without_retry():

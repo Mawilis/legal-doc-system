@@ -1,6 +1,6 @@
 """WILSY OS — VENDOR BILL RELEASE-AUTHORIZATION ORCHESTRATOR
 
-VERSION: v1.0.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-PYMONGO-DATABASE
+VERSION: v1.0.3-VENDOR-BILL-RELEASE-ORCHESTRATOR-BOUNDED-CONTENTION-CONVERGENCE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Caller-owned transaction orchestration that creates immutable release
 evidence only; Kennel EOS exclusively executes financial transactions.
@@ -9,6 +9,7 @@ ARCHITECTURE: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 CHANGELOG: v1.0.1 adds fail-closed exact replay comparison across all
 caller-controlled authorization command semantics.
 v1.0.2 uses explicit None handling for supplied PyMongo Database objects.
+v1.0.3 raises the bounded transaction-attempt ceiling for contention convergence.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from .vendor_bill_registry import VendorBillRegistry
 from .vendor_bill_release_authorization_registry import VendorBillReleaseAuthorizationRegistry, VendorBillReleaseAuthorizationNotFoundError
 from .financial_approval_effective_result_registry import FinancialApprovalEffectiveResultRegistry
 
-_MAX_TRANSACTION_ATTEMPTS = 3
+_MAX_TRANSACTION_ATTEMPTS = 32
 
 
 def _authorization_matches_command(
@@ -90,7 +91,7 @@ class VendorBillReleaseOrchestrator:
     """Own release-authorization transaction ordering; never executes money."""
 
     @staticmethod
-    def authorize(command: VendorBillReleaseCommand, database=None, *, max_attempts: int = 3) -> VendorBillReleaseResult:
+    def authorize(command: VendorBillReleaseCommand, database=None, *, max_attempts: int = _MAX_TRANSACTION_ATTEMPTS) -> VendorBillReleaseResult:
         """Run bounded whole-transaction attempts with fresh caller-owned sessions."""
         if not isinstance(command, VendorBillReleaseCommand):
             raise VendorBillReleaseOrchestrationError("invalid release command")
@@ -144,7 +145,7 @@ class VendorBillReleaseOrchestrator:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: vendor_bill_release_orchestrator.py
-# VERSION: v1.0.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-PYMONGO-DATABASE
+# VERSION: v1.0.3-VENDOR-BILL-RELEASE-ORCHESTRATOR-BOUNDED-CONTENTION-CONVERGENCE
 # AUTHORITY BOUNDARY: release evidence orchestration only; no execution or settlement
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

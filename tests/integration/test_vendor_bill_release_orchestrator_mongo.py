@@ -1,5 +1,5 @@
 """WILSY OS — VENDOR BILL RELEASE ORCHESTRATOR REAL-MONGO CERTIFICATION
-Version: v1.1.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-REMAINING-CAPACITY-RACE-MONGO-CERT
+Version: v1.1.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-CONCURRENT-CONVERGENCE-MONGO-CERT
 Authority: Wilsy OS Core Governance
 Architecture: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 Runtime: caller-owned Mongo transactions; Kennel EOS exclusively executes money.
@@ -30,7 +30,7 @@ from tools.eos.saas.billing.vendor_bill_release_orchestrator import (
     VendorBillReleaseOrchestrationOutcome, VendorBillReleaseOrchestrationIdempotencyError,
     VendorBillReleaseOrchestrationError,
 )
-from tools.eos.saas.billing.vendor_bill_release_authorization_registry import VendorBillReleaseAuthorizationRegistry
+from tools.eos.saas.billing.vendor_bill_release_authorization_registry import VendorBillReleaseAuthorizationRegistry, VendorBillReleaseAuthorizationNotFoundError
 from pymongo import MongoClient
 from tools.eos.saas.billing.vendor_bill_registry import VendorBillRegistry
 from tools.eos.saas.domain.vendor_bill_release_policy import VendorBillReleasePolicyError
@@ -192,8 +192,57 @@ def test_vendor_bill_release_orchestrator_remaining_capacity_race_real_mongo():
         client.drop_database(db.name); client.close()
 
 
+def test_vendor_bill_release_orchestrator_exact_command_concurrent_convergence_real_mongo():
+    client, db, bill = _fixture()
+    try:
+        command = _command(bill, "convergent", 100)
+        barrier = threading.Barrier(20, timeout=30)
+        states = []
+        local = threading.local()
+        real_lookup = VendorBillReleaseAuthorizationRegistry.get_by_idempotency_key
+
+        def synchronized_lookup(*args, **kwargs):
+            try:
+                value = real_lookup(*args, **kwargs)
+                state = ("FOUND", value)
+            except VendorBillReleaseAuthorizationNotFoundError as error:
+                state = ("NOT_FOUND", error)
+            if not getattr(local, "waited", False):
+                local.waited = True
+                states.append(state[0])
+                barrier.wait(timeout=30)
+            if state[0] == "FOUND":
+                return state[1]
+            raise state[1]
+
+        def invoke():
+            with patch.object(VendorBillReleaseAuthorizationRegistry, "get_by_idempotency_key", synchronized_lookup):
+                return VendorBillReleaseOrchestrator.authorize(command, db).outcome
+
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(invoke) for _ in range(20)]
+            outcomes = [future.result(timeout=30) for future in futures]
+        assert len(states) == 20
+        assert states == ["NOT_FOUND"] * 20
+        assert all(outcome in (VendorBillReleaseOrchestrationOutcome.AUTHORIZED, VendorBillReleaseOrchestrationOutcome.IDEMPOTENT_REPLAY) for outcome in outcomes)
+        assert VendorBillReleaseOrchestrationOutcome.AUTHORIZED in outcomes
+        auths = db["vendor_bill_release_authorizations"]
+        durable = real_lookup(bill.tenant_id, bill.payable_id, command.idempotency_key, auths)
+        assert durable.tenant_id == command.tenant_id
+        assert durable.payable_id == command.payable_id
+        assert durable.release_authorization_id == command.release_authorization_id
+        assert durable.authorized_amount_minor == 100
+        assert durable.currency == command.currency
+        assert auths.count_documents({"tenant_id": bill.tenant_id, "payable_id": bill.payable_id, "create_idempotency_key": command.idempotency_key}) == 1
+        assert auths.count_documents({"tenant_id": bill.tenant_id, "release_authorization_id": command.release_authorization_id}) == 1
+        assert VendorBillReleaseAuthorizationRegistry.sum_authorized_amount_minor(bill.tenant_id, bill.payable_id, auths) == 100
+        assert VendorBillRegistry.get(bill.tenant_id, bill.payable_id, db["vendor_bills"]).release_authority_guard_revision == 1
+    finally:
+        client.drop_database(db.name); client.close()
+
+
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_vendor_bill_release_orchestrator_mongo.py
-# VERSION: v1.1.1-VENDOR-BILL-RELEASE-ORCHESTRATOR-REMAINING-CAPACITY-RACE-MONGO-CERT
+# VERSION: v1.1.2-VENDOR-BILL-RELEASE-ORCHESTRATOR-EXACT-CONCURRENT-CONVERGENCE-MONGO-CERT
 # AUTHORITY: Wilsy OS Core Governance
 # END OF WILSY OS SOVEREIGN ARTIFACT
