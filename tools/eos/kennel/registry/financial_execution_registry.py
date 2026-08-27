@@ -1,6 +1,6 @@
 """Wilsy OS Kennel EOS immutable financial execution truth registry.
 
-VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-READ-CONTRACT-COMPLETION
+VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-PRE-MONGO-HARDENING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Tenant-scoped append-only persistence; no transaction ownership or settlement.
 """
@@ -19,7 +19,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ..domain.financial_execution import FinancialExecutionTruth, FinancialExecutionTruthError
 
-VERSION = "v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-READ-CONTRACT-COMPLETION"
+VERSION = "v1.0.2-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-PRE-MONGO-HARDENING"
 COLLECTION = "kennel_financial_execution_truth"
 
 
@@ -76,6 +76,11 @@ def _key(value: str) -> str:
         raise FinancialExecutionRegistryError("invalid idempotency key")
     return key
 
+def _text(value: object, field: str, max_length: int = 256) -> str:
+    if not isinstance(value, str) or not value.strip() or len(value.strip()) > max_length:
+        raise FinancialExecutionRegistryError(f"invalid {field}")
+    return value.strip()
+
 
 def _hydrate(document: dict) -> FinancialExecutionTruth:
     try:
@@ -94,10 +99,10 @@ class FinancialExecutionTruthRegistry:
         target = _collection_or_raise(collection)
         target.create_index([("tenant_id", ASCENDING), ("execution_truth_id", ASCENDING)], unique=True, name="tenant_execution_truth_identity_unique")
         target.create_index([("tenant_id", ASCENDING), ("payable_id", ASCENDING), ("create_idempotency_key", ASCENDING)], unique=True, name="tenant_payable_execution_create_idempotency_unique")
-        target.create_index([("tenant_id", ASCENDING), ("provider", ASCENDING), ("provider_execution_reference", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)])
-        target.create_index([("tenant_id", ASCENDING), ("release_authorization_id", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)])
-        target.create_index([("tenant_id", ASCENDING), ("payable_id", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)])
-        target.create_index([("tenant_id", ASCENDING), ("execution_status", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)])
+        target.create_index([("tenant_id", ASCENDING), ("provider", ASCENDING), ("provider_execution_reference", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)], name="tenant_provider_execution_timeline")
+        target.create_index([("tenant_id", ASCENDING), ("release_authorization_id", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)], name="tenant_release_authorization_execution_timeline")
+        target.create_index([("tenant_id", ASCENDING), ("payable_id", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)], name="tenant_payable_execution_timeline")
+        target.create_index([("tenant_id", ASCENDING), ("execution_status", ASCENDING), ("executed_at", ASCENDING), ("execution_truth_id", ASCENDING)], name="tenant_execution_status_timeline")
 
     @staticmethod
     def create(execution_truth: FinancialExecutionTruth, idempotency_key: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> FinancialExecutionCreateResult:
@@ -121,7 +126,7 @@ class FinancialExecutionTruthRegistry:
 
     @staticmethod
     def get(tenant_id: str, execution_truth_id: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> Optional[FinancialExecutionTruth]:
-        document = _collection_or_raise(collection).find_one({"tenant_id": tenant_id, "execution_truth_id": execution_truth_id}, session=session)
+        document = _collection_or_raise(collection).find_one({"tenant_id": _text(tenant_id, "tenant_id"), "execution_truth_id": _text(execution_truth_id, "execution_truth_id")}, session=session)
         return None if document is None else _hydrate(document)
 
     @staticmethod
@@ -132,24 +137,24 @@ class FinancialExecutionTruthRegistry:
 
     @staticmethod
     def list_for_payable(tenant_id: str, payable_id: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionTruth, ...]:
-        return FinancialExecutionTruthRegistry._list({"tenant_id": tenant_id, "payable_id": payable_id}, limit, collection, session)
+        return FinancialExecutionTruthRegistry._list({"tenant_id": _text(tenant_id, "tenant_id"), "payable_id": _text(payable_id, "payable_id")}, limit, collection, session)
 
     @staticmethod
     def get_by_idempotency_key(tenant_id: str, payable_id: str, idempotency_key: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> Optional[FinancialExecutionTruth]:
         key = _key(idempotency_key)
-        document = _collection_or_raise(collection).find_one({"tenant_id": tenant_id, "payable_id": payable_id, "create_idempotency_key": key}, session=session)
+        document = _collection_or_raise(collection).find_one({"tenant_id": _text(tenant_id, "tenant_id"), "payable_id": _text(payable_id, "payable_id"), "create_idempotency_key": key}, session=session)
         return None if document is None else _hydrate(document)
 
     @staticmethod
     def list_for_provider_execution(tenant_id: str, provider: str, provider_execution_reference: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionTruth, ...]:
-        return FinancialExecutionTruthRegistry._list({"tenant_id": tenant_id, "provider": provider, "provider_execution_reference": provider_execution_reference}, limit, collection, session)
+        return FinancialExecutionTruthRegistry._list({"tenant_id": _text(tenant_id, "tenant_id"), "provider": _text(provider, "provider"), "provider_execution_reference": _text(provider_execution_reference, "provider_execution_reference")}, limit, collection, session)
 
     @staticmethod
     def list_for_release_authorization(tenant_id: str, release_authorization_id: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionTruth, ...]:
-        return FinancialExecutionTruthRegistry._list({"tenant_id": tenant_id, "release_authorization_id": release_authorization_id}, limit, collection, session)
+        return FinancialExecutionTruthRegistry._list({"tenant_id": _text(tenant_id, "tenant_id"), "release_authorization_id": _text(release_authorization_id, "release_authorization_id")}, limit, collection, session)
 
 
 # ARTIFACT: financial_execution_registry.py
-# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-READ-CONTRACT-COMPLETION
+# VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-PRE-MONGO-HARDENING
 # AUTHORITY BOUNDARY: Kennel EOS owns execution truth; registry owns persistence only.
 # END OF WILSY OS SOVEREIGN ARTIFACT
