@@ -1,11 +1,11 @@
 """WILSY OS Kennel EOS financial execution truth domain contract.
 
-VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION
+VERSION: v1.1.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-STATUS-TIMESTAMP-CORRECTION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Immutable, tenant-scoped execution evidence; execution never implies settlement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kennel/domain/financial_execution.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI engineering)
-CHANGELOG: v1.0.0 establishes pure Kennel EOS execution-truth vocabulary; v1.0.1 canonicalizes persisted status hydration without changing evidence semantics.
+CHANGELOG: v1.0.0 establishes pure Kennel EOS execution-truth vocabulary; v1.0.1 canonicalizes persisted status hydration; v1.1.0 makes executed_at status-specific so FAILED and other non-executed outcomes cannot fabricate execution time.
 COMPLIANCE: POPIA §19 | GDPR Art. 32 | SOC2 CC7.2
 SECURITY / PRIVACY: destination is an opaque reference; no credentials or account data.
 TENANT BOUNDARY: tenant_id and payable_id are mandatory and never inferred.
@@ -22,7 +22,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Mapping
 
-VERSION = "v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION"
+VERSION = "v1.1.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-STATUS-TIMESTAMP-CORRECTION"
 _HEX = re.compile(r"^[0-9a-f]{128}$")
 
 
@@ -52,7 +52,7 @@ class FinancialExecutionTruth:
     execution_status: FinancialExecutionStatus
     executed_amount_minor: int
     currency: str
-    executed_at: datetime
+    executed_at: datetime | None
     payment_destination_reference: str
     provider_evidence_reference: str
     execution_command_fingerprint: str
@@ -71,9 +71,13 @@ class FinancialExecutionTruth:
             raise FinancialExecutionTruthError("executed_amount_minor must be positive")
         if not isinstance(self.currency, str) or re.fullmatch(r"[A-Z]{3}", self.currency) is None:
             raise FinancialExecutionTruthError("currency must be an uppercase 3-letter code")
-        if not isinstance(self.executed_at, datetime) or self.executed_at.tzinfo is None or not isinstance(self.created_at, datetime) or self.created_at.tzinfo is None:
+        if not isinstance(self.created_at, datetime) or self.created_at.tzinfo is None:
             raise FinancialExecutionTruthError("timestamps must be timezone-aware")
-        if self.executed_at > self.created_at:
+        if self.execution_status is FinancialExecutionStatus.EXECUTED and (not isinstance(self.executed_at, datetime) or self.executed_at.tzinfo is None):
+            raise FinancialExecutionTruthError("EXECUTED requires timezone-aware executed_at")
+        if self.execution_status is not FinancialExecutionStatus.EXECUTED and self.executed_at is not None:
+            raise FinancialExecutionTruthError("non-EXECUTED outcomes must not carry executed_at")
+        if isinstance(self.executed_at, datetime) and self.executed_at > self.created_at:
             raise FinancialExecutionTruthError("executed_at cannot be later than created_at")
         if _HEX.fullmatch(self.execution_command_fingerprint) is None or _HEX.fullmatch(self.execution_evidence_fingerprint) is None:
             raise FinancialExecutionTruthError("fingerprints must be lowercase SHA3-512 hex")
@@ -112,7 +116,7 @@ class FinancialExecutionTruth:
 
 # MANDATORY END SEAL
 # ARTIFACT: financial_execution.py
-# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION
+# VERSION: v1.1.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-STATUS-TIMESTAMP-CORRECTION
 # AUTHORITY BOUNDARY: Kennel EOS exclusively owns provider execution truth.
 # TENANT POSTURE: tenant_id and payable_id required; no cross-tenant inference.
 # FAIL-CLOSED POSTURE: immutable validation rejects malformed or sensitive input.

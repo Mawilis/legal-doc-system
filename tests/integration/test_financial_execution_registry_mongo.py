@@ -43,8 +43,10 @@ from tools.eos.kennel.registry.financial_execution_registry import (
 )
 
 def make_execution_truth(**overrides: object) -> FinancialExecutionTruth:
-    values: dict[str, object] = {"execution_truth_id":"execution-a","tenant_id":"tenant-a","payable_id":"payable-a","release_authorization_id":"release-a","provider":"PAYSHAP","provider_execution_reference":"provider-execution-a","execution_status":FinancialExecutionStatus.SUBMITTED,"executed_amount_minor":100,"currency":"ZAR","executed_at":datetime(2026,1,1,tzinfo=timezone.utc),"created_at":datetime(2026,1,2,tzinfo=timezone.utc),"payment_destination_reference":"destination-ref-a","provider_evidence_reference":"provider-evidence-a","execution_command_fingerprint":"a"*128,"execution_evidence_fingerprint":"b"*128}
+    values: dict[str, object] = {"execution_truth_id":"execution-a","tenant_id":"tenant-a","payable_id":"payable-a","release_authorization_id":"release-a","provider":"PAYSHAP","provider_execution_reference":"provider-execution-a","execution_status":FinancialExecutionStatus.SUBMITTED,"executed_amount_minor":100,"currency":"ZAR","executed_at":None,"created_at":datetime(2026,1,2,tzinfo=timezone.utc),"payment_destination_reference":"destination-ref-a","provider_evidence_reference":"provider-evidence-a","execution_command_fingerprint":"a"*128,"execution_evidence_fingerprint":"b"*128}
     values.update(overrides)
+    if values["execution_status"] is FinancialExecutionStatus.EXECUTED and values["executed_at"] is None:
+        values["executed_at"] = datetime(2026,1,1,tzinfo=timezone.utc)
     return FinancialExecutionTruth(**values)  # type: ignore[arg-type]
 
 @pytest.fixture
@@ -79,7 +81,7 @@ def test_timelines_isolation_and_collection_boundary(mongo_db):
     _, db = mongo_db; c = db[COLLECTION]; FinancialExecutionTruthRegistry.ensure_indexes(c)
     for i, status in enumerate(FinancialExecutionStatus):
         if status is FinancialExecutionStatus.FAILED: continue
-        FinancialExecutionTruthRegistry.create(make_execution_truth(execution_truth_id=f"e-{i}",execution_status=status,executed_at=datetime(2026,1,i+1,tzinfo=timezone.utc),created_at=datetime(2026,1,i+2,tzinfo=timezone.utc)),f"k-{i}",c)
+        FinancialExecutionTruthRegistry.create(make_execution_truth(execution_truth_id=f"e-{i}",execution_status=status,created_at=datetime(2026,1,i+2,tzinfo=timezone.utc)),f"k-{i}",c)
     provider_rows = FinancialExecutionTruthRegistry.list_for_provider_execution("tenant-a","PAYSHAP","provider-execution-a",collection=c)
     assert [x.execution_truth_id for x in provider_rows] == ["e-0","e-1","e-2"]
     assert {x.execution_status for x in provider_rows} == {FinancialExecutionStatus.SUBMITTED, FinancialExecutionStatus.ACCEPTED, FinancialExecutionStatus.EXECUTED}
@@ -227,7 +229,7 @@ def test_provider_payable_and_release_isolation(mongo_db):
     records = []
     for tenant, release, payable, prefix in (("tenant-a", "release-a", "payable-a", "a"), ("tenant-a", "release-b", "payable-b", "b"), ("tenant-b", "release-a", "payable-a", "t")):
         for i in range(3 if prefix == "a" else 1):
-            truth = make_execution_truth(tenant_id=tenant, release_authorization_id=release, payable_id=payable, execution_truth_id=f"{prefix}-{i}", provider_execution_reference="provider-shared", provider_evidence_reference=f"{prefix}-evidence-{i}", execution_evidence_fingerprint=f"{i + 1:x}" * 128, executed_at=datetime(2026, 3, i + 1, tzinfo=timezone.utc), created_at=datetime(2026, 3, i + 2, tzinfo=timezone.utc))
+            truth = make_execution_truth(tenant_id=tenant, release_authorization_id=release, payable_id=payable, execution_truth_id=f"{prefix}-{i}", provider_execution_reference="provider-shared", provider_evidence_reference=f"{prefix}-evidence-{i}", execution_evidence_fingerprint=f"{i + 1:x}" * 128, created_at=datetime(2026, 3, i + 2, tzinfo=timezone.utc))
             FinancialExecutionTruthRegistry.create(truth, f"{prefix}-key-{i}", c)
             records.append(truth)
     provider_a = FinancialExecutionTruthRegistry.list_for_provider_execution("tenant-a", "PAYSHAP", "provider-shared", collection=c)
@@ -306,7 +308,7 @@ def test_concurrent_provider_reference_is_non_unique(mongo_db):
     _, db = mongo_db
     c = db[COLLECTION]
     FinancialExecutionTruthRegistry.ensure_indexes(c)
-    truths = [make_execution_truth(execution_truth_id=f"concurrent-{i}", payable_id=f"payable-{i}", provider_evidence_reference=f"evidence-{i}", execution_evidence_fingerprint=f"{i + 1:x}" * 128, executed_at=datetime(2026, 2, i + 1, tzinfo=timezone.utc), created_at=datetime(2026, 2, i + 2, tzinfo=timezone.utc)) for i in range(8)]
+    truths = [make_execution_truth(execution_truth_id=f"concurrent-{i}", payable_id=f"payable-{i}", provider_evidence_reference=f"evidence-{i}", execution_evidence_fingerprint=f"{i + 1:x}" * 128, created_at=datetime(2026, 2, i + 2, tzinfo=timezone.utc)) for i in range(8)]
     def create(item):
         return FinancialExecutionTruthRegistry.create(item, f"key-{item.execution_truth_id}", c).outcome
     def categorized(item):
