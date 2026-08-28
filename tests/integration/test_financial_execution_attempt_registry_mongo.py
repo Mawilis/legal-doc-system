@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Real-Mongo certification for the canonical FinancialExecutionAttempt registry.
 
-VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-ATTEMPT-REGISTRY-MONGO-CERT
+VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-ATTEMPT-REGISTRY-MONGO-CERT
+CHANGELOG: certifies attempt-registry v1.0.1 transaction-error propagation, upsert replay safety, caller-owned transactions, and unchanged CAS/lifecycle semantics; full static/runtime recertification remains required.
 """
 from datetime import datetime, timezone
 import os, uuid
@@ -10,8 +11,9 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 import pytest
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 from tools.eos.kennel.domain.financial_execution_lifecycle import FinancialExecutionAttempt, FinancialExecutionAttemptState
-from tools.eos.kennel.registry.financial_execution_attempt_registry import FinancialExecutionAttemptRegistry, FinancialExecutionAttemptCreateConflictError, FinancialExecutionAttemptPersistedRecordInvalidError, FinancialExecutionAttemptTransitionConflictError
+from tools.eos.kennel.registry.financial_execution_attempt_registry import FinancialExecutionAttemptRegistry, FinancialExecutionAttemptRegistryError, FinancialExecutionAttemptCreateConflictError, FinancialExecutionAttemptPersistedRecordInvalidError, FinancialExecutionAttemptTransitionConflictError
 
 @pytest.fixture()
 def mongo_db():
@@ -159,6 +161,36 @@ def test_concurrent_divergent_create_stress_bounded(mongo_db):
         a=make_attempt(tenant_id=f"divergent-{iteration}"); b=FinancialExecutionAttempt(**{**a.__dict__,"execution_command_id":f"other-{iteration}"}); out=_raced_creates(c,[a,b])
         assert sum(x[0] is not None for x in out)==1, iteration; assert sum(isinstance(x[1],FinancialExecutionAttemptCreateConflictError) for x in out)==1, iteration; assert c.count_documents({"tenant_id":a.tenant_id,"execution_attempt_id":a.execution_attempt_id})==1
 
+# Added deterministic error-taxonomy checks for the forward-corrected registry.
+def test_labeled_transaction_errors_propagate_unchanged(monkeypatch):
+    error = PyMongoError("transient", error_labels=["TransientTransactionError"])
+    class FailingCollection:
+        def create_index(self, *_args, **_kwargs):
+            raise error
+    monkeypatch.setattr("tools.eos.kennel.registry.financial_execution_attempt_registry._target", lambda _collection: FailingCollection())
+    with pytest.raises(PyMongoError) as caught:
+        FinancialExecutionAttemptRegistry.ensure_indexes()
+    assert caught.value is error
+    unknown = PyMongoError("unknown commit", error_labels=["UnknownTransactionCommitResult"])
+    def fail_get(*_args, **_kwargs):
+        raise unknown
+    monkeypatch.setattr(FinancialExecutionAttemptRegistry, "get", staticmethod(fail_get))
+    with pytest.raises(PyMongoError) as caught_unknown:
+        FinancialExecutionAttemptRegistry.transition("tenant", "attempt", FinancialExecutionAttemptState.PREPARED, "a" * 128, make_attempt())
+    assert caught_unknown.value is unknown
+
+def test_unlabeled_pymongo_error_is_canonically_wrapped(monkeypatch):
+    error = PyMongoError("ordinary infrastructure failure")
+    class FailingCollection:
+        def find_one(self, *_args, **_kwargs):
+            raise error
+    monkeypatch.setattr("tools.eos.kennel.registry.financial_execution_attempt_registry._target", lambda _collection: FailingCollection())
+    with pytest.raises(Exception) as caught:
+        FinancialExecutionAttemptRegistry.get("tenant", "attempt")
+    assert isinstance(caught.value, FinancialExecutionAttemptRegistryError)
+    assert caught.value.__cause__ is error
+
 # ARTIFACT: test_financial_execution_attempt_registry_mongo.py
-# VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-ATTEMPT-REGISTRY-MONGO-CERT
+# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-ATTEMPT-REGISTRY-MONGO-CERT
+# CHANGELOG: forward-corrected transaction-error taxonomy and upsert replay certification.
 # END OF WILSY OS SOVEREIGN ARTIFACT
