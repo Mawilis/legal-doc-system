@@ -1,7 +1,7 @@
 """Wilsy OS Kennel EOS provider-neutral financial execution orchestration.
 
 TITLE: Financial Execution Orchestrator and Provider SPI
-VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-ORCHESTRATOR-REGISTRY-DEPENDENCY-SEAM
+VERSION: v1.1.0-KENNEL-FINANCIAL-EXECUTION-ORCHESTRATOR-TERMINAL-RESULT-CONTRACT
 AUTHORITY: Wilsy OS Core Governance
 ARCHITECTURE LOCK: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 FINANCIAL AUTHORITY: Kennel EOS exclusively owns execution truth.
@@ -12,7 +12,7 @@ REGISTRY CERTIFICATION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-REAL-MO
 COMPLIANCE: POPIA §19 | GDPR Art. 32 | SOC2 CC7.2
 SECURITY: opaque destination references; raw credentials rejected.
 TRANSACTION OWNERSHIP: caller-owned sessions; orchestrator never commits or aborts.
-CHANGELOG: v1.0.0 establishes provider-neutral command, SPI, replay protection, and truth persistence; v1.0.1 introduces a narrow injected registry port and production delegation adapter without changing financial or persistence semantics.
+CHANGELOG: v1.0.0 establishes provider-neutral command, SPI, replay protection, and truth persistence; v1.0.1 introduces a narrow injected registry port and production delegation adapter without changing financial or persistence semantics; v1.1.0 restricts synchronous provider results to terminal EXECUTED or FAILED outcomes with status-specific timestamp validation.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ from ..registry.financial_execution_registry import (
     FinancialExecutionTruthRegistry,
 )
 
-VERSION = "v1.0.1-KENNEL-FINANCIAL-EXECUTION-ORCHESTRATOR-REGISTRY-DEPENDENCY-SEAM"
+VERSION = "v1.1.0-KENNEL-FINANCIAL-EXECUTION-ORCHESTRATOR-TERMINAL-RESULT-CONTRACT"
 _HEX = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN = re.compile(r"(?:bank_account|account_number|branch_code|card_number|card_pan|cvv|credentials|password|secret|access_token|refresh_token|api_key)", re.I)
 
@@ -98,13 +98,19 @@ class FinancialExecutionProviderResult:
     provider_execution_reference: str
     execution_status: FinancialExecutionStatus
     provider_evidence_reference: str
-    executed_at: datetime
+    executed_at: datetime | None
 
     def __post_init__(self) -> None:
         if not isinstance(self.provider, str) or not self.provider.strip() or not isinstance(self.provider_execution_reference, str) or not self.provider_execution_reference.strip() or not isinstance(self.provider_evidence_reference, str) or not self.provider_evidence_reference.strip():
             raise FinancialExecutionProviderContractError("provider evidence identifiers are invalid")
-        if not isinstance(self.execution_status, FinancialExecutionStatus) or not isinstance(self.executed_at, datetime) or self.executed_at.tzinfo is None:
+        if not isinstance(self.execution_status, FinancialExecutionStatus):
             raise FinancialExecutionProviderContractError("provider execution evidence is invalid")
+        if self.execution_status not in (FinancialExecutionStatus.EXECUTED, FinancialExecutionStatus.FAILED):
+            raise FinancialExecutionProviderContractError("provider result must be terminal")
+        if self.execution_status is FinancialExecutionStatus.EXECUTED and (not isinstance(self.executed_at, datetime) or self.executed_at.tzinfo is None):
+            raise FinancialExecutionProviderContractError("EXECUTED requires timezone-aware executed_at")
+        if self.execution_status is FinancialExecutionStatus.FAILED and self.executed_at is not None:
+            raise FinancialExecutionProviderContractError("FAILED must not carry executed_at")
 
 
 class FinancialExecutionProvider(Protocol):
@@ -173,12 +179,12 @@ class FinancialExecutionOrchestrator:
 
 def _evidence_fingerprint(command: FinancialExecutionCommand, result: FinancialExecutionProviderResult) -> str:
     """Hash immutable command/provider evidence without settlement semantics."""
-    payload = {"command_fingerprint": command.fingerprint, "provider": result.provider, "provider_execution_reference": result.provider_execution_reference, "execution_status": result.execution_status.value, "provider_evidence_reference": result.provider_evidence_reference, "executed_at": result.executed_at.isoformat()}
+    payload = {"command_fingerprint": command.fingerprint, "provider": result.provider, "provider_execution_reference": result.provider_execution_reference, "execution_status": result.execution_status.value, "provider_evidence_reference": result.provider_evidence_reference, "executed_at": result.executed_at.isoformat() if result.executed_at is not None else None}
     return hashlib.sha3_512(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")).hexdigest()
 
 
 # ARTIFACT: financial_execution_orchestrator.py
-# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-ORCHESTRATOR-REGISTRY-DEPENDENCY-SEAM
+# VERSION: v1.1.0-KENNEL-FINANCIAL-EXECUTION-ORCHESTRATOR-TERMINAL-RESULT-CONTRACT
 # ARCHITECTURE LOCK: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 # FINANCIAL AUTHORITY: Kennel EOS exclusively owns financial execution truth
 # TRANSACTION POSTURE: caller-owned sessions; no lifecycle ownership

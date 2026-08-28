@@ -26,7 +26,7 @@ def command(**changes):
 
 
 def truth_for(c, status=FinancialExecutionStatus.EXECUTED):
-    result = FinancialExecutionProviderResult("GENERIC", "provider-ref", status, "evidence-ref", datetime(2026, 1, 1, tzinfo=timezone.utc))
+    result = FinancialExecutionProviderResult("GENERIC", "provider-ref", status, "evidence-ref", datetime(2026, 1, 1, tzinfo=timezone.utc) if status is FinancialExecutionStatus.EXECUTED else None)
     fp = c.fingerprint
     return FinancialExecutionTruth(c.execution_command_id, c.tenant_id, c.payable_id, c.release_authorization_id, result.provider, result.provider_execution_reference, status, c.amount_minor, c.currency, result.executed_at, c.payment_destination_reference, result.provider_evidence_reference, fp, "b" * 128, datetime(2026, 1, 2, tzinfo=timezone.utc))
 
@@ -82,11 +82,15 @@ def test_secret_patterns_rejected_and_opaque_reference_allowed():
 
 
 def test_provider_result_immutable_and_status_contract():
-    result = FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.SUBMITTED, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc))
+    result = FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.EXECUTED, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc))
     with pytest.raises((AttributeError, TypeError)): result.provider = "x"
-    for status in FinancialExecutionStatus: assert FinancialExecutionProviderResult("GENERIC", "ref", status, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc)).execution_status is status
-    for status in ("PAID", "SETTLED", "CLEARED", "COMPLETED", "executed"):
+    assert FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.EXECUTED, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc)).execution_status is FinancialExecutionStatus.EXECUTED
+    assert FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.FAILED, "evidence", None).executed_at is None
+    for status in (FinancialExecutionStatus.SUBMITTED, FinancialExecutionStatus.ACCEPTED, "PAID", "SETTLED", "CLEARED", "COMPLETED", "executed"):
         with pytest.raises(FinancialExecutionProviderContractError): FinancialExecutionProviderResult("GENERIC", "ref", status, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc))
+    with pytest.raises(FinancialExecutionProviderContractError): FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.EXECUTED, "evidence", None)
+    with pytest.raises(FinancialExecutionProviderContractError): FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.EXECUTED, "evidence", datetime(2026, 1, 1))
+    with pytest.raises(FinancialExecutionProviderContractError): FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.FAILED, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc))
 
 
 def test_provider_required_fields_and_consistency():
@@ -112,6 +116,11 @@ def test_fresh_execution_maps_truth_and_persists_once():
     c = command(); provider = SpyProvider(FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.EXECUTED, "evidence", datetime(2026, 1, 1, tzinfo=timezone.utc))); registry = SpyRegistry(); result = FinancialExecutionOrchestrator(provider, registry).authorize(c)
     assert provider.invocation_count == 1 and registry.read_count == 1 and registry.create_count == 1 and result.provider_invoked and result.registry_outcome is FinancialExecutionCreateOutcome.CREATED
     assert isinstance(result.execution_truth, FinancialExecutionTruth) and result.execution_truth.execution_status is FinancialExecutionStatus.EXECUTED and result.execution_truth.payable_id == c.payable_id
+
+
+def test_failed_execution_maps_truth_without_timestamp():
+    c = command(); provider = SpyProvider(FinancialExecutionProviderResult("GENERIC", "ref", FinancialExecutionStatus.FAILED, "evidence", None)); registry = SpyRegistry(); result = FinancialExecutionOrchestrator(provider, registry).authorize(c)
+    assert result.execution_truth.execution_status is FinancialExecutionStatus.FAILED and result.execution_truth.executed_at is None and provider.invocation_count == 1
 
 
 def test_provider_and_registry_errors_propagate():
