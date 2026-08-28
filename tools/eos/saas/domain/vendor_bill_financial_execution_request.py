@@ -10,10 +10,13 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from tools.eos.kennel.orchestration.financial_execution_orchestrator import FinancialExecutionCommand
+from tools.eos.kennel.domain.financial_execution_command import FinancialExecutionCommand
 from .vendor_bill_release_authorization import VendorBillReleaseAuthorization
+
+if TYPE_CHECKING:
+    from tools.eos.kennel.orchestration.financial_execution_command_issuance import FinancialExecutionCommandIssuance
 
 
 class VendorBillFinancialExecutionRequestError(ValueError):
@@ -49,13 +52,14 @@ class VendorBillFinancialExecutionRequest:
         if not isinstance(self.requested_at, datetime) or self.requested_at.tzinfo is None:
             raise VendorBillFinancialExecutionRequestError("requested_at is invalid")
 
-    def to_financial_execution_command(self, authorization: VendorBillReleaseAuthorization) -> FinancialExecutionCommand:
+    def to_financial_execution_command(self, authorization: VendorBillReleaseAuthorization, issuance: FinancialExecutionCommandIssuance) -> FinancialExecutionCommand:
         """Validate AP release scope and construct the canonical Kennel command without I/O."""
         if not isinstance(authorization, VendorBillReleaseAuthorization):
             raise VendorBillFinancialExecutionRequestError("authorization is invalid")
         if (self.tenant_id != authorization.tenant_id or self.payable_id != authorization.payable_id or self.release_authorization_id != authorization.release_authorization_id or self.currency != authorization.currency or self.amount_minor > authorization.authorized_amount_minor):
             raise VendorBillFinancialExecutionRequestError("release authorization scope mismatch")
-        return FinancialExecutionCommand(self.tenant_id, self.payable_id, self.release_authorization_id, self.execution_command_id, self.idempotency_key, self.amount_minor, self.currency, self.payment_destination_reference)
+        from tools.eos.kennel.orchestration.financial_execution_command_issuance import issue_financial_execution_command
+        return issue_financial_execution_command(self, issuance)
 
     @property
     def fingerprint(self) -> str:

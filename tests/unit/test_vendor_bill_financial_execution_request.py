@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import pytest
 from tools.eos.saas.domain.vendor_bill_financial_execution_request import VendorBillFinancialExecutionRequest, VendorBillFinancialExecutionRequestError
 from tools.eos.saas.domain.vendor_bill_release_authorization import VendorBillReleaseAuthorization
+from tools.eos.kennel.orchestration.financial_execution_command_issuance import FinancialExecutionCommandIssuance
 
 
 def auth() -> VendorBillReleaseAuthorization:
@@ -19,8 +20,12 @@ def request(**changes: object) -> VendorBillFinancialExecutionRequest:
     return VendorBillFinancialExecutionRequest(**values)
 
 
+def issuance() -> FinancialExecutionCommandIssuance:
+    return FinancialExecutionCommandIssuance("issued-command", "issued-idem", datetime(2026, 1, 3, tzinfo=timezone.utc), "PAYSHAP", "metadata-ref")
+
+
 def test_valid_mapping_is_immutable_and_side_effect_free() -> None:
-    item = request(); command = item.to_financial_execution_command(auth())
+    item = request(); command = item.to_financial_execution_command(auth(), issuance())
     assert command.tenant_id == "t" and command.payable_id == "p" and command.release_authorization_id == "ra" and command.execution_command_id != command.release_authorization_id
     with pytest.raises((AttributeError, TypeError)): item.amount_minor = 1
 
@@ -42,7 +47,7 @@ def test_currency_rejected(value: str) -> None:
 
 def test_scope_and_destination_validation() -> None:
     for field, value in (("tenant_id", "x"), ("payable_id", "x"), ("release_authorization_id", "x"), ("currency", "USD"), ("amount_minor", 101)):
-        with pytest.raises(VendorBillFinancialExecutionRequestError): request(**{field: value}).to_financial_execution_command(auth())
+        with pytest.raises(VendorBillFinancialExecutionRequestError): request(**{field: value}).to_financial_execution_command(auth(), issuance())
     for value in ("bank account 123", "card_number", "secret-token"):
         with pytest.raises(VendorBillFinancialExecutionRequestError): request(payment_destination_reference=value)
 
