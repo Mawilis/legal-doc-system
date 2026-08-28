@@ -2,7 +2,7 @@
 """Durable provider-neutral FinancialExecutionProviderObservation authority.
 
 TITLE: Financial Execution Provider Observation Registry
-VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-PROVIDER-OBSERVATION-REGISTRY
+VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-PROVIDER-OBSERVATION-REGISTRY
 PURPOSE: Canonical immutable provider-neutral observation persistence authority.
 COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI Engineering)
 LAST UPDATED: 2026-08-28
@@ -11,7 +11,7 @@ SECURITY / PRIVACY POSTURE: opaque references only; raw payloads and credentials
 TENANT BOUNDARY: every identity and query is tenant-scoped.
 AUTHORITY: immutable observation persistence only; no attempt, truth, or settlement authority.
 FINANCIAL AUTHORITY BOUNDARY: no lifecycle, execution, settlement, ledger, or provider transport authority.
-CHANGELOG: v1.0.1 governance-only structural hardening; NO FINANCIAL SEMANTIC CHANGE. v1.0.0 established tenant-scoped corruption-first persistence, replay protection, and caller-owned sessions.
+CHANGELOG: v1.0.2 corrects transaction-unsafe duplicate-key replay by using immutable transaction-safe upsert resolution; public authority boundaries, caller transaction ownership, and no financial semantic expansion are preserved. v1.0.1 governance-only structural hardening; NO FINANCIAL SEMANTIC CHANGE. v1.0.0 established tenant-scoped corruption-first persistence, replay protection, and caller-owned sessions.
 """
 from __future__ import annotations
 
@@ -20,10 +20,10 @@ from typing import Optional, Mapping, Any
 from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.client_session import ClientSession
-from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.errors import PyMongoError
 from ..domain.financial_execution_provider_observation import FinancialExecutionProviderObservation, ObservationError
 
-VERSION = "v1.0.1-KENNEL-FINANCIAL-EXECUTION-PROVIDER-OBSERVATION-REGISTRY"
+VERSION = "v1.0.2-KENNEL-FINANCIAL-EXECUTION-PROVIDER-OBSERVATION-REGISTRY"
 COLLECTION = "kennel_financial_execution_provider_observations"
 
 class FinancialExecutionProviderObservationRegistryError(RuntimeError):
@@ -83,13 +83,18 @@ class FinancialExecutionProviderObservationRegistry:
         if not isinstance(observation, FinancialExecutionProviderObservation): raise FinancialExecutionProviderObservationCreateConflictError("FINANCIAL_EXECUTION_PROVIDER_OBSERVATION_CREATE_INVALID")
         target = _target(collection)
         try:
-            target.insert_one(_document(observation), session=session); return "CREATED", observation
-        except DuplicateKeyError as error:
+            result = target.update_one(
+                {'tenant_id': observation.tenant_id, 'observation_id': observation.observation_id},
+                {'$setOnInsert': _document(observation)},
+                upsert=True,
+                session=session,
+            )
+            if result.upserted_id is not None: return "CREATED", observation
             existing = target.find_one({'tenant_id': observation.tenant_id, 'observation_id': observation.observation_id}, session=session)
-            if existing is None: raise FinancialExecutionProviderObservationCreateConflictError("FINANCIAL_EXECUTION_PROVIDER_OBSERVATION_CREATE_CONFLICT") from error
+            if existing is None: raise FinancialExecutionProviderObservationCreateConflictError("FINANCIAL_EXECUTION_PROVIDER_OBSERVATION_CREATE_CONFLICT")
             durable = _hydrate(existing)
             if durable == observation: return "IDEMPOTENT_REPLAY", durable
-            raise FinancialExecutionProviderObservationCreateConflictError("FINANCIAL_EXECUTION_PROVIDER_OBSERVATION_CREATE_CONFLICT") from error
+            raise FinancialExecutionProviderObservationCreateConflictError("FINANCIAL_EXECUTION_PROVIDER_OBSERVATION_CREATE_CONFLICT")
         except PyMongoError as error:
             raise FinancialExecutionProviderObservationRegistryError("FINANCIAL_EXECUTION_PROVIDER_OBSERVATION_CREATE_FAILED") from error
 
@@ -108,7 +113,7 @@ class FinancialExecutionProviderObservationRegistry:
         return tuple(_hydrate(row) for row in rows)
 
 # ARTIFACT: financial_execution_provider_observation_registry.py
-# VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-PROVIDER-OBSERVATION-REGISTRY
+# VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-PROVIDER-OBSERVATION-REGISTRY
 # AUTHORITY BOUNDARY: immutable provider observation persistence; no lifecycle, truth, or settlement authority.
 # TENANT POSTURE: all identities and queries are tenant-scoped.
 # FAIL-CLOSED POSTURE: corruption, divergent replay, and persistence failures never downgrade integrity.
