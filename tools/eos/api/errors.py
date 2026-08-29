@@ -1,26 +1,20 @@
+"""WILSY OS SOVEREIGN ARTIFACT — API ERROR BOUNDARY
+TITLE: Institutional API Error Taxonomy and HTTP Translation
+VERSION: v1.0.15-STRUCTURE-COMPLIANCE
+AUTHORITY: Wilsy OS Core Governance / Kennel EOS boundary
+EPITOME: Canonical WilsyAPIException compatibility bridge and bounded HTTP error translation.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/errors.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi; Core Engineering
+CERTIFICATION/UPDATE DATE: 2026-08-29
+CHANGELOG: v1.0.15-STRUCTURE-COMPLIANCE — governed bridge, bounded translation, modern HTTP 422 cleanup.
+COMPLIANCE: POPIA §19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY/PRIVACY POSTURE: debug=False suppresses traces; details are bounded; unexpected errors become HTTP 500.
+TENANT BOUNDARY: No tenant resolution or authorization.
+AUTHORITY BOUNDARY: API error taxonomy/HTTP translation only; no authentication, principal, membership, or authorization truth.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
-===============================================================================
-WILSY ENGINEERING KERNEL
-===============================================================================
-Epitome:
-    Institutional API Error Hierarchy & Exception Handler Engine (FG169).
-    Provides structured, cryptographically traceable, and standardized error
-    payloads across all Wilsy OS API endpoints.
-    Billion-dollar software architecture: secure, robust, immutable, and future-proof.
-
-Biblical Scale & Architecture:
-    Production-ready institutional error management. Zero child's place.
-    Proverbs 16:11 - "A just weight and balance are the Lord's: all the weights of the bag are his work."
-    Job 34:12 - "Yea, surely God will not do wickedly, neither will the Almighty pervert judgment."
-
-Collaboration & Maintenance:
-    - [Architecture]: Unified exception hierarchy and ASGI/FastAPI handler engine.
-    - [Traceability]: Attaches execution IDs and timestamp tokens to every error payload.
-    - Maintained by Wilson Khanyezi & Core Engineering.
-===============================================================================
-"""
-
 from __future__ import annotations
+
 
 import datetime
 import logging
@@ -32,8 +26,10 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from tools.eos.api.exceptions import WilsyAPIException
 
 logger = logging.getLogger("WilsyOS.API.Errors")
+VERSION = "v1.0.15-STRUCTURE-COMPLIANCE"
 
 
 class APIErrorCode(str, Enum):
@@ -119,7 +115,7 @@ class ValidationError(APIError):
     def __init__(self, message: str, details: Optional[List[APIErrorDetail]] = None, execution_id: str = "exec-unknown") -> None:
         super().__init__(
             message=message,
-            http_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            http_status=status.HTTP_422_UNPROCESSABLE_CONTENT,
             error_code=APIErrorCode.VALIDATION_ERROR,
             details=details,
             execution_id=execution_id,
@@ -190,6 +186,24 @@ def register_error_handlers(app: FastAPI, debug: bool = False) -> None:
         )
         return val_exc.to_response(include_trace=debug)
 
+    @app.exception_handler(WilsyAPIException)
+    async def wilsy_api_exception_handler(request: Request, exc: WilsyAPIException) -> JSONResponse:
+        code_map = {
+            status.HTTP_401_UNAUTHORIZED: APIErrorCode.UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN: APIErrorCode.FORBIDDEN,
+            status.HTTP_422_UNPROCESSABLE_CONTENT: APIErrorCode.VALIDATION_ERROR,
+            status.HTTP_502_BAD_GATEWAY: APIErrorCode.SERVICE_UNAVAILABLE,
+        }
+        mapped = code_map.get(exc.status_code, APIErrorCode.INTERNAL_KERNEL_ERROR)
+        bounded = APIError(
+            message=exc.message,
+            http_status=exc.status_code,
+            error_code=mapped,
+            details=[],
+            execution_id=getattr(request.state, "execution_id", "exec-unknown"),
+        )
+        return bounded.to_response(include_trace=debug)
+
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception(f"Unhandled Exception on [{request.url.path}]: {exc}")
@@ -199,3 +213,11 @@ def register_error_handlers(app: FastAPI, debug: bool = False) -> None:
             error_code=APIErrorCode.INTERNAL_KERNEL_ERROR,
         )
         return internal_exc.to_response(include_trace=debug)
+
+# ARTIFACT: errors.py
+# VERSION: v1.0.15-STRUCTURE-COMPLIANCE
+# AUTHORITY BOUNDARY: API error taxonomy and HTTP translation only.
+# TENANT POSTURE: No tenant authority or inference.
+# FAIL-CLOSED POSTURE: Unexpected failures collapse to bounded HTTP 500.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT

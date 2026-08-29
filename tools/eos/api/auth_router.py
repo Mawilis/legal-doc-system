@@ -1,43 +1,34 @@
-# -*- coding: utf-8 -*-
-"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS - AUTH ROUTER                                                      ║
-║ [LOGIN | VERIFY OTP | VALIDATE MFA SETUP | DISCOVER | LOGOUT]              ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║ VERSION: 1.0.13-TYPE-FIX                                                    ║
-║ EPITOME: Sovereign authentication endpoints for EOS Kennel with robust      ║
-║          OTP storage, MFA setup validation, and session creation.           ║
-║ ABSOLUTE PATH: tools/eos/api/auth_router.py                                 ║
-║ AUTHORITY: Wilsy OS Core Governance                                         ║
-║ COMPLIANCE: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                    ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║ CHANGE LOG:                                                                 ║
-║   2026-08-22 v1.0.13-TYPE-FIX – Explicit `if code is None` to satisfy      ║
-║        type checker; no runtime logic change.                              ║
-║   2026-08-22 v1.0.12-TOTP-VERIFICATION – Verifies Google Authenticator      ║
-║        codes against the enrolled TOTP secret; accepts code or otp aliases. ║
-║   2026-08-22 v1.0.11-ADD-VALIDATE-MFA – Added /validate-mfa-setup endpoint ║
-║        to complete MFA enrollment flow. Updated error handling and logging. ║
-║   2026-08-21 v1.0.10-OTP-USERID-FIX – Generate and store OTP with user ID  ║
-║        during login; verify uses stored OTP and user ID.                   ║
-║   2026-08-20 v1.0.9-OTP-CODE-FIX – Use request.code directly (required).   ║
-║   2026-08-20 v1.0.8-UNBOUND-USER-FIX – Initialize user=None in verify_otp. ║
-║   2026-08-20 v1.0.7-ERROR-HANDLING – Added try/except and structured logs. ║
-║   2026-08-20 v1.0.6-TYPE-FIXES – Fixed type errors.                         ║
-║   2026-08-20 v1.0.5-FIX-TYPES – Previous type fixes.                        ║
-║   2026-08-20 v1.0.4-ADD-VERIFY-3FA – Added /auth/verify-3fa alias.         ║
-║   2026-08-20 v1.0.3-FIX-DISCOVER – Fixed discovery response.                ║
-║   2026-08-20 v1.0.2-REMOVE-TENANT-IMPORT – Removed import of Tenant.       ║
-║   2026-08-20 v1.0.1-IMPORT-FIX – Use TenantRegistry static methods.        ║
-║   2026-08-20 v1.0.0-SOVEREIGN – Initial creation.                           ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║ CERTIFICATION SEAL: PRODUCTION_READY_v1.0.13-TYPE-FIX                       ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+"""TITLE: Wilsy OS Authentication Router.
+VERSION: v1.0.14-VERIFY-TOKEN-PROJECTION
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
+MFA setup and verification, login, discovery, and logout.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
+COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
+credential and identity authorities remain in tools.eos.auth.
+CERTIFICATION/UPDATE DATE: 2026-08-29.
+CHANGELOG:
+  v1.0.14-VERIFY-TOKEN-PROJECTION: Canonical GET + POST /auth/verify-token share one
+  handler and the get_current_identity authority dependency; the public projection is
+  bounded to success, status, user.id, and user.email with no tenant, role, permission,
+  or credential response projection.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY/PRIVACY POSTURE: Raw credentials and database documents are never returned;
+verify-token is limited to governed public fields; authentication failure remains
+fail-closed through get_current_identity.
+TENANT BOUNDARY: verify-token does not certify tenant membership; tenant context remains
+the responsibility of a separate downstream authority.
+AUTHORITY BOUNDARY: This router exposes authentication HTTP endpoints only. It does not
+own credential truth, principal lifecycle authority, tenant membership, governed role
+assignment, authorization, or financial execution.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+VERSION = "v1.0.14-VERIFY-TOKEN-PROJECTION"
+
+from fastapi import APIRouter, Depends, HTTPException, status
 import logging
 import traceback
 import os
@@ -48,6 +39,8 @@ from pymongo.errors import PyMongoError
 from ..saas.domain.auth import AuthRequest, VerifyOTPRequest, DiscoverRequest, AuthResponse
 from ..saas.auth.auth_registry import get_auth_registry
 from ..saas.tenancy.tenant_registry import TenantRegistry
+from ..auth.authentication import get_current_identity
+from ..auth.identity import SovereignIdentity
 
 # ─── Logging Discipline (Mandate §2.6) ──────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -82,6 +75,12 @@ def _tenant_id_from_user(user: Any) -> str:
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@router.get("/verify-token")
+@router.post("/verify-token")
+async def _verify_token(identity: SovereignIdentity = Depends(get_current_identity)) -> dict[str, object]:
+    """Return a bounded public projection for a current active identity."""
+    return {"success": True, "status": "VERIFIED", "user": {"id": identity.identity_id, "email": identity.email}}
 
 
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
@@ -418,15 +417,11 @@ async def logout():
     return {"status": "success", "message": "Logged out"}
 
 
-"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║ 🏛️ INSTITUTIONAL CERTIFICATION SEAL — AUTH ROUTER v1.0.13-TYPE-FIX       ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║ Status:          CERTIFIED PRODUCTION ARTIFACT — 10/10 SOVEREIGN GRADE    ║
-║ Version:         1.0.13-TYPE-FIX                                           ║
-║ Fix:             Explicit `if code is None` to satisfy type checker.       ║
-║ Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001          ║
-║ Security:        No hard‑coded credentials; proper OTP verification.      ║
-║ OTP Source:      Persisted enrollment secret; no transient random OTP.     ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-"""
+# ARTIFACT: auth_router.py
+# VERSION: v1.0.14-VERIFY-TOKEN-PROJECTION
+# AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
+# credential, principal, tenant, authorization, and financial authorities remain separate.
+# TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
+# FAIL-CLOSED POSTURE: Authentication failures remain fail-closed through get_current_identity.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,35 +1,34 @@
 # -*- coding: utf-8 -*-
-"""
-════════════════════════════════════════════════════════════════════════════════
-Wilsy OS — EOS Kernel API Main Router (Kennel‑Integrated)
-════════════════════════════════════════════════════════════════════════════════
-File:           tools/eos/api/router.py
-Version:        v1.1.1-INSTITUTIONAL-SEAL
-Authority:      Wilsy OS Core Governance
-Epitome:        Aggregates all institutional API routers and exposes the
-                Kennel‑required `/kernel` surface (health, status, execute,
-                governance) alongside the existing FG211 instrumentation.
-Classification: Production Artifact
-
-Contributors:
-  - Wilson Khanyezi (CEO/Lead Architect) — Mandated absolute system unification.
-  - AI Engineering — RECTIFIED: Integrated kernel_routes and added contract endpoints.
-
-Change Log:
-  2026-07-30 v1.1.1-INSTITUTIONAL-SEAL — Added `/kernel` contract endpoints.
-  2026-07-30 v1.0.0-INSTITUTIONAL — Baseline.
-
-Forensic Relationships:
-  Upstream:   fastapi, tools/eos/api/kernel_routes.py, tools/eos/api/responses.py,
-              tools/eos/platform/engineering_os_kernel.py
-  Downstream: tools/eos/api/server.py (FastAPI app)
-  Shared Crypto / Events / Config: Port 9095, x-request-seal, x-tenant-id.
-
-Certification Seal: PRODUCTION_READY_v1.1.1-INSTITUTIONAL-SEAL
-════════════════════════════════════════════════════════════════════════════════
+"""TITLE: WILSY OS EOS Kernel API Main Router.
+VERSION: v1.1.2-LEGACY-AUTH-RETIREMENT
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: General EOS kernel/API route aggregation. Legacy Python authentication
+verification authority is retired; authentication verification is delegated to
+the canonical auth router.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/router.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
+CERTIFICATION/UPDATE DATE: 2026-08-29.
+CHANGELOG:
+  v1.1.2-LEGACY-AUTH-RETIREMENT: Retires legacy Python verify-token
+  verifier/routes, preserves kernel/API routing, and delegates canonical
+  authentication verification to auth_router.py/get_current_identity.
+  v1.1.1-INSTITUTIONAL-SEAL: Added kernel contract endpoints.
+  v1.0.0-INSTITUTIONAL: Baseline.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY/PRIVACY POSTURE: This router does not authenticate credentials,
+synthesize identity, or emit authentication credentials. Authentication truth
+stays in the governed auth authority path; the retired verifier remains absent.
+TENANT BOUNDARY: This router does not establish tenant membership authority;
+existing tenant/request context is not authentication or membership truth.
+AUTHORITY BOUNDARY: Owns general API/kernel route aggregation only. It does
+not own credential verification, principal lifecycle, tenant membership, role
+assignment, authorization truth, or financial execution.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
 
 from __future__ import annotations
+
+VERSION = "v1.1.2-LEGACY-AUTH-RETIREMENT"
 
 import time
 import logging
@@ -103,16 +102,6 @@ async def _get_boardroom_telemetry_data(tenant_id: str = "WILSY-GLOBAL") -> Dict
         }
 
 
-async def _verify_sovereign_token(authorization: Optional[str] = None) -> Dict[str, Any]:
-    return {
-        "success": True,
-        "valid": True,
-        "identity": "wilsonkhanyezi@gmail.com",
-        "role": "FOUNDER",
-        "covenant": "ANCHORED",
-        "timestamp": time.time()
-    }
-
 # ─── Existing Endpoints (Preserved) ──────────────────────────────────────────
 
 @direct_router.get("/api/telemetry/boardroom")
@@ -122,17 +111,6 @@ async def get_boardroom_telemetry(request: Request) -> Any:
     data = await _get_boardroom_telemetry_data()
     exec_id = getattr(request.state, "execution_id", "EXEC-EOS-TELEMETRY")
     return format_response(data=data, message="Boardroom telemetry retrieved successfully.", execution_id=exec_id)
-
-
-@direct_router.post("/api/auth/verify-token")
-@direct_router.get("/api/auth/verify-token")
-@router.post("/auth/verify-token")
-@router.get("/auth/verify-token")
-async def verify_token_endpoint(request: Request, authorization: Optional[str] = Header(None)) -> Any:
-    """[SOVEREIGN ANCHOR]: Verifies identity token validity for SovereignLogin & MFA portal."""
-    data = await _verify_sovereign_token(authorization)
-    exec_id = getattr(request.state, "execution_id", "EXEC-EOS-AUTH")
-    return format_response(data=data, message="Sovereign token verified successfully.", execution_id=exec_id)
 
 
 @router.get("/kernel")
@@ -271,15 +249,10 @@ async def check_compatibility(payload: CompatibilityCheckRequest, request: Reque
     compat = {"source": payload.source_abi_version, "target": payload.target_abi_version, "compatible": True}
     return format_response(data=compat, message="Compatibility check verified successfully.", execution_id=request.state.execution_id)
 
-"""
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS KERNEL API ROUTER
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
-Contract Match: Server Kernel Bridge v1.1.1-INSTITUTIONAL-SEAL
-Routes mounted: /kernel, /kernel/status, /kernel/execute, /kernel/governance
-Port:           9095
-Cryptographic:  Full forensic header preservation from Node BFF
-Health Check:   All institutional endpoints intact | Kernel surface fully exposed
-════════════════════════════════════════════════════════════════════════════════
-"""
+# ARTIFACT: router.py
+# VERSION: v1.1.2-LEGACY-AUTH-RETIREMENT
+# AUTHORITY BOUNDARY: General API/kernel routing only; authentication verification authority is excluded.
+# TENANT POSTURE: No tenant-membership authority is created or inferred here.
+# FAIL-CLOSED POSTURE: Legacy authentication verifier remains absent; no synthetic identity fallback is permitted.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
