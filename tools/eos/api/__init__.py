@@ -31,7 +31,6 @@ logger = logging.getLogger("WilsyOS.API")
 # [FUNCTION EXPLANATION]: Lazy/Safe import loader for API package components.
 try:
     from .errors import APIError, APIErrorDetail, ResourceNotFoundError, ValidationError
-    from .responses import APIResponse, APIStatus, PaginatedResponse
     from .contracts import (
         KernelSessionDTO,
         RepositoryMetricsDTO,
@@ -41,17 +40,12 @@ try:
         IntelligenceReasoningDTO,
         SystemHealthDTO,
     )
-    from .router import APIRouter
-    from .server import WilsyAPIServer
 
     __all__ = [
         "APIError",
         "APIErrorDetail",
         "ResourceNotFoundError",
         "ValidationError",
-        "APIResponse",
-        "APIStatus",
-        "PaginatedResponse",
         "KernelSessionDTO",
         "RepositoryMetricsDTO",
         "ArtifactCatalogDTO",
@@ -59,8 +53,6 @@ try:
         "ObservabilityDTO",
         "IntelligenceReasoningDTO",
         "SystemHealthDTO",
-        "APIRouter",
-        "WilsyAPIServer",
     ]
 except ImportError as e:
     logger.debug(f"API package submodules initializing... ({e})")
