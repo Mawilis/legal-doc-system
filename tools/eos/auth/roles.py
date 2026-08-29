@@ -1,48 +1,51 @@
+"""TITLE: WILSY OS Role Definition Policy.
+VERSION: v1.0.0-WILSY-ROLE-DEFINITION-POLICY
+AUTHORITY: Canonical Python definition of institutional role identifiers and their permission grants only.
+EPITOME: Deterministic code-defined role policy separating role meaning from current principal/tenant role assignment.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
+CERTIFICATION/UPDATE DATE: 2026-08-29.
+CHANGELOG: v1.0.0-WILSY-ROLE-DEFINITION-POLICY establishes governed deterministic Python role-definition authority without assignment or authorization ownership.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY/PRIVACY POSTURE: Contains no credentials, principal profiles, membership records, or runtime secrets; unknown or malformed role inputs fail closed.
+TENANT BOUNDARY: Role definitions are tenant-agnostic policy only; current principal/tenant possession requires governed RoleAssignmentAuthority.
+AUTHORITY BOUNDARY: Owns role identifiers and explicit role-to-permission policy only. Does not own assignment, lifecycle, membership, credentials, authentication, authorization decisions, or financial execution.
+FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive.
 """
-===============================================================================
-WILSY OS — SOVEREIGN OPERATING SYSTEM
-MODULE: FG212 INSTITUTIONAL AUTHENTICATION - ROLES & HIERARCHY
-FILE: tools/eos/auth/roles.py
-===============================================================================
-Epitome:
-    Defines sovereign institutional roles and permission matrices for Wilsy OS
-    Platform 1.0 access control.
+from __future__ import annotations
+from collections.abc import Iterable
 
-Biblical Worth Billions:
-    "Where no counsel is, the people fall: but in the multitude of counsellors there is safety."
-    — Proverbs 11:14
+VERSION = "v1.0.0-WILSY-ROLE-DEFINITION-POLICY"
 
-Collaboration & Ownership:
-    - Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
-    - AI Collaborator: Core Systems Engineering Agent
-    - File Path: tools/eos/auth/roles.py
-===============================================================================
-"""
-
-from typing import Dict, List
-
-ROLE_PERMISSIONS_MAP: Dict[str, List[str]] = {
-    "SOVEREIGN_ARCHITECT": [
-        "kernel:read", "kernel:write", "execution:trigger", 
-        "governance:evaluate", "artifacts:read", "admin:all"
-    ],
-    "ENTERPRISE_ADMIN": [
-        "kernel:read", "execution:trigger", "governance:evaluate", 
-        "artifacts:read", "tenant:manage"
-    ],
-    "AUDITOR": [
-        "kernel:read", "artifacts:read", "governance:read", "audit:read"
-    ],
-    "SERVICE_WORKER": [
-        "execution:trigger", "artifacts:write", "events:publish"
-    ]
+ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
+    "SOVEREIGN_ARCHITECT": ["kernel:read", "kernel:write", "execution:trigger", "governance:evaluate", "artifacts:read", "admin:all"],
+    "ENTERPRISE_ADMIN": ["kernel:read", "execution:trigger", "governance:evaluate", "artifacts:read", "tenant:manage"],
+    "AUDITOR": ["kernel:read", "artifacts:read", "governance:read", "audit:read"],
+    "SERVICE_WORKER": ["execution:trigger", "artifacts:write", "events:publish"],
 }
 
-
-def get_permissions_for_roles(roles: List[str]) -> List[str]:
-    """Aggregates all unique permissions granted across a list of roles."""
-    permissions = set()
+def get_permissions_for_roles(roles: Iterable[str]) -> list[str]:
+    """Expand defined roles into deterministic unique permissions without authorization."""
+    if isinstance(roles, (str, bytes)):
+        return []
+    permissions: set[str] = set()
     for role in roles:
-        role_perms = ROLE_PERMISSIONS_MAP.get(role, [])
-        permissions.update(role_perms)
-    return list(permissions)
+        if isinstance(role, str):
+            permissions.update(ROLE_PERMISSIONS_MAP.get(role, ()))
+    return sorted(permissions)
+
+def get_roles_granting_permission(permission: str) -> tuple[str, ...]:
+    """Return defined roles explicitly granting an exact permission string."""
+    if not isinstance(permission, str) or not permission:
+        return ()
+    return tuple(sorted(role for role, grants in ROLE_PERMISSIONS_MAP.items() if permission in grants))
+
+__all__ = ["ROLE_PERMISSIONS_MAP", "VERSION", "get_permissions_for_roles", "get_roles_granting_permission"]
+
+# ARTIFACT: roles.py
+# VERSION: v1.0.0-WILSY-ROLE-DEFINITION-POLICY
+# AUTHORITY BOUNDARY: canonical deterministic role identifiers and explicit role-to-permission definitions only
+# TENANT POSTURE: role definitions are tenant-agnostic; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# FAIL-CLOSED POSTURE: unknown or malformed role inputs never manufacture role or permission authority
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
