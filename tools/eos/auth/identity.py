@@ -21,15 +21,16 @@ Collaboration & Ownership:
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from tools.eos.auth.principal_status import PrincipalStatus
 
 
 class SovereignIdentity(BaseModel):
-    identity_id: str = Field(..., description="Unique sovereign identity or user UUID")
-    tenant_id: str = Field(..., description="Multi-tenant namespace isolation identifier")
-    username: str = Field(..., description="Principal username or service account name")
-    email: Optional[str] = Field(None, description="Principal contact email")
-    roles: List[str] = Field(default_factory=list, description="Assigned institutional roles (e.g., ADMIN, ARCHITECT, AUDITOR)")
-    permissions: List[str] = Field(default_factory=list, description="Fine-grained capability permissions")
-    is_service_account: bool = Field(False, description="Indicates whether principal is a machine/service identity")
-    auth_method: str = Field(..., description="Authentication mechanism used (JWT, API_KEY, MACHINE_MTLS)")
-    status: str = Field("ACTIVE", description="Identity lifecycle status")
+    """Authenticated projection, never a source of lifecycle authority."""
+    identity_id: str = Field(..., description="Resolved principal identifier")
+    tenant_id: str = Field(..., description="Verified request tenant context; membership is unresolved projection debt")
+    username: Optional[str] = Field(None, description="Non-authoritative verified display metadata")
+    email: Optional[str] = Field(None, description="Non-authoritative verified contact metadata")
+    roles: List[str] = Field(default_factory=list, description="Projection of signed/legacy role claims; not governed assignment")
+    permissions: List[str] = Field(default_factory=list, description="Projection of signed/legacy permissions; not lifecycle authority")
+    auth_method: str = Field(..., description="Authentication mechanism used")
+    status: PrincipalStatus = Field(..., description="Current status copied from durable PrincipalAuthority")
