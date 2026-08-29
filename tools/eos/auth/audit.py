@@ -21,12 +21,17 @@ Collaboration & Ownership:
 
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Any, Dict
+from typing import Mapping
 
 logger = logging.getLogger("WilsyOS.SecurityAudit")
 
 
-def log_auth_event(event_type: str, principal: str, success: bool, details: Dict[str, Any] = None):
+def log_auth_event(
+    event_type: str,
+    principal: str,
+    success: bool,
+    details: Mapping[str, object] | None = None,
+) -> dict[str, object]:
     """Emits an immutable structured security audit log entry."""
     sast_tz = timezone(timedelta(hours=2))
     timestamp = datetime.now(sast_tz).strftime("%B %d, %Y | %H:%M:%S SAST")
@@ -37,7 +42,7 @@ def log_auth_event(event_type: str, principal: str, success: bool, details: Dict
         "event_type": event_type,
         "principal": principal,
         "status": status_str,
-        "details": details or {}
+        "details": dict(details) if details is not None else {}
     }
     logger.info(f"[SECURITY AUDIT] {log_payload}")
     return log_payload
