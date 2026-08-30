@@ -1,71 +1,69 @@
 # -*- coding: utf-8 -*-
-"""
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS — TENANT REGISTRY (MONGODB‑BACKED) – WITH VERIFIED FIELD                                            ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ File:           tools/eos/saas/tenancy/tenant_registry.py                                                     ║
-║ Version:        v1.2.1-PYLANCE-TENANT-ENTITY                                                                 ║
-║ Authority:      Wilsy OS Core Governance                                                                      ║
-║ Epitome:        Added support for verified field on TenantEntity; Pylance-safe entity construction.           ║
-║ Classification: Production Artifact                                                                            ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ Change Log:                                                                                                    ║
-║   2026-08-23 v1.2.1-PYLANCE-TENANT-ENTITY – Safe TenantEntity build (type: ignore + attr fallback).           ║
-║   2026-08-23 v1.2.0-VERIFIED-FIELD – Added verified field to _doc_to_entity, _entity_to_doc, and update.      ║
-║   2026-08-23 v1.1.0-TYPE-SAFE – Added alias, region, compliance_flags, proof_hash.                            ║
-║   2026-08-20 v1.0.8-DEFER-CONNECTION – Removed directConnection, added connect=False.                         ║
-║   2026-08-20 v1.0.7-DIRECT-CONNECTION – Added directConnection=True (caused config error).                    ║
-║   2026-08-20 v1.0.6-ADD-ALIAS-LOOKUP – Added get_tenant_by_alias.                                             ║
-║   2026-08-19 v1.0.5-CREATED-AT-STR – TenantEntity created_at uses _to_iso_datetime (str), not datetime.       ║
-║   2026-08-19 v1.0.4-CLEAN – Added type: ignore comment on OrganizationProfile call.                           ║
-║   2026-08-19 v1.0.3-TYPED – Added explicit type conversion.                                                   ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:   POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                   ║
-║ COLLECTION:   tenants                                                                                          ║
-║ DEPENDENCIES: domain.tenant (TenantEntity should expose verified + extended fields)                            ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+"""TITLE: WILSY OS Tenant Registry.
+VERSION: v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS
+AUTHORITY: Canonical MongoDB-backed tenant registry persistence boundary.
+EPITOME: Preserves existing tenant registry behavior while distinguishing tenant absence from get/archive infrastructure unavailability.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/tenancy/tenant_registry.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
+CERTIFICATION/UPDATE DATE: 2026-08-30.
+CHANGELOG: v1.3.0 introduces TenantRegistryError and makes get/archive MongoDB outages explicit without changing list/create/update business semantics.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY/PRIVACY POSTURE: Registry persistence contains tenant profile data; infrastructure failures are explicit and never converted into fabricated absence.
+TENANT BOUNDARY: Every direct tenant lookup or mutation is keyed by the supplied tenant identifier; legacy tenant_id_header inputs remain compatibility-only and never grant authority.
+AUTHORITY BOUNDARY: Owns tenant registry persistence and persistence-failure signaling only; does not authenticate, authorize, grant roles, establish membership, or own transport authority.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution authority. Kennel EOS remains exclusive.
 """
 
 from __future__ import annotations
 
-import os
-import logging
 import hashlib
 import json
-from typing import Optional, Dict, Any, List, Union
+import logging
+import os
+import uuid
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Union
+
+from bson import ObjectId
+from bson.errors import InvalidId
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, PyMongoError
-from bson import ObjectId
 
-from ..domain.tenant import TenantEntity, SubscriptionPlan, OrganizationProfile
+from ..domain.tenant import OrganizationProfile, SubscriptionPlan, TenantEntity
+
+VERSION = "v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS"
 
 logger = logging.getLogger("WilsyOS.SaaS.Tenancy.TenantRegistry")
 
-# ─── MongoDB Connection ──────────────────────────────────────────────────────
+
+class TenantRegistryError(RuntimeError):
+    """Bounded tenant-registry persistence failure.
+
+    This exception signals infrastructure unavailability only. It does not
+    represent tenant absence, authentication failure, authorization denial,
+    membership state, role possession, HTTP status, or financial execution.
+    """
+
+
+# MongoDB connection is deferred until first operation so process startup does not
+# falsely claim database availability.
 MONGO_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017/wilsy")
-# Defer connection until first operation to allow server to start even if DB is unreachable.
 client = MongoClient(MONGO_URI, connect=False)
 db = client.get_database("wilsy")
 tenants_collection = db["tenants"]
 
 
-# ─── Mapping Helpers ────────────────────────────────────────────────────────
-
 def _to_plan_enum(plan_str: str) -> Any:
-    """Safely convert a plan string to a SubscriptionPlan enum."""
+    """Convert a persisted plan string to the existing SubscriptionPlan shape."""
     plan_str = (plan_str or "BASIC").upper()
     try:
         return SubscriptionPlan[plan_str]
     except (KeyError, AttributeError):
-        try:
-            return getattr(SubscriptionPlan, plan_str, plan_str)
-        except Exception:
-            return plan_str
+        return getattr(SubscriptionPlan, plan_str, plan_str)
 
 
 def _to_iso_datetime(dt: Union[datetime, str, None]) -> str:
-    """Convert datetime or string to ISO format string (always returns str)."""
+    """Convert datetime/string input to the registry's existing ISO-string shape."""
     if isinstance(dt, datetime):
         return dt.isoformat()
     if isinstance(dt, str) and dt.strip():
@@ -86,12 +84,7 @@ def _build_tenant_entity(
     verified: bool = False,
     checksum: Any = None,
 ) -> TenantEntity:
-    """
-    Construct TenantEntity in a Pylance-safe way.
-
-    Domain models evolve; some stubs only expose a subset of constructor kwargs.
-    We try full kwargs first, then core kwargs + attribute hydration.
-    """
+    """Construct a TenantEntity while preserving existing constructor compatibility."""
     extended = {
         "alias": alias,
         "region": region,
@@ -100,7 +93,6 @@ def _build_tenant_entity(
         "verified": verified,
     }
 
-    # Full constructor (production domain with extended fields)
     try:
         entity = TenantEntity(
             tenant_id=tenant_id,
@@ -114,7 +106,6 @@ def _build_tenant_entity(
             verified=verified,
         )  # type: ignore[call-arg]
     except TypeError:
-        # Narrow constructor — core identity only
         try:
             entity = TenantEntity(
                 tenant_id=tenant_id,
@@ -123,7 +114,6 @@ def _build_tenant_entity(
                 created_at=created_at,
             )  # type: ignore[call-arg]
         except TypeError:
-            # Last resort: positional (organization, tenant_id, status, created_at)
             entity = TenantEntity(  # type: ignore[call-arg]
                 organization,
                 tenant_id,
@@ -131,23 +121,23 @@ def _build_tenant_entity(
                 created_at,
             )
 
-    # Hydrate extended fields when the class allows assignment / extra attrs
     for key, value in extended.items():
         try:
             setattr(entity, key, value)
-        except Exception:
-            pass
+        except (AttributeError, TypeError) as exc:
+            logger.debug("TenantEntity compatibility hydration skipped for %s: %s", key, exc)
 
     if checksum is not None:
         try:
             entity.checksum = checksum
-        except Exception:
-            pass
+        except (AttributeError, TypeError) as exc:
+            logger.debug("TenantEntity checksum hydration skipped: %s", exc)
 
     return entity
 
 
 def _doc_to_entity(doc: Dict[str, Any]) -> Optional[TenantEntity]:
+    """Map one tenant document into TenantEntity; malformed documents fail closed."""
     try:
         org_name = doc.get("name") or doc.get("organization_name") or "Unknown"
         industry = doc.get("industry") or "General"
@@ -159,9 +149,8 @@ def _doc_to_entity(doc: Dict[str, Any]) -> Optional[TenantEntity]:
         tax_id = doc.get("tax_id")
         contact_email = doc.get("contact_email")
 
-        # Always ISO str for domain models that type created_at as str
         raw_created = doc.get("created_at") or datetime.now(timezone.utc)
-        created_at_str: str = _to_iso_datetime(raw_created)
+        created_at_str = _to_iso_datetime(raw_created)
 
         organization = OrganizationProfile(  # type: ignore[call-arg]
             organization_name=org_name,
@@ -177,7 +166,7 @@ def _doc_to_entity(doc: Dict[str, Any]) -> Optional[TenantEntity]:
         tenant_id = doc.get("tenant_id") or str(doc["_id"])
         status = doc.get("status", "ACTIVE")
 
-        entity = _build_tenant_entity(
+        return _build_tenant_entity(
             tenant_id=tenant_id,
             organization=organization,
             status=status,
@@ -189,21 +178,17 @@ def _doc_to_entity(doc: Dict[str, Any]) -> Optional[TenantEntity]:
             verified=bool(doc.get("verified", False)),
             checksum=doc.get("checksum"),
         )
-
-        return entity
-    except Exception as e:
-        logger.error(f"Mapping failed for document {doc.get('_id')}: {e}")
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        logger.error("Tenant document mapping failed for %s: %s", doc.get("_id"), exc)
         return None
 
 
 def _entity_to_doc(entity: TenantEntity) -> Dict[str, Any]:
+    """Serialize TenantEntity into the registry's existing persistence document."""
     org = entity.organization
     plan_value = org.plan.value if hasattr(org.plan, "value") else str(org.plan)
     created_raw = entity.created_at
-    if isinstance(created_raw, datetime):
-        created_store: Any = created_raw
-    else:
-        created_store = created_raw
+    created_store: Any = created_raw
     return {
         "tenant_id": entity.tenant_id,
         "name": org.organization_name,
@@ -223,7 +208,6 @@ def _entity_to_doc(entity: TenantEntity) -> Dict[str, Any]:
         "status": entity.status,
         "created_at": created_store,
         "checksum": getattr(entity, "checksum", None),
-        # ─── Persist the extended fields ──────────────────────────────────────
         "alias": getattr(entity, "alias", None),
         "region": getattr(entity, "region", None),
         "compliance_flags": getattr(entity, "compliance_flags", None),
@@ -232,13 +216,26 @@ def _entity_to_doc(entity: TenantEntity) -> Dict[str, Any]:
     }
 
 
-# ─── Registry API ──────────────────────────────────────────────────────────
-
 class TenantRegistry:
-    """MongoDB‑backed tenant registry."""
+    """MongoDB-backed tenant registry.
+
+    This registry owns tenant persistence only. It does not authenticate callers,
+    authorize operations, infer membership, or treat transport headers as authority.
+    """
 
     @staticmethod
-    def list(skip: int = 0, limit: int = 20, tenant_id_header: Optional[str] = None) -> Dict[str, Any]:
+    def list(
+        skip: int = 0,
+        limit: int = 20,
+        tenant_id_header: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """List persisted tenants using existing bounded fallback semantics.
+
+        `tenant_id_header` is compatibility-only and never narrows or grants access.
+        This method's historical empty-result-on-PyMongoError behavior is preserved
+        because list-route migration is outside this delivery.
+        """
+        del tenant_id_header
         try:
             total = tenants_collection.count_documents({})
             cursor = tenants_collection.find({}, {"_id": 0}).skip(skip).limit(limit)
@@ -249,56 +246,88 @@ class TenantRegistry:
                 if entity:
                     items.append(entity)
                 else:
-                    logger.warning(f"Skipped document due to mapping error: {doc.get('_id')}")
+                    logger.warning(
+                        "Skipped tenant document after bounded mapping failure: %s",
+                        doc.get("_id"),
+                    )
             return {"items": items, "total": total}
-        except PyMongoError as e:
-            logger.error(f"Tenant list failed: {e}")
+        except PyMongoError as exc:
+            logger.error("Tenant list failed: %s", exc)
             return {"items": [], "total": 0}
 
     @staticmethod
-    def get(tenant_id: str, tenant_id_header: Optional[str] = None) -> Optional[TenantEntity]:
+    def get(
+        tenant_id: str,
+        tenant_id_header: Optional[str] = None,
+    ) -> Optional[TenantEntity]:
+        """Resolve one tenant by identifier.
+
+        Genuine absence returns None. MongoDB infrastructure failures raise
+        TenantRegistryError with the PyMongoError preserved as `__cause__`.
+        `tenant_id_header` is compatibility-only and never authority.
+        """
+        del tenant_id_header
         try:
             doc = tenants_collection.find_one({"tenant_id": tenant_id})
             if not doc and len(tenant_id) == 24:
                 try:
                     doc = tenants_collection.find_one({"_id": ObjectId(tenant_id)})
-                except Exception:
-                    pass
+                except (InvalidId, TypeError):
+                    doc = None
             if doc:
                 return _doc_to_entity(doc)
             return None
-        except PyMongoError as e:
-            logger.error(f"Tenant get failed: {e}")
-            return None
+        except PyMongoError as exc:
+            logger.error("Tenant get unavailable: %s", exc)
+            raise TenantRegistryError("TENANT_REGISTRY_GET_UNAVAILABLE") from exc
 
     @staticmethod
-    def get_tenant_by_alias(alias: str, tenant_id_header: Optional[str] = None) -> Optional[TenantEntity]:
+    def get_tenant_by_alias(
+        alias: str,
+        tenant_id_header: Optional[str] = None,
+    ) -> Optional[TenantEntity]:
+        """Retrieve a tenant by alias, tenant id, or name case-insensitively.
+
+        This preserves existing alias-discovery behavior. `tenant_id_header` is
+        compatibility-only and never authority.
         """
-        Retrieve a tenant by its alias (case‑insensitive).
-        """
+        del tenant_id_header
         if not alias:
             return None
-        doc = tenants_collection.find_one({
-            "$or": [
-                {"alias": {"$regex": f"^{alias}$", "$options": "i"}},
-                {"tenant_id": {"$regex": f"^{alias}$", "$options": "i"}},
-                {"name": {"$regex": f"^{alias}$", "$options": "i"}},
-            ]
-        })
+        doc = tenants_collection.find_one(
+            {
+                "$or": [
+                    {"alias": {"$regex": f"^{alias}$", "$options": "i"}},
+                    {"tenant_id": {"$regex": f"^{alias}$", "$options": "i"}},
+                    {"name": {"$regex": f"^{alias}$", "$options": "i"}},
+                ]
+            }
+        )
         if doc:
             return _doc_to_entity(doc)
         return None
 
     @staticmethod
-    def create(payload: Dict[str, Any], tenant_id_header: Optional[str] = None) -> Dict[str, Any]:
+    def create(
+        payload: Dict[str, Any],
+        tenant_id_header: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create one tenant using the existing registry create contract.
+
+        This method does not authorize creation. `tenant_id_header` is ignored as
+        authority. Existing structured success/error return semantics are preserved.
+        """
+        del tenant_id_header
         try:
             name = payload.get("name") or payload.get("organization_name")
             if not name:
-                return {"success": False, "error": "Missing 'name' or 'organization_name'."}
+                return {
+                    "success": False,
+                    "error": "Missing 'name' or 'organization_name'.",
+                }
 
             tenant_id = payload.get("tenant_id")
             if not tenant_id:
-                import uuid
                 tenant_id = f"WILSYTENANT-{uuid.uuid4().hex[:8].upper()}"
 
             now = datetime.now(timezone.utc)
@@ -324,28 +353,49 @@ class TenantRegistry:
                 "checksum": payload.get("checksum"),
                 "alias": payload.get("alias"),
                 "region": payload.get("region"),
-                "compliance_flags": payload.get("compliance_flags") or {
+                "compliance_flags": payload.get("compliance_flags")
+                or {
                     "popia_section_19": True,
                     "gdpr_article_32": True,
                     "soc2_cc7_2": True,
                 },
                 "verified": payload.get("verified", False),
             }
-            proof_payload = {key: value for key, value in doc.items() if key not in {"created_at", "proof_hash"}}
+            proof_payload = {
+                key: value
+                for key, value in doc.items()
+                if key not in {"created_at", "proof_hash"}
+            }
             doc["proof_hash"] = hashlib.sha3_512(
-                json.dumps(proof_payload, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
+                json.dumps(
+                    proof_payload,
+                    sort_keys=True,
+                    default=str,
+                    separators=(",", ":"),
+                ).encode("utf-8")
             ).hexdigest().upper()
             tenants_collection.insert_one(doc)
             entity = _doc_to_entity(doc)
             return {"success": True, "tenant": entity}
         except DuplicateKeyError:
             return {"success": False, "error": "Tenant ID already exists."}
-        except PyMongoError as e:
-            logger.error(f"Tenant create failed: {e}")
-            return {"success": False, "error": str(e)}
+        except PyMongoError as exc:
+            logger.error("Tenant create failed: %s", exc)
+            return {"success": False, "error": str(exc)}
 
     @staticmethod
-    def update(tenant_id: str, payload: Dict[str, Any], tenant_id_header: Optional[str] = None) -> Dict[str, Any]:
+    def update(
+        tenant_id: str,
+        payload: Dict[str, Any],
+        tenant_id_header: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Update one tenant using the pre-existing registry field contract.
+
+        This method does not authorize profile mutation. `tenant_id_header` is
+        compatibility-only and never authority. Field-policy alignment is outside
+        this B1 delivery, so existing update fields and return semantics are preserved.
+        """
+        del tenant_id_header
         try:
             doc = tenants_collection.find_one({"tenant_id": tenant_id})
             if not doc:
@@ -391,42 +441,55 @@ class TenantRegistry:
             if not update_fields:
                 return {"success": False, "error": "No fields to update."}
 
-            result = tenants_collection.update_one({"tenant_id": tenant_id}, {"$set": update_fields})
+            result = tenants_collection.update_one(
+                {"tenant_id": tenant_id},
+                {"$set": update_fields},
+            )
             if result.modified_count == 0:
                 return {"success": False, "error": "No changes made."}
 
             updated_doc = tenants_collection.find_one({"tenant_id": tenant_id})
             if not updated_doc:
-                return {"success": False, "error": "Failed to retrieve updated tenant."}
+                return {
+                    "success": False,
+                    "error": "Failed to retrieve updated tenant.",
+                }
 
             return {"success": True, "tenant": _doc_to_entity(updated_doc)}
-        except PyMongoError as e:
-            logger.error(f"Tenant update failed: {e}")
-            return {"success": False, "error": str(e)}
+        except PyMongoError as exc:
+            logger.error("Tenant update failed: %s", exc)
+            return {"success": False, "error": str(exc)}
 
     @staticmethod
-    def archive(tenant_id: str, tenant_id_header: Optional[str] = None) -> bool:
+    def archive(
+        tenant_id: str,
+        tenant_id_header: Optional[str] = None,
+    ) -> bool:
+        """Archive one tenant without hard deletion.
+
+        True means the existing archive mutation modified a document; False means
+        no document was modified. MongoDB infrastructure failures raise
+        TenantRegistryError with the PyMongoError preserved as `__cause__`.
+        `tenant_id_header` is compatibility-only and never authority.
+        """
+        del tenant_id_header
         try:
             result = tenants_collection.update_one(
                 {"tenant_id": tenant_id},
                 {"$set": {"status": "ARCHIVED"}},
             )
             return result.modified_count > 0
-        except PyMongoError as e:
-            logger.error(f"Tenant archive failed: {e}")
-            return False
+        except PyMongoError as exc:
+            logger.error("Tenant archive unavailable: %s", exc)
+            raise TenantRegistryError("TENANT_REGISTRY_ARCHIVE_UNAVAILABLE") from exc
 
 
-"""
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — TENANT REGISTRY (PYLANCE + VERIFIED)
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.2.1-PYLANCE-TENANT-ENTITY
-Fix:             _build_tenant_entity — type: ignore[call-arg] + attr hydration
-Additions:       verified field support in mapping and update
-Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Pending:         Align tools/eos/saas/domain/tenant.py TenantEntity fields if
-                 Pylance still warns on domain itself; tenant_router verified field
-════════════════════════════════════════════════════════════════════════════════
-"""
+__all__ = ["TenantRegistry", "TenantRegistryError", "VERSION"]
+
+# ARTIFACT: tenant_registry.py
+# VERSION: v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS
+# AUTHORITY BOUNDARY: tenant registry persistence and bounded persistence-failure signaling only; no authentication or authorization authority
+# TENANT POSTURE: direct lookup/archive remain tenant-id scoped; compatibility headers never grant or widen tenant authority
+# FAIL-CLOSED POSTURE: get/archive MongoDB outages raise TenantRegistryError and cannot masquerade as tenant absence or no-change
+# FINANCIAL EXECUTION AUTHORITY: None. Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
