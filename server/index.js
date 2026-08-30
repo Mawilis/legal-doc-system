@@ -227,7 +227,7 @@ app.get('/ping', (req, res) => {
   res.status(200).json({
     status: 'PONG',
     system: 'WILSY OS BFF',
-    version: '44.19.0-KENNEL-ALL-THE-WAY',
+    version: '44.20.0-TENANT-CONTAINMENT',
     timestamp: new Date().toISOString(),
   });
 });
@@ -236,7 +236,7 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({
     status: 'PONG',
     system: 'WILSY OS BFF',
-    version: '44.19.0-KENNEL-ALL-THE-WAY',
+    version: '44.20.0-TENANT-CONTAINMENT',
     kernelBridge: 'ACTIVE',
     kennelAllTheWay: true,
     tenantContext: 'MOUNTED',
@@ -319,7 +319,7 @@ app.get('/', (req, res) => {
   res.json({
     status: 'OPERATIONAL',
     system: 'WILSY OS SINGULARITY',
-    version: '44.19.0-KENNEL-ALL-THE-WAY',
+    version: '44.20.0-TENANT-CONTAINMENT',
     message: 'Sovereign Quantum Encryption Nexus Active',
     kernelBridge: 'ACTIVE → :9095',
     kennelAllTheWay: true,
@@ -354,7 +354,7 @@ app.get('/health', async (req, res) => {
 
   res.json({
     status: 'OPTIMAL',
-    build: '44.19.0-KENNEL-ALL-THE-WAY',
+    build: '44.20.0-TENANT-CONTAINMENT',
     database: mongoose.connection?.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
     kernelBridge: 'MOUNTED',
     kennelEOS: kennelStatus,
