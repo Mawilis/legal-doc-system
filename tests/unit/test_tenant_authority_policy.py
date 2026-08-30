@@ -1,11 +1,11 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.0.0-TENANT-AUTHORITY-POLICY-CERT
+VERSION: v1.0.1-TENANT-AUTHORITY-POLICY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.0 certifies tenant role matrix and bounded profile policy.
+CHANGELOG: v1.0.1 certifies scope-correct SYSTEM requirements and true immutable policy facts.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: No network, persistence, or sensitive data.
 TENANT BOUNDARY: Policy facts do not prove membership or scope.
@@ -13,6 +13,7 @@ AUTHORITY BOUNDARY: Tests do not authorize or mutate.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
 from tools.eos.auth.tenant_authority_policy import *
+import pytest
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -55,13 +56,28 @@ def test_policy_is_not_authorization_or_persistence() -> None:
     assert "pymongo" not in __import__("tools.eos.auth.tenant_authority_policy", fromlist=["x"]).__dict__
     assert requires_system_authority("lifecycle_create") is True
     assert requires_system_authority("cross_tenant") is True
+    assert requires_system_authority("platform_lifecycle") is True
+    assert requires_system_authority("lifecycle_archive") is False
     assert requires_system_authority("profile_read") is False
     assert "tenant:profile:read" in FUTURE_PERMISSION_CANDIDATES
     assert "tenant:lifecycle:archive" in FUTURE_PERMISSION_CANDIDATES
     assert "payment" not in FUTURE_PERMISSION_CANDIDATES
 
+def test_policy_facts_cannot_be_mutated() -> None:
+    with pytest.raises(TypeError):
+        ELIGIBILITY["tenant_owner"]["profile_read"] = DENY  # type: ignore[index]
+    with pytest.raises(AttributeError):
+        TENANT_ROLES.add("x")  # type: ignore[attr-defined]
+    with pytest.raises(AttributeError):
+        OPERATIONS.add("x")  # type: ignore[attr-defined]
+    with pytest.raises(AttributeError):
+        PROFILE_MUTABLE_FIELDS_V1.add("status")  # type: ignore[attr-defined]
+    assert tenant_role_operation_eligibility("tenant_owner", "profile_read") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_owner", "role_grant") == DENY
+    assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
+
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.0.0-TENANT-AUTHORITY-POLICY-CERT
+# VERSION: v1.0.1-TENANT-AUTHORITY-POLICY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
