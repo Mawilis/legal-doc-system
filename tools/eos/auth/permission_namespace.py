@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.0.0-PERMISSION-NAMESPACE-CANON
+VERSION: v1.1.0-PERMISSION-NAMESPACE-CANON
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Binds explicit permission identifiers to bounded authority namespaces without assigning or authorizing them.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.0 establishes immutable permission scope metadata, legacy classification, and deterministic serialization.
+CHANGELOG: v1.1.0 adds seven bounded TENANT vocabulary permissions without role grants or authorization.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Metadata never authenticates, authorizes, proves membership, trusts JWT/Node input, or grants financial execution.
 TENANT BOUNDARY: Tenant permissions require current governed membership; no descriptor creates membership or cross-tenant authority.
@@ -20,7 +20,7 @@ from json import dumps
 from types import MappingProxyType
 from typing import Final
 
-VERSION = "v1.0.0-PERMISSION-NAMESPACE-CANON"
+VERSION = "v1.1.0-PERMISSION-NAMESPACE-CANON"
 
 
 class PermissionDisposition(StrEnum):
@@ -58,6 +58,13 @@ _PERMISSIONS: Final = MappingProxyType({
     "artifacts:write": _meta("artifacts:write", "SERVICE", "SERVICE", "write service artifacts"),
     "events:publish": _meta("events:publish", "SERVICE", "SERVICE", "publish service events"),
     "audit:read": _meta("audit:read", "TENANT", "TENANT", "read tenant audit evidence", tenant=True),
+    "tenant:profile:read": _meta("tenant:profile:read", "TENANT", "TENANT", "read bounded tenant profile", tenant=True),
+    "tenant:profile:write": _meta("tenant:profile:write", "TENANT", "TENANT", "write bounded tenant profile", tenant=True),
+    "tenant:lifecycle:archive": _meta("tenant:lifecycle:archive", "TENANT", "TENANT", "archive own tenant", tenant=True),
+    "tenant:membership:read": _meta("tenant:membership:read", "TENANT", "TENANT", "read tenant membership", tenant=True),
+    "tenant:membership:write": _meta("tenant:membership:write", "TENANT", "TENANT", "administer tenant membership", tenant=True),
+    "tenant:role_assignment:read": _meta("tenant:role_assignment:read", "TENANT", "TENANT", "read tenant role assignments", tenant=True),
+    "tenant:role_assignment:write": _meta("tenant:role_assignment:write", "TENANT", "TENANT", "administer tenant role assignments", tenant=True),
     "execution:trigger": _meta("execution:trigger", "SYSTEM", "UNSAFE_MULTI_NAMESPACE", "trigger non-financial execution", disposition=PermissionDisposition.BLOCKED_AMBIGUOUS),
     "tenant:manage": _meta("tenant:manage", "TENANT", "UNRESOLVED", "tenant administration (scope unresolved)", tenant=True, disposition=PermissionDisposition.BLOCKED_AMBIGUOUS),
     "admin:all": _meta("admin:all", "SYSTEM", "LEGACY", "legacy administrative label", system=True, disposition=PermissionDisposition.LEGACY_ONLY),
@@ -93,7 +100,7 @@ def classify_legacy_permission(permission_id: object) -> PermissionDisposition |
 __all__ = ["PermissionDisposition", "PermissionMetadata", "VERSION", "permission_metadata", "canonical_permissions", "classify_legacy_permission"]
 
 # ARTIFACT: permission_namespace.py
-# VERSION: v1.0.0-PERMISSION-NAMESPACE-CANON
+# VERSION: v1.1.0-PERMISSION-NAMESPACE-CANON
 # AUTHORITY BOUNDARY: permission vocabulary and scope metadata only
 # TENANT POSTURE: tenant descriptors require separately proven ACTIVE membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous, and legacy values never authorize
