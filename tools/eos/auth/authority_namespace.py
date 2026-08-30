@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Authority Namespace Canon.
-VERSION: v1.0.0-AUTHORITY-NAMESPACE-CANON
+VERSION: v1.0.1-AUTHORITY-NAMESPACE-CANON
 AUTHORITY: Canonical Python classification of authority namespaces only.
 EPITOME: Separates system, tenant, service, domain, and profile concepts before authorization.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authority_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.0 establishes immutable namespace metadata and migration-only legacy classification.
+CHANGELOG: v1.0.1 preserves immutable namespace metadata and migration-only legacy classification while repairing sovereign version coherence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Unknown and ambiguous values fail closed; no credentials, claims, tenant sentinels, or financial data are accepted.
 TENANT BOUNDARY: Namespace metadata never proves membership or tenant authority.

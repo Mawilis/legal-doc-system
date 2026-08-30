@@ -13,6 +13,8 @@ AUTHORITY BOUNDARY: Certification covers namespace semantics only.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
 from dataclasses import FrozenInstanceError
+from pathlib import Path
+import re
 
 import pytest
 from tools.eos.auth import authority_namespace as namespace_module
@@ -103,6 +105,17 @@ def test_legacy_is_migration_metadata_not_authorization():
 def test_canonical_round_trip():
     import json
     assert tuple(item["namespace"] for item in json.loads(canonical_metadata())) == tuple(item.value for item in AuthorityNamespace)
+
+
+def test_sovereign_version_coherence():
+    source = Path(namespace_module.__file__).read_text(encoding="utf-8")
+    header = re.search(r'(?m)^VERSION:\s*(\S+)$', source)
+    module = re.search(r'(?m)^VERSION = "([^"]+)"$', source)
+    seal = re.search(r'(?m)^# VERSION:\s*(\S+)$', source)
+    changelog = re.search(r'(?m)^CHANGELOG:\s*(v\S+)', source)
+    assert header and module and seal and changelog
+    assert {header.group(1), module.group(1), seal.group(1)} == {namespace_module.VERSION}
+    assert changelog.group(1) == "v1.0.1"
 
 
 # ARTIFACT: test_authority_namespace.py
