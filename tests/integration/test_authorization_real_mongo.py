@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Real-Mongo Current Authorization Integration Certification
-VERSION: v1.0.0-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION
+VERSION: v1.0.1-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION
 AUTHORITY: Integration certification of final tenant-scoped authorization decisions over actual persisted current RoleAssignmentAuthority.
 EPITOME: Proves frozen Python authorization consumes exact real-Mongo current role assignment truth and preserves principal/tenant scoping.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_authorization_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30
-CHANGELOG: v1.0.0-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION establishes isolated real-Mongo composition evidence for current role and permission authorization.
+CHANGELOG: v1.0.1-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION proves removed legacy and ambiguous permissions remain denied even with valid persisted current role assignments.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Dedicated synthetic integration records only; no production credentials, customer data, secrets, or financial records.
 TENANT BOUNDARY: Every proof uses explicit principal/tenant/role natural keys and includes negative cross-tenant evidence.
@@ -31,7 +31,7 @@ from tools.eos.auth.role_assignment_repository import (
     RoleAssignmentRepository,
 )
 
-VERSION = "v1.0.0-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION"
+VERSION = "v1.0.1-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION"
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
 
 
@@ -105,11 +105,18 @@ async def test_real_mongo_permission_projection_and_admin_literal(mongo_context:
     collection, repository = mongo_context
     persist(collection, authority("principal-p", "tenant-t", "SERVICE_WORKER"))
     typed = cast(Any, repository)
-    assert await RequirePermission("execution:trigger").__call__(identity(roles=[], permissions=[]), repository=typed) is not None
+    with pytest.raises(ForbiddenOperationException):
+        await RequirePermission("execution:trigger").__call__(identity(roles=[], permissions=[]), repository=typed)
     with pytest.raises(ForbiddenOperationException):
         await RequirePermission("admin:all").__call__(identity(roles=["SOVEREIGN_ARCHITECT"], permissions=["admin:all"]), repository=typed)
     persist(collection, authority("principal-p", "tenant-t", "SOVEREIGN_ARCHITECT"))
-    assert await RequirePermission("admin:all").__call__(identity(), repository=typed) is not None
+    with pytest.raises(ForbiddenOperationException):
+        await RequirePermission("admin:all").__call__(identity(), repository=typed)
+    persist(collection, authority("principal-p", "tenant-t", "ENTERPRISE_ADMIN"))
+    with pytest.raises(ForbiddenOperationException):
+        await RequirePermission("tenant:manage").__call__(identity(), repository=typed)
+    persist(collection, authority("principal-p", "tenant-t", "AUDITOR"))
+    assert await RequirePermission("audit:read").__call__(identity(roles=[], permissions=[]), repository=typed) is not None
     with pytest.raises(ForbiddenOperationException):
         await RequirePermission("tenant:delete").__call__(identity(), repository=typed)
 
@@ -123,7 +130,7 @@ def test_real_mongo_malformed_persisted_authority_is_bounded(mongo_context: tupl
 
 
 # ARTIFACT: test_authorization_real_mongo.py
-# VERSION: v1.0.0-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION
+# VERSION: v1.0.1-WILSY-CURRENT-AUTHORIZATION-REAL-MONGO-INTEGRATION
 # AUTHORITY BOUNDARY: real-Mongo current role-assignment integration into frozen tenant-scoped authorization decisions only
 # TENANT POSTURE: exact principal/tenant/role authority keys with negative cross-tenant proof; no inference or default
 # FAIL-CLOSED POSTURE: absent, revoked, malformed, cross-tenant, cross-principal, and projected-only authority never grants access

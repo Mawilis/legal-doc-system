@@ -78,9 +78,11 @@ async def test_require_permission_uses_definition_and_current_assignment():
 async def test_require_permission_candidates_fail_closed_and_admin_all_is_literal():
     """Permission candidates continue only on absence; admin:all remains exact literal policy."""
     repo = StubRepository({"ENTERPRISE_ADMIN": active("ENTERPRISE_ADMIN")})
-    assert await RequirePermission("execution:trigger").__call__(identity=identity(), repository=cast(Any, repo)) is not None
+    with pytest.raises(ForbiddenOperationException):
+        await RequirePermission("execution:trigger").__call__(identity=identity(), repository=cast(Any, repo))
     with pytest.raises(ForbiddenOperationException): await RequirePermission("admin:all").__call__(identity=identity(), repository=cast(Any, StubRepository({"SOVEREIGN_ARCHITECT": revoked("SOVEREIGN_ARCHITECT")})))
-    assert await RequirePermission("admin:all").__call__(identity=identity(), repository=cast(Any, StubRepository({"SOVEREIGN_ARCHITECT": active("SOVEREIGN_ARCHITECT")}))) is not None
+    with pytest.raises(ForbiddenOperationException):
+        await RequirePermission("admin:all").__call__(identity=identity(), repository=cast(Any, StubRepository({"SOVEREIGN_ARCHITECT": active("SOVEREIGN_ARCHITECT")})))
     with pytest.raises(ForbiddenOperationException): await RequirePermission("tenant:delete").__call__(identity=identity(), repository=cast(Any, StubRepository({"SOVEREIGN_ARCHITECT": active("SOVEREIGN_ARCHITECT")})))
 
 @pytest.mark.anyio
@@ -92,7 +94,7 @@ async def test_require_permission_unknown_malformed_and_failure_semantics():
         assert repo.calls == []
     repo = StubRepository({"ENTERPRISE_ADMIN": RoleAssignmentRepositoryError("internal") , "SERVICE_WORKER": active("SERVICE_WORKER")})
     with pytest.raises(ForbiddenOperationException): await RequirePermission("execution:trigger").__call__(identity=identity(), repository=cast(Any, repo))
-    assert repo.calls == [("principal-p", "tenant-t", "ENTERPRISE_ADMIN")]
+    assert repo.calls == []
 
 def test_role_assignment_provider_is_constructor_boundary():
     """Provider constructs the repository without persistence access."""

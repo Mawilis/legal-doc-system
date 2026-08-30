@@ -26,7 +26,7 @@ def test_sovereign_architect_and_admin_all_are_literal():
     """Prove neither role nor admin:all creates implicit bypass authority."""
     assert has_permission(["SOVEREIGN_ARCHITECT"], "kernel:read") is True
     assert has_permission(["SOVEREIGN_ARCHITECT"], "tenant:delete") is False
-    assert has_permission(["SOVEREIGN_ARCHITECT"], "admin:all") is True
+    assert has_permission(["SOVEREIGN_ARCHITECT"], "admin:all") is False
     assert has_permission(["SOVEREIGN_ARCHITECT"], "admin:manage") is False
 
 def test_unknown_and_malformed_inputs_fail_closed():
@@ -48,7 +48,7 @@ def test_multi_role_union_is_exact_and_deterministic():
     assert has_permission(roles, "audit:read") is True
     for partial in ("audit", "audit:read:extra", "*", "admin:"):
         assert has_permission(roles, partial) is False
-    assert [has_permission(roles, "execution:trigger") for _ in range(5)] == [True] * 5
+    assert [has_permission(roles, "execution:trigger") for _ in range(5)] == [False] * 5
 
 # ARTIFACT: test_permissions.py
 # VERSION: v1.0.0-WILSY-PERMISSION-POLICY-UNIT-CONTRACT

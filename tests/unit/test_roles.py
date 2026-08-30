@@ -36,8 +36,8 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed():
 
 def test_reverse_lookup_is_exact_and_deterministic():
     """Prove exact reverse lookup rejects unknown and partial permission strings."""
-    assert get_roles_granting_permission("admin:all") == ("SOVEREIGN_ARCHITECT",)
-    assert get_roles_granting_permission("execution:trigger") == ("ENTERPRISE_ADMIN", "SERVICE_WORKER", "SOVEREIGN_ARCHITECT")
+    assert get_roles_granting_permission("admin:all") == ()
+    assert get_roles_granting_permission("execution:trigger") == ()
     assert get_roles_granting_permission("admin") == ()
     assert get_roles_granting_permission("unknown:permission") == ()
     assert get_roles_granting_permission(cast(Any, None)) == ()
@@ -45,7 +45,12 @@ def test_reverse_lookup_is_exact_and_deterministic():
 def test_admin_all_and_sovereign_architect_are_not_implicit_bypasses():
     """Prove admin:all and SOVEREIGN_ARCHITECT grant only explicit definitions."""
     grants = get_permissions_for_roles(["SOVEREIGN_ARCHITECT"])
-    assert "admin:all" in grants
+    assert "admin:all" not in grants
+    assert get_permissions_for_roles(["ENTERPRISE_ADMIN"]) == ["artifacts:read", "governance:evaluate", "kernel:read"]
+    assert get_permissions_for_roles(["SERVICE_WORKER"]) == ["artifacts:write", "events:publish"]
+    assert get_roles_granting_permission("tenant:manage") == ()
+    assert get_permissions_for_roles(["AUDITOR"]) == ["artifacts:read", "audit:read", "governance:read", "kernel:read"]
+    assert get_permissions_for_roles(["SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN"]) == get_permissions_for_roles(["ENTERPRISE_ADMIN", "SOVEREIGN_ARCHITECT"])
     assert "tenant:delete" not in grants
     assert get_roles_granting_permission("tenant:delete") == ()
 
