@@ -1,17 +1,85 @@
 # -*- coding: utf-8 -*-
-"""TITLE: WILSY OS Tenant Registry.
-VERSION: v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS
-AUTHORITY: Canonical MongoDB-backed tenant registry persistence boundary.
-EPITOME: Preserves existing tenant registry behavior while distinguishing tenant absence from get/archive infrastructure unavailability.
-ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/tenancy/tenant_registry.py
-COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.3.0 introduces TenantRegistryError and makes get/archive MongoDB outages explicit without changing list/create/update business semantics.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Registry persistence contains tenant profile data; infrastructure failures are explicit and never converted into fabricated absence.
-TENANT BOUNDARY: Every direct tenant lookup or mutation is keyed by the supplied tenant identifier; legacy tenant_id_header inputs remain compatibility-only and never grant authority.
-AUTHORITY BOUNDARY: Owns tenant registry persistence and persistence-failure signaling only; does not authenticate, authorize, grant roles, establish membership, or own transport authority.
-FINANCIAL AUTHORITY BOUNDARY: No financial execution authority. Kennel EOS remains exclusive.
+"""
+===============================================================================
+WILSY OS — SOVEREIGN OPERATING SYSTEM
+TENANT REGISTRY — MAPPING FAILURE SEMANTICS
+===============================================================================
+
+TITLE:
+    WILSY OS Tenant Registry
+
+FILE:
+    tools/eos/saas/tenancy/tenant_registry.py
+
+VERSION:
+    v1.3.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS
+
+AUTHORITY:
+    Wilsy OS Core Governance.
+    Canonical MongoDB-backed tenant registry persistence boundary.
+
+EPITOME:
+    Owns tenant-registry persistence semantics while preserving the distinction
+    between genuine tenant absence, infrastructure unavailability, and invalid
+    persisted tenant truth. A matching document that cannot be mapped into a
+    TenantEntity is never allowed to masquerade as tenant absence.
+
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/tenancy/tenant_registry.py
+
+COLLABORATION / OWNERSHIP:
+    Wilson Khanyezi / Wilsy Core Engineering.
+
+CERTIFICATION / UPDATE DATE:
+    2026-08-30
+
+CHANGELOG:
+    v1.3.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS
+        - Makes persisted GET mapping failure explicit.
+        - Matching malformed documents raise
+          TENANT_REGISTRY_GET_INVALID_DOCUMENT.
+        - Genuine absence remains None.
+        - Existing GET/archive infrastructure failure semantics remain exact.
+        - list/create/update/get_tenant_by_alias business semantics remain
+          intentionally unchanged.
+
+    v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS
+        - Introduced TenantRegistryError.
+        - Distinguished GET/archive MongoDB outages from ordinary
+          absence/no-change.
+
+COMPLIANCE:
+    POPIA section 19.
+    GDPR Article 32.
+    SOC 2 CC7.2.
+    ISO 27001.
+
+SECURITY / PRIVACY POSTURE:
+    Tenant profile persistence is bounded to the supplied tenant identifier.
+    Invalid persisted GET truth fails explicitly. Infrastructure outages fail
+    explicitly. Neither condition is converted into fabricated absence.
+    Compatibility transport inputs do not grant or widen authority.
+
+TENANT BOUNDARY:
+    Direct GET/archive persistence operations are keyed by the supplied tenant
+    identifier. The legacy tenant_id_header parameter is compatibility-only and
+    never grants authority, changes tenant scope, or redirects persistence.
+
+AUTHORITY BOUNDARY:
+    This artifact owns tenant registry persistence, entity hydration, and
+    bounded persistence/read-integrity failure signaling only. It does not
+    authenticate callers, authorize operations, establish membership, grant
+    roles, interpret JWT claims, or own HTTP authority.
+
+FINANCIAL AUTHORITY BOUNDARY:
+    No financial execution authority exists in this artifact.
+    Kennel EOS remains the exclusive financial execution authority.
+
+STRUCTURAL GOVERNANCE:
+    AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+    Full-file sovereign artifact.
+    Fail-closed.
+===============================================================================
 """
 
 from __future__ import annotations
@@ -31,26 +99,57 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ..domain.tenant import OrganizationProfile, SubscriptionPlan, TenantEntity
 
-VERSION = "v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS"
+
+# =============================================================================
+# SOVEREIGN VERSION
+# =============================================================================
+
+VERSION = "v1.3.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS"
+
+
+# =============================================================================
+# LOGGING AND PERSISTENCE CONNECTION
+# =============================================================================
 
 logger = logging.getLogger("WilsyOS.SaaS.Tenancy.TenantRegistry")
 
-
-class TenantRegistryError(RuntimeError):
-    """Bounded tenant-registry persistence failure.
-
-    This exception signals infrastructure unavailability only. It does not
-    represent tenant absence, authentication failure, authorization denial,
-    membership state, role possession, HTTP status, or financial execution.
-    """
-
-
-# MongoDB connection is deferred until first operation so process startup does not
-# falsely claim database availability.
 MONGO_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017/wilsy")
 client = MongoClient(MONGO_URI, connect=False)
 db = client.get_database("wilsy")
 tenants_collection = db["tenants"]
+
+
+# =============================================================================
+# BOUNDED REGISTRY FAILURE CONTRACT
+# =============================================================================
+
+
+class TenantRegistryError(RuntimeError):
+    """Represent bounded tenant-registry persistence/read-integrity failure.
+
+    Authority:
+        Persistence/read-integrity signaling only.
+
+    Tenant scope:
+        Does not grant tenant access or alter lookup scope.
+
+    Failure semantics:
+        Used for infrastructure unavailability and invalid persisted tenant
+        truth at explicitly governed registry boundaries. It does not represent
+        genuine tenant absence, authentication failure, authorization denial,
+        membership state, role possession, HTTP status, or financial execution.
+
+    Mutation semantics:
+        Raising this exception performs no mutation by itself.
+
+    Financial boundary:
+        No financial execution authority. Kennel EOS remains exclusive.
+    """
+
+
+# =============================================================================
+# PRIVATE PERSISTENCE / HYDRATION HELPERS
+# =============================================================================
 
 
 def _to_plan_enum(plan_str: str) -> Any:
@@ -84,7 +183,7 @@ def _build_tenant_entity(
     verified: bool = False,
     checksum: Any = None,
 ) -> TenantEntity:
-    """Construct a TenantEntity while preserving existing constructor compatibility."""
+    """Construct TenantEntity while preserving existing constructor compatibility."""
     extended = {
         "alias": alias,
         "region": region,
@@ -125,7 +224,11 @@ def _build_tenant_entity(
         try:
             setattr(entity, key, value)
         except (AttributeError, TypeError) as exc:
-            logger.debug("TenantEntity compatibility hydration skipped for %s: %s", key, exc)
+            logger.debug(
+                "TenantEntity compatibility hydration skipped for %s: %s",
+                key,
+                exc,
+            )
 
     if checksum is not None:
         try:
@@ -137,11 +240,23 @@ def _build_tenant_entity(
 
 
 def _doc_to_entity(doc: Dict[str, Any]) -> Optional[TenantEntity]:
-    """Map one tenant document into TenantEntity; malformed documents fail closed."""
+    """Map one tenant document using the registry's legacy tolerant contract.
+
+    This helper intentionally returns None when a document cannot be hydrated.
+    Existing list/create/update/alias-discovery semantics depend on that tolerant
+    behavior and remain outside the B1.1 behavioral change.
+
+    TenantRegistry.get() MUST use the strict GET helper below after document
+    existence has been established.
+    """
     try:
         org_name = doc.get("name") or doc.get("organization_name") or "Unknown"
         industry = doc.get("industry") or "General"
-        plan_str = doc.get("subscription", {}).get("plan") or doc.get("plan") or "BASIC"
+        plan_str = (
+            doc.get("subscription", {}).get("plan")
+            or doc.get("plan")
+            or "BASIC"
+        )
         plan_enum = _to_plan_enum(str(plan_str))
 
         regions = doc.get("regions") or ["Africa", "Europe"]
@@ -183,6 +298,19 @@ def _doc_to_entity(doc: Dict[str, Any]) -> Optional[TenantEntity]:
         return None
 
 
+def _doc_to_entity_for_get(doc: Dict[str, Any]) -> TenantEntity:
+    """Hydrate an existing GET document or fail closed as invalid persisted truth.
+
+    This helper is intentionally GET-specific. The caller has already established
+    that a matching persisted document exists. Returning None here would fabricate
+    tenant absence, so an unmappable document raises a bounded registry error.
+    """
+    entity = _doc_to_entity(doc)
+    if entity is None:
+        raise TenantRegistryError("TENANT_REGISTRY_GET_INVALID_DOCUMENT")
+    return entity
+
+
 def _entity_to_doc(entity: TenantEntity) -> Dict[str, Any]:
     """Serialize TenantEntity into the registry's existing persistence document."""
     org = entity.organization
@@ -216,11 +344,32 @@ def _entity_to_doc(entity: TenantEntity) -> Dict[str, Any]:
     }
 
 
-class TenantRegistry:
-    """MongoDB-backed tenant registry.
+# =============================================================================
+# CANONICAL TENANT REGISTRY
+# =============================================================================
 
-    This registry owns tenant persistence only. It does not authenticate callers,
-    authorize operations, infer membership, or treat transport headers as authority.
+
+class TenantRegistry:
+    """Own the MongoDB-backed tenant persistence boundary.
+
+    Authority:
+        Persistence only. No authentication, authorization, membership, role,
+        JWT, permission, transport, or financial authority.
+
+    Tenant scope:
+        Direct GET/archive operations use the supplied tenant identifier.
+        tenant_id_header is compatibility-only and never authority.
+
+    Mutation semantics:
+        create/update/archive retain their existing persistence behavior.
+        archive is a soft status transition, never hard deletion.
+
+    Fail-closed semantics:
+        GET distinguishes genuine absence, infrastructure outage, and invalid
+        persisted tenant truth.
+
+    Financial boundary:
+        No financial execution authority. Kennel EOS remains exclusive.
     """
 
     @staticmethod
@@ -231,9 +380,23 @@ class TenantRegistry:
     ) -> Dict[str, Any]:
         """List persisted tenants using existing bounded fallback semantics.
 
-        `tenant_id_header` is compatibility-only and never narrows or grants access.
-        This method's historical empty-result-on-PyMongoError behavior is preserved
-        because list-route migration is outside this delivery.
+        Authority:
+            This method does not authorize listing.
+
+        Tenant scope:
+            tenant_id_header is compatibility-only and never narrows or grants
+            access. The historical global list behavior remains contained at the
+            HTTP layer and is intentionally unchanged here.
+
+        Failure semantics:
+            Existing empty-result-on-PyMongoError behavior is preserved because
+            list-route migration is outside this delivery.
+
+        Mutation semantics:
+            Read-only.
+
+        Financial boundary:
+            No financial execution authority.
         """
         del tenant_id_header
         try:
@@ -260,11 +423,32 @@ class TenantRegistry:
         tenant_id: str,
         tenant_id_header: Optional[str] = None,
     ) -> Optional[TenantEntity]:
-        """Resolve one tenant by identifier.
+        """Resolve one tenant by identifier with strict persisted-truth semantics.
 
-        Genuine absence returns None. MongoDB infrastructure failures raise
-        TenantRegistryError with the PyMongoError preserved as `__cause__`.
-        `tenant_id_header` is compatibility-only and never authority.
+        Authority:
+            Persistence lookup only. This method does not authenticate or authorize.
+
+        Tenant scope:
+            Lookup is keyed by tenant_id. tenant_id_header is compatibility-only
+            and never authority.
+
+        Return semantics:
+            A healthy matching document returns TenantEntity.
+            Genuine absence returns None.
+
+        Fail-closed semantics:
+            MongoDB infrastructure failure raises
+            TENANT_REGISTRY_GET_UNAVAILABLE with the original PyMongoError as
+            __cause__.
+
+            A matching persisted document that cannot be hydrated raises
+            TENANT_REGISTRY_GET_INVALID_DOCUMENT and never masquerades as absence.
+
+        Mutation semantics:
+            Read-only.
+
+        Financial boundary:
+            No financial execution authority.
         """
         del tenant_id_header
         try:
@@ -274,8 +458,10 @@ class TenantRegistry:
                     doc = tenants_collection.find_one({"_id": ObjectId(tenant_id)})
                 except (InvalidId, TypeError):
                     doc = None
+
             if doc:
-                return _doc_to_entity(doc)
+                return _doc_to_entity_for_get(doc)
+
             return None
         except PyMongoError as exc:
             logger.error("Tenant get unavailable: %s", exc)
@@ -288,8 +474,20 @@ class TenantRegistry:
     ) -> Optional[TenantEntity]:
         """Retrieve a tenant by alias, tenant id, or name case-insensitively.
 
-        This preserves existing alias-discovery behavior. `tenant_id_header` is
-        compatibility-only and never authority.
+        Authority:
+            Persistence discovery only. No authorization grant is implied.
+
+        Tenant scope:
+            tenant_id_header is compatibility-only and never authority.
+
+        Failure semantics:
+            Existing alias-discovery behavior is intentionally preserved.
+
+        Mutation semantics:
+            Read-only.
+
+        Financial boundary:
+            No financial execution authority.
         """
         del tenant_id_header
         if not alias:
@@ -314,8 +512,20 @@ class TenantRegistry:
     ) -> Dict[str, Any]:
         """Create one tenant using the existing registry create contract.
 
-        This method does not authorize creation. `tenant_id_header` is ignored as
-        authority. Existing structured success/error return semantics are preserved.
+        Authority:
+            Persistence only. This method does not authorize lifecycle creation.
+
+        Tenant scope:
+            tenant_id_header is ignored as authority.
+
+        Mutation semantics:
+            Existing structured success/error behavior is preserved.
+
+        Failure semantics:
+            Existing DuplicateKeyError/PyMongoError return semantics are preserved.
+
+        Financial boundary:
+            No financial execution authority.
         """
         del tenant_id_header
         try:
@@ -391,9 +601,21 @@ class TenantRegistry:
     ) -> Dict[str, Any]:
         """Update one tenant using the pre-existing registry field contract.
 
-        This method does not authorize profile mutation. `tenant_id_header` is
-        compatibility-only and never authority. Field-policy alignment is outside
-        this B1 delivery, so existing update fields and return semantics are preserved.
+        Authority:
+            Persistence only. This method does not authorize profile mutation.
+
+        Tenant scope:
+            tenant_id_header is compatibility-only and never authority.
+
+        Mutation semantics:
+            Existing field and return semantics are preserved. Field-policy
+            alignment remains outside this delivery.
+
+        Failure semantics:
+            Existing structured PyMongoError behavior is preserved.
+
+        Financial boundary:
+            No financial execution authority.
         """
         del tenant_id_header
         try:
@@ -467,10 +689,26 @@ class TenantRegistry:
     ) -> bool:
         """Archive one tenant without hard deletion.
 
-        True means the existing archive mutation modified a document; False means
-        no document was modified. MongoDB infrastructure failures raise
-        TenantRegistryError with the PyMongoError preserved as `__cause__`.
-        `tenant_id_header` is compatibility-only and never authority.
+        Authority:
+            Persistence only. This method does not authorize lifecycle archival.
+
+        Tenant scope:
+            tenant_id is the exact persistence target.
+            tenant_id_header is compatibility-only and never authority.
+
+        Mutation semantics:
+            Performs only ``$set: {"status": "ARCHIVED"}``.
+            True means the mutation modified a document.
+            False means no document was modified.
+            No hard deletion occurs.
+
+        Fail-closed semantics:
+            MongoDB infrastructure failure raises
+            TENANT_REGISTRY_ARCHIVE_UNAVAILABLE with the original PyMongoError as
+            __cause__.
+
+        Financial boundary:
+            No financial execution authority.
         """
         del tenant_id_header
         try:
@@ -481,15 +719,25 @@ class TenantRegistry:
             return result.modified_count > 0
         except PyMongoError as exc:
             logger.error("Tenant archive unavailable: %s", exc)
-            raise TenantRegistryError("TENANT_REGISTRY_ARCHIVE_UNAVAILABLE") from exc
+            raise TenantRegistryError(
+                "TENANT_REGISTRY_ARCHIVE_UNAVAILABLE"
+            ) from exc
 
+
+# =============================================================================
+# EXPLICIT PUBLIC EXPORT SURFACE
+# =============================================================================
 
 __all__ = ["TenantRegistry", "TenantRegistryError", "VERSION"]
 
+
+# =============================================================================
+# WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
+# =============================================================================
 # ARTIFACT: tenant_registry.py
-# VERSION: v1.3.0-TENANT-REGISTRY-FAILURE-SEMANTICS
-# AUTHORITY BOUNDARY: tenant registry persistence and bounded persistence-failure signaling only; no authentication or authorization authority
-# TENANT POSTURE: direct lookup/archive remain tenant-id scoped; compatibility headers never grant or widen tenant authority
-# FAIL-CLOSED POSTURE: get/archive MongoDB outages raise TenantRegistryError and cannot masquerade as tenant absence or no-change
+# VERSION: v1.3.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS
+# AUTHORITY BOUNDARY: tenant registry persistence, hydration, and bounded persistence/read-integrity signaling only; no authentication or authorization authority
+# TENANT POSTURE: direct GET/archive remain tenant-id scoped; compatibility headers never grant, widen, or redirect tenant authority
+# FAIL-CLOSED POSTURE: genuine absence alone returns None; invalid persisted GET truth raises TENANT_REGISTRY_GET_INVALID_DOCUMENT; GET/archive outages remain explicit
 # FINANCIAL EXECUTION AUTHORITY: None. Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
