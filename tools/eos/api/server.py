@@ -53,6 +53,7 @@ from .tenant_router import tenant_router
 from .auth_router import router as auth_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
 from .employee_router import router as employee_router
+from .authority_bridge_router import router as authority_bridge_router
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -188,6 +189,7 @@ class WilsyAPIServer:
 
         # Employee
         app.include_router(employee_router)                   # /api/employees/search, etc.
+        app.include_router(authority_bridge_router)            # /internal/authority/authorize
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with all sovereign routers "

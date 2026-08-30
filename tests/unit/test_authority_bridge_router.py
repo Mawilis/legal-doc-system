@@ -24,8 +24,8 @@ from unittest.mock import AsyncMock
 import pytest
 from starlette.requests import Request
 
-from tools.eos.api.authority_bridge_router import BridgeRequest, authorize_request, _origin_form
-from tools.eos.api.exceptions import ForbiddenOperationException, UnauthorizedAccessException
+from tools.eos.api.authority_bridge_router import BridgeRequest, authorize, authorize_request, router, _origin_form
+from tools.eos.api.exceptions import ForbiddenOperationException, UnauthorizedAccessException, WilsyAPIException
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.internal_service_trust import TrustResult
@@ -330,9 +330,26 @@ def test_governed_authentication_rejects_inactive_and_revoked_principals(monkeyp
 def test_final_64_property_traceability_seal():
     executed = {
         1: "test_valid_request_uses_actual_frozen_verifier", 2: "test_valid_request_uses_actual_frozen_verifier", 3: "test_actual_frozen_verifier_missing_header_is_bounded_401", 4: "test_actual_frozen_verifier_malformed_timestamp_is_bounded_401", 5: "test_actual_frozen_verifier_bad_signature_is_bounded_401", 6: "test_actual_frozen_verifier_body_digest_and_service_mismatch_are_401", 7: "test_actual_frozen_verifier_unknown_key_exposes_mapping_gap", 8: "test_trust_and_config_fail_closed", 9: "test_actual_frozen_verifier_body_digest_and_service_mismatch_are_401", 10: "test_audience_is_checked_by_bridge_contract", 11: "test_freshness_failures_are_bounded_denials", 12: "test_freshness_failures_are_bounded_denials", 13: "test_direct_frozen_replay_duplicate_denies_second_claim", 14: "test_direct_frozen_replay_duplicate_denies_second_claim", 15: "test_replay_and_replay_infrastructure_are_distinct_boundaries", 16: "test_raw_body_bytes_reach_verifier_without_reserialization", 17: "test_raw_body_bytes_reach_verifier_without_reserialization", 18: "test_raw_body_bytes_reach_verifier_without_reserialization", 19: "test_raw_body_bytes_reach_verifier_without_reserialization", 20: "test_one_byte_body_mutation_invalidates_signed_assertion", 21: "test_raw_body_bytes_reach_verifier_without_reserialization", 22: "test_origin_form_preserves_exact_wire_bytes", 23: "test_origin_form_preserves_exact_wire_bytes", 24: "test_origin_form_preserves_exact_wire_bytes", 25: "test_origin_form_preserves_exact_wire_bytes", 26: "test_origin_form_preserves_exact_wire_bytes", 27: "test_origin_form_preserves_exact_wire_bytes", 28: "test_origin_form_preserves_exact_wire_bytes", 29: "test_user_and_tenant_authority_failures_remain_401", 30: "test_user_and_tenant_authority_failures_remain_401", 31: "test_request_authority_fields_cannot_cross_bridge", 32: "test_request_authority_fields_cannot_cross_bridge", 33: "test_request_authority_fields_cannot_cross_bridge", 34: "test_governed_authentication_rejects_inactive_and_revoked_principals", 35: "test_valid_composition_is_bounded_and_delegated", 36: "test_user_and_tenant_authority_failures_remain_401", 37: "test_request_authority_fields_cannot_cross_bridge", 38: "test_user_and_tenant_authority_failures_remain_401", 39: "test_valid_composition_is_bounded_and_delegated", 40: "test_user_tenant_and_policy_denials_are_preserved", 41: "test_authorization_revocation_denies_403", 42: "test_unknown_policy_fails_closed_with_403", 43: "test_request_authority_fields_cannot_cross_bridge", 44: "test_request_authority_fields_cannot_cross_bridge", 45: "test_request_authority_fields_cannot_cross_bridge", 46: "test_request_authority_fields_cannot_cross_bridge", 47: "test_request_authority_fields_cannot_cross_bridge", 48: "test_request_authority_fields_cannot_cross_bridge", 49: "test_request_authority_fields_cannot_cross_bridge", 50: "test_request_authority_fields_cannot_cross_bridge", 51: "test_request_authority_fields_cannot_cross_bridge", 52: "test_valid_composition_is_bounded_and_delegated", 53: "test_direct_asgi_serializes_bounded_errors_without_httpx", 54: "test_direct_asgi_serializes_bounded_errors_without_httpx", 55: "test_direct_asgi_serializes_bounded_errors_without_httpx", 56: "test_direct_asgi_serializes_bounded_errors_without_httpx", 57: "test_direct_asgi_serializes_bounded_errors_without_httpx", 58: "test_direct_asgi_serializes_bounded_errors_without_httpx", 59: "test_trust_and_config_fail_closed", 60: "test_trust_and_config_fail_closed", 61: "test_trust_and_config_fail_closed", 62: "test_valid_composition_is_bounded_and_delegated", 63: "test_valid_composition_is_bounded_and_delegated", 64: "test_valid_composition_is_bounded_and_delegated",
+        65: "test_route_service_trust_precedes_user_authentication", 66: "test_route_service_trust_precedes_user_authentication", 67: "test_route_service_trust_precedes_user_authentication", 68: "test_route_endpoint_has_no_outer_identity_or_tenant_dependencies",
     }
-    assert len(executed) == 64
+    assert len(executed) == 68
     assert all(isinstance(name, str) and name for name in executed.values())
+
+
+def test_route_service_trust_precedes_user_authentication():
+    async def run() -> None:
+        request = _request()
+        with pytest.raises(WilsyAPIException) as error:
+            await authorize(request, BridgeRequest(policy_id="audit:read"))
+        assert error.value.status_code == 503
+        assert "credentials" not in error.value.message.lower()
+    asyncio.run(run())
+
+
+def test_route_endpoint_has_no_outer_identity_or_tenant_dependencies():
+    route = next(route for route in router.routes if getattr(route, "path", None) == "/internal/authority/authorize")
+    assert getattr(route, "endpoint", None) is authorize
+    assert not getattr(getattr(route, "dependant", None), "dependencies", ())
 
 
 def test_direct_asgi_serializes_bounded_errors_without_httpx():

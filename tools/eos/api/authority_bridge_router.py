@@ -1,12 +1,12 @@
 """WILSY OS Python Authority Bridge Router
 TITLE: WILSY OS Python Authority Bridge Router
-VERSION: v1.0.0-WILSY-PYTHON-AUTHORITY-BRIDGE
+VERSION: v1.0.1-SERVICE-TRUST-FIRST
 AUTHORITY: HTTP composition of existing Python service-trust, identity, tenant, and authorization authorities.
 EPITOME: Verifies a Node service assertion without allowing service metadata to become user or tenant authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/authority_bridge_router.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering; Python owns authority decisions.
 CERTIFICATION/UPDATE DATE: 2026-08-30
-CHANGELOG: v1.0.0-WILSY-PYTHON-AUTHORITY-BRIDGE — raw HTTP trust, durable replay, and delegated Python authorization composition.
+CHANGELOG: v1.0.1-SERVICE-TRUST-FIRST — service-trust-first ordering; governed user and tenant authorities execute only after trust.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Fail closed; bounded responses; secrets, credentials, claims, and repository details are never returned.
 TENANT BOUNDARY: X-Tenant-ID is untrusted context and is admitted only by current Python membership authority.
@@ -19,11 +19,12 @@ import os
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, Protocol
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Request, status
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, ConfigDict
 
 from tools.eos.api.exceptions import ForbiddenOperationException, UnauthorizedAccessException, WilsyAPIException
-from tools.eos.auth.authentication import get_current_identity
+from tools.eos.auth.authentication import get_current_identity, get_principal_authority_repository
 from tools.eos.auth.authorization import RequirePermission, get_role_assignment_repository
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.internal_service_replay_registry import InternalServiceReplayRegistry
@@ -37,9 +38,9 @@ from tools.eos.auth.internal_service_trust import (
     TrustResult,
     verify_internal_service_request,
 )
-from tools.eos.auth.tenant_access import get_current_tenant_identity
+from tools.eos.auth.tenant_access import get_current_tenant_identity, get_tenant_membership_repository
 
-VERSION = "v1.0.0-WILSY-PYTHON-AUTHORITY-BRIDGE"
+VERSION = "v1.0.1-SERVICE-TRUST-FIRST"
 ROUTE_PATH = "/internal/authority/authorize"
 SERVICE_HEADERS = (
     "X-Wilsy-Auth-Version", "X-Wilsy-Service-ID", "X-Wilsy-Audience", "X-Wilsy-Key-ID",
@@ -154,19 +155,36 @@ router = APIRouter(tags=["Internal Python Authority"])
 
 
 @router.post(ROUTE_PATH)
-async def authorize(request: Request, payload: BridgeRequest, identity: SovereignIdentity = Depends(get_current_identity), tenant_identity: SovereignIdentity = Depends(get_current_tenant_identity)) -> dict[str, Any]:
+async def authorize(request: Request, payload: BridgeRequest) -> dict[str, Any]:
     """Authorize one server-controlled policy after service, user, tenant, and role gates."""
     async def current_identity() -> SovereignIdentity:
-        return identity
-    async def current_tenant(_: SovereignIdentity) -> SovereignIdentity:
-        return tenant_identity
+        authorization = request.headers.get("Authorization")
+        credentials = None
+        if authorization:
+            scheme, _, token = authorization.partition(" ")
+            if scheme and token:
+                credentials = HTTPAuthorizationCredentials(scheme=scheme, credentials=token)
+        return await get_current_identity(
+            request,
+            credentials=credentials,
+            api_key=None,
+            repository=get_principal_authority_repository(),
+        )
+
+    async def current_tenant(identity: SovereignIdentity) -> SovereignIdentity:
+        return await get_current_tenant_identity(
+            tenant_id=request.headers.get("X-Tenant-ID"),
+            identity=identity,
+            repository=get_tenant_membership_repository(),
+        )
+
     return await authorize_request(request, payload, identity_provider=current_identity, tenant_provider=current_tenant)
 
 
 __all__ = ["BridgeRequest", "ROUTE_PATH", "authorize", "authorize_request", "router"]
 
 # ARTIFACT: authority_bridge_router.py
-# VERSION: v1.0.0-WILSY-PYTHON-AUTHORITY-BRIDGE
+# VERSION: v1.0.1-SERVICE-TRUST-FIRST
 # AUTHORITY BOUNDARY: HTTP composition only; Python identity, membership, and authorization remain authoritative.
 # TENANT POSTURE: Explicit X-Tenant-ID requires current ACTIVE membership; service metadata never substitutes for tenant authority.
 # FAIL-CLOSED POSTURE: Trust, replay, authentication, membership, or authorization failures deny or return bounded 503.
