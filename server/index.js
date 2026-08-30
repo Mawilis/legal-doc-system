@@ -4,7 +4,7 @@
  * 🏛️ WILSY OS — SOVEREIGN ORCHESTRATOR (BFF ENTRY)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           server/index.js
- * Version:        v44.19.0‑KENNEL‑ALL‑THE‑WAY
+ * Version:        v44.20.0‑TENANT-CONTAINMENT
  * Authority:      Wilsy OS Core Governance
  * EPITOME:        Express app factory — the institutional gateway for all
  *                 client‑facing traffic. Provides consolidated API routes,
@@ -20,11 +20,13 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:
  *   • Wilson Khanyezi (CEO/Lead Architect) – mandate for "Kennel All The Way".
+ *   • AI Engineering – v44.20.0: Early singular tenant namespace containment before tenant context.
  *   • AI Engineering – v44.19.0: Full Kennel billing/business mounts before /api.
  *   • AI Engineering – v44.18.0: Full sovereign header, JSDoc, certification seal.
  *   • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001
  * ──────────────────────────────────────────────────────────────────────────────
  * 🔧 CHANGE LOG:
+ *   2026-08-30 – v44.20.0 – Deny direct /api/tenant authority before tenantContext; preserve plural Python proxy.
  *   2026-08-24 – v44.19.0 – Kennel All The Way: /billing, /api/billing,
  *                           /api/business, /business before apiRouter; trust proxy.
  *   2026-08-24 – v44.18.0 – Full sovereign header, JSDoc, certification seal.
@@ -48,6 +50,7 @@ import auditLogger from './middleware/auditLogger.js';
 import { startSelfHealing, stopSelfHealing } from './metrics/prometheusMetrics.js';
 import { register } from './utils/metricsCollector.js';
 import apiRouter from './routes/api.js';
+import { tenantAuthorityUnavailable } from './middleware/tenantAuthorityContainment.middleware.js';
 import { initializeSovereignJobs } from './app.js';
 import { createRequire } from 'module';
 import kennelProxyRouter from './routes/kennelProxy.js';
@@ -242,6 +245,8 @@ app.get('/api/ping', (req, res) => {
   });
 });
 
+// Contain the singular legacy namespace before tenantContext can read or select tenant state.
+app.use('/api/tenant', tenantAuthorityUnavailable);
 app.use(tenantContext);
 
 // ─── KENNEL ALL THE WAY (money + tenants + business) ────────────────────────
@@ -448,10 +453,10 @@ export default app;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — index.js V44.19.0‑KENNEL‑ALL‑THE‑WAY
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — index.js V44.20.0‑TENANT-CONTAINMENT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT — FULL MANDATE COMPLIANCE
- * Version:         v44.19.0‑KENNEL‑ALL‑THE‑WAY
+ * Version:         v44.20.0‑TENANT-CONTAINMENT
  * Key Properties:  Kennel owns /billing + /api/billing + /api/business
  *                  Orchestration metrics · Audit evidence · Self‑healing
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
