@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.0.1-TENANT-AUTHORITY-POLICY-CANON
+VERSION: v1.0.2-TENANT-AUTHORITY-POLICY-CANON
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries for future composition.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.1 repairs own-tenant archive SYSTEM scope and seals nested policy facts immutable.
+CHANGELOG: v1.0.2 makes unknown SYSTEM-authority queries explicitly fail closed.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Pure deterministic metadata; no persistence, credentials, network, or implicit authority.
 TENANT BOUNDARY: Eligibility is own-tenant only; membership and target scope require separate composition.
@@ -13,10 +13,15 @@ AUTHORITY BOUNDARY: Does not authenticate, authorize, grant permissions, mutate 
 FINANCIAL AUTHORITY BOUNDARY: Every tenant role denies financial execution; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
+from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.0.1-TENANT-AUTHORITY-POLICY-CANON"
+VERSION = "v1.0.2-TENANT-AUTHORITY-POLICY-CANON"
+class SystemAuthorityClassification(StrEnum):
+    SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
+    SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
+    UNKNOWN = "UNKNOWN"
 ELIGIBLE, DENY = "ELIGIBLE", "DENY"
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor"})
 OPERATIONS: Final[FrozenSet[str]] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "audit_read", "artifact_read", "cross_tenant", "financial_execution"})
@@ -53,14 +58,17 @@ def is_hard_delete_allowed(_: object = None) -> bool:
     """Hard deletion is prohibited; future DELETE semantics are archive-only."""
     return False
 
-def requires_system_authority(operation: object) -> bool:
-    """Identify operations requiring a future explicit SYSTEM capability."""
-    return operation in {"lifecycle_create", "cross_tenant", "platform_lifecycle"}
+def requires_system_authority(operation: object) -> SystemAuthorityClassification:
+    """Classify SYSTEM scope; unknown or malformed operations return UNKNOWN."""
+    if not isinstance(operation, str): return SystemAuthorityClassification.UNKNOWN
+    if operation in {"lifecycle_create", "cross_tenant", "platform_lifecycle"}: return SystemAuthorityClassification.SYSTEM_REQUIRED
+    if operation in OPERATIONS or operation == "lifecycle_archive": return SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    return SystemAuthorityClassification.UNKNOWN
 
-__all__ = ["VERSION", "ELIGIBLE", "DENY", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
+__all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.0.1-TENANT-AUTHORITY-POLICY-CANON
+# VERSION: v1.0.2-TENANT-AUTHORITY-POLICY-CANON
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant eligibility requires separate ACTIVE membership and scope checks
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
