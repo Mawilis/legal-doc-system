@@ -5,7 +5,7 @@ EPITOME: Proves namespace separation and fail-closed migration metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authority_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.1 substantively certifies 30 namespace security properties and immutable migration metadata.
+CHANGELOG: v1.0.1 substantively certifies 31 namespace/security properties, immutable migration metadata, and the sovereign version-coherence guard.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: No credentials, JWTs, Node objects, tenant sentinels, or financial authority are processed.
 TENANT BOUNDARY: Classification never proves tenant membership.
