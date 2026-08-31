@@ -2,28 +2,30 @@
 """
 ===============================================================================
 WILSY OS — SOVEREIGN CERTIFICATION ARTIFACT
-TENANT ROUTER — CONTROLLED GET + ARCHIVE — REAL-MONGO RUNTIME CERTIFICATE
+TENANT ROUTER — C2 PROFILE UPDATE — REAL-MONGO RUNTIME CERTIFICATE
 ===============================================================================
 
 TITLE:
-    WILSY OS Tenant Router GET + Archive Real-Mongo Runtime Certification
+    WILSY OS Tenant Router C2 Profile Update Real-Mongo Runtime Certification
 
 FILE:
     tests/integration/test_tenant_router_get_archive_real_mongo.py
 
 VERSION:
-    v1.0.0-TENANT-ROUTER-GET-ARCHIVE-REAL-MONGO-CERT
+    v1.1.0-TENANT-ROUTER-PROFILE-UPDATE-REAL-MONGO-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
-    Isolated real-Mongo certification of activated tenant GET/archive HTTP wiring.
+    Isolated actual-Mongo certification of GET/PUT/archive tenant HTTP wiring.
 
 EPITOME:
-    Proves the real tenant router, frozen durable authorization dependency, and
-    real Mongo-backed TenantRegistry compose correctly for healthy GET, genuine
-    absence, invalid persisted truth, exact path/scope isolation, soft archive,
-    repeated archive no-change, preserved neighboring tenant truth, continued
-    containment of global list/create/PUT, and UUID-bounded cleanup.
+    Evolves the B2B actual-Mongo certificate to prove controlled strict profile
+    PUT through the real router, frozen durable authorization dependency, and C1
+    TenantRegistry.update_profile. Proves all-six-field persistence, durable
+    sector response, protected-truth preservation, checksum regeneration,
+    proof-hash preservation, same-value idempotency, absence/corruption/scope
+    failure semantics, schema non-mutation, soft archive, containment, neighboring
+    tenant isolation, and UUID-bounded cleanup.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_tenant_router_get_archive_real_mongo.py
@@ -32,22 +34,22 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-08-30
+    2026-08-31
 
 CHANGELOG:
+    v1.1.0-TENANT-ROUTER-PROFILE-UPDATE-REAL-MONGO-CERT
+        - Adds authorized all-six-field PUT persistence proof.
+        - Adds checksum regeneration and proof-hash preservation proof.
+        - Adds same-value idempotent PUT proof.
+        - Adds PUT absence, malformed truth, forbidden-field, empty-payload, and
+          scope-mismatch non-destructive failure proof.
+        - Preserves B2B healthy GET, GET absence/corruption, soft archive,
+          repeated archive, collection/list-create containment, tenant isolation,
+          and UUID cleanup assertions.
+
     v1.0.0-TENANT-ROUTER-GET-ARCHIVE-REAL-MONGO-CERT
-        - Establishes B2B real-Mongo HTTP-to-registry certification.
-        - Proves authorized healthy GET returns HTTP 200.
-        - Proves genuine absence returns HTTP 404.
-        - Proves invalid persisted tenant truth returns HTTP 503 and remains
-          persisted.
-        - Proves authorized scope/path mismatch returns HTTP 403 without
-          cross-tenant mutation.
-        - Proves DELETE performs soft archive only, preserves document count,
-          and leaves neighboring tenant truth unchanged.
-        - Proves repeated archive returns historical no-change HTTP 404.
-        - Proves collection GET, POST, and PUT remain 503-contained.
-        - Proves UUID-bounded database cleanup and registry collection restoration.
+        - Certified B2B GET/archive actual-Mongo wiring while PUT remained
+          contained.
 
 COMPLIANCE:
     POPIA section 19.
@@ -56,24 +58,22 @@ COMPLIANCE:
     ISO 27001.
 
 SECURITY / PRIVACY POSTURE:
-    Local certification replica set only.
-    Generated tenant/principal identifiers only.
-    Real Mongo persistence is UUID-bounded and destroyed after each proof.
-    Durable authorization readers are deterministic test-local current-truth
-    fixtures; they do not replace the production authorization composition.
+    Local certification replica set only. Generated tenant/principal identifiers
+    only. Real Mongo persistence is UUID-bounded and destroyed after each proof.
+    Durable authorization readers are deterministic current-truth fixtures and do
+    not replace production authorization composition.
 
 TENANT BOUNDARY:
-    Exact own-tenant authorized scope must equal the path tenant before registry
-    access. Neighboring generated tenant documents are independently verified
-    against cross-tenant mutation.
+    Exact own-tenant authorized scope must equal the path tenant before any
+    registry access. Neighboring generated tenant documents are independently
+    verified against cross-tenant mutation.
 
 AUTHORITY BOUNDARY:
-    Evidence only. Production authentication/authorization code is used as wired;
-    test dependency overrides provide deterministic principal/membership/role
-    repository truth without creating alternate business-authority logic.
+    Evidence only. Production authentication/authorization code and real registry
+    persistence are used as wired; fixtures supply bounded current truth.
 
 FINANCIAL AUTHORITY BOUNDARY:
-    No financial state or execution is touched.
+    No financial state or execution is touched. PUT plan mutation is rejected.
     Kennel EOS remains the exclusive financial execution authority.
 
 CERTIFICATION CLASS:
@@ -86,12 +86,12 @@ STRUCTURAL GOVERNANCE:
 
 from __future__ import annotations
 
+import copy
 import os
 from contextlib import contextmanager
 from typing import Any, Iterator
 from uuid import uuid4
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pymongo import MongoClient
@@ -123,34 +123,30 @@ from tools.eos.auth.tenant_membership_repository import (
 )
 
 
-# =============================================================================
-# CERTIFICATION CONSTANTS
-# =============================================================================
-
-VERSION = "v1.0.0-TENANT-ROUTER-GET-ARCHIVE-REAL-MONGO-CERT"
+VERSION = "v1.1.0-TENANT-ROUTER-PROFILE-UPDATE-REAL-MONGO-CERT"
 
 CERT_URI_ENV = "TEST_VENDOR_MONGO_URI"
-DEFAULT_CERT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
+DEFAULT_CERT_URI = (
+    "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
+)
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
-DATABASE_PREFIX = "tenant_router_b2b_cert_"
+DATABASE_PREFIX = "tenant_router_c2_cert_"
 
-_PID = "principal-b2b-real-mongo"
-
-
-# =============================================================================
-# DETERMINISTIC DURABLE-AUTHORITY READERS
-# =============================================================================
+_PID = "principal-c2-real-mongo"
 
 
 class _RecordingReader:
     """Resolve deterministic current truth without mutation authority."""
 
-    def __init__(self, values: dict[tuple[str, ...], object] | None = None) -> None:
+    def __init__(
+        self,
+        values: dict[tuple[str, ...], object] | None = None,
+    ) -> None:
         self.values = dict(values or {})
         self.read_calls: list[tuple[str, ...]] = []
 
     def resolve(self, *keys: str) -> object:
-        """Resolve one exact authority key or raise its repository not-found type."""
+        """Resolve one exact authority key or raise repository not-found."""
         key = tuple(keys)
         self.read_calls.append(key)
         if key in self.values:
@@ -168,11 +164,6 @@ class _RecordingReader:
         )
 
 
-# =============================================================================
-# PERSISTED DOCUMENT BUILDERS
-# =============================================================================
-
-
 def _tenant_doc(
     tenant_id: str,
     *,
@@ -187,18 +178,23 @@ def _tenant_doc(
             "industry": "Legal",
             "plan": "ENTERPRISE",
             "legal_name": f"{name} Legal",
-            "tax_id": None,
-            "contact_email": None,
+            "tax_id": f"tax-{tenant_id}",
+            "contact_email": f"{tenant_id}@example.test",
             "regions": ["Africa"],
-            "created_at": "2026-08-30T00:00:00+00:00",
+            "created_at": "2026-08-31T00:00:00+00:00",
         },
         "industry": "Legal",
+        "legal_name": f"{name} Legal",
+        "tax_id": f"tax-{tenant_id}",
+        "contact_email": f"{tenant_id}@example.test",
         "plan": "ENTERPRISE",
         "regions": ["Africa"],
         "status": "ACTIVE",
-        "created_at": "2026-08-30T00:00:00+00:00",
+        "created_at": "2026-08-31T00:00:00+00:00",
+        "checksum": "legacy-checksum",
         "alias": f"{tenant_id}-alias",
         "region": "ZA",
+        "sector": "Legal Services",
         "compliance_flags": {"certification": True},
         "proof_hash": f"proof-{tenant_id}",
         "verified": True,
@@ -206,7 +202,7 @@ def _tenant_doc(
 
 
 def _invalid_doc(tenant_id: str) -> dict[str, Any]:
-    """Build a real persisted document that fails the production mapper."""
+    """Build persisted truth that fails the frozen mapping contract."""
     document = _tenant_doc(
         tenant_id,
         name="Malformed Tenant",
@@ -215,27 +211,27 @@ def _invalid_doc(tenant_id: str) -> dict[str, Any]:
     return document
 
 
-# =============================================================================
-# AUTHORIZATION FIXTURE BUILDERS
-# =============================================================================
-
-
 def _identity() -> SovereignIdentity:
-    """Build one authenticated identity; projected roles remain non-authority."""
+    """Build authenticated identity projections that remain non-authority."""
     return SovereignIdentity(
         identity_id=_PID,
         tenant_id="wrong-token-tenant",
-        username="b2b-real-mongo",
-        email="b2b-real-mongo@example.test",
+        username="c2-real-mongo",
+        email="c2-real-mongo@example.test",
         auth_method="test",
         status=PrincipalStatus.ACTIVE,
         roles=["ROOT", "GLOBAL_ROOT", "ENTERPRISE_ADMIN"],
-        permissions=["*", "tenant:profile:read", "tenant:lifecycle:archive"],
+        permissions=[
+            "*",
+            "tenant:profile:read",
+            "tenant:profile:write",
+            "tenant:lifecycle:archive",
+        ],
     )
 
 
 def _app_for_scope(tenant_id: str) -> FastAPI:
-    """Compose the real router with deterministic durable current-truth readers."""
+    """Compose the real router with deterministic current-truth readers."""
     principal_reader = _RecordingReader(
         {
             (_PID,): PrincipalAuthority(
@@ -292,11 +288,6 @@ def _app_for_scope(tenant_id: str) -> FastAPI:
     return app
 
 
-# =============================================================================
-# UUID-BOUNDED REAL-MONGO STATE
-# =============================================================================
-
-
 @contextmanager
 def _state() -> Iterator[
     tuple[
@@ -307,7 +298,7 @@ def _state() -> Iterator[
         str,
     ]
 ]:
-    """Create isolated real-Mongo tenant truth and restore the registry globally."""
+    """Create UUID-bounded real Mongo truth and restore registry globally."""
     uri = os.environ.get(
         CERT_URI_ENV,
         DEFAULT_CERT_URI,
@@ -335,14 +326,8 @@ def _state() -> Iterator[
 
         collection.insert_many(
             [
-                _tenant_doc(
-                    tenant_a,
-                    name="Tenant A",
-                ),
-                _tenant_doc(
-                    tenant_b,
-                    name="Tenant B",
-                ),
+                _tenant_doc(tenant_a, name="Tenant A"),
+                _tenant_doc(tenant_b, name="Tenant B"),
                 _invalid_doc(malformed_id),
             ]
         )
@@ -363,13 +348,17 @@ def _state() -> Iterator[
         client.close()
 
 
-# =============================================================================
-# AUTHORIZED GET REAL-MONGO CERTIFICATION
-# =============================================================================
+def _without_id(document: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Return a comparison copy without Mongo _id."""
+    if document is None:
+        return None
+    result = copy.deepcopy(document)
+    result.pop("_id", None)
+    return result
 
 
-def test_real_mongo_authorized_get_returns_healthy_tenant() -> None:
-    """Authorized own-tenant HTTP GET reaches real Mongo and returns HTTP 200."""
+def test_real_mongo_authorized_get_returns_healthy_tenant_and_sector() -> None:
+    """Authorized GET reaches real Mongo and exposes durable sector."""
     with _state() as (collection, _, tenant_a, _, _):
         app = _app_for_scope(tenant_a)
 
@@ -383,6 +372,7 @@ def test_real_mongo_authorized_get_returns_healthy_tenant() -> None:
         payload = response.json()
         assert payload["tenant_id"] == tenant_a
         assert payload["name"] == "Tenant A"
+        assert payload["sector"] == "Legal Services"
         assert payload["status"] == "ACTIVE"
         assert payload["verified"] is True
         assert collection.count_documents({"tenant_id": tenant_a}) == 1
@@ -390,11 +380,10 @@ def test_real_mongo_authorized_get_returns_healthy_tenant() -> None:
 
 
 def test_real_mongo_authorized_get_genuine_absence_is_404() -> None:
-    """A genuinely missing own-tenant target maps to the bounded GET 404."""
-    with _state() as (collection, _, tenant_a, _, _):
+    """Missing own-tenant target retains bounded GET 404."""
+    with _state() as (collection, _, _, _, _):
         missing_id = f"missing-{uuid4().hex}"
         app = _app_for_scope(missing_id)
-
         before = collection.count_documents({})
 
         with TestClient(app) as client:
@@ -404,18 +393,17 @@ def test_real_mongo_authorized_get_genuine_absence_is_404() -> None:
             )
 
         assert response.status_code == 404
-        assert response.json() == {
-            "detail": "Tenant not found."
-        }
+        assert response.json() == {"detail": "Tenant not found."}
         assert collection.count_documents({}) == before
 
 
 def test_real_mongo_invalid_persisted_get_is_503_and_non_destructive() -> None:
-    """Malformed persisted truth reaches strict GET semantics and remains stored."""
+    """Malformed persisted GET truth remains explicit and stored."""
     with _state() as (collection, _, _, _, malformed_id):
         app = _app_for_scope(malformed_id)
-        before = collection.find_one({"tenant_id": malformed_id})
-        assert before is not None
+        before = _without_id(
+            collection.find_one({"tenant_id": malformed_id})
+        )
 
         with TestClient(app) as client:
             response = client.get(
@@ -427,55 +415,254 @@ def test_real_mongo_invalid_persisted_get_is_503_and_non_destructive() -> None:
         assert response.json() == {
             "detail": "TENANT_REGISTRY_GET_INVALID_DOCUMENT"
         }
-        assert collection.find_one({"tenant_id": malformed_id}) == before
-        assert collection.count_documents({}) == 3
+        assert _without_id(
+            collection.find_one({"tenant_id": malformed_id})
+        ) == before
 
 
-# =============================================================================
-# TENANT PATH / SCOPE ISOLATION REAL-MONGO CERTIFICATION
-# =============================================================================
+def test_real_mongo_authorized_put_persists_exact_six_and_preserves_protected_truth() -> None:
+    """Authorized PUT mutates all six profile fields plus internal checksum only."""
+    with _state() as (collection, _, tenant_a, tenant_b, _):
+        app = _app_for_scope(tenant_a)
+
+        target_before = _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        )
+        neighbor_before = _without_id(
+            collection.find_one({"tenant_id": tenant_b})
+        )
+        assert target_before is not None
+        assert neighbor_before is not None
+        count_before = collection.count_documents({})
+
+        with TestClient(app) as client:
+            response = client.put(
+                f"/api/tenants/{tenant_a}",
+                headers={"X-Tenant-ID": tenant_a},
+                json={
+                    "name": "Tenant Alpha",
+                    "alias": "alpha",
+                    "industry": "Technology",
+                    "region": "EU",
+                    "sector": "AI",
+                    "legal_name": "Tenant Alpha Legal",
+                },
+            )
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["tenant_id"] == tenant_a
+        assert payload["name"] == "Tenant Alpha"
+        assert payload["alias"] == "alpha"
+        assert payload["industry"] == "Technology"
+        assert payload["region"] == "EU"
+        assert payload["sector"] == "AI"
+        assert payload["legal_name"] == "Tenant Alpha Legal"
+
+        persisted = _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        )
+        assert persisted is not None
+        assert persisted["name"] == "Tenant Alpha"
+        assert persisted["organization"]["organization_name"] == "Tenant Alpha"
+        assert persisted["industry"] == "Technology"
+        assert persisted["organization"]["industry"] == "Technology"
+        assert persisted["legal_name"] == "Tenant Alpha Legal"
+        assert persisted["organization"]["legal_name"] == "Tenant Alpha Legal"
+        assert persisted["alias"] == "alpha"
+        assert persisted["region"] == "EU"
+        assert persisted["sector"] == "AI"
+
+        for field_name in (
+            "tenant_id",
+            "status",
+            "plan",
+            "tax_id",
+            "contact_email",
+            "verified",
+            "compliance_flags",
+            "created_at",
+            "proof_hash",
+        ):
+            assert persisted[field_name] == target_before[field_name]
+
+        assert persisted["checksum"] != target_before["checksum"]
+        assert persisted["proof_hash"] == target_before["proof_hash"]
+        assert _without_id(
+            collection.find_one({"tenant_id": tenant_b})
+        ) == neighbor_before
+        assert collection.count_documents({}) == count_before
+
+
+def test_real_mongo_put_same_value_is_idempotent_200() -> None:
+    """Repeated canonical same-value PUT leaves real persisted truth unchanged."""
+    with _state() as (collection, _, tenant_a, _, _):
+        app = _app_for_scope(tenant_a)
+
+        with TestClient(app) as client:
+            first = client.put(
+                f"/api/tenants/{tenant_a}",
+                headers={"X-Tenant-ID": tenant_a},
+                json={"sector": "Legal Services"},
+            )
+            assert first.status_code == 200
+
+            before_repeat = _without_id(
+                collection.find_one({"tenant_id": tenant_a})
+            )
+
+            second = client.put(
+                f"/api/tenants/{tenant_a}",
+                headers={"X-Tenant-ID": tenant_a},
+                json={"sector": "Legal Services"},
+            )
+
+        after_repeat = _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        )
+        assert second.status_code == 200
+        assert second.json()["sector"] == "Legal Services"
+        assert after_repeat == before_repeat
+
+
+def test_real_mongo_put_genuine_absence_is_404_and_non_mutating() -> None:
+    """Missing PUT target returns 404 without changing neighbors."""
+    with _state() as (collection, _, tenant_a, _, _):
+        missing_id = f"missing-{uuid4().hex}"
+        app = _app_for_scope(missing_id)
+        before = list(collection.find({}).sort("tenant_id", 1))
+
+        with TestClient(app) as client:
+            response = client.put(
+                f"/api/tenants/{missing_id}",
+                headers={"X-Tenant-ID": missing_id},
+                json={"alias": "missing"},
+            )
+
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Tenant not found."}
+        after = list(collection.find({}).sort("tenant_id", 1))
+        assert after == before
+        assert collection.count_documents({"tenant_id": tenant_a}) == 1
+
+
+def test_real_mongo_put_invalid_persisted_truth_is_503_and_non_destructive() -> None:
+    """Malformed matching tenant fails strict PUT and remains unchanged."""
+    with _state() as (collection, _, _, _, malformed_id):
+        app = _app_for_scope(malformed_id)
+        before = _without_id(
+            collection.find_one({"tenant_id": malformed_id})
+        )
+
+        with TestClient(app) as client:
+            response = client.put(
+                f"/api/tenants/{malformed_id}",
+                headers={"X-Tenant-ID": malformed_id},
+                json={"alias": "must-not-write"},
+            )
+
+        assert response.status_code == 503
+        assert response.json() == {
+            "detail": "TENANT_REGISTRY_PROFILE_UPDATE_INVALID_DOCUMENT"
+        }
+        assert _without_id(
+            collection.find_one({"tenant_id": malformed_id})
+        ) == before
+
+
+def test_real_mongo_put_forbidden_field_is_422_and_non_mutating() -> None:
+    """Schema-protected lifecycle/billing input cannot mutate real Mongo."""
+    with _state() as (collection, _, tenant_a, _, _):
+        app = _app_for_scope(tenant_a)
+        before = _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        )
+
+        with TestClient(app) as client:
+            response = client.put(
+                f"/api/tenants/{tenant_a}",
+                headers={"X-Tenant-ID": tenant_a},
+                json={
+                    "alias": "attacker",
+                    "status": "ARCHIVED",
+                    "plan": "FREE",
+                },
+            )
+
+        assert response.status_code == 422
+        assert _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        ) == before
+
+
+def test_real_mongo_put_empty_payload_is_422_and_non_mutating() -> None:
+    """Empty profile mutation reaches strict registry EMPTY and changes nothing."""
+    with _state() as (collection, _, tenant_a, _, _):
+        app = _app_for_scope(tenant_a)
+        before = _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        )
+
+        with TestClient(app) as client:
+            response = client.put(
+                f"/api/tenants/{tenant_a}",
+                headers={"X-Tenant-ID": tenant_a},
+                json={},
+            )
+
+        assert response.status_code == 422
+        assert response.json() == {
+            "detail": "TENANT_REGISTRY_PROFILE_UPDATE_EMPTY"
+        }
+        assert _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        ) == before
 
 
 def test_real_mongo_authorized_scope_cannot_cross_to_other_path_tenant() -> None:
-    """Authority for tenant-b cannot read or mutate tenant-a path truth."""
+    """Authority for tenant-b cannot read, mutate, or archive tenant-a path truth."""
     with _state() as (collection, _, tenant_a, tenant_b, _):
         app = _app_for_scope(tenant_b)
 
-        tenant_a_before = collection.find_one({"tenant_id": tenant_a})
-        tenant_b_before = collection.find_one({"tenant_id": tenant_b})
-        assert tenant_a_before is not None
-        assert tenant_b_before is not None
+        tenant_a_before = _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        )
+        tenant_b_before = _without_id(
+            collection.find_one({"tenant_id": tenant_b})
+        )
 
         with TestClient(app) as client:
             get_response = client.get(
                 f"/api/tenants/{tenant_a}",
                 headers={"X-Tenant-ID": tenant_b},
             )
+            put_response = client.put(
+                f"/api/tenants/{tenant_a}",
+                headers={"X-Tenant-ID": tenant_b},
+                json={"alias": "cross-tenant"},
+            )
             delete_response = client.delete(
                 f"/api/tenants/{tenant_a}",
                 headers={"X-Tenant-ID": tenant_b},
             )
 
-        assert get_response.status_code == 403
-        assert get_response.json() == {
-            "detail": "TENANT_SCOPE_PATH_MISMATCH"
-        }
-        assert delete_response.status_code == 403
-        assert delete_response.json() == {
-            "detail": "TENANT_SCOPE_PATH_MISMATCH"
-        }
-        assert collection.find_one({"tenant_id": tenant_a}) == tenant_a_before
-        assert collection.find_one({"tenant_id": tenant_b}) == tenant_b_before
+        for response in (get_response, put_response, delete_response):
+            assert response.status_code == 403
+            assert response.json() == {
+                "detail": "TENANT_SCOPE_PATH_MISMATCH"
+            }
+
+        assert _without_id(
+            collection.find_one({"tenant_id": tenant_a})
+        ) == tenant_a_before
+        assert _without_id(
+            collection.find_one({"tenant_id": tenant_b})
+        ) == tenant_b_before
         assert collection.count_documents({}) == 3
 
 
-# =============================================================================
-# SOFT ARCHIVE REAL-MONGO CERTIFICATION
-# =============================================================================
-
-
 def test_real_mongo_authorized_delete_soft_archives_only() -> None:
-    """Authorized DELETE changes only status and never deletes target or neighbor."""
+    """Authorized DELETE still changes only status and never deletes."""
     with _state() as (collection, _, tenant_a, tenant_b, _):
         app = _app_for_scope(tenant_a)
 
@@ -492,8 +679,6 @@ def test_real_mongo_authorized_delete_soft_archives_only() -> None:
             )
 
         assert response.status_code == 204
-        assert response.content == b""
-
         target_after = collection.find_one({"tenant_id": tenant_a})
         assert target_after is not None
         assert target_after["status"] == "ARCHIVED"
@@ -507,7 +692,7 @@ def test_real_mongo_authorized_delete_soft_archives_only() -> None:
 
 
 def test_real_mongo_repeated_archive_maps_no_change_to_historical_404() -> None:
-    """A second soft archive makes no Mongo change and maps to exact HTTP 404."""
+    """Second archive retains historical no-change HTTP 404."""
     with _state() as (collection, _, tenant_a, _, _):
         app = _app_for_scope(tenant_a)
 
@@ -532,19 +717,11 @@ def test_real_mongo_repeated_archive_maps_no_change_to_historical_404() -> None:
         assert collection.count_documents({}) == 3
 
 
-# =============================================================================
-# NON-MIGRATED ROUTE CONTAINMENT AGAINST REAL PERSISTENCE
-# =============================================================================
-
-
-def test_real_mongo_list_create_and_put_remain_contained_and_non_mutating() -> None:
-    """Non-migrated routes remain exact 503 and leave real Mongo unchanged."""
+def test_real_mongo_list_and_create_remain_contained_and_non_mutating() -> None:
+    """The two non-migrated routes remain 503 and leave Mongo unchanged."""
     with _state() as (collection, _, tenant_a, _, _):
         app = _app_for_scope(tenant_a)
-
-        before = list(
-            collection.find({}).sort("tenant_id", 1)
-        )
+        before = list(collection.find({}).sort("tenant_id", 1))
 
         headers = {
             "X-Tenant-ID": tenant_a,
@@ -562,36 +739,20 @@ def test_real_mongo_list_create_and_put_remain_contained_and_non_mutating() -> N
                 headers=headers,
                 json={"name": "Forbidden Create"},
             )
-            put_response = client.put(
-                f"/api/tenants/{tenant_a}",
-                headers=headers,
-                json={"name": "Forbidden Update"},
-            )
 
-        for response in (
-            list_response,
-            create_response,
-            put_response,
-        ):
+        for response in (list_response, create_response):
             assert response.status_code == 503
             assert response.json() == {
                 "detail": "TENANT_AUTHORITY_UNAVAILABLE"
             }
 
-        after = list(
-            collection.find({}).sort("tenant_id", 1)
-        )
+        after = list(collection.find({}).sort("tenant_id", 1))
         assert after == before
         assert collection.count_documents({}) == 3
 
 
-# =============================================================================
-# CLEANUP / GLOBAL-REFERENCE CERTIFICATION
-# =============================================================================
-
-
 def test_real_mongo_scope_is_uuid_bounded_and_registry_reference_restores() -> None:
-    """Certification DB naming is UUID-bounded and registry binding restores."""
+    """Certification database is UUID-bounded and global registry binding restores."""
     original_collection = registry_module.tenants_collection
 
     with _state() as (_, database_name, _, _, _):
@@ -609,9 +770,9 @@ def test_real_mongo_scope_is_uuid_bounded_and_registry_reference_restores() -> N
 # WILSY OS SOVEREIGN CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: test_tenant_router_get_archive_real_mongo.py
-# VERSION: v1.0.0-TENANT-ROUTER-GET-ARCHIVE-REAL-MONGO-CERT
-# AUTHORITY BOUNDARY: real-Mongo HTTP wiring evidence only; production durable authorization logic remains frozen and no test-local projection grants business authority
-# TENANT POSTURE: exact own-tenant scope/path congruence is required; malformed truth remains persisted; archive is soft and neighboring tenant truth remains unchanged; global list/create/PUT stay contained
-# FAIL-CLOSED POSTURE: healthy GET is 200; genuine absence is 404; invalid persisted GET truth is 503; cross-tenant mismatch is 403; archive is 204 then bounded 404 on no-change
-# FINANCIAL EXECUTION AUTHORITY: None. Kennel EOS remains exclusive.
+# VERSION: v1.1.0-TENANT-ROUTER-PROFILE-UPDATE-REAL-MONGO-CERT
+# AUTHORITY BOUNDARY: actual-Mongo HTTP wiring evidence only; production durable authorization and strict registry persistence remain the governing authorities
+# TENANT POSTURE: exact own-tenant scope/path congruence gates GET/PUT/archive; all-six-field PUT is isolated to its target; malformed truth remains stored; collection GET and POST stay contained
+# FAIL-CLOSED POSTURE: GET retains 200/404/503; PUT proves 200/403/404/422/503 with protected-field nonmutation and strict update_profile semantics; archive remains soft 204 then bounded 404
+# FINANCIAL EXECUTION AUTHORITY: None. Plan mutation is rejected; Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT

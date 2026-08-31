@@ -12,7 +12,7 @@ FILE:
     tools/eos/api/api_server.py
 
 VERSION:
-    v1.2.0-TENANT-ROUTER-CONTROLLED-ACTIVATION
+    v1.3.0-TENANT-PROFILE-UPDATE-CONTROLLED-ACTIVATION
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -20,10 +20,10 @@ AUTHORITY:
 
 EPITOME:
     Preserves the governed kernel API surface while registering the canonical
-    tenant router exactly once. The application server itself grants no tenant
-    authority: controlled tenant profile GET and lifecycle archive are authorized
+    tenant router exactly once. Application composition grants no tenant authority:
+    controlled profile GET, strict profile PUT, and lifecycle archive are governed
     inside tenant_router through the frozen durable authorization dependency,
-    while global list, lifecycle create, and profile PUT remain contained.
+    while global tenant list and lifecycle create remain contained.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/api_server.py
@@ -32,24 +32,24 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-08-30
+    2026-08-31
 
 CHANGELOG:
-    v1.2.0-TENANT-ROUTER-CONTROLLED-ACTIVATION
-        - Aligns canonical application composition metadata with B2B selective
-          tenant-router activation.
+    v1.3.0-TENANT-PROFILE-UPDATE-CONTROLLED-ACTIVATION
+        - Aligns canonical application governance with C2 controlled profile PUT.
+        - Records that GET detail, PUT detail, and DELETE/archive compose durable
+          authority inside tenant_router and require exact tenant scope/path binding
+          before persistence.
+        - Records that collection GET and POST create remain contained.
         - Preserves exact router registration, middleware, exception handling,
           application metadata, root endpoint, and general API composition.
-        - Records that authority is composed inside tenant_router rather than by
-          application registration.
-        - Records that GET detail and DELETE/archive may reach persistence only
-          after frozen durable authorization and exact tenant scope/path binding.
-        - Records that collection GET, POST create, and PUT mutation remain
-          contained.
+
+    v1.2.0-TENANT-ROUTER-CONTROLLED-ACTIVATION
+        - Aligned application composition with B2B GET/archive activation while
+          collection GET, POST, and PUT remained contained.
 
     v1.1.0-TENANT-ROUTER-RUNTIME-REGISTRATION
-        - Registered the then-contained tenant router exactly once without
-          changing application composition authority.
+        - Registered the then-contained tenant router exactly once.
 
 COMPLIANCE:
     POPIA section 19.
@@ -61,19 +61,19 @@ SECURITY / PRIVACY POSTURE:
     ASGI composition only. Router registration never authenticates a caller,
     derives membership, interprets role projections, or grants permission.
     Activated tenant detail routes remain governed by their own durable
-    authorization dependency and persistence failure boundaries.
+    authorization dependencies, exact scope/path checks, and persistence failure
+    boundaries.
 
 TENANT BOUNDARY:
-    The application mounts exactly one /api/tenants router. Tenant scope and
-    path congruence are enforced inside the activated detail routes. No alternate
-    tenant mount, global-list authority, or cross-tenant authority is created by
-    application composition.
+    The application mounts exactly one /api/tenants router. Tenant scope and path
+    congruence are enforced inside activated detail routes. No alternate tenant
+    mount, global-list authority, or cross-tenant authority is created here.
 
 AUTHORITY BOUNDARY:
     Owns FastAPI application composition and router registration only.
     Authentication, principal truth, tenant membership, business-role truth,
-    permission grants, final authorization, and tenant business persistence
-    remain separate authorities.
+    permission grants, final authorization, and tenant persistence remain separate
+    authorities.
 
 FINANCIAL AUTHORITY BOUNDARY:
     No financial execution authority exists in this artifact.
@@ -92,7 +92,6 @@ import os
 import sys
 from typing import Any
 
-# Preserve the legacy project-root import bootstrap before tools.eos imports.
 project_root = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
@@ -111,16 +110,8 @@ from tools.eos.api.router import router
 from tools.eos.api.tenant_router import tenant_router
 
 
-# =============================================================================
-# SOVEREIGN VERSION
-# =============================================================================
+VERSION = "v1.3.0-TENANT-PROFILE-UPDATE-CONTROLLED-ACTIVATION"
 
-VERSION = "v1.2.0-TENANT-ROUTER-CONTROLLED-ACTIVATION"
-
-
-# =============================================================================
-# CANONICAL FASTAPI APPLICATION
-# =============================================================================
 
 app = FastAPI(
     title="Wilsy OS Kernel Gateway API",
@@ -134,31 +125,15 @@ app = FastAPI(
 )
 
 
-# =============================================================================
-# CANONICAL MIDDLEWARE
-# =============================================================================
-
 app.add_middleware(SovereignTelemetryMiddleware)
 
 
-# =============================================================================
-# CANONICAL ROUTER COMPOSITION
-# =============================================================================
-
-# Preserve the existing general kernel/API router.
 app.include_router(router)
 
-# Register the canonical tenant router exactly once.
-#
-# Registration itself grants no tenant authority. B2B GET detail and
-# DELETE/archive compose RequireTenantAuthorization inside tenant_router;
-# collection GET, POST create, and PUT mutation remain contained there.
+# Registration itself grants no tenant authority. GET detail, strict PUT detail,
+# and DELETE/archive compose frozen RequireTenantAuthorization inside
+# tenant_router. Collection GET and POST create remain contained there.
 app.include_router(tenant_router)
-
-
-# =============================================================================
-# CANONICAL WILSY API EXCEPTION TRANSLATION
-# =============================================================================
 
 
 @app.exception_handler(WilsyAPIException)
@@ -192,11 +167,6 @@ async def wilsy_exception_handler(
         success=False,
         execution_id=execution_id,
     )
-
-
-# =============================================================================
-# CANONICAL ROOT ENDPOINT
-# =============================================================================
 
 
 @app.get("/", tags=["Root"])
@@ -237,9 +207,9 @@ async def root(request: Request) -> Any:
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: api_server.py
-# VERSION: v1.2.0-TENANT-ROUTER-CONTROLLED-ACTIVATION
+# VERSION: v1.3.0-TENANT-PROFILE-UPDATE-CONTROLLED-ACTIVATION
 # AUTHORITY BOUNDARY: canonical ASGI composition and router registration only; authentication, membership, business-role, permission, authorization, and persistence authority remain outside this artifact
-# TENANT POSTURE: exactly one tenant router is mounted; GET detail and DELETE/archive are governed inside that router; collection GET, POST, and PUT remain contained; no alternate mount creates cross-tenant authority
-# FAIL-CLOSED POSTURE: application registration never grants authority; tenant persistence is reachable only through the activated router's frozen authorization and exact scope/path checks
+# TENANT POSTURE: exactly one tenant router is mounted; GET/PUT/DELETE detail operations are governed inside that router; collection GET and POST remain contained; no alternate mount creates cross-tenant authority
+# FAIL-CLOSED POSTURE: application registration never grants authority; tenant persistence is reachable only through activated router dependencies, exact scope/path checks, and bounded persistence contracts
 # FINANCIAL EXECUTION AUTHORITY: None. Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -2,7 +2,7 @@
 """
 ===============================================================================
 WILSY OS — SOVEREIGN OPERATING SYSTEM
-TENANT ROUTER — CONTROLLED GET + ARCHIVE AUTHORITY WIRING
+TENANT ROUTER — CONTROLLED PROFILE UPDATE AUTHORITY WIRING
 ===============================================================================
 
 TITLE:
@@ -12,18 +12,18 @@ FILE:
     tools/eos/api/tenant_router.py
 
 VERSION:
-    v1.1.0-TENANT-GET-ARCHIVE-AUTHORITY-WIRING
+    v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
 
 AUTHORITY:
     Wilsy OS Core Governance.
     Canonical FastAPI tenant HTTP surface for bounded tenant registry operations.
 
 EPITOME:
-    Activates only own-tenant profile GET and lifecycle archive through the
-    frozen durable tenant authorization dependency. Collection listing, tenant
-    creation, and profile mutation remain fail-closed and cannot reach registry
-    persistence. X-Tenant-ID is requested scope only and must exactly match the
-    detail-route tenant path before persistence is accessed.
+    Activates own-tenant profile GET, strict six-field profile PUT, and lifecycle
+    archive through the frozen durable tenant authorization dependency. Global
+    tenant listing and tenant creation remain fail-closed before persistence.
+    X-Tenant-ID is requested scope only and must exactly match the detail-route
+    tenant path before any activated detail operation reaches TenantRegistry.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/tenant_router.py
@@ -32,30 +32,35 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-08-30
+    2026-08-31
 
 CHANGELOG:
+    v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
+        - Activates PUT /api/tenants/{tenant_id} with canonical
+          tenant:profile:write + profile_update authorization.
+        - Narrows TenantUpdateRequest to the frozen six-field profile mutation
+          canon and rejects extra request fields.
+        - Requires exact authorized X-Tenant-ID scope to equal the path tenant
+          before strict profile persistence.
+        - Routes PUT exclusively through TenantRegistry.update_profile; the broad
+          legacy TenantRegistry.update compatibility API is never invoked.
+        - Maps genuine profile-update absence to HTTP 404.
+        - Maps strict profile-input registry failures to bounded HTTP 422.
+        - Maps invalid persisted truth, post-write inconsistency, infrastructure
+          outage, and unknown registry failures to bounded HTTP 503.
+        - Aligns TenantResponse sector with durable top-level TenantEntity.sector.
+        - Preserves GET detail and DELETE/archive B2B semantics exactly.
+        - Keeps collection GET and POST create contained before persistence.
+        - Uses Starlette's canonical HTTP_422_UNPROCESSABLE_CONTENT symbol for
+          strict profile-input failure translation without changing HTTP status.
+
     v1.1.0-TENANT-GET-ARCHIVE-AUTHORITY-WIRING
-        - Activates GET /api/tenants/{tenant_id} with canonical
-          tenant:profile:read + profile_read authorization.
-        - Activates DELETE /api/tenants/{tenant_id} as archive-only with canonical
-          tenant:lifecycle:archive + lifecycle_archive authorization.
-        - Requires exact authorized X-Tenant-ID scope to equal the tenant path
-          before either activated route accesses TenantRegistry.
-        - Adds a route-safe RequireTenantAuthorization adapter that preserves
-          X-Tenant-ID semantics while avoiding FastAPI path/header name
-          collision on canonical {tenant_id} detail routes.
-        - Maps genuine GET absence to HTTP 404.
-        - Maps persisted GET corruption and registry infrastructure failures to
-          deterministic HTTP 503 responses.
-        - Preserves archive no-modification semantics as the historical
-          "not found or already archived" HTTP 404 result.
-        - Keeps collection GET, POST create, and PUT mutation contained at
-          TENANT_AUTHORITY_UNAVAILABLE before registry access.
+        - Activated GET /api/tenants/{tenant_id} and DELETE/archive through the
+          frozen durable tenant authorization dependency.
+        - Kept collection GET, POST create, and PUT mutation contained.
 
     v1.0.4-TENANT-AUTHORITY-CONTAINMENT
-        - Contained all five tenant routes until governed authority composition
-          and persistence failure semantics were available.
+        - Contained all five tenant routes before governed authority composition.
 
 COMPLIANCE:
     POPIA section 19.
@@ -65,26 +70,29 @@ COMPLIANCE:
 
 SECURITY / PRIVACY POSTURE:
     Durable principal, membership, tenant-business-role, permission, and role
-    assignment truth are composed by RequireTenantAuthorization. Request
-    headers, JWT role projections, request.state values, and Node-side role
-    labels never become business authority. Registry failures fail closed.
+    assignment truth are composed only by RequireTenantAuthorization. Request
+    headers, JWT role projections, request.state values, Node-side role labels,
+    and caller-supplied profile fields never become business authority. PUT input
+    is schema-bounded and strict persistence independently enforces the same
+    six-field canon. Registry failures fail closed.
 
 TENANT BOUNDARY:
     X-Tenant-ID is explicit requested scope and never membership evidence.
-    Activated detail routes require authorized X-Tenant-ID scope to exactly
-    equal the path tenant_id before persistence access. Cross-tenant mismatch
-    returns HTTP 403. Global tenant listing remains unavailable.
+    Every activated detail route requires authorized X-Tenant-ID scope to exactly
+    equal path tenant_id before persistence access. Cross-tenant mismatch returns
+    HTTP 403 without registry access. Global tenant listing remains unavailable.
 
 AUTHORITY BOUNDARY:
-    This artifact owns HTTP route composition and persistence invocation only.
-    It does not authenticate callers, establish principal truth, establish
-    membership, resolve business roles, assign permissions, or grant authority.
+    This artifact owns HTTP route composition, request-shape validation, exact
+    path/scope binding, bounded registry invocation, and HTTP failure translation.
+    It does not authenticate callers, establish principal or membership truth,
+    resolve business roles, assign permissions, or independently authorize.
     Those decisions remain owned by the frozen authorization stack.
 
 FINANCIAL AUTHORITY BOUNDARY:
     No financial execution authority exists in this artifact.
-    Tenant profile read and lifecycle archive are non-financial operations.
-    Kennel EOS remains the exclusive financial execution authority.
+    Profile mutation cannot change plan or financial metadata through the strict
+    six-field persistence boundary. Kennel EOS remains exclusive.
 
 STRUCTURAL GOVERNANCE:
     AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
@@ -98,8 +106,17 @@ from __future__ import annotations
 import logging
 from typing import Any, NoReturn
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
-from pydantic import BaseModel, Field
+from fastapi import (
+    APIRouter,
+    Depends,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from pydantic import BaseModel, ConfigDict, Field
 
 import tools.eos.api.tenant_authorization_http as tenant_authorization_http
 from tools.eos.api.tenant_authorization_http import (
@@ -118,7 +135,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 # SOVEREIGN VERSION
 # =============================================================================
 
-VERSION = "v1.1.0-TENANT-GET-ARCHIVE-AUTHORITY-WIRING"
+VERSION = "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
 
 
 # =============================================================================
@@ -136,17 +153,19 @@ logger = logging.getLogger("WilsyOS.API.TenantRouter")
 class _RouteTenantAuthorization(RequireTenantAuthorization):
     """Expose the frozen tenant authorization dependency safely on detail routes.
 
-    FastAPI resolves dependency parameter names against path parameters before
-    applying field annotations. The frozen reusable dependency intentionally
-    names its X-Tenant-ID Header parameter ``tenant_id``. Detail routes also own
-    the canonical path parameter ``{tenant_id}``, so using the frozen callable
-    directly would cause FastAPI to reject Header metadata for a path parameter.
+    Authority:
+        Delegation only. This adapter does not duplicate or reinterpret durable
+        authorization logic.
 
-    This bounded adapter changes only the FastAPI-visible Python parameter name
-    to ``tenant_scope`` while preserving the public Header alias ``X-Tenant-ID``.
-    It delegates all authorization semantics to the frozen
-    RequireTenantAuthorization implementation and therefore does not duplicate
-    or reinterpret principal, membership, role, permission, or decision truth.
+    Tenant scope:
+        The public header remains X-Tenant-ID. ``tenant_scope`` exists only to
+        avoid FastAPI's path/header Python-parameter collision on {tenant_id}.
+
+    Mutation semantics:
+        None.
+
+    Financial boundary:
+        No financial execution authority.
     """
 
     async def __call__(
@@ -168,7 +187,7 @@ class _RouteTenantAuthorization(RequireTenantAuthorization):
             tenant_authorization_http.get_role_assignment_repository
         ),
     ) -> TenantAuthorizationContext:
-        """Delegate exact current-truth authorization with route-safe scope naming."""
+        """Delegate current-truth authorization with route-safe scope naming."""
         return await super().__call__(
             identity=identity,
             tenant_id=tenant_scope,
@@ -183,9 +202,23 @@ _PROFILE_READ_AUTHORIZATION = _RouteTenantAuthorization(
     "profile_read",
 )
 
+_PROFILE_UPDATE_AUTHORIZATION = _RouteTenantAuthorization(
+    "tenant:profile:write",
+    "profile_update",
+)
+
 _LIFECYCLE_ARCHIVE_AUTHORIZATION = _RouteTenantAuthorization(
     "tenant:lifecycle:archive",
     "lifecycle_archive",
+)
+
+_PROFILE_UPDATE_CLIENT_ERROR_REASONS = frozenset(
+    {
+        "TENANT_REGISTRY_PROFILE_UPDATE_INVALID_TENANT_ID",
+        "TENANT_REGISTRY_PROFILE_UPDATE_EMPTY",
+        "TENANT_REGISTRY_PROFILE_UPDATE_INVALID_FIELDS",
+        "TENANT_REGISTRY_PROFILE_UPDATE_INVALID_VALUES",
+    }
 )
 
 _KNOWN_REGISTRY_UNAVAILABLE_REASONS = frozenset(
@@ -193,6 +226,9 @@ _KNOWN_REGISTRY_UNAVAILABLE_REASONS = frozenset(
         "TENANT_REGISTRY_GET_UNAVAILABLE",
         "TENANT_REGISTRY_GET_INVALID_DOCUMENT",
         "TENANT_REGISTRY_ARCHIVE_UNAVAILABLE",
+        "TENANT_REGISTRY_PROFILE_UPDATE_INVALID_DOCUMENT",
+        "TENANT_REGISTRY_PROFILE_UPDATE_INCONSISTENT_STATE",
+        "TENANT_REGISTRY_PROFILE_UPDATE_UNAVAILABLE",
     }
 )
 
@@ -213,7 +249,7 @@ class TenantCreateRequest(BaseModel):
         tenant_id is request data only and never authority.
 
     Mutation semantics:
-        The POST route remains contained and does not persist this model.
+        POST remains contained and does not persist this model.
 
     Financial boundary:
         No financial execution authority.
@@ -242,22 +278,28 @@ class TenantCreateRequest(BaseModel):
 
 
 class TenantUpdateRequest(BaseModel):
-    """Represent the contained tenant-profile mutation request contract.
+    """Represent the exact C2 tenant-profile mutation request contract.
 
     Authority:
-        Schema validation only. Constructing this model does not authorize
-        profile mutation.
+        Schema validation only. Construction never authorizes profile mutation.
 
     Tenant scope:
-        The path tenant remains outside this model.
+        The path tenant remains outside this model and is independently bound to
+        authorized X-Tenant-ID before persistence.
 
     Mutation semantics:
-        The PUT route remains contained until profile storage and policy fields
-        are aligned in the subsequent migration phase.
+        Exposes exactly the frozen PROFILE_MUTABLE_FIELDS_V1 surface:
+        name, alias, industry, region, sector, legal_name. Extra fields are
+        rejected by Pydantic before the route can invoke registry persistence.
+        Omitted fields remain untouched; explicit null remains meaningful for the
+        optional alias/region/sector/legal_name fields and is passed through using
+        model_dump(exclude_unset=True).
 
     Financial boundary:
-        No financial execution authority.
+        Plan and financial metadata are absent. No financial execution authority.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
     alias: str | None = None
@@ -265,16 +307,23 @@ class TenantUpdateRequest(BaseModel):
     region: str | None = None
     sector: str | None = None
     legal_name: str | None = None
-    tax_id: str | None = None
-    contact_email: str | None = None
-    plan: str | None = None
-    status: str | None = None
-    checksum: str | None = None
-    verified: bool | None = None
 
 
 class TenantResponse(BaseModel):
-    """Represent the bounded tenant profile returned by an activated GET."""
+    """Represent the bounded tenant profile returned by activated detail routes.
+
+    Authority:
+        Response schema only.
+
+    Tenant scope:
+        The entity must already be resolved after governed authorization.
+
+    Mutation semantics:
+        None; this is serialization only.
+
+    Financial boundary:
+        Subscription metadata is descriptive only and grants no execution.
+    """
 
     tenant_id: str
     alias: str | None
@@ -295,7 +344,7 @@ class TenantResponse(BaseModel):
 
 
 class TenantListResponse(BaseModel):
-    """Represent the legacy tenant-list response shape while listing is contained."""
+    """Represent the legacy tenant-list response while collection GET is contained."""
 
     tenants: list[TenantResponse]
     total: int
@@ -307,20 +356,19 @@ class TenantListResponse(BaseModel):
 
 
 def _entity_to_response(entity: TenantEntity) -> TenantResponse:
-    """Convert one TenantEntity to the bounded HTTP response model.
+    """Convert one resolved TenantEntity to the bounded HTTP response.
 
     Authority:
-        Serialization only. This helper never authorizes access.
+        Serialization only.
 
     Tenant scope:
-        The entity must already have been resolved after exact route authorization.
+        Caller must already have completed authorization and scope/path binding.
 
     Mutation semantics:
         Read-only.
 
     Failure semantics:
-        A missing object is rejected rather than converted into a fabricated
-        response.
+        Missing entities are rejected rather than fabricated.
 
     Financial boundary:
         No financial execution authority.
@@ -338,7 +386,7 @@ def _entity_to_response(entity: TenantEntity) -> TenantResponse:
         contact_email=organization.contact_email,
         industry=organization.industry,
         region=getattr(entity, "region", None),
-        sector=None,
+        sector=getattr(entity, "sector", None),
         status=entity.status,
         subscription_tier=getattr(entity, "subscription_tier", None),
         compliance_flags=getattr(entity, "compliance_flags", None),
@@ -350,16 +398,16 @@ def _entity_to_response(entity: TenantEntity) -> TenantResponse:
 
 
 def _require_tenant_authority_available() -> NoReturn:
-    """Keep non-migrated tenant routes deterministically unavailable.
+    """Keep non-migrated collection/lifecycle routes unavailable before persistence.
 
     Authority:
-        This helper grants nothing.
+        Grants nothing.
 
     Tenant scope:
-        No tenant scope is resolved.
+        Resolves no tenant.
 
     Persistence semantics:
-        Raises before any TenantRegistry access.
+        Raises before TenantRegistry access.
 
     Financial boundary:
         No financial execution authority.
@@ -374,11 +422,20 @@ def _require_exact_path_scope(
     tenant_id: str,
     authorization: TenantAuthorizationContext,
 ) -> None:
-    """Require authorized request scope to exactly equal the detail-route path.
+    """Require authorized X-Tenant-ID scope to exactly equal the detail path.
 
-    The frozen authorization dependency proves authority for X-Tenant-ID.
-    This route-level check binds that proven scope to the concrete path target
-    before persistence is accessed.
+    Authority:
+        Consumes already-proven authorization context; does not authorize.
+
+    Tenant scope:
+        Prevents an authorization decision for one tenant from being applied to
+        another path target.
+
+    Mutation semantics:
+        Must complete before registry access.
+
+    Financial boundary:
+        No financial execution authority.
     """
     if authorization.tenant_id != tenant_id:
         raise HTTPException(
@@ -388,12 +445,7 @@ def _require_exact_path_scope(
 
 
 def _raise_registry_service_unavailable(error: TenantRegistryError) -> NoReturn:
-    """Translate bounded registry failures into deterministic HTTP 503.
-
-    Known registry reasons are preserved verbatim for operational distinction.
-    Unknown future registry errors remain fail-closed under a generic bounded
-    service-unavailable token rather than escaping as HTTP 500.
-    """
+    """Translate bounded registry service/integrity failures to HTTP 503."""
     reason = str(error).strip()
     detail = (
         reason
@@ -404,6 +456,23 @@ def _raise_registry_service_unavailable(error: TenantRegistryError) -> NoReturn:
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail=detail,
     ) from error
+
+
+def _raise_profile_update_registry_failure(
+    error: TenantRegistryError,
+) -> NoReturn:
+    """Translate strict profile persistence errors without leaking internals.
+
+    Client-shape/value failures are bounded HTTP 422. Persisted-truth,
+    consistency, infrastructure, and unknown failures are fail-closed HTTP 503.
+    """
+    reason = str(error).strip()
+    if reason in _PROFILE_UPDATE_CLIENT_ERROR_REASONS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=reason,
+        ) from error
+    _raise_registry_service_unavailable(error)
 
 
 # =============================================================================
@@ -437,7 +506,7 @@ async def list_tenants(
 ) -> TenantListResponse:
     """Keep global tenant listing unavailable before any persistence access.
 
-    Global listing is not an own-tenant operation and is outside B2B authority.
+    Global listing is not an own-tenant operation and remains outside C2.
     """
     del request, search, skip, limit
     _require_tenant_authority_available()
@@ -454,20 +523,18 @@ async def get_tenant(
     """Read one authorized own-tenant profile.
 
     Authority:
-        Requires canonical tenant:profile:read bound to profile_read through
-        RequireTenantAuthorization. No caller/header/JWT role is interpreted here.
+        Requires tenant:profile:read / profile_read through the frozen
+        RequireTenantAuthorization composition.
 
     Tenant scope:
-        The authorized X-Tenant-ID must exactly equal tenant_id before registry
-        access.
+        Authorized X-Tenant-ID must exactly equal tenant_id before registry access.
 
     Return semantics:
-        Healthy persisted truth returns TenantResponse.
-        Genuine absence returns HTTP 404.
+        Healthy persisted truth -> HTTP 200.
+        Genuine absence -> HTTP 404.
 
     Fail-closed semantics:
-        Invalid persisted truth and MongoDB GET outage return HTTP 503 with the
-        bounded registry reason.
+        Invalid persisted truth or GET outage -> bounded HTTP 503.
 
     Mutation semantics:
         Read-only.
@@ -504,7 +571,8 @@ async def create_tenant(
 ) -> TenantResponse:
     """Keep tenant lifecycle creation unavailable before persistence access.
 
-    Lifecycle creation requires system authority and is outside B2B.
+    Lifecycle creation requires separately governed system authority and remains
+    outside C2.
     """
     del payload, request
     _require_tenant_authority_available()
@@ -515,14 +583,59 @@ async def update_tenant(
     tenant_id: str,
     payload: TenantUpdateRequest,
     request: Request,
+    authorization: TenantAuthorizationContext = Depends(
+        _PROFILE_UPDATE_AUTHORIZATION
+    ),
 ) -> TenantResponse:
-    """Keep tenant profile mutation unavailable before persistence access.
+    """Mutate exactly the authorized own-tenant six-field profile.
 
-    Profile mutation remains blocked until mutable-field policy and storage
-    semantics are aligned in the subsequent migration phase.
+    Authority:
+        Requires canonical tenant:profile:write bound to profile_update through
+        frozen RequireTenantAuthorization. Transport/JWT/header role projections
+        are never interpreted as business authority here.
+
+    Tenant scope:
+        Authorized X-Tenant-ID must exactly equal tenant_id before persistence.
+        A mismatch returns HTTP 403 and performs no registry call.
+
+    Mutation semantics:
+        Only name, alias, industry, region, sector, and legal_name are representable
+        by TenantUpdateRequest. The resulting exclude-unset payload is sent only to
+        TenantRegistry.update_profile. Legacy TenantRegistry.update is not used.
+
+    Return semantics:
+        Healthy mutation, including same-value idempotent mutation -> HTTP 200.
+        Genuine target absence -> HTTP 404.
+
+    Fail-closed semantics:
+        Strict profile input/value errors -> bounded HTTP 422.
+        Invalid persisted truth, post-write inconsistency, Mongo outage, and
+        unknown registry failures -> bounded HTTP 503.
+
+    Financial boundary:
+        Plan is not requestable or persistable through this route.
+        No financial execution authority.
     """
-    del tenant_id, payload, request
-    _require_tenant_authority_available()
+    del request
+    _require_exact_path_scope(tenant_id, authorization)
+    mutation = payload.model_dump(exclude_unset=True)
+
+    try:
+        entity = TenantRegistry.update_profile(
+            tenant_id,
+            mutation,
+        )
+    except TenantRegistryError as error:
+        logger.error("Authorized tenant PUT registry failure: %s", error)
+        _raise_profile_update_registry_failure(error)
+
+    if entity is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant not found.",
+        )
+
+    return _entity_to_response(entity)
 
 
 @tenant_router.delete(
@@ -539,24 +652,21 @@ async def archive_tenant(
     """Archive one authorized own tenant without hard deletion.
 
     Authority:
-        Requires canonical tenant:lifecycle:archive bound to lifecycle_archive
-        through RequireTenantAuthorization.
+        Requires tenant:lifecycle:archive / lifecycle_archive through the frozen
+        RequireTenantAuthorization composition.
 
     Tenant scope:
-        The authorized X-Tenant-ID must exactly equal tenant_id before registry
-        access.
+        Authorized X-Tenant-ID must exactly equal tenant_id before registry access.
 
     Mutation semantics:
-        Calls TenantRegistry.archive only. The registry performs a soft
-        ``status = ARCHIVED`` update and never hard deletion.
+        Calls TenantRegistry.archive only; archive remains soft status mutation.
 
     Return semantics:
-        A modified tenant returns HTTP 204.
-        A no-modification result preserves historical ambiguity as HTTP 404
-        "Tenant not found or already archived."
+        Modified tenant -> HTTP 204.
+        No modification -> historical HTTP 404.
 
     Fail-closed semantics:
-        MongoDB archive outage returns HTTP 503 with the bounded registry reason.
+        Mongo archive outage -> bounded HTTP 503.
 
     Financial boundary:
         No financial execution authority.
@@ -579,10 +689,6 @@ async def archive_tenant(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-# =============================================================================
-# EXPLICIT PUBLIC EXPORT SURFACE
-# =============================================================================
-
 __all__ = [
     "VERSION",
     "TenantCreateRequest",
@@ -597,9 +703,9 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: tenant_router.py
-# VERSION: v1.1.0-TENANT-GET-ARCHIVE-AUTHORITY-WIRING
-# AUTHORITY BOUNDARY: tenant HTTP composition and bounded registry invocation only; durable authentication, membership, role, permission, and authorization truth remain external authorities
-# TENANT POSTURE: authorized X-Tenant-ID must exactly equal the detail path tenant before GET/archive persistence; global list, create, and PUT remain contained
-# FAIL-CLOSED POSTURE: only canonical profile_read and lifecycle_archive dependencies can reach registry; scope mismatch denies 403; absence is 404; registry corruption/outage is 503
-# FINANCIAL EXECUTION AUTHORITY: None. Kennel EOS remains exclusive.
+# VERSION: v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
+# AUTHORITY BOUNDARY: tenant HTTP composition, exact request schema, path/scope binding, bounded registry invocation, and HTTP translation only; durable authentication, membership, role, permission, and authorization truth remain external authorities
+# TENANT POSTURE: authorized X-Tenant-ID must exactly equal the detail path tenant before GET/PUT/archive persistence; collection list and create remain contained
+# FAIL-CLOSED POSTURE: GET uses profile_read, PUT uses profile_update, archive uses lifecycle_archive; extra PUT fields are rejected; mismatch denies 403; absence is 404; client mutation errors are 422; persistence corruption/outage/inconsistency is 503
+# FINANCIAL EXECUTION AUTHORITY: None. Profile PUT cannot mutate plan; Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
