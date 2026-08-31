@@ -2,29 +2,31 @@
 """
 ===============================================================================
 WILSY OS — SOVEREIGN CERTIFICATION ARTIFACT
-TENANT REGISTRY — MAPPING FAILURE SEMANTICS — UNIT CERTIFICATE
+TENANT REGISTRY — MAPPING FAILURE SEMANTICS — C1 ADJACENCY CERTIFICATE
 ===============================================================================
 
 TITLE:
-    WILSY OS Tenant Registry Mapping Failure Semantics Unit Certification
+    WILSY OS Tenant Registry Mapping Failure Semantics Adjacency Certification
 
 FILE:
     tests/unit/test_tenant_registry_mapping_failure_semantics.py
 
 VERSION:
-    v1.0.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-CERT
+    v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
-    Deterministic unit certification of the TenantRegistry GET persistence and
-    read-integrity contract.
+    Deterministic preservation certification for the B1.1 GET mapping-failure
+    contract after C1 profile-mutation persistence evolution.
 
 EPITOME:
-    Certifies that healthy persisted tenant truth maps successfully, genuine
-    absence alone returns None, malformed persisted tenant truth raises the exact
-    GET-invalid-document error, MongoDB outage remains a distinct failure class,
-    ObjectId compatibility stays bounded, list tolerance remains unchanged, and
-    transport projections never become registry authority.
+    Preserves every B1.1 distinction: healthy persisted truth maps, genuine
+    absence alone is None, malformed persisted subscription truth raises the
+    exact GET-invalid-document error, Mongo outage stays distinct with cause,
+    ObjectId compatibility remains bounded, list remains tolerant, archive stays
+    soft and exact, and compatibility transport inputs never become authority.
+    The only certification evolution is recognition of the governed C1 registry
+    version and the additional persistence-only update_profile method.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_registry_mapping_failure_semantics.py
@@ -36,12 +38,14 @@ CERTIFICATION / UPDATE DATE:
     2026-08-30
 
 CHANGELOG:
+    v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
+        - Advances expected TenantRegistry production version to C1 v1.4.0.
+        - Preserves all B1.1 GET corruption/absence/outage assertions.
+        - Extends public-authority-surface inspection to update_profile.
+        - Does not weaken, skip, remove, or reinterpret any B1.1 assertion.
+
     v1.0.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-CERT
-        - Establishes deterministic B1.1 mapping-failure certification.
-        - Proves invalid persisted GET truth cannot masquerade as absence.
-        - Locks GET-invalid-document versus GET-unavailable semantics.
-        - Preserves ObjectId compatibility, list behavior, archive behavior,
-          and compatibility-header non-authority.
+        - Established B1.1 persisted GET mapping-failure certification.
 
 COMPLIANCE:
     POPIA section 19.
@@ -55,20 +59,19 @@ SECURITY / PRIVACY POSTURE:
     mutation outside bounded test substitution.
 
 TENANT BOUNDARY:
-    Exact tenant identifiers are asserted.
-    tenant_id_header is compatibility-only and cannot redirect tenant lookup.
+    Exact tenant identifiers are asserted. Compatibility header values cannot
+    redirect tenant lookup. update_profile exposes no transport scope parameter.
 
 AUTHORITY BOUNDARY:
-    Evidence only.
-    No authentication, authorization, membership, role, permission, JWT, HTTP,
-    or financial authority is created by this certificate.
+    Evidence only. No authentication, authorization, membership, role,
+    permission, JWT, HTTP, or financial authority.
 
 FINANCIAL AUTHORITY BOUNDARY:
     No financial state or execution is touched.
     Kennel EOS remains the exclusive financial execution authority.
 
 CERTIFICATION CLASS:
-    UNIT / DETERMINISTIC / FAIL-CLOSED
+    UNIT / DETERMINISTIC / FAIL-CLOSED / ADJACENCY
 
 STRUCTURAL GOVERNANCE:
     AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
@@ -92,24 +95,17 @@ from tools.eos.saas.tenancy.tenant_registry import (
 )
 
 
-# =============================================================================
-# CERTIFICATION CONSTANTS
-# =============================================================================
-
-VERSION = "v1.0.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-CERT"
-EXPECTED_PRIMARY_VERSION = "v1.3.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS"
+VERSION = (
+    "v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT"
+)
+EXPECTED_PRIMARY_VERSION = "v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE"
 INVALID_DOCUMENT = "TENANT_REGISTRY_GET_INVALID_DOCUMENT"
 GET_UNAVAILABLE = "TENANT_REGISTRY_GET_UNAVAILABLE"
 
 
-# =============================================================================
-# DETERMINISTIC COLLECTION EVIDENCE DOUBLES
-# =============================================================================
-
-
 @dataclass(frozen=True, slots=True)
 class _UpdateResult:
-    """Represent the exact modified_count contract consumed by archive()."""
+    """Represent the modified_count contract consumed by archive()."""
 
     modified_count: int
 
@@ -121,15 +117,15 @@ class _CursorFake:
         self._docs = docs
 
     def skip(self, _value: int) -> "_CursorFake":
-        """Preserve the cursor while recording no additional authority."""
+        """Preserve cursor identity without adding authority."""
         return self
 
     def limit(self, _value: int) -> "_CursorFake":
-        """Preserve the cursor while recording no additional authority."""
+        """Preserve cursor identity without adding authority."""
         return self
 
     def __iter__(self) -> Iterator[dict[str, Any]]:
-        """Yield the deterministic persisted documents."""
+        """Yield deterministic persisted documents."""
         return iter(self._docs)
 
 
@@ -149,10 +145,12 @@ class _CollectionFake:
         self.find_error = find_error
         self.modified_count = modified_count
         self.find_calls: list[dict[str, Any]] = []
-        self.update_calls: list[tuple[dict[str, Any], dict[str, Any]]] = []
+        self.update_calls: list[
+            tuple[dict[str, Any], dict[str, Any]]
+        ] = []
 
     def find_one(self, query: dict[str, Any]) -> dict[str, Any] | None:
-        """Resolve one deterministic result or raise the configured Mongo failure."""
+        """Resolve one deterministic result or raise configured Mongo failure."""
         self.find_calls.append(query)
         if self.find_error is not None:
             raise self.find_error
@@ -161,7 +159,7 @@ class _CollectionFake:
         return None
 
     def count_documents(self, query: dict[str, Any]) -> int:
-        """Return the deterministic total used by legacy list behavior."""
+        """Return deterministic total used by preserved list behavior."""
         assert query == {}
         return len(self.list_docs)
 
@@ -180,14 +178,9 @@ class _CollectionFake:
         query: dict[str, Any],
         update: dict[str, Any],
     ) -> _UpdateResult:
-        """Record the exact archive mutation and return modified_count evidence."""
+        """Record the exact archive mutation."""
         self.update_calls.append((query, update))
         return _UpdateResult(self.modified_count)
-
-
-# =============================================================================
-# CANONICAL TEST DOCUMENT BUILDERS
-# =============================================================================
 
 
 def _tenant_doc(tenant_id: str = "tenant-a") -> dict[str, Any]:
@@ -206,33 +199,25 @@ def _tenant_doc(tenant_id: str = "tenant-a") -> dict[str, Any]:
     }
 
 
-def _invalid_doc(tenant_id: str = "tenant-corrupt") -> dict[str, Any]:
-    """Build an existing document that enters and fails the real mapper."""
+def _invalid_doc(
+    tenant_id: str = "tenant-corrupt",
+) -> dict[str, Any]:
+    """Build existing truth that must still fail the frozen B1.1 mapper."""
     doc = _tenant_doc(tenant_id)
     doc["subscription"] = "corrupt"
     return doc
 
 
-# =============================================================================
-# VERSION AND ERROR-SURFACE CERTIFICATION
-# =============================================================================
-
-
 def test_primary_version_and_error_type_are_exact() -> None:
-    """Lock the B1.1 production version and bounded error type."""
+    """Recognize the governed C1 version without weakening the B1.1 error type."""
     assert registry_module.VERSION == EXPECTED_PRIMARY_VERSION
     assert issubclass(TenantRegistryError, RuntimeError)
-
-
-# =============================================================================
-# HEALTHY GET / GENUINE ABSENCE CERTIFICATION
-# =============================================================================
 
 
 def test_healthy_matching_document_maps_to_entity(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A healthy matching persisted document returns the correct tenant entity."""
+    """A healthy matching persisted document still returns the correct tenant."""
     fake = _CollectionFake(find_results=[_tenant_doc()])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
 
@@ -244,7 +229,9 @@ def test_healthy_matching_document_maps_to_entity(
     assert fake.find_calls == [{"tenant_id": "tenant-a"}]
 
 
-def test_genuine_absence_is_still_none(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_genuine_absence_is_still_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A genuinely absent tenant remains the sole ordinary None GET result."""
     fake = _CollectionFake(find_results=[None])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
@@ -253,15 +240,10 @@ def test_genuine_absence_is_still_none(monkeypatch: pytest.MonkeyPatch) -> None:
     assert fake.find_calls == [{"tenant_id": "missing"}]
 
 
-# =============================================================================
-# INVALID PERSISTED TRUTH CERTIFICATION
-# =============================================================================
-
-
 def test_existing_invalid_document_raises_exact_get_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An existing unmappable document raises the exact GET-invalid error."""
+    """An existing unmappable document retains the exact invalid GET error."""
     fake = _CollectionFake(find_results=[_invalid_doc()])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
 
@@ -276,23 +258,21 @@ def test_existing_invalid_document_raises_exact_get_error(
 def test_existing_invalid_document_can_never_return_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Persisted corruption is structurally distinct from genuine absence."""
+    """Persisted corruption remains structurally distinct from absence."""
     fake = _CollectionFake(find_results=[_invalid_doc()])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
 
-    with pytest.raises(TenantRegistryError, match=f"^{INVALID_DOCUMENT}$"):
+    with pytest.raises(
+        TenantRegistryError,
+        match=f"^{INVALID_DOCUMENT}$",
+    ):
         TenantRegistry.get("tenant-corrupt")
-
-
-# =============================================================================
-# INFRASTRUCTURE OUTAGE CERTIFICATION
-# =============================================================================
 
 
 def test_mongo_outage_remains_distinct_and_preserves_cause(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Mongo outage keeps the exact unavailable token and original cause."""
+    """Mongo outage retains exact unavailable token and original cause."""
     failure = PyMongoError("offline")
     fake = _CollectionFake(find_error=failure)
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
@@ -304,15 +284,10 @@ def test_mongo_outage_remains_distinct_and_preserves_cause(
     assert raised.value.__cause__ is failure
 
 
-# =============================================================================
-# LEGACY LIST BEHAVIOR PRESERVATION
-# =============================================================================
-
-
 def test_list_still_skips_invalid_document_without_strict_get_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Strict invalid-document failure remains GET-specific, not list-global."""
+    """Legacy list remains tolerant while strict invalid failure stays GET-specific."""
     fake = _CollectionFake(
         list_docs=[
             _tenant_doc("tenant-good"),
@@ -329,15 +304,10 @@ def test_list_still_skips_invalid_document_without_strict_get_error(
     assert items[0].tenant_id == "tenant-good"
 
 
-# =============================================================================
-# OBJECTID COMPATIBILITY CERTIFICATION
-# =============================================================================
-
-
 def test_objectid_compatibility_fallback_remains_bounded(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A valid 24-hex identifier retains the existing exact ObjectId fallback."""
+    """A valid 24-hex identifier retains exact ObjectId fallback."""
     legacy_id = "64f000000000000000000001"
     fake = _CollectionFake(
         find_results=[
@@ -360,7 +330,7 @@ def test_objectid_compatibility_fallback_remains_bounded(
 def test_invalid_24_character_non_objectid_remains_genuine_absence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Invalid ObjectId text is bounded and cannot fabricate a second lookup."""
+    """Invalid ObjectId text remains bounded to the natural-key lookup."""
     value = "z" * 24
     fake = _CollectionFake(find_results=[None])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
@@ -369,31 +339,29 @@ def test_invalid_24_character_non_objectid_remains_genuine_absence(
     assert fake.find_calls == [{"tenant_id": value}]
 
 
-# =============================================================================
-# TRANSPORT NON-AUTHORITY CERTIFICATION
-# =============================================================================
-
-
 def test_compatibility_header_cannot_redirect_strict_mapping(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Compatibility header values cannot redirect or authorize tenant lookup."""
+    """Compatibility header cannot redirect an invalid persisted GET."""
     fake = _CollectionFake(find_results=[_invalid_doc("tenant-a")])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
 
-    with pytest.raises(TenantRegistryError, match=f"^{INVALID_DOCUMENT}$"):
-        TenantRegistry.get("tenant-a", tenant_id_header="tenant-b")
+    with pytest.raises(
+        TenantRegistryError,
+        match=f"^{INVALID_DOCUMENT}$",
+    ):
+        TenantRegistry.get(
+            "tenant-a",
+            tenant_id_header="tenant-b",
+        )
 
     assert fake.find_calls == [{"tenant_id": "tenant-a"}]
 
 
-# =============================================================================
-# ARCHIVE AND ADJACENT-BEHAVIOR PRESERVATION
-# =============================================================================
-
-
-def test_archive_semantics_remain_exact(monkeypatch: pytest.MonkeyPatch) -> None:
-    """B1.1 preserves the already-certified soft-archive mutation exactly."""
+def test_archive_semantics_remain_exact(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C1 preserves the already-certified soft archive mutation exactly."""
     fake = _CollectionFake(modified_count=1)
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
 
@@ -406,10 +374,10 @@ def test_archive_semantics_remain_exact(monkeypatch: pytest.MonkeyPatch) -> None
     ]
 
 
-def test_other_business_methods_are_not_replaced(
+def test_adjacent_business_methods_remain_present(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """B1.1 strict GET does not replace list/create/update/alias/archive methods."""
+    """Strict GET preservation does not replace adjacent registry methods."""
     originals = {
         name: TenantRegistry.__dict__[name]
         for name in (
@@ -417,6 +385,7 @@ def test_other_business_methods_are_not_replaced(
             "get_tenant_by_alias",
             "create",
             "update",
+            "update_profile",
             "archive",
         )
     }
@@ -430,13 +399,8 @@ def test_other_business_methods_are_not_replaced(
     } == originals
 
 
-# =============================================================================
-# AUTHORITY-SURFACE CERTIFICATION
-# =============================================================================
-
-
 def test_registry_surface_exposes_no_role_jwt_permission_or_financial_authority() -> None:
-    """Registry public inputs expose no role/JWT/permission/financial grant path."""
+    """All public persistence inputs remain free of grant-bearing projections."""
     forbidden = {
         "role",
         "roles",
@@ -453,25 +417,27 @@ def test_registry_surface_exposes_no_role_jwt_permission_or_financial_authority(
         TenantRegistry.list,
         TenantRegistry.create,
         TenantRegistry.update,
+        TenantRegistry.update_profile,
         TenantRegistry.archive,
     ):
-        assert not forbidden.intersection(inspect.signature(method).parameters)
-
-
-# =============================================================================
-# TEST ISOLATION CERTIFICATION
-# =============================================================================
+        assert not forbidden.intersection(
+            inspect.signature(method).parameters
+        )
 
 
 def test_collection_substitution_restores_cleanly(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Bounded collection substitution restores the production collection object."""
+    """Bounded collection substitution still restores the production object."""
     original = registry_module.tenants_collection
     fake = _CollectionFake(find_results=[None])
 
     with monkeypatch.context() as scoped:
-        scoped.setattr(registry_module, "tenants_collection", fake)
+        scoped.setattr(
+            registry_module,
+            "tenants_collection",
+            fake,
+        )
         assert TenantRegistry.get("missing") is None
 
     assert registry_module.tenants_collection is original
@@ -481,9 +447,9 @@ def test_collection_substitution_restores_cleanly(
 # WILSY OS SOVEREIGN CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: test_tenant_registry_mapping_failure_semantics.py
-# VERSION: v1.0.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-CERT
-# AUTHORITY BOUNDARY: deterministic persistence/read-integrity evidence only; no authentication, membership, role, permission, JWT, HTTP, or financial authority
-# TENANT POSTURE: genuine absence alone returns None; an existing unmappable tenant fails explicitly and compatibility headers cannot redirect scope
-# FAIL-CLOSED POSTURE: persisted GET corruption raises TENANT_REGISTRY_GET_INVALID_DOCUMENT while Mongo outage remains TENANT_REGISTRY_GET_UNAVAILABLE
+# VERSION: v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
+# AUTHORITY BOUNDARY: deterministic B1.1 persistence/read-integrity adjacency evidence only; no authentication, membership, role, permission, JWT, HTTP, or financial authority
+# TENANT POSTURE: genuine absence alone is None; malformed matching truth remains explicit; compatibility headers cannot redirect scope; update_profile adds no transport authority
+# FAIL-CLOSED POSTURE: persisted GET corruption remains TENANT_REGISTRY_GET_INVALID_DOCUMENT and Mongo outage remains TENANT_REGISTRY_GET_UNAVAILABLE after C1 evolution
 # FINANCIAL EXECUTION AUTHORITY: None. Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
