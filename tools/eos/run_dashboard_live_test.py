@@ -45,29 +45,32 @@ async def main() -> None:
     # 1. Simulate Task Started Event
     logger.info("\nSimulating Task Started Event...")
     start_event = TaskStartedEvent(
-        event_id="evt-start-01",
+        execution_id="evt-start-01",
+        message="Task started",
         session_id=session_id,
         tenant_id="tenant-default",
         task_id="task-live-01",
         engine_name="legal_playbook_engine"
     )
-    await event_bus.publish(RuntimeEventTypeEnum.TASK_STARTED, start_event)
+    await event_bus.publish_async(RuntimeEventTypeEnum.TASK_STARTED, start_event)
 
     # 2. Simulate Artifact Published Event (using correct schema arguments)
     logger.info("\nSimulating Artifact Published Event...")
     art_event = ArtifactPublishedEvent(
         artifact_id="art-live-rpt-01",
+        message="Artifact published",
         session_id=session_id,
         tenant_id="tenant-default",
         source_task_id="task-live-01",
         artifact_type="playbook_compliance_report"
     )
-    await event_bus.publish(RuntimeEventTypeEnum.ARTIFACT_PUBLISHED, art_event)
+    await event_bus.publish_async(RuntimeEventTypeEnum.ARTIFACT_PUBLISHED, art_event)
 
     # 3. Simulate Task Completed Event
     logger.info("\nSimulating Task Completed Event...")
     comp_event = TaskCompletedEvent(
-        event_id="evt-comp-01",
+        execution_id="evt-comp-01",
+        message="Task completed",
         session_id=session_id,
         tenant_id="tenant-default",
         task_id="task-live-01",
@@ -75,7 +78,7 @@ async def main() -> None:
         status="SUCCESS",
         execution_duration_ms=45.2
     )
-    await event_bus.publish(RuntimeEventTypeEnum.TASK_COMPLETED, comp_event)
+    await event_bus.publish_async(RuntimeEventTypeEnum.TASK_COMPLETED, comp_event)
 
     # Allow event listeners to complete
     await asyncio.sleep(0.1)

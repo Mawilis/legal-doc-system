@@ -17,7 +17,7 @@ import logging
 import hashlib
 import threading
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 logging.basicConfig(
     level=logging.INFO,

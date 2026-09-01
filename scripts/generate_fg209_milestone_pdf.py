@@ -87,7 +87,7 @@ def build_fg209_executive_report() -> None:
     ]
 
     try:
-        builder.add_metadata_box(metadata_paired)
+        builder.add_metadata_box(metadata_2tuples)
     except Exception:
         builder.add_metadata_box(metadata_2tuples)
 

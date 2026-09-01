@@ -42,6 +42,7 @@ class MockDocumentEngineWorker:
     # [FUNCTION EXPLANATION]: Simulates engine execution and returns a structured result payload.
     async def execute(self, task_id: str, payload: Dict[str, Any]) -> WorkerExecutionResult:
         return WorkerExecutionResult(
+            task_id=task_id,
             status=WorkerExecutionStatusEnum.SUCCESS,
             execution_duration_ms=15.0,
             output={

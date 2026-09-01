@@ -43,7 +43,7 @@ except ImportError:
                 self.api_key = api_key or "verification_key"
                 self.endpoint = endpoint or "http://localhost:8000"
 
-            def health_check() -> Dict[str, Any]:
+            def health_check(self) -> Dict[str, Any]:
                 return {"status": "HEALTHY", "version": "1.0.0"}
 
 

@@ -46,6 +46,7 @@ class VerificationStatus(Enum):
     DEPRECATED = "DEPRECATED"
     EXPERIMENTAL = "EXPERIMENTAL"
     NON_COMPLIANT = "NON_COMPLIANT"
+    UNVERIFIED = "UNVERIFIED"
 
 
 @dataclass(frozen=True)

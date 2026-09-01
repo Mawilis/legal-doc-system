@@ -143,6 +143,7 @@ class TestFG210DocumentationSuite(unittest.TestCase):
 
         fetched = self.registry.get_by_urn(self.sample_entity.urn)
         self.assertIsNotNone(fetched)
+        assert fetched is not None, "Fetched entity should not be None"
         self.assertEqual(fetched.title, "Kernel Test Engine")
 
         kernel_entities = self.registry.filter_by_kind(EntityKind.KERNEL)

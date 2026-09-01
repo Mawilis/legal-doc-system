@@ -37,13 +37,13 @@ class DocumentationRegistry:
 
     _instance = None
     _lock = threading.Lock()
+    _registry: Dict[str, DocumentationEntity] = {}
+    _urn_index: Set[str] = set()
 
     def __new__(cls):
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super(DocumentationRegistry, cls).__new__(cls)
-                cls._instance._registry: Dict[str, DocumentationEntity] = {}
-                cls._instance._urn_index: Set[str] = set()
             return cls._instance
 
     def register(self, entity: DocumentationEntity) -> None:

@@ -91,6 +91,7 @@ class TestFG173InstitutionalMemory(unittest.TestCase):
         """
         retrieved = self.store.get_record("REC-001")
         self.assertIsNotNone(retrieved)
+        assert retrieved is not None, "Retrieved record should not be None"
         self.assertEqual(retrieved.title, "Institutional Architecture Decision")
         
         exec_records = self.store.get_records_by_execution("EXEC-MEM-001")
