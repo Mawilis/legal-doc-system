@@ -1,6 +1,17 @@
-"""
-===============================================================================
-WILSY OS KERNEL — RUNTIME SCHEDULER EVENTS (PRODUCTION GRADE)
+"""WILSY OS canonical runtime event transport and forensic history.
+TITLE: Runtime Scheduler Events
+VERSION: v1.0.1-WILSY-RUNTIME-SCHEDULER-EVENTS
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Immutable event DTOs and zero-loss in-memory publication history.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/scheduler_events.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi; Wilsy OS Core Engineering
+CERTIFICATION/UPDATE DATE: 2026-09-01
+CHANGELOG: v1.0.1 closes TaskFailedEventDTO history loss, retains canonical tenant/session/task/engine/failure/artifact evidence, prevents supported delivery/history divergence, and adds defensive history isolation without authority or financial behavior.
+COMPLIANCE: Explicit event transport; no authentication, authorization, persistence, or financial execution authority.
+SECURITY / PRIVACY POSTURE: Structured evidence is deep-copied; tenant data is scope evidence only.
+TENANT BOUNDARY: No tenant synthesis, lookup, membership, or authorization.
+AUTHORITY BOUNDARY: Event transport and forensic evidence only.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains the exclusive financial execution authority.
 ===============================================================================
 [EPITOME]:
     Provides immutable runtime event DTOs, event types, task event DTO aliases,
@@ -28,6 +39,7 @@ WILSY OS KERNEL — RUNTIME SCHEDULER EVENTS (PRODUCTION GRADE)
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -37,6 +49,7 @@ from typing import Any, Dict, List, Optional, Callable
 from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger("WilsyOS.RuntimeEventBus")
+VERSION = "v1.0.1-WILSY-RUNTIME-SCHEDULER-EVENTS"
 
 
 class RuntimeEventTypeEnum(str, Enum):
@@ -170,13 +183,27 @@ class RuntimeEventBus:
         Also stores the event in the history.
         """
         # Store raw event for audit
-        if isinstance(event, (TaskStartedEvent, TaskCompletedEvent, ArtifactPublishedEvent, SchedulerEvent)):
+        supported = (TaskStartedEvent, TaskCompletedEvent, TaskFailedEvent, ArtifactPublishedEvent, SchedulerEvent)
+        if not isinstance(event, supported):
+            raise TypeError("Unsupported runtime event object")
+        expected = getattr(event, "event_type", None)
+        supplied = event_type.value if isinstance(event_type, RuntimeEventTypeEnum) else event_type
+        if expected is not None and expected != supplied and not isinstance(event, SchedulerEvent):
+            raise ValueError("Event type does not match DTO")
+        if isinstance(event, supported):
+            metadata = {
+                key: deepcopy(getattr(event, key))
+                for key in event.model_fields
+                if key not in {"event_type", "execution_id", "message", "timestamp"}
+                and hasattr(event, key)
+            }
             stored = SchedulerEvent(
                 event_id=getattr(event, 'execution_id', str(uuid.uuid4())),
                 execution_id=getattr(event, 'execution_id', ''),
-                event_type=RuntimeEventTypeEnum(event_type),
+                event_type=RuntimeEventTypeEnum(supplied),
                 message=getattr(event, 'message', ''),
-                metadata=getattr(event, 'metadata', {})
+                timestamp=getattr(event, 'timestamp', datetime.now(timezone.utc).isoformat()),
+                metadata=metadata or deepcopy(getattr(event, 'metadata', {})),
             )
             self._events.append(stored)
 
@@ -208,7 +235,7 @@ class RuntimeEventBus:
 
     def get_events(self) -> List[SchedulerEvent]:
         """Retrieve all published events for forensic audit."""
-        return list(self._events)
+        return deepcopy(self._events)
 
     def clear_events(self) -> None:
         """Clear event history – useful for test isolation."""
@@ -217,3 +244,12 @@ class RuntimeEventBus:
     def event_count(self) -> int:
         """Return the number of events published."""
         return len(self._events)
+
+
+# ARTIFACT: scheduler_events.py
+# VERSION: v1.0.1-WILSY-RUNTIME-SCHEDULER-EVENTS
+# AUTHORITY BOUNDARY: event transport and forensic evidence only.
+# TENANT POSTURE: tenant is scope evidence, never authorization truth.
+# FAIL-CLOSED POSTURE: unsupported event objects are rejected before delivery.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
