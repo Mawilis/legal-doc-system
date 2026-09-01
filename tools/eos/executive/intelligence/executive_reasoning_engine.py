@@ -1,13 +1,13 @@
 """WILSY OS evidence-bound executive reasoning boundary.
 
 TITLE: WILSY Executive Evidence-Bound Reasoning Engine
-VERSION: v1.0.0-WILSY-EXECUTIVE-REASONING-EVIDENCE
+VERSION: v1.0.1-WILSY-EXECUTIVE-REASONING-EVIDENCE
 AUTHORITY: Wilsy OS Core Governance; Kennel EOS / Python sovereign truth
 EPITOME: Deterministic provenance envelope; no semantic conclusions are manufactured.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/executive/intelligence/executive_reasoning_engine.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi; Wilsy OS Core Engineering
 CERTIFICATION/UPDATE DATE: 2026-09-01
-CHANGELOG: v1.0.0 replaces dictionary-context synthetic reasoning, fixed confidence/risk/impact, unstable IDs, mutable cache, and state export with a stateless ExecutiveContext-bound evidence envelope.
+CHANGELOG: v1.0.1 closes the direct-constructor evaluation-ID format gap by enforcing the canonical lowercase hexadecimal identifier format.
 COMPLIANCE: POPIA section 19, GDPR Article 32, SOC 2 CC7.2.
 SECURITY / PRIVACY: Raw query, evidence, and authority references never appear in IDs or errors.
 TENANT BOUNDARY: Authority derives solely from KernelBootstrapRequest embedded in ExecutiveContext.
@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from hashlib import sha3_512
 from tools.eos.executive.intelligence.executive_context_engine import ExecutiveContext
 
-VERSION = "v1.0.0-WILSY-EXECUTIVE-REASONING-EVIDENCE"
+VERSION = "v1.0.1-WILSY-EXECUTIVE-REASONING-EVIDENCE"
 
 class ExecutiveReasoningError(ValueError):
     """Stable fail-closed executive reasoning contract error."""
@@ -47,7 +47,9 @@ class ExecutiveReasoningEvidenceReference:
     source_version: str | None
 
 def _validate_result(result: "ExecutiveReasoningResult") -> None:
-    if not isinstance(result.evaluation_id, str) or len(result.evaluation_id) != 23 or not result.evaluation_id.startswith("REASON-"):
+    if (not isinstance(result.evaluation_id, str) or len(result.evaluation_id) != 23 or
+            not result.evaluation_id.startswith("REASON-") or
+            any(char not in "0123456789abcdef" for char in result.evaluation_id[7:])):
         raise ExecutiveReasoningError("INVALID_EVALUATION_ID")
     _aware(result.evaluated_at)
     if not isinstance(result.query_intent, str) or not result.query_intent.strip():
@@ -112,7 +114,7 @@ class ExecutiveReasoningEngine:
 executive_reasoning_engine = ExecutiveReasoningEngine()
 
 # ARTIFACT: executive_reasoning_engine.py
-# VERSION: v1.0.0-WILSY-EXECUTIVE-REASONING-EVIDENCE
+# VERSION: v1.0.1-WILSY-EXECUTIVE-REASONING-EVIDENCE
 # AUTHORITY BOUNDARY: evidence envelope only; no authority grant.
 # TENANT POSTURE: ExecutiveContext-bound; no implicit identity or tenant fallback.
 # EVIDENCE POSTURE: provenance references preserve explicit metadata only.
