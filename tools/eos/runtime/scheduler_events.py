@@ -1,12 +1,12 @@
 """WILSY OS canonical runtime event transport and forensic history.
 TITLE: Runtime Scheduler Events
-VERSION: v1.0.1-WILSY-RUNTIME-SCHEDULER-EVENTS
+VERSION: v1.0.2-WILSY-RUNTIME-SCHEDULER-EVENTS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Immutable event DTOs and zero-loss in-memory publication history.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/scheduler_events.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi; Wilsy OS Core Engineering
 CERTIFICATION/UPDATE DATE: 2026-09-01
-CHANGELOG: v1.0.1 closes TaskFailedEventDTO history loss, retains canonical tenant/session/task/engine/failure/artifact evidence, prevents supported delivery/history divergence, and adds defensive history isolation without authority or financial behavior.
+CHANGELOG: v1.0.2 removes deprecated Pydantic instance model_fields access via class-level introspection and replaces deprecated asyncio.iscoroutinefunction with inspect.iscoroutinefunction while preserving v1.0.1 forensic history and subscriber contracts; no authority or financial behavior.
 COMPLIANCE: Explicit event transport; no authentication, authorization, persistence, or financial execution authority.
 SECURITY / PRIVACY POSTURE: Structured evidence is deep-copied; tenant data is scope evidence only.
 TENANT BOUNDARY: No tenant synthesis, lookup, membership, or authorization.
@@ -39,6 +39,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains the exclusive financial executi
 from __future__ import annotations
 
 import asyncio
+import inspect
 from copy import deepcopy
 import logging
 import uuid
@@ -49,7 +50,7 @@ from typing import Any, Dict, List, Optional, Callable
 from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger("WilsyOS.RuntimeEventBus")
-VERSION = "v1.0.1-WILSY-RUNTIME-SCHEDULER-EVENTS"
+VERSION = "v1.0.2-WILSY-RUNTIME-SCHEDULER-EVENTS"
 
 
 class RuntimeEventTypeEnum(str, Enum):
@@ -193,7 +194,7 @@ class RuntimeEventBus:
         if isinstance(event, supported):
             metadata = {
                 key: deepcopy(getattr(event, key))
-                for key in event.model_fields
+                for key in type(event).model_fields
                 if key not in {"event_type", "execution_id", "message", "timestamp"}
                 and hasattr(event, key)
             }
@@ -210,7 +211,7 @@ class RuntimeEventBus:
         # Dispatch to synchronous subscribers
         for handler in self._subscribers.get(event_type, []):
             try:
-                if asyncio.iscoroutinefunction(handler):
+                if inspect.iscoroutinefunction(handler):
                     # Should not happen for sync subscribers, but handle gracefully
                     asyncio.create_task(handler(event))
                 else:
@@ -247,7 +248,7 @@ class RuntimeEventBus:
 
 
 # ARTIFACT: scheduler_events.py
-# VERSION: v1.0.1-WILSY-RUNTIME-SCHEDULER-EVENTS
+# VERSION: v1.0.2-WILSY-RUNTIME-SCHEDULER-EVENTS
 # AUTHORITY BOUNDARY: event transport and forensic evidence only.
 # TENANT POSTURE: tenant is scope evidence, never authorization truth.
 # FAIL-CLOSED POSTURE: unsupported event objects are rejected before delivery.
