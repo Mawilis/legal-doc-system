@@ -1,150 +1,54 @@
+# -*- coding: utf-8 -*-
+"""Canonical public export boundary for the Wilsy OS runtime package.
+
+TITLE: WILSY OS Runtime Canonical Export Boundary
+VERSION: v1.0.0-WILSY-RUNTIME-CANONICAL-EXPORTS
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Preserves the established tools.eos.runtime public surface by re-exporting each runtime contract from its single canonical dedicated module.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/__init__.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder & Chief Architect); Wilsy OS Core Engineering
+CERTIFICATION/UPDATE DATE: 2026-09-01
+CHANGELOG: v1.0.0 removes stale duplicate event, scheduler, bus, and bridge implementations and establishes this package initializer as an import/export boundary only.
+COMPLIANCE: Delegates tenant-sensitive runtime behavior to the canonical scheduler and bridge under POPIA section 19, GDPR Article 32, and SOC 2 CC7.2 isolation requirements.
+SECURITY / PRIVACY POSTURE: Owns no credentials, personal information processing, authentication decision, authorization decision, logging, telemetry, or executable fallback behavior.
+TENANT BOUNDARY: Owns no tenant lookup, tenant authorization, tenant default, tenant substitution, or cross-tenant behavior; explicit fail-closed tenant enforcement remains delegated to the canonical scheduler and bridge.
+AUTHORITY BOUNDARY: Owns no authentication, tenant authorization, KEXEC authority, persistence, transaction, idempotency, worker execution, or operational authority; it exposes canonical contracts without altering them.
+FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains the exclusive financial execution authority.
+
+Institutional contract:
+    This initializer exists solely to preserve stable root-package imports while
+    ensuring that every exported symbol is identical to the object defined by
+    its canonical dedicated module. It creates no wrapper, alias implementation,
+    fallback, state, event, side effect, tenant scope, or authority.
+
+Canonical relationships:
+    Pipeline lifecycle symbols are supplied by pipeline_status,
+    pipeline_statistics, pipeline_result, and pipeline_manager. Event contracts
+    and the event bus are supplied by scheduler_events. Task-start scheduling is
+    supplied by scheduler, and worker event orchestration is supplied by
+    scheduler_bridge.
+
+Fail-closed posture:
+    Tenant and authority validation is neither weakened nor reproduced here.
+    Callers receive the already-canonical EventDrivenScheduler and
+    WorkerEventBridge directly, so their explicit tenant requirements and
+    authority boundaries remain the only runtime behavior.
 """
-===============================================================================
-WILSY OS KERNEL — RUNTIME MODULE EXPORTS
-===============================================================================
-[FILE EXPLANATION]:
-    Exposes pipeline, scheduler, event bus, enums, DTOs, and bridge components 
-    for Wilsy OS runtime. Engineered to billion-dollar enterprise production standards.
-
-[BIBLICAL FOUNDATION]:
-    Colossians 3:23 — "Whatsoever ye do, do it heartily, as to the Lord..."
-
-[COLLABORATION & MAINTENANCE]:
-    - Founder & Lead Architect: Wilson Khanyezi
-    - Classification: Billion-Dollar Production Grade / Runtime Package
-===============================================================================
-"""
-
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from enum import Enum
-from typing import Any, Dict, List, Optional
-
-from tools.eos.runtime.pipeline_status import PipelineStatus, PipelineStatusValidator
-from tools.eos.runtime.pipeline_statistics import PipelineStatistics
-from tools.eos.runtime.pipeline_result import PipelineResult
-from tools.eos.runtime.pipeline_manager import PipelineManager
-
-
-class RuntimeEventTypeEnum(str, Enum):
-    """
-    [ENUM SPECIFICATION]: Runtime Event Type Enum
-    Classifies asynchronous runtime and telemetry events across Wilsy OS.
-    """
-    PIPELINE_STARTED = "PIPELINE_STARTED"
-    PIPELINE_COMPLETED = "PIPELINE_COMPLETED"
-    PIPELINE_FAILED = "PIPELINE_FAILED"
-    ARTIFACT_PUBLISHED = "ARTIFACT_PUBLISHED"
-    TASK_STARTED = "TASK_STARTED"
-    TASK_COMPLETED = "TASK_COMPLETED"
-    WORKER_SIGNAL = "WORKER_SIGNAL"
-
-
-@dataclass
-class ArtifactPublishedEventDTO:
-    """
-    [DTO SPECIFICATION]: Artifact Published Event DTO
-    Represents an immutable telemetry payload emitted upon successful artifact publication.
-    """
-    artifact_id: str
-    pipeline_id: str
-    status: str = "PUBLISHED"
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone(timedelta(hours=2))).isoformat())
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class TaskStartedEventDTO:
-    """
-    [DTO SPECIFICATION]: Task Started Event DTO
-    Represents an immutable telemetry payload emitted upon task initiation.
-    """
-    task_id: str
-    pipeline_id: str
-    status: str = "STARTED"
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone(timedelta(hours=2))).isoformat())
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class TaskCompletedEventDTO:
-    """
-    [DTO SPECIFICATION]: Task Completed Event DTO
-    Represents an immutable telemetry payload emitted upon successful task completion.
-    """
-    task_id: str
-    pipeline_id: str
-    status: str = "COMPLETED"
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone(timedelta(hours=2))).isoformat())
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-class EventDrivenScheduler:
-    """
-    [SCHEDULER SPECIFICATION]: Event Driven Scheduler
-    Orchestrates execution cycles triggered by asynchronous runtime events.
-    """
-
-    def __init__(self, pipeline_manager: Optional[PipelineManager] = None) -> None:
-        self._pipeline_manager = pipeline_manager or PipelineManager()
-        self._registered_events: List[Dict[str, Any]] = []
-
-    def schedule_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
-        """
-        [FUNCTION EXPLANATION]: Registers and schedules an incoming runtime event.
-        """
-        self._registered_events.append({"event_name": event_name, "payload": payload})
-        return True
-
-    def get_scheduled_events(self) -> List[Dict[str, Any]]:
-        """
-        [FUNCTION EXPLANATION]: Returns all currently scheduled events.
-        """
-        return self._registered_events
-
-
-class RuntimeEventBus:
-    """
-    [BUS SPECIFICATION]: Runtime Event Bus
-    Central pub-sub event dispatcher for kernel telemetry and lifecycle signals.
-    """
-
-    def __init__(self) -> None:
-        self._subscribers: Dict[str, List[Any]] = {}
-
-    def publish(self, event_type: str, payload: Dict[str, Any]) -> None:
-        """
-        [FUNCTION EXPLANATION]: Publishes an event payload to all registered subscribers.
-        """
-        pass
-
-    def subscribe(self, event_type: str, callback: Any) -> None:
-        """
-        [FUNCTION EXPLANATION]: Registers a listener callback for a given event type.
-        """
-        if event_type not in self._subscribers:
-            self._subscribers[event_type] = []
-        self._subscribers[event_type].append(callback)
-
-
-class WorkerEventBridge:
-    """
-    [BRIDGE SPECIFICATION]: Worker Event Bridge
-    Bridges distributed worker node signals with the core runtime event bus.
-    """
-
-    def __init__(self, event_bus: Optional[RuntimeEventBus] = None) -> None:
-        self._event_bus = event_bus or RuntimeEventBus()
-
-    def bridge_signal(self, worker_id: str, signal_type: str, data: Dict[str, Any]) -> bool:
-        """
-        [FUNCTION EXPLANATION]: Relays a worker signal through the event bridge.
-        """
-        self._event_bus.publish(signal_type, {"worker_id": worker_id, **data})
-        return True
-
+from .pipeline_manager import PipelineManager
+from .pipeline_result import PipelineResult
+from .pipeline_statistics import PipelineStatistics
+from .pipeline_status import PipelineStatus, PipelineStatusValidator
+from .scheduler import EventDrivenScheduler
+from .scheduler_bridge import WorkerEventBridge
+from .scheduler_events import (
+    ArtifactPublishedEventDTO,
+    RuntimeEventBus,
+    RuntimeEventTypeEnum,
+    TaskCompletedEventDTO,
+    TaskStartedEventDTO,
+)
 
 __all__ = [
     "PipelineStatus",
@@ -160,3 +64,12 @@ __all__ = [
     "RuntimeEventBus",
     "WorkerEventBridge",
 ]
+
+
+# ARTIFACT: tools/eos/runtime/__init__.py
+# VERSION: v1.0.0-WILSY-RUNTIME-CANONICAL-EXPORTS
+# AUTHORITY BOUNDARY: import/export only; no authentication, tenant authorization, KEXEC authority, persistence, transactions, idempotency, worker execution, or operational authority
+# TENANT POSTURE: no tenant default, synthesis, lookup, substitution, or authorization; canonical scheduler and bridge retain explicit fail-closed enforcement
+# FAIL-CLOSED POSTURE: no duplicate implementation, wrapper, fallback, invented tenant scope, or invented authority
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains the exclusive financial execution authority
+# END OF WILSY OS SOVEREIGN ARTIFACT
