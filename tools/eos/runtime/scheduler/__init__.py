@@ -2,15 +2,15 @@
 """Canonical package boundary for FG171C event-driven runtime scheduling.
 
 TITLE: WILSY OS FG171C Event-Driven Scheduler Package
-VERSION: v1.0.0-WILSY-FG171C-EVENT-DRIVEN-SCHEDULER
+VERSION: v1.0.1-WILSY-FG171C-EVENT-DRIVEN-SCHEDULER
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Provides the reachable FG171C task-start scheduler contract at tools.eos.runtime.scheduler without conflating the distinct FG233D recurring-maintenance scheduler.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/runtime/scheduler/__init__.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder & Chief Architect); Wilsy OS Core Engineering
 CERTIFICATION/UPDATE DATE: 2026-09-01
-CHANGELOG: v1.0.0 establishes the first sovereign package contract, restores reachable EventDrivenScheduler imports, removes implicit tenant-default authority, aligns TASK_STARTED construction with scheduler_events.py, and publishes through RuntimeEventBus.publish_async().
+CHANGELOG: v1.0.1 enforces fail-closed scheduler shutdown, deep-isolates caller payloads before event construction, and narrows mutation claims while preserving explicit tenant enforcement and the canonical TASK_STARTED DTO contract.
 COMPLIANCE: Explicit tenant scope; no persistence or transaction ownership; POPIA section 19, GDPR Article 32, and SOC 2 CC7.2 tenant-isolation posture.
-SECURITY / PRIVACY POSTURE: Stores no credentials or durable authority; transient task material is defensively copied into immutable event metadata.
+SECURITY / PRIVACY POSTURE: Stores no credentials or durable authority; caller payloads are deep-copied before event construction to prevent subsequent caller-side nested mutation from altering the published event payload.
 TENANT BOUNDARY: tenant_id must be explicitly supplied and valid; no default tenant, cross-tenant lookup, membership inference, or tenant authorization occurs here.
 AUTHORITY BOUNDARY: Owns task-start scheduling only. Authentication, principal authority, tenant authorization, request/correlation trust, worker execution, and higher-level kernel execution authority remain external.
 FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains the exclusive financial execution authority.
@@ -31,6 +31,11 @@ Epitome:
     identity is not the higher-level KEXEC identity owned by the canonical
     Engineering Kernel runner.
 
+    Payload isolation is ingress-scoped. The scheduler deep-copies caller input
+    before constructing the event, preventing later caller-side nested mutation
+    from changing that event. This package does not claim that downstream event
+    metadata is transitively immutable after publication.
+
 Collaboration & Ownership:
     Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
     Engineering Collaboration: Wilsy OS Core Engineering
@@ -38,6 +43,7 @@ Collaboration & Ownership:
 """
 from __future__ import annotations
 
+from copy import deepcopy
 import logging
 import uuid
 from typing import Any, Dict, Optional
@@ -48,7 +54,7 @@ from ..scheduler_events import (
     TaskStartedEventDTO,
 )
 
-VERSION = "v1.0.0-WILSY-FG171C-EVENT-DRIVEN-SCHEDULER"
+VERSION = "v1.0.1-WILSY-FG171C-EVENT-DRIVEN-SCHEDULER"
 
 logger = logging.getLogger("WilsyOS.Runtime.Scheduler")
 
@@ -76,6 +82,19 @@ class SchedulerAuthorityError(ValueError):
     """
 
 
+class SchedulerLifecycleError(RuntimeError):
+    """Fail closed when scheduling is attempted after scheduler shutdown.
+
+    Lifecycle boundary:
+        Once shutdown completes, this scheduler emits no further task-start
+        events through schedule_task().
+
+    Authority boundary:
+        This error grants no authentication, tenant, worker, or financial
+        authority.
+    """
+
+
 class EventDrivenScheduler:
     """Create and asynchronously publish tenant-scoped TASK_STARTED events.
 
@@ -84,12 +103,18 @@ class EventDrivenScheduler:
         must be established by an upstream trusted boundary.
 
     Mutation:
-        Caller-supplied task payload dictionaries are defensively copied into
-        immutable TaskStartedEventDTO metadata.
+        Caller-supplied task payload dictionaries are deep-copied before
+        TaskStartedEventDTO construction. This isolates the emitted event from
+        later caller-side nested mutation but does not claim transitively
+        immutable metadata after publication.
 
     Persistence and transactions:
         None. This scheduler owns no persistence session, database transaction,
         durable retry, idempotency record, worker registry, or settlement state.
+
+    Lifecycle:
+        shutdown() closes this scheduler instance for future scheduling.
+        schedule_task() fails closed after shutdown and emits no new task event.
 
     Capability separation:
         This FG171C scheduler performs per-task event initiation. It is not the
@@ -136,13 +161,16 @@ class EventDrivenScheduler:
                 source compatibility with legacy callers, while absence, blank
                 values, and forbidden sentinels fail closed.
             payload:
-                Optional transient task material copied into event metadata.
+                Optional transient task material. The complete object graph is
+                deep-copied before event construction.
 
         Returns:
             The resolved task identifier. The emitted scheduler event uses the
             same value for task_id and execution_id.
 
         Raises:
+            SchedulerLifecycleError:
+                The scheduler has already been shut down.
             SchedulerAuthorityError:
                 The tenant reference is absent, blank, or forbidden.
 
@@ -150,6 +178,11 @@ class EventDrivenScheduler:
             Outer whitespace is removed from the explicit tenant reference.
             No tenant identifier is invented, substituted, authorized, or
             persisted by this scheduler.
+
+        Mutation boundary:
+            Deep-copying isolates the event from later mutation through the
+            caller's original payload references. It does not prevent downstream
+            subscribers from mutating mutable values they themselves receive.
 
         Idempotency:
             No durable idempotency claim is made. Omitting task_id creates a new
@@ -159,6 +192,9 @@ class EventDrivenScheduler:
             Scheduling is not approval, release authorization, execution,
             payment, or settlement.
         """
+        if not self._is_active:
+            raise SchedulerLifecycleError("SCHEDULER_INACTIVE")
+
         if tenant_id is None:
             raise SchedulerAuthorityError("SCHEDULER_TENANT_ID_REQUIRED")
 
@@ -171,7 +207,7 @@ class EventDrivenScheduler:
 
         resolved_task_id = task_id or f"task-{uuid.uuid4().hex[:8]}"
         resolved_session_id = session_id or f"sess-{uuid.uuid4().hex[:8]}"
-        resolved_payload = dict(payload or {})
+        resolved_payload = deepcopy(payload) if payload is not None else {}
 
         task_event = TaskStartedEventDTO(
             execution_id=resolved_task_id,
@@ -198,10 +234,11 @@ class EventDrivenScheduler:
         return resolved_task_id
 
     async def shutdown(self) -> None:
-        """Mark this scheduler inactive without mutating shared runtime state.
+        """Close this scheduler instance for all subsequent scheduling.
 
         Shutdown does not tear down the caller-owned event bus, cancel workers,
         flush persistence, close transactions, or exercise financial authority.
+        Repeated shutdown calls are harmless.
         """
         self._is_active = False
         logger.info("FG171C EventDrivenScheduler shut down")
@@ -211,13 +248,14 @@ __all__ = [
     "VERSION",
     "EventDrivenScheduler",
     "SchedulerAuthorityError",
+    "SchedulerLifecycleError",
 ]
 
 
 # ARTIFACT: scheduler/__init__.py
-# VERSION: v1.0.0-WILSY-FG171C-EVENT-DRIVEN-SCHEDULER
+# VERSION: v1.0.1-WILSY-FG171C-EVENT-DRIVEN-SCHEDULER
 # AUTHORITY BOUNDARY: FG171C task-start scheduling only; authentication, tenant authorization, request/correlation trust, worker execution, FG233D recurring scheduling, and higher-level KEXEC authority remain external
 # TENANT POSTURE: explicit validated tenant required; no tenant-default fallback, synthesis, persistence, membership inference, or cross-tenant authority
-# FAIL-CLOSED POSTURE: absent, blank, and forbidden tenant references raise SchedulerAuthorityError before event emission
+# FAIL-CLOSED POSTURE: absent/invalid tenant references and post-shutdown scheduling are rejected before event emission
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains the exclusive financial execution authority
 # END OF WILSY OS SOVEREIGN ARTIFACT
