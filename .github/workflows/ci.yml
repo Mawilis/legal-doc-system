@@ -48,9 +48,15 @@ jobs:
             controllers/businessArtifactPdfController.js \
             services/artifacts/wilsyEnterprisePdfRenderer.js \
             services/qr/qrGenerator.js
-      - name: Run secret guard
+      - name: Run retained production secret guard
         working-directory: .
-        run: npm run secrets:guard
+        run: |
+          node scripts/wilsy-secret-guard.js \
+            server/server.js \
+            server/controllers/businessArtifactPdfController.js \
+            server/services/artifacts/wilsyEnterprisePdfRenderer.js \
+            server/services/qr/qrGenerator.js \
+            scripts/wilsy-secret-guard.js
 
   test-suite:
     name: 🧪 Complete Test Suite (41 Tests)
