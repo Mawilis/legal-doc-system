@@ -25,3 +25,7 @@ jobs:
         run: |
           python tools/eos/governance/repository_integrity_guard.py \
             --commit "$GITHUB_SHA"
+
+      - name: Enforce public status consistency
+        run: |
+          python tools/eos/governance/public_status.py --check

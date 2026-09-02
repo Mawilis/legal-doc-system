@@ -378,6 +378,21 @@ def commit_changed(
     }
 
 
+def validate_public_status(surface: str = "worktree") -> None:
+    if surface == "worktree":
+        read = lambda path: (ROOT / path).read_text(encoding="utf-8")
+    elif surface == "index":
+        read = lambda path: git("show", f":{path}").decode("utf-8")
+    else:
+        read = lambda path: git("show", f"{surface}:{path}").decode("utf-8")
+    try:
+        sys.path.insert(0, str(ROOT))
+        from tools.eos.governance.public_status import validate_text
+        validate_text(read("README.md"), read("tools/eos/governance/public_project_status.json"))
+    except (ValueError, OSError, subprocess.CalledProcessError) as exc:
+        raise IntegrityFailure("public README status drift: " + str(exc)) from exc
+
+
 def classify(
     path: str,
 ) -> str:
@@ -441,6 +456,7 @@ def main() -> int:
 
     try:
         if args.staged:
+            validate_public_status("index")
             validate_snapshot(
                 index_entries(),
                 staged_changed(),
@@ -454,6 +470,7 @@ def main() -> int:
             )
 
         elif args.commit:
+            validate_public_status(args.commit)
             validate_snapshot(
                 tree_entries(
                     args.commit

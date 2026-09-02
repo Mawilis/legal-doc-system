@@ -14,6 +14,7 @@
     ".wilsy_graph.json",
     ".yamllint",
     "AGENTS.md",
+    "ARCHITECTURE.md",
     "CREATE_COMPLETE_PACKAGE.sh",
     "DEPLOYMENT.md",
     "Dockerfile",
@@ -29,12 +30,15 @@
     "FG218_Streaming_Gateway_Verification.pdf",
     "FORENSIC_MAP_FRAGMENTS.txt",
     "FRAGMENT_DEFINITION_MAP.txt",
+    "GOVERNANCE.md",
     "Genesis_Ignition.sh",
     "GlobalLaunchSequence.sh",
     "Jenkinsfile",
     "PLAYBOOK.md",
     "README.md",
     "README.md.save",
+    "RELEASES.md",
+    "SECURITY.md",
     "SOVEREIGN_DOCUMENTATION.md",
     "Sovereign_Deployment_Automation.sh",
     "Sovereign_Handover_Package.sh",
@@ -259,6 +263,26 @@
     {
       "class": "RETAIN",
       "pattern": "scripts/wilsy-secret-guard.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "README.md"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "ARCHITECTURE.md"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "GOVERNANCE.md"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "RELEASES.md"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "SECURITY.md"
     }
   ],
   "version": 1
