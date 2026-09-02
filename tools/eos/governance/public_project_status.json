@@ -8,17 +8,53 @@
   "release_posture": "development; no production release tag issued by this campaign",
   "status": "governed-development",
   "tenant_posture": "tenant scope is explicit and fail-closed",
-  "updated": "2026-09-02",
-  "current_frontier": "MAINLINE_RECONCILIATION_AND_PRODUCTION_PROMOTION",
+  "updated": "2026-09-03",
+  "current_frontier": "MAIN_BRANCH_PROTECTION_AND_GOVERNANCE_SEAL",
   "milestones": [
-    {"name": "Executive intelligence spine", "state": "CLOSED", "result": "FROZEN"},
-    {"name": "M0 mainline divergence discovery", "state": "CLOSED", "result": "PASS"},
-    {"name": "R1–R4 anomaly remediation", "state": "CLOSED", "result": "PASS"},
-    {"name": "P0 repository integrity firewall", "state": "CLOSED", "result": "PASS"},
-    {"name": "P1 production surface inventory", "state": "CLOSED", "result": "PASS"},
-    {"name": "P2 dominant production-boundary decomposition", "state": "CLOSED", "result": "PASS"},
-    {"name": "M4 controlled fast-forward promotion to main", "state": "PENDING", "result": null},
-    {"name": "M6 protected main / required checks", "state": "PENDING", "result": null},
-    {"name": "Production release", "state": "NOT_DECLARED", "result": null}
+    {
+      "name": "Executive intelligence spine",
+      "state": "CLOSED",
+      "result": "FROZEN"
+    },
+    {
+      "name": "M0 mainline divergence discovery",
+      "state": "CLOSED",
+      "result": "PASS"
+    },
+    {
+      "name": "R1–R4 anomaly remediation",
+      "state": "CLOSED",
+      "result": "PASS"
+    },
+    {
+      "name": "P0 repository integrity firewall",
+      "state": "CLOSED",
+      "result": "PASS"
+    },
+    {
+      "name": "P1 production surface inventory",
+      "state": "CLOSED",
+      "result": "PASS"
+    },
+    {
+      "name": "P2 dominant production-boundary decomposition",
+      "state": "CLOSED",
+      "result": "PASS"
+    },
+    {
+      "name": "M4 controlled fast-forward promotion to main",
+      "state": "CLOSED",
+      "result": "PASS"
+    },
+    {
+      "name": "M6 protected main / required checks",
+      "state": "PENDING",
+      "result": null
+    },
+    {
+      "name": "Production release",
+      "state": "NOT_DECLARED",
+      "result": null
+    }
   ]
 }

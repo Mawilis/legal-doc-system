@@ -37,7 +37,7 @@ Production readiness is not declared.
 {
   "authority": "Wilsy OS Core Governance",
   "canonical_truth": "Python EOS governs business, intelligence, tenant, and execution evidence.",
-  "current_frontier": "MAINLINE_RECONCILIATION_AND_PRODUCTION_PROMOTION",
+  "current_frontier": "MAIN_BRANCH_PROTECTION_AND_GOVERNANCE_SEAL",
   "financial_execution_authority": "Kennel EOS exclusively",
   "governance_version": "v1.0.0-public-status",
   "milestones": [
@@ -73,8 +73,8 @@ Production readiness is not declared.
     },
     {
       "name": "M4 controlled fast-forward promotion to main",
-      "result": null,
-      "state": "PENDING"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "M6 protected main / required checks",
@@ -92,7 +92,7 @@ Production readiness is not declared.
   "schema_version": 1,
   "status": "governed-development",
   "tenant_posture": "tenant scope is explicit and fail-closed",
-  "updated": "2026-09-02"
+  "updated": "2026-09-03"
 }
 ```
 <!-- WILSY_PUBLIC_STATUS_END -->
