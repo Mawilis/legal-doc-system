@@ -9,7 +9,7 @@
   "status": "governed-development",
   "tenant_posture": "tenant scope is explicit and fail-closed",
   "updated": "2026-09-03",
-  "current_frontier": "MAIN_BRANCH_PROTECTION_AND_GOVERNANCE_SEAL",
+  "current_frontier": "WILSY_AI_GOVERNED_DEVELOPMENT",
   "milestones": [
     {
       "name": "Executive intelligence spine",
@@ -48,8 +48,8 @@
     },
     {
       "name": "M6 protected main / required checks",
-      "state": "PENDING",
-      "result": null
+      "state": "CLOSED",
+      "result": "PASS"
     },
     {
       "name": "Production release",

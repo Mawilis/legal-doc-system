@@ -37,7 +37,7 @@ Production readiness is not declared.
 {
   "authority": "Wilsy OS Core Governance",
   "canonical_truth": "Python EOS governs business, intelligence, tenant, and execution evidence.",
-  "current_frontier": "MAIN_BRANCH_PROTECTION_AND_GOVERNANCE_SEAL",
+  "current_frontier": "WILSY_AI_GOVERNED_DEVELOPMENT",
   "financial_execution_authority": "Kennel EOS exclusively",
   "governance_version": "v1.0.0-public-status",
   "milestones": [
@@ -78,8 +78,8 @@ Production readiness is not declared.
     },
     {
       "name": "M6 protected main / required checks",
-      "result": null,
-      "state": "PENDING"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "Production release",
