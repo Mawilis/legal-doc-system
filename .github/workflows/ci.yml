@@ -8,7 +8,7 @@ name: 🏛️ WILSY OS 2050 Unified Pipeline
 
 on:
   push:
-    branches: [main, master, develop, production]
+    branches: [main, master, develop, production, fg108o4b-knowledge-operating-room]
     tags: ["v*"]
   pull_request:
     branches: [main, develop]
