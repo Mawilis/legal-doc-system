@@ -283,6 +283,30 @@
     {
       "class": "RETAIN",
       "pattern": "SECURITY.md"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/server.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/controllers/businessArtifactPdfController.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/services/artifacts/wilsyEnterprisePdfRenderer.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/services/qr/qrGenerator.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/package.json"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/package-lock.json"
     }
   ],
   "version": 1
