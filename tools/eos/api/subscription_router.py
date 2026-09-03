@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription HTTP Authority Router.
-VERSION: v1.1.2-CURRENT-SUBSCRIPTION-AUTHORITY
+VERSION: v1.2.0-CATALOGUE-PROVENANCE
 AUTHORITY: FastAPI composition of current Python identity, tenant membership,
 permission and SubscriptionRegistry authorities.
 EPITOME: Retires direct X-Tenant-ID-to-registry forwarding. Every subscription
@@ -10,6 +10,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/su
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    v1.2.0-CATALOGUE-PROVENANCE removes caller-authored Plan commercial truth
+    from subscription creation and plan-change HTTP contracts. Clients select
+    planId/newPlanId only; SubscriptionRegistry derives canonical PlanRegistry
+    price, currency, billing frequency, name, features and catalogue version.
+    Tenant identity continues to come only from current Python membership and
+    permission authority.
+
     v1.1.2-CURRENT-SUBSCRIPTION-AUTHORITY closes FastAPI dependency-source collision by renaming only
     the metrics route's internal tenant path parameter; external URL semantics
     are unchanged and the canonical get_current_tenant_identity X-Tenant-ID
@@ -65,7 +72,7 @@ from tools.eos.saas.domain.subscription import SubscriptionStatus
 from .responses import format_response
 
 
-VERSION = "v1.1.2-CURRENT-SUBSCRIPTION-AUTHORITY"
+VERSION = "v1.2.0-CATALOGUE-PROVENANCE"
 
 SUBSCRIPTION_READ_PERMISSION = "subscription:read"
 SUBSCRIPTION_MANAGE_PERMISSION = "subscription:manage"
@@ -161,6 +168,22 @@ def _raise_result_failure(
     )
 
     mapping: dict[str, tuple[int, str]] = {
+        "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN": (
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN",
+        ),
+        "SUBSCRIPTION_PLAN_NOT_AVAILABLE": (
+            status.HTTP_404_NOT_FOUND,
+            "SUBSCRIPTION_PLAN_NOT_AVAILABLE",
+        ),
+        "SUBSCRIPTION_PLAN_CHANGE_INVALID_FIELDS": (
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "SUBSCRIPTION_PLAN_CHANGE_INVALID_FIELDS",
+        ),
+        "SUBSCRIPTION_UPDATE_INVALID_FIELDS": (
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "SUBSCRIPTION_UPDATE_INVALID_FIELDS",
+        ),
         "Subscription not found": (
             status.HTTP_404_NOT_FOUND,
             "SUBSCRIPTION_NOT_FOUND",
@@ -253,7 +276,7 @@ async def list_subscriptions(
         except ValueError as error:
             raise HTTPException(
                 status_code=
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={
                     "error": "INVALID_STATUS",
                     "valid": [
@@ -361,12 +384,7 @@ async def create_subscription(
     )
 
     required = (
-        "tenantId",
         "planId",
-        "plan",
-        "amount",
-        "currency",
-        "billingFrequency",
         "startDate",
         "idempotencyKey",
     )
@@ -375,7 +393,7 @@ async def create_subscription(
         if field_name not in payload:
             raise HTTPException(
                 status_code=
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={
                     "error": "MISSING_FIELD",
                     "field": field_name,
@@ -853,7 +871,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/api/subscription_router.py
-# VERSION: v1.1.2-CURRENT-SUBSCRIPTION-AUTHORITY
+# VERSION: v1.2.0-CATALOGUE-PROVENANCE
 # AUTHORITY BOUNDARY: HTTP composition only; identity, membership, role assignment, permission policy and persistence retain canonical ownership
 # TENANT POSTURE: only membership-admitted SovereignIdentity.tenant_id reaches SubscriptionRegistry; raw X-Tenant-ID is never registry authority
 # FAIL-CLOSED POSTURE: missing or invalid identity, membership, role, permission or persistence authority never becomes subscription access

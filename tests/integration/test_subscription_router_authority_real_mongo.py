@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription Router Authority Real-Mongo Certification.
-VERSION: v1.0.0-SUBSCRIPTION-ROUTER-AUTHORITY-REAL-MONGO-CERT
+VERSION: v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT
 AUTHORITY: Actual-Mongo HTTP certification of subscription identity, tenant
 membership, permission and persistence composition.
 EPITOME: Executes the real FastAPI subscription router with current JWT
@@ -10,6 +10,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT binds the real HTTP authority certificate to actual
+    PlanRegistry catalogue persistence in the same isolated Mongo database;
+    certifies planId/newPlanId-only selection, commercial redirection denial,
+    tenant/global catalogue scope, inactive/neighbor denial, canonical snapshot
+    persistence and bounded catalogue-outage HTTP failure.
     v1.0.0-SUBSCRIPTION-ROUTER-AUTHORITY-REAL-MONGO-CERT establishes real HTTP,
     real authority Mongo and real SubscriptionRegistry Mongo certification for
     subscription:read/subscription:manage wiring.
@@ -32,6 +37,7 @@ SUBSCRIPTION MONGO / FAIL-CLOSED.
 
 from __future__ import annotations
 
+import hashlib
 import inspect
 import os
 import uuid
@@ -53,6 +59,7 @@ from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
 import tools.eos.api.subscription_router as router_module
+import tools.eos.saas.billing.plan_registry as plan_registry_module
 import tools.eos.saas.billing.subscription_registry as registry_module
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.api.subscription_router import subscription_router
@@ -95,13 +102,14 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepository,
     TenantMembershipRepositoryError,
 )
+from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
 )
 
 
 VERSION = (
-    "v1.0.0-SUBSCRIPTION-ROUTER-AUTHORITY-REAL-MONGO-CERT"
+    "v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT"
 )
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
@@ -206,21 +214,102 @@ class Context:
     memberships: Collection[dict[str, Any]]
     roles: Collection[dict[str, Any]]
     subscriptions: Collection[dict[str, Any]]
+    plans: Collection[dict[str, Any]]
     app: FastAPI
 
 
-def _payload(
-    tenant_id: str,
-    key: str,
-) -> dict[str, Any]:
-    """Build one explicit synthetic subscription create command."""
-    return {
-        "tenantId": tenant_id,
-        "planId": "PLAN-ENTERPRISE",
-        "plan": "ENTERPRISE",
-        "amount": 499.0,
+def _plan_identity(
+    *,
+    plan: str,
+    amount: float,
+    tenant_id: str | None,
+    active: bool,
+) -> tuple[str, str]:
+    material = (
+        f"{tenant_id or 'GLOBAL'}"
+        f"|{plan.upper()}"
+        f"|{float(amount):.6f}"
+        f"|{active}"
+    )
+
+    digest = hashlib.sha3_256(
+        material.encode("utf-8")
+    ).hexdigest().upper()
+
+    return (
+        "WILSYPLAN-HTTPCERT" + digest[:12],
+        "PLAN-HTTP-CERT-" + digest[:20],
+    )
+
+
+def _seed_plan(
+    *,
+    plan: str = "ENTERPRISE",
+    amount: float = 499.0,
+    tenant_id: str | None = None,
+    active: bool = True,
+    features: tuple[str, ...] = (
+        "crm.core",
+        "legal.documents",
+    ),
+):
+    """Persist one real PlanRegistry row for HTTP provenance certification."""
+    plan_id, idempotency_key = _plan_identity(
+        plan=plan,
+        amount=amount,
+        tenant_id=tenant_id,
+        active=active,
+    )
+
+    existing = PlanRegistry.get(
+        plan_id,
+        tenant_id=tenant_id,
+    )
+
+    if existing is not None:
+        return existing
+
+    payload: dict[str, Any] = {
+        "name": f"HTTP Certificate {plan.title()}",
+        "price": amount,
         "currency": "ZAR",
         "billingFrequency": "monthly",
+        "planType": plan,
+        "idempotencyKey": idempotency_key,
+        "plan_id": plan_id,
+        "active": active,
+        "features": list(features),
+        "metadata": {
+            "certificate": True,
+            "catalogueAuthority": "PlanRegistry",
+        },
+        "tags": [
+            "subscription-http-catalogue-cert"
+        ],
+        "user": "SUBSCRIPTION-HTTP-CERT",
+    }
+
+    if tenant_id is not None:
+        payload["tenantId"] = tenant_id
+
+    result = PlanRegistry.create(
+        payload
+    )
+
+    assert result["success"] is True
+
+    return result["plan"]
+
+
+def _command(
+    tenant_id: str,
+    key: str,
+    *,
+    plan_id: str,
+) -> dict[str, Any]:
+    return {
+        "tenantId": tenant_id,
+        "planId": plan_id,
         "startDate":
             "2026-09-03T00:00:00+00:00",
         "currentPeriodStart":
@@ -228,7 +317,6 @@ def _payload(
         "currentPeriodEnd":
             "2026-10-03T00:00:00+00:00",
         "idempotencyKey": key,
-        "tier": "ENTERPRISE",
         "billingMode": "PLATFORM",
         "onboardingRef":
             f"ONBOARD-{tenant_id}",
@@ -239,6 +327,27 @@ def _payload(
         },
     }
 
+
+def _payload(
+    tenant_id: str,
+    key: str,
+    *,
+    amount: float = 499.0,
+    plan: str = "ENTERPRISE",
+) -> dict[str, Any]:
+    """Build HTTP command containing plan selection only."""
+    catalogue_plan = _seed_plan(
+        plan=plan,
+        amount=amount,
+        tenant_id=None,
+        active=True,
+    )
+
+    return _command(
+        tenant_id,
+        key,
+        plan_id=catalogue_plan.plan_id,
+    )
 
 @pytest.fixture()
 def context() -> Iterator[Context]:
@@ -302,6 +411,19 @@ def context() -> Iterator[Context]:
         ),
     )
 
+    plans: Collection[
+        dict[str, Any]
+    ] = database.get_collection(
+        "plans",
+        write_concern=WriteConcern(
+            w="majority",
+            j=True,
+        ),
+        read_concern=ReadConcern(
+            "majority"
+        ),
+    )
+
     PrincipalAuthorityRepository.ensure_indexes(
         principals
     )
@@ -316,9 +438,19 @@ def context() -> Iterator[Context]:
         registry_module.subscriptions_collection
     )
 
+    original_plan_collection = (
+        plan_registry_module.plans_collection
+    )
+
     registry_module.subscriptions_collection = (
         subscriptions
     )
+
+    plan_registry_module.plans_collection = (
+        plans
+    )
+
+    PlanRegistry._ensure_indexes()
 
     app = FastAPI()
     register_error_handlers(
@@ -354,6 +486,7 @@ def context() -> Iterator[Context]:
         memberships=memberships,
         roles=roles,
         subscriptions=subscriptions,
+        plans=plans,
         app=app,
     )
 
@@ -362,6 +495,9 @@ def context() -> Iterator[Context]:
     finally:
         registry_module.subscriptions_collection = (
             original_collection
+        )
+        plan_registry_module.plans_collection = (
+            original_plan_collection
         )
         mongo.drop_database(
             database_name
@@ -1129,12 +1265,411 @@ def test_registry_network_failure_after_valid_authority_is_bounded_503(
     )
 
 
+def test_catalogue_provenance_certificate_versions_are_exact() -> None:
+    assert (
+        router_module.VERSION
+        == "v1.2.0-CATALOGUE-PROVENANCE"
+    )
+    assert (
+        registry_module.VERSION
+        == "v1.2.0-CATALOGUE-PROVENANCE"
+    )
+    assert (
+        VERSION
+        == "v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT"
+    )
+
+
+def test_http_create_persists_planregistry_derived_snapshot(
+    context: Context,
+) -> None:
+    """Authorized create stores actual canonical PlanRegistry evidence."""
+    principal = "principal-" + uuid.uuid4().hex
+    tenant = "tenant-" + uuid.uuid4().hex
+
+    _seed(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+    )
+
+    payload = _payload(
+        tenant,
+        "http-catalogue-snapshot",
+        amount=777.0,
+    )
+
+    plan = PlanRegistry.get(
+        payload["planId"],
+        tenant_id=tenant,
+    )
+
+    assert plan is not None
+
+    response = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(
+            principal,
+            tenant,
+        ),
+        json=payload,
+    )
+
+    assert response.status_code == 201
+
+    persisted = context.subscriptions.find_one(
+        {
+            "tenant_id": tenant,
+            "idempotency_key":
+                "http-catalogue-snapshot",
+        }
+    )
+
+    assert persisted is not None
+    assert persisted["plan_id"] == plan.plan_id
+    assert persisted["plan_name"] == plan.name
+    assert persisted["plan_features"] == list(plan.features)
+    assert (
+        persisted["plan_catalogue_version"]
+        == plan.catalogue_version
+    )
+    assert persisted["amount"] == float(plan.price)
+    assert persisted["currency"] == plan.currency
+    assert (
+        persisted["billing_frequency"]
+        == plan.billing_frequency.value
+    )
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("plan", "SOVEREIGN"),
+        ("amount", 1.0),
+        ("currency", "USD"),
+        ("billingFrequency", "annual"),
+        ("planFeatures", ["caller.feature"]),
+        ("planCatalogueVersion", 999),
+    ],
+)
+def test_http_create_rejects_caller_commercial_redirection(
+    context: Context,
+    field: str,
+    value: Any,
+) -> None:
+    principal = "principal-" + uuid.uuid4().hex
+    tenant = "tenant-" + uuid.uuid4().hex
+
+    _seed(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+    )
+
+    payload = _payload(
+        tenant,
+        "http-redirection-" + field,
+    )
+    payload[field] = value
+
+    response = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(
+            principal,
+            tenant,
+        ),
+        json=payload,
+    )
+
+    assert response.status_code == 422
+    assert (
+        "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN"
+        in response.text
+    )
+    assert (
+        context.subscriptions.count_documents({})
+        == 0
+    )
+
+
+def test_http_neighbor_and_inactive_plans_fail_closed(
+    context: Context,
+) -> None:
+    principal = "principal-" + uuid.uuid4().hex
+    tenant_a = "tenant-a-" + uuid.uuid4().hex
+    tenant_b = "tenant-b-" + uuid.uuid4().hex
+
+    _seed(
+        context,
+        principal_id=principal,
+        tenant_id=tenant_b,
+    )
+
+    neighbor_plan = _seed_plan(
+        plan="PROFESSIONAL",
+        amount=333.0,
+        tenant_id=tenant_a,
+    )
+
+    neighbor = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(
+            principal,
+            tenant_b,
+        ),
+        json=_command(
+            tenant_b,
+            "neighbor-plan-denied",
+            plan_id=neighbor_plan.plan_id,
+        ),
+    )
+
+    assert neighbor.status_code == 404
+    assert (
+        "SUBSCRIPTION_PLAN_NOT_AVAILABLE"
+        in neighbor.text
+    )
+
+    inactive_plan = _seed_plan(
+        plan="ENTERPRISE",
+        amount=444.0,
+        active=False,
+    )
+
+    inactive = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(
+            principal,
+            tenant_b,
+        ),
+        json=_command(
+            tenant_b,
+            "inactive-plan-denied",
+            plan_id=inactive_plan.plan_id,
+        ),
+    )
+
+    assert inactive.status_code == 404
+    assert (
+        "SUBSCRIPTION_PLAN_NOT_AVAILABLE"
+        in inactive.text
+    )
+
+    assert (
+        context.subscriptions.count_documents({})
+        == 0
+    )
+
+
+def test_http_generic_update_cannot_redirect_price(
+    context: Context,
+) -> None:
+    principal = "principal-" + uuid.uuid4().hex
+    tenant = "tenant-" + uuid.uuid4().hex
+
+    _seed(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+    )
+
+    subscription = _persist_subscription(
+        context,
+        tenant,
+        key="http-update-redirection",
+    )
+
+    before = context.subscriptions.find_one(
+        {
+            "tenant_id": tenant,
+            "subscription_id":
+                subscription.subscription_id,
+        },
+        {"_id": 0},
+    )
+
+    response = _client(context).put(
+        (
+            "/api/subscriptions/"
+            + subscription.subscription_id
+        ),
+        headers=_headers(
+            principal,
+            tenant,
+        ),
+        json={
+            "amount": 0.01,
+        },
+    )
+
+    assert response.status_code == 422
+    assert (
+        "SUBSCRIPTION_UPDATE_INVALID_FIELDS"
+        in response.text
+    )
+
+    after = context.subscriptions.find_one(
+        {
+            "tenant_id": tenant,
+            "subscription_id":
+                subscription.subscription_id,
+        },
+        {"_id": 0},
+    )
+
+    assert after == before
+
+
+def test_http_upgrade_uses_newplanid_only_and_derives_snapshot(
+    context: Context,
+) -> None:
+    principal = "principal-" + uuid.uuid4().hex
+    tenant = "tenant-" + uuid.uuid4().hex
+
+    _seed(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+    )
+
+    subscription = _persist_subscription(
+        context,
+        tenant,
+        key="http-upgrade-base",
+    )
+
+    target = _seed_plan(
+        plan="SOVEREIGN",
+        amount=2500.0,
+        features=(
+            "crm.core",
+            "legal.documents",
+            "wilsy.ai",
+        ),
+    )
+
+    response = _client(context).post(
+        (
+            "/api/subscriptions/"
+            + subscription.subscription_id
+            + "/upgrade"
+        ),
+        headers=_headers(
+            principal,
+            tenant,
+        ),
+        json={
+            "newPlanId": target.plan_id,
+        },
+    )
+
+    assert response.status_code == 200
+
+    persisted = context.subscriptions.find_one(
+        {
+            "tenant_id": tenant,
+            "subscription_id":
+                subscription.subscription_id,
+        }
+    )
+
+    assert persisted is not None
+    assert persisted["plan_id"] == target.plan_id
+    assert persisted["amount"] == float(target.price)
+    assert persisted["currency"] == target.currency
+    assert persisted["plan_features"] == list(target.features)
+    assert (
+        persisted["plan_catalogue_version"]
+        == target.catalogue_version
+    )
+
+    redirected = _client(context).post(
+        (
+            "/api/subscriptions/"
+            + subscription.subscription_id
+            + "/upgrade"
+        ),
+        headers=_headers(
+            principal,
+            tenant,
+        ),
+        json={
+            "newPlanId": target.plan_id,
+            "newAmount": 1.0,
+        },
+    )
+
+    assert redirected.status_code == 422
+    assert (
+        "SUBSCRIPTION_PLAN_CHANGE_INVALID_FIELDS"
+        in redirected.text
+    )
+
+
+def test_http_plan_catalogue_outage_after_valid_authority_is_bounded_503(
+    context: Context,
+) -> None:
+    principal = "principal-" + uuid.uuid4().hex
+    tenant = "tenant-" + uuid.uuid4().hex
+
+    _seed(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+    )
+
+    plan = _seed_plan(
+        plan="ENTERPRISE",
+        amount=612.0,
+    )
+
+    dead = MongoClient(
+        "mongodb://127.0.0.1:1/sub_plan_dead",
+        serverSelectionTimeoutMS=150,
+    )
+
+    original = plan_registry_module.plans_collection
+
+    plan_registry_module.plans_collection = (
+        dead["sub_plan_dead"]["plans"]
+    )
+
+    try:
+        response = _client(context).post(
+            "/api/subscriptions",
+            headers=_headers(
+                principal,
+                tenant,
+            ),
+            json=_command(
+                tenant,
+                "http-plan-outage",
+                plan_id=plan.plan_id,
+            ),
+        )
+    finally:
+        plan_registry_module.plans_collection = original
+        dead.close()
+
+    assert response.status_code == 503
+
+    # Bounded failure: no Mongo internals or caller-selected commercial truth.
+    assert (
+        "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE"
+        in response.text
+    )
+    assert plan.plan_id not in response.text
+    assert (
+        context.subscriptions.count_documents({})
+        == 0
+    )
+
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_router_authority_real_mongo.py
-# VERSION: v1.0.0-SUBSCRIPTION-ROUTER-AUTHORITY-REAL-MONGO-CERT
-# AUTHORITY BOUNDARY: real HTTP composition of current principal, membership, permission and real subscription persistence only
+# VERSION: v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT
+# AUTHORITY BOUNDARY: real HTTP composition of principal, membership, permission, canonical PlanRegistry catalogue provenance and real subscription persistence only
 # TENANT POSTURE: raw tenant context must survive ACTIVE persisted membership and current role-assignment permission authority
 # FAIL-CLOSED POSTURE: missing identity, wrong tenant, inactive membership, absent/revoked role, projected JWT grants and persistence outage never become subscription access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively

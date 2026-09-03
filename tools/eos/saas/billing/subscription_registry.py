@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.1.1-SUBSCRIPTION-REAL-MONGO
+    v1.2.0-CATALOGUE-PROVENANCE
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -28,6 +28,19 @@ CERTIFICATION / UPDATE DATE:
     2026-09-03
 
 CHANGELOG:
+    v1.2.0-CATALOGUE-PROVENANCE:
+        - Resolves every new or changed subscription plan selector through
+          canonical PlanRegistry catalogue truth.
+        - Preserves PlanRegistry default global-plus-authorized-tenant scope;
+          neighboring tenant plans remain unavailable.
+        - Derives plan type, name, price, currency, billing frequency, features
+          and catalogue version from the resolved PlanEntity.
+        - Rejects caller-authored commercial catalogue values and proof aliases.
+        - Removes plan/pricing/catalogue fields from generic update authority.
+        - Restricts upgrade/downgrade commands to newPlanId selection only.
+        - Keeps subscription persistence distinct from payment execution;
+          Kennel EOS remains exclusive financial execution authority.
+
     v1.1.1-SUBSCRIPTION-REAL-MONGO:
         - Closes Codex VAS13-001 by persisting canonical creation material,
           validating complete SHA3-512 syntax, and recomputing the persisted
@@ -116,6 +129,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
+from .plan_registry import PlanRegistry
 from ..domain.subscription import (
     AuditAction,
     AuditEntry,
@@ -130,7 +144,7 @@ from ..domain.subscription import (
 )
 
 
-VERSION = "v1.1.1-SUBSCRIPTION-REAL-MONGO"
+VERSION = "v1.2.0-CATALOGUE-PROVENANCE"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -194,14 +208,6 @@ _REQUIRED_PERSISTED_FIELDS = frozenset(
 
 _MUTABLE_UPDATE_FIELDS = frozenset(
     {
-        "plan",
-        "plan_id",
-        "plan_name",
-        "plan_features",
-        "amount",
-        "tax_amount",
-        "currency",
-        "billing_frequency",
         "collection_method",
         "trial_end_date",
         "current_period_start",
@@ -214,7 +220,6 @@ _MUTABLE_UPDATE_FIELDS = frozenset(
         "credit_balance",
         "last_invoice_id",
         "last_platform_invoice_id",
-        "tier",
         "onboarding_ref",
         "billing_mode",
         "end_date",
@@ -226,6 +231,44 @@ _MUTABLE_UPDATE_FIELDS = frozenset(
         "user",
     }
 )
+
+_CALLER_COMMERCIAL_AUTHORITY_FIELDS = frozenset(
+    {
+        "plan",
+        "plan_id",
+        "planName",
+        "plan_name",
+        "planFeatures",
+        "plan_features",
+        "amount",
+        "price",
+        "currency",
+        "billingFrequency",
+        "billing_frequency",
+        "tier",
+        "planCatalogueVersion",
+        "plan_catalogue_version",
+        "catalogueVersion",
+        "catalogue_version",
+        "features",
+        "taxAmount",
+        "tax_amount",
+        "proofHash",
+        "proof_hash",
+        "merkleRoot",
+        "merkle_root",
+        "newPlan",
+        "newAmount",
+        "newPlanId",
+    }
+)
+
+_PLAN_CHANGE_ALLOWED_FIELDS = frozenset(
+    {
+        "newPlanId",
+    }
+)
+
 
 
 class SubscriptionRegistryError(RuntimeError):
@@ -905,32 +948,215 @@ class SubscriptionRegistry:
         }
 
     @classmethod
+    def _resolve_catalogue_plan(
+        cls,
+        plan_id: Any,
+        tenant_id: str,
+    ) -> Any:
+        """Resolve one sellable global-or-tenant PlanRegistry catalogue entry."""
+        normalized_plan_id = _text(
+            plan_id,
+            "plan_id",
+        )
+
+        try:
+            plan = PlanRegistry.get(
+                normalized_plan_id,
+                tenant_id=tenant_id,
+            )
+        except Exception as error:
+            raise SubscriptionRegistryError(
+                "SUBSCRIPTION_PLAN_CATALOGUE_UNAVAILABLE"
+            ) from error
+
+        if (
+            plan is None
+            or plan.active is not True
+        ):
+            raise ValueError(
+                "SUBSCRIPTION_PLAN_NOT_AVAILABLE"
+            )
+
+        try:
+            PlanTiers(
+                plan.plan_type.value
+            )
+            BillingFrequency(
+                plan.billing_frequency.value
+            )
+        except (
+            AttributeError,
+            ValueError,
+        ) as error:
+            raise ValueError(
+                "SUBSCRIPTION_PLAN_NOT_AVAILABLE"
+            ) from error
+
+        return plan
+
+    @classmethod
+    def _catalogue_snapshot(
+        cls,
+        plan: Any,
+    ) -> dict[str, Any]:
+        """Project canonical PlanEntity truth into subscription snapshot values."""
+        plan_tier = PlanTiers(
+            plan.plan_type.value
+        )
+
+        frequency = BillingFrequency(
+            plan.billing_frequency.value
+        )
+
+        return {
+            "plan_id":
+                plan.plan_id,
+            "plan":
+                plan_tier,
+            "plan_name":
+                plan.name,
+            "plan_features":
+                tuple(plan.features),
+            "plan_catalogue_version":
+                plan.catalogue_version,
+            "amount":
+                float(plan.price),
+            "currency":
+                plan.currency,
+            "billing_frequency":
+                frequency,
+            "tier":
+                plan_tier,
+        }
+
+    @classmethod
+    def _change_catalogue_plan(
+        cls,
+        subscription_id: str,
+        tenant_id_header: str | None,
+        change_data: dict[str, Any] | None,
+        *,
+        action: AuditAction,
+    ) -> dict[str, Any]:
+        """Persist one PlanRegistry-derived subscription catalogue transition."""
+        data = change_data or {}
+
+        if (
+            not isinstance(data, dict)
+            or frozenset(data)
+            != _PLAN_CHANGE_ALLOWED_FIELDS
+        ):
+            return {
+                "success": False,
+                "error":
+                    "SUBSCRIPTION_PLAN_CHANGE_INVALID_FIELDS",
+            }
+
+        tenant_id = _authorized_tenant(
+            tenant_id_header
+        )
+
+        def updater(
+            sub: SubscriptionEntity,
+        ) -> SubscriptionEntity:
+            catalogue_plan = (
+                cls._resolve_catalogue_plan(
+                    data["newPlanId"],
+                    tenant_id,
+                )
+            )
+
+            snapshot = (
+                cls._catalogue_snapshot(
+                    catalogue_plan
+                )
+            )
+
+            values = sub.to_dict()
+            values.update(
+                snapshot
+            )
+
+            # Existing persisted proof/merkle material describes the previous
+            # commercial state. Never carry it into a new catalogue snapshot.
+            values["proof_hash"] = ""
+            values["merkle_root"] = ""
+
+            candidate = (
+                SubscriptionEntity.from_dict(
+                    values
+                )
+            )
+
+            proof = candidate.generate_proof(
+                action=action.value,
+                metadata={
+                    "plan_id":
+                        catalogue_plan.plan_id,
+                    "plan_catalogue_version":
+                        catalogue_plan.catalogue_version,
+                },
+            )
+
+            occurred_at = datetime.now(
+                timezone.utc
+            )
+
+            verb = (
+                "Upgraded"
+                if action
+                == AuditAction.UPGRADE
+                else "Downgraded"
+            )
+
+            audit = AuditEntry(
+                action=action,
+                timestamp=occurred_at,
+                user="SYSTEM",
+                reason=(
+                    verb
+                    + " to "
+                    + candidate.plan.value
+                ),
+                previous_status=sub.status,
+                new_status=sub.status,
+                tier=candidate.tier,
+                billing_mode=
+                    candidate.billing_mode,
+                proof_hash=proof,
+            )
+
+            final = candidate.to_dict()
+            final["proof_hash"] = proof
+            final["merkle_root"] = ""
+            final["audit_trail"] = [
+                *[
+                    item.to_dict()
+                    for item
+                    in sub.audit_trail
+                ],
+                audit.to_dict(),
+            ]
+
+            return (
+                SubscriptionEntity.from_dict(
+                    final
+                )
+            )
+
+        return cls._mutate(
+            subscription_id,
+            tenant_id,
+            updater,
+        )
+
+    @classmethod
     def create(
         cls,
         payload: dict[str, Any],
         tenant_id_header: str | None = None,
     ) -> dict[str, Any]:
-        """Persist one tenant subscription with durable create idempotency.
-
-        Tenant:
-            Requires already-authorized ``tenant_id_header``. If payload
-            ``tenantId`` exists it must match exactly.
-
-        Mutation:
-            Inserts one canonical Mongo document only after validation.
-
-        Idempotency:
-            Explicit ``idempotencyKey`` is mandatory. Exact canonical replay
-            returns the existing entity; conflicting reuse fails closed.
-
-        Failure:
-            Validation returns bounded failure dictionaries. Persistence and
-            persisted-integrity failures raise SubscriptionRegistryError.
-
-        Financial:
-            Creates commercial subscription truth only; no payment execution or
-            settlement authority.
-        """
+        """Create subscription truth only from an authorized PlanRegistry entry."""
         tenant_id = _authorized_tenant(
             tenant_id_header
         )
@@ -956,12 +1182,20 @@ class SubscriptionRegistry:
                     "SUBSCRIPTION_TENANT_SCOPE_MISMATCH",
             }
 
+        redirected = (
+            frozenset(payload)
+            & _CALLER_COMMERCIAL_AUTHORITY_FIELDS
+        )
+
+        if redirected:
+            return {
+                "success": False,
+                "error":
+                    "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN",
+            }
+
         required = (
             "planId",
-            "plan",
-            "amount",
-            "currency",
-            "billingFrequency",
             "startDate",
             "idempotencyKey",
         )
@@ -985,10 +1219,14 @@ class SubscriptionRegistry:
                 "error": str(error),
             }
 
+        # Idempotency remains command evidence. Commercial catalogue truth is
+        # resolved only for a genuinely new command; exact replay returns the
+        # previously persisted immutable subscription snapshot.
         create_material = _create_material(
             tenant_id,
             payload,
         )
+
         fingerprint = (
             _fingerprint_create_material(
                 create_material
@@ -1039,14 +1277,22 @@ class SubscriptionRegistry:
             }
 
         try:
-            plan = PlanTiers(
-                str(payload["plan"]).upper()
+            catalogue_plan = (
+                cls._resolve_catalogue_plan(
+                    payload["planId"],
+                    tenant_id,
+                )
             )
-            frequency = BillingFrequency(
-                str(
-                    payload["billingFrequency"]
-                ).lower()
+
+            snapshot = (
+                cls._catalogue_snapshot(
+                    catalogue_plan
+                )
             )
+
+            frequency = snapshot[
+                "billing_frequency"
+            ]
 
             start_date = cls._to_datetime(
                 payload["startDate"]
@@ -1099,15 +1345,6 @@ class SubscriptionRegistry:
                 ).lower()
             )
 
-            tier = PlanTiers(
-                str(
-                    payload.get(
-                        "tier",
-                        plan.value,
-                    )
-                ).upper()
-            )
-
             billing_mode = str(
                 payload.get(
                     "billingMode",
@@ -1127,44 +1364,40 @@ class SubscriptionRegistry:
 
             entity = SubscriptionEntity(
                 tenant_id=tenant_id,
-                plan_id=_text(
-                    payload["planId"],
-                    "plan_id",
-                ),
-                plan=plan,
-                amount=float(
-                    payload["amount"]
-                ),
-                currency=_text(
-                    payload["currency"],
-                    "currency",
-                ).upper(),
-                billing_frequency=frequency,
+                plan_id=
+                    snapshot["plan_id"],
+                plan=
+                    snapshot["plan"],
+                amount=
+                    snapshot["amount"],
+                currency=
+                    snapshot["currency"],
+                billing_frequency=
+                    snapshot["billing_frequency"],
                 start_date=start_date,
-                current_period_start=period_start,
-                current_period_end=period_end,
-                idempotency_key=idempotency_key,
+                current_period_start=
+                    period_start,
+                current_period_end=
+                    period_end,
+                idempotency_key=
+                    idempotency_key,
                 kennel_shard=str(
                     payload.get(
                         "kennelShard",
                         "EOS_PRIMARY",
                     )
                 ),
-                plan_name=payload.get(
-                    "planName"
-                ),
-                plan_features=list(
-                    payload.get(
-                        "planFeatures",
-                        [],
-                    )
-                ),
-                tax_amount=float(
-                    payload.get(
-                        "taxAmount",
-                        0,
-                    )
-                ),
+                plan_name=
+                    snapshot["plan_name"],
+                plan_features=
+                    snapshot["plan_features"],
+                plan_catalogue_version=
+                    snapshot[
+                        "plan_catalogue_version"
+                    ],
+                # Tax authority is a later governed slice. Until then, callers
+                # cannot manufacture sovereign tax truth through this command.
+                tax_amount=0.0,
                 collection_method=
                     collection_method,
                 trial_end_date=
@@ -1192,28 +1425,11 @@ class SubscriptionRegistry:
                     payload.get(
                         "lastPlatformInvoiceId"
                     ),
-                seal_nonce=str(
-                    payload.get(
-                        "sealNonce",
-                        uuid.uuid4().hex,
-                    )
-                ),
-                proof_hash=str(
-                    payload.get(
-                        "proofHash",
-                        "",
-                    )
-                ),
-                merkle_root=str(
-                    payload.get(
-                        "merkleRoot",
-                        "",
-                    )
-                ),
                 trace_id=payload.get(
                     "traceId"
                 ),
-                tier=tier,
+                tier=
+                    snapshot["tier"],
                 onboarding_ref=
                     payload.get(
                         "onboardingRef"
@@ -1254,7 +1470,11 @@ class SubscriptionRegistry:
                 action="create",
                 metadata={
                     "source":
-                        "subscription_registry"
+                        "subscription_registry",
+                    "plan_id":
+                        catalogue_plan.plan_id,
+                    "plan_catalogue_version":
+                        catalogue_plan.catalogue_version,
                 },
             )
 
@@ -1279,6 +1499,7 @@ class SubscriptionRegistry:
 
             final_data = entity.to_dict()
             final_data["proof_hash"] = proof
+            final_data["merkle_root"] = ""
             final_data["audit_trail"] = [
                 audit.to_dict()
             ]
@@ -1302,6 +1523,7 @@ class SubscriptionRegistry:
                 _collection().insert_one(
                     document
                 )
+
             except DuplicateKeyError as error:
                 duplicate_kind = (
                     _duplicate_key_kind(
@@ -1374,6 +1596,7 @@ class SubscriptionRegistry:
                     "error":
                         "SUBSCRIPTION_IDEMPOTENCY_CONFLICT",
                 }
+
             except PyMongoError as error:
                 raise SubscriptionRegistryError(
                     "SUBSCRIPTION_REGISTRY_UNAVAILABLE"
@@ -1949,95 +2172,12 @@ class SubscriptionRegistry:
         tenant_id_header: str | None = None,
         upgrade_data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Persist one explicit plan upgrade inside the authorized tenant.
-
-        Mutation:
-            Plan/plan-id/amount/tier and audit evidence only.
-
-        Financial:
-            Pricing state does not execute collection or settlement.
-        """
-        data = upgrade_data or {}
-
-        def updater(
-            sub: SubscriptionEntity,
-        ) -> SubscriptionEntity:
-            new_plan = PlanTiers(
-                str(
-                    data.get(
-                        "newPlan",
-                        "",
-                    )
-                ).upper()
-            )
-
-            new_amount = float(
-                data.get(
-                    "newAmount",
-                    sub.amount,
-                )
-            )
-
-            new_plan_id = str(
-                data.get(
-                    "newPlanId",
-                    sub.plan_id,
-                )
-            )
-
-            occurred_at = datetime.now(
-                timezone.utc
-            )
-
-            proof = sub.generate_proof(
-                action="upgrade",
-                metadata=data,
-            )
-
-            audit = AuditEntry(
-                action=AuditAction.UPGRADE,
-                timestamp=occurred_at,
-                user="SYSTEM",
-                reason=(
-                    "Upgraded to "
-                    + new_plan.value
-                ),
-                previous_status=sub.status,
-                new_status=sub.status,
-                tier=new_plan,
-                billing_mode=sub.billing_mode,
-                proof_hash=proof,
-            )
-
-            values = sub.to_dict()
-            values.update(
-                {
-                    "plan": new_plan.value,
-                    "plan_id": new_plan_id,
-                    "amount": new_amount,
-                    "tier": new_plan.value,
-                    "proof_hash": proof,
-                    "audit_trail": [
-                        *[
-                            item.to_dict()
-                            for item in
-                            sub.audit_trail
-                        ],
-                        audit.to_dict(),
-                    ],
-                }
-            )
-
-            return (
-                SubscriptionEntity.from_dict(
-                    values
-                )
-            )
-
-        return cls._mutate(
+        """Upgrade only to a canonical PlanRegistry-selected plan."""
+        return cls._change_catalogue_plan(
             subscription_id,
             tenant_id_header,
-            updater,
+            upgrade_data,
+            action=AuditAction.UPGRADE,
         )
 
     @classmethod
@@ -2047,95 +2187,12 @@ class SubscriptionRegistry:
         tenant_id_header: str | None = None,
         downgrade_data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Persist one explicit plan downgrade inside the authorized tenant.
-
-        Mutation:
-            Plan/plan-id/amount/tier and audit evidence only.
-
-        Financial:
-            Pricing state does not execute payment or settlement.
-        """
-        data = downgrade_data or {}
-
-        def updater(
-            sub: SubscriptionEntity,
-        ) -> SubscriptionEntity:
-            new_plan = PlanTiers(
-                str(
-                    data.get(
-                        "newPlan",
-                        "",
-                    )
-                ).upper()
-            )
-
-            new_amount = float(
-                data.get(
-                    "newAmount",
-                    sub.amount,
-                )
-            )
-
-            new_plan_id = str(
-                data.get(
-                    "newPlanId",
-                    sub.plan_id,
-                )
-            )
-
-            occurred_at = datetime.now(
-                timezone.utc
-            )
-
-            proof = sub.generate_proof(
-                action="downgrade",
-                metadata=data,
-            )
-
-            audit = AuditEntry(
-                action=AuditAction.DOWNGRADE,
-                timestamp=occurred_at,
-                user="SYSTEM",
-                reason=(
-                    "Downgraded to "
-                    + new_plan.value
-                ),
-                previous_status=sub.status,
-                new_status=sub.status,
-                tier=new_plan,
-                billing_mode=sub.billing_mode,
-                proof_hash=proof,
-            )
-
-            values = sub.to_dict()
-            values.update(
-                {
-                    "plan": new_plan.value,
-                    "plan_id": new_plan_id,
-                    "amount": new_amount,
-                    "tier": new_plan.value,
-                    "proof_hash": proof,
-                    "audit_trail": [
-                        *[
-                            item.to_dict()
-                            for item in
-                            sub.audit_trail
-                        ],
-                        audit.to_dict(),
-                    ],
-                }
-            )
-
-            return (
-                SubscriptionEntity.from_dict(
-                    values
-                )
-            )
-
-        return cls._mutate(
+        """Downgrade only to a canonical PlanRegistry-selected plan."""
+        return cls._change_catalogue_plan(
             subscription_id,
             tenant_id_header,
-            updater,
+            downgrade_data,
+            action=AuditAction.DOWNGRADE,
         )
 
     @classmethod
@@ -2638,7 +2695,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.1.1-SUBSCRIPTION-REAL-MONGO
+# VERSION: v1.2.0-CATALOGUE-PROVENANCE
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,
