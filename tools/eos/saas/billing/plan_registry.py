@@ -1,29 +1,79 @@
 # -*- coding: utf-8 -*-
 """
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN PLAN REGISTRY (PYTHON) – FIXED                                                           ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ FILE:           tools/eos/saas/billing/plan_registry.py                                                         ║
-║ VERSION:        v1.0.2-FIXED                                                                                   ║
-║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
-║ EPITOME:        Fixed `_to_bool` to always return bool; removed explicit created_at/updated_at in create;     ║
-║                 ensured active is non‑nullable; improved type safety.                                          ║
-║ CLASSIFICATION: Production Artifact                                                                             ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                          ║
-║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated sovereign plan store with Wilsy identity.                   ║
-║ • AI Engineering – v1.0.2: Fixed type issues with `active` and datetimes.                                     ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 🔧 CHANGE LOG:                                                                                                  ║
-║   2026-08-19 v1.0.2-FIXED – Fixed `_to_bool` to return bool; removed explicit timestamps in create;           ║
-║                             ensured active always bool.                                                       ║
-║   2026-08-19 v1.0.1-WILSY-ID – Changed plan_id generation to WILSYPLAN- prefix.                                ║
-║   2026-08-19 v1.0.0-INSTITUTIONAL – Initial production release.                                                ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
-║ STORE:         In‑memory (extensible to DB).                                                                    ║
-║ IDENTITY:      All new plan IDs: WILSYPLAN-XXXXXXXX (8‑char hex).                                              ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+TITLE:
+    WILSY OS — Sovereign Plan Registry
+
+VERSION:
+    v1.0.3-DOMAIN-PRICE-PASSTHROUGH
+
+AUTHORITY:
+    Wilsy OS Core Governance
+
+PURPOSE:
+    Own the current canonical in-memory Plan catalogue registry and lifecycle
+    bridge while delegating commercial value validation to PlanEntity.
+
+EPITOME:
+    Registry orchestration must never destroy caller commercial precision before
+    the sovereign Plan Domain validates and canonicalizes that value.
+
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/plan_registry.py
+
+OWNERSHIP:
+    Python EOS SaaS / Billing — Plan catalogue registry owner.
+
+COLLABORATION:
+    PlanEntity owns commercial state validation and deterministic evidence.
+    PlanRegistry owns current catalogue registration/lifecycle orchestration.
+    Future durable Mongo persistence remains a separately certified phase.
+
+CLASSIFICATION:
+    Production Artifact
+
+CERTIFICATION DATE:
+    2026-09-03
+
+CHANGELOG:
+    2026-09-03 v1.0.3-DOMAIN-PRICE-PASSTHROUGH
+        - Removes destructive Registry float coercion before PlanEntity price
+          validation.
+        - Adopts PlanEntity integrity_root constructor input while preserving
+          merkleRoot only as compatibility input.
+        - Adds current governance/authority boundary metadata.
+    2026-08-19 v1.0.2-FIXED
+        - Fixed active conversion/type issues and timestamp construction.
+    2026-08-19 v1.0.1-WILSY-ID
+        - Changed generated IDs to WILSYPLAN-* identity.
+    2026-08-19 v1.0.0-INSTITUTIONAL
+        - Initial production release.
+
+COMPLIANCE:
+    POPIA §19 | GDPR §32 | SOC2 CC7.2 | ISO 27001
+
+SECURITY / PRIVACY:
+    No authentication authority is created here. Caller payload commercial
+    values are passed to the Plan Domain for fail-closed validation.
+
+TENANT BOUNDARY:
+    tenant_id is catalogue scope evidence only. It does not authenticate
+    membership, role, permission, entitlement or subscription access.
+
+AUTHORITY BOUNDARY:
+    Registry creation/lifecycle establishes catalogue registry state only.
+    PlanEntity construction alone does not authorize publication outside the
+    Registry. No subscription or WILSY AI entitlement authority exists here.
+
+FINANCIAL AUTHORITY:
+    NONE. Kennel EOS remains the exclusive payment, release and settlement
+    execution authority.
+
+PERSISTENCE POSTURE:
+    Current store is in-memory. Real-Mongo certification is NOT claimed by this
+    version.
+
+PUBLIC API INTENT:
+    PlanRegistry.create/get/list/update/archive/reactivate/health_check.
 """
 
 from __future__ import annotations
@@ -43,6 +93,8 @@ from ..domain.plan import (
 )
 
 logger = logging.getLogger("WilsyOS.PlanRegistry")
+
+PLAN_REGISTRY_VERSION = "v1.0.3-DOMAIN-PRICE-PASSTHROUGH"
 
 
 class PlanRegistry:
@@ -114,7 +166,7 @@ class PlanRegistry:
 
         Required fields:
             - name (str)
-            - price (float)
+            - price (domain-governed numeric input; Registry performs no float coercion)
             - currency (str)
             - billingFrequency (str) – monthly, quarterly, annual, one_time
             - planType (str) – FREE, PROFESSIONAL, ENTERPRISE, SOVEREIGN, ULTRA, FOUNDER_ENTERPRISE
@@ -172,7 +224,7 @@ class PlanRegistry:
                 plan_id=plan_id,
                 name=payload["name"],
                 description=payload.get("description", ""),
-                price=float(payload["price"]),
+                price=payload["price"],
                 currency=payload["currency"].upper(),
                 billing_frequency=freq_enum,
                 trial_days=int(payload.get("trialDays", 0)),
@@ -184,7 +236,13 @@ class PlanRegistry:
                 idempotency_key=idempotency_key,
                 seal_nonce=payload.get("sealNonce", uuid.uuid4().hex),
                 proof_hash=payload.get("proofHash", ""),
-                merkle_root=payload.get("merkleRoot", ""),
+                integrity_root=payload.get(
+                    "integrityRoot",
+                    payload.get(
+                        "merkleRoot",
+                        "",
+                    ),
+                ),
                 metadata=payload.get("metadata", {}),
                 tags=payload.get("tags", []),
                 # created_at and updated_at will be set by domain defaults
@@ -357,28 +415,58 @@ class PlanRegistry:
             return False
 
     @classmethod
-    def health_check(cls) -> Dict[str, Any]:
-        """Return health status of registry."""
+    def health_check(
+        cls,
+    ) -> Dict[str, Any]:
+        """Return bounded registry health; does not claim durable persistence."""
         return {
             "status": "OPERATIONAL",
-            "version": "1.0.2-FIXED",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "version": PLAN_REGISTRY_VERSION,
+            "timestamp": datetime.now(
+                timezone.utc
+            ).isoformat(),
             "store_type": "in-memory",
-            "plan_count": len(cls._plans),
+            "plan_count": len(
+                cls._plans
+            ),
         }
 
-
 """
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLAN REGISTRY (FIXED)
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.0.2-FIXED
-Fixes:           Fixed `_to_bool` to return bool; removed explicit timestamps; ensured active is non‑nullable.
-Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Store:           In‑memory (extensible to PostgreSQL/MongoDB)
-Methods:         create, list, get, update, archive, reactivate, health_check
-Identity:        All new plan IDs: WILSYPLAN-XXXXXXXX (8‑char hex)
-Pending Work:    None – fully production‑ready.
-════════════════════════════════════════════════════════════════════════════════
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLAN REGISTRY
+
+Status:
+    PRODUCTION REGISTRY CONTRACT — IN-MEMORY STORE
+
+Version:
+    v1.0.3-DOMAIN-PRICE-PASSTHROUGH
+
+Authority:
+    Wilsy OS Core Governance
+
+Canonical path:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/plan_registry.py
+
+Catalogue owner:
+    PlanRegistry
+
+Commercial validation:
+    PlanEntity / Python EOS
+
+Tenant authority:
+    NONE — tenant_id is scope evidence only.
+
+Financial execution:
+    NONE — Kennel EOS remains exclusive.
+
+Persistence:
+    IN-MEMORY ONLY — Real-Mongo certification remains pending.
+
+Certified change:
+    Lossless commercial-price passthrough to PlanEntity plus integrity-root
+    compatibility bridge.
+
+Certification date:
+    2026-09-03
+
+WILSY OS — ALL OR NOTHING.
 """
