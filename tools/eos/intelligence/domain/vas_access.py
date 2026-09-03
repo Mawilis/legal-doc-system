@@ -1,38 +1,89 @@
 """WILSY OS — sovereign WILSY AI VAS access contract.
 
-TITLE: WILSY AI Value-Added-Service Access Contract
-VERSION: v1.0.0-WILSY-AI-VAS-ACCESS
-AUTHORITY: Wilsy OS Core Governance
-PURPOSE:
-    Package an already-authorized tenant AI entitlement, business profile,
-    dashboard context, domain scope, and usage budget into one immutable,
-    deterministic access envelope before WILSY AI computation.
+TITLE:
+    WILSY AI Value-Added-Service Access Contract
+
+VERSION:
+    v1.0.1-WILSY-AI-VAS-ACCESS
+
+AUTHORITY:
+    Wilsy OS Core Governance
+
+EPITOME:
+    Immutable, deterministic packaging of already-resolved WILSY AI commercial
+    access facts before any governed AI computation. The envelope binds tenant,
+    principal, authorized scope, subscription/entitlement evidence, metered
+    capacity evidence, business-profile evidence, dashboard context, domain
+    grants, and explicitly advisory AI capabilities without acquiring any of
+    the upstream authorities that supplied those facts.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intelligence/domain/vas_access.py
 
+COLLABORATION / OWNERSHIP:
+    Wilson Khanyezi / Wilsy OS Core Engineering
+
+CERTIFICATION / UPDATE DATE:
+    2026-09-03
+
+CHANGELOG:
+    v1.0.1-WILSY-AI-VAS-ACCESS:
+        Structural sovereign-certification alignment required by AGENTS.md.
+        Adds the complete institutional header, synchronized versioning,
+        institutional public-API documentation, and mandatory sovereign end
+        seal. Runtime access semantics remain unchanged from v1.0.0 except for
+        the explicit VERSION constant increment.
+
+    v1.0.0-WILSY-AI-VAS-ACCESS:
+        Introduced the evidence-bound pre-compute VAS access envelope,
+        explicit advisory capability allow-list, entitlement/usage/business
+        profile evidence requirements, deterministic SHA3-512 integrity
+        anchor, dashboard-domain entitlement check, and fail-closed capacity
+        boundary.
+
+COMPLIANCE:
+    POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001-aligned
+    minimization, tenant separation, integrity, access-control composition,
+    and fail-closed handling. Compliance references describe technical
+    posture only and do not manufacture legal certification.
+
+SECURITY / PRIVACY POSTURE:
+    The contract accepts opaque identifiers, references, bounded business
+    context, and usage counts only. It does not retrieve raw tenant records,
+    credentials, secrets, authentication tokens, or evidence payloads. It
+    never derives identity, membership, entitlement, subscription status,
+    business profile, authorization, or payment state. Callers must resolve
+    and authorize all such facts before constructing the envelope.
+
+TENANT BOUNDARY:
+    ``tenant_id``, ``principal_id``, and ``scope_ref`` are explicit
+    caller-resolved references. Their presence never establishes identity,
+    membership, role, entitlement, or cross-tenant authority. Dashboard and
+    business-profile context personalize assistance only; domain access
+    remains independently constrained by ``allowed_domains``.
+
 AUTHORITY BOUNDARY:
-    This artifact does not authenticate a principal, establish tenant
-    membership, sell a subscription, activate a VAS, price usage, retrieve
-    business evidence, run AI, mutate business state, or execute money.
+    This artifact packages already-resolved access facts only. It does not
+    authenticate a principal, establish tenant membership, resolve or activate
+    entitlement, sell or modify a subscription, price usage, retrieve domain
+    evidence, meter or persist usage, run AI, mutate business state, approve
+    actions, authorize execution, or dispatch workflows.
 
-    Identity, membership, permission, subscription, entitlement, business
-    profile, dashboard context, and usage facts must already have been resolved
-    by their respective sovereign Python authorities before construction.
-
-FINANCIAL AUTHORITY:
-    Kennel EOS remains the exclusive financial execution authority.
+FINANCIAL AUTHORITY BOUNDARY:
+    Kennel EOS remains the exclusive financial execution authority. This
+    artifact cannot approve, release, execute, settle, transfer, charge,
+    collect, infer paid state, or manufacture financial execution truth.
 
 JAVASCRIPT MIGRATION POSTURE:
-    Existing JS AI licensing, entitlement, metering, and dashboard surfaces are
-    migration sources/projections only. They are not sovereign authority for
-    this contract and are to be retired incrementally after certified Python
-    replacement.
+    Existing JS AI licensing, entitlement, metering, and dashboard surfaces
+    are migration sources, transport, or projections only. They are not
+    sovereign authority for this contract and are retired incrementally only
+    after certified Python parity and consumer migration.
 
 CONSTITUTION:
     NO EVIDENCE = NO FACT.
     NO ENTITLEMENT = NO AI COMPUTE.
-    OBSERVED FACT != AI INFERENCE != RECOMMENDATION
+    OBSERVED FACT != DERIVED SIGNAL != AI INFERENCE != RECOMMENDATION
                   != AUTHORIZATION != EXECUTION.
 """
 
@@ -45,7 +96,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-VERSION = "v1.0.0-WILSY-AI-VAS-ACCESS"
+VERSION = "v1.0.1-WILSY-AI-VAS-ACCESS"
 
 ADVISORY_AI_CAPABILITIES = frozenset(
     {
@@ -237,7 +288,31 @@ def _checksum(payload: dict[str, Any]) -> str:
 
 @dataclass(frozen=True, slots=True)
 class WilsyAIVASAccess:
-    """Immutable envelope of previously resolved WILSY AI access facts."""
+    """Immutable projection of previously resolved WILSY AI VAS access facts.
+
+    Tenant and authority posture:
+        Tenant, principal, scope, subscription, entitlement, profile, usage,
+        dashboard, domain, and capability values are caller-resolved inputs.
+        Construction validates consistency but grants no upstream authority.
+
+    Mutation and persistence:
+        Instances are frozen and contain no persistence, registry, transaction,
+        session, dispatch, or external side effect.
+
+    Determinism and replay:
+        Equal canonical inputs produce the same checksum and projection. This
+        deterministic integrity behavior is not a durable idempotency claim.
+
+    Fail-closed behavior:
+        Missing evidence references, malformed identifiers or timestamps,
+        unsupported advisory capabilities, non-canonical domain/capability
+        ordering, exhausted capacity, or a dashboard outside the authorized
+        domains cause construction to fail.
+
+    Financial boundary:
+        The envelope has no financial execution authority. Kennel EOS remains
+        the exclusive financial execution authority.
+    """
 
     tenant_id: str
     principal_id: str
@@ -446,9 +521,21 @@ class WilsyAIVASAccess:
 
     @property
     def usage_remaining(self) -> int:
+        """Return evidenced capacity remaining in this immutable snapshot.
+
+        This arithmetic projection does not reserve, persist, consume, replenish,
+        price, or authorize usage. The upstream sovereign metering authority owns
+        the underlying usage truth and supplied ``usage_evidence_refs``.
+        """
         return self.usage_limit - self.usage_consumed
 
     def permits_domain(self, domain: str) -> bool:
+        """Return whether an already-resolved domain grant contains ``domain``.
+
+        This convenience projection performs no tenant lookup, permission check,
+        evidence retrieval, or mutation. ``True`` reflects only the immutable
+        ``allowed_domains`` supplied by upstream sovereign authority.
+        """
         if not isinstance(domain, str):
             return False
 
@@ -460,6 +547,12 @@ class WilsyAIVASAccess:
         return normalized in self.allowed_domains
 
     def permits_capability(self, capability: str) -> bool:
+        """Return whether this envelope contains an allowed advisory capability.
+
+        Only capabilities admitted by ``ADVISORY_AI_CAPABILITIES`` can exist in
+        a valid instance. The result grants no approval, authorization, workflow
+        dispatch, business mutation, or financial execution authority.
+        """
         if not isinstance(capability, str):
             return False
 
@@ -471,6 +564,13 @@ class WilsyAIVASAccess:
         return normalized in self.allowed_capabilities
 
     def to_dict(self) -> dict[str, Any]:
+        """Return a serialization-safe projection of the access envelope.
+
+        The returned dictionary is a detached projection for transport,
+        evidence, or presentation. Mutating it cannot mutate this frozen
+        instance or upstream tenant, entitlement, metering, subscription,
+        dashboard, business-profile, or financial truth.
+        """
         return {
             "tenant_id": self.tenant_id,
             "principal_id": self.principal_id,
@@ -508,3 +608,25 @@ __all__ = [
     "VERSION",
     "WilsyAIVASAccess",
 ]
+
+# =============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# =============================================================================
+# ARTIFACT: tools/eos/intelligence/domain/vas_access.py
+# VERSION: v1.0.1-WILSY-AI-VAS-ACCESS
+# AUTHORITY BOUNDARY:
+#   Immutable packaging of already-resolved WILSY AI VAS access facts only.
+#   No authentication, tenant-membership, entitlement-resolution, subscription,
+#   pricing, persistence, business mutation, approval, dispatch, or execution
+#   authority is created here.
+# TENANT POSTURE:
+#   Explicit caller-resolved tenant/principal/scope references; possession or
+#   serialization never establishes membership, role, permission, entitlement,
+#   or cross-tenant authority.
+# FAIL-CLOSED POSTURE:
+#   Missing evidence, invalid identifiers/timestamps, unsupported capabilities,
+#   non-canonical grants, exhausted capacity, and unauthorized dashboard-domain
+#   combinations are rejected.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
