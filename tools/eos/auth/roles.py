@@ -1,12 +1,16 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.2.0-SUBSCRIPTION-PERMISSION-GRANTS
+VERSION: v1.3.0-PLAN-PERMISSION-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Extends current tenant-scoped authorization roles with least-privilege
-subscription read/manage grants without creating current possession authority.
+subscription and plan-catalogue read/manage grants without creating current
+possession authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    2026-09-03 v1.3.0-PLAN-PERMISSION-GRANTS grants plan:read to
+    ENTERPRISE_ADMIN and AUDITOR, plan:manage only to ENTERPRISE_ADMIN,
+    and grants neither capability to SERVICE_WORKER or SOVEREIGN_ARCHITECT.
     v1.2.0-SUBSCRIPTION-PERMISSION-GRANTS grants subscription:read to
     ENTERPRISE_ADMIN and AUDITOR, subscription:manage only to
     ENTERPRISE_ADMIN, and grants neither capability to SERVICE_WORKER or
@@ -21,9 +25,9 @@ RoleAssignmentAuthority after ACTIVE tenant membership admission.
 AUTHORITY BOUNDARY: Owns only deterministic role-to-permission policy.
 Authentication, membership, role assignment and final authorization remain
 separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription management is commercial lifecycle
-authority only and cannot authorize, release, execute or settle payment.
-Kennel EOS remains exclusive.
+FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue management are
+commercial lifecycle policy only and cannot authorize, release, execute,
+collect, or settle payment. Kennel EOS remains exclusive.
 """
 
 from __future__ import annotations
@@ -31,7 +35,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.2.0-SUBSCRIPTION-PERMISSION-GRANTS"
+VERSION = "v1.3.0-PLAN-PERMISSION-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -54,6 +58,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant:role_assignment:write",
         "subscription:read",
         "subscription:manage",
+        "plan:read",
+        "plan:manage",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -64,6 +70,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant:membership:read",
         "tenant:role_assignment:read",
         "subscription:read",
+        "plan:read",
     ],
     "SERVICE_WORKER": [
         "artifacts:write",
@@ -121,7 +128,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.2.0-SUBSCRIPTION-PERMISSION-GRANTS
+# VERSION: v1.3.0-PLAN-PERMISSION-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

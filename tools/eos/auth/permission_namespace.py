@@ -1,26 +1,31 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.2.0-SUBSCRIPTION-PERMISSION-CANON
+VERSION: v1.3.0-PLAN-PERMISSION-CANON
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with bounded
-subscription read and management capabilities without granting possession or
-financial execution.
+subscription and plan-catalogue read/manage capabilities without granting
+possession, cross-tenant authority, entitlement, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
-    v1.2.0-SUBSCRIPTION-PERMISSION-CANON adds subscription:read and
+    2026-09-03 v1.3.0-PLAN-PERMISSION-CANON adds plan:read and plan:manage
+    as explicit own-tenant, membership-required, non-cross-tenant,
+    non-financial canonical permissions.
+    v1.2.0-SUBSCRIPTION-PERMISSION-CANON added subscription:read and
     subscription:manage as explicit own-tenant, membership-required,
     non-cross-tenant, non-financial canonical permissions.
     v1.1.0-PERMISSION-NAMESPACE-CANON added the bounded TENANT vocabulary.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Metadata never authenticates, authorizes, proves
 membership, trusts transport projections, or grants execution.
-TENANT BOUNDARY: Subscription permissions require separately proven ACTIVE
-membership in the exact selected tenant and never permit cross-tenant access.
+TENANT BOUNDARY: Subscription and plan permissions require separately proven
+ACTIVE membership in the exact selected tenant and never permit cross-tenant
+access.
 AUTHORITY BOUNDARY: Owns permission vocabulary semantics only. Current role
 assignment and final authorization remain separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription permissions cannot approve,
-release, execute or settle funds. Kennel EOS remains exclusive.
+FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue permissions
+cannot approve, release, execute, collect, or settle funds. Kennel EOS remains
+exclusive.
 """
 
 from __future__ import annotations
@@ -32,7 +37,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.2.0-SUBSCRIPTION-PERMISSION-CANON"
+VERSION = "v1.3.0-PLAN-PERMISSION-CANON"
 
 
 class PermissionDisposition(StrEnum):
@@ -208,6 +213,20 @@ _PERMISSIONS: Final = MappingProxyType(
             "manage own-tenant subscription lifecycle truth",
             tenant=True,
         ),
+        "plan:read": _meta(
+            "plan:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant plan catalogue commercial truth",
+            tenant=True,
+        ),
+        "plan:manage": _meta(
+            "plan:manage",
+            "TENANT",
+            "TENANT",
+            "manage own-tenant plan catalogue lifecycle truth",
+            tenant=True,
+        ),
         "execution:trigger": _meta(
             "execution:trigger",
             "SYSTEM",
@@ -316,9 +335,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.2.0-SUBSCRIPTION-PERMISSION-CANON
+# VERSION: v1.3.0-PLAN-PERMISSION-CANON
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
-# TENANT POSTURE: subscription permissions require separately proven exact ACTIVE tenant membership
+# TENANT POSTURE: subscription and plan permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
