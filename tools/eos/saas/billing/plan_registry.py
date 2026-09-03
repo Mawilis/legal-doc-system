@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — Sovereign Plan Registry — Real Mongo Persistence
 
 VERSION:
-    v1.1.1-STORAGE-ENVELOPE-CAS
+    v1.2.0-EXACT-TENANT-SCOPE
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -37,6 +37,10 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-09-03 v1.2.0-EXACT-TENANT-SCOPE
+        - Adds backwards-compatible keyword-only exact_tenant scope.
+        - Default global-plus-tenant catalogue semantics remain unchanged.
+        - Exact mode requires persisted Plan tenant ownership equality.
     2026-09-03 v1.1.1-STORAGE-ENVELOPE-CAS
         - Adds immutable Mongo identity plus monotonic _registry_revision
           transport evidence for optimistic lifecycle mutation.
@@ -124,7 +128,7 @@ from ..domain.plan import (
 
 logger = logging.getLogger("WilsyOS.PlanRegistry")
 
-PLAN_REGISTRY_VERSION = "v1.1.1-STORAGE-ENVELOPE-CAS"
+PLAN_REGISTRY_VERSION = "v1.2.0-EXACT-TENANT-SCOPE"
 
 _REGISTRY_REVISION_FIELD = "_registry_revision"
 
@@ -633,6 +637,8 @@ class PlanRegistry:
         tenant_id: Optional[
             str
         ] = None,
+        *,
+        exact_tenant: bool = False,
     ) -> Optional[
         _StoredPlan
     ]:
@@ -651,7 +657,15 @@ class PlanRegistry:
             ):
                 continue
 
-            if (
+            if exact_tenant:
+                if (
+                    tenant_id is None
+                    or plan.tenant_id
+                    != tenant_id
+                ):
+                    return None
+
+            elif (
                 tenant_id
                 and plan.tenant_id
                 and plan.tenant_id
@@ -1063,6 +1077,8 @@ class PlanRegistry:
         tenant_id: Optional[
             str
         ] = None,
+        *,
+        exact_tenant: bool = False,
     ) -> Optional[
         PlanEntity
     ]:
@@ -1077,6 +1093,8 @@ class PlanRegistry:
             cls._get_record(
                 plan_id,
                 tenant_id,
+                exact_tenant=
+                    exact_tenant,
             )
         )
 
@@ -1104,6 +1122,8 @@ class PlanRegistry:
         ] = None,
         page: int = 1,
         limit: int = 20,
+        *,
+        exact_tenant: bool = False,
     ) -> Dict[
         str,
         Any,
@@ -1121,7 +1141,20 @@ class PlanRegistry:
             in cls._load_catalogue()
         ]
 
-        if tenant_id:
+        if exact_tenant:
+            all_plans = [
+                plan
+                for plan
+                in all_plans
+                if (
+                    tenant_id
+                    is not None
+                    and plan.tenant_id
+                    == tenant_id
+                )
+            ]
+
+        elif tenant_id:
             all_plans = [
                 plan
                 for plan
@@ -1200,6 +1233,8 @@ class PlanRegistry:
         tenant_id: Optional[
             str
         ] = None,
+        *,
+        exact_tenant: bool = False,
     ) -> Dict[
         str,
         Any,
@@ -1210,6 +1245,8 @@ class PlanRegistry:
             stored = cls._get_record(
                 plan_id,
                 tenant_id,
+                exact_tenant=
+                    exact_tenant,
             )
 
             if stored is None:
@@ -1352,6 +1389,8 @@ class PlanRegistry:
         tenant_id: Optional[
             str
         ] = None,
+        *,
+        exact_tenant: bool = False,
     ) -> bool:
         """
         Soft-delete a plan.
@@ -1364,6 +1403,8 @@ class PlanRegistry:
             stored = cls._get_record(
                 plan_id,
                 tenant_id,
+                exact_tenant=
+                    exact_tenant,
             )
 
             if stored is None:
@@ -1586,7 +1627,7 @@ Status:
     PRODUCTION REGISTRY CONTRACT — REAL MONGODB PERSISTENCE
 
 Version:
-    v1.1.1-STORAGE-ENVELOPE-CAS
+    v1.2.0-EXACT-TENANT-SCOPE
 
 Authority:
     Wilsy OS Core Governance

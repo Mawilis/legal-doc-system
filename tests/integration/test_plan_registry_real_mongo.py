@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — PlanRegistry Real-Mongo Certification
 
 VERSION:
-    v1.0.4-PLAN-REGISTRY-CONSUMER-CONVERGENCE-CERT
+    v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -36,6 +36,16 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-09-03 v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
+        - Aligns the topology certificate's TEST_VERSION assertion with its governed runtime identity.
+        - PlanRegistry production bytes and exact-tenant semantics remain unchanged.
+    2026-09-03 v1.1.1-PLAN-REGISTRY-VERSION-ALIGNMENT-CERT
+        - Aligns the topology/version certificate with PlanRegistry v1.2.0 exact-tenant scope.
+        - No production bytes or catalogue semantics change.
+    2026-09-03 v1.1.0-PLAN-REGISTRY-EXACT-TENANT-CERT
+        - Certifies default global compatibility plus exact-tenant opt-in.
+        - Certifies exact filtering before total/pages/pagination.
+        - Certifies global Plans cannot be updated/archived in exact mode.
     2026-09-03 v1.0.4-PLAN-REGISTRY-CONSUMER-CONVERGENCE-CERT
         - Certifies that /billing/plans delegates catalogue truth to
           PlanRegistry and contains no direct plans-collection reader.
@@ -131,7 +141,7 @@ from tools.eos.saas.domain.plan import (
 )
 
 TEST_VERSION = (
-    "v1.0.4-PLAN-REGISTRY-CONSUMER-CONVERGENCE-CERT"
+    "v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT"
 )
 
 CERT_URI_ENV = (
@@ -465,12 +475,12 @@ def test_real_mongo_version_topology_health_and_index_contract(
 ) -> None:
     assert (
         PLAN_REGISTRY_VERSION
-        == "v1.1.1-STORAGE-ENVELOPE-CAS"
+        == "v1.2.0-EXACT-TENANT-SCOPE"
     )
 
     assert (
         TEST_VERSION
-        == "v1.0.4-PLAN-REGISTRY-CONSUMER-CONVERGENCE-CERT"
+        == "v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT"
     )
 
     hello = (
@@ -2296,6 +2306,196 @@ def test_billing_plans_consumer_converges_on_plan_registry_fail_closed() -> None
         not in source
     )
 
+
+
+def test_real_mongo_exact_tenant_opt_in_denies_global_and_neighbor_mutation() -> None:
+    """Exact tenant mode excludes global/neighbor Plans without changing defaults."""
+    global_result = PlanRegistry.create(
+        _payload(
+            name="Global Exact Scope",
+            idempotency_key=
+                "EXACT-GLOBAL",
+            plan_id=
+                "WILSYPLAN-X1X1X1X1",
+        )
+    )
+
+    tenant_a_result = PlanRegistry.create(
+        _payload(
+            name="Tenant A Exact Scope",
+            idempotency_key=
+                "EXACT-TENANT-A",
+            tenant_id=
+                "TENANT-A",
+            plan_id=
+                "WILSYPLAN-X2X2X2X2",
+        )
+    )
+
+    tenant_b_result = PlanRegistry.create(
+        _payload(
+            name="Tenant B Exact Scope",
+            idempotency_key=
+                "EXACT-TENANT-B",
+            tenant_id=
+                "TENANT-B",
+            plan_id=
+                "WILSYPLAN-X3X3X3X3",
+        )
+    )
+
+    assert global_result["success"] is True
+    assert tenant_a_result["success"] is True
+    assert tenant_b_result["success"] is True
+
+    global_plan = global_result["plan"]
+    tenant_a_plan = tenant_a_result["plan"]
+    tenant_b_plan = tenant_b_result["plan"]
+
+    # Default compatibility remains unchanged.
+    assert (
+        PlanRegistry.get(
+            global_plan.plan_id,
+            tenant_id="TENANT-A",
+        )
+        is not None
+    )
+
+    # Exact scope admits only exact tenant ownership.
+    assert (
+        PlanRegistry.get(
+            global_plan.plan_id,
+            tenant_id="TENANT-A",
+            exact_tenant=True,
+        )
+        is None
+    )
+
+    assert (
+        PlanRegistry.get(
+            tenant_a_plan.plan_id,
+            tenant_id="TENANT-A",
+            exact_tenant=True,
+        )
+        is not None
+    )
+
+    assert (
+        PlanRegistry.get(
+            tenant_b_plan.plan_id,
+            tenant_id="TENANT-A",
+            exact_tenant=True,
+        )
+        is None
+    )
+
+    update_global = PlanRegistry.update(
+        global_plan.plan_id,
+        {
+            "price":
+                1234.0
+        },
+        tenant_id="TENANT-A",
+        exact_tenant=True,
+    )
+
+    assert update_global["success"] is False
+    assert update_global["error"] == "Plan not found"
+
+    assert (
+        PlanRegistry.archive(
+            global_plan.plan_id,
+            tenant_id="TENANT-A",
+            exact_tenant=True,
+        )
+        is False
+    )
+
+    surviving_global = PlanRegistry.get(
+        global_plan.plan_id
+    )
+
+    assert surviving_global is not None
+    assert surviving_global.active is True
+
+
+def test_real_mongo_exact_tenant_list_filters_before_pagination() -> None:
+    """Exact filtering precedes total/pages/pagination and excludes global Plans."""
+    commands = (
+        _payload(
+            name="Exact Global",
+            idempotency_key=
+                "EXACT-LIST-GLOBAL",
+            plan_id=
+                "WILSYPLAN-Y1Y1Y1Y1",
+        ),
+        _payload(
+            name="Exact Tenant A One",
+            idempotency_key=
+                "EXACT-LIST-A1",
+            tenant_id=
+                "TENANT-A",
+            plan_id=
+                "WILSYPLAN-Y2Y2Y2Y2",
+        ),
+        _payload(
+            name="Exact Tenant A Two",
+            idempotency_key=
+                "EXACT-LIST-A2",
+            tenant_id=
+                "TENANT-A",
+            plan_id=
+                "WILSYPLAN-Y3Y3Y3Y3",
+        ),
+        _payload(
+            name="Exact Tenant B",
+            idempotency_key=
+                "EXACT-LIST-B",
+            tenant_id=
+                "TENANT-B",
+            plan_id=
+                "WILSYPLAN-Y4Y4Y4Y4",
+        ),
+    )
+
+    for command in commands:
+        created = PlanRegistry.create(
+            command
+        )
+        assert created["success"] is True
+
+    first = PlanRegistry.list(
+        tenant_id="TENANT-A",
+        page=1,
+        limit=1,
+        exact_tenant=True,
+    )
+
+    second = PlanRegistry.list(
+        tenant_id="TENANT-A",
+        page=2,
+        limit=1,
+        exact_tenant=True,
+    )
+
+    assert first["total"] == 2
+    assert first["pages"] == 2
+    assert len(first["items"]) == 1
+
+    assert second["total"] == 2
+    assert second["pages"] == 2
+    assert len(second["items"]) == 1
+
+    observed = {
+        first["items"][0].tenant_id,
+        second["items"][0].tenant_id,
+    }
+
+    assert observed == {
+        "TENANT-A"
+    }
+
+
 """
 INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLANREGISTRY REAL-MONGO
 
@@ -2303,7 +2503,7 @@ Status:
     DIRECT REAL-WORLD CERTIFICATE — ACTUAL MONGODB REQUIRED
 
 Version:
-    v1.0.4-PLAN-REGISTRY-CONSUMER-CONVERGENCE-CERT
+    v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
 
 Production owner:
     tools/eos/saas/billing/plan_registry.py
