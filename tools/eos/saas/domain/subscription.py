@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 """
 TITLE:
-    WILSY OS — Sovereign Subscription Catalogue Snapshot Domain
+    WILSY OS — Sovereign Subscription Catalogue Snapshot + Calendar Billing Domain
 
 VERSION:
-    v1.1.0-CATALOGUE-PROVENANCE
+    v1.2.0-CALENDAR-BILLING-FOUNDATION
 
 AUTHORITY:
     Wilsy OS Core Governance
 
 PURPOSE:
-    Preserve immutable subscription lifecycle truth while binding each current
-    commercial plan snapshot to the canonical Plan catalogue coordinate from
-    which that snapshot was derived.
+    Preserve immutable subscription lifecycle truth, bind each current
+    commercial plan snapshot to canonical Plan catalogue provenance, and expose
+    deterministic calendar-period primitives for sovereign billing orchestration.
 
 EPITOME:
-    Subscription evidence may remember canonical catalogue truth, but it may
-    never manufacture or replace Plan catalogue authority.
+    Subscription evidence may remember canonical catalogue truth and derive
+    calendar billing coordinates, but it may never manufacture Plan authority,
+    caller-authored proration, payment authority or financial execution truth.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/subscription.py
@@ -32,6 +33,17 @@ CERTIFICATION / UPDATE DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-09-03 v1.2.0-CALENDAR-BILLING-FOUNDATION
+        - Adds deterministic timezone-aware calendar billing-period primitives.
+        - Anchors billing periods to the first local calendar day of the month.
+        - Models monthly, quarterly and annual periods as 1/3/12 calendar months.
+        - Derives actual calendar-day denominators, including leap February.
+        - Adds calendar-day proration coordinates without calculating money,
+          authorizing payment, or widening Kennel execution authority.
+        - Retains the legacy fixed-day helper only for existing registry
+          compatibility until the separately certified registry-wiring slice.
+        - Preserves all v1.1.0 catalogue-provenance semantics and proofs.
+
     2026-09-03 v1.1.0-CATALOGUE-PROVENANCE
         - Adds explicit optional plan_catalogue_version provenance.
         - Preserves None for legacy subscriptions where catalogue provenance
@@ -77,6 +89,7 @@ CONSTITUTION:
 
 from __future__ import annotations
 
+from calendar import monthrange
 import hashlib
 import json
 import uuid
@@ -86,7 +99,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "v1.1.0-CATALOGUE-PROVENANCE"
+VERSION = "v1.2.0-CALENDAR-BILLING-FOUNDATION"
 
 
 # ─── Helper ──────────────────────────────────────────────────────────────────
@@ -217,12 +230,204 @@ class AuditAction(str, Enum):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def period_days_for_frequency(frequency: BillingFrequency) -> int:
-    """Return the number of days in a billing cycle."""
+    """Return the legacy fixed-day compatibility length.
+
+    This helper remains temporarily for existing SubscriptionRegistry callers.
+    It is NOT sovereign calendar billing truth and must not be used by new
+    calendar-aware code. The registry-wiring slice will retire its production
+    use after the calendar foundation is certified.
+    """
     if frequency in (BillingFrequency.ANNUAL,):
         return 365
     if frequency == BillingFrequency.QUARTERLY:
         return 90
     return 30
+
+
+def _require_aware_datetime(
+    value: datetime,
+    *,
+    field_name: str,
+) -> datetime:
+    """Require one explicit timezone-aware calendar coordinate."""
+    if not isinstance(value, datetime):
+        raise TypeError(
+            f"{field_name} must be a datetime"
+        )
+
+    if value.utcoffset() is None:
+        raise ValueError(
+            f"{field_name} must be timezone-aware"
+        )
+
+    return value
+
+
+def _add_calendar_months(
+    month_start: datetime,
+    months: int,
+) -> datetime:
+    """Advance a first-of-month coordinate by whole calendar months."""
+    if (
+        isinstance(months, bool)
+        or not isinstance(months, int)
+    ):
+        raise TypeError(
+            "months must be an integer"
+        )
+
+    if months < 1:
+        raise ValueError(
+            "months must be >= 1"
+        )
+
+    absolute_month = (
+        month_start.year * 12
+        + (month_start.month - 1)
+        + months
+    )
+
+    year, zero_based_month = divmod(
+        absolute_month,
+        12,
+    )
+
+    return month_start.replace(
+        year=year,
+        month=zero_based_month + 1,
+        day=1,
+    )
+
+
+def calendar_period_bounds(
+    reference: datetime,
+    frequency: BillingFrequency,
+) -> Tuple[datetime, datetime, int]:
+    """Resolve deterministic first-of-month calendar period coordinates.
+
+    The returned interval is half-open: ``[period_start, period_end)``.
+    Calendar-day counts are derived from local dates rather than elapsed UTC
+    seconds, so timezone offset changes cannot silently alter the denominator.
+    """
+    reference = _require_aware_datetime(
+        reference,
+        field_name="reference",
+    )
+
+    if not isinstance(
+        frequency,
+        BillingFrequency,
+    ):
+        raise TypeError(
+            "frequency must be a BillingFrequency"
+        )
+
+    period_start = reference.replace(
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+
+    months = {
+        BillingFrequency.MONTHLY: 1,
+        BillingFrequency.QUARTERLY: 3,
+        BillingFrequency.ANNUAL: 12,
+    }[frequency]
+
+    period_end = _add_calendar_months(
+        period_start,
+        months,
+    )
+
+    total_days = (
+        period_end.date()
+        - period_start.date()
+    ).days
+
+    if total_days < 1:
+        raise RuntimeError(
+            "calendar billing period must contain at least one day"
+        )
+
+    if frequency == BillingFrequency.MONTHLY:
+        expected_month_days = monthrange(
+            period_start.year,
+            period_start.month,
+        )[1]
+
+        if total_days != expected_month_days:
+            raise RuntimeError(
+                "monthly calendar denominator mismatch"
+            )
+
+    return (
+        period_start,
+        period_end,
+        total_days,
+    )
+
+
+def calendar_proration_coordinate(
+    effective_at: datetime,
+    frequency: BillingFrequency,
+) -> Dict[str, Any]:
+    """Return non-monetary calendar-day proration evidence.
+
+    This helper derives period bounds, actual total calendar days, remaining
+    calendar days, and their deterministic ratio. It does not calculate price,
+    credit, tax, charge, payment, authorization, execution or settlement.
+    """
+    effective_at = _require_aware_datetime(
+        effective_at,
+        field_name="effective_at",
+    )
+
+    (
+        period_start,
+        period_end,
+        total_days,
+    ) = calendar_period_bounds(
+        effective_at,
+        frequency,
+    )
+
+    days_elapsed = (
+        effective_at.date()
+        - period_start.date()
+    ).days
+
+    days_remaining = (
+        period_end.date()
+        - effective_at.date()
+    ).days
+
+    if not (
+        0 <= days_elapsed < total_days
+    ):
+        raise RuntimeError(
+            "effective_at falls outside derived calendar period"
+        )
+
+    if not (
+        1 <= days_remaining <= total_days
+    ):
+        raise RuntimeError(
+            "invalid calendar days_remaining"
+        )
+
+    return {
+        "period_start": period_start,
+        "period_end": period_end,
+        "total_days": total_days,
+        "days_elapsed": days_elapsed,
+        "days_remaining": days_remaining,
+        "proration_factor": (
+            days_remaining
+            / total_days
+        ),
+    }
 
 
 def to_monthly_amount(amount: float, frequency: BillingFrequency) -> float:
@@ -781,13 +986,14 @@ class SubscriptionEntity:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/domain/subscription.py
-# VERSION: v1.1.0-CATALOGUE-PROVENANCE
+# VERSION: v1.2.0-CALENDAR-BILLING-FOUNDATION
 # AUTHORITY BOUNDARY: Immutable subscription value, lifecycle and catalogue-
 # snapshot evidence only; PlanEntity/PlanRegistry remain canonical plan truth.
 # TENANT POSTURE: tenant_id is persisted subscription scope and never establishes
 # authentication, membership, role or permission authority.
-# FAIL-CLOSED POSTURE: Invalid catalogue-version coordinates and malformed
-# catalogue feature snapshots are rejected; unknown legacy provenance remains
-# explicit None and is never fabricated as current catalogue truth.
+# FAIL-CLOSED POSTURE: Invalid catalogue-version coordinates, malformed
+# catalogue feature snapshots, naive calendar datetimes and invalid calendar
+# coordinates are rejected. Unknown legacy provenance remains explicit None.
+# Calendar helpers derive evidence only; they grant no caller proration authority.
 # FINANCIAL EXECUTION AUTHORITY: NONE — Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
