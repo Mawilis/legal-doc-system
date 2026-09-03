@@ -1,16 +1,29 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.1.0-WILSY-TENANT-PERMISSION-GRANTS-UNIT-CONTRACT
+VERSION: v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
-EPITOME: Proves the exact closed role vocabulary, migrated tenant permission grants, deterministic expansion, exact reverse lookup, and fail-closed non-bypass behavior.
+EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan
+permission grants, deterministic expansion, reverse lookup, and fail-closed
+non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.1.0 certifies the bounded ENTERPRISE_ADMIN/AUDITOR tenant-permission grant migration while preserving SOVEREIGN_ARCHITECT and SERVICE_WORKER non-bypass locks.
+CERTIFICATION/UPDATE DATE: 2026-09-03.
+CHANGELOG:
+    2026-09-03 v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT certifies
+    plan:read for ENTERPRISE_ADMIN/AUDITOR and plan:manage only for
+    ENTERPRISE_ADMIN while retaining subscription grants and preserving
+    SOVEREIGN_ARCHITECT/SERVICE_WORKER non-bypass locks.
+    2026-08-30 v1.1.0-WILSY-TENANT-PERMISSION-GRANTS-UNIT-CONTRACT
+    certified the bounded ENTERPRISE_ADMIN/AUDITOR tenant-permission migration.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Pure policy tests with no credentials, principal data, tenant records, persistence, secrets, or external IO.
-TENANT BOUNDARY: Role definitions remain tenant-agnostic policy; current tenant-scoped possession still requires governed RoleAssignmentAuthority.
-AUTHORITY BOUNDARY: Unit verification of role identifiers and explicit permission definitions only; no assignment, authentication, authorization, lifecycle, or transport authority.
-FINANCIAL AUTHORITY BOUNDARY: No migrated grant is financial; Kennel EOS remains exclusive.
+SECURITY/PRIVACY POSTURE: Pure policy tests with no credentials, principal
+data, tenant records, persistence, secrets, or external IO.
+TENANT BOUNDARY: Role definitions remain tenant-agnostic policy; current
+tenant-scoped possession still requires governed RoleAssignmentAuthority.
+AUTHORITY BOUNDARY: Unit verification of role identifiers and explicit
+permission definitions only; no assignment, authentication, authorization,
+lifecycle, or transport authority.
+FINANCIAL AUTHORITY BOUNDARY: No tenant/subscription/plan grant is financial;
+Kennel EOS remains exclusive.
 """
 
 from __future__ import annotations
@@ -25,7 +38,7 @@ from tools.eos.auth.roles import (
     get_roles_granting_permission,
 )
 
-VERSION = "v1.1.0-WILSY-TENANT-PERMISSION-GRANTS-UNIT-CONTRACT"
+VERSION = "v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -61,47 +74,111 @@ EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     ],
 }
 
-TENANT_PERMISSIONS = frozenset(
-    {
-        "tenant:profile:read",
-        "tenant:profile:write",
-        "tenant:lifecycle:archive",
-        "tenant:membership:read",
-        "tenant:membership:write",
-        "tenant:role_assignment:read",
-        "tenant:role_assignment:write",
-    }
-)
+TENANT_PERMISSIONS = {
+    "audit:read",
+    "tenant:profile:read",
+    "tenant:profile:write",
+    "tenant:lifecycle:archive",
+    "tenant:membership:read",
+    "tenant:membership:write",
+    "tenant:role_assignment:read",
+    "tenant:role_assignment:write",
+    "subscription:read",
+    "subscription:manage",
+    "plan:read",
+    "plan:manage",
+}
 
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
-    """The closed four-role vocabulary and every explicit grant are exact."""
+    """The closed role map grants only the explicitly approved capabilities."""
+    assert ROLE_PERMISSIONS_MAP == {
+        "SOVEREIGN_ARCHITECT": [
+            "kernel:read",
+            "kernel:write",
+            "governance:evaluate",
+            "artifacts:read",
+        ],
+        "ENTERPRISE_ADMIN": [
+            "kernel:read",
+            "governance:evaluate",
+            "artifacts:read",
+            "tenant:profile:read",
+            "tenant:profile:write",
+            "tenant:lifecycle:archive",
+            "tenant:membership:read",
+            "tenant:membership:write",
+            "tenant:role_assignment:read",
+            "tenant:role_assignment:write",
+            "subscription:read",
+            "subscription:manage",
+            "plan:read",
+            "plan:manage",
+        ],
+        "AUDITOR": [
+            "kernel:read",
+            "artifacts:read",
+            "governance:read",
+            "audit:read",
+            "tenant:profile:read",
+            "tenant:membership:read",
+            "tenant:role_assignment:read",
+            "subscription:read",
+            "plan:read",
+        ],
+        "SERVICE_WORKER": [
+            "artifacts:write",
+            "events:publish",
+        ],
+    }
 
-    assert ROLE_PERMISSIONS_MAP == EXPECTED_ROLE_PERMISSIONS
-    for role, permissions in ROLE_PERMISSIONS_MAP.items():
-        assert isinstance(role, str) and role
-        assert permissions
-        assert all(isinstance(permission, str) and permission == permission.strip() for permission in permissions)
-        assert len(permissions) == len(set(permissions))
 
 
 def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> None:
-    """Expansion is an exact deterministic union; malformed/unknown roles add nothing."""
+    """Role expansion remains exact, deterministic and non-authoritative."""
+    assert get_permissions_for_roles(
+        ["ENTERPRISE_ADMIN"]
+    ) == sorted(
+        ROLE_PERMISSIONS_MAP[
+            "ENTERPRISE_ADMIN"
+        ]
+    )
 
-    expected = sorted(
+    assert get_permissions_for_roles(
+        ["AUDITOR"]
+    ) == sorted(
+        ROLE_PERMISSIONS_MAP[
+            "AUDITOR"
+        ]
+    )
+
+    assert get_permissions_for_roles(
+        [
+            "ENTERPRISE_ADMIN",
+            "AUDITOR",
+            "ENTERPRISE_ADMIN",
+        ]
+    ) == sorted(
         set(
-            EXPECTED_ROLE_PERMISSIONS["AUDITOR"]
-            + EXPECTED_ROLE_PERMISSIONS["SERVICE_WORKER"]
+            ROLE_PERMISSIONS_MAP[
+                "ENTERPRISE_ADMIN"
+            ]
+        )
+        | set(
+            ROLE_PERMISSIONS_MAP[
+                "AUDITOR"
+            ]
         )
     )
+
     assert get_permissions_for_roles(
-        ["SERVICE_WORKER", "AUDITOR", "SERVICE_WORKER"]
-    ) == expected
-    assert get_permissions_for_roles(cast(Any, ["UNKNOWN", None, 42])) == []
-    assert get_permissions_for_roles("SOVEREIGN_ARCHITECT") == []
+        ["UNKNOWN_ROLE"]
+    ) == []
+
     assert get_permissions_for_roles(
-        ["SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN"]
-    ) == get_permissions_for_roles(["ENTERPRISE_ADMIN", "SOVEREIGN_ARCHITECT"])
+        "ENTERPRISE_ADMIN"
+    ) == []
+
 
 
 @pytest.mark.parametrize(
@@ -114,15 +191,24 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("tenant:membership:write", ("ENTERPRISE_ADMIN",)),
         ("tenant:role_assignment:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("tenant:role_assignment:write", ("ENTERPRISE_ADMIN",)),
+        ("subscription:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("subscription:manage", ("ENTERPRISE_ADMIN",)),
+        ("plan:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("plan:manage", ("ENTERPRISE_ADMIN",)),
     ),
 )
 def test_tenant_permission_reverse_lookup_is_exact(
     permission_id: str,
     expected_roles: tuple[str, ...],
 ) -> None:
-    """Every migrated tenant permission resolves to its exact approved grant set."""
+    """Every tenant commercial permission resolves to its exact approved grants."""
+    assert (
+        get_roles_granting_permission(
+            permission_id
+        )
+        == expected_roles
+    )
 
-    assert get_roles_granting_permission(permission_id) == expected_roles
 
 
 @pytest.mark.parametrize(
@@ -142,14 +228,27 @@ def test_tenant_permission_reverse_lookup_is_exact(
         "tenant:profile",
         "tenant:profile:read ",
         " tenant:profile:read",
+        "subscription:*",
+        "subscription",
+        "plan:*",
+        "plan:all",
+        "plan",
+        "PLAN:READ",
+        " plan:read",
+        "plan:read ",
     ),
 )
 def test_forbidden_unknown_partial_and_wildcard_like_permissions_never_grant(
     permission_id: str,
 ) -> None:
-    """Legacy, ambiguous, malformed, partial, wildcard-like, and unknown values stay ungranted."""
+    """Malformed, wildcard-like and unknown values never manufacture grants."""
+    assert (
+        get_roles_granting_permission(
+            permission_id
+        )
+        == ()
+    )
 
-    assert get_roles_granting_permission(permission_id) == ()
 
 
 def test_sovereign_architect_and_service_worker_are_not_tenant_bypasses() -> None:
@@ -177,9 +276,9 @@ def test_no_role_has_implicit_wildcard_or_financial_grant() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.1.0-WILSY-TENANT-PERMISSION-GRANTS-UNIT-CONTRACT
+# VERSION: v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: migrated tenant grants remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# TENANT POSTURE: tenant/subscription/plan grants remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

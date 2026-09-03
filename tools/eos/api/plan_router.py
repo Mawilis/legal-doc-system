@@ -1,279 +1,800 @@
-# -*- coding: utf-8 -*-
-"""
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – EOS KENNEL PLAN API ROUTER (FIXED)                                                                 ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ FILE:           tools/eos/api/plan_router.py                                                                    ║
-║ VERSION:        v1.0.1-FIXED                                                                                   ║
-║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
-║ EPITOME:        Fixed DELETE endpoint: added response_model=None to satisfy 204 No Content rule.              ║
-║ CLASSIFICATION: Production Artifact                                                                             ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 🔧 CHANGE LOG:                                                                                                  ║
-║   2026-08-19 v1.0.1-FIXED – Added response_model=None to DELETE endpoint.                                      ║
-║   2026-08-19 v1.0.0-INSTITUTIONAL – Initial release.                                                          ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
-║ PORT:          9095                                                                                             ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+"""TITLE: WILSY OS Plan HTTP Authority Router.
+VERSION: v1.2.0-EXACT-TENANT-REGISTRY-SCOPE
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Binds private Plan catalogue HTTP access to exact current tenant
+permission authority before PlanRegistry access.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/plan_router.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
+CERTIFICATION/UPDATE DATE: 2026-09-03.
+CHANGELOG:
+    v1.2.0-EXACT-TENANT-REGISTRY-SCOPE opts private list/get/update/archive into
+    PlanRegistry exact-tenant scope so tenantless/global catalogue truth
+    cannot cross the authenticated private tenant boundary.
+    v1.1.2-PLAN-HTTP-RESPONSE-BOUNDARY extends fail-closed evidence handling across the complete
+    institutional response-formatting and JSON serialization boundary.
+    v1.1.1-PLAN-HTTP-AUTHORITY-HARDENING bounds Plan-not-found responses, contains
+    evidence serialization failure as persistence-unavailable, closes
+    setup/failure diagnostic edges, and adopts the current HTTP 422
+    Starlette status constant.
+    v1.1.0-PLAN-HTTP-AUTHORITY replaces raw transport-header forwarding with
+    RequirePermission plan:read/plan:manage, membership-admitted tenant scope,
+    pre-Registry body-tenant containment, bounded persistence failures, and
+    non-leaking private catalogue semantics.
+    v1.0.1-FIXED added response_model=None for HTTP 204 archive responses.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credential, role, permission, tenant, catalogue,
+or persistence diagnostics are logged or returned as authority evidence.
+TENANT BOUNDARY: Every route derives scope only from SovereignIdentity returned
+by RequirePermission after exact ACTIVE membership and role-assignment proof.
+Caller tenant fields are never sovereign authority and cannot redirect writes.
+AUTHORITY BOUNDARY: This router owns HTTP admission and error translation only.
+PlanRegistry owns catalogue persistence; PlanEntity owns commercial value truth.
+FINANCIAL AUTHORITY BOUNDARY: Plan management is commercial catalogue authority
+only. It cannot approve, release, execute, settle, transfer, collect, or infer
+payment. Kennel EOS remains the exclusive financial execution authority.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, status, Header, Request, Query, Path, Body
+from typing import Any, NoReturn
 
-# ─── Institutional Imports ────────────────────────────────────────────────────
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    status,
+)
+
 from .responses import format_response
-from tools.eos.saas.billing.plan_registry import PlanRegistry
-from tools.eos.saas.domain.plan import PlanEntity, PlanTiers
+from tools.eos.auth.authorization import (
+    RequirePermission,
+)
+from tools.eos.auth.identity import (
+    SovereignIdentity,
+)
+from tools.eos.saas.billing.plan_registry import (
+    PlanRegistry,
+)
+from tools.eos.saas.domain.plan import (
+    PlanTiers,
+)
 
-logger = logging.getLogger("WilsyOS.API.PlanRouter")
 
-# ─── Router Instantiation ─────────────────────────────────────────────────────
-plan_router = APIRouter(prefix="/api/plans", tags=["Plan Management"])
+VERSION = "v1.2.0-EXACT-TENANT-REGISTRY-SCOPE"
 
-# ─── Helper: Extract Tenant ID from Headers (for isolation) ──────────────────
-def _extract_request_tenant_id(x_tenant_id: Optional[str] = Header(None)) -> Optional[str]:
-    return x_tenant_id if x_tenant_id else None
+PLAN_READ_PERMISSION = "plan:read"
+PLAN_MANAGE_PERMISSION = "plan:manage"
 
-# ─── Endpoint: List Plans ────────────────────────────────────────────────────
+PLAN_READ_AUTHORITY = RequirePermission(
+    PLAN_READ_PERMISSION
+)
+
+PLAN_MANAGE_AUTHORITY = RequirePermission(
+    PLAN_MANAGE_PERMISSION
+)
+
+_CREATE_REQUIRED_FIELDS = (
+    "name",
+    "price",
+    "currency",
+    "billingFrequency",
+    "planType",
+    "idempotencyKey",
+)
+
+_TENANT_PAYLOAD_FIELDS = (
+    "tenantId",
+    "tenant_id",
+)
+
+logger = logging.getLogger(
+    "WilsyOS.API.PlanRouter"
+)
+
+plan_router = APIRouter(
+    prefix="/api/plans",
+    tags=["Plan Management"],
+)
+
+
+def _authorized_tenant_id(
+    identity: SovereignIdentity,
+) -> str:
+    """Return only membership-admitted tenant scope or fail closed."""
+    tenant_id = identity.tenant_id
+
+    if (
+        not isinstance(tenant_id, str)
+        or not tenant_id
+        or tenant_id != tenant_id.strip()
+    ):
+        raise HTTPException(
+            status_code=
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error":
+                    "PLAN_AUTHORITY_UNAVAILABLE"
+            },
+        )
+
+    return tenant_id
+
+
+def _tenant_scope_mismatch() -> NoReturn:
+    """Reject body-directed cross-tenant scope before Registry access."""
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "error":
+                "PLAN_TENANT_SCOPE_MISMATCH"
+        },
+    )
+
+
+def _bind_create_tenant(
+    payload: dict[str, Any],
+    tenant_id: str,
+) -> dict[str, Any]:
+    """Normalize create payload to the one authorized tenant."""
+    safe = dict(payload)
+
+    for field_name in _TENANT_PAYLOAD_FIELDS:
+        if (
+            field_name in safe
+            and safe[field_name] != tenant_id
+        ):
+            _tenant_scope_mismatch()
+
+    safe.pop(
+        "tenant_id",
+        None,
+    )
+
+    safe["tenantId"] = tenant_id
+
+    return safe
+
+
+def _strip_update_tenant(
+    payload: dict[str, Any],
+    tenant_id: str,
+) -> dict[str, Any]:
+    """Validate tenant aliases then remove tenant ownership from mutation data."""
+    safe = dict(payload)
+
+    for field_name in _TENANT_PAYLOAD_FIELDS:
+        if (
+            field_name in safe
+            and safe[field_name] != tenant_id
+        ):
+            _tenant_scope_mismatch()
+
+    safe.pop(
+        "tenantId",
+        None,
+    )
+
+    safe.pop(
+        "tenant_id",
+        None,
+    )
+
+    return safe
+
+
+def _validate_create_payload(
+    payload: dict[str, Any],
+) -> None:
+    """Validate only exact HTTP-visible PlanRegistry input vocabulary."""
+    for field_name in _CREATE_REQUIRED_FIELDS:
+        if field_name not in payload:
+            raise HTTPException(
+                status_code=
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={
+                    "error":
+                        "MISSING_FIELD",
+                    "field":
+                        field_name,
+                },
+            )
+
+    raw_plan_type = payload.get(
+        "planType"
+    )
+
+    if not isinstance(
+        raw_plan_type,
+        str,
+    ):
+        raise HTTPException(
+            status_code=
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={
+                "error":
+                    "INVALID_PLAN_TYPE"
+            },
+        )
+
+    try:
+        PlanTiers(
+            raw_plan_type.upper()
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={
+                "error":
+                    "INVALID_PLAN_TYPE",
+                "valid": [
+                    item.value
+                    for item in PlanTiers
+                ],
+            },
+        ) from error
+
+
+def _raise_persistence_failure(
+    operation: str,
+    error: Exception,
+) -> NoReturn:
+    """Translate unexpected Registry failure without leaking diagnostics."""
+    logger.error(
+        "[PLAN_PERSISTENCE_FAILURE]"
+        " operation=%s type=%s",
+        operation,
+        type(error).__name__,
+    )
+
+    raise HTTPException(
+        status_code=
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "error":
+                "PLAN_PERSISTENCE_UNAVAILABLE"
+        },
+    ) from error
+
+
+def _create_conflict(
+    error_text: str,
+) -> bool:
+    """Recognize only observed deterministic catalogue-conflict results."""
+    return (
+        error_text
+        == "Duplicate plan catalogue key"
+        or (
+            error_text.startswith(
+                "Idempotency key '"
+            )
+            and error_text.endswith(
+                "' already exists"
+            )
+        )
+        or (
+            error_text.startswith(
+                "Plan ID '"
+            )
+            and error_text.endswith(
+                "' already exists"
+            )
+        )
+    )
+
+
+def _raise_result_failure(
+    result: dict[str, Any],
+    *,
+    operation: str,
+) -> NoReturn:
+    """Map only explicit known result contracts; unknown results become 503."""
+    raw_error = result.get(
+        "error"
+    )
+
+    error_text = (
+        raw_error
+        if isinstance(
+            raw_error,
+            str,
+        )
+        else ""
+    )
+
+    if operation == "CREATE":
+        missing_prefix = (
+            "Missing required field: "
+        )
+
+        if error_text.startswith(
+            missing_prefix
+        ):
+            field_name = error_text[
+                len(
+                    missing_prefix
+                ):
+            ]
+
+            if (
+                field_name
+                in _CREATE_REQUIRED_FIELDS
+            ):
+                raise HTTPException(
+                    status_code=
+                        status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail={
+                        "error":
+                            "MISSING_FIELD",
+                        "field":
+                            field_name,
+                    },
+                )
+
+        if error_text.startswith(
+            "Invalid planType: "
+        ):
+            raise HTTPException(
+                status_code=
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={
+                    "error":
+                        "INVALID_PLAN_TYPE"
+                },
+            )
+
+        if error_text.startswith(
+            "Invalid billingFrequency: "
+        ):
+            raise HTTPException(
+                status_code=
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={
+                    "error":
+                        "INVALID_BILLING_FREQUENCY"
+                },
+            )
+
+        if _create_conflict(
+            error_text
+        ):
+            raise HTTPException(
+                status_code=
+                    status.HTTP_409_CONFLICT,
+                detail={
+                    "error":
+                        "PLAN_CATALOGUE_CONFLICT"
+                },
+            )
+
+    if (
+        operation == "UPDATE"
+        and error_text
+        == "Plan not found"
+    ):
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail={
+                "error":
+                    "PLAN_NOT_FOUND"
+            },
+        )
+
+    logger.error(
+        "[PLAN_REGISTRY_RESULT_FAILURE]"
+        " operation=%s",
+        operation,
+    )
+
+    raise HTTPException(
+        status_code=
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "error":
+                "PLAN_PERSISTENCE_UNAVAILABLE"
+        },
+    )
+
+
 @plan_router.get("")
 async def list_plans(
     request: Request,
-    x_tenant_id: Optional[str] = Header(None),
-    active: Optional[bool] = Query(None, description="Filter by active status"),
-    plan_type: Optional[str] = Query(None, description="Filter by plan type (FREE, PROFESSIONAL, ENTERPRISE, etc.)"),
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    identity: SovereignIdentity = Depends(
+        PLAN_READ_AUTHORITY
+    ),
+    active: bool | None = Query(
+        None,
+        description="Filter by active status",
+    ),
+    plan_type: str | None = Query(
+        None,
+        description="Filter by canonical Plan tier",
+    ),
+    page: int = Query(
+        1,
+        ge=1,
+    ),
+    limit: int = Query(
+        20,
+        ge=1,
+        le=100,
+    ),
 ) -> Any:
-    """
-    Retrieve a paginated list of plans with optional filters.
-    """
-    try:
-        # Convert plan_type to enum if provided
-        plan_type_enum = None
-        if plan_type:
-            try:
-                plan_type_enum = PlanTiers[plan_type.upper()]
-            except KeyError:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail={"error": "INVALID_PLAN_TYPE", "valid": [p.value for p in PlanTiers]}
-                )
+    """List only catalogue truth inside the current authorized tenant."""
+    tenant_id = _authorized_tenant_id(
+        identity
+    )
 
+    plan_type_enum = None
+
+    if plan_type is not None:
+        try:
+            plan_type_enum = PlanTiers(
+                plan_type.upper()
+            )
+        except ValueError as error:
+            raise HTTPException(
+                status_code=
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={
+                    "error":
+                        "INVALID_PLAN_TYPE",
+                    "valid": [
+                        item.value
+                        for item in PlanTiers
+                    ],
+                },
+            ) from error
+
+    try:
         result = PlanRegistry.list(
-            tenant_id=x_tenant_id,
+            tenant_id=tenant_id,
+            exact_tenant=True,
             active=active,
             plan_type=plan_type_enum,
             page=page,
-            limit=limit
+            limit=limit,
         )
-        return format_response(
-            data={
-                "plans": [p.to_dict() for p in result["items"]],
-                "total": result["total"],
-                "page": page,
-                "limit": limit,
-                "pages": result["pages"],
-            },
-            message="Plans retrieved successfully.",
-            execution_id=getattr(request.state, "execution_id", "PLAN-LIST")
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("💥 [PLAN_LIST_EXCEPTION]: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "PLAN_LIST_FAILED", "message": str(e)}
+    except Exception as error:
+        _raise_persistence_failure(
+            "LIST",
+            error,
         )
 
-# ─── Endpoint: Get Single Plan ──────────────────────────────────────────────
+    try:
+        response_data = {
+            "plans": [
+                plan.to_dict()
+                for plan
+                in result["items"]
+            ],
+            "total":
+                result["total"],
+            "page":
+                page,
+            "limit":
+                limit,
+            "pages":
+                result["pages"],
+        }
+    except Exception as error:
+        _raise_persistence_failure(
+            "LIST_EVIDENCE",
+            error,
+        )
+
+    try:
+        return format_response(
+            data=response_data,
+            message=
+                "Plans retrieved successfully.",
+            execution_id=getattr(
+                request.state,
+                "execution_id",
+                "PLAN-LIST",
+            ),
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "LIST_RESPONSE",
+            error,
+        )
+
+
 @plan_router.get("/{plan_id}")
 async def get_plan(
     request: Request,
-    plan_id: str = Path(..., description="Plan ID"),
-    x_tenant_id: Optional[str] = Header(None),
+    plan_id: str = Path(
+        ...,
+        description="Plan ID",
+    ),
+    identity: SovereignIdentity = Depends(
+        PLAN_READ_AUTHORITY
+    ),
 ) -> Any:
-    """
-    Retrieve a single plan by its ID.
-    """
+    """Read one Plan only inside current authorized tenant scope."""
+    tenant_id = _authorized_tenant_id(
+        identity
+    )
+
     try:
-        plan = PlanRegistry.get(plan_id, tenant_id=x_tenant_id)
-        if not plan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"error": "PLAN_NOT_FOUND", "plan_id": plan_id}
-            )
-        return format_response(
-            data={"plan": plan.to_dict()},
-            message="Plan retrieved successfully.",
-            execution_id=getattr(request.state, "execution_id", "PLAN-GET")
+        plan = PlanRegistry.get(
+            plan_id,
+            tenant_id=tenant_id,
+            exact_tenant=True,
         )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("💥 [PLAN_GET_EXCEPTION]: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "PLAN_GET_FAILED", "message": str(e)}
+    except Exception as error:
+        _raise_persistence_failure(
+            "GET",
+            error,
         )
 
-# ─── Endpoint: Create Plan ──────────────────────────────────────────────────
-@plan_router.post("", status_code=status.HTTP_201_CREATED)
+    if plan is None:
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail={
+                "error":
+                    "PLAN_NOT_FOUND"
+            },
+        )
+
+    try:
+        plan_data = (
+            plan.to_dict()
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "GET_EVIDENCE",
+            error,
+        )
+
+    try:
+        return format_response(
+            data={
+                "plan":
+                    plan_data
+            },
+            message=
+                "Plan retrieved successfully.",
+            execution_id=getattr(
+                request.state,
+                "execution_id",
+                "PLAN-GET",
+            ),
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "GET_RESPONSE",
+            error,
+        )
+
+
+@plan_router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_plan(
     request: Request,
-    payload: Dict[str, Any] = Body(..., description="Plan creation payload"),
-    x_tenant_id: Optional[str] = Header(None),
+    payload: dict[str, Any] = Body(
+        ...,
+        description="Plan creation payload",
+    ),
+    identity: SovereignIdentity = Depends(
+        PLAN_MANAGE_AUTHORITY
+    ),
 ) -> Any:
-    """
-    Create a new plan.
+    """Create Plan truth only inside current authorized tenant scope."""
+    tenant_id = _authorized_tenant_id(
+        identity
+    )
 
-    Required fields:
-        - name (str) – Plan name.
-        - price (float) – Plan price.
-        - currency (str) – ISO 4217.
-        - billingFrequency (str) – monthly, quarterly, annual, one_time.
-        - planType (str) – FREE, PROFESSIONAL, ENTERPRISE, SOVEREIGN, ULTRA, FOUNDER_ENTERPRISE.
-        - idempotencyKey (str) – unique identifier.
+    safe_payload = _bind_create_tenant(
+        payload,
+        tenant_id,
+    )
 
-    Optional:
-        - description (str)
-        - trialDays (int)
-        - features (list)
-        - active (bool)
-        - tenantId (str) – if set, restricts plan to tenant.
-        - metadata (dict)
-        - tags (list)
-    """
+    _validate_create_payload(
+        safe_payload
+    )
+
     try:
-        required = ["name", "price", "currency", "billingFrequency", "planType", "idempotencyKey"]
-        for field in required:
-            if field not in payload:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail={"error": "MISSING_FIELD", "field": field}
-                )
+        result = PlanRegistry.create(
+            safe_payload,
+            tenant_id=tenant_id,
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "CREATE",
+            error,
+        )
 
-        # Validate plan type
-        plan_type_str = payload["planType"].upper()
-        try:
-            plan_type_enum = PlanTiers(plan_type_str)
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={"error": "INVALID_PLAN_TYPE", "valid": [p.value for p in PlanTiers]}
-            )
+    if not result.get(
+        "success"
+    ):
+        _raise_result_failure(
+            result,
+            operation="CREATE",
+        )
 
-        # Delegate to registry
-        result = PlanRegistry.create(payload, tenant_id=x_tenant_id)
-        if not result.get("success"):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={"error": "PLAN_CREATE_FAILED", "message": result.get("error", "Unknown error")}
-            )
-
+    try:
         plan = result["plan"]
-        logger.info("✅ [PLAN_CREATED] ID: %s, Name: %s", plan.plan_id, plan.name)
-        return format_response(
-            data={"plan": plan.to_dict()},
-            message="Plan created successfully.",
-            execution_id=getattr(request.state, "execution_id", "PLAN-CREATE"),
-            status_code=status.HTTP_201_CREATED
+        plan_data = (
+            plan.to_dict()
         )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("💥 [PLAN_CREATE_EXCEPTION]: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "PLAN_CREATE_FAILED", "message": str(e)}
+    except Exception as error:
+        _raise_persistence_failure(
+            "CREATE_EVIDENCE",
+            error,
         )
 
-# ─── Endpoint: Update Plan ──────────────────────────────────────────────────
+    try:
+        return format_response(
+            data={
+                "plan":
+                    plan_data
+            },
+            message=
+                "Plan created successfully.",
+            execution_id=getattr(
+                request.state,
+                "execution_id",
+                "PLAN-CREATE",
+            ),
+            status_code=
+                status.HTTP_201_CREATED,
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "CREATE_RESPONSE",
+            error,
+        )
+
+
 @plan_router.put("/{plan_id}")
 async def update_plan(
     request: Request,
-    plan_id: str = Path(..., description="Plan ID"),
-    payload: Dict[str, Any] = Body(..., description="Plan update payload"),
-    x_tenant_id: Optional[str] = Header(None),
+    plan_id: str = Path(
+        ...,
+        description="Plan ID",
+    ),
+    payload: dict[str, Any] = Body(
+        ...,
+        description="Plan update payload",
+    ),
+    identity: SovereignIdentity = Depends(
+        PLAN_MANAGE_AUTHORITY
+    ),
 ) -> Any:
-    """
-    Update an existing plan.
-    """
+    """Update bounded Plan truth only inside current authorized tenant scope."""
+    tenant_id = _authorized_tenant_id(
+        identity
+    )
+
+    safe_payload = _strip_update_tenant(
+        payload,
+        tenant_id,
+    )
+
     try:
-        result = PlanRegistry.update(plan_id, payload, tenant_id=x_tenant_id)
-        if not result.get("success"):
-            error = result.get("error", "Unknown error")
-            if "not found" in error.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"error": "PLAN_NOT_FOUND", "plan_id": plan_id}
-                )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error": "PLAN_UPDATE_FAILED", "message": error}
-            )
-        plan = result["plan"]
-        logger.info("🔄 [PLAN_UPDATED] ID: %s", plan_id)
-        return format_response(
-            data={"plan": plan.to_dict()},
-            message="Plan updated successfully.",
-            execution_id=getattr(request.state, "execution_id", "PLAN-UPDATE")
+        result = PlanRegistry.update(
+            plan_id,
+            safe_payload,
+            tenant_id=tenant_id,
+            exact_tenant=True,
         )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("💥 [PLAN_UPDATE_EXCEPTION]: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "PLAN_UPDATE_FAILED", "message": str(e)}
+    except Exception as error:
+        _raise_persistence_failure(
+            "UPDATE",
+            error,
         )
 
-# ─── Endpoint: Archive Plan (FIXED: added response_model=None) ──────────────
+    if not result.get(
+        "success"
+    ):
+        _raise_result_failure(
+            result,
+            operation="UPDATE",
+        )
+
+    try:
+        plan = result["plan"]
+        plan_data = (
+            plan.to_dict()
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "UPDATE_EVIDENCE",
+            error,
+        )
+
+    try:
+        return format_response(
+            data={
+                "plan":
+                    plan_data
+            },
+            message=
+                "Plan updated successfully.",
+            execution_id=getattr(
+                request.state,
+                "execution_id",
+                "PLAN-UPDATE",
+            ),
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "UPDATE_RESPONSE",
+            error,
+        )
+
+
 @plan_router.delete(
     "/{plan_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_model=None  # ✅ Critical fix: No response body for 204
+    status_code=
+        status.HTTP_204_NO_CONTENT,
+    response_model=None,
 )
 async def archive_plan(
     request: Request,
-    plan_id: str = Path(..., description="Plan ID"),
-    x_tenant_id: Optional[str] = Header(None),
+    plan_id: str = Path(
+        ...,
+        description="Plan ID",
+    ),
+    identity: SovereignIdentity = Depends(
+        PLAN_MANAGE_AUTHORITY
+    ),
 ) -> None:
-    """
-    Archive (soft‑delete) a plan.
-    Returns 204 No Content on success.
-    """
+    """Archive Plan lifecycle truth only after current manage authority."""
+    del request
+
+    tenant_id = _authorized_tenant_id(
+        identity
+    )
+
     try:
-        success = PlanRegistry.archive(plan_id, tenant_id=x_tenant_id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"error": "PLAN_NOT_FOUND", "plan_id": plan_id}
-            )
-        logger.info("🗄️ [PLAN_ARCHIVED] ID: %s", plan_id)
-        return None  # FastAPI will return 204 with no body
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("💥 [PLAN_ARCHIVE_EXCEPTION]: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "PLAN_ARCHIVE_FAILED", "message": str(e)}
+        success = PlanRegistry.archive(
+            plan_id,
+            tenant_id=tenant_id,
+            exact_tenant=True,
+        )
+    except Exception as error:
+        _raise_persistence_failure(
+            "ARCHIVE",
+            error,
         )
 
-"""
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLAN API ROUTER (FIXED)
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.0.1-FIXED
-Fixes:           Added response_model=None to DELETE endpoint for 204 compliance.
-Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Endpoints:       GET /plans, GET /plans/{id}, POST /plans, PUT /plans/{id}, DELETE /plans/{id}
-Pending Work:    None – fully production‑ready.
-════════════════════════════════════════════════════════════════════════════════
-"""
+    if not success:
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail={
+                "error":
+                    "PLAN_NOT_FOUND"
+            },
+        )
+
+    return None
+
+
+__all__ = [
+    "VERSION",
+    "PLAN_READ_PERMISSION",
+    "PLAN_MANAGE_PERMISSION",
+    "plan_router",
+]
+
+
+# ARTIFACT: tools/eos/api/plan_router.py
+# VERSION: v1.2.0-EXACT-TENANT-REGISTRY-SCOPE
+# AUTHORITY BOUNDARY: exact current permission admission plus bounded HTTP translation only
+# TENANT POSTURE: membership-admitted identity tenant exclusively scopes private catalogue access
+# FAIL-CLOSED POSTURE: raw projections, scope mismatch, unknown Registry failures and evidence outages deny
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

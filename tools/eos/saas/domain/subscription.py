@@ -1,25 +1,78 @@
 # -*- coding: utf-8 -*-
 """
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN SUBSCRIPTION DOMAIN MODEL (PYTHON) – FINAL FIX                                          ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ FILE:           tools/eos/saas/domain/subscription.py                                                          ║
-║ VERSION:        v1.0.3-FIXED                                                                                   ║
-║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
-║ EPITOME:        Added UPDATE to AuditAction; default action in AuditEntry.from_dict to CREATE if missing.     ║
-║ CLASSIFICATION: Production Artifact                                                                             ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 🔧 CHANGE LOG:                                                                                                  ║
-║   2026-08-19 v1.0.3-FIXED – Added UPDATE to AuditAction; default action in from_dict.                         ║
-║   2026-08-19 v1.0.2-FIXED – Field ordering fixed; to_dict methods added; from_dict improved.                 ║
-║   2026-08-19 v1.0.1-WILSY-IDENTITY – Added import json and WILSYSUB- prefix.                                  ║
-║   2026-08-19 v1.0.0-INSTITUTIONAL – Initial release.                                                          ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
-║ CRYPTO:        SHA3‑512 for proof generation                                                                   ║
-║ IDENTITY:      WILSYSUB-XXXXXXXX (8‑char hex)                                                                  ║
-║ INTEGRATION:   Used by subscription_registry and subscription_router.                                          ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+TITLE:
+    WILSY OS — Sovereign Subscription Catalogue Snapshot Domain
+
+VERSION:
+    v1.1.0-CATALOGUE-PROVENANCE
+
+AUTHORITY:
+    Wilsy OS Core Governance
+
+PURPOSE:
+    Preserve immutable subscription lifecycle truth while binding each current
+    commercial plan snapshot to the canonical Plan catalogue coordinate from
+    which that snapshot was derived.
+
+EPITOME:
+    Subscription evidence may remember canonical catalogue truth, but it may
+    never manufacture or replace Plan catalogue authority.
+
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/subscription.py
+
+OWNERSHIP / COLLABORATION:
+    Wilson Khanyezi / Wilsy OS Core Engineering.
+    PlanEntity remains sovereign commercial catalogue truth.
+    PlanRegistry remains canonical catalogue persistence authority.
+    SubscriptionRegistry remains subscription persistence authority.
+    Subscription HTTP authorization remains outside this domain.
+
+CERTIFICATION / UPDATE DATE:
+    2026-09-03
+
+CHANGELOG:
+    2026-09-03 v1.1.0-CATALOGUE-PROVENANCE
+        - Adds explicit optional plan_catalogue_version provenance.
+        - Preserves None for legacy subscriptions where catalogue provenance
+          was never persisted; no historical catalogue version is fabricated.
+        - Deep-freezes the plan-feature snapshot inside SubscriptionEntity.
+        - Binds plan name, features and catalogue version into subscription
+          SHA3-512 proof material.
+        - Removes proof-time wall-clock material so identical canonical
+          subscription state produces deterministic proof evidence.
+        - Projects catalogue provenance through canonical serialization,
+          invoice seed and evidence-package surfaces.
+    2026-08-19 v1.0.3-FIXED
+        - Historical pre-provenance subscription domain baseline.
+
+COMPLIANCE:
+    POPIA section 19.
+    GDPR Article 32.
+    SOC 2 CC7.2.
+    ISO 27001-aligned commercial evidence integrity.
+
+SECURITY / PRIVACY POSTURE:
+    Contains subscription commercial/lifecycle evidence only. Catalogue
+    provenance is descriptive persisted truth and never authentication,
+    membership, permission, entitlement or financial-execution authority.
+
+TENANT BOUNDARY:
+    tenant_id is persisted subscription scope. This domain does not establish
+    tenant membership or authorize access to another tenant's subscription.
+
+AUTHORITY BOUNDARY:
+    Owns immutable subscription value and evidence semantics only. Canonical
+    sellable plan values remain owned by PlanEntity / PlanRegistry.
+
+FINANCIAL AUTHORITY BOUNDARY:
+    Subscription amount and billing configuration are commercial evidence only.
+    APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED.
+    Kennel EOS remains the exclusive financial execution authority.
+
+CONSTITUTION:
+    NO EVIDENCE = NO FACT.
+    Unknown legacy catalogue provenance remains None.
 """
 
 from __future__ import annotations
@@ -30,10 +83,61 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+
+VERSION = "v1.1.0-CATALOGUE-PROVENANCE"
 
 
 # ─── Helper ──────────────────────────────────────────────────────────────────
+
+def _canonical_plan_catalogue_version(
+    value: Any,
+) -> Optional[int]:
+    """Validate explicit catalogue provenance without inventing legacy truth."""
+    if value is None:
+        return None
+
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(
+            "plan_catalogue_version must be an integer or None"
+        )
+
+    if value < 1:
+        raise ValueError(
+            "plan_catalogue_version must be >= 1"
+        )
+
+    return value
+
+
+def _canonical_plan_features(
+    value: Any,
+) -> Tuple[str, ...]:
+    """Freeze one already-derived catalogue feature snapshot."""
+    if value is None:
+        return ()
+
+    if isinstance(value, str):
+        raise TypeError(
+            "plan_features must be a sequence of strings"
+        )
+
+    try:
+        values = tuple(value)
+    except TypeError as error:
+        raise TypeError(
+            "plan_features must be a sequence of strings"
+        ) from error
+
+    for item in values:
+        if not isinstance(item, str) or not item:
+            raise ValueError(
+                "plan_features entries must be non-empty strings"
+            )
+
+    return values
+
 
 def parse_datetime(val: Any) -> Optional[datetime]:
     """Parse a datetime from ISO string or return datetime if already one."""
@@ -157,6 +261,22 @@ def generate_proof(
         "kennelShard": subscription.get("kennel_shard", "EOS_PRIMARY"),
         "plan": subscription.get("plan", ""),
         "planId": subscription.get("plan_id", ""),
+        "planName": subscription.get("plan_name"),
+        "planFeatures": list(
+            _canonical_plan_features(
+                subscription.get(
+                    "plan_features",
+                    (),
+                )
+            )
+        ),
+        "planCatalogueVersion": (
+            _canonical_plan_catalogue_version(
+                subscription.get(
+                    "plan_catalogue_version"
+                )
+            )
+        ),
         "planRef": subscription.get("plan_ref"),
         "tier": subscription.get("tier", ""),
         "status": subscription.get("status", SubscriptionStatus.ACTIVE.value),
@@ -173,7 +293,6 @@ def generate_proof(
         "currentPeriodEnd": subscription.get("current_period_end", datetime.now(timezone.utc).isoformat()),
         "idempotencyKey": subscription.get("idempotency_key", ""),
         "sealNonce": subscription.get("seal_nonce", uuid.uuid4().hex),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
         "metadata": metadata or {},
     }
 
@@ -320,7 +439,8 @@ class SubscriptionEntity:
     billing_ref: Optional[str] = None
     plan_ref: Optional[str] = None
     plan_name: Optional[str] = None
-    plan_features: List[str] = field(default_factory=list)
+    plan_features: Tuple[str, ...] = field(default_factory=tuple)
+    plan_catalogue_version: Optional[int] = None
     tax_amount: float = 0.0
     collection_method: CollectionMethod = CollectionMethod.CHARGE_AUTOMATICALLY
     trial_end_date: Optional[datetime] = None
@@ -360,11 +480,36 @@ class SubscriptionEntity:
     tags: List[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        """Auto‑generate proof and merkle root if not set."""
+        """Canonicalize immutable catalogue snapshot and subscription evidence."""
+        object.__setattr__(
+            self,
+            "plan_features",
+            _canonical_plan_features(
+                self.plan_features
+            ),
+        )
+
+        object.__setattr__(
+            self,
+            "plan_catalogue_version",
+            _canonical_plan_catalogue_version(
+                self.plan_catalogue_version
+            ),
+        )
+
         if not self.proof_hash:
-            object.__setattr__(self, "proof_hash", self.generate_proof())
+            object.__setattr__(
+                self,
+                "proof_hash",
+                self.generate_proof(),
+            )
+
         if not self.merkle_root:
-            object.__setattr__(self, "merkle_root", self._compute_merkle_root())
+            object.__setattr__(
+                self,
+                "merkle_root",
+                self._compute_merkle_root(),
+            )
 
     def _compute_merkle_root(self) -> str:
         data = f"{self.tenant_id}|{self.proof_hash}|{self.seal_nonce}"
@@ -399,7 +544,8 @@ class SubscriptionEntity:
             "plan_id": self.plan_id,
             "plan_ref": self.plan_ref,
             "plan_name": self.plan_name,
-            "plan_features": self.plan_features,
+            "plan_features": list(self.plan_features),
+            "plan_catalogue_version": self.plan_catalogue_version,
             "billing_frequency": self.billing_frequency.value if isinstance(self.billing_frequency, BillingFrequency) else self.billing_frequency,
             "amount": self.amount,
             "tax_amount": self.tax_amount,
@@ -494,7 +640,14 @@ class SubscriptionEntity:
             billing_ref=data.get("billing_ref"),
             plan_ref=data.get("plan_ref"),
             plan_name=data.get("plan_name"),
-            plan_features=data.get("plan_features", []),
+            plan_features=_canonical_plan_features(
+                data.get("plan_features", ())
+            ),
+            plan_catalogue_version=(
+                _canonical_plan_catalogue_version(
+                    data.get("plan_catalogue_version")
+                )
+            ),
             tax_amount=float(data.get("tax_amount", 0)),
             collection_method=collection_method_enum,
             trial_end_date=parse_datetime(data.get("trial_end_date")),
@@ -536,12 +689,13 @@ class SubscriptionEntity:
             "tenantId": self.tenant_id,
             "kennelShard": self.kennel_shard,
             "planId": self.plan_id,
+            "planCatalogueVersion": self.plan_catalogue_version,
             "planName": self.plan_name or self.plan.value,
             "plan": self.plan.value,
             "planTier": self.plan.value,
             "tier": self.tier.value if self.tier else self.plan.value,
             "billingFrequency": self.billing_frequency.value,
-            "planFeatures": self.plan_features,
+            "planFeatures": list(self.plan_features),
             "amount": self.amount,
             "taxAmount": self.tax_amount,
             "currency": self.currency,
@@ -571,9 +725,10 @@ class SubscriptionEntity:
             "billingRef": self.billing_ref,
             "plan": self.plan.value,
             "planId": self.plan_id,
+            "planCatalogueVersion": self.plan_catalogue_version,
             "planRef": self.plan_ref,
             "planName": self.plan_name,
-            "planFeatures": self.plan_features,
+            "planFeatures": list(self.plan_features),
             "tier": self.tier.value if self.tier else None,
             "billingFrequency": self.billing_frequency.value,
             "billingMode": self.billing_mode,
@@ -622,17 +777,17 @@ class SubscriptionEntity:
         return package
 
 
-"""
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS SUBSCRIPTION DOMAIN (FINAL FIX)
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.0.3-FIXED
-Fixes:           Added UPDATE to AuditAction; default action in AuditEntry.from_dict.
-Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Crypto:          SHA3‑512 proof generation
-Identity:        WILSYSUB-XXXXXXXX
-Methods:         to_dict, from_dict, generate_proof, to_platform_invoice_seed, generate_evidence_package
-Pending Work:    None within this file.
-════════════════════════════════════════════════════════════════════════════════
-"""
+# =============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# =============================================================================
+# ARTIFACT: tools/eos/saas/domain/subscription.py
+# VERSION: v1.1.0-CATALOGUE-PROVENANCE
+# AUTHORITY BOUNDARY: Immutable subscription value, lifecycle and catalogue-
+# snapshot evidence only; PlanEntity/PlanRegistry remain canonical plan truth.
+# TENANT POSTURE: tenant_id is persisted subscription scope and never establishes
+# authentication, membership, role or permission authority.
+# FAIL-CLOSED POSTURE: Invalid catalogue-version coordinates and malformed
+# catalogue feature snapshots are rejected; unknown legacy provenance remains
+# explicit None and is never fabricated as current catalogue truth.
+# FINANCIAL EXECUTION AUTHORITY: NONE — Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
