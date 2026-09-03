@@ -1,32 +1,34 @@
 # -*- coding: utf-8 -*-
 """
 TITLE:
-    WILSY OS — Sovereign Plan Registry
+    WILSY OS — Sovereign Plan Registry — Real Mongo Persistence
 
 VERSION:
-    v1.0.3-DOMAIN-PRICE-PASSTHROUGH
+    v1.1.1-STORAGE-ENVELOPE-CAS
 
 AUTHORITY:
     Wilsy OS Core Governance
 
 PURPOSE:
-    Own the current canonical in-memory Plan catalogue registry and lifecycle
-    bridge while delegating commercial value validation to PlanEntity.
+    Own durable canonical Plan catalogue persistence and lifecycle orchestration
+    while delegating all commercial-state validation and evidence generation to
+    PlanEntity.
 
 EPITOME:
-    Registry orchestration must never destroy caller commercial precision before
-    the sovereign Plan Domain validates and canonicalizes that value.
+    Durable catalogue truth is accepted only when canonical PlanEntity evidence
+    hydrates successfully from MongoDB; persistence failure is never absence.
 
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/plan_registry.py
 
 OWNERSHIP:
-    Python EOS SaaS / Billing — Plan catalogue registry owner.
+    Python EOS SaaS / Billing — canonical Plan catalogue persistence owner.
 
 COLLABORATION:
-    PlanEntity owns commercial state validation and deterministic evidence.
-    PlanRegistry owns current catalogue registration/lifecycle orchestration.
-    Future durable Mongo persistence remains a separately certified phase.
+    PlanEntity owns commercial value validation, canonical state history,
+    deterministic proofs and audit evidence.
+    PlanRegistry owns catalogue persistence and lifecycle orchestration only.
+    Plan HTTP authorization remains a separately certified phase.
 
 CLASSIFICATION:
     Production Artifact
@@ -35,6 +37,25 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-09-03 v1.1.1-STORAGE-ENVELOPE-CAS
+        - Adds immutable Mongo identity plus monotonic _registry_revision
+          transport evidence for optimistic lifecycle mutation.
+        - Requires exact canonical PlanEntity serialization after removing only
+          declared Mongo transport fields.
+        - Rejects stale revision, replacement identity and competing persisted
+          fields before catalogue mutation can succeed.
+        - Gates successful lifecycle logging behind WILSY_MODEL_DEBUG.
+        - Closes the P2R1 storage/CAS/canonicalization/logging Codex findings.
+    2026-09-03 v1.1.0-PLAN-REAL-MONGO
+        - Replaces in-memory catalogue authority with direct PyMongo persistence.
+        - Persists canonical PlanEntity.to_dict() evidence without a second schema.
+        - Adds deterministic fail-closed Mongo index contracts and majority
+          read/write durability.
+        - Preserves global plan-id/idempotency uniqueness and existing
+          global-plan/tenant-scope catalogue semantics.
+        - Adds optimistic compare-and-swap lifecycle persistence.
+        - Makes persistence, hydration and index failures distinguishable from
+          genuine catalogue absence.
     2026-09-03 v1.0.3-DOMAIN-PRICE-PASSTHROUGH
         - Removes destructive Registry float coercion before PlanEntity price
           validation.
@@ -52,25 +73,27 @@ COMPLIANCE:
     POPIA §19 | GDPR §32 | SOC2 CC7.2 | ISO 27001
 
 SECURITY / PRIVACY:
-    No authentication authority is created here. Caller payload commercial
-    values are passed to the Plan Domain for fail-closed validation.
+    No authentication authority is created here. MongoDB is durable catalogue
+    evidence only. Caller commercial values remain subject to fail-closed
+    PlanEntity validation.
 
 TENANT BOUNDARY:
-    tenant_id is catalogue scope evidence only. It does not authenticate
-    membership, role, permission, entitlement or subscription access.
+    tenant_id is catalogue scope evidence only. A supplied tenant context may
+    view its own tenant-scoped plans plus global plans, matching the pre-Mongo
+    Registry contract. This does not authenticate membership, role, permission,
+    entitlement or subscription access.
 
 AUTHORITY BOUNDARY:
-    Registry creation/lifecycle establishes catalogue registry state only.
-    PlanEntity construction alone does not authorize publication outside the
-    Registry. No subscription or WILSY AI entitlement authority exists here.
+    Registry creation/lifecycle establishes catalogue state only. It cannot grant
+    subscription entitlement, WILSY AI access, membership, roles or permissions.
 
 FINANCIAL AUTHORITY:
-    NONE. Kennel EOS remains the exclusive payment, release and settlement
-    execution authority.
+    NONE. Kennel EOS remains the exclusive payment, release, settlement,
+    transfer and charge execution authority.
 
 PERSISTENCE POSTURE:
-    Current store is in-memory. Real-Mongo certification is NOT claimed by this
-    version.
+    REAL MONGODB. Required indexes and persisted PlanEntity evidence fail closed.
+    There is no in-memory authority fallback.
 
 PUBLIC API INTENT:
     PlanRegistry.create/get/list/update/archive/reactivate/health_check.
@@ -79,366 +102,1491 @@ PUBLIC API INTENT:
 from __future__ import annotations
 
 import logging
+import os
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional
+
+from pymongo import ASCENDING, MongoClient
+from pymongo.collection import Collection
+from pymongo.database import Database
+from pymongo.errors import ConfigurationError, DuplicateKeyError
+from pymongo.read_concern import ReadConcern
+from pymongo.write_concern import WriteConcern
 
 from ..domain.plan import (
-    PlanEntity,
-    PlanTiers,
-    PlanFrequency,
-    PlanStatus,
     AuditAction,
-    generate_plan_proof,
+    PlanEntity,
+    PlanFrequency,
+    PlanTiers,
 )
 
 logger = logging.getLogger("WilsyOS.PlanRegistry")
 
-PLAN_REGISTRY_VERSION = "v1.0.3-DOMAIN-PRICE-PASSTHROUGH"
+PLAN_REGISTRY_VERSION = "v1.1.1-STORAGE-ENVELOPE-CAS"
+
+_REGISTRY_REVISION_FIELD = "_registry_revision"
+
+_TRANSPORT_FIELDS = frozenset(
+    {
+        "_id",
+        _REGISTRY_REVISION_FIELD,
+    }
+)
+
+_DEBUG_LOGGING = (
+    os.getenv(
+        "WILSY_MODEL_DEBUG",
+        "0",
+    )
+    == "1"
+)
+
+
+def _debug_success(
+    event: str,
+    plan_id: str,
+) -> None:
+    """Emit bounded successful lifecycle telemetry only in explicit debug mode."""
+
+    if _DEBUG_LOGGING:
+        logger.info(
+            "[PLAN_REGISTRY] %s plan_id=%s",
+            event,
+            plan_id,
+        )
+
+_MONGO_URI = (
+    os.getenv("WILSY_PLAN_MONGO_URI")
+    or os.getenv("MONGODB_URI")
+    or "mongodb://127.0.0.1:27017/wilsy"
+)
+
+_MONGO_SERVER_SELECTION_MS = int(
+    os.getenv(
+        "WILSY_PLAN_MONGO_SERVER_SELECTION_MS",
+        "5000",
+    )
+)
+
+
+def _resolve_database(
+    client: MongoClient[Any],
+) -> Database[Any]:
+    configured = (
+        os.getenv("WILSY_PLAN_MONGO_DATABASE")
+        or ""
+    ).strip()
+
+    if configured:
+        return client[configured]
+
+    try:
+        return client.get_default_database()
+    except ConfigurationError:
+        return client["wilsy"]
+
+
+_mongo_client: MongoClient[Any] = MongoClient(
+    _MONGO_URI,
+    serverSelectionTimeoutMS=
+        _MONGO_SERVER_SELECTION_MS,
+    retryWrites=True,
+)
+
+_mongo_database = _resolve_database(
+    _mongo_client
+)
+
+plans_collection: Collection[dict[str, Any]] = (
+    _mongo_database.get_collection(
+        "plans",
+        write_concern=WriteConcern(
+            w="majority",
+            j=True,
+        ),
+        read_concern=ReadConcern(
+            "majority"
+        ),
+    )
+)
+
+_INDEX_CONTRACT: tuple[
+    tuple[
+        str,
+        list[
+            tuple[
+                str,
+                int,
+            ]
+        ],
+        bool,
+        Optional[
+            dict[
+                str,
+                Any,
+            ]
+        ],
+    ],
+    ...,
+] = (
+    (
+        "plan_id_unique",
+        [
+            (
+                "plan_id",
+                ASCENDING,
+            )
+        ],
+        True,
+        {
+            "plan_id": {
+                "$type": "string"
+            }
+        },
+    ),
+    (
+        "idempotency_key_unique",
+        [
+            (
+                "idempotency_key",
+                ASCENDING,
+            )
+        ],
+        True,
+        {
+            "idempotency_key": {
+                "$type": "string"
+            }
+        },
+    ),
+    (
+        "tenant_active",
+        [
+            (
+                "tenant_id",
+                ASCENDING,
+            ),
+            (
+                "active",
+                ASCENDING,
+            ),
+        ],
+        False,
+        None,
+    ),
+    (
+        "tenant_plan_type",
+        [
+            (
+                "tenant_id",
+                ASCENDING,
+            ),
+            (
+                "plan_type",
+                ASCENDING,
+            ),
+        ],
+        False,
+        None,
+    ),
+    (
+        "catalogue_order",
+        [
+            (
+                "created_at",
+                ASCENDING,
+            ),
+            (
+                "plan_id",
+                ASCENDING,
+            ),
+        ],
+        False,
+        None,
+    ),
+)
+
+
+
+@dataclass(
+    frozen=True
+)
+class _StoredPlan:
+    """Mongo transport envelope; never canonical PlanEntity commercial state."""
+
+    plan: PlanEntity
+    mongo_id: Any
+    registry_revision: int
 
 
 class PlanRegistry:
     """
-    In‑memory registry for plans.
-    All methods are classmethods to mimic Node static methods.
+    Durable Mongo-backed Plan catalogue registry.
+
+    All business-facing methods remain classmethods to preserve the established
+    Python/Node bridge contract. The module-level ``plans_collection`` is the
+    bounded persistence seam used by real-Mongo certification.
     """
 
-    _plans: Dict[str, PlanEntity] = {}
-
-    # ─── Helpers ─────────────────────────────────────────────────────────────
+    @classmethod
+    def _generate_idempotency_key(
+        cls,
+    ) -> str:
+        return (
+            "WILSY-IDEMP-"
+            + uuid.uuid4().hex[
+                :16
+            ].upper()
+        )
 
     @classmethod
-    def _generate_idempotency_key(cls) -> str:
-        """Generate a unique idempotency key with Wilsy identity."""
-        return f"WILSY-IDEMP-{uuid.uuid4().hex[:16].upper()}"
-
-    @classmethod
-    def _to_bool(cls, value: Any) -> bool:
-        """Safely convert any value to bool; defaults to True if unable to determine."""
+    def _to_bool(
+        cls,
+        value: Any,
+    ) -> bool:
         if value is None:
             return True
-        if isinstance(value, bool):
+
+        if isinstance(
+            value,
+            bool,
+        ):
             return value
-        if isinstance(value, str):
-            if value.lower() in ("true", "1", "yes", "on"):
+
+        if isinstance(
+            value,
+            str,
+        ):
+            lowered = value.lower()
+
+            if lowered in (
+                "true",
+                "1",
+                "yes",
+                "on",
+            ):
                 return True
-            if value.lower() in ("false", "0", "no", "off"):
+
+            if lowered in (
+                "false",
+                "0",
+                "no",
+                "off",
+            ):
                 return False
-            # fallback: treat non‑empty string as True
-            return bool(value)
+
+            return bool(
+                value
+            )
+
         try:
-            return bool(value)
+            return bool(
+                value
+            )
         except Exception:
             return True
 
     @classmethod
-    def _to_enum(cls, enum_class, value: Any) -> Optional[Any]:
-        if value is None:
-            return None
-        if isinstance(value, enum_class):
-            return value
-        if isinstance(value, str):
-            try:
-                return enum_class(value.upper())
-            except ValueError:
+    def _ensure_indexes(
+        cls,
+    ) -> None:
+        for (
+            name,
+            keys,
+            unique,
+            partial,
+        ) in _INDEX_CONTRACT:
+            kwargs: dict[
+                str,
+                Any,
+            ] = {
+                "name": name,
+            }
+
+            if unique:
+                kwargs[
+                    "unique"
+                ] = True
+
+            if partial is not None:
+                kwargs[
+                    "partialFilterExpression"
+                ] = partial
+
+            observed_name = (
+                plans_collection.create_index(
+                    keys,
+                    **kwargs,
+                )
+            )
+
+            if (
+                observed_name
+                != name
+            ):
+                raise RuntimeError(
+                    "PLAN_REGISTRY_INDEX_NAME_MISMATCH:"
+                    f"{name}:{observed_name}"
+                )
+
+        information = (
+            plans_collection
+            .index_information()
+        )
+
+        for (
+            name,
+            keys,
+            unique,
+            partial,
+        ) in _INDEX_CONTRACT:
+            details = information.get(
+                name
+            )
+
+            if details is None:
+                raise RuntimeError(
+                    "PLAN_REGISTRY_INDEX_MISSING:"
+                    + name
+                )
+
+            if list(
+                details.get(
+                    "key",
+                    [],
+                )
+            ) != keys:
+                raise RuntimeError(
+                    "PLAN_REGISTRY_INDEX_KEY_MISMATCH:"
+                    + name
+                )
+
+            if bool(
+                details.get(
+                    "unique",
+                    False,
+                )
+            ) != unique:
+                raise RuntimeError(
+                    "PLAN_REGISTRY_INDEX_UNIQUENESS_MISMATCH:"
+                    + name
+                )
+
+            if partial is not None:
+                if (
+                    details.get(
+                        "partialFilterExpression"
+                    )
+                    != partial
+                ):
+                    raise RuntimeError(
+                        "PLAN_REGISTRY_INDEX_PARTIAL_MISMATCH:"
+                        + name
+                    )
+
+    @classmethod
+    def _hydrate(
+        cls,
+        document: Mapping[
+            str,
+            Any,
+        ],
+    ) -> _StoredPlan:
+        """
+        Hydrate canonical PlanEntity evidence plus exact Mongo transport metadata.
+
+        Only ``_id`` and ``_registry_revision`` may exist outside canonical
+        ``PlanEntity.to_dict()`` material.
+        """
+
+        if (
+            "_id"
+            not in document
+        ):
+            raise ValueError(
+                "PLAN_REGISTRY_MONGO_ID_REQUIRED"
+            )
+
+        mongo_id = document[
+            "_id"
+        ]
+
+        revision = document.get(
+            _REGISTRY_REVISION_FIELD
+        )
+
+        if (
+            isinstance(
+                revision,
+                bool,
+            )
+            or not isinstance(
+                revision,
+                int,
+            )
+            or revision < 1
+        ):
+            raise ValueError(
+                "PLAN_REGISTRY_REVISION_INVALID"
+            )
+
+        payload = {
+            key:
+                value
+            for key, value
+            in document.items()
+            if key
+            not in _TRANSPORT_FIELDS
+        }
+
+        plan = (
+            PlanEntity.from_dict(
+                payload
+            )
+        )
+
+        canonical = (
+            plan.to_dict()
+        )
+
+        if (
+            payload
+            != canonical
+        ):
+            unexpected = sorted(
+                set(payload)
+                - set(canonical)
+            )
+
+            missing = sorted(
+                set(canonical)
+                - set(payload)
+            )
+
+            mismatched = sorted(
+                key
+                for key
+                in (
+                    set(payload)
+                    & set(canonical)
+                )
+                if (
+                    payload[key]
+                    != canonical[key]
+                )
+            )
+
+            raise ValueError(
+                "PLAN_REGISTRY_NONCANONICAL_DOCUMENT:"
+                f"unexpected={unexpected}:"
+                f"missing={missing}:"
+                f"mismatched={mismatched}"
+            )
+
+        return _StoredPlan(
+            plan=plan,
+            mongo_id=mongo_id,
+            registry_revision=revision,
+        )
+
+    @classmethod
+    def _load_catalogue(
+        cls,
+    ) -> list[
+        _StoredPlan
+    ]:
+        cls._ensure_indexes()
+
+        documents = (
+            plans_collection
+            .find(
+                {}
+            )
+            .sort(
+                [
+                    (
+                        "created_at",
+                        ASCENDING,
+                    ),
+                    (
+                        "plan_id",
+                        ASCENDING,
+                    ),
+                ]
+            )
+        )
+
+        return [
+            cls._hydrate(
+                document
+            )
+            for document
+            in documents
+        ]
+
+    @classmethod
+    def _get_record(
+        cls,
+        plan_id: str,
+        tenant_id: Optional[
+            str
+        ] = None,
+    ) -> Optional[
+        _StoredPlan
+    ]:
+        """Resolve one validated Mongo record under catalogue-scope semantics."""
+
+        for record in (
+            cls._load_catalogue()
+        ):
+            plan = (
+                record.plan
+            )
+
+            if (
+                plan.plan_id
+                != plan_id
+            ):
+                continue
+
+            if (
+                tenant_id
+                and plan.tenant_id
+                and plan.tenant_id
+                != tenant_id
+            ):
                 return None
+
+            return record
+
         return None
 
     @classmethod
-    def _to_datetime(cls, value: Any) -> Optional[datetime]:
-        if value is None:
-            return None
-        if isinstance(value, datetime):
-            return value
-        if isinstance(value, str):
-            try:
-                return datetime.fromisoformat(value)
-            except ValueError:
-                return None
-        return None
+    def _replace_current(
+        cls,
+        existing: _StoredPlan,
+        updated: PlanEntity,
+    ) -> None:
+        """
+        Replace exactly one observed Mongo storage generation.
 
-    # ─── CRUD Operations ────────────────────────────────────────────────────
+        The predicate binds immutable Mongo identity, the monotonic transport
+        revision, the complete prior canonical PlanEntity state and the exact
+        persisted key set. A stale or ABA writer therefore cannot overwrite a
+        different observed Mongo generation.
+        """
+
+        canonical_existing = (
+            existing.plan
+            .to_dict()
+        )
+
+        expected_keys = sorted(
+            [
+                *canonical_existing.keys(),
+                "_id",
+                _REGISTRY_REVISION_FIELD,
+            ]
+        )
+
+        predicate: dict[
+            str,
+            Any,
+        ] = dict(
+            canonical_existing
+        )
+
+        predicate[
+            "_id"
+        ] = (
+            existing.mongo_id
+        )
+
+        predicate[
+            _REGISTRY_REVISION_FIELD
+        ] = (
+            existing.registry_revision
+        )
+
+        predicate[
+            "$expr"
+        ] = {
+            "$setEquals": [
+                {
+                    "$map": {
+                        "input": {
+                            "$objectToArray":
+                                "$$ROOT"
+                        },
+                        "as":
+                            "field",
+                        "in":
+                            "$$field.k",
+                    }
+                },
+                expected_keys,
+            ]
+        }
+
+        replacement: dict[
+            str,
+            Any,
+        ] = (
+            updated.to_dict()
+        )
+
+        replacement[
+            "_id"
+        ] = (
+            existing.mongo_id
+        )
+
+        replacement[
+            _REGISTRY_REVISION_FIELD
+        ] = (
+            existing.registry_revision
+            + 1
+        )
+
+        result = (
+            plans_collection
+            .replace_one(
+                predicate,
+                replacement,
+                upsert=False,
+            )
+        )
+
+        if (
+            result.matched_count
+            != 1
+        ):
+            raise RuntimeError(
+                "PLAN_REGISTRY_CONCURRENT_MUTATION"
+            )
 
     @classmethod
-    def create(cls, payload: Dict[str, Any], tenant_id: Optional[str] = None) -> Dict[str, Any]:
+    def create(
+        cls,
+        payload: Dict[
+            str,
+            Any,
+        ],
+        tenant_id: Optional[
+            str
+        ] = None,
+    ) -> Dict[
+        str,
+        Any,
+    ]:
         """
-        Create a new plan.
+        Create and durably persist one canonical PlanEntity.
 
-        Required fields:
-            - name (str)
-            - price (domain-governed numeric input; Registry performs no float coercion)
-            - currency (str)
-            - billingFrequency (str) – monthly, quarterly, annual, one_time
-            - planType (str) – FREE, PROFESSIONAL, ENTERPRISE, SOVEREIGN, ULTRA, FOUNDER_ENTERPRISE
-            - idempotencyKey (str) – unique
-
-        Optional:
-            - description (str)
-            - trialDays (int)
-            - features (list)
-            - active (bool)
-            - tenantId (str)
-            - metadata (dict)
-            - tags (list)
-            - kennelShard (str)
+        Required input remains compatible with the pre-Mongo Registry:
+        name, price, currency, billingFrequency, planType and idempotencyKey.
         """
+
         try:
-            # Validate required fields
-            required = ["name", "price", "currency", "billingFrequency", "planType", "idempotencyKey"]
+            required = [
+                "name",
+                "price",
+                "currency",
+                "billingFrequency",
+                "planType",
+                "idempotencyKey",
+            ]
+
             for field in required:
                 if field not in payload:
-                    return {"success": False, "error": f"Missing required field: {field}"}
+                    return {
+                        "success":
+                            False,
+                        "error":
+                            "Missing required field: "
+                            + field,
+                    }
 
-            # Validate plan type
-            plan_type_str = payload["planType"].upper()
+            plan_type_str = str(
+                payload[
+                    "planType"
+                ]
+            ).upper()
+
             try:
-                plan_type_enum = PlanTiers(plan_type_str)
+                plan_type_enum = (
+                    PlanTiers(
+                        plan_type_str
+                    )
+                )
             except ValueError:
-                return {"success": False, "error": f"Invalid planType: {plan_type_str}"}
+                return {
+                    "success":
+                        False,
+                    "error":
+                        "Invalid planType: "
+                        + plan_type_str,
+                }
 
-            # Validate billing frequency
-            freq_str = payload["billingFrequency"].lower()
+            frequency_str = str(
+                payload[
+                    "billingFrequency"
+                ]
+            ).lower()
+
             try:
-                freq_enum = PlanFrequency(freq_str)
+                frequency_enum = (
+                    PlanFrequency(
+                        frequency_str
+                    )
+                )
             except ValueError:
-                return {"success": False, "error": f"Invalid billingFrequency: {freq_str}"}
+                return {
+                    "success":
+                        False,
+                    "error":
+                        "Invalid billingFrequency: "
+                        + frequency_str,
+                }
 
-            # Validate idempotency key uniqueness
-            idempotency_key = payload["idempotencyKey"]
-            if any(p.idempotency_key == idempotency_key for p in cls._plans.values()):
-                return {"success": False, "error": f"Idempotency key '{idempotency_key}' already exists"}
+            idempotency_key = (
+                payload[
+                    "idempotencyKey"
+                ]
+            )
 
-            # Determine tenant isolation
-            effective_tenant = payload.get("tenantId") or tenant_id
+            effective_tenant = (
+                payload.get(
+                    "tenantId"
+                )
+                or tenant_id
+            )
 
-            # Generate Wilsy plan ID if not provided
-            plan_id = payload.get("plan_id")
-            if not plan_id:
-                plan_id = f"WILSYPLAN-{uuid.uuid4().hex[:8].upper()}"
+            plan_id = (
+                payload.get(
+                    "plan_id"
+                )
+                or (
+                    "WILSYPLAN-"
+                    + uuid.uuid4().hex[
+                        :8
+                    ].upper()
+                )
+            )
 
-            # Safely get active (always bool)
-            active = cls._to_bool(payload.get("active", True))
-
-            # Build plan entity – let domain handle created_at/updated_at defaults
             plan = PlanEntity(
                 plan_id=plan_id,
-                name=payload["name"],
-                description=payload.get("description", ""),
-                price=payload["price"],
-                currency=payload["currency"].upper(),
-                billing_frequency=freq_enum,
-                trial_days=int(payload.get("trialDays", 0)),
-                plan_type=plan_type_enum,
-                features=payload.get("features", []),
-                active=active,
-                tenant_id=effective_tenant,
-                kennel_shard=payload.get("kennelShard", "EOS_PRIMARY"),
-                idempotency_key=idempotency_key,
-                seal_nonce=payload.get("sealNonce", uuid.uuid4().hex),
-                proof_hash=payload.get("proofHash", ""),
-                integrity_root=payload.get(
-                    "integrityRoot",
+                name=payload[
+                    "name"
+                ],
+                description=
                     payload.get(
-                        "merkleRoot",
+                        "description",
                         "",
                     ),
+                price=payload[
+                    "price"
+                ],
+                currency=str(
+                    payload[
+                        "currency"
+                    ]
+                ).upper(),
+                billing_frequency=
+                    frequency_enum,
+                trial_days=int(
+                    payload.get(
+                        "trialDays",
+                        0,
+                    )
                 ),
-                metadata=payload.get("metadata", {}),
-                tags=payload.get("tags", []),
-                # created_at and updated_at will be set by domain defaults
+                plan_type=
+                    plan_type_enum,
+                features=
+                    payload.get(
+                        "features",
+                        [],
+                    ),
+                active=cls._to_bool(
+                    payload.get(
+                        "active",
+                        True,
+                    )
+                ),
+                tenant_id=
+                    effective_tenant,
+                kennel_shard=
+                    payload.get(
+                        "kennelShard",
+                        "EOS_PRIMARY",
+                    ),
+                idempotency_key=
+                    idempotency_key,
+                seal_nonce=
+                    payload.get(
+                        "sealNonce",
+                        uuid.uuid4().hex,
+                    ),
+                proof_hash=
+                    payload.get(
+                        "proofHash",
+                        "",
+                    ),
+                integrity_root=
+                    payload.get(
+                        "integrityRoot",
+                        payload.get(
+                            "merkleRoot",
+                            "",
+                        ),
+                    ),
+                metadata=
+                    payload.get(
+                        "metadata",
+                        {},
+                    ),
+                tags=
+                    payload.get(
+                        "tags",
+                        [],
+                    ),
             )
 
-            # Add audit entry for creation
-            plan = plan.add_audit_entry(
-                action=AuditAction.CREATE,
-                user=payload.get("user", "SYSTEM"),
-                reason="Plan created",
-                metadata={"source": "registry"},
+            plan = (
+                plan.add_audit_entry(
+                    action=
+                        AuditAction.CREATE,
+                    user=payload.get(
+                        "user",
+                        "SYSTEM",
+                    ),
+                    reason=
+                        "Plan created",
+                    metadata={
+                        "source":
+                            "registry"
+                    },
+                )
             )
 
-            # Store
-            cls._plans[plan.plan_id] = plan
-            logger.info("✅ [PLAN_REGISTRY] Plan created: %s (%s)", plan.plan_id, plan.name)
-            return {"success": True, "plan": plan}
+            catalogue = (
+                cls._load_catalogue()
+            )
 
-        except Exception as e:
-            logger.error("❌ [PLAN_REGISTRY] Create failed: %s", str(e))
-            return {"success": False, "error": str(e)}
+            if any(
+                current.plan.idempotency_key
+                == plan.idempotency_key
+                for current
+                in catalogue
+            ):
+                return {
+                    "success":
+                        False,
+                    "error":
+                        "Idempotency key "
+                        f"'{plan.idempotency_key}' "
+                        "already exists",
+                }
+
+            if any(
+                current.plan.plan_id
+                == plan.plan_id
+                for current
+                in catalogue
+            ):
+                return {
+                    "success":
+                        False,
+                    "error":
+                        "Plan ID "
+                        f"'{plan.plan_id}' "
+                        "already exists",
+                }
+
+            document: dict[
+                str,
+                Any,
+            ] = (
+                plan.to_dict()
+            )
+
+            document[
+                _REGISTRY_REVISION_FIELD
+            ] = 1
+
+            try:
+                plans_collection.insert_one(
+                    document
+                )
+            except DuplicateKeyError:
+                return {
+                    "success":
+                        False,
+                    "error":
+                        "Duplicate plan catalogue key",
+                }
+
+            _debug_success(
+                "create",
+                plan.plan_id,
+            )
+
+            return {
+                "success":
+                    True,
+                "plan":
+                    plan,
+            }
+
+        except Exception as exc:
+            logger.error(
+                "❌ [PLAN_REGISTRY] Create failed: %s",
+                str(
+                    exc
+                ),
+            )
+
+            return {
+                "success":
+                    False,
+                "error":
+                    str(
+                        exc
+                    ),
+            }
 
     @classmethod
-    def get(cls, plan_id: str, tenant_id: Optional[str] = None) -> Optional[PlanEntity]:
-        """Retrieve a plan by ID, with optional tenant isolation."""
-        plan = cls._plans.get(plan_id)
-        if not plan:
+    def get(
+        cls,
+        plan_id: str,
+        tenant_id: Optional[
+            str
+        ] = None,
+    ) -> Optional[
+        PlanEntity
+    ]:
+        """
+        Retrieve one canonical plan.
+
+        ``None`` means genuine absence or genuine catalogue-scope mismatch.
+        Persistence, transport-envelope or canonical hydration failure propagates.
+        """
+
+        record = (
+            cls._get_record(
+                plan_id,
+                tenant_id,
+            )
+        )
+
+        if (
+            record
+            is None
+        ):
             return None
-        if tenant_id and plan.tenant_id and plan.tenant_id != tenant_id:
-            return None
-        return plan
+
+        return (
+            record.plan
+        )
 
     @classmethod
     def list(
         cls,
-        tenant_id: Optional[str] = None,
-        active: Optional[bool] = None,
-        plan_type: Optional[PlanTiers] = None,
+        tenant_id: Optional[
+            str
+        ] = None,
+        active: Optional[
+            bool
+        ] = None,
+        plan_type: Optional[
+            PlanTiers
+        ] = None,
         page: int = 1,
         limit: int = 20,
-    ) -> Dict[str, Any]:
+    ) -> Dict[
+        str,
+        Any,
+    ]:
         """
-        List plans with pagination and filters.
-        Returns: { "items": List[PlanEntity], "total": int, "pages": int }
+        List validated catalogue truth with the established return shape.
+
+        Persistence or hydration failure propagates. An empty result therefore
+        means the validated catalogue actually contains no matching plan.
         """
+
+        all_plans = [
+            record.plan
+            for record
+            in cls._load_catalogue()
+        ]
+
+        if tenant_id:
+            all_plans = [
+                plan
+                for plan
+                in all_plans
+                if (
+                    plan.tenant_id
+                    == tenant_id
+                    or plan.tenant_id
+                    is None
+                )
+            ]
+
+        if active is not None:
+            all_plans = [
+                plan
+                for plan
+                in all_plans
+                if plan.active
+                == active
+            ]
+
+        if plan_type:
+            all_plans = [
+                plan
+                for plan
+                in all_plans
+                if plan.plan_type
+                == plan_type
+            ]
+
+        total = len(
+            all_plans
+        )
+
+        start = (
+            page - 1
+        ) * limit
+
+        end = (
+            start
+            + limit
+        )
+
+        items = all_plans[
+            start:end
+        ]
+
+        pages = (
+            (
+                total
+                + limit
+                - 1
+            )
+            // limit
+            if limit > 0
+            else 0
+        )
+
+        return {
+            "items":
+                items,
+            "total":
+                total,
+            "pages":
+                pages,
+        }
+
+    @classmethod
+    def update(
+        cls,
+        plan_id: str,
+        payload: Dict[
+            str,
+            Any,
+        ],
+        tenant_id: Optional[
+            str
+        ] = None,
+    ) -> Dict[
+        str,
+        Any,
+    ]:
+        """Update one plan using immutable PlanEntity evolution plus Mongo CAS."""
+
         try:
-            all_plans = list(cls._plans.values())
+            stored = cls._get_record(
+                plan_id,
+                tenant_id,
+            )
 
-            # Filter by tenant
-            if tenant_id:
-                all_plans = [p for p in all_plans if p.tenant_id == tenant_id or p.tenant_id is None]
+            if stored is None:
+                return {
+                    "success":
+                        False,
+                    "error":
+                        "Plan not found",
+                }
 
-            # Filter by active status
-            if active is not None:
-                all_plans = [p for p in all_plans if p.active == active]
+            existing = stored.plan
 
-            # Filter by plan type
-            if plan_type:
-                all_plans = [p for p in all_plans if p.plan_type == plan_type]
+            protected = {
+                "plan_id",
+                "idempotency_key",
+                "created_at",
+                "seal_nonce",
+                "proof_hash",
+                "merkle_root",
+                "integrity_root",
+                "state_proof_lineage",
+                "state_history",
+                "catalogue_version",
+                "proof_version",
+                "audit_trail",
+            }
 
-            # Pagination
-            total = len(all_plans)
-            start = (page - 1) * limit
-            end = start + limit
-            items = all_plans[start:end]
-            pages = (total + limit - 1) // limit
+            safe_payload = {
+                key:
+                    value
+                for (
+                    key,
+                    value,
+                )
+                in payload.items()
+                if key
+                not in protected
+            }
+
+            if (
+                "plan_type"
+                in safe_payload
+                and isinstance(
+                    safe_payload[
+                        "plan_type"
+                    ],
+                    str,
+                )
+            ):
+                safe_payload[
+                    "plan_type"
+                ] = PlanTiers(
+                    safe_payload[
+                        "plan_type"
+                    ].upper()
+                )
+
+            if (
+                "billing_frequency"
+                in safe_payload
+                and isinstance(
+                    safe_payload[
+                        "billing_frequency"
+                    ],
+                    str,
+                )
+            ):
+                safe_payload[
+                    "billing_frequency"
+                ] = PlanFrequency(
+                    safe_payload[
+                        "billing_frequency"
+                    ].lower()
+                )
+
+            updated_plan = (
+                existing.update(
+                    safe_payload
+                )
+            )
+
+            updated_plan = (
+                updated_plan
+                .add_audit_entry(
+                    action=
+                        AuditAction.UPDATE,
+                    user=payload.get(
+                        "user",
+                        "SYSTEM",
+                    ),
+                    reason=
+                        "Plan updated",
+                    metadata={
+                        "updated_fields":
+                            list(
+                                safe_payload.keys()
+                            )
+                    },
+                )
+            )
+
+            cls._replace_current(
+                stored,
+                updated_plan,
+            )
+
+            _debug_success(
+                "update",
+                plan_id,
+            )
 
             return {
-                "items": items,
-                "total": total,
-                "pages": pages,
+                "success":
+                    True,
+                "plan":
+                    updated_plan,
             }
-        except Exception as e:
-            logger.error("❌ [PLAN_REGISTRY] List failed: %s", str(e))
-            return {"items": [], "total": 0, "pages": 0}
 
-    @classmethod
-    def update(cls, plan_id: str, payload: Dict[str, Any], tenant_id: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Update a plan.
-
-        Args:
-            plan_id: ID of the plan to update.
-            payload: Dictionary of fields to update.
-            tenant_id: Optional tenant isolation.
-
-        Returns:
-            {"success": True, "plan": PlanEntity} or {"success": False, "error": str}
-        """
-        try:
-            existing = cls.get(plan_id, tenant_id)
-            if not existing:
-                return {"success": False, "error": "Plan not found"}
-
-            # Prevent updating immutable fields
-            safe_payload = {k: v for k, v in payload.items() if k not in ["plan_id", "idempotency_key", "created_at", "seal_nonce", "proof_hash", "merkle_root"]}
-
-            # Handle enum conversions
-            if "plan_type" in safe_payload and isinstance(safe_payload["plan_type"], str):
-                safe_payload["plan_type"] = PlanTiers(safe_payload["plan_type"].upper())
-            if "billing_frequency" in safe_payload and isinstance(safe_payload["billing_frequency"], str):
-                safe_payload["billing_frequency"] = PlanFrequency(safe_payload["billing_frequency"].lower())
-
-            # Update using the immutable update method
-            updated_plan = existing.update(safe_payload)
-
-            # Add audit entry
-            updated_plan = updated_plan.add_audit_entry(
-                action=AuditAction.UPDATE,
-                user=payload.get("user", "SYSTEM"),
-                reason="Plan updated",
-                metadata={"updated_fields": list(safe_payload.keys())},
+        except Exception as exc:
+            logger.error(
+                "❌ [PLAN_REGISTRY] Update failed: %s",
+                str(
+                    exc
+                ),
             )
 
-            # Store
-            cls._plans[plan_id] = updated_plan
-            logger.info("🔄 [PLAN_REGISTRY] Plan updated: %s", plan_id)
-            return {"success": True, "plan": updated_plan}
-
-        except Exception as e:
-            logger.error("❌ [PLAN_REGISTRY] Update failed: %s", str(e))
-            return {"success": False, "error": str(e)}
+            return {
+                "success":
+                    False,
+                "error":
+                    str(
+                        exc
+                    ),
+            }
 
     @classmethod
-    def archive(cls, plan_id: str, tenant_id: Optional[str] = None) -> bool:
-        """Soft‑delete a plan (set active=False)."""
+    def archive(
+        cls,
+        plan_id: str,
+        tenant_id: Optional[
+            str
+        ] = None,
+    ) -> bool:
+        """
+        Soft-delete a plan.
+
+        ``False`` means genuine absence/scope mismatch only. Infrastructure and
+        evidence failures propagate.
+        """
+
         try:
-            existing = cls.get(plan_id, tenant_id)
-            if not existing:
+            stored = cls._get_record(
+                plan_id,
+                tenant_id,
+            )
+
+            if stored is None:
                 return False
 
-            updated_plan = existing.update({"active": False})
-            updated_plan = updated_plan.add_audit_entry(
-                action=AuditAction.ARCHIVE,
-                user="SYSTEM",
-                reason="Plan archived",
+            existing = stored.plan
+
+            updated_plan = (
+                existing.update(
+                    {
+                        "active":
+                            False
+                    }
+                )
             )
 
-            cls._plans[plan_id] = updated_plan
-            logger.info("🗄️ [PLAN_REGISTRY] Plan archived: %s", plan_id)
+            updated_plan = (
+                updated_plan
+                .add_audit_entry(
+                    action=
+                        AuditAction.ARCHIVE,
+                    user="SYSTEM",
+                    reason=
+                        "Plan archived",
+                )
+            )
+
+            cls._replace_current(
+                stored,
+                updated_plan,
+            )
+
+            _debug_success(
+                "archive",
+                plan_id,
+            )
+
             return True
 
-        except Exception as e:
-            logger.error("❌ [PLAN_REGISTRY] Archive failed: %s", str(e))
-            return False
+        except Exception:
+            logger.exception(
+                "❌ [PLAN_REGISTRY] Archive failed: %s",
+                plan_id,
+            )
+            raise
 
     @classmethod
-    def reactivate(cls, plan_id: str, tenant_id: Optional[str] = None) -> bool:
-        """Reactivate an archived plan (set active=True)."""
+    def reactivate(
+        cls,
+        plan_id: str,
+        tenant_id: Optional[
+            str
+        ] = None,
+    ) -> bool:
+        """
+        Reactivate an archived plan.
+
+        ``False`` means genuine absence/scope mismatch only. Infrastructure and
+        evidence failures propagate.
+        """
+
         try:
-            existing = cls.get(plan_id, tenant_id)
-            if not existing:
+            stored = cls._get_record(
+                plan_id,
+                tenant_id,
+            )
+
+            if stored is None:
                 return False
+
+            existing = stored.plan
+
             if existing.active:
-                return True  # Already active
+                return True
 
-            updated_plan = existing.update({"active": True})
-            updated_plan = updated_plan.add_audit_entry(
-                action=AuditAction.REACTIVATE,
-                user="SYSTEM",
-                reason="Plan reactivated",
+            updated_plan = (
+                existing.update(
+                    {
+                        "active":
+                            True
+                    }
+                )
             )
 
-            cls._plans[plan_id] = updated_plan
-            logger.info("🔄 [PLAN_REGISTRY] Plan reactivated: %s", plan_id)
+            updated_plan = (
+                updated_plan
+                .add_audit_entry(
+                    action=
+                        AuditAction.REACTIVATE,
+                    user="SYSTEM",
+                    reason=
+                        "Plan reactivated",
+                )
+            )
+
+            cls._replace_current(
+                stored,
+                updated_plan,
+            )
+
+            _debug_success(
+                "reactivate",
+                plan_id,
+            )
+
             return True
 
-        except Exception as e:
-            logger.error("❌ [PLAN_REGISTRY] Reactivate failed: %s", str(e))
-            return False
+        except Exception:
+            logger.exception(
+                "❌ [PLAN_REGISTRY] Reactivate failed: %s",
+                plan_id,
+            )
+            raise
 
     @classmethod
     def health_check(
         cls,
-    ) -> Dict[str, Any]:
-        """Return bounded registry health; does not claim durable persistence."""
-        return {
-            "status": "OPERATIONAL",
-            "version": PLAN_REGISTRY_VERSION,
-            "timestamp": datetime.now(
+    ) -> Dict[
+        str,
+        Any,
+    ]:
+        """
+        Return bounded Mongo catalogue health.
+
+        A red health result never claims durable truth is available.
+        """
+
+        timestamp = (
+            datetime.now(
                 timezone.utc
-            ).isoformat(),
-            "store_type": "in-memory",
-            "plan_count": len(
-                cls._plans
-            ),
-        }
+            ).isoformat()
+        )
+
+        try:
+            (
+                plans_collection
+                .database
+                .client
+                .admin
+                .command(
+                    "ping"
+                )
+            )
+
+            catalogue = (
+                cls._load_catalogue()
+            )
+
+            indexes = (
+                plans_collection
+                .index_information()
+            )
+
+            return {
+                "status":
+                    "OPERATIONAL",
+                "version":
+                    PLAN_REGISTRY_VERSION,
+                "timestamp":
+                    timestamp,
+                "store_type":
+                    "mongo",
+                "plan_count":
+                    len(
+                        catalogue
+                    ),
+                "required_indexes":
+                    sorted(
+                        name
+                        for (
+                            name,
+                            _keys,
+                            _unique,
+                            _partial,
+                        )
+                        in _INDEX_CONTRACT
+                    ),
+                "observed_indexes":
+                    sorted(
+                        name
+                        for name
+                        in indexes
+                        if name
+                        != "_id_"
+                    ),
+                "write_concern":
+                    "majority+journal",
+                "read_concern":
+                    "majority",
+            }
+
+        except Exception as exc:
+            logger.error(
+                "❌ [PLAN_REGISTRY] Health unavailable: %s",
+                str(
+                    exc
+                ),
+            )
+
+            return {
+                "status":
+                    "UNAVAILABLE",
+                "version":
+                    PLAN_REGISTRY_VERSION,
+                "timestamp":
+                    timestamp,
+                "store_type":
+                    "mongo",
+                "error":
+                    str(
+                        exc
+                    ),
+            }
+
 
 """
 INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLAN REGISTRY
 
 Status:
-    PRODUCTION REGISTRY CONTRACT — IN-MEMORY STORE
+    PRODUCTION REGISTRY CONTRACT — REAL MONGODB PERSISTENCE
 
 Version:
-    v1.0.3-DOMAIN-PRICE-PASSTHROUGH
+    v1.1.1-STORAGE-ENVELOPE-CAS
 
 Authority:
     Wilsy OS Core Governance
@@ -452,18 +1600,20 @@ Catalogue owner:
 Commercial validation:
     PlanEntity / Python EOS
 
+Persistence:
+    REAL MONGODB — canonical PlanEntity evidence, majority reads/writes.
+
+Failure semantics:
+    Mongo/index/hydration failure cannot masquerade as absence or empty truth.
+
 Tenant authority:
-    NONE — tenant_id is scope evidence only.
+    NONE — tenant_id is catalogue scope evidence only.
 
 Financial execution:
     NONE — Kennel EOS remains exclusive.
 
-Persistence:
-    IN-MEMORY ONLY — Real-Mongo certification remains pending.
-
-Certified change:
-    Lossless commercial-price passthrough to PlanEntity plus integrity-root
-    compatibility bridge.
+HTTP authority:
+    NONE — Plan HTTP authorization remains separately certified.
 
 Certification date:
     2026-09-03

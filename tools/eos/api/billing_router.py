@@ -4,12 +4,13 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.7.0-DUNNING-LIFECYCLE                                                                                       ║
+║ VERSION:        v1.7.1-PLAN-CATALOGUE-CONVERGENCE                                                                                       ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; fixed mongo_client access.                  ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-03 v1.7.1-PLAN-CATALOGUE-CONVERGENCE – /billing/plans delegates canonical catalogue truth to PlanRegistry and fails closed on catalogue errors. ║
 ║   2026-08-25 v1.7.0-DUNNING-LIFECYCLE – Persisted 3/7/10/14/21/30 lifecycle with read-only suspension and SHA3 audit proof. ║
 ║   2026-08-21 v1.6.1-CROSS-TENANT-RESOLVE – Use global mongo_client from billing_registry; remove request.app dependency.      ║
 ║   2026-08-21 v1.4.2-PRODUCTION – Fixed mongo_client access; use request.app.mongo_client (removed).           ║
@@ -49,7 +50,7 @@ from ..saas.domain.billing import (
     TaxType,
     LineItem,
 )
-from ..saas.domain.plan import PlanEntity
+from ..saas.billing.plan_registry import PlanRegistry
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -914,37 +915,87 @@ async def get_billing_plans(
     tenant_id: str = Depends(get_tenant_id),
 ):
     """
-    Returns the plan catalog. Resilient to missing fields.
+    Return the complete canonical PlanRegistry catalogue projection.
+
+    ``GLOBAL_ROOT`` receives the complete catalogue. A tenant receives its
+    tenant-scoped plus global catalogue entries under PlanRegistry semantics.
+    Persistence, index or hydration failure becomes HTTP 503 and can never
+    masquerade as an empty catalogue.
     """
+
     try:
-        plans_coll = _require_db()["plans"]
-        docs = list(plans_coll.find().sort("created_at", -1))
-        result = []
-        for doc in docs:
-            if "_id" in doc:
-                doc["_id"] = str(doc["_id"])
-            try:
-                plan = PlanEntity.from_dict(doc)
-                result.append(plan.to_dict())
-            except Exception as entity_err:
-                _log_error(entity_err, "PLAN_ENTITY_CONVERSION", tenant_id)
-                minimal = {
-                    "_id": doc.get("_id", str(uuid.uuid4())),
-                    "name": doc.get("name", "Unnamed Plan"),
-                    "price": float(doc.get("price", 0)),
-                    "currency": doc.get("currency", "ZAR"),
-                    "billingFrequency": doc.get("billingFrequency", "monthly"),
-                    "planType": doc.get("planType", "STANDARD"),
-                }
-                for k, v in doc.items():
-                    if k not in minimal and k != "_id":
-                        minimal[k] = v
-                result.append(minimal)
-        return result
-    except Exception as e:
-        _log_error(e, "GET_PLANS", tenant_id)
-        logger.error(f"Plans endpoint failed: {e}\n{traceback.format_exc()}")
-        return []
+        registry_tenant = (
+            None
+            if tenant_id
+            == "GLOBAL_ROOT"
+            else tenant_id
+        )
+
+        probe = (
+            PlanRegistry.list(
+                tenant_id=
+                    registry_tenant,
+                page=1,
+                limit=1,
+            )
+        )
+
+        expected_total = int(
+            probe[
+                "total"
+            ]
+        )
+
+        result = (
+            PlanRegistry.list(
+                tenant_id=
+                    registry_tenant,
+                page=1,
+                limit=max(
+                    1,
+                    expected_total,
+                ),
+            )
+        )
+
+        items = result[
+            "items"
+        ]
+
+        if (
+            int(
+                result[
+                    "total"
+                ]
+            )
+            != expected_total
+            or len(
+                items
+            )
+            != expected_total
+        ):
+            raise RuntimeError(
+                "PLAN_CATALOGUE_CHANGED_DURING_READ"
+            )
+
+        return [
+            plan.to_dict()
+            for plan in items
+        ]
+
+    except Exception as exc:
+        _log_error(
+            exc,
+            "GET_PLANS",
+            tenant_id,
+        )
+
+        raise HTTPException(
+            status_code=
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=
+                "Plan catalogue unavailable",
+        ) from exc
 
 # ----------------------------------------------------------------------------
 # Credit Scores (placeholder)
@@ -1833,12 +1884,12 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.6.1-CROSS-TENANT-RESOLVE
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.7.1-PLAN-CATALOGUE-CONVERGENCE
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.4.4-PAIR-PROOF-FIX
-Fixes:           pair_proof_hash $setOnInsert/$set conflict; db/mongo_client guards.
+Version:         v1.7.1-PLAN-CATALOGUE-CONVERGENCE
+Fixes:           /billing/plans canonical PlanRegistry convergence; explicit 503 failure posture.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Note:            Ready for deployment with billing_registry v1.0.5.
+Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
 ════════════════════════════════════════════════════════════════════════════════
 """

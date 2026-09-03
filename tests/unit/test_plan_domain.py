@@ -5,7 +5,7 @@ TITLE:
     Plan Domain Commercial Contract Direct Certificate
 
 VERSION:
-    v1.0.10-PLAN-DOMAIN-CERT
+    v1.0.12-PLAN-DOMAIN-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -35,6 +35,18 @@ SECURITY / PRIVACY:
     Invalid commercial state and inconsistent persisted evidence fail closed.
 
 CHANGELOG:
+    2026-09-03 v1.0.12-PLAN-DOMAIN-CERT
+        - Re-certifies all PlanEntity runtime/commercial invariants after the
+          governance-only durable PlanRegistry ownership alignment.
+        - No Mongo, HTTP, tenant authorization or financial execution authority
+          is introduced into this PlanEntity certificate.
+    2026-09-03 v1.0.11-PLAN-DOMAIN-CERT
+        - Migrates the three Registry-specific compatibility assertions into the
+          actual-Mongo PlanRegistry certificate now that in-memory Registry
+          authority is retired.
+        - Leaves every PlanEntity commercial-state, history, proof, audit and
+          legacy-trust assertion in this certificate unchanged.
+        - Production Plan Domain bytes remain frozen.
     2026-09-03 v1.0.10-PLAN-DOMAIN-CERT
         - Certifies explicit LEGACY_UNVERSIONED_CONTENT_UNVERIFIED provenance
           for marker-free, evidence-free historical migration.
@@ -109,7 +121,6 @@ from typing import Any, cast
 
 import pytest
 
-from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.domain.plan import (
     AuditAction,
     AuditEntry,
@@ -1055,67 +1066,6 @@ def test_legacy_audit_is_separated_from_current_trust_class() -> None:
             persisted
         )
 
-def test_current_plan_registry_user_context_compatibility() -> None:
-    PlanRegistry._plans.clear()
-
-    try:
-        created = PlanRegistry.create(
-            {
-                "name": "Registry Compatibility",
-                "price": 100,
-                "currency": "ZAR",
-                "billingFrequency": "monthly",
-                "planType": "PROFESSIONAL",
-                "idempotencyKey": "P1R4-REGISTRY-COMPAT",
-            }
-        )
-
-        assert (
-            created["success"]
-            is True
-        )
-
-        plan = created["plan"]
-
-        updated = PlanRegistry.update(
-            plan.plan_id,
-            {
-                "price": 200,
-                "user": "OPERATOR",
-            },
-        )
-
-        assert (
-            updated["success"]
-            is True
-        )
-
-        updated_plan = (
-            updated["plan"]
-        )
-
-        assert (
-            updated_plan.price
-            == 200.0
-        )
-
-        assert (
-            updated_plan.catalogue_version
-            == 2
-        )
-
-        assert (
-            updated_plan.audit_trail[-1].user
-            == "OPERATOR"
-        )
-
-        assert (
-            "user"
-            not in updated_plan.to_dict()
-        )
-
-    finally:
-        PlanRegistry._plans.clear()
 
 
 
@@ -1317,34 +1267,6 @@ def test_legacy_migration_rejects_current_schema_record() -> None:
         )
 
 
-def test_registry_preserves_high_precision_price_for_domain_rejection() -> None:
-    PlanRegistry._plans.clear()
-
-    try:
-        result = PlanRegistry.create(
-            {
-                "name":
-                    "Precision Rejection",
-                "price":
-                    Decimal(
-                        "1.0000000000000000001"
-                    ),
-                "currency":
-                    "ZAR",
-                "billingFrequency":
-                    "monthly",
-                "planType":
-                    "PROFESSIONAL",
-                "idempotencyKey":
-                    "P1R5-PRECISION",
-            }
-        )
-
-        assert result["success"] is False
-        assert "losslessly" in result["error"]
-
-    finally:
-        PlanRegistry._plans.clear()
 
 
 def test_signed_zero_canonicalizes_to_positive_zero() -> None:
@@ -1390,13 +1312,6 @@ def test_integrity_root_semantics_are_explicitly_non_merkle() -> None:
     )
 
 
-def test_registry_health_version_matches_governance() -> None:
-    health = PlanRegistry.health_check()
-
-    assert (
-        health["version"]
-        == "v1.0.3-DOMAIN-PRICE-PASSTHROUGH"
-    )
 
 @pytest.mark.parametrize(
     ("snake_version", "camel_version"),
@@ -2059,7 +1974,7 @@ Artifact:
     tests/unit/test_plan_domain.py
 
 Version:
-    v1.0.10-PLAN-DOMAIN-CERT
+    v1.0.12-PLAN-DOMAIN-CERT
 
 Scope:
     PlanEntity commercial value contract only.

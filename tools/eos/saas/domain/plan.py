@@ -6,7 +6,7 @@ TITLE:
     WILSY OS Sovereign Plan Domain Commercial Contract
 
 VERSION:
-    v1.1.9-LEGACY-UNSEALED-PROVENANCE
+    v1.1.10-REAL-MONGO-OWNERSHIP-GOVERNANCE
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -20,9 +20,9 @@ ABSOLUTE CANONICAL PATH:
 
 OWNERSHIP:
     Python EOS owns sovereign commercial plan truth.
-    PlanRegistry owns current in-memory catalogue orchestration and mutation
-    authority. Durable catalogue persistence remains reserved for the separately
-    certified Real-Mongo phase.
+    PlanRegistry owns durable Mongo-backed catalogue persistence and lifecycle
+    orchestration. PlanEntity remains sovereign commercial-state truth; Plan
+    HTTP publication authorization remains separately certified work.
 
 TENANT BOUNDARY:
     tenant_id is commercial scope evidence only. It is not authentication,
@@ -43,6 +43,11 @@ SECURITY / PRIVACY:
     policy, lifecycle posture, commercial metadata and catalogue version.
 
 CHANGELOG:
+    2026-09-03 v1.1.10-REAL-MONGO-OWNERSHIP-GOVERNANCE
+        - Governance-only alignment after direct PlanRegistry Real-Mongo
+          certification; no PlanEntity commercial runtime semantics change.
+        - Records PlanRegistry as durable catalogue persistence/lifecycle owner.
+        - Plan HTTP authorization remains separately certified work.
     2026-09-03 v1.1.9-LEGACY-UNSEALED-PROVENANCE
         - Labels every genuine unversioned legacy migration as explicitly
           content-unverified even when no sealed evidence or audit trail exists.
@@ -4018,7 +4023,7 @@ class PlanEntity:
 INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLAN DOMAIN COMMERCIAL CONTRACT
 ════════════════════════════════════════════════════════════════════════════════
 Status:              PRODUCTION CONTRACT — DIRECT CERTIFICATION REQUIRED
-Version:             v1.1.9-LEGACY-UNSEALED-PROVENANCE
+Version:             v1.1.10-REAL-MONGO-OWNERSHIP-GOVERNANCE
 Authority:           Wilsy OS Core Governance
 Canonical path:      /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/plan.py
 Commercial truth:    Python EOS
@@ -4027,7 +4032,7 @@ Financial execution: NONE — Kennel EOS remains exclusive
 Tenant authority:    NONE — tenant_id is scope evidence only
 Proof posture:       Deterministic SHA3-512 commercial-state evidence
 Public API:          PlanEntity / enums / parse_datetime / generate_plan_proof
-Pending work:        Real-Mongo PlanRegistry certification
+Pending work:        Plan HTTP authority certification
 Certification date:  2026-09-03
 ════════════════════════════════════════════════════════════════════════════════
 WILSY OS — ALL OR NOTHING.
