@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry Real-Mongo Certification
 
 VERSION:
-    v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-CERT
+    v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -27,6 +27,23 @@ CERTIFICATION / UPDATE DATE:
     2026-09-03
 
 CHANGELOG:
+    v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT:
+        - Corrects the synthetic legacy-period replay fixture to persist
+          canonical registry ISO datetime strings rather than direct BSON
+          datetime values.
+        - Preserves explicit timezone offsets through canonical hydration while
+          still certifying exact historical replay and changed-key conflict
+          non-mutation.
+
+    v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-CERT:
+        - Certifies actual-Mongo server-derived calendar period persistence.
+        - Certifies new caller period redirection fails before persistence.
+        - Certifies generic update cannot replace period coordinates.
+        - Certifies naive startDate fails closed.
+        - Certifies historical exact period-bearing command replay survives only
+          for an exact stored command fingerprint; changed reuse conflicts.
+        - Preserves catalogue provenance, tenant isolation and Kennel boundary.
+
     v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-CERT:
         - Binds SubscriptionRegistry and PlanRegistry to the same UUID-isolated
           actual-Mongo certification database.
@@ -108,6 +125,7 @@ import sys
 import uuid
 from unittest.mock import patch
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -128,7 +146,7 @@ from tools.eos.saas.billing.subscription_registry import (
 
 
 TEST_VERSION = (
-    "v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-CERT"
+    "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT"
 )
 
 CERT_URI_ENV = "TEST_VENDOR_MONGO_URI"
@@ -275,10 +293,6 @@ def _command(
         "tenantId": tenant_id,
         "planId": plan_id,
         "startDate": "2026-09-03T10:00:00+00:00",
-        "currentPeriodStart":
-            "2026-09-03T10:00:00+00:00",
-        "currentPeriodEnd":
-            "2026-10-03T10:00:00+00:00",
         "idempotencyKey": idempotency_key,
         "billingMode": "PLATFORM",
         "onboardingRef":
@@ -448,11 +462,11 @@ def test_real_mongo_version_database_and_index_contract(
     """Prove actual Mongo, isolated database and deterministic indexes."""
     assert (
         REGISTRY_VERSION
-        == "v1.2.0-CATALOGUE-PROVENANCE"
+        == "v1.3.0-CALENDAR-BILLING-WIRING"
     )
     assert (
         TEST_VERSION
-        == "v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-CERT"
+        == "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT"
     )
 
     mongo_context.client.admin.command(
@@ -1835,11 +1849,318 @@ def test_real_mongo_plan_catalogue_outage_fails_explicitly(
         == 0
     )
 
+
+def test_real_mongo_create_derives_calendar_period_from_start_and_plan(
+    mongo_context: _MongoContext,
+) -> None:
+    tenant_id = (
+        "tenant-calendar-"
+        + uuid.uuid4().hex
+    )
+
+    result = SubscriptionRegistry.create(
+        _payload(
+            tenant_id,
+            "calendar-derived-create",
+        ),
+        tenant_id_header=tenant_id,
+    )
+
+    assert result["success"] is True
+    assert result["replayed"] is False
+
+    subscription = result["subscription"]
+
+    assert (
+        subscription.current_period_start.isoformat()
+        == "2026-09-01T00:00:00+00:00"
+    )
+
+    assert (
+        subscription.current_period_end.isoformat()
+        == "2026-10-01T00:00:00+00:00"
+    )
+
+
+def test_real_mongo_new_create_rejects_caller_period_redirection(
+    mongo_context: _MongoContext,
+) -> None:
+    tenant_id = (
+        "tenant-period-redirection-"
+        + uuid.uuid4().hex
+    )
+
+    payload = _payload(
+        tenant_id,
+        "period-redirection",
+    )
+
+    payload["currentPeriodStart"] = (
+        "2026-09-03T10:00:00+00:00"
+    )
+    payload["currentPeriodEnd"] = (
+        "2026-10-03T10:00:00+00:00"
+    )
+
+    result = SubscriptionRegistry.create(
+        payload,
+        tenant_id_header=tenant_id,
+    )
+
+    assert result == {
+        "success": False,
+        "error":
+            "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN",
+    }
+
+    assert (
+        mongo_context.collection.count_documents(
+            {"tenant_id": tenant_id}
+        )
+        == 0
+    )
+
+
+def test_real_mongo_generic_update_cannot_replace_calendar_period(
+    mongo_context: _MongoContext,
+) -> None:
+    tenant_id = (
+        "tenant-period-update-"
+        + uuid.uuid4().hex
+    )
+
+    created = SubscriptionRegistry.create(
+        _payload(
+            tenant_id,
+            "period-update-create",
+        ),
+        tenant_id_header=tenant_id,
+    )
+
+    assert created["success"] is True
+
+    subscription = created["subscription"]
+
+    before_start = (
+        subscription.current_period_start
+    )
+    before_end = (
+        subscription.current_period_end
+    )
+
+    result = SubscriptionRegistry.update(
+        subscription.subscription_id,
+        {
+            "current_period_end":
+                "2099-01-01T00:00:00+00:00",
+        },
+        tenant_id_header=tenant_id,
+    )
+
+    assert result == {
+        "success": False,
+        "error":
+            "SUBSCRIPTION_UPDATE_INVALID_FIELDS",
+    }
+
+    loaded = SubscriptionRegistry.get(
+        subscription.subscription_id,
+        tenant_id_header=tenant_id,
+    )
+
+    assert loaded is not None
+    assert loaded.current_period_start == before_start
+    assert loaded.current_period_end == before_end
+
+
+def test_real_mongo_naive_start_date_fails_closed(
+    mongo_context: _MongoContext,
+) -> None:
+    tenant_id = (
+        "tenant-naive-calendar-"
+        + uuid.uuid4().hex
+    )
+
+    payload = _payload(
+        tenant_id,
+        "naive-calendar",
+    )
+
+    payload["startDate"] = (
+        "2026-09-03T10:00:00"
+    )
+
+    result = SubscriptionRegistry.create(
+        payload,
+        tenant_id_header=tenant_id,
+    )
+
+    assert result["success"] is False
+    assert "timezone-aware" in result["error"]
+
+    assert (
+        mongo_context.collection.count_documents(
+            {"tenant_id": tenant_id}
+        )
+        == 0
+    )
+
+
+def test_real_mongo_legacy_period_command_exact_replay_survives_but_change_conflicts(
+    mongo_context: _MongoContext,
+) -> None:
+    tenant_id = (
+        "tenant-legacy-period-"
+        + uuid.uuid4().hex
+    )
+
+    key = "legacy-period-replay"
+
+    canonical_payload = _payload(
+        tenant_id,
+        key,
+    )
+
+    created = SubscriptionRegistry.create(
+        canonical_payload,
+        tenant_id_header=tenant_id,
+    )
+
+    assert created["success"] is True
+
+    subscription = created["subscription"]
+
+    legacy_payload = copy.deepcopy(
+        canonical_payload
+    )
+
+    legacy_payload["currentPeriodStart"] = (
+        "2026-09-03T10:00:00+00:00"
+    )
+    legacy_payload["currentPeriodEnd"] = (
+        "2026-10-03T10:00:00+00:00"
+    )
+
+    create_material = (
+        registry._create_material(
+            tenant_id,
+            legacy_payload,
+        )
+    )
+
+    fingerprint = (
+        registry._fingerprint_create_material(
+            create_material
+        )
+    )
+
+    update_result = (
+        mongo_context.collection.update_one(
+            {
+                "tenant_id": tenant_id,
+                "subscription_id":
+                    subscription.subscription_id,
+            },
+            {
+                "$set": {
+                    "_registry_create_material":
+                        create_material,
+                    "_registry_create_fingerprint":
+                        fingerprint,
+                    "current_period_start":
+                        "2026-09-03T10:00:00+00:00",
+                    "current_period_end":
+                        "2026-10-03T10:00:00+00:00",
+                }
+            },
+        )
+    )
+
+    assert update_result.matched_count == 1
+    assert update_result.modified_count == 1
+
+    replay = SubscriptionRegistry.create(
+        legacy_payload,
+        tenant_id_header=tenant_id,
+    )
+
+    assert replay["success"] is True
+    assert replay["replayed"] is True
+
+    assert (
+        replay["subscription"].subscription_id
+        == subscription.subscription_id
+    )
+
+    assert (
+        replay[
+            "subscription"
+        ].current_period_start
+        == datetime.fromisoformat(
+            "2026-09-03T10:00:00+00:00"
+        )
+    )
+
+    assert (
+        replay[
+            "subscription"
+        ].current_period_end
+        == datetime.fromisoformat(
+            "2026-10-03T10:00:00+00:00"
+        )
+    )
+
+    changed = copy.deepcopy(
+        legacy_payload
+    )
+
+    changed["currentPeriodEnd"] = (
+        "2026-11-03T10:00:00+00:00"
+    )
+
+    conflict = SubscriptionRegistry.create(
+        changed,
+        tenant_id_header=tenant_id,
+    )
+
+    assert conflict == {
+        "success": False,
+        "error":
+            "SUBSCRIPTION_IDEMPOTENCY_CONFLICT",
+    }
+
+    persisted_after_conflict = (
+        mongo_context.collection.find_one(
+            {
+                "tenant_id": tenant_id,
+                "subscription_id":
+                    subscription.subscription_id,
+            }
+        )
+    )
+
+    assert persisted_after_conflict is not None
+
+    assert (
+        persisted_after_conflict[
+            "current_period_start"
+        ]
+        == "2026-09-03T10:00:00+00:00"
+    )
+
+    assert (
+        persisted_after_conflict[
+            "current_period_end"
+        ]
+        == "2026-10-03T10:00:00+00:00"
+    )
+
+
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_registry_real_mongo.py
-# VERSION: v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-CERT
+# VERSION: v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT
 # AUTHORITY BOUNDARY:
 #   Real Mongo subscription persistence plus canonical PlanRegistry
 #   catalogue-provenance integration. HTTP authorization remains outside
