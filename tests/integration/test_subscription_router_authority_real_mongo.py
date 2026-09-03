@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription Router Authority Real-Mongo Certification.
-VERSION: v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT
+VERSION: v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
 AUTHORITY: Actual-Mongo HTTP certification of subscription identity, tenant
 membership, permission and persistence composition.
 EPITOME: Executes the real FastAPI subscription router with current JWT
@@ -10,6 +10,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT certifies real HTTP
+    calendar-period authority composition. Authorized callers provide startDate
+    and Plan selection only; SubscriptionRegistry derives the current calendar
+    period from canonical Plan frequency. Caller period redirection, generic
+    period replacement and naive startDate fail closed without replacing
+    persisted subscription period truth. Production HTTP router authority
+    composition remains unchanged.
     v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT binds the real HTTP authority certificate to actual
     PlanRegistry catalogue persistence in the same isolated Mongo database;
     certifies planId/newPlanId-only selection, commercial redirection denial,
@@ -109,7 +116,7 @@ from tools.eos.saas.billing.subscription_registry import (
 
 
 VERSION = (
-    "v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT"
+    "v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
 )
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
@@ -312,10 +319,6 @@ def _command(
         "planId": plan_id,
         "startDate":
             "2026-09-03T00:00:00+00:00",
-        "currentPeriodStart":
-            "2026-09-03T00:00:00+00:00",
-        "currentPeriodEnd":
-            "2026-10-03T00:00:00+00:00",
         "idempotencyKey": key,
         "billingMode": "PLATFORM",
         "onboardingRef":
@@ -1272,11 +1275,11 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.2.0-CATALOGUE-PROVENANCE"
+        == "v1.3.0-CALENDAR-BILLING-WIRING"
     )
     assert (
         VERSION
-        == "v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT"
+        == "v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
     )
 
 
@@ -1664,11 +1667,283 @@ def test_http_plan_catalogue_outage_after_valid_authority_is_bounded_503(
         == 0
     )
 
+
+def test_http_create_derives_calendar_period_and_denies_period_redirection(
+    context: Context,
+) -> None:
+    """Certify server-derived period truth and deny caller redirection."""
+    principal_id = (
+        "principal-calendar-"
+        + uuid.uuid4().hex
+    )
+
+    tenant_id = (
+        "tenant-calendar-"
+        + uuid.uuid4().hex
+    )
+
+    _seed(
+        context,
+        principal_id=principal_id,
+        tenant_id=tenant_id,
+    )
+
+    with TestClient(
+        context.app
+    ) as client:
+        created = client.post(
+            "/api/subscriptions",
+            json=_payload(
+                tenant_id,
+                "http-calendar-derived",
+            ),
+            headers=_headers(
+                principal_id,
+                tenant_id,
+            ),
+        )
+
+        assert created.status_code == 201
+
+        assert (
+            "2026-09-01T00:00:00+00:00"
+            in created.text
+        )
+
+        assert (
+            "2026-10-01T00:00:00+00:00"
+            in created.text
+        )
+
+        count_before = (
+            context.subscriptions.count_documents(
+                {
+                    "tenant_id":
+                        tenant_id
+                }
+            )
+        )
+
+        redirected = _payload(
+            tenant_id,
+            "http-period-redirection",
+        )
+
+        redirected[
+            "currentPeriodStart"
+        ] = "2026-09-03T00:00:00+00:00"
+
+        redirected[
+            "currentPeriodEnd"
+        ] = "2026-10-03T00:00:00+00:00"
+
+        denied = client.post(
+            "/api/subscriptions",
+            json=redirected,
+            headers=_headers(
+                principal_id,
+                tenant_id,
+            ),
+        )
+
+        assert denied.status_code == 422
+
+        assert (
+            "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN"
+            in denied.text
+        )
+
+        assert (
+            context.subscriptions.count_documents(
+                {
+                    "tenant_id":
+                        tenant_id
+                }
+            )
+            == count_before
+        )
+
+
+def test_http_generic_update_cannot_replace_calendar_period(
+    context: Context,
+) -> None:
+    """Certify manage authority cannot replace registry period truth."""
+    principal_id = (
+        "principal-calendar-update-"
+        + uuid.uuid4().hex
+    )
+
+    tenant_id = (
+        "tenant-calendar-update-"
+        + uuid.uuid4().hex
+    )
+
+    _seed(
+        context,
+        principal_id=principal_id,
+        tenant_id=tenant_id,
+    )
+
+    with TestClient(
+        context.app
+    ) as client:
+        created = client.post(
+            "/api/subscriptions",
+            json=_payload(
+                tenant_id,
+                "http-calendar-update-create",
+            ),
+            headers=_headers(
+                principal_id,
+                tenant_id,
+            ),
+        )
+
+        assert created.status_code == 201
+
+        persisted_before = (
+            context.subscriptions.find_one(
+                {
+                    "tenant_id":
+                        tenant_id
+                }
+            )
+        )
+
+        assert persisted_before is not None
+
+        subscription_id = (
+            persisted_before[
+                "subscription_id"
+            ]
+        )
+
+        period_start_before = (
+            persisted_before[
+                "current_period_start"
+            ]
+        )
+
+        period_end_before = (
+            persisted_before[
+                "current_period_end"
+            ]
+        )
+
+        denied = client.put(
+            (
+                "/api/subscriptions/"
+                + subscription_id
+            ),
+            json={
+                "current_period_end":
+                    "2099-01-01T00:00:00+00:00",
+            },
+            headers=_headers(
+                principal_id,
+                tenant_id,
+            ),
+        )
+
+        assert denied.status_code == 422
+
+        assert (
+            "SUBSCRIPTION_UPDATE_INVALID_FIELDS"
+            in denied.text
+        )
+
+        persisted_after = (
+            context.subscriptions.find_one(
+                {
+                    "tenant_id":
+                        tenant_id,
+                    "subscription_id":
+                        subscription_id,
+                }
+            )
+        )
+
+        assert persisted_after is not None
+
+        assert (
+            persisted_after[
+                "current_period_start"
+            ]
+            == period_start_before
+        )
+
+        assert (
+            persisted_after[
+                "current_period_end"
+            ]
+            == period_end_before
+        )
+
+
+def test_http_naive_start_date_fails_closed_without_subscription_persistence(
+    context: Context,
+) -> None:
+    """Certify explicit timezone is mandatory through the HTTP path."""
+    principal_id = (
+        "principal-naive-calendar-"
+        + uuid.uuid4().hex
+    )
+
+    tenant_id = (
+        "tenant-naive-calendar-"
+        + uuid.uuid4().hex
+    )
+
+    _seed(
+        context,
+        principal_id=principal_id,
+        tenant_id=tenant_id,
+    )
+
+    payload = _payload(
+        tenant_id,
+        "http-naive-calendar",
+    )
+
+    payload["startDate"] = (
+        "2026-09-03T00:00:00"
+    )
+
+    with TestClient(
+        context.app
+    ) as client:
+        response = client.post(
+            "/api/subscriptions",
+            json=payload,
+            headers=_headers(
+                principal_id,
+                tenant_id,
+            ),
+        )
+
+    assert response.status_code == 400
+
+    assert (
+        "SUBSCRIPTION_CREATE_FAILED"
+        in response.text
+    )
+
+    assert (
+        context.subscriptions.count_documents(
+            {
+                "tenant_id":
+                    tenant_id
+            }
+        )
+        == 0
+    )
+
+
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_router_authority_real_mongo.py
-# VERSION: v1.1.0-SUBSCRIPTION-CATALOGUE-PROVENANCE-HTTP-CERT
+# VERSION: v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
 # AUTHORITY BOUNDARY: real HTTP composition of principal, membership, permission, canonical PlanRegistry catalogue provenance and real subscription persistence only
 # TENANT POSTURE: raw tenant context must survive ACTIVE persisted membership and current role-assignment permission authority
 # FAIL-CLOSED POSTURE: missing identity, wrong tenant, inactive membership, absent/revoked role, projected JWT grants and persistence outage never become subscription access

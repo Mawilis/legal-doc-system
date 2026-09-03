@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.2.0-CATALOGUE-PROVENANCE
+    v1.3.0-CALENDAR-BILLING-WIRING
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -28,6 +28,18 @@ CERTIFICATION / UPDATE DATE:
     2026-09-03
 
 CHANGELOG:
+    v1.3.0-CALENDAR-BILLING-WIRING:
+        - Retires fixed 30/90/365-day period derivation from production create.
+        - Derives current period exclusively from timezone-aware startDate and
+          canonical PlanRegistry billing frequency through calendar_period_bounds.
+        - Rejects caller-authored current-period coordinates for new commands.
+        - Removes current-period coordinates from generic update authority.
+        - Preserves historical exact idempotent replay for previously persisted
+          period-bearing commands only when their stored command fingerprint
+          matches exactly; changed reuse remains an idempotency conflict.
+        - Does not invent plan-change proration, payment authorization or
+          execution truth; Kennel EOS remains exclusive financial execution.
+
     v1.2.0-CATALOGUE-PROVENANCE:
         - Resolves every new or changed subscription plan selector through
           canonical PlanRegistry catalogue truth.
@@ -120,7 +132,7 @@ import logging
 import os
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 from pymongo import MongoClient
@@ -138,13 +150,13 @@ from ..domain.subscription import (
     PlanTiers,
     SubscriptionEntity,
     SubscriptionStatus,
-    period_days_for_frequency,
+    calendar_period_bounds,
     to_annual_amount,
     to_monthly_amount,
 )
 
 
-VERSION = "v1.2.0-CATALOGUE-PROVENANCE"
+VERSION = "v1.3.0-CALENDAR-BILLING-WIRING"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -210,8 +222,6 @@ _MUTABLE_UPDATE_FIELDS = frozenset(
     {
         "collection_method",
         "trial_end_date",
-        "current_period_start",
-        "current_period_end",
         "status",
         "cancel_reason",
         "pause_reason",
@@ -260,6 +270,15 @@ _CALLER_COMMERCIAL_AUTHORITY_FIELDS = frozenset(
         "newPlan",
         "newAmount",
         "newPlanId",
+    }
+)
+
+_CALLER_PERIOD_AUTHORITY_FIELDS = frozenset(
+    {
+        "currentPeriodStart",
+        "currentPeriodEnd",
+        "current_period_start",
+        "current_period_end",
     }
 )
 
@@ -866,18 +885,6 @@ class SubscriptionRegistry:
     """
 
     @classmethod
-    def _period_end_from_start(
-        cls,
-        start: datetime,
-        frequency: BillingFrequency,
-    ) -> datetime:
-        return start + timedelta(
-            days=period_days_for_frequency(
-                frequency
-            )
-        )
-
-    @classmethod
     def _to_datetime(
         cls,
         value: Any,
@@ -1276,6 +1283,18 @@ class SubscriptionRegistry:
                 "replayed": True,
             }
 
+        period_redirected = (
+            frozenset(payload)
+            & _CALLER_PERIOD_AUTHORITY_FIELDS
+        )
+
+        if period_redirected:
+            return {
+                "success": False,
+                "error":
+                    "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN",
+            }
+
         try:
             catalogue_plan = (
                 cls._resolve_catalogue_plan(
@@ -1304,28 +1323,14 @@ class SubscriptionRegistry:
                     "error": "Invalid startDate",
                 }
 
-            period_start = (
-                cls._to_datetime(
-                    payload.get(
-                        "currentPeriodStart"
-                    )
-                )
-                or start_date
+            (
+                period_start,
+                period_end,
+                _period_days,
+            ) = calendar_period_bounds(
+                start_date,
+                frequency,
             )
-
-            period_end = cls._to_datetime(
-                payload.get(
-                    "currentPeriodEnd"
-                )
-            )
-
-            if period_end is None:
-                period_end = (
-                    cls._period_end_from_start(
-                        period_start,
-                        frequency,
-                    )
-                )
 
             status_value = SubscriptionStatus(
                 str(
@@ -2695,7 +2700,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.2.0-CATALOGUE-PROVENANCE
+# VERSION: v1.3.0-CALENDAR-BILLING-WIRING
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,
