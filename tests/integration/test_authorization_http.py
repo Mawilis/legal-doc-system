@@ -1,11 +1,11 @@
 """TITLE: WILSY OS FastAPI Current Authorization HTTP Integration Certification
-VERSION: v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION
+VERSION: v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION
 AUTHORITY: Real FastAPI composition over current principal, tenant membership, and role-assignment authority.
 EPITOME: Proves bearer authentication, explicit tenant admission, and current role/permission enforcement at an HTTP boundary.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30
-CHANGELOG: v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION establishes a test-local FastAPI certification surface without production startup.
+CHANGELOG: v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION corrects the stale SERVICE_WORKER/execution:trigger allow assertion to the canonical fail-closed denial contract and strengthens the certificate against JWT role/permission projections. v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION established the test-local FastAPI certification surface without production startup.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Synthetic identities, deterministic test secret, UUID-isolated Mongo, bounded responses, and no credential logging.
 TENANT BOUNDARY: X-Tenant-ID and every persistence lookup are explicit and tenant-scoped; no default or global tenant exists.
@@ -40,7 +40,7 @@ from tools.eos.auth.tenant_access import get_current_tenant_identity, get_tenant
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository, TenantMembershipRepositoryError
 
-VERSION = "v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION"
+VERSION = "v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION"
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
 
 
@@ -143,8 +143,19 @@ def test_non_active_principal_denies(context: tuple[Any, Any, Any, Any, Any]) ->
     seed(context, principal_status=PrincipalStatus.REVOKED); assert_error(client(context[3]).get("/cert/role", headers={"Authorization": f"Bearer {token()}", "X-Tenant-ID": "tenant-t"}), 401)
 
 
-def test_permission_and_admin_projection_boundary(context: tuple[Any, Any, Any, Any, Any]) -> None:
-    seed(context, role="SERVICE_WORKER"); response = client(context[3]).get("/cert/permission", headers={"Authorization": f"Bearer {token()}", "X-Tenant-ID": "tenant-t"}); assert response.status_code == 200
+def test_blocked_permission_and_admin_projection_boundary_denies(context: tuple[Any, Any, Any, Any, Any]) -> None:
+    """Blocked permission and JWT projections cannot override current authority."""
+    seed(context, role="SERVICE_WORKER")
+
+    for projected in (False, True):
+        response = client(context[3]).get(
+            "/cert/permission",
+            headers={
+                "Authorization": f"Bearer {token(projected=projected)}",
+                "X-Tenant-ID": "tenant-t",
+            },
+        )
+        assert_error(response, 403)
 
 
 def test_expired_token_denies(context: tuple[Any, Any, Any, Any, Any]) -> None:
@@ -164,8 +175,8 @@ def test_repository_failures_are_bounded(context: tuple[Any, Any, Any, Any, Any]
     assert_error(client(app).get("/cert/role", headers={"Authorization": f"Bearer {token()}", "X-Tenant-ID": "tenant-t"}), 403)
 
 
-# ARTIFACT: test_authorization_http.py
-# VERSION: v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION
+# ARTIFACT: tests/integration/test_authorization_http.py
+# VERSION: v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION
 # AUTHORITY BOUNDARY: test-local FastAPI composition of current principal, membership, role, and permission authority only
 # TENANT POSTURE: explicit X-Tenant-ID and exact tenant-scoped persistence keys; no inference or default
 # FAIL-CLOSED POSTURE: invalid credentials, inactive authority, absent authority, cross-scope authority, and repository failures deny
