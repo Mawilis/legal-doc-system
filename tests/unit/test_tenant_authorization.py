@@ -838,6 +838,23 @@ def test_authorization_is_read_only_across_success_denial_and_financial_paths() 
 # 37 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
 # 38-40 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
 
+# Caller-owned session propagation contract.
+def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
+    session = object()
+    seen: list[object] = []
+    principal = _principal(); membership = _membership(); business = _business("tenant_owner"); assignments = _assignments("ENTERPRISE_ADMIN")
+    class P:
+        def resolve(self, principal_id: str, *, session: object = None) -> object: seen.append(session); return principal.resolve(principal_id)
+    class M:
+        def resolve(self, principal_id: str, tenant_id: str, *, session: object = None) -> object: seen.append(session); return membership.resolve(principal_id, tenant_id)
+    class A:
+        def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: object = None) -> object: seen.append(session); return assignments.resolve(principal_id, tenant_id, role_id)
+    class B(A):
+        def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: object = None) -> object: seen.append(session); return business.resolve(principal_id, tenant_id, role_id)
+    result = authorize_tenant_operation(principal_id=_PID, tenant_id=_TENANT, permission_id="platform_billing:release", operation="platform_billing_release", principal_repository=P(), membership_repository=M(), role_assignment_repository=A(), business_role_repository=B(), session=session)
+    assert result.authorized is True
+    assert seen and all(item is session for item in seen)
+
 # ARTIFACT: test_tenant_authorization.py
 # VERSION: v1.1.0-TENANT-AUTHORIZATION-COMPOSITION-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth

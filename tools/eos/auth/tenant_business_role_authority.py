@@ -15,7 +15,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial semantics; Kennel EOS remains exclusi
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final, Protocol
+from typing import Any, Final, Protocol
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
@@ -35,9 +35,9 @@ class TenantBusinessRoleResult:
     resolution: BusinessRoleResolution
 
 class RoleAssignmentReader(Protocol):
-    def resolve(self, principal_id: str, tenant_id: str, role_id: str) -> object: ...
+    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
 
-def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: object, repository: RoleAssignmentReader) -> TenantBusinessRoleResult:
+def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: object, repository: Any, session: Any = None) -> TenantBusinessRoleResult:
     """Return current durable business-role evidence; membership and authorization remain separate."""
     if not isinstance(principal_id, str) or not principal_id.strip() or principal_id != principal_id.strip() or not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
         return TenantBusinessRoleResult(None, BusinessRoleResolution.INVALID_INPUT)
@@ -45,7 +45,7 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
     try:
         for role_id in TENANT_ROLES:
             try:
-                assignment = repository.resolve(principal_id, tenant_id, role_id)
+                assignment = repository.resolve(principal_id, tenant_id, role_id) if session is None else repository.resolve(principal_id, tenant_id, role_id, session=session)
             except RoleAssignmentNotFoundError:
                 continue
             if getattr(assignment, "status", None) is RoleAssignmentStatus.ACTIVE:

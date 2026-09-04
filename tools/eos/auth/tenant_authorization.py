@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Protocol, cast
+from typing import Any
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
@@ -42,26 +43,26 @@ class TenantAuthorizationDecision:
     business_role: str | None = None
     authorization_role: str | None = None
 class PrincipalReader(Protocol):
-    def resolve(self, principal_id: str) -> object: ...
+    def resolve(self, principal_id: str, *, session: Any = None) -> object: ...
 class MembershipReader(Protocol):
-    def resolve(self, principal_id: str, tenant_id: str) -> object: ...
+    def resolve(self, principal_id: str, tenant_id: str, *, session: Any = None) -> object: ...
 class AssignmentReader(Protocol):
-    def resolve(self, principal_id: str, tenant_id: str, role_id: str) -> object: ...
+    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
 _BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","platform_billing_release":"platform_billing:release"})
-def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: PrincipalReader, membership_repository: MembershipReader, role_assignment_repository: AssignmentReader, business_role_repository: AssignmentReader) -> TenantAuthorizationDecision:
+def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
         return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT)
     pid, tid, perm, op = cast(str, principal_id), cast(str, tenant_id), cast(str, permission_id), cast(str, operation)
-    try: principal = principal_repository.resolve(pid)
+    try: principal = principal_repository.resolve(pid) if session is None else principal_repository.resolve(pid, session=session)
     except PrincipalAuthorityNotFoundError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PRINCIPAL_NOT_FOUND)
     except PrincipalAuthorityRepositoryError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE)
     if getattr(principal, "status", None) is not PrincipalStatus.ACTIVE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PRINCIPAL_INACTIVE)
-    try: membership = membership_repository.resolve(pid, tid)
+    try: membership = membership_repository.resolve(pid, tid) if session is None else membership_repository.resolve(pid, tid, session=session)
     except TenantMembershipNotFoundError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND)
     except TenantMembershipRepositoryError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE)
     if getattr(membership, "status", None) is not TenantMembershipStatus.ACTIVE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.MEMBERSHIP_INACTIVE)
-    role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository)
+    role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session)
     if role_result.resolution is not BusinessRoleResolution.RESOLVED: return TenantAuthorizationDecision(False, TenantAuthorizationReason(role_result.resolution.value)) if role_result.resolution.value in TenantAuthorizationReason._value2member_map_ else TenantAuthorizationDecision(False, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
     if op == "financial_execution": return TenantAuthorizationDecision(False, TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED, role_result.role)
     system = requires_system_authority(op)
@@ -76,7 +77,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     inactive_seen = False
     active_role: str | None = None
     for auth_role in get_roles_granting_permission(perm):
-        try: assignment = role_assignment_repository.resolve(pid, tid, auth_role)
+        try: assignment = role_assignment_repository.resolve(pid, tid, auth_role) if session is None else role_assignment_repository.resolve(pid, tid, auth_role, session=session)
         except RoleAssignmentNotFoundError: continue
         except RoleAssignmentRepositoryError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE, role_result.role)
         if getattr(assignment, "status", None) is RoleAssignmentStatus.ACTIVE:
