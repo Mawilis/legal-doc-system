@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.0.2-TENANT-AUTHORITY-POLICY-CANON
+VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-POLICY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries for future composition.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.2 makes unknown SYSTEM-authority queries explicitly fail closed.
+CHANGELOG: v1.1.0 adds platform_billing_release as a high-consequence
+tenant commercial-liability operation eligible only to tenant_owner; tenant_admin,
+tenant_manager, and tenant_auditor remain ineligible, financial_execution remains
+explicitly denied, and no financial or Kennel authority is created.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Pure deterministic metadata; no persistence, credentials, network, or implicit authority.
 TENANT BOUNDARY: Eligibility is own-tenant only; membership and target scope require separate composition.
@@ -17,17 +20,17 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.0.2-TENANT-AUTHORITY-POLICY-CANON"
+VERSION = "v1.1.0-PLATFORM-BILLING-RELEASE-POLICY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
     UNKNOWN = "UNKNOWN"
 ELIGIBLE, DENY = "ELIGIBLE", "DENY"
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor"})
-OPERATIONS: Final[FrozenSet[str]] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "audit_read", "artifact_read", "cross_tenant", "financial_execution"})
+OPERATIONS: Final[FrozenSet[str]] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "audit_read", "artifact_read", "platform_billing_release", "cross_tenant", "financial_execution"})
 ELIGIBILITY: Final = MappingProxyType({
-    "tenant_owner": MappingProxyType({"profile_read": ELIGIBLE, "profile_update": ELIGIBLE, "lifecycle_create": DENY, "lifecycle_archive": ELIGIBLE, "membership_read": ELIGIBLE, "membership_invite": ELIGIBLE, "membership_deactivate": ELIGIBLE, "role_assignment_read": ELIGIBLE, "role_grant": DENY, "role_revoke": DENY, "audit_read": ELIGIBLE, "artifact_read": DENY, "cross_tenant": DENY, "financial_execution": DENY}),
-    "tenant_admin": MappingProxyType({"profile_read": ELIGIBLE, "profile_update": ELIGIBLE, "lifecycle_create": DENY, "lifecycle_archive": DENY, "membership_read": ELIGIBLE, "membership_invite": ELIGIBLE, "membership_deactivate": ELIGIBLE, "role_assignment_read": ELIGIBLE, "role_grant": ELIGIBLE, "role_revoke": ELIGIBLE, "audit_read": ELIGIBLE, "artifact_read": DENY, "cross_tenant": DENY, "financial_execution": DENY}),
+    "tenant_owner": MappingProxyType({"profile_read": ELIGIBLE, "profile_update": ELIGIBLE, "lifecycle_create": DENY, "lifecycle_archive": ELIGIBLE, "membership_read": ELIGIBLE, "membership_invite": ELIGIBLE, "membership_deactivate": ELIGIBLE, "role_assignment_read": ELIGIBLE, "role_grant": DENY, "role_revoke": DENY, "audit_read": ELIGIBLE, "artifact_read": DENY, "platform_billing_release": ELIGIBLE, "cross_tenant": DENY, "financial_execution": DENY}),
+    "tenant_admin": MappingProxyType({"profile_read": ELIGIBLE, "profile_update": ELIGIBLE, "lifecycle_create": DENY, "lifecycle_archive": DENY, "membership_read": ELIGIBLE, "membership_invite": ELIGIBLE, "membership_deactivate": ELIGIBLE, "role_assignment_read": ELIGIBLE, "role_grant": ELIGIBLE, "role_revoke": ELIGIBLE, "audit_read": ELIGIBLE, "artifact_read": DENY, "platform_billing_release": DENY, "cross_tenant": DENY, "financial_execution": DENY}),
     "tenant_manager": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "profile_read": ELIGIBLE}),
     "tenant_auditor": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "profile_read": ELIGIBLE, "membership_read": ELIGIBLE, "role_assignment_read": ELIGIBLE, "audit_read": ELIGIBLE}),
 })
@@ -68,7 +71,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.0.2-TENANT-AUTHORITY-POLICY-CANON
+# VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-POLICY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant eligibility requires separate ACTIVE membership and scope checks
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

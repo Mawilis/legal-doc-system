@@ -644,6 +644,17 @@ def test_permission_operation_binding_remains_exact() -> None:
     assert result.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
     assert assignments.calls == []
 
+def test_platform_billing_release_requires_owner_and_enterprise_admin() -> None:
+    result = _decision(permission_id="platform_billing:release", operation="platform_billing_release", business_repository=_business("tenant_owner"), assignment_repository=_assignments("ENTERPRISE_ADMIN"))
+    assert result.authorized is True
+    assert result.reason is TenantAuthorizationReason.AUTHORIZED
+
+@pytest.mark.parametrize("business_role", ("tenant_admin", "tenant_manager", "tenant_auditor"))
+def test_platform_billing_release_rejects_non_owner_business_roles(business_role: str) -> None:
+    result = _decision(permission_id="platform_billing:release", operation="platform_billing_release", business_repository=_business(business_role), assignment_repository=_assignments("ENTERPRISE_ADMIN"))
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
 
 @pytest.mark.parametrize(
     "operation",

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT
+VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan
 permission grants, deterministic expansion, reverse lookup, and fail-closed
@@ -38,7 +38,7 @@ from tools.eos.auth.roles import (
     get_roles_granting_permission,
 )
 
-VERSION = "v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT"
+VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -114,6 +114,7 @@ def test_exact_role_vocabulary_and_grant_matrix() -> None:
             "subscription:manage",
             "plan:read",
             "plan:manage",
+            "platform_billing:release",
         ],
         "AUDITOR": [
             "kernel:read",
@@ -195,6 +196,7 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("subscription:manage", ("ENTERPRISE_ADMIN",)),
         ("plan:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
+        ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
     ),
 )
 def test_tenant_permission_reverse_lookup_is_exact(
@@ -276,7 +278,7 @@ def test_no_role_has_implicit_wildcard_or_financial_grant() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT
+# VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: tenant/subscription/plan grants remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

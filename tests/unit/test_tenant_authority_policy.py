@@ -1,5 +1,5 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.0.2-TENANT-AUTHORITY-POLICY-CERT
+VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-POLICY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
@@ -41,6 +41,11 @@ def test_matrix_boundaries() -> None:
     assert tenant_role_operation_eligibility("tenant_manager", "membership_read") == DENY
     assert tenant_role_operation_eligibility("tenant_manager", "role_assignment_read") == DENY
 
+def test_platform_billing_release_is_tenant_owner_only() -> None:
+    assert "platform_billing_release" in OPERATIONS
+    assert tenant_role_operation_eligibility("tenant_owner", "platform_billing_release") == ELIGIBLE
+    assert all(tenant_role_operation_eligibility(role, "platform_billing_release") == DENY for role in TENANT_ROLES if role != "tenant_owner")
+
 def test_profile_policy_is_bounded_and_disjoint() -> None:
     assert allowed_profile_mutation_fields("tenant_owner") == PROFILE_MUTABLE_FIELDS_V1
     assert allowed_profile_mutation_fields("tenant_admin") == PROFILE_MUTABLE_FIELDS_V1
@@ -78,7 +83,7 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.0.2-TENANT-AUTHORITY-POLICY-CERT
+# VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-POLICY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
