@@ -5,7 +5,8 @@ EPITOME: Defines bounded tenant-role eligibility and field boundaries for future
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.1.0 adds platform_billing_release as a high-consequence
+CHANGELOG: v1.1.0 runtime VERSION is the canonical policy provenance source;
+v1.1.0 adds platform_billing_release as a high-consequence
 tenant commercial-liability operation eligible only to tenant_owner; tenant_admin,
 tenant_manager, and tenant_auditor remain ineligible, financial_execution remains
 explicitly denied, and no financial or Kennel authority is created.

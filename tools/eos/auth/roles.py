@@ -8,6 +8,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    2026-09-04 runtime VERSION is the canonical policy provenance source for
+    trusted authorization-evidence capture; no grant semantics changed.
     2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS grants
     platform_billing:release only to ENTERPRISE_ADMIN.
     2026-09-03 v1.3.0-PLAN-PERMISSION-GRANTS grants plan:read to

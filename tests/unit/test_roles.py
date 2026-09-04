@@ -33,10 +33,14 @@ from typing import Any, cast
 import pytest
 
 from tools.eos.auth.roles import (
+    VERSION as POLICY_VERSION,
     ROLE_PERMISSIONS_MAP,
     get_permissions_for_roles,
     get_roles_granting_permission,
 )
+
+def test_runtime_version_source_is_canonical() -> None:
+    assert POLICY_VERSION == "v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS"
 
 VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT"
 

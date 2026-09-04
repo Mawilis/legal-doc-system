@@ -8,6 +8,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    2026-09-04 runtime VERSION is the canonical policy provenance source for
+    trusted authorization-evidence capture; no policy semantics changed.
     2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION adds the
     tenant-scoped platform_billing:release capability without execution authority.
     2026-09-03 v1.3.0-PLAN-PERMISSION-CANON adds plan:read and plan:manage

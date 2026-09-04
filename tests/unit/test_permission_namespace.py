@@ -31,7 +31,10 @@ import pytest
 
 VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-PERMISSION-CERT"
 
-from tools.eos.auth.permission_namespace import PermissionDisposition, canonical_permissions, classify_legacy_permission, permission_metadata
+from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
+
+def test_runtime_version_source_is_canonical() -> None:
+    assert POLICY_VERSION == "v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
