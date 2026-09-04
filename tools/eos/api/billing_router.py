@@ -4,12 +4,13 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.7.1-PLAN-CATALOGUE-CONVERGENCE                                                                                       ║
+║ VERSION:        v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL                                                                                       ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; fixed mongo_client access.                  ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-04 v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL – HTTP payment success/failure, refund, partial-payment settlement, paid-state, and paid-at mutation fail closed behind Kennel EOS. ║
 ║   2026-09-03 v1.7.1-PLAN-CATALOGUE-CONVERGENCE – /billing/plans delegates canonical catalogue truth to PlanRegistry and fails closed on catalogue errors. ║
 ║   2026-08-25 v1.7.0-DUNNING-LIFECYCLE – Persisted 3/7/10/14/21/30 lifecycle with read-only suspension and SHA3 audit proof. ║
 ║   2026-08-21 v1.6.1-CROSS-TENANT-RESOLVE – Use global mongo_client from billing_registry; remove request.app dependency.      ║
@@ -19,6 +20,28 @@
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/billing_router.py
+
+TENANT BOUNDARY:
+    X-Tenant-Id remains requested billing scope only. This transport layer does
+    not create tenant membership, commercial authority, payment execution
+    authority, or settlement authority.
+
+AUTHORITY BOUNDARY:
+    This router is Python HTTP transport/composition over sovereign Python EOS
+    business owners. Caller payloads cannot manufacture provider execution or
+    settlement truth.
+
+FINANCIAL AUTHORITY BOUNDARY:
+    Kennel EOS exclusively owns financial execution truth. HTTP callers cannot
+    declare payment success/failure/refund, record partial settlement, stamp
+    paid_at, or directly establish InvoiceStatus.PAID.
+
+CONSTITUTION:
+    REQUEST != AUTHORIZATION != EXECUTION != SETTLEMENT.
+    NO EVIDENCE = NO FACT.
+
 """
 
 from __future__ import annotations
@@ -53,6 +76,8 @@ from ..saas.domain.billing import (
 from ..saas.billing.plan_registry import PlanRegistry
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
+VERSION = "v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL"
+
 logger = logging.getLogger(__name__)
 DEBUG_MODE = os.getenv("WILSY_MODEL_DEBUG", "0") == "1"
 
@@ -61,6 +86,67 @@ def _log_error(exc: Exception, context: str, tenant_id: str = "GLOBAL_ROOT") -> 
         logger.error(f"[ERROR] {context} | tenant: {tenant_id} | {exc}\n{traceback.format_exc()}")
     else:
         logger.error(f"[ERROR] {context} | tenant: {tenant_id} | {exc}")
+
+def _raise_financial_authority_conflict(
+    code: str,
+) -> None:
+    """Fail closed when HTTP input attempts to create Kennel-owned truth."""
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=code,
+    )
+
+
+def _reject_http_invoice_financial_truth(
+    updates: Dict[str, Any],
+) -> None:
+    """Reject caller-authored settlement fields before registry invocation."""
+    forbidden_fields = {
+        "paid_at",
+        "paidAt",
+        "amount_paid",
+        "amountPaid",
+        "outstanding_amount",
+        "outstandingAmount",
+    }
+
+    if forbidden_fields.intersection(updates):
+        _raise_financial_authority_conflict(
+            "BILLING_SETTLEMENT_TRUTH_REQUIRES_KENNEL"
+        )
+
+    value = updates.get("status")
+
+    if isinstance(value, InvoiceStatus):
+        value = value.value
+
+    if (
+        isinstance(value, str)
+        and value.strip().lower()
+        == InvoiceStatus.PAID.value
+    ):
+        _raise_financial_authority_conflict(
+            "BILLING_PAID_STATE_REQUIRES_KENNEL_SETTLEMENT_EVIDENCE"
+        )
+
+
+async def _reject_http_invoice_financial_truth_request(
+    request: Request,
+) -> None:
+    """Reject forbidden settlement keys before Pydantic projects the DTO.
+
+    Presence of a forbidden financial-truth key is itself an authority
+    violation. The caller cannot evade the 409 boundary through an unknown
+    snake/camel alias that Pydantic would otherwise discard.
+    """
+    try:
+        payload: Any = await request.json()
+    except ValueError:
+        return
+
+    if isinstance(payload, dict):
+        _reject_http_invoice_financial_truth(payload)
+
 
 def _telemetry(tenant_id: str, category: str, event: str, source: str, metadata: Optional[dict] = None) -> None:
     if metadata is None:
@@ -407,7 +493,13 @@ async def get_platform_invoice(
         _log_error(e, "GET_PLATFORM_INVOICE", tenant_id)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
-@router.patch("/platform/invoices/{invoice_id}", response_model=Dict[str, Any])
+@router.patch(
+    "/platform/invoices/{invoice_id}",
+    response_model=Dict[str, Any],
+    dependencies=[
+        Depends(_reject_http_invoice_financial_truth_request)
+    ],
+)
 async def update_platform_invoice(
     invoice_id: str,
     updates: PlatformInvoiceUpdate,
@@ -417,10 +509,13 @@ async def update_platform_invoice(
 ):
     try:
         update_dict = updates.dict(exclude_unset=True)
+        _reject_http_invoice_financial_truth(update_dict)
         if not update_dict:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update")
         invoice = registry.update_platform_invoice(tenant_id, invoice_id, update_dict, performed_by)
         return _invoice_response_with_statement(invoice, tenant_id, "PLATFORM", performed_by)
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -546,7 +641,13 @@ async def get_client_invoice(
         _log_error(e, "GET_CLIENT_INVOICE", tenant_id)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
-@router.patch("/client/invoices/{invoice_id}", response_model=Dict[str, Any])
+@router.patch(
+    "/client/invoices/{invoice_id}",
+    response_model=Dict[str, Any],
+    dependencies=[
+        Depends(_reject_http_invoice_financial_truth_request)
+    ],
+)
 async def update_client_invoice(
     invoice_id: str,
     updates: ClientInvoiceUpdate,
@@ -556,10 +657,13 @@ async def update_client_invoice(
 ):
     try:
         update_dict = updates.dict(exclude_unset=True)
+        _reject_http_invoice_financial_truth(update_dict)
         if not update_dict:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update")
         invoice = registry.update_client_invoice(tenant_id, invoice_id, update_dict, performed_by)
         return invoice.to_dict()
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -660,14 +764,10 @@ async def update_payment_status(
     registry: BillingRegistry = Depends(get_billing_registry),
     performed_by: str = "SYSTEM",
 ):
-    try:
-        payment = registry.update_payment_status(tenant_id, payment_id, status_update.status, performed_by)
-        return payment.to_dict()
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    except Exception as e:
-        _log_error(e, "UPDATE_PAYMENT_STATUS", tenant_id)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+    """Payment execution truth is Kennel-owned; caller status mutation is prohibited."""
+    _raise_financial_authority_conflict(
+        "BILLING_EXECUTION_TRUTH_REQUIRES_KENNEL"
+    )
 
 @router.post("/payments/{payment_id}/refund", response_model=Dict[str, Any])
 async def refund_payment(
@@ -677,14 +777,10 @@ async def refund_payment(
     registry: BillingRegistry = Depends(get_billing_registry),
     performed_by: str = "SYSTEM",
 ):
-    try:
-        payment = registry.refund_payment(tenant_id, payment_id, refund_data.refund_amount, performed_by)
-        return payment.to_dict()
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
-        _log_error(e, "REFUND_PAYMENT", tenant_id)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+    """Refund execution requires a new Kennel-owned financial execution path."""
+    _raise_financial_authority_conflict(
+        "BILLING_REFUND_REQUIRES_KENNEL_EXECUTION"
+    )
 
 # ----------------------------------------------------------------------------
 # Summary
@@ -750,7 +846,7 @@ async def get_billing_summary(
                 total_arr += amount
 
         subscriptions_coll = _require_db()["subscriptions"]
-        sub_query = {"status": {"$in": ["active", "ACTIVE", "trialing", "TRIALING"]}} if tenant_id != "GLOBAL_ROOT" else {}
+        sub_query: Dict[str, Any] = {"status": {"$in": ["active", "ACTIVE", "trialing", "TRIALING"]}} if tenant_id != "GLOBAL_ROOT" else {}
         if tenant_id != "GLOBAL_ROOT":
             sub_query["$and"] = [
                 {"status": {"$in": ["active", "ACTIVE", "trialing", "TRIALING"]}},
@@ -1484,110 +1580,10 @@ async def record_partial_payment(
     registry: BillingRegistry = Depends(get_billing_registry),
     performed_by: str = "SYSTEM",
 ):
-    try:
-        if body.amount <= 0:
-            raise HTTPException(status_code=400, detail="amount must be > 0")
-        inv, kind = _resolve_invoice_any(registry, tenant_id, invoice_id)
-        if not inv:
-            raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} not found")
-        # Persist payment under the invoice's real tenant (not only GLOBAL_ROOT header)
-        pay_tenant = getattr(inv, "tenant_id", None) or tenant_id
-        invoice_doc_before_payment = inv.to_dict() if hasattr(inv, "to_dict") else dict(inv)
-        invoice_total = float(
-            invoice_doc_before_payment.get("total")
-            or invoice_doc_before_payment.get("total_amount")
-            or invoice_doc_before_payment.get("totalAmount")
-            or 0
-        )
-        successful_before_payment = registry.list_payments(
-            pay_tenant, invoice_id=invoice_id, status="succeeded", limit=500
-        )
-        amount_paid_before_payment = round(sum(
-            float((item.to_dict() if hasattr(item, "to_dict") else item).get("amount", 0) or 0)
-            for item in successful_before_payment
-        ), 2)
-        remaining_before_payment = max(0.0, round(invoice_total - amount_paid_before_payment, 2))
-        if invoice_total <= 0:
-            raise HTTPException(status_code=409, detail="Invoice does not have a collectible total")
-        if remaining_before_payment <= 0:
-            raise HTTPException(status_code=409, detail="Invoice is already settled")
-        if round(body.amount, 2) > remaining_before_payment:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Payment exceeds remaining balance of {remaining_before_payment:.2f} {body.currency or getattr(inv, 'currency', 'ZAR')}",
-            )
-        key = body.idempotencyKey or body.idempotency_key or str(uuid.uuid4())
-        payment = registry.create_payment(
-            tenant_id=pay_tenant,
-            invoice_id=invoice_id,
-            amount=body.amount,
-            currency=body.currency or getattr(inv, "currency", "ZAR"),
-            method=body.method or "manual",
-            external_reference=body.external_reference,
-            metadata={"source": "LEDGER_PARTIAL", "pipeline": kind},
-            idempotency_key=key,
-            performed_by=performed_by,
-        )
-        # Mark succeeded so invoice balance updates when registry supports it
-        try:
-            payment = registry.update_payment_status(
-                pay_tenant, payment.payment_id, "succeeded", performed_by
-            )
-        except Exception:
-            pass
-        # The payment collection is the source for partial settlement.  Return a
-        # fresh, enriched invoice so the browser never has to invent balances.
-        refreshed, _ = _resolve_invoice_any(registry, pay_tenant, invoice_id)
-        if not refreshed:
-            raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} disappeared after payment recording")
-        succeeded_payments = registry.list_payments(
-            pay_tenant, invoice_id=invoice_id, status="succeeded", limit=500
-        )
-        payment_history = [
-            item.to_dict() if hasattr(item, "to_dict") else item
-            for item in succeeded_payments
-        ]
-        invoice_doc = refreshed.to_dict() if hasattr(refreshed, "to_dict") else dict(refreshed)
-        amount_paid = round(sum(float(item.get("amount", 0) or 0) for item in payment_history), 2)
-        invoice_total = float(invoice_doc.get("total") or invoice_doc.get("total_amount") or 0)
-        outstanding_amount = max(0.0, round(invoice_total - amount_paid, 2))
-        settlement_updates: Dict[str, Any] = {
-            "amount_paid": amount_paid,
-            "outstanding_amount": outstanding_amount,
-        }
-        if outstanding_amount == 0 and invoice_total > 0:
-            settlement_updates.update({"status": "paid", "paid_at": datetime.now(timezone.utc)})
-        if kind == "platform":
-            refreshed = registry.update_platform_invoice(pay_tenant, invoice_id, settlement_updates, performed_by)
-        else:
-            refreshed = registry.update_client_invoice(pay_tenant, invoice_id, settlement_updates, performed_by)
-        invoice_doc = refreshed.to_dict() if hasattr(refreshed, "to_dict") else dict(refreshed)
-        invoice_doc.update({
-            "amount_paid": amount_paid,
-            "amountPaid": amount_paid,
-            "outstanding_amount": outstanding_amount,
-            "outstandingAmount": outstanding_amount,
-            "payments": payment_history,
-            "status": "paid" if outstanding_amount == 0 and invoice_total > 0 else "partially_paid",
-        })
-        _telemetry(pay_tenant, "BILLING", "PARTIAL_PAYMENT", "billing_router", {
-            "invoice_id": invoice_id, "amount": body.amount, "pipeline": kind,
-            "resolved_tenant": pay_tenant, "header_tenant": tenant_id,
-        })
-        return {
-            "success": True,
-            "payment": payment.to_dict() if hasattr(payment, "to_dict") else payment,
-            "invoice": invoice_doc,
-            "invoice_id": invoice_id,
-            "pipeline": kind,
-        }
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        _log_error(e, "PARTIAL_PAYMENT", tenant_id)
-        raise HTTPException(status_code=500, detail=str(e))
+    """Partial settlement requires governed Kennel execution and settlement evidence."""
+    _raise_financial_authority_conflict(
+        "BILLING_PARTIAL_SETTLEMENT_REQUIRES_KENNEL"
+    )
 
 
 @router.patch("/invoices/{invoice_id}/status", response_model=Dict[str, Any])
@@ -1602,6 +1598,10 @@ async def update_invoice_status_unified(
 ):
     try:
         raw = str(body.status or "").lower().strip()
+        if raw == "paid":
+            _raise_financial_authority_conflict(
+                "BILLING_PAID_STATE_REQUIRES_KENNEL_SETTLEMENT_EVIDENCE"
+            )
         # Map UI vocabulary → domain
         aliases = {
             "issued": "open",
@@ -1884,12 +1884,28 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.7.1-PLAN-CATALOGUE-CONVERGENCE
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.7.1-PLAN-CATALOGUE-CONVERGENCE
-Fixes:           /billing/plans canonical PlanRegistry convergence; explicit 503 failure posture.
+Version:         v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL
+Fixes:           Financial-truth HTTP firewall; caller payment execution/refund/settlement mutation denied.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
 ════════════════════════════════════════════════════════════════════════════════
 """
+
+# =============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# =============================================================================
+# ARTIFACT: tools/eos/api/billing_router.py
+# VERSION: v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL
+# AUTHORITY BOUNDARY:
+#   Python HTTP transport/composition only; no provider execution or settlement.
+# TENANT POSTURE:
+#   Tenant header is requested scope and never independently grants authority.
+# FAIL-CLOSED POSTURE:
+#   Payment status, refund, partial settlement, paid state, and paid-at caller
+#   mutation are rejected before billing-registry mutation.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

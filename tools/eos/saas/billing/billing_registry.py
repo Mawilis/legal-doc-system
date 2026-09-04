@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.0.10‑PARTIAL‑ROLLUP                                ║
+║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.1.0-FINANCIAL-TRUTH-FIREWALL                                ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/saas/billing/billing_registry.py                                                     ║
-║ VERSION:        v1.0.10‑PARTIAL‑ROLLUP                                                                        ║
+║ VERSION:        v1.1.0-FINANCIAL-TRUTH-FIREWALL                                                                        ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Dual‑write/read tenantId|tenant_id + invoiceId|invoice_id; non‑null idempotencyKey parity;    ║
 ║                 payment rollup – sums succeeded payments and marks invoice PAID only when fully settled.       ║
@@ -12,6 +12,7 @@
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-04 – v1.1.0-FINANCIAL-TRUTH-FIREWALL – Billing payment success/failure/refund and invoice settlement truth now fail closed unless projected from Kennel EOS. ║
 ║   2026-08-24 – v1.0.10 – Added `_sum_succeeded_payments` and rollup logic; mark PAID only when fully paid.    ║
 ║   2026-08-23 – v1.0.8 – Added `client = get_client()` alias.                                                   ║
 ║   2026-08-23 – v1.0.7 – Fixed DuplicateKeyError import.                                                        ║
@@ -25,6 +26,27 @@
 ║ CRYPTO:        SHA3‑512 proof generation (delegated to domain models)                                          ║
 ║ INTEGRATION:   Used by billing_router.py.                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/billing_registry.py
+
+TENANT BOUNDARY:
+    Every billing persistence lookup remains tenant-scoped. Tenant identity is
+    explicit input and never inferred from payment, invoice, or provider data.
+
+AUTHORITY BOUNDARY:
+    BillingRegistry owns commercial invoice persistence and historical payment
+    projection only. It does not authenticate, authorize release, invoke a
+    provider, create financial execution truth, or establish settlement truth.
+
+FINANCIAL AUTHORITY BOUNDARY:
+    Kennel EOS exclusively owns financial execution truth. Payment SUCCEEDED,
+    FAILED, REFUNDED, PARTIALLY_REFUNDED, paid_at, amount-paid settlement, and
+    InvoiceStatus.PAID cannot be manufactured by this registry.
+
+CONSTITUTION:
+    REQUEST != AUTHORIZATION != EXECUTION != SETTLEMENT.
+    NO EVIDENCE = NO FACT.
+
 """
 
 import logging
@@ -54,6 +76,8 @@ from ..domain.billing import (
 )
 
 # ─── Configuration ──────────────────────────────────────────────────────────
+
+VERSION = "v1.1.0-FINANCIAL-TRUTH-FIREWALL"
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +216,52 @@ def _normalize_sort_field(sort_by: str) -> str:
         "status": "status",
     }
     return mapping.get(sort_by, sort_by or "issued_at")
+
+
+class BillingFinancialTruthAuthorityError(ValueError):
+    """Raised when billing is asked to manufacture Kennel-owned truth."""
+
+
+def _reject_invoice_financial_truth_updates(
+    updates: Dict[str, Any],
+) -> None:
+    """Reject direct settlement mutation on generic invoice update paths.
+
+    Billing owns invoice commercial state but cannot independently establish
+    payment execution or settlement. Historical persisted projections remain
+    readable; new settlement truth must originate from certified Kennel
+    evidence through a future dedicated projection path.
+    """
+    if not isinstance(updates, dict):
+        raise TypeError("updates must be a dictionary")
+
+    forbidden_fields = {
+        "paid_at",
+        "paidAt",
+        "amount_paid",
+        "amountPaid",
+        "outstanding_amount",
+        "outstandingAmount",
+    }
+
+    if forbidden_fields.intersection(updates):
+        raise BillingFinancialTruthAuthorityError(
+            "BILLING_SETTLEMENT_TRUTH_REQUIRES_KENNEL"
+        )
+
+    status_value = updates.get("status")
+
+    if isinstance(status_value, InvoiceStatus):
+        status_value = status_value.value
+
+    if (
+        isinstance(status_value, str)
+        and status_value.strip().lower()
+        == InvoiceStatus.PAID.value
+    ):
+        raise BillingFinancialTruthAuthorityError(
+            "BILLING_PAID_STATE_REQUIRES_KENNEL_SETTLEMENT_EVIDENCE"
+        )
 
 
 class BillingRegistry:
@@ -420,6 +490,7 @@ class BillingRegistry:
         Update a platform invoice. Fields allowed: status, paid_at, void_at, cancellation_reason,
         metadata, etc. Recomputes proof.
         """
+        _reject_invoice_financial_truth_updates(updates)
         try:
             current = self.get_platform_invoice(tenant_id, invoice_id)
             if not current:
@@ -633,6 +704,7 @@ class BillingRegistry:
         updates: Dict[str, Any],
         performed_by: str = "SYSTEM",
     ) -> ClientInvoice:
+        _reject_invoice_financial_truth_updates(updates)
         try:
             current = self.get_client_invoice(tenant_id, invoice_id)
             if not current:
@@ -821,62 +893,15 @@ class BillingRegistry:
         status: Union[str, PaymentStatus],
         performed_by: str = "SYSTEM",
     ) -> Payment:
-        try:
-            payment = self.get_payment(tenant_id, payment_id)
-            if not payment:
-                raise ValueError(f"Payment {payment_id} not found for tenant {tenant_id}")
-            new_status = PaymentStatus(status.lower()) if isinstance(status, str) else status
-            current_dict = payment.to_dict()
-            current_dict["status"] = new_status.value
-            if new_status == PaymentStatus.SUCCEEDED:
-                current_dict["paid_at"] = datetime.now(timezone.utc).isoformat()
-            elif new_status == PaymentStatus.FAILED:
-                current_dict["paid_at"] = None
-            updated = Payment.from_dict(current_dict)
-            result = payments_coll.update_one(
-                {
-                    "$and": [
-                        _tenant_clause(tenant_id),
-                        {"$or": [{"payment_id": payment_id}, {"paymentId": payment_id}]},
-                    ]
-                },
-                {"$set": updated.to_dict()},
-            )
-            if result.matched_count == 0:
-                raise ValueError(f"Payment {payment_id} not found for tenant {tenant_id}")
-            # ─── ROLLUP LOGIC ──────────────────────────────────────────────
-            if new_status == PaymentStatus.SUCCEEDED:
-                try:
-                    paid_total = self._sum_succeeded_payments(tenant_id, payment.invoice_id)
-                    # Check platform invoice
-                    inv = self.get_platform_invoice(tenant_id, payment.invoice_id)
-                    if inv:
-                        inv_total = float(getattr(inv, "total", 0) or 0)
-                        if paid_total + 1e-6 >= inv_total and inv_total > 0:
-                            self.update_platform_invoice(
-                                tenant_id,
-                                payment.invoice_id,
-                                {"status": InvoiceStatus.PAID, "paid_at": datetime.now(timezone.utc)},
-                                performed_by,
-                            )
-                        # else leave OPEN / issued – partial is tracked on payments collection
-                    else:
-                        inv = self.get_client_invoice(tenant_id, payment.invoice_id)
-                        if inv:
-                            inv_total = float(getattr(inv, "total", 0) or 0)
-                            if paid_total + 1e-6 >= inv_total and inv_total > 0:
-                                self.update_client_invoice(
-                                    tenant_id,
-                                    payment.invoice_id,
-                                    {"status": InvoiceStatus.PAID, "paid_at": datetime.now(timezone.utc)},
-                                    performed_by,
-                                )
-                except Exception as rollup_err:
-                    logger.warning(f"Payment rollup skipped: {rollup_err}")
-            return updated
-        except Exception as e:
-            logger.error(f"Failed to update payment status {payment_id}: {e}\n{traceback.format_exc()}")
-            raise
+        """Reject local creation of provider execution or settlement truth.
+
+        Payment success/failure is provider execution truth and therefore belongs
+        exclusively to Kennel EOS. BillingRegistry may hydrate historical
+        projections but cannot manufacture, infer, or mutate that truth.
+        """
+        raise BillingFinancialTruthAuthorityError(
+            "BILLING_EXECUTION_TRUTH_REQUIRES_KENNEL"
+        )
 
     def refund_payment(
         self,
@@ -885,37 +910,15 @@ class BillingRegistry:
         refund_amount: float,
         performed_by: str = "SYSTEM",
     ) -> Payment:
-        try:
-            payment = self.get_payment(tenant_id, payment_id)
-            if not payment:
-                raise ValueError(f"Payment {payment_id} not found for tenant {tenant_id}")
-            if payment.status not in (PaymentStatus.SUCCEEDED, PaymentStatus.PARTIALLY_REFUNDED):
-                raise ValueError("Cannot refund a payment that is not succeeded or partially refunded")
-            current_dict = payment.to_dict()
-            if refund_amount >= payment.amount:
-                current_dict["status"] = PaymentStatus.REFUNDED.value
-                current_dict["refund_amount"] = payment.amount
-                current_dict["refunded_at"] = datetime.now(timezone.utc).isoformat()
-            else:
-                current_dict["status"] = PaymentStatus.PARTIALLY_REFUNDED.value
-                current_dict["refund_amount"] = current_dict.get("refund_amount", 0) + refund_amount
-                current_dict["refunded_at"] = datetime.now(timezone.utc).isoformat()
-            updated = Payment.from_dict(current_dict)
-            result = payments_coll.update_one(
-                {
-                    "$and": [
-                        _tenant_clause(tenant_id),
-                        {"$or": [{"payment_id": payment_id}, {"paymentId": payment_id}]},
-                    ]
-                },
-                {"$set": updated.to_dict()},
-            )
-            if result.matched_count == 0:
-                raise ValueError(f"Payment {payment_id} not found for tenant {tenant_id}")
-            return updated
-        except Exception as e:
-            logger.error(f"Failed to refund payment {payment_id}: {e}\n{traceback.format_exc()}")
-            raise
+        """Reject local refund execution.
+
+        A refund moves money and therefore requires a new authorized financial
+        execution path through Kennel EOS. BillingRegistry owns no refund
+        execution authority.
+        """
+        raise BillingFinancialTruthAuthorityError(
+            "BILLING_REFUND_REQUIRES_KENNEL_EXECUTION"
+        )
 
 
 # ─── Singleton ──────────────────────────────────────────────────────────────
@@ -932,11 +935,11 @@ def get_billing_registry() -> BillingRegistry:
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.0.10‑PARTIAL‑ROLLUP
+🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.1.0-FINANCIAL-TRUTH-FIREWALL
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT — FULL MANDATE COMPLIANCE
-Version:         v1.0.10‑PARTIAL‑ROLLUP
-Fixes:           Payment rollup: sum succeeded payments; invoice marked PAID only when fully settled.
+Version:         v1.1.0-FINANCIAL-TRUTH-FIREWALL
+Fixes:           Direct billing execution/refund/settlement mutation disabled; Kennel EOS required.
 Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
 Health Posture:  GREEN — no open issues
 Deploy:
@@ -944,3 +947,20 @@ Deploy:
       /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/billing_registry.py
 ════════════════════════════════════════════════════════════════════════════════
 """
+
+# =============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# =============================================================================
+# ARTIFACT: tools/eos/saas/billing/billing_registry.py
+# VERSION: v1.1.0-FINANCIAL-TRUTH-FIREWALL
+# AUTHORITY BOUNDARY:
+#   Commercial billing persistence and historical projection only.
+# TENANT POSTURE:
+#   Explicit tenant-scoped persistence; no cross-tenant inference.
+# FAIL-CLOSED POSTURE:
+#   Direct payment execution, refund execution, paid state, and settlement
+#   mutation are rejected until certified Kennel evidence is supplied through
+#   a dedicated projection boundary.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
