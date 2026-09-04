@@ -1,14 +1,15 @@
-"""WILSY OS — PLATFORM BILLING RELEASE AUTHORIZATION DIRECT CERT
+"""WILSY OS — PLATFORM BILLING COMMERCIAL + RELEASE AUTHORIZATION DIRECT CERT
 
-TITLE: Platform Billing Release Authorization Domain Direct Certificate
-VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-DOMAIN-CERT
+TITLE: PlatformInvoice Commercial Evidence and Release Authorization Domain Certificate
+VERSION: v1.2.0-PLATFORM-BILLING-COMMERCIAL-RELEASE-EVIDENCE-DOMAIN-CERT
 AUTHORITY: Wilsy OS Core Governance
-PURPOSE: Certify the immutable value and persistence-shape contract only.
-EPITOME: Direct structural certification; no persistence, authorization
-issuance, financial execution, or real-world settlement claim.
+PURPOSE: Certify R3C1 immutable release-authorization values and P1A2 deterministic PlatformInvoice commercial evidence.
+EPITOME: Direct domain certification only; no issuance, persistence, authorization,
+financial execution, or real-world settlement claim.
 ABSOLUTE CANONICAL PATH:
 /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_platform_billing_release_authorization.py
 CERTIFICATION / UPDATE DATE: 2026-09-04
+CHANGELOG: v1.2.0 adds direct commercial-release evidence and settlement-exclusion coverage.
 FINANCIAL AUTHORITY BOUNDARY:
   APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED.
   Kennel EOS remains the exclusive financial execution authority.
@@ -29,6 +30,7 @@ from tools.eos.saas.domain.platform_billing_release_authorization import (
     PlatformBillingReleaseAuthorization,
     PlatformBillingReleaseAuthorizationDomainError,
 )
+from tools.eos.saas.domain.billing import InvoiceStatus, PlatformInvoice
 
 
 TEST_VERSION = (
@@ -146,6 +148,32 @@ def test_contract_is_frozen() -> None:
 
     with pytest.raises(FrozenInstanceError):
         evidence.currency = "USD"  # type: ignore[misc]
+
+def invoice(**changes: Any) -> PlatformInvoice:
+    values: dict[str, Any] = {"tenant_id": "T1", "invoice_id": "I1", "amount": 100.0, "tax_amount": 15.0, "total": 115.0, "currency": "ZAR", "issued_at": AUTHORIZED_AT, "due_at": AUTHORIZED_AT}
+    values.update(changes)
+    return PlatformInvoice(**values)
+
+def test_commercial_release_evidence_uses_payable_total_and_is_deterministic() -> None:
+    value = invoice()
+    assert value.release_amount_minor == 11500
+    assert value.commercial_release_evidence_payload() == value.commercial_release_evidence_payload()
+    assert value.commercial_release_evidence_fingerprint == invoice().commercial_release_evidence_fingerprint
+    assert value.commercial_release_evidence_fingerprint != invoice(total=116.0).commercial_release_evidence_fingerprint
+    assert value.commercial_release_evidence_fingerprint != invoice(tenant_id="T2").commercial_release_evidence_fingerprint
+    assert value.commercial_release_evidence_fingerprint != invoice(invoice_id="I2").commercial_release_evidence_fingerprint
+    assert value.commercial_release_evidence_fingerprint != invoice(currency="USD").commercial_release_evidence_fingerprint
+    assert value.commercial_release_evidence_fingerprint != value.proof_hash
+
+def test_commercial_release_evidence_is_clock_independent() -> None:
+    first = invoice().commercial_release_evidence_fingerprint
+    second = invoice().commercial_release_evidence_fingerprint
+    assert first == second
+
+def test_settlement_projection_does_not_change_commercial_evidence() -> None:
+    assert invoice(amount_paid=10.0, outstanding_amount=105.0).commercial_release_evidence_fingerprint == invoice().commercial_release_evidence_fingerprint
+    assert invoice(paid_at=AUTHORIZED_AT).commercial_release_evidence_fingerprint == invoice().commercial_release_evidence_fingerprint
+    assert invoice(status=InvoiceStatus.PAID).commercial_release_evidence_fingerprint == invoice().commercial_release_evidence_fingerprint
 
 
 @pytest.mark.parametrize(
@@ -349,9 +377,9 @@ def test_source_has_no_io_or_kennel_dependency() -> None:
 # ARTIFACT:
 #   test_platform_billing_release_authorization.py
 # VERSION:
-#   v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-DOMAIN-CERT
+#   v1.2.0-PLATFORM-BILLING-COMMERCIAL-RELEASE-EVIDENCE-DOMAIN-CERT
 # CERTIFICATION:
-#   Direct immutable-domain contract only.
+#   Direct R3C1 release-authorization and P1A2 commercial-evidence contracts only.
 # REAL-WORLD PERSISTENCE CLAIM:
 #   NONE.
 # FINANCIAL EXECUTION CLAIM:

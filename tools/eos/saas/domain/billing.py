@@ -4,15 +4,19 @@
 ║ WILSY OS – SOVEREIGN BILLING DOMAIN MODEL (PYTHON) – TAX-INCLUSIVE TOTALS + DUAL CASE                           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/saas/domain/billing.py                                                             ║
-║ VERSION:        v1.2.1-PYLANCE-METADATA                                                               ║
+║ VERSION:        v1.3.0-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE                                  ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                     ║
 ║ EPITOME:        LineItem accepts snake_case + camelCase. Invoice amount=subtotal, total=subtotal+tax.        ║
 ║                 Ledger MUST display tax-inclusive total (SA VAT / commercial invoice law).                    ║
+║                 PlatformInvoice exposes deterministic, settlement-excluded commercial-release evidence.      ║
 ║ CLASSIFICATION: Production Artifact                                                                          ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                               ║
 ║   2026-08-24 v1.2.1-PYLANCE-METADATA – Fix ledger R0/ex-tax: from_dict reads unit_price/tax_amount;    ║
 ║                post_init sets amount (ex-VAT), tax_amount, total (incl VAT); dual-write total_amount.         ║
+║   2026-09-04 v1.3.0-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE – Added canonical tax-inclusive payable  ║
+║                minor-unit evidence and deterministic versioned commercial-release payload/fingerprint,       ║
+║                excluding settlement and execution truth.                                                     ║
 ║   2026-08-21 v1.1.0-ORDER-FIELDS – order_number & purchase_order.                                            ║
 ║   2026-08-20 v1.0.2-PROOF-GEN-FIX – Removed redundant enum .value in generate_proof.                         ║
 ║   2026-08-20 v1.0.0-INSTITUTIONAL – Initial creation.                                                        ║
@@ -31,6 +35,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
+from .money import to_minor_units
 
 
 def parse_datetime(val: Any) -> Optional[datetime]:
@@ -422,6 +427,42 @@ class PlatformInvoice(BaseInvoice):
         }
         return base
 
+    def commercial_release_evidence_payload(self) -> Dict[str, Any]:
+        """Return deterministic payable-liability evidence, excluding settlement state."""
+        return {
+            "schema": "WILSY-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE/V1",
+            "tenant_id": self.tenant_id,
+            "invoice_id": self.invoice_id,
+            "release_amount_minor": self.release_amount_minor,
+            "currency": self.currency,
+            "amount": self.amount,
+            "tax_amount": self.tax_amount,
+            "tax_type": self.tax_type.value,
+            "line_items": [item.to_dict() for item in self.line_items],
+            "issued_at": self.issued_at.isoformat() if self.issued_at else None,
+            "due_at": self.due_at.isoformat() if self.due_at else None,
+            "payment_terms_days": self.payment_terms_days,
+            "collection_method": self.collection_method.value,
+            "billing_mode": self.billing_mode,
+            "seller_jurisdiction": self.seller_jurisdiction,
+            "customer_jurisdiction": self.customer_jurisdiction,
+            "subscription_id": self.subscription_id,
+            "plan_id": self.plan_id,
+            "order_number": self.order_number,
+            "purchase_order": self.purchase_order,
+        }
+
+    @property
+    def release_amount_minor(self) -> int:
+        """Convert the tax-inclusive payable total using canonical money precision."""
+        return to_minor_units(self.total, self.currency)
+
+    @property
+    def commercial_release_evidence_fingerprint(self) -> str:
+        """Return deterministic lowercase SHA3-512 over canonical evidence payload."""
+        raw = json.dumps(self.commercial_release_evidence_payload(), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        return hashlib.sha3_512(raw).hexdigest()
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PlatformInvoice":
         if not isinstance(data, dict):
@@ -574,7 +615,7 @@ class ClientInvoice(BaseInvoice):
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING DOMAIN v1.2.0-TAX-INCLUSIVE
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING DOMAIN v1.3.0-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE
 ════════════════════════════════════════════════════════════════════════════════
 Math:            amount = Σ line.amount (ex-VAT); tax_amount = Σ line.tax; total = amount + tax
 Ledger:          MUST display total / total_amount / totalAmount (tax-inclusive)
