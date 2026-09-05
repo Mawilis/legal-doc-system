@@ -213,6 +213,43 @@ def test_real_mongo_cleanup_scope_is_uuid_bounded() -> None:
         assert len(database_name) > len("tenant_registry_failure_cert_")
 
 
+def test_real_mongo_create_participates_in_caller_owned_transaction() -> None:
+    """TenantRegistry.create forwards the caller session and never commits it."""
+    with _state() as (client, collection, _, _, _):
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            tenant_id = f"tenant-tx-{uuid4().hex}"
+            result = TenantRegistry.create({"name": "Transactional Tenant", "tenant_id": tenant_id}, session=session)
+            assert result["success"] is True
+            assert collection.find_one({"tenant_id": tenant_id}, session=session) is not None
+            assert session.in_transaction is True
+            session.abort_transaction()
+            assert collection.find_one({"tenant_id": tenant_id}) is None
+        finally:
+            session.end_session()
+
+
+def test_real_mongo_create_commit_is_durable_outside_transaction() -> None:
+    """Caller commit makes a session-participating tenant durable."""
+    with _state() as (client, collection, _, _, _):
+        session = client.start_session()
+        tenant_id = f"tenant-commit-{uuid4().hex}"
+        try:
+            session.start_transaction()
+            result = TenantRegistry.create({"name": "Committed Tenant", "tenant_id": tenant_id}, session=session)
+            assert result["success"] is True
+            assert session.in_transaction is True
+            session.commit_transaction()
+            assert session.in_transaction is False
+            assert collection.find_one({"tenant_id": tenant_id}) is not None
+            collection.delete_one({"tenant_id": tenant_id})
+        finally:
+            if session.in_transaction:
+                session.abort_transaction()
+            session.end_session()
+
+
 # ARTIFACT: test_tenant_registry_failure_semantics_real_mongo.py
 # VERSION: v1.0.0-TENANT-REGISTRY-FAILURE-SEMANTICS-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: isolated real-Mongo persistence certification only; no authentication or authorization authority

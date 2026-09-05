@@ -12,7 +12,7 @@ FILE:
     tools/eos/saas/tenancy/tenant_registry.py
 
 VERSION:
-    v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE
+    v1.4.1-TENANT-CALLER-SESSION-PARTICIPATION
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -35,6 +35,10 @@ CERTIFICATION / UPDATE DATE:
     2026-08-30
 
 CHANGELOG:
+    v1.4.1-TENANT-CALLER-SESSION-PARTICIPATION
+        - Adds optional keyword-only caller session forwarding to create.
+        - Preserves legacy no-session insertion behavior.
+
     v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE
         - Adds TenantRegistry.update_profile(tenant_id, payload).
         - Binds mutation fields to frozen PROFILE_MUTABLE_FIELDS_V1.
@@ -106,6 +110,7 @@ from typing import Any
 from bson import ObjectId
 from bson.errors import InvalidId
 from pymongo import MongoClient
+from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ...auth.tenant_authority_policy import PROFILE_MUTABLE_FIELDS_V1
@@ -591,6 +596,8 @@ class TenantRegistry:
     def create(
         payload: dict[str, Any],
         tenant_id_header: str | None = None,
+        *,
+        session: ClientSession | None = None,
     ) -> dict[str, Any]:
         """Create one tenant using the preserved legacy structured result contract."""
         del tenant_id_header
@@ -654,7 +661,10 @@ class TenantRegistry:
                 ).encode("utf-8")
             ).hexdigest().upper()
 
-            tenants_collection.insert_one(doc)
+            if session is None:
+                tenants_collection.insert_one(doc)
+            else:
+                tenants_collection.insert_one(doc, session=session)
             return {
                 "success": True,
                 "tenant": _doc_to_entity(doc),
@@ -873,7 +883,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: tenant_registry.py
-# VERSION: v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE
+# VERSION: v1.4.1-TENANT-CALLER-SESSION-PARTICIPATION
 # AUTHORITY BOUNDARY: tenant persistence, hydration, exact six-field profile mutation, and bounded persistence failure signaling only; no authentication or authorization authority
 # TENANT POSTURE: update_profile targets only its explicit tenant_id; no header/JWT/role/request-state scope can redirect persistence
 # FAIL-CLOSED POSTURE: invalid target/input/persisted truth fails explicitly; genuine absence alone returns None; same-value profile mutation succeeds; Mongo outage raises TENANT_REGISTRY_PROFILE_UPDATE_UNAVAILABLE
