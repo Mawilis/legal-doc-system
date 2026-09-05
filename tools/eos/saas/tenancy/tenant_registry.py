@@ -11,8 +11,8 @@ TITLE:
 FILE:
     tools/eos/saas/tenancy/tenant_registry.py
 
-VERSION:
-    v1.4.1-TENANT-CALLER-SESSION-PARTICIPATION
+    VERSION:
+    v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -35,6 +35,10 @@ CERTIFICATION / UPDATE DATE:
     2026-08-30
 
 CHANGELOG:
+    v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION
+        - Adds optional keyword-only caller session forwarding to get.
+        - Preserves no-session lookup behavior and transaction ownership.
+
     v1.4.1-TENANT-CALLER-SESSION-PARTICIPATION
         - Adds optional keyword-only caller session forwarding to create.
         - Preserves legacy no-session insertion behavior.
@@ -117,7 +121,7 @@ from ...auth.tenant_authority_policy import PROFILE_MUTABLE_FIELDS_V1
 from ..domain.tenant import OrganizationProfile, SubscriptionPlan, TenantEntity
 
 
-VERSION = "v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE"
+VERSION = "v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION"
 
 logger = logging.getLogger("WilsyOS.SaaS.Tenancy.TenantRegistry")
 
@@ -549,15 +553,17 @@ class TenantRegistry:
     def get(
         tenant_id: str,
         tenant_id_header: str | None = None,
+        *,
+        session: ClientSession | None = None,
     ) -> TenantEntity | None:
         """Resolve one tenant with strict absence/outage/corruption semantics."""
         del tenant_id_header
         try:
-            doc = tenants_collection.find_one({"tenant_id": tenant_id})
+            doc = tenants_collection.find_one({"tenant_id": tenant_id}, session=session)
             if not doc and len(tenant_id) == 24:
                 try:
                     doc = tenants_collection.find_one(
-                        {"_id": ObjectId(tenant_id)}
+                        {"_id": ObjectId(tenant_id)}, session=session
                     )
                 except (InvalidId, TypeError):
                     doc = None
@@ -883,7 +889,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: tenant_registry.py
-# VERSION: v1.4.1-TENANT-CALLER-SESSION-PARTICIPATION
+# VERSION: v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION
 # AUTHORITY BOUNDARY: tenant persistence, hydration, exact six-field profile mutation, and bounded persistence failure signaling only; no authentication or authorization authority
 # TENANT POSTURE: update_profile targets only its explicit tenant_id; no header/JWT/role/request-state scope can redirect persistence
 # FAIL-CLOSED POSTURE: invalid target/input/persisted truth fails explicitly; genuine absence alone returns None; same-value profile mutation succeeds; Mongo outage raises TENANT_REGISTRY_PROFILE_UPDATE_UNAVAILABLE

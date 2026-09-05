@@ -116,6 +116,27 @@ def test_real_mongo_lookup_success_and_genuine_absence() -> None:
         assert collection.count_documents({}) == 2
 
 
+def test_real_mongo_get_reads_uncommitted_write_and_abort_rolls_back() -> None:
+    """A caller-owned transaction sees its write only through the same session."""
+    with _state() as (client, collection, _, _, _):
+        tenant_id = f"transactional-{uuid4().hex}"
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            created = TenantRegistry.create({"name": "Transactional", "tenant_id": tenant_id}, session=session)
+            assert created["success"] is True
+            assert TenantRegistry.get(tenant_id, session=session) is not None
+            assert session.in_transaction is True
+            assert TenantRegistry.get(tenant_id) is None
+            session.abort_transaction()
+            assert session.in_transaction is False
+            assert TenantRegistry.get(tenant_id) is None
+        finally:
+            if session.in_transaction:
+                session.abort_transaction()
+            session.end_session()
+
+
 def test_real_mongo_archive_is_exact_and_never_hard_deletes() -> None:
     """Archive mutates only the requested tenant status and preserves both documents."""
     with _state() as (_, collection, _, tenant_a, tenant_b):

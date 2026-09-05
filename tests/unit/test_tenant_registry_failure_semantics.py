@@ -51,10 +51,12 @@ class _CollectionFake:
         self.modified_count = modified_count
         self.update_error = update_error
         self.find_calls: list[dict[str, Any]] = []
+        self.find_sessions: list[ClientSession | None] = []
         self.update_calls: list[tuple[dict[str, Any], dict[str, Any]]] = []
 
-    def find_one(self, query: dict[str, Any]) -> dict[str, Any] | None:
+    def find_one(self, query: dict[str, Any], *, session: ClientSession | None = None) -> dict[str, Any] | None:
         self.find_calls.append(query)
+        self.find_sessions.append(session)
         if self.find_error is not None:
             raise self.find_error
         return self.find_result
@@ -292,6 +294,25 @@ def test_create_forwards_caller_session_without_owning_transaction(
     assert result["success"] is True
     assert capture.session is caller_session
     assert capture.document is not None
+
+
+def test_get_forwards_caller_session_without_owning_transaction(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tenant lookup forwards the exact caller session and leaves lifecycle untouched."""
+    fake = _CollectionFake(find_result=None)
+    monkeypatch.setattr(registry_module, "tenants_collection", fake)
+    caller_session = ClientSession(MongoClient(connect=False), None, SessionOptions(), False)
+    assert TenantRegistry.get("tenant-session", session=caller_session) is None
+    assert fake.find_calls == [{"tenant_id": "tenant-session"}]
+    assert fake.find_sessions == [caller_session]
+
+
+def test_get_preserves_legacy_no_session_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Omitting session remains the legacy lookup path."""
+    fake = _CollectionFake(find_result=None)
+    monkeypatch.setattr(registry_module, "tenants_collection", fake)
+    assert TenantRegistry.get("missing") is None
+    assert fake.find_calls == [{"tenant_id": "missing"}]
+    assert fake.find_sessions == [None]
 
 
 # ARTIFACT: test_tenant_registry_failure_semantics.py
