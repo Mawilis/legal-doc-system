@@ -1,15 +1,14 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION
+VERSION: v1.2.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.1.0 binds platform_billing_release to platform_billing:release
-through the existing fail-closed tenant authorization chain, preserving the
-independent tenant_owner and ENTERPRISE_ADMIN intersection and all principal,
-tenant, membership, assignment, namespace, and financial-execution checks; no
-durable authorization evidence is created.
+CHANGELOG: v1.2.0 binds granular plan and subscription operations to their
+canonical permissions while preserving the existing platform_billing_release
+binding and fail-closed tenant authorization chain; no durable authorization
+evidence is created.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Exact scope, active-state, canonical permission, and fail-closed checks; no JWT/header trust.
 TENANT BOUNDARY: Requires exact principal and tenant membership; cross-tenant requests deny.
@@ -33,7 +32,7 @@ from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operati
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION"
+VERSION = "v1.2.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -48,7 +47,7 @@ class MembershipReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, *, session: Any = None) -> object: ...
 class AssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
-_BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","platform_billing_release":"platform_billing:release"})
+_BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","plan_read":"plan:read","plan_create":"plan:manage","plan_update":"plan:manage","plan_archive":"plan:manage","subscription_read":"subscription:read","subscription_audit_read":"subscription:read","subscription_metrics_read":"subscription:read","subscription_create":"subscription:manage","subscription_update":"subscription:manage","subscription_archive":"subscription:manage","subscription_pause":"subscription:manage","subscription_resume":"subscription:manage","subscription_cancel":"subscription:manage","subscription_upgrade":"subscription:manage","subscription_downgrade":"subscription:manage","subscription_reactivate":"subscription:manage","platform_billing_release":"platform_billing:release"})
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
@@ -90,7 +89,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION
+# VERSION: v1.2.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, role and target tenant required
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny

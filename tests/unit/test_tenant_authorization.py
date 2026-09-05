@@ -235,6 +235,28 @@ def test_existing_audit_authorization_remains_green() -> None:
 
 
 @pytest.mark.parametrize(
+    ("permission_id", "operation"),
+     (("plan:read", "plan_read"), ("plan:manage", "plan_create"),
+     ("subscription:read", "subscription_read"),
+     ("subscription:manage", "subscription_create")),
+)
+def test_plan_subscription_policy_requires_two_dimensions(permission_id: str, operation: str) -> None:
+    result = _decision(
+        permission_id=permission_id,
+        operation=operation,
+        business_repository=_business("tenant_admin"),
+        assignment_repository=_assignments("ENTERPRISE_ADMIN"),
+    )
+    assert result.authorized is True
+
+
+def test_plan_subscription_mutation_denies_auditor_even_with_enterprise_assignment() -> None:
+    for permission_id, operation in (("plan:manage", "plan_create"), ("subscription:manage", "subscription_create")):
+        result = _decision(permission_id=permission_id, operation=operation, business_repository=_business("tenant_auditor"), assignment_repository=_assignments("ENTERPRISE_ADMIN"))
+        assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+
+@pytest.mark.parametrize(
     ("business_role", "authorization_role", "permission_id", "operation"),
     (
         ("tenant_auditor", "AUDITOR", "tenant:profile:read", "profile_read"),
