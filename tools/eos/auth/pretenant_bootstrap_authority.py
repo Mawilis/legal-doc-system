@@ -29,7 +29,7 @@ from tools.eos.auth.identity import SovereignIdentity
 VERSION = "v1.0.0-WILSY-PRETENANT-BOOTSTRAP-AUTHORITY"
 TENANT_OWNER_BOOTSTRAP_OPERATION = "tenant_owner_bootstrap"
 AUTHORITY_SOURCE_ID = "deployment_operator_provisioner_config"
-_CONFIG_NAME = "WILSY_PRETENTANT_TENANT_PROVISIONER_PRINCIPAL_IDS"
+_CONFIG_NAME = "WILSY_PRETENANT_TENANT_PROVISIONER_PRINCIPAL_IDS"
 
 
 class PretenantBootstrapAuthorityDenialCode(str, Enum):

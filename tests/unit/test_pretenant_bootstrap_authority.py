@@ -36,7 +36,7 @@ from tools.eos.auth.pretenant_bootstrap_authority import (
     verify_pretenant_bootstrap_authority,
 )
 
-CONFIG = "WILSY_PRETENTANT_TENANT_PROVISIONER_PRINCIPAL_IDS"
+CONFIG = "WILSY_PRETENANT_TENANT_PROVISIONER_PRINCIPAL_IDS"
 
 
 def identity(principal: str = "synthetic-provisioner", *, roles: list[str] | None = None, permissions: list[str] | None = None, tenant_id: str = "ignored") -> SovereignIdentity:
@@ -89,6 +89,7 @@ def test_root_06_immutability_and_public_signature() -> None:
     with pytest.raises(FrozenInstanceError): setattr(evidence, "principal_id", "x")
     assert list(inspect.signature(verify_pretenant_bootstrap_authority).parameters) == ["identity"]
     assert VERSION == "v1.0.0-WILSY-PRETENANT-BOOTSTRAP-AUTHORITY"
+    assert CONFIG == "WILSY_PRETENANT_TENANT_PROVISIONER_PRINCIPAL_IDS"
 
 
 def test_root_07_identity_and_scope_boundaries(monkeypatch: pytest.MonkeyPatch) -> None:
