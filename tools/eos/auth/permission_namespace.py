@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION
+VERSION: v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with bounded
 subscription and plan-catalogue read/manage capabilities without granting
@@ -41,7 +41,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION"
+VERSION = "v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -202,6 +202,22 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "administer tenant role assignments",
             tenant=True,
+        ),
+        "tenant:business_role:read": _meta(
+            "tenant:business_role:read",
+            "TENANT",
+            "TENANT",
+            "read tenant business-role authority",
+            tenant=True,
+            system=True,
+        ),
+        "tenant:business_role:write": _meta(
+            "tenant:business_role:write",
+            "TENANT",
+            "TENANT",
+            "change tenant business-role authority",
+            tenant=True,
+            system=True,
         ),
         "subscription:read": _meta(
             "subscription:read",

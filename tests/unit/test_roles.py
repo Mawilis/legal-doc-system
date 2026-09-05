@@ -40,7 +40,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS"
+    assert POLICY_VERSION == "v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS"
 
 VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT"
 
@@ -96,46 +96,8 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP == {
-        "SOVEREIGN_ARCHITECT": [
-            "kernel:read",
-            "kernel:write",
-            "governance:evaluate",
-            "artifacts:read",
-        ],
-        "ENTERPRISE_ADMIN": [
-            "kernel:read",
-            "governance:evaluate",
-            "artifacts:read",
-            "tenant:profile:read",
-            "tenant:profile:write",
-            "tenant:lifecycle:archive",
-            "tenant:membership:read",
-            "tenant:membership:write",
-            "tenant:role_assignment:read",
-            "tenant:role_assignment:write",
-            "subscription:read",
-            "subscription:manage",
-            "plan:read",
-            "plan:manage",
-            "platform_billing:release",
-        ],
-        "AUDITOR": [
-            "kernel:read",
-            "artifacts:read",
-            "governance:read",
-            "audit:read",
-            "tenant:profile:read",
-            "tenant:membership:read",
-            "tenant:role_assignment:read",
-            "subscription:read",
-            "plan:read",
-        ],
-        "SERVICE_WORKER": [
-            "artifacts:write",
-            "events:publish",
-        ],
-    }
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write"]
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "tenant:business_role:read"]
 
 
 

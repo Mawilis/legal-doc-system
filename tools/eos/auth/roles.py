@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS
+VERSION: v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Extends current tenant-scoped authorization roles with least-privilege
 subscription and plan-catalogue read/manage grants without creating current
@@ -39,7 +39,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS"
+VERSION = "v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -65,6 +65,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "plan:read",
         "plan:manage",
         "platform_billing:release",
+        "tenant:business_role:read",
+        "tenant:business_role:write",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -76,6 +78,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant:role_assignment:read",
         "subscription:read",
         "plan:read",
+        "tenant:business_role:read",
     ],
     "SERVICE_WORKER": [
         "artifacts:write",
