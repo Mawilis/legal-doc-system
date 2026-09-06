@@ -1,14 +1,14 @@
 """WILSY OS — durable platform billing release-authorization registry.
 
 TITLE: Platform Billing Release Authorization Registry
-VERSION: v1.0.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-REGISTRY
+VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
 PURPOSE: Persist immutable tenant-scoped release evidence with strict replay and corruption handling.
 EPITOME: Durable evidence only; no approval, payment, execution, or settlement authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/platform_billing_release_authorization_registry.py
 COLLABORATION / OWNERSHIP: Python EOS / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-04
-CHANGELOG: v1.0.0 establishes tenant-scoped Mongo persistence, strict V2 hydration, and idempotent immutable replay.
+CHANGELOG: v1.1.0 defers kernel database import until explicit-collection fallback is required.
 COMPLIANCE: POPIA §19 | GDPR Article 32 | SOC2 CC7.2
 SECURITY / PRIVACY: No raw payment instruments, credentials, provider or execution data.
 TENANT BOUNDARY: Every identity and idempotency lookup includes tenant_id.
@@ -24,10 +24,9 @@ from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
-from ...kernel.db import get_database
 from ..domain.platform_billing_release_authorization import PlatformBillingReleaseAuthorization, PlatformBillingReleaseAuthorizationDomainError
 
-VERSION = "v1.0.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-REGISTRY"
+VERSION = "v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-REGISTRY"
 SCHEMA = "WILSY-PLATFORM-BILLING-RELEASE-AUTHORIZATION/V2"
 COLLECTION = "platform_billing_release_authorizations"
 _WC = WriteConcern(w="majority", j=True, wtimeout=10000)
@@ -46,6 +45,7 @@ class CreateResult:
 
 def _collection(collection: Optional[Collection] = None) -> Collection:
     if collection is not None: return collection.with_options(write_concern=_WC, read_concern=_RC)
+    from ...kernel.db import get_database
     database = get_database()
     if database is None: raise PlatformBillingReleaseAuthorizationRegistryError("PLATFORM_RELEASE_AUTHORIZATION_PERSISTENCE_UNAVAILABLE")
     return database[COLLECTION].with_options(write_concern=_WC, read_concern=_RC)
@@ -112,9 +112,11 @@ class PlatformBillingReleaseAuthorizationRegistry:
 
 __all__ = ["PlatformBillingReleaseAuthorizationRegistry", "PlatformBillingReleaseAuthorizationRegistryError", "PlatformBillingReleaseAuthorizationNotFoundError", "PlatformBillingReleaseAuthorizationPersistedRecordInvalidError", "PlatformBillingReleaseAuthorizationIdempotencyConflictError", "PlatformBillingReleaseAuthorizationIdentityConflictError", "CreateResult", "VERSION"]
 # ARTIFACT: platform_billing_release_authorization_registry.py
-# VERSION: v1.0.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-REGISTRY
+# VERSION: v1.1.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION-REGISTRY
 # AUTHORITY BOUNDARY: durable release evidence only; no execution or settlement
 # TENANT POSTURE: tenant-scoped identities and idempotency
+# SECURITY / PRIVACY POSTURE: no raw payment instruments, credentials, or provider secrets
+# FAIL-CLOSED DECLARATION: invalid records, persistence failures, and replay conflicts fail closed
 # FAIL-CLOSED POSTURE: corruption, conflict, absence, and outage are explicit
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
