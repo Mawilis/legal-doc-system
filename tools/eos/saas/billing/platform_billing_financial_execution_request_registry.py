@@ -16,6 +16,8 @@ TRANSACTION BOUNDARY: Caller supplies session; DDL occurs before transactions.
 FAIL-CLOSED POSTURE: Material conflicts and duplicate races raise typed errors.
 """
 from __future__ import annotations
+import hmac
+from datetime import datetime, timezone
 from typing import Any, Optional
 from pymongo.collection import Collection
 from pymongo.client_session import ClientSession
@@ -24,12 +26,36 @@ from tools.eos.saas.domain.platform_billing_financial_execution_request import P
 
 COLLECTION = "platform_billing_financial_execution_requests"
 class PlatformBillingFinancialExecutionRequestConflictError(RuntimeError): pass
+class PlatformBillingFinancialExecutionRequestNotFoundError(RuntimeError): pass
+class PlatformBillingFinancialExecutionRequestPersistedRecordInvalidError(RuntimeError): pass
 
 class PlatformBillingFinancialExecutionRequestRegistry:
     @staticmethod
     def ensure_indexes(collection: Collection) -> None:
         collection.create_index([("tenant_id", 1), ("execution_request_id", 1)], unique=True)
         collection.create_index([("tenant_id", 1), ("idempotency_key", 1)], unique=True)
+    @staticmethod
+    def _hydrate(document: dict[str, Any]) -> PlatformBillingFinancialExecutionRequest:
+        try:
+            body = dict(document); body.pop("_id", None)
+            stored = body.pop("request_fingerprint")
+            requested_at = body.get("requested_at")
+            if isinstance(requested_at, datetime) and requested_at.tzinfo is None:
+                body["requested_at"] = requested_at.replace(tzinfo=timezone.utc)
+            value = PlatformBillingFinancialExecutionRequest(**body)
+            if not isinstance(stored, str) or not hmac.compare_digest(stored, value.fingerprint):
+                raise ValueError("fingerprint")
+            return value
+        except (KeyError, TypeError, ValueError) as error:
+            raise PlatformBillingFinancialExecutionRequestPersistedRecordInvalidError("PLATFORM_BILLING_EXECUTION_REQUEST_PERSISTED_RECORD_INVALID") from error
+    @staticmethod
+    def get(tenant_id: str, execution_request_id: str, collection: Collection, *, session: Optional[ClientSession] = None) -> PlatformBillingFinancialExecutionRequest:
+        if not isinstance(tenant_id, str) or not tenant_id.strip() or not isinstance(execution_request_id, str) or not execution_request_id.strip():
+            raise PlatformBillingFinancialExecutionRequestNotFoundError("PLATFORM_BILLING_EXECUTION_REQUEST_NOT_FOUND")
+        document = collection.find_one({"tenant_id": tenant_id, "execution_request_id": execution_request_id}, session=session)
+        if document is None:
+            raise PlatformBillingFinancialExecutionRequestNotFoundError("PLATFORM_BILLING_EXECUTION_REQUEST_NOT_FOUND")
+        return PlatformBillingFinancialExecutionRequestRegistry._hydrate(document)
     @staticmethod
     def create(value: PlatformBillingFinancialExecutionRequest, collection: Collection, *, session: Optional[ClientSession] = None) -> tuple[PlatformBillingFinancialExecutionRequest, bool]:
         document = {**value.__dict__, "requested_at": value.requested_at, "request_fingerprint": value.fingerprint}

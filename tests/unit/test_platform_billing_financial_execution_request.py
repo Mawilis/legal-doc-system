@@ -34,6 +34,9 @@ def test_invalid_request_rejected(field,value):
 def test_fingerprint_deterministic_and_provider_neutral():
     r=PlatformBillingFinancialExecutionRequest.from_release_authorization(auth(),"x",T); assert r.fingerprint==r.fingerprint and len(r.fingerprint)==128
     assert not any(hasattr(r,n) for n in ("provider_transaction_id","settlement_id","paid_state","kennel_command_id","payable_id"))
+def test_requested_at_is_bson_millisecond_canonical():
+    value=PlatformBillingFinancialExecutionRequest.from_release_authorization(auth(),"x",datetime(2026,1,1,0,0,0,123456,tzinfo=timezone.utc))
+    assert value.requested_at.microsecond == 123000
 # ARTIFACT: test_platform_billing_financial_execution_request.py
 # VERSION: v1.0.0-PLATFORM-BILLING-FINANCIAL-EXECUTION-REQUEST-UNIT
 # AUTHORITY BOUNDARY: certification only

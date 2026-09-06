@@ -18,7 +18,7 @@ FAIL-CLOSED POSTURE: Invalid or cross-domain facts are rejected.
 from __future__ import annotations
 import hashlib, json, re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from .platform_billing_release_authorization import PlatformBillingReleaseAuthorization
 
@@ -49,6 +49,8 @@ class PlatformBillingFinancialExecutionRequest:
         if not isinstance(self.currency, str) or re.fullmatch(r"[A-Z]{3}", self.currency) is None: raise PlatformBillingFinancialExecutionRequestError("currency is invalid")
         if not isinstance(self.payment_destination_reference, str) or re.search(r"bank|account|card|secret|token|credential|password", self.payment_destination_reference, re.I): raise PlatformBillingFinancialExecutionRequestError("payment destination must be opaque")
         if not isinstance(self.requested_at, datetime) or self.requested_at.tzinfo is None: raise PlatformBillingFinancialExecutionRequestError("requested_at is invalid")
+        canonical = self.requested_at.astimezone(timezone.utc).replace(microsecond=(self.requested_at.microsecond // 1000) * 1000)
+        object.__setattr__(self, "requested_at", canonical)
 
     @classmethod
     def from_release_authorization(cls, authorization: PlatformBillingReleaseAuthorization, execution_request_id: str, requested_at: datetime) -> "PlatformBillingFinancialExecutionRequest":

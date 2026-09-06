@@ -21,6 +21,7 @@ import os, uuid
 from pymongo import MongoClient
 from tools.eos.saas.billing.platform_billing_release_authorization_registry import PlatformBillingReleaseAuthorizationRegistry
 from tools.eos.saas.billing.platform_billing_financial_execution_request_issuance import issue_platform_billing_financial_execution_request
+from tools.eos.saas.billing.platform_billing_financial_execution_request_registry import PlatformBillingFinancialExecutionRequestRegistry
 from tools.eos.saas.domain.platform_billing_release_authorization import PlatformBillingReleaseAuthorization
 
 URI=os.getenv("TEST_VENDOR_MONGO_URI","")
@@ -42,6 +43,8 @@ def test_r3d_rm01_happy_durable_request():
     try:
         result=issue_platform_billing_financial_execution_request(client,db,"t","r",execution_request_id="x",requested_at=datetime.now(timezone.utc))
         assert result[0].tenant_id==authorization.tenant_id and result[0].release_authorization_fingerprint==authorization.release_authorization_fingerprint
+        hydrated=PlatformBillingFinancialExecutionRequestRegistry.get("t","x",db["platform_billing_financial_execution_requests"])
+        assert hydrated == result[0]
     finally: _close(client,db,authorization)
 
 def test_r3d_rm02_authority_tenant_firewall():
@@ -58,6 +61,8 @@ def test_r3d_rm03_tenant_isolation():
     try:
         issue_platform_billing_financial_execution_request(client,db,"t","r",execution_request_id="x",requested_at=datetime.now(timezone.utc))
         assert db["platform_billing_financial_execution_requests"].count_documents({"tenant_id":"other"})==0
+        import pytest
+        with pytest.raises(Exception): PlatformBillingFinancialExecutionRequestRegistry.get("other","x",db["platform_billing_financial_execution_requests"])
     finally: _close(client,db,authorization)
 
 def test_r3d_rm04_idempotency_and_conflict():
