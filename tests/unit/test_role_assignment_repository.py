@@ -32,6 +32,7 @@ class Fake:
         if any(all(r[x]==d[x] for x in ('principal_id','tenant_id','role_id')) for r in self.rows): raise Exception
         self.rows.append(d)
     def find_one(self,q,**k): return next((r for r in self.rows if all(r[x]==v for x,v in q.items())),None)
+    def find(self,q,**k): return [r for r in self.rows if all(r[x]==v for x,v in q.items())]
     def replace_one(self,q,d,**k):
         for i,r in enumerate(self.rows):
             if all(r[x]==v for x,v in q.items()): self.rows[i]=d; return Result()
@@ -53,6 +54,12 @@ def test_absence_and_stale():
     RoleAssignmentRepository.insert(value(),c)
     try: RoleAssignmentRepository.compare_and_swap(value(2),0,c); assert False
     except RoleAssignmentRevisionConflictError: pass
+
+def test_list_assignments_discovers_all_roles():
+    c=cast(Collection,Fake()); RoleAssignmentRepository.insert(value(),c)
+    c.rows.append({'principal_id':'p','tenant_id':'t','role_id':'AUDITOR','status':'ACTIVE','revision':0})
+    result=RoleAssignmentRepository.list_assignments('p','t',c,session=object())
+    assert {item.role_id for item in result} == {'r','AUDITOR'}
 
 # ARTIFACT: test_role_assignment_repository.py
 # VERSION: v1.0.0-WILSY-ROLE-ASSIGNMENT-UNIT-CONTRACT

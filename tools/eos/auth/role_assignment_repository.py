@@ -149,6 +149,25 @@ class RoleAssignmentRepository:
         return _hydrate(row)
 
     @staticmethod
+    def list_assignments(
+        principal_id: str,
+        tenant_id: str,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> tuple[RoleAssignmentAuthority, ...]:
+        """Return every durable assignment for one explicit principal/tenant pair."""
+        if not all(isinstance(item, str) and item for item in (principal_id, tenant_id)):
+            raise RoleAssignmentRepositoryError("ROLE_ASSIGNMENT_LIST_INVALID")
+        try:
+            rows = _target(collection).find({"principal_id": principal_id, "tenant_id": tenant_id}, session=session)
+            return tuple(_hydrate(row) for row in rows)
+        except RoleAssignmentPersistedRecordInvalidError:
+            raise
+        except PyMongoError as error:
+            raise RoleAssignmentRepositoryError("ROLE_ASSIGNMENT_READ_FAILED") from error
+
+    @staticmethod
     def compare_and_swap(
         value: RoleAssignmentAuthority,
         expected_revision: int,

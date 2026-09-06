@@ -56,6 +56,15 @@ def test_cas_advances_revision_and_rejects_stale_writes(collection):
     with pytest.raises(RoleAssignmentRevisionConflictError): RoleAssignmentRepository.compare_and_swap(value(revision=1), 0, target)
     current = RoleAssignmentRepository.resolve("p", "t", "r", target); assert current.status is RoleAssignmentStatus.REVOKED; assert current.revision == 1
 
+def test_list_assignments_discovers_complete_principal_tenant_set(collection):
+    """Discovery returns every durable role for one principal and tenant."""
+    _, target = collection
+    RoleAssignmentRepository.insert(value(role="AUDITOR"), target)
+    RoleAssignmentRepository.insert(value(role="SERVICE_WORKER"), target)
+    RoleAssignmentRepository.insert(value(principal="other", role="ENTERPRISE_ADMIN"), target)
+    result = RoleAssignmentRepository.list_assignments("p", "t", target)
+    assert {item.role_id for item in result} == {"AUDITOR", "SERVICE_WORKER"}
+
 def test_malformed_absent_and_invalid_states_fail_closed(collection):
     """Malformed records, absent keys, and invalid revisions never become authority."""
     _, target = collection; target.insert_one({"principal_id":"bad","tenant_id":"t","role_id":"r","status":"BROKEN","revision":0})
