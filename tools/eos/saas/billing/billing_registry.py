@@ -54,7 +54,8 @@ import os
 import uuid
 import traceback
 from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
+from pymongo.collection import Collection
 
 # ─── SHARED DATABASE CLIENT (ATLAS‑RESILIENT) ──────────────────────────────
 from ...kernel.db import get_database, get_client, is_db_ready, connect_db
@@ -86,18 +87,14 @@ connect_db()
 
 # Get the database instance from the shared module
 db = get_database()
-if db is None:
-    raise RuntimeError("Could not obtain database instance from kernel.db")
 
 # ─── EXPORT CLIENT FOR billing_router.py ──────────────────────────────────
 client = get_client()
-if client is None:
-    raise RuntimeError("Could not obtain MongoClient from kernel.db")
 
 # Get collections
-platform_invoices_coll = db["platform_invoices"]
-client_invoices_coll = db["client_invoices"]
-payments_coll = db["payments"]
+platform_invoices_coll = cast(Collection, db["platform_invoices"] if db is not None else None)
+client_invoices_coll = cast(Collection, db["client_invoices"] if db is not None else None)
+payments_coll = cast(Collection, db["payments"] if db is not None else None)
 
 # ─── Index Creation (idempotent) ──────────────────────────────────────────
 def _ensure_indexes():
@@ -145,7 +142,8 @@ def _ensure_indexes():
     except Exception as e:
         logger.warning(f"[BILLING_REGISTRY] Index creation issue (non‑fatal): {e}")
 
-_ensure_indexes()
+if db is not None:
+    _ensure_indexes()
 
 
 def _resolve_idempotency_key(
@@ -417,10 +415,22 @@ class BillingRegistry:
             logger.error(f"Failed to create platform invoice: {e}\n{traceback.format_exc()}")
             raise
 
-    def get_platform_invoice(self, tenant_id: str, invoice_id: str) -> Optional[PlatformInvoice]:
+    def get_platform_invoice(
+        self,
+        tenant_id: str,
+        invoice_id: str,
+        *,
+        collection: Any = None,
+        session: Any = None,
+    ) -> Optional[PlatformInvoice]:
         """Retrieve a platform invoice by ID, enforcing tenant isolation."""
         try:
-            doc = platform_invoices_coll.find_one(_tenant_invoice_query(tenant_id, invoice_id))
+            target = platform_invoices_coll if collection is None else collection
+            query = _tenant_invoice_query(tenant_id, invoice_id)
+            if session is None:
+                doc = target.find_one(query)
+            else:
+                doc = target.find_one(query, session=session)
             if not doc:
                 return None
             return PlatformInvoice.from_dict(doc)

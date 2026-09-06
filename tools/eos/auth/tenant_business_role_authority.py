@@ -19,6 +19,7 @@ from typing import Any, Final, Protocol
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 
 VERSION = "v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY"
 
@@ -48,7 +49,7 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
                 assignment = repository.resolve(principal_id, tenant_id, role_id) if session is None else repository.resolve(principal_id, tenant_id, role_id, session=session)
             except RoleAssignmentNotFoundError:
                 continue
-            if getattr(assignment, "status", None) is RoleAssignmentStatus.ACTIVE:
+            if getattr(assignment, "status", None) is TenantBusinessRoleStatus.ACTIVE:
                 active.append(role_id)
     except (RoleAssignmentRepositoryError, AttributeError, TypeError):
         return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)

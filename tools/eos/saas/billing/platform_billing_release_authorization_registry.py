@@ -80,6 +80,12 @@ class PlatformBillingReleaseAuthorizationRegistry:
         if not isinstance(authorization, PlatformBillingReleaseAuthorization): raise PlatformBillingReleaseAuthorizationRegistryError("authorization is invalid")
         target = _collection(collection); PlatformBillingReleaseAuthorizationRegistry.ensure_indexes(target)
         document = authorization.to_persistence_dict()
+        existing = target.find_one({"tenant_id": authorization.tenant_id, "idempotency_key": authorization.idempotency_key}, session=session) if session is not None else None
+        if existing is not None:
+            persisted = _hydrate(existing)
+            if hmac.compare_digest(persisted.release_authorization_fingerprint, authorization.release_authorization_fingerprint):
+                return CreateResult(persisted, True)
+            raise PlatformBillingReleaseAuthorizationIdempotencyConflictError("PLATFORM_RELEASE_AUTHORIZATION_IDEMPOTENCY_CONFLICT")
         try:
             target.insert_one(document, session=session)
             return CreateResult(authorization, False)
