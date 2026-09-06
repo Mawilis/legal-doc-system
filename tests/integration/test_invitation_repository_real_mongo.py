@@ -18,10 +18,10 @@ def collection():
     client.close()
 
 def make():
-    now = datetime.now(timezone.utc); return InvitationAuthority(f"cert-inv-{uuid.uuid4().hex}", "cert-tenant", f"recipient-{uuid.uuid4().hex}", "recipient@example.test", f"inviter-{uuid.uuid4().hex}", "AUDITOR", hashlib.sha3_512(uuid.uuid4().bytes).hexdigest(), InvitationStatus.ACTIVE, now + timedelta(hours=1), 0, now)
+    now = datetime.now(timezone.utc); return InvitationAuthority(f"cert-inv-{uuid.uuid4().hex}", "cert-tenant", f"recipient-{uuid.uuid4().hex}", f"inviter-{uuid.uuid4().hex}", "AUDITOR", hashlib.sha3_512(uuid.uuid4().bytes).hexdigest(), InvitationStatus.ACTIVE, now + timedelta(hours=1), 0, now)
 
 def test_rm_a_insert_get(collection):
-    c, _ = collection; value = make(); InvitationRepository.insert(value, c); assert InvitationRepository.get(value.invitation_id, c) == value; c.delete_one({"invitation_id": value.invitation_id})
+    c, _ = collection; value = make(); InvitationRepository.insert(value, c); assert InvitationRepository.get(value.invitation_id, c) == value; raw = c.find_one({"invitation_id": value.invitation_id}); assert raw is not None and "recipient_email" not in raw and raw["recipient_principal_id"] == value.recipient_principal_id; c.delete_one({"invitation_id": value.invitation_id})
 
 def test_rm_b_consume_and_replay(collection):
     c, _ = collection; value = make(); InvitationRepository.insert(value, c); consumed = InvitationRepository.consume(value.invitation_id, value.capability_digest, 0, datetime.now(timezone.utc), c); assert consumed.revision == 1; c.delete_one({"invitation_id": value.invitation_id})

@@ -39,14 +39,14 @@ def _target(collection: Optional[Collection]) -> Collection:
     if db is None: raise InvitationRepositoryError("INVITATION_PERSISTENCE_UNAVAILABLE")
     return db[COLLECTION]
 def _document(v: InvitationAuthority) -> dict[str, object]:
-    return {"invitation_id":v.invitation_id,"tenant_id":v.tenant_id,"recipient_principal_id":v.recipient_principal_id,"recipient_email":v.recipient_email,"inviter_principal_id":v.inviter_principal_id,"authorization_role_id":v.authorization_role_id,"capability_digest":v.capability_digest,"status":v.status.value,"expires_at":v.expires_at,"revision":v.revision,"created_at":v.created_at,"consumed_at":v.consumed_at}
+    return {"invitation_id":v.invitation_id,"tenant_id":v.tenant_id,"recipient_principal_id":v.recipient_principal_id,"inviter_principal_id":v.inviter_principal_id,"authorization_role_id":v.authorization_role_id,"capability_digest":v.capability_digest,"status":v.status.value,"expires_at":v.expires_at,"revision":v.revision,"created_at":v.created_at,"consumed_at":v.consumed_at}
 def _hydrate(d: Mapping[str, object]) -> InvitationAuthority:
     def utc(value: object, *, nullable: bool = False) -> datetime | None:
         if value is None and nullable: return None
         if not isinstance(value, datetime): raise TypeError("persisted datetime invalid")
         if value.tzinfo is None or value.utcoffset() is None: return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
-    try: return InvitationAuthority(cast(str,d["invitation_id"]),cast(str,d["tenant_id"]),cast(str,d["recipient_principal_id"]),cast(str,d["recipient_email"]),cast(str,d["inviter_principal_id"]),cast(str,d["authorization_role_id"]),cast(str,d["capability_digest"]),InvitationStatus(cast(str,d["status"])),cast(datetime,utc(d["expires_at"])),cast(int,d["revision"]),cast(datetime,utc(d["created_at"])),cast(datetime | None,utc(d.get("consumed_at"), nullable=True)))
+    try: return InvitationAuthority(cast(str,d["invitation_id"]),cast(str,d["tenant_id"]),cast(str,d["recipient_principal_id"]),cast(str,d["inviter_principal_id"]),cast(str,d["authorization_role_id"]),cast(str,d["capability_digest"]),InvitationStatus(cast(str,d["status"])),cast(datetime,utc(d["expires_at"])),cast(int,d["revision"]),cast(datetime,utc(d["created_at"])),cast(datetime | None,utc(d.get("consumed_at"), nullable=True)))
     except (KeyError, TypeError, ValueError, AttributeError) as e: raise InvitationPersistedRecordInvalidError("INVITATION_PERSISTED_RECORD_INVALID") from e
 class InvitationRepository:
     @staticmethod

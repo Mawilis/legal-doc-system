@@ -29,7 +29,7 @@ class FakeCollection:
     def create_index(self, *args, **kwargs): return "idx"
 
 def authority(**overrides):
-    values = dict(invitation_id="inv-1", tenant_id="tenant-1", recipient_principal_id="recipient-1", recipient_email="r@example.test", inviter_principal_id="inviter-1", authorization_role_id="AUDITOR", capability_digest=DIGEST, status=InvitationStatus.ACTIVE, expires_at=NOW + timedelta(hours=1), revision=0, created_at=NOW)
+    values = dict(invitation_id="inv-1", tenant_id="tenant-1", recipient_principal_id="recipient-1", inviter_principal_id="inviter-1", authorization_role_id="AUDITOR", capability_digest=DIGEST, status=InvitationStatus.ACTIVE, expires_at=NOW + timedelta(hours=1), revision=0, created_at=NOW)
     values.update(overrides); return InvitationAuthority(**values)  # type: ignore
 
 def test_insert_get_and_immutability():

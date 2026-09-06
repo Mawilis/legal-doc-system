@@ -34,11 +34,11 @@ _DIGEST = re.compile(r"^[0-9a-f]{128}$")
 
 @dataclass(frozen=True, slots=True)
 class InvitationAuthority:
-    invitation_id: str; tenant_id: str; recipient_principal_id: str; recipient_email: str
+    invitation_id: str; tenant_id: str; recipient_principal_id: str
     inviter_principal_id: str; authorization_role_id: str; capability_digest: str
     status: InvitationStatus; expires_at: datetime; revision: int; created_at: datetime; consumed_at: datetime | None = None
     def __post_init__(self) -> None:
-        for name, value in (("invitation_id", self.invitation_id), ("tenant_id", self.tenant_id), ("recipient_principal_id", self.recipient_principal_id), ("recipient_email", self.recipient_email), ("inviter_principal_id", self.inviter_principal_id), ("authorization_role_id", self.authorization_role_id)):
+        for name, value in (("invitation_id", self.invitation_id), ("tenant_id", self.tenant_id), ("recipient_principal_id", self.recipient_principal_id), ("inviter_principal_id", self.inviter_principal_id), ("authorization_role_id", self.authorization_role_id)):
             if not isinstance(value, str) or not value or value != value.strip(): raise ValueError(f"{name} must be non-empty and trimmed")
         if self.authorization_role_id not in ROLE_PERMISSIONS_MAP: raise ValueError("authorization_role_id must be canonical")
         if not isinstance(self.capability_digest, str) or not _DIGEST.fullmatch(self.capability_digest): raise ValueError("capability_digest must be lowercase SHA3-512 hex")
