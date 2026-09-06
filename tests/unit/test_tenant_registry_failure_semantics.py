@@ -315,6 +315,17 @@ def test_get_preserves_legacy_no_session_call(monkeypatch: pytest.MonkeyPatch) -
     assert fake.find_sessions == [None]
 
 
+def test_get_explicit_collection_bypasses_global_and_forwards_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Explicit collection is authoritative and receives the caller session."""
+    global_fake = _CollectionFake(find_result=None)
+    explicit = _CollectionFake(find_result=_tenant_doc("tenant-explicit"))
+    monkeypatch.setattr(registry_module, "tenants_collection", global_fake)
+    caller_session = object()
+    found = TenantRegistry.get("tenant-explicit", collection=explicit, session=caller_session)  # type: ignore[arg-type]
+    assert found is not None and found.tenant_id == "tenant-explicit"
+    assert global_fake.find_calls == []
+    assert explicit.find_sessions == [caller_session]
+
 # ARTIFACT: test_tenant_registry_failure_semantics.py
 # VERSION: v1.0.0-TENANT-REGISTRY-FAILURE-SEMANTICS-CERT
 # AUTHORITY BOUNDARY: deterministic persistence-boundary certification only; no authentication, authorization, role, or membership authority

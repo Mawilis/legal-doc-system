@@ -115,6 +115,28 @@ def test_real_mongo_lookup_success_and_genuine_absence() -> None:
         assert missing is None
         assert collection.count_documents({}) == 2
 
+def test_real_mongo_explicit_collection_overrides_global_and_forwards_session() -> None:
+    """Explicit collection is authoritative even when the global has data."""
+    with _state() as (client, collection, database_name, tenant_a, _):
+        alternate = client[database_name]["alternate_tenants"]
+        with client.start_session() as session:
+            found = TenantRegistry.get(tenant_a, collection=collection, session=session)
+        assert found is not None and found.tenant_id == tenant_a
+        assert alternate.count_documents({}) == 0
+
+def test_real_mongo_explicit_collection_transaction_visibility_and_abort() -> None:
+    """The explicit collection participates in caller-owned transaction rollback."""
+    with _state() as (client, _collection, database_name, _tenant_a, _):
+        explicit = client[database_name]["transactional_tenants"]
+        tenant_id = f"transactional-{uuid4().hex}"
+        with client.start_session() as session:
+            session.start_transaction()
+            explicit.insert_one(_tenant_doc(tenant_id, name="Transactional"), session=session)
+            found = TenantRegistry.get(tenant_id, collection=explicit, session=session)
+            assert found is not None and found.tenant_id == tenant_id
+            session.abort_transaction()
+        assert explicit.find_one({"tenant_id": tenant_id}) is None
+
 
 def test_real_mongo_get_reads_uncommitted_write_and_abort_rolls_back() -> None:
     """A caller-owned transaction sees its write only through the same session."""

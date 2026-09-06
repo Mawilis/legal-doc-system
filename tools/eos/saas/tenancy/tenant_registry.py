@@ -107,6 +107,7 @@ import hashlib
 import json
 import logging
 import os
+from pymongo.collection import Collection
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -554,15 +555,17 @@ class TenantRegistry:
         tenant_id: str,
         tenant_id_header: str | None = None,
         *,
+        collection: Collection | None = None,
         session: ClientSession | None = None,
     ) -> TenantEntity | None:
         """Resolve one tenant with strict absence/outage/corruption semantics."""
         del tenant_id_header
         try:
-            doc = tenants_collection.find_one({"tenant_id": tenant_id}, session=session)
+            source = collection if collection is not None else tenants_collection
+            doc = source.find_one({"tenant_id": tenant_id}, session=session)
             if not doc and len(tenant_id) == 24:
                 try:
-                    doc = tenants_collection.find_one(
+                    doc = source.find_one(
                         {"_id": ObjectId(tenant_id)}, session=session
                     )
                 except (InvalidId, TypeError):
