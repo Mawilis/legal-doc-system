@@ -2,7 +2,7 @@
 VERSION: v1.0.0-M7
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Separated deterministic platform/client statement derivation.
-ABSOLUTE CANONICAL PATH: tools/eos/saas/billing/commercial_statement_engine.py
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/commercial_statement_engine.py
 COLLABORATION / OWNERSHIP: SaaS Billing statement engine.
 CERTIFICATION / UPDATE DATE: 2026-09-06
 CHANGELOG: v1.0.0-M7 establishes live statement computation.
@@ -19,6 +19,8 @@ from dataclasses import replace
 from ..domain.commercial_statement import AgingBucket, CommercialStatement, CommercialStatementActivity, StatementActivityKind, StatementFamily, StatementLedgerKind
 from ..domain.billing import PlatformInvoice, ClientInvoice, InvoiceType
 from ..domain.platform_billing_commercial_settlement_projection import PlatformBillingCommercialSettlementProjection
+from ..domain.commercial_receivable import CommercialReceivable, ReceivableFamily
+from ..domain.commercial_receivable_reconciliation import CommercialReceivableReconciliation
 class CommercialStatementError(ValueError): pass
 def invoice_activity(invoice, *, tenant_id=None, ledger_kind, account_id, effective_at):
     if tenant_id is not None and (not isinstance(getattr(invoice, 'tenant_id', None), str) or invoice.tenant_id != tenant_id):
@@ -59,6 +61,26 @@ def generate_commercial_statement(*, tenant_id, ledger_kind, family, account_id,
   outstanding=max(0,int(round(getattr(invoice,'outstanding_amount',invoice.total)*100)))
   aging[bucket.value]+=outstanding
  return replace(statement, aging=aging)
+
+def generate_receivable_commercial_statement(*, tenant_id, ledger_kind, family, account_id, currency, as_of, receivables=(), reconciliations=(), source_invoices=()):
+ """Derive an OPEN_ITEM statement from integer-unit M11 receivable truth only."""
+ if as_of.tzinfo is None or family is not StatementFamily.OPEN_ITEM: raise CommercialStatementError('M11E1_SCOPE_INVALID')
+ expected=ReceivableFamily.PLATFORM if ledger_kind is StatementLedgerKind.PLATFORM else ReceivableFamily.CLIENT if ledger_kind is StatementLedgerKind.CLIENT else None
+ if expected is None: raise CommercialStatementError('M11E1_LEDGER_INVALID')
+ invoices={i.invoice_id:i for i in source_invoices}; vals=[]
+ for r in sorted(receivables,key=lambda x:(x.tenant_id,x.receivable_family.value,x.receivable_id)):
+  if not isinstance(r,CommercialReceivable) or r.tenant_id!=tenant_id or r.receivable_family is not expected or r.currency!=currency: raise CommercialStatementError('M11E1_PROVENANCE_MISMATCH')
+  invoice=invoices.get(r.source_invoice_id)
+  if invoice is not None and (invoice.tenant_id!=tenant_id or invoice.currency!=currency or (expected is ReceivableFamily.CLIENT and getattr(invoice,'customer_id',None)!=account_id)): raise CommercialStatementError('M11E1_INVOICE_BINDING_MISMATCH')
+  recon=next((x for x in reconciliations if isinstance(x,CommercialReceivableReconciliation) and x.receivable_id==r.receivable_id),None)
+  amount=r.outstanding_amount_minor if recon is None else recon.outstanding_amount_minor
+  if recon is not None and (recon.tenant_id,recon.receivable_family,recon.source_invoice_id,recon.currency,recon.source_receivable_fingerprint)!=(r.tenant_id,r.receivable_family,r.source_invoice_id,r.currency,r.receivable_fingerprint): raise CommercialStatementError('M11E1_RECONCILIATION_MISMATCH')
+  vals.append(CommercialStatementActivity(tenant_id,ledger_kind,account_id,r.receivable_id,'commercial_receivable',as_of,currency,amount,StatementActivityKind.RECEIVABLE_BALANCE,recon.reconciliation_fingerprint if recon else r.receivable_fingerprint))
+ return build_statement(tenant_id=tenant_id,ledger_kind=ledger_kind,family=family,account_id=account_id,currency=currency,as_of=as_of,activities=tuple(vals))
 # ARTIFACT: commercial_statement_engine.py
 # VERSION: v1.0.0-M7
+# AUTHORITY BOUNDARY: Invoice/evidence projection only.
+# TENANT POSTURE: Explicit tenant/account scope.
+# FAIL-CLOSED POSTURE: Cross-lane and mixed-currency inputs reject.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT

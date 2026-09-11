@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN BILLING DOMAIN MODEL (PYTHON) – TAX-INCLUSIVE TOTALS + DUAL CASE                           ║
+║ WILSY OS – SOVEREIGN BILLING DOMAIN MODEL (PYTHON) – CLIENT COMMERCIAL EVIDENCE + DUAL CASE                    ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/saas/domain/billing.py                                                             ║
-║ VERSION:        v1.3.0-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE                                  ║
+║ VERSION:        v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE                                                      ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                     ║
 ║ EPITOME:        LineItem accepts snake_case + camelCase. Invoice amount=subtotal, total=subtotal+tax.        ║
 ║                 Ledger MUST display tax-inclusive total (SA VAT / commercial invoice law).                    ║
@@ -12,6 +12,8 @@
 ║ CLASSIFICATION: Production Artifact                                                                          ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                               ║
+║   2026-09-09 v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE – Added optional, persisted, versioned deterministic     ║
+║                ClientInvoice commercial-content evidence while preserving legacy proof_hash correlation.      ║
 ║   2026-08-24 v1.2.1-PYLANCE-METADATA – Fix ledger R0/ex-tax: from_dict reads unit_price/tax_amount;    ║
 ║                post_init sets amount (ex-VAT), tax_amount, total (incl VAT); dual-write total_amount.         ║
 ║   2026-09-04 v1.3.0-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE – Added canonical tax-inclusive payable  ║
@@ -29,13 +31,31 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from .money import to_minor_units
+
+
+CLIENT_COMMERCIAL_EVIDENCE_VERSION = "WILSY-CLIENT-INVOICE-COMMERCIAL-EVIDENCE/V1"
+_CLIENT_COMMERCIAL_EVIDENCE_SCHEMA = CLIENT_COMMERCIAL_EVIDENCE_VERSION
+
+
+def _canonical_rate(value: float) -> str:
+    """Return a deterministic decimal representation for a line tax rate."""
+    try:
+        decimal_value = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError("CLIENT_INVOICE_TAX_RATE_INVALID") from exc
+    if not decimal_value.is_finite():
+        raise ValueError("CLIENT_INVOICE_TAX_RATE_INVALID")
+    rendered = format(decimal_value, "f").rstrip("0").rstrip(".")
+    return rendered or "0"
 
 
 def parse_datetime(val: Any) -> Optional[datetime]:
@@ -520,6 +540,95 @@ class ClientInvoice(BaseInvoice):
     customer_tax_id: Optional[str] = None
     customer_email: Optional[str] = None
     customer_phone: Optional[str] = None
+    commercial_evidence_fingerprint: Optional[str] = None
+    commercial_evidence_version: Optional[str] = None
+
+    def generate_proof(self, action: str = "save", metadata: Optional[Dict[str, Any]] = None) -> str:
+        """Generate the unchanged legacy correlation proof without Model-C fields."""
+        state = self.to_dict()
+        state.pop("commercial_evidence_fingerprint", None)
+        state.pop("commercial_evidence_version", None)
+        return generate_entity_proof(state, action=action, metadata=metadata)
+
+    def commercial_evidence_payload(
+        self,
+        *,
+        version: str = CLIENT_COMMERCIAL_EVIDENCE_VERSION,
+    ) -> Dict[str, Any]:
+        """Build the exact deterministic V1 commercial-content payload.
+
+        The payload deliberately excludes lifecycle, collection, audit metadata,
+        legacy proof, and persistence timestamps that are not issuance facts.
+        """
+        if version != CLIENT_COMMERCIAL_EVIDENCE_VERSION:
+            raise ValueError("CLIENT_INVOICE_COMMERCIAL_EVIDENCE_VERSION_UNSUPPORTED")
+        return {
+            "schema_version": version,
+            "tenant_id": self.tenant_id,
+            "invoice_id": self.invoice_id,
+            "invoice_type": self.invoice_type.value,
+            "customer_id": self.customer_id,
+            "customer_name": self.customer_name,
+            "customer_tax_id": self.customer_tax_id,
+            "customer_email": self.customer_email,
+            "customer_phone": self.customer_phone,
+            "currency": self.currency,
+            "amount_minor": to_minor_units(self.amount, self.currency),
+            "tax_amount_minor": to_minor_units(self.tax_amount, self.currency),
+            "total_minor": to_minor_units(self.total, self.currency),
+            "line_items": [
+                {
+                    "description": item.description,
+                    "quantity": item.quantity,
+                    "amount_minor": to_minor_units(item.amount, item.currency),
+                    "unit_price_minor": to_minor_units(item.unit_price, item.currency),
+                    "tax_rate": _canonical_rate(item.tax_rate),
+                    "tax_amount_minor": to_minor_units(item.tax_amount, item.currency),
+                    "discount_minor": to_minor_units(item.discount, item.currency),
+                    "currency": item.currency,
+                }
+                for item in self.line_items
+            ],
+            "issued_at": self.issued_at.isoformat() if self.issued_at else None,
+            "due_at": self.due_at.isoformat() if self.due_at else None,
+            "collection_method": self.collection_method.value,
+            "payment_terms_days": self.payment_terms_days,
+            "tax_type": self.tax_type.value,
+            "seller_jurisdiction": self.seller_jurisdiction,
+            "customer_jurisdiction": self.customer_jurisdiction,
+            "billing_mode": self.billing_mode,
+            "order_number": self.order_number,
+            "purchase_order": self.purchase_order,
+        }
+
+    def compute_commercial_evidence_fingerprint(
+        self,
+        *,
+        version: str = CLIENT_COMMERCIAL_EVIDENCE_VERSION,
+    ) -> str:
+        """Compute deterministic lowercase SHA3-512 commercial evidence."""
+        payload = self.commercial_evidence_payload(version=version)
+        raw = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        return hashlib.sha3_512(raw).hexdigest()
+
+    def verify_commercial_evidence(self) -> bool:
+        """Verify persisted Model-C evidence without clocks or defaulting."""
+        stored = self.commercial_evidence_fingerprint
+        version = self.commercial_evidence_version
+        if not stored or not version or version != CLIENT_COMMERCIAL_EVIDENCE_VERSION:
+            return False
+        if len(stored) != 128 or any(char not in "0123456789abcdef" for char in stored):
+            return False
+        try:
+            expected = self.compute_commercial_evidence_fingerprint(version=version)
+        except (TypeError, ValueError):
+            return False
+        return hmac.compare_digest(stored, expected)
 
     def to_dict(self) -> Dict[str, Any]:
         base = {
@@ -563,6 +672,10 @@ class ClientInvoice(BaseInvoice):
             "purchaseOrder": self.purchase_order,
             "purchase_order": self.purchase_order,
         }
+        if self.commercial_evidence_fingerprint is not None:
+            base["commercial_evidence_fingerprint"] = self.commercial_evidence_fingerprint
+        if self.commercial_evidence_version is not None:
+            base["commercial_evidence_version"] = self.commercial_evidence_version
         return base
 
     @classmethod
@@ -610,12 +723,14 @@ class ClientInvoice(BaseInvoice):
             invoice_type=InvoiceType(str(_pick(data, "invoiceType", "invoice_type") or "client").lower()),
             order_number=_pick(data, "orderNumber", "order_number"),
             purchase_order=_pick(data, "purchaseOrder", "purchase_order"),
+            commercial_evidence_fingerprint=data.get("commercial_evidence_fingerprint"),
+            commercial_evidence_version=data.get("commercial_evidence_version"),
         )
 
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING DOMAIN v1.3.0-PLATFORM-INVOICE-COMMERCIAL-RELEASE-EVIDENCE
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING DOMAIN v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
 ════════════════════════════════════════════════════════════════════════════════
 Math:            amount = Σ line.amount (ex-VAT); tax_amount = Σ line.tax; total = amount + tax
 Ledger:          MUST display total / total_amount / totalAmount (tax-inclusive)

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.1.0-FINANCIAL-TRUTH-FIREWALL                                ║
+║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE              ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/saas/billing/billing_registry.py                                                     ║
-║ VERSION:        v1.1.0-FINANCIAL-TRUTH-FIREWALL                                                                        ║
+║ VERSION:        v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE                                                          ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Dual‑write/read tenantId|tenant_id + invoiceId|invoice_id; non‑null idempotencyKey parity;    ║
 ║                 payment rollup – sums succeeded payments and marks invoice PAID only when fully settled.       ║
@@ -12,6 +12,12 @@
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-09 – v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE – Persist deterministic, versioned ClientInvoice        ║
+║                commercial-content evidence and reject post-create commercial rewrites.                        ║
+║   2026-09-09 – v1.3.0-M11-R8-R3B-C-STRICT-RAW-INVOICE-READ – Added tenant-scoped, caller-session-capable raw       ║
+║                ClientInvoice and PlatformInvoice reads that preserve persisted field presence and values.       ║
+║   2026-09-09 – v1.2.0-CLIENT-INVOICE-SESSION-READ – ClientInvoice reads now accept caller-owned collection/session      ║
+║                context while preserving tenant predicates and default callers.                                      ║
 ║   2026-09-04 – v1.1.0-FINANCIAL-TRUTH-FIREWALL – Billing payment success/failure/refund and invoice settlement truth now fail closed unless projected from Kennel EOS. ║
 ║   2026-08-24 – v1.0.10 – Added `_sum_succeeded_payments` and rollup logic; mark PAID only when fully paid.    ║
 ║   2026-08-23 – v1.0.8 – Added `client = get_client()` alias.                                                   ║
@@ -20,7 +26,6 @@
 ║   2026-08-21 – v1.0.5 – Added order_number & purchase_order parameters.                                        ║
 ║   2026-08-21 – v1.0.4 – Dual‑write tenant/invoice ids; list/get $or both casings.                             ║
 ║   2026-08-21 – v1.0.3 – Non‑null idempotency; E11000 replay.                                                  ║
-║   ...                                                                                                          ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
 ║ CRYPTO:        SHA3‑512 proof generation (delegated to domain models)                                          ║
@@ -53,6 +58,7 @@ import logging
 import os
 import uuid
 import traceback
+from dataclasses import replace
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional, Union, cast
 from pymongo.collection import Collection
@@ -74,11 +80,12 @@ from ..domain.billing import (
     TaxType,
     InvoiceType,
     LineItem,
+    CLIENT_COMMERCIAL_EVIDENCE_VERSION,
 )
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 
-VERSION = "v1.1.0-FINANCIAL-TRUTH-FIREWALL"
+VERSION = "v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE"
 
 logger = logging.getLogger(__name__)
 
@@ -220,6 +227,28 @@ class BillingFinancialTruthAuthorityError(ValueError):
     """Raised when billing is asked to manufacture Kennel-owned truth."""
 
 
+_CLIENT_COMMERCIAL_PROTECTED_FIELDS = {
+    "tenant_id", "tenantId", "invoice_id", "invoiceId", "invoice_type", "invoiceType",
+    "customer_id", "customerId", "customer_name", "customerName",
+    "customer_tax_id", "customerTaxId", "customer_email", "customerEmail",
+    "customer_phone", "customerPhone", "currency", "amount", "subtotal",
+    "tax_amount", "taxAmount", "total", "total_amount", "totalAmount",
+    "grand_total", "grandTotal", "line_items", "lineItems", "issued_at", "issuedAt",
+    "due_at", "dueAt", "collection_method", "collectionMethod",
+    "payment_terms_days", "paymentTermsDays", "tax_type", "taxType",
+    "seller_jurisdiction", "sellerJurisdiction", "customer_jurisdiction",
+    "customerJurisdiction", "billing_mode", "billingMode", "order_number",
+    "orderNumber", "purchase_order", "purchaseOrder", "commercial_evidence_fingerprint",
+    "commercial_evidence_version",
+}
+
+
+def _reject_client_invoice_commercial_updates(updates: Dict[str, Any]) -> None:
+    """Prevent rewriting issued commercial content or its evidence."""
+    if _CLIENT_COMMERCIAL_PROTECTED_FIELDS.intersection(updates):
+        raise ValueError("CLIENT_INVOICE_COMMERCIAL_FIELD_REWRITE_FORBIDDEN")
+
+
 def _reject_invoice_financial_truth_updates(
     updates: Dict[str, Any],
 ) -> None:
@@ -348,7 +377,9 @@ class BillingRegistry:
                     line_item_objs.append(LineItem.from_dict(li))
 
             # Calculate totals (domain will compute in __post_init__)
-            invoice = PlatformInvoice(
+            # Pyright cannot expand inherited dataclass constructor parameters;
+            # the runtime constructor remains the canonical PlatformInvoice.
+            invoice = cast(Any, PlatformInvoice)(
                 tenant_id=tenant_id,
                 customer_id=customer_id,
                 line_items=line_item_objs,
@@ -436,6 +467,35 @@ class BillingRegistry:
             return PlatformInvoice.from_dict(doc)
         except Exception as e:
             logger.error(f"Failed to get platform invoice {invoice_id}: {e}\n{traceback.format_exc()}")
+            raise
+
+    def get_platform_invoice_raw(
+        self,
+        tenant_id: str,
+        invoice_id: str,
+        *,
+        collection: Any = None,
+        session: Any = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Return an exact tenant-scoped persisted platform invoice document.
+
+        This authority-reading seam intentionally performs no domain hydration,
+        defaulting, normalization, proof generation, amount conversion, or
+        schema repair.  A shallow copy protects the driver's returned mapping
+        while preserving ``_id`` and every persisted field, including unknown
+        fields and absent authority fields.  The caller owns collection and
+        session/transaction lifecycle.
+        """
+        try:
+            target = platform_invoices_coll if collection is None else collection
+            query = _tenant_invoice_query(tenant_id, invoice_id)
+            if session is None:
+                doc = target.find_one(query)
+            else:
+                doc = target.find_one(query, session=session)
+            return None if doc is None else dict(doc)
+        except Exception as e:
+            logger.error(f"Failed to get raw platform invoice {invoice_id}: {e}\n{traceback.format_exc()}")
             raise
 
     def get_platform_invoice_by_idempotency_key(self, tenant_id: str, idempotency_key: str) -> Optional[PlatformInvoice]:
@@ -590,7 +650,9 @@ class BillingRegistry:
                 for li in line_items:
                     line_item_objs.append(LineItem.from_dict(li))
 
-            invoice = ClientInvoice(
+            # Pyright cannot expand inherited dataclass constructor parameters;
+            # the runtime constructor remains the canonical ClientInvoice.
+            invoice = cast(Any, ClientInvoice)(
                 tenant_id=tenant_id,
                 customer_id=customer_id,
                 customer_name=customer_name,
@@ -613,6 +675,16 @@ class BillingRegistry:
                 order_number=order_number,
                 purchase_order=purchase_order,
             )
+            invoice = replace(
+                invoice,
+                commercial_evidence_version=CLIENT_COMMERCIAL_EVIDENCE_VERSION,
+            )
+            invoice = replace(
+                invoice,
+                commercial_evidence_fingerprint=invoice.compute_commercial_evidence_fingerprint(),
+            )
+            if not invoice.verify_commercial_evidence():
+                raise ValueError("CLIENT_INVOICE_COMMERCIAL_EVIDENCE_VERIFICATION_FAILED")
             doc = invoice.to_dict()
             doc = _stamp_identity(doc, tenant_id)
             doc = _stamp_idempotency(doc, resolved_key)
@@ -648,14 +720,60 @@ class BillingRegistry:
             logger.error(f"Failed to create client invoice: {e}\n{traceback.format_exc()}")
             raise
 
-    def get_client_invoice(self, tenant_id: str, invoice_id: str) -> Optional[ClientInvoice]:
+    def get_client_invoice(
+        self,
+        tenant_id: str,
+        invoice_id: str,
+        *,
+        collection: Any = None,
+        session: Any = None,
+    ) -> Optional[ClientInvoice]:
+        """Retrieve a tenant-scoped client invoice with caller-owned read context.
+
+        ``collection`` and ``session`` mirror ``get_platform_invoice``.  The
+        registry never creates, starts, commits, or aborts a transaction; when
+        supplied, the exact caller session is forwarded to MongoDB.
+        """
         try:
-            doc = client_invoices_coll.find_one(_tenant_invoice_query(tenant_id, invoice_id))
+            target = client_invoices_coll if collection is None else collection
+            query = _tenant_invoice_query(tenant_id, invoice_id)
+            if session is None:
+                doc = target.find_one(query)
+            else:
+                doc = target.find_one(query, session=session)
             if not doc:
                 return None
             return ClientInvoice.from_dict(doc)
         except Exception as e:
             logger.error(f"Failed to get client invoice {invoice_id}: {e}\n{traceback.format_exc()}")
+            raise
+
+    def get_client_invoice_raw(
+        self,
+        tenant_id: str,
+        invoice_id: str,
+        *,
+        collection: Any = None,
+        session: Any = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Return an exact tenant-scoped persisted client invoice document.
+
+        The raw result is a shallow copy of the persisted Mongo mapping.  No
+        ``ClientInvoice.from_dict`` call, default-generating hydration,
+        normalization, proof generation, money conversion, or field insertion
+        occurs.  Caller-supplied collection/session context is forwarded
+        unchanged and transaction ownership remains with the caller.
+        """
+        try:
+            target = client_invoices_coll if collection is None else collection
+            query = _tenant_invoice_query(tenant_id, invoice_id)
+            if session is None:
+                doc = target.find_one(query)
+            else:
+                doc = target.find_one(query, session=session)
+            return None if doc is None else dict(doc)
+        except Exception as e:
+            logger.error(f"Failed to get raw client invoice {invoice_id}: {e}\n{traceback.format_exc()}")
             raise
 
     def get_client_invoice_by_idempotency_key(self, tenant_id: str, idempotency_key: str) -> Optional[ClientInvoice]:
@@ -715,6 +833,7 @@ class BillingRegistry:
         performed_by: str = "SYSTEM",
     ) -> ClientInvoice:
         _reject_invoice_financial_truth_updates(updates)
+        _reject_client_invoice_commercial_updates(updates)
         try:
             current = self.get_client_invoice(tenant_id, invoice_id)
             if not current:
@@ -945,11 +1064,11 @@ def get_billing_registry() -> BillingRegistry:
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.1.0-FINANCIAL-TRUTH-FIREWALL
+🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT — FULL MANDATE COMPLIANCE
-Version:         v1.1.0-FINANCIAL-TRUTH-FIREWALL
-Fixes:           Direct billing execution/refund/settlement mutation disabled; Kennel EOS required.
+Version:         v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
+Fixes:           Deterministic ClientInvoice evidence persisted; commercial rewrites fail closed; Kennel EOS required for execution.
 Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
 Health Posture:  GREEN — no open issues
 Deploy:
@@ -962,7 +1081,7 @@ Deploy:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/billing_registry.py
-# VERSION: v1.1.0-FINANCIAL-TRUTH-FIREWALL
+# VERSION: v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
 # AUTHORITY BOUNDARY:
 #   Commercial billing persistence and historical projection only.
 # TENANT POSTURE:

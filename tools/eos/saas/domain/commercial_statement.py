@@ -2,7 +2,7 @@
 VERSION: v1.0.0-M7
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Deterministic platform/client statement projection.
-ABSOLUTE CANONICAL PATH: tools/eos/saas/domain/commercial_statement.py
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/commercial_statement.py
 COLLABORATION / OWNERSHIP: Python EOS SaaS Billing statement owner.
 CERTIFICATION / UPDATE DATE: 2026-09-06
 CHANGELOG: v1.0.0-M7 establishes separated statement domain.
@@ -20,7 +20,7 @@ from enum import Enum
 import hashlib, json
 class StatementLedgerKind(str, Enum): PLATFORM='PLATFORM'; CLIENT='CLIENT'
 class StatementFamily(str, Enum): BALANCE_FORWARD='BALANCE_FORWARD'; OPEN_ITEM='OPEN_ITEM'; TRANSACTION='TRANSACTION'
-class StatementActivityKind(str, Enum): INVOICE_CHARGE='INVOICE_CHARGE'; SETTLEMENT='SETTLEMENT'; CREDIT='CREDIT'; DEBIT_ADJUSTMENT='DEBIT_ADJUSTMENT'; REFUND_ADJUSTMENT='REFUND_ADJUSTMENT'
+class StatementActivityKind(str, Enum): INVOICE_CHARGE='INVOICE_CHARGE'; RECEIVABLE_BALANCE='RECEIVABLE_BALANCE'; SETTLEMENT='SETTLEMENT'; CREDIT='CREDIT'; DEBIT_ADJUSTMENT='DEBIT_ADJUSTMENT'; REFUND_ADJUSTMENT='REFUND_ADJUSTMENT'
 class AgingBucket(str, Enum): CURRENT='CURRENT'; ONE_30='1_30'; THIRTY_ONE_60='31_60'; SIXTY_ONE_90='61_90'; NINETY_ONE_120='91_120'; ONE_TWENTY_PLUS='120_PLUS'
 @dataclass(frozen=True)
 class CommercialStatementActivity:
@@ -59,5 +59,7 @@ class CommercialStatementSnapshot:
 # ARTIFACT: commercial_statement.py
 # VERSION: v1.0.0-M7
 # AUTHORITY BOUNDARY: Commercial projection only.
+# TENANT POSTURE: Tenant and account scoped.
 # FAIL-CLOSED POSTURE: Cross-lane and mixed-currency inputs reject.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
