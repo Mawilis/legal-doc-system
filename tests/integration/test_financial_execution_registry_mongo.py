@@ -1,12 +1,12 @@
 """WILSY OS Kennel EOS real-Mongo registry certification.
 
-VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-REAL-MONGO-CERT
+VERSION: v1.1.0-KENNEL-FINANCIAL-EXECUTION-FACT-REGISTRY-REAL-MONGO-CERT
 TITLE: FinancialExecutionTruthRegistry real-Mongo certification
 AUTHORITY: Wilsy OS Core Governance
 ARCHITECTURE LOCK: APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED
 FINANCIAL AUTHORITY: Kennel EOS exclusively owns execution truth.
 SCOPE: persistence semantics only; provider execution and settlement excluded.
-CHANGELOG: v1.0.0 establishes real replica-set persistence proofs against registry v1.0.4 caller-owned transaction replay correction.
+CHANGELOG: v1.1.0 adds live neutral-fact index, hydration, replay, cardinality, transaction-visibility, and independent-session race proofs; AP truth coverage remains unchanged.
 DOMAIN CONTRACT VERSION: v1.0.1-KENNEL-FINANCIAL-EXECUTION-TRUTH-DOMAIN-PERSISTENCE-HYDRATION
 DOMAIN CONTRACT COMMIT: 6783d523efea6c311453c794afca6b0520777c0a
 DOMAIN SHA3-512: d268c94813636d65605079b6939d1dadb1cb34d2cce6ddf62c8ecd2f2582175de171dacca3698551768706ece096018df96dcc9f7684f850c9f9e156a393dc17
@@ -35,11 +35,13 @@ from datetime import datetime, timezone
 import pytest
 from pymongo import ASCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
-from tools.eos.kennel.domain.financial_execution import FinancialExecutionStatus, FinancialExecutionTruth
+from tools.eos.kennel.domain.financial_execution import FinancialExecutionFactError, FinancialExecutionStatus, FinancialExecutionTruth
 from tools.eos.kennel.registry.financial_execution_registry import (
     COLLECTION, FinancialExecutionCreateConflictError, FinancialExecutionCreateOutcome,
     FinancialExecutionIdempotencyKeyReuseError, FinancialExecutionPersistedRecordInvalidError,
     FinancialExecutionRegistryError, FinancialExecutionTruthRegistry,
+    FACT_COLLECTION, FinancialExecutionFactRegistry, FinancialExecutionFactCreateOutcome,
+    FinancialExecutionFactCreateConflictError, FinancialExecutionFactPersistedRecordInvalidError,
 )
 
 def make_execution_truth(**overrides: object) -> FinancialExecutionTruth:
@@ -328,8 +330,168 @@ def test_concurrent_provider_reference_is_non_unique(mongo_db):
     assert [row.execution_truth_id for row in rows] == [f"concurrent-{i}" for i in range(8)]
     assert c.count_documents({}) == 8
 
+
+def make_execution_fact(**overrides: object):
+    """Build one canonical subject-neutral fact for live registry certification."""
+    from tools.eos.kennel.domain.financial_execution import FinancialExecutionFact
+
+    values: dict[str, object] = {
+        "execution_fact_id": FinancialExecutionFact.deterministic_id("tenant-fact", "attempt-fact"),
+        "tenant_id": "tenant-fact",
+        "execution_command_id": "command-fact",
+        "execution_command_fingerprint": "a" * 128,
+        "execution_attempt_id": "attempt-fact",
+        "provider": "PAYSHAP",
+        "provider_execution_reference": "provider-fact",
+        "execution_status": FinancialExecutionStatus.EXECUTED,
+        "executed_amount_minor": 100,
+        "currency": "ZAR",
+        "executed_at": datetime(2026, 1, 1, tzinfo=timezone.utc),
+        "payment_destination_reference": "destination-fact",
+        "provider_evidence_reference": "evidence-fact",
+        "execution_evidence_fingerprint": "b" * 128,
+        "created_at": datetime(2026, 1, 2, tzinfo=timezone.utc),
+    }
+    values.update(overrides)
+    if "tenant_id" in overrides or "execution_attempt_id" in overrides:
+        values["execution_fact_id"] = FinancialExecutionFact.deterministic_id(
+            str(values["tenant_id"]), str(values["execution_attempt_id"])
+        )
+    return FinancialExecutionFact(**values)  # type: ignore[arg-type]
+
+
+def test_neutral_fact_indexes_create_read_and_strict_hydration(mongo_db):
+    """Certify live unique indexes, round-trip hydration, corruption, and tenant scope."""
+    _, db = mongo_db
+    facts = db[FACT_COLLECTION]
+    FinancialExecutionFactRegistry.ensure_indexes(facts)
+    indexes = {item["name"]: item for item in facts.list_indexes()}
+    assert list(indexes["tenant_execution_fact_identity_unique"]["key"].items()) == [("tenant_id", 1), ("execution_fact_id", 1)]
+    assert list(indexes["tenant_execution_fact_attempt_unique"]["key"].items()) == [("tenant_id", 1), ("execution_attempt_id", 1)]
+    assert indexes["tenant_execution_fact_identity_unique"]["unique"] is True
+    assert indexes["tenant_execution_fact_attempt_unique"]["unique"] is True
+    fact = make_execution_fact()
+    created = FinancialExecutionFactRegistry.create(fact, facts)
+    assert created.outcome is FinancialExecutionFactCreateOutcome.CREATED
+    assert FinancialExecutionFactRegistry.get("tenant-fact", fact.execution_fact_id, facts) == fact
+    assert FinancialExecutionFactRegistry.get_by_attempt("tenant-fact", fact.execution_attempt_id, facts) == fact
+    assert FinancialExecutionFactRegistry.get("other-tenant", fact.execution_fact_id, facts) is None
+    row = facts.find_one({"tenant_id": "tenant-fact", "execution_fact_id": fact.execution_fact_id})
+    assert row is not None
+    facts.update_one({"_id": row["_id"]}, {"$set": {"execution_evidence_fingerprint": "bad"}})
+    with pytest.raises(FinancialExecutionFactPersistedRecordInvalidError):
+        FinancialExecutionFactRegistry.get("tenant-fact", fact.execution_fact_id, facts)
+    facts.delete_many({})
+    fact = make_execution_fact()
+    FinancialExecutionFactRegistry.create(fact, facts)
+    facts.update_one({"tenant_id": "tenant-fact"}, {"$set": {"unknown_field": "reject"}})
+    with pytest.raises(FinancialExecutionFactPersistedRecordInvalidError):
+        FinancialExecutionFactRegistry.get("tenant-fact", fact.execution_fact_id, facts)
+    facts.delete_many({})
+    facts.insert_one({key: value for key, value in fact.to_dict().items() if key != "created_at"})
+    with pytest.raises(FinancialExecutionFactPersistedRecordInvalidError):
+        FinancialExecutionFactRegistry.get("tenant-fact", fact.execution_fact_id, facts)
+
+
+def test_neutral_fact_exact_and_divergent_replay_and_attempt_cardinality(mongo_db):
+    """Certify exact replay and immutable one-fact-per-tenant-attempt enforcement."""
+    _, db = mongo_db
+    facts = db[FACT_COLLECTION]
+    FinancialExecutionFactRegistry.ensure_indexes(facts)
+    fact = make_execution_fact()
+    first = FinancialExecutionFactRegistry.create(fact, facts)
+    replay = FinancialExecutionFactRegistry.create(fact, facts)
+    assert first.outcome is FinancialExecutionFactCreateOutcome.CREATED
+    assert replay.outcome is FinancialExecutionFactCreateOutcome.IDEMPOTENT_REPLAY
+    divergent = make_execution_fact(execution_evidence_fingerprint="c" * 128)
+    with pytest.raises(FinancialExecutionFactCreateConflictError):
+        FinancialExecutionFactRegistry.create(divergent, facts)
+    with pytest.raises(FinancialExecutionFactError):
+        make_execution_fact(execution_fact_id="fact-divergent")
+    assert facts.count_documents({"tenant_id": "tenant-fact", "execution_attempt_id": "attempt-fact"}) == 1
+
+
+def test_neutral_fact_same_session_visibility_and_abort(mongo_db):
+    """Certify caller-session propagation and Mongo transaction visibility boundaries."""
+    client, db = mongo_db
+    facts = db[FACT_COLLECTION]
+    FinancialExecutionFactRegistry.ensure_indexes(facts)
+    fact = make_execution_fact()
+    session = client.start_session()
+    session.start_transaction()
+    try:
+        FinancialExecutionFactRegistry.create(fact, facts, session=session)
+        assert FinancialExecutionFactRegistry.get("tenant-fact", fact.execution_fact_id, facts, session=session) == fact
+        assert facts.count_documents({}, session=session) == 1
+        assert facts.count_documents({}) == 0
+        session.abort_transaction()
+    finally:
+        session.end_session()
+    assert facts.count_documents({}) == 0
+    session = client.start_session()
+    session.start_transaction()
+    try:
+        FinancialExecutionFactRegistry.create(fact, facts, session=session)
+        session.commit_transaction()
+    finally:
+        session.end_session()
+    assert FinancialExecutionFactRegistry.get_by_attempt("tenant-fact", "attempt-fact", facts) == fact
+
+
+def test_neutral_fact_real_duplicate_key_race(mongo_db):
+    """Certify loser propagation followed by caller-owned fresh-transaction replay."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    client, db = mongo_db
+    facts = db[FACT_COLLECTION]
+    FinancialExecutionFactRegistry.ensure_indexes(facts)
+    fact = make_execution_fact()
+    barrier = Barrier(2)
+
+    def invoke() -> str:
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            assert FinancialExecutionFactRegistry.get_by_attempt(
+                "tenant-fact", "attempt-fact", facts, session=session
+            ) is None
+            barrier.wait(timeout=10)
+            result = FinancialExecutionFactRegistry.create(fact, facts, session=session)
+            session.commit_transaction()
+            return result.outcome.value
+        except Exception:
+            try:
+                session.abort_transaction()
+            except Exception:
+                pass
+            raise
+        finally:
+            session.end_session()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(invoke) for _ in range(2)]
+        outcomes = []
+        for future in futures:
+            try:
+                outcomes.append(future.result(timeout=30))
+            except Exception:
+                outcomes.append("ABORTED_OR_DUPLICATE")
+    assert outcomes.count(FinancialExecutionFactCreateOutcome.CREATED.value) == 1
+    assert "ABORTED_OR_DUPLICATE" in outcomes
+    retry = client.start_session()
+    retry.start_transaction()
+    try:
+        replay = FinancialExecutionFactRegistry.create(fact, facts, session=retry)
+        assert replay.outcome is FinancialExecutionFactCreateOutcome.IDEMPOTENT_REPLAY
+        retry.commit_transaction()
+    finally:
+        retry.end_session()
+    assert facts.count_documents({"tenant_id": "tenant-fact", "execution_attempt_id": "attempt-fact"}) == 1
+
+
 # ARTIFACT: test_financial_execution_registry_mongo.py
-# VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-REAL-MONGO-CERT
+# VERSION: v1.1.0-KENNEL-FINANCIAL-EXECUTION-FACT-REGISTRY-REAL-MONGO-CERT
 # STATUS: REAL-MONGO PERSISTENCE CERTIFICATION
 # PRODUCTION CONTRACT VERSION: v1.0.4-KENNEL-FINANCIAL-EXECUTION-TRUTH-REGISTRY-CALLER-TRANSACTION-REPLAY
 # PRODUCTION CONTRACT COMMIT: a5cec760cdb03f7b3d88a3869f2cf7bf379c1d0d
