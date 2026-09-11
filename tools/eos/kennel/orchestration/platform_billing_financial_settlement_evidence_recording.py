@@ -13,9 +13,7 @@ from ..registry.platform_billing_financial_execution_truth_registry import Platf
 from ..domain.platform_billing_financial_settlement_evidence import PlatformBillingFinancialSettlementEvidence
 from ..registry.platform_billing_financial_settlement_evidence_registry import PlatformBillingFinancialSettlementEvidenceRegistry
 def record_platform_billing_financial_settlement_evidence(tenant_id:str,execution_truth_id:str,*,execution_collection:Collection,settlement_collection:Collection,settlement_reference:str,provider_settlement_evidence_reference:str,settled_at:datetime,created_at:datetime,session:Optional[ClientSession]=None):
- truth=PlatformBillingFinancialExecutionTruthRegistry.get(tenant_id,execution_truth_id,execution_collection,session=session)
- evidence=PlatformBillingFinancialSettlementEvidence.from_execution_truth(truth,settlement_reference,provider_settlement_evidence_reference,settled_at,created_at)
- return PlatformBillingFinancialSettlementEvidenceRegistry.create(evidence,settlement_collection,session=session)
+ raise RuntimeError("M11E2D5R2_LEGACY_SETTLEMENT_RECORDER_RETIRED_USE_DURABLE_OBSERVATION_BRIDGE")
 # ARTIFACT: platform_billing_financial_settlement_evidence_recording.py
 # VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
 # AUTHORITY BOUNDARY: Kennel evidence recording only; no commercial projection.
