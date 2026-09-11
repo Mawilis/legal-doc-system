@@ -1,7 +1,7 @@
 """WILSY OS — durable settlement-observation evidence registry.
 
 TITLE: Financial Settlement Observation Registry
-VERSION: v1.0.0-M11E2D4
+VERSION: v1.0.1-M11E2D4
 AUTHORITY: Kennel EOS / Wilsy OS Core Governance
 EPITOME: Persists immutable authenticated settlement observations without settlement authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kennel/registry/financial_settlement_observation_registry.py
@@ -35,7 +35,7 @@ class FinancialSettlementObservationRegistry:
     @staticmethod
     def _hydrate(doc):
         try:
-            d={k:v for k,v in doc.items() if k!='_id'}; d['status']=SettlementObservationStatus(d['status']); d['evidence_strength']=EvidenceStrength(d['evidence_strength']); d['transport_disposition']=TransportDisposition(d['transport_disposition'])
+            d={k:v for k,v in doc.items() if k not in {"_id","observation_fingerprint"}}; d['status']=SettlementObservationStatus(d['status']); d['evidence_strength']=EvidenceStrength(d['evidence_strength']); d['transport_disposition']=TransportDisposition(d['transport_disposition'])
             for k in ('observed_at','settled_at'):
                 if isinstance(d[k],str): d[k]=datetime.fromisoformat(d[k])
                 elif d[k].tzinfo is None:d[k]=d[k].replace(tzinfo=timezone.utc)
@@ -58,7 +58,7 @@ class FinancialSettlementObservationRegistry:
         return FinancialSettlementObservationRegistry._hydrate(doc)
 
 # ARTIFACT: financial_settlement_observation_registry.py
-# VERSION: v1.0.0-M11E2D4
+# VERSION: v1.0.1-M11E2D4
 # AUTHORITY BOUNDARY: observation persistence only; no platform settlement.
 # TENANT POSTURE: tenant-scoped replay and hydration.
 # FAIL-CLOSED POSTURE: corruption and conflict reject.
