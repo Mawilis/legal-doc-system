@@ -25,7 +25,7 @@
     "predev": "lsof -ti:4000 | xargs kill -9 2>/dev/null || true"
   },
   "dependencies": {
-    "@babel/core": "^7.24.0",
+    "@babel/core": "7.29.7",
     "@babel/preset-env": "^7.24.0",
     "@babel/preset-react": "^7.23.3",
     "@huggingface/transformers": "3.8.1",
@@ -77,7 +77,7 @@
     "ioredis": "5.10.0",
     "joi": "^17.13.3",
     "js-sha3": "0.9.3",
-    "js-yaml": "4.3.1",
+    "js-yaml": "4.3.2",
     "jsdom": "29.0.1",
     "json-stable-stringify": "1.3.0",
     "json2csv": "6.0.0-alpha.2",
@@ -94,12 +94,12 @@
     "mongoose-sequence": "6.0.1",
     "morgan": "1.11.0",
     "msgpack-lite": "0.1.26",
-    "multer": "2.2.0",
+    "multer": "2.3.0",
     "node-cache": "5.1.2",
     "node-cron": "4.6.0",
     "node-forge": "1.4.0",
     "node-rsa": "2.0.0",
-    "nodemailer": "9.0.5",
+    "nodemailer": "9.1.1",
     "opossum": "9.0.0",
     "otplib": "13.4.0",
     "pdf-lib": "1.17.1",
@@ -141,7 +141,7 @@
     "zxcvbn": "4.4.2"
   },
   "devDependencies": {
-    "@babel/core": "7.29.0",
+    "@babel/core": "7.29.7",
     "@babel/preset-env": "7.29.0",
     "@babel/register": "7.28.6",
     "@tensorflow/tfjs-node": "4.22.0",
@@ -189,7 +189,7 @@
     "@remix-run/router": "^1.19.0",
     "gpu.js": "^2.15.2",
     "compromise": "^14.14.0",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "minimatch@3.1.5": {
       "brace-expansion": "1.1.18"
     },
