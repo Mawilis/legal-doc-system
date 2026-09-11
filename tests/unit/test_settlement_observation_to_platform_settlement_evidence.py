@@ -28,13 +28,13 @@ SESSION = Mock(in_transaction=True)
 
 def _records(amount=100, source_id="gt", source_fp="g" * 128):
     observation = SimpleNamespace(tenant_id="tenant-a", observation_id="obs-1", execution_truth_id="gt", provider_name="provider-a", provider_execution_reference="exec-1", settlement_reference="settle-1", provider_settlement_evidence_reference="evidence-1", settled_amount_minor=amount, currency="ZAR", payment_destination_reference="dest-1", settled_at=NOW, fingerprint="f" * 128)
-    generic = SimpleNamespace(tenant_id="tenant-a", execution_truth_id="gt", evidence_fingerprint="g" * 128, execution_status=FinancialExecutionStatus.EXECUTED, provider="provider-a", provider_execution_reference="exec-1", executed_amount_minor=100, currency="ZAR", payment_destination_reference="dest-1")
+    generic = SimpleNamespace(tenant_id="tenant-a", execution_fact_id="gt", fingerprint="g" * 128, execution_status=FinancialExecutionStatus.EXECUTED, provider="provider-a", provider_execution_reference="exec-1", executed_amount_minor=100, currency="ZAR", payment_destination_reference="dest-1")
     platform = SimpleNamespace(tenant_id="tenant-a", execution_status=PlatformExecutionStatus.EXECUTED, source_financial_execution_truth_id=source_id, source_financial_execution_truth_fingerprint=source_fp, executed_amount_minor=100, provider="provider-a", provider_execution_reference="exec-1", currency="ZAR", payment_destination_reference="dest-1", platform_invoice_id="inv-1", execution_request_id="req-1", execution_command_id="cmd-1", release_authorization_id="auth-1")
     return observation, generic, platform
 
 def _run(observation, generic, platform):
     base = "tools.eos.kennel.orchestration.settlement_observation_to_platform_settlement_evidence."
-    with patch(base + "FinancialSettlementObservationRegistry.get", return_value=observation) as obs_get, patch(base + "FinancialExecutionTruthRegistry.get", return_value=generic) as gen_get, patch(base + "PlatformBillingFinancialExecutionTruthRegistry.get", return_value=platform) as plat_get, patch(base + "PlatformBillingFinancialSettlementEvidenceRegistry.create", side_effect=lambda value, *_a, **_k: value) as create:
+    with patch(base + "FinancialSettlementObservationRegistry.get", return_value=observation) as obs_get, patch(base + "FinancialExecutionFactRegistry.get", return_value=generic) as gen_get, patch(base + "PlatformBillingFinancialExecutionTruthRegistry.get", return_value=platform) as plat_get, patch(base + "PlatformBillingFinancialSettlementEvidenceRegistry.create", side_effect=lambda value, *_a, **_k: value) as create:
         result = bridge_settlement_observation_to_platform_evidence("tenant-a", "obs-1", "pt-1", observation_collection=Mock(), generic_truth_collection=Mock(), platform_truth_collection=Mock(), evidence_collection=Mock(), session=SESSION, created_at=NOW)
     obs_get.assert_called_once(); gen_get.assert_called_once(); plat_get.assert_called_once(); create.assert_called_once()
     return result
@@ -54,8 +54,8 @@ def test_d5_full_durable_chain_preserves_provenance_and_settlement_facts():
     assert evidence.source_financial_settlement_observation_id == observation.observation_id
     assert evidence.source_financial_settlement_observation_fingerprint == observation.fingerprint
     assert (evidence.settlement_reference, evidence.provider_settlement_evidence_reference, evidence.settled_amount_minor, evidence.currency, evidence.settled_at) == ("settle-1", "evidence-1", 100, "ZAR", NOW)
-    assert observation.execution_truth_id == generic.execution_truth_id == platform.source_financial_execution_truth_id
-    assert generic.evidence_fingerprint == platform.source_financial_execution_truth_fingerprint
+    assert observation.execution_truth_id == generic.execution_fact_id == platform.source_financial_execution_truth_id
+    assert generic.fingerprint == platform.source_financial_execution_truth_fingerprint
 
 @pytest.mark.parametrize("source_id,source_fp", [("wrong", "g" * 128), ("gt", "x" * 128)])
 def test_d5_wrong_source_identity_or_fingerprint_fails_closed(source_id, source_fp):
@@ -76,7 +76,7 @@ def test_d5_identical_replay_has_identical_evidence_identity():
 
 def test_d5_corrupt_durable_settlement_observation_rejects_before_downstream_authority():
     base = "tools.eos.kennel.orchestration.settlement_observation_to_platform_settlement_evidence."
-    with patch(base + "FinancialSettlementObservationRegistry.get", side_effect=RuntimeError("M11E2D4_SETTLEMENT_OBSERVATION_INVALID")) as observation_get, patch(base + "FinancialExecutionTruthRegistry.get") as generic_get:
+    with patch(base + "FinancialSettlementObservationRegistry.get", side_effect=RuntimeError("M11E2D4_SETTLEMENT_OBSERVATION_INVALID")) as observation_get, patch(base + "FinancialExecutionFactRegistry.get") as generic_get:
         with pytest.raises(RuntimeError, match="SETTLEMENT_OBSERVATION_INVALID"):
             bridge_settlement_observation_to_platform_evidence("tenant-a", "obs-1", "pt-1", observation_collection=Mock(), generic_truth_collection=Mock(), platform_truth_collection=Mock(), evidence_collection=Mock(), session=SESSION, created_at=NOW)
     observation_get.assert_called_once()

@@ -20,7 +20,7 @@ from typing import Optional, cast
 from pymongo.collection import Collection
 from pymongo.client_session import ClientSession
 from ..registry.financial_settlement_observation_registry import FinancialSettlementObservationRegistry
-from ..registry.financial_execution_registry import FinancialExecutionTruthRegistry
+from ..registry.financial_execution_registry import FinancialExecutionFactRegistry
 from ..registry.platform_billing_financial_execution_truth_registry import PlatformBillingFinancialExecutionTruthRegistry
 from ..registry.platform_billing_financial_settlement_evidence_registry import PlatformBillingFinancialSettlementEvidenceRegistry
 from ..domain.financial_execution import FinancialExecutionStatus
@@ -37,11 +37,11 @@ def bridge_settlement_observation_to_platform_evidence(tenant_id: str, observati
     if session is None or not bool(getattr(session, 'in_transaction', False)):
         raise SettlementObservationBridgeError('M11E2D5R2_ACTIVE_SESSION_REQUIRED')
     observation = FinancialSettlementObservationRegistry.get(tenant_id, observation_id, observation_collection, session=session)
-    generic = cast(FinancialExecutionTruth, FinancialExecutionTruthRegistry.get(tenant_id, observation.execution_truth_id, generic_truth_collection, session=session))
+    generic = FinancialExecutionFactRegistry.get(tenant_id, observation.execution_truth_id, generic_truth_collection, session=session)
     platform = cast(PlatformBillingFinancialExecutionTruth, PlatformBillingFinancialExecutionTruthRegistry.get(tenant_id, platform_truth_id, platform_truth_collection, session=session))
     if generic.execution_status is not FinancialExecutionStatus.EXECUTED or platform.execution_status is not PlatformExecutionStatus.EXECUTED:
         raise SettlementObservationBridgeError('EXECUTED_TRUTH_REQUIRED')
-    if platform.source_financial_execution_truth_id != generic.execution_truth_id or platform.source_financial_execution_truth_fingerprint != generic.evidence_fingerprint:
+    if platform.source_financial_execution_truth_id != generic.execution_fact_id or platform.source_financial_execution_truth_fingerprint != generic.fingerprint:
         raise SettlementObservationBridgeError('GENERIC_PLATFORM_PROVENANCE_MISMATCH')
     if (observation.tenant_id, observation.provider_name, observation.provider_execution_reference, observation.currency, observation.payment_destination_reference, observation.settled_amount_minor) != (generic.tenant_id, generic.provider, generic.provider_execution_reference, generic.currency, generic.payment_destination_reference, generic.executed_amount_minor):
         raise SettlementObservationBridgeError('SETTLEMENT_EXECUTION_MISMATCH')

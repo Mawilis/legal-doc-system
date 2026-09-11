@@ -24,7 +24,7 @@ from pymongo.client_session import ClientSession
 from ..domain.financial_execution import FinancialExecutionTruth, FinancialExecutionStatus
 from ..domain.financial_execution_provider_observation import EvidenceStrength, TransportDisposition
 from ..domain.financial_settlement_observation import FinancialSettlementObservation, SettlementObservationStatus
-from ..registry.financial_execution_registry import FinancialExecutionTruthRegistry
+from ..registry.financial_execution_registry import FinancialExecutionFactRegistry
 from ..registry.financial_settlement_observation_registry import FinancialSettlementObservationRegistry
 class AuthenticatedSettlementObservationIngestionError(ValueError): pass
 @dataclass(frozen=True)
@@ -34,9 +34,9 @@ def ingest_authenticated_settlement_observation(tenant_id:str,evidence:Authentic
     if session is None or not bool(getattr(session,'in_transaction',False)): raise AuthenticatedSettlementObservationIngestionError('M11E2D4_ACTIVE_SESSION_REQUIRED')
     if not isinstance(evidence,AuthenticatedSettlementTransportEvidence) or evidence.tenant_id!=tenant_id: raise AuthenticatedSettlementObservationIngestionError('M11E2D4_TENANT_MISMATCH')
     if evidence.evidence_strength not in {EvidenceStrength.AUTHENTICATED,EvidenceStrength.CORROBORATED} or evidence.transport_disposition is TransportDisposition.AMBIGUOUS: raise AuthenticatedSettlementObservationIngestionError('M11E2D4_EVIDENCE_INVALID')
-    truth=FinancialExecutionTruthRegistry.get(tenant_id,execution_truth_id,execution_truth_collection,session=session)
+    truth=FinancialExecutionFactRegistry.get(tenant_id,execution_truth_id,execution_truth_collection,session=session)
     if truth is None or not isinstance(truth,FinancialExecutionTruth) or truth.execution_status is not FinancialExecutionStatus.EXECUTED or (truth.provider,truth.provider_execution_reference,truth.currency,truth.payment_destination_reference)!=(evidence.provider_name,evidence.provider_execution_reference,evidence.currency,evidence.payment_destination_reference) or evidence.settled_amount_minor>truth.executed_amount_minor: raise AuthenticatedSettlementObservationIngestionError('M11E2D4_EXECUTION_CORRELATION_MISMATCH')
-    value=FinancialSettlementObservation(tenant_id,f'settlement-observation-{truth.execution_truth_id}-{evidence.settlement_reference}',evidence.provider_name,execution_truth_id,evidence.provider_execution_reference,evidence.settlement_reference,evidence.provider_settlement_evidence_reference,SettlementObservationStatus.SETTLED,evidence.settled_amount_minor,evidence.currency,evidence.payment_destination_reference,evidence.observed_at,evidence.settled_at,evidence.evidence_strength,evidence.transport_disposition)
+    value=FinancialSettlementObservation(tenant_id,f'settlement-observation-{execution_truth_id}-{evidence.settlement_reference}',evidence.provider_name,execution_truth_id,evidence.provider_execution_reference,evidence.settlement_reference,evidence.provider_settlement_evidence_reference,SettlementObservationStatus.SETTLED,evidence.settled_amount_minor,evidence.currency,evidence.payment_destination_reference,evidence.observed_at,evidence.settled_at,evidence.evidence_strength,evidence.transport_disposition)
     return FinancialSettlementObservationRegistry.create(value,observation_collection,session=session)
 
 # ARTIFACT: authenticated_settlement_observation_ingestion.py

@@ -24,7 +24,7 @@ from tools.eos.kennel.domain.financial_execution_provider_observation import Evi
 from tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion import *
 def test_authenticated_settlement_is_correlated_and_persisted():
  n=datetime(2026,1,1,tzinfo=timezone.utc); t=FinancialExecutionTruth('gt','t','pay','auth','p','exec',FinancialExecutionStatus.EXECUTED,100,'ZAR',n,'dest','ev','a'*128,'b'*128,n); e=AuthenticatedSettlementTransportEvidence('t','p','exec','settle','settle-ev',100,'ZAR','dest',n,n,EvidenceStrength.AUTHENTICATED,TransportDisposition.RESPONSE_RECEIVED)
- with patch('tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion.FinancialExecutionTruthRegistry.get',return_value=t),patch('tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion.FinancialSettlementObservationRegistry.create',return_value=Mock()) as create: ingest_authenticated_settlement_observation('t',e,execution_truth_id='gt',execution_truth_collection=Mock(),observation_collection=Mock(),session=Mock(in_transaction=True))
+ with patch('tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion.FinancialExecutionFactRegistry.get',return_value=t),patch('tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion.FinancialSettlementObservationRegistry.create',return_value=Mock()) as create: ingest_authenticated_settlement_observation('t',e,execution_truth_id='gt',execution_truth_collection=Mock(),observation_collection=Mock(),session=Mock(in_transaction=True))
  assert create.call_args.args[0].settlement_reference=='settle'
 @pytest.mark.parametrize('strength',[EvidenceStrength.UNAUTHENTICATED,EvidenceStrength.CONFLICTING])
 def test_weak_settlement_evidence_fails_closed(strength):
