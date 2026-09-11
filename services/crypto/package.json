@@ -1,5 +1,8 @@
 {
   "name": "wilsy-os-crypto",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "express": "^4.22.1"
+  }
 }
