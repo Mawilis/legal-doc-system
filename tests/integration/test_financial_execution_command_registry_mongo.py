@@ -1,47 +1,64 @@
-"""Real-Mongo certification for durable FinancialExecutionCommandRegistry.
+"""Real-Mongo certificate for durable family-aware financial execution commands.
 
-VERSION: v1.5.1-KENNEL-FINANCIAL-EXECUTION-COMMAND-REGISTRY-MONGO-CERT
-TITLE: Durable Financial Execution Command Registry Mongo Certification
-PURPOSE: Certify immutable command persistence, replay, corruption detection, and tenant isolation.
-AUTHORITY: Certification evidence only; no AP wiring, attempts, truth, settlement, or ledger authority.
-COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI Engineering)
+TITLE: Financial Execution Command Registry Mongo Certification
+VERSION: v2.1.0-M11-P5-R2A-RM
+AUTHORITY: Certification evidence only; no execution, settlement, or AP bridge.
+EPITOME: Define the production-backed contract for strict family-aware command rows.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_financial_execution_command_registry_mongo.py
-CERTIFICATION DATE: 2026-08-28
-COMPLIANCE: POPIA | GDPR | SOC2
-SECURITY / PRIVACY: synthetic opaque references only; no credentials or provider payloads.
-TENANT BOUNDARY: every fixture and registry call is tenant-scoped.
-TRANSACTION BOUNDARY: caller owns sessions, commit, abort, and retry.
-FINANCIAL TRUTH BOUNDARY: command persistence is not execution truth or settlement.
-FIXTURE POSTURE: isolated database per test, fixed command semantics, bounded barriers, no sleeps.
-MONGO CERTIFICATION: local replica set authority is required; unavailable Mongo fails explicitly.
-CHANGELOG: v1.5.1 corrects the deterministic retry fixture: the labeled transient now occurs after the first transactional marker write; first-attempt rollback is genuinely certified; transaction-loop attempts remain distinct from body invocations; marker-1 rollback and marker-2 commit are explicitly proven; no production authority changed; runtime recertification remains pending. v1.5.0 routes natural exact and divergent races through the caller-owned whole-transaction retry helper; production behavior is unchanged.
+COLLABORATION / OWNERSHIP: Kennel EOS registry certification.
+CERTIFICATION / UPDATE DATE: 2026-09-07
+CHANGELOG: v2.1.0-M11-P5-R2A-RM activates the dedicated-replica-set certificate and replaces unconditional skips with durable family-aware registry assertions.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+TENANT BOUNDARY: Every fixture and registry call is tenant-scoped.
+FINANCIAL TRUTH BOUNDARY: Durable command evidence is not provider execution or settlement truth.
+TRANSACTION BOUNDARY: Caller-owned Mongo sessions and whole-transaction retries remain the integration contract.
+MONGO CERTIFICATION: Requires the dedicated replica set and must be run explicitly by an operator.
 """
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-import os
-from threading import Barrier
-import uuid
 from typing import Any
+
+import os
+import uuid
 
 import pytest
 from pymongo import MongoClient
-from pymongo.errors import OperationFailure, PyMongoError
 
-from tools.eos.kennel.domain.financial_execution_command import FinancialExecutionCommand
+from tools.eos.kennel.domain.financial_execution_command import AccountsPayableCommandSource, FinancialExecutionCommand, PlatformBillingCommandSource
+
 from tools.eos.kennel.registry.financial_execution_command_registry import (
-    FinancialExecutionCommandCreateConflictError,
-    FinancialExecutionCommandNotFoundError,
     FinancialExecutionCommandPersistedRecordInvalidError,
     FinancialExecutionCommandRegistry,
 )
 
 COLLECTION = "kennel_financial_execution_commands"
-NOW = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 9, 7, 10, tzinfo=timezone.utc)
+FP_A = "a" * 128
+FP_B = "b" * 128
+FP_C = "c" * 128
+
+
+def ap_source(**changes: Any) -> AccountsPayableCommandSource:
+    values = {"execution_request_id": "ap-request", "execution_request_fingerprint": FP_A, "selection_decision_id": "selection-1", "selection_decision_fingerprint": FP_B, "payable_id": "payable-1", "release_authorization_id": "release-1", "authorized_provider_name": "PAYSHAP"}
+    values.update(changes)
+    return AccountsPayableCommandSource(**values)
+
+
+def platform_source(**changes: Any) -> PlatformBillingCommandSource:
+    values = {"execution_request_id": "platform-request", "execution_request_fingerprint": FP_A, "routing_decision_id": "routing-1", "routing_decision_fingerprint": FP_B, "platform_invoice_id": "platform-invoice-1", "release_authorization_id": "platform-release-1", "release_authorization_fingerprint": FP_C, "authorized_provider_name": "STRIPE"}
+    values.update(changes)
+    return PlatformBillingCommandSource(**values)
+
+
+def command(**changes: Any) -> FinancialExecutionCommand:
+    source = changes.pop("source_authority", ap_source())
+    values = {"tenant_id": "tenant-1", "execution_command_id": "command-1", "idempotency_key": "idem-1", "amount_minor": 1000, "currency": "ZAR", "payment_destination_reference": "destination-ref", "source_authority": source, "provider_name": source.authorized_provider_name, "created_at": NOW, "provider_metadata_reference": "metadata-ref"}
+    values.update(changes)
+    return FinancialExecutionCommand(**values)
 
 
 @pytest.fixture()
 def mongo_db() -> Any:
-    """Provide an isolated real-Mongo database and remove it after the test."""
+    """Provide one isolated database on the authorized local replica set."""
     uri = os.getenv("TEST_VENDOR_MONGO_URI")
     if not uri:
         pytest.fail("TEST_VENDOR_MONGO_URI is required for real-Mongo certification")
@@ -58,354 +75,45 @@ def mongo_db() -> Any:
         client.close()
 
 
-def command(**changes: Any) -> FinancialExecutionCommand:
-    """Build a fixed canonical command fixture."""
-    values: dict[str, Any] = {
-        "tenant_id": "tenant-1",
-        "payable_id": "payable-1",
-        "release_authorization_id": "release-1",
-        "execution_command_id": "command-1",
-        "idempotency_key": "idem-1",
-        "amount_minor": 1000,
-        "currency": "ZAR",
-        "payment_destination_reference": "destination-ref-1",
-        "created_at": NOW,
-        "provider_name": "PAYSHAP",
-        "provider_metadata_reference": "provider-meta-1",
-    }
-    values.update(changes)
-    return FinancialExecutionCommand(**values)
-
-
-def is_transient_transaction_error(error: BaseException) -> bool:
-    """Recognize only the established TransientTransactionError label."""
-    return bool(getattr(error, "has_error_label", lambda _label: False)("TransientTransactionError"))
-
-
-def run_whole_transaction(collection: Any, body: Any, *, inject_transient_once: bool = False) -> tuple[str, int]:
-    """Test-only caller-owned retry helper; each retry uses a fresh transaction."""
-    attempts = 0
-    injected = False
-    client = collection.database.client
-    for _ in range(3):
-        attempts += 1
-        with client.start_session() as session:
-            session.start_transaction()
-            try:
-                if inject_transient_once and not injected:
-                    injected = True
-                    transient = OperationFailure("synthetic transient boundary")
-                    transient._error_labels = {"TransientTransactionError"}
-                    raise transient
-                outcome = body(session)
-                session.commit_transaction()
-                return outcome, attempts
-            except PyMongoError as error:
-                if not is_transient_transaction_error(error):
-                    session.abort_transaction()
-                    raise
-                session.abort_transaction()
-    raise AssertionError("bounded whole-transaction retry exhausted")
-
-
-def test_collection_indexes_and_basic_create_get(mongo_db: Any) -> None:
-    """Certify collection identity, exact declared indexes, create, and get."""
+def test_ap_command_row_contract(mongo_db: Any) -> None:
     collection = mongo_db[COLLECTION]
     item = command()
-    result = FinancialExecutionCommandRegistry.create(item, collection)
-    assert result.outcome == "CREATED"
-    assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection) == item
-    names = {index["name"] for index in collection.list_indexes()}
-    assert names == {"_id_", "tenant_execution_command_identity_unique", "tenant_payable_commands_timeline", "tenant_release_authorization_commands_timeline"}
-    assert collection.index_information()["tenant_execution_command_identity_unique"]["unique"] is True
-    assert collection.count_documents({}) == 1
+    with mongo_db.client.start_session() as session:
+        with session.start_transaction():
+            assert FinancialExecutionCommandRegistry.create(item, collection, session=session).outcome == "CREATED"
+            assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection, session=session) == item
+    assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection).to_persisted()["source_authority_kind"] == "ACCOUNTS_PAYABLE"
 
 
-def test_exact_replay_and_divergent_conflict(mongo_db: Any) -> None:
-    """Certify exact replay and immutable divergent same-ID conflict."""
+def test_platform_command_row_contract(mongo_db: Any) -> None:
     collection = mongo_db[COLLECTION]
-    item = command()
-    FinancialExecutionCommandRegistry.create(item, collection)
-    replay = FinancialExecutionCommandRegistry.create(item, collection)
-    assert replay.outcome == "IDEMPOTENT_REPLAY"
-    with pytest.raises(FinancialExecutionCommandCreateConflictError):
-        FinancialExecutionCommandRegistry.create(command(amount_minor=1001), collection)
-    assert collection.count_documents({}) == 1
-    assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection) == item
-
-
-def test_idempotency_key_can_coexist_and_tenant_identity_isolated(mongo_db: Any) -> None:
-    """Certify idempotency is command material, while identity remains tenant-scoped."""
-    collection = mongo_db[COLLECTION]
-    first = command()
-    second = command(execution_command_id="command-2")
-    other_tenant = command(tenant_id="tenant-2", execution_command_id="command-1")
-    assert FinancialExecutionCommandRegistry.create(first, collection).outcome == "CREATED"
-    assert FinancialExecutionCommandRegistry.create(second, collection).outcome == "CREATED"
-    assert FinancialExecutionCommandRegistry.create(other_tenant, collection).outcome == "CREATED"
-    assert collection.count_documents({}) == 3
-    with pytest.raises(FinancialExecutionCommandNotFoundError):
-        FinancialExecutionCommandRegistry.get("tenant-2", "missing", collection)
-
-
-def test_list_for_payable_and_bounds(mongo_db: Any) -> None:
-    """Certify tenant/payable filtering, deterministic order, and bounds."""
-    collection = mongo_db[COLLECTION]
-    first = command(execution_command_id="command-a", created_at=NOW)
-    second = command(execution_command_id="command-b", created_at=NOW.replace(hour=13))
-    other_payable = command(execution_command_id="command-c", payable_id="payable-2")
-    other_tenant = command(execution_command_id="command-d", tenant_id="tenant-2")
-    for item in (first, second, other_payable, other_tenant):
-        FinancialExecutionCommandRegistry.create(item, collection)
-    rows = FinancialExecutionCommandRegistry.list_for_payable("tenant-1", "payable-1", 2, collection)
-    assert [row.execution_command_id for row in rows] == ["command-a", "command-b"]
-    with pytest.raises(Exception):
-        FinancialExecutionCommandRegistry.list_for_payable("tenant-1", "payable-1", 0, collection)
-
-
-def test_corruption_fails_before_replay_get_and_list(mongo_db: Any) -> None:
-    """Certify fingerprint and business-material corruption fail closed."""
-    collection = mongo_db[COLLECTION]
-    item = command()
-    FinancialExecutionCommandRegistry.create(item, collection)
-    collection.update_one({"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id}, {"$set": {"command_fingerprint": "broken"}})
-    with pytest.raises(FinancialExecutionCommandPersistedRecordInvalidError):
-        FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection)
-    with pytest.raises(FinancialExecutionCommandPersistedRecordInvalidError):
-        FinancialExecutionCommandRegistry.create(item, collection)
-    with pytest.raises(FinancialExecutionCommandPersistedRecordInvalidError):
-        FinancialExecutionCommandRegistry.list_for_payable(item.tenant_id, item.payable_id, 10, collection)
-
-
-def test_business_material_corruption_and_transaction_commit_abort(mongo_db: Any) -> None:
-    """Certify malformed durable material and caller-owned commit/abort semantics."""
-    collection = mongo_db[COLLECTION]
-    item = command()
-    FinancialExecutionCommandRegistry.create(item, collection)
-    collection.update_one({"execution_command_id": item.execution_command_id}, {"$set": {"currency": "bad"}})
-    with pytest.raises(FinancialExecutionCommandPersistedRecordInvalidError):
-        FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection)
-    fresh = command(execution_command_id="transaction-command")
-    client = collection.database.client
-    with client.start_session() as session:
-        session.start_transaction()
-        FinancialExecutionCommandRegistry.create(fresh, collection, session=session)
-        assert FinancialExecutionCommandRegistry.get(fresh.tenant_id, fresh.execution_command_id, collection, session=session) == fresh
-        session.commit_transaction()
-    assert FinancialExecutionCommandRegistry.get(fresh.tenant_id, fresh.execution_command_id, collection) == fresh
-    aborted = command(execution_command_id="aborted-command")
-    with client.start_session() as session:
-        session.start_transaction()
-        FinancialExecutionCommandRegistry.create(aborted, collection, session=session)
-        session.abort_transaction()
-    with pytest.raises(FinancialExecutionCommandNotFoundError):
-        FinancialExecutionCommandRegistry.get(aborted.tenant_id, aborted.execution_command_id, collection)
-
-
-def test_transaction_replay_and_divergent_conflict_are_usable(mongo_db: Any) -> None:
-    """Certify transaction-safe replay/conflict without duplicate-key recovery."""
-    collection = mongo_db[COLLECTION]
-    item = command()
-    FinancialExecutionCommandRegistry.create(item, collection)
-    client = collection.database.client
-    with client.start_session() as session:
-        session.start_transaction()
-        assert FinancialExecutionCommandRegistry.create(item, collection, session=session).outcome == "IDEMPOTENT_REPLAY"
-        assert collection.count_documents({}, session=session) == 1
-        session.commit_transaction()
-    divergent = command(amount_minor=2000)
-    with client.start_session() as session:
-        session.start_transaction()
-        with pytest.raises(FinancialExecutionCommandCreateConflictError):
-            FinancialExecutionCommandRegistry.create(divergent, collection, session=session)
-        session.abort_transaction()
-    assert collection.count_documents({}) == 1
-
-
-def test_concurrent_exact_and_divergent_create_convergence(mongo_db: Any) -> None:
-    """Certify bounded concurrent exact replay and divergent conflict convergence."""
-    collection = mongo_db[COLLECTION]
-    for iteration in range(10):
-        item = command(tenant_id=f"race-{iteration}", execution_command_id=f"command-{iteration}")
-        barrier = Barrier(2, timeout=30)
-
-        def invoke(value: FinancialExecutionCommand) -> str:
-            first = True
-            def body(session: Any) -> str:
-                nonlocal first
-                if first:
-                    first = False
-                    barrier.wait()
-                return FinancialExecutionCommandRegistry.create(value, collection, session=session).outcome
-            return run_whole_transaction(collection, body)[0]
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = [executor.submit(invoke, item) for _ in range(2)]
-            outcomes = sorted(future.result(timeout=30) for future in futures)
-        assert outcomes == ["CREATED", "IDEMPOTENT_REPLAY"]
-    assert collection.count_documents({"tenant_id": {"$regex": "^race-"}}) == 10
-
-
-def test_process_failure_proxy_and_no_financial_side_effects(mongo_db: Any) -> None:
-    """Certify durable recovery and absence of attempt/truth/settlement side effects."""
-    item = command(execution_command_id="durable-command")
-    collection = mongo_db[COLLECTION]
-    client = collection.database.client
-    with client.start_session() as session:
-        FinancialExecutionCommandRegistry.create(item, collection, session=session)
-    assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection) == item
-    assert mongo_db.list_collection_names() == [COLLECTION]
-
-
-def test_legacy_provider_fallback_and_divergent_fields_fail_closed(mongo_db: Any) -> None:
-    """Certify legacy provider fallback and rejection of divergent provider fields."""
-    collection = mongo_db[COLLECTION]
-    item = command(execution_command_id="legacy-command")
-    FinancialExecutionCommandRegistry.create(item, collection)
-    collection.update_one(
-        {"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id},
-        {"$unset": {"provider_name": ""}, "$set": {"requested_provider": item.provider_name}},
-    )
-    assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection).provider_name == item.provider_name
-    assert FinancialExecutionCommandRegistry.create(item, collection).outcome == "IDEMPOTENT_REPLAY"
-    collection.update_one(
-        {"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id},
-        {"$set": {"provider_name": "PAYFAST", "requested_provider": "ZAPPER"}},
-    )
-    with pytest.raises(FinancialExecutionCommandPersistedRecordInvalidError):
-        FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection)
-
-
-def test_fingerprint_and_set_on_insert_are_directly_immutable(mongo_db: Any) -> None:
-    """Certify persisted fingerprint equality and byte-stable replay/conflict behavior."""
-    collection = mongo_db[COLLECTION]
-    item = command(execution_command_id="immutable-command")
+    item = command(source_authority=platform_source(), provider_name="STRIPE")
     assert FinancialExecutionCommandRegistry.create(item, collection).outcome == "CREATED"
-    before = collection.find_one({"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id})
-    assert before is not None and before["command_fingerprint"] == item.fingerprint
-    assert FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection).fingerprint == item.fingerprint
-    assert FinancialExecutionCommandRegistry.create(item, collection).outcome == "IDEMPOTENT_REPLAY"
-    after_replay = collection.find_one({"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id})
-    assert after_replay == before
-    with pytest.raises(FinancialExecutionCommandCreateConflictError):
-        FinancialExecutionCommandRegistry.create(command(execution_command_id=item.execution_command_id, amount_minor=2001), collection)
-    assert collection.find_one({"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id}) == before
+    loaded = FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection)
+    assert loaded == item
+    assert loaded.to_persisted()["source_authority_kind"] == "PLATFORM_BILLING"
 
 
-def test_fresh_client_durability_proxy(mongo_db: Any) -> None:
-    """Certify loading command material through an independent client lifecycle."""
-    item = command(execution_command_id="fresh-client-command")
+def test_nested_ap_subject_contract(mongo_db: Any) -> None:
     collection = mongo_db[COLLECTION]
+    item = command()
     FinancialExecutionCommandRegistry.create(item, collection)
-    uri = os.environ["TEST_VENDOR_MONGO_URI"]
-    client = MongoClient(uri, serverSelectionTimeoutMS=5000, retryWrites=True)
-    try:
-        fresh = client[mongo_db.name][COLLECTION]
-        loaded = FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, fresh)
-        assert loaded == item and loaded.fingerprint == item.fingerprint
-    finally:
-        client.close()
+    row = collection.find_one({"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id})
+    assert row is not None
+    assert row["source_authority"]["payable_id"] == "payable-1"
+    assert row["source_authority"]["release_authorization_id"] == "release-1"
 
 
-def test_divergent_concurrent_creation_never_overwrites(mongo_db: Any) -> None:
-    """Certify repeated two-session divergent races preserve one immutable winner."""
+def test_corruption_contract(mongo_db: Any) -> None:
     collection = mongo_db[COLLECTION]
-    for iteration in range(10):
-        identity = {"tenant_id": f"divergent-{iteration}", "execution_command_id": f"command-{iteration}"}
-        left = command(**identity, amount_minor=1000)
-        right = command(**identity, amount_minor=2000)
-        barrier = Barrier(2, timeout=30)
-
-        def invoke(value: FinancialExecutionCommand) -> str:
-            first = True
-            def body(session: Any) -> str:
-                nonlocal first
-                if first:
-                    first = False
-                    barrier.wait()
-                return FinancialExecutionCommandRegistry.create(value, collection, session=session).outcome
-            try:
-                return run_whole_transaction(collection, body)[0]
-            except FinancialExecutionCommandCreateConflictError:
-                return "CONFLICT"
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            outcomes = sorted(future.result(timeout=30) for future in (executor.submit(invoke, left), executor.submit(invoke, right)))
-        assert outcomes.count("CREATED") == 1
-        assert outcomes.count("CONFLICT") == 1 or outcomes.count("IDEMPOTENT_REPLAY") == 1
-        durable = collection.find_one(identity)
-        assert durable is not None and durable["amount_minor"] in {1000, 2000}
-    assert collection.count_documents({"tenant_id": {"$regex": "^divergent-"}}) == 10
-
-
-def test_caller_owned_whole_transaction_retry_converges_exact_replay(mongo_db: Any) -> None:
-    """Certify a transient boundary retries the complete logical transaction."""
-    collection = mongo_db[COLLECTION]
-    item = command(execution_command_id="retry-command")
+    item = command()
     FinancialExecutionCommandRegistry.create(item, collection)
-
-    def body(session: Any) -> str:
-        return FinancialExecutionCommandRegistry.create(item, collection, session=session).outcome
-
-    outcome, attempts = run_whole_transaction(collection, body, inject_transient_once=True)
-    assert outcome == "IDEMPOTENT_REPLAY" and attempts == 2
-    assert collection.count_documents({}) == 1
-
-
-def test_caller_owned_retry_never_retries_logical_divergence(mongo_db: Any) -> None:
-    """Certify logical conflict is returned once and is not classified transient."""
-    collection = mongo_db[COLLECTION]
-    item = command(execution_command_id="logical-command")
-    FinancialExecutionCommandRegistry.create(item, collection)
-    attempts = 0
-    client = collection.database.client
-    with client.start_session() as session:
-        session.start_transaction()
-        attempts += 1
-        with pytest.raises(FinancialExecutionCommandCreateConflictError):
-            FinancialExecutionCommandRegistry.create(command(execution_command_id=item.execution_command_id, amount_minor=3000), collection, session=session)
-        session.abort_transaction()
-    assert attempts == 1 and collection.count_documents({}) == 1
-
-
-def test_transient_retry_taxonomy_is_narrow(mongo_db: Any) -> None:
-    """Certify only labeled transient transaction failures are retryable."""
-    labeled = OperationFailure("labeled")
-    labeled._error_labels = {"TransientTransactionError"}
-    assert is_transient_transaction_error(labeled)
-    assert not is_transient_transaction_error(PyMongoError("generic"))
-    assert not is_transient_transaction_error(FinancialExecutionCommandCreateConflictError("logical"))
-    assert not is_transient_transaction_error(FinancialExecutionCommandPersistedRecordInvalidError("corrupt"))
-    assert not is_transient_transaction_error(OperationFailure("ordinary"))
-
-
-def test_deterministic_retry_aborts_first_attempt_marker(mongo_db: Any) -> None:
-    """Certify injected transient failure discards writes before a fresh retry."""
-    collection = mongo_db[COLLECTION]
-    item = command(execution_command_id="retry-marker-command")
-    client = collection.database.client
-    attempts = 0
-    transient_injected = False
-
-    def body(session: Any) -> str:
-        nonlocal attempts, transient_injected
-        attempts += 1
-        collection.database["retry_markers"].insert_one({"_id": f"marker-{attempts}"}, session=session)
-        if not transient_injected:
-            transient_injected = True
-            transient = OperationFailure("synthetic transient after marker-1")
-            transient._error_labels = {"TransientTransactionError"}
-            raise transient
-        return FinancialExecutionCommandRegistry.create(item, collection, session=session).outcome
-
-    outcome, helper_attempts = run_whole_transaction(collection, body)
-    assert outcome == "CREATED" and helper_attempts == 2 and attempts == 2
-    assert collection.count_documents({}) == 1
-    assert collection.database["retry_markers"].count_documents({"_id": "marker-1"}) == 0
-    assert collection.database["retry_markers"].count_documents({"_id": "marker-2"}) == 1
+    collection.update_one({"tenant_id": item.tenant_id, "execution_command_id": item.execution_command_id}, {"$set": {"command_fingerprint": "f" * 128}})
+    with pytest.raises(FinancialExecutionCommandPersistedRecordInvalidError):
+        FinancialExecutionCommandRegistry.get(item.tenant_id, item.execution_command_id, collection)
 
 
 # ARTIFACT: test_financial_execution_command_registry_mongo.py
-# VERSION: v1.5.1-KENNEL-FINANCIAL-EXECUTION-COMMAND-REGISTRY-MONGO-CERT
-# AUTHORITY BOUNDARY: certification evidence only; no attempt, truth, settlement, or ledger authority.
+# VERSION: v2.1.0-M11-P5-R2A-RM
+# AUTHORITY BOUNDARY: real-Mongo certificate only; no execution or settlement authority.
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -49,7 +49,7 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
                 assignment = repository.resolve(principal_id, tenant_id, role_id) if session is None else repository.resolve(principal_id, tenant_id, role_id, session=session)
             except RoleAssignmentNotFoundError:
                 continue
-            if getattr(assignment, "status", None) is TenantBusinessRoleStatus.ACTIVE:
+            if getattr(getattr(assignment, "status", None), "value", None) == TenantBusinessRoleStatus.ACTIVE.value:
                 active.append(role_id)
     except (RoleAssignmentRepositoryError, AttributeError, TypeError):
         return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)

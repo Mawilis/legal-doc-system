@@ -39,6 +39,11 @@ class PlatformBillingFinancialExecutionRequest:
     requested_by_principal_id: str
     authorization_basis_reference: str
     requested_at: datetime
+    provider_policy_runtime_binding_id: str = ""
+    provider_policy_runtime_binding_fingerprint: str = ""
+    provider_policy_id: str = ""
+    provider_policy_revision: int = 0
+    provider_policy_fingerprint: str = ""
 
     def __post_init__(self) -> None:
         for name in ("execution_request_id", "tenant_id", "release_authorization_id", "platform_invoice_id", "requested_by_principal_id", "authorization_basis_reference", "idempotency_key", "payment_destination_reference"):
@@ -49,13 +54,19 @@ class PlatformBillingFinancialExecutionRequest:
         if not isinstance(self.currency, str) or re.fullmatch(r"[A-Z]{3}", self.currency) is None: raise PlatformBillingFinancialExecutionRequestError("currency is invalid")
         if not isinstance(self.payment_destination_reference, str) or re.search(r"bank|account|card|secret|token|credential|password", self.payment_destination_reference, re.I): raise PlatformBillingFinancialExecutionRequestError("payment destination must be opaque")
         if not isinstance(self.requested_at, datetime) or self.requested_at.tzinfo is None: raise PlatformBillingFinancialExecutionRequestError("requested_at is invalid")
+        supplied = any((self.provider_policy_runtime_binding_id,self.provider_policy_runtime_binding_fingerprint,self.provider_policy_id,self.provider_policy_revision,self.provider_policy_fingerprint))
+        if supplied:
+            for name in ("provider_policy_runtime_binding_id","provider_policy_runtime_binding_fingerprint","provider_policy_id","provider_policy_fingerprint"):
+                if not isinstance(getattr(self,name),str) or not getattr(self,name).strip(): raise PlatformBillingFinancialExecutionRequestError(f"{name} is invalid")
+            if re.fullmatch(r"[0-9a-f]{128}", self.provider_policy_runtime_binding_fingerprint) is None or re.fullmatch(r"[0-9a-f]{128}", self.provider_policy_fingerprint) is None: raise PlatformBillingFinancialExecutionRequestError("policy provenance fingerprint is invalid")
+            if not isinstance(self.provider_policy_revision,int) or isinstance(self.provider_policy_revision,bool) or self.provider_policy_revision < 1: raise PlatformBillingFinancialExecutionRequestError("provider_policy_revision is invalid")
         canonical = self.requested_at.astimezone(timezone.utc).replace(microsecond=(self.requested_at.microsecond // 1000) * 1000)
         object.__setattr__(self, "requested_at", canonical)
 
     @classmethod
-    def from_release_authorization(cls, authorization: PlatformBillingReleaseAuthorization, execution_request_id: str, requested_at: datetime) -> "PlatformBillingFinancialExecutionRequest":
+    def from_release_authorization(cls, authorization: PlatformBillingReleaseAuthorization, execution_request_id: str, requested_at: datetime, *, runtime_binding_id: str = "", runtime_binding_fingerprint: str = "", policy_id: str = "", policy_revision: int = 0, policy_fingerprint: str = "") -> "PlatformBillingFinancialExecutionRequest":
         if not isinstance(authorization, PlatformBillingReleaseAuthorization): raise PlatformBillingFinancialExecutionRequestError("authorization is invalid")
-        return cls(execution_request_id, authorization.tenant_id, authorization.release_authorization_id, authorization.platform_invoice_id, authorization.release_authorization_fingerprint, authorization.authorized_amount_minor, authorization.currency, authorization.payment_destination_reference, authorization.idempotency_key, authorization.authorized_by_principal_id, authorization.authorization_basis_reference, requested_at)
+        return cls(execution_request_id, authorization.tenant_id, authorization.release_authorization_id, authorization.platform_invoice_id, authorization.release_authorization_fingerprint, authorization.authorized_amount_minor, authorization.currency, authorization.payment_destination_reference, authorization.idempotency_key, authorization.authorized_by_principal_id, authorization.authorization_basis_reference, requested_at, runtime_binding_id, runtime_binding_fingerprint, policy_id, policy_revision, policy_fingerprint)
 
     @property
     def fingerprint(self) -> str:

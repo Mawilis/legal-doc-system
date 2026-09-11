@@ -23,7 +23,7 @@ def test_issuance_derives_from_durable_r3c3_and_is_provider_neutral():
     assert "from_release_authorization" in source
     assert "PlatformBillingReleaseAuthorizationRegistry.get" in source
     assert "PlatformBillingFinancialExecutionRequest.from_release_authorization" in source
-    assert "start_transaction" in source
+    assert "start_transaction" not in source
     assert "provider_sdk" not in source.lower()
 # ARTIFACT: test_platform_billing_financial_execution_request_issuance.py
 # VERSION: v1.0.0-PLATFORM-BILLING-FINANCIAL-EXECUTION-REQUEST-ISSUANCE-UNIT

@@ -1,5 +1,5 @@
 """TITLE: Platform Billing Financial Settlement Evidence Registry
-VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
+VERSION: v1.1.1-R3F0-IDEMPOTENT-REPLAY
 AUTHORITY: Kennel EOS / Wilsy OS Core Governance
 EPITOME: Tenant-scoped immutable settlement evidence persistence.
 ABSOLUTE CANONICAL PATH: tools/eos/kennel/registry/platform_billing_financial_settlement_evidence_registry.py
@@ -26,10 +26,14 @@ class PlatformBillingFinancialSettlementEvidenceRegistry:
  def ensure_indexes(collection:Collection): collection.create_index([('tenant_id',1),('settlement_evidence_id',1)],unique=True); collection.create_index([('tenant_id',1),('platform_execution_truth_id',1)],unique=True)
  @staticmethod
  def create(value,collection:Collection,*,session:Optional[ClientSession]=None):
-  try: collection.insert_one(value.to_dict(),session=session); return value
+  d=collection.find_one({'tenant_id':value.tenant_id,'platform_execution_truth_id':value.platform_execution_truth_id},session=session)
+  if d is not None:
+   hydrated=_hydrate(d)
+   if hydrated==value:return hydrated
+   raise PlatformBillingFinancialSettlementEvidenceConflictError('PLATFORM_SETTLEMENT_EVIDENCE_CREATE_CONFLICT')
+  try:
+   collection.insert_one(value.to_dict(),session=session); return value
   except DuplicateKeyError as e:
-   d=collection.find_one({'tenant_id':value.tenant_id,'platform_execution_truth_id':value.platform_execution_truth_id},session=session)
-   if d is not None and _hydrate(d)==value:return _hydrate(d)
    raise PlatformBillingFinancialSettlementEvidenceConflictError('PLATFORM_SETTLEMENT_EVIDENCE_CREATE_CONFLICT') from e
  @staticmethod
  def get(tenant_id:str,settlement_evidence_id:str,collection:Collection,*,session:Optional[ClientSession]=None):
@@ -37,19 +41,19 @@ class PlatformBillingFinancialSettlementEvidenceRegistry:
   if d is None: raise PlatformBillingFinancialSettlementEvidenceNotFoundError('PLATFORM_SETTLEMENT_EVIDENCE_NOT_FOUND')
   return _hydrate(d)
 # ARTIFACT: platform_billing_financial_settlement_evidence_registry.py
-# VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
+# VERSION: v1.1.1-R3F0-IDEMPOTENT-REPLAY
 # AUTHORITY BOUNDARY: Persistence only; no paid state.
 # END OF WILSY OS SOVEREIGN ARTIFACT
 # WILSY OS SOVEREIGN ARTIFACT STRUCTURE
 # TITLE: R3F0 Platform Billing Financial Execution Truth and Settlement Evidence
-# VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
+# VERSION: v1.1.1-R3F0-IDEMPOTENT-REPLAY
 # AUTHORITY: Wilsy OS Core Governance / Kennel EOS
 # PURPOSE: Durable, tenant-scoped platform execution and settlement evidence.
 # EPITOME: Canonical platform financial truth without provider execution or money movement.
 # ABSOLUTE CANONICAL PATH: tools/eos/kennel/registry/platform_billing_financial_settlement_evidence_registry.py
 # COLLABORATION / OWNERSHIP: Kennel EOS platform financial domain; R3F0 certificates.
-# CERTIFICATION / UPDATE DATE: 2026-09-06; structural remediation.
-# CHANGELOG: v1.1.0-R3F0-STRUCTURAL-REMEDIATION complete sovereign metadata alignment.
+# CERTIFICATION / UPDATE DATE: 2026-09-11; idempotent replay repair.
+# CHANGELOG: v1.1.1-R3F0-IDEMPOTENT-REPLAY preflights durable replay before insert and fails closed on duplicate races.
 # COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 # SECURITY / PRIVACY POSTURE: Tenant isolation; UUID synthetic tests; no raw secrets.
 # TENANT BOUNDARY: Every read, write, replay, and certificate assertion is tenant-scoped.
@@ -61,7 +65,7 @@ class PlatformBillingFinancialSettlementEvidenceRegistry:
 # END SOVEREIGN HEADER SEAL
 
 # ARTIFACT: tools/eos/kennel/registry/platform_billing_financial_settlement_evidence_registry.py
-# VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
+# VERSION: v1.1.1-R3F0-IDEMPOTENT-REPLAY
 # AUTHORITY BOUNDARY: Certification evidence only.
 # TENANT POSTURE: Tenant-scoped synthetic fixtures.
 # FAIL-CLOSED POSTURE: Failures are surfaced; no skips.

@@ -1,13 +1,21 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT
+VERSION: v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan
 permission grants, deterministic expansion, reverse lookup, and fail-closed
 non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-03.
+CERTIFICATION/UPDATE DATE: 2026-09-09.
 CHANGELOG:
+    2026-09-10 v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies exactly four
+    credential-security grants on the existing security-admin role.
+    2026-09-09 v1.6.0-M11-R8-R3B-P8-P3B-I2-R3-CERT certifies the bounded
+    remediation grant on the existing security-admin role.
+    2026-09-09 v1.5.0-M11-R8-R3B-P8-P3A-CERT certifies four dedicated
+    inbound merchant-configuration/provider-policy roles and exact grants.
+    2026-09-09 v1.4.0-M11-R8-R3B-P6A-CERT certifies the dedicated
+    INBOUND_COLLECTION_AUTHORIZATION_ADMIN least-privilege grant.
     2026-09-03 v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT certifies
     plan:read for ENTERPRISE_ADMIN/AUDITOR and plan:manage only for
     ENTERPRISE_ADMIN while retaining subscription grants and preserving
@@ -40,9 +48,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS"
+    assert POLICY_VERSION == "v1.10.0-M11-R8-R3B-P8-P3D-P4A"
 
-VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT"
+VERSION = "v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -91,6 +99,19 @@ TENANT_PERMISSIONS = {
     "subscription:manage",
     "plan:read",
     "plan:manage",
+    "inbound_collection:authorization:create",
+    "inbound_merchant_configuration:register",
+    "inbound_merchant_configuration:lifecycle",
+    "inbound_merchant_configuration:security",
+    "inbound_merchant_configuration:remediate",
+    "inbound_provider_policy:author",
+    "inbound_provider_policy:activate",
+    "inbound_provider_policy:deactivate",
+    "inbound_provider_policy:emergency_disable",
+    "inbound_provider_credential_security:eligibility_issue",
+    "inbound_provider_credential_security:revoke",
+    "inbound_provider_credential_security:compromise",
+    "inbound_provider_credential_security:rotate",
 }
 
 
@@ -163,6 +184,19 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("plan:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
+        ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
+        ("inbound_merchant_configuration:register", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
+        ("inbound_merchant_configuration:lifecycle", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
+        ("inbound_merchant_configuration:security", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
+        ("inbound_merchant_configuration:remediate", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
+        ("inbound_provider_policy:author", ("INBOUND_PROVIDER_POLICY_ADMIN",)),
+        ("inbound_provider_policy:activate", ("INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",)),
+        ("inbound_provider_policy:deactivate", ("INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",)),
+        ("inbound_provider_policy:emergency_disable", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
+        ("inbound_provider_credential_security:eligibility_issue", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
+        ("inbound_provider_credential_security:revoke", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
+        ("inbound_provider_credential_security:compromise", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
+        ("inbound_provider_credential_security:rotate", ("INBOUND_PROVIDER_SECURITY_ADMIN",)),
     ),
 )
 def test_tenant_permission_reverse_lookup_is_exact(
@@ -243,8 +277,71 @@ def test_no_role_has_implicit_wildcard_or_financial_grant() -> None:
         assert "tenant:manage" not in permissions
 
 
+def test_inbound_collection_role_is_least_privilege() -> None:
+    """The dedicated role grants only the provider-neutral request privilege."""
+    assert ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"] == [
+        "inbound_collection:authorization:create",
+    ]
+    assert get_permissions_for_roles(["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]) == [
+        "inbound_collection:authorization:create",
+    ]
+    assert "financial_execution" not in " ".join(ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"])
+    assert "platform_billing:provider_policy:admin" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
+    assert "platform_billing:release" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
+    assert "accounts_payable:provider_policy:admin" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
+
+
+def test_inbound_provider_roles_are_narrow_and_separated() -> None:
+    assert ROLE_PERMISSIONS_MAP["INBOUND_MERCHANT_CONFIGURATION_ADMIN"] == [
+        "inbound_merchant_configuration:register",
+        "inbound_merchant_configuration:lifecycle",
+    ]
+    assert ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"] == [
+        "inbound_merchant_configuration:security",
+        "inbound_merchant_configuration:remediate",
+        "inbound_provider_policy:emergency_disable",
+        "inbound_provider_credential_security:eligibility_issue",
+        "inbound_provider_credential_security:revoke",
+        "inbound_provider_credential_security:compromise",
+        "inbound_provider_credential_security:rotate",
+    ]
+    assert "inbound_merchant_configuration:register" not in ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"]
+    assert "inbound_merchant_configuration:lifecycle" not in ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"]
+    assert "inbound_provider_policy:author" not in ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"]
+    assert "inbound_provider_policy:activate" not in ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"]
+    assert "secret" not in " ".join(ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"])
+    assert "kms" not in " ".join(ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"])
+    assert ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_POLICY_ADMIN"] == [
+        "inbound_provider_policy:author",
+    ]
+    assert ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN"] == [
+        "inbound_provider_policy:activate",
+        "inbound_provider_policy:deactivate",
+    ]
+    assert "inbound_provider_policy:activate" not in ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_POLICY_ADMIN"]
+    assert "inbound_provider_policy:emergency_disable" not in ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN"]
+
+
+def test_credential_security_grants_are_exactly_security_admin_only() -> None:
+    credential_permissions = {
+        "inbound_provider_credential_security:eligibility_issue",
+        "inbound_provider_credential_security:revoke",
+        "inbound_provider_credential_security:compromise",
+        "inbound_provider_credential_security:rotate",
+    }
+    assert set(ROLE_PERMISSIONS_MAP["INBOUND_PROVIDER_SECURITY_ADMIN"]) & credential_permissions == credential_permissions
+    for role in (
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+    ):
+        assert not credential_permissions.intersection(ROLE_PERMISSIONS_MAP[role])
+
+
 # ARTIFACT: test_roles.py
-# VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT
+# VERSION: v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: tenant/subscription/plan grants remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

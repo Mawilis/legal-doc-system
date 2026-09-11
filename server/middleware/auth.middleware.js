@@ -8,9 +8,9 @@
 
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import User from '../models/userModel.js';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import { canBypassTenant } from '../config/roles.registry.js';
+import User from '../models/userModel.js';
 
 /**
  * @function normalizeWilsyR8YAuthTenantId
@@ -123,16 +123,16 @@ const wilsyVerifyArtifactBrowserProof = (req) => {
 
   const type = String(
     wilsyReadHeader(req, ['X-Artifact-Type', 'X-Wilsy-Artifact-Type']) ||
-    body.type ||
-    metadata.type ||
-    ''
+      body.type ||
+      metadata.type ||
+      ''
   ).trim();
 
   const tenantId = String(
     wilsyReadHeader(req, ['X-Tenant-ID', 'X-Wilsy-Tenant-ID']) ||
-    body.tenantId ||
-    metadata.tenantId ||
-    'MASTER'
+      body.tenantId ||
+      metadata.tenantId ||
+      'MASTER'
   ).trim();
 
   const timestamp = String(
@@ -337,36 +337,6 @@ const protect = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
       return res.status(401).json({ success: false, error: 'INVALID_TOKEN', message: err.message });
-    }
-
-    const decodedRole = decoded?.role || decoded?.securityClearance;
-    const founderEmail = decoded?.email === 'wilsonkhanyezi@gmail.com';
-    const sovereignToken = founderEmail || canBypassTenant(decodedRole);
-
-    if (decoded && sovereignToken) {
-      req.user = {
-        id: decoded.id || decoded.userId || decoded.sub,
-        _id: decoded.id || decoded.userId || decoded.sub,
-        email: decoded.email,
-        role: decoded.role || 'FOUNDER',
-        tenantId: decoded.tenantId || 'wilsy',
-        securityClearance: decoded.securityClearance || 'omega',
-        authContinuity: 'SIGNED_JWT_DB_LOOKUP_BYPASS',
-      };
-
-      broadcastTelemetry(
-        req.user.tenantId || 'GLOBAL_ROOT',
-        'AUTH_EVENT',
-        'SIGNED_JWT_CONTINUITY',
-        'auth.middleware',
-        {
-          userId: req.user.id,
-          role: req.user.role,
-          reason: err.message,
-        }
-      ).catch(() => { });
-
-      return next();
     }
 
     console.error('[AUTH] Unexpected error:', err);

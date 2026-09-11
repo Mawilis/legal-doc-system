@@ -3,9 +3,9 @@
 WILSY OS KERNEL — FG173 INSTITUTIONAL MEMORY TEST SUITE
 ===============================================================================
 [EPITOME]:
-    Validates the Institutional Memory Engine (FG173), ensuring immutable record archival, 
+    Validates the Institutional Memory Engine (FG173), ensuring immutable record archival,
     multi-dimensional indexing, keyword search accuracy, and statistical telemetry computation.
-    Engineered to billion-dollar enterprise production standards with zero tolerance 
+    Engineered to billion-dollar enterprise production standards with zero tolerance
     for regression or unverified memory retrieval.
 
 [BIBLICAL FOUNDATION]:
@@ -93,7 +93,7 @@ class TestFG173InstitutionalMemory(unittest.TestCase):
         self.assertIsNotNone(retrieved)
         assert retrieved is not None, "Retrieved record should not be None"
         self.assertEqual(retrieved.title, "Institutional Architecture Decision")
-        
+
         exec_records = self.store.get_records_by_execution("EXEC-MEM-001")
         self.assertEqual(len(exec_records), 2)
 

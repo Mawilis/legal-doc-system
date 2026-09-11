@@ -38,6 +38,8 @@ class PlatformBillingFinancialExecutionRequestRegistry:
     def _hydrate(document: dict[str, Any]) -> PlatformBillingFinancialExecutionRequest:
         try:
             body = dict(document); body.pop("_id", None)
+            required = ("provider_policy_runtime_binding_id", "provider_policy_runtime_binding_fingerprint", "provider_policy_id", "provider_policy_revision", "provider_policy_fingerprint")
+            if any(field not in body for field in required): raise ValueError("missing policy provenance")
             stored = body.pop("request_fingerprint")
             requested_at = body.get("requested_at")
             if isinstance(requested_at, datetime) and requested_at.tzinfo is None:

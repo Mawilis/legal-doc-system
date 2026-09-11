@@ -1,17 +1,20 @@
-"""Canonical pure issuance boundary from AP request to Kennel command.
+"""WILSY OS legacy generic-command issuance boundary.
 
-VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-COMMAND-ISSUANCE
-TITLE: Financial Execution Command Issuance Adapter
-PURPOSE: Convert an authoritative AP execution request into one canonical durable command.
-AUTHORITY: Pure value conversion only; no persistence, attempts, providers, truth, or settlement.
-EPITOME: Explicit issuance material prevents hidden identity or clock generation.
-COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI Engineering)
+TITLE: Financial Execution Command Legacy Issuance Boundary
+VERSION: v2.0.0-M11-P5-R2A
+AUTHORITY: Wilsy OS Core Governance / Kennel EOS
+EPITOME: Retire authority-ambiguous caller-driven issuance until typed bridges exist.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kennel/orchestration/financial_execution_command_issuance.py
-CERTIFICATION DATE: 2026-08-28
-COMPLIANCE: POPIA | GDPR | SOC2
-SECURITY / PRIVACY: opaque destination and metadata references only; credentials are forbidden.
-TRANSACTION BOUNDARY: pure conversion; caller owns all persistence and transaction lifecycle.
-CHANGELOG: v1.0.0 establishes explicit request-to-canonical-command issuance authority.
+COLLABORATION / OWNERSHIP: Kennel EOS generic command boundary owner.
+CERTIFICATION / UPDATE DATE: 2026-09-07
+CHANGELOG: v2.0.0-M11-P5-R2A preserves the public legacy shape while failing closed before command construction or persistence.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No provider, destination, or credential material is transformed.
+TENANT BOUNDARY: Legacy issuance performs no persistence or cross-tenant lookup.
+AUTHORITY BOUNDARY: Typed AP and Platform Billing bridges own future command issuance.
+FINANCIAL AUTHORITY BOUNDARY: No command, provider execution, attempt, truth, settlement, or receivable mutation.
+TRANSACTION BOUNDARY: No transaction lifecycle is opened or owned.
+FAIL-CLOSED DECLARATION: Legacy caller-driven authority is explicitly rejected with a stable error.
 """
 from __future__ import annotations
 
@@ -21,12 +24,21 @@ from datetime import datetime
 from tools.eos.kennel.domain.financial_execution_command import FinancialExecutionCommand
 from tools.eos.saas.domain.vendor_bill_financial_execution_request import VendorBillFinancialExecutionRequest
 
-VERSION = "v1.0.0-KENNEL-FINANCIAL-EXECUTION-COMMAND-ISSUANCE"
+VERSION = "v2.0.0-M11-P5-R2A"
+
+
+class FinancialExecutionCommandLegacyIssuanceError(RuntimeError):
+    """Stable error for the retired untyped issuance surface."""
+
+    code = "FINANCIAL_EXECUTION_COMMAND_LEGACY_ISSUANCE_DISABLED"
+
+    def __init__(self) -> None:
+        super().__init__(self.code)
 
 
 @dataclass(frozen=True)
 class FinancialExecutionCommandIssuance:
-    """Explicit caller-supplied authority for immutable command issuance."""
+    """Preserved legacy value shape; it no longer grants command authority."""
 
     execution_command_id: str
     idempotency_key: str
@@ -39,27 +51,15 @@ def issue_financial_execution_command(
     request: VendorBillFinancialExecutionRequest,
     issuance: FinancialExecutionCommandIssuance,
 ) -> FinancialExecutionCommand:
-    """Convert one AP request and explicit issuance authority to the canonical command."""
-    if not isinstance(request, VendorBillFinancialExecutionRequest):
-        raise TypeError("request must be VendorBillFinancialExecutionRequest")
-    if not isinstance(issuance, FinancialExecutionCommandIssuance):
-        raise TypeError("issuance must be FinancialExecutionCommandIssuance")
-    return FinancialExecutionCommand(
-        tenant_id=request.tenant_id,
-        payable_id=request.payable_id,
-        release_authorization_id=request.release_authorization_id,
-        execution_command_id=issuance.execution_command_id,
-        idempotency_key=issuance.idempotency_key,
-        amount_minor=request.amount_minor,
-        currency=request.currency,
-        payment_destination_reference=request.payment_destination_reference,
-        created_at=issuance.issued_at,
-        provider_name=issuance.provider_name,
-        provider_metadata_reference=issuance.provider_metadata_reference,
-    )
+    """Reject the retired caller-driven path before construction or side effects."""
+    del request, issuance
+    raise FinancialExecutionCommandLegacyIssuanceError()
 
 
 # ARTIFACT: financial_execution_command_issuance.py
-# VERSION: v1.0.0-KENNEL-FINANCIAL-EXECUTION-COMMAND-ISSUANCE
-# AUTHORITY BOUNDARY: pure AP request conversion; no persistence, attempt, provider, truth, or settlement authority.
+# VERSION: v2.0.0-M11-P5-R2A
+# AUTHORITY BOUNDARY: retired untyped issuance only; typed bridges own future authority.
+# TENANT POSTURE: no lookup, persistence, or tenant disclosure occurs.
+# FAIL-CLOSED POSTURE: stable explicit authority error; no command construction.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns later execution truth.
 # END OF WILSY OS SOVEREIGN ARTIFACT

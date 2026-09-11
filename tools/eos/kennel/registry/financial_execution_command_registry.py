@@ -1,34 +1,37 @@
-"""Durable tenant-scoped persistence authority for immutable execution commands.
+"""WILSY OS strict persistence authority for family-discriminated commands.
 
-VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-COMMAND-REGISTRY
 TITLE: Financial Execution Command Registry
-PURPOSE: Persist authorized command material for process-failure recovery.
-AUTHORITY: Immutable command persistence, replay, and corruption detection only.
-EPITOME: Tenant-bound `$setOnInsert` storage preserves command identity without overwrites.
+VERSION: v2.1.0-M11-P5-R2B-R1
+AUTHORITY: Wilsy OS Core Governance / Kennel EOS
+EPITOME: Persist and replay complete AP or Platform Billing command authority without reconstruction.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kennel/registry/financial_execution_command_registry.py
-COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI Engineering)
-CERTIFICATION DATE: 2026-08-28
-CHANGELOG: v1.0.2 preserves caller-owned transaction-control taxonomy by propagating labeled TransientTransactionError and UnknownTransactionCommitResult unchanged; unlabeled PyMongo failures remain registry-wrapped and transaction ownership is unchanged. v1.0.1 corrected provider-name hydration fallback evaluation; v1.0.0 established caller-session command persistence, exact replay, divergent conflict, and corruption-first hydration.
-COMPLIANCE: POPIA | GDPR | SOC2
-SECURITY / PRIVACY: opaque references only; raw credentials and provider payloads are forbidden.
-TENANT BOUNDARY: every identity filter includes tenant_id.
-TRANSACTION BOUNDARY: caller-owned sessions; this registry never starts, commits, aborts, or retries transactions.
-FINANCIAL AUTHORITY BOUNDARY: no attempt, provider, execution-truth, settlement, ledger, or payable authority.
+COLLABORATION / OWNERSHIP: Kennel EOS generic command persistence owner.
+CERTIFICATION / UPDATE DATE: 2026-09-08
+CHANGELOG: v2.1.0-M11-P5-R2B-R1 adds tenant/family/source-request uniqueness, exact source lookup, and fail-closed duplicate-key race adjudication while preserving command-ID replay law.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Opaque references only; no provider credentials or payloads.
+TENANT BOUNDARY: Every identity and source-request filter includes tenant_id.
+AUTHORITY BOUNDARY: Persistence and strict hydration only; registry grants no provider or execution authority.
+FINANCIAL AUTHORITY BOUNDARY: No attempt, provider execution, truth, settlement, paid state, or receivable mutation.
+TRANSACTION BOUNDARY: Caller-owned sessions; registry never starts, commits, aborts, or retries transactions.
+FAIL-CLOSED DECLARATION: Unknown fields, missing provenance, family mismatch, corruption, divergent replay, and source-request conflicts reject.
 """
 from __future__ import annotations
 
-import hashlib
-from datetime import datetime, timezone
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
 
 from pymongo import ASCENDING
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
-from pymongo.errors import PyMongoError
+from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from ..domain.financial_execution_command import FinancialExecutionCommand, FinancialExecutionCommandError
+from ..domain.financial_execution_command import (
+    FinancialExecutionCommand,
+    FinancialExecutionCommandError,
+    FinancialExecutionCommandFamily,
+)
 
-VERSION = "v1.0.2-KENNEL-FINANCIAL-EXECUTION-COMMAND-REGISTRY"
+VERSION = "v2.1.0-M11-P5-R2B-R1"
 COLLECTION = "kennel_financial_execution_commands"
 
 
@@ -41,7 +44,7 @@ class FinancialExecutionCommandNotFoundError(FinancialExecutionCommandRegistryEr
 
 
 class FinancialExecutionCommandPersistedRecordInvalidError(FinancialExecutionCommandRegistryError):
-    """Persisted command corruption detected before replay or return."""
+    """Persisted command corruption or incomplete authority detected."""
 
 
 class FinancialExecutionCommandCreateConflictError(FinancialExecutionCommandRegistryError):
@@ -67,47 +70,33 @@ def _target(collection: Optional[Collection]) -> Collection:
     return database[COLLECTION]
 
 
-def _fingerprint(command: FinancialExecutionCommand) -> str:
-    """Return the command's canonical synchronous-compatible fingerprint."""
-    return command.fingerprint
-
-
-def _document(command: FinancialExecutionCommand) -> dict[str, Any]:
-    """Build the complete immutable persistence projection."""
-    return {
-        **command.evidence_payload(),
-        "created_at": command.created_at.isoformat(),
-        "provider_name": command.provider_name,
-        "provider_metadata_reference": command.provider_metadata_reference,
-        "command_fingerprint": _fingerprint(command),
-    }
-
-
-def _hydrate(document: Mapping[str, Any]) -> FinancialExecutionCommand:
-    """Hydrate and validate canonical command material before any classification."""
+def _hydrate(document: Any) -> FinancialExecutionCommand:
+    """Hydrate only the exact current schema; never infer family or provenance."""
     try:
-        data = dict(document)
-        stored = data.pop("command_fingerprint", None)
-        data.pop("_id", None)
-        created_at = data.get("created_at")
-        if isinstance(created_at, str):
-            data["created_at"] = datetime.fromisoformat(created_at)
-        elif isinstance(created_at, datetime) and created_at.tzinfo is None:
-            data["created_at"] = created_at.replace(tzinfo=timezone.utc)
-        has_provider_name = "provider_name" in data
-        has_legacy_provider = "requested_provider" in data
-        provider_name = data.pop("provider_name") if has_provider_name else data.pop("requested_provider", None)
-        if has_provider_name and has_legacy_provider:
-            legacy_provider = data.pop("requested_provider")
-            if legacy_provider != provider_name:
-                raise ValueError("provider-name fields diverge")
-        data["provider_name"] = provider_name
-        command = FinancialExecutionCommand(**data)
-        if not isinstance(stored, str) or stored != _fingerprint(command):
-            raise ValueError("command fingerprint mismatch")
-        return command
+        return FinancialExecutionCommand.from_persisted(document)
     except (TypeError, ValueError, KeyError, FinancialExecutionCommandError) as error:
         raise FinancialExecutionCommandPersistedRecordInvalidError("FINANCIAL_EXECUTION_COMMAND_PERSISTED_RECORD_INVALID") from error
+
+
+def _require_family(source_family: FinancialExecutionCommandFamily) -> FinancialExecutionCommandFamily:
+    """Require the closed enum rather than accepting a free-form family string."""
+    if not isinstance(source_family, FinancialExecutionCommandFamily):
+        raise FinancialExecutionCommandRegistryError("SOURCE_REQUEST_FAMILY_INVALID")
+    return source_family
+
+
+def _source_request_query(
+    tenant_id: str,
+    source_family: FinancialExecutionCommandFamily,
+    execution_request_id: str,
+) -> dict[str, object]:
+    """Build the exact persisted source-request query without normalization."""
+    family = _require_family(source_family)
+    return {
+        "tenant_id": tenant_id,
+        "source_authority_kind": family.value,
+        "source_authority.execution_request_id": execution_request_id,
+    }
 
 
 class FinancialExecutionCommandCreateResult:
@@ -121,25 +110,138 @@ class FinancialExecutionCommandCreateResult:
 
 
 class FinancialExecutionCommandRegistry:
-    """Persists immutable command material; never owns attempts, truth, or settlement."""
+    """Persist immutable command authority with tenant/family source replay."""
+
+    @staticmethod
+    def get_by_source_request(
+        tenant_id: str,
+        source_family: FinancialExecutionCommandFamily,
+        execution_request_id: str,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> FinancialExecutionCommand | None:
+        """Return the sole exact source-request command or fail closed.
+
+        Zero rows is canonical absence; one row is strictly hydrated; multiple
+        rows are durable corruption and never trigger first/latest selection.
+        """
+        target = _target(collection)
+        query = _source_request_query(tenant_id, source_family, execution_request_id)
+        try:
+            cursor = target.find(query, session=session)
+            limited = cursor.limit(2) if hasattr(cursor, "limit") else cursor
+            rows = list(limited)[:2]
+            if len(rows) > 1:
+                raise FinancialExecutionCommandRegistryError("MULTIPLE_SOURCE_REQUEST_ROWS")
+            if not rows:
+                return None
+            command = _hydrate(rows[0])
+            if (
+                command.tenant_id != tenant_id
+                or command.source_authority_kind is not source_family
+                or command.source_authority.execution_request_id != execution_request_id
+            ):
+                raise FinancialExecutionCommandPersistedRecordInvalidError(
+                    "FINANCIAL_EXECUTION_COMMAND_SOURCE_REQUEST_CORRELATION_INVALID"
+                )
+            return command
+        except FinancialExecutionCommandRegistryError:
+            raise
+        except PyMongoError as error:
+            raise FinancialExecutionCommandRegistryError(
+                "FINANCIAL_EXECUTION_COMMAND_SOURCE_REQUEST_LOOKUP_FAILED"
+            ) from error
+        except Exception as error:
+            raise FinancialExecutionCommandRegistryError(
+                "FINANCIAL_EXECUTION_COMMAND_SOURCE_REQUEST_LOOKUP_FAILED"
+            ) from error
+
+    @staticmethod
+    def _same_source_replay_or_conflict(
+        candidate: FinancialExecutionCommand,
+        existing: FinancialExecutionCommand,
+    ) -> FinancialExecutionCommandCreateResult:
+        """Classify a source-cardinality match without redefining exact replay."""
+        if existing == candidate:
+            return FinancialExecutionCommandCreateResult(
+                FinancialExecutionCommandCreateOutcome.IDEMPOTENT_REPLAY,
+                existing,
+            )
+        raise FinancialExecutionCommandCreateConflictError(
+            "FINANCIAL_EXECUTION_COMMAND_SOURCE_REQUEST_CONFLICT"
+        )
 
     @staticmethod
     def ensure_indexes(collection: Optional[Collection] = None) -> None:
-        """Create only indexes justified by canonical command retrieval."""
+        """Create command-ID and family-scoped source-request uniqueness indexes."""
         target = _target(collection)
-        target.create_index([('tenant_id', ASCENDING), ('execution_command_id', ASCENDING)], unique=True, name='tenant_execution_command_identity_unique')
-        target.create_index([('tenant_id', ASCENDING), ('payable_id', ASCENDING), ('created_at', ASCENDING)], name='tenant_payable_commands_timeline')
-        target.create_index([('tenant_id', ASCENDING), ('release_authorization_id', ASCENDING), ('created_at', ASCENDING)], name='tenant_release_authorization_commands_timeline')
+        target.create_index(
+            [("tenant_id", ASCENDING), ("execution_command_id", ASCENDING)],
+            unique=True,
+            name="tenant_execution_command_identity_unique",
+        )
+        target.create_index(
+            [
+                ("tenant_id", ASCENDING),
+                ("source_authority_kind", ASCENDING),
+                ("source_authority.execution_request_id", ASCENDING),
+            ],
+            unique=True,
+            name="tenant_family_source_execution_request_unique",
+        )
+        target.create_index(
+            [("tenant_id", ASCENDING), ("source_authority.payable_id", ASCENDING), ("created_at", ASCENDING)],
+            name="tenant_payable_commands_timeline",
+        )
+        target.create_index(
+            [("tenant_id", ASCENDING), ("source_authority.release_authorization_id", ASCENDING), ("created_at", ASCENDING)],
+            name="tenant_release_authorization_commands_timeline",
+        )
 
     @staticmethod
-    def create(command: FinancialExecutionCommand, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> FinancialExecutionCommandCreateResult:
-        """Create immutably or classify exact replay within the caller's session."""
+    def create(
+        command: FinancialExecutionCommand,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> FinancialExecutionCommandCreateResult:
+        """Insert immutable authority, classify exact replay, or reject conflicts.
+
+        Source-request cardinality is adjudicated before command-ID upsert. A
+        duplicate-key race is read back through strict source lookup; a
+        different command ID, provider, source, or fingerprint cannot overwrite,
+        supersede, or become failover authority.
+        """
         if not isinstance(command, FinancialExecutionCommand):
             raise FinancialExecutionCommandCreateConflictError("FINANCIAL_EXECUTION_COMMAND_CREATE_INVALID")
         target = _target(collection)
-        identity = {'tenant_id': command.tenant_id, 'execution_command_id': command.execution_command_id}
+        source = command.source_authority
+        existing_source = FinancialExecutionCommandRegistry.get_by_source_request(
+            command.tenant_id,
+            command.source_authority_kind,
+            source.execution_request_id,
+            target,
+            session=session,
+        )
+        if existing_source is not None:
+            return FinancialExecutionCommandRegistry._same_source_replay_or_conflict(command, existing_source)
+        identity = {"tenant_id": command.tenant_id, "execution_command_id": command.execution_command_id}
         try:
-            result = target.update_one(identity, {'$setOnInsert': _document(command)}, upsert=True, session=session)
+            result = target.update_one(identity, {"$setOnInsert": command.to_persisted()}, upsert=True, session=session)
+        except DuplicateKeyError:
+            winner = FinancialExecutionCommandRegistry.get_by_source_request(
+                command.tenant_id,
+                command.source_authority_kind,
+                source.execution_request_id,
+                target,
+                session=session,
+            )
+            if winner is None:
+                raise FinancialExecutionCommandRegistryError(
+                    "FINANCIAL_EXECUTION_COMMAND_SOURCE_REQUEST_RACE_UNRESOLVED"
+                )
+            return FinancialExecutionCommandRegistry._same_source_replay_or_conflict(command, winner)
         except PyMongoError as error:
             if error.has_error_label("TransientTransactionError") or error.has_error_label("UnknownTransactionCommitResult"):
                 raise
@@ -155,26 +257,45 @@ class FinancialExecutionCommandRegistry:
         raise FinancialExecutionCommandCreateConflictError("FINANCIAL_EXECUTION_COMMAND_CREATE_CONFLICT")
 
     @staticmethod
-    def get(tenant_id: str, execution_command_id: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> FinancialExecutionCommand:
-        """Return one tenant-scoped command after corruption-first hydration."""
-        row = _target(collection).find_one({'tenant_id': str(tenant_id).strip(), 'execution_command_id': str(execution_command_id).strip()}, session=session)
+    def get(
+        tenant_id: str,
+        execution_command_id: str,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> FinancialExecutionCommand:
+        """Return one tenant-scoped command after strict corruption-first hydration."""
+        row = _target(collection).find_one(
+            {"tenant_id": str(tenant_id).strip(), "execution_command_id": str(execution_command_id).strip()},
+            session=session,
+        )
         if row is None:
             raise FinancialExecutionCommandNotFoundError("FINANCIAL_EXECUTION_COMMAND_NOT_FOUND")
         return _hydrate(row)
 
     @staticmethod
-    def list_for_payable(tenant_id: str, payable_id: str, limit: int = 100, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[FinancialExecutionCommand, ...]:
-        """Return bounded tenant-scoped command history for one payable."""
+    def list_for_payable(
+        tenant_id: str,
+        payable_id: str,
+        limit: int = 100,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> tuple[FinancialExecutionCommand, ...]:
+        """Return bounded AP command history using the typed source subject."""
         if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 250:
             raise FinancialExecutionCommandRegistryError("limit must be between 1 and 250")
-        rows = _target(collection).find({'tenant_id': str(tenant_id).strip(), 'payable_id': str(payable_id).strip()}, session=session).sort([('created_at', ASCENDING), ('execution_command_id', ASCENDING)]).limit(limit)
+        rows = _target(collection).find(
+            {"tenant_id": str(tenant_id).strip(), "source_authority.payable_id": str(payable_id).strip()},
+            session=session,
+        ).sort([("created_at", ASCENDING), ("execution_command_id", ASCENDING)]).limit(limit)
         return tuple(_hydrate(row) for row in rows)
 
 
 # ARTIFACT: financial_execution_command_registry.py
-# VERSION: v1.0.2-KENNEL-FINANCIAL-EXECUTION-COMMAND-REGISTRY
-# AUTHORITY BOUNDARY: immutable command persistence only; no attempt, truth, provider, or settlement authority.
-# TENANT POSTURE: all reads and writes are tenant-scoped.
-# FAIL-CLOSED POSTURE: corruption and divergent identity material never replay or overwrite.
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution truth; this registry does not create it.
+# VERSION: v2.1.0-M11-P5-R2B-R1
+# AUTHORITY BOUNDARY: immutable family-aware command persistence only; no attempt, truth, provider, or settlement authority.
+# TENANT POSTURE: all reads and writes are tenant-scoped; source uniqueness includes the closed family.
+# FAIL-CLOSED POSTURE: missing, unknown, mixed, corrupt, divergent, and duplicate source material never replays or overwrites.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns later execution truth.
 # END OF WILSY OS SOVEREIGN ARTIFACT

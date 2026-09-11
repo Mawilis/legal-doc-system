@@ -32,7 +32,9 @@ const JWT_VERIFY_OPTS = Object.freeze({
 });
 
 function resolveJwtSecret() {
-  return process.env.JWT_SECRET || process.env.JWT_SECRETS || 'wilsy_sovereign_secret';
+  const secret = process.env.JWT_SECRET || process.env.JWT_SECRETS;
+  if (!secret || !secret.trim()) throw new Error('AUTHENTICATION_CONFIGURATION_UNAVAILABLE');
+  return secret;
 }
 
 function verifyAccessToken(token) {
@@ -124,9 +126,6 @@ const sovereignAuthenticate = async (req, res, next) => {
       });
     }
     req.user = user;
-    if (decoded.tenantId) {
-      req.user.tenantId = normalizeWilsyR8YAuthTenantId(decoded.tenantId);
-    }
     next();
   } catch (err) {
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
@@ -197,9 +196,6 @@ const protect = async (req, res, next) => {
       });
     }
     req.user = user;
-    if (decoded.tenantId) {
-      req.user.tenantId = normalizeWilsyR8YAuthTenantId(decoded.tenantId);
-    }
     next();
   } catch (err) {
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
@@ -209,20 +205,6 @@ const protect = async (req, res, next) => {
         message: err.message,
       });
     }
-    const decodedRole = decoded?.role || decoded?.securityClearance;
-    const sovereignToken = canBypassTenant(decodedRole);
-    if (decoded && sovereignToken) {
-      req.user = {
-        id: decoded.id || decoded.userId || decoded.sub,
-        _id: decoded.id || decoded.userId || decoded.sub,
-        email: decoded.email,
-        role: decoded.role || 'SUPER_ADMIN',
-        tenantId: normalizeWilsyR8YAuthTenantId(decoded.tenantId || 'wilsy-sovereign-root'),
-        securityClearance: decoded.securityClearance || 'omega',
-        authContinuity: 'SIGNED_JWT_DB_LOOKUP_BYPASS',
-      };
-      return next();
-    }
     logger.error('[AUTH] Unexpected error:', err);
     return res.status(500).json({ success: false, error: 'AUTH_FAILURE' });
   }
@@ -231,7 +213,10 @@ const protect = async (req, res, next) => {
 const requireRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
-    const allowedRoles = roles.flat(Infinity).filter(Boolean).map((r) => String(r).toUpperCase());
+    const allowedRoles = roles
+      .flat(Infinity)
+      .filter(Boolean)
+      .map((r) => String(r).toUpperCase());
     const userRole = String(req.user.role || '').toUpperCase();
     if (allowedRoles.includes(userRole) || canBypassTenant(req.user.role)) return next();
     return res.status(403).json({

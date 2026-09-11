@@ -6,7 +6,7 @@ MODULE: EXECUTIVE CERTIFICATION REPORT BUILDER
 Epitome:
     Automated production script for compiling the FG209 Institutional Versioning
     Engine Executive Milestone Certification PDF. Uses dynamic SAST timestamping,
-    dynamic Sovereign Quote engine, XML string escaping, explicit page geometry 
+    dynamic Sovereign Quote engine, XML string escaping, explicit page geometry
     controls, and standardized Wilsy OS artifact naming conventions.
 
 Biblical Worth Billions:
@@ -50,7 +50,7 @@ def build_fg209_executive_report() -> None:
     """
     output_dir = PROJECT_ROOT / "reports"
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Standardized Wilsy OS Artifact Filename
     pdf_path = output_dir / "WilsyOS_FG209_Institutional_Versioning_Engine_Report.pdf"
 

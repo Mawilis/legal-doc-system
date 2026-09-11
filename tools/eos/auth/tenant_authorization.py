@@ -1,14 +1,21 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.2.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION
+VERSION: v1.7.0-M11-R8-R3B-P8-P3D-P4A
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.2.0 binds granular plan and subscription operations to their
-canonical permissions while preserving the existing platform_billing_release
-binding and fail-closed tenant authorization chain; no durable authorization
-evidence is created.
+CERTIFICATION/UPDATE DATE: 2026-09-09.
+CHANGELOG: v1.7.0-M11-R8-R3B-P8-P3D-P4A binds four exact credential-security
+operations to four dedicated permissions without changing decision schema.
+v1.6.0-M11-R8-R3B-P8-P3B-I2-R3 binds the explicit
+tenant_inbound_merchant_configuration_remediate operation to its dedicated
+permission; no state parsing or lifecycle execution authority is added.
+v1.5.0-M11-R8-R3B-P8-P3A binds eight tenant inbound
+merchant-configuration/provider-policy operations to their exact permissions;
+authorization remains conjunctive and fail-closed with no automatic owner grant.
+v1.4.0-M11-R8-R3B-P6A binds the provider-neutral
+inbound_collection_authorization_create operation to its exact tenant
+privilege; no typed authorization or durable evidence is created here.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Exact scope, active-state, canonical permission, and fail-closed checks; no JWT/header trust.
 TENANT BOUNDARY: Requires exact principal and tenant membership; cross-tenant requests deny.
@@ -32,7 +39,7 @@ from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operati
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.2.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION"
+VERSION = "v1.7.0-M11-R8-R3B-P8-P3D-P4A"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -47,7 +54,7 @@ class MembershipReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, *, session: Any = None) -> object: ...
 class AssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
-_BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","plan_read":"plan:read","plan_create":"plan:manage","plan_update":"plan:manage","plan_archive":"plan:manage","subscription_read":"subscription:read","subscription_audit_read":"subscription:read","subscription_metrics_read":"subscription:read","subscription_create":"subscription:manage","subscription_update":"subscription:manage","subscription_archive":"subscription:manage","subscription_pause":"subscription:manage","subscription_resume":"subscription:manage","subscription_cancel":"subscription:manage","subscription_upgrade":"subscription:manage","subscription_downgrade":"subscription:manage","subscription_reactivate":"subscription:manage","platform_billing_release":"platform_billing:release"})
+_BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","plan_read":"plan:read","plan_create":"plan:manage","plan_update":"plan:manage","plan_archive":"plan:manage","subscription_read":"subscription:read","subscription_audit_read":"subscription:read","subscription_metrics_read":"subscription:read","subscription_create":"subscription:manage","subscription_update":"subscription:manage","subscription_archive":"subscription:manage","subscription_pause":"subscription:manage","subscription_resume":"subscription:manage","subscription_cancel":"subscription:manage","subscription_upgrade":"subscription:manage","subscription_downgrade":"subscription:manage","subscription_reactivate":"subscription:manage","platform_billing_release":"platform_billing:release","platform_billing_provider_policy_create":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revise":"platform_billing:provider_policy:admin","platform_billing_provider_policy_activate":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revoke":"platform_billing:provider_policy:admin","inbound_collection_authorization_create":"inbound_collection:authorization:create","tenant_inbound_merchant_configuration_register":"inbound_merchant_configuration:register","tenant_inbound_merchant_configuration_lifecycle_transition":"inbound_merchant_configuration:lifecycle","tenant_inbound_merchant_configuration_compromise":"inbound_merchant_configuration:security","tenant_inbound_merchant_configuration_remediate":"inbound_merchant_configuration:remediate","tenant_inbound_provider_policy_create":"inbound_provider_policy:author","tenant_inbound_provider_policy_revise":"inbound_provider_policy:author","tenant_inbound_provider_policy_activate":"inbound_provider_policy:activate","tenant_inbound_provider_policy_deactivate":"inbound_provider_policy:deactivate","tenant_inbound_provider_policy_emergency_disable":"inbound_provider_policy:emergency_disable","tenant_inbound_provider_credential_security_eligibility_issue":"inbound_provider_credential_security:eligibility_issue","tenant_inbound_provider_credential_security_revoke":"inbound_provider_credential_security:revoke","tenant_inbound_provider_credential_security_compromise":"inbound_provider_credential_security:compromise","tenant_inbound_provider_credential_security_rotate":"inbound_provider_credential_security:rotate"})
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
@@ -89,7 +96,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.2.0-PLATFORM-BILLING-RELEASE-AUTHORIZATION
+# VERSION: v1.7.0-M11-R8-R3B-P8-P3D-P4A
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, role and target tenant required
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny

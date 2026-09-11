@@ -6,7 +6,7 @@ FILE: tools/eos/documentation/documentation_contract.py
 ===============================================================================
 Epitome:
     Defines the immutable schemas, data contracts, and structural models for
-    the FG210 Institutional Documentation Engine. Enforces a unified, 
+    the FG210 Institutional Documentation Engine. Enforces a unified,
     mathematically strict document schema across every subsystem, contract,
     API, event, artifact, governance policy, and execution path in Wilsy OS.
 
@@ -119,7 +119,7 @@ class DocumentationEntity:
     def validate(self) -> bool:
         """
         Validates structural integrity of the documentation contract.
-        
+
         Raises:
             ValueError: If URN, title, purpose, or module path violates schema rules.
         """

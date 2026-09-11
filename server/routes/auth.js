@@ -35,10 +35,15 @@ import {
   logout,
   adminForceRegenerateMfa,
   verify3FA,
-  refresh
+  refresh,
 } from '../controllers/authController.js';
 import { registerTenant } from '../controllers/onboardingController.js';
-import { protect, admin, requireSovereignAuth, forensicAuditMiddleware } from '../middleware/auth.js';
+import {
+  protect,
+  admin,
+  requireSovereignAuth,
+  forensicAuditMiddleware,
+} from '../middleware/auth.js';
 import { useSovereignMesh } from '../utils/sovereignMesh.js';
 import { useSovereignData } from '../utils/sovereignData.js';
 import loggerRaw from '../utils/logger.js';
@@ -67,7 +72,10 @@ function detectAuthAnomalies(req) {
     anomalies.push('WEAK_PASSWORD');
   }
   const email = body.adminEmail || body.email || '';
-  if (email && /@(gmail|yahoo|hotmail|outlook|aol|protonmail|mail|yandex|icloud)\.com$/i.test(email)) {
+  if (
+    email &&
+    /@(gmail|yahoo|hotmail|outlook|aol|protonmail|mail|yandex|icloud)\.com$/i.test(email)
+  ) {
     anomalies.push('CONSUMER_EMAIL_DOMAIN');
   }
   if (req.headers['x-forwarded-for'] && req.headers['x-forwarded-for'].split(',').length > 3) {
@@ -79,12 +87,13 @@ function detectAuthAnomalies(req) {
 function withAuthTelemetry(handler, routeName, eventType) {
   return async (req, res, next) => {
     const start = process.hrtime.bigint();
-    const tenantId = req.headers['x-tenant-id'] || req.headers['x-wilsy-tenant-id'] || 'GLOBAL_ROOT';
+    const tenantId =
+      req.headers['x-tenant-id'] || req.headers['x-wilsy-tenant-id'] || 'GLOBAL_ROOT';
     const tier = req.headers['x-wilsy-tier'] || 'default';
 
     try {
       const originalJson = res.json;
-      res.json = function(data) {
+      res.json = function (data) {
         if (res.statusCode >= 200 && res.statusCode < 300 && data && typeof data === 'object') {
           if (!data.proofHash) {
             const proofPayload = {
@@ -94,7 +103,7 @@ function withAuthTelemetry(handler, routeName, eventType) {
               method: req.method,
               event: eventType,
               status: res.statusCode,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             };
             data.proofHash = generateAuthProof(proofPayload);
           }
@@ -121,7 +130,11 @@ function withAuthTelemetry(handler, routeName, eventType) {
       }
     } catch (error) {
       if (promMetrics?.authFailures) {
-        promMetrics.authFailures.inc({ tenantId, tier, reason: error.code || error.message || 'UNKNOWN' });
+        promMetrics.authFailures.inc({
+          tenantId,
+          tier,
+          reason: error.code || error.message || 'UNKNOWN',
+        });
       }
       logger.error(`[AUTH_GATEWAY] ${routeName} failed: ${error.message}`);
       next(error);
@@ -131,9 +144,7 @@ function withAuthTelemetry(handler, routeName, eventType) {
 
 // ====================== PUBLIC IDENTITY ROUTES ======================
 
-router.route('/discover')
-  .get(discoverTenantShard)
-  .post(discoverTenantShard);
+router.route('/discover').get(discoverTenantShard).post(discoverTenantShard);
 
 router.post('/register', withAuthTelemetry(registerTenant, '/register', 'register'));
 
@@ -164,27 +175,26 @@ const verifyTokenHandler = async (req, res) => {
         success: false,
         status: 'UNAUTHORIZED',
         error: 'AUTHENTICATION_REQUIRED',
-        message: 'Valid JWT token required.'
+        message: 'Valid JWT token required.',
       });
     }
 
-    const authHeader = req.headers.authorization || req.headers['x-access-token'];
-    const token = authHeader && authHeader.startsWith('Bearer ') 
-      ? authHeader.split(' ')[1] 
-      : (authHeader || req.body?.token);
+    const user = {
+      id: req.user.id || req.user._id,
+      email: req.user.email,
+    };
 
     return res.status(200).json({
       success: true,
       status: 'VERIFIED',
-      user: req.user, // Always from database
-      token: token || null
+      user,
     });
   } catch (error) {
     logger.error(`💥 [AUTH_VERIFY] Token Verification Fracture: ${error.message}`);
     return res.status(500).json({
       success: false,
       status: 'FRACTURE',
-      error: 'TOKEN_VERIFICATION_FAILED'
+      error: 'TOKEN_VERIFICATION_FAILED',
     });
   }
 };

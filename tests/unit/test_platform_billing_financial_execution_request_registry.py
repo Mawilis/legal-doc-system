@@ -42,6 +42,10 @@ def test_get_is_tenant_scoped_and_hydrates_without_write():
     hydrated=PlatformBillingFinancialExecutionRequestRegistry.get("t","x",cast(Any,c),session=cast(Any,"s"))
     assert hydrated == original and c.inserts == 1
     with pytest.raises(Exception): PlatformBillingFinancialExecutionRequestRegistry.get("other","x",cast(Any,c))
+
+def test_missing_provenance_document_rejects():
+    c=C(); original=value(); PlatformBillingFinancialExecutionRequestRegistry.create(original,cast(Any,c)); c.rows[0].pop("provider_policy_id",None)
+    with pytest.raises(Exception): PlatformBillingFinancialExecutionRequestRegistry.get("t","x",cast(Any,c))
 # ARTIFACT: test_platform_billing_financial_execution_request_registry.py
 # VERSION: v1.0.0-PLATFORM-BILLING-FINANCIAL-EXECUTION-REQUEST-REGISTRY-UNIT
 # AUTHORITY BOUNDARY: certification only
