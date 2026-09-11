@@ -37,6 +37,19 @@ def test_fingerprint_deterministic_and_provider_neutral():
 def test_requested_at_is_bson_millisecond_canonical():
     value=PlatformBillingFinancialExecutionRequest.from_release_authorization(auth(),"x",datetime(2026,1,1,0,0,0,123456,tzinfo=timezone.utc))
     assert value.requested_at.microsecond == 123000
+
+def test_policy_provenance_is_fingerprint_material_and_missing_persisted_fields_reject():
+    values = {"execution_request_id":"x","tenant_id":"t","release_authorization_id":"r","platform_invoice_id":"i","release_authorization_fingerprint":"a"*128,"amount_minor":100,"currency":"ZAR","payment_destination_reference":"dest","idempotency_key":"k","requested_by_principal_id":"p","authorization_basis_reference":"b","requested_at":T}
+    base=PlatformBillingFinancialExecutionRequest(**values)
+    for name in ("provider_policy_runtime_binding_id","provider_policy_runtime_binding_fingerprint","provider_policy_id","provider_policy_revision","provider_policy_fingerprint"):
+        assert name in base.__dataclass_fields__
+
+def test_each_provenance_fact_is_fingerprint_material():
+    values = {"execution_request_id":"x","tenant_id":"t","release_authorization_id":"r","platform_invoice_id":"i","release_authorization_fingerprint":"a"*128,"amount_minor":100,"currency":"ZAR","payment_destination_reference":"dest","idempotency_key":"k","requested_by_principal_id":"p","authorization_basis_reference":"b","requested_at":T,"provider_policy_runtime_binding_id":"b1","provider_policy_runtime_binding_fingerprint":"b"*128,"provider_policy_id":"p1","provider_policy_revision":1,"provider_policy_fingerprint":"c"*128}
+    base=PlatformBillingFinancialExecutionRequest(**values)
+    for key, changed in (("provider_policy_runtime_binding_id","b2"),("provider_policy_runtime_binding_fingerprint","d"*128),("provider_policy_id","p2"),("provider_policy_revision",2),("provider_policy_fingerprint","e"*128)):
+        altered=PlatformBillingFinancialExecutionRequest(**{**values,key:changed})
+        assert altered.fingerprint != base.fingerprint
 # ARTIFACT: test_platform_billing_financial_execution_request.py
 # VERSION: v1.0.0-PLATFORM-BILLING-FINANCIAL-EXECUTION-REQUEST-UNIT
 # AUTHORITY BOUNDARY: certification only

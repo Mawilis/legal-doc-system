@@ -1,8 +1,18 @@
 """TITLE: Platform Billing Financial Execution Truth Registry
-VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
+VERSION: v1.2.0-M11-P5-R2E-R4-R3
 AUTHORITY: Kennel EOS / Wilsy OS Core Governance
 EPITOME: Durable tenant-scoped platform execution evidence.
 ABSOLUTE CANONICAL PATH: tools/eos/kennel/registry/platform_billing_financial_execution_truth_registry.py
+COLLABORATION / OWNERSHIP: Kennel EOS platform financial execution-evidence persistence owner.
+CERTIFICATION / UPDATE DATE: 2026-09-08.
+CHANGELOG: v1.2.0-M11-P5-R2E-R4-R3 adds canonical pre-insert exact replay and caller-owned active-transaction duplicate-race propagation.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Strict BSON hydration; opaque synthetic references only.
+TENANT BOUNDARY: Every lookup and conflict query includes tenant_id.
+AUTHORITY BOUNDARY: Persistence of canonical Platform execution evidence only.
+FINANCIAL AUTHORITY BOUNDARY: No provider selection, settlement, paid state, or receivable closure.
+TRANSACTION BOUNDARY: Caller-owned Mongo sessions propagate unchanged; no transaction lifecycle ownership.
+FAIL-CLOSED DECLARATION: Unknown, missing, corrupt, divergent, and duplicate-race records reject.
 """
 from __future__ import annotations
 from datetime import datetime
@@ -25,6 +35,10 @@ def _hydrate(doc: dict) -> PlatformBillingFinancialExecutionTruth:
         return PlatformBillingFinancialExecutionTruth(**d)
     except (TypeError,ValueError,PlatformBillingFinancialExecutionTruthError) as e: raise PlatformBillingFinancialExecutionTruthPersistedRecordInvalidError('PLATFORM_EXECUTION_TRUTH_PERSISTED_RECORD_INVALID') from e
 
+def _transaction_is_active(session: Optional[ClientSession]) -> bool:
+    """Read transaction state only from the caller-owned ClientSession."""
+    return session is not None and session.in_transaction
+
 class PlatformBillingFinancialExecutionTruthRegistry:
     @staticmethod
     def ensure_indexes(collection: Collection)->None:
@@ -33,10 +47,24 @@ class PlatformBillingFinancialExecutionTruthRegistry:
     @staticmethod
     def create(value: PlatformBillingFinancialExecutionTruth, collection: Collection, *, session: Optional[ClientSession]=None)->PlatformBillingFinancialExecutionTruth:
         document={'execution_truth_id':f'platform-truth-{value.execution_request_id}',**value.to_dict()}
+        try:
+            existing = PlatformBillingFinancialExecutionTruthRegistry.get(
+                value.tenant_id, value.execution_truth_id, collection, session=session
+            )
+        except PlatformBillingFinancialExecutionTruthNotFoundError:
+            existing = None
+        if existing is not None:
+            if existing == value and existing.fingerprint == value.fingerprint:
+                return existing
+            raise PlatformBillingFinancialExecutionTruthConflictError('PLATFORM_EXECUTION_TRUTH_CREATE_CONFLICT')
         try: collection.insert_one(document,session=session); return value
         except DuplicateKeyError as e:
+            if _transaction_is_active(session):
+                raise PlatformBillingFinancialExecutionTruthConflictError('PLATFORM_EXECUTION_TRUTH_CREATE_CONFLICT') from e
             existing=collection.find_one({'tenant_id':value.tenant_id,'execution_request_id':value.execution_request_id},session=session)
-            if existing is not None and _hydrate(existing)==value:return _hydrate(existing)
+            if existing is not None:
+                durable = _hydrate(existing)
+                if durable == value and durable.fingerprint == value.fingerprint:return durable
             raise PlatformBillingFinancialExecutionTruthConflictError('PLATFORM_EXECUTION_TRUTH_CREATE_CONFLICT') from e
     @staticmethod
     def get(tenant_id:str, execution_truth_id:str, collection:Collection, *, session:Optional[ClientSession]=None)->PlatformBillingFinancialExecutionTruth:
@@ -45,33 +73,9 @@ class PlatformBillingFinancialExecutionTruthRegistry:
         return _hydrate(doc)
 
 # ARTIFACT: platform_billing_financial_execution_truth_registry.py
-# VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
-# AUTHORITY BOUNDARY: Persistence only; no settlement or commercial projection.
-# END OF WILSY OS SOVEREIGN ARTIFACT
-# WILSY OS SOVEREIGN ARTIFACT STRUCTURE
-# TITLE: R3F0 Platform Billing Financial Execution Truth and Settlement Evidence
-# VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
-# AUTHORITY: Wilsy OS Core Governance / Kennel EOS
-# PURPOSE: Durable, tenant-scoped platform execution and settlement evidence.
-# EPITOME: Canonical platform financial truth without provider execution or money movement.
-# ABSOLUTE CANONICAL PATH: tools/eos/kennel/registry/platform_billing_financial_execution_truth_registry.py
-# COLLABORATION / OWNERSHIP: Kennel EOS platform financial domain; R3F0 certificates.
-# CERTIFICATION / UPDATE DATE: 2026-09-06; structural remediation.
-# CHANGELOG: v1.1.0-R3F0-STRUCTURAL-REMEDIATION complete sovereign metadata alignment.
-# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-# SECURITY / PRIVACY POSTURE: Tenant isolation; UUID synthetic tests; no raw secrets.
-# TENANT BOUNDARY: Every read, write, replay, and certificate assertion is tenant-scoped.
-# AUTHORITY BOUNDARY: Kennel EOS is exclusive financial execution authority.
-# FINANCIAL AUTHORITY BOUNDARY: Evidence only; no provider call, settlement inference, or paid state.
-# TRANSACTION BOUNDARY: Caller-owned Mongo session propagates through durable operations.
-# FAIL-CLOSED DECLARATION: Invalid authority, provenance, persistence, or hydration fails closed.
-# BEGIN SOVEREIGN HEADER SEAL
-# END SOVEREIGN HEADER SEAL
-
-# ARTIFACT: tools/eos/kennel/registry/platform_billing_financial_execution_truth_registry.py
-# VERSION: v1.1.0-R3F0-STRUCTURAL-REMEDIATION
-# AUTHORITY BOUNDARY: Certification evidence only.
-# TENANT POSTURE: Tenant-scoped synthetic fixtures.
-# FAIL-CLOSED POSTURE: Failures are surfaced; no skips.
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# VERSION: v1.2.0-M11-P5-R2E-R4-R3
+# AUTHORITY BOUNDARY: Caller-session persistence of canonical Platform execution evidence only.
+# TENANT POSTURE: Every lookup, replay, and conflict is tenant-scoped.
+# FAIL-CLOSED POSTURE: Corrupt, divergent, and active-transaction duplicate races reject.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no settlement or paid-state authority.
 # END OF WILSY OS SOVEREIGN ARTIFACT
