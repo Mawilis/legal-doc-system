@@ -21,6 +21,8 @@ from typing import Any
 
 import pytest
 from pymongo.errors import PyMongoError
+from pymongo import MongoClient
+from pymongo.client_session import ClientSession, SessionOptions
 
 import tools.eos.saas.tenancy.tenant_registry as registry_module
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
@@ -49,10 +51,12 @@ class _CollectionFake:
         self.modified_count = modified_count
         self.update_error = update_error
         self.find_calls: list[dict[str, Any]] = []
+        self.find_sessions: list[ClientSession | None] = []
         self.update_calls: list[tuple[dict[str, Any], dict[str, Any]]] = []
 
-    def find_one(self, query: dict[str, Any]) -> dict[str, Any] | None:
+    def find_one(self, query: dict[str, Any], *, session: ClientSession | None = None) -> dict[str, Any] | None:
         self.find_calls.append(query)
+        self.find_sessions.append(session)
         if self.find_error is not None:
             raise self.find_error
         return self.find_result
@@ -269,6 +273,58 @@ def test_collection_substitution_restores_after_bounded_context(
 
     assert registry_module.tenants_collection is original
 
+
+def test_create_forwards_caller_session_without_owning_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tenant creation participates in, but never owns, the caller transaction."""
+    class InsertCapture:
+        def __init__(self) -> None:
+            self.session: object | None = None
+            self.document: dict[str, Any] | None = None
+
+        def insert_one(self, document: dict[str, Any], *, session: object) -> None:
+            self.document = document
+            self.session = session
+
+    capture = InsertCapture()
+    monkeypatch.setattr(registry_module, "tenants_collection", capture)
+    caller_session = ClientSession(MongoClient(connect=False), None, SessionOptions(), False)
+    result = TenantRegistry.create({"name": "Session Tenant", "tenant_id": "tenant-session"}, session=caller_session)
+    assert result["success"] is True
+    assert capture.session is caller_session
+    assert capture.document is not None
+
+
+def test_get_forwards_caller_session_without_owning_transaction(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tenant lookup forwards the exact caller session and leaves lifecycle untouched."""
+    fake = _CollectionFake(find_result=None)
+    monkeypatch.setattr(registry_module, "tenants_collection", fake)
+    caller_session = ClientSession(MongoClient(connect=False), None, SessionOptions(), False)
+    assert TenantRegistry.get("tenant-session", session=caller_session) is None
+    assert fake.find_calls == [{"tenant_id": "tenant-session"}]
+    assert fake.find_sessions == [caller_session]
+
+
+def test_get_preserves_legacy_no_session_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Omitting session remains the legacy lookup path."""
+    fake = _CollectionFake(find_result=None)
+    monkeypatch.setattr(registry_module, "tenants_collection", fake)
+    assert TenantRegistry.get("missing") is None
+    assert fake.find_calls == [{"tenant_id": "missing"}]
+    assert fake.find_sessions == [None]
+
+
+def test_get_explicit_collection_bypasses_global_and_forwards_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Explicit collection is authoritative and receives the caller session."""
+    global_fake = _CollectionFake(find_result=None)
+    explicit = _CollectionFake(find_result=_tenant_doc("tenant-explicit"))
+    monkeypatch.setattr(registry_module, "tenants_collection", global_fake)
+    caller_session = object()
+    found = TenantRegistry.get("tenant-explicit", collection=explicit, session=caller_session)  # type: ignore[arg-type]
+    assert found is not None and found.tenant_id == "tenant-explicit"
+    assert global_fake.find_calls == []
+    assert explicit.find_sessions == [caller_session]
 
 # ARTIFACT: test_tenant_registry_failure_semantics.py
 # VERSION: v1.0.0-TENANT-REGISTRY-FAILURE-SEMANTICS-CERT

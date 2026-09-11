@@ -115,6 +115,49 @@ def test_real_mongo_lookup_success_and_genuine_absence() -> None:
         assert missing is None
         assert collection.count_documents({}) == 2
 
+def test_real_mongo_explicit_collection_overrides_global_and_forwards_session() -> None:
+    """Explicit collection is authoritative even when the global has data."""
+    with _state() as (client, collection, database_name, tenant_a, _):
+        alternate = client[database_name]["alternate_tenants"]
+        with client.start_session() as session:
+            found = TenantRegistry.get(tenant_a, collection=collection, session=session)
+        assert found is not None and found.tenant_id == tenant_a
+        assert alternate.count_documents({}) == 0
+
+def test_real_mongo_explicit_collection_transaction_visibility_and_abort() -> None:
+    """The explicit collection participates in caller-owned transaction rollback."""
+    with _state() as (client, _collection, database_name, _tenant_a, _):
+        explicit = client[database_name]["transactional_tenants"]
+        tenant_id = f"transactional-{uuid4().hex}"
+        with client.start_session() as session:
+            session.start_transaction()
+            explicit.insert_one(_tenant_doc(tenant_id, name="Transactional"), session=session)
+            found = TenantRegistry.get(tenant_id, collection=explicit, session=session)
+            assert found is not None and found.tenant_id == tenant_id
+            session.abort_transaction()
+        assert explicit.find_one({"tenant_id": tenant_id}) is None
+
+
+def test_real_mongo_get_reads_uncommitted_write_and_abort_rolls_back() -> None:
+    """A caller-owned transaction sees its write only through the same session."""
+    with _state() as (client, collection, _, _, _):
+        tenant_id = f"transactional-{uuid4().hex}"
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            created = TenantRegistry.create({"name": "Transactional", "tenant_id": tenant_id}, session=session)
+            assert created["success"] is True
+            assert TenantRegistry.get(tenant_id, session=session) is not None
+            assert session.in_transaction is True
+            assert TenantRegistry.get(tenant_id) is None
+            session.abort_transaction()
+            assert session.in_transaction is False
+            assert TenantRegistry.get(tenant_id) is None
+        finally:
+            if session.in_transaction:
+                session.abort_transaction()
+            session.end_session()
+
 
 def test_real_mongo_archive_is_exact_and_never_hard_deletes() -> None:
     """Archive mutates only the requested tenant status and preserves both documents."""
@@ -211,6 +254,43 @@ def test_real_mongo_cleanup_scope_is_uuid_bounded() -> None:
     with _state() as (_, _, database_name, _, _):
         assert database_name.startswith("tenant_registry_failure_cert_")
         assert len(database_name) > len("tenant_registry_failure_cert_")
+
+
+def test_real_mongo_create_participates_in_caller_owned_transaction() -> None:
+    """TenantRegistry.create forwards the caller session and never commits it."""
+    with _state() as (client, collection, _, _, _):
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            tenant_id = f"tenant-tx-{uuid4().hex}"
+            result = TenantRegistry.create({"name": "Transactional Tenant", "tenant_id": tenant_id}, session=session)
+            assert result["success"] is True
+            assert collection.find_one({"tenant_id": tenant_id}, session=session) is not None
+            assert session.in_transaction is True
+            session.abort_transaction()
+            assert collection.find_one({"tenant_id": tenant_id}) is None
+        finally:
+            session.end_session()
+
+
+def test_real_mongo_create_commit_is_durable_outside_transaction() -> None:
+    """Caller commit makes a session-participating tenant durable."""
+    with _state() as (client, collection, _, _, _):
+        session = client.start_session()
+        tenant_id = f"tenant-commit-{uuid4().hex}"
+        try:
+            session.start_transaction()
+            result = TenantRegistry.create({"name": "Committed Tenant", "tenant_id": tenant_id}, session=session)
+            assert result["success"] is True
+            assert session.in_transaction is True
+            session.commit_transaction()
+            assert session.in_transaction is False
+            assert collection.find_one({"tenant_id": tenant_id}) is not None
+            collection.delete_one({"tenant_id": tenant_id})
+        finally:
+            if session.in_transaction:
+                session.abort_transaction()
+            session.end_session()
 
 
 # ARTIFACT: test_tenant_registry_failure_semantics_real_mongo.py

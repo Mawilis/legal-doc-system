@@ -88,6 +88,7 @@ jobs:
           .ci-venv/bin/python -m pip install \
             pymongo==4.16.0 \
             pytest==9.1.1 \
+            cryptography==50.0.1 \
             pydantic==2.13.4 \
             pydantic_core==2.46.4 \
             python-dotenv==1.2.3

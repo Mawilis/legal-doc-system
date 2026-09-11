@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT
+VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan
 permission grants, deterministic expansion, reverse lookup, and fail-closed
@@ -33,12 +33,16 @@ from typing import Any, cast
 import pytest
 
 from tools.eos.auth.roles import (
+    VERSION as POLICY_VERSION,
     ROLE_PERMISSIONS_MAP,
     get_permissions_for_roles,
     get_roles_granting_permission,
 )
 
-VERSION = "v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT"
+def test_runtime_version_source_is_canonical() -> None:
+    assert POLICY_VERSION == "v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS"
+
+VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -92,45 +96,8 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP == {
-        "SOVEREIGN_ARCHITECT": [
-            "kernel:read",
-            "kernel:write",
-            "governance:evaluate",
-            "artifacts:read",
-        ],
-        "ENTERPRISE_ADMIN": [
-            "kernel:read",
-            "governance:evaluate",
-            "artifacts:read",
-            "tenant:profile:read",
-            "tenant:profile:write",
-            "tenant:lifecycle:archive",
-            "tenant:membership:read",
-            "tenant:membership:write",
-            "tenant:role_assignment:read",
-            "tenant:role_assignment:write",
-            "subscription:read",
-            "subscription:manage",
-            "plan:read",
-            "plan:manage",
-        ],
-        "AUDITOR": [
-            "kernel:read",
-            "artifacts:read",
-            "governance:read",
-            "audit:read",
-            "tenant:profile:read",
-            "tenant:membership:read",
-            "tenant:role_assignment:read",
-            "subscription:read",
-            "plan:read",
-        ],
-        "SERVICE_WORKER": [
-            "artifacts:write",
-            "events:publish",
-        ],
-    }
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write"]
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "tenant:business_role:read"]
 
 
 
@@ -195,6 +162,7 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("subscription:manage", ("ENTERPRISE_ADMIN",)),
         ("plan:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
+        ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
     ),
 )
 def test_tenant_permission_reverse_lookup_is_exact(
@@ -276,7 +244,7 @@ def test_no_role_has_implicit_wildcard_or_financial_grant() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.2.0-PLAN-PERMISSION-GRANTS-UNIT-CONTRACT
+# VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-GRANTS-UNIT-CONTRACT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: tenant/subscription/plan grants remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

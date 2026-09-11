@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.2.1-PLAN-PERMISSION-NAMESPACE-CERT
+VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan permission semantics.
@@ -29,9 +29,12 @@ import json
 
 import pytest
 
-VERSION = "v1.2.1-PLAN-PERMISSION-NAMESPACE-CERT"
+VERSION = "v1.3.0-PLATFORM-BILLING-RELEASE-PERMISSION-CERT"
 
-from tools.eos.auth.permission_namespace import PermissionDisposition, canonical_permissions, classify_legacy_permission, permission_metadata
+from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
+
+def test_runtime_version_source_is_canonical() -> None:
+    assert POLICY_VERSION == "v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -53,6 +56,7 @@ def test_permission_canon_properties() -> None:
         "subscription:manage",
         "plan:read",
         "plan:manage",
+        "platform_billing:release",
     }
 
     assert tenant <= {
@@ -66,9 +70,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 19
+    ) == 22
 
-    assert len(rows) == 22
+    assert len(rows) == 25
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -80,6 +84,9 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    release = permission_metadata("platform_billing:release")
+    assert release.business_capability == "authorize platform billing release"
 
     plan_read = permission_metadata(
         "plan:read"
@@ -252,9 +259,10 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.2.1-PLAN-PERMISSION-NAMESPACE-CERT
+# VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: subscription/plan grants remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# VERSION: v1.3.0-PLATFORM-BILLING-RELEASE-PERMISSION-CERT
 # END OF WILSY OS SOVEREIGN ARTIFACT

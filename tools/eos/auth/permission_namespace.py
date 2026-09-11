@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.3.0-PLAN-PERMISSION-CANON
+VERSION: v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with bounded
 subscription and plan-catalogue read/manage capabilities without granting
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    2026-09-04 runtime VERSION is the canonical policy provenance source for
+    trusted authorization-evidence capture; no policy semantics changed.
+    2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION adds the
+    tenant-scoped platform_billing:release capability without execution authority.
     2026-09-03 v1.3.0-PLAN-PERMISSION-CANON adds plan:read and plan:manage
     as explicit own-tenant, membership-required, non-cross-tenant,
     non-financial canonical permissions.
@@ -37,7 +41,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.3.0-PLAN-PERMISSION-CANON"
+VERSION = "v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -199,6 +203,22 @@ _PERMISSIONS: Final = MappingProxyType(
             "administer tenant role assignments",
             tenant=True,
         ),
+        "tenant:business_role:read": _meta(
+            "tenant:business_role:read",
+            "TENANT",
+            "TENANT",
+            "read tenant business-role authority",
+            tenant=True,
+            system=True,
+        ),
+        "tenant:business_role:write": _meta(
+            "tenant:business_role:write",
+            "TENANT",
+            "TENANT",
+            "change tenant business-role authority",
+            tenant=True,
+            system=True,
+        ),
         "subscription:read": _meta(
             "subscription:read",
             "TENANT",
@@ -225,6 +245,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "manage own-tenant plan catalogue lifecycle truth",
+            tenant=True,
+        ),
+        "platform_billing:release": _meta(
+            "platform_billing:release",
+            "TENANT",
+            "TENANT",
+            "authorize platform billing release",
             tenant=True,
         ),
         "execution:trigger": _meta(
@@ -335,7 +362,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.3.0-PLAN-PERMISSION-CANON
+# VERSION: v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: subscription and plan permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
