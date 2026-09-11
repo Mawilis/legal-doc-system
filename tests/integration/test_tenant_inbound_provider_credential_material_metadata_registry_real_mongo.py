@@ -32,6 +32,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
+from urllib.parse import urlsplit
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from typing import Any, Mapping, cast
@@ -40,6 +41,7 @@ from uuid import uuid4
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.uri_parser import parse_uri
 
 from tools.eos.saas.billing.tenant_inbound_provider_credential_material_metadata_registry import (
     CREDENTIAL_VERSION_INDEX_NAME,
@@ -81,8 +83,11 @@ def _uri() -> str:
     uri = os.environ.get("TEST_VENDOR_MONGO_URI", "").strip()
     if not uri:
         pytest.fail("TEST_VENDOR_MONGO_URI is required for the P5-R7 certificate")
-    if "mongodb.net" in uri.lower() or "atlas" in uri.lower():
-        pytest.fail("Atlas or production Mongo endpoints are prohibited")
+    if urlsplit(uri).scheme.lower() != "mongodb":
+        pytest.fail("Only standard local Mongo URIs are permitted")
+    nodes = parse_uri(uri)["nodelist"]
+    if not nodes or any(str(host).lower() not in {"127.0.0.1", "localhost", "::1"} or port != 27027 for host, port in nodes):
+        pytest.fail("Only loopback Mongo port 27027 is permitted")
     return uri
 
 

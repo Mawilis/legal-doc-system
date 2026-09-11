@@ -33,10 +33,12 @@ from threading import Barrier
 from typing import Any, cast
 from uuid import uuid4
 import os
+from urllib.parse import urlsplit
 
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.uri_parser import parse_uri
 
 from tools.eos.auth.permission_namespace import VERSION as PERMISSION_NAMESPACE_VERSION
 from tools.eos.auth.principal_authority import PrincipalAuthority
@@ -273,8 +275,11 @@ def _evidence(
 @pytest.fixture()
 def mongo_db() -> Any:
     configured = os.environ.get("TEST_VENDOR_MONGO_URI", URI)
-    if "mongodb.net" in configured or "atlas" in configured.lower():
-        pytest.fail("Atlas/production Mongo is prohibited")
+    if urlsplit(configured).scheme.lower() != "mongodb":
+        pytest.fail("Only standard local Mongo URIs are permitted")
+    nodes = parse_uri(configured)["nodelist"]
+    if not nodes or any(str(host).lower() not in {"127.0.0.1", "localhost", "::1"} or port != 27027 for host, port in nodes):
+        pytest.fail("Only loopback Mongo port 27027 is permitted")
     client = MongoClient(configured, tz_aware=True, serverSelectionTimeoutMS=5000, retryWrites=True)
     hello = client.admin.command("hello")
     assert hello.get("setName") == "wilsyVendorCertRS"
