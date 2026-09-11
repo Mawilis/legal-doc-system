@@ -3,8 +3,8 @@
 WILSY OS — SOVEREIGN QUOTE ENGINE (GOVERNANCE GUARD)
 ===============================================================================
 Epitome:
-    Provides dynamic, enterprise-grade architectural quotes authored by Founder 
-    & Chief Architect Wilson Khanyezi. Replaces hardcoded static verses with 
+    Provides dynamic, enterprise-grade architectural quotes authored by Founder
+    & Chief Architect Wilson Khanyezi. Replaces hardcoded static verses with
     investor-grade institutional statements engineered for the 0.01% standard.
 
 Collaboration & Ownership:

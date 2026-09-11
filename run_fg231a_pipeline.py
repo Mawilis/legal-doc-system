@@ -2,10 +2,10 @@
 * Epitome: Absolute Sovereign Master Pipeline Orchestrator for FG231A Repository Census & Intelligence.
 *          Executes and chains all 12 Wilsy OS repository analysis engines sequentially,
 *          generating cryptographically sealed enterprise baseline artifacts and Merkle audit roots.
-* Collaboration Comments: 
+* Collaboration Comments:
     - Architect: Wilsy OS Core Engineering (Wilson Khanyezi / Wilsy (Pty) Ltd)
     - Tier: Billion-Dollar Production Grade (v8.0.0-Omega)
-    - Standards: Strict Type Hinting, Thread-Safe Concurrency, Immutable Auditing, 
+    - Standards: Strict Type Hinting, Thread-Safe Concurrency, Immutable Auditing,
       Zero-Defect Production Execution.
     - Biblical Worth Billions Reference: "For which of you, desiring to build a tower, does not first sit down and count the cost, whether he has enough to complete it?" — Luke 14:28
 """
@@ -29,7 +29,7 @@ class FG231AMasterOrchestrator:
     """
     Orchestrates the 12-engine FG231A repository census and intelligence pipeline.
     """
-    
+
     _instance: Optional["FG231AMasterOrchestrator"] = None
     _lock: threading.Lock = threading.Lock()
 
