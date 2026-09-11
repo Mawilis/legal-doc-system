@@ -1,13 +1,26 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS
+VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
-EPITOME: Extends current tenant-scoped authorization roles with least-privilege
-subscription and plan-catalogue read/manage grants without creating current
+EPITOME: Defines current tenant-scoped authorization roles, including
+least-privilege subscription/plan-catalogue grants and dedicated inbound
+merchant-configuration/provider-policy administration without creating current
 possession authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-03.
+CERTIFICATION/UPDATE DATE: 2026-09-09.
 CHANGELOG:
+    2026-09-10 v1.10.0-M11-R8-R3B-P8-P3D-P4A adds exactly four
+    credential-security permissions to the existing INBOUND_PROVIDER_SECURITY_ADMIN;
+    no new role and no unrelated grant changes.
+    2026-09-09 v1.9.0-M11-R8-R3B-P8-P3B-I2-R3 adds only the bounded
+    remediation permission to the existing INBOUND_PROVIDER_SECURITY_ADMIN;
+    no new role or broader lifecycle authority is introduced.
+    2026-09-09 v1.8.0-M11-R8-R3B-P8-P3A adds four dedicated least-privilege
+    inbound merchant-configuration/provider-policy administration roles;
+    existing roles and grants remain unchanged.
+    2026-09-09 v1.7.0-M11-R8-R3B-P6A adds only the dedicated
+    INBOUND_COLLECTION_AUTHORIZATION_ADMIN grant for the exact inbound
+    collection authorization-request privilege.
     2026-09-04 runtime VERSION is the canonical policy provenance source for
     trusted authorization-evidence capture; no grant semantics changed.
     2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS grants
@@ -39,7 +52,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.5.0-PLATFORM-BILLING-RELEASE-GRANTS"
+VERSION = "v1.10.0-M11-R8-R3B-P8-P3D-P4A"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -84,6 +97,36 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "artifacts:write",
         "events:publish",
     ],
+    "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN": [
+        "platform_billing:provider_policy:admin",
+    ],
+    "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN": [
+        "accounts_payable:provider_policy:admin",
+    ],
+    "INBOUND_COLLECTION_AUTHORIZATION_ADMIN": [
+        "inbound_collection:authorization:create",
+    ],
+    "INBOUND_MERCHANT_CONFIGURATION_ADMIN": [
+        "inbound_merchant_configuration:register",
+        "inbound_merchant_configuration:lifecycle",
+    ],
+    "INBOUND_PROVIDER_SECURITY_ADMIN": [
+        "inbound_merchant_configuration:security",
+        "inbound_merchant_configuration:remediate",
+        "inbound_provider_policy:emergency_disable",
+        "inbound_provider_credential_security:eligibility_issue",
+        "inbound_provider_credential_security:revoke",
+        "inbound_provider_credential_security:compromise",
+        "inbound_provider_credential_security:rotate",
+    ],
+    "INBOUND_PROVIDER_POLICY_ADMIN": [
+        "inbound_provider_policy:author",
+    ],
+    "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN": [
+        "inbound_provider_policy:activate",
+        "inbound_provider_policy:deactivate",
+    ],
+
 }
 
 
@@ -136,7 +179,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.4.0-PLATFORM-BILLING-RELEASE-GRANTS
+# VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

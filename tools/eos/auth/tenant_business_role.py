@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Tenant Business-Role Authority.
-VERSION: v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY
+VERSION: v1.1.0-M11-R8-R3B-P8-P3A
 AUTHORITY: Immutable tenant business-role fact only; no authorization.
 EPITOME: Defines explicit, revisioned, scope-bound business-role evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_business_role.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-05.
-CHANGELOG: v1.0.0 establishes the independent tenant business-role value contract.
+CHANGELOG: v1.1.0-M11-R8-R3B-P8-P3A adopts the four explicit inbound
+merchant-configuration/provider-policy business roles from the canonical tenant
+role policy; role facts remain non-authorizing and tenant scoped.
+v1.0.0 establishes the independent tenant business-role value contract.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Explicit identifiers and lifecycle provenance; no credentials or inference.
 TENANT BOUNDARY: Every value binds one explicit principal_id and tenant_id.
@@ -19,6 +22,9 @@ from datetime import datetime
 from enum import Enum
 
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+
+
+VERSION = "v1.1.0-M11-R8-R3B-P8-P3A"
 
 
 class TenantBusinessRoleStatus(str, Enum):
@@ -64,10 +70,10 @@ class TenantBusinessRoleAuthority:
                 raise ValueError("revoked_at cannot precede effective_at")
 
 
-__all__ = ["TenantBusinessRoleStatus", "TenantBusinessRoleAuthority"]
+__all__ = ["VERSION", "TenantBusinessRoleStatus", "TenantBusinessRoleAuthority"]
 
 # ARTIFACT: tenant_business_role.py
-# VERSION: v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY
+# VERSION: v1.1.0-M11-R8-R3B-P8-P3A
 # AUTHORITY BOUNDARY: immutable business-role fact only; no authorization or persistence
 # TENANT POSTURE: explicit principal/tenant scope; no inference or cross-tenant authority
 # FAIL-CLOSED POSTURE: malformed identifiers, roles, revisions, timestamps, and lifecycle states reject

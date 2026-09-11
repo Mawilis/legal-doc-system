@@ -1,13 +1,27 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION
+VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
-EPITOME: Extends the canonical TENANT permission vocabulary with bounded
-subscription and plan-catalogue read/manage capabilities without granting
-possession, cross-tenant authority, entitlement, or financial execution.
+EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
+inbound-collection, merchant-configuration, and provider-policy capabilities
+without granting typed subject authority, possession, cross-tenant authority,
+or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-03.
+CERTIFICATION/UPDATE DATE: 2026-09-09.
 CHANGELOG:
+    2026-09-10 v1.10.0-M11-R8-R3B-P8-P3D-P4A adds four dedicated
+    tenant inbound provider credential-security permissions; all remain
+    own-tenant, non-financial, and non-self-authorizing.
+    2026-09-09 v1.9.0-M11-R8-R3B-P8-P3B-I2-R3 adds the explicit
+    inbound merchant-configuration remediation permission for the future
+    COMPROMISED-to-DISABLED authority; no lifecycle or secret authority is
+    granted.
+    2026-09-09 v1.8.0-M11-R8-R3B-P8-P3A adds the seven dedicated
+    tenant inbound merchant-configuration and provider-policy permissions;
+    all remain explicit, own-tenant, non-financial and non-self-authorizing.
+    2026-09-09 v1.7.0-M11-R8-R3B-P6A adds the exact
+    inbound_collection:authorization:create tenant privilege; it remains
+    provider-neutral, non-financial, and non-self-authorizing.
     2026-09-04 runtime VERSION is the canonical policy provenance source for
     trusted authorization-evidence capture; no policy semantics changed.
     2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION adds the
@@ -41,7 +55,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.5.0-PLATFORM-BILLING-RELEASE-PERMISSION"
+VERSION = "v1.10.0-M11-R8-R3B-P8-P3D-P4A"
 
 
 class PermissionDisposition(StrEnum):
@@ -247,11 +261,116 @@ _PERMISSIONS: Final = MappingProxyType(
             "manage own-tenant plan catalogue lifecycle truth",
             tenant=True,
         ),
+        "platform_billing:provider_policy:admin": _meta(
+            "platform_billing:provider_policy:admin",
+            "TENANT",
+            "TENANT",
+            "administer platform billing provider policy lifecycle",
+            tenant=True,
+        ),
+        "accounts_payable:provider_policy:admin": _meta(
+            "accounts_payable:provider_policy:admin",
+            "TENANT",
+            "ACCOUNTS_PAYABLE",
+            "administer accounts-payable provider policy",
+            tenant=True,
+        ),
         "platform_billing:release": _meta(
             "platform_billing:release",
             "TENANT",
             "TENANT",
             "authorize platform billing release",
+            tenant=True,
+        ),
+        "inbound_collection:authorization:create": _meta(
+            "inbound_collection:authorization:create",
+            "TENANT",
+            "TENANT",
+            "request inbound collection authorization creation",
+            tenant=True,
+        ),
+        "inbound_merchant_configuration:register": _meta(
+            "inbound_merchant_configuration:register",
+            "TENANT",
+            "TENANT",
+            "register inbound merchant configuration identity",
+            tenant=True,
+        ),
+        "inbound_merchant_configuration:lifecycle": _meta(
+            "inbound_merchant_configuration:lifecycle",
+            "TENANT",
+            "TENANT",
+            "transition inbound merchant configuration lifecycle",
+            tenant=True,
+        ),
+        "inbound_merchant_configuration:security": _meta(
+            "inbound_merchant_configuration:security",
+            "TENANT",
+            "TENANT",
+            "contain compromised inbound merchant configuration",
+            tenant=True,
+        ),
+        "inbound_merchant_configuration:remediate": _meta(
+            "inbound_merchant_configuration:remediate",
+            "TENANT",
+            "TENANT",
+            "remediate compromised inbound merchant configuration",
+            tenant=True,
+        ),
+        "inbound_provider_credential_security:eligibility_issue": _meta(
+            "inbound_provider_credential_security:eligibility_issue",
+            "TENANT",
+            "TENANT",
+            "issue credential-security eligibility evidence",
+            tenant=True,
+        ),
+        "inbound_provider_credential_security:revoke": _meta(
+            "inbound_provider_credential_security:revoke",
+            "TENANT",
+            "TENANT",
+            "revoke credential-security eligibility evidence",
+            tenant=True,
+        ),
+        "inbound_provider_credential_security:compromise": _meta(
+            "inbound_provider_credential_security:compromise",
+            "TENANT",
+            "TENANT",
+            "record credential-security compromise evidence",
+            tenant=True,
+        ),
+        "inbound_provider_credential_security:rotate": _meta(
+            "inbound_provider_credential_security:rotate",
+            "TENANT",
+            "TENANT",
+            "record credential-security rotation evidence",
+            tenant=True,
+        ),
+        "inbound_provider_policy:author": _meta(
+            "inbound_provider_policy:author",
+            "TENANT",
+            "TENANT",
+            "author inbound provider policy revisions",
+            tenant=True,
+        ),
+        "inbound_provider_policy:activate": _meta(
+            "inbound_provider_policy:activate",
+            "TENANT",
+            "TENANT",
+            "activate inbound provider policy",
+            tenant=True,
+        ),
+        "inbound_provider_policy:deactivate": _meta(
+            "inbound_provider_policy:deactivate",
+            "TENANT",
+            "TENANT",
+            "deactivate inbound provider policy",
+            tenant=True,
+        ),
+        "inbound_provider_policy:emergency_disable": _meta(
+            "inbound_provider_policy:emergency_disable",
+            "TENANT",
+            "TENANT",
+            "emergency-disable inbound provider policy",
             tenant=True,
         ),
         "execution:trigger": _meta(
@@ -362,7 +481,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION
+# VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: subscription and plan permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

@@ -1,11 +1,21 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.1.0-TENANT-AUTHORIZATION-COMPOSITION-CERT
+VERSION: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants remain conjunctive with principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.1.0 migrates the certificate from deliberately ungranted tenant permissions to the governed ENTERPRISE_ADMIN/AUDITOR tenant-permission grant matrix while preserving fail-closed gate precedence.
+CERTIFICATION/UPDATE DATE: 2026-09-09.
+CHANGELOG: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four exact
+credential-security operation-to-permission bindings and least-authority
+role denials. No decision schema or replay semantics changed.
+v1.4.0-M11-R8-R3B-P8-P3B-I2-R3-CERT certifies the explicit
+merchant-configuration remediation binding while preserving fail-closed
+composition and opaque subjects.
+v1.3.0-M11-R8-R3B-P8-P3A-CERT certifies eight dedicated inbound
+merchant-configuration/provider-policy operation bindings while preserving
+conjunctive current-truth authorization.
+v1.2.0-M11-R8-R3B-P6A-CERT certifies the exact inbound
+collection authorization-request composition while preserving fail-closed gate precedence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Deterministic resolve-only readers; projected transport authority cannot grant; mutation tripwires remain armed.
 TENANT BOUNDARY: Exact principal and tenant scope, ACTIVE membership, one eligible tenant business role, and an ACTIVE granting authorization role are conjunctively required.
@@ -42,7 +52,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.1.0-TENANT-AUTHORIZATION-COMPOSITION-CERT"
+VERSION = "v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -666,6 +676,206 @@ def test_permission_operation_binding_remains_exact() -> None:
     assert result.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
     assert assignments.calls == []
 
+
+def test_inbound_collection_authorization_composition_is_exact_and_opaque() -> None:
+    """Current principal, membership, business role, and dedicated grant compose exactly."""
+    result = _decision(
+        permission_id="inbound_collection:authorization:create",
+        operation="inbound_collection_authorization_create",
+        business_repository=_business("tenant_inbound_collection_authorization_admin"),
+        assignment_repository=_assignments("INBOUND_COLLECTION_AUTHORIZATION_ADMIN"),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_inbound_collection_authorization_admin",
+        "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
+    )
+    assert result.business_role == "tenant_inbound_collection_authorization_admin"
+    assert result.authorization_role == "INBOUND_COLLECTION_AUTHORIZATION_ADMIN"
+
+
+@pytest.mark.parametrize(
+    ("permission_id", "operation"),
+    (
+        ("inbound_collection:authorization:create", "audit_read"),
+        ("audit:read", "inbound_collection_authorization_create"),
+        ("unknown", "inbound_collection_authorization_create"),
+    ),
+)
+def test_inbound_collection_operation_permission_pairing_is_exact(
+    permission_id: str,
+    operation: str,
+) -> None:
+    """Wrong, unknown, and cross-capability pairs fail before role grant lookup."""
+    assignments = _assignments("INBOUND_COLLECTION_AUTHORIZATION_ADMIN", "AUDITOR")
+    result = _decision(
+        permission_id=permission_id,
+        operation=operation,
+        business_repository=_business("tenant_inbound_collection_authorization_admin"),
+        assignment_repository=assignments,
+    )
+    assert result.authorized is False
+    assert result.reason in {
+        TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH,
+        TenantAuthorizationReason.PERMISSION_UNKNOWN,
+    }
+    assert assignments.calls == []
+
+
+@pytest.mark.parametrize(
+    "authorization_role",
+    (
+        "AUDITOR",
+        "ENTERPRISE_ADMIN",
+        "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN",
+        "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN",
+    ),
+)
+def test_inbound_collection_does_not_accept_unrelated_authorization_roles(
+    authorization_role: str,
+) -> None:
+    """Invoice-read, provider-policy, AP, and administrative roles do not cross-grant."""
+    result = _decision(
+        permission_id="inbound_collection:authorization:create",
+        operation="inbound_collection_authorization_create",
+        business_repository=_business("tenant_inbound_collection_authorization_admin"),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+
+@pytest.mark.parametrize(
+    ("operation", "permission", "business_role", "authorization_role"),
+    (
+        ("tenant_inbound_merchant_configuration_register", "inbound_merchant_configuration:register", "tenant_inbound_merchant_configuration_admin", "INBOUND_MERCHANT_CONFIGURATION_ADMIN"),
+        ("tenant_inbound_merchant_configuration_lifecycle_transition", "inbound_merchant_configuration:lifecycle", "tenant_inbound_merchant_configuration_admin", "INBOUND_MERCHANT_CONFIGURATION_ADMIN"),
+        ("tenant_inbound_merchant_configuration_compromise", "inbound_merchant_configuration:security", "tenant_inbound_provider_security_admin", "INBOUND_PROVIDER_SECURITY_ADMIN"),
+        ("tenant_inbound_merchant_configuration_remediate", "inbound_merchant_configuration:remediate", "tenant_inbound_provider_security_admin", "INBOUND_PROVIDER_SECURITY_ADMIN"),
+        ("tenant_inbound_provider_policy_create", "inbound_provider_policy:author", "tenant_inbound_provider_policy_admin", "INBOUND_PROVIDER_POLICY_ADMIN"),
+        ("tenant_inbound_provider_policy_revise", "inbound_provider_policy:author", "tenant_inbound_provider_policy_admin", "INBOUND_PROVIDER_POLICY_ADMIN"),
+        ("tenant_inbound_provider_policy_activate", "inbound_provider_policy:activate", "tenant_inbound_provider_policy_activation_admin", "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN"),
+        ("tenant_inbound_provider_policy_deactivate", "inbound_provider_policy:deactivate", "tenant_inbound_provider_policy_activation_admin", "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN"),
+        ("tenant_inbound_provider_policy_emergency_disable", "inbound_provider_policy:emergency_disable", "tenant_inbound_provider_security_admin", "INBOUND_PROVIDER_SECURITY_ADMIN"),
+    ),
+)
+def test_inbound_provider_operation_mappings_are_exact(
+    operation: str,
+    permission: str,
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    result = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+def test_inbound_provider_privileges_do_not_cross_grant() -> None:
+    result = _decision(
+        permission_id="inbound_provider_policy:activate",
+        operation="tenant_inbound_provider_policy_activate",
+        business_repository=_business("tenant_inbound_provider_policy_admin"),
+        assignment_repository=_assignments("INBOUND_PROVIDER_POLICY_ADMIN"),
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+
+def test_remediation_is_limited_to_security_business_and_authorization_roles() -> None:
+    result = _decision(
+        permission_id="inbound_merchant_configuration:remediate",
+        operation="tenant_inbound_merchant_configuration_remediate",
+        business_repository=_business("tenant_inbound_merchant_configuration_admin"),
+        assignment_repository=_assignments("INBOUND_PROVIDER_SECURITY_ADMIN"),
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+
+@pytest.mark.parametrize(
+    ("operation", "permission"),
+    (
+        ("tenant_inbound_provider_credential_security_eligibility_issue", "inbound_provider_credential_security:eligibility_issue"),
+        ("tenant_inbound_provider_credential_security_revoke", "inbound_provider_credential_security:revoke"),
+        ("tenant_inbound_provider_credential_security_compromise", "inbound_provider_credential_security:compromise"),
+        ("tenant_inbound_provider_credential_security_rotate", "inbound_provider_credential_security:rotate"),
+    ),
+)
+def test_credential_security_operation_permission_bindings_are_exact(
+    operation: str, permission: str,
+) -> None:
+    result = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_inbound_provider_security_admin"),
+        assignment_repository=_assignments("INBOUND_PROVIDER_SECURITY_ADMIN"),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_inbound_provider_security_admin",
+        "INBOUND_PROVIDER_SECURITY_ADMIN",
+    )
+
+
+@pytest.mark.parametrize(
+    "authorization_role",
+    (
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+    ),
+)
+def test_credential_security_requires_security_admin_role(authorization_role: str) -> None:
+    result = _decision(
+        permission_id="inbound_provider_credential_security:eligibility_issue",
+        operation="tenant_inbound_provider_credential_security_eligibility_issue",
+        business_repository=_business("tenant_inbound_provider_security_admin"),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+
+def test_credential_security_operation_permission_cross_pairing_fails_closed() -> None:
+    result = _decision(
+        permission_id="inbound_provider_credential_security:revoke",
+        operation="tenant_inbound_provider_credential_security_compromise",
+        business_repository=_business("tenant_inbound_provider_security_admin"),
+        assignment_repository=_assignments("INBOUND_PROVIDER_SECURITY_ADMIN"),
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
+def test_credential_security_unknown_operation_and_permission_fail_closed() -> None:
+    for operation, permission in (
+        ("tenant_inbound_provider_credential_security_unknown", "inbound_provider_credential_security:eligibility_issue"),
+        ("tenant_inbound_provider_credential_security_eligibility_issue", "inbound_provider_credential_security:unknown"),
+    ):
+        assignments = _assignments("INBOUND_PROVIDER_SECURITY_ADMIN")
+        result = _decision(
+            permission_id=permission,
+            operation=operation,
+            business_repository=_business("tenant_inbound_provider_security_admin"),
+            assignment_repository=assignments,
+        )
+        assert result.authorized is False
+        assert result.reason in {TenantAuthorizationReason.INVALID_INPUT, TenantAuthorizationReason.PERMISSION_UNKNOWN}
+        assert assignments.calls == []
+
 def test_platform_billing_release_requires_owner_and_enterprise_admin() -> None:
     result = _decision(permission_id="platform_billing:release", operation="platform_billing_release", business_repository=_business("tenant_owner"), assignment_repository=_assignments("ENTERPRISE_ADMIN"))
     assert result.authorized is True
@@ -748,7 +958,7 @@ def test_wrong_assignment_scope_cannot_grant() -> None:
 def test_malformed_operation_values_fail_closed_before_grant_lookup() -> None:
     """Malformed and unknown operations cannot reach the final grant gate."""
 
-    for operation in ("", " ", "unknown", None, 123):
+    for operation in ("", " ", "unknown", "tenant_inbound_merchant_configuration_remediation", None, 123):
         assignments = _assignments("AUDITOR", "ENTERPRISE_ADMIN")
         result = _decision(
             permission_id="audit:read",
@@ -781,6 +991,10 @@ def test_decisions_are_deterministic_and_immutable() -> None:
 def test_operation_binding_is_immutable() -> None:
     """The frozen operation-to-permission binding cannot be changed by callers."""
 
+    assert ta._BINDINGS["inbound_collection_authorization_create"] == (
+        "inbound_collection:authorization:create"
+    )
+    assert list(ta._BINDINGS).count("inbound_collection_authorization_create") == 1
     with pytest.raises(TypeError):
         cast(Any, ta._BINDINGS)["profile_read"] = "tenant:profile:write"
 
@@ -878,7 +1092,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.1.0-TENANT-AUTHORIZATION-COMPOSITION-CERT
+# VERSION: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny

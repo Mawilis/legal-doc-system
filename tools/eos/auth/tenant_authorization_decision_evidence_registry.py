@@ -45,6 +45,19 @@ class TenantAuthorizationDecisionEvidenceRegistry:
         self._collection.create_index([("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)], unique=True, name="tenant_authorization_idempotency_unique")
         self._collection.create_index([("authorization_decision_id", ASCENDING)], unique=True, name="authorization_decision_identity_unique")
 
+    def get(self, *, tenant_id: str, authorization_decision_id: str, session: Optional[ClientSession] = None) -> TenantAuthorizationDecisionEvidence:
+        """Read one exact tenant-scoped evidence record and strictly hydrate it."""
+        if not isinstance(tenant_id, str) or not tenant_id.strip() or not isinstance(authorization_decision_id, str) or not authorization_decision_id.strip():
+            raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_NOT_FOUND")
+        try:
+            row = self._collection.find_one({"tenant_id": tenant_id, "authorization_decision_id": authorization_decision_id}, session=session)
+            if row is None: raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_NOT_FOUND")
+            body = dict(row); body.pop("_id", None)
+            return TenantAuthorizationDecisionEvidence.from_persisted(body)
+        except TenantAuthorizationDecisionEvidencePersistenceError: raise
+        except (TenantAuthorizationDecisionEvidenceError, PyMongoError, TypeError, ValueError) as error:
+            raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_PERSISTED_RECORD_INVALID") from error
+
     @staticmethod
     def _require_transaction(session: Optional[ClientSession]) -> ClientSession:
         if session is None or getattr(session, "in_transaction", False) is not True:

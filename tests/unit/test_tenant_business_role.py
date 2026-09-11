@@ -1,11 +1,13 @@
 """TITLE: WILSY OS Tenant Business-Role Authority Certificate.
-VERSION: v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY-CERT
+VERSION: v1.1.0-M11-R8-R3B-P8-P3A-CERT
 AUTHORITY: Pure value-contract certification only.
 EPITOME: Certifies immutable, explicit, scope-bound business-role evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_business_role.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-05.
-CHANGELOG: v1.0.0 certifies the initial business-role authority value contract.
+CHANGELOG: v1.1.0-M11-R8-R3B-P8-P3A-CERT certifies the four explicit inbound
+merchant-configuration/provider-policy business roles.
+v1.0.0 certifies the initial business-role authority value contract.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: No persistence, credentials, network, or fabricated authority.
 TENANT BOUNDARY: Explicit principal and tenant identifiers are retained exactly.
@@ -17,9 +19,13 @@ from typing import Any, cast
 
 import pytest
 
-from tools.eos.auth.tenant_business_role import TenantBusinessRoleAuthority, TenantBusinessRoleStatus
+from tools.eos.auth.tenant_business_role import VERSION as POLICY_VERSION, TenantBusinessRoleAuthority, TenantBusinessRoleStatus
 
 STAMP = datetime(2026, 9, 1, tzinfo=timezone.utc)
+
+
+def test_runtime_version_source_is_canonical() -> None:
+    assert POLICY_VERSION == "v1.1.0-M11-R8-R3B-P8-P3A"
 
 
 def make(**overrides: object) -> TenantBusinessRoleAuthority:
@@ -28,7 +34,7 @@ def make(**overrides: object) -> TenantBusinessRoleAuthority:
     return TenantBusinessRoleAuthority(**cast(dict[str, Any], values))
 
 
-@pytest.mark.parametrize("role", ("tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor"))
+@pytest.mark.parametrize("role", ("tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin"))
 def test_all_canonical_business_roles_are_retained(role: str) -> None:
     value = make(business_role=role)
     assert (value.principal_id, value.tenant_id, value.business_role, value.status, value.revision, value.effective_at, value.revoked_at) == ("principal-1", "tenant-1", role, TenantBusinessRoleStatus.ACTIVE, 0, STAMP, None)
@@ -93,7 +99,7 @@ def test_no_authorization_or_execution_methods() -> None:
 
 
 # ARTIFACT: test_tenant_business_role.py
-# VERSION: v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY-CERT
+# VERSION: v1.1.0-M11-R8-R3B-P8-P3A-CERT
 # AUTHORITY BOUNDARY: pure value-contract certification only; no authority grant
 # TENANT POSTURE: explicit principal/tenant scope and canonical business-role values
 # FAIL-CLOSED POSTURE: malformed identifiers, roles, revisions, timestamps, and lifecycle states reject
