@@ -4,12 +4,15 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM                                                                               ║
+║ VERSION:        v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE                                                                       ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; fixed mongo_client access.                  ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-12 v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE – Removes legacy
+║                router-owned intelligence formulas; summary/analytics remain
+║                explicit fail-closed compatibility boundaries.                    ║
 ║   2026-09-12 v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM – Adds the delegated
 ║                /billing/intelligence/evidence canonical P1/P2 evidence seam; legacy
 ║                summary/analytics remain explicitly non-canonical.                         ║
@@ -50,13 +53,11 @@ CONSTITUTION:
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status, Depends, Header, Request, Query
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, NoReturn, Optional
 import logging
 import os
 import traceback
 from datetime import datetime, timezone, timedelta
-from collections import defaultdict
-import math
 import uuid
 import hashlib
 import json
@@ -83,7 +84,20 @@ from ..saas.billing.billing_intelligence_orchestrator import (
 )
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM"
+VERSION = "v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE"
+
+_LEGACY_INTELLIGENCE_UNSUPPORTED: tuple[str, ...] = (
+    "arr",
+    "mrr",
+    "churn_rate",
+    "ltv",
+    "cac",
+    "forecast",
+    "growth_rate",
+    "arpu",
+    "credit_score",
+    "anomaly_score",
+)
 
 logger = logging.getLogger(__name__)
 DEBUG_MODE = os.getenv("WILSY_MODEL_DEBUG", "0") == "1"
@@ -101,6 +115,24 @@ def _raise_financial_authority_conflict(
     raise HTTPException(
         status_code=status.HTTP_409_CONFLICT,
         detail=code,
+    )
+
+
+def _legacy_intelligence_unavailable(route: str) -> NoReturn:
+    """Fail closed for uncertified legacy intelligence routes.
+
+    The route remains mounted for compatibility with existing callers, but it
+    cannot return unsupported ARR/MRR/churn/LTV/CAC/forecast/growth values.
+    Canonical evidence is available only from the P1/P2-owned endpoint.
+    """
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail={
+            "code": "BILLING_LEGACY_INTELLIGENCE_UNAVAILABLE",
+            "message": f"{route} has no certified intelligence contract",
+            "canonical_endpoint": "/billing/intelligence/evidence",
+            "unsupported_outputs": list(_LEGACY_INTELLIGENCE_UNSUPPORTED),
+        },
     )
 
 
@@ -290,23 +322,6 @@ class HybridInvoiceCreate(BaseModel):
     currency: str = "ZAR"
     description: str = "Hybrid monetization invoice"
     idempotency_key: Optional[str] = None
-
-class BillingSummaryResponse(BaseModel):
-    totalArr: float
-    activeSubscriptions: int
-    pendingInvoices: int
-    history: List[Dict[str, Any]]
-    recentInvoices: List[Dict[str, Any]]
-
-class BillingAnalyticsResponse(BaseModel):
-    mrr: float
-    arr: float
-    churnRate: float
-    ltv: float
-    cac: float
-    forecast: float
-    growthRate: float
-    mrrHistory: List[Dict[str, Any]]
 
 class ForensicStatusResponse(BaseModel):
     sealStatus: str
@@ -790,225 +805,22 @@ async def refund_payment(
     )
 
 # ----------------------------------------------------------------------------
-# Summary
+# Legacy intelligence compatibility boundaries
 # ----------------------------------------------------------------------------
-@router.get("/summary", response_model=BillingSummaryResponse)
+@router.get("/summary", response_model=None)
 async def get_billing_summary(
     tenant_id: str = Depends(get_tenant_id),
-    registry: BillingRegistry = Depends(get_billing_registry),
-):
-    try:
-        from ..saas.billing.billing_registry import platform_invoices_coll
+) -> Any:
+    """Reject the uncertified legacy summary without fabricating intelligence."""
+    _legacy_intelligence_unavailable("/billing/summary")
 
-        query = {}
-        if tenant_id != "GLOBAL_ROOT":
-            # Registry records dual-write both forms, while older records may
-            # contain only one.  The summary must never silently drop either.
-            query = {"$or": [{"tenant_id": tenant_id}, {"tenantId": tenant_id}]}
 
-        invoice_docs = list(platform_invoices_coll.find(query).sort("issuedAt", -1))
-
-        now = datetime.now(timezone.utc)
-        twelve_months_ago = now - timedelta(days=365)
-
-        monthly_volume = defaultdict(float)
-        monthly_paid = defaultdict(float)
-        total_arr = 0.0
-        pending_invoices = 0
-        recent_invoices = []
-
-        for doc in invoice_docs:
-            issued_at = doc.get("issued_at") or doc.get("issuedAt") or doc.get("created_at") or doc.get("createdAt")
-            if isinstance(issued_at, str):
-                issued_at = datetime.fromisoformat(issued_at.replace('Z', '+00:00'))
-            elif isinstance(issued_at, datetime):
-                pass
-            else:
-                continue
-
-            # Mongo can return legacy naive datetimes while the current clock
-            # is UTC-aware.  Normalise before comparison so one historical
-            # invoice cannot make the entire cockpit summary unavailable.
-            if issued_at.tzinfo is None:
-                issued_at = issued_at.replace(tzinfo=timezone.utc)
-            else:
-                issued_at = issued_at.astimezone(timezone.utc)
-
-            invoice_status = doc.get("status", "open")
-            if invoice_status not in ["paid", "void", "cancelled"]:
-                pending_invoices += 1
-
-            if len(recent_invoices) < 10:
-                if "_id" in doc:
-                    doc["_id"] = str(doc["_id"])
-                recent_invoices.append(doc)
-
-            month_key = issued_at.strftime("%Y-%m")
-            amount = float(doc.get("total", 0))
-            paid_amount = float(doc.get("paid_amount", doc.get("paidAmount", 0)))
-            monthly_volume[month_key] += amount
-            monthly_paid[month_key] += paid_amount
-
-            if issued_at >= twelve_months_ago:
-                total_arr += amount
-
-        subscriptions_coll = _require_db()["subscriptions"]
-        sub_query: Dict[str, Any] = {"status": {"$in": ["active", "ACTIVE", "trialing", "TRIALING"]}} if tenant_id != "GLOBAL_ROOT" else {}
-        if tenant_id != "GLOBAL_ROOT":
-            sub_query["$and"] = [
-                {"status": {"$in": ["active", "ACTIVE", "trialing", "TRIALING"]}},
-                {"$or": [{"tenant_id": tenant_id}, {"tenantId": tenant_id}]},
-            ]
-        active_subscriptions = subscriptions_coll.count_documents(sub_query)
-
-        history = []
-        for month in sorted(monthly_volume.keys()):
-            history.append({
-                "label": month,
-                "volume": monthly_volume[month],
-                "paidVolume": monthly_paid[month],
-            })
-
-        _telemetry(tenant_id, "BILLING", "SUMMARY_RETRIEVED", "billing_router", {
-            "active_subscriptions": active_subscriptions,
-            "total_arr": total_arr,
-            "pending_invoices": pending_invoices,
-            "history_months": len(history)
-        })
-
-        return BillingSummaryResponse(
-            totalArr=total_arr,
-            activeSubscriptions=active_subscriptions,
-            pendingInvoices=pending_invoices,
-            history=history,
-            recentInvoices=recent_invoices,
-        )
-
-    except Exception as e:
-        _log_error(e, "GET_BILLING_SUMMARY", tenant_id)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve billing summary. Please try again later."
-        )
-
-# ----------------------------------------------------------------------------
-# Analytics
-# ----------------------------------------------------------------------------
-@router.get("/analytics", response_model=BillingAnalyticsResponse)
+@router.get("/analytics", response_model=None)
 async def get_billing_analytics(
     tenant_id: str = Depends(get_tenant_id),
-    registry: BillingRegistry = Depends(get_billing_registry),
-):
-    try:
-        subscriptions_coll = _require_db()["subscriptions"]
-        platform_invoices_coll = _require_db()["platform_invoices"]
-
-        sub_query = {}
-        if tenant_id != "GLOBAL_ROOT":
-            sub_query["tenant_id"] = tenant_id
-
-        active_subs = list(subscriptions_coll.find({**sub_query, "status": "active"}))
-        mrr = 0.0
-        for sub in active_subs:
-            amount = float(sub.get("amount", 0))
-            freq = sub.get("billing_frequency", "monthly")
-            if freq == "monthly":
-                mrr += amount
-            elif freq == "quarterly":
-                mrr += amount / 3
-            elif freq == "annual":
-                mrr += amount / 12
-            else:
-                mrr += amount
-
-        arr = mrr * 12
-
-        ninety_days_ago = datetime.now(timezone.utc) - timedelta(days=90)
-        cancelled_subs = list(subscriptions_coll.find({
-            **sub_query,
-            "status": "cancelled",
-            "cancelled_at": {"$gte": ninety_days_ago}
-        }))
-        total_cancelled = len(cancelled_subs)
-        total_active = len(active_subs)
-        churn_rate = total_cancelled / max(1, total_active + total_cancelled)
-
-        avg_lifetime = 36
-        avg_revenue_per_customer = mrr / max(1, total_active) if total_active > 0 else 0
-        ltv = avg_revenue_per_customer * avg_lifetime * 12
-        cac = ltv * 0.3
-
-        invoice_query = {}
-        if tenant_id != "GLOBAL_ROOT":
-            invoice_query["tenant_id"] = tenant_id
-        invoices = list(platform_invoices_coll.find(invoice_query).sort("issued_at", 1))
-        monthly_mrr = defaultdict(float)
-        for inv in invoices:
-            issued_at = inv.get("issued_at")
-            if isinstance(issued_at, str):
-                issued_at = datetime.fromisoformat(issued_at.replace('Z', '+00:00'))
-            elif isinstance(issued_at, datetime):
-                pass
-            else:
-                continue
-            month_key = issued_at.strftime("%Y-%m")
-            amount = float(inv.get("total", 0))
-            monthly_mrr[month_key] += amount
-
-        sorted_months = sorted(monthly_mrr.keys())
-        mrr_history = []
-        for month in sorted_months:
-            mrr_history.append({"label": month, "mrr": monthly_mrr[month]})
-
-        forecast = mrr
-        if len(mrr_history) >= 3:
-            recent = [mrr_history[-i]["mrr"] for i in range(1, 4)][::-1]
-            x = [0, 1, 2]
-            y = recent
-            n = len(x)
-            sum_x = sum(x)
-            sum_y = sum(y)
-            sum_xy = sum(xi * yi for xi, yi in zip(x, y))
-            sum_xx = sum(xi * xi for xi in x)
-            slope = (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x * sum_x) if (n * sum_xx - sum_x * sum_x) != 0 else 0
-            intercept = (sum_y - slope * sum_x) / n
-            forecast = intercept + slope * 3
-            forecast = max(0, forecast)
-
-        growth_rate = 0.0
-        if len(mrr_history) >= 2:
-            prev = mrr_history[-2]["mrr"]
-            curr = mrr_history[-1]["mrr"]
-            if prev > 0:
-                growth_rate = (curr - prev) / prev * 100
-            else:
-                growth_rate = 0
-
-        _telemetry(tenant_id, "BILLING", "ANALYTICS_RETRIEVED", "billing_router", {
-            "mrr": mrr,
-            "arr": arr,
-            "churn_rate": churn_rate,
-            "forecast": forecast,
-            "history_count": len(mrr_history)
-        })
-
-        return BillingAnalyticsResponse(
-            mrr=mrr,
-            arr=arr,
-            churnRate=churn_rate,
-            ltv=ltv,
-            cac=cac,
-            forecast=forecast,
-            growthRate=growth_rate,
-            mrrHistory=mrr_history,
-        )
-
-    except Exception as e:
-        _log_error(e, "GET_BILLING_ANALYTICS", tenant_id)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve billing analytics. Please try again later."
-        )
+) -> Any:
+    """Reject uncertified legacy analytics without fabricating intelligence."""
+    _legacy_intelligence_unavailable("/billing/analytics")
 
 
 @router.get("/intelligence/evidence", response_model=Dict[str, Any])
@@ -1945,11 +1757,11 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM
-Fixes:           Financial-truth HTTP firewall; caller payment execution/refund/settlement mutation denied.
+Version:         v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE
+Fixes:           Financial-truth HTTP firewall; uncertified legacy intelligence routes fail closed; canonical P1/P2 seam preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
 ════════════════════════════════════════════════════════════════════════════════
@@ -1959,7 +1771,7 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM
+# VERSION: v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:
