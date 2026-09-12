@@ -1,7 +1,7 @@
-"""WILSY OS M12-P6 canonical billing-intelligence composition owner.
+"""WILSY OS M12-P8 canonical billing-intelligence composition owner.
 
 TITLE: Billing Intelligence Orchestrator
-VERSION: v1.1.0-M12-P6
+VERSION: v1.2.0-M12-P8
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Load canonical tenant evidence, invoke frozen P1 derivation, and
          persist/replay through the frozen P2 registry.
@@ -9,8 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/b
 COLLABORATION / OWNERSHIP: Python composition owner; P1 owns derivation, P2
                             owns durable evidence, and HTTP owns transport.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.1.0-M12-P6 adds strict tenant-scoped subscription hydration and
-           delegates recurring-revenue policy to the certified P5 owner.
+CHANGELOG: v1.2.0-M12-P8 accepts an explicit prior evidence identity and
+           delegates exact growth derivation to the certified P7 owner.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Explicit tenant filters; no clients, providers,
                              secrets, KMS, or financial execution access.
@@ -45,6 +45,10 @@ from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistryError,
 )
 from tools.eos.saas.billing.recurring_revenue_policy import RecurringRevenuePolicyError
+from tools.eos.saas.billing.recurring_revenue_growth_policy import (
+    RecurringRevenueGrowthPolicyError,
+    derive_recurring_revenue_growth,
+)
 from tools.eos.saas.billing.commercial_receivable_registry import (
     CommercialReceivableRegistry,
     CommercialReceivableRegistryError,
@@ -225,11 +229,35 @@ class BillingIntelligenceOrchestrator:
         *,
         as_of: datetime,
         session: Any = None,
+        prior_evidence_identity: str | None = None,
     ) -> BillingIntelligenceEvidence:
-        """Load one tenant snapshot, derive frozen P1 evidence, and P2 persist it."""
+        """Load, optionally compare, and persist one tenant evidence snapshot.
+
+        ``prior_evidence_identity`` is an explicit tenant-scoped P2 identity.
+        It is never inferred, replaced by a latest lookup, or synthesized from
+        current subscriptions. The caller still owns the transaction/session.
+        """
         tenant = _tenant(tenant_id)
         if not isinstance(as_of, datetime) or as_of.tzinfo is None:
             raise BillingIntelligenceOrchestratorError("M12P3_AS_OF_INVALID")
+        prior: BillingIntelligenceEvidence | None = None
+        if prior_evidence_identity is not None:
+            try:
+                prior = BillingIntelligenceRegistry.get(
+                    tenant,
+                    prior_evidence_identity,
+                    self._evidence_collection,
+                    session=session,
+                )
+            except BillingIntelligenceRegistryError as error:
+                raise BillingIntelligenceOrchestratorError(str(error)) from error
+            if prior.recurring_revenue is None:
+                raise BillingIntelligenceOrchestratorError("M12P8_PRIOR_RECURRING_REVENUE_REQUIRED")
+            prior_recurring = prior.recurring_revenue
+            if prior.as_of is None or prior.as_of >= as_of.astimezone(timezone.utc):
+                raise BillingIntelligenceOrchestratorError("M12P8_PRIOR_AS_OF_ORDER_INVALID")
+        else:
+            prior_recurring = None
         try:
             receivables = tuple(
                 CommercialReceivableRegistry._hydrate(document)
@@ -268,11 +296,32 @@ class BillingIntelligenceOrchestrator:
                 subscriptions=subscriptions,
                 as_of=as_of,
             )
+            growth = None
+            if prior is not None:
+                if evidence.recurring_revenue is None:
+                    raise BillingIntelligenceOrchestratorError("M12P8_CURRENT_RECURRING_REVENUE_REQUIRED")
+                if prior_recurring is None:
+                    raise BillingIntelligenceOrchestratorError("M12P8_PRIOR_RECURRING_REVENUE_REQUIRED")
+                growth = derive_recurring_revenue_growth(
+                    prior=prior_recurring,
+                    current=evidence.recurring_revenue,
+                )
+                evidence = derive_billing_intelligence(
+                    tenant_id=tenant,
+                    receivables=receivables,
+                    aging=aging,
+                    dunning=dunning,
+                    subscriptions=subscriptions,
+                    as_of=as_of,
+                    recurring_revenue_growth=growth,
+                )
             return BillingIntelligenceRegistry.create(
                 evidence,
                 self._evidence_collection,
                 session=session,
             )
+        except RecurringRevenueGrowthPolicyError as error:
+            raise BillingIntelligenceOrchestratorError(str(error)) from error
         except (BillingIntelligenceError, RecurringRevenuePolicyError) as error:
             raise BillingIntelligenceOrchestratorError("M12P3_SUBSCRIPTION_CORRUPT") from error
         except BillingIntelligenceRegistryError as error:
@@ -294,7 +343,7 @@ __all__ = [
 
 
 # ARTIFACT: billing_intelligence_orchestrator.py
-# VERSION: v1.1.0-M12-P6
+# VERSION: v1.2.0-M12-P8
 # AUTHORITY BOUNDARY: Canonical composition only; P1/P2 remain sovereign owners.
 # TENANT POSTURE: Explicit tenant-only source queries; global aliases rejected.
 # FAIL-CLOSED POSTURE: Source corruption and persistence conflicts reject.

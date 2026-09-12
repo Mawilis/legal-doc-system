@@ -1,7 +1,7 @@
-"""WILSY OS M12-P6 canonical billing-intelligence evidence engine.
+"""WILSY OS M12-P8 canonical billing-intelligence evidence engine.
 
 TITLE: Canonical Billing Intelligence Evidence Engine
-VERSION: v1.1.0-M12-P6
+VERSION: v1.2.0-M12-P8
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derive deterministic, tenant-scoped billing evidence from immutable
          Python commercial objects without persistence or financial execution.
@@ -10,9 +10,8 @@ COLLABORATION / OWNERSHIP: Python EOS billing-intelligence derivation owner;
                             Node remains transport/projection and Kennel EOS
                             remains exclusive financial execution authority.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.1.0-M12-P6 binds certified P5 recurring-revenue evidence into
-           the canonical P1 fingerprint while preserving all prior source,
-           provenance, tenant, and financial firewalls.
+CHANGELOG: v1.2.0-M12-P8 binds optional explicit P7 growth evidence into the
+           canonical fingerprint while preserving P5 source and P6 firewalls.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque tenant and source identities only; no
                              credentials, network, Mongo, KMS, or providers.
@@ -48,10 +47,13 @@ from tools.eos.saas.billing.recurring_revenue_policy import (
     RecurringRevenueEvidence,
     derive_recurring_revenue,
 )
+from tools.eos.saas.billing.recurring_revenue_growth_policy import (
+    RecurringRevenueGrowthEvidence,
+)
 from tools.eos.saas.domain.subscription import SubscriptionEntity
 
 
-VERSION: Final[str] = "v1.1.0-M12-P6"
+VERSION: Final[str] = "v1.2.0-M12-P8"
 EVIDENCE_CONTRACT: Final[str] = "WILSY-BILLING-INTELLIGENCE-EVIDENCE/V2"
 UNSUPPORTED_INTELLIGENCE_OUTPUTS: Final[tuple[str, ...]] = (
     "arpu",
@@ -151,6 +153,7 @@ class BillingIntelligenceEvidence:
     unsupported_outputs: tuple[str, ...]
     recurring_revenue: RecurringRevenueEvidence | None
     evidence_fingerprint: str
+    recurring_revenue_growth: RecurringRevenueGrowthEvidence | None = None
 
     def __post_init__(self) -> None:
         _tenant(self.tenant_id)
@@ -170,6 +173,17 @@ class BillingIntelligenceEvidence:
                 raise BillingIntelligenceError("M12P1_RECURRING_REVENUE_TENANT_MISMATCH")
             if self.as_of is not None and self.recurring_revenue.as_of != self.as_of.astimezone(timezone.utc):
                 raise BillingIntelligenceError("M12P1_RECURRING_REVENUE_AS_OF_MISMATCH")
+        if self.recurring_revenue_growth is not None:
+            if not isinstance(self.recurring_revenue_growth, RecurringRevenueGrowthEvidence):
+                raise BillingIntelligenceError("M12P8_RECURRING_REVENUE_GROWTH_INVALID")
+            if self.recurring_revenue_growth.tenant_id != self.tenant_id:
+                raise BillingIntelligenceError("M12P8_RECURRING_REVENUE_GROWTH_TENANT_MISMATCH")
+            if self.as_of is None or self.recurring_revenue is None:
+                raise BillingIntelligenceError("M12P8_RECURRING_REVENUE_GROWTH_CURRENT_REQUIRED")
+            if self.recurring_revenue_growth.current_as_of != self.as_of.astimezone(timezone.utc):
+                raise BillingIntelligenceError("M12P8_RECURRING_REVENUE_GROWTH_AS_OF_MISMATCH")
+            if self.recurring_revenue_growth.current_source_fingerprint != self.recurring_revenue.fingerprint:
+                raise BillingIntelligenceError("M12P8_RECURRING_REVENUE_GROWTH_SOURCE_MISMATCH")
         if self.evidence_fingerprint != self.compute_fingerprint():
             raise BillingIntelligenceError("M12P1_FINGERPRINT_MISMATCH")
 
@@ -188,6 +202,7 @@ class BillingIntelligenceEvidence:
             "tenant_id": self.tenant_id,
             "unsupported_outputs": list(self.unsupported_outputs),
             "recurring_revenue": self.recurring_revenue.to_dict() if self.recurring_revenue is not None else None,
+            "recurring_revenue_growth": self.recurring_revenue_growth.to_dict() if self.recurring_revenue_growth is not None else None,
         }
         if include_fingerprint:
             payload["evidence_fingerprint"] = self.evidence_fingerprint
@@ -206,6 +221,7 @@ def derive_billing_intelligence(
     dunning: Sequence[CommercialReceivableDunning] = (),
     subscriptions: Sequence[SubscriptionEntity] = (),
     as_of: datetime | None = None,
+    recurring_revenue_growth: RecurringRevenueGrowthEvidence | None = None,
 ) -> BillingIntelligenceEvidence:
     """Derive tenant-scoped receivable, aging, and dunning evidence.
 
@@ -269,6 +285,7 @@ def derive_billing_intelligence(
         "tenant_id": tenant,
         "unsupported_outputs": list(UNSUPPORTED_INTELLIGENCE_OUTPUTS),
         "recurring_revenue": recurring_revenue.to_dict() if recurring_revenue is not None else None,
+        "recurring_revenue_growth": recurring_revenue_growth.to_dict() if recurring_revenue_growth is not None else None,
     }
     fingerprint = hashlib.sha3_512(_canonical_bytes(evidence_fields)).hexdigest()
     evidence = BillingIntelligenceEvidence(
@@ -285,6 +302,7 @@ def derive_billing_intelligence(
         unsupported_outputs=UNSUPPORTED_INTELLIGENCE_OUTPUTS,
         recurring_revenue=recurring_revenue,
         evidence_fingerprint=fingerprint,
+        recurring_revenue_growth=recurring_revenue_growth,
     )
     return evidence
 
@@ -300,7 +318,7 @@ __all__ = [
 
 
 # ARTIFACT: billing_intelligence_engine.py
-# VERSION: v1.1.0-M12-P6
+# VERSION: v1.2.0-M12-P8
 # AUTHORITY BOUNDARY: Pure tenant-scoped commercial evidence derivation only.
 # TENANT POSTURE: Explicit tenant required; mixed tenants fail closed.
 # FAIL-CLOSED POSTURE: Invalid, duplicate, or drifted provenance rejects.

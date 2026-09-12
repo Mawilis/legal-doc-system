@@ -1,7 +1,7 @@
-"""WILSY OS M12-P6 durable billing-intelligence evidence registry.
+"""WILSY OS M12-P8 durable billing-intelligence evidence registry.
 
 TITLE: Durable Billing Intelligence Evidence Registry
-VERSION: v1.1.0-M12-P6
+VERSION: v1.2.0-M12-P8
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist and strictly hydrate immutable M12-P1 intelligence evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/billing_intelligence_registry.py
@@ -9,9 +9,8 @@ COLLABORATION / OWNERSHIP: Python EOS persistence owner for M12-P1 evidence;
                             the P1 engine owns derivation and callers own
                             sessions and transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.1.0-M12-P6 extends the strict durable schema with certified P5
-           recurring-revenue evidence and rejects records from the prior
-           schema rather than interpreting missing values as zero.
+CHANGELOG: v1.2.0-M12-P8 extends the strict durable schema with optional P7
+           growth evidence and rejects malformed or divergent growth records.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stores opaque tenant/source evidence only; no
                              credentials, network, KMS, or provider access.
@@ -44,9 +43,13 @@ from tools.eos.saas.billing.recurring_revenue_policy import (
     RecurringRevenueEvidence,
     RecurringRevenueSource,
 )
+from tools.eos.saas.billing.recurring_revenue_growth_policy import (
+    GrowthClassification,
+    RecurringRevenueGrowthEvidence,
+)
 
 
-VERSION: Final[str] = "v1.1.0-M12-P6"
+VERSION: Final[str] = "v1.2.0-M12-P8"
 COLLECTION: Final[str] = "billing_intelligence_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _RECORD_FIELDS = frozenset(
@@ -64,6 +67,7 @@ _RECORD_FIELDS = frozenset(
         "source_provenance",
         "unsupported_outputs",
         "recurring_revenue",
+        "recurring_revenue_growth",
         "evidence_fingerprint",
     }
 )
@@ -181,6 +185,54 @@ def _hydrate_recurring(value: object, tenant: str, as_of: datetime | None) -> Re
     return result
 
 
+def _hydrate_growth(
+    value: object,
+    *,
+    tenant: str,
+    as_of: datetime | None,
+    recurring: RecurringRevenueEvidence | None,
+) -> RecurringRevenueGrowthEvidence | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise BillingIntelligenceRegistryError("M12P8_GROWTH_INVALID")
+    expected = {
+        "evidence_contract", "tenant_id", "prior_as_of", "current_as_of", "currency",
+        "prior_source_fingerprint", "current_source_fingerprint", "prior_mrr_minor",
+        "current_mrr_minor", "delta_mrr_minor", "growth_numerator", "growth_denominator",
+        "classification", "fingerprint",
+    }
+    if set(value) != expected:
+        raise BillingIntelligenceRegistryError("M12P8_GROWTH_SCHEMA_INVALID")
+    try:
+        prior_as_of = datetime.fromisoformat(value["prior_as_of"])
+        current_as_of = datetime.fromisoformat(value["current_as_of"])
+        classification = GrowthClassification(value["classification"])
+        result = RecurringRevenueGrowthEvidence(
+            tenant_id=value["tenant_id"],
+            prior_as_of=prior_as_of,
+            current_as_of=current_as_of,
+            currency=value["currency"],
+            prior_source_fingerprint=value["prior_source_fingerprint"],
+            current_source_fingerprint=value["current_source_fingerprint"],
+            prior_mrr_minor=value["prior_mrr_minor"],
+            current_mrr_minor=value["current_mrr_minor"],
+            delta_mrr_minor=value["delta_mrr_minor"],
+            growth_numerator=value["growth_numerator"],
+            growth_denominator=value["growth_denominator"],
+            classification=classification,
+            evidence_contract=value["evidence_contract"],
+            fingerprint=value["fingerprint"],
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise BillingIntelligenceRegistryError("M12P8_GROWTH_INVALID") from error
+    if result.tenant_id != tenant or as_of is None or result.current_as_of != as_of.astimezone(result.current_as_of.tzinfo):
+        raise BillingIntelligenceRegistryError("M12P8_GROWTH_AS_OF_INVALID")
+    if recurring is None or result.current_source_fingerprint != recurring.fingerprint:
+        raise BillingIntelligenceRegistryError("M12P8_GROWTH_SOURCE_INVALID")
+    return result
+
+
 def _hydrate(document: Mapping[str, Any]) -> BillingIntelligenceEvidence:
     payload = dict(document)
     payload.pop("_id", None)
@@ -219,6 +271,12 @@ def _hydrate(document: Mapping[str, Any]) -> BillingIntelligenceEvidence:
     recurring = _hydrate_recurring(payload["recurring_revenue"], tenant, as_of)
     if as_of is not None and recurring is None:
         raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_REQUIRED")
+    growth = _hydrate_growth(
+        payload["recurring_revenue_growth"],
+        tenant=tenant,
+        as_of=as_of,
+        recurring=recurring,
+    )
     try:
         value = BillingIntelligenceEvidence(
             tenant_id=tenant,
@@ -234,6 +292,7 @@ def _hydrate(document: Mapping[str, Any]) -> BillingIntelligenceEvidence:
             unsupported_outputs=tuple(unsupported),
             recurring_revenue=recurring,
             evidence_fingerprint=fingerprint,
+            recurring_revenue_growth=growth,
         )
     except Exception as error:
         raise BillingIntelligenceRegistryError("M12P2_FINGERPRINT_CORRUPT") from error
@@ -310,7 +369,7 @@ __all__ = [
 
 
 # ARTIFACT: billing_intelligence_registry.py
-# VERSION: v1.1.0-M12-P6
+# VERSION: v1.2.0-M12-P8
 # AUTHORITY BOUNDARY: Persistence and strict hydration only.
 # TENANT POSTURE: Every identity and lookup includes tenant_id.
 # FAIL-CLOSED POSTURE: Corruption and replay divergence reject.
