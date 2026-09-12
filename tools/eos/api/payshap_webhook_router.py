@@ -1,19 +1,19 @@
 """WILSY OS authenticated PayShap host-runtime ingress.
 
 TITLE: PayShap Authenticated Host-Runtime Webhook Router
-VERSION: v1.0.0-M11-HOST-PAYSHAP-ROUTER
+VERSION: v1.1.0-M11-HOST-PAYSHAP-ROUTER-RECONCILIATION
 AUTHORITY: Wilsy OS Core Governance / Kennel EOS
 EPITOME: Composes authenticated PayShap evidence into canonical Kennel execution observation without inventing execution or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/payshap_webhook_router.py
 COLLABORATION / OWNERSHIP: Kennel EOS provider-ingress / Python API composition owner.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0 establishes fail-closed PayShap command-to-attempt correlation and canonical authenticated observation composition.
+CHANGELOG: v1.1.0 delegates authenticated EXECUTED evidence to the canonical reconciliation owner with the caller transaction and existing runtime collections; v1.0.0 established fail-closed PayShap command-to-attempt correlation and canonical authenticated observation composition.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: HMAC-authenticated opaque evidence only; secrets are resolved at execution time and never persisted here.
 TENANT BOUNDARY: Signed provider tenant, durable command lineage, and durable attempt tenant must agree exactly.
 AUTHORITY BOUNDARY: HTTP composition only; provider evidence is submitted to existing Kennel authorities.
 FINANCIAL AUTHORITY BOUNDARY: Provider EXECUTED is evidence requiring reconciliation; EXECUTION != SETTLEMENT.
-TRANSACTION BOUNDARY: One caller-owned Mongo transaction encloses provider evidence and canonical observation application.
+TRANSACTION BOUNDARY: One caller-owned Mongo transaction encloses provider evidence, canonical observation, reconciliation CAS, and runtime projection.
 FAIL-CLOSED DECLARATION: Missing runtime, authentication failure, absent/ambiguous attempt correlation, and canonical-ingestion failures reject.
 """
 
@@ -48,17 +48,29 @@ from tools.eos.kennel.orchestration.authenticated_provider_observation_ingestion
     AuthenticatedProviderTransportEvidence,
     ingest_authenticated_provider_observation,
 )
+from tools.eos.kennel.orchestration.financial_execution_reconciliation import (
+    FinancialExecutionReconciliationError,
+    reconcile_and_finalize_execution,
+)
 from tools.eos.kennel.providers.payshap_contract import PayShapStatus
 from tools.eos.kennel.registry.financial_execution_attempt_registry import (
     FinancialExecutionAttemptRegistry,
 )
+from tools.eos.kennel.registry.financial_execution_command_registry import (
+    COLLECTION as _COMMANDS,
+)
+from tools.eos.kennel.registry.financial_execution_registry import (
+    COLLECTION as _AP_TRUTH,
+    FACT_COLLECTION as _FACTS,
+)
 
-VERSION = "v1.0.0-M11-HOST-PAYSHAP-ROUTER"
+VERSION = "v1.1.0-M11-HOST-PAYSHAP-ROUTER-RECONCILIATION"
 ROUTE_PATH = "/providers/payshap/webhook"
 _SIGNATURE_HEADER = "X-PayShap-Signature"
 _ATTEMPTS = "kennel_financial_execution_attempts"
 _OBSERVATIONS = "kennel_financial_execution_provider_observations"
 _PAYSHAP_EVIDENCE = "kennel_payshap_provider_evidence"
+_PLATFORM_TRUTH = "kennel_platform_billing_financial_execution_truth"
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["PayShap Provider Evidence"])
@@ -156,9 +168,9 @@ def compose_authenticated_payshap_webhook(
 ) -> PayShapWebhookHostResult:
     """Persist authenticated evidence and apply one canonical observation.
 
-    A provider EXECUTED status remains evidence requiring reconciliation under
-    the canonical observation policy; this router never force-transitions an
-    attempt to CONFIRMED_EXECUTED and never invokes settlement authority.
+    A provider EXECUTED status remains evidence until the canonical
+    reconciliation owner accepts it. This router never performs the lifecycle
+    transition itself and never invokes settlement authority.
     """
     webhook = ingest_webhook(
         payload,
@@ -227,12 +239,32 @@ def compose_authenticated_payshap_webhook(
         session=session,
         observation_collection=database[_OBSERVATIONS],
         attempt_collection=database[_ATTEMPTS],
+        command_collection=database[_COMMANDS],
+        fact_collection=database[_FACTS],
+        ap_truth_collection=database[_AP_TRUTH],
+        platform_truth_collection=database[_PLATFORM_TRUTH],
     )
-    decision = getattr(application, "decision", None)
-    reconcile = bool(
-        getattr(decision, "reconciliation_required", False)
-        or observed_status is ObservationStatus.EXECUTED
-    )
+    if observed_status is ObservationStatus.EXECUTED:
+        if not isinstance(time_evidence, FinancialExecutionTimeEvidence):
+            raise PayShapWebhookHostError(
+                "PAYSHAP_WEBHOOK_EXECUTION_TIME_EVIDENCE_REQUIRED"
+            )
+        reconcile_and_finalize_execution(
+            webhook.tenant_id,
+            attempt.execution_attempt_id,
+            command_collection=database[_COMMANDS],
+            attempt_collection=database[_ATTEMPTS],
+            observation_collection=database[_OBSERVATIONS],
+            fact_collection=database[_FACTS],
+            ap_truth_collection=database[_AP_TRUTH],
+            platform_truth_collection=database[_PLATFORM_TRUTH],
+            execution_time_evidence=time_evidence,
+            session=session,
+        )
+        reconcile = False
+    else:
+        decision = getattr(application, "decision", None)
+        reconcile = bool(getattr(decision, "reconciliation_required", False))
     return PayShapWebhookHostResult(
         provider_event_id=webhook.provider_event_id,
         provider_status=webhook.provider_status.value,
@@ -289,6 +321,11 @@ async def receive_payshap_webhook(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(error),
         ) from error
+    except FinancialExecutionReconciliationError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=error.code,
+        ) from error
     except HTTPException:
         raise
     except Exception as error:
@@ -318,7 +355,7 @@ __all__ = [
 ]
 
 # ARTIFACT: payshap_webhook_router.py
-# VERSION: v1.0.0-M11-HOST-PAYSHAP-ROUTER
+# VERSION: v1.1.0-M11-HOST-PAYSHAP-ROUTER-RECONCILIATION
 # AUTHORITY BOUNDARY: HTTP composition of authenticated provider evidence only.
 # TENANT POSTURE: Signed tenant plus durable command/attempt lineage fail closed.
 # FAIL-CLOSED POSTURE: Missing, ambiguous, malformed, or divergent correlation rejects.
