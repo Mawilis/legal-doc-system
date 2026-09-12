@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.3.0-CALENDAR-BILLING-WIRING
+    v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -25,9 +25,14 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy OS Core Engineering
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-03
+    2026-09-12
 
 CHANGELOG:
+    v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM:
+        - Adds a bounded dependency-injected, tenant-scoped read-only entity
+          seam for billing intelligence. Caller sessions are propagated and
+          this registry never owns transaction lifecycle.
+
     v1.3.0-CALENDAR-BILLING-WIRING:
         - Retires fixed 30/90/365-day period derivation from production create.
         - Derives current period exclusively from timezone-aware startDate and
@@ -156,7 +161,7 @@ from ..domain.subscription import (
 )
 
 
-VERSION = "v1.3.0-CALENDAR-BILLING-WIRING"
+VERSION = "v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -1749,6 +1754,36 @@ class SubscriptionRegistry:
         }
 
     @classmethod
+    def list_entities(
+        cls,
+        tenant_id_header: str | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
+    ) -> tuple[SubscriptionEntity, ...]:
+        """Hydrate every canonical subscription for one tenant snapshot.
+
+        This read-only seam is intentionally bounded for billing intelligence:
+        callers inject the collection and optional Mongo session, while this
+        registry applies the existing strict ``_hydrate`` contract. It never
+        starts, commits, aborts, paginates, or mutates a transaction.
+        """
+        tenant_id = _authorized_tenant(tenant_id_header)
+        source = collection if collection is not None else _collection()
+        if source is None or not hasattr(source, "find"):
+            raise SubscriptionRegistryError("SUBSCRIPTION_REGISTRY_COLLECTION_REQUIRED")
+        try:
+            try:
+                documents = source.find({"tenant_id": tenant_id}, session=session)
+            except TypeError:
+                documents = source.find({"tenant_id": tenant_id})
+            return tuple(_hydrate(document) for document in documents)
+        except SubscriptionRegistryError:
+            raise
+        except PyMongoError as error:
+            raise SubscriptionRegistryError("SUBSCRIPTION_REGISTRY_UNAVAILABLE") from error
+
+    @classmethod
     def update(
         cls,
         subscription_id: str,
@@ -2700,7 +2735,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.3.0-CALENDAR-BILLING-WIRING
+# VERSION: v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,

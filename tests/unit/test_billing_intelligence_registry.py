@@ -1,9 +1,22 @@
-"""M12-P2 direct certificate for durable billing-intelligence evidence.
+"""WILSY OS M12-P6 direct certificate for durable billing evidence.
 
-VERSION: v1.0.0-M12-P2
+TITLE: Durable Billing Intelligence Evidence Registry Certificate
+VERSION: v1.1.0-M12-P6
 AUTHORITY: Wilsy OS Core Governance
-PURPOSE: Certify strict, immutable, caller-owned persistence semantics.
+EPITOME: Certify strict P1/P5 evidence persistence, replay, and corruption
+         rejection under caller-owned resources.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_billing_intelligence_registry.py
+COLLABORATION / OWNERSHIP: Direct registry certificate; P1 owns derivation,
+                            P2 owns persistence, and callers own transactions.
+CERTIFICATION / UPDATE DATE: 2026-09-12
+CHANGELOG: v1.1.0-M12-P6 aligns this direct certificate with the V2 evidence
+           contract and recurring-revenue durable schema.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Opaque test tenants only; no secrets or providers.
+TENANT BOUNDARY: Every fixture and lookup is tenant-scoped.
+AUTHORITY BOUNDARY: Persistence certificate only; no financial execution.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
+FAIL-CLOSED DECLARATION: Schema, provenance, replay, and fingerprint drift reject.
 """
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -151,7 +164,7 @@ def test_provenance_corruption_and_unknown_version_reject() -> None:
     with pytest.raises(BillingIntelligenceRegistryError):
         BillingIntelligenceRegistry.get(TENANT, identity, collection)
     collection.documents[0]["source_provenance"] = value.to_dict()["source_provenance"]
-    collection.documents[0]["evidence_contract"] = "WILSY-BILLING-INTELLIGENCE-EVIDENCE/V2"
+    collection.documents[0]["evidence_contract"] = "WILSY-BILLING-INTELLIGENCE-EVIDENCE/V3"
     with pytest.raises(BillingIntelligenceRegistryError, match="VERSION"):
         BillingIntelligenceRegistry.get(TENANT, identity, collection)
 
@@ -208,3 +221,12 @@ def test_document_serialization_is_deterministic_and_identity_is_immutable() -> 
     BillingIntelligenceRegistry.create(first, first_collection)
     BillingIntelligenceRegistry.create(second, second_collection)
     assert first_collection.documents[0]["evidence_identity"] == second_collection.documents[0]["evidence_identity"]
+
+
+# ARTIFACT: test_billing_intelligence_registry.py
+# VERSION: v1.1.0-M12-P6
+# AUTHORITY BOUNDARY: Persistence and strict hydration certificate only.
+# TENANT POSTURE: Explicit tenant-scoped fixtures and lookups.
+# FAIL-CLOSED POSTURE: Schema, provenance, and replay divergence reject.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

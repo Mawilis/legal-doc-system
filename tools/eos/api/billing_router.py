@@ -4,12 +4,13 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE                                                                       ║
+║ VERSION:        v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS                                                                       ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; fixed mongo_client access.                  ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-12 v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS – Injects canonical tenant-scoped subscriptions into the Python intelligence orchestrator; P5 owns MRR/ARR policy. ║
 ║   2026-09-12 v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE – Removes legacy
 ║                router-owned intelligence formulas; summary/analytics remain
 ║                explicit fail-closed compatibility boundaries.                    ║
@@ -84,7 +85,7 @@ from ..saas.billing.billing_intelligence_orchestrator import (
 )
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE"
+VERSION = "v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS"
 
 _LEGACY_INTELLIGENCE_UNSUPPORTED: tuple[str, ...] = (
     "arr",
@@ -844,6 +845,7 @@ async def get_billing_intelligence_evidence(
             aging_collection=database["commercial_receivable_aging"],
             dunning_collection=database["commercial_receivable_dunning"],
             evidence_collection=database["billing_intelligence_evidence"],
+            subscription_collection=database["subscriptions"],
         )
         evidence = orchestrator.collect_and_persist(
             tenant_id,
@@ -1757,10 +1759,10 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE
+Version:         v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS
 Fixes:           Financial-truth HTTP firewall; uncertified legacy intelligence routes fail closed; canonical P1/P2 seam preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
@@ -1771,7 +1773,7 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE
+# VERSION: v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:

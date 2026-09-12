@@ -1,7 +1,7 @@
-"""WILSY OS M12-P2 durable billing-intelligence evidence registry.
+"""WILSY OS M12-P6 durable billing-intelligence evidence registry.
 
 TITLE: Durable Billing Intelligence Evidence Registry
-VERSION: v1.0.0-M12-P2
+VERSION: v1.1.0-M12-P6
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist and strictly hydrate immutable M12-P1 intelligence evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/billing_intelligence_registry.py
@@ -9,9 +9,9 @@ COLLABORATION / OWNERSHIP: Python EOS persistence owner for M12-P1 evidence;
                             the P1 engine owns derivation and callers own
                             sessions and transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M12-P2 establishes explicit collection injection,
-           tenant-scoped immutable identity, exact replay, strict hydration,
-           provenance/fingerprint verification, and caller-owned transactions.
+CHANGELOG: v1.1.0-M12-P6 extends the strict durable schema with certified P5
+           recurring-revenue evidence and rejects records from the prior
+           schema rather than interpreting missing values as zero.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stores opaque tenant/source evidence only; no
                              credentials, network, KMS, or provider access.
@@ -39,9 +39,14 @@ from tools.eos.saas.billing.billing_intelligence_engine import (
     EVIDENCE_CONTRACT,
     BillingIntelligenceEvidence,
 )
+from tools.eos.saas.billing.recurring_revenue_policy import (
+    EVIDENCE_CONTRACT as RECURRING_REVENUE_CONTRACT,
+    RecurringRevenueEvidence,
+    RecurringRevenueSource,
+)
 
 
-VERSION: Final[str] = "v1.0.0-M12-P2"
+VERSION: Final[str] = "v1.1.0-M12-P6"
 COLLECTION: Final[str] = "billing_intelligence_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _RECORD_FIELDS = frozenset(
@@ -58,6 +63,7 @@ _RECORD_FIELDS = frozenset(
         "dunning_by_stage",
         "source_provenance",
         "unsupported_outputs",
+        "recurring_revenue",
         "evidence_fingerprint",
     }
 )
@@ -119,6 +125,62 @@ def _validate_pairs(value: object, allowed: set[str], code: str) -> tuple[tuple[
     return tuple(result)
 
 
+def _hydrate_recurring(value: object, tenant: str, as_of: datetime | None) -> RecurringRevenueEvidence | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_INVALID")
+    expected = {
+        "evidence_contract", "tenant_id", "as_of", "currency",
+        "qualifying_subscription_count", "mrr_minor", "arr_minor", "sources", "fingerprint",
+    }
+    if set(value) != expected:
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_SCHEMA_INVALID")
+    raw_as_of = value["as_of"]
+    if not isinstance(raw_as_of, str):
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_INVALID")
+    try:
+        recurring_as_of = datetime.fromisoformat(raw_as_of)
+        sources_raw = value["sources"]
+        if not isinstance(sources_raw, list):
+            raise ValueError("sources")
+        sources = tuple(
+            RecurringRevenueSource(
+                subscription_id=item["subscription_id"],
+                subscription_fingerprint=item["subscription_fingerprint"],
+                plan_id=item["plan_id"],
+                plan_catalogue_version=item["plan_catalogue_version"],
+                amount_minor=item["amount_minor"],
+                billing_frequency=item["billing_frequency"],
+            )
+            for item in sources_raw
+            if isinstance(item, dict) and set(item) == {
+                "subscription_id", "subscription_fingerprint", "plan_id",
+                "plan_catalogue_version", "amount_minor", "billing_frequency",
+            }
+        )
+        if len(sources) != len(sources_raw):
+            raise ValueError("source schema")
+        result = RecurringRevenueEvidence(
+            tenant_id=value["tenant_id"],
+            as_of=recurring_as_of,
+            currency=value["currency"],
+            qualifying_subscription_count=value["qualifying_subscription_count"],
+            mrr_minor=value["mrr_minor"],
+            arr_minor=value["arr_minor"],
+            sources=sources,
+            evidence_contract=value["evidence_contract"],
+            fingerprint=value["fingerprint"],
+        )
+    except Exception as error:
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_INVALID") from error
+    if result.evidence_contract != RECURRING_REVENUE_CONTRACT or result.tenant_id != tenant:
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_INVALID")
+    if as_of is None or result.as_of != as_of.astimezone(result.as_of.tzinfo):
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_AS_OF_INVALID")
+    return result
+
+
 def _hydrate(document: Mapping[str, Any]) -> BillingIntelligenceEvidence:
     payload = dict(document)
     payload.pop("_id", None)
@@ -154,6 +216,9 @@ def _hydrate(document: Mapping[str, Any]) -> BillingIntelligenceEvidence:
     fingerprint = payload["evidence_fingerprint"]
     if not isinstance(fingerprint, str) or not _SHA3.fullmatch(fingerprint):
         raise BillingIntelligenceRegistryError("M12P2_FINGERPRINT_INVALID")
+    recurring = _hydrate_recurring(payload["recurring_revenue"], tenant, as_of)
+    if as_of is not None and recurring is None:
+        raise BillingIntelligenceRegistryError("M12P2_RECURRING_REVENUE_REQUIRED")
     try:
         value = BillingIntelligenceEvidence(
             tenant_id=tenant,
@@ -167,6 +232,7 @@ def _hydrate(document: Mapping[str, Any]) -> BillingIntelligenceEvidence:
             dunning_by_stage=dunning,
             source_provenance=provenance,
             unsupported_outputs=tuple(unsupported),
+            recurring_revenue=recurring,
             evidence_fingerprint=fingerprint,
         )
     except Exception as error:
@@ -244,7 +310,7 @@ __all__ = [
 
 
 # ARTIFACT: billing_intelligence_registry.py
-# VERSION: v1.0.0-M12-P2
+# VERSION: v1.1.0-M12-P6
 # AUTHORITY BOUNDARY: Persistence and strict hydration only.
 # TENANT POSTURE: Every identity and lookup includes tenant_id.
 # FAIL-CLOSED POSTURE: Corruption and replay divergence reject.

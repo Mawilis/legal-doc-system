@@ -1,7 +1,7 @@
-"""WILSY OS M12-P3 canonical billing-intelligence composition owner.
+"""WILSY OS M12-P6 canonical billing-intelligence composition owner.
 
 TITLE: Billing Intelligence Orchestrator
-VERSION: v1.0.0-M12-P3
+VERSION: v1.1.0-M12-P6
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Load canonical tenant evidence, invoke frozen P1 derivation, and
          persist/replay through the frozen P2 registry.
@@ -9,8 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/b
 COLLABORATION / OWNERSHIP: Python composition owner; P1 owns derivation, P2
                             owns durable evidence, and HTTP owns transport.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M12-P3 establishes explicit tenant source acquisition and
-           canonical evidence composition without metric-policy duplication.
+CHANGELOG: v1.1.0-M12-P6 adds strict tenant-scoped subscription hydration and
+           delegates recurring-revenue policy to the certified P5 owner.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Explicit tenant filters; no clients, providers,
                              secrets, KMS, or financial execution access.
@@ -31,6 +31,7 @@ import re
 from typing import Any, Iterable
 
 from tools.eos.saas.billing.billing_intelligence_engine import (
+    BillingIntelligenceError,
     BillingIntelligenceEvidence,
     derive_billing_intelligence,
 )
@@ -39,6 +40,11 @@ from tools.eos.saas.billing.billing_intelligence_registry import (
     BillingIntelligenceRegistryError,
     _canonical_identity,
 )
+from tools.eos.saas.billing.subscription_registry import (
+    SubscriptionRegistry,
+    SubscriptionRegistryError,
+)
+from tools.eos.saas.billing.recurring_revenue_policy import RecurringRevenuePolicyError
 from tools.eos.saas.billing.commercial_receivable_registry import (
     CommercialReceivableRegistry,
     CommercialReceivableRegistryError,
@@ -185,6 +191,7 @@ class BillingIntelligenceOrchestrator:
         "_aging_collection",
         "_dunning_collection",
         "_evidence_collection",
+        "_subscription_collection",
     )
 
     def __init__(
@@ -194,6 +201,7 @@ class BillingIntelligenceOrchestrator:
         aging_collection: Any,
         dunning_collection: Any,
         evidence_collection: Any,
+        subscription_collection: Any = None,
     ) -> None:
         if any(
             value is None
@@ -209,6 +217,7 @@ class BillingIntelligenceOrchestrator:
         self._aging_collection = aging_collection
         self._dunning_collection = dunning_collection
         self._evidence_collection = evidence_collection
+        self._subscription_collection = subscription_collection
 
     def collect_and_persist(
         self,
@@ -236,7 +245,19 @@ class BillingIntelligenceOrchestrator:
             _hydrate_dunning(document)
             for document in _documents(self._dunning_collection, tenant, session)
         )
-        if not receivables and not aging and not dunning:
+        try:
+            subscriptions = (
+                SubscriptionRegistry.list_entities(
+                    tenant,
+                    collection=self._subscription_collection,
+                    session=session,
+                )
+                if self._subscription_collection is not None
+                else ()
+            )
+        except SubscriptionRegistryError as error:
+            raise BillingIntelligenceOrchestratorError("M12P3_SUBSCRIPTION_CORRUPT") from error
+        if not receivables and not aging and not dunning and not subscriptions:
             raise BillingIntelligenceOrchestratorError("M12P3_SOURCE_EVIDENCE_UNAVAILABLE")
         try:
             evidence = derive_billing_intelligence(
@@ -244,6 +265,7 @@ class BillingIntelligenceOrchestrator:
                 receivables=receivables,
                 aging=aging,
                 dunning=dunning,
+                subscriptions=subscriptions,
                 as_of=as_of,
             )
             return BillingIntelligenceRegistry.create(
@@ -251,6 +273,8 @@ class BillingIntelligenceOrchestrator:
                 self._evidence_collection,
                 session=session,
             )
+        except (BillingIntelligenceError, RecurringRevenuePolicyError) as error:
+            raise BillingIntelligenceOrchestratorError("M12P3_SUBSCRIPTION_CORRUPT") from error
         except BillingIntelligenceRegistryError as error:
             raise BillingIntelligenceOrchestratorError(str(error)) from error
 
@@ -270,7 +294,7 @@ __all__ = [
 
 
 # ARTIFACT: billing_intelligence_orchestrator.py
-# VERSION: v1.0.0-M12-P3
+# VERSION: v1.1.0-M12-P6
 # AUTHORITY BOUNDARY: Canonical composition only; P1/P2 remain sovereign owners.
 # TENANT POSTURE: Explicit tenant-only source queries; global aliases rejected.
 # FAIL-CLOSED POSTURE: Source corruption and persistence conflicts reject.

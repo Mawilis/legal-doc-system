@@ -1,15 +1,18 @@
-"""M12-P2 bounded real-Mongo certificate for durable intelligence evidence.
+"""WILSY OS M12-P6 bounded real-Mongo certificate for durable intelligence.
 
 TITLE: Durable Billing Intelligence Evidence Real-Mongo Certificate
-VERSION: v1.0.0-M12-P2-RM
+VERSION: v1.1.0-M12-P6-RM
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certify actual replica-set durability, replay, corruption rejection,
-         tenant isolation, and caller-owned transaction semantics.
+EPITOME: Certify actual replica-set durability, recurring-revenue schema,
+         replay, corruption rejection, tenant isolation, and caller-owned
+         transaction semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_billing_intelligence_registry_real_mongo.py
-COLLABORATION / OWNERSHIP: M12-P2 bounded integration certificate; registry
-                            owns persistence only and caller owns transactions.
+COLLABORATION / OWNERSHIP: M12-P6 bounded integration certificate; P1/P5 own
+                            derivation, P2 owns persistence, and caller owns
+                            transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0 establishes bounded M12-P2 durable evidence certification.
+CHANGELOG: v1.1.0-M12-P6 aligns corruption assertions with the V2 evidence
+           contract and recurring-revenue durable schema.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic test tenants only.
 TENANT BOUNDARY: Every lookup and index is explicitly tenant-scoped.
@@ -148,7 +151,7 @@ def test_cross_tenant_and_all_corruption_classes_reject(mongo_context: Any) -> N
         ("evidence_fingerprint", "b" * 128),
         ("source_provenance", [["commercial_receivable", "r-1", "c" * 128]]),
         ("receivable_count", 99),
-        ("evidence_contract", "WILSY-BILLING-INTELLIGENCE-EVIDENCE/V2"),
+        ("evidence_contract", "WILSY-BILLING-INTELLIGENCE-EVIDENCE/V3"),
     ):
         collection.update_one({"tenant_id": tenant}, {"$set": {field: replacement}})
         with pytest.raises(BillingIntelligenceRegistryError):
@@ -181,3 +184,12 @@ def test_registry_persists_no_financial_authority_fields(mongo_context: Any) -> 
     assert document is not None
     for forbidden in ("execution", "settlement", "paid_state", "refund", "payment"):
         assert forbidden not in document
+
+
+# ARTIFACT: test_billing_intelligence_registry_real_mongo.py
+# VERSION: v1.1.0-M12-P6-RM
+# AUTHORITY BOUNDARY: Bounded durable evidence certificate only.
+# TENANT POSTURE: UUID-isolated tenant-scoped Mongo fixtures.
+# FAIL-CLOSED POSTURE: Replica-set, schema, and replay divergence reject.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
