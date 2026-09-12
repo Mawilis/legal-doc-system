@@ -1,5 +1,8 @@
 /**
- * File: services/standards/index.js
+ * File: services/standards/standardsService.js
+ * VERSION: v1.1.0-WILSY-STANDARDS-SERVICE
+ * AUTHORITY: Wilsy OS Core Governance
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/services/standards/standardsService.js
  * -----------------------------------------------------------------------------
  * STATUS: EPITOME | Legal Compliance & Validation Engine
  * -----------------------------------------------------------------------------
@@ -20,7 +23,64 @@ const winston = require('winston');
 
 // --- CONFIGURATION ---
 const PORT = process.env.STANDARDS_PORT || 6100;
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI   POST /validate
+function getMongoUri() {
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!mongoUri) {
+        throw new Error('MONGO_URI or MONGODB_URI is required');
+    }
+    return mongoUri;
+}
+
+// --- LOGGER ---
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
+    ),
+    transports: [new winston.transports.Console()]
+});
+
+// --- DATA MODEL: COURT RULES ---
+const ruleSchema = new mongoose.Schema({
+    courtType: { type: String, required: true, unique: true }, // e.g., 'High Court'
+    requiredFields: [String], // ['caseNumber', 'plaintiff']
+    regexPatterns: { type: Map, of: String } // { "caseNumber": "^\\d{4}/\\d{4}$" }
+});
+const Rule = mongoose.model('Rule', ruleSchema);
+
+// --- APP INIT ---
+const app = express();
+app.use(express.json());
+app.use(cors({
+    origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true
+}));
+
+// --- DATABASE & SEEDING ---
+async function seedDefaults() {
+    const count = await Rule.countDocuments();
+    if (count === 0) {
+        logger.info('🌱 [Standards] Seeding Default Court Rules...');
+        await Rule.create([
+            {
+                courtType: 'High Court',
+                requiredFields: ['title', 'caseNumber', 'plaintiff', 'serviceAddress'],
+                regexPatterns: { caseNumber: '^\\d{4}/\\d{4}$' } // 2023/1234
+            },
+            {
+                courtType: 'Magistrate Court',
+                requiredFields: ['caseNumber', 'court', 'clerkName'],
+                regexPatterns: { caseNumber: '^[A-Z]{3}-\\d{4}$' } // JHB-1234
+            }
+        ]);
+    }
+}
+
+// --- ROUTES ---
+
+/**
+ * @route   POST /validate
  * @desc    Validate a document payload against active court rules
  */
 app.post('/validate', async (req, res) => {
@@ -86,6 +146,24 @@ app.get('/rules', async (req, res) => {
 });
 
 // --- ACTIVATION ---
-app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`🧠 [Standards Service] Compliance Engine Online on Port ${PORT}`);
-});
+async function start() {
+    const mongoUri = getMongoUri();
+    await mongoose.connect(mongoUri);
+    logger.info('✅ [Standards] Connected to Rulebook DB');
+    await seedDefaults();
+
+    return app.listen(PORT, '0.0.0.0', () => {
+        logger.info(`🧠 [Standards Service] Compliance Engine Online on Port ${PORT}`);
+    });
+}
+
+if (require.main === module) {
+    start().catch(err => {
+        logger.error(`❌ [Standards] Startup failed: ${err.message}`);
+        process.exitCode = 1;
+    });
+}
+
+module.exports = { app, start };
+
+// END OF FILE — services/standards/standardsService.js
