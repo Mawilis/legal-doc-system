@@ -4,12 +4,15 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL                                                                                       ║
+║ VERSION:        v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM                                                                               ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; fixed mongo_client access.                  ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-12 v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM – Adds the delegated
+║                /billing/intelligence/evidence canonical P1/P2 evidence seam; legacy
+║                summary/analytics remain explicitly non-canonical.                         ║
 ║   2026-09-04 v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL – HTTP payment success/failure, refund, partial-payment settlement, paid-state, and paid-at mutation fail closed behind Kennel EOS. ║
 ║   2026-09-03 v1.7.1-PLAN-CATALOGUE-CONVERGENCE – /billing/plans delegates canonical catalogue truth to PlanRegistry and fails closed on catalogue errors. ║
 ║   2026-08-25 v1.7.0-DUNNING-LIFECYCLE – Persisted 3/7/10/14/21/30 lifecycle with read-only suspension and SHA3 audit proof. ║
@@ -46,7 +49,7 @@ CONSTITUTION:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status, Depends, Header, Request
+from fastapi import APIRouter, HTTPException, status, Depends, Header, Request, Query
 from typing import Any, Dict, List, Optional
 import logging
 import os
@@ -73,10 +76,14 @@ from ..saas.domain.billing import (
     TaxType,
     LineItem,
 )
-from ..saas.billing.plan_registry import PlanRegistry
+from ..saas.billing.billing_intelligence_orchestrator import (
+    BillingIntelligenceOrchestrator,
+    BillingIntelligenceOrchestratorError,
+    parse_as_of,
+)
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL"
+VERSION = "v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM"
 
 logger = logging.getLogger(__name__)
 DEBUG_MODE = os.getenv("WILSY_MODEL_DEBUG", "0") == "1"
@@ -1003,6 +1010,55 @@ async def get_billing_analytics(
             detail="Failed to retrieve billing analytics. Please try again later."
         )
 
+
+@router.get("/intelligence/evidence", response_model=Dict[str, Any])
+async def get_billing_intelligence_evidence(
+    as_of: str = Query(..., description="Explicit aware ISO-8601 evidence snapshot time"),
+    tenant_id: str = Depends(get_tenant_id),
+) -> Dict[str, Any]:
+    """Return canonical M12-P1 evidence composed and persisted through P2.
+
+    This endpoint is deliberately separate from the legacy summary/analytics
+    projections. It supplies explicit tenant scope and snapshot time, loads
+    only canonical Python evidence collections, and delegates derivation and
+    persistence to their certified owners. It creates no execution or
+    settlement truth.
+    """
+    try:
+        snapshot = parse_as_of(as_of)
+        database = _require_db()
+        orchestrator = BillingIntelligenceOrchestrator(
+            receivable_collection=database["commercial_receivables"],
+            aging_collection=database["commercial_receivable_aging"],
+            dunning_collection=database["commercial_receivable_dunning"],
+            evidence_collection=database["billing_intelligence_evidence"],
+        )
+        evidence = orchestrator.collect_and_persist(
+            tenant_id,
+            as_of=snapshot,
+        )
+        return orchestrator.response_payload(evidence)
+    except BillingIntelligenceOrchestratorError as error:
+        code = str(error)
+        if code in {
+            "M12P3_TENANT_REQUIRED",
+            "M12P3_GLOBAL_TENANT_FORBIDDEN",
+            "M12P3_AS_OF_REQUIRED",
+            "M12P3_AS_OF_INVALID",
+        }:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=code) from error
+        if "CONFLICT" in code or "CORRUPT" in code or "UNSUPPORTED" in code:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=code) from error
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=code) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        _log_error(error, "GET_BILLING_INTELLIGENCE_EVIDENCE", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Canonical billing intelligence evidence unavailable",
+        ) from error
+
 # ----------------------------------------------------------------------------
 # Plans (RESILIENT)
 # ----------------------------------------------------------------------------
@@ -1020,6 +1076,11 @@ async def get_billing_plans(
     """
 
     try:
+        # PlanRegistry opens its configured catalogue client at import time;
+        # defer that unrelated catalogue dependency so billing composition can
+        # mount the canonical intelligence seam without network side effects.
+        from ..saas.billing.plan_registry import PlanRegistry
+
         registry_tenant = (
             None
             if tenant_id
@@ -1884,10 +1945,10 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL
+Version:         v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM
 Fixes:           Financial-truth HTTP firewall; caller payment execution/refund/settlement mutation denied.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
@@ -1898,7 +1959,7 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL
+# VERSION: v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:
