@@ -4,12 +4,16 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH                                                                             ║
+║ VERSION:        v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP                                                                             ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
-║ EPITOME:        Uses global MongoDB client from billing_registry; fixed mongo_client access.                  ║
+║ EPITOME:        Uses global MongoDB client from billing_registry; composes certified billing intelligence and ║
+║                 WILSY AI capacity evidence through caller-owned transactions.                                 ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-13 v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP – Adds the authorized own-tenant WILSY AI usage-capacity    ║
+║                evidence endpoint over the canonical P4/P6B/P6A/P6C chain; HTTP owns only transport and        ║
+║                transaction lifecycle.                                                                          ║
 ║   2026-09-12 v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH – Accepts an explicit prior evidence identity for P7 growth; no historical inference. ║
 ║   2026-09-12 v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS – Injects canonical tenant-scoped subscriptions into the Python intelligence orchestrator; P5 owns MRR/ARR policy. ║
 ║   2026-09-12 v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE – Removes legacy
@@ -32,14 +36,17 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/billing_router.py
 
 TENANT BOUNDARY:
-    X-Tenant-Id remains requested billing scope only. This transport layer does
-    not create tenant membership, commercial authority, payment execution
-    authority, or settlement authority.
+    Legacy X-Tenant-Id remains requested billing scope only. The WILSY AI
+    capacity evidence endpoint accepts tenant scope only from the shared
+    TenantAuthorizationContext after canonical own-tenant authorization.
+    This transport layer does not create tenant membership, commercial
+    authority, payment execution authority, or settlement authority.
 
 AUTHORITY BOUNDARY:
     This router is Python HTTP transport/composition over sovereign Python EOS
-    business owners. Caller payloads cannot manufacture provider execution or
-    settlement truth.
+    business owners. The WILSY AI capacity route delegates identity, bounded
+    observation retrieval, and capacity derivation without duplicating truth.
+    Caller payloads cannot manufacture provider execution or settlement truth.
 
 FINANCIAL AUTHORITY BOUNDARY:
     Kennel EOS exclusively owns financial execution truth. HTTP callers cannot
@@ -84,9 +91,29 @@ from ..saas.billing.billing_intelligence_orchestrator import (
     BillingIntelligenceOrchestratorError,
     parse_as_of,
 )
+from ..saas.billing.wilsy_ai_entitlement_registry import COLLECTION as WILSY_AI_ENTITLEMENT_COLLECTION
+from ..saas.billing.wilsy_ai_usage_capacity import WilsyAIUsageCapacityError
+from ..saas.billing.wilsy_ai_usage_capacity_orchestrator import (
+    WilsyAIUsageCapacityOrchestrator,
+    WilsyAIUsageCapacityOrchestratorError,
+)
+from ..saas.billing.wilsy_ai_usage_observation_registry import (
+    COLLECTION as WILSY_AI_USAGE_OBSERVATION_COLLECTION,
+    WilsyAIUsageObservationRegistryError,
+)
+from ..saas.billing.wilsy_ai_entitlement_registry import WilsyAIEntitlementRegistryError
+from tools.eos.api.tenant_authorization_http import (
+    RequireTenantAuthorization,
+    TenantAuthorizationContext,
+)
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH"
+VERSION = "v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP"
+
+_WILSY_AI_CAPACITY_READ_AUTHORIZATION = RequireTenantAuthorization(
+    "wilsy_ai:usage_capacity:read",
+    "wilsy_ai_usage_capacity_read",
+)
 
 _LEGACY_INTELLIGENCE_UNSUPPORTED: tuple[str, ...] = (
     "arr",
@@ -219,6 +246,64 @@ def get_tenant_id(x_tenant_id: str = Header(...)) -> str:
     if not x_tenant_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="X-Tenant-Id header required")
     return x_tenant_id
+
+
+def _parse_wilsy_ai_capacity_as_of(value: object) -> datetime:
+    """Parse one explicit aware UTC snapshot for the P6D transport seam."""
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, str) and value and value == value.strip():
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise WilsyAIUsageCapacityOrchestratorError(
+                "M13P6C_AS_OF_INVALID"
+            ) from error
+    else:
+        raise WilsyAIUsageCapacityOrchestratorError("M13P6C_AS_OF_INVALID")
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise WilsyAIUsageCapacityOrchestratorError("M13P6C_AS_OF_INVALID")
+    return parsed.astimezone(timezone.utc)
+
+
+def _raise_wilsy_ai_capacity_http_failure(
+    error: Exception,
+    tenant_id: str,
+) -> NoReturn:
+    """Translate governed P4/P6B/P6A/P6C failures without fabricating success."""
+    code = str(error)
+    if code in {
+        "M13P6C_AS_OF_INVALID",
+        "M13P6C_ENTITLEMENT_ID_REQUIRED",
+        "M13P6C_TENANT_REQUIRED",
+        "M13P6C_TENANT_FORBIDDEN",
+        "M13P6B_INPUT_INVALID",
+        "M13P6A_AS_OF_INVALID",
+    }:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=code) from error
+    if code == "M13P4_ENTITLEMENT_NOT_FOUND":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=code) from error
+    if "PERSISTENCE_UNAVAILABLE" in code or "TRANSACTION_REQUIRED" in code:
+        _log_error(error, "GET_WILSY_AI_USAGE_CAPACITY_EVIDENCE", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WILSY AI usage-capacity evidence unavailable",
+        ) from error
+    if (
+        "CORRUPT" in code
+        or "CONFLICT" in code
+        or "DUPLICATE" in code
+        or "EVIDENCE_REQUIRED" in code
+        or "NOT_ACTIVE" in code
+        or "BINDING" in code
+        or "INVALID" in code
+    ):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=code) from error
+    _log_error(error, "GET_WILSY_AI_USAGE_CAPACITY_EVIDENCE", tenant_id)
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="WILSY AI usage-capacity evidence unavailable",
+    ) from error
 
 # ─── Router ──────────────────────────────────────────────────────────────────
 router = APIRouter(prefix="/billing", tags=["Billing"])
@@ -878,6 +963,80 @@ async def get_billing_intelligence_evidence(
             detail="Canonical billing intelligence evidence unavailable",
         ) from error
 
+
+@router.get("/wilsy-ai/usage-capacity/evidence", response_model=Dict[str, Any])
+async def get_wilsy_ai_usage_capacity_evidence(
+    entitlement_id: str = Query(
+        ...,
+        description="Explicit tenant-scoped entitlement locator",
+    ),
+    as_of: str = Query(
+        ...,
+        description="Explicit aware ISO-8601 capacity snapshot time",
+    ),
+    authorization: TenantAuthorizationContext = Depends(
+        _WILSY_AI_CAPACITY_READ_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Return canonical P6A capacity evidence for the authorized own tenant.
+
+    Tenant scope is taken exclusively from ``TenantAuthorizationContext``.
+    The router composes P6C from the exact P4 and P6B collections, owns one
+    caller-created session and transaction, and returns P6A's serialization
+    unchanged.  It performs no entitlement, usage, quota, commercial, or
+    financial derivation of its own.
+    """
+    tenant_id = authorization.tenant_id
+    try:
+        if (
+            not isinstance(entitlement_id, str)
+            or not entitlement_id
+            or entitlement_id != entitlement_id.strip()
+        ):
+            raise WilsyAIUsageCapacityOrchestratorError(
+                "M13P6C_ENTITLEMENT_ID_REQUIRED"
+            )
+        snapshot = _parse_wilsy_ai_capacity_as_of(as_of)
+        database = _require_db()
+        live_client = _require_mongo_client()
+        orchestrator = WilsyAIUsageCapacityOrchestrator.from_collections(
+            entitlement_collection=database[WILSY_AI_ENTITLEMENT_COLLECTION],
+            observation_collection=database[WILSY_AI_USAGE_OBSERVATION_COLLECTION],
+        )
+        with live_client.start_session() as session:
+            session.start_transaction()
+            try:
+                capacity = orchestrator.derive_capacity(
+                    tenant_id=tenant_id,
+                    entitlement_id=entitlement_id,
+                    as_of=snapshot,
+                    session=session,
+                )
+                session.commit_transaction()
+            except BaseException:
+                active = getattr(session, "in_transaction", False)
+                if callable(active):
+                    active = active()
+                if active is True:
+                    session.abort_transaction()
+                raise
+        return capacity.to_dict()
+    except HTTPException:
+        raise
+    except (
+        WilsyAIUsageCapacityOrchestratorError,
+        WilsyAIEntitlementRegistryError,
+        WilsyAIUsageObservationRegistryError,
+        WilsyAIUsageCapacityError,
+    ) as error:
+        _raise_wilsy_ai_capacity_http_failure(error, tenant_id)
+    except Exception as error:
+        _log_error(error, "GET_WILSY_AI_USAGE_CAPACITY_EVIDENCE", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WILSY AI usage-capacity evidence unavailable",
+        ) from error
+
 # ----------------------------------------------------------------------------
 # Plans (RESILIENT)
 # ----------------------------------------------------------------------------
@@ -974,7 +1133,7 @@ async def get_billing_plans(
         ) from exc
 
 # ----------------------------------------------------------------------------
-# Credit Scores (placeholder)
+# Credit Scores (legacy compatibility boundary)
 # ----------------------------------------------------------------------------
 @router.get("/credit-scores", response_model=Dict[str, Any])
 async def get_billing_credit_scores(
@@ -1764,11 +1923,11 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH
-Fixes:           Financial-truth HTTP firewall; uncertified legacy intelligence routes fail closed; canonical P1/P2 seam preserved.
+Version:         v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP
+Fixes:           Financial-truth HTTP firewall; canonical P1/P2 intelligence and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
 ════════════════════════════════════════════════════════════════════════════════
@@ -1778,7 +1937,7 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH
+# VERSION: v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:

@@ -1,14 +1,19 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
+VERSION: v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
-least-privilege subscription/plan-catalogue grants and dedicated inbound
+least-privilege subscription/plan-catalogue grants, read-only WILSY AI
+usage-capacity evidence access, and dedicated inbound
 merchant-configuration/provider-policy administration without creating current
 possession authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-09.
 CHANGELOG:
+    2026-09-13 v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS grants the
+    read-only WILSY AI usage-capacity evidence permission exactly to
+    ENTERPRISE_ADMIN and AUDITOR; no assignment, cross-tenant, quota,
+    commercial, or financial authority is introduced.
     2026-09-10 v1.10.0-M11-R8-R3B-P8-P3D-P4A adds exactly four
     credential-security permissions to the existing INBOUND_PROVIDER_SECURITY_ADMIN;
     no new role and no unrelated grant changes.
@@ -38,13 +43,15 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Contains no credentials, principal records,
 memberships or runtime secrets. A role definition never proves possession.
 TENANT BOUNDARY: Current principal/tenant possession requires governed
-RoleAssignmentAuthority after ACTIVE tenant membership admission.
+RoleAssignmentAuthority after ACTIVE tenant membership admission; WILSY AI
+usage-capacity evidence is read-only and remains own-tenant scoped.
 AUTHORITY BOUNDARY: Owns only deterministic role-to-permission policy.
-Authentication, membership, role assignment and final authorization remain
-separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue management are
-commercial lifecycle policy only and cannot authorize, release, execute,
-collect, or settle payment. Kennel EOS remains exclusive.
+Authentication, membership, role assignment, WILSY AI capacity derivation and
+final authorization remain separate authorities.
+FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue management and
+WILSY AI usage-capacity evidence reads are non-financial policy capabilities;
+they cannot authorize, release, execute, collect, or settle payment. Kennel EOS
+remains exclusive.
 """
 
 from __future__ import annotations
@@ -52,7 +59,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.10.0-M11-R8-R3B-P8-P3D-P4A"
+VERSION = "v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -77,6 +84,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "subscription:manage",
         "plan:read",
         "plan:manage",
+        "wilsy_ai:usage_capacity:read",
         "platform_billing:release",
         "tenant:business_role:read",
         "tenant:business_role:write",
@@ -91,6 +99,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant:role_assignment:read",
         "subscription:read",
         "plan:read",
+        "wilsy_ai:usage_capacity:read",
         "tenant:business_role:read",
     ],
     "SERVICE_WORKER": [
@@ -179,9 +188,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
+# VERSION: v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; WILSY AI capacity read remains own-tenant scoped
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,11 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT
+VERSION: v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
-EPITOME: Proves immutable tenant eligibility and non-authority boundaries.
+EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity read
+eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-09.
-CHANGELOG: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four distinct
+CERTIFICATION/UPDATE DATE: 2026-09-13.
+CHANGELOG: 2026-09-13 v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
+certifies own-tenant WILSY AI usage-capacity read eligibility for exactly the
+four general tenant business roles and preserves specialized-role denial.
+v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four distinct
 credential-security operations on the existing security-admin business role.
 v1.4.0-M11-R8-R3B-P8-P3B-I2-R3-CERT certifies the dedicated
 merchant-configuration remediation operation on the existing security role.
@@ -16,15 +20,17 @@ v1.2.0-M11-R8-R3B-P6A-CERT certifies the explicit inbound
 collection authorization operation and dedicated tenant business-role eligibility.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: No network, persistence, or sensitive data.
-TENANT BOUNDARY: Policy facts do not prove membership or scope.
+TENANT BOUNDARY: Policy facts do not prove membership or scope; WILSY AI
+capacity-read eligibility remains own-tenant and separately composed.
 AUTHORITY BOUNDARY: Tests do not authorize or mutate.
-FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
+FINANCIAL AUTHORITY BOUNDARY: Capacity-read eligibility is non-financial;
+Kennel EOS remains exclusive.
 """
 from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.8.0-M11-R8-R3B-P8-P3D-P4A"
+    assert VERSION == "v1.9.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -127,6 +133,21 @@ def test_credential_security_operation_vocabulary_is_four_way_and_least_authorit
         "cross_tenant",
     })
 
+
+def test_wilsy_ai_capacity_read_eligibility_is_general_roles_only() -> None:
+    operation = "wilsy_ai_usage_capacity_read"
+    general_roles = {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor"}
+    assert operation in OPERATIONS
+    assert {role for role in TENANT_ROLES if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == general_roles
+    assert all(tenant_role_operation_eligibility(role, operation) == DENY for role in TENANT_ROLES - general_roles)
+    assert requires_system_authority(operation) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+    for role in ("unknown", "TENANT_OWNER", " tenant_owner", "tenant_owner ", None, 123):
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    for malformed in ("wilsy_ai_usage_capacity", "wilsy_ai_usage_capacity_read ", " wilsy_ai_usage_capacity_read", "WILSY_AI_USAGE_CAPACITY_READ", "wilsy_ai:*", None, 123):
+        assert all(tenant_role_operation_eligibility(role, malformed) == DENY for role in TENANT_ROLES)
+    assert requires_system_authority("wilsy_ai_usage_capacity") is SystemAuthorityClassification.UNKNOWN
+
 def test_profile_policy_is_bounded_and_disjoint() -> None:
     assert allowed_profile_mutation_fields("tenant_owner") == PROFILE_MUTABLE_FIELDS_V1
     assert allowed_profile_mutation_fields("tenant_admin") == PROFILE_MUTABLE_FIELDS_V1
@@ -164,9 +185,9 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT
+# VERSION: v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
-# TENANT POSTURE: no membership or tenant authority is granted
+# TENANT POSTURE: WILSY AI capacity-read eligibility remains policy-only; no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
