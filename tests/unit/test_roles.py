@@ -1,13 +1,17 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS-CERT
+VERSION: v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
-WILSY AI usage-capacity read permission grants, deterministic expansion,
+WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-13 v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT
+    certifies the exact billing-intelligence evidence read grant for
+    ENTERPRISE_ADMIN/AUDITOR, its reverse lookup, non-bypass exclusions, and
+    malformed alias rejection.
     2026-09-13 v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS-CERT certifies
     the exact own-tenant WILSY AI usage-capacity read grant for
     ENTERPRISE_ADMIN/AUDITOR, its reverse lookup, non-bypass exclusions, and
@@ -53,9 +57,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS"
+    assert POLICY_VERSION == "v1.12.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS"
 
-VERSION = "v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS-CERT"
+VERSION = "v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -104,6 +108,7 @@ TENANT_PERMISSIONS = {
     "subscription:manage",
     "plan:read",
     "plan:manage",
+    "billing_intelligence:evidence:read",
     "inbound_collection:authorization:create",
     "inbound_merchant_configuration:register",
     "inbound_merchant_configuration:lifecycle",
@@ -122,8 +127,8 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write"]
-    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "tenant:business_role:read"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write"]
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read"]
 
 
 
@@ -189,6 +194,7 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("plan:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
         ("wilsy_ai:usage_capacity:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("billing_intelligence:evidence:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
         ("inbound_merchant_configuration:register", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
@@ -250,6 +256,13 @@ def test_tenant_permission_reverse_lookup_is_exact(
         " wilsy_ai:usage_capacity:read",
         "wilsy_ai:usage_capacity:read ",
         "wilsy_ai:usage_capacity:READ",
+        "billing_intelligence:*",
+        "billing_intelligence:evidence:*",
+        "BILLING_INTELLIGENCE:EVIDENCE:READ",
+        " billing_intelligence:evidence:read",
+        "billing_intelligence:evidence:read ",
+        "billing_intelligence:evidence:READ",
+        "billing_intelligence:evidence",
     ),
 )
 def test_forbidden_unknown_partial_and_wildcard_like_permissions_never_grant(
@@ -285,6 +298,20 @@ def test_wilsy_ai_capacity_read_is_granted_only_to_approved_roles() -> None:
         "AUDITOR",
         "ENTERPRISE_ADMIN",
     )
+    for role in ROLE_PERMISSIONS_MAP:
+        if role not in {"AUDITOR", "ENTERPRISE_ADMIN"}:
+            assert permission not in ROLE_PERMISSIONS_MAP[role]
+
+
+def test_billing_intelligence_evidence_read_is_granted_only_to_approved_roles() -> None:
+    """Billing-intelligence evidence read is limited to two static roles."""
+    permission = "billing_intelligence:evidence:read"
+    assert get_roles_granting_permission(permission) == (
+        "AUDITOR",
+        "ENTERPRISE_ADMIN",
+    )
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].count(permission) == 1
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"].count(permission) == 1
     for role in ROLE_PERMISSIONS_MAP:
         if role not in {"AUDITOR", "ENTERPRISE_ADMIN"}:
             assert permission not in ROLE_PERMISSIONS_MAP[role]
@@ -365,9 +392,9 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS-CERT
+# VERSION: v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity and billing-intelligence evidence reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

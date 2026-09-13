@@ -4,12 +4,13 @@
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.1.1-KENNEL-PHASE4
+ * Version:        v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Operator AI dock. Uses sovereign `api` service exclusively.
  *                 Kennel health and registry are fetched via `/kernel` and
- *                 `/source-registry/health`. Assistant replies are generated via
- *                 backend `POST /api/ai/operator` – Phase 4 complete.
+ *                 `/source-registry/health`; canonical billing-intelligence
+ *                 evidence is fetched as a separate read-only projection.
+ *                 Assistant replies are generated via backend `POST /api/ai/operator`.
  * Classification: Production Artifact — Institutional Contract
  *
  * Contributors:
@@ -17,6 +18,10 @@
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
+ *   2026-09-13 v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE — Added optional
+ *     canonical billing-intelligence evidence projection with explicit UTC
+ *     snapshot request and explicit operator-context propagation; no client
+ *     billing derivation or authorization inference.
  *   2026-08-06 v4.1.1-KENNEL-PHASE4 — Refined History Tab: Integrated New Thread & Sync 
  *     actions using dedicated CSS classes, achieving 10/10 UX parity.
  *   2026-08-06 v4.1.0-KENNEL-PHASE4 — Updated History Tab: Added manual "New Thread" and 
@@ -30,9 +35,10 @@
  *               suggestion + history engines
  *   Downstream: App shell, Boardroom, Founder chrome
  *   Kennel:     GET /api/kernel (health) + GET /source-registry/health (optional)
+ *               GET /billing/intelligence/evidence (optional canonical evidence)
  *               POST /api/ai/operator (Phase 4)
  *
- * Certification Seal: PRODUCTION_READY_v4.1.1-KENNEL-PHASE4
+ * Certification Seal: PRODUCTION_READY_v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -192,6 +198,29 @@ export function WilsyOSIntelligenceDock() {
       },
     });
 
+    let billingIntelligenceEvidence;
+    try {
+      // `as_of` is only the requested evidence snapshot boundary. The
+      // server remains sovereign for tenant authorization, observations,
+      // aggregation, fingerprints, and unsupported-output declarations.
+      const asOf = new Date().toISOString();
+      const billingRes = await api.get('/billing/intelligence/evidence', {
+        params: { as_of: asOf },
+        timeout: 8000,
+      });
+      if (
+        billingRes?.status === 200
+        && billingRes?.data
+        && typeof billingRes.data === 'object'
+      ) {
+        // Preserve the canonical server payload unchanged; no client
+        // normalization, recomputation, or authorization inference.
+        billingIntelligenceEvidence = billingRes.data;
+      }
+    } catch {
+      // Optional billing evidence is fail-quiet; never fabricate billing facts.
+    }
+
     try {
       // Kennel source of truth – public health probe on BFF
       const kernelRes = await api.get('/kernel', { timeout: 8000 });
@@ -210,22 +239,28 @@ export function WilsyOSIntelligenceDock() {
         // optional surface – quiet
       }
 
-      setDockContext(
-        buildWilsyAIProductivityCopy({
-          ...registry,
-          result: live ? 'WILSY_AI_SOVEREIGN_CONTEXT_RESOLVED' : registry.result,
-          kennel: kernel,
-          bridge: kernel.bridge || registry.bridge,
-          workspace: {
-            ...(registry.workspace || {}),
-            operatingRole: authUser?.role || registry.workspace?.operatingRole || 'Founder & Architect',
-            tenantId: activeTenant?.tenantId || activeTenant?._id || registry.workspace?.tenantId || 'MASTER',
-          },
-        })
-      );
+      const normalizedDockContext = buildWilsyAIProductivityCopy({
+        ...registry,
+        result: live ? 'WILSY_AI_SOVEREIGN_CONTEXT_RESOLVED' : registry.result,
+        kennel: kernel,
+        bridge: kernel.bridge || registry.bridge,
+        workspace: {
+          ...(registry.workspace || {}),
+          operatingRole: authUser?.role || registry.workspace?.operatingRole || 'Founder & Architect',
+          tenantId: activeTenant?.tenantId || activeTenant?._id || registry.workspace?.tenantId || 'MASTER',
+        },
+      });
+      if (billingIntelligenceEvidence) {
+        normalizedDockContext.billingIntelligenceEvidence = billingIntelligenceEvidence;
+      }
+      setDockContext(normalizedDockContext);
     } catch (err) {
       // Fallback when kernel is unreachable
-      setDockContext(fallback);
+      setDockContext(
+        billingIntelligenceEvidence
+          ? { ...fallback, billingIntelligenceEvidence }
+          : fallback
+      );
       setKennelPosture('SOURCE_SILENT');
       // Log silently in production; in dev we can show a warning
       if (import.meta.env.DEV) {
@@ -348,10 +383,14 @@ export function WilsyOSIntelligenceDock() {
 
       try {
         // --- Phase 4: Backend call to /api/ai/operator ---
+        const { billingIntelligenceEvidence, ...operatorDockContext } = dockContext || {};
         const requestBody = {
           prompt: text,
           context: {
-            ...dockContext,
+            ...operatorDockContext,
+            ...(billingIntelligenceEvidence
+              ? { canonicalBillingIntelligenceEvidence: billingIntelligenceEvidence }
+              : {}),
             threadId,
             history: activeThread?.messages || [],
           },
@@ -666,11 +705,13 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.1.1-KENNEL-PHASE4
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE
  * ═══════════════════════════════════════════════════════════════════════════════
  * Phase 4 complete: local engine replaced with backend POST /api/ai/operator.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
  * Phase 4.1.1 complete: CSS classes for action buttons formally integrated.
+ * M14-P7 complete: optional billing-intelligence evidence remains a separate
+ * server-returned canonical projection and is explicitly named in operator context.
  * The dock now uses the sovereign Kennel for all intelligence generation.
  * Phase 5 next: move conversation history to server (tenant‑scoped).
  * ═══════════════════════════════════════════════════════════════════════════════

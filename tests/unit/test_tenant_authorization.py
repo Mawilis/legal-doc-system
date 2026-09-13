@@ -1,11 +1,17 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT
+VERSION: v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
-EPITOME: Proves migrated tenant permission grants remain conjunctive with principal, membership, business-role, and durable final-role truth.
+EPITOME: Proves migrated tenant permission grants, including WILSY AI
+capacity and billing-intelligence evidence reads, remain conjunctive with
+principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-09.
-CHANGELOG: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four exact
+CERTIFICATION/UPDATE DATE: 2026-09-13.
+CHANGELOG: 2026-09-13 v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT
+certifies the exact billing-intelligence evidence-read binding alongside the
+existing WILSY AI capacity binding, including full current-truth conjunctions
+and fail-closed malformed/crossed pairs; no new authority is introduced.
+v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four exact
 credential-security operation-to-permission bindings and least-authority
 role denials. No decision schema or replay semantics changed.
 v1.4.0-M11-R8-R3B-P8-P3B-I2-R3-CERT certifies the explicit
@@ -18,7 +24,7 @@ v1.2.0-M11-R8-R3B-P6A-CERT certifies the exact inbound
 collection authorization-request composition while preserving fail-closed gate precedence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Deterministic resolve-only readers; projected transport authority cannot grant; mutation tripwires remain armed.
-TENANT BOUNDARY: Exact principal and tenant scope, ACTIVE membership, one eligible tenant business role, and an ACTIVE granting authorization role are conjunctively required.
+TENANT BOUNDARY: Exact principal and tenant scope, ACTIVE membership, one eligible tenant business role, and an ACTIVE granting authorization role are conjunctively required for every certified binding, including own-tenant evidence reads.
 AUTHORITY BOUNDARY: Certifies the frozen composition against migrated role-definition policy; tests do not authorize by themselves, wire routes, or own persistence.
 FINANCIAL AUTHORITY BOUNDARY: Financial execution remains prohibited; Kennel EOS remains exclusive.
 """
@@ -36,6 +42,7 @@ from tools.eos.auth.principal_authority_repository import (
     PrincipalAuthorityRepositoryError,
 )
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import (
     RoleAssignmentNotFoundError,
@@ -52,7 +59,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT"
+VERSION = "v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -677,6 +684,195 @@ def test_permission_operation_binding_remains_exact() -> None:
     assert assignments.calls == []
 
 
+def test_m14_evidence_bindings_are_exact_and_unique() -> None:
+    """Both evidence operations resolve only through their immutable exact pairs."""
+
+    assert ta.VERSION == "v1.9.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING"
+    assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
+        "wilsy_ai:usage_capacity:read"
+    )
+    assert ta._BINDINGS["billing_intelligence_evidence_read"] == (
+        "billing_intelligence:evidence:read"
+    )
+    assert list(ta._BINDINGS).count("wilsy_ai_usage_capacity_read") == 1
+    assert list(ta._BINDINGS).count("billing_intelligence_evidence_read") == 1
+
+
+def test_billing_intelligence_permission_metadata_is_canonical_tenant_read() -> None:
+    """The bound permission retains its non-financial own-tenant metadata contract."""
+
+    metadata = permission_metadata("billing_intelligence:evidence:read")
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.business_capability == (
+        "read own-tenant canonical billing-intelligence evidence"
+    )
+    assert metadata.tenant_membership_required is True
+    assert metadata.system_assignment_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_owner", "ENTERPRISE_ADMIN"),
+        ("tenant_admin", "ENTERPRISE_ADMIN"),
+        ("tenant_manager", "ENTERPRISE_ADMIN"),
+        ("tenant_auditor", "AUDITOR"),
+    ),
+)
+def test_billing_intelligence_read_requires_full_current_truth(
+    business_role: str, authorization_role: str
+) -> None:
+    """The billing evidence read succeeds only with every existing authority conjunct."""
+
+    result = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+def test_wilsy_ai_capacity_binding_remains_authorized_through_current_truth() -> None:
+    """The pre-existing M13 WILSY AI binding remains a normal conjunctive decision."""
+
+    result = _decision(
+        permission_id="wilsy_ai:usage_capacity:read",
+        operation="wilsy_ai_usage_capacity_read",
+        business_repository=_business("tenant_auditor"),
+        assignment_repository=_assignments("AUDITOR"),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_auditor",
+        "AUDITOR",
+    )
+
+
+@pytest.mark.parametrize(
+    ("permission_id", "operation"),
+    (
+        ("billing_intelligence:evidence:read", "wilsy_ai_usage_capacity_read"),
+        ("wilsy_ai:usage_capacity:read", "billing_intelligence_evidence_read"),
+        ("billing_intelligence:evidence:read", "billing_intelligence_evidence"),
+        ("billing_intelligence:evidence:read", "BILLING_INTELLIGENCE_EVIDENCE_READ"),
+        ("billing_intelligence:evidence:read", " billing_intelligence_evidence_read"),
+        ("billing_intelligence:evidence:read", "billing_intelligence_evidence_read "),
+        ("billing_intelligence:evidence:READ", "billing_intelligence_evidence_read"),
+        ("billing_intelligence:evidence:read ", "billing_intelligence_evidence_read"),
+        ("billing_intelligence:*", "billing_intelligence_evidence_read"),
+    ),
+)
+def test_m14_evidence_binding_cross_pairs_and_aliases_fail_closed(
+    permission_id: str, operation: str
+) -> None:
+    """Crossed, unknown, case, whitespace, and wildcard forms stop before grants."""
+
+    assignments = _assignments("ENTERPRISE_ADMIN", "AUDITOR")
+    result = _decision(
+        permission_id=permission_id,
+        operation=operation,
+        business_repository=_business("tenant_owner"),
+        assignment_repository=assignments,
+    )
+    assert result.authorized is False
+    assert result.reason in {
+        TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH,
+        TenantAuthorizationReason.PERMISSION_UNKNOWN,
+        TenantAuthorizationReason.INVALID_INPUT,
+    }
+    assert assignments.calls == []
+
+
+@pytest.mark.parametrize(
+    "authorization_role",
+    (
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+        "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN",
+        "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN",
+        "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+    ),
+)
+def test_billing_intelligence_read_rejects_unrelated_assignments(
+    authorization_role: str,
+) -> None:
+    """Specialized or platform roles cannot cross-grant billing evidence reads."""
+
+    result = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        business_repository=_business("tenant_owner"),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+
+def test_billing_intelligence_read_missing_inactive_and_wrong_assignments_deny() -> None:
+    """Eligibility alone, inactive grants, and wrong scope never authorize."""
+
+    missing = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        business_repository=_business("tenant_admin"),
+        assignment_repository=_assignments(),
+    )
+    assert missing.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    inactive = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        business_repository=_business("tenant_admin"),
+        assignment_repository=_assignments(revoked_roles=("ENTERPRISE_ADMIN",)),
+    )
+    assert inactive.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    wrong_scope = _AssignmentReader(
+        {("other", _TENANT, "ENTERPRISE_ADMIN"): _StatusRecord(RoleAssignmentStatus.ACTIVE)}
+    )
+    wrong = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        business_repository=_business("tenant_admin"),
+        assignment_repository=wrong_scope,
+    )
+    assert wrong.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    inactive_principal = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        principal_repository=_principal(status=PrincipalStatus.SUSPENDED),
+        business_repository=_business("tenant_admin"),
+        assignment_repository=_assignments("ENTERPRISE_ADMIN"),
+    )
+    assert inactive_principal.reason is TenantAuthorizationReason.PRINCIPAL_INACTIVE
+
+    inactive_membership = _decision(
+        permission_id="billing_intelligence:evidence:read",
+        operation="billing_intelligence_evidence_read",
+        membership_repository=_membership(status=TenantMembershipStatus.SUSPENDED),
+        business_repository=_business("tenant_admin"),
+        assignment_repository=_assignments("ENTERPRISE_ADMIN"),
+    )
+    assert inactive_membership.reason is TenantAuthorizationReason.MEMBERSHIP_INACTIVE
+
+
 def test_inbound_collection_authorization_composition_is_exact_and_opaque() -> None:
     """Current principal, membership, business role, and dedicated grant compose exactly."""
     result = _decision(
@@ -997,6 +1193,8 @@ def test_operation_binding_is_immutable() -> None:
     assert list(ta._BINDINGS).count("inbound_collection_authorization_create") == 1
     with pytest.raises(TypeError):
         cast(Any, ta._BINDINGS)["profile_read"] = "tenant:profile:write"
+    with pytest.raises(TypeError):
+        cast(Any, ta._BINDINGS)["billing_intelligence_evidence_read"] = "tenant:profile:read"
 
 
 def test_transport_or_caller_projection_cannot_enter_composition() -> None:
@@ -1065,14 +1263,22 @@ def test_authorization_is_read_only_across_success_denial_and_financial_paths() 
 # 26-28 business-role absence/multiple/outage: test_business_role_absence_ambiguity_and_outage_fail_closed
 # 29 permission/namespace locks: test_permission_namespace_failures_remain_exact
 # 30 operation binding: test_permission_operation_binding_remains_exact
-# 31 system/cross-tenant lock: test_system_authority_operations_remain_outside_tenant_grants
-# 32 financial lock: test_financial_execution_remains_prohibited_before_final_grant_lookup
-# 33 final assignment scope: test_wrong_assignment_scope_cannot_grant
-# 34 malformed operations: test_malformed_operation_values_fail_closed_before_grant_lookup
-# 35 determinism and immutability: test_decisions_are_deterministic_and_immutable
-# 36 immutable composition binding: test_operation_binding_is_immutable
-# 37 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
-# 38-40 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
+# 31-32 M14 exact evidence bindings and full-truth successes:
+#     test_m14_evidence_bindings_are_exact_and_unique,
+#     test_billing_intelligence_read_requires_full_current_truth
+# 33 existing M13 binding success: test_wilsy_ai_capacity_binding_remains_authorized_through_current_truth
+# 34-42 M14 crossed/alias/specialized/assignment locks:
+#     test_m14_evidence_binding_cross_pairs_and_aliases_fail_closed,
+#     test_billing_intelligence_read_rejects_unrelated_assignments,
+#     test_billing_intelligence_read_missing_inactive_and_wrong_assignments_deny
+# 43 system/cross-tenant lock: test_system_authority_operations_remain_outside_tenant_grants
+# 44 financial lock: test_financial_execution_remains_prohibited_before_final_grant_lookup
+# 45 final assignment scope: test_wrong_assignment_scope_cannot_grant
+# 46 malformed operations: test_malformed_operation_values_fail_closed_before_grant_lookup
+# 47 determinism and immutability: test_decisions_are_deterministic_and_immutable
+# 48 immutable composition binding: test_operation_binding_is_immutable
+# 49 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
+# 50-52 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
 
 # Caller-owned session propagation contract.
 def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
@@ -1092,7 +1298,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT
+# VERSION: v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny

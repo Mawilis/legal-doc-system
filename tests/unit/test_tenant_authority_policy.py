@@ -1,12 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
+VERSION: v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
-EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity read
-eligibility, and non-authority boundaries.
+EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
+billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-13 v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
+CHANGELOG: 2026-09-13 v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
+certifies billing-intelligence evidence-read eligibility for exactly the four
+general tenant business roles while preserving specialized-role denial.
+2026-09-13 v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
 certifies own-tenant WILSY AI usage-capacity read eligibility for exactly the
 four general tenant business roles and preserves specialized-role denial.
 v1.5.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four distinct
@@ -21,16 +24,17 @@ collection authorization operation and dedicated tenant business-role eligibilit
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: No network, persistence, or sensitive data.
 TENANT BOUNDARY: Policy facts do not prove membership or scope; WILSY AI
-capacity-read eligibility remains own-tenant and separately composed.
+capacity-read and billing-intelligence evidence-read eligibility remain
+own-tenant and separately composed.
 AUTHORITY BOUNDARY: Tests do not authorize or mutate.
-FINANCIAL AUTHORITY BOUNDARY: Capacity-read eligibility is non-financial;
-Kennel EOS remains exclusive.
+FINANCIAL AUTHORITY BOUNDARY: Capacity-read and billing-intelligence
+evidence-read eligibility are non-financial; Kennel EOS remains exclusive.
 """
 from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.9.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY"
+    assert VERSION == "v1.10.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -148,6 +152,30 @@ def test_wilsy_ai_capacity_read_eligibility_is_general_roles_only() -> None:
         assert all(tenant_role_operation_eligibility(role, malformed) == DENY for role in TENANT_ROLES)
     assert requires_system_authority("wilsy_ai_usage_capacity") is SystemAuthorityClassification.UNKNOWN
 
+
+def test_billing_intelligence_evidence_read_eligibility_is_general_roles_only() -> None:
+    operation = "billing_intelligence_evidence_read"
+    general_roles = {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor"}
+    assert operation in OPERATIONS
+    assert {role for role in TENANT_ROLES if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == general_roles
+    assert all(tenant_role_operation_eligibility(role, operation) == DENY for role in TENANT_ROLES - general_roles)
+    assert requires_system_authority(operation) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+    for role in ("unknown", "TENANT_OWNER", " tenant_owner", "tenant_owner ", None, 123):
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    for malformed in (
+        "billing_intelligence_evidence",
+        "billing_intelligence_evidence_read ",
+        " billing_intelligence_evidence_read",
+        "BILLING_INTELLIGENCE_EVIDENCE_READ",
+        "billing_intelligence:*",
+        "billing_intelligence_evidence_*",
+        None,
+        123,
+    ):
+        assert all(tenant_role_operation_eligibility(role, malformed) == DENY for role in TENANT_ROLES)
+    assert requires_system_authority("billing_intelligence_evidence") is SystemAuthorityClassification.UNKNOWN
+
 def test_profile_policy_is_bounded_and_disjoint() -> None:
     assert allowed_profile_mutation_fields("tenant_owner") == PROFILE_MUTABLE_FIELDS_V1
     assert allowed_profile_mutation_fields("tenant_admin") == PROFILE_MUTABLE_FIELDS_V1
@@ -185,9 +213,9 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
+# VERSION: v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
-# TENANT POSTURE: WILSY AI capacity-read eligibility remains policy-only; no membership or tenant authority is granted
+# TENANT POSTURE: WILSY AI capacity-read and billing-intelligence evidence-read eligibility remain policy-only; no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
