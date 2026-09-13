@@ -1,15 +1,16 @@
 """Direct P5B certificate for append-only usage-observation persistence.
 
 TITLE: WILSY AI Usage Observation Registry Direct Certificate
-VERSION: v1.0.0-M13-P5B
+VERSION: v1.0.1-M13-P5B
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove tenant-scoped idempotent append-only persistence without
          granting quota, billing, execution, or settlement authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_usage_observation_registry.py
 COLLABORATION / OWNERSHIP: Direct certificate for the P5B registry owner.
-CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M13-P5B certifies replay, divergence, isolation,
-           corruption handling, and caller transaction ownership.
+CERTIFICATION / UPDATE DATE: 2026-09-13
+CHANGELOG: v1.0.1-M13-P5B certifies replay, divergence, isolation,
+           corruption handling, caller transaction ownership, and the P6B
+           optimized lookup index.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 from datetime import datetime, timezone
@@ -57,7 +58,7 @@ def test_exact_create_replay_and_indexes() -> None:
     collection, session = Collection(), object(); ensure_indexes(collection); registry = WilsyAIUsageObservationRegistry(collection)
     first = registry.create_or_replay(observation(), idempotency_key="key-1", session=session)
     assert registry.create_or_replay(observation(), idempotency_key="key-1", session=session) == first
-    assert len(collection.rows) == 1 and len(collection.indexes) == 3
+    assert len(collection.rows) == 1 and len(collection.indexes) == 4
 
 
 def test_divergent_idempotency_and_identity_fail_closed() -> None:
@@ -125,3 +126,10 @@ def test_wrong_well_formed_command_fingerprint_is_corruption_on_get_and_replay()
 
 def test_append_only_and_caller_transaction_ownership() -> None:
     assert not any(name in dir(WilsyAIUsageObservationRegistry) for name in ("update", "delete", "transition", "start_transaction", "commit_transaction", "abort_transaction"))
+
+
+# ARTIFACT: test_wilsy_ai_usage_observation_registry.py
+# VERSION: v1.0.1-M13-P5B
+# AUTHORITY BOUNDARY: append-only raw usage-observation persistence certificate
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

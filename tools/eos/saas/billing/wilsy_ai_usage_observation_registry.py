@@ -1,18 +1,20 @@
-"""Wilsy OS M13-P5B durable append-only WILSY AI usage-observation registry.
+"""Wilsy OS M13-P6B durable append-only WILSY AI usage-observation registry.
 
 TITLE: WILSY AI Usage Observation Registry
-VERSION: v1.0.0-M13-P5B
+VERSION: v1.1.0-M13-P6B
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist source-evidenced P5A observations exactly once while keeping
          all aggregation, quota, billing, execution, and settlement elsewhere.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/wilsy_ai_usage_observation_registry.py
 COLLABORATION / OWNERSHIP: P5A owns immutable fact shape; P5B owns this
-                            append-only persistence/replay; future P6 owns
-                            derivation; callers own transactions; Kennel EOS
-                            owns financial execution and settlement.
-CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M13-P5B establishes tenant-scoped identity/idempotency
-           indexes, strict hydration, and caller-session persistence.
+                            append-only persistence/replay; P6B owns this
+                            bounded retrieval seam for P6A; callers own
+                            transactions; Kennel EOS owns financial execution
+                            and settlement.
+CERTIFICATION / UPDATE DATE: 2026-09-13
+CHANGELOG: v1.1.0-M13-P6B preserves P5B append/replay authority and adds
+           caller-transaction bounded retrieval for P6A with strict ordering,
+           month/as-of bounds, binding integrity, and an optimized lookup index.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No secrets, providers, clients, quotas, or money.
 TENANT BOUNDARY: Every read/replay query includes explicit tenant_id.
@@ -25,6 +27,7 @@ FAIL-CLOSED DECLARATION: Persistence errors, duplicate conflicts, and corrupt
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
@@ -39,7 +42,7 @@ from tools.eos.saas.domain.wilsy_ai_usage_observation import (
     WilsyAIUsageObservationError,
 )
 
-VERSION: Final[str] = "v1.0.0-M13-P5B"
+VERSION: Final[str] = "v1.1.0-M13-P6B"
 COLLECTION: Final[str] = "wilsy_ai_usage_observations"
 OBSERVATION_FIELDS: Final[tuple[str, ...]] = (
     "schema", "observation_version", "tenant_id", "usage_observation_id",
@@ -80,6 +83,7 @@ def ensure_indexes(collection: Any) -> None:
     target.create_index([("tenant_id", 1), ("usage_observation_id", 1)], unique=True, name="wilsy_ai_usage_tenant_observation_unique")
     target.create_index([("tenant_id", 1), ("idempotency_key", 1)], unique=True, name="wilsy_ai_usage_tenant_idempotency_unique")
     target.create_index([("tenant_id", 1), ("occurred_at", 1), ("usage_observation_id", 1)], name="wilsy_ai_usage_tenant_occurred_lookup")
+    target.create_index([("tenant_id", 1), ("entitlement_id", 1), ("module_id", 1), ("occurred_at", 1), ("usage_observation_id", 1)], name="wilsy_ai_usage_tenant_entitlement_module_lookup")
 
 
 def _command_fingerprint(observation: WilsyAIUsageObservation, idempotency_key: str) -> str:
@@ -157,11 +161,88 @@ class WilsyAIUsageObservationRegistry:
             raise WilsyAIUsageObservationNotFoundError("M13P5B_OBSERVATION_NOT_FOUND")
         return _hydrate(row)
 
+    def get_bounded_for_p6a(
+        self,
+        *,
+        tenant_id: str,
+        entitlement_id: str,
+        module_id: str,
+        expected_entitlement_revision: int,
+        expected_entitlement_fingerprint: str,
+        as_of: Any,
+        session: Any,
+    ) -> tuple[WilsyAIUsageObservation, ...]:
+        """Read one complete tenant/entitlement/module month snapshot for P6A.
+
+        The caller must have started a Mongo transaction (or equivalent
+        snapshot) and retains commit/abort ownership.  The registry queries
+        without a timestamp predicate because persisted timestamps are ISO
+        evidence strings; every candidate is strictly hydrated and parsed,
+        then bounded in UTC through ``as_of``.  Empty means no rows in this
+        snapshot, never zero usage or a completeness assertion for P6A.
+        """
+        if (
+            not isinstance(tenant_id, str)
+            or not tenant_id.strip()
+            or not isinstance(entitlement_id, str)
+            or not entitlement_id.strip()
+            or not isinstance(module_id, str)
+            or not module_id.strip()
+            or isinstance(expected_entitlement_revision, bool)
+            or not isinstance(expected_entitlement_revision, int)
+            or expected_entitlement_revision < 0
+            or not isinstance(expected_entitlement_fingerprint, str)
+            or len(expected_entitlement_fingerprint) != 128
+            or not set(expected_entitlement_fingerprint) <= _HEX
+            or not isinstance(as_of, datetime)
+            or as_of.tzinfo is None
+            or as_of.utcoffset() is None
+            or session is None
+        ):
+            raise WilsyAIUsageObservationRegistryError("M13P6B_INPUT_INVALID")
+        active_transaction = getattr(session, "in_transaction", False)
+        if callable(active_transaction):
+            active_transaction = active_transaction()
+        if active_transaction is not True:
+            raise WilsyAIUsageObservationRegistryError("M13P6B_TRANSACTION_REQUIRED")
+        as_of_utc = as_of.astimezone(timezone.utc)
+        month_start = as_of_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if month_start.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1)
+        query = {"tenant_id": tenant_id, "entitlement_id": entitlement_id, "module_id": module_id}
+        bounded: list[WilsyAIUsageObservation] = []
+        seen_ids: set[str] = set()
+        seen_fingerprints: set[str] = set()
+        try:
+            cursor = self._collection.find(query, session=session)
+            for row in cursor:
+                observation = _hydrate(row)
+                if not (month_start <= observation.occurred_at <= as_of_utc) or observation.occurred_at >= month_end:
+                    continue
+                if (
+                    observation.tenant_id != tenant_id
+                    or observation.entitlement_id != entitlement_id
+                    or observation.module_id != module_id
+                    or observation.entitlement_revision != expected_entitlement_revision
+                    or observation.entitlement_fingerprint != expected_entitlement_fingerprint
+                ):
+                    raise WilsyAIUsageObservationRegistryError("M13P6B_BINDING_CONFLICT")
+                if observation.usage_observation_id in seen_ids or observation.fingerprint in seen_fingerprints:
+                    raise WilsyAIUsageObservationRegistryError("M13P6B_DUPLICATE_EVIDENCE")
+                seen_ids.add(observation.usage_observation_id)
+                seen_fingerprints.add(observation.fingerprint)
+                bounded.append(observation)
+        except PyMongoError as error:
+            raise WilsyAIUsageObservationRegistryError("M13P6B_PERSISTENCE_UNAVAILABLE") from error
+        return tuple(sorted(bounded, key=lambda item: (item.occurred_at, item.usage_observation_id)))
+
 
 __all__ = ["COLLECTION", "OBSERVATION_FIELDS", "VERSION", "WRITE_CONCERN", "READ_CONCERN", "WilsyAIUsageObservationRegistry", "WilsyAIUsageObservationRegistryError", "WilsyAIUsageObservationConflictError", "WilsyAIUsageObservationNotFoundError", "ensure_indexes"]
 
 # ARTIFACT: wilsy_ai_usage_observation_registry.py
-# VERSION: v1.0.0-M13-P5B
+# VERSION: v1.1.0-M13-P6B
 # AUTHORITY BOUNDARY: append-only raw usage-observation persistence only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
