@@ -1,12 +1,15 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT
+VERSION: v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
-bytes, and exact own-tenant subscription/plan permission semantics.
+bytes, and exact own-tenant subscription/plan/WILSY AI capacity-read semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-09.
+CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-13 v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT certifies the
+    canonical own-tenant WILSY AI usage-capacity evidence read permission,
+    including its membership and non-financial metadata and alias rejection.
     2026-09-10 v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT certifies four
     credential-security permissions in the canonical TENANT namespace.
     2026-09-09 v1.6.0-M11-R8-R3B-P8-P3B-I2-R3-CERT certifies the dedicated
@@ -30,8 +33,9 @@ CHANGELOG:
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: No credentials, JWT authority projections,
 persistence, or financial execution are processed.
-TENANT BOUNDARY: Permission metadata never proves membership; subscription and
-plan permissions require separately proven exact ACTIVE tenant membership.
+TENANT BOUNDARY: Permission metadata never proves membership; subscription,
+plan, and WILSY AI capacity-read permissions require separately proven exact
+ACTIVE tenant membership.
 AUTHORITY BOUNDARY: Tests policy metadata, not assignment or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
@@ -39,12 +43,12 @@ import json
 
 import pytest
 
-VERSION = "v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT"
+VERSION = "v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.10.0-M11-R8-R3B-P8-P3D-P4A"
+    assert POLICY_VERSION == "v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ"
 
 
 def test_permission_canon_properties() -> None:
@@ -66,6 +70,7 @@ def test_permission_canon_properties() -> None:
         "subscription:manage",
         "plan:read",
         "plan:manage",
+        "wilsy_ai:usage_capacity:read",
         "platform_billing:release",
         "inbound_collection:authorization:create",
         "inbound_merchant_configuration:register",
@@ -93,9 +98,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 37
+    ) == 38
 
-    assert len(rows) == 40
+    assert len(rows) == 41
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -107,6 +112,17 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    wilsy_ai_capacity = permission_metadata("wilsy_ai:usage_capacity:read")
+    assert wilsy_ai_capacity.namespace == "TENANT"
+    assert wilsy_ai_capacity.scope_kind == "TENANT"
+    assert wilsy_ai_capacity.business_capability == "read own-tenant WILSY AI usage-capacity evidence"
+    assert wilsy_ai_capacity.tenant_membership_required is True
+    assert wilsy_ai_capacity.system_assignment_required is False
+    assert wilsy_ai_capacity.cross_tenant_capable is False
+    assert wilsy_ai_capacity.financial_execution_capable is False
+    assert wilsy_ai_capacity.authorizes_by_itself is False
+    assert wilsy_ai_capacity.disposition is PermissionDisposition.CANONICAL
 
     release = permission_metadata("platform_billing:release")
     assert release.business_capability == "authorize platform billing release"
@@ -248,6 +264,12 @@ def test_permission_canon_properties() -> None:
         "inbound_provider_credential_security:*",
         "inbound_provider_credential_security:all",
         "inbound_provider_credential_security:ELIGIBILITY_ISSUE",
+        "wilsy_ai:*",
+        "wilsy_ai:usage_capacity:*",
+        "WILSY_AI:USAGE_CAPACITY:READ",
+        " wilsy_ai:usage_capacity:read",
+        "wilsy_ai:usage_capacity:read ",
+        "wilsy_ai:usage_capacity:READ",
     )
 
     for value in invalid:
@@ -351,9 +373,9 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.7.0-M11-R8-R3B-P8-P3D-P4A-CERT
+# VERSION: v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: subscription/plan grants remain policy; exact ACTIVE membership remains separately governed
+# TENANT POSTURE: subscription, plan, and WILSY AI capacity reads remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

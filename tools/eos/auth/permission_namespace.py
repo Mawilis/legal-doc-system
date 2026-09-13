@@ -1,14 +1,18 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
+VERSION: v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
-without granting typed subject authority, possession, cross-tenant authority,
-or financial execution.
+and the own-tenant WILSY AI usage-capacity evidence read capability without
+granting typed subject authority, possession, cross-tenant authority, or
+financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-09.
 CHANGELOG:
+    2026-09-13 v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ adds the canonical
+    own-tenant WILSY AI usage-capacity evidence read permission; it remains
+    membership-gated, non-cross-tenant, non-financial, and non-self-authorizing.
     2026-09-10 v1.10.0-M11-R8-R3B-P8-P3D-P4A adds four dedicated
     tenant inbound provider credential-security permissions; all remain
     own-tenant, non-financial, and non-self-authorizing.
@@ -36,14 +40,15 @@ CHANGELOG:
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Metadata never authenticates, authorizes, proves
 membership, trusts transport projections, or grants execution.
-TENANT BOUNDARY: Subscription and plan permissions require separately proven
-ACTIVE membership in the exact selected tenant and never permit cross-tenant
-access.
-AUTHORITY BOUNDARY: Owns permission vocabulary semantics only. Current role
-assignment and final authorization remain separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue permissions
-cannot approve, release, execute, collect, or settle funds. Kennel EOS remains
-exclusive.
+TENANT BOUNDARY: Subscription, plan, and WILSY AI usage-capacity read
+permissions require separately proven ACTIVE membership in the exact selected
+tenant and never permit cross-tenant access.
+AUTHORITY BOUNDARY: Owns permission vocabulary semantics only. WILSY AI
+capacity evidence remains a read-only projection; current role assignment and
+final authorization remain separate authorities.
+FINANCIAL AUTHORITY BOUNDARY: Subscription, plan, and WILSY AI capacity
+permissions cannot approve, release, execute, collect, or settle funds.
+Kennel EOS remains exclusive.
 """
 
 from __future__ import annotations
@@ -55,7 +60,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.10.0-M11-R8-R3B-P8-P3D-P4A"
+VERSION = "v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ"
 
 
 class PermissionDisposition(StrEnum):
@@ -259,6 +264,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "manage own-tenant plan catalogue lifecycle truth",
+            tenant=True,
+        ),
+        "wilsy_ai:usage_capacity:read": _meta(
+            "wilsy_ai:usage_capacity:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant WILSY AI usage-capacity evidence",
             tenant=True,
         ),
         "platform_billing:provider_policy:admin": _meta(
@@ -481,9 +493,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.10.0-M11-R8-R3B-P8-P3D-P4A
+# VERSION: v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
-# TENANT POSTURE: subscription and plan permissions require separately proven exact ACTIVE tenant membership
+# TENANT POSTURE: subscription, plan, and WILSY AI capacity reads require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

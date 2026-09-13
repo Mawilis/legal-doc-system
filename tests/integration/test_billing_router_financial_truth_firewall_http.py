@@ -4,7 +4,7 @@ TITLE:
     WAI-VAS23R3B2 Billing HTTP Financial-Truth Firewall Certificate
 
 VERSION:
-    v1.2.0-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT
+    v1.3.0-M13-P6D-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -21,9 +21,11 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy OS Core Engineering
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-12
+    2026-09-13
 
 CHANGELOG:
+    v1.3.0-M13-P6D reanchors the unchanged financial-truth firewall against
+    the M13-P6D billing-router version.
     v1.2.0 reanchors the unchanged financial-truth firewall against the
     M12-P8 billing-intelligence growth router version.
     v1.1.0 reanchors the unchanged financial-truth firewall against the
@@ -71,10 +73,10 @@ import pytest
 
 
 TEST_VERSION = (
-    "v1.2.0-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT"
+    "v1.3.0-M13-P6D-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT"
 )
 EXPECTED_ROUTER_VERSION = (
-    "v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH"
+    "v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP"
 )
 
 ROUTER_PATH = Path(
@@ -208,7 +210,7 @@ def test_runtime_version_and_structure() -> None:
     )
 
     assert TEST_VERSION == (
-        "v1.2.0-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT"
+        "v1.3.0-M13-P6D-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT"
     )
 
     assert (
@@ -405,7 +407,7 @@ def test_raw_settlement_aliases_fail_before_pydantic_projection(
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_billing_router_financial_truth_firewall_http.py
-# VERSION: v1.2.0-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT
+# VERSION: v1.3.0-M13-P6D-BILLING-HTTP-FINANCIAL-TRUTH-FIREWALL-CERT
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport certification only.
 # TENANT POSTURE:
