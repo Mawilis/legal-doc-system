@@ -4,13 +4,16 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP                                                                             ║
+║ VERSION:        v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP                                                                  ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; composes certified billing intelligence and ║
 ║                 WILSY AI capacity evidence through caller-owned transactions.                                 ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-13 v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP – Binds the canonical billing-intelligence evidence route to      ║
+║                RequireTenantAuthorization and derives tenant scope only from its authorized context; legacy compatibility routes ║
+║                remain unchanged.                                                                                                  ║
 ║   2026-09-13 v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP – Adds the authorized own-tenant WILSY AI usage-capacity    ║
 ║                evidence endpoint over the canonical P4/P6B/P6A/P6C chain; HTTP owns only transport and        ║
 ║                transaction lifecycle.                                                                          ║
@@ -108,7 +111,12 @@ from tools.eos.api.tenant_authorization_http import (
 )
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP"
+VERSION = "v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP"
+
+_BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION = RequireTenantAuthorization(
+    "billing_intelligence:evidence:read",
+    "billing_intelligence_evidence_read",
+)
 
 _WILSY_AI_CAPACITY_READ_AUTHORIZATION = RequireTenantAuthorization(
     "wilsy_ai:usage_capacity:read",
@@ -917,7 +925,9 @@ async def get_billing_intelligence_evidence(
         None,
         description="Optional exact tenant-scoped prior evidence identity for growth",
     ),
-    tenant_id: str = Depends(get_tenant_id),
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION
+    ),
 ) -> Dict[str, Any]:
     """Return canonical M12-P1 evidence composed and persisted through P2.
 
@@ -927,6 +937,7 @@ async def get_billing_intelligence_evidence(
     persistence to their certified owners. It creates no execution or
     settlement truth.
     """
+    tenant_id = authorization.tenant_id
     try:
         snapshot = parse_as_of(as_of)
         database = _require_db()
@@ -1923,11 +1934,11 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP
-Fixes:           Financial-truth HTTP firewall; canonical P1/P2 intelligence and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
+Version:         v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP
+Fixes:           Financial-truth HTTP firewall; canonical billing-intelligence authorization seam and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
 ════════════════════════════════════════════════════════════════════════════════
@@ -1937,11 +1948,12 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP
+# VERSION: v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:
-#   Tenant header is requested scope and never independently grants authority.
+#   Legacy tenant header is requested scope; canonical intelligence evidence
+#   scope is derived only from TenantAuthorizationContext.
 # FAIL-CLOSED POSTURE:
 #   Payment status, refund, partial settlement, paid state, and paid-at caller
 #   mutation are rejected before billing-registry mutation.
