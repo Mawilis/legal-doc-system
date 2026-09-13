@@ -1,15 +1,20 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ
+VERSION: v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
-and the own-tenant WILSY AI usage-capacity evidence read capability without
+and the own-tenant WILSY AI usage-capacity and billing-intelligence evidence
+read capabilities without
 granting typed subject authority, possession, cross-tenant authority, or
 financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-09.
+CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-13 v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ adds the
+    canonical own-tenant billing-intelligence evidence read permission; it
+    remains membership-gated, non-cross-tenant, non-financial, and
+    non-self-authorizing.
     2026-09-13 v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ adds the canonical
     own-tenant WILSY AI usage-capacity evidence read permission; it remains
     membership-gated, non-cross-tenant, non-financial, and non-self-authorizing.
@@ -40,14 +45,15 @@ CHANGELOG:
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Metadata never authenticates, authorizes, proves
 membership, trusts transport projections, or grants execution.
-TENANT BOUNDARY: Subscription, plan, and WILSY AI usage-capacity read
-permissions require separately proven ACTIVE membership in the exact selected
-tenant and never permit cross-tenant access.
+TENANT BOUNDARY: Subscription, plan, WILSY AI usage-capacity, and
+billing-intelligence evidence read permissions require separately proven ACTIVE
+membership in the exact selected tenant and never permit cross-tenant access.
 AUTHORITY BOUNDARY: Owns permission vocabulary semantics only. WILSY AI
-capacity evidence remains a read-only projection; current role assignment and
-final authorization remain separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription, plan, and WILSY AI capacity
-permissions cannot approve, release, execute, collect, or settle funds.
+capacity and billing-intelligence evidence remain read-only projections;
+current role assignment and final authorization remain separate authorities.
+FINANCIAL AUTHORITY BOUNDARY: Subscription, plan, WILSY AI capacity, and
+billing-intelligence evidence permissions cannot approve, release, execute,
+collect, or settle funds.
 Kennel EOS remains exclusive.
 """
 
@@ -60,7 +66,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ"
+VERSION = "v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ"
 
 
 class PermissionDisposition(StrEnum):
@@ -271,6 +277,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "read own-tenant WILSY AI usage-capacity evidence",
+            tenant=True,
+        ),
+        "billing_intelligence:evidence:read": _meta(
+            "billing_intelligence:evidence:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant canonical billing-intelligence evidence",
             tenant=True,
         ),
         "platform_billing:provider_policy:admin": _meta(
@@ -493,9 +506,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ
+# VERSION: v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
-# TENANT POSTURE: subscription, plan, and WILSY AI capacity reads require separately proven exact ACTIVE tenant membership
+# TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

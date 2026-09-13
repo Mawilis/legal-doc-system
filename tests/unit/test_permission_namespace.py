@@ -1,12 +1,16 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT
+VERSION: v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
-bytes, and exact own-tenant subscription/plan/WILSY AI capacity-read semantics.
+bytes, and exact own-tenant subscription/plan/WILSY AI capacity and
+billing-intelligence evidence-read semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-13 v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT
+    certifies the canonical own-tenant billing-intelligence evidence read
+    permission and its strict metadata and alias rejection.
     2026-09-13 v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT certifies the
     canonical own-tenant WILSY AI usage-capacity evidence read permission,
     including its membership and non-financial metadata and alias rejection.
@@ -34,8 +38,8 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: No credentials, JWT authority projections,
 persistence, or financial execution are processed.
 TENANT BOUNDARY: Permission metadata never proves membership; subscription,
-plan, and WILSY AI capacity-read permissions require separately proven exact
-ACTIVE tenant membership.
+plan, WILSY AI capacity-read, and billing-intelligence evidence-read
+permissions require separately proven exact ACTIVE tenant membership.
 AUTHORITY BOUNDARY: Tests policy metadata, not assignment or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
@@ -43,12 +47,12 @@ import json
 
 import pytest
 
-VERSION = "v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT"
+VERSION = "v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ"
+    assert POLICY_VERSION == "v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ"
 
 
 def test_permission_canon_properties() -> None:
@@ -71,6 +75,7 @@ def test_permission_canon_properties() -> None:
         "plan:read",
         "plan:manage",
         "wilsy_ai:usage_capacity:read",
+        "billing_intelligence:evidence:read",
         "platform_billing:release",
         "inbound_collection:authorization:create",
         "inbound_merchant_configuration:register",
@@ -98,9 +103,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 38
+    ) == 39
 
-    assert len(rows) == 41
+    assert len(rows) == 42
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -123,6 +128,19 @@ def test_permission_canon_properties() -> None:
     assert wilsy_ai_capacity.financial_execution_capable is False
     assert wilsy_ai_capacity.authorizes_by_itself is False
     assert wilsy_ai_capacity.disposition is PermissionDisposition.CANONICAL
+
+    billing_intelligence = permission_metadata(
+        "billing_intelligence:evidence:read"
+    )
+    assert billing_intelligence.namespace == "TENANT"
+    assert billing_intelligence.scope_kind == "TENANT"
+    assert billing_intelligence.business_capability == "read own-tenant canonical billing-intelligence evidence"
+    assert billing_intelligence.tenant_membership_required is True
+    assert billing_intelligence.system_assignment_required is False
+    assert billing_intelligence.cross_tenant_capable is False
+    assert billing_intelligence.financial_execution_capable is False
+    assert billing_intelligence.authorizes_by_itself is False
+    assert billing_intelligence.disposition is PermissionDisposition.CANONICAL
 
     release = permission_metadata("platform_billing:release")
     assert release.business_capability == "authorize platform billing release"
@@ -270,6 +288,13 @@ def test_permission_canon_properties() -> None:
         " wilsy_ai:usage_capacity:read",
         "wilsy_ai:usage_capacity:read ",
         "wilsy_ai:usage_capacity:READ",
+        "billing_intelligence:*",
+        "billing_intelligence:evidence:*",
+        "BILLING_INTELLIGENCE:EVIDENCE:READ",
+        " billing_intelligence:evidence:read",
+        "billing_intelligence:evidence:read ",
+        "billing_intelligence:evidence:READ",
+        "billing_intelligence:evidence",
     )
 
     for value in invalid:
@@ -373,9 +398,9 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT
+# VERSION: v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: subscription, plan, and WILSY AI capacity reads remain policy; exact ACTIVE membership remains separately governed
+# TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
