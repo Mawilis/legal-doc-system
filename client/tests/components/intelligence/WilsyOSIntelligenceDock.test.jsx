@@ -1,11 +1,13 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — Sovereign Intelligence Dock Unit Tests (Final Fix – 3 args)
+ * Wilsy OS — Sovereign Intelligence Dock Unit Tests (M14-P7 Evidence Projection)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
- * Version:        v1.0.8-KENNEL-PHASE4
+ * Version:        v1.1.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE-CERT
  * Authority:      Wilsy OS Core Governance
- * Epitome:        All tests pass – POST expectations now match 3 arguments.
+ * Epitome:        Certifies canonical billing-intelligence evidence projection,
+ *                 explicit snapshot requests, payload preservation, and
+ *                 fail-quiet optional behavior alongside the Phase 4 operator seam.
  * Classification: Production Test Artifact — Institutional Contract
  *
  * Contributors:
@@ -13,9 +15,12 @@
  *   - AI Engineering – Corrected POST argument count; added third arg matcher.
  *
  * Change Log:
+ *   2026-09-13 v1.1.0-M14-P7 — Added exact billing-intelligence evidence GET,
+ *     canonical payload preservation, explicit operator-context propagation,
+ *     and no-fabrication failure certificates.
  *   2026-08-07 v1.0.8-KENNEL-PHASE4 — Fixed POST calls to include third argument.
  *
- * Certification Seal: PRODUCTION_READY_v1.0.8-KENNEL-PHASE4
+ * Certification Seal: PRODUCTION_READY_v1.1.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -111,6 +116,8 @@ import WilsyOSIntelligenceDock from '../../../src/components/intelligence/WilsyO
 describe('WilsyOSIntelligenceDock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockApiGet.mockReset();
+    mockApiPost.mockReset();
     mockThreads = [
       { id: 'thread1', title: 'Thread 1', messages: [] },
       { id: 'thread2', title: 'Thread 2', messages: [] },
@@ -131,6 +138,99 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => {
       expect(screen.getByText('Wilsy OS Intelligence Dock')).toBeInTheDocument();
     });
+  });
+
+  it('requests canonical billing evidence with an explicit aware ISO as_of boundary', async () => {
+    mockApiGet.mockImplementation((path) => {
+      if (path === '/billing/intelligence/evidence') {
+        return Promise.resolve({ status: 403, data: { detail: 'forbidden' } });
+      }
+      return Promise.resolve({ status: path === '/kernel' ? 200 : 404, data: { status: 'OPERATIONAL' } });
+    });
+
+    render(<WilsyOSIntelligenceDock />);
+
+    await waitFor(() => {
+      const billingCall = mockApiGet.mock.calls.find(
+        ([path]) => path === '/billing/intelligence/evidence'
+      );
+      expect(billingCall).toBeDefined();
+      const asOf = billingCall[1]?.params?.as_of;
+      expect(asOf).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(new Date(asOf).toISOString()).toBe(asOf);
+    });
+  });
+
+  it('preserves the canonical billing payload and names operator-context propagation explicitly', async () => {
+    const canonicalEvidence = {
+      tenant_id: 'TEST_TENANT',
+      as_of: '2026-09-13T12:00:00+00:00',
+      evidence_contract: 'WILSY-BILLING-INTELLIGENCE-EVIDENCE/V1',
+      unsupported_outputs: ['invoice', 'payment', 'settlement'],
+      recurring_revenue: { mrr_minor: 49900, arr_minor: 598800, currency: 'ZAR' },
+      recurring_revenue_growth: { classification: 'NO_CHANGE', numerator: 0, denominator: 49900 },
+      evidence_fingerprint: 'a'.repeat(128),
+      evidence_identity: 'evidence-test-1',
+    };
+    mockApiGet.mockImplementation((path) => {
+      if (path === '/billing/intelligence/evidence') {
+        return Promise.resolve({ status: 200, data: canonicalEvidence });
+      }
+      if (path === '/kernel') {
+        return Promise.resolve({ status: 200, data: { status: 'OPERATIONAL' } });
+      }
+      return Promise.resolve({ status: 200, data: {} });
+    });
+    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'ok' } } });
+
+    render(<WilsyOSIntelligenceDock />);
+    await waitFor(() => {
+      expect(mockApiGet).toHaveBeenCalledWith(
+        '/billing/intelligence/evidence',
+        expect.objectContaining({ params: expect.objectContaining({ as_of: expect.any(String) }) })
+      );
+    });
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(textarea, { target: { value: 'Show billing evidence' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalled());
+    const requestBody = mockApiPost.mock.calls[0][1];
+    expect(requestBody.context.canonicalBillingIntelligenceEvidence).toEqual(canonicalEvidence);
+    expect(requestBody.context).not.toHaveProperty('billingIntelligenceEvidence');
+  });
+
+  it.each([
+    ['unavailable', 'reject'],
+    ['forbidden', 'forbidden'],
+  ])('fails quiet without fabrication when billing evidence is %s', async (_label, billingMode) => {
+    mockApiGet.mockImplementation((path) => {
+      if (path === '/billing/intelligence/evidence') {
+        return billingMode === 'reject'
+          ? Promise.reject(new Error('billing unavailable'))
+          : Promise.resolve({ status: 403, data: { detail: 'forbidden' } });
+      }
+      if (path === '/kernel') return Promise.resolve({ status: 200, data: { status: 'OPERATIONAL' } });
+      return Promise.resolve({ status: 200, data: {} });
+    });
+    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'ok' } } });
+
+    render(<WilsyOSIntelligenceDock />);
+    await waitFor(() => {
+      expect(mockApiGet).toHaveBeenCalledWith(
+        '/billing/intelligence/evidence',
+        expect.anything()
+      );
+    });
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(textarea, { target: { value: 'No fabricated billing facts' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalled());
+    const requestBody = mockApiPost.mock.calls[0][1];
+    expect(requestBody.context).not.toHaveProperty('canonicalBillingIntelligenceEvidence');
   });
 
   it('switches tabs correctly', async () => {
@@ -286,10 +386,11 @@ describe('WilsyOSIntelligenceDock', () => {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.0.8-KENNEL-PHASE4
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.1.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
- * All tests pass. POST expectations now match the three-argument call.
- * The dock's sovereign AI features are fully verified by CI.
- * Phase 5 next: integration tests and performance benchmarks.
+ * Direct tests certify the canonical billing-intelligence GET projection,
+ * explicit snapshot boundary, unchanged payload forwarding, and fail-quiet behavior.
+ * Broader client/CI certification remains a separate gate beyond this direct certificate.
+ * Host-backed billing-intelligence evidence remains a separate runtime gate.
  * ═══════════════════════════════════════════════════════════════════════════════
  */
