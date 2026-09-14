@@ -1,7 +1,7 @@
 """Host-backed P5B certificate for process-service attempt authority receipts.
 
 TITLE: Wilsy OS Process-Service Attempt Authority Registry Real-Mongo Certificate
-VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT
+VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify the immutable P5B receipt registry against a real, writable
          Mongo replica set: indexes, transaction ownership, durable replay,
@@ -12,9 +12,11 @@ COLLABORATION / OWNERSHIP: Host-backed P5B certificate only. P4B owns allocation
                             P5B owns append-only receipt persistence, and this
                             test caller owns every session and transaction.
 CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT
-           certifies real replica-set indexes, durable receipt replay, tenant
-           isolation, rollback atomicity, and fail-closed corruption handling.
+CHANGELOG: 2026-09-14 v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT
+           certifies BSON-level allocation-evidence provenance round-trip,
+           replay, divergence, and corruption rejection while retaining real
+           replica-set indexes, tenant isolation, rollback atomicity, and all
+           prior fail-closed boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic tenants and opaque evidence;
                              no provider, secret, customer, or external call.
@@ -57,7 +59,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION = "v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT"
+VERSION = "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -122,6 +124,7 @@ def _receipt(
     authority_id: str = "attempt-authority-1",
     attempt_id: str = "attempt-1",
     allocated_at: datetime = BASE,
+    allocation_evidence_reference: str | None = None,
 ) -> ProcessServiceAllocationReceipt:
     """Build one deterministic valid P4 allocation receipt for P5A."""
     return ProcessServiceAllocationReceipt(
@@ -148,7 +151,11 @@ def _receipt(
         from_holder_reference="office-1",
         to_holder_reference="deputy-1",
         allocation_custody_event_id=f"custody-allocation-{authority_id}",
-        allocation_evidence_reference=f"allocation-evidence-{authority_id}",
+        allocation_evidence_reference=(
+            allocation_evidence_reference
+            if allocation_evidence_reference is not None
+            else f"allocation-evidence-{authority_id}"
+        ),
         allocated_at=allocated_at,
         allocated_document_fingerprint=HEX_C,
         allocation_custody_event_fingerprint=HEX_D,
@@ -178,6 +185,7 @@ def _decision(
     authority_id: str = "attempt-authority-1",
     attempt_id: str = "attempt-1",
     allocated_at: datetime = BASE,
+    allocation_evidence_reference: str | None = None,
 ) -> Any:
     """Authorize one exact P5A decision from independently validated P4 evidence."""
     receipt = _receipt(
@@ -185,6 +193,11 @@ def _decision(
         authority_id=authority_id,
         attempt_id=attempt_id,
         allocated_at=allocated_at,
+        **(
+            {"allocation_evidence_reference": allocation_evidence_reference}
+            if allocation_evidence_reference is not None
+            else {}
+        ),
     )
     return authorize_process_service_attempt(
         allocation_receipt=receipt,
@@ -273,6 +286,7 @@ def test_real_mongo_p5b_receipt_registry_certificate(
 
     created = _persist_and_commit(client, collection, original)
     assert created.outcome is registry.ProcessServiceAttemptAuthorityPersistenceOutcome.CREATED
+    assert created.receipt.allocation_evidence_reference == "allocation-evidence-attempt-authority-1"
     assert collection.count_documents({}) == 1
 
     read_session = _transaction(client)
@@ -289,6 +303,7 @@ def test_real_mongo_p5b_receipt_registry_certificate(
         assert by_authority.fingerprint == created.receipt.fingerprint
         assert by_authority.evidence_identity == created.receipt.evidence_identity
         assert by_authority.authority_decision_fingerprint == original.fingerprint
+        assert by_authority.allocation_evidence_reference == "allocation-evidence-attempt-authority-1"
         read_session.commit_transaction()
     finally:
         read_session.end_session()
@@ -296,6 +311,23 @@ def test_real_mongo_p5b_receipt_registry_certificate(
     replay = _persist_and_commit(client, collection, original)
     assert replay.outcome is registry.ProcessServiceAttemptAuthorityPersistenceOutcome.IDEMPOTENT_REPLAY
     assert replay.receipt.to_dict() == created.receipt.to_dict()
+    assert replay.receipt.allocation_evidence_reference == "allocation-evidence-attempt-authority-1"
+    assert collection.count_documents({}) == 1
+
+    provenance_conflict = _decision(
+        tenant_a,
+        authority_id=original.attempt_authority_id,
+        attempt_id=original.attempt_id,
+        allocation_evidence_reference="allocation-evidence-divergent",
+    )
+    provenance_session = _transaction(client)
+    try:
+        with pytest.raises(registry.ProcessServiceAttemptAuthorityRegistryAuthorityIdentityConflictError) as caught:
+            registry.persist(provenance_conflict, collection, session=provenance_session)
+        assert caught.value.code == "P5B_ATTEMPT_AUTHORITY_IDENTITY_CONFLICT"
+        provenance_session.abort_transaction()
+    finally:
+        provenance_session.end_session()
     assert collection.count_documents({}) == 1
 
     authority_conflict = _decision(tenant_a, authority_id=original.attempt_authority_id, attempt_id="attempt-2")
@@ -366,6 +398,14 @@ def test_real_mongo_p5b_receipt_registry_certificate(
             "source_fingerprint",
             lambda row: row["receipt_payload"].__setitem__("allocation_current_fingerprint", "3" * 128),
         ),
+        (
+            "provenance_missing",
+            lambda row: row["receipt_payload"].pop("allocation_evidence_reference"),
+        ),
+        (
+            "provenance_altered",
+            lambda row: row["receipt_payload"].__setitem__("allocation_evidence_reference", "allocation-evidence-corrupt"),
+        ),
     )
     for _name, mutate in corruption_cases:
         corrupted = deepcopy(pristine)
@@ -391,6 +431,7 @@ def test_real_mongo_p5b_receipt_registry_certificate(
     rows = list(collection.find({}))
     assert len(rows) == 2
     for row in rows:
+        assert row["receipt_payload"]["allocation_evidence_reference"].startswith("allocation-evidence-")
         assert not {
             "payment", "settlement", "paid_state", "refund", "invoice", "billing_execution"
         }.intersection(row)
@@ -400,7 +441,7 @@ def test_real_mongo_p5b_receipt_registry_certificate(
 
 
 # ARTIFACT: test_process_service_attempt_authority_registry_real_mongo.py
-# VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT
+# VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: P5B immutable receipt persistence evidence only
 # TENANT POSTURE: explicit tenant-scoped queries; foreign records are absence
 # FAIL-CLOSED POSTURE: runtime and product failures remain certificate failures

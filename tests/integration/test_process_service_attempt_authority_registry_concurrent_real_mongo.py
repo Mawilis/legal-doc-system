@@ -1,7 +1,7 @@
 """Deterministic real-Mongo P5B duplicate-key transaction-race certificate.
 
 TITLE: Wilsy OS Process-Service Attempt Authority Registry Concurrent Certificate
-VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT
+VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify that two caller-owned Mongo transactions synchronized after
          the same absent attempt lookup produce exactly one durable P5B receipt,
@@ -14,9 +14,10 @@ COLLABORATION / OWNERSHIP: Host-backed P5B concurrency certificate only. P4B
                             receipt persistence, and each worker owns its Mongo
                             session and transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT
-           certifies deterministic barrier synchronization, positive duplicate-
-           key retry classification, winner durability, and loser rollback.
+CHANGELOG: 2026-09-14 v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT
+           re-anchors the deterministic race against the v1.1.0 provenance-
+           bearing P5B receipt while retaining positive conflict labels,
+           winner durability, and loser rollback.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic tenant and opaque evidence;
                              no provider, secret, customer, or external call.
@@ -65,7 +66,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION = "v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT"
+VERSION = "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -183,6 +184,26 @@ def _decision(authority_id: str) -> Any:
     )
 
 
+def _error_chain(error: BaseException) -> tuple[BaseException, ...]:
+    """Collect the governed error and technical causes without rewriting them."""
+    chain: list[BaseException] = []
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        chain.append(current)
+        current = current.__cause__ or current.__context__
+    return tuple(chain)
+
+
+def _error_labels(error: BaseException) -> tuple[str, ...]:
+    """Return raw Mongo error labels preserved anywhere in the cause chain."""
+    labels: list[str] = []
+    for item in _error_chain(error):
+        labels.extend(str(label) for label in getattr(item, "_error_labels", ()))
+    return tuple(dict.fromkeys(labels))
+
+
 class _BarrierCursor:
     """Cursor proxy that releases both workers after the absent attempt read."""
 
@@ -257,13 +278,13 @@ def _run_worker(
         try:
             session.commit_transaction()
         except BaseException as error:
-            labels = tuple(str(label) for label in getattr(error, "_error_labels", ()))
+            labels = _error_labels(error)
             if "UnknownTransactionCommitResult" in labels:
                 return _WorkerOutcome(worker, "AMBIGUOUS", decision, error=error, labels=labels)
             raise
         return _WorkerOutcome(worker, "COMMITTED", decision, result=result)
     except BaseException as error:
-        labels = tuple(str(label) for label in getattr(error, "_error_labels", ()))
+        labels = _error_labels(error)
         try:
             if session.in_transaction:
                 session.abort_transaction()
@@ -282,6 +303,19 @@ def test_real_mongo_deterministic_p5b_duplicate_key_race(
     client, database, collection = mongo_context
     decision_a = _decision("attempt-authority-race-a")
     decision_b = _decision("attempt-authority-race-b")
+    for decision in (decision_a, decision_b):
+        assert decision.allocation_evidence_reference == "allocation-evidence-race"
+        assert len(decision.fingerprint) == 128
+        assert decision.fingerprint.islower()
+        assert all(character in "0123456789abcdef" for character in decision.fingerprint)
+        for digest in (
+            decision.allocation_receipt_evidence_identity,
+            decision.allocation_receipt_fingerprint,
+            decision.allocation_current_fingerprint,
+        ):
+            assert len(digest) == 128
+            assert digest.islower()
+            assert all(character in "0123456789abcdef" for character in digest)
     barrier = threading.Barrier(2)
     arrivals: list[str] = []
     state = threading.local()
@@ -306,6 +340,7 @@ def test_real_mongo_deterministic_p5b_duplicate_key_race(
     assert loser.error is not None
     assert isinstance(loser.error, registry.ProcessServiceAttemptAuthorityRegistryRetryRequiredError)
     assert loser.error.code == "P5B_WHOLE_TRANSACTION_RETRY_REQUIRED"
+    assert "TransientTransactionError" in loser.labels
     assert "UnknownTransactionCommitResult" not in loser.labels
     assert winner.result is not None
     assert winner.result.outcome is registry.ProcessServiceAttemptAuthorityPersistenceOutcome.CREATED
@@ -317,7 +352,10 @@ def test_real_mongo_deterministic_p5b_duplicate_key_race(
         assert len(rows) == 1
         durable = registry.get_by_attempt_id(TENANT, ATTEMPT_ID, collection, session=verify)
         assert durable.to_dict() == winner.result.receipt.to_dict()
+        assert durable.allocation_evidence_reference == "allocation-evidence-race"
         assert durable.authority_decision_fingerprint == winner.decision.fingerprint
+        assert durable.fingerprint == winner.result.receipt.fingerprint
+        assert durable.evidence_identity == winner.result.receipt.evidence_identity
         verify.commit_transaction()
     finally:
         verify.end_session()
@@ -347,7 +385,7 @@ def test_real_mongo_deterministic_p5b_duplicate_key_race(
 
 
 # ARTIFACT: test_process_service_attempt_authority_registry_concurrent_real_mongo.py
-# VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT
+# VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CONCURRENT-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: deterministic P5B duplicate-key race evidence only
 # TENANT POSTURE: one explicit synthetic tenant; no cross-tenant disclosure
 # FAIL-CLOSED POSTURE: ambiguous or unclassified outcomes fail the certificate

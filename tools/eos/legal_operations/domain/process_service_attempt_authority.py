@@ -1,20 +1,21 @@
 """Canonical pure-Python process-service attempt-authorization evidence.
 
 TITLE: Wilsy OS Process-Service Attempt Authority
-VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY
+VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Bind one explicit process-service attempt authorization to a validated
          P4 allocation receipt and current pointer without constructing or
-         transitioning any later service lifecycle fact.
+         transitioning any later service lifecycle fact. The complete P4
+         allocation provenance reference is preserved byte-for-byte.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/process_service_attempt_authority.py
 COLLABORATION / OWNERSHIP: P5A owns immutable attempt-authorization evidence;
                             P4B owns allocation receipt/current evidence; later
                             callers own persistence and ServiceAttempt
                             lifecycle transitions.
 CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY establishes
-           strict P4 receipt/current correlation and payload-bound immutable
-           attempt-authorization evidence.
+CHANGELOG: 2026-09-14 v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY extends the
+           immutable decision payload with the exact validated P4 allocation
+           evidence reference for a later durable handoff.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque tenant, identity, custody, and evidence
                              references only; no network, provider, credential,
@@ -49,7 +50,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION: Final[str] = "v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY"
+VERSION: Final[str] = "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY"
 SCHEMA: Final[str] = "WILSY-PROCESS-SERVICE-ATTEMPT-AUTHORITY/V1"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
@@ -97,6 +98,13 @@ def _fingerprint(name: str, value: object) -> str:
     if not isinstance(value, str) or _SHA3.fullmatch(value) is None:
         _fail(f"P5A_{name.upper()}_INVALID")
     return cast(str, value)
+
+
+def _evidence_reference(name: str, value: object) -> str:
+    """Require one exact non-empty P4 evidence reference."""
+    if not isinstance(value, str) or not value or value != value.strip():
+        _fail(f"P5A_{name.upper()}_INVALID")
+    return value
 
 
 def _utc_timestamp(name: str, value: object) -> datetime:
@@ -162,6 +170,7 @@ def _decision_payload(
     document_id: str,
     deputy_id: str,
     allocation_command_id: str,
+    allocation_evidence_reference: str,
     allocation_receipt_evidence_identity: str,
     allocation_receipt_fingerprint: str,
     allocation_current_fingerprint: str,
@@ -180,6 +189,7 @@ def _decision_payload(
         "document_id": document_id,
         "deputy_id": deputy_id,
         "allocation_command_id": allocation_command_id,
+        "allocation_evidence_reference": allocation_evidence_reference,
         "allocation_receipt_evidence_identity": allocation_receipt_evidence_identity,
         "allocation_receipt_fingerprint": allocation_receipt_fingerprint,
         "allocation_current_fingerprint": allocation_current_fingerprint,
@@ -219,6 +229,7 @@ class ProcessServiceAttemptAuthorityDecision:
     document_id: str
     deputy_id: str
     allocation_command_id: str
+    allocation_evidence_reference: str
     allocation_receipt_evidence_identity: str
     allocation_receipt_fingerprint: str
     allocation_current_fingerprint: str
@@ -241,6 +252,7 @@ class ProcessServiceAttemptAuthorityDecision:
             "allocation_command_id",
         ):
             _identity(name, getattr(self, name))
+        _evidence_reference("allocation_evidence_reference", self.allocation_evidence_reference)
         _fingerprint("allocation_receipt_evidence_identity", self.allocation_receipt_evidence_identity)
         _fingerprint("allocation_receipt_fingerprint", self.allocation_receipt_fingerprint)
         _fingerprint("allocation_current_fingerprint", self.allocation_current_fingerprint)
@@ -267,6 +279,7 @@ class ProcessServiceAttemptAuthorityDecision:
             document_id=self.document_id,
             deputy_id=self.deputy_id,
             allocation_command_id=self.allocation_command_id,
+            allocation_evidence_reference=self.allocation_evidence_reference,
             allocation_receipt_evidence_identity=self.allocation_receipt_evidence_identity,
             allocation_receipt_fingerprint=self.allocation_receipt_fingerprint,
             allocation_current_fingerprint=self.allocation_current_fingerprint,
@@ -346,6 +359,7 @@ def authorize_process_service_attempt(
         document_id=_identity("document_id", receipt.document_id),
         deputy_id=_identity("deputy_id", receipt.deputy_id),
         allocation_command_id=_identity("allocation_command_id", receipt.allocation_command_id),
+        allocation_evidence_reference=receipt.allocation_evidence_reference,
         allocation_receipt_evidence_identity=_fingerprint(
             "allocation_receipt_evidence_identity", receipt.evidence_identity
         ),
@@ -362,6 +376,7 @@ def authorize_process_service_attempt(
         document_id=cast(str, payload["document_id"]),
         deputy_id=cast(str, payload["deputy_id"]),
         allocation_command_id=cast(str, payload["allocation_command_id"]),
+        allocation_evidence_reference=cast(str, payload["allocation_evidence_reference"]),
         allocation_receipt_evidence_identity=cast(
             str, payload["allocation_receipt_evidence_identity"]
         ),
@@ -383,7 +398,7 @@ __all__ = [
 
 
 # ARTIFACT: process_service_attempt_authority.py
-# VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY
+# VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY
 # AUTHORITY BOUNDARY: canonical P5A attempt-authorization evidence only
 # TENANT POSTURE: explicit tenant derived from correlated P4 allocation evidence
 # FAIL-CLOSED POSTURE: exact P4 validation, binding, chronology, and proof required
