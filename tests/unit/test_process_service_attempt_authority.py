@@ -1,7 +1,7 @@
 """Direct adversarial certificate for the pure P5A attempt authority.
 
 TITLE: Wilsy OS Process-Service Attempt Authority Certificate
-VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT
+VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify immutable, tenant-scoped P5A attempt-authorization evidence
          and every fail-closed P4 correlation boundary without persistence.
@@ -10,9 +10,11 @@ COLLABORATION / OWNERSHIP: Direct P5A certificate; P4B remains allocation
                             evidence authority and P5A production remains the
                             attempt-authorization evidence owner.
 CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT adds
-           deterministic happy-path, proof-gate, P4-correlation, tenant,
-           chronology, immutability, and authority-boundary certification.
+CHANGELOG: 2026-09-14 v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT certifies
+           exact P4 allocation-evidence provenance propagation and its
+           canonical payload/fingerprint binding while retaining all prior
+           proof-gate, correlation, tenant, chronology, immutability, and
+           authority-boundary certification.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only; no network,
                              Mongo runtime, provider, credential, location, or
@@ -34,6 +36,7 @@ from __future__ import annotations
 from dataclasses import fields, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
+import inspect
 import json
 from typing import Any, cast
 
@@ -51,7 +54,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION = "v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT"
+VERSION = "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT"
 TENANT = "tenant-alpha"
 BASE = datetime(2026, 9, 14, 8, 0, tzinfo=timezone.utc)
 HEX_A = "a" * 128
@@ -164,6 +167,7 @@ def test_happy_path_derives_every_authority_field_and_is_deterministic() -> None
     assert decision.document_id == receipt.document_id
     assert decision.deputy_id == receipt.deputy_id
     assert decision.allocation_command_id == receipt.allocation_command_id
+    assert decision.allocation_evidence_reference == receipt.allocation_evidence_reference
     assert decision.allocation_receipt_evidence_identity == receipt.evidence_identity
     assert decision.allocation_receipt_fingerprint == receipt.fingerprint
     assert decision.allocation_current_fingerprint == hashlib.sha3_512(
@@ -172,6 +176,7 @@ def test_happy_path_derives_every_authority_field_and_is_deterministic() -> None
     assert decision.allocated_at == receipt.allocated_at
     assert decision.authorized_at == receipt.allocated_at + timedelta(minutes=2)
     assert decision.to_dict() == decision.to_dict()
+    assert decision.to_dict()["allocation_evidence_reference"] == "allocation-evidence-1"
     assert decision.fingerprint == decision.fingerprint
     assert len(decision.fingerprint) == 128
     assert decision.fingerprint == decision.fingerprint.lower()
@@ -201,6 +206,34 @@ def test_fingerprint_is_independently_recomputed_and_changes_with_semantics() ->
         authorized_at=_receipt().allocated_at + timedelta(minutes=2),
     )
     assert other.fingerprint != decision.fingerprint
+
+
+def test_allocation_provenance_is_canonical_and_fingerprint_bound() -> None:
+    """The exact P4 allocation provenance is serialized and integrity-bound."""
+    decision = _decision()
+    payload = decision.to_dict()
+    assert payload["allocation_evidence_reference"] == "allocation-evidence-1"
+    changed = dict(payload)
+    changed["allocation_evidence_reference"] = "allocation-evidence-2"
+    changed_digest = hashlib.sha3_512(
+        json.dumps(changed, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    ).hexdigest()
+    assert changed_digest != decision.fingerprint
+
+
+def test_allocation_provenance_has_no_caller_authority_input() -> None:
+    """Callers cannot supply or override the P4 allocation provenance field."""
+    signature = inspect.signature(authorize_process_service_attempt)
+    assert "allocation_evidence_reference" not in signature.parameters
+    with pytest.raises(TypeError):
+        authorize_process_service_attempt(  # type: ignore[call-arg]
+            allocation_receipt=_receipt(),
+            allocation_current=_current(_receipt()),
+            attempt_authority_id="attempt-authority-1",
+            attempt_id="attempt-1",
+            authorized_at=BASE,
+            allocation_evidence_reference="caller-forged",  # type: ignore[call-arg]
+        )
 
 
 def test_direct_construction_and_proof_reuse_fail_closed() -> None:
@@ -438,6 +471,7 @@ def test_authority_surface_excludes_later_lifecycle_and_financial_truth() -> Non
         "document_id",
         "deputy_id",
         "allocation_command_id",
+        "allocation_evidence_reference",
         "allocation_receipt_evidence_identity",
         "allocation_receipt_fingerprint",
         "allocation_current_fingerprint",
@@ -458,7 +492,7 @@ def test_authority_surface_excludes_later_lifecycle_and_financial_truth() -> Non
 
 
 # ARTIFACT: test_process_service_attempt_authority.py
-# VERSION: v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT
+# VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-CERT
 # AUTHORITY BOUNDARY: direct P5A evidence certificate only
 # TENANT POSTURE: synthetic explicit tenant scope; no cross-tenant disclosure
 # FAIL-CLOSED POSTURE: production contract is tested without mutation or Mongo

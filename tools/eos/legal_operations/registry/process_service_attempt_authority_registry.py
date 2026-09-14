@@ -1,7 +1,7 @@
 """Durable tenant-scoped registry for process-service attempt authority.
 
 TITLE: Wilsy OS Process-Service Attempt Authority Registry
-VERSION: v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY
+VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist immutable P5A attempt-authorization receipts with strict
          replay, hydration, tenant isolation, and caller-owned transactions.
@@ -10,9 +10,10 @@ COLLABORATION / OWNERSHIP: P5B owns durable P5A receipt persistence only;
                             P5A remains attempt-authorization evidence owner;
                             callers own Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY
-           classifies positively labeled transactional insert conflicts as
-           whole-transaction retry-required while preserving other outages.
+CHANGELOG: 2026-09-14 v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY
+           extends the immutable P5B receipt and durable payload with the
+           exact validated P5A allocation-evidence reference, preserving
+           append-only replay, hydration, and transaction boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stores opaque tenant, identity, and evidence
                              references only; no provider, credential,
@@ -53,7 +54,7 @@ from tools.eos.legal_operations.domain.process_service_attempt_authority import 
 )
 
 
-VERSION: Final[str] = "v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY"
+VERSION: Final[str] = "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY"
 RECEIPT_SCHEMA: Final[str] = "WILSY-PROCESS-SERVICE-ATTEMPT-AUTHORITY-RECEIPT/V1"
 RECEIPT_COLLECTION: Final[str] = "process_service_attempt_authority_receipts"
 AUTHORITY_INDEX_NAME: Final[str] = "process_service_attempt_tenant_authority_unique"
@@ -73,6 +74,7 @@ _RECEIPT_SEMANTIC_FIELDS: Final[tuple[str, ...]] = (
     "document_id",
     "deputy_id",
     "allocation_command_id",
+    "allocation_evidence_reference",
     "allocation_receipt_evidence_identity",
     "allocation_receipt_fingerprint",
     "allocation_current_fingerprint",
@@ -245,6 +247,7 @@ def _receipt_payload(
     document_id: str,
     deputy_id: str,
     allocation_command_id: str,
+    allocation_evidence_reference: str,
     allocation_receipt_evidence_identity: str,
     allocation_receipt_fingerprint: str,
     allocation_current_fingerprint: str,
@@ -264,6 +267,7 @@ def _receipt_payload(
         "document_id": document_id,
         "deputy_id": deputy_id,
         "allocation_command_id": allocation_command_id,
+        "allocation_evidence_reference": allocation_evidence_reference,
         "allocation_receipt_evidence_identity": allocation_receipt_evidence_identity,
         "allocation_receipt_fingerprint": allocation_receipt_fingerprint,
         "allocation_current_fingerprint": allocation_current_fingerprint,
@@ -286,6 +290,7 @@ def _p5a_payload_from_receipt(receipt: "ProcessServiceAttemptAuthorityReceipt") 
         "document_id": receipt.document_id,
         "deputy_id": receipt.deputy_id,
         "allocation_command_id": receipt.allocation_command_id,
+        "allocation_evidence_reference": receipt.allocation_evidence_reference,
         "allocation_receipt_evidence_identity": receipt.allocation_receipt_evidence_identity,
         "allocation_receipt_fingerprint": receipt.allocation_receipt_fingerprint,
         "allocation_current_fingerprint": receipt.allocation_current_fingerprint,
@@ -336,6 +341,7 @@ class ProcessServiceAttemptAuthorityReceipt:
     document_id: str
     deputy_id: str
     allocation_command_id: str
+    allocation_evidence_reference: str
     allocation_receipt_evidence_identity: str
     allocation_receipt_fingerprint: str
     allocation_current_fingerprint: str
@@ -354,6 +360,11 @@ class ProcessServiceAttemptAuthorityReceipt:
             "deputy_id", "allocation_command_id",
         ):
             _identity(name, getattr(self, name), ProcessServiceAttemptAuthorityRegistryInputError)
+        _text(
+            "allocation_evidence_reference",
+            self.allocation_evidence_reference,
+            ProcessServiceAttemptAuthorityRegistryInputError,
+        )
         for name in (
             "allocation_receipt_evidence_identity", "allocation_receipt_fingerprint",
             "allocation_current_fingerprint", "authority_decision_fingerprint",
@@ -376,6 +387,7 @@ class ProcessServiceAttemptAuthorityReceipt:
             document_id=self.document_id,
             deputy_id=self.deputy_id,
             allocation_command_id=self.allocation_command_id,
+            allocation_evidence_reference=self.allocation_evidence_reference,
             allocation_receipt_evidence_identity=self.allocation_receipt_evidence_identity,
             allocation_receipt_fingerprint=self.allocation_receipt_fingerprint,
             allocation_current_fingerprint=self.allocation_current_fingerprint,
@@ -441,6 +453,7 @@ def _receipt_from_decision(decision: ProcessServiceAttemptAuthorityDecision) -> 
         document_id=cast(str, payload["document_id"]),
         deputy_id=cast(str, payload["deputy_id"]),
         allocation_command_id=cast(str, payload["allocation_command_id"]),
+        allocation_evidence_reference=cast(str, payload["allocation_evidence_reference"]),
         allocation_receipt_evidence_identity=cast(str, payload["allocation_receipt_evidence_identity"]),
         allocation_receipt_fingerprint=cast(str, payload["allocation_receipt_fingerprint"]),
         allocation_current_fingerprint=cast(str, payload["allocation_current_fingerprint"]),
@@ -456,6 +469,7 @@ def _receipt_from_decision(decision: ProcessServiceAttemptAuthorityDecision) -> 
         document_id=cast(str, payload["document_id"]),
         deputy_id=cast(str, payload["deputy_id"]),
         allocation_command_id=cast(str, payload["allocation_command_id"]),
+        allocation_evidence_reference=cast(str, payload["allocation_evidence_reference"]),
         allocation_receipt_evidence_identity=cast(str, payload["allocation_receipt_evidence_identity"]),
         allocation_receipt_fingerprint=cast(str, payload["allocation_receipt_fingerprint"]),
         allocation_current_fingerprint=cast(str, payload["allocation_current_fingerprint"]),
@@ -525,6 +539,11 @@ def _hydrate_record(document: Mapping[str, Any]) -> ProcessServiceAttemptAuthori
         "deputy_id", "allocation_command_id",
     ):
         _identity(name, values[name], ProcessServiceAttemptAuthorityRegistryPersistedRecordInvalidError)
+    _text(
+        "allocation_evidence_reference",
+        values["allocation_evidence_reference"],
+        ProcessServiceAttemptAuthorityRegistryPersistedRecordInvalidError,
+    )
     for name in (
         "allocation_receipt_evidence_identity", "allocation_receipt_fingerprint",
         "allocation_current_fingerprint", "authority_decision_fingerprint",
@@ -817,7 +836,7 @@ __all__ = [
 
 
 # ARTIFACT: process_service_attempt_authority_registry.py
-# VERSION: v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY
+# VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY
 # AUTHORITY BOUNDARY: append-only P5A receipt persistence and strict hydration
 # TENANT POSTURE: every lookup and record is explicitly tenant-scoped
 # FAIL-CLOSED POSTURE: corruption, divergence, outages, and races reject

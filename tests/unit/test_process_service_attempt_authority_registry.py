@@ -1,7 +1,7 @@
 """Direct adversarial certificate for the immutable P5B attempt registry.
 
 TITLE: Wilsy OS Process-Service Attempt Authority Registry Certificate
-VERSION: v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT
+VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify P5B receipt derivation, durable replay, strict hydration,
          tenant isolation, outage handling, and caller transaction ownership.
@@ -10,9 +10,11 @@ COLLABORATION / OWNERSHIP: Direct P5B certificate; P5A remains immutable
                             attempt-authorization evidence authority and this
                             registry remains append-only persistence authority.
 CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT
-           adds direct labeled transactional insert-conflict classification
-           and explicit unknown-commit-result exclusion certification.
+CHANGELOG: 2026-09-14 v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT
+           certifies exact P5A allocation-evidence provenance propagation,
+           durable serialization, fingerprint/evidence-identity binding,
+           strict hydration, and provenance-aware replay while retaining all
+           prior transactional and authority-boundary certification.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only; no network,
                              provider, credential, location, or personal-data
@@ -34,6 +36,7 @@ from __future__ import annotations
 from dataclasses import fields
 from datetime import datetime, timedelta, timezone
 import hashlib
+import inspect
 import json
 from typing import Any, Callable, cast
 
@@ -61,7 +64,7 @@ from tools.eos.legal_operations.registry.process_service_attempt_authority_regis
 )
 
 
-VERSION = "v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT"
+VERSION = "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT"
 TENANT = "tenant-alpha"
 BASE = datetime(2026, 9, 14, 8, 0, tzinfo=timezone.utc)
 HEX_A = "a" * 128
@@ -169,9 +172,13 @@ def _decision(
     tenant_id: str = TENANT,
     attempt_authority_id: str = "attempt-authority-1",
     attempt_id: str = "attempt-1",
+    allocation_evidence_reference: str = "allocation-evidence-1",
 ) -> ProcessServiceAttemptAuthorityDecision:
     """Build one deterministic P5A decision through its public factory."""
-    receipt = _receipt(tenant_id=tenant_id)
+    receipt = _receipt(
+        tenant_id=tenant_id,
+        allocation_evidence_reference=allocation_evidence_reference,
+    )
     current = _current(receipt)
     return authorize_process_service_attempt(
         allocation_receipt=receipt,
@@ -213,6 +220,7 @@ def test_receipt_derivation_and_deterministic_evidence() -> None:
     assert receipt.document_id == decision.document_id
     assert receipt.deputy_id == decision.deputy_id
     assert receipt.allocation_command_id == decision.allocation_command_id
+    assert receipt.allocation_evidence_reference == decision.allocation_evidence_reference
     assert receipt.allocation_receipt_evidence_identity == decision.allocation_receipt_evidence_identity
     assert receipt.allocation_receipt_fingerprint == decision.allocation_receipt_fingerprint
     assert receipt.allocation_current_fingerprint == decision.allocation_current_fingerprint
@@ -224,6 +232,42 @@ def test_receipt_derivation_and_deterministic_evidence() -> None:
     assert receipt.to_dict() == receipt.to_dict()
     assert receipt.fingerprint == receipt.fingerprint
     assert receipt.evidence_identity == receipt.evidence_identity
+
+
+def test_provenance_is_present_in_durable_record_and_replay() -> None:
+    """The exact P5A provenance survives receipt and nested record serialization."""
+    decision = _decision()
+    collection = _Collection()
+    first = registry.persist(decision, collection, session=_Session())
+    row = collection.rows[0]
+    assert first.receipt.to_dict()["allocation_evidence_reference"] == "allocation-evidence-1"
+    assert row["receipt_payload"]["allocation_evidence_reference"] == "allocation-evidence-1"
+    replay = registry.persist(decision, collection, session=_Session())
+    assert replay.outcome is ProcessServiceAttemptAuthorityPersistenceOutcome.IDEMPOTENT_REPLAY
+    assert replay.receipt.allocation_evidence_reference == "allocation-evidence-1"
+
+
+def test_provenance_has_no_independent_caller_argument() -> None:
+    """P5B accepts provenance only through the exact P5A decision payload."""
+    signature = inspect.signature(ProcessServiceAttemptAuthorityRegistry.persist)
+    assert "allocation_evidence_reference" not in signature.parameters
+    with pytest.raises(TypeError):
+        ProcessServiceAttemptAuthorityRegistry.persist(  # type: ignore[call-arg]
+            _decision(), _Collection(), session=_Session(), allocation_evidence_reference="forged"  # type: ignore[call-arg]
+        )
+
+
+def test_provenance_changes_receipt_fingerprint_and_evidence_identity() -> None:
+    """Changing only the upstream provenance input changes both P5B identities."""
+    first = registry.persist(_decision(), _Collection(), session=_Session()).receipt
+    second = registry.persist(
+        _decision(allocation_evidence_reference="allocation-evidence-2"),
+        _Collection(),
+        session=_Session(),
+    ).receipt
+    assert first.allocation_evidence_reference != second.allocation_evidence_reference
+    assert first.fingerprint != second.fingerprint
+    assert first.evidence_identity != second.evidence_identity
 
 
 def test_exact_p5a_input_type_and_validation_contract() -> None:
@@ -318,6 +362,19 @@ def test_exact_replay_returns_one_durable_record_without_insert() -> None:
     assert len(collection.rows) == 1
 
 
+def test_hydration_preserves_exact_provenance_and_p5a_fingerprint_binding() -> None:
+    """A v1.1.0 durable row rehydrates provenance and its extended P5A digest."""
+    decision = _decision()
+    collection = _Collection()
+    registry.persist(decision, collection, session=_Session())
+    hydrated = registry.get_by_attempt_authority_id(
+        TENANT, decision.attempt_authority_id, collection, session=_Session()
+    )
+    assert hydrated.allocation_evidence_reference == decision.allocation_evidence_reference
+    assert hydrated.authority_decision_fingerprint == decision.fingerprint
+    assert hydrated.to_dict() == collection.rows[0]["receipt_payload"]
+
+
 def test_authority_identity_divergence_rejects_without_last_write_wins() -> None:
     """Same tenant/authority identity with changed immutable semantics conflicts."""
     first = _decision(attempt_id="attempt-1")
@@ -327,6 +384,20 @@ def test_authority_identity_divergence_rejects_without_last_write_wins() -> None
     registry.persist(first, collection, session=session)
     _assert_code(
         lambda: registry.persist(divergent, collection, session=session),
+        "P5B_ATTEMPT_AUTHORITY_IDENTITY_CONFLICT",
+        ProcessServiceAttemptAuthorityRegistryAuthorityIdentityConflictError,
+    )
+    assert len(collection.rows) == 1
+
+
+def test_provenance_divergence_is_not_idempotent_replay() -> None:
+    """Same authority identity with changed provenance is a conflict, not replay."""
+    first = _decision()
+    divergent = _decision(allocation_evidence_reference="allocation-evidence-2")
+    collection = _Collection()
+    registry.persist(first, collection, session=_Session())
+    _assert_code(
+        lambda: registry.persist(divergent, collection, session=_Session()),
         "P5B_ATTEMPT_AUTHORITY_IDENTITY_CONFLICT",
         ProcessServiceAttemptAuthorityRegistryAuthorityIdentityConflictError,
     )
@@ -425,6 +496,9 @@ def _corrupted_row(decision: ProcessServiceAttemptAuthorityDecision, mutate: Cal
         ("payload_extra", lambda row: row["receipt_payload"].update({"quota": 1}), "P5B_RECEIPT_PAYLOAD_SCHEMA_INVALID"),
         ("payload_missing", lambda row: row["receipt_payload"].pop("attempt_id"), "P5B_RECEIPT_PAYLOAD_SCHEMA_INVALID"),
         ("payload_schema", lambda row: row["receipt_payload"].update({"schema": "wrong"}), "P5B_RECEIPT_VERSION_UNSUPPORTED"),
+        ("provenance_missing", lambda row: row["receipt_payload"].pop("allocation_evidence_reference"), "P5B_RECEIPT_PAYLOAD_SCHEMA_INVALID"),
+        ("provenance_malformed", lambda row: row["receipt_payload"].update({"allocation_evidence_reference": " "}), "P5B_ALLOCATION_EVIDENCE_REFERENCE_INVALID"),
+        ("provenance_altered", lambda row: row["receipt_payload"].update({"allocation_evidence_reference": "allocation-evidence-2"}), "P5B_DECISION_FINGERPRINT_MISMATCH"),
         ("bad_timestamp", lambda row: row["receipt_payload"].update({"allocated_at": "2026-09-14T08:05:00"}), "P5B_ALLOCATED_AT_INVALID"),
         ("bad_receipt_digest_shape", lambda row: row.update({"receipt_fingerprint": "x" * 128}), "P5B_RECEIPT_FINGERPRINT_INVALID"),
         ("bad_decision_digest", lambda row: (row.update({"authority_decision_fingerprint": HEX_A}), row["receipt_payload"].update({"authority_decision_fingerprint": HEX_A})), "P5B_DECISION_FINGERPRINT_MISMATCH"),
@@ -470,7 +544,7 @@ def test_p5a_payload_digest_is_independently_verified() -> None:
     payload = row["receipt_payload"]
     expected_payload = {
         "schema": "WILSY-PROCESS-SERVICE-ATTEMPT-AUTHORITY/V1",
-        "version": "v1.0.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY",
+        "version": "v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY",
         "entity_type": "ProcessServiceAttemptAuthorityDecision",
         "tenant_id": payload["tenant_id"],
         "attempt_authority_id": payload["attempt_authority_id"],
@@ -479,6 +553,7 @@ def test_p5a_payload_digest_is_independently_verified() -> None:
         "document_id": payload["document_id"],
         "deputy_id": payload["deputy_id"],
         "allocation_command_id": payload["allocation_command_id"],
+        "allocation_evidence_reference": payload["allocation_evidence_reference"],
         "allocation_receipt_evidence_identity": payload["allocation_receipt_evidence_identity"],
         "allocation_receipt_fingerprint": payload["allocation_receipt_fingerprint"],
         "allocation_current_fingerprint": payload["allocation_current_fingerprint"],
@@ -672,7 +747,7 @@ def test_persistence_result_serialization_is_exact_and_nonfinancial() -> None:
 
 
 # ARTIFACT: test_process_service_attempt_authority_registry.py
-# VERSION: v1.0.1-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT
+# VERSION: v1.1.0-PROCESS-SERVICE-ATTEMPT-AUTHORITY-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct P5B persistence certificate only
 # TENANT POSTURE: synthetic explicit tenant scope; no cross-tenant disclosure
 # FAIL-CLOSED POSTURE: strict replay, hydration, outage, and transaction proofs
