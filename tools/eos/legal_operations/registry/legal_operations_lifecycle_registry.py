@@ -1,7 +1,7 @@
 """Durable, provider-neutral Legal Operations lifecycle evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry
-VERSION: v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
+VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist and strictly hydrate immutable P1 Legal Operations evidence
          without deriving lifecycle, service, billing, or financial truth.
@@ -9,10 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: P2 persistence owner; the P1 domain remains the
                             exclusive lifecycle/evidence authority. Callers own
                             Mongo sessions and transaction boundaries.
-CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: 2026-09-13 v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY adds strict
-           tenant-scoped durable identity, replay, hydration, and corruption
-           handling for all canonical P1 lifecycle evidence types.
+CERTIFICATION / UPDATE DATE: 2026-09-14
+CHANGELOG: 2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY translates
+           labeled transient transaction write conflicts into the governed
+           whole-transaction retry signal while preserving caller ownership.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stores canonical opaque evidence only; no network,
                              provider, credential, secret, or PII expansion.
@@ -60,7 +60,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+VERSION: Final[str] = "v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
 COLLECTION: Final[str] = "legal_operations_lifecycle_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -142,6 +142,13 @@ def _tenant(value: object) -> str:
 def _sha3(value: object) -> str:
     encoded = json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha3_512(encoded.encode("utf-8")).hexdigest()
+
+
+def _is_transient_transaction_write_conflict(error: PyMongoError) -> bool:
+    """Recognize retryable transaction conflicts without resolving commit uncertainty."""
+    return error.has_error_label("TransientTransactionError") and not error.has_error_label(
+        "UnknownTransactionCommitResult"
+    )
 
 
 def _require_sha3(value: object, code: str) -> str:
@@ -477,6 +484,8 @@ class LegalOperationsLifecycleRegistry:
         try:
             existing = collection.find_one(query, session=session)
         except PyMongoError as error:
+            if session is not None and getattr(session, "in_transaction", False) and _is_transient_transaction_write_conflict(error):
+                _fail("M2_RETRY_TRANSACTION_REQUIRED", error)
             _fail("M2_PERSISTENCE_UNAVAILABLE", error)
         if existing is not None:
             current = _hydrate_record(existing)
@@ -511,6 +520,8 @@ class LegalOperationsLifecycleRegistry:
                     return current
             _fail("M2_REPLAY_CONFLICT", error)
         except PyMongoError as error:
+            if session is not None and getattr(session, "in_transaction", False) and _is_transient_transaction_write_conflict(error):
+                _fail("M2_RETRY_TRANSACTION_REQUIRED", error)
             _fail("M2_PERSISTENCE_UNAVAILABLE", error)
         try:
             persisted = collection.find_one(query, session=session)
@@ -546,7 +557,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_lifecycle_registry.py
-# VERSION: v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
+# VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
 # AUTHORITY BOUNDARY: durable P1 evidence persistence and strict hydration only.
 # TENANT POSTURE: every record and lookup is explicitly tenant-scoped.
 # FAIL-CLOSED POSTURE: corruption, divergence, unsupported types, and outages reject.
