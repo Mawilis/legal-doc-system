@@ -1,7 +1,7 @@
 """Direct adversarial certificate for the Legal Operations P2 registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry Certificate
-VERSION: v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify immutable snapshot persistence, exact factory provenance,
          strict hydration, replay integrity, and tenant/session boundaries.
@@ -9,10 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Direct certificate for the P2 registry only; P1
                             remains lifecycle/evidence authority and callers own
                             Mongo sessions and transactions.
-CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: 2026-09-13 v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT adds
-           deterministic fake-Mongo proofs for immutable snapshots, complete
-           factory provenance, strict corruption rejection, and isolation.
+CERTIFICATION / UPDATE DATE: 2026-09-14
+CHANGELOG: 2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT adds
+           direct labeled-transient conflict translation, uncertain-commit
+           exclusion, and generic persistence regression proofs.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic identifiers only; no real database,
                              network, provider, secret, or customer access.
@@ -33,7 +33,7 @@ from dataclasses import fields
 from typing import Any, Callable, cast
 
 import pytest
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, OperationFailure
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     LegalInstruction,
@@ -46,6 +46,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     LegalOperationsLifecycleRegistry,
     LegalOperationsLifecycleRegistryError,
+    VERSION as P2_VERSION,
 )
 
 
@@ -113,6 +114,41 @@ class DivergentRaceCollection(RaceCollection):
             return super().find_one(query, session=session)
         self.calls.append(("find_one", session, deepcopy(query)))
         return deepcopy(self.docs[0])
+
+
+class FailureCollection(FakeCollection):
+    """Collection that raises one real PyMongo error from the insert path."""
+
+    def __init__(self, error: OperationFailure) -> None:
+        super().__init__()
+        self.error = error
+
+    def insert_one(self, document: dict[str, object], *, session: object = None) -> object:
+        self.calls.append(("insert_one", session, deepcopy(document)))
+        raise self.error
+
+
+class TrackingSession(FakeSession):
+    """Active caller session proving P2 does not own lifecycle operations."""
+
+    def __init__(self) -> None:
+        super().__init__(in_transaction=True)
+        self.start_calls = 0
+        self.commit_calls = 0
+        self.abort_calls = 0
+        self.end_calls = 0
+
+    def start_transaction(self) -> None:
+        self.start_calls += 1
+
+    def commit_transaction(self) -> None:
+        self.commit_calls += 1
+
+    def abort_transaction(self) -> None:
+        self.abort_calls += 1
+
+    def end_session(self) -> None:
+        self.end_calls += 1
 
 
 def instruction(**overrides: object) -> LegalInstruction:
@@ -388,6 +424,63 @@ def test_outside_transaction_duplicate_race_divergence_is_replay_conflict() -> N
     assert len(raced.docs) == 1
 
 
+def _operation_failure(code: int, *labels: str) -> OperationFailure:
+    """Build a PyMongo failure with explicit driver labels for the seam test."""
+    error = OperationFailure("synthetic persistence failure", code=code)
+    for label in labels:
+        error._add_error_label(label)
+    return error
+
+
+def test_active_transient_transaction_error_is_retry_required_and_causal() -> None:
+    error = _operation_failure(27182, "TransientTransactionError")
+    collection = FailureCollection(error)
+    session = TrackingSession()
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.create(instruction(), collection, session=session)
+    assert str(caught.value) == "M2_RETRY_TRANSACTION_REQUIRED"
+    assert caught.value.__cause__ is error
+    assert error.code == 27182
+    assert error.has_error_label("TransientTransactionError")
+    assert session.start_calls == session.commit_calls == session.abort_calls == session.end_calls == 0
+    assert len(collection.docs) == 0
+
+
+def test_unknown_commit_result_is_not_resolved_as_retry_required() -> None:
+    error = _operation_failure(27183, "TransientTransactionError", "UnknownTransactionCommitResult")
+    collection = FailureCollection(error)
+    session = TrackingSession()
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.create(instruction(), collection, session=session)
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
+    assert error.has_error_label("UnknownTransactionCommitResult")
+    assert session.start_calls == session.commit_calls == session.abort_calls == session.end_calls == 0
+
+
+def test_active_non_transient_error_remains_persistence_unavailable() -> None:
+    error = _operation_failure(27184)
+    collection = FailureCollection(error)
+    session = TrackingSession()
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.create(instruction(), collection, session=session)
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
+
+
+def test_outside_transaction_transient_error_is_not_retry_required() -> None:
+    error = _operation_failure(27185, "TransientTransactionError")
+    collection = FailureCollection(error)
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.create(instruction(), collection, session=FakeSession())
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
+
+
+def test_p2_production_version_is_the_repaired_patch() -> None:
+    assert P2_VERSION == "v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+
+
 def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> None:
     expect_code("M2_P1_VALUE_REQUIRED", lambda: LegalOperationsLifecycleRegistry.create(cast(Any, object()), FakeCollection()))
     value = instruction()
@@ -399,7 +492,7 @@ def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> 
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry.py
-# VERSION: v1.0.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+# VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct P2 persistence/hydration certificate only.
 # TENANT POSTURE: explicit synthetic tenants; foreign evidence is undisclosed.
 # FAIL-CLOSED POSTURE: malformed records, provenance, races, and sources reject.
