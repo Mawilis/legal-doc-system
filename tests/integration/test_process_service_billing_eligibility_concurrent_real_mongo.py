@@ -1,0 +1,172 @@
+"""Deterministic P6B duplicate-writer real-Mongo certificate.
+
+TITLE: Wilsy OS P6B Billing Eligibility Concurrent Certificate
+VERSION: v1.0.0-PROCESS-SERVICE-BILLING-ELIGIBILITY-CONCURRENT-REAL-MONGO-CERT
+AUTHORITY: Wilsy OS Core Governance
+SCOPE: Two caller-owned transactions racing on one immutable eligibility record.
+TENANT BOUNDARY: UUID-isolated database and tenant predicates on every operation.
+AUTHORITY BOUNDARY: P6B evidence only; no invoice/payment/settlement authority.
+TRANSACTION BOUNDARY: Workers own sessions, commit, abort, and end lifecycle.
+FAIL-CLOSED: Exactly one winner and one governed retry loser are required.
+CERTIFICATION / UPDATE DATE: 2026-09-14
+CHANGELOG: 2026-09-14 v1.0.0-PROCESS-SERVICE-BILLING-ELIGIBILITY-CONCURRENT-REAL-MONGO-CERT
+           certifies deterministic unique-writer behavior without ambiguous commit claims.
+"""
+from datetime import datetime, timedelta, timezone
+import os
+import sys
+import threading
+from typing import Any, Iterator, cast
+import uuid
+
+import pytest
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from pymongo.read_concern import ReadConcern
+from pymongo.write_concern import WriteConcern
+
+from tools.eos.legal_operations.domain.legal_operations_lifecycle import District, ReturnOfService, ServiceAttempt, ServiceAttemptState, ServiceExecution
+from tools.eos.legal_operations.domain.process_service_tariff_authority import TariffQuantityBasis, TariffRule, TariffSchedule, TariffVersion, assess_from_return
+from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import LegalOperationsLifecycleRegistry
+from tools.eos.legal_operations.registry.process_service_billing_eligibility_registry import ProcessServiceBillingEligibilityRegistry, ProcessServiceBillingEligibilityRegistryError
+from tools.eos.legal_operations.registry.process_service_tariff_registry import ProcessServiceTariffRegistry, _record as tariff_record
+
+MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
+EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
+BASE = datetime(2026, 9, 14, 13, 0, tzinfo=timezone.utc)
+HASH = "c" * 128
+
+
+class BarrierCollection:
+    """Synchronize the two durable writes without sleeps or retries."""
+
+    def __init__(self, collection: Any, barrier: threading.Barrier) -> None:
+        self.collection, self.barrier = collection, barrier
+
+    def create_index(self, *args: Any, **kwargs: Any) -> Any:
+        return self.collection.create_index(*args, **kwargs)
+
+    def find_one(self, query: dict[str, Any], *, session: object = None) -> Any:
+        return self.collection.find_one(query, session=session)
+
+    def insert_one(self, document: dict[str, Any], *, session: object = None) -> Any:
+        self.barrier.wait(timeout=15)
+        return self.collection.insert_one(document, session=session)
+
+    def count_documents(self, query: dict[str, Any]) -> int:
+        return self.collection.count_documents(query)
+
+
+@pytest.fixture
+def mongo_context() -> Iterator[tuple[MongoClient, Any, Any, Any]]:
+    """Yield isolated majority/journaled collections and clean them safely."""
+    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000, retryWrites=True)
+    database: Any = None
+    try:
+        try:
+            hello = client.admin.command("hello")
+        except PyMongoError as error:
+            pytest.skip(f"MONGO_RUNTIME_UNAVAILABLE: {type(error).__name__}")
+        if hello.get("setName") != EXPECTED_REPLICA_SET:
+            pytest.skip(f"MONGO_REPLICA_SET_UNAVAILABLE: {hello.get('setName')!r}")
+        if hello.get("isWritablePrimary", hello.get("ismaster")) is not True:
+            pytest.skip("MONGO_WRITABLE_PRIMARY_UNAVAILABLE")
+        database = client[f"p6b_race_{uuid.uuid4().hex}"]
+        concerns = {"write_concern": WriteConcern(w="majority", j=True), "read_concern": ReadConcern("majority")}
+        lifecycle = database.get_collection("lifecycle", **concerns)
+        assessments = database.get_collection("assessments", **concerns)
+        eligibility = database.get_collection("eligibility", **concerns)
+        LegalOperationsLifecycleRegistry.ensure_indexes(lifecycle)
+        ProcessServiceBillingEligibilityRegistry.ensure_indexes(eligibility)
+        yield client, lifecycle, assessments, eligibility
+    finally:
+        active_error = sys.exc_info()[0] is not None
+        try:
+            if database is not None:
+                try:
+                    client.drop_database(database.name)
+                except PyMongoError:
+                    if not active_error:
+                        raise
+        finally:
+            client.close()
+
+
+def _tx(client: MongoClient) -> Any:
+    session = client.start_session()
+    session.start_transaction(read_concern=ReadConcern("snapshot"), write_concern=WriteConcern(w="majority", j=True))
+    return session
+
+
+def test_duplicate_writer_has_one_winner_and_one_retry_loser(mongo_context: tuple[MongoClient, Any, Any, Any]) -> None:
+    client, lifecycle, assessments, eligibility = mongo_context
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    allocated = ServiceAttempt(tenant, "attempt-1", "instruction-1", "document-1", "deputy-1", BASE, "allocation-1")
+    attempted = allocated.transition_to(ServiceAttemptState.ATTEMPTED, evidence_reference="attempted", occurred_at=BASE + timedelta(minutes=1))
+    terminal = attempted.transition_to(ServiceAttemptState.COMPLETED, evidence_reference="terminal", evidence_fingerprint=HASH, occurred_at=BASE + timedelta(minutes=2))
+    execution = ServiceExecution.from_attempt(attempt=terminal, service_execution_id="execution-1", executed_at=BASE + timedelta(minutes=3))
+    returned = ReturnOfService.from_service_execution(instruction_id=terminal.instruction_id, service_execution=execution, return_id="return-1", generated_at=BASE + timedelta(minutes=4))
+    setup = _tx(client)
+    try:
+        LegalOperationsLifecycleRegistry.create(District(tenant, "district-1", "District", "ZA-GP", "source"), lifecycle, session=setup)
+        for snapshot in (allocated, attempted, terminal):
+            LegalOperationsLifecycleRegistry.create(snapshot, lifecycle, session=setup)
+        LegalOperationsLifecycleRegistry.create(execution, lifecycle, session=setup, source_attempt=terminal)
+        LegalOperationsLifecycleRegistry.create(returned, lifecycle, session=setup, source_attempt=terminal, source_execution=execution)
+        setup.commit_transaction()
+    finally:
+        setup.end_session()
+    return_identity = next(row["evidence_identity"] for row in lifecycle.find({"tenant_id": tenant, "entity_type": "ReturnOfService", "entity_identity": returned.return_id}))
+    schedule = TariffSchedule(tenant, "schedule-1", "district-1", "ZA-GP", None, None, "schedule-source")
+    version = TariffVersion(tenant, "schedule-1", "version-1", BASE, None, (TariffRule("SERVICE-001", "Service", "SERVICE", TariffQuantityBasis.SERVICE, 12500, "ZAR", "none", "EXEMPT", "return"),), "version-source")
+    assessment = assess_from_return(return_of_service=returned, return_evidence_identity=return_identity, schedule=schedule, tariff_version=version, assessment_id="assessment-1", assessment_at=BASE + timedelta(minutes=5), sheriff_office_id="office-1", effective_at=BASE + timedelta(minutes=3))
+    assessment_session = _tx(client)
+    try:
+        ProcessServiceTariffRegistry.create_assessment(assessment, assessments, session=assessment_session)
+        assessment_session.commit_transaction()
+    finally:
+        assessment_session.end_session()
+    assessment_identity = cast(str, tariff_record(assessment)["evidence_identity"])
+    raced = BarrierCollection(eligibility, threading.Barrier(2))
+    outcomes: list[dict[str, Any]] = []
+    lock = threading.Lock()
+
+    def worker() -> None:
+        session = _tx(client)
+        try:
+            value = ProcessServiceBillingEligibilityRegistry.issue(tenant_id=tenant, assessment_evidence_identity=assessment_identity, billing_eligibility_id="eligibility-race", eligibility_at=BASE + timedelta(minutes=6), assessment_collection=assessments, lifecycle_collection=lifecycle, collection=raced, session=session)
+            session.commit_transaction()
+            item = {"status": "WINNER", "value": value}
+        except ProcessServiceBillingEligibilityRegistryError as error:
+            try:
+                session.abort_transaction()
+            finally:
+                cause = error.__cause__
+                item = {"status": "RETRY", "code": error.code, "cause": cause, "cause_type": type(cause).__name__ if cause else None, "unknown": isinstance(cause, PyMongoError) and cause.has_error_label("UnknownTransactionCommitResult")}
+        except BaseException as error:
+            try:
+                session.abort_transaction()
+            finally:
+                item = {"status": "OTHER", "error": error}
+        finally:
+            session.end_session()
+        with lock:
+            outcomes.append(item)
+
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+    assert len(outcomes) == 2
+    assert sum(item["status"] == "WINNER" for item in outcomes) == 1
+    assert sum(item["status"] == "RETRY" and item.get("code") == "P6B_RETRY_TRANSACTION_REQUIRED" for item in outcomes) == 1
+    assert not any(item["status"] == "OTHER" or item.get("unknown") for item in outcomes)
+    assert eligibility.count_documents({"tenant_id": tenant}) == 1
+
+
+# ARTIFACT: test_process_service_billing_eligibility_concurrent_real_mongo.py
+# VERSION: v1.0.0-PROCESS-SERVICE-BILLING-ELIGIBILITY-CONCURRENT-REAL-MONGO-CERT
+# AUTHORITY BOUNDARY: deterministic P6B writer-race evidence only.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN TEST ARTIFACT
