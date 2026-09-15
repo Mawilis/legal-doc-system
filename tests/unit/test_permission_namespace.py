@@ -1,15 +1,17 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT
+VERSION: v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
-bytes, and exact own-tenant subscription/plan/WILSY AI capacity and
-billing-intelligence evidence-read semantics.
+bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
+billing-intelligence evidence-read, and field-service outcome/return command
+semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
-    2026-09-15 v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT certifies the nine
-    canonical Legal Operations permissions while preserving prior
+    2026-09-15 v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT certifies
+    the attempt-outcome and return-write command permissions, yielding exactly
+    50 canonical permissions and 53 total rows while preserving prior
     own-tenant evidence-read metadata and fail-closed alias rejection.
     2026-09-13 v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT certifies the
     canonical own-tenant WILSY AI usage-capacity evidence read permission,
@@ -47,7 +49,7 @@ import json
 
 import pytest
 
-VERSION = "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT"
+VERSION = "v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -82,7 +84,9 @@ def test_permission_canon_properties() -> None:
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
         "legal_operations:attempt:write",
+        "legal_operations:attempt_outcome:write",
         "legal_operations:return:read",
+        "legal_operations:return:write",
         "legal_operations:billing:read",
         "legal_operations:invoice:read",
         "platform_billing:release",
@@ -112,9 +116,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 48
+    ) == 50
 
-    assert len(rows) == 51
+    assert len(rows) == 53
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -150,6 +154,23 @@ def test_permission_canon_properties() -> None:
     assert billing_intelligence.financial_execution_capable is False
     assert billing_intelligence.authorizes_by_itself is False
     assert billing_intelligence.disposition is PermissionDisposition.CANONICAL
+
+    command_permissions = {
+        "legal_operations:attempt_outcome:write":
+            "record own-tenant terminal service-attempt outcomes",
+        "legal_operations:return:write":
+            "generate own-tenant returns of service",
+    }
+    for permission_id, capability in command_permissions.items():
+        metadata = permission_metadata(permission_id)
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert metadata.disposition is PermissionDisposition.CANONICAL
+        assert metadata.business_capability == capability
 
     release = permission_metadata("platform_billing:release")
     assert release.business_capability == "authorize platform billing release"
@@ -407,7 +428,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT
+# VERSION: v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
