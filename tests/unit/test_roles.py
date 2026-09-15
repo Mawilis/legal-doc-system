@@ -56,7 +56,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS"
+    assert POLICY_VERSION == "v1.14.0-L7B-LEGAL-OPERATIONS-IAM-GRANTS"
 
 VERSION = "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT"
 
@@ -146,11 +146,17 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
+        "legal_operations:return:write",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"] == [
         "legal_operations:billing:read", "legal_operations:invoice:read",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
+    assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
+    assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
+    assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_SECRETARY"]
+    assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert all("financial_execution" not in grants for grants in ROLE_PERMISSIONS_MAP.values())
 
 

@@ -12,7 +12,7 @@ FILE:
     tools/eos/api/api_server.py
 
 VERSION:
-    v1.4.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT
+    v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -35,9 +35,9 @@ CERTIFICATION / UPDATE DATE:
     2026-08-31
 
 CHANGELOG:
-    v1.4.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT
-        - Mounts the dedicated authenticated Legal Operations read projection
-          router under /api without adding mutation or financial authority.
+    v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
+        - Mounts the dedicated authenticated Legal Operations command and read
+          routers under /api without adding financial authority.
         - Aligns canonical application governance with C2 controlled profile PUT.
         - Records that GET detail, PUT detail, and DELETE/archive compose durable
           authority inside tenant_router and require exact tenant scope/path binding
@@ -111,9 +111,10 @@ from tools.eos.api.responses import format_response
 from tools.eos.api.router import router
 from tools.eos.api.tenant_router import tenant_router
 from tools.eos.api.legal_operations_router import router as legal_operations_router
+from tools.eos.api.legal_operations_command_router import router as legal_operations_command_router
 
 
-VERSION = "v1.4.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT"
+VERSION = "v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
 
 
 app = FastAPI(
@@ -138,6 +139,7 @@ app.include_router(router)
 # tenant_router. Collection GET and POST create remain contained there.
 app.include_router(tenant_router)
 app.include_router(legal_operations_router, prefix="/api")
+app.include_router(legal_operations_command_router, prefix="/api")
 
 
 @app.exception_handler(WilsyAPIException)
@@ -211,7 +213,7 @@ async def root(request: Request) -> Any:
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: api_server.py
-# VERSION: v1.4.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT
+# VERSION: v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
 # AUTHORITY BOUNDARY: canonical ASGI composition and router registration only; authentication, membership, business-role, permission, authorization, and persistence authority remain outside this artifact
 # TENANT POSTURE: exactly one tenant router is mounted; GET/PUT/DELETE detail operations are governed inside that router; collection GET and POST remain contained; no alternate mount creates cross-tenant authority
 # FAIL-CLOSED POSTURE: application registration never grants authority; tenant persistence is reachable only through activated router dependencies, exact scope/path checks, and bounded persistence contracts

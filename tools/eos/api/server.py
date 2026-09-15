@@ -1,15 +1,15 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.7.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT
+VERSION: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mounts sovereign Python API routers, including authenticated PayShap provider evidence ingress.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.7.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT mounts the dedicated
-authenticated Legal Operations read projection router under /api without
-adding mutation or financial authority; v1.6.0 mounts the authenticated
+CHANGELOG: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT mounts the dedicated
+authenticated Legal Operations command and read routers under /api without
+adding financial authority; v1.6.0 mounts the authenticated
 PayShap host-runtime evidence router without changing billing or settlement
 authority; v1.5.1 dual-mounted billing for BFF parity.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001-aligned.
@@ -47,8 +47,9 @@ from .router import direct_router, router
 from .subscription_router import subscription_router
 from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
+from .legal_operations_command_router import router as legal_operations_command_router
 
-VERSION = "v1.7.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT"
+VERSION = "v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -179,6 +180,7 @@ class WilsyAPIServer:
         app.include_router(router)
         app.include_router(tenant_router)
         app.include_router(legal_operations_router, prefix="/api")
+        app.include_router(legal_operations_command_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
@@ -209,7 +211,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.7.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT
+# VERSION: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
