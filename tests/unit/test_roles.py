@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT
+VERSION: v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,10 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
-    2026-09-13 v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT
-    certifies the exact billing-intelligence evidence read grant for
-    ENTERPRISE_ADMIN/AUDITOR, its reverse lookup, non-bypass exclusions, and
-    malformed alias rejection.
+    2026-09-15 v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT certifies the
+    explicit Legal Operations role grants and least-authority exclusions,
+    while preserving reverse lookup and malformed-alias rejection.
     2026-09-13 v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-GRANTS-CERT certifies
     the exact own-tenant WILSY AI usage-capacity read grant for
     ENTERPRISE_ADMIN/AUDITOR, its reverse lookup, non-bypass exclusions, and
@@ -57,9 +56,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.12.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS"
+    assert POLICY_VERSION == "v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS"
 
-VERSION = "v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT"
+VERSION = "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -109,6 +108,15 @@ TENANT_PERMISSIONS = {
     "plan:read",
     "plan:manage",
     "billing_intelligence:evidence:read",
+    "legal_operations:instruction:read",
+    "legal_operations:instruction:write",
+    "legal_operations:allocation:read",
+    "legal_operations:allocation:write",
+    "legal_operations:attempt:read",
+    "legal_operations:attempt:write",
+    "legal_operations:return:read",
+    "legal_operations:billing:read",
+    "legal_operations:invoice:read",
     "inbound_collection:authorization:create",
     "inbound_merchant_configuration:register",
     "inbound_merchant_configuration:lifecycle",
@@ -129,6 +137,21 @@ def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
     assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write"]
     assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read"]
+
+
+def test_legal_role_grants_are_explicit_and_least_authority() -> None:
+    """Legal personas receive only the certified legal-operation capabilities."""
+    assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
+        "legal_operations:instruction:read", "legal_operations:instruction:write",
+        "legal_operations:allocation:read", "legal_operations:allocation:write",
+        "legal_operations:attempt:read", "legal_operations:return:read",
+        "legal_operations:billing:read", "legal_operations:invoice:read",
+    ]
+    assert ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"] == [
+        "legal_operations:billing:read", "legal_operations:invoice:read",
+    ]
+    assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
+    assert all("financial_execution" not in grants for grants in ROLE_PERMISSIONS_MAP.values())
 
 
 

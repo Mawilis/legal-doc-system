@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT
+VERSION: v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,8 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-13 v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT
+CHANGELOG: 2026-09-15 v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT adds explicit
+legal-operation bindings and preserves all conjunctive denial gates.
 certifies the exact billing-intelligence evidence-read binding alongside the
 existing WILSY AI capacity binding, including full current-truth conjunctions
 and fail-closed malformed/crossed pairs; no new authority is introduced.
@@ -59,7 +60,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT"
+VERSION = "v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -687,7 +688,7 @@ def test_permission_operation_binding_remains_exact() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.9.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING"
+    assert ta.VERSION == "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -696,6 +697,22 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     )
     assert list(ta._BINDINGS).count("wilsy_ai_usage_capacity_read") == 1
     assert list(ta._BINDINGS).count("billing_intelligence_evidence_read") == 1
+
+
+@pytest.mark.parametrize(
+    ("permission", "operation", "business_role", "authorization_role"),
+    [
+        ("legal_operations:instruction:read", "legal_instruction_read", "tenant_legal_partner", "LEGAL_PARTNER"),
+        ("legal_operations:attempt:write", "legal_attempt_write", "tenant_deputy", "DEPUTY"),
+        ("legal_operations:invoice:read", "legal_invoice_read", "tenant_legal_client", "LEGAL_CLIENT"),
+    ],
+)
+def test_legal_operations_bindings_remain_fully_conjunctive(permission: str, operation: str, business_role: str, authorization_role: str) -> None:
+    """New legal bindings require exact current role and permission evidence."""
+    result = _decision(permission_id=permission, operation=operation, business_repository=_business(business_role), assignment_repository=_assignments(authorization_role))
+    assert result == TenantAuthorizationDecision(True, TenantAuthorizationReason.AUTHORIZED, business_role, authorization_role)
+    crossed = _decision(permission_id=permission, operation="legal_instruction_write", business_repository=_business(business_role), assignment_repository=_assignments(authorization_role))
+    assert crossed.authorized is False
 
 
 def test_billing_intelligence_permission_metadata_is_canonical_tenant_read() -> None:
