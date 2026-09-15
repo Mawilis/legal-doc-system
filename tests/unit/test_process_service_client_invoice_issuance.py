@@ -20,6 +20,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from pymongo.errors import DuplicateKeyError
 
 from tools.eos.legal_operations.domain.process_service_tariff_authority import FeeLine, ServiceExecutionOutcome, TariffAssessment
 from tools.eos.legal_operations.domain.process_service_billing_eligibility_authority import ProcessServiceBillingEligibility
@@ -157,6 +158,58 @@ def test_financial_execution_and_payment_surfaces_are_absent() -> None:
     import tools.eos.saas.billing.process_service_client_invoice_issuance as module
     names = set(dir(module))
     assert not {"Payment", "Settlement", "Kennel", "execute_payment", "settle"}.intersection(names)
+
+
+def test_p6e_retry_translation_preserves_conflict_cause_and_rejects_unrelated_errors() -> None:
+    basis, binding, profile = _sources()
+    monkey = pytest.MonkeyPatch()
+    try:
+        from tools.eos.saas.billing import process_service_client_invoice_issuance as module
+        monkey.setattr(module, "build_process_service_client_invoice_basis", lambda **_: basis)
+        monkey.setattr(module.ProcessServiceClientBillingRegistry, "get_binding", staticmethod(lambda *args, **kwargs: binding))
+        monkey.setattr(module.ProcessServiceClientBillingRegistry, "get_profile", staticmethod(lambda *args, **kwargs: profile))
+        cause = DuplicateKeyError("client invoice write conflict")
+
+        def retrying_create(*args: Any, **kwargs: Any) -> Any:
+            raise ValueError("M2_RETRY_TRANSACTION_REQUIRED") from cause
+
+        monkey.setattr(module.BillingRegistry, "create_client_invoice_exact", retrying_create)
+        with pytest.raises(ProcessServiceClientInvoiceIssuanceError) as captured:
+            issue_process_service_client_invoice(
+                tenant_id="tenant-a",
+                billing_eligibility_evidence_identity=HASH,
+                binding_evidence_identity=HASH,
+                profile_evidence_identity=HASH,
+                eligibility_collection=FakeCollection(),
+                assessment_collection=FakeCollection(),
+                profile_collection=FakeCollection(),
+                binding_collection=FakeCollection(),
+                client_invoice_collection=FakeCollection(),
+                issuance_collection=FakeCollection(),
+                session=ActiveSession(),
+                clock=lambda: BASE + timedelta(hours=1),
+            )
+        assert captured.value.code == "P6F_RETRY_TRANSACTION_REQUIRED"
+        assert captured.value.__cause__ is cause
+
+        monkey.setattr(module.BillingRegistry, "create_client_invoice_exact", lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("CLIENT_INVOICE_REPLAY_CONFLICT")))
+        with pytest.raises(ValueError, match="CLIENT_INVOICE_REPLAY_CONFLICT"):
+            issue_process_service_client_invoice(
+                tenant_id="tenant-a",
+                billing_eligibility_evidence_identity=HASH,
+                binding_evidence_identity=HASH,
+                profile_evidence_identity=HASH,
+                eligibility_collection=FakeCollection(),
+                assessment_collection=FakeCollection(),
+                profile_collection=FakeCollection(),
+                binding_collection=FakeCollection(),
+                client_invoice_collection=FakeCollection(),
+                issuance_collection=FakeCollection(),
+                session=ActiveSession(),
+                clock=lambda: BASE + timedelta(hours=1),
+            )
+    finally:
+        monkey.undo()
 
 
 def test_registry_tenant_isolation_and_corruption_reject() -> None:
