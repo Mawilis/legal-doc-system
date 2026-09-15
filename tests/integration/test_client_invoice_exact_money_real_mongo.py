@@ -9,6 +9,7 @@ FAIL-CLOSED: Runtime corruption and divergent replay reject.
 """
 from datetime import datetime, timezone
 import os
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -52,9 +53,10 @@ def test_exact_money_persists_replays_hydrates_and_is_tenant_scoped(mongo):
     registry = BillingRegistry()
     value = _money()
     session = client.start_session()
+    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc))
     try:
-        first = registry.create_client_invoice_exact("tenant-a", value, idempotency_key="p6e-a", collection=collection, session=session)
-        replay = registry.create_client_invoice_exact("tenant-a", value, idempotency_key="p6e-a", collection=collection, session=session)
+        first = registry.create_client_invoice_exact("tenant-a", value, idempotency_key="p6e-a", collection=collection, session=session, **kwargs)
+        replay = registry.create_client_invoice_exact("tenant-a", value, idempotency_key="p6e-a", collection=collection, session=session, **kwargs)
         assert first == replay
         assert collection.count_documents({"tenant_id": "tenant-a"}) == 1
         raw = collection.find_one({"tenant_id": "tenant-a", "idempotency_key": "p6e-a"})
@@ -65,7 +67,7 @@ def test_exact_money_persists_replays_hydrates_and_is_tenant_scoped(mongo):
         assert registry.get_client_invoice("tenant-b", first.invoice_id, collection=collection) is None
         divergent = ClientInvoiceExactMoney("ZAR", 1002, 150, 1152, (ClientInvoiceExactMoneyLine("Service", 3, 334, 1002, 150, 0, "ZAR"),))
         with pytest.raises(ValueError, match="CLIENT_INVOICE_REPLAY_CONFLICT"):
-            registry.create_client_invoice_exact("tenant-a", divergent, idempotency_key="p6e-a", collection=collection)
+            registry.create_client_invoice_exact("tenant-a", divergent, idempotency_key="p6e-a", collection=collection, **kwargs)
     finally:
         session.end_session()
 

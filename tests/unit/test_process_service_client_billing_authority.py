@@ -11,6 +11,7 @@ CERTIFICATION / UPDATE DATE: 2026-09-15
 """
 from datetime import datetime, timedelta, timezone
 from dataclasses import FrozenInstanceError, replace
+from typing import cast
 
 import pytest
 
@@ -28,6 +29,7 @@ from tools.eos.saas.billing.process_service_client_billing_authority import (
     TaxPolicy,
     TaxRoundingRule,
     TaxTreatment,
+    InvoiceTaxType,
 )
 from tools.eos.saas.billing.process_service_client_billing_registry import ProcessServiceClientBillingRegistry, ProcessServiceClientBillingRegistryError
 from tools.eos.saas.billing.process_service_client_billing_authority import derive_process_service_commercial_context, assess_process_service_invoice_readiness
@@ -140,9 +142,28 @@ def test_context_preserves_p6c_amount_currency_and_removes_only_five_commercial_
     assert context.eligible_minor_units == 12500 and context.currency == "ZAR"
     assert context.instruction_id == "instruction-1" and context.customer_id == "customer-1"
     status, blockers = assess_process_service_invoice_readiness(context)
-    assert status == "BLOCKED" and blockers == ("MONEY_ROUNDTRIP_UNSAFE",)
+    assert status == "BLOCKED" and blockers == ("TAX_TYPE_REQUIRED", "MONEY_ROUNDTRIP_UNSAFE")
+    explicit = replace(_profile(), invoice_tax_type=InvoiceTaxType.VAT)
+    explicit_context = derive_process_service_commercial_context(p6c_basis=_basis(), binding=_binding(), profile=explicit)
+    explicit_status, explicit_blockers = assess_process_service_invoice_readiness(explicit_context)
+    assert explicit_status == "BLOCKED" and explicit_blockers == ("MONEY_ROUNDTRIP_UNSAFE",)
     with pytest.raises(ProcessServiceClientBillingAuthorityError, match="P6D_PROFILE_BINDING_MISMATCH"):
         derive_process_service_commercial_context(p6c_basis=_basis(), binding=_binding(profile_version="other"), profile=_profile())
+
+
+def test_invoice_tax_type_is_explicit_and_legacy_fingerprint_stays_unchanged() -> None:
+    old = _profile()
+    explicit = replace(old, invoice_tax_type=InvoiceTaxType.GST)
+    assert "invoice_tax_type" not in old.to_dict()
+    assert explicit.to_dict()["invoice_tax_type"] == "gst"
+    assert explicit.fingerprint != old.fingerprint
+    profiles = FakeCollection()
+    ProcessServiceClientBillingRegistry.create_profile(explicit, profiles)
+    evidence_identity = cast(str, profiles.rows[0]["evidence_identity"])
+    hydrated = ProcessServiceClientBillingRegistry.get_profile(explicit.tenant_id, evidence_identity, profiles)
+    assert hydrated.to_dict() == explicit.to_dict()
+    with pytest.raises(ProcessServiceClientBillingAuthorityError, match="P6D_INVOICE_TAX_TYPE_INVALID"):
+        replace(old, invoice_tax_type="vat")
 
 
 # ARTIFACT: test_process_service_client_billing_authority.py

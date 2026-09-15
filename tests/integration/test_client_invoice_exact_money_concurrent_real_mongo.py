@@ -10,6 +10,7 @@ FAIL-CLOSED: Exactly one winner and one governed retry loser are required.
 from datetime import datetime, timezone
 import os
 from threading import Barrier, Thread
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -54,11 +55,12 @@ def test_two_caller_transactions_have_one_winner_and_retry_loser(mongo):
     collection.create_index([("tenant_id", 1), ("idempotency_key", 1)], unique=True)
     value = ClientInvoiceExactMoney("ZAR", 100, 15, 115, (ClientInvoiceExactMoneyLine("x", 1, 100, 100, 15, 0, "ZAR"),))
     barrier = Barrier(2); outcomes = []; causes = []
+    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc))
 
     def worker():
         session = client.start_session(); session.start_transaction()
         try:
-            BillingRegistry().create_client_invoice_exact("tenant-a", value, idempotency_key="race", collection=_InsertBoundary(collection, barrier), session=session)
+            BillingRegistry().create_client_invoice_exact("tenant-a", value, idempotency_key="race", collection=_InsertBoundary(collection, barrier), session=session, **kwargs)
             session.commit_transaction(); outcomes.append("WINNER")
         except Exception as error:
             try: session.abort_transaction()

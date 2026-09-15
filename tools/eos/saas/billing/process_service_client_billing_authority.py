@@ -143,6 +143,14 @@ class CollectionMethod(StrEnum):
     CHARGE_AUTOMATICALLY = "CHARGE_AUTOMATICALLY"
 
 
+class InvoiceTaxType(StrEnum):
+    """Explicit ClientInvoice tax-type identity; never inferred from policy."""
+
+    VAT = "vat"
+    GST = "gst"
+    NONE = "none"
+
+
 @dataclass(frozen=True, slots=True)
 class TaxPolicy:
     """Immutable, explicitly versioned tax policy with integer rate basis points."""
@@ -248,6 +256,7 @@ class ClientBillingProfileVersion:
     effective_from: datetime
     effective_to: datetime | None
     evidence_reference: str
+    invoice_tax_type: InvoiceTaxType | None = None
 
     def __post_init__(self) -> None:
         _tenant(self.tenant_id)
@@ -258,6 +267,8 @@ class ClientBillingProfileVersion:
             if value is not None: _text(name, value)
         if type(self.tax_policy) is not TaxPolicy or type(self.payment_terms) is not PaymentTerms or type(self.due_date_policy) is not DueDatePolicy or type(self.collection_method) is not CollectionMethodPolicy:
             _fail("P6D_PROFILE_POLICY_INVALID")
+        if self.invoice_tax_type is not None and type(self.invoice_tax_type) is not InvoiceTaxType:
+            _fail("P6D_INVOICE_TAX_TYPE_INVALID")
         start = _time("effective_from", self.effective_from)
         if self.effective_to is not None and _time("effective_to", self.effective_to) <= start:
             _fail("P6D_PROFILE_CHRONOLOGY_INVALID")
@@ -266,7 +277,10 @@ class ClientBillingProfileVersion:
 
     def to_dict(self) -> dict[str, object]:
         """Serialize the complete immutable customer/profile authority."""
-        return {"schema": SCHEMA, "version": VERSION, "entity_type": type(self).__name__, "tenant_id": self.tenant_id, "billing_profile_id": self.billing_profile_id, "billing_profile_version_id": self.billing_profile_version_id, "customer_id": self.customer_id, "customer_legal_name": self.customer_legal_name, "customer_tax_id": self.customer_tax_id, "customer_email": self.customer_email, "customer_phone": self.customer_phone, "seller_jurisdiction": self.seller_jurisdiction, "customer_jurisdiction": self.customer_jurisdiction, "tax_policy": self.tax_policy.to_dict(), "payment_terms": self.payment_terms.to_dict(), "due_date_policy": self.due_date_policy.to_dict(), "collection_method": self.collection_method.to_dict(), "effective_from": self.effective_from.isoformat(), "effective_to": None if self.effective_to is None else self.effective_to.isoformat(), "evidence_reference": self.evidence_reference}
+        payload = {"schema": SCHEMA, "version": VERSION, "entity_type": type(self).__name__, "tenant_id": self.tenant_id, "billing_profile_id": self.billing_profile_id, "billing_profile_version_id": self.billing_profile_version_id, "customer_id": self.customer_id, "customer_legal_name": self.customer_legal_name, "customer_tax_id": self.customer_tax_id, "customer_email": self.customer_email, "customer_phone": self.customer_phone, "seller_jurisdiction": self.seller_jurisdiction, "customer_jurisdiction": self.customer_jurisdiction, "tax_policy": self.tax_policy.to_dict(), "payment_terms": self.payment_terms.to_dict(), "due_date_policy": self.due_date_policy.to_dict(), "collection_method": self.collection_method.to_dict(), "effective_from": self.effective_from.isoformat(), "effective_to": None if self.effective_to is None else self.effective_to.isoformat(), "evidence_reference": self.evidence_reference}
+        if self.invoice_tax_type is not None:
+            payload["invoice_tax_type"] = self.invoice_tax_type.value
+        return payload
 
     @property
     def fingerprint(self) -> str:
@@ -320,6 +334,7 @@ class ProcessServiceCommercialContext:
     tariff_version_fingerprint: str
     binding_fingerprint: str
     profile_fingerprint: str
+    invoice_tax_type: InvoiceTaxType | None = None
 
     def to_dict(self) -> dict[str, object]:
         """Serialize deterministic context without adding invoice authority."""
@@ -358,17 +373,19 @@ def derive_process_service_commercial_context(*, p6c_basis: object, binding: Ins
     _sha3("p6c_basis_fingerprint", getattr(p6c_basis, "fingerprint", None)); _sha3("tariff_version_fingerprint", payload["tariff_version_fingerprint"])
     lines = payload["fee_lines"]
     if not isinstance(lines, list) or any(not isinstance(line, Mapping) for line in lines): _fail("P6D_P6C_FEE_LINES_INVALID")
-    return ProcessServiceCommercialContext(tenant_id=profile.tenant_id, instruction_id=binding.instruction_id, billing_profile_id=profile.billing_profile_id, billing_profile_version_id=profile.billing_profile_version_id, customer_id=profile.customer_id, customer_legal_name=profile.customer_legal_name, p6c_basis_fingerprint=cast(str, getattr(p6c_basis, "fingerprint")), eligible_minor_units=cast(int, payload["eligible_minor_units"]), currency=cast(str, payload["currency"]), fee_lines=tuple(cast(Mapping[str, object], line) for line in lines if isinstance(line, Mapping)), tariff_version_id=cast(str, payload["tariff_version_id"]), tariff_version_fingerprint=cast(str, payload["tariff_version_fingerprint"]), binding_fingerprint=binding.fingerprint, profile_fingerprint=profile.fingerprint)
+    return ProcessServiceCommercialContext(tenant_id=profile.tenant_id, instruction_id=binding.instruction_id, billing_profile_id=profile.billing_profile_id, billing_profile_version_id=profile.billing_profile_version_id, customer_id=profile.customer_id, customer_legal_name=profile.customer_legal_name, p6c_basis_fingerprint=cast(str, getattr(p6c_basis, "fingerprint")), eligible_minor_units=cast(int, payload["eligible_minor_units"]), currency=cast(str, payload["currency"]), fee_lines=tuple(cast(Mapping[str, object], line) for line in lines if isinstance(line, Mapping)), tariff_version_id=cast(str, payload["tariff_version_id"]), tariff_version_fingerprint=cast(str, payload["tariff_version_fingerprint"]), binding_fingerprint=binding.fingerprint, profile_fingerprint=profile.fingerprint, invoice_tax_type=profile.invoice_tax_type)
 
 
 def assess_process_service_invoice_readiness(context: ProcessServiceCommercialContext) -> tuple[str, tuple[str, ...]]:
     """Return blocked readiness until the independent exact-money contract passes."""
     if type(context) is not ProcessServiceCommercialContext: _fail("P6D_CONTEXT_REQUIRED")
     context.to_dict()
+    if context.invoice_tax_type is None:
+        return "BLOCKED", ("TAX_TYPE_REQUIRED", "MONEY_ROUNDTRIP_UNSAFE")
     return "BLOCKED", ("MONEY_ROUNDTRIP_UNSAFE",)
 
 
-__all__ = ["VERSION", "SCHEMA", "ProcessServiceClientBillingAuthorityError", "TaxTreatment", "TaxCalculationScope", "TaxRoundingRule", "PaymentTermsRule", "DueDateRule", "CollectionMethod", "TaxPolicy", "PaymentTerms", "DueDatePolicy", "CollectionMethodPolicy", "ClientBillingProfileVersion", "InstructionBillingBinding", "ProcessServiceCommercialContext", "derive_process_service_commercial_context", "assess_process_service_invoice_readiness"]
+__all__ = ["VERSION", "SCHEMA", "ProcessServiceClientBillingAuthorityError", "TaxTreatment", "TaxCalculationScope", "TaxRoundingRule", "PaymentTermsRule", "DueDateRule", "CollectionMethod", "InvoiceTaxType", "TaxPolicy", "PaymentTerms", "DueDatePolicy", "CollectionMethodPolicy", "ClientBillingProfileVersion", "InstructionBillingBinding", "ProcessServiceCommercialContext", "derive_process_service_commercial_context", "assess_process_service_invoice_readiness"]
 
 # ARTIFACT: process_service_client_billing_authority.py
 # VERSION: v1.0.0-PROCESS-SERVICE-CLIENT-BILLING-AUTHORITY
