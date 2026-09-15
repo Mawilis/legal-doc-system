@@ -35,6 +35,8 @@ CERTIFICATION / UPDATE DATE:
     2026-08-31
 
 CHANGELOG:
+    L7D backend hardening — disables production OpenAPI documentation unless
+        explicitly enabled and adds safe security/no-store response headers.
     v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
         - Mounts the dedicated authenticated Legal Operations command and read
           routers under /api without adding financial authority.
@@ -120,6 +122,9 @@ from tools.eos.api.legal_operations_billing_read_router import router as legal_o
 
 VERSION = "v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
 
+_PRODUCTION_MODE = os.getenv("WILSY_ENV", os.getenv("ENV", "")).strip().lower() == "production"
+_DOCS_ENABLED = not _PRODUCTION_MODE or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+
 
 app = FastAPI(
     title="Wilsy OS Kernel Gateway API",
@@ -128,12 +133,24 @@ app = FastAPI(
         "for Platform 1.0."
     ),
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if _DOCS_ENABLED else None,
+    redoc_url="/redoc" if _DOCS_ENABLED else None,
 )
 
 
 app.add_middleware(SovereignTelemetryMiddleware)
+
+
+@app.middleware("http")
+async def sovereign_security_headers(request: Request, call_next: Any) -> Any:
+    """Apply safe backend security and sensitive-response cache headers."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Frame-Options"] = "DENY"
+    if request.url.path.startswith("/api/legal-operations"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 app.include_router(router)

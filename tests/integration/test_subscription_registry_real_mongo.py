@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry Real-Mongo Certification
 
 VERSION:
-    v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT
+    v1.2.2-SUBSCRIPTION-CALENDAR-BILLING-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -27,6 +27,12 @@ CERTIFICATION / UPDATE DATE:
     2026-09-03
 
 CHANGELOG:
+    v1.2.2-SUBSCRIPTION-CALENDAR-BILLING-CERT:
+        - Aligns the current production-version assertion with the bounded
+          v1.3.1 billing-intelligence read seam.
+        - Preserves all v1.3.0 calendar-billing derivation, provenance,
+          tenant-isolation and fail-closed persistence assertions.
+
     v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT:
         - Corrects the synthetic legacy-period replay fixture to persist
           canonical registry ISO datetime strings rather than direct BSON
@@ -146,7 +152,7 @@ from tools.eos.saas.billing.subscription_registry import (
 
 
 TEST_VERSION = (
-    "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT"
+    "v1.2.2-SUBSCRIPTION-CALENDAR-BILLING-CERT"
 )
 
 CERT_URI_ENV = "TEST_VENDOR_MONGO_URI"
@@ -462,11 +468,11 @@ def test_real_mongo_version_database_and_index_contract(
     """Prove actual Mongo, isolated database and deterministic indexes."""
     assert (
         REGISTRY_VERSION
-        == "v1.3.0-CALENDAR-BILLING-WIRING"
+        == "v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM"
     )
     assert (
         TEST_VERSION
-        == "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT"
+        == "v1.2.2-SUBSCRIPTION-CALENDAR-BILLING-CERT"
     )
 
     mongo_context.client.admin.command(
@@ -2160,7 +2166,7 @@ def test_real_mongo_legacy_period_command_exact_replay_survives_but_change_confl
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_registry_real_mongo.py
-# VERSION: v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-CERT
+# VERSION: v1.2.2-SUBSCRIPTION-CALENDAR-BILLING-CERT
 # AUTHORITY BOUNDARY:
 #   Real Mongo subscription persistence plus canonical PlanRegistry
 #   catalogue-provenance integration. HTTP authorization remains outside
