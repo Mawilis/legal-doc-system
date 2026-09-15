@@ -818,6 +818,7 @@ class BillingRegistry:
         due_at: datetime | object = _EXACT_REQUIRED,
         line_tax_rates_basis_points: tuple[int, ...] | object = _EXACT_REQUIRED,
         idempotency_key: str,
+        invoice_id: Optional[str] = None,
         performed_by: str = "SYSTEM",
         order_number: Optional[str] = None,
         purchase_order: Optional[str] = None,
@@ -898,6 +899,10 @@ class BillingRegistry:
             purchase_order=purchase_order,
             exact_money=exact_money,
         )
+        if invoice_id is not None:
+            if not isinstance(invoice_id, str) or not invoice_id.strip():
+                raise ValueError("CLIENT_INVOICE_IDENTITY_REQUIRED")
+            invoice = replace(invoice, invoice_id=invoice_id)
         invoice = replace(
             invoice,
             commercial_evidence_version=CLIENT_COMMERCIAL_EVIDENCE_VERSION,
