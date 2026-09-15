@@ -67,25 +67,38 @@ def test_two_caller_transactions_yield_one_winner_and_one_retry_loser(mongo: tup
     collection = database.get_collection("bindings")
     ProcessServiceClientBillingRegistry.ensure_indexes(database.get_collection("profiles"), collection)
     binding = InstructionBillingBinding("tenant-a", "binding-race", "instruction-race", "profile-1", "profile-v1", datetime(2026, 9, 15, 10, 0, tzinfo=timezone.utc), "race-evidence")
-    barrier = Barrier(2); outcomes: list[str] = []; raw_errors: list[str] = []
+    barrier = Barrier(2); outcomes: list[str] = []; raw_errors: list[str] = []; diagnostics: list[dict[str, Any]] = []; aborted_loser = False
 
     def worker() -> None:
+        nonlocal aborted_loser
         with client.start_session() as session:
             session.start_transaction()
             try:
                 ProcessServiceClientBillingRegistry.create_binding(binding, _InsertBoundary(collection, barrier), session=session)
                 session.commit_transaction(); outcomes.append("WINNER")
             except Exception as error:
-                try: session.abort_transaction()
+                try:
+                    session.abort_transaction()
+                    aborted_loser = True
                 except Exception: pass
                 code = getattr(error, "code", "")
                 raw_errors.append(type(error).__name__)
+                cause: Any = error.__cause__
+                details = getattr(cause, "details", {})
+                labels = tuple(label for label in ("TransientTransactionError", "UnknownTransactionCommitResult") if hasattr(cause, "has_error_label") and cause.has_error_label(label))
+                diagnostics.append({"exception_type": type(error).__name__, "raw_cause_type": type(cause).__name__ if cause is not None else "NONE", "raw_mongo_code": details.get("code") if isinstance(details, dict) else None, "mongo_labels": labels})
                 outcomes.append("RETRY_REQUIRED" if code == "P6D_RETRY_TRANSACTION_REQUIRED" else "OTHER")
 
     workers = [Thread(target=worker), Thread(target=worker)]
     for thread in workers: thread.start()
     for thread in workers: thread.join(timeout=30)
     assert sorted(outcomes) == ["RETRY_REQUIRED", "WINNER"], (outcomes, raw_errors)
+    assert len(diagnostics) == 1 and diagnostics[0]["raw_cause_type"] == "OperationFailure"
+    assert diagnostics[0]["raw_mongo_code"] == 112
+    assert "TransientTransactionError" in diagnostics[0]["mongo_labels"]
+    assert "UnknownTransactionCommitResult" not in diagnostics[0]["mongo_labels"]
+    assert aborted_loser is True
+    print(f"LOSER_DIAGNOSTICS={diagnostics[0]}")
     assert collection.count_documents({"tenant_id": "tenant-a", "entity_identity": "binding-race"}) == 1
     assert raw_errors
     replay = ProcessServiceClientBillingRegistry.create_binding(binding, collection)
