@@ -37,6 +37,9 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-09-15 L7D import-safety hardening (compatibility version retained)
+        - Defers Mongo topology discovery until a registry operation executes;
+          importing the API no longer performs external DNS/network work.
     2026-09-03 v1.2.0-EXACT-TENANT-SCOPE
         - Adds backwards-compatible keyword-only exact_tenant scope.
         - Default global-plus-tenant catalogue semantics remain unchanged.
@@ -197,6 +200,7 @@ _mongo_client: MongoClient[Any] = MongoClient(
     serverSelectionTimeoutMS=
         _MONGO_SERVER_SELECTION_MS,
     retryWrites=True,
+    connect=False,
 )
 
 _mongo_database = _resolve_database(
@@ -1660,4 +1664,11 @@ Certification date:
     2026-09-03
 
 WILSY OS — ALL OR NOTHING.
+# ARTIFACT: plan_registry.py
+# VERSION: v1.2.0-EXACT-TENANT-SCOPE
+# AUTHORITY BOUNDARY: durable Plan catalogue persistence and lifecycle only.
+# TENANT POSTURE: tenant_id is catalogue scope evidence, not membership authority.
+# FAIL-CLOSED POSTURE: import defers network discovery; persistence/hydration failures remain explicit.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
 """

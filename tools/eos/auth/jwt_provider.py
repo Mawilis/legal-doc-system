@@ -12,6 +12,13 @@ Biblical Worth Billions:
     "In the mouth of two or three witnesses shall every word be established."
     — 2 Corinthians 13:1
 
+VERSION: v1.1.0-L7D-SECRET-FAIL-CLOSED
+AUTHORITY: Credential signing and verification only; no identity or tenant authority.
+TENANT BOUNDARY: Claims are untrusted projections until downstream durable admission.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive financial execution authority.
+CHANGELOG: v1.1.0-L7D-SECRET-FAIL-CLOSED removes the hard-coded signing-key fallback;
+            missing configuration now fails closed.
+
 Collaboration & Ownership:
     - Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
     - AI Collaborator: Core Systems Engineering Agent
@@ -27,8 +34,15 @@ import json
 import time
 from typing import Any, Dict, Optional
 
-# Sovereign secret key (in production, loaded from secure hardware enclave or environment)
-SOVEREIGN_JWT_SECRET = os.environ.get("WILSY_JWT_SECRET", "WILSY-OS-SOVEREIGN-BILLION-DOLLAR-SECRET-2026")
+VERSION = "v1.1.0-L7D-SECRET-FAIL-CLOSED"
+
+
+def _signing_secret() -> str:
+    """Resolve the signing key from governed configuration, never a source fallback."""
+    secret = os.getenv("WILSY_JWT_SECRET", "")
+    if not secret.strip():
+        raise RuntimeError("WILSY_JWT_SECRET is not configured")
+    return secret
 
 
 def _base64url_encode(data: bytes) -> str:
@@ -58,7 +72,7 @@ def create_access_token(identity_data: Dict[str, Any], expires_in_seconds: int =
 
     signing_input = f"{encoded_header}.{encoded_payload}"
     signature = hmac.new(
-        SOVEREIGN_JWT_SECRET.encode("utf-8"),
+        _signing_secret().encode("utf-8"),
         signing_input.encode("utf-8"),
         hashlib.sha256
     ).digest()
@@ -78,7 +92,7 @@ def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
         signing_input = f"{encoded_header}.{encoded_payload}"
 
         expected_sig = hmac.new(
-            SOVEREIGN_JWT_SECRET.encode("utf-8"),
+            _signing_secret().encode("utf-8"),
             signing_input.encode("utf-8"),
             hashlib.sha256
         ).digest()
@@ -95,3 +109,12 @@ def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except Exception:
         return None
+
+
+# ARTIFACT: jwt_provider.py
+# VERSION: v1.1.0-L7D-SECRET-FAIL-CLOSED
+# AUTHORITY BOUNDARY: credential signing and verification only.
+# TENANT POSTURE: token claims are untrusted context until durable admission.
+# FAIL-CLOSED POSTURE: absent or malformed signing configuration cannot mint or validate tokens.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT

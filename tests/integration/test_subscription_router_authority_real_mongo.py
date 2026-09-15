@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription Router Authority Real-Mongo Certification.
-VERSION: v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
+VERSION: v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
 AUTHORITY: Actual-Mongo HTTP certification of subscription identity, tenant
 membership, permission and persistence composition.
 EPITOME: Executes the real FastAPI subscription router with current JWT
@@ -10,6 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-03.
 CHANGELOG:
+    v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT aligns the current
+    SubscriptionRegistry production-version assertion with the bounded v1.3.1
+    billing-intelligence read seam while preserving all v1.3.0 calendar-billing
+    and live-IAM authority assertions.
     v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT certifies real HTTP
     calendar-period authority composition. Authorized callers provide startDate
     and Plan selection only; SubscriptionRegistry derives the current calendar
@@ -116,7 +120,7 @@ from tools.eos.saas.billing.subscription_registry import (
 
 
 VERSION = (
-    "v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
+    "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
 )
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
@@ -1275,11 +1279,11 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.3.0-CALENDAR-BILLING-WIRING"
+        == "v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM"
     )
     assert (
         VERSION
-        == "v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
+        == "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
     )
 
 
@@ -1943,7 +1947,7 @@ def test_http_naive_start_date_fails_closed_without_subscription_persistence(
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_router_authority_real_mongo.py
-# VERSION: v1.2.0-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
+# VERSION: v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
 # AUTHORITY BOUNDARY: real HTTP composition of principal, membership, permission, canonical PlanRegistry catalogue provenance and real subscription persistence only
 # TENANT POSTURE: raw tenant context must survive ACTIVE persisted membership and current role-assignment permission authority
 # FAIL-CLOSED POSTURE: missing identity, wrong tenant, inactive membership, absent/revoked role, projected JWT grants and persistence outage never become subscription access

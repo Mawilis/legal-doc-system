@@ -1,13 +1,16 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
+VERSION: v1.9.0-L7D-SOVEREIGN-BACKEND-HARDENING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mounts sovereign Python API routers, including authenticated PayShap provider evidence ingress.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT mounts the dedicated
+CHANGELOG: v1.9.0-L7D-SOVEREIGN-BACKEND-HARDENING fails closed for production
+debug/docs and credentialed wildcard CORS, adds architecture-independent
+security headers and no-store Legal Operations responses, and defaults the
+dunning scheduler off in production; v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT mounts the dedicated
 authenticated Legal Operations command and read routers under /api without
 adding financial authority, plus authenticated GET-only Legal Operations
 billing and client-invoice read projections without adding issuance, payment,
@@ -52,7 +55,7 @@ from .legal_operations_router import router as legal_operations_router
 from .legal_operations_command_router import router as legal_operations_command_router
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
 
-VERSION = "v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
+VERSION = "v1.9.0-L7D-SOVEREIGN-BACKEND-HARDENING"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -72,8 +75,12 @@ class WilsyAPIServer:
         self.title = title
         self.description = description
         self.version = version
-        self.debug = debug
-        self.allowed_origins = allowed_origins or ["*"]
+        self.production_mode = os.getenv("WILSY_ENV", os.getenv("ENV", "")).strip().lower() == "production"
+        # Production must never inherit debug or wildcard credentialed CORS.
+        self.debug = bool(debug) and not self.production_mode
+        configured_origins = os.getenv("WILSY_CORS_ALLOWED_ORIGINS", "")
+        parsed_origins = [item.strip() for item in configured_origins.split(",") if item.strip()]
+        self.allowed_origins = list(allowed_origins) if allowed_origins is not None else parsed_origins
         self.app: FastAPI = self._build_app()
 
     def _build_app(self) -> FastAPI:
@@ -83,14 +90,15 @@ class WilsyAPIServer:
             description=self.description,
             version=self.version,
             debug=self.debug,
-            docs_url="/docs",
-            redoc_url="/redoc",
+            docs_url="/docs" if (not self.production_mode or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}) else None,
+            redoc_url="/redoc" if (not self.production_mode or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}) else None,
         )
 
+        allow_credentials = "*" not in self.allowed_origins and bool(self.allowed_origins)
         app.add_middleware(
             CORSMiddleware,
             allow_origins=self.allowed_origins,
-            allow_credentials=True,
+            allow_credentials=allow_credentials,
             allow_methods=["*"],
             allow_headers=["*"],
         )
@@ -108,6 +116,11 @@ class WilsyAPIServer:
             process_time = (time.perf_counter() - start_time) * 1000
             response.headers["X-Process-Time-Ms"] = f"{process_time:.3f}"
             response.headers["X-Wilsy-OS-Kernel"] = "FG169-Active"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            response.headers["X-Frame-Options"] = "DENY"
+            if request.url.path.startswith("/api/legal-operations"):
+                response.headers["Cache-Control"] = "no-store"
             if "x-trace-id" not in response.headers and "x-trace-id" in request.headers:
                 response.headers["x-trace-id"] = request.headers["x-trace-id"]
             return response
@@ -142,7 +155,7 @@ class WilsyAPIServer:
             """Arm the daily dunning scheduler when enabled by environment policy."""
             enabled = os.getenv(
                 "WILSY_DUNNING_SCHEDULER_ENABLED",
-                "true",
+                "false" if self.production_mode else "true",
             ).strip().lower() in {"1", "true", "yes", "on"}
             if enabled:
                 app.state.dunning_scheduler_task = asyncio.create_task(
@@ -215,7 +228,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
+# VERSION: v1.9.0-L7D-SOVEREIGN-BACKEND-HARDENING
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
