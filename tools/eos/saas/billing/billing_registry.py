@@ -64,6 +64,7 @@ import hashlib
 import json
 from dataclasses import replace
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Union, cast
 from pymongo.collection import Collection
 
@@ -254,6 +255,7 @@ _CLIENT_COMMERCIAL_PROTECTED_FIELDS = {
     "commercial_evidence_version",
     "exact_money", "exact_money_version", "exact_money_fingerprint",
     "subtotal_minor", "tax_amount_minor", "total_minor", "exact_money_lines",
+    "exact_line_tax_rates_basis_points", "line_tax_rates_basis_points",
 }
 
 
@@ -263,7 +265,7 @@ def _reject_client_invoice_commercial_updates(updates: Dict[str, Any]) -> None:
         raise ValueError("CLIENT_INVOICE_COMMERCIAL_FIELD_REWRITE_FORBIDDEN")
 
 
-def _exact_invoice_content(invoice: ClientInvoice, idempotency_key: str) -> Dict[str, Any]:
+def _exact_invoice_content(invoice: ClientInvoice, idempotency_key: str, line_tax_rates_basis_points: tuple[int, ...]) -> Dict[str, Any]:
     """Return immutable exact-path content used for replay reconciliation."""
     if invoice.exact_money is None:
         raise ValueError("CLIENT_INVOICE_EXACT_MONEY_REQUIRED")
@@ -276,6 +278,7 @@ def _exact_invoice_content(invoice: ClientInvoice, idempotency_key: str) -> Dict
         "customer_email": invoice.customer_email,
         "customer_phone": invoice.customer_phone,
         "exact_money": invoice.exact_money.to_dict(),
+        "line_tax_rates_basis_points": list(line_tax_rates_basis_points),
         "payment_terms_days": invoice.payment_terms_days,
         "tax_type": invoice.tax_type.value,
         "seller_jurisdiction": invoice.seller_jurisdiction,
@@ -285,11 +288,13 @@ def _exact_invoice_content(invoice: ClientInvoice, idempotency_key: str) -> Dict
         "metadata": invoice.metadata,
         "order_number": invoice.order_number,
         "purchase_order": invoice.purchase_order,
+        "issued_at": invoice.issued_at.isoformat() if invoice.issued_at else None,
+        "due_at": invoice.due_at.isoformat() if invoice.due_at else None,
     }
 
 
-def _exact_invoice_digest(invoice: ClientInvoice, idempotency_key: str) -> str:
-    raw = json.dumps(_exact_invoice_content(invoice, idempotency_key), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+def _exact_invoice_digest(invoice: ClientInvoice, idempotency_key: str, line_tax_rates_basis_points: tuple[int, ...]) -> str:
+    raw = json.dumps(_exact_invoice_content(invoice, idempotency_key, line_tax_rates_basis_points), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return hashlib.sha3_512(raw).hexdigest()
 
 
@@ -811,6 +816,7 @@ class BillingRegistry:
         metadata: Optional[Dict[str, Any]] = None,
         issued_at: datetime | object = _EXACT_REQUIRED,
         due_at: datetime | object = _EXACT_REQUIRED,
+        line_tax_rates_basis_points: tuple[int, ...] | object = _EXACT_REQUIRED,
         idempotency_key: str,
         performed_by: str = "SYSTEM",
         order_number: Optional[str] = None,
@@ -855,6 +861,8 @@ class BillingRegistry:
             raise ValueError("CLIENT_INVOICE_DUE_AT_REQUIRED")
         if due_at < issued_at:
             raise ValueError("CLIENT_INVOICE_DUE_DATE_INVALID")
+        if not isinstance(line_tax_rates_basis_points, tuple) or len(line_tax_rates_basis_points) != len(exact_money.lines) or any(isinstance(rate, bool) or not isinstance(rate, int) or rate < 0 for rate in line_tax_rates_basis_points):
+            raise ValueError("CLIENT_INVOICE_LINE_TAX_RATES_REQUIRED")
         if not isinstance(idempotency_key, str) or not idempotency_key.strip():
             raise ValueError("CLIENT_INVOICE_IDEMPOTENCY_REQUIRED")
         target = client_invoices_coll if collection is None else collection
@@ -862,6 +870,7 @@ class BillingRegistry:
             raise ValueError("CLIENT_INVOICE_COLLECTION_UNAVAILABLE")
         projection = exact_money.to_legacy_projection()
         line_items = [LineItem.from_dict(item) for item in projection["line_items"]]
+        line_items = [replace(item, tax_rate=float(Decimal(rate) / Decimal(10000))) for item, rate in zip(line_items, line_tax_rates_basis_points)]
         invoice = ClientInvoice(
             tenant_id=tenant_id,
             customer_id=customer_id,
@@ -889,7 +898,17 @@ class BillingRegistry:
             purchase_order=purchase_order,
             exact_money=exact_money,
         )
-        content_fingerprint = _exact_invoice_digest(invoice, idempotency_key)
+        invoice = replace(
+            invoice,
+            commercial_evidence_version=CLIENT_COMMERCIAL_EVIDENCE_VERSION,
+        )
+        invoice = replace(
+            invoice,
+            commercial_evidence_fingerprint=invoice.compute_commercial_evidence_fingerprint(),
+        )
+        if not invoice.verify_commercial_evidence():
+            raise ValueError("CLIENT_INVOICE_COMMERCIAL_EVIDENCE_VERIFICATION_FAILED")
+        content_fingerprint = _exact_invoice_digest(invoice, idempotency_key, line_tax_rates_basis_points)
         query = {"tenant_id": tenant_id, "idempotency_key": idempotency_key}
         try:
             existing_raw = target.find_one(query, **({"session": session} if session is not None else {}))
@@ -904,6 +923,7 @@ class BillingRegistry:
         doc = _stamp_identity(doc, tenant_id)
         doc = _stamp_idempotency(doc, idempotency_key)
         doc["exact_invoice_content_fingerprint"] = content_fingerprint
+        doc["exact_line_tax_rates_basis_points"] = list(line_tax_rates_basis_points)
         doc["performed_by"] = performed_by
         doc["created_by"] = performed_by
         try:

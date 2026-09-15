@@ -53,7 +53,7 @@ def test_exact_money_persists_replays_hydrates_and_is_tenant_scoped(mongo):
     registry = BillingRegistry()
     value = _money()
     session = client.start_session()
-    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc))
+    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc), line_tax_rates_basis_points=(1500,))
     try:
         first = registry.create_client_invoice_exact("tenant-a", value, idempotency_key="p6e-a", collection=collection, session=session, **kwargs)
         replay = registry.create_client_invoice_exact("tenant-a", value, idempotency_key="p6e-a", collection=collection, session=session, **kwargs)

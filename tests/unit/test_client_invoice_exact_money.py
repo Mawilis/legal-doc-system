@@ -87,14 +87,23 @@ class _Collection:
 
 def test_exact_registry_replay_divergence_and_session_forwarding():
     collection = _Collection(); session = object(); registry = BillingRegistry()
-    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc))
+    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc), line_tax_rates_basis_points=(1500, 0))
     first = registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, session=session, **kwargs)
     second = registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, session=session, **kwargs)
     assert first == second and len(collection.docs) == 1
+    assert collection.docs[0]["exact_line_tax_rates_basis_points"] == [1500, 0]
+    assert first.line_items[0].tax_rate == 0.15
     assert all(call[1] is session for call in collection.calls)
     divergent = ClientInvoiceExactMoney("ZAR", 1300, 150, 1450, (_money().lines[0], ClientInvoiceExactMoneyLine("Travel", 1, 300, 300, 0, 0, "ZAR")))
     with pytest.raises(ValueError, match="CLIENT_INVOICE_REPLAY_CONFLICT"):
         registry.create_client_invoice_exact("tenant-a", divergent, idempotency_key="key-a", collection=collection, **kwargs)
+
+    changed_dates = dict(kwargs, issued_at=datetime(2026, 9, 16, tzinfo=timezone.utc), due_at=datetime(2026, 10, 16, tzinfo=timezone.utc))
+    with pytest.raises(ValueError, match="CLIENT_INVOICE_REPLAY_CONFLICT"):
+        registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, **changed_dates)
+    changed_rates = dict(kwargs, line_tax_rates_basis_points=(2000, 0))
+    with pytest.raises(ValueError, match="CLIENT_INVOICE_REPLAY_CONFLICT"):
+        registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, **changed_rates)
 
 
 @pytest.mark.parametrize(
@@ -123,6 +132,7 @@ def test_exact_registry_requires_every_commercial_authority_input(missing: str, 
         collection_method="send_invoice",
         issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc),
         due_at=datetime(2026, 10, 15, tzinfo=timezone.utc),
+        line_tax_rates_basis_points=(1500, 0),
     )
     kwargs.pop(missing)
     with pytest.raises(ValueError, match=expected):
