@@ -364,7 +364,23 @@ def issue_process_service_client_invoice(
         tax, rate = _tax_for_line(source.amount_minor_units, policy.treatment, policy.rate_basis_points, policy.rounding_rule, policy.calculation_scope)
         lines.append(ClientInvoiceExactMoneyLine(source.description, source.quantity, source.unit_minor_units, source.amount_minor_units, tax, 0, source.currency)); rates.append(rate)
     exact = ClientInvoiceExactMoney(basis.currency, basis.eligible_minor_units, sum(line.tax_amount_minor for line in lines), basis.eligible_minor_units + sum(line.tax_amount_minor for line in lines), tuple(lines))
-    invoice = BillingRegistry().create_client_invoice_exact(tenant, exact_money=exact, customer_id=profile.customer_id, customer_name=profile.customer_legal_name, customer_tax_id=profile.customer_tax_id, customer_email=profile.customer_email, customer_phone=profile.customer_phone, payment_terms_days=terms.days_after_issue, tax_type=profile.invoice_tax_type.value, seller_jurisdiction=profile.seller_jurisdiction, customer_jurisdiction=profile.customer_jurisdiction, collection_method=profile.collection_method.method.value, issued_at=issued_at, due_at=due_at, line_tax_rates_basis_points=tuple(rates), idempotency_key=idempotency_key, invoice_id=invoice_id, collection=client_invoice_collection, session=session)
+    try:
+        invoice = BillingRegistry().create_client_invoice_exact(tenant, exact_money=exact, customer_id=profile.customer_id, customer_name=profile.customer_legal_name, customer_tax_id=profile.customer_tax_id, customer_email=profile.customer_email, customer_phone=profile.customer_phone, payment_terms_days=terms.days_after_issue, tax_type=profile.invoice_tax_type.value, seller_jurisdiction=profile.seller_jurisdiction, customer_jurisdiction=profile.customer_jurisdiction, collection_method=profile.collection_method.method.value, issued_at=issued_at, due_at=due_at, line_tax_rates_basis_points=tuple(rates), idempotency_key=idempotency_key, invoice_id=invoice_id, collection=client_invoice_collection, session=session)
+    except ValueError as error:
+        # P6E exposes one exact governed retry signal for active transaction
+        # write conflicts. Translate only that signal when its original
+        # PyMongo cause is retained and positively classifies a write conflict.
+        cause = error.__cause__
+        mongo_cause = cause if isinstance(cause, PyMongoError) else None
+        retry = str(error) == "M2_RETRY_TRANSACTION_REQUIRED" and mongo_cause is not None
+        if retry and mongo_cause is not None:
+            retry = isinstance(mongo_cause, DuplicateKeyError) or (
+                mongo_cause.has_error_label("TransientTransactionError")
+                and not mongo_cause.has_error_label("UnknownTransactionCommitResult")
+            )
+        if retry:
+            _fail("P6F_RETRY_TRANSACTION_REQUIRED", cause)
+        raise
     evidence = ProcessServiceClientInvoiceIssuanceEvidence.from_invoice_sources(tenant_id=tenant, invoice=invoice, invoice_idempotency_key=idempotency_key, basis=basis, binding=binding, profile=profile, billing_eligibility_evidence_identity=billing_eligibility_evidence_identity, binding_evidence_identity=binding_evidence_identity, profile_evidence_identity=profile_evidence_identity, issuance_id=issuance_id, line_tax_rates_basis_points=tuple(rates))
     ProcessServiceClientInvoiceIssuanceRegistry.create(evidence, issuance_collection, session=session)
     return invoice, evidence
