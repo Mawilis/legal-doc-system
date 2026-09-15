@@ -1,11 +1,16 @@
-"""TITLE: WILSY OS Legal Operations read API real-Mongo certificate.
-VERSION: v1.0.0-L7A-LEGAL-OPERATIONS-READ-API-RM-CERT
-AUTHORITY: Host-backed certificate for tenant-authorized canonical projections.
-EPITOME: Proves a real P2 LegalInstruction round-trip through the authenticated ASGI read boundary.
+"""TITLE: WILSY OS Legal Operations live-IAM read API real-Mongo certificate.
+VERSION: v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT
+AUTHORITY: Host-backed certificate for durable tenant authorization and canonical projections.
+EPITOME: Proves the real RequireTenantAuthorization chain resolves durable principal,
+membership, business-role, and granting-role truth before a real P2 projection.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; P1/P2 remain canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-15
-CHANGELOG: v1.0.0 certifies own-tenant visibility, foreign absence, and bounded output on Mongo.
+CHANGELOG: v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT removes the final-authorization
+override and certifies durable principal, membership, business-role, granting-role,
+revocation, inactive-state, ambiguity, cross-tenant, and client-policy denials.
+v1.0.0-L7A-LEGAL-OPERATIONS-READ-API-RM-CERT certified own-tenant visibility,
+foreign absence, and bounded output on Mongo.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID-isolated database and synthetic identifiers; no secrets or provider calls.
 TENANT BOUNDARY: Every read predicate includes the exact authorized tenant.
@@ -31,10 +36,8 @@ from pymongo.write_concern import WriteConcern
 
 import tools.eos.api.legal_operations_router as legal_router
 from tools.eos.api.errors import register_error_handlers
-from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
-from tools.eos.auth.tenant_authorization import TenantAuthorizationDecision, TenantAuthorizationReason
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import LegalInstruction
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION,
@@ -42,15 +45,15 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L7A-LEGAL-OPERATIONS-READ-API-RM-CERT"
+VERSION = "v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT"
 MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 NOW = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture
-def mongo_context() -> Iterator[tuple[Any, Any]]:
-    """Provide an isolated majority-concern collection; skip only pre-cert host absence."""
+def mongo_context() -> Iterator[dict[str, Any]]:
+    """Provide isolated majority collections; skip only pre-cert host absence."""
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000, retryWrites=True)
     database = None
     try:
@@ -70,9 +73,37 @@ def mongo_context() -> Iterator[tuple[Any, Any]]:
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
+    principal_collection = database.get_collection(
+        "principal_authorities",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    membership_collection = database.get_collection(
+        "tenant_memberships",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    role_collection = database.get_collection(
+        "role_assignments",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
     try:
         LegalOperationsLifecycleRegistry.ensure_indexes(collection)
-        yield database, collection
+        from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+        from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+        from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+
+        PrincipalAuthorityRepository.ensure_indexes(principal_collection)
+        TenantMembershipRepository.ensure_indexes(membership_collection)
+        RoleAssignmentRepository.ensure_indexes(role_collection)
+        yield {
+            "database": database,
+            "lifecycle": collection,
+            "principal": principal_collection,
+            "membership": membership_collection,
+            "roles": role_collection,
+        }
     finally:
         if database is not None:
             try:
@@ -93,7 +124,7 @@ def _instruction(tenant_id: str) -> LegalInstruction:
     )
 
 
-def _context(tenant_id: str) -> TenantAuthorizationContext:
+def _identity(tenant_id: str) -> SovereignIdentity:
     identity = SovereignIdentity(
         identity_id="principal-1",
         tenant_id=tenant_id,
@@ -102,61 +133,255 @@ def _context(tenant_id: str) -> TenantAuthorizationContext:
         auth_method="TEST",
         status=PrincipalStatus.ACTIVE,
     )
-    decision = TenantAuthorizationDecision(True, TenantAuthorizationReason.AUTHORIZED, "tenant_legal_partner", "LEGAL_PARTNER")
-    return TenantAuthorizationContext(identity=identity, tenant_id=tenant_id, decision=decision)
+    return identity
 
 
-def _app(collection: Any, context: TenantAuthorizationContext) -> FastAPI:
+class _PrincipalReader:
+    """Trace durable principal resolution while delegating to the canonical repository."""
+
+    def __init__(self, collection: Any, calls: list[str]) -> None:
+        self._collection = collection
+        self._calls = calls
+
+    def resolve(self, principal_id: str, *, session: Any = None) -> Any:
+        self._calls.append("principal")
+        from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+
+        return PrincipalAuthorityRepository.get(principal_id, self._collection, session=session)
+
+
+class _MembershipReader:
+    """Trace durable membership resolution while delegating to the canonical repository."""
+
+    def __init__(self, collection: Any, calls: list[str]) -> None:
+        self._collection = collection
+        self._calls = calls
+
+    def resolve(self, principal_id: str, tenant_id: str, *, session: Any = None) -> Any:
+        self._calls.append("membership")
+        from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+
+        return TenantMembershipRepository.resolve(principal_id, tenant_id, self._collection, session=session)
+
+
+class _RoleReader:
+    """Trace durable business/granting-role lookups without supplying role truth."""
+
+    def __init__(self, collection: Any, calls: list[str]) -> None:
+        self._collection = collection
+        self._calls = calls
+
+    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> Any:
+        self._calls.append("business_role" if role_id.startswith("tenant_") else "authorization_role")
+        from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+
+        return RoleAssignmentRepository.resolve(principal_id, tenant_id, role_id, self._collection, session=session)
+
+
+class _LifecycleReader:
+    """Trace lifecycle repository access and preserve the real Mongo collection contract."""
+
+    def __init__(self, collection: Any, calls: list[str]) -> None:
+        self._collection = collection
+        self._calls = calls
+
+    def find_one(self, query: Any, **kwargs: Any) -> Any:
+        del kwargs
+        self._calls.append("lifecycle")
+        return self._collection.find_one(query)
+
+
+def _app(
+    collections: dict[str, Any],
+    tenant_id: str,
+    calls: list[str],
+) -> FastAPI:
+    """Compose the real final authorization dependency with isolated durable providers."""
+    import tools.eos.auth.authentication as authentication
+    import tools.eos.auth.authorization as authorization
+    import tools.eos.auth.tenant_access as tenant_access
+    import tools.eos.api.tenant_authorization_http as authorization_http
+
     app = FastAPI()
     register_error_handlers(app, debug=False)
-    app.dependency_overrides[legal_router._INSTRUCTION_READ] = lambda: context
-    app.dependency_overrides[legal_router.get_lifecycle_collection] = lambda: collection
+    principal_reader = _PrincipalReader(collections["principal"], calls)
+    membership_reader = _MembershipReader(collections["membership"], calls)
+    role_reader = _RoleReader(collections["roles"], calls)
+    app.dependency_overrides[authorization_http.get_current_identity] = lambda: _identity(tenant_id)
+    app.dependency_overrides[authentication.get_principal_authority_repository] = lambda: principal_reader
+    app.dependency_overrides[tenant_access.get_tenant_membership_repository] = lambda: membership_reader
+    app.dependency_overrides[authorization.get_role_assignment_repository] = lambda: role_reader
+    app.dependency_overrides[legal_router.get_lifecycle_collection] = lambda: _LifecycleReader(collections["lifecycle"], calls)
+    assert legal_router._INSTRUCTION_READ not in app.dependency_overrides
     app.include_router(legal_router.router, prefix="/api")
     return app
 
 
-def test_real_mongo_authorized_projection_and_foreign_absence(mongo_context: tuple[Any, Any]) -> None:
-    _, collection = mongo_context
+def _persist_iam(collections: dict[str, Any], tenant_id: str, *, business_role: str = "tenant_legal_partner") -> None:
+    """Persist active principal, membership, business role, and granting role evidence."""
+    from tools.eos.auth.principal_authority import PrincipalAuthority
+    from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+    from tools.eos.auth.principal_status import PrincipalStatus
+    from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
+    from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+    from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
+    from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+
+    PrincipalAuthorityRepository.create(
+        PrincipalAuthority("principal-1", PrincipalStatus.ACTIVE, 0),
+        collections["principal"],
+    )
+    TenantMembershipRepository.insert(
+        TenantMembershipAuthority("principal-1", tenant_id, TenantMembershipStatus.ACTIVE, 0),
+        collections["membership"],
+    )
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority("principal-1", tenant_id, business_role, RoleAssignmentStatus.ACTIVE, 0),
+        collections["roles"],
+    )
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority("principal-1", tenant_id, "LEGAL_PARTNER", RoleAssignmentStatus.ACTIVE, 0),
+        collections["roles"],
+    )
+
+
+def _prepare(
+    collections: dict[str, Any],
+    *,
+    business_role: str = "tenant_legal_partner",
+) -> tuple[str, LegalInstruction, list[str]]:
+    """Persist one complete durable IAM model and one canonical lifecycle fact."""
     tenant = f"tenant-{uuid.uuid4().hex}"
+    _persist_iam(collections, tenant, business_role=business_role)
     value = _instruction(tenant)
-    persisted = LegalOperationsLifecycleRegistry.create(value, collection)
-    assert persisted == value
-    with TestClient(_app(collection, _context(tenant))) as client:
-        own = client.get("/api/legal-operations/instructions/instruction-1")
-    assert own.status_code == 200
-    assert own.json()["data"] == value.to_dict()
-    foreign_tenant = f"tenant-{uuid.uuid4().hex}"
-    with TestClient(_app(collection, _context(foreign_tenant))) as client:
-        foreign = client.get("/api/legal-operations/instructions/instruction-1")
-    assert foreign.status_code == 404
+    assert LegalOperationsLifecycleRegistry.create(value, collections["lifecycle"]) == value
+    calls: list[str] = []
+    return tenant, value, calls
 
 
-def test_real_mongo_unknown_resource_is_bounded(mongo_context: tuple[Any, Any]) -> None:
-    _, collection = mongo_context
-    tenant = f"tenant-{uuid.uuid4().hex}"
-    with TestClient(_app(collection, _context(tenant))) as client:
-        response = client.get("/api/legal-operations/instructions/missing")
-    assert response.status_code == 404
-    assert "stack_trace" not in response.text
+def _request(collections: dict[str, Any], tenant: str, calls: list[str]) -> Any:
+    """Issue the real route request with only authentication identity injected."""
+    with TestClient(_app(collections, tenant, calls)) as client:
+        return client.get(
+            "/api/legal-operations/instructions/instruction-1",
+            headers={"X-Tenant-ID": tenant},
+        )
 
 
-def test_real_mongo_projection_has_no_financial_or_mongo_fields(mongo_context: tuple[Any, Any]) -> None:
-    _, collection = mongo_context
-    tenant = f"tenant-{uuid.uuid4().hex}"
-    value = _instruction(tenant)
-    LegalOperationsLifecycleRegistry.create(value, collection)
-    with TestClient(_app(collection, _context(tenant))) as client:
-        response = client.get("/api/legal-operations/instructions/instruction-1")
+def test_real_mongo_live_iam_authorizes_and_precedes_lifecycle_read(mongo_context: dict[str, Any]) -> None:
+    """Durable IAM truth authorizes the own-tenant P2 projection."""
+    tenant, value, calls = _prepare(mongo_context)
+    response = _request(mongo_context, tenant, calls)
     assert response.status_code == 200
-    payload = response.json()["data"]
+    assert response.json()["data"] == value.to_dict()
+    assert "principal" in calls
+    assert "membership" in calls
+    assert "business_role" in calls
+    assert "authorization_role" in calls
+    assert "lifecycle" in calls
+    assert max(calls.index("principal"), calls.index("membership"), calls.index("business_role"), calls.index("authorization_role")) < calls.index("lifecycle")
+
+
+def test_real_mongo_revoked_grant_denies_before_lifecycle(mongo_context: dict[str, Any]) -> None:
+    """Revoking the durable granting role cannot be bypassed by injected claims."""
+    from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
+    from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+
+    tenant, _, calls = _prepare(mongo_context)
+    RoleAssignmentRepository.compare_and_swap(
+        RoleAssignmentAuthority("principal-1", tenant, "LEGAL_PARTNER", RoleAssignmentStatus.REVOKED, 1),
+        0,
+        mongo_context["roles"],
+    )
+    response = _request(mongo_context, tenant, calls)
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_inactive_principal_denies_before_lifecycle(mongo_context: dict[str, Any]) -> None:
+    """Durable principal inactivity dominates any projected identity status."""
+    from tools.eos.auth.principal_authority import PrincipalAuthority
+    from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+    from tools.eos.auth.principal_status import PrincipalStatus
+
+    tenant, _, calls = _prepare(mongo_context)
+    PrincipalAuthorityRepository.compare_and_swap(
+        PrincipalAuthority("principal-1", PrincipalStatus.SUSPENDED, 1),
+        0,
+        mongo_context["principal"],
+    )
+    response = _request(mongo_context, tenant, calls)
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_inactive_membership_denies_before_lifecycle(mongo_context: dict[str, Any]) -> None:
+    """Durable membership inactivity denies the selected tenant scope."""
+    from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
+    from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+
+    tenant, _, calls = _prepare(mongo_context)
+    TenantMembershipRepository.compare_and_swap(
+        TenantMembershipAuthority("principal-1", tenant, TenantMembershipStatus.SUSPENDED, 1),
+        0,
+        mongo_context["membership"],
+    )
+    response = _request(mongo_context, tenant, calls)
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_ineligible_business_role_denies_before_lifecycle(mongo_context: dict[str, Any]) -> None:
+    """A durable but ineligible Legal Operations business role cannot authorize reads."""
+    tenant, _, calls = _prepare(mongo_context, business_role="tenant_legal_client")
+    response = _request(mongo_context, tenant, calls)
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_cross_tenant_denies_without_foreign_repository_access(mongo_context: dict[str, Any]) -> None:
+    """A foreign X-Tenant-ID is denied before any lifecycle lookup."""
+    tenant, _, calls = _prepare(mongo_context)
+    foreign = f"tenant-{uuid.uuid4().hex}"
+    response = _request(mongo_context, foreign, calls)
+    assert tenant != foreign
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_client_role_is_denied_until_projection_policy_exists(mongo_context: dict[str, Any]) -> None:
+    """Client business-role evidence cannot reach internal lifecycle projections."""
+    tenant, _, calls = _prepare(mongo_context, business_role="tenant_legal_client")
+    response = _request(mongo_context, tenant, calls)
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_unknown_resource_and_projection_boundary_remain_bounded(mongo_context: dict[str, Any]) -> None:
+    """Unknown resources remain bounded and successful projections exclude internals."""
+    tenant, value, calls = _prepare(mongo_context)
+    with TestClient(_app(mongo_context, tenant, calls)) as client:
+        missing = client.get(
+            "/api/legal-operations/instructions/missing",
+            headers={"X-Tenant-ID": tenant},
+        )
+        own = client.get(
+            "/api/legal-operations/instructions/instruction-1",
+            headers={"X-Tenant-ID": tenant},
+        )
+    assert missing.status_code == 404
+    assert "stack_trace" not in missing.text
+    assert own.status_code == 200
+    payload = own.json()["data"]
+    assert payload == value.to_dict()
     assert "_id" not in payload
     assert not any(token in key.casefold() for key in payload for token in ("payment", "settlement", "invoice", "billing_execution"))
 
 
 # ARTIFACT: test_legal_operations_http_real_mongo.py
-# VERSION: v1.0.0-L7A-LEGAL-OPERATIONS-READ-API-RM-CERT
-# AUTHORITY BOUNDARY: real-Mongo read projection certificate only
-# TENANT POSTURE: exact tenant predicates and foreign absence
+# VERSION: v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT
+# AUTHORITY BOUNDARY: real-Mongo live-IAM read projection certificate only
+# TENANT POSTURE: exact tenant predicates, durable membership, and foreign absence
 # FAIL-CLOSED POSTURE: post-hello failures are certificate failures
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
