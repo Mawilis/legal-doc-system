@@ -48,6 +48,7 @@ from tools.eos.saas.billing.process_service_client_billing_authority import (
     TaxPolicy,
     TaxRoundingRule,
     TaxTreatment,
+    InvoiceTaxType,
 )
 
 VERSION: Final[str] = "v1.0.0-PROCESS-SERVICE-CLIENT-BILLING-REGISTRY"
@@ -140,9 +141,11 @@ def _hydrate(raw: Mapping[str, Any], tenant: str) -> ClientBillingProfileVersion
     try:
         if value["entity_type"] == "ClientBillingProfileVersion":
             fields = {"schema", "version", "entity_type", "tenant_id", "billing_profile_id", "billing_profile_version_id", "customer_id", "customer_legal_name", "customer_tax_id", "customer_email", "customer_phone", "seller_jurisdiction", "customer_jurisdiction", "tax_policy", "payment_terms", "due_date_policy", "collection_method", "effective_from", "effective_to", "evidence_reference"}
-            if set(payload) != fields: _fail("P6D_PAYLOAD_SCHEMA_INVALID")
+            optional_tax_type = payload.get("invoice_tax_type")
+            allowed_fields = fields | {"invoice_tax_type"}
+            if set(payload) != fields and set(payload) != allowed_fields: _fail("P6D_PAYLOAD_SCHEMA_INVALID")
             tax, terms, due, collection = _policy(payload)
-            result: ClientBillingProfileVersion | InstructionBillingBinding = ClientBillingProfileVersion(tenant_id=payload["tenant_id"], billing_profile_id=payload["billing_profile_id"], billing_profile_version_id=payload["billing_profile_version_id"], customer_id=payload["customer_id"], customer_legal_name=payload["customer_legal_name"], customer_tax_id=payload["customer_tax_id"], customer_email=payload["customer_email"], customer_phone=payload["customer_phone"], seller_jurisdiction=payload["seller_jurisdiction"], customer_jurisdiction=payload["customer_jurisdiction"], tax_policy=tax, payment_terms=terms, due_date_policy=due, collection_method=collection, effective_from=_time(payload["effective_from"]), effective_to=None if payload["effective_to"] is None else _time(payload["effective_to"]), evidence_reference=payload["evidence_reference"])
+            result: ClientBillingProfileVersion | InstructionBillingBinding = ClientBillingProfileVersion(tenant_id=payload["tenant_id"], billing_profile_id=payload["billing_profile_id"], billing_profile_version_id=payload["billing_profile_version_id"], customer_id=payload["customer_id"], customer_legal_name=payload["customer_legal_name"], customer_tax_id=payload["customer_tax_id"], customer_email=payload["customer_email"], customer_phone=payload["customer_phone"], seller_jurisdiction=payload["seller_jurisdiction"], customer_jurisdiction=payload["customer_jurisdiction"], tax_policy=tax, payment_terms=terms, due_date_policy=due, collection_method=collection, effective_from=_time(payload["effective_from"]), effective_to=None if payload["effective_to"] is None else _time(payload["effective_to"]), evidence_reference=payload["evidence_reference"], invoice_tax_type=None if optional_tax_type is None else InvoiceTaxType(optional_tax_type))
         else:
             fields = {"schema", "version", "entity_type", "tenant_id", "binding_id", "instruction_id", "billing_profile_id", "billing_profile_version_id", "bound_at", "evidence_reference"}
             if set(payload) != fields: _fail("P6D_PAYLOAD_SCHEMA_INVALID")

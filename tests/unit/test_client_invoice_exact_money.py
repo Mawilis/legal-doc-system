@@ -10,6 +10,7 @@ FAIL-CLOSED: malformed, inexact, divergent, or corrupted evidence rejects.
 from dataclasses import FrozenInstanceError, replace
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Any
 
 import pytest
 
@@ -86,13 +87,71 @@ class _Collection:
 
 def test_exact_registry_replay_divergence_and_session_forwarding():
     collection = _Collection(); session = object(); registry = BillingRegistry()
-    first = registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, session=session)
-    second = registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, session=session)
+    kwargs: dict[str, Any] = dict(customer_id="customer-a", customer_name="Customer A", payment_terms_days=30, tax_type="vat", seller_jurisdiction="ZA", customer_jurisdiction="ZA", collection_method="send_invoice", issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc), due_at=datetime(2026, 10, 15, tzinfo=timezone.utc))
+    first = registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, session=session, **kwargs)
+    second = registry.create_client_invoice_exact("tenant-a", _money(), idempotency_key="key-a", collection=collection, session=session, **kwargs)
     assert first == second and len(collection.docs) == 1
     assert all(call[1] is session for call in collection.calls)
     divergent = ClientInvoiceExactMoney("ZAR", 1300, 150, 1450, (_money().lines[0], ClientInvoiceExactMoneyLine("Travel", 1, 300, 300, 0, 0, "ZAR")))
     with pytest.raises(ValueError, match="CLIENT_INVOICE_REPLAY_CONFLICT"):
-        registry.create_client_invoice_exact("tenant-a", divergent, idempotency_key="key-a", collection=collection)
+        registry.create_client_invoice_exact("tenant-a", divergent, idempotency_key="key-a", collection=collection, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("missing", "expected"),
+    [
+        ("customer_id", "CLIENT_INVOICE_CUSTOMER_REQUIRED"),
+        ("customer_name", "CLIENT_INVOICE_CUSTOMER_REQUIRED"),
+        ("payment_terms_days", "CLIENT_INVOICE_PAYMENT_TERMS_REQUIRED"),
+        ("tax_type", "CLIENT_INVOICE_TAX_TYPE_REQUIRED"),
+        ("seller_jurisdiction", "CLIENT_INVOICE_JURISDICTION_REQUIRED"),
+        ("customer_jurisdiction", "CLIENT_INVOICE_JURISDICTION_REQUIRED"),
+        ("collection_method", "CLIENT_INVOICE_COLLECTION_METHOD_REQUIRED"),
+        ("issued_at", "CLIENT_INVOICE_ISSUED_AT_REQUIRED"),
+        ("due_at", "CLIENT_INVOICE_DUE_AT_REQUIRED"),
+    ],
+)
+def test_exact_registry_requires_every_commercial_authority_input(missing: str, expected: str):
+    collection = _Collection()
+    kwargs: dict[str, Any] = dict(
+        customer_id="customer-a",
+        customer_name="Customer A",
+        payment_terms_days=30,
+        tax_type="vat",
+        seller_jurisdiction="ZA",
+        customer_jurisdiction="ZA",
+        collection_method="send_invoice",
+        issued_at=datetime(2026, 9, 15, tzinfo=timezone.utc),
+        due_at=datetime(2026, 10, 15, tzinfo=timezone.utc),
+    )
+    kwargs.pop(missing)
+    with pytest.raises(ValueError, match=expected):
+        BillingRegistry().create_client_invoice_exact(
+            "tenant-a", _money(), idempotency_key="required-key", collection=collection, **kwargs
+        )
+
+
+def test_exact_registry_signature_has_no_commercial_defaults():
+    import inspect
+
+    signature = inspect.signature(BillingRegistry.create_client_invoice_exact)
+    commercial = {
+        "customer_id",
+        "customer_name",
+        "payment_terms_days",
+        "tax_type",
+        "seller_jurisdiction",
+        "customer_jurisdiction",
+        "collection_method",
+        "issued_at",
+        "due_at",
+        "idempotency_key",
+    }
+    for name in commercial:
+        parameter = signature.parameters[name]
+        assert parameter.default is inspect.Parameter.empty or name == "idempotency_key" or parameter.default is not None
+        if name != "idempotency_key":
+            assert parameter.default is not None and repr(parameter.default) != "'vat'"
 
 
 def test_no_payment_or_settlement_authority_on_exact_object():

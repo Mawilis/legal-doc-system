@@ -91,6 +91,7 @@ from ..domain.billing import (
 # ─── Configuration ──────────────────────────────────────────────────────────
 
 VERSION = "v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY"
+_EXACT_REQUIRED = object()
 
 logger = logging.getLogger(__name__)
 
@@ -796,20 +797,20 @@ class BillingRegistry:
         tenant_id: str,
         exact_money: ClientInvoiceExactMoney,
         *,
-        customer_id: Optional[str] = None,
-        customer_name: Optional[str] = None,
+        customer_id: str | object = _EXACT_REQUIRED,
+        customer_name: str | object = _EXACT_REQUIRED,
         customer_tax_id: Optional[str] = None,
         customer_email: Optional[str] = None,
         customer_phone: Optional[str] = None,
-        payment_terms_days: int = 30,
-        tax_type: str = "vat",
-        seller_jurisdiction: str = "ZA",
-        customer_jurisdiction: str = "ZA",
-        collection_method: str = "send_invoice",
+        payment_terms_days: int | object = _EXACT_REQUIRED,
+        tax_type: str | TaxType | object = _EXACT_REQUIRED,
+        seller_jurisdiction: str | object = _EXACT_REQUIRED,
+        customer_jurisdiction: str | object = _EXACT_REQUIRED,
+        collection_method: str | CollectionMethod | object = _EXACT_REQUIRED,
         billing_mode: str = "CLIENT",
         metadata: Optional[Dict[str, Any]] = None,
-        issued_at: Optional[datetime] = None,
-        due_at: Optional[datetime] = None,
+        issued_at: datetime | object = _EXACT_REQUIRED,
+        due_at: datetime | object = _EXACT_REQUIRED,
         idempotency_key: str,
         performed_by: str = "SYSTEM",
         order_number: Optional[str] = None,
@@ -828,6 +829,32 @@ class BillingRegistry:
             raise ValueError("CLIENT_INVOICE_TENANT_INVALID")
         if type(exact_money) is not ClientInvoiceExactMoney:
             raise ValueError("CLIENT_INVOICE_EXACT_MONEY_REQUIRED")
+        if not isinstance(customer_id, str) or not customer_id.strip() or not isinstance(customer_name, str) or not customer_name.strip():
+            raise ValueError("CLIENT_INVOICE_CUSTOMER_REQUIRED")
+        if isinstance(payment_terms_days, bool) or not isinstance(payment_terms_days, int) or payment_terms_days < 0:
+            raise ValueError("CLIENT_INVOICE_PAYMENT_TERMS_REQUIRED")
+        if not isinstance(seller_jurisdiction, str) or not seller_jurisdiction.strip() or not isinstance(customer_jurisdiction, str) or not customer_jurisdiction.strip():
+            raise ValueError("CLIENT_INVOICE_JURISDICTION_REQUIRED")
+        if type(tax_type) is TaxType:
+            resolved_tax_type = tax_type
+        elif isinstance(tax_type, str):
+            try: resolved_tax_type = TaxType(tax_type.lower())
+            except ValueError as error: raise ValueError("CLIENT_INVOICE_TAX_TYPE_REQUIRED") from error
+        else:
+            raise ValueError("CLIENT_INVOICE_TAX_TYPE_REQUIRED")
+        if type(collection_method) is CollectionMethod:
+            resolved_collection_method = collection_method
+        elif isinstance(collection_method, str):
+            try: resolved_collection_method = CollectionMethod(collection_method.lower())
+            except ValueError as error: raise ValueError("CLIENT_INVOICE_COLLECTION_METHOD_REQUIRED") from error
+        else:
+            raise ValueError("CLIENT_INVOICE_COLLECTION_METHOD_REQUIRED")
+        if not isinstance(issued_at, datetime) or issued_at.tzinfo is None or issued_at.utcoffset() is None:
+            raise ValueError("CLIENT_INVOICE_ISSUED_AT_REQUIRED")
+        if not isinstance(due_at, datetime) or due_at.tzinfo is None or due_at.utcoffset() is None:
+            raise ValueError("CLIENT_INVOICE_DUE_AT_REQUIRED")
+        if due_at < issued_at:
+            raise ValueError("CLIENT_INVOICE_DUE_DATE_INVALID")
         if not isinstance(idempotency_key, str) or not idempotency_key.strip():
             raise ValueError("CLIENT_INVOICE_IDEMPOTENCY_REQUIRED")
         target = client_invoices_coll if collection is None else collection
@@ -849,13 +876,13 @@ class BillingRegistry:
             outstanding_amount=projection["total"],
             currency=exact_money.currency,
             line_items=line_items,
-            issued_at=issued_at or datetime.now(timezone.utc),
-            due_at=due_at or datetime.now(timezone.utc) + timedelta(days=payment_terms_days),
+            issued_at=issued_at,
+            due_at=due_at,
             payment_terms_days=payment_terms_days,
-            tax_type=TaxType(tax_type.lower()),
+            tax_type=resolved_tax_type,
             seller_jurisdiction=seller_jurisdiction,
             customer_jurisdiction=customer_jurisdiction,
-            collection_method=CollectionMethod(collection_method.lower()),
+            collection_method=resolved_collection_method,
             billing_mode=billing_mode,
             metadata=metadata or {},
             order_number=order_number,
