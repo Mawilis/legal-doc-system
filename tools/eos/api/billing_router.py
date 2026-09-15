@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – BILLING ROUTER (FASTAPI) – PRODUCTION WITH ORDER NUMBER GENERATION (FIXED MONGO CLIENT)           ║
+║ WILSY OS – BILLING ROUTER (FASTAPI) – LAZY KERNEL DATABASE HANDLES                                      ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP                                                                  ║
+║ VERSION:        v1.11.0-L7D-B-LAZY-BILLING-HANDLES                                                                  ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; composes certified billing intelligence and ║
 ║                 WILSY AI capacity evidence through caller-owned transactions.                                 ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-15 v1.11.0-L7D-B-LAZY-BILLING-HANDLES – Resolves active kernel database/client handles at request time; ║
+║                imports no longer freeze unavailable Mongo snapshots.                                             ║
 ║   2026-09-13 v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP – Binds the canonical billing-intelligence evidence route to      ║
 ║                RequireTenantAuthorization and derives tenant scope only from its authorized context; legacy compatibility routes ║
 ║                remain unchanged.                                                                                                  ║
@@ -77,6 +79,7 @@ import json
 from pydantic import BaseModel
 
 from ..saas.billing.billing_registry import get_billing_registry, BillingRegistry, db, client as mongo_client
+from ..kernel.db import get_database as get_kernel_database, get_client as get_kernel_client
 from ..saas.billing.order_number_service import get_order_number_service
 from ..saas.domain.billing import (
     PlatformInvoice,
@@ -111,7 +114,7 @@ from tools.eos.api.tenant_authorization_http import (
 )
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP"
+VERSION = "v1.11.0-L7D-B-LAZY-BILLING-HANDLES"
 
 _BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION = RequireTenantAuthorization(
     "billing_intelligence:evidence:read",
@@ -232,23 +235,25 @@ def _telemetry(tenant_id: str, category: str, event: str, source: str, metadata:
 # ─── Tenant Dependency ──────────────────────────────────────────────────────
 
 def _require_db():
-    """Return live Mongo database or raise 503 — satisfies Pylance Optional[Database]."""
-    if db is None:
+    """Return the live kernel database or raise 503 without stale snapshots."""
+    database = db if db is not None else get_kernel_database()
+    if database is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Billing database unavailable",
         )
-    return db
+    return database
 
 
 def _require_mongo_client():
-    """Return live MongoClient or raise 503 — for OrderNumberService."""
-    if mongo_client is None:
+    """Return the live kernel client or raise 503 for order generation."""
+    active_client = mongo_client if mongo_client is not None else get_kernel_client()
+    if active_client is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Mongo client unavailable for order number generation",
         )
-    return mongo_client
+    return active_client
 
 def get_tenant_id(x_tenant_id: str = Header(...)) -> str:
     if not x_tenant_id:
@@ -1369,7 +1374,7 @@ async def get_forensic_status(
     tenant_id: str = Depends(get_tenant_id),
 ):
     try:
-        from ..saas.billing.billing_registry import platform_invoices_coll
+        platform_invoices_coll = _require_db()["platform_invoices"]
         query = {}
         if tenant_id != "GLOBAL_ROOT":
             query["tenant_id"] = tenant_id
@@ -1934,10 +1939,10 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.11.0-L7D-B-LAZY-BILLING-HANDLES
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP
+Version:         v1.11.0-L7D-B-LAZY-BILLING-HANDLES
 Fixes:           Financial-truth HTTP firewall; canonical billing-intelligence authorization seam and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
@@ -1948,7 +1953,7 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP
+# VERSION: v1.11.0-L7D-B-LAZY-BILLING-HANDLES
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:

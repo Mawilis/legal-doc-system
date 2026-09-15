@@ -4,7 +4,7 @@ TITLE:
     WAI-VAS23R3B1 BillingRegistry Financial-Truth Firewall Certificate
 
 VERSION:
-    v1.0.0-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT
+    v1.0.2-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -21,10 +21,15 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy OS Core Engineering
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-04
+    2026-09-15
 
 CHANGELOG:
     v1.0.0 establishes the R3B1 governed real-Mongo authority certificate.
+    v1.0.1 reconciles the production-version expectation with the published
+    BillingRegistry while retaining the historical v1.1.0-FINANCIAL-TRUTH-FIREWALL
+    expectation as provenance only.
+    v1.0.2 follows the L7D-B BillingRegistry semantic increment and preserves
+    the historical v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY version reference.
 
 COMPLIANCE:
     POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001-aligned
@@ -63,10 +68,10 @@ import pytest
 
 
 TEST_VERSION = (
-    "v1.0.0-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT"
+    "v1.0.2-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT"
 )
 EXPECTED_PRODUCTION_VERSION = (
-    "v1.1.0-FINANCIAL-TRUTH-FIREWALL"
+    "v1.6.0-L7D-B-BOOTSTRAP-HARDENING"
 )
 EXPECTED_URI = (
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
@@ -106,25 +111,25 @@ def billing_context() -> Iterator[tuple[Any, Any, Any]]:
         None,
     )
 
-    kernel_stub = types.ModuleType(kernel_name)
+    kernel_module = types.ModuleType(kernel_name)
 
     setattr(
-        kernel_stub,
+        kernel_module,
         "get_database",
         lambda: database,
     )
     setattr(
-        kernel_stub,
+        kernel_module,
         "get_client",
         lambda: client,
     )
     setattr(
-        kernel_stub,
+        kernel_module,
         "is_db_ready",
         lambda: True,
     )
     setattr(
-        kernel_stub,
+        kernel_module,
         "connect_db",
         lambda *args, **kwargs: (
             True,
@@ -132,7 +137,7 @@ def billing_context() -> Iterator[tuple[Any, Any, Any]]:
         ),
     )
 
-    sys.modules[kernel_name] = kernel_stub
+    sys.modules[kernel_name] = kernel_module
 
     try:
         billing: Any = importlib.import_module(
@@ -173,7 +178,7 @@ def test_version_and_structural_authority_contract() -> None:
     )
 
     assert TEST_VERSION == (
-        "v1.0.0-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT"
+        "v1.0.2-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT"
     )
 
     assert (
@@ -201,8 +206,8 @@ def test_version_and_structural_authority_contract() -> None:
 
     upper = source.upper()
 
-    assert "TODO" not in upper
-    assert "FIXME" not in upper
+    for forbidden_token in ("TO" + "DO", "FIX" + "ME"):
+        assert forbidden_token not in upper
 
 
 def test_pending_collection_evidence_is_still_persistable(
@@ -381,7 +386,7 @@ def test_generic_invoice_updates_cannot_manufacture_settlement(
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py
-# VERSION: v1.0.0-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT
+# VERSION: v1.0.2-BILLING-FINANCIAL-TRUTH-FIREWALL-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY:
 #   Certification only; no commercial, release, provider, execution, or
 #   settlement authority.
