@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT
+VERSION: v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity and
@@ -8,9 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
-    2026-09-13 v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT
-    certifies the canonical own-tenant billing-intelligence evidence read
-    permission and its strict metadata and alias rejection.
+    2026-09-15 v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT certifies the nine
+    canonical Legal Operations permissions while preserving prior
+    own-tenant evidence-read metadata and fail-closed alias rejection.
     2026-09-13 v1.8.0-M13-P6D-WILSY-AI-CAPACITY-READ-CERT certifies the
     canonical own-tenant WILSY AI usage-capacity evidence read permission,
     including its membership and non-financial metadata and alias rejection.
@@ -47,12 +47,12 @@ import json
 
 import pytest
 
-VERSION = "v1.9.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ-CERT"
+VERSION = "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ"
+    assert POLICY_VERSION == "v1.13.0-L7A-LEGAL-OPERATIONS-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -76,6 +76,15 @@ def test_permission_canon_properties() -> None:
         "plan:manage",
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
+        "legal_operations:instruction:read",
+        "legal_operations:instruction:write",
+        "legal_operations:allocation:read",
+        "legal_operations:allocation:write",
+        "legal_operations:attempt:read",
+        "legal_operations:attempt:write",
+        "legal_operations:return:read",
+        "legal_operations:billing:read",
+        "legal_operations:invoice:read",
         "platform_billing:release",
         "inbound_collection:authorization:create",
         "inbound_merchant_configuration:register",
@@ -103,9 +112,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 39
+    ) == 48
 
-    assert len(rows) == 42
+    assert len(rows) == 51
 
     for permission_id in tenant:
         metadata = permission_metadata(

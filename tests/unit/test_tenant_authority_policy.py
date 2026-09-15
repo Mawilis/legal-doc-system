@@ -1,12 +1,14 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
+VERSION: v1.8.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-13 v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
+CHANGELOG: 2026-09-15 v1.8.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY-CERT
+certifies the explicit legal-practice role vocabulary and least-authority matrix.
+2026-09-13 v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
 certifies billing-intelligence evidence-read eligibility for exactly the four
 general tenant business roles while preserving specialized-role denial.
 2026-09-13 v1.6.0-M13-P6D-WILSY-AI-CAPACITY-READ-ELIGIBILITY-CERT
@@ -34,12 +36,12 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.10.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY"
+    assert VERSION == "v1.11.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
 def test_matrix_boundaries() -> None:
-    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin"}
+    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}
     assert all(tenant_role_operation_eligibility(role, "financial_execution") == DENY for role in TENANT_ROLES)
     assert all(tenant_role_operation_eligibility(role, "cross_tenant") == DENY for role in TENANT_ROLES)
     assert tenant_role_operation_eligibility("tenant_manager", "profile_update") == DENY
@@ -61,6 +63,26 @@ def test_matrix_boundaries() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_create") == DENY
     assert tenant_role_operation_eligibility("tenant_manager", "membership_read") == DENY
     assert tenant_role_operation_eligibility("tenant_manager", "role_assignment_read") == DENY
+
+
+def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
+    """Each legal persona has bounded eligibility and no financial execution."""
+    expected = {
+        "tenant_legal_partner": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_billing_read", "legal_invoice_read"},
+        "tenant_legal_attorney": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_billing_read", "legal_invoice_read"},
+        "tenant_legal_paralegal": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_invoice_read"},
+        "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_invoice_read"},
+        "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read"},
+        "tenant_sheriff": {"legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_return_read"},
+        "tenant_deputy": {"legal_attempt_read", "legal_attempt_write", "legal_return_read"},
+        "tenant_legal_client": {"legal_invoice_read"},
+    }
+    assert set(expected) <= TENANT_ROLES
+    for role, allowed in expected.items():
+        assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed
+        assert tenant_role_operation_eligibility(role, "financial_execution") == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_client", "legal_instruction_read") == DENY
+    assert tenant_role_operation_eligibility("tenant_deputy", "legal_instruction_read") == DENY
 
 def test_platform_billing_release_is_tenant_owner_only() -> None:
     assert "platform_billing_release" in OPERATIONS

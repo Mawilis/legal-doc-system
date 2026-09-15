@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ
+VERSION: v1.13.0-L7A-LEGAL-OPERATIONS-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
@@ -11,6 +11,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-15 v1.13.0-L7A-LEGAL-OPERATIONS-IAM adds explicit own-tenant
+    Legal Operations read/write vocabulary without granting authority alone.
     2026-09-13 v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ adds the
     canonical own-tenant billing-intelligence evidence read permission; it
     remains membership-gated, non-cross-tenant, non-financial, and
@@ -66,7 +68,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ"
+VERSION = "v1.13.0-L7A-LEGAL-OPERATIONS-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -285,6 +287,42 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "read own-tenant canonical billing-intelligence evidence",
             tenant=True,
+        ),
+        "legal_operations:instruction:read": _meta(
+            "legal_operations:instruction:read", "TENANT", "TENANT",
+            "read own-tenant legal instructions", tenant=True,
+        ),
+        "legal_operations:instruction:write": _meta(
+            "legal_operations:instruction:write", "TENANT", "TENANT",
+            "operate own-tenant legal instructions", tenant=True,
+        ),
+        "legal_operations:allocation:read": _meta(
+            "legal_operations:allocation:read", "TENANT", "TENANT",
+            "read own-tenant process allocations", tenant=True,
+        ),
+        "legal_operations:allocation:write": _meta(
+            "legal_operations:allocation:write", "TENANT", "TENANT",
+            "operate own-tenant process allocations", tenant=True,
+        ),
+        "legal_operations:attempt:read": _meta(
+            "legal_operations:attempt:read", "TENANT", "TENANT",
+            "read own-tenant service attempts", tenant=True,
+        ),
+        "legal_operations:attempt:write": _meta(
+            "legal_operations:attempt:write", "TENANT", "TENANT",
+            "operate own-tenant service attempts", tenant=True,
+        ),
+        "legal_operations:return:read": _meta(
+            "legal_operations:return:read", "TENANT", "TENANT",
+            "read own-tenant returns of service", tenant=True,
+        ),
+        "legal_operations:billing:read": _meta(
+            "legal_operations:billing:read", "TENANT", "TENANT",
+            "read own-tenant legal billing evidence", tenant=True,
+        ),
+        "legal_operations:invoice:read": _meta(
+            "legal_operations:invoice:read", "TENANT", "TENANT",
+            "read own-tenant legal invoice evidence", tenant=True,
         ),
         "platform_billing:provider_policy:admin": _meta(
             "platform_billing:provider_policy:admin",
@@ -506,7 +544,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ
+# VERSION: v1.13.0-L7A-LEGAL-OPERATIONS-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.12.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS
+VERSION: v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -10,6 +10,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-15 v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS adds bounded
+    legal-practice authorization-role grants; Kennel financial execution stays
+    outside this map.
     2026-09-13 v1.12.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS
     grants the read-only billing-intelligence evidence permission exactly to
     ENTERPRISE_ADMIN and AUDITOR; no assignment, cross-tenant, quota,
@@ -64,7 +67,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.12.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS"
+VERSION = "v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -108,6 +111,61 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
         "tenant:business_role:read",
+    ],
+    "LEGAL_PARTNER": [
+        "legal_operations:instruction:read",
+        "legal_operations:instruction:write",
+        "legal_operations:allocation:read",
+        "legal_operations:allocation:write",
+        "legal_operations:attempt:read",
+        "legal_operations:return:read",
+        "legal_operations:billing:read",
+        "legal_operations:invoice:read",
+    ],
+    "LEGAL_ATTORNEY": [
+        "legal_operations:instruction:read",
+        "legal_operations:instruction:write",
+        "legal_operations:allocation:read",
+        "legal_operations:allocation:write",
+        "legal_operations:attempt:read",
+        "legal_operations:return:read",
+        "legal_operations:billing:read",
+        "legal_operations:invoice:read",
+    ],
+    "LEGAL_PARALEGAL": [
+        "legal_operations:instruction:read",
+        "legal_operations:instruction:write",
+        "legal_operations:allocation:read",
+        "legal_operations:allocation:write",
+        "legal_operations:attempt:read",
+        "legal_operations:return:read",
+        "legal_operations:invoice:read",
+    ],
+    "LEGAL_SECRETARY": [
+        "legal_operations:instruction:read",
+        "legal_operations:allocation:read",
+        "legal_operations:attempt:read",
+        "legal_operations:return:read",
+        "legal_operations:invoice:read",
+    ],
+    "LEGAL_FINANCE": [
+        "legal_operations:billing:read",
+        "legal_operations:invoice:read",
+    ],
+    "SHERIFF": [
+        "legal_operations:allocation:read",
+        "legal_operations:allocation:write",
+        "legal_operations:attempt:read",
+        "legal_operations:attempt:write",
+        "legal_operations:return:read",
+    ],
+    "DEPUTY": [
+        "legal_operations:attempt:read",
+        "legal_operations:attempt:write",
+        "legal_operations:return:read",
+    ],
+    "LEGAL_CLIENT": [
+        "legal_operations:invoice:read",
     ],
     "SERVICE_WORKER": [
         "artifacts:write",
@@ -195,7 +253,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.12.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS
+# VERSION: v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; WILSY AI capacity and billing-intelligence evidence reads remain own-tenant scoped
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

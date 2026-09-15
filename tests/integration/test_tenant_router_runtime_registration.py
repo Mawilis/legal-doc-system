@@ -12,7 +12,7 @@ FILE:
     tests/integration/test_tenant_router_runtime_registration.py
 
 VERSION:
-    v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT
+    v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -36,6 +36,9 @@ CERTIFICATION / UPDATE DATE:
     2026-08-31
 
 CHANGELOG:
+    v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT
+        - Certifies the dedicated Legal Operations read router is mounted once
+          while the existing tenant-router five-route surface remains exact.
     v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT
         - Evolves B2B runtime certification for controlled profile PUT.
         - Preserves router registration, OpenAPI surface, general application
@@ -106,6 +109,7 @@ from tools.eos.api.tenant_router import (
     VERSION as TENANT_ROUTER_VERSION,
     tenant_router,
 )
+from tools.eos.api.legal_operations_router import router as legal_operations_router
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import (
@@ -132,9 +136,9 @@ from tools.eos.saas.tenancy.tenant_registry import (
 )
 
 
-VERSION = "v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT"
+VERSION = "v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT"
 EXPECTED_API_SERVER_VERSION = (
-    "v1.3.0-TENANT-PROFILE-UPDATE-CONTROLLED-ACTIVATION"
+    "v1.4.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT"
 )
 EXPECTED_TENANT_ROUTER_VERSION = (
     "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
@@ -391,7 +395,7 @@ def _entity(
 
 def test_versions_lock_c2_into_unchanged_canonical_app() -> None:
     """C2 advances governance versions while preserving app composition."""
-    assert VERSION == "v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT"
+    assert VERSION == "v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT"
     assert API_SERVER_VERSION == EXPECTED_API_SERVER_VERSION
     assert TENANT_ROUTER_VERSION == EXPECTED_TENANT_ROUTER_VERSION
 
@@ -406,6 +410,13 @@ def test_tenant_router_is_still_included_exactly_once() -> None:
     """Canonical application contains one tenant and one general router."""
     assert _included_router_count(tenant_router) == 1
     assert _included_router_count(general_router) == 1
+
+
+def test_legal_operations_router_is_registered_exactly_once() -> None:
+    """The dedicated legal read router is mounted once without tenant widening."""
+    assert _included_router_count(legal_operations_router) == 1
+    assert len(legal_operations_router.routes) == 4
+    assert _router_method_path_counter() == EXPECTED_TENANT_ROUTES
 
 
 def test_composed_openapi_keeps_exact_tenant_surface() -> None:
