@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY                 ║
+║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.6.0-L7D-B-BOOTSTRAP-HARDENING                      ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/saas/billing/billing_registry.py                                                     ║
-║ VERSION:        v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY                                                              ║
+║ VERSION:        v1.6.0-L7D-B-BOOTSTRAP-HARDENING                                                              ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Dual‑write/read tenantId|tenant_id + invoiceId|invoice_id; non‑null idempotencyKey parity;    ║
 ║                 payment rollup – sums succeeded payments and marks invoice PAID only when fully settled.       ║
-║                 Uses shared kernel.db for Atlas‑resilient TLS connections; exports `client` for router compat.║
+║                 Uses explicit, lazy kernel.db resolution; imports never connect or freeze Mongo snapshots.       ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-15 – v1.6.0-L7D-B-BOOTSTRAP-HARDENING – Removed import-time connection and frozen collection handles; ║
+║                billing operations now resolve active persistence lazily and fail closed when unavailable.       ║
 ║   2026-09-15 – v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY – Added caller-owned exact integer ClientInvoice creation,       ║
 ║                replay reconciliation, strict corruption checks, and transaction-conflict translation.                ║
 ║   2026-09-09 – v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE – Persist deterministic, versioned ClientInvoice        ║
@@ -69,7 +71,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 from pymongo.collection import Collection
 
 # ─── SHARED DATABASE CLIENT (ATLAS‑RESILIENT) ──────────────────────────────
-from ...kernel.db import get_database, get_client, is_db_ready, connect_db
+from ...kernel.db import get_database, get_client, is_db_ready
 
 # ─── MONGO EXCEPTIONS ──────────────────────────────────────────────────────
 from pymongo.errors import DuplicateKeyError, PyMongoError
@@ -91,35 +93,48 @@ from ..domain.billing import (
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 
-VERSION = "v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY"
+VERSION = "v1.6.0-L7D-B-BOOTSTRAP-HARDENING"
 _EXACT_REQUIRED = object()
 
 logger = logging.getLogger(__name__)
 
-# Ensure database is connected (idempotent)
-connect_db()
+# Compatibility attributes remain available for callers/tests that inject an
+# explicit collection.  They intentionally remain ``None`` at import time;
+# active persistence is resolved from kernel.db only when an operation needs it.
+db = None
+client = None
+platform_invoices_coll = None
+client_invoices_coll = None
+payments_coll = None
 
-# Get the database instance from the shared module
-db = get_database()
 
-# ─── EXPORT CLIENT FOR billing_router.py ──────────────────────────────────
-client = get_client()
+def _active_collection(configured: Any, name: str) -> Collection:
+    """Resolve an injected collection or the currently connected database.
 
-# Get collections
-platform_invoices_coll = cast(Collection, db["platform_invoices"] if db is not None else None)
-client_invoices_coll = cast(Collection, db["client_invoices"] if db is not None else None)
-payments_coll = cast(Collection, db["payments"] if db is not None else None)
+    Importing this module performs no network I/O.  Missing explicit or kernel
+    persistence fails closed at the operation boundary instead of silently
+    falling back to memory.
+    """
+    if configured is not None:
+        return cast(Collection, configured)
+    database = get_database()
+    if database is None:
+        raise RuntimeError("BILLING_DATABASE_UNAVAILABLE")
+    return cast(Collection, database[name])
 
 # ─── Index Creation (idempotent) ──────────────────────────────────────────
 def _ensure_indexes():
     """Create required indexes; safe to call multiple times."""
     try:
-        platform_invoices_coll.create_index([("tenant_id", 1), ("invoice_id", 1)], unique=True)
-        platform_invoices_coll.create_index([("tenant_id", 1), ("status", 1)])
-        platform_invoices_coll.create_index([("tenant_id", 1), ("issued_at", -1)])
-        platform_invoices_coll.create_index([("tenant_id", 1), ("due_at", 1)])
+        platform = _active_collection(platform_invoices_coll, "platform_invoices")
+        client_invoices = _active_collection(client_invoices_coll, "client_invoices")
+        payments = _active_collection(payments_coll, "payments")
+        platform.create_index([("tenant_id", 1), ("invoice_id", 1)], unique=True)
+        platform.create_index([("tenant_id", 1), ("status", 1)])
+        platform.create_index([("tenant_id", 1), ("issued_at", -1)])
+        platform.create_index([("tenant_id", 1), ("due_at", 1)])
         try:
-            platform_invoices_coll.create_index(
+            platform.create_index(
                 [("idempotencyKey", 1)],
                 unique=True,
                 name="idempotencyKey_1_partial",
@@ -128,17 +143,17 @@ def _ensure_indexes():
         except Exception:
             pass
 
-        client_invoices_coll.create_index([("tenant_id", 1), ("invoice_id", 1)], unique=True)
-        client_invoices_coll.create_index([("tenant_id", 1), ("status", 1)])
-        client_invoices_coll.create_index([("tenant_id", 1), ("issued_at", -1)])
-        client_invoices_coll.create_index(
+        client_invoices.create_index([("tenant_id", 1), ("invoice_id", 1)], unique=True)
+        client_invoices.create_index([("tenant_id", 1), ("status", 1)])
+        client_invoices.create_index([("tenant_id", 1), ("issued_at", -1)])
+        client_invoices.create_index(
             [("tenant_id", 1), ("idempotency_key", 1)],
             unique=True,
             name="p6e_client_exact_idempotency_unique",
             partialFilterExpression={"idempotency_key": {"$type": "string"}},
         )
         try:
-            client_invoices_coll.create_index(
+            client_invoices.create_index(
                 [("idempotencyKey", 1)],
                 unique=True,
                 name="idempotencyKey_1_partial",
@@ -147,10 +162,10 @@ def _ensure_indexes():
         except Exception:
             pass
 
-        payments_coll.create_index([("invoice_id", 1), ("payment_id", 1)], unique=True)
-        payments_coll.create_index([("tenant_id", 1), ("status", 1)])
+        payments.create_index([("invoice_id", 1), ("payment_id", 1)], unique=True)
+        payments.create_index([("tenant_id", 1), ("status", 1)])
         try:
-            payments_coll.create_index(
+            payments.create_index(
                 [("idempotencyKey", 1)],
                 unique=True,
                 name="idempotencyKey_1_partial",
@@ -161,9 +176,6 @@ def _ensure_indexes():
         logger.info("[BILLING_REGISTRY] Indexes verified/created.")
     except Exception as e:
         logger.warning(f"[BILLING_REGISTRY] Index creation issue (non‑fatal): {e}")
-
-if db is not None:
-    _ensure_indexes()
 
 
 def _resolve_idempotency_key(
@@ -369,7 +381,7 @@ class BillingRegistry:
                 }},
                 {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
             ]
-            result = list(payments_coll.aggregate(pipeline))
+            result = list(_active_collection(payments_coll, "payments").aggregate(pipeline))
             if result and result[0].get("total"):
                 return float(result[0]["total"])
             return 0.0
@@ -461,7 +473,7 @@ class BillingRegistry:
             doc["created_by"] = performed_by
 
             try:
-                platform_invoices_coll.insert_one(doc)
+                _active_collection(platform_invoices_coll, "platform_invoices").insert_one(doc)
                 logger.info(f"Created platform invoice {invoice.invoice_id} for tenant {tenant_id}")
                 return invoice
             except DuplicateKeyError as dup:
@@ -484,7 +496,7 @@ class BillingRegistry:
                 doc["performed_by"] = performed_by
                 doc["created_by"] = performed_by
                 try:
-                    platform_invoices_coll.insert_one(doc)
+                    _active_collection(platform_invoices_coll, "platform_invoices").insert_one(doc)
                     return invoice
                 except DuplicateKeyError:
                     existing = self.get_platform_invoice_by_idempotency_key(tenant_id, resolved_key)
@@ -505,7 +517,7 @@ class BillingRegistry:
     ) -> Optional[PlatformInvoice]:
         """Retrieve a platform invoice by ID, enforcing tenant isolation."""
         try:
-            target = platform_invoices_coll if collection is None else collection
+            target = collection if collection is not None else _active_collection(platform_invoices_coll, "platform_invoices")
             query = _tenant_invoice_query(tenant_id, invoice_id)
             if session is None:
                 doc = target.find_one(query)
@@ -536,7 +548,7 @@ class BillingRegistry:
         session/transaction lifecycle.
         """
         try:
-            target = platform_invoices_coll if collection is None else collection
+            target = collection if collection is not None else _active_collection(platform_invoices_coll, "platform_invoices")
             query = _tenant_invoice_query(tenant_id, invoice_id)
             if session is None:
                 doc = target.find_one(query)
@@ -552,7 +564,7 @@ class BillingRegistry:
             if not idempotency_key:
                 return None
             # Match either field name (Node camelCase index vs Kennel snake_case)
-            doc = platform_invoices_coll.find_one({
+            doc = _active_collection(platform_invoices_coll, "platform_invoices").find_one({
                 "$and": [
                     _tenant_clause(tenant_id),
                     {
@@ -588,7 +600,7 @@ class BillingRegistry:
                 query["status"] = status
             sort_field = _normalize_sort_field(sort_by)
             cursor = (
-                platform_invoices_coll.find(query)
+                _active_collection(platform_invoices_coll, "platform_invoices").find(query)
                 .sort(sort_field, sort_order)
                 .skip(offset)
                 .limit(limit)
@@ -637,7 +649,7 @@ class BillingRegistry:
 
             updated = PlatformInvoice.from_dict(current_dict)
             set_doc = _stamp_identity(updated.to_dict(), tenant_id)
-            result = platform_invoices_coll.update_one(
+            result = _active_collection(platform_invoices_coll, "platform_invoices").update_one(
                 _tenant_invoice_query(tenant_id, invoice_id),
                 {"$set": set_doc},
             )
@@ -740,7 +752,7 @@ class BillingRegistry:
             doc["performed_by"] = performed_by
             doc["created_by"] = performed_by
             try:
-                client_invoices_coll.insert_one(doc)
+                _active_collection(client_invoices_coll, "client_invoices").insert_one(doc)
                 logger.info(f"Created client invoice {invoice.invoice_id} for tenant {tenant_id}")
                 return invoice
             except DuplicateKeyError as dup:
@@ -758,7 +770,7 @@ class BillingRegistry:
                 doc["performed_by"] = performed_by
                 doc["created_by"] = performed_by
                 try:
-                    client_invoices_coll.insert_one(doc)
+                    _active_collection(client_invoices_coll, "client_invoices").insert_one(doc)
                     return invoice
                 except DuplicateKeyError:
                     existing = self.get_client_invoice_by_idempotency_key(tenant_id, resolved_key)
@@ -784,7 +796,7 @@ class BillingRegistry:
         supplied, the exact caller session is forwarded to MongoDB.
         """
         try:
-            target = client_invoices_coll if collection is None else collection
+            target = collection if collection is not None else _active_collection(client_invoices_coll, "client_invoices")
             query = _tenant_invoice_query(tenant_id, invoice_id)
             if session is None:
                 doc = target.find_one(query)
@@ -866,7 +878,7 @@ class BillingRegistry:
             raise ValueError("CLIENT_INVOICE_LINE_TAX_RATES_REQUIRED")
         if not isinstance(idempotency_key, str) or not idempotency_key.strip():
             raise ValueError("CLIENT_INVOICE_IDEMPOTENCY_REQUIRED")
-        target = client_invoices_coll if collection is None else collection
+        target = collection if collection is not None else _active_collection(client_invoices_coll, "client_invoices")
         if target is None:
             raise ValueError("CLIENT_INVOICE_COLLECTION_UNAVAILABLE")
         projection = exact_money.to_legacy_projection()
@@ -972,7 +984,7 @@ class BillingRegistry:
         unchanged and transaction ownership remains with the caller.
         """
         try:
-            target = client_invoices_coll if collection is None else collection
+            target = collection if collection is not None else _active_collection(client_invoices_coll, "client_invoices")
             query = _tenant_invoice_query(tenant_id, invoice_id)
             if session is None:
                 doc = target.find_one(query)
@@ -987,7 +999,7 @@ class BillingRegistry:
         try:
             if not idempotency_key:
                 return None
-            doc = client_invoices_coll.find_one({
+            doc = _active_collection(client_invoices_coll, "client_invoices").find_one({
                 "$and": [
                     _tenant_clause(tenant_id),
                     {
@@ -1022,7 +1034,7 @@ class BillingRegistry:
                 query["status"] = status
             sort_field = _normalize_sort_field(sort_by)
             cursor = (
-                client_invoices_coll.find(query)
+                _active_collection(client_invoices_coll, "client_invoices").find(query)
                 .sort(sort_field, sort_order)
                 .skip(offset)
                 .limit(limit)
@@ -1066,7 +1078,7 @@ class BillingRegistry:
                         current_dict[key] = value
             updated = ClientInvoice.from_dict(current_dict)
             set_doc = _stamp_identity(updated.to_dict(), tenant_id)
-            result = client_invoices_coll.update_one(
+            result = _active_collection(client_invoices_coll, "client_invoices").update_one(
                 _tenant_invoice_query(tenant_id, invoice_id),
                 {"$set": set_doc},
             )
@@ -1127,7 +1139,7 @@ class BillingRegistry:
             doc["performed_by"] = performed_by
             doc["created_by"] = performed_by
             try:
-                payments_coll.insert_one(doc)
+                _active_collection(payments_coll, "payments").insert_one(doc)
                 logger.info(f"Created payment {payment.payment_id} for invoice {invoice_id}")
                 return payment
             except DuplicateKeyError:
@@ -1144,7 +1156,7 @@ class BillingRegistry:
                 doc["performed_by"] = performed_by
                 doc["created_by"] = performed_by
                 try:
-                    payments_coll.insert_one(doc)
+                    _active_collection(payments_coll, "payments").insert_one(doc)
                     return payment
                 except DuplicateKeyError:
                     existing = self.get_payment_by_idempotency_key(tenant_id, resolved_key)
@@ -1157,7 +1169,7 @@ class BillingRegistry:
 
     def get_payment(self, tenant_id: str, payment_id: str) -> Optional[Payment]:
         try:
-            doc = payments_coll.find_one({
+            doc = _active_collection(payments_coll, "payments").find_one({
                 "$and": [
                     _tenant_clause(tenant_id),
                     {"$or": [{"payment_id": payment_id}, {"paymentId": payment_id}]},
@@ -1174,7 +1186,7 @@ class BillingRegistry:
         try:
             if not idempotency_key:
                 return None
-            doc = payments_coll.find_one({
+            doc = _active_collection(payments_coll, "payments").find_one({
                 "$and": [
                     _tenant_clause(tenant_id),
                     {
@@ -1216,7 +1228,7 @@ class BillingRegistry:
                     query["$and"].append({"status": status})
                 else:
                     query["status"] = status
-            cursor = payments_coll.find(query).sort("created_at", -1).skip(offset).limit(limit)
+            cursor = _active_collection(payments_coll, "payments").find(query).sort("created_at", -1).skip(offset).limit(limit)
             return [Payment.from_dict(doc) for doc in cursor]
         except Exception as e:
             logger.error(f"Failed to list payments: {e}\n{traceback.format_exc()}")
@@ -1271,10 +1283,10 @@ def get_billing_registry() -> BillingRegistry:
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY
+🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.6.0-L7D-B-BOOTSTRAP-HARDENING
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT — FULL MANDATE COMPLIANCE
-Version:         v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY
+Version:         v1.6.0-L7D-B-BOOTSTRAP-HARDENING
 Fixes:           Exact integer-minor-unit ClientInvoice authority persisted with deterministic replay and conflict rejection; Kennel EOS required for execution.
 Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
 Health Posture:  GREEN — no open issues
@@ -1288,7 +1300,7 @@ Deploy:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/billing_registry.py
-# VERSION: v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY
+# VERSION: v1.6.0-L7D-B-BOOTSTRAP-HARDENING
 # AUTHORITY BOUNDARY:
 #   Commercial billing persistence and historical projection only.
 # TENANT POSTURE:
