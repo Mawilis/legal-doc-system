@@ -38,6 +38,9 @@ CHANGELOG:
     v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT
         - Mounts the dedicated authenticated Legal Operations command and read
           routers under /api without adding financial authority.
+        - Also mounts the authenticated GET-only Legal Operations billing and
+          client-invoice read projections without adding issuance, payment,
+          settlement, or Kennel execution authority.
         - Aligns canonical application governance with C2 controlled profile PUT.
         - Records that GET detail, PUT detail, and DELETE/archive compose durable
           authority inside tenant_router and require exact tenant scope/path binding
@@ -112,6 +115,7 @@ from tools.eos.api.router import router
 from tools.eos.api.tenant_router import tenant_router
 from tools.eos.api.legal_operations_router import router as legal_operations_router
 from tools.eos.api.legal_operations_command_router import router as legal_operations_command_router
+from tools.eos.api.legal_operations_billing_read_router import router as legal_operations_billing_read_router
 
 
 VERSION = "v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
@@ -140,6 +144,7 @@ app.include_router(router)
 app.include_router(tenant_router)
 app.include_router(legal_operations_router, prefix="/api")
 app.include_router(legal_operations_command_router, prefix="/api")
+app.include_router(legal_operations_billing_read_router, prefix="/api")
 
 
 @app.exception_handler(WilsyAPIException)

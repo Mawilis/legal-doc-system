@@ -9,7 +9,9 @@ COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-12
 CHANGELOG: v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT mounts the dedicated
 authenticated Legal Operations command and read routers under /api without
-adding financial authority; v1.6.0 mounts the authenticated
+adding financial authority, plus authenticated GET-only Legal Operations
+billing and client-invoice read projections without adding issuance, payment,
+settlement, or Kennel execution authority; v1.6.0 mounts the authenticated
 PayShap host-runtime evidence router without changing billing or settlement
 authority; v1.5.1 dual-mounted billing for BFF parity.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001-aligned.
@@ -48,6 +50,7 @@ from .subscription_router import subscription_router
 from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
 from .legal_operations_command_router import router as legal_operations_command_router
+from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
 
 VERSION = "v1.8.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
 
@@ -181,6 +184,7 @@ class WilsyAPIServer:
         app.include_router(tenant_router)
         app.include_router(legal_operations_router, prefix="/api")
         app.include_router(legal_operations_command_router, prefix="/api")
+        app.include_router(legal_operations_billing_read_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
