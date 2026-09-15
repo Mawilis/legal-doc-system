@@ -1,15 +1,18 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS
+VERSION: v1.14.0-L7B-LEGAL-OPERATIONS-IAM-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
 usage-capacity and billing-intelligence evidence access, and dedicated inbound
-merchant-configuration/provider-policy administration without creating current
-possession authority.
+merchant-configuration/provider-policy administration plus least-privilege
+field-service outcome/return commands without creating current possession authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-15 v1.14.0-L7B-LEGAL-OPERATIONS-IAM-GRANTS adds least-privilege
+    field-service outcome and return grants to the published legal roles;
+    Kennel financial execution stays outside this map.
     2026-09-15 v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS adds bounded
     legal-practice authorization-role grants; Kennel financial execution stays
     outside this map.
@@ -67,7 +70,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS"
+VERSION = "v1.14.0-L7B-LEGAL-OPERATIONS-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -204,6 +207,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
 }
 
 
+for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
+    ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:return:write")
+for _role_name in ("SHERIFF", "DEPUTY"):
+    ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:attempt_outcome:write")
+
+
 def get_permissions_for_roles(
     roles: Iterable[str],
 ) -> list[str]:
@@ -253,7 +262,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.13.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS
+# VERSION: v1.14.0-L7B-LEGAL-OPERATIONS-IAM-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; WILSY AI capacity and billing-intelligence evidence reads remain own-tenant scoped
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

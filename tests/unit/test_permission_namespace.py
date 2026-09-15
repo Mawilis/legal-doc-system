@@ -52,7 +52,7 @@ VERSION = "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-CERT"
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.13.0-L7A-LEGAL-OPERATIONS-IAM"
+    assert POLICY_VERSION == "v1.14.0-L7B-LEGAL-OPERATIONS-IAM"
 
 
 def test_permission_canon_properties() -> None:

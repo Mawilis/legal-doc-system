@@ -688,7 +688,7 @@ def test_permission_operation_binding_remains_exact() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-BINDING"
+    assert ta.VERSION == "v1.11.0-L7B-LEGAL-OPERATIONS-IAM-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
