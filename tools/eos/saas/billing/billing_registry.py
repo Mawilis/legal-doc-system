@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE              ║
+║ WILSY OS – SOVEREIGN BILLING REGISTRY (MONGODB‑BACKED) – v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY                 ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/saas/billing/billing_registry.py                                                     ║
-║ VERSION:        v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE                                                          ║
+║ VERSION:        v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY                                                              ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Dual‑write/read tenantId|tenant_id + invoiceId|invoice_id; non‑null idempotencyKey parity;    ║
 ║                 payment rollup – sums succeeded payments and marks invoice PAID only when fully settled.       ║
@@ -12,6 +12,8 @@
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-09-15 – v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY – Added caller-owned exact integer ClientInvoice creation,       ║
+║                replay reconciliation, strict corruption checks, and transaction-conflict translation.                ║
 ║   2026-09-09 – v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE – Persist deterministic, versioned ClientInvoice        ║
 ║                commercial-content evidence and reject post-create commercial rewrites.                        ║
 ║   2026-09-09 – v1.3.0-M11-R8-R3B-C-STRICT-RAW-INVOICE-READ – Added tenant-scoped, caller-session-capable raw       ║
@@ -58,6 +60,8 @@ import logging
 import os
 import uuid
 import traceback
+import hashlib
+import json
 from dataclasses import replace
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional, Union, cast
@@ -81,11 +85,12 @@ from ..domain.billing import (
     InvoiceType,
     LineItem,
     CLIENT_COMMERCIAL_EVIDENCE_VERSION,
+    ClientInvoiceExactMoney,
 )
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 
-VERSION = "v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE"
+VERSION = "v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY"
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +129,12 @@ def _ensure_indexes():
         client_invoices_coll.create_index([("tenant_id", 1), ("invoice_id", 1)], unique=True)
         client_invoices_coll.create_index([("tenant_id", 1), ("status", 1)])
         client_invoices_coll.create_index([("tenant_id", 1), ("issued_at", -1)])
+        client_invoices_coll.create_index(
+            [("tenant_id", 1), ("idempotency_key", 1)],
+            unique=True,
+            name="p6e_client_exact_idempotency_unique",
+            partialFilterExpression={"idempotency_key": {"$type": "string"}},
+        )
         try:
             client_invoices_coll.create_index(
                 [("idempotencyKey", 1)],
@@ -240,6 +251,8 @@ _CLIENT_COMMERCIAL_PROTECTED_FIELDS = {
     "customerJurisdiction", "billing_mode", "billingMode", "order_number",
     "orderNumber", "purchase_order", "purchaseOrder", "commercial_evidence_fingerprint",
     "commercial_evidence_version",
+    "exact_money", "exact_money_version", "exact_money_fingerprint",
+    "subtotal_minor", "tax_amount_minor", "total_minor", "exact_money_lines",
 }
 
 
@@ -247,6 +260,36 @@ def _reject_client_invoice_commercial_updates(updates: Dict[str, Any]) -> None:
     """Prevent rewriting issued commercial content or its evidence."""
     if _CLIENT_COMMERCIAL_PROTECTED_FIELDS.intersection(updates):
         raise ValueError("CLIENT_INVOICE_COMMERCIAL_FIELD_REWRITE_FORBIDDEN")
+
+
+def _exact_invoice_content(invoice: ClientInvoice, idempotency_key: str) -> Dict[str, Any]:
+    """Return immutable exact-path content used for replay reconciliation."""
+    if invoice.exact_money is None:
+        raise ValueError("CLIENT_INVOICE_EXACT_MONEY_REQUIRED")
+    return {
+        "tenant_id": invoice.tenant_id,
+        "idempotency_key": idempotency_key,
+        "customer_id": invoice.customer_id,
+        "customer_name": invoice.customer_name,
+        "customer_tax_id": invoice.customer_tax_id,
+        "customer_email": invoice.customer_email,
+        "customer_phone": invoice.customer_phone,
+        "exact_money": invoice.exact_money.to_dict(),
+        "payment_terms_days": invoice.payment_terms_days,
+        "tax_type": invoice.tax_type.value,
+        "seller_jurisdiction": invoice.seller_jurisdiction,
+        "customer_jurisdiction": invoice.customer_jurisdiction,
+        "collection_method": invoice.collection_method.value,
+        "billing_mode": invoice.billing_mode,
+        "metadata": invoice.metadata,
+        "order_number": invoice.order_number,
+        "purchase_order": invoice.purchase_order,
+    }
+
+
+def _exact_invoice_digest(invoice: ClientInvoice, idempotency_key: str) -> str:
+    raw = json.dumps(_exact_invoice_content(invoice, idempotency_key), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha3_512(raw).hexdigest()
 
 
 def _reject_invoice_financial_truth_updates(
@@ -748,6 +791,118 @@ class BillingRegistry:
             logger.error(f"Failed to get client invoice {invoice_id}: {e}\n{traceback.format_exc()}")
             raise
 
+    def create_client_invoice_exact(
+        self,
+        tenant_id: str,
+        exact_money: ClientInvoiceExactMoney,
+        *,
+        customer_id: Optional[str] = None,
+        customer_name: Optional[str] = None,
+        customer_tax_id: Optional[str] = None,
+        customer_email: Optional[str] = None,
+        customer_phone: Optional[str] = None,
+        payment_terms_days: int = 30,
+        tax_type: str = "vat",
+        seller_jurisdiction: str = "ZA",
+        customer_jurisdiction: str = "ZA",
+        collection_method: str = "send_invoice",
+        billing_mode: str = "CLIENT",
+        metadata: Optional[Dict[str, Any]] = None,
+        issued_at: Optional[datetime] = None,
+        due_at: Optional[datetime] = None,
+        idempotency_key: str,
+        performed_by: str = "SYSTEM",
+        order_number: Optional[str] = None,
+        purchase_order: Optional[str] = None,
+        collection: Any = None,
+        session: Any = None,
+    ) -> ClientInvoice:
+        """Create or exactly replay a ClientInvoice backed by integer money.
+
+        ``exact_money`` is the sole commercial money authority; legacy floats are
+        derived compatibility projections. The caller supplies collection/session
+        and owns every transaction decision. Active transaction conflicts become
+        ``M2_RETRY_TRANSACTION_REQUIRED`` while retaining the PyMongo cause.
+        """
+        if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id.casefold() in {"default", "global", "root", "master", "*"}:
+            raise ValueError("CLIENT_INVOICE_TENANT_INVALID")
+        if type(exact_money) is not ClientInvoiceExactMoney:
+            raise ValueError("CLIENT_INVOICE_EXACT_MONEY_REQUIRED")
+        if not isinstance(idempotency_key, str) or not idempotency_key.strip():
+            raise ValueError("CLIENT_INVOICE_IDEMPOTENCY_REQUIRED")
+        target = client_invoices_coll if collection is None else collection
+        if target is None:
+            raise ValueError("CLIENT_INVOICE_COLLECTION_UNAVAILABLE")
+        projection = exact_money.to_legacy_projection()
+        line_items = [LineItem.from_dict(item) for item in projection["line_items"]]
+        invoice = ClientInvoice(
+            tenant_id=tenant_id,
+            customer_id=customer_id,
+            customer_name=customer_name,
+            customer_tax_id=customer_tax_id,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
+            status=InvoiceStatus.OPEN,
+            amount=projection["amount"],
+            tax_amount=projection["tax_amount"],
+            total=projection["total"],
+            outstanding_amount=projection["total"],
+            currency=exact_money.currency,
+            line_items=line_items,
+            issued_at=issued_at or datetime.now(timezone.utc),
+            due_at=due_at or datetime.now(timezone.utc) + timedelta(days=payment_terms_days),
+            payment_terms_days=payment_terms_days,
+            tax_type=TaxType(tax_type.lower()),
+            seller_jurisdiction=seller_jurisdiction,
+            customer_jurisdiction=customer_jurisdiction,
+            collection_method=CollectionMethod(collection_method.lower()),
+            billing_mode=billing_mode,
+            metadata=metadata or {},
+            order_number=order_number,
+            purchase_order=purchase_order,
+            exact_money=exact_money,
+        )
+        content_fingerprint = _exact_invoice_digest(invoice, idempotency_key)
+        query = {"tenant_id": tenant_id, "idempotency_key": idempotency_key}
+        try:
+            existing_raw = target.find_one(query, **({"session": session} if session is not None else {}))
+        except PyMongoError as error:
+            raise ValueError("CLIENT_INVOICE_PERSISTENCE_UNAVAILABLE") from error
+        if existing_raw is not None:
+            existing = ClientInvoice.from_dict(existing_raw)
+            if existing_raw.get("exact_invoice_content_fingerprint") != content_fingerprint:
+                raise ValueError("CLIENT_INVOICE_REPLAY_CONFLICT")
+            return existing
+        doc = invoice.to_dict()
+        doc = _stamp_identity(doc, tenant_id)
+        doc = _stamp_idempotency(doc, idempotency_key)
+        doc["exact_invoice_content_fingerprint"] = content_fingerprint
+        doc["performed_by"] = performed_by
+        doc["created_by"] = performed_by
+        try:
+            target.insert_one(doc, **({"session": session} if session is not None else {}))
+            return invoice
+        except DuplicateKeyError as error:
+            active = bool(getattr(session, "in_transaction", False)) if session is not None else False
+            if active:
+                raise ValueError("M2_RETRY_TRANSACTION_REQUIRED") from error
+            try:
+                raced_raw = target.find_one(query, **({"session": session} if session is not None else {}))
+            except PyMongoError as read_error:
+                raise ValueError("CLIENT_INVOICE_PERSISTENCE_UNAVAILABLE") from read_error
+            if raced_raw is None:
+                raise ValueError("CLIENT_INVOICE_REPLAY_CONFLICT") from error
+            raced = ClientInvoice.from_dict(raced_raw)
+            if raced_raw.get("exact_invoice_content_fingerprint") != content_fingerprint:
+                raise ValueError("CLIENT_INVOICE_REPLAY_CONFLICT") from error
+            return raced
+        except PyMongoError as error:
+            labels = {label for label in ("TransientTransactionError", "UnknownTransactionCommitResult") if error.has_error_label(label)}
+            if active := (session is not None and bool(getattr(session, "in_transaction", False))):
+                if "TransientTransactionError" in labels and "UnknownTransactionCommitResult" not in labels:
+                    raise ValueError("M2_RETRY_TRANSACTION_REQUIRED") from error
+            raise ValueError("CLIENT_INVOICE_PERSISTENCE_UNAVAILABLE") from error
+
     def get_client_invoice_raw(
         self,
         tenant_id: str,
@@ -1064,11 +1219,11 @@ def get_billing_registry() -> BillingRegistry:
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
+🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING REGISTRY v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT — FULL MANDATE COMPLIANCE
-Version:         v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
-Fixes:           Deterministic ClientInvoice evidence persisted; commercial rewrites fail closed; Kennel EOS required for execution.
+Version:         v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY
+Fixes:           Exact integer-minor-unit ClientInvoice authority persisted with deterministic replay and conflict rejection; Kennel EOS required for execution.
 Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
 Health Posture:  GREEN — no open issues
 Deploy:
@@ -1081,7 +1236,7 @@ Deploy:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/billing_registry.py
-# VERSION: v1.4.0-M11-R8-R3B-P6E-R1-CLIENT-EVIDENCE
+# VERSION: v1.5.0-P6E-EXACT-CLIENT-INVOICE-MONEY
 # AUTHORITY BOUNDARY:
 #   Commercial billing persistence and historical projection only.
 # TENANT POSTURE:
