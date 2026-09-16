@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Real-Mongo certification for PrincipalAuthorityRepository.
 
-VERSION: v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-MONGO-CERT
-CHANGELOG: v1.0.0 certifies durable snapshots, caller sessions, CAS, and terminal stale-write protection.
+VERSION: v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-MONGO-CERT
+CHANGELOG: v1.1.0 certifies the canonical resolve seam, get equivalence,
+caller-session visibility, and preserved transaction ownership.
+v1.0.0 certifies durable snapshots, caller sessions, CAS, and terminal stale-write protection.
 """
 import os
 import uuid
@@ -50,10 +52,13 @@ def test_create_get_duplicate_and_absence(collection: Any) -> None:
     value = item()
     assert PrincipalAuthorityRepository.create(value, collection) == value
     assert PrincipalAuthorityRepository.get(value.principal_id, collection) == value
+    assert PrincipalAuthorityRepository.resolve(value.principal_id, collection) == value
     with pytest.raises(PrincipalAuthorityAlreadyExistsError):
         PrincipalAuthorityRepository.create(value, collection)
     with pytest.raises(PrincipalAuthorityNotFoundError):
         PrincipalAuthorityRepository.get("missing", collection)
+    with pytest.raises(PrincipalAuthorityNotFoundError):
+        PrincipalAuthorityRepository.resolve("missing", collection)
 
 
 def test_cas_revision_and_abort_commit_session(collection: Any) -> None:
@@ -65,6 +70,7 @@ def test_cas_revision_and_abort_commit_session(collection: Any) -> None:
         updated = PrincipalAuthority(value.principal_id, PrincipalStatus.SUSPENDED, 1)
         PrincipalAuthorityRepository.compare_and_swap(updated, 0, collection, session=session)
         assert PrincipalAuthorityRepository.get(value.principal_id, collection, session=session) == updated
+        assert PrincipalAuthorityRepository.resolve(value.principal_id, collection, session=session) == updated
         session.abort_transaction()
     assert PrincipalAuthorityRepository.get(value.principal_id, collection) == value
     with client.start_session() as session:
@@ -95,5 +101,5 @@ def test_persisted_shape_has_no_other_authority(collection: Any) -> None:
 
 
 # ARTIFACT: test_principal_authority_repository_mongo.py
-# VERSION: v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-MONGO-CERT
+# VERSION: v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-MONGO-CERT
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,7 +1,7 @@
 """Wilsy OS M13-P4 durable Mongo registry for WILSY AI entitlements.
 
 TITLE: WILSY AI Entitlement Registry
-VERSION: v1.0.0-M13-P4
+VERSION: v1.1.0-M13-P4-B2
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist tenant-scoped entitlement lifecycle evidence with strict
          hydration, idempotent replay, and caller-owned transactions.
@@ -10,7 +10,7 @@ COLLABORATION / OWNERSHIP: P4 persistence owner; P3 owns commercial policy;
                             callers own sessions/transactions; Kennel EOS owns
                             financial execution and settlement.
 CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M13-P4 adds tenant/module uniqueness, durable command
+CHANGELOG: v1.1.0-M13-P4-B2 adds exact tenant/module hydration without fallback; v1.0.0-M13-P4 adds tenant/module uniqueness, durable command
            idempotency, revisioned CAS transitions, and corruption-rejecting hydration.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No secrets, provider clients, usage, or payment.
@@ -33,7 +33,7 @@ from pymongo.write_concern import WriteConcern
 
 from tools.eos.saas.domain.wilsy_ai_entitlement import ENTITLEMENT_FIELDS, WilsyAIEntitlement, WilsyAIEntitlementError, WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.0.0-M13-P4"
+VERSION: Final[str] = "v1.1.0-M13-P4-B2"
 COLLECTION: Final[str] = "wilsy_ai_entitlements"
 _COMMAND_FIELDS = ("tenant_id", "idempotency_key", "entitlement")
 WRITE_CONCERN = WriteConcern(w="majority", j=True)
@@ -124,6 +124,18 @@ class WilsyAIEntitlementRegistry:
             raise WilsyAIEntitlementNotFoundError("M13P4_ENTITLEMENT_NOT_FOUND")
         return _hydrate(row)
 
+    def get_by_module(self, *, tenant_id: str, module_id: str, session: Any) -> WilsyAIEntitlement:
+        """Hydrate the sole exact tenant/module entitlement; no fallback selection."""
+        if not isinstance(tenant_id, str) or not tenant_id.strip() or not isinstance(module_id, str) or not module_id.strip() or session is None:
+            raise WilsyAIEntitlementRegistryError("M13P4_INPUT_INVALID")
+        try:
+            row = self._collection.find_one({"tenant_id": tenant_id, "module_id": module_id}, session=session)
+        except PyMongoError as error:
+            raise WilsyAIEntitlementRegistryError("M13P4_PERSISTENCE_UNAVAILABLE") from error
+        if row is None:
+            raise WilsyAIEntitlementNotFoundError("M13P4_ENTITLEMENT_NOT_FOUND")
+        return _hydrate(row)
+
     def transition(
         self,
         *,
@@ -154,7 +166,7 @@ class WilsyAIEntitlementRegistry:
 __all__ = ["COLLECTION", "VERSION", "WRITE_CONCERN", "READ_CONCERN", "WilsyAIEntitlementRegistry", "WilsyAIEntitlementRegistryError", "WilsyAIEntitlementConflictError", "WilsyAIEntitlementNotFoundError", "ensure_indexes"]
 
 # ARTIFACT: wilsy_ai_entitlement_registry.py
-# VERSION: v1.0.0-M13-P4
+# VERSION: v1.1.0-M13-P4-B2
 # AUTHORITY BOUNDARY: durable entitlement persistence only; caller owns transaction
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

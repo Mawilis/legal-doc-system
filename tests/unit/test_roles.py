@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT
+VERSION: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,6 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-15 v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT certifies the
+    dedicated gateway grant set and proves it does not manufacture underlying
+    legal-operation permissions.
     2026-09-15 v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT certifies the
     explicit Legal Operations role grants and least-authority exclusions,
     while preserving reverse lookup and malformed-alias rejection.
@@ -56,9 +59,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.14.0-L7B-LEGAL-OPERATIONS-IAM-GRANTS"
+    assert POLICY_VERSION == "v1.15.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS"
 
-VERSION = "v1.10.0-L7A-LEGAL-OPERATIONS-IAM-GRANTS-CERT"
+VERSION = "v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -147,9 +150,11 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
         "legal_operations:return:write",
+        "wilsy_ai:legal_tool:read",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"] == [
         "legal_operations:billing:read", "legal_operations:invoice:read",
+        "wilsy_ai:legal_tool:read",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
@@ -158,6 +163,17 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert all("financial_execution" not in grants for grants in ROLE_PERMISSIONS_MAP.values())
+    assert "wilsy_ai:legal_tool:read" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
+    assert "wilsy_ai:legal_tool:read" in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
+    assert "wilsy_ai:legal_tool:read" in ROLE_PERMISSIONS_MAP["LEGAL_SECRETARY"]
+    assert "wilsy_ai:legal_tool:read" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "wilsy_ai:legal_tool:read" in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    assert "legal_operations:instruction:read" not in ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"]
+    assert "legal_operations:attempt:read" not in ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"]
+    assert "legal_operations:return:read" not in ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"]
+    assert "legal_operations:billing:read" not in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:invoice:read" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    assert "wilsy_ai:legal_tool:read" not in ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"]
 
 
 
@@ -421,7 +437,7 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.9.0-M14-P2-BILLING-INTELLIGENCE-EVIDENCE-READ-GRANTS-CERT
+# VERSION: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity and billing-intelligence evidence reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

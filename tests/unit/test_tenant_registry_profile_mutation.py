@@ -12,7 +12,7 @@ FILE:
     tests/unit/test_tenant_registry_profile_mutation.py
 
 VERSION:
-    v1.0.0-TENANT-PROFILE-MUTATION-PERSISTENCE-CERT
+    v1.0.1-TENANT-PROFILE-MUTATION-PERSISTENCE-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -34,6 +34,9 @@ CERTIFICATION / UPDATE DATE:
     2026-08-30
 
 CHANGELOG:
+    v1.0.1-TENANT-PROFILE-MUTATION-PERSISTENCE-CERT
+        - Reconciles the exact C1.2 TenantRegistry production version.
+
     v1.0.0-TENANT-PROFILE-MUTATION-PERSISTENCE-CERT
         - Initial deterministic C1 certification.
 
@@ -88,7 +91,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 
 
 EXPECTED_DOMAIN_VERSION = "v1.4.0-TENANT-PROFILE-SECTOR-TRUTH"
-EXPECTED_REGISTRY_VERSION = "v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE"
+EXPECTED_REGISTRY_VERSION = "v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION"
 EXPECTED_FIELDS = frozenset(
     {"name", "alias", "industry", "region", "sector", "legal_name"}
 )
@@ -616,7 +619,7 @@ def test_legacy_update_signature_and_broad_status_contract_remain_separate(
 # WILSY OS SOVEREIGN CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: test_tenant_registry_profile_mutation.py
-# VERSION: v1.0.0-TENANT-PROFILE-MUTATION-PERSISTENCE-CERT
+# VERSION: v1.0.1-TENANT-PROFILE-MUTATION-PERSISTENCE-CERT
 # AUTHORITY BOUNDARY: deterministic domain/persistence evidence only; no authentication, HTTP, membership, role, permission, or financial authority
 # TENANT POSTURE: update_profile accepts explicit tenant_id plus exact six-field profile payload only; no transport scope input exists
 # FAIL-CLOSED POSTURE: forbidden/invalid input fails before Mongo; invalid truth and outages are explicit; same-value mutation succeeds without widening fields

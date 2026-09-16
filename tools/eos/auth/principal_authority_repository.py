@@ -2,11 +2,13 @@
 """Durable Mongo repository for current PrincipalAuthority snapshots.
 
 TITLE: WILSY OS Principal Authority Repository
-VERSION: v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY
+VERSION: v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY
 AUTHORITY: Current PrincipalAuthority persistence, resolution, and revision CAS only.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/principal_authority_repository.py
 CERTIFICATION/UPDATE DATE: 2026-08-29
-CHANGELOG: v1.0.0 establishes tenant-neutral Mongo persistence with duplicate and stale-write protection.
+CHANGELOG: v1.1.0 adds the canonical resolve compatibility seam by delegating
+to get without changing persistence, hydration, or transaction ownership.
+v1.0.0 establishes tenant-neutral Mongo persistence with duplicate and stale-write protection.
 COMPLIANCE: Caller-owned sessions; deterministic unique identity; no hidden transaction or retry ownership.
 SECURITY/PRIVACY POSTURE: Stores only opaque principal_id, PrincipalStatus value, and revision.
 TENANT BOUNDARY: PrincipalAuthority is tenant-neutral; no tenant field or cross-tenant lookup exists here.
@@ -37,7 +39,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_status import PrincipalStatus
 
-VERSION = "v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY"
+VERSION = "v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY"
 COLLECTION = "principal_authorities"
 
 
@@ -150,6 +152,26 @@ class PrincipalAuthorityRepository:
         return _hydrate(row)
 
     @staticmethod
+    def resolve(
+        principal_id: str,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> PrincipalAuthority:
+        """Resolve a principal through the PrincipalReader protocol.
+
+        This compatibility seam delegates to :meth:`get` so exact principal
+        predicates, strict hydration, absence semantics, persistence errors,
+        injected collections, and caller-owned sessions remain authoritative.
+        It performs no mutation and owns no transaction lifecycle.
+        """
+        return PrincipalAuthorityRepository.get(
+            principal_id,
+            collection,
+            session=session,
+        )
+
+    @staticmethod
     def compare_and_swap(
         authority: PrincipalAuthority,
         expected_revision: int,
@@ -188,7 +210,7 @@ __all__ = [
 ]
 
 # ARTIFACT: principal_authority_repository.py
-# VERSION: v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY
+# VERSION: v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY
 # AUTHORITY BOUNDARY: current snapshot persistence and revision CAS only
 # TENANT POSTURE: tenant-neutral; no membership authority
 # FAIL-CLOSED POSTURE: absence, duplicates, corruption, and stale writes are explicit errors

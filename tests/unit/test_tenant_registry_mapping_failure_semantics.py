@@ -12,7 +12,7 @@ FILE:
     tests/unit/test_tenant_registry_mapping_failure_semantics.py
 
 VERSION:
-    v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
+    v1.1.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -38,6 +38,11 @@ CERTIFICATION / UPDATE DATE:
     2026-08-30
 
 CHANGELOG:
+    v1.1.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
+        - Reconciles the exact C1.2 TenantRegistry production version.
+        - Makes the deterministic collection double accept and record the
+          caller-owned session without creating transaction lifecycle state.
+
     v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
         - Advances expected TenantRegistry production version to C1 v1.4.0.
         - Preserves all B1.1 GET corruption/absence/outage assertions.
@@ -98,7 +103,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 VERSION = (
     "v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT"
 )
-EXPECTED_PRIMARY_VERSION = "v1.4.0-TENANT-PROFILE-MUTATION-PERSISTENCE"
+EXPECTED_PRIMARY_VERSION = "v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION"
 INVALID_DOCUMENT = "TENANT_REGISTRY_GET_INVALID_DOCUMENT"
 GET_UNAVAILABLE = "TENANT_REGISTRY_GET_UNAVAILABLE"
 
@@ -145,13 +150,20 @@ class _CollectionFake:
         self.find_error = find_error
         self.modified_count = modified_count
         self.find_calls: list[dict[str, Any]] = []
+        self.find_sessions: list[object] = []
         self.update_calls: list[
             tuple[dict[str, Any], dict[str, Any]]
         ] = []
 
-    def find_one(self, query: dict[str, Any]) -> dict[str, Any] | None:
+    def find_one(
+        self,
+        query: dict[str, Any],
+        *,
+        session: object = None,
+    ) -> dict[str, Any] | None:
         """Resolve one deterministic result or raise configured Mongo failure."""
         self.find_calls.append(query)
+        self.find_sessions.append(session)
         if self.find_error is not None:
             raise self.find_error
         if self.find_results:
@@ -220,13 +232,15 @@ def test_healthy_matching_document_maps_to_entity(
     """A healthy matching persisted document still returns the correct tenant."""
     fake = _CollectionFake(find_results=[_tenant_doc()])
     monkeypatch.setattr(registry_module, "tenants_collection", fake)
+    session: Any = object()
 
-    tenant = TenantRegistry.get("tenant-a")
+    tenant = TenantRegistry.get("tenant-a", session=session)
 
     assert tenant is not None
     assert tenant.tenant_id == "tenant-a"
     assert tenant.organization.organization_name == "Tenant A"
     assert fake.find_calls == [{"tenant_id": "tenant-a"}]
+    assert fake.find_sessions == [session]
 
 
 def test_genuine_absence_is_still_none(
@@ -447,7 +461,7 @@ def test_collection_substitution_restores_cleanly(
 # WILSY OS SOVEREIGN CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: test_tenant_registry_mapping_failure_semantics.py
-# VERSION: v1.1.0-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
+# VERSION: v1.1.1-TENANT-REGISTRY-MAPPING-FAILURE-SEMANTICS-ADJACENCY-CERT
 # AUTHORITY BOUNDARY: deterministic B1.1 persistence/read-integrity adjacency evidence only; no authentication, membership, role, permission, JWT, HTTP, or financial authority
 # TENANT POSTURE: genuine absence alone is None; malformed matching truth remains explicit; compatibility headers cannot redirect scope; update_profile adds no transport authority
 # FAIL-CLOSED POSTURE: persisted GET corruption remains TENANT_REGISTRY_GET_INVALID_DOCUMENT and Mongo outage remains TENANT_REGISTRY_GET_UNAVAILABLE after C1 evolution

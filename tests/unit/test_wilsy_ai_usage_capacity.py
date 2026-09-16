@@ -1,7 +1,7 @@
 """Direct certificate for the M13-P6A WILSY AI usage-capacity authority.
 
 TITLE: WILSY AI Usage Capacity Direct Certificate
-VERSION: v1.0.1-M13-P6A
+VERSION: v1.0.2-M13-P6A
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove deterministic, tenant-bound capacity derivation from explicit
          P4 entitlement and P5A observed-consumption evidence only.
@@ -12,12 +12,15 @@ CERTIFICATION / UPDATE DATE: 2026-09-13
 CHANGELOG: v1.0.1-M13-P6A recertifies P4 hydration, chronology, tenant
            boundaries, windows, sums, evidence binding,
            fail-closed validation, activation chronology, tenant boundaries,
-           immutability, and authority boundaries.
+           immutability, and authority boundaries; v1.0.2 makes the external
+           authority import check subprocess-isolated and order-independent.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 from dataclasses import replace
 from datetime import datetime, timezone
 import re
+import subprocess
+import sys
 
 import pytest
 
@@ -290,12 +293,19 @@ def test_observation_source_evidence_and_tokens_are_not_derived_authority() -> N
 
 
 def test_no_runtime_side_effect_or_external_authority_imports() -> None:
-    import sys
-    assert "pymongo" not in sys.modules and "requests" not in sys.modules and "boto3" not in sys.modules
+    probe = (
+        "import sys; "
+        "import tools.eos.saas.billing.wilsy_ai_usage_capacity; "
+        "forbidden = {'pymongo', 'requests', 'boto3'}; "
+        "loaded = sorted(name for name in forbidden if name in sys.modules); "
+        "print(','.join(loaded)); raise SystemExit(1 if loaded else 0)"
+    )
+    completed = subprocess.run([sys.executable, "-c", probe], check=False, capture_output=True, text=True)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
 # ARTIFACT: test_wilsy_ai_usage_capacity.py
-# VERSION: v1.0.1-M13-P6A
+# VERSION: v1.0.2-M13-P6A
 # AUTHORITY BOUNDARY: direct certificate for observed capacity derivation only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

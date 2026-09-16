@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.14.0-L7B-LEGAL-OPERATIONS-IAM
+VERSION: v1.15.0-L7B-WILSY-AI-LEGAL-TOOL
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
@@ -11,6 +11,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-15 v1.15.0-L7B-WILSY-AI-LEGAL-TOOL adds the dedicated own-tenant
+    Legal Tool Gateway read permission; it remains non-financial and
+    non-cross-tenant.
     2026-09-15 v1.14.0-L7B-LEGAL-OPERATIONS-IAM adds authenticated field-service
     command vocabulary for attempt outcomes and return generation without
     granting typed subject authority or financial execution.
@@ -71,7 +74,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.14.0-L7B-LEGAL-OPERATIONS-IAM"
+VERSION = "v1.15.0-L7B-WILSY-AI-LEGAL-TOOL"
 
 
 class PermissionDisposition(StrEnum):
@@ -282,6 +285,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "read own-tenant WILSY AI usage-capacity evidence",
+            tenant=True,
+        ),
+        "wilsy_ai:legal_tool:read": _meta(
+            "wilsy_ai:legal_tool:read",
+            "TENANT",
+            "TENANT",
+            "invoke own-tenant WILSY AI Legal Tool Gateway reads",
             tenant=True,
         ),
         "billing_intelligence:evidence:read": _meta(
@@ -555,7 +565,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.14.0-L7B-LEGAL-OPERATIONS-IAM
+# VERSION: v1.15.0-L7B-WILSY-AI-LEGAL-TOOL
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

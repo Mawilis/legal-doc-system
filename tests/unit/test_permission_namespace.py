@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT
+VERSION: v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-15 v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT certifies
+    the dedicated tenant-scoped gateway read permission and its non-financial,
+    non-self-authorizing metadata.
     2026-09-15 v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT certifies
     the attempt-outcome and return-write command permissions, yielding exactly
     50 canonical permissions and 53 total rows while preserving prior
@@ -49,12 +52,12 @@ import json
 
 import pytest
 
-VERSION = "v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT"
+VERSION = "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.14.0-L7B-LEGAL-OPERATIONS-IAM"
+    assert POLICY_VERSION == "v1.15.0-L7B-WILSY-AI-LEGAL-TOOL"
 
 
 def test_permission_canon_properties() -> None:
@@ -78,6 +81,7 @@ def test_permission_canon_properties() -> None:
         "plan:manage",
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
+        "wilsy_ai:legal_tool:read",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:allocation:read",
@@ -116,9 +120,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 50
+    ) == 51
 
-    assert len(rows) == 53
+    assert len(rows) == 54
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -130,6 +134,15 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    gateway = permission_metadata("wilsy_ai:legal_tool:read")
+    assert gateway.namespace == "TENANT"
+    assert gateway.scope_kind == "TENANT"
+    assert gateway.tenant_membership_required is True
+    assert gateway.cross_tenant_capable is False
+    assert gateway.financial_execution_capable is False
+    assert gateway.authorizes_by_itself is False
+    assert gateway.disposition is PermissionDisposition.CANONICAL
 
     wilsy_ai_capacity = permission_metadata("wilsy_ai:usage_capacity:read")
     assert wilsy_ai_capacity.namespace == "TENANT"
@@ -428,7 +441,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.11.0-L7B-LEGAL-OPERATIONS-COMMAND-PERMISSION-CERT
+# VERSION: v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

@@ -1,14 +1,15 @@
 """Direct certificate for the stateless PRDCA core.
 
 TITLE: PRDCA Core Direct Certificate
-VERSION: v1.0.4-M11-R8-R3B-P8-P3D-P5-R8-P3KR9
+VERSION: v1.0.5-M11-R8-R3B-P8-P3D-P5-R8-P3KR9
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exercises the frozen signed-envelope and deployment-evidence boundary.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_prdca.py
 COLLABORATION / OWNERSHIP: Direct certificate for tools/eos/governance/prdca.py.
 CERTIFICATION / UPDATE DATE: 2026-09-10
-CHANGELOG: v1.0.4-M11-R8-R3B-P8-P3D-P5-R8-P3KR9 adds literal authority and
-           cryptographic-contract assertions across every certificate surface.
+CHANGELOG: v1.0.5-M11-R8-R3B-P8-P3D-P5-R8-P3KR9 replaces process-global
+           dependency assertions with strict child-process target-import
+           isolation while preserving forbidden-dependency rejection.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 from __future__ import annotations
@@ -284,6 +285,59 @@ def _context(tmp_path: Path) -> _Context:
     return {"authority": authority, "prc": prc, "evidence": evidence, "dcc": dcc, "descriptor": descriptor, "receipt": receipt}
 
 
+_PRDCA_IMPORT_TARGET = "tools.eos.governance.prdca"
+
+
+def _assert_target_import_isolated(forbidden_prefixes: tuple[str, ...]) -> None:
+    """Prove the PRDCA target import does not introduce forbidden dependencies."""
+    child_code = f'''\
+import importlib
+import json
+import sys
+
+target = {_PRDCA_IMPORT_TARGET!r}
+prefixes = {forbidden_prefixes!r}
+before = set(sys.modules)
+baseline_forbidden = sorted(
+    name for name in before
+    if any(name == prefix or name.startswith(prefix + ".") for prefix in prefixes)
+)
+if baseline_forbidden:
+    print(json.dumps({{"status": "CHILD_PROBE_FAILED", "reason": "BASELINE_CONTAMINATED", "modules": baseline_forbidden}}, sort_keys=True, separators=(",", ":")))
+    raise SystemExit(2)
+try:
+    importlib.import_module(target)
+except BaseException as error:
+    print(json.dumps({{"status": "CHILD_PROBE_FAILED", "reason": "TARGET_IMPORT_FAILED", "error_type": type(error).__name__}}, sort_keys=True, separators=(",", ":")))
+    raise SystemExit(3)
+after = set(sys.modules)
+introduced = sorted(
+    name for name in after - before
+    if any(name == prefix or name.startswith(prefix + ".") for prefix in prefixes)
+)
+if introduced:
+    print(json.dumps({{"status": "TARGET_IMPORTED_FORBIDDEN_DEPENDENCY", "modules": introduced}}, sort_keys=True, separators=(",", ":")))
+    raise SystemExit(4)
+print(json.dumps({{"status": "OK", "introduced": []}}, sort_keys=True, separators=(",", ":")))
+'''
+    result = subprocess.run(
+        [sys.executable, "-c", child_code],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"PRDCA child isolation failed: rc={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}"
+        )
+    try:
+        report = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise AssertionError(f"PRDCA child probe emitted invalid JSON: {result.stdout!r}") from error
+    if not isinstance(report, dict) or report.get("status") != "OK" or report.get("introduced") != []:
+        raise AssertionError(f"PRDCA child probe failed closed: {report!r}")
+
+
 def _expect(exc: type[BaseException], fn: Callable[[], object]) -> None:
     with pytest.raises(exc):
         fn()
@@ -428,7 +482,7 @@ def _run_case(case_id: int, tmp_path: Path) -> None:
         result = subprocess.run([sys.executable, "-c", "import tools.eos.governance.prdca"], capture_output=True, text=True, check=True)
         assert result.stdout == "" and result.stderr == ""
     elif case_id == 58:
-        assert "pymongo" not in sys.modules and "motor" not in sys.modules
+        _assert_target_import_isolated(("pymongo", "motor"))
     elif case_id == 59:
         assert not hasattr(authority, "produce_deployment_evidence")
     elif case_id == 60:
@@ -436,7 +490,7 @@ def _run_case(case_id: int, tmp_path: Path) -> None:
     elif case_id == 61:
         assert "commercial_receivable" not in sys.modules
     elif case_id == 62:
-        assert not any(name.startswith("tools.eos.kennel") for name in sys.modules)
+        _assert_target_import_isolated(("tools.eos.kennel",))
     elif case_id == 63:
         _expect(module.PRDCACanonicalizationError, lambda: module._timestamp(datetime(2026, 9, 10, 10, 0, 0)))
     elif case_id == 64:
@@ -541,5 +595,5 @@ def test_prdca_core_behavior(case_id: int, tmp_path: Path) -> None:
 
 
 # ARTIFACT: test_prdca.py
-# VERSION: v1.0.4-M11-R8-R3B-P8-P3D-P5-R8-P3KR9
+# VERSION: v1.0.5-M11-R8-R3B-P8-P3D-P5-R8-P3KR9
 # END OF WILSY OS SOVEREIGN ARTIFACT
