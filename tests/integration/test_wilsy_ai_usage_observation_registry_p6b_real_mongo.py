@@ -1,7 +1,7 @@
 """Host-backed M13-P6B bounded retrieval certificate.
 
 TITLE: WILSY AI Usage Observation P6B Retrieval Real-Mongo Certificate
-VERSION: v1.0.0-M13-P6B
+VERSION: v1.1.0-M13-P6B
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify exhaustive caller-transaction observation retrieval and its
          frozen P6A composition on the certified local Mongo replica set.
@@ -10,9 +10,10 @@ COLLABORATION / OWNERSHIP: P6B integration certificate; P5B persists raw
                             facts, P6A derives capacity, and Kennel EOS owns
                             financial execution and settlement.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: v1.0.0-M13-P6B certifies bounded month/as-of retrieval, tenant and
-           binding isolation, strict corruption handling, ordering, and
-           caller-owned transaction lifecycle on real Mongo.
+CHANGELOG: v1.1.0-M13-P6B adds explicit full first-use limits and a genuine
+           nonempty complete-window capacity/provenance transition while
+           preserving bounded retrieval, tenant/binding isolation, strict
+           corruption handling, ordering, and caller-owned transactions.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 import os
@@ -23,7 +24,7 @@ import pytest
 from pymongo import MongoClient
 
 import tools.eos.saas.billing.wilsy_ai_usage_observation_registry as registry_module
-from tools.eos.saas.billing.wilsy_ai_usage_capacity import derive_wilsy_ai_usage_capacity
+from tools.eos.saas.billing.wilsy_ai_usage_capacity import derive_wilsy_ai_usage_capacity as _derive_capacity
 from tools.eos.saas.billing.wilsy_ai_commercial_policy import WilsyAITier, get_wilsy_ai_commercial_policy
 from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
     WilsyAIUsageObservationRegistry,
@@ -32,6 +33,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlement, WilsyAIEntitlementState
 from tools.eos.saas.domain.wilsy_ai_usage_observation import WilsyAIUsageObservation
+from tools.eos.saas.domain.wilsy_ai_usage_window import WilsyAIUsageWindowEvidence
 
 
 URI = os.environ.get("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
@@ -115,10 +117,76 @@ def test_real_mongo_bounded_retrieval_and_p6a_chain(bounded_database: object) ->
         assert session.in_transaction is True
         assert [item.usage_observation_id for item in bounded] == ["early", "late"]
         assert bounded[0].source_evidence_fingerprint == FP
-        capacity = derive_wilsy_ai_usage_capacity(entitlement=ent, observations=bounded, as_of=AS_OF)
+        window = WilsyAIUsageWindowEvidence(
+            tenant_id=ent.tenant_id, entitlement_id=ent.entitlement_id, module_id=ent.module_id,
+            entitlement_revision=ent.lifecycle_revision, entitlement_fingerprint=ent.fingerprint,
+            as_of=AS_OF, window_start=datetime(2026, 9, 1, tzinfo=timezone.utc), window_end=AS_OF,
+            observation_count=len(bounded), observation_fingerprints=tuple(item.fingerprint for item in bounded),
+            observations=bounded,
+        )
+        capacity = _derive_capacity(entitlement=ent, usage_window=window, as_of=AS_OF)
         assert capacity.daily_consumed_request_units == 2 and capacity.monthly_consumed_automation_actions == 2
         session.abort_transaction()
+
+    first_use_collection = database["wilsy_ai_usage_p6b_first_use"]
+    ensure_indexes(first_use_collection)
+    first_use_registry = WilsyAIUsageObservationRegistry(first_use_collection)
+    policy = get_wilsy_ai_commercial_policy(ent.tier)
+    binding_filter = {
+        "tenant_id": ent.tenant_id,
+        "entitlement_id": ent.entitlement_id,
+        "module_id": ent.module_id,
+        "entitlement_revision": ent.lifecycle_revision,
+        "entitlement_fingerprint": ent.fingerprint,
+    }
+    with client.start_session() as session:
+        session.start_transaction()
+        empty_window = first_use_registry.get_complete_window_for_p6a(
+            tenant_id=ent.tenant_id, entitlement_id=ent.entitlement_id, module_id=ent.module_id,
+            expected_entitlement_revision=ent.lifecycle_revision,
+            expected_entitlement_fingerprint=ent.fingerprint, as_of=AS_OF, session=session,
+        )
+        assert empty_window.observation_count == 0 and empty_window.observations == ()
+        empty_capacity = _derive_capacity(entitlement=ent, usage_window=empty_window, as_of=AS_OF)
+        assert empty_capacity.daily_consumed_request_units == 0
+        assert empty_capacity.monthly_consumed_automation_actions == 0
+        assert empty_capacity.daily_remaining_request_units == policy.daily_request_limit
+        assert empty_capacity.monthly_remaining_automation_actions == policy.monthly_automation_limit
+        assert empty_capacity.daily_exhausted is False
+        assert empty_capacity.monthly_exhausted is False
+        assert empty_capacity.usage_window_fingerprint == empty_window.fingerprint
+        assert first_use_collection.count_documents(binding_filter) == 0
+        session.abort_transaction()
         assert session.in_transaction is False
+
+    genuine_observation = _observation(ent, "genuine", datetime(2026, 9, 12, 10, tzinfo=timezone.utc))
+    _insert(first_use_registry, client, genuine_observation, "genuine")
+    assert first_use_collection.count_documents(binding_filter) == 1
+
+    with client.start_session() as session:
+        session.start_transaction()
+        nonempty_window = first_use_registry.get_complete_window_for_p6a(
+            tenant_id=ent.tenant_id, entitlement_id=ent.entitlement_id, module_id=ent.module_id,
+            expected_entitlement_revision=ent.lifecycle_revision,
+            expected_entitlement_fingerprint=ent.fingerprint, as_of=AS_OF, session=session,
+        )
+        assert nonempty_window.observation_count == 1
+        assert len(nonempty_window.observations) == 1
+        assert nonempty_window.observations[0].usage_observation_id == genuine_observation.usage_observation_id
+        assert nonempty_window.observations[0].fingerprint == genuine_observation.fingerprint
+        assert nonempty_window.fingerprint != empty_window.fingerprint
+        nonempty_capacity = _derive_capacity(entitlement=ent, usage_window=nonempty_window, as_of=AS_OF)
+        assert nonempty_capacity.usage_window_fingerprint == nonempty_window.fingerprint
+        assert nonempty_capacity.usage_window_fingerprint != empty_capacity.usage_window_fingerprint
+        assert nonempty_capacity.daily_consumed_request_units == genuine_observation.request_units
+        assert nonempty_capacity.monthly_consumed_automation_actions == genuine_observation.automation_actions
+        assert nonempty_capacity.daily_remaining_request_units == policy.daily_request_limit - genuine_observation.request_units
+        assert nonempty_capacity.monthly_remaining_automation_actions == policy.monthly_automation_limit - genuine_observation.automation_actions
+        assert nonempty_capacity.fingerprint != empty_capacity.fingerprint
+        session.abort_transaction()
+        assert session.in_transaction is False
+
+    assert first_use_collection.count_documents(binding_filter) == 1
     assert collection.count_documents({"tenant_id": "tenant-a"}) == 5
 
     conflict_collection = database["wilsy_ai_usage_p6b_conflict"]
@@ -175,7 +243,7 @@ def test_real_mongo_bounded_retrieval_and_p6a_chain(bounded_database: object) ->
 
 
 # ARTIFACT: test_wilsy_ai_usage_observation_registry_p6b_real_mongo.py
-# VERSION: v1.0.0-M13-P6B
+# VERSION: v1.1.0-M13-P6B
 # AUTHORITY BOUNDARY: bounded raw observation retrieval only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,7 +1,7 @@
 """Direct certificate for M13-P6B bounded P5B retrieval.
 
 TITLE: WILSY AI Usage Observation P6B Retrieval Direct Certificate
-VERSION: v1.0.0-M13-P6B
+VERSION: v1.1.0-M13-P6B
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exhaustive caller-snapshot retrieval for P6A without moving
          aggregation, quota, commercial, or financial authority into P5B.
@@ -28,6 +28,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
     WilsyAIUsageObservationRegistryError,
     ensure_indexes,
 )
+from tools.eos.saas.domain.wilsy_ai_usage_window import WilsyAIUsageWindowEvidence
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlement, WilsyAIEntitlementState
 from tools.eos.saas.domain.wilsy_ai_usage_observation import WilsyAIUsageObservation
 
@@ -132,7 +133,14 @@ def test_bounded_inclusion_exclusion_order_and_p6a_composition() -> None:
         module_id=ent.module_id, expected_entitlement_revision=ent.lifecycle_revision,
         expected_entitlement_fingerprint=ent.fingerprint, as_of=AS_OF, session=session)
     assert [item.usage_observation_id for item in bounded] == ["early", "late"]
-    capacity = derive_wilsy_ai_usage_capacity(entitlement=ent, observations=bounded, as_of=AS_OF)
+    complete = WilsyAIUsageWindowEvidence(
+        tenant_id=ent.tenant_id, entitlement_id=ent.entitlement_id, module_id=ent.module_id,
+        entitlement_revision=ent.lifecycle_revision, entitlement_fingerprint=ent.fingerprint,
+        as_of=AS_OF, window_start=datetime(2026, 9, 1, tzinfo=timezone.utc), window_end=AS_OF,
+        observation_count=len(bounded), observation_fingerprints=tuple(item.fingerprint for item in bounded),
+        observations=bounded,
+    )
+    capacity = derive_wilsy_ai_usage_capacity(entitlement=ent, usage_window=complete, as_of=AS_OF)
     assert capacity.daily_consumed_request_units == 1 and capacity.monthly_consumed_automation_actions == 2
     assert session.commits == 0 and session.aborts == 0 and session.in_transaction is True
     assert len(collection.indexes) == 4 and any("entitlement_id" in dict(keys) and "module_id" in dict(keys) for keys, _ in collection.indexes)
@@ -146,6 +154,31 @@ def test_empty_window_returns_empty_tuple_not_zero_claim() -> None:
         expected_entitlement_revision=ent.lifecycle_revision, expected_entitlement_fingerprint=ent.fingerprint,
         as_of=AS_OF, session=Session())
     assert result == ()
+
+
+def test_complete_window_empty_result_is_authoritative_zero_window() -> None:
+    ent = entitlement(); collection = Collection(); registry = WilsyAIUsageObservationRegistry(collection); session = Session()
+    value = registry.get_complete_window_for_p6a(
+        tenant_id=ent.tenant_id, entitlement_id=ent.entitlement_id, module_id=ent.module_id,
+        expected_entitlement_revision=ent.lifecycle_revision,
+        expected_entitlement_fingerprint=ent.fingerprint, as_of=AS_OF, session=session,
+    )
+    assert isinstance(value, WilsyAIUsageWindowEvidence)
+    assert value.observation_count == 0 and value.observations == () and value.observation_fingerprints == ()
+    assert session.in_transaction is True and session.commits == 0 and session.aborts == 0
+
+
+def test_complete_window_contains_exact_sorted_observations() -> None:
+    ent = entitlement(); collection = Collection(); registry = WilsyAIUsageObservationRegistry(collection)
+    early = observation(ent, ident="early", when=datetime(2026, 9, 1, tzinfo=timezone.utc)); late = observation(ent, ident="late", when=AS_OF)
+    collection.rows.extend([row(late, "late"), row(early, "early")])
+    value = registry.get_complete_window_for_p6a(
+        tenant_id=ent.tenant_id, entitlement_id=ent.entitlement_id, module_id=ent.module_id,
+        expected_entitlement_revision=ent.lifecycle_revision,
+        expected_entitlement_fingerprint=ent.fingerprint, as_of=AS_OF, session=Session(),
+    )
+    assert [item.usage_observation_id for item in value.observations] == ["early", "late"]
+    assert value.observation_fingerprints == tuple(item.fingerprint for item in value.observations)
 
 
 def test_transaction_required_and_input_validation() -> None:
@@ -189,7 +222,7 @@ def test_no_quota_or_financial_authority_surface() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_usage_observation_registry_p6b.py
-# VERSION: v1.0.0-M13-P6B
+# VERSION: v1.1.0-M13-P6B
 # AUTHORITY BOUNDARY: bounded raw observation retrieval only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,10 +1,10 @@
 """Wilsy OS M13-P6C canonical WILSY AI capacity runtime composition.
 
 TITLE: WILSY AI Usage Capacity Runtime Orchestrator
-VERSION: v1.0.0-M13-P6C
+VERSION: v1.1.0-M13-P6C
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Compose caller-supplied P4 entitlement truth, P6B bounded raw
-         observations, and the frozen P6A capacity derivation in one explicit
+EPITOME: Compose canonical P4 entitlement truth, P6B complete-window
+         evidence, and P6A capacity derivation in one explicit
          transaction snapshot without creating a second authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/wilsy_ai_usage_capacity_orchestrator.py
 COLLABORATION / OWNERSHIP: P4 owns durable entitlement lifecycle truth; P5A
@@ -13,8 +13,8 @@ COLLABORATION / OWNERSHIP: P4 owns durable entitlement lifecycle truth; P5A
                             this module owns composition only. Kennel EOS owns
                             financial execution and settlement.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: v1.0.0-M13-P6C establishes caller-session composition from the
-           canonical P4 registry through P6B retrieval into unchanged P6A.
+CHANGELOG: v1.1.0-M13-P6C composes canonical complete-window evidence,
+           including authoritative empty first-use windows, into P6A.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No network, secrets, providers, clients, metrics,
                              persistence writes, or financial operations.
@@ -33,7 +33,7 @@ FAIL-CLOSED DECLARATION: Invalid composition inputs and inactive caller
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
     WilsyAIEntitlementRegistry,
@@ -46,6 +46,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
     WilsyAIUsageObservationRegistry,
 )
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlement
+from tools.eos.saas.domain.wilsy_ai_usage_window import WilsyAIUsageWindowEvidence
 
 
 VERSION: Final[str] = "v1.0.0-M13-P6C"
@@ -88,7 +89,7 @@ class WilsyAIUsageCapacityOrchestrator:
     The P4 registry is queried first.  Its returned entitlement, rather than
     any caller-supplied commercial or module values, supplies the module ID,
     lifecycle revision, and entitlement fingerprint forwarded to P6B.  The
-    resulting tuple is passed unchanged to P6A, which remains the sole
+    resulting complete-window evidence is passed unchanged to P6A, which remains the sole
     capacity authority.  All registry and derivation exceptions retain their
     original governed type and code.
     """
@@ -100,7 +101,7 @@ class WilsyAIUsageCapacityOrchestrator:
             raise WilsyAIUsageCapacityOrchestratorError("M13P6C_REGISTRIES_REQUIRED")
         if not callable(getattr(entitlement_registry, "get", None)):
             raise WilsyAIUsageCapacityOrchestratorError("M13P6C_ENTITLEMENT_REGISTRY_INVALID")
-        if not callable(getattr(observation_registry, "get_bounded_for_p6a", None)):
+        if not callable(getattr(observation_registry, "get_complete_window_for_p6a", None)):
             raise WilsyAIUsageCapacityOrchestratorError("M13P6C_OBSERVATION_REGISTRY_INVALID")
         self._entitlement_registry = entitlement_registry
         self._observation_registry = observation_registry
@@ -153,7 +154,7 @@ class WilsyAIUsageCapacityOrchestrator:
         )
         if not isinstance(entitlement, WilsyAIEntitlement):
             raise WilsyAIUsageCapacityOrchestratorError("M13P6C_ENTITLEMENT_INVALID")
-        observations = self._observation_registry.get_bounded_for_p6a(
+        usage_window = self._observation_registry.get_complete_window_for_p6a(
             tenant_id=tenant,
             entitlement_id=entitlement.entitlement_id,
             module_id=entitlement.module_id,
@@ -164,7 +165,7 @@ class WilsyAIUsageCapacityOrchestrator:
         )
         return derive_wilsy_ai_usage_capacity(
             entitlement=entitlement,
-            observations=observations,
+            usage_window=cast(WilsyAIUsageWindowEvidence, usage_window),
             as_of=snapshot,
         )
 
@@ -176,7 +177,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_usage_capacity_orchestrator.py
-# VERSION: v1.0.0-M13-P6C
+# VERSION: v1.1.0-M13-P6C
 # AUTHORITY BOUNDARY: P4/P6B/P6A runtime composition only
 # TENANT POSTURE: explicit tenant-scoped locator and canonical P4 identity
 # FAIL-CLOSED POSTURE: active caller snapshot and upstream governed errors
