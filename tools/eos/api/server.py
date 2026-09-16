@@ -1,13 +1,16 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT
+VERSION: v1.12.0-C1B-R19-AUTHENTICATED-REASONING
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Mounts sovereign Python API routers, including authenticated PayShap provider evidence ingress.
+EPITOME: Mounts sovereign Python API routers, including authenticated PayShap
+         evidence ingress and the C1B authenticated reasoning command.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT mounts the composed
+CERTIFICATION / UPDATE DATE: 2026-09-16
+CHANGELOG: v1.12.0-C1B-R19-AUTHENTICATED-REASONING mounts the server-owned,
+authenticated C1B reasoning command and extends no-store privacy headers;
+v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT mounts the composed
 authenticated WILSY AI Legal Tool Gateway; v1.10.0-L7D-B-EXPLICIT-DB-BOOTSTRAP assigns explicit database
 connect/disconnect ownership to the ASGI lifecycle; v1.9.0 remains historical.
 debug/docs and credentialed wildcard CORS, adds architecture-independent
@@ -60,9 +63,10 @@ from .legal_operations_router import router as legal_operations_router
 from .legal_operations_command_router import router as legal_operations_command_router
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
 from .wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
+from .wilsy_ai_reasoning_router import router as wilsy_ai_reasoning_router
 from tools.eos.kernel.db import connect_db, disconnect_db
 
-VERSION = "v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT"
+VERSION = "v1.12.0-C1B-R19-AUTHENTICATED-REASONING"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -77,6 +81,7 @@ class WilsyAPIServer:
         version: str = "1.0.0",
         debug: bool = False,
         allowed_origins: Optional[List[str]] = None,
+        reasoning_provider_binding: Any | None = None,
     ) -> None:
         """Initialize immutable server configuration and build the FastAPI app."""
         self.title = title
@@ -88,6 +93,7 @@ class WilsyAPIServer:
         configured_origins = os.getenv("WILSY_CORS_ALLOWED_ORIGINS", "")
         parsed_origins = [item.strip() for item in configured_origins.split(",") if item.strip()]
         self.allowed_origins = list(allowed_origins) if allowed_origins is not None else parsed_origins
+        self.reasoning_provider_binding = reasoning_provider_binding
         self.app: FastAPI = self._build_app()
 
     def _build_app(self) -> FastAPI:
@@ -100,6 +106,7 @@ class WilsyAPIServer:
             docs_url="/docs" if (not self.production_mode or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}) else None,
             redoc_url="/redoc" if (not self.production_mode or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}) else None,
         )
+        app.state.wilsy_ai_reasoning_provider_binding = self.reasoning_provider_binding
 
         allow_credentials = "*" not in self.allowed_origins and bool(self.allowed_origins)
         app.add_middleware(
@@ -126,7 +133,7 @@ class WilsyAPIServer:
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["Referrer-Policy"] = "no-referrer"
             response.headers["X-Frame-Options"] = "DENY"
-            if request.url.path.startswith("/api/legal-operations"):
+            if request.url.path.startswith(("/api/legal-operations", "/api/wilsy-ai/reasoning")):
                 response.headers["Cache-Control"] = "no-store"
             if "x-trace-id" not in response.headers and "x-trace-id" in request.headers:
                 response.headers["x-trace-id"] = request.headers["x-trace-id"]
@@ -218,6 +225,7 @@ class WilsyAPIServer:
         app.include_router(legal_operations_command_router, prefix="/api")
         app.include_router(legal_operations_billing_read_router, prefix="/api")
         app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
+        app.include_router(wilsy_ai_reasoning_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
@@ -248,7 +256,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT
+# VERSION: v1.12.0-C1B-R19-AUTHENTICATED-REASONING
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
