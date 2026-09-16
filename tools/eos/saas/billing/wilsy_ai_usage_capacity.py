@@ -1,7 +1,7 @@
 """Wilsy OS M13-P6A canonical WILSY AI usage-capacity derivation.
 
 TITLE: WILSY AI Usage Capacity Derivation
-VERSION: v1.0.1-M13-P6A
+VERSION: v1.1.0-M13-P6A
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derive tenant-scoped daily request and calendar-month automation
          capacity from explicit P5A/P5B evidence without creating new truth.
@@ -12,10 +12,9 @@ COLLABORATION / OWNERSHIP: P3 owns commercial limits; P4 owns active
                             Kennel EOS exclusively owns financial execution and
                             settlement.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: v1.0.1-M13-P6A adds canonical P4 entitlement hydration before
-           derivation and preserves deterministic UTC daily/month windows,
-           evidence-bound consumption sums, immutable capacity evidence, and
-           activation chronology/tenant-boundary enforcement.
+CHANGELOG: v1.1.0-M13-P6A binds capacity to canonical P6B complete-window
+           evidence and derives legitimate zero consumption from an empty
+           authoritative window.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-memory derivation; no persistence,
                              network, secrets, providers, or clients.
@@ -23,15 +22,15 @@ TENANT BOUNDARY: Every observation must match the explicit entitlement tenant.
 AUTHORITY BOUNDARY: Capacity derivation only; no access grant, billing,
                     invoice, payment, execution, settlement, or ROI authority.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution/settlement.
-FAIL-CLOSED DECLARATION: Missing evidence, inactive/stale entitlements,
-                         mismatches, invalid windows, and malformed facts reject.
-COMPLETENESS POSTURE: P6A derives only from the supplied bounded evidence; it
-                      does not assert that P5B returned a complete registry
-                      window. Complete retrieval remains a separate P6B duty.
+FAIL-CLOSED DECLARATION: Missing complete-window evidence, inactive/stale
+                         entitlements, mismatches, invalid windows, and
+                         malformed facts reject.
+COMPLETENESS POSTURE: P6B complete-window evidence is mandatory; an empty
+                      complete window is proven absence, not a usage event.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -45,13 +44,13 @@ from tools.eos.saas.domain.wilsy_ai_entitlement import (
     WilsyAIEntitlementError,
     WilsyAIEntitlementState,
 )
-from tools.eos.saas.domain.wilsy_ai_usage_observation import (
-    WilsyAIUsageObservation,
-    WilsyAIUsageObservationError,
+from tools.eos.saas.domain.wilsy_ai_usage_window import (
+    WilsyAIUsageWindowEvidence,
+    WilsyAIUsageWindowEvidenceError,
 )
 
-VERSION: Final[str] = "v1.0.1-M13-P6A"
-SCHEMA: Final[str] = "WILSY-AI-USAGE-CAPACITY/V1"
+VERSION: Final[str] = "v1.1.0-M13-P6A"
+SCHEMA: Final[str] = "WILSY-AI-USAGE-CAPACITY/V2"
 _FIELDS: Final[tuple[str, ...]] = (
     "tenant_id", "entitlement_id", "module_id", "entitlement_revision",
     "entitlement_fingerprint", "as_of", "daily_window_start",
@@ -60,7 +59,7 @@ _FIELDS: Final[tuple[str, ...]] = (
     "daily_consumed_request_units", "monthly_consumed_automation_actions",
     "daily_remaining_request_units", "monthly_remaining_automation_actions",
     "daily_exhausted", "monthly_exhausted", "observation_fingerprints",
-    "schema", "capacity_version", "fingerprint",
+    "usage_window_fingerprint", "schema", "capacity_version", "fingerprint",
 )
 _HEX = frozenset("0123456789abcdef")
 _FORBIDDEN_TENANTS = frozenset({"default", "global", "root", "*", "global_root"})
@@ -125,6 +124,7 @@ class WilsyAIUsageCapacity:
     daily_exhausted: bool
     monthly_exhausted: bool
     observation_fingerprints: tuple[str, ...]
+    usage_window_fingerprint: str
     schema: str = SCHEMA
     capacity_version: str = VERSION
     fingerprint: str = ""
@@ -156,6 +156,7 @@ class WilsyAIUsageCapacity:
                 raise WilsyAIUsageCapacityError("M13P6A_TENANT_REQUIRED")
         _nonnegative(self.entitlement_revision, "M13P6A_REVISION_INVALID")
         _digest(self.entitlement_fingerprint, "M13P6A_FINGERPRINT_INVALID")
+        _digest(self.usage_window_fingerprint, "M13P6A_WINDOW_FINGERPRINT_INVALID")
         for field in ("daily_request_limit", "monthly_automation_limit"):
             if _nonnegative(getattr(self, field), "M13P6A_LIMIT_INVALID") <= 0:
                 raise WilsyAIUsageCapacityError("M13P6A_LIMIT_INVALID")
@@ -167,14 +168,12 @@ class WilsyAIUsageCapacity:
             raise WilsyAIUsageCapacityError("M13P6A_STATUS_INVALID")
         if self.daily_exhausted != (self.daily_consumed_request_units >= self.daily_request_limit) or self.monthly_exhausted != (self.monthly_consumed_automation_actions >= self.monthly_automation_limit):
             raise WilsyAIUsageCapacityError("M13P6A_STATUS_INVALID")
-        if not self.observation_fingerprints:
-            raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_REQUIRED")
         if not isinstance(self.observation_fingerprints, tuple) or any(
             _digest(item, "M13P6A_OBSERVATION_FINGERPRINT_INVALID") != item
             for item in self.observation_fingerprints
         ):
             raise WilsyAIUsageCapacityError("M13P6A_OBSERVATION_FINGERPRINT_INVALID")
-        if tuple(sorted(self.observation_fingerprints)) != self.observation_fingerprints or len(set(self.observation_fingerprints)) != len(self.observation_fingerprints):
+        if len(set(self.observation_fingerprints)) != len(self.observation_fingerprints):
             raise WilsyAIUsageCapacityError("M13P6A_OBSERVATION_FINGERPRINT_INVALID")
         object.__setattr__(self, "as_of", as_of)
         for field, value in windows.items():
@@ -211,12 +210,11 @@ class WilsyAIUsageCapacity:
         return item
 
 
-def derive_wilsy_ai_usage_capacity(*, entitlement: WilsyAIEntitlement, observations: Iterable[WilsyAIUsageObservation], as_of: datetime) -> WilsyAIUsageCapacity:
-    """Derive capacity from supplied evidence without asserting P5B completeness.
+def derive_wilsy_ai_usage_capacity(*, entitlement: WilsyAIEntitlement, usage_window: WilsyAIUsageWindowEvidence, as_of: datetime) -> WilsyAIUsageCapacity:
+    """Derive capacity from one canonical, complete P6B usage window.
 
-    P6A rejects evidence outside the requested as-of month and future evidence,
-    but cannot prove that a P5B retrieval was exhaustive; that completeness
-    contract belongs to the separately authorized P6B persistence layer.
+    A naked iterable of observations is deliberately unsupported: P6B must
+    prove that an empty result is exhaustive before P6A may derive zero use.
     """
     if not isinstance(entitlement, WilsyAIEntitlement):
         raise WilsyAIUsageCapacityError("M13P6A_ENTITLEMENT_INVALID")
@@ -239,45 +237,37 @@ def derive_wilsy_ai_usage_capacity(*, entitlement: WilsyAIEntitlement, observati
     policy = get_wilsy_ai_commercial_policy(verified_entitlement.tier)
     if verified_entitlement.policy_fingerprint != policy.policy_fingerprint:
         raise WilsyAIUsageCapacityError("M13P6A_POLICY_BINDING_INVALID")
+    if not isinstance(usage_window, WilsyAIUsageWindowEvidence):
+        raise WilsyAIUsageCapacityError("M13P6A_COMPLETE_WINDOW_REQUIRED")
     try:
-        supplied = tuple(observations)
-    except TypeError as error:
-        raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_REQUIRED") from error
-    if not supplied:
-        raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_REQUIRED")
+        window = WilsyAIUsageWindowEvidence.from_dict(usage_window.to_dict())
+    except WilsyAIUsageWindowEvidenceError as error:
+        raise WilsyAIUsageCapacityError("M13P6A_WINDOW_INVALID") from error
+    if (
+        window.tenant_id != verified_entitlement.tenant_id
+        or window.entitlement_id != verified_entitlement.entitlement_id
+        or window.module_id != verified_entitlement.module_id
+        or window.entitlement_revision != verified_entitlement.lifecycle_revision
+        or window.entitlement_fingerprint != verified_entitlement.fingerprint
+        or window.as_of != as_of_utc
+    ):
+        raise WilsyAIUsageCapacityError("M13P6A_WINDOW_BINDING_MISMATCH")
+    if window.as_of < activated_at:
+        raise WilsyAIUsageCapacityError("M13P6A_AS_OF_BEFORE_ACTIVATION")
     daily_start = as_of_utc.replace(hour=0, minute=0, second=0, microsecond=0)
     daily_end = daily_start + timedelta(days=1)
     monthly_start = daily_start.replace(day=1)
     monthly_end = _next_month(monthly_start)
-    observation_ids: set[str] = set()
-    observation_fingerprints: set[str] = set()
-    evidence: list[WilsyAIUsageObservation] = []
-    for item in supplied:
-        if not isinstance(item, WilsyAIUsageObservation):
-            raise WilsyAIUsageCapacityError("M13P6A_OBSERVATION_MISMATCH")
-        try:
-            validated = WilsyAIUsageObservation.from_dict(item.to_dict())
-        except WilsyAIUsageObservationError as error:
-            raise WilsyAIUsageCapacityError("M13P6A_OBSERVATION_INVALID") from error
-        if validated.tenant_id != verified_entitlement.tenant_id or validated.entitlement_id != verified_entitlement.entitlement_id or validated.module_id != verified_entitlement.module_id or validated.entitlement_revision != verified_entitlement.lifecycle_revision or validated.entitlement_fingerprint != verified_entitlement.fingerprint:
-            raise WilsyAIUsageCapacityError("M13P6A_OBSERVATION_MISMATCH")
-        if validated.occurred_at < activated_at:
+    for item in window.observations:
+        if item.occurred_at < activated_at:
             raise WilsyAIUsageCapacityError("M13P6A_PRE_ACTIVATION_EVIDENCE")
-        item = validated
-        if item.usage_observation_id in observation_ids or item.fingerprint in observation_fingerprints:
-            raise WilsyAIUsageCapacityError("M13P6A_DUPLICATE_EVIDENCE")
-        observation_ids.add(item.usage_observation_id)
-        observation_fingerprints.add(item.fingerprint)
         if item.occurred_at > as_of_utc:
             raise WilsyAIUsageCapacityError("M13P6A_FUTURE_EVIDENCE")
         if item.occurred_at < monthly_start or item.occurred_at >= monthly_end:
             raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_OUTSIDE_MONTH")
-        evidence.append(item)
-    bounded_evidence = tuple(evidence)
+    bounded_evidence = window.observations
     daily = tuple(item for item in bounded_evidence if daily_start <= item.occurred_at <= as_of_utc)
     monthly = tuple(item for item in bounded_evidence if monthly_start <= item.occurred_at <= as_of_utc)
-    if not daily or not monthly:
-        raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_WINDOW_INCOMPLETE")
     daily_consumed = sum(item.request_units for item in daily)
     monthly_consumed = sum(item.automation_actions for item in monthly)
     daily_limit = policy.daily_request_limit
@@ -291,14 +281,15 @@ def derive_wilsy_ai_usage_capacity(*, entitlement: WilsyAIEntitlement, observati
         daily_consumed_request_units=daily_consumed, monthly_consumed_automation_actions=monthly_consumed,
         daily_remaining_request_units=max(0, daily_limit - daily_consumed), monthly_remaining_automation_actions=max(0, monthly_limit - monthly_consumed),
         daily_exhausted=daily_consumed >= daily_limit, monthly_exhausted=monthly_consumed >= monthly_limit,
-        observation_fingerprints=tuple(sorted(item.fingerprint for item in bounded_evidence)),
+        observation_fingerprints=window.observation_fingerprints,
+        usage_window_fingerprint=window.fingerprint,
     )
 
 
 __all__ = ["SCHEMA", "VERSION", "WilsyAIUsageCapacity", "WilsyAIUsageCapacityError", "derive_wilsy_ai_usage_capacity"]
 
 # ARTIFACT: wilsy_ai_usage_capacity.py
-# VERSION: v1.0.1-M13-P6A
+# VERSION: v1.1.0-M13-P6A
 # AUTHORITY BOUNDARY: observed capacity derivation only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

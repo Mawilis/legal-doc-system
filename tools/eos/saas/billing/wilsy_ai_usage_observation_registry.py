@@ -1,7 +1,7 @@
 """Wilsy OS M13-P6B durable append-only WILSY AI usage-observation registry.
 
 TITLE: WILSY AI Usage Observation Registry
-VERSION: v1.1.0-M13-P6B
+VERSION: v1.2.0-M13-P6B
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist source-evidenced P5A observations exactly once while keeping
          all aggregation, quota, billing, execution, and settlement elsewhere.
@@ -12,9 +12,9 @@ COLLABORATION / OWNERSHIP: P5A owns immutable fact shape; P5B owns this
                             transactions; Kennel EOS owns financial execution
                             and settlement.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: v1.1.0-M13-P6B preserves P5B append/replay authority and adds
-           caller-transaction bounded retrieval for P6A with strict ordering,
-           month/as-of bounds, binding integrity, and an optimized lookup index.
+CHANGELOG: v1.2.0-M13-P6B preserves P5B append/replay authority and adds
+           immutable complete-window evidence, including authoritative empty
+           windows, for P6A first-use derivation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No secrets, providers, clients, quotas, or money.
 TENANT BOUNDARY: Every read/replay query includes explicit tenant_id.
@@ -41,8 +41,9 @@ from tools.eos.saas.domain.wilsy_ai_usage_observation import (
     WilsyAIUsageObservation,
     WilsyAIUsageObservationError,
 )
+from tools.eos.saas.domain.wilsy_ai_usage_window import WilsyAIUsageWindowEvidence
 
-VERSION: Final[str] = "v1.1.0-M13-P6B"
+VERSION: Final[str] = "v1.2.0-M13-P6B"
 COLLECTION: Final[str] = "wilsy_ai_usage_observations"
 OBSERVATION_FIELDS: Final[tuple[str, ...]] = (
     "schema", "observation_version", "tenant_id", "usage_observation_id",
@@ -238,11 +239,97 @@ class WilsyAIUsageObservationRegistry:
             raise WilsyAIUsageObservationRegistryError("M13P6B_PERSISTENCE_UNAVAILABLE") from error
         return tuple(sorted(bounded, key=lambda item: (item.occurred_at, item.usage_observation_id)))
 
+    def get_complete_window_for_p6a(
+        self,
+        *,
+        tenant_id: str,
+        entitlement_id: str,
+        module_id: str,
+        expected_entitlement_revision: int,
+        expected_entitlement_fingerprint: str,
+        as_of: Any,
+        session: Any,
+    ) -> WilsyAIUsageWindowEvidence:
+        """Return exhaustive complete-window evidence under caller snapshot.
+
+        Every exact binding row is strictly hydrated.  Historical and future
+        observations are excluded from this bounded month/as-of result only
+        after hydration; malformed rows and in-window binding/duplicate drift
+        fail closed.  An empty result is valid proof of no observed usage in
+        this registry snapshot, never a synthetic usage fact.
+        """
+        if (
+            not isinstance(tenant_id, str) or not tenant_id.strip()
+            or not isinstance(entitlement_id, str) or not entitlement_id.strip()
+            or not isinstance(module_id, str) or not module_id.strip()
+            or isinstance(expected_entitlement_revision, bool)
+            or not isinstance(expected_entitlement_revision, int)
+            or expected_entitlement_revision < 0
+            or not isinstance(expected_entitlement_fingerprint, str)
+            or len(expected_entitlement_fingerprint) != 128
+            or not set(expected_entitlement_fingerprint) <= _HEX
+            or not isinstance(as_of, datetime)
+            or as_of.tzinfo is None or as_of.utcoffset() is None
+            or session is None
+        ):
+            raise WilsyAIUsageObservationRegistryError("M13P6B_INPUT_INVALID")
+        active_transaction = getattr(session, "in_transaction", False)
+        if callable(active_transaction):
+            active_transaction = active_transaction()
+        if active_transaction is not True:
+            raise WilsyAIUsageObservationRegistryError("M13P6B_TRANSACTION_REQUIRED")
+        as_of_utc = as_of.astimezone(timezone.utc)
+        month_start = as_of_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        bounded: list[WilsyAIUsageObservation] = []
+        seen_ids: set[str] = set()
+        seen_fingerprints: set[str] = set()
+        try:
+            cursor = self._collection.find(
+                {"tenant_id": tenant_id, "entitlement_id": entitlement_id, "module_id": module_id},
+                session=session,
+            )
+            for row in cursor:
+                observation = _hydrate(row)
+                if (
+                    observation.tenant_id != tenant_id
+                    or observation.entitlement_id != entitlement_id
+                    or observation.module_id != module_id
+                ):
+                    raise WilsyAIUsageObservationRegistryError("M13P6B_BINDING_CONFLICT")
+                if observation.occurred_at < month_start or observation.occurred_at > as_of_utc:
+                    continue
+                if (
+                    observation.entitlement_revision != expected_entitlement_revision
+                    or observation.entitlement_fingerprint != expected_entitlement_fingerprint
+                ):
+                    raise WilsyAIUsageObservationRegistryError("M13P6B_BINDING_CONFLICT")
+                if observation.usage_observation_id in seen_ids or observation.fingerprint in seen_fingerprints:
+                    raise WilsyAIUsageObservationRegistryError("M13P6B_DUPLICATE_EVIDENCE")
+                seen_ids.add(observation.usage_observation_id)
+                seen_fingerprints.add(observation.fingerprint)
+                bounded.append(observation)
+        except PyMongoError as error:
+            raise WilsyAIUsageObservationRegistryError("M13P6B_PERSISTENCE_UNAVAILABLE") from error
+        ordered = tuple(sorted(bounded, key=lambda item: (item.occurred_at, item.usage_observation_id)))
+        return WilsyAIUsageWindowEvidence(
+            tenant_id=tenant_id,
+            entitlement_id=entitlement_id,
+            module_id=module_id,
+            entitlement_revision=expected_entitlement_revision,
+            entitlement_fingerprint=expected_entitlement_fingerprint,
+            as_of=as_of_utc,
+            window_start=month_start,
+            window_end=as_of_utc,
+            observation_count=len(ordered),
+            observation_fingerprints=tuple(item.fingerprint for item in ordered),
+            observations=ordered,
+        )
+
 
 __all__ = ["COLLECTION", "OBSERVATION_FIELDS", "VERSION", "WRITE_CONCERN", "READ_CONCERN", "WilsyAIUsageObservationRegistry", "WilsyAIUsageObservationRegistryError", "WilsyAIUsageObservationConflictError", "WilsyAIUsageObservationNotFoundError", "ensure_indexes"]
 
 # ARTIFACT: wilsy_ai_usage_observation_registry.py
-# VERSION: v1.1.0-M13-P6B
+# VERSION: v1.2.0-M13-P6B
 # AUTHORITY BOUNDARY: append-only raw usage-observation persistence only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

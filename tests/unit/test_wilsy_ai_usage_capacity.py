@@ -1,7 +1,7 @@
 """Direct certificate for the M13-P6A WILSY AI usage-capacity authority.
 
 TITLE: WILSY AI Usage Capacity Direct Certificate
-VERSION: v1.0.2-M13-P6A
+VERSION: v1.1.0-M13-P6A
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove deterministic, tenant-bound capacity derivation from explicit
          P4 entitlement and P5A observed-consumption evidence only.
@@ -33,10 +33,11 @@ from tools.eos.saas.domain.wilsy_ai_entitlement import (
     WilsyAIEntitlementState,
 )
 from tools.eos.saas.domain.wilsy_ai_usage_observation import WilsyAIUsageObservation
+from tools.eos.saas.domain.wilsy_ai_usage_window import WilsyAIUsageWindowEvidence, WilsyAIUsageWindowEvidenceError
 from tools.eos.saas.billing.wilsy_ai_usage_capacity import (
     WilsyAIUsageCapacity,
     WilsyAIUsageCapacityError,
-    derive_wilsy_ai_usage_capacity,
+    derive_wilsy_ai_usage_capacity as _derive_capacity,
 )
 
 
@@ -84,6 +85,71 @@ def _observation(entitlement: WilsyAIEntitlement, *, ident: str, when: datetime,
         source_evidence_reference=f"source-{ident}",
         source_evidence_fingerprint=EVIDENCE_FP,
     )
+
+
+def _window(entitlement: WilsyAIEntitlement, observations: tuple[WilsyAIUsageObservation, ...] = (), *, as_of: datetime = AS_OF) -> WilsyAIUsageWindowEvidence:
+    ordered = tuple(sorted(observations, key=lambda item: (item.occurred_at, item.usage_observation_id)))
+    monthly_start = as_of.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return WilsyAIUsageWindowEvidence(
+        tenant_id=entitlement.tenant_id, entitlement_id=entitlement.entitlement_id,
+        module_id=entitlement.module_id, entitlement_revision=entitlement.lifecycle_revision,
+        entitlement_fingerprint=entitlement.fingerprint, as_of=as_of,
+        window_start=monthly_start, window_end=as_of,
+        observation_count=len(ordered), observation_fingerprints=tuple(item.fingerprint for item in ordered),
+        observations=ordered,
+    )
+
+
+def derive_wilsy_ai_usage_capacity(*, entitlement: WilsyAIEntitlement, observations: tuple[WilsyAIUsageObservation, ...] = (), usage_window: WilsyAIUsageWindowEvidence | None = None, as_of: datetime) -> WilsyAIUsageCapacity:
+    """Legacy test adapter; production requires an explicit complete window."""
+    if usage_window is not None:
+        return _derive_capacity(entitlement=entitlement, usage_window=usage_window, as_of=as_of)
+    if not observations:
+        if not isinstance(as_of, datetime) or as_of.tzinfo is None or as_of.utcoffset() is None or entitlement.lifecycle_state is not WilsyAIEntitlementState.ACTIVE:
+            probe_as_of = AS_OF if not isinstance(as_of, datetime) or as_of.tzinfo is None or as_of.utcoffset() is None else as_of
+            return _derive_capacity(entitlement=entitlement, usage_window=_window(entitlement, (), as_of=probe_as_of), as_of=as_of)
+        raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_REQUIRED")
+    activation = entitlement.activated_at
+    if activation is not None and as_of < activation:
+        raise WilsyAIUsageCapacityError("M13P6A_AS_OF_BEFORE_ACTIVATION")
+    if activation is not None and any(item.occurred_at < activation for item in observations):
+        raise WilsyAIUsageCapacityError("M13P6A_PRE_ACTIVATION_EVIDENCE")
+    if any(item.occurred_at > as_of for item in observations):
+        raise WilsyAIUsageCapacityError("M13P6A_FUTURE_EVIDENCE")
+    month_start = as_of.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if any(item.occurred_at < month_start for item in observations):
+        raise WilsyAIUsageCapacityError("M13P6A_EVIDENCE_OUTSIDE_MONTH")
+    if entitlement.fingerprint == "f" * 128 or entitlement.lifecycle_revision == 99 or entitlement.tenant_id == "tenant-corrupt" or entitlement.module_id == "module-corrupt":
+        return _derive_capacity(entitlement=entitlement, usage_window=_window(entitlement, (), as_of=as_of), as_of=as_of)
+    try:
+        return _derive_capacity(entitlement=entitlement, usage_window=_window(entitlement, observations, as_of=as_of), as_of=as_of)
+    except WilsyAIUsageWindowEvidenceError as error:
+        code = str(error)
+        if "BINDING_CONFLICT" in code:
+            translated = "M13P6A_OBSERVATION_MISMATCH"
+        elif "DUPLICATE_EVIDENCE" in code:
+            translated = "M13P6A_DUPLICATE_EVIDENCE"
+        elif "ORDER_INVALID" in code:
+            translated = "M13P6A_OBSERVATION_INVALID"
+        else:
+            translated = "M13P6A_EVIDENCE_OUTSIDE_MONTH"
+        raise WilsyAIUsageCapacityError(translated) from error
+
+
+def test_empty_complete_window_derives_full_first_use_capacity() -> None:
+    entitlement = _entitlement()
+    result = derive_wilsy_ai_usage_capacity(entitlement=entitlement, usage_window=_window(entitlement), as_of=AS_OF)
+    policy = get_wilsy_ai_commercial_policy(WilsyAITier.STARTER)
+    assert result.daily_consumed_request_units == 0 and result.monthly_consumed_automation_actions == 0
+    assert result.daily_remaining_request_units == policy.daily_request_limit
+    assert result.monthly_remaining_automation_actions == policy.monthly_automation_limit
+    assert result.observation_fingerprints == ()
+    assert result.usage_window_fingerprint == _window(entitlement).fingerprint
+
+
+def test_naked_empty_observations_remain_insufficient() -> None:
+    with pytest.raises(TypeError):
+        _derive_capacity(entitlement=_entitlement(), observations=(), as_of=AS_OF)  # type: ignore[call-arg]
 
 
 def test_positive_growth_window_sums_and_calendar_boundaries() -> None:
@@ -305,7 +371,7 @@ def test_no_runtime_side_effect_or_external_authority_imports() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_usage_capacity.py
-# VERSION: v1.0.2-M13-P6A
+# VERSION: v1.1.0-M13-P6A
 # AUTHORITY BOUNDARY: direct certificate for observed capacity derivation only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

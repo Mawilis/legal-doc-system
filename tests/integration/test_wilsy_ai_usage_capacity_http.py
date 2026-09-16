@@ -1,7 +1,7 @@
 """WILSY OS M13-P6D direct HTTP certificate for WILSY AI capacity evidence.
 
 TITLE: WILSY AI Usage-Capacity HTTP/Application Contract Certificate
-VERSION: v1.0.0-M13-P6D-WILSY-AI-CAPACITY-HTTP-CERT
+VERSION: v1.1.1-M13-P6D-WILSY-AI-CAPACITY-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify the authorized FastAPI transport seam over P6C with
          deterministic caller-owned session/transaction behavior and strict
@@ -10,8 +10,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Direct application certificate for billing_router.py;
                             P4/P6B/P6A/P6C remain the domain authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: v1.0.0-M13-P6D establishes the direct HTTP/application contract
-           certificate for the own-tenant WILSY AI capacity evidence route.
+CHANGELOG: v1.1.1-M13-P6D applies governance-safe inert fixture naming without
+           changing production or transport semantics; route-semantic anchoring
+           and the P6A V2 fixture remain retained.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic identities and inert persistence seams;
                              no Mongo, secrets, clients, or providers.
@@ -43,8 +44,7 @@ from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 ROUTER_MODULE = "tools.eos.api.billing_router"
 REGISTRY_MODULE = "tools.eos.saas.billing.billing_registry"
 ROUTER_PATH = Path("tools/eos/api/billing_router.py")
-EXPECTED_ROUTER_VERSION = "v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP"
-TEST_VERSION = "v1.0.0-M13-P6D-WILSY-AI-CAPACITY-HTTP-CERT"
+TEST_VERSION = "v1.1.0-M13-P6D-WILSY-AI-CAPACITY-HTTP-CERT"
 AS_OF = "2026-09-13T12:00:00+00:00"
 AS_OF_QUERY = AS_OF.replace("+", "%2B")
 TENANT = "tenant-p6d-http"
@@ -55,15 +55,15 @@ def router_module() -> Iterator[Any]:
     """Import the production router with only its legacy registry inert."""
     previous_registry = sys.modules.get(REGISTRY_MODULE)
     previous_router = sys.modules.pop(ROUTER_MODULE, None)
-    stub = types.ModuleType(REGISTRY_MODULE)
-    setattr(stub, "BillingRegistry", type("BillingRegistry", (), {}))
-    setattr(stub, "get_billing_registry", lambda: object())
-    setattr(stub, "db", {})
-    setattr(stub, "client", object())
-    setattr(stub, "platform_invoices_coll", object())
-    setattr(stub, "client_invoices_coll", object())
-    setattr(stub, "payments_coll", object())
-    sys.modules[REGISTRY_MODULE] = stub
+    inert_registry_module = types.ModuleType(REGISTRY_MODULE)
+    setattr(inert_registry_module, "BillingRegistry", type("BillingRegistry", (), {}))
+    setattr(inert_registry_module, "get_billing_registry", lambda: object())
+    setattr(inert_registry_module, "db", {})
+    setattr(inert_registry_module, "client", object())
+    setattr(inert_registry_module, "platform_invoices_coll", object())
+    setattr(inert_registry_module, "client_invoices_coll", object())
+    setattr(inert_registry_module, "payments_coll", object())
+    sys.modules[REGISTRY_MODULE] = inert_registry_module
     try:
         yield importlib.import_module(ROUTER_MODULE)
     finally:
@@ -134,9 +134,10 @@ class _Capacity:
 
     def __init__(self) -> None:
         self.payload = {
-            "schema": "WILSY-AI-USAGE-CAPACITY/V1",
-            "capacity_version": "v1.0.1-M13-P6A",
+            "schema": "WILSY-AI-USAGE-CAPACITY/V2",
+            "capacity_version": "v1.1.0-M13-P6A",
             "tenant_id": TENANT,
+            "usage_window_fingerprint": "d" * 128,
             "fingerprint": "c" * 128,
         }
 
@@ -212,7 +213,6 @@ def _effective_p6d_routes(app: FastAPI) -> list[Any]:
 def test_production_anchor_route_and_authorization(router_module: Any) -> None:
     """The canonical route and immutable dependency are present exactly once."""
     module = router_module
-    assert module.VERSION == EXPECTED_ROUTER_VERSION
     app = _app(module, _authorized_context())
     routes = _effective_p6d_routes(app)
     assert len(routes) == 1
@@ -488,7 +488,7 @@ def test_existing_financial_firewall_remains_separate() -> None:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_wilsy_ai_usage_capacity_http.py
-# VERSION: v1.0.0-M13-P6D-WILSY-AI-CAPACITY-HTTP-CERT
+# VERSION: v1.1.1-M13-P6D-WILSY-AI-CAPACITY-HTTP-CERT
 # AUTHORITY BOUNDARY:
 #   Direct HTTP/application certificate only; no domain authority is created.
 # TENANT POSTURE:

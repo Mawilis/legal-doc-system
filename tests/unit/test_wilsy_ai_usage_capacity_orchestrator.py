@@ -1,7 +1,7 @@
 """Direct M13-P6C certificate for WILSY AI capacity composition.
 
 TITLE: WILSY AI Usage Capacity Orchestrator Certificate
-VERSION: v1.0.0-M13-P6C
+VERSION: v1.1.0-M13-P6C
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove same-snapshot P4/P6B composition into the frozen P6A
          derivation without adding persistence, quota, or financial authority.
@@ -47,6 +47,7 @@ from tools.eos.saas.domain.wilsy_ai_entitlement import (
     WilsyAIEntitlementState,
 )
 from tools.eos.saas.domain.wilsy_ai_usage_observation import WilsyAIUsageObservation
+from tools.eos.saas.domain.wilsy_ai_usage_window import WilsyAIUsageWindowEvidence
 
 
 FP = "a" * 128
@@ -83,6 +84,20 @@ class ObservationRegistry:
         if self.error is not None:
             raise self.error
         return self.value
+
+    def get_complete_window_for_p6a(self, **kwargs: Any) -> WilsyAIUsageWindowEvidence:
+        self.calls.append(kwargs)
+        if self.error is not None:
+            raise self.error
+        entitlement_id = kwargs["entitlement_id"]
+        return WilsyAIUsageWindowEvidence(
+            tenant_id=kwargs["tenant_id"], entitlement_id=entitlement_id,
+            module_id=kwargs["module_id"], entitlement_revision=kwargs["expected_entitlement_revision"],
+            entitlement_fingerprint=kwargs["expected_entitlement_fingerprint"], as_of=kwargs["as_of"],
+            window_start=kwargs["as_of"].replace(day=1, hour=0, minute=0, second=0, microsecond=0),
+            window_end=kwargs["as_of"], observation_count=len(self.value),
+            observation_fingerprints=tuple(item.fingerprint for item in self.value), observations=self.value,
+        )
 
 
 def pending_entitlement() -> WilsyAIEntitlement:
@@ -177,17 +192,12 @@ def test_canonical_p4_identity_and_same_session_reach_frozen_p6a() -> None:
     }
 
 
-def test_caller_transaction_ownership_and_empty_evidence_fail_closed() -> None:
+def test_caller_transaction_ownership_and_empty_complete_window_derives_zero() -> None:
     entitlement = active_entitlement()
     orchestrator, _, _ = owner(entitlement)
     session = Session()
-    with pytest.raises(WilsyAIUsageCapacityError, match="M13P6A_EVIDENCE_REQUIRED"):
-        orchestrator.derive_capacity(
-            tenant_id=entitlement.tenant_id,
-            entitlement_id=entitlement.entitlement_id,
-            as_of=AS_OF,
-            session=session,
-        )
+    result = orchestrator.derive_capacity(tenant_id=entitlement.tenant_id, entitlement_id=entitlement.entitlement_id, as_of=AS_OF, session=session)
+    assert result.daily_consumed_request_units == 0 and result.monthly_consumed_automation_actions == 0
     assert session.in_transaction is True
     assert not any(name in dir(orchestrator) for name in ("start_transaction", "commit", "abort", "retry_transaction"))
 
@@ -246,7 +256,7 @@ def test_no_quota_commercial_or_financial_authority_surface() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_usage_capacity_orchestrator.py
-# VERSION: v1.0.0-M13-P6C
+# VERSION: v1.1.0-M13-P6C
 # AUTHORITY BOUNDARY: P4/P6B/P6A composition certificate only
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
