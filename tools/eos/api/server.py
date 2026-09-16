@@ -1,14 +1,18 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.12.0-C1B-R19-AUTHENTICATED-REASONING
+VERSION: v1.13.0-C1B-R23-PRODUCTION-PROVIDER
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mounts sovereign Python API routers, including authenticated PayShap
-         evidence ingress and the C1B authenticated reasoning command.
+         evidence ingress and the C1B authenticated reasoning command with a
+         server-owned production provider binding.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-16
-CHANGELOG: v1.12.0-C1B-R19-AUTHENTICATED-REASONING mounts the server-owned,
+CHANGELOG: v1.13.0-C1B-R23-PRODUCTION-PROVIDER composes one optional,
+server-owned OpenAI Responses provider binding from environment configuration
+and keeps reasoning I/O off the ASGI event loop;
+v1.12.0-C1B-R19-AUTHENTICATED-REASONING mounts the server-owned,
 authenticated C1B reasoning command and extends no-store privacy headers;
 v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT mounts the composed
 authenticated WILSY AI Legal Tool Gateway; v1.10.0-L7D-B-EXPLICIT-DB-BOOTSTRAP assigns explicit database
@@ -64,9 +68,12 @@ from .legal_operations_command_router import router as legal_operations_command_
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
 from .wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
 from .wilsy_ai_reasoning_router import router as wilsy_ai_reasoning_router
+from tools.eos.intelligence.providers.reasoning_provider_runtime import (
+    build_reasoning_provider_binding_from_environment,
+)
 from tools.eos.kernel.db import connect_db, disconnect_db
 
-VERSION = "v1.12.0-C1B-R19-AUTHENTICATED-REASONING"
+VERSION = "v1.13.0-C1B-R23-PRODUCTION-PROVIDER"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -93,6 +100,15 @@ class WilsyAPIServer:
         configured_origins = os.getenv("WILSY_CORS_ALLOWED_ORIGINS", "")
         parsed_origins = [item.strip() for item in configured_origins.split(",") if item.strip()]
         self.allowed_origins = list(allowed_origins) if allowed_origins is not None else parsed_origins
+        if reasoning_provider_binding is None:
+            try:
+                reasoning_provider_binding = build_reasoning_provider_binding_from_environment()
+            except Exception as error:
+                # Configuration failure is isolated to optional reasoning; a
+                # stable code is logged without exposing secrets or values.
+                code = getattr(error, "code", "R23_PROVIDER_CONFIGURATION_INVALID")
+                logger.error("[WILSY_AI_PROVIDER] binding unavailable: %s", code)
+                reasoning_provider_binding = None
         self.reasoning_provider_binding = reasoning_provider_binding
         self.app: FastAPI = self._build_app()
 
@@ -256,7 +272,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.12.0-C1B-R19-AUTHENTICATED-REASONING
+# VERSION: v1.13.0-C1B-R23-PRODUCTION-PROVIDER
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

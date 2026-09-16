@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.0.0-C1B-R19
+VERSION: v1.1.0-C1B-R23
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,9 +10,10 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-09-16
-CHANGELOG: v1.0.0-C1B-R19 adds the authenticated reasoning command, bounded
-           deterministic identity derivation, provider-outside-transaction
-           execution, and replay-safe finalization.
+CHANGELOG: v1.1.0-C1B-R23 hardens the authenticated reasoning command through
+           FastAPI's synchronous worker boundary while preserving the
+           provider-outside-transaction and replay-safe composition;
+           v1.0.0-C1B-R19 established the command and its bounded identities.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Prompt and model output are transient; no request
                              authority fields or provider exception details are
@@ -249,13 +250,18 @@ router = APIRouter(prefix="/wilsy-ai", tags=["WILSY AI Reasoning"])
 
 
 @router.post("/reasoning")
-async def execute_reasoning(
+def execute_reasoning(
     request: WilsyAIReasoningRequest,
     context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     provider_binding: ServerOwnedModelProviderBinding | None = Depends(get_reasoning_provider_binding),
 ) -> dict[str, object]:
-    """Reserve, claim, execute once outside Mongo, and finalize evidence."""
+    """Reserve, claim, execute once outside Mongo, and finalize evidence.
+
+    This deliberately synchronous boundary lets FastAPI place the complete
+    PyMongo/provider composition on its worker-thread boundary; the canonical
+    domain authorities remain synchronous and caller-transaction-owned.
+    """
     try:
         key = _validate_key(idempotency_key)
     except _ReasoningHTTPError as error:
@@ -361,7 +367,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.0.0-C1B-R19
+# VERSION: v1.1.0-C1B-R23
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
