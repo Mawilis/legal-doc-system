@@ -1,12 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.8.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY-CERT
+VERSION: v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-15 v1.8.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY-CERT
+CHANGELOG: 2026-09-15 v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY-CERT certifies
+the bounded WILSY AI Legal Tool Gateway eligibility for seven legal personas,
+with tenant clients and administrative roles denied and no financial authority.
+2026-09-15 v1.8.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY-CERT
 certifies the explicit legal-practice role vocabulary and least-authority matrix.
 2026-09-13 v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
 certifies billing-intelligence evidence-read eligibility for exactly the four
@@ -36,7 +39,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.12.0-L7B-LEGAL-OPERATIONS-IAM-ELIGIBILITY"
+    assert VERSION == "v1.13.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -68,13 +71,13 @@ def test_matrix_boundaries() -> None:
 def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     """Each legal persona has bounded eligibility and no financial execution."""
     expected = {
-        "tenant_legal_partner": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read"},
-        "tenant_legal_attorney": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read"},
-        "tenant_legal_paralegal": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read"},
-        "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read"},
-        "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read"},
-        "tenant_sheriff": {"legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write"},
-        "tenant_deputy": {"legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write"},
+        "tenant_legal_partner": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read"},
+        "tenant_legal_attorney": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read"},
+        "tenant_legal_paralegal": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read"},
+        "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read"},
+        "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read"},
+        "tenant_sheriff": {"legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read"},
+        "tenant_deputy": {"legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read"},
         "tenant_legal_client": {"legal_invoice_read"},
     }
     assert set(expected) <= TENANT_ROLES
@@ -198,6 +201,59 @@ def test_billing_intelligence_evidence_read_eligibility_is_general_roles_only() 
         assert all(tenant_role_operation_eligibility(role, malformed) == DENY for role in TENANT_ROLES)
     assert requires_system_authority("billing_intelligence_evidence") is SystemAuthorityClassification.UNKNOWN
 
+
+def test_wilsy_ai_legal_tool_gateway_eligibility_is_bounded_and_nonfinancial() -> None:
+    """Gateway eligibility is limited to legal personas and cannot cross-grant."""
+
+    operation = "wilsy_ai_legal_tool_read"
+    eligible_roles = {
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+        "tenant_legal_finance",
+        "tenant_sheriff",
+        "tenant_deputy",
+    }
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == eligible_roles
+    assert tenant_role_operation_eligibility("tenant_legal_client", operation) == DENY
+    assert all(
+        tenant_role_operation_eligibility(role, operation) == DENY
+        for role in {
+            "tenant_owner",
+            "tenant_admin",
+            "tenant_manager",
+            "tenant_auditor",
+            "tenant_inbound_collection_authorization_admin",
+            "tenant_inbound_merchant_configuration_admin",
+            "tenant_inbound_provider_security_admin",
+            "tenant_inbound_provider_policy_admin",
+            "tenant_inbound_provider_policy_activation_admin",
+        }
+    )
+    assert all(
+        tenant_role_operation_eligibility(role, "financial_execution") == DENY
+        for role in eligible_roles
+    )
+    assert tenant_role_operation_eligibility("tenant_legal_finance", "legal_instruction_read") == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_finance", "legal_attempt_read") == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_finance", "legal_return_read") == DENY
+    for role in ("tenant_sheriff", "tenant_deputy"):
+        assert tenant_role_operation_eligibility(role, "legal_billing_read") == DENY
+        assert tenant_role_operation_eligibility(role, "legal_invoice_read") == DENY
+    for malformed in ("wilsy_ai_legal_tool", "wilsy_ai_legal_tool_read ", " wilsy_ai_legal_tool_read", "WILSY_AI_LEGAL_TOOL_READ", "wilsy_ai:*"):
+        assert all(
+            tenant_role_operation_eligibility(role, malformed) == DENY
+            for role in TENANT_ROLES
+        )
+    assert requires_system_authority(operation) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+
 def test_profile_policy_is_bounded_and_disjoint() -> None:
     assert allowed_profile_mutation_fields("tenant_owner") == PROFILE_MUTABLE_FIELDS_V1
     assert allowed_profile_mutation_fields("tenant_admin") == PROFILE_MUTABLE_FIELDS_V1
@@ -235,7 +291,7 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.7.0-M14-P3-BILLING-INTELLIGENCE-EVIDENCE-READ-ELIGIBILITY-CERT
+# VERSION: v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: WILSY AI capacity-read and billing-intelligence evidence-read eligibility remain policy-only; no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny

@@ -1,11 +1,13 @@
 """TITLE: WILSY OS Tenant Authorization Real-Mongo Certification.
-VERSION: v1.1.0-TENANT-AUTHORIZATION-REAL-MONGO-CERT
+VERSION: v1.1.1-TENANT-AUTHORIZATION-REAL-MONGO-CERT
 AUTHORITY: Evidence-only certification of frozen tenant authorization composition.
 EPITOME: Exercises governed repositories against one isolated replica-set database.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_tenant_authorization_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.1.0 expands durable Mongo current-truth, uniqueness, outage, and no-mutation certification coverage.
+CHANGELOG: v1.1.1 routes the principal reader adapter through the concrete
+PrincipalAuthorityRepository.resolve protocol seam without changing IAM policy.
+v1.1.0 expands durable Mongo current-truth, uniqueness, outage, and no-mutation certification coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: Local UUID database only; no credentials or production data are emitted.
 TENANT BOUNDARY: Every read and write is explicitly scoped to the generated tenant and principal.
@@ -39,7 +41,7 @@ from tools.eos.auth.tenant_membership_repository import TenantMembershipReposito
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
 from tools.eos.auth.tenant_authorization import TenantAuthorizationReason, authorize_tenant_operation
 
-VERSION = "v1.1.0-TENANT-AUTHORIZATION-REAL-MONGO-CERT"
+VERSION = "v1.1.1-TENANT-AUTHORIZATION-REAL-MONGO-CERT"
 SHARED_MONGO_DISRUPTION_REQUIRED = False
 REQUIRED_REAL_MONGO_PROPERTIES = tuple(f"{i:02d}_{name}" for i, name in enumerate(("mongo_identity_isolation", "positive_persisted_authorization", "principal_absent", "principal_inactive", "corrupt_persisted_principal", "membership_absent", "membership_suspended", "membership_revoked", "business_role_absent", "multiple_active_business_roles", "authorization_role_absent", "authorization_role_revoked", "wrong_tenant", "wrong_principal", "principal_uniqueness", "membership_uniqueness", "role_assignment_uniqueness", "durable_current_truth_refresh", "positive_no_mutation", "negative_no_mutation", "financial_no_mutation", "financial_execution_prohibited", "principal_repository_outage", "membership_repository_outage", "business_role_repository_outage", "authorization_role_repository_outage", "cleanup", "no_transport_authority"), 1))
 
@@ -148,7 +150,7 @@ class _PrincipalReader:
         self.collection = collection
 
     def resolve(self, principal_id: str) -> object:
-        return PrincipalAuthorityRepository.get(principal_id, collection=self.collection)
+        return PrincipalAuthorityRepository.resolve(principal_id, collection=self.collection)
 
 
 class _MembershipReader:
@@ -220,7 +222,7 @@ def test_tenant_authorization_real_mongo_matrix() -> None:
 
 
 # ARTIFACT: test_tenant_authorization_real_mongo.py
-# VERSION: v1.1.0-TENANT-AUTHORIZATION-REAL-MONGO-CERT
+# VERSION: v1.1.1-TENANT-AUTHORIZATION-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: isolated real-Mongo tenant authorization composition evidence only
 # TENANT POSTURE: generated UUID database and exact principal/tenant keys
 # FAIL-CLOSED POSTURE: unavailable, absent, inactive, ambiguous, and financial paths deny

@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT
+VERSION: v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,14 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-15 v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT adds explicit
+CHANGELOG: 2026-09-15 v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT adds direct
+PrincipalReader.resolve identity/session protocol and transaction-ownership
+proof while preserving the exact gateway binding and financial firewall.
+2026-09-15 v1.8.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT certifies the
+exact own-tenant WILSY AI Legal Tool Gateway read binding, its canonical
+permission metadata, and every current-truth/fail-closed gate without granting
+underlying Legal Operations authority or financial execution.
+2026-09-15 v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT adds explicit
 legal-operation bindings and preserves all conjunctive denial gates.
 certifies the exact billing-intelligence evidence-read binding alongside the
 existing WILSY AI capacity binding, including full current-truth conjunctions
@@ -60,7 +67,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.7.0-L7A-LEGAL-OPERATIONS-IAM-BINDING-CERT"
+VERSION = "v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -688,7 +695,7 @@ def test_permission_operation_binding_remains_exact() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.11.0-L7B-LEGAL-OPERATIONS-IAM-BINDING"
+    assert ta.VERSION == "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -697,6 +704,246 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     )
     assert list(ta._BINDINGS).count("wilsy_ai_usage_capacity_read") == 1
     assert list(ta._BINDINGS).count("billing_intelligence_evidence_read") == 1
+
+
+def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
+    """Gateway reads require canonical own-tenant IAM and never create authority."""
+
+    assert ta.VERSION == "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING"
+    assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
+    assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
+
+    metadata = permission_metadata("wilsy_ai:legal_tool:read")
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.tenant_membership_required is True
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+
+    authorized = _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_legal_attorney",
+        "LEGAL_ATTORNEY",
+    )
+
+    assert _decision(
+        permission_id="legal_operations:instruction:read",
+        operation="wilsy_ai_legal_tool_read",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    assert _decision(
+        permission_id="unknown",
+        operation="wilsy_ai_legal_tool_read",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.PERMISSION_UNKNOWN
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation=" wilsy_ai_legal_tool_read",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.INVALID_INPUT
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        tenant_id="foreign-tenant",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        principal_repository=_principal(status=PrincipalStatus.SUSPENDED),
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.PRINCIPAL_INACTIVE
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        membership_repository=_membership(status=TenantMembershipStatus.SUSPENDED),
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.MEMBERSHIP_INACTIVE
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments(revoked_roles=("LEGAL_ATTORNEY",)),
+    ).reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+    assert _decision(
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="financial_execution",
+        business_repository=_business("tenant_legal_attorney"),
+        assignment_repository=_assignments("LEGAL_ATTORNEY"),
+    ).reason is TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED
+
+
+def test_principal_reader_resolve_preserves_identity_session_and_ownership() -> None:
+    """The resolve protocol receives caller truth without transaction authority."""
+
+    session = object()
+    principal_ids: list[str] = []
+    principal_sessions: list[object] = []
+    transaction_calls: list[str] = []
+
+    class _TransactionProbe:
+        def start_transaction(self) -> None:
+            transaction_calls.append("start")
+
+        def commit(self) -> None:
+            transaction_calls.append("commit")
+
+        def commit_transaction(self) -> None:
+            transaction_calls.append("commit_transaction")
+
+        def abort(self) -> None:
+            transaction_calls.append("abort")
+
+        def abort_transaction(self) -> None:
+            transaction_calls.append("abort_transaction")
+
+        def retry_transaction(self) -> None:
+            transaction_calls.append("retry")
+
+    class _PrincipalReader(_TransactionProbe):
+        def resolve(self, principal_id: str, *, session: object = None) -> object:
+            principal_ids.append(principal_id)
+            principal_sessions.append(session)
+            return _StatusRecord(PrincipalStatus.ACTIVE)
+
+    class _MembershipReader(_TransactionProbe):
+        def __init__(self, status: TenantMembershipStatus) -> None:
+            self.status = status
+
+        def resolve(
+            self, principal_id: str, tenant_id: str, *, session: object = None
+        ) -> object:
+            assert (principal_id, tenant_id) == (_PID, _TENANT)
+            assert session is session_object
+            return _StatusRecord(self.status)
+
+    class _RoleReader(_TransactionProbe):
+        def __init__(self, active: set[str]) -> None:
+            self.active = active
+
+        def resolve(
+            self,
+            principal_id: str,
+            tenant_id: str,
+            role_id: str,
+            *,
+            session: object = None,
+        ) -> object:
+            assert (principal_id, tenant_id) == (_PID, _TENANT)
+            assert session is session_object
+            if role_id not in self.active:
+                raise RoleAssignmentNotFoundError("missing")
+            return _StatusRecord(RoleAssignmentStatus.ACTIVE)
+
+    session_object = session
+    principal = _PrincipalReader()
+    membership = _MembershipReader(TenantMembershipStatus.ACTIVE)
+    business = _RoleReader({"tenant_legal_attorney"})
+    assignments = _RoleReader({"LEGAL_ATTORNEY"})
+
+    result = authorize_tenant_operation(
+        principal_id=_PID,
+        tenant_id=_TENANT,
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        principal_repository=principal,
+        membership_repository=membership,
+        business_role_repository=business,
+        role_assignment_repository=assignments,
+        session=session,
+    )
+    assert result.authorized is True
+    assert principal_ids == [_PID]
+    assert principal_sessions == [session]
+    assert transaction_calls == []
+
+    no_grant = _RoleReader(set())
+    denied_without_assignment = authorize_tenant_operation(
+        principal_id=_PID,
+        tenant_id=_TENANT,
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        principal_repository=principal,
+        membership_repository=membership,
+        business_role_repository=business,
+        role_assignment_repository=no_grant,
+        session=session,
+    )
+    assert denied_without_assignment.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    denied_inactive_membership = authorize_tenant_operation(
+        principal_id=_PID,
+        tenant_id=_TENANT,
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        principal_repository=principal,
+        membership_repository=_MembershipReader(TenantMembershipStatus.SUSPENDED),
+        business_role_repository=business,
+        role_assignment_repository=assignments,
+        session=session,
+    )
+    assert denied_inactive_membership.reason is TenantAuthorizationReason.MEMBERSHIP_INACTIVE
+
+    denied_ineligible_business = authorize_tenant_operation(
+        principal_id=_PID,
+        tenant_id=_TENANT,
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="wilsy_ai_legal_tool_read",
+        principal_repository=principal,
+        membership_repository=membership,
+        business_role_repository=_RoleReader({"tenant_legal_client"}),
+        role_assignment_repository=assignments,
+        session=session,
+    )
+    assert denied_ineligible_business.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    denied_underlying_permission = authorize_tenant_operation(
+        principal_id=_PID,
+        tenant_id=_TENANT,
+        permission_id="legal_operations:instruction:read",
+        operation="wilsy_ai_legal_tool_read",
+        principal_repository=principal,
+        membership_repository=membership,
+        business_role_repository=business,
+        role_assignment_repository=assignments,
+        session=session,
+    )
+    assert denied_underlying_permission.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    denied_financial = authorize_tenant_operation(
+        principal_id=_PID,
+        tenant_id=_TENANT,
+        permission_id="wilsy_ai:legal_tool:read",
+        operation="financial_execution",
+        principal_repository=principal,
+        membership_repository=membership,
+        business_role_repository=business,
+        role_assignment_repository=assignments,
+        session=session,
+    )
+    assert denied_financial.reason is TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED
+    assert transaction_calls == []
 
 
 @pytest.mark.parametrize(
@@ -1283,19 +1530,23 @@ def test_authorization_is_read_only_across_success_denial_and_financial_paths() 
 # 31-32 M14 exact evidence bindings and full-truth successes:
 #     test_m14_evidence_bindings_are_exact_and_unique,
 #     test_billing_intelligence_read_requires_full_current_truth
-# 33 existing M13 binding success: test_wilsy_ai_capacity_binding_remains_authorized_through_current_truth
-# 34-42 M14 crossed/alias/specialized/assignment locks:
+# 33 B4 exact gateway binding and current-truth/fail-closed gates:
+#     test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed
+# 34 B4 principal-reader resolve/session/transaction protocol:
+#     test_principal_reader_resolve_preserves_identity_session_and_ownership
+# 35 existing M13 binding success: test_wilsy_ai_capacity_binding_remains_authorized_through_current_truth
+# 36-44 M14 crossed/alias/specialized/assignment locks:
 #     test_m14_evidence_binding_cross_pairs_and_aliases_fail_closed,
 #     test_billing_intelligence_read_rejects_unrelated_assignments,
 #     test_billing_intelligence_read_missing_inactive_and_wrong_assignments_deny
-# 43 system/cross-tenant lock: test_system_authority_operations_remain_outside_tenant_grants
-# 44 financial lock: test_financial_execution_remains_prohibited_before_final_grant_lookup
-# 45 final assignment scope: test_wrong_assignment_scope_cannot_grant
-# 46 malformed operations: test_malformed_operation_values_fail_closed_before_grant_lookup
-# 47 determinism and immutability: test_decisions_are_deterministic_and_immutable
-# 48 immutable composition binding: test_operation_binding_is_immutable
-# 49 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
-# 50-52 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
+# 45 system/cross-tenant lock: test_system_authority_operations_remain_outside_tenant_grants
+# 46 financial lock: test_financial_execution_remains_prohibited_before_final_grant_lookup
+# 47 final assignment scope: test_wrong_assignment_scope_cannot_grant
+# 48 malformed operations: test_malformed_operation_values_fail_closed_before_grant_lookup
+# 49 determinism and immutability: test_decisions_are_deterministic_and_immutable
+# 50 immutable composition binding: test_operation_binding_is_immutable
+# 51 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
+# 52-54 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
 
 # Caller-owned session propagation contract.
 def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
@@ -1315,7 +1566,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.6.0-M14-P4-BILLING-INTELLIGENCE-EVIDENCE-READ-BINDING-CERT
+# VERSION: v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny

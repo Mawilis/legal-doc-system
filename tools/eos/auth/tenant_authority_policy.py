@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.12.0-L7B-LEGAL-OPERATIONS-IAM-ELIGIBILITY
+VERSION: v1.13.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -8,7 +8,9 @@ outcome/return roles.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-15 v1.12.0-L7B-LEGAL-OPERATIONS-IAM-ELIGIBILITY adds
+CHANGELOG: 2026-09-15 v1.13.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY adds
+dedicated gateway read eligibility without broadening underlying legal roles.
+2026-09-15 v1.12.0-L7B-LEGAL-OPERATIONS-IAM-ELIGIBILITY adds
 explicit eligibility for authenticated field-service outcome and return
 commands while preserving least privilege and denying finance/client mutation.
 2026-09-15 v1.11.0-L7A-LEGAL-OPERATIONS-IAM-ELIGIBILITY adds
@@ -58,7 +60,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.12.0-L7B-LEGAL-OPERATIONS-IAM-ELIGIBILITY"
+VERSION = "v1.13.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -93,7 +95,7 @@ ELIGIBILITY = MappingProxyType({
     "tenant_deputy": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_attempt_read": ELIGIBLE, "legal_attempt_write": ELIGIBLE, "legal_return_read": ELIGIBLE}),
     "tenant_legal_client": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_invoice_read": ELIGIBLE}),
 })
-OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_attempt_outcome_write", "legal_return_write"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read"))
 _eligibility_updates = dict(ELIGIBILITY)
 for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary"):
     _existing = dict(ELIGIBILITY[_role])
@@ -102,6 +104,12 @@ for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant
     _existing["legal_return_write"] = ELIGIBLE
     _eligibility_updates[_role] = MappingProxyType(_existing)
 ELIGIBILITY = MappingProxyType(_eligibility_updates)
+_gateway_updates = dict(ELIGIBILITY)
+for _role in ("tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy"):
+    _role_values = dict(_gateway_updates[_role])
+    _role_values["wilsy_ai_legal_tool_read"] = ELIGIBLE
+    _gateway_updates[_role] = MappingProxyType(_role_values)
+ELIGIBILITY = MappingProxyType(_gateway_updates)
 
 PROFILE_READABLE_FIELDS: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name", "tax_id", "contact_email", "plan", "status", "verified", "checksum", "proof_hash", "compliance_flags", "created_at", "updated_at"})
 PROFILE_MUTABLE_FIELDS_V1: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name"})
@@ -144,7 +152,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.12.0-L7B-LEGAL-OPERATIONS-IAM-ELIGIBILITY
+# VERSION: v1.13.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant WILSY AI and billing-intelligence evidence eligibility requires separate ACTIVE membership and scope checks
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

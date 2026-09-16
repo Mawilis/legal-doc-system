@@ -1,13 +1,13 @@
 """Wilsy OS certificate for authorized tenant merchant-configuration registration.
 
 TITLE: Tenant Inbound Merchant Configuration Issuance Certificate
-VERSION: v1.1.0-M11-R8-R3B-P8-P3B-I2-I1-R2-R1-AUTHORIZED-MERCHANT-CONFIGURATION-LIFECYCLE-CERT
+VERSION: v1.1.1-M11-R8-R3B-P8-P3B-I2-I1-R2-R1-AUTHORIZED-MERCHANT-CONFIGURATION-LIFECYCLE-CERT
 AUTHORITY: Wilsy OS Core Governance; direct unit evidence for the SaaS registration owner.
 EPITOME: Prove replay-first, provenance-bound, current-authority registration without Mongo.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_inbound_merchant_configuration_issuance.py
 COLLABORATION / OWNERSHIP: Test owner certifies the paired issuance owner; frozen P8-P2/P8-P3A owners remain untouched.
 CERTIFICATION / UPDATE DATE: 2026-09-09
-CHANGELOG: v1.1.0-M11-R8-R3B-P8-P3B-I2-I1-R2-R1-AUTHORIZED-MERCHANT-CONFIGURATION-LIFECYCLE-CERT replaces static transaction-ownership checks with runtime caller-session sentinels for cases 65-69; the complete 78-case matrix remains certified.
+CHANGELOG: v1.1.1-M11-R8-R3B-P8-P3B-I2-I1-R2-R1-AUTHORIZED-MERCHANT-CONFIGURATION-LIFECYCLE-CERT replaces the case-70/71 substring security assertion with exact governed authority-token semantics while preserving secret and KMS controls; v1.1.0 replaced static transaction-ownership checks with runtime caller-session sentinels for cases 65-69; the complete matrix remains certified.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only; no secrets, network, Mongo, or provider adapter.
 TENANT BOUNDARY: Every synthetic lookup and persisted evidence row is explicitly tenant scoped.
@@ -63,6 +63,23 @@ from tools.eos.saas.billing.tenant_inbound_merchant_configuration_registry impor
 from tools.eos.saas.domain.tenant_inbound_merchant_configuration import InboundMerchantProviderId
 from tools.eos.saas.billing.tenant_inbound_merchant_configuration_registry import EnablementState
 import tools.eos.saas.billing.tenant_inbound_merchant_configuration_issuance as issuance_module
+
+
+_SECURITY_AUTHORITY_ROLE_IDS = frozenset(
+    {
+        "INBOUND_PROVIDER_SECRET_ADMIN",
+        "tenant_inbound_provider_secret_admin",
+        "INBOUND_PROVIDER_KMS_ADMIN",
+        "tenant_inbound_provider_kms_admin",
+    }
+)
+
+
+def _contains_secret_or_kms_security_fact(role_ids: object) -> bool:
+    """Recognize exact secret/KMS authority tokens, never incidental text."""
+    if not isinstance(role_ids, (list, tuple, set, frozenset)):
+        return False
+    return any(role_id in _SECURITY_AUTHORITY_ROLE_IDS for role_id in role_ids)
 
 
 class Session:
@@ -882,7 +899,16 @@ def test_cases_70_and_71_reenable_after_remediation_has_no_security_fact() -> No
     result = _invoke_lifecycle(setup, api=transition_tenant_inbound_merchant_configuration, prior=EnablementState.DISABLED, target=EnablementState.ENABLED, key="security-reenable", decision="security-reenable")
     assert result.state is EnablementState.ENABLED
     assert [call[5] for call in setup["registry"].transition_calls] == [EnablementState.COMPROMISED, EnablementState.DISABLED, EnablementState.ENABLED]
-    assert not any("secret" in role.lower() or "kms" in role.lower() for role in setup["current"].assignment_role_ids)
+    assert not _contains_secret_or_kms_security_fact(
+        setup["current"].assignment_role_ids
+    )
+
+
+def test_security_fact_classifier_uses_exact_governed_tokens() -> None:
+    """Role names are classified structurally, not by incidental substrings."""
+    assert not _contains_secret_or_kms_security_fact(["tenant_legal_secretary"])
+    assert _contains_secret_or_kms_security_fact(["INBOUND_PROVIDER_SECRET_ADMIN"])
+    assert _contains_secret_or_kms_security_fact(["INBOUND_PROVIDER_KMS_ADMIN"])
 
 
 def test_cases_72_to_77_model_a_and_financial_firewall_is_explicit() -> None:
@@ -905,7 +931,7 @@ def test_case_78_registration_surface_remains_unchanged() -> None:
 
 
 # ARTIFACT: test_tenant_inbound_merchant_configuration_issuance.py
-# VERSION: v1.1.0-M11-R8-R3B-P8-P3B-I2-I1-R2-R1-AUTHORIZED-MERCHANT-CONFIGURATION-LIFECYCLE-CERT
+# VERSION: v1.1.1-M11-R8-R3B-P8-P3B-I2-I1-R2-R1-AUTHORIZED-MERCHANT-CONFIGURATION-LIFECYCLE-CERT
 # AUTHORITY BOUNDARY: direct unit certificate only; no production authority.
 # TENANT POSTURE: synthetic tenant-scoped records and exact session assertions.
 # FAIL-CLOSED POSTURE: all divergence, stale currentness, corruption, and forbidden inputs reject.

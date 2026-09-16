@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Bounded certification for PrincipalAuthorityRepository semantics.
 
-VERSION: v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-CERT
-CHANGELOG: v1.0.0 certifies strict serialization, absence, duplicate, and CAS behavior.
+VERSION: v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-CERT
+CHANGELOG: v1.1.0 certifies the PrincipalReader resolve seam, exact get
+equivalence, collection/session forwarding, and preserved transaction ownership.
+v1.0.0 certifies strict serialization, absence, duplicate, and CAS behavior.
 """
 from dataclasses import dataclass
 from typing import Any
@@ -27,6 +29,7 @@ class Result:
 class FakeCollection:
     def __init__(self) -> None:
         self.rows: dict[str, dict[str, object]] = {}
+        self.last_find_session: object = None
 
     def create_index(self, *_args: Any, **_kwargs: Any) -> str:
         return "principal_identity_unique"
@@ -39,6 +42,7 @@ class FakeCollection:
         self.rows[str(document["principal_id"])] = dict(document)
 
     def find_one(self, query: dict[str, object], *, session: Any = None) -> dict[str, object] | None:
+        self.last_find_session = session
         row = self.rows.get(str(query["principal_id"]))
         return dict(row) if row is not None else None
 
@@ -82,6 +86,28 @@ def test_compare_and_swap_advances_exactly_and_rejects_stale() -> None:
         PrincipalAuthorityRepository.compare_and_swap(authority(PrincipalStatus.ACTIVE, 1), 0, typed(collection))
 
 
+def test_resolve_matches_get_and_forwards_collection_and_session() -> None:
+    collection = FakeCollection()
+    item = authority()
+    PrincipalAuthorityRepository.create(item, typed(collection))
+    session: Any = object()
+    assert PrincipalAuthorityRepository.resolve(
+        item.principal_id,
+        typed(collection),
+        session=session,
+    ) == PrincipalAuthorityRepository.get(
+        item.principal_id,
+        typed(collection),
+        session=session,
+    ) == item
+    assert collection.last_find_session is session
+    with pytest.raises(PrincipalAuthorityNotFoundError) as resolved_error:
+        PrincipalAuthorityRepository.resolve("missing", typed(collection), session=session)
+    with pytest.raises(PrincipalAuthorityNotFoundError) as get_error:
+        PrincipalAuthorityRepository.get("missing", typed(collection), session=session)
+    assert str(resolved_error.value) == str(get_error.value)
+
+
 def test_revoked_snapshot_survives_stale_active_and_suspended_writes() -> None:
     collection = FakeCollection()
     PrincipalAuthorityRepository.create(authority(), typed(collection))
@@ -99,5 +125,5 @@ def test_repository_does_not_own_transition_policy_or_extra_authority() -> None:
 
 
 # ARTIFACT: test_principal_authority_repository.py
-# VERSION: v1.0.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-CERT
+# VERSION: v1.1.0-WILSY-PRINCIPAL-AUTHORITY-REPOSITORY-CERT
 # END OF WILSY OS SOVEREIGN ARTIFACT
