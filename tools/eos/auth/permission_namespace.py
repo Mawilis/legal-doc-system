@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.16.0-C1B-R2
+VERSION: v1.17.0-C1C-R1
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
@@ -9,8 +9,10 @@ granting typed subject authority, possession, cross-tenant authority, or
 financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-13.
+CERTIFICATION/UPDATE DATE: 2026-09-17.
 CHANGELOG:
+    2026-09-17 v1.17.0-C1C-R1 adds the dedicated own-tenant legal-services
+    execution permission for the governed C1C orchestration route.
     2026-09-16 v1.16.0-C1B-R2 adds the dedicated own-tenant reasoning
     execution permission; it grants no provider, model, financial, or
     cross-tenant authority.
@@ -77,7 +79,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.16.0-C1B-R2"
+VERSION = "v1.17.0-C1C-R1"
 
 
 class PermissionDisposition(StrEnum):
@@ -300,6 +302,11 @@ _PERMISSIONS: Final = MappingProxyType(
         "wilsy_ai:reasoning:execute": _meta(
             "wilsy_ai:reasoning:execute", "TENANT", "TENANT",
             "execute authenticated WILSY AI reasoning admission",
+            tenant=True,
+        ),
+        "wilsy_ai:legal_services:execute": _meta(
+            "wilsy_ai:legal_services:execute", "TENANT", "TENANT",
+            "execute authenticated own-tenant WILSY AI Legal Services orchestration",
             tenant=True,
         ),
         "billing_intelligence:evidence:read": _meta(
@@ -573,7 +580,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.16.0-C1B-R2
+# VERSION: v1.17.0-C1C-R1
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
