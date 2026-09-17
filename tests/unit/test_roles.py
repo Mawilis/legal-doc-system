@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT
+VERSION: v1.12.0-C1C-R1
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -59,7 +59,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.15.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS"
+    assert POLICY_VERSION == "v1.17.0-C1C-R1"
 
 VERSION = "v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT"
 
@@ -138,7 +138,7 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "wilsy_ai:reasoning:execute", "wilsy_ai:legal_services:execute"]
     assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read"]
 
 
@@ -151,10 +151,12 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:billing:read", "legal_operations:invoice:read",
         "legal_operations:return:write",
         "wilsy_ai:legal_tool:read",
+        "wilsy_ai:legal_services:execute",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"] == [
         "legal_operations:billing:read", "legal_operations:invoice:read",
         "wilsy_ai:legal_tool:read",
+        "wilsy_ai:legal_services:execute",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
@@ -348,6 +350,16 @@ def test_wilsy_ai_capacity_read_is_granted_only_to_approved_roles() -> None:
             assert permission not in ROLE_PERMISSIONS_MAP[role]
 
 
+def test_c1c_legal_services_permission_is_granted_only_to_intended_roles() -> None:
+    """C1C entry permission is explicit and does not replace tool IAM."""
+    permission = "wilsy_ai:legal_services:execute"
+    intended = {"LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "LEGAL_FINANCE", "SHERIFF", "DEPUTY", "ENTERPRISE_ADMIN"}
+    assert set(get_roles_granting_permission(permission)) == intended
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role not in intended:
+            assert permission not in grants
+
+
 def test_billing_intelligence_evidence_read_is_granted_only_to_approved_roles() -> None:
     """Billing-intelligence evidence read is limited to two static roles."""
     permission = "billing_intelligence:evidence:read"
@@ -437,7 +449,7 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT
+# VERSION: v1.12.0-C1C-R1
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity and billing-intelligence evidence reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

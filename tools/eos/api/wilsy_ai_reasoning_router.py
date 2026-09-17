@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.1.0-C1B-R23
+VERSION: v1.2.0-C1C-R1-SERVICE-DELEGATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,7 +10,8 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-09-16
-CHANGELOG: v1.1.0-C1B-R23 hardens the authenticated reasoning command through
+CHANGELOG: v1.2.0-C1C-R1-SERVICE-DELEGATION delegates to the reusable C1B
+service without changing behavior; v1.1.0-C1B-R23 hardens the authenticated reasoning command through
            FastAPI's synchronous worker boundary while preserving the
            provider-outside-transaction and replay-safe composition;
            v1.0.0-C1B-R19 established the command and its bounded identities.
@@ -52,6 +53,7 @@ from tools.eos.intelligence.wilsy_ai_reasoning_orchestrator import (
     WilsyAIReasoningOrchestrator,
     WilsyAIReasoningOrchestratorError,
 )
+from tools.eos.intelligence.wilsy_ai_reasoning_service import WilsyAIReasoningService
 from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
     COLLECTION as ENTITLEMENT_COLLECTION,
     WilsyAIEntitlementRegistry,
@@ -275,12 +277,12 @@ def execute_reasoning(
         admission_registry = WilsyAIUsageAdmissionRegistry(collections["admission"])
         invocation_registry = AIModelInvocationRegistry(collections["invocation"])
         observation_registry = WilsyAIUsageObservationRegistry(collections["observation"])
-        orchestrator = WilsyAIReasoningOrchestrator(
+        orchestrator = WilsyAIReasoningService(WilsyAIReasoningOrchestrator(
             admission_registry=admission_registry,
             invocation_registry=invocation_registry,
             observation_registry=observation_registry,
             binding=provider_binding,
-        )
+        ))
     except Exception as error:
         raise _error_response(error)
 
@@ -367,7 +369,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.1.0-C1B-R23
+# VERSION: v1.2.0-C1C-R1-SERVICE-DELEGATION
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions

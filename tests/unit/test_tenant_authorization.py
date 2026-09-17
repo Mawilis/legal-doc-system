@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT
+VERSION: v1.10.0-C1C-R1B-WILSY-AI-LEGAL-TOOL-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -10,6 +10,8 @@ CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG: 2026-09-15 v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT adds direct
 PrincipalReader.resolve identity/session protocol and transaction-ownership
 proof while preserving the exact gateway binding and financial firewall.
+2026-09-17 v1.10.0-C1C-R1B refreshes stale canonical-version assertions
+without changing authorization decisions or permission scope.
 2026-09-15 v1.8.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT certifies the
 exact own-tenant WILSY AI Legal Tool Gateway read binding, its canonical
 permission metadata, and every current-truth/fail-closed gate without granting
@@ -695,7 +697,7 @@ def test_permission_operation_binding_remains_exact() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING"
+    assert ta.VERSION == "v1.14.0-C1C-R1"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -709,7 +711,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING"
+    assert ta.VERSION == "v1.14.0-C1C-R1"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -1566,7 +1568,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT
+# VERSION: v1.10.0-C1C-R1B-WILSY-AI-LEGAL-TOOL-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny

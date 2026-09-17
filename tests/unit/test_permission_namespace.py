@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT
+VERSION: v1.13.0-C1C-R1
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -57,7 +57,7 @@ VERSION = "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT"
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.15.0-L7B-WILSY-AI-LEGAL-TOOL"
+    assert POLICY_VERSION == "v1.17.0-C1C-R1"
 
 
 def test_permission_canon_properties() -> None:
@@ -82,6 +82,7 @@ def test_permission_canon_properties() -> None:
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
         "wilsy_ai:legal_tool:read",
+        "wilsy_ai:legal_services:execute",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:allocation:read",
@@ -120,9 +121,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 51
+    ) == 53
 
-    assert len(rows) == 54
+    assert len(rows) == 56
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -143,6 +144,15 @@ def test_permission_canon_properties() -> None:
     assert gateway.financial_execution_capable is False
     assert gateway.authorizes_by_itself is False
     assert gateway.disposition is PermissionDisposition.CANONICAL
+
+    legal_services = permission_metadata("wilsy_ai:legal_services:execute")
+    assert legal_services.namespace == "TENANT"
+    assert legal_services.scope_kind == "TENANT"
+    assert legal_services.tenant_membership_required is True
+    assert legal_services.cross_tenant_capable is False
+    assert legal_services.financial_execution_capable is False
+    assert legal_services.authorizes_by_itself is False
+    assert legal_services.disposition is PermissionDisposition.CANONICAL
 
     wilsy_ai_capacity = permission_metadata("wilsy_ai:usage_capacity:read")
     assert wilsy_ai_capacity.namespace == "TENANT"
@@ -441,7 +451,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT
+# VERSION: v1.13.0-C1C-R1
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
