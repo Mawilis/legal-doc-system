@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.13.0-C1C-R1
+VERSION: v1.14.0-C1E-R1
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-17 v1.14.0-C1E-R1 certifies the dedicated legal-advisory
+    generate/read permissions and exact tenant-only metadata.
     2026-09-15 v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT certifies
     the dedicated tenant-scoped gateway read permission and its non-financial,
     non-self-authorizing metadata.
@@ -52,12 +54,12 @@ import json
 
 import pytest
 
-VERSION = "v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT"
+VERSION = "v1.13.0-C1E-R1-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.17.0-C1C-R1"
+    assert POLICY_VERSION == "v1.18.0-C1E-R1"
 
 
 def test_permission_canon_properties() -> None:
@@ -83,6 +85,8 @@ def test_permission_canon_properties() -> None:
         "billing_intelligence:evidence:read",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
+        "wilsy_ai:legal_advisory:generate",
+        "wilsy_ai:legal_advisory:read",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:allocation:read",
@@ -121,9 +125,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 53
+    ) == 55
 
-    assert len(rows) == 56
+    assert len(rows) == 58
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -451,7 +455,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.13.0-C1C-R1
+# VERSION: v1.14.0-C1E-R1
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

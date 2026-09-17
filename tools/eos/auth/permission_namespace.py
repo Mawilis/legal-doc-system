@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.17.0-C1C-R1
+VERSION: v1.18.0-C1E-R1
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
@@ -11,6 +11,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-17.
 CHANGELOG:
+    2026-09-17 v1.18.0-C1E-R1 adds dedicated legal-advisory generate/read
+    permissions without legal execution, provider, or financial authority.
     2026-09-17 v1.17.0-C1C-R1 adds the dedicated own-tenant legal-services
     execution permission for the governed C1C orchestration route.
     2026-09-16 v1.16.0-C1B-R2 adds the dedicated own-tenant reasoning
@@ -79,7 +81,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.17.0-C1C-R1"
+VERSION = "v1.18.0-C1E-R1"
 
 
 class PermissionDisposition(StrEnum):
@@ -308,6 +310,14 @@ _PERMISSIONS: Final = MappingProxyType(
             "wilsy_ai:legal_services:execute", "TENANT", "TENANT",
             "execute authenticated own-tenant WILSY AI Legal Services orchestration",
             tenant=True,
+        ),
+        "wilsy_ai:legal_advisory:generate": _meta(
+            "wilsy_ai:legal_advisory:generate", "TENANT", "TENANT",
+            "generate own-tenant evidence-backed legal advisory", tenant=True,
+        ),
+        "wilsy_ai:legal_advisory:read": _meta(
+            "wilsy_ai:legal_advisory:read", "TENANT", "TENANT",
+            "read own-tenant evidence-backed legal advisory", tenant=True,
         ),
         "billing_intelligence:evidence:read": _meta(
             "billing_intelligence:evidence:read",
@@ -580,7 +590,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.17.0-C1C-R1
+# VERSION: v1.18.0-C1E-R1
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

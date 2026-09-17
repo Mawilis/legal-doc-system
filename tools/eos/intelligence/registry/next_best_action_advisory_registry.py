@@ -1,7 +1,7 @@
 """WILSY OS C1D caller-session registry for advisory evidence.
 
 TITLE: Next-Best-Action Advisory Registry
-VERSION: v1.0.0-C1D-R1
+VERSION: v1.1.0-C1E-R1
 AUTHORITY: Wilsy OS Core Governance; append-only advisory persistence boundary
 EPITOME: Persists immutable tenant-scoped C1D envelopes with exact replay,
          strict corruption handling, and derived supersession status.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intell
 COLLABORATION / OWNERSHIP: C1D domain supplies validated envelopes; callers own
                             Mongo sessions, transactions, commit, abort, and retry.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.0-C1D-R1 establishes majority+journal persistence, deterministic
+CHANGELOG: v1.1.0-C1E-R1 adds tenant-scoped current-predecessor hydration while
+           preserving majority+journal persistence, deterministic
            tenant indexes, immutable replay, and forward-only supersession lineage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Only bounded advisory identities and evidence refs persist.
@@ -33,7 +34,7 @@ from tools.eos.intelligence.domain.next_best_action_advisory import (
     NextBestActionAdvisoryError,
 )
 
-VERSION: Final[str] = "v1.0.0-C1D-R1"
+VERSION: Final[str] = "v1.1.0-C1E-R1"
 COLLECTION: Final[str] = "wilsy_ai_next_best_action_advisories"
 WRITE_CONCERN = WriteConcern(w="majority", j=True)
 READ_CONCERN = ReadConcern("majority")
@@ -147,11 +148,41 @@ class NextBestActionAdvisoryRegistry:
         except PyMongoError as error:
             raise NextBestActionAdvisoryRegistryError("C1D_PERSISTENCE_UNAVAILABLE") from error
 
+    def get_current_by_scope(self, *, tenant_id: str, scope_ref: str, policy_id: str, policy_version: str, session: Any) -> NextBestActionAdvisory:
+        """Resolve the sole current advisory for an exact tenant/policy scope.
+
+        The registry performs strict hydration and reverse-successor checks but
+        never starts or controls a transaction. Multiple current rows or
+        malformed durable rows fail closed.
+        """
+        values = (tenant_id, scope_ref, policy_id, policy_version)
+        if any(not isinstance(value, str) or not value or value != value.strip() for value in values):
+            raise NextBestActionAdvisoryRegistryError("C1D_INPUT_INVALID")
+        self._require_session(session)
+        try:
+            cursor = self._collection.find({"tenant_id": tenant_id, "scope_ref": scope_ref, "policy_id": policy_id, "policy_version": policy_version}, session=session)
+            rows = list(cursor)
+            hydrated = [_hydrate(row) for row in rows]
+            currents: list[NextBestActionAdvisory] = []
+            for candidate in hydrated:
+                successor = self._collection.find_one({"tenant_id": tenant_id, "supersedes_advisory_id": candidate.advisory_id}, session=session)
+                if successor is None:
+                    currents.append(candidate)
+                else:
+                    _hydrate(successor)
+            if len(currents) != 1:
+                raise NextBestActionAdvisoryRegistryError("C1D_CURRENT_LINEAGE_INVALID" if currents else "C1D_CURRENT_NOT_FOUND")
+            return currents[0]
+        except NextBestActionAdvisoryRegistryError:
+            raise
+        except PyMongoError as error:
+            raise NextBestActionAdvisoryRegistryError("C1D_PERSISTENCE_UNAVAILABLE") from error
+
 
 __all__ = ["VERSION", "COLLECTION", "WRITE_CONCERN", "READ_CONCERN", "ensure_indexes", "NextBestActionAdvisoryRegistry", "NextBestActionAdvisoryRegistryError", "NextBestActionAdvisoryConflictError"]
 
 # ARTIFACT: next_best_action_advisory_registry.py
-# VERSION: v1.0.0-C1D-R1
+# VERSION: v1.1.0-C1E-R1
 # AUTHORITY BOUNDARY: append-only advisory evidence persistence only
 # TENANT POSTURE: exact tenant predicates; foreign absence is non-disclosing
 # FAIL-CLOSED POSTURE: corruption, duplicate, divergence, and lineage conflicts reject

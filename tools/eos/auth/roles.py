@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.17.0-C1C-R1
+VERSION: v1.18.0-C1E-R1
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -10,6 +10,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-17.
 CHANGELOG:
+    2026-09-17 v1.18.0-C1E-R1 grants legal-advisory generate/read only to
+    the seven approved tenant legal roles.
     2026-09-17 v1.17.0-C1C-R1 grants the dedicated legal-services execution
     permission to the approved legal, sheriff, deputy, and enterprise roles.
     2026-09-16 v1.16.0-C1B-R2 grants reasoning execution only to the
@@ -77,7 +79,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.17.0-C1C-R1"
+VERSION = "v1.18.0-C1E-R1"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -224,6 +226,8 @@ for _role_name in ("ENTERPRISE_ADMIN",):
     ROLE_PERMISSIONS_MAP[_role_name].append("wilsy_ai:reasoning:execute")
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "LEGAL_FINANCE", "SHERIFF", "DEPUTY", "ENTERPRISE_ADMIN"):
     ROLE_PERMISSIONS_MAP[_role_name].append("wilsy_ai:legal_services:execute")
+for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "LEGAL_FINANCE", "SHERIFF", "DEPUTY"):
+    ROLE_PERMISSIONS_MAP[_role_name].extend(("wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read"))
 
 
 def get_permissions_for_roles(
@@ -275,7 +279,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.17.0-C1C-R1
+# VERSION: v1.18.0-C1E-R1
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; WILSY AI capacity and billing-intelligence evidence reads remain own-tenant scoped
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
