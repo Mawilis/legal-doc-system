@@ -1,14 +1,15 @@
 """C1D-R1 unit certificate for the immutable advisory foundation.
 
 TITLE: Next-Best-Action Advisory Unit Certificate
-VERSION: v1.0.0-C1D-R1
+VERSION: v1.1.0-C1E-R1
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves strict evidence binding, deterministic identity, replay-safe
          lineage, and advisory-only boundaries without database or provider calls.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_next_best_action_advisory.py
 COLLABORATION / OWNERSHIP: C1D domain and Legal adapter certificate.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.0-C1D-R1 adds focused immutable-envelope and adapter coverage.
+CHANGELOG: v1.1.0-C1E-R1 refreshes typed result-reference fixtures while
+           preserving immutable-envelope and adapter coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 from datetime import datetime, timezone
@@ -39,7 +40,7 @@ def _evidence(*, tool: str = "legal.attempt.read.v1", result: dict[str, object] 
     result_fp = hashlib.sha3_512(json.dumps(result, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
     contract = TOOL_CONTRACTS[tool]
     root = AIToolOrchestration(ROOT_ID, TENANT, PRINCIPAL, ROOT_ID, OrchestrationPhase.COMPLETED, "planner-1", tool_invocation_id="inv-1", synthesis_invocation_id="synth-1", tool_identity=tool, resource_identity="attempt-1", evidence_references=("result-1",), outcome="TOOL_ASSISTED", revision=1, occurred_at=STAMP)
-    invocation = LegalAIToolInvocationEvidence("inv-1", TENANT, PRINCIPAL, tool, "v1", GATEWAY_PERMISSION, contract.underlying_permission, contract.capability, "role", "entitlement-1", 1, "a" * 128, "tier", "b" * 128, "capacity:1", "c" * 128, ROOT_ID, "d" * 128, "READ", "attempt-1", result_fp, STAMP)
+    invocation = LegalAIToolInvocationEvidence("inv-1", TENANT, PRINCIPAL, tool, "v1", GATEWAY_PERMISSION, contract.underlying_permission, contract.capability, "role", "entitlement-1", 1, "a" * 128, "tier", "b" * 128, "capacity:1", "c" * 128, ROOT_ID, "d" * 128, "READ", f"{contract.entity_type}:attempt-1", result_fp, STAMP)
     return root, invocation, result
 
 
@@ -125,6 +126,6 @@ def test_supersession_self_reference_rejected():
 
 
 # ARTIFACT: test_next_best_action_advisory.py
-# VERSION: v1.0.0-C1D-R1
+# VERSION: v1.1.0-C1E-R1
 # CERTIFICATION: focused unit proof only; no Mongo or provider execution
 # END OF WILSY OS SOVEREIGN ARTIFACT

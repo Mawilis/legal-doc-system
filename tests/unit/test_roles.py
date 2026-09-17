@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.12.0-C1C-R1
+VERSION: v1.13.0-C1E-R1
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,6 +8,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-13.
 CHANGELOG:
+    2026-09-17 v1.13.0-C1E-R1 certifies the seven-role legal-advisory
+    generate/read grant set and explicit exclusion of all other roles.
     2026-09-15 v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT certifies the
     dedicated gateway grant set and proves it does not manufacture underlying
     legal-operation permissions.
@@ -59,9 +61,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.17.0-C1C-R1"
+    assert POLICY_VERSION == "v1.18.0-C1E-R1"
 
-VERSION = "v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT"
+VERSION = "v1.12.0-C1E-R1-ROLE-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -152,11 +154,13 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:return:write",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
+        "wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_FINANCE"] == [
         "legal_operations:billing:read", "legal_operations:invoice:read",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
+        "wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
@@ -176,6 +180,11 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert "legal_operations:billing:read" not in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:invoice:read" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert "wilsy_ai:legal_tool:read" not in ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"]
+    for role in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "LEGAL_FINANCE", "SHERIFF", "DEPUTY"):
+        assert "wilsy_ai:legal_advisory:generate" in ROLE_PERMISSIONS_MAP[role]
+        assert "wilsy_ai:legal_advisory:read" in ROLE_PERMISSIONS_MAP[role]
+    for role in ("ENTERPRISE_ADMIN", "AUDITOR", "LEGAL_CLIENT", "SOVEREIGN_ARCHITECT", "SERVICE_WORKER"):
+        assert "wilsy_ai:legal_advisory:generate" not in ROLE_PERMISSIONS_MAP[role]
 
 
 
@@ -449,7 +458,7 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.12.0-C1C-R1
+# VERSION: v1.13.0-C1E-R1
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity and billing-intelligence evidence reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

@@ -1,7 +1,7 @@
 """WILSY OS C1D deterministic Legal Operations advisory adapter.
 
 TITLE: Legal Operations Next-Best-Action Adapter
-VERSION: v1.0.0-C1D-R1
+VERSION: v1.1.0-C1E-R1
 AUTHORITY: Wilsy OS Core Governance; server-owned advisory policy
 EPITOME: Converts complete C1C TOOL_ASSISTED evidence into one conservative,
          review-only advisory without calling providers or mutating legal state.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intell
 COLLABORATION / OWNERSHIP: Consumes C1C orchestration and L7B invocation facts;
                             C1C, Legal Operations, IAM, and Kennel retain authority.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.0-C1D-R1 establishes the seven-tool allowlist, five-category
+CHANGELOG: v1.1.0-C1E-R1 enforces typed C1D result references and preserves
+           the seven-tool allowlist, five-category
            evidence binding, exact C1C result fingerprint validation, and review-only templates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Legal projections are transient; only identities and fingerprints persist.
@@ -36,7 +37,7 @@ from tools.eos.intelligence.domain.next_best_action_advisory import (
     build_advisory,
 )
 
-VERSION: Final[str] = "v1.0.0-C1D-R1"
+VERSION: Final[str] = "v1.1.0-C1E-R1"
 POLICY_ID: Final[str] = "WILSY_AI_LEGAL_NEXT_BEST_ACTION_REVIEW_POLICY"
 POLICY_VERSION: Final[str] = "v1"
 RISK_LEVEL: Final[str] = "MEDIUM"
@@ -109,7 +110,8 @@ def build_legal_advisory(*, tenant_id: str, scope_ref: str, root: AIToolOrchestr
         raise LegalOperationsAdvisoryError("C1D_RESULT_TENANT_MISMATCH")
     if _result_fingerprint(result) != invocation.result_fingerprint:
         raise LegalOperationsAdvisoryError("C1D_RESULT_FINGERPRINT_MISMATCH")
-    if root.resource_identity != invocation.result_reference or not root.evidence_references:
+    expected_reference = f"{contract.entity_type}:{root.resource_identity}" if root.resource_identity else ""
+    if invocation.result_reference != expected_reference or not root.evidence_references:
         raise LegalOperationsAdvisoryError("C1D_RESULT_REFERENCE_MISMATCH")
     if not invocation.entitlement_id or not invocation.entitlement_fingerprint or not invocation.capacity_evidence_reference or not invocation.capacity_evidence_fingerprint:
         raise LegalOperationsAdvisoryError("C1D_ENTITLEMENT_CAPACITY_REQUIRED")
@@ -148,7 +150,7 @@ class LegalOperationsAdvisoryAdapter:
 __all__ = ["VERSION", "POLICY_ID", "POLICY_VERSION", "TOOL_IDENTITIES", "LegalOperationsAdvisoryError", "LegalOperationsAdvisoryAdapter", "build_legal_advisory"]
 
 # ARTIFACT: legal_operations_advisory_adapter.py
-# VERSION: v1.0.0-C1D-R1
+# VERSION: v1.1.0-C1E-R1
 # AUTHORITY BOUNDARY: deterministic advisory proposal only; no legal or execution authority
 # TENANT POSTURE: root, invocation, and transient result tenant must agree exactly
 # FAIL-CLOSED POSTURE: incomplete C1C evidence, unknown tools, mismatched fingerprints, and drift reject
