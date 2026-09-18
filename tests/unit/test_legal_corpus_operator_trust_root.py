@@ -1,33 +1,37 @@
-"""Direct certificate for the R8J-H legal-corpus operator trust root.
+"""Direct certificate for the R8O-P4-R7 legal-corpus operator trust root.
 
 TITLE: WILSY OS Legal Corpus Operator Trust-Root Direct Certificate
-VERSION: v1.1.0-R1D-B0F-B4-R8J-I-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
+VERSION: v1.2.0-R1D-B0F-B4-R8O-P4-R7-C1-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the immutable, one-key, PLATFORM-scoped Ed25519 public-key
-         trust root without issuing authorization or accessing private keys.
+         trust root after its human-authorized RETIRED lifecycle transition,
+         without issuing authorization or accessing private keys.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_operator_trust_root.py
-COLLABORATION / OWNERSHIP: Direct certificate for the R8J-H production
+COLLABORATION / OWNERSHIP: Direct certificate for the R8O-P4-R7 production
                            trust-root artifact; signed authorization and the
-                           operator command remain separate future gates.
+                           operator command remain separate boundaries.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.1.0-R1D-B0F-B4-R8J-I-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
-           evolves historical C2 zero-key bootstrap evidence into direct
-           certification of the current exact one-key production root while
-           retaining immutable, cryptographic, and fail-closed coverage.
+CHANGELOG: v1.2.0-R1D-B0F-B4-R8O-P4-R7-C1-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
+           certifies the exact one-key RETIRED production record, revision 2,
+           its recomputed fingerprint, unchanged validity interval, and
+           ACTIVE-only fresh-authorization boundary.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Deterministic public test material only; no private
                             key, secret, network, Mongo, environment, or file
                             key loading is used.
 TENANT BOUNDARY: PLATFORM trust-root scope only; tenant and principal authority
                  are explicitly excluded.
-AUTHORITY BOUNDARY: Certificate evidence for public trust material only; no
-                    signed authorization, R8D evidence, document persistence,
-                    approval, acceptance, signing, or execution is created.
+AUTHORITY BOUNDARY: Certificate evidence for retired public trust material
+                    only; no signed authorization, R8D evidence, document
+                    persistence, approval, acceptance, signing, or execution
+                    is created. Historical R8N execution remains unproven.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive for financial
                               execution and settlement truth.
 FAIL-CLOSED POSTURE: Unknown keys, malformed records, unsupported algorithms,
-                     unsupported permissions, drift, and mutable-root attempts
-                     reject without fallback authority; E2 remains stale.
+                     unsupported permissions, drift, mutable-root attempts,
+                     and fresh RETIRED-key issuance reject without fallback
+                     authority; archival P8 remains historical and P9 remains
+                     unproven.
 """
 from __future__ import annotations
 
@@ -81,7 +85,9 @@ _ALTERNATE_PUBLIC_KEY = bytes(range(32))
 _PRODUCTION_KEY_ID = "prdca-key:legal-corpus-69c7c3e9a67c7e552057d4c0670623be"
 _PRODUCTION_PUBLIC_KEY = "jfG0IANHA_tSNyjyurpBtTId98fG2l_LhifnfQJ2cXg"
 _PRODUCTION_PUBLIC_KEY_SHA3_512 = "69c7c3e9a67c7e552057d4c0670623be651f22e95dc69ad142e9174d1f811f3bfb74c7faa172a6d12df38abcde2576b8dd4005640c77649c932d13fbc74f72ac"
-_PRODUCTION_FINGERPRINT = "54a863320f5fe106db2edfbbd95fb9a50688f0471bdc086879601b713d274469bc8610f839dbcdceb6b3bb0187ac7a35ed33cf2f3c50cf3ffcd8c84dc13aafe8"
+_PRODUCTION_FINGERPRINT = "1ea7ec1e18355b4181d6b652c05be296deb2bb02cf0d5504e1e2ede82278572ee66178df141a4f98cf280af122fb2f55eebedb44262fa552f215c38a5bec2e38"
+_PRODUCTION_SOURCE_BYTES = 20563
+_PRODUCTION_SOURCE_SHA3_512 = "f7c6d79005c381c6c0c83d4eda251023faa31118024ab8e8dc51aa7d23d282b687cfae4767443150d1c3a45beff8a4c380d836d3d64e995944d185d36383b5c0"
 _PRODUCTION_VALID_FROM = datetime(2026, 9, 18, 5, 32, 16, tzinfo=timezone.utc)
 _PRODUCTION_VALID_UNTIL = datetime(2026, 9, 19, 5, 32, 16, tzinfo=timezone.utc)
 
@@ -135,7 +141,7 @@ def _error_code(callable_object: object, *args: object, **kwargs: object) -> str
 
 def test_production_root_contains_exactly_one_admitted_key() -> None:
     """The current root contains exactly the approved production record."""
-    assert VERSION == "v1.1.0-R1D-B0F-B4-R8J-H-LEGAL-CORPUS-OPERATOR-TRUST-ROOT"
+    assert VERSION == "v1.2.0-R1D-B0F-B4-R8O-P4-R7-LEGAL-CORPUS-OPERATOR-TRUST-ROOT"
     assert LegalCorpusOperatorTrustRoot.production_key_count() == 1
     assert len(LegalCorpusOperatorTrustRoot.all_keys()) == 1
     assert _production_record().key_id == _PRODUCTION_KEY_ID
@@ -152,8 +158,8 @@ def test_exact_production_record_is_fully_bound() -> None:
     assert record.authority_domain == "WILSY_LEGAL_CORPUS_OPERATOR_AUTHORITY"
     assert record.scope == "PLATFORM"
     assert record.permitted_operations == frozenset({"LEGAL_CORPUS_DRAFT_ADMISSION"})
-    assert record.status is LegalCorpusOperatorKeyStatus.ACTIVE
-    assert record.revision == 1
+    assert record.status is LegalCorpusOperatorKeyStatus.RETIRED
+    assert record.revision == 2
     assert record.valid_from == _PRODUCTION_VALID_FROM
     valid_from = record.valid_from
     valid_until = record.valid_until
@@ -245,6 +251,14 @@ def test_production_validity_boundaries_are_deterministic() -> None:
     assert record.can_verify_at(AUTHORIZED_OPERATION, _PRODUCTION_VALID_FROM + timedelta(hours=12))
     assert not record.can_verify_at(AUTHORIZED_OPERATION, valid_until)
     assert not record.can_verify_at(AUTHORIZED_OPERATION, valid_until + timedelta(microseconds=1))
+    assert not record.can_issue(AUTHORIZED_OPERATION, _PRODUCTION_VALID_FROM + timedelta(hours=12))
+
+
+def test_production_source_identity_is_exact() -> None:
+    """The certificate freezes the final governed source bytes and digest."""
+    source = ROOT_PATH.read_bytes()
+    assert len(source) == _PRODUCTION_SOURCE_BYTES
+    assert hashlib.sha3_512(source).hexdigest() == _PRODUCTION_SOURCE_SHA3_512
 
 
 def test_trusted_key_is_frozen() -> None:
@@ -405,6 +419,8 @@ def test_source_bootstrap_is_static_one_key_and_side_effect_free() -> None:
     assert reloaded.LegalCorpusOperatorTrustRoot.production_key_count() == 1
     assert len(reloaded.LegalCorpusOperatorTrustRoot.all_keys()) == 1
     assert reloaded.TRUSTED_KEYS[0].key_id == _PRODUCTION_KEY_ID
+    assert reloaded.TRUSTED_KEYS[0].status is reloaded.LegalCorpusOperatorKeyStatus.RETIRED
+    assert reloaded.TRUSTED_KEYS[0].revision == 2
 
 
 def test_d1_uses_the_unchanged_canonical_resolver_contract() -> None:
@@ -419,7 +435,7 @@ def test_d1_uses_the_unchanged_canonical_resolver_contract() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_trust_root.py
-# VERSION: v1.1.0-R1D-B0F-B4-R8J-I-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
+# VERSION: v1.2.0-R1D-B0F-B4-R8O-P4-R7-C1-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
 # AUTHORITY BOUNDARY: direct evidence for public trust-root semantics only
 # TENANT POSTURE: PLATFORM trust only; no tenant or principal authority
 # FAIL-CLOSED POSTURE: exact one-key root, unknown keys, and invalid trust values reject
