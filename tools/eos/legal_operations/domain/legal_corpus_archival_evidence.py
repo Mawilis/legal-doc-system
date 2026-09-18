@@ -1,7 +1,7 @@
 """Truth-preserving archival evidence value objects for the legal corpus.
 
 TITLE: WILSY OS Legal Corpus Archival Evidence Domain
-VERSION: v1.0.0-R1D-B0F-B4-R8O-P3A-LEGAL-CORPUS-ARCHIVAL-EVIDENCE
+VERSION: v1.0.1-R1D-B0F-B4-R8O-P3A-R1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Represents a future immutable archival package containing public
          authorization, trust-snapshot, document, R8D, and proposition-ledger
@@ -11,9 +11,9 @@ COLLABORATION / OWNERSHIP: The later governed capture surface supplies public
                             evidence; P3C will verify authenticity; a later
                             retirement gate adjudicates trust-root lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.0.0-R1D-B0F-B4-R8O-P3A establishes immutable archival evidence
-           snapshots, an explicit P1-P9 proposition ledger, deterministic
-           SHA3-512 package fingerprints, and permanent historical limits.
+CHANGELOG: v1.0.1-R1D-B0F-B4-R8O-P3A-R1 separates substantive document-content
+           validation from single-line metadata validation while preserving
+           exact captured content and canonical digest authority.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Public authorization and public-key evidence only;
                             no private key, secret, filesystem, environment,
@@ -66,7 +66,7 @@ from tools.eos.legal_operations.domain.legal_corpus_provisioning_authority impor
 )
 
 
-VERSION: Final[str] = "v1.0.0-R1D-B0F-B4-R8O-P3A-LEGAL-CORPUS-ARCHIVAL-EVIDENCE"
+VERSION: Final[str] = "v1.0.1-R1D-B0F-B4-R8O-P3A-R1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE"
 SCHEMA: Final[str] = "WILSY-LEGAL-CORPUS-ARCHIVAL-EVIDENCE/V1"
 HISTORICAL_EVENT_TIME_SOURCE: Final[str] = "NONE"
 HISTORICAL_EVENT_TIME_RECOVERY: Final[str] = "IMPOSSIBLE_FROM_CURRENT_CANONICAL_EVIDENCE"
@@ -111,6 +111,13 @@ class LegalCorpusArchivalClassification(StrEnum):
 def _text(value: object, code: str) -> str:
     """Require non-empty, stable single-line text without silent rewriting."""
     if not isinstance(value, str) or not value or value != value.strip() or "\n" in value or "\r" in value:
+        raise LegalCorpusArchivalEvidenceError(code)
+    return value
+
+
+def _document_content(value: object, code: str) -> str:
+    """Require substantive legal content while preserving its exact value."""
+    if not isinstance(value, str) or not value.strip():
         raise LegalCorpusArchivalEvidenceError(code)
     return value
 
@@ -574,8 +581,9 @@ class LegalCorpusArchivalDocumentSnapshot:
     supersedes_document_id: str | None
 
     def __post_init__(self) -> None:
-        for value, code in ((self.document_id, "DOCUMENT_SNAPSHOT_ID_INVALID"), (self.version, "DOCUMENT_SNAPSHOT_VERSION_INVALID"), (self.title, "DOCUMENT_SNAPSHOT_TITLE_INVALID"), (self.jurisdiction, "DOCUMENT_SNAPSHOT_JURISDICTION_INVALID"), (self.locale, "DOCUMENT_SNAPSHOT_LOCALE_INVALID"), (self.content_reference, "DOCUMENT_SNAPSHOT_REFERENCE_INVALID"), (self.content, "DOCUMENT_SNAPSHOT_CONTENT_INVALID")):
+        for value, code in ((self.document_id, "DOCUMENT_SNAPSHOT_ID_INVALID"), (self.version, "DOCUMENT_SNAPSHOT_VERSION_INVALID"), (self.title, "DOCUMENT_SNAPSHOT_TITLE_INVALID"), (self.jurisdiction, "DOCUMENT_SNAPSHOT_JURISDICTION_INVALID"), (self.locale, "DOCUMENT_SNAPSHOT_LOCALE_INVALID"), (self.content_reference, "DOCUMENT_SNAPSHOT_REFERENCE_INVALID")):
             _text(value, code)
+        _document_content(self.content, "DOCUMENT_SNAPSHOT_CONTENT_INVALID")
         if not isinstance(self.agreement_type, LegalAgreementType) or not isinstance(self.status, LegalDocumentStatus):
             raise LegalCorpusArchivalEvidenceError("DOCUMENT_SNAPSHOT_ENUM_INVALID")
         if self.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED:
@@ -719,7 +727,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_archival_evidence.py
-# VERSION: v1.0.0-R1D-B0F-B4-R8O-P3A-LEGAL-CORPUS-ARCHIVAL-EVIDENCE
+# VERSION: v1.0.1-R1D-B0F-B4-R8O-P3A-R1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE
 # AUTHORITY BOUNDARY: immutable archival evidence representation only
 # TENANT POSTURE: PLATFORM corpus evidence; no tenant/principal authority
 # FAIL-CLOSED POSTURE: historical gaps remain explicit and unproven

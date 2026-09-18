@@ -1,7 +1,7 @@
 """Direct certificate for the authenticity-only archival verifier.
 
 TITLE: WILSY OS Legal Corpus Archival Authenticity Verifier Certificate
-VERSION: v1.0.0-R1D-B0F-B4-R8O-P3C-C1-LEGAL-CORPUS-ARCHIVAL-AUTHENTICITY-VERIFIER-CERT
+VERSION: v1.0.1-R1D-B0F-B4-R8O-P3C-C1-R1-LEGAL-CORPUS-ARCHIVAL-AUTHENTICITY-VERIFIER-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies P1, P2, and P7 re-verification over deterministic public
          archival snapshots, exact D1 preimage reuse, fail-closed tamper
@@ -11,10 +11,9 @@ COLLABORATION / OWNERSHIP: Direct certificate for P3C; P3A, D1, the public
                             trust root, R8D, and production capture remain
                             separately governed artifacts.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.0.0-R1D-B0F-B4-R8O-P3C-C1 certifies synthetic in-memory
-           Ed25519 interoperability, exact D1 canonical signing semantics,
-           issuance-time boundaries, snapshot integrity, and non-authority
-           limitations without production data or persistence.
+CHANGELOG: v1.0.1-R1D-B0F-B4-R8O-P3C-C1-R1 recertifies the repaired P3A
+           dependency identity while preserving synthetic Ed25519
+           interoperability, D1 signing semantics, and non-authority limits.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic public fixtures and ephemeral test-only
                             private keys exist only in memory; no production
@@ -70,8 +69,8 @@ from tools.eos.legal_operations.domain.legal_corpus_operator_trust_root import (
 
 P3A_PATH = Path("tools/eos/legal_operations/domain/legal_corpus_archival_evidence.py")
 P3C_PATH = Path("tools/eos/legal_operations/domain/legal_corpus_operator_archival_verification.py")
-EXPECTED_P3A_BYTES = 50369
-EXPECTED_P3A_SHA3_512 = "0bf3a923508526afaacd5ae1445db21fbbed82909643a71479551a54eba39dd230df76207e3013c50077f1b2e80375fc2d561b3df74ae710f6bec092a255489d"
+EXPECTED_P3A_BYTES = 50659
+EXPECTED_P3A_SHA3_512 = "899af341f899c16c68b1e92e9d7ee6ce2528e492c9de3244aa52ccb23cb481132b8b0b90f4372a36f8ff1964386042cd6ab7d2f4343eb70a4e70d3c9a6d7ca32"
 EXPECTED_P3C_BYTES = 17325
 EXPECTED_P3C_SHA3_512 = "a9400439baa9cf4f34f371b45032f908d4dfc04ac16fb95e9bde670edbbcdfdcf21c8fdc23afe26c9328280369c436e34a93c266e5d03f3c6585f19e10269484"
 NOW = datetime(2026, 9, 18, 12, 0, tzinfo=timezone.utc)
@@ -480,7 +479,7 @@ def test_result_boundary_is_explicitly_non_authorizing() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_archival_verification.py
-# VERSION: v1.0.0-R1D-B0F-B4-R8O-P3C-C1-LEGAL-CORPUS-ARCHIVAL-AUTHENTICITY-VERIFIER-CERT
+# VERSION: v1.0.1-R1D-B0F-B4-R8O-P3C-C1-R1-LEGAL-CORPUS-ARCHIVAL-AUTHENTICITY-VERIFIER-CERT
 # AUTHORITY BOUNDARY: direct synthetic certificate evidence only
 # TENANT POSTURE: PLATFORM archival evidence; no tenant or principal authority
 # FAIL-CLOSED POSTURE: cryptographic, fingerprint, boundary, and import drift fails

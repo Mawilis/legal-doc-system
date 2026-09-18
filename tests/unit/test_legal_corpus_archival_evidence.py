@@ -1,7 +1,7 @@
 """Direct certificate for the truth-preserving archival evidence domain.
 
 TITLE: WILSY OS Legal Corpus Archival Evidence Direct Certificate
-VERSION: v1.0.0-R1D-B0F-B4-R8O-P3A-C1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE-CERT
+VERSION: v1.1.0-R1D-B0F-B4-R8O-P3A-R1-C1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the complete immutable P1-P9 archival evidence contract,
          deterministic fingerprints, historical limitations, and pure-domain
@@ -11,9 +11,9 @@ COLLABORATION / OWNERSHIP: Direct certificate for the P3A domain artifact;
                             the P3C authenticity verifier and later capture
                             gate remain separate owners.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.0.0-R1D-B0F-B4-R8O-P3A-C1 certifies proposition semantics,
-           immutable snapshots, canonical serialization, SHA3-512 integrity,
-           hydration rejection, and non-authority boundaries.
+CHANGELOG: v1.1.0-R1D-B0F-B4-R8O-P3A-R1-C1 recertifies the repaired
+           multiline document-content contract, exact round trips, canonical
+           digest reuse, package determinism, and prior authority boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Deterministic synthetic public fixtures only;
                             no production authorization, secrets, signer,
@@ -70,9 +70,9 @@ from tools.eos.legal_operations.domain.legal_corpus_provisioning_authority impor
 PRODUCTION_PATH = Path(
     "tools/eos/legal_operations/domain/legal_corpus_archival_evidence.py"
 )
-EXPECTED_SOURCE_BYTES = 50369
+EXPECTED_SOURCE_BYTES = 50659
 EXPECTED_SOURCE_SHA3_512 = (
-    "0bf3a923508526afaacd5ae1445db21fbbed82909643a71479551a54eba39dd230df76207e3013c50077f1b2e80375fc2d561b3df74ae710f6bec092a255489d"
+    "899af341f899c16c68b1e92e9d7ee6ce2528e492c9de3244aa52ccb23cb481132b8b0b90f4372a36f8ff1964386042cd6ab7d2f4343eb70a4e70d3c9a6d7ca32"
 )
 NOW = datetime(2026, 9, 18, 12, 0, tzinfo=timezone.utc)
 VALID_FROM = datetime(2026, 9, 18, 11, 0, tzinfo=timezone.utc)
@@ -291,7 +291,7 @@ def test_source_identity_is_the_frozen_p3a_artifact() -> None:
     payload = PRODUCTION_PATH.read_bytes()
     assert len(payload) == EXPECTED_SOURCE_BYTES
     assert hashlib.sha3_512(payload).hexdigest() == EXPECTED_SOURCE_SHA3_512
-    assert archival.VERSION == "v1.0.0-R1D-B0F-B4-R8O-P3A-LEGAL-CORPUS-ARCHIVAL-EVIDENCE"
+    assert archival.VERSION == "v1.0.1-R1D-B0F-B4-R8O-P3A-R1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE"
 
 
 def test_proposition_enum_and_classification_contract_are_complete() -> None:
@@ -496,6 +496,44 @@ def test_document_snapshot_is_exact_digest_bound_draft_only_and_immutable() -> N
         snapshot.status = LegalDocumentStatus.APPROVED  # type: ignore[misc]
 
 
+def test_multiline_document_content_is_exactly_preserved_and_package_deterministic() -> None:
+    for content in ("Line one\nLine two", "Line one\r\nLine two"):
+        snapshot = _document_snapshot(content=content)
+        hydrated = archival.LegalCorpusArchivalDocumentSnapshot.from_document(snapshot.to_document())
+        assert snapshot.content == content
+        assert hydrated.content == content
+        assert hydrated.to_document() == snapshot.to_document()
+        first = _package(document_snapshot=snapshot)
+        second = _package(document_snapshot=_document_snapshot(content=content))
+        assert first.canonical_bytes() == second.canonical_bytes()
+        assert first.package_fingerprint == second.package_fingerprint
+
+
+def test_document_content_blank_rejection_and_metadata_text_contract_remain_separate() -> None:
+    for content in ("", " \n\t "):
+        values = _document_snapshot(content="valid content").to_document()
+        values["content"] = content
+        values["sha3_512"] = "0" * 128
+        _raises(
+            "DOCUMENT_SNAPSHOT_VALUE_INVALID",
+            lambda values=values: archival.LegalCorpusArchivalDocumentSnapshot.from_document(values),
+        )
+
+    values = _document_snapshot().to_document()
+    values["content_reference"] = "invalid\nreference"
+    _raises(
+        "DOCUMENT_SNAPSHOT_VALUE_INVALID",
+        lambda: archival.LegalCorpusArchivalDocumentSnapshot.from_document(values),
+    )
+
+    values = _document_snapshot().to_document()
+    values["sha3_512"] = "0" * 128
+    _raises(
+        "DOCUMENT_SNAPSHOT_VALUE_INVALID",
+        lambda: archival.LegalCorpusArchivalDocumentSnapshot.from_document(values),
+    )
+
+
 def test_package_canonical_bytes_hydration_and_independent_fingerprint_are_stable() -> None:
     package = _package()
     first = package.canonical_bytes()
@@ -609,7 +647,7 @@ def test_p3a_is_pure_and_exposes_no_operational_authority_surface() -> None:
 
 
 # ARTIFACT: test_legal_corpus_archival_evidence.py
-# VERSION: v1.0.0-R1D-B0F-B4-R8O-P3A-C1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE-CERT
+# VERSION: v1.1.0-R1D-B0F-B4-R8O-P3A-R1-C1-LEGAL-CORPUS-ARCHIVAL-EVIDENCE-CERT
 # AUTHORITY BOUNDARY: direct certificate evidence for pure archival values only
 # TENANT POSTURE: PLATFORM archival evidence; no tenant/principal authority
 # FAIL-CLOSED POSTURE: domain drift, tampering, or authority escalation fails
