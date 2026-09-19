@@ -1,7 +1,7 @@
-"""Direct certificate for the six-document WILSY OS platform draft corpus.
+"""Direct certificate for the historical and reviewed-successor platform corpus.
 
 TITLE: WILSY OS Required Platform Legal Corpus Certificate
-VERSION: v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PRODUCTION-CORPUS-CERT
+VERSION: v1.4.1-R9B-P7-A3-R2-R1-REVIEWED-SUCCESSOR-RUNTIME-CATALOG-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the immutable Charter source plus five substantive,
          review-required platform legal-document drafts without provisioning,
@@ -10,8 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Direct certificate for production_legal_corpus and
                             its immutable legal-document domain contract.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.2.0 preserves the historical six-document identities and
-           directly certifies five lifecycle-neutral 1.1.0-DRAFT successors.
+CHANGELOG: v1.4.1 repairs the resolver ambiguity/non-draft certificate
+           fixture to construct domain-valid LegalDocumentVersion values
+           without serialized enum primitive rehydration; production runtime
+           semantics are unchanged.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Platform drafts only; tenant acceptance remains separate.
 AUTHORITY BOUNDARY: Draft evidence only; no review, approval, signature,
@@ -23,6 +25,7 @@ FAIL-CLOSED POSTURE: Identity, digest, lifecycle, substantive text, API, and
 from __future__ import annotations
 
 import ast
+from dataclasses import replace
 import inspect
 import unicodedata
 from collections.abc import Mapping
@@ -260,6 +263,34 @@ def test_reviewed_successors_are_immutable_and_getters_are_repeatable() -> None:
             successor.version = "2.0.0"  # type: ignore[misc]
 
 
+def test_canonical_runtime_catalog_and_exact_resolver_cover_all_eleven_values() -> None:
+    """The source-owned resolver separates historical and successor versions."""
+    catalog = corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS
+    assert isinstance(catalog, tuple)
+    assert len(catalog) == 11
+    assert len({(value.document_id, value.version) for value in catalog}) == 11
+    for value in catalog:
+        assert corpus.resolve_platform_legal_corpus_draft(value.document_id, value.version) is value
+    for historical, successor in zip(corpus.PLATFORM_LEGAL_CORPUS_DRAFTS[1:], corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS, strict=True):
+        assert corpus.resolve_platform_legal_corpus_draft(historical.document_id, "1.0.0-DRAFT") is historical
+        assert corpus.resolve_platform_legal_corpus_draft(successor.document_id, "1.1.0-DRAFT") is successor
+    with pytest.raises(corpus.LegalCorpusCanonicalDraftResolutionError, match="CANONICAL_DOCUMENT_UNKNOWN"):
+        corpus.resolve_platform_legal_corpus_draft("WILSY-OS-USER-TERMS", "9.9.9-DRAFT")
+
+
+def test_canonical_runtime_resolver_rejects_ambiguity_and_non_draft_without_io(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Forced source ambiguity and lifecycle drift fail closed without authority or I/O."""
+    original = corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS
+    duplicate = original + (original[0],)
+    monkeypatch.setattr(corpus, "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS", duplicate)
+    with pytest.raises(corpus.LegalCorpusCanonicalDraftResolutionError, match="CANONICAL_DOCUMENT_DUPLICATE"):
+        corpus.resolve_platform_legal_corpus_draft(original[0].document_id, original[0].version)
+    non_draft = replace(original[0], status=LegalDocumentStatus.APPROVED)
+    monkeypatch.setattr(corpus, "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS", (non_draft, *original[1:]))
+    with pytest.raises(corpus.LegalCorpusCanonicalDraftResolutionError, match="NON_DRAFT_CANONICAL_SOURCE"):
+        corpus.resolve_platform_legal_corpus_draft(original[0].document_id, original[0].version)
+
+
 def test_public_api_is_exact_and_repeatable() -> None:
     """The explicit API exposes only immutable corpus values and pure getters."""
     assert set(corpus.__all__) == {
@@ -274,7 +305,7 @@ def test_public_api_is_exact_and_repeatable() -> None:
         "PRIVACY_NOTICE_REVIEWED_SUCCESSOR_CONTENT", "PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT",
         "AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_CONTENT", "AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT",
         "ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_CONTENT", "ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT",
-        "JURISDICTION", "LOCALE", "PLATFORM_LEGAL_CORPUS_DRAFTS", "PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS", "VERSION",
+        "JURISDICTION", "LOCALE", "PLATFORM_LEGAL_CORPUS_DRAFTS", "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS", "PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS", "LegalCorpusCanonicalDraftResolutionError", "resolve_platform_legal_corpus_draft", "VERSION",
         "get_acceptable_use_draft", "get_admin_responsibility_notice_draft",
         "get_ai_assistance_notice_draft", "get_institutional_charter_draft",
         "get_privacy_notice_draft", "get_user_terms_draft",
@@ -332,7 +363,7 @@ def test_source_does_not_use_mutable_corpus_collection() -> None:
 
 
 # ARTIFACT: test_production_legal_corpus.py
-# VERSION: v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PRODUCTION-CORPUS-CERT
+# VERSION: v1.4.1-R9B-P7-A3-R2-R1-REVIEWED-SUCCESSOR-RUNTIME-CATALOG-CERT
 # AUTHORITY BOUNDARY: historical and successor draft-corpus evidence only
 # TENANT POSTURE: platform corpus inspection only; no tenant acceptance state
 # FAIL-CLOSED POSTURE: identity, digest, lifecycle, text, and authority drift fail

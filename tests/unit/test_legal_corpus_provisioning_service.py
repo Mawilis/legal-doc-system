@@ -1,7 +1,7 @@
 """Direct certificate for the R8H legal-corpus provisioning service.
 
 TITLE: WILSY OS Legal Corpus Draft Provisioning Service Certificate
-VERSION: v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-PROVISIONING-SERVICE-CERT
+VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-PROVISIONING-SERVICE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies canonical-source ownership, active caller transaction
          requirements, pair-state adjudication, staged result semantics, and
@@ -11,9 +11,9 @@ COLLABORATION / OWNERSHIP: R8H owns the composition service; this certificate
                             owns only direct non-Mongo evidence. R8J will own
                             the governed operator-command boundary.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.0-R8I certifies canonical draft admission composition,
-           exact replay, partial-state rejection, session propagation, and
-           caller-owned transaction semantics.
+CHANGELOG: v1.2.0 certifies historical and reviewed-successor admission
+           through the source-owned runtime resolver while retaining exact
+           replay, partial-state, session, and caller-owned transaction semantics.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque fixtures only; no secrets, network, HTTP,
                             browser, or live persistence are used.
@@ -210,9 +210,9 @@ def test_canonical_source_and_authority_are_verified_before_mutation() -> None:
     assert documents.write_sessions[0] is authorities.write_sessions[0] is documents.read_sessions[0] is authorities.read_sessions[0]
 
 
-def test_all_six_closed_platform_corpus_families_stage_from_r8d_identity() -> None:
-    """R8H resolves and stages each server-owned draft without caller content."""
-    for document in corpus.PLATFORM_LEGAL_CORPUS_DRAFTS:
+def test_all_eleven_platform_corpus_versions_stage_from_r8d_identity() -> None:
+    """R8H resolves historical and reviewed-successor values without caller content."""
+    for document in corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS:
         evidence = _evidence(document=document, authority_evidence_id=f"AUTH-{document.document_id}")
         instance, _documents, _authorities, _events = _service(events=[])
         result = instance.admit_draft(evidence, session=Session())
@@ -245,8 +245,8 @@ def test_non_draft_canonical_source_is_rejected_before_reads_or_writes(monkeypat
     evidence = _evidence()
     monkeypatch.setattr(
         service_module.production_legal_corpus,
-        "PLATFORM_LEGAL_CORPUS_DRAFTS",
-        (replace(canonical, status=status),),
+        "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS",
+        (replace(canonical, status=status), *service_module.production_legal_corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS[1:]),
     )
     instance, documents, authorities, events = _service()
     failure = _error(lambda: instance.admit_draft(evidence, session=Session()))
@@ -367,12 +367,12 @@ def test_service_import_and_operation_have_no_live_persistence_surface() -> None
     imports = [node.module or "" for node in __import__("ast").walk(tree) if isinstance(node, __import__("ast").ImportFrom)]
     imports.extend(alias.name for node in __import__("ast").walk(tree) if isinstance(node, __import__("ast").Import) for alias in node.names)
     assert not any(token in module.casefold() for module in imports for token in ("pymongo", "http", "fastapi", "browser"))
-    assert "PLATFORM_LEGAL_CORPUS_DRAFTS" in source
+    assert "resolve_platform_legal_corpus_draft" in source
     assert "LegalDocumentRegistry" in source and "LegalCorpusProvisioningAuthorityRegistry" in source
 
 
 # ARTIFACT: test_legal_corpus_provisioning_service.py
-# VERSION: v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-PROVISIONING-SERVICE-CERT
+# VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-PROVISIONING-SERVICE-CERT
 # AUTHORITY BOUNDARY: direct service certificate only; staged composition is not committed persistence
 # TENANT POSTURE: PLATFORM corpus admission; no tenant/principal authority
 # FAIL-CLOSED POSTURE: transaction, source, pair-state, divergence, and dependency failures reject

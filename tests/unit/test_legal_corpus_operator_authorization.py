@@ -1,7 +1,7 @@
 """Direct certificate for the R8O-P4-R7-R3 signed operator authorization domain.
 
 TITLE: WILSY OS R8O-P4-R7-R3 Signed Legal-Corpus Operator Authorization Certificate
-VERSION: v1.6.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
+VERSION: v1.7.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the two-record production trust root after its governed
          RETIRED/revision-2 preservation and retirement of the second record,
@@ -16,11 +16,9 @@ COLLABORATION / OWNERSHIP: Certifies the E1 domain artifact against C1's
                            separate evidence. R8D authority, corpus source,
                            and PRDCA crypto certificates remain separate.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.6.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
-           certifies the second production record as RETIRED/revision 2 with
-           unchanged validity and public identity, and requires the exact
-           operationally-inactive rejection code while preserving test-owned
-           ACTIVE authorization coverage.
+CHANGELOG: v1.7.0-R9B-P7-A3-R2 certifies all five reviewed-successor
+           identities through the source-owned runtime resolver while retaining
+           historical binding and retired production trust-root coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Test-only key material is deterministic and local;
                             no production secret, environment trust, file key,
@@ -625,16 +623,11 @@ def test_canonical_charter_binding_and_all_mismatch_states(monkeypatch: pytest.M
         _expect_code(LegalCorpusOperatorAuthorizationCanonicalDocumentError, _authorization(signing_key, **change).verify)
     for status in (LegalDocumentStatus.APPROVED, LegalDocumentStatus.RETIRED):
         monkeypatch.setattr(
-            authorization_module,
-            "PLATFORM_LEGAL_CORPUS_DRAFTS",
-            (replace(document, status=status),),
+            production_legal_corpus,
+            "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS",
+            (replace(document, status=status), *production_legal_corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS[1:]),
         )
         _expect_code(LegalCorpusOperatorAuthorizationCanonicalDocumentError, authorization.verify)
-    monkeypatch.setattr(
-        authorization_module,
-        "PLATFORM_LEGAL_CORPUS_DRAFTS",
-        production_legal_corpus.PLATFORM_LEGAL_CORPUS_DRAFTS,
-    )
 
 
 def test_canonical_source_is_not_caller_selectable() -> None:
@@ -647,12 +640,12 @@ def test_canonical_source_is_not_caller_selectable() -> None:
     assert set(inspect.signature(LegalCorpusOperatorAuthorization.derive_provisioning_authority_evidence).parameters) == {"self"}
 
 
-def test_all_six_closed_platform_drafts_bind_independently(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Every canonical family resolves through the signed identity only."""
+def test_all_eleven_canonical_platform_drafts_bind_independently(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Historical and reviewed-successor identities resolve independently."""
     signing_key = Ed25519PrivateKey.from_private_bytes(TEST_SEED)
     _patch_test_trust(monkeypatch, _trusted_key(signing_key))
     _patch_clock(monkeypatch, NOW)
-    for document in production_legal_corpus.PLATFORM_LEGAL_CORPUS_DRAFTS:
+    for document in production_legal_corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS:
         authorization = _authorization(signing_key, document=document, authorization_id=f"auth-{document.document_id}")
         evidence = authorization.derive_provisioning_authority_evidence()
         assert evidence.source_document_id == document.document_id
@@ -660,6 +653,22 @@ def test_all_six_closed_platform_drafts_bind_independently(monkeypatch: pytest.M
         assert evidence.source_version == document.version
         assert evidence.source_content_reference == document.content_reference
         assert evidence.source_sha3_512 == document.sha3_512
+
+
+def test_reviewed_successors_bind_exactly_and_do_not_alias_historical_versions(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Each successor derives exact R8D identity while 1.0.0 remains distinct."""
+    signing_key = Ed25519PrivateKey.from_private_bytes(TEST_SEED)
+    _patch_test_trust(monkeypatch, _trusted_key(signing_key))
+    _patch_clock(monkeypatch, NOW)
+    for successor in production_legal_corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS:
+        authorization = _authorization(signing_key, document=successor, authorization_id=f"successor-{successor.document_id}")
+        evidence = authorization.derive_provisioning_authority_evidence()
+        assert evidence.source_document_id == successor.document_id
+        assert evidence.source_version == "1.1.0-DRAFT"
+        assert evidence.source_sha3_512 == successor.sha3_512
+        historical = production_legal_corpus.resolve_platform_legal_corpus_draft(successor.document_id, "1.0.0-DRAFT")
+        assert historical.version != evidence.source_version
+        assert historical.sha3_512 != evidence.source_sha3_512
 
 
 def test_r8d_derivation_is_exact_and_deterministic(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -822,7 +831,7 @@ def test_dependency_and_side_effect_boundary_is_pure() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_authorization.py
-# VERSION: v1.6.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
+# VERSION: v1.7.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: direct certificate evidence only; no authorization issuance
 # TENANT POSTURE: PLATFORM corpus scope; no tenant or principal authority
 # FAIL-CLOSED POSTURE: malformed, untrusted, divergent, expired, tampered, and retired-production values reject

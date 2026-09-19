@@ -1,7 +1,7 @@
 """Direct certificate for the R8K legal-corpus operator command.
 
 TITLE: WILSY OS R8K Legal Corpus Operator Command Direct Certificate
-VERSION: v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-COMMAND-CERT
+VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Behaviorally certifies the authority-consuming R8K command with
          deterministic TEST-only Ed25519, Kernel, Mongo-session, registry,
@@ -11,9 +11,9 @@ COLLABORATION / OWNERSHIP: R8K production source is read-only. This artifact
                             owns direct unit evidence only; real-Mongo
                             durability remains a later certificate.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.0.0-R1D-B0F-B4-R8K-P2 establishes direct coverage of hydration,
-           authority ordering, dry-run isolation, transaction ownership,
-           bounded retries, unknown-commit reconciliation, and output classes.
+CHANGELOG: v1.2.0 extends dry-run identity coverage to the source-owned
+           historical and reviewed-successor runtime catalog while preserving
+           hydration, authority ordering, transaction, retry, and readback evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Deterministic TEST-only private material exists
                             only in memory for a sanctioned positive path;
@@ -386,7 +386,7 @@ def test_dry_run_accepts_each_closed_platform_corpus_family(
     """The command reaches every canonical family through real D1 verification."""
     key = Ed25519PrivateKey.from_private_bytes(TEST_SEED)
     _patch_test_authority(monkeypatch, _test_trusted_key(key))
-    for document in production_legal_corpus.PLATFORM_LEGAL_CORPUS_DRAFTS:
+    for document in production_legal_corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS:
         auth = _authorization(key, document=document, authorization_id=f"cmd-{document.document_id}")
         result, exit_code = command.run_command(_write_authorization(tmp_path, auth), dry_run=True)
         assert exit_code == 0
@@ -759,7 +759,7 @@ def test_certificate_metadata_is_complete_and_test_only() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_command.py
-# VERSION: v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-COMMAND-CERT
+# VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-CERT
 # AUTHORITY BOUNDARY: direct fake-orchestration evidence only; no production authority issuance
 # TENANT POSTURE: PLATFORM corpus command only; no tenant or principal authority
 # FAIL-CLOSED POSTURE: required invalid, partial, divergent, uncertain, and retry paths reject

@@ -1,7 +1,7 @@
 """Signed platform authorization for one exact legal-corpus draft.
 
 TITLE: WILSY OS Legal Corpus Operator Authorization Domain
-VERSION: v1.2.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION
+VERSION: v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Verifies an externally issued Ed25519 authorization against the
          canonical C1 operator trust root, which may contain governed public
@@ -12,10 +12,10 @@ COLLABORATION / OWNERSHIP: An external governed issuer creates the signed
                            envelope; this value verifies it; R8D evidence
                            remains the next downstream immutable value.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.2.0-R9B-P7-A2-R1 generalizes exact canonical resolution from the
-           Institutional Charter to every closed platform legal-corpus draft;
-           trust, signature, lifetime, scope, operation, and R8D boundaries
-           remain unchanged.
+CHANGELOG: v1.3.0-R9B-P7-A3-R2 consumes the source-owned eleven-value runtime
+           catalog resolver, binding signed identities to exact historical or
+           reviewed-successor drafts without changing trust, signature,
+           lifetime, scope, operation, or R8D boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Only opaque identifiers, public-key-derived issuer
                             identity, timestamps, and integrity digests are
@@ -71,10 +71,10 @@ from tools.eos.legal_operations.domain.legal_corpus_provisioning_authority impor
     LegalCorpusProvisioningAuthoritySource,
     LegalCorpusProvisioningOperation,
 )
-from tools.eos.legal_operations.production_legal_corpus import PLATFORM_LEGAL_CORPUS_DRAFTS
+from tools.eos.legal_operations.production_legal_corpus import resolve_platform_legal_corpus_draft
 
 
-VERSION: Final[str] = "v1.2.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION"
+VERSION: Final[str] = "v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION"
 SCHEMA: Final[str] = "WILSY-LEGAL-CORPUS-OPERATOR-AUTHORIZATION/V1"
 AUTHORITY_SCOPE: Final[str] = TRUST_ROOT_SCOPE
 AUTHORIZED_OPERATION: Final[str] = TRUST_ROOT_AUTHORIZED_OPERATION
@@ -158,19 +158,11 @@ def resolve_canonical_legal_corpus_document(
     unknown or duplicate identities and every non-draft source. It never
     accepts caller-supplied document content or performs I/O.
     """
-    matches = tuple(
-        document
-        for document in PLATFORM_LEGAL_CORPUS_DRAFTS
-        if document.document_id == source_document_id and document.version == source_version
-    )
-    if not matches:
-        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("CANONICAL_DOCUMENT_UNKNOWN")
-    if len(matches) != 1:
-        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("CANONICAL_DOCUMENT_DUPLICATE")
-    document = matches[0]
-    if document.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED:
-        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("NON_DRAFT_CANONICAL_SOURCE")
-    return document
+    try:
+        return resolve_platform_legal_corpus_draft(source_document_id, source_version)
+    except ValueError as error:
+        code = getattr(error, "code", "CANONICAL_DOCUMENT_UNKNOWN")
+        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError(code) from error
 
 
 class LegalCorpusOperatorAuthorizationOperation(StrEnum):
@@ -528,7 +520,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_operator_authorization.py
-# VERSION: v1.2.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION
+# VERSION: v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION
 # AUTHORITY BOUNDARY: external-signature verification and deterministic R8D derivation only
 # TENANT POSTURE: PLATFORM scope; no tenant or principal authority
 # FAIL-CLOSED POSTURE: canonical C1 public-key trust, invalid signatures, drift, and expiry reject
