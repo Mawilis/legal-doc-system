@@ -1,20 +1,22 @@
 """Append-only persistence boundary for signed legal-corpus approvals.
 
 TITLE: WILSY OS Legal Corpus Approval Evidence Registry
-VERSION: v1.0.0-R1D-B0F-B4-R9B-P3-P1-LEGAL-CORPUS-APPROVAL-REGISTRY
+VERSION: v1.1.0-R1D-B0F-B4-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Persists and exactly replays one complete, already-verified PLATFORM
-         legal-corpus approval authorization without issuing authority,
-         promoting documents, or owning transaction lifecycle.
+EPITOME: Provides non-mutating five-identity preflight plus append-only exact
+         replay for one complete, already-verified PLATFORM legal-corpus
+         approval authorization without issuing authority, promoting
+         documents, or owning transaction lifecycle.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/registry/legal_corpus_approval_registry.py
 COLLABORATION / OWNERSHIP: The future approval service supplies a
                             VerifiedLegalCorpusApprovalAuthorization and owns
                             sessions, transactions, retries, and commit truth.
                             This registry owns only immutable evidence storage.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.0.0-P3-P1 establishes lossless 17-field authorization
-           persistence, closed hydration, five-identity collision adjudication,
-           exact replay, and caller-owned transaction boundaries.
+CHANGELOG: v1.1.0-R1D-B0F-B4-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY adds a
+           non-mutating, immutable five-selector preflight result and makes
+           admission and duplicate-race replay use the same complete identity
+           reconciliation core.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No private keys, secrets, request context, caller
                             mappings, or current-trust claims are accepted.
@@ -32,6 +34,7 @@ FAIL-CLOSED POSTURE: Unknown inputs, corrupt rows, identity splits, divergent
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from copy import deepcopy
 from dataclasses import dataclass
@@ -64,7 +67,7 @@ from tools.eos.legal_operations.domain.legal_corpus_approval_authorization impor
 )
 
 
-VERSION: Final[str] = "v1.0.0-R1D-B0F-B4-R9B-P3-P1-LEGAL-CORPUS-APPROVAL-REGISTRY"
+VERSION: Final[str] = "v1.1.0-R1D-B0F-B4-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY"
 COLLECTION: Final[str] = "legal_corpus_approval_evidence"
 
 AUTHORIZATION_STRUCTURAL_FIELDS: Final[frozenset[str]] = frozenset(
@@ -157,6 +160,15 @@ class LegalCorpusApprovalAdmissionState(StrEnum):
     EXACT_REPLAY = "EXACT_REPLAY"
 
 
+class LegalCorpusApprovalPreflightState(StrEnum):
+    """Non-mutating reconciliation state across all five unique selectors."""
+
+    ABSENT = "ABSENT"
+    EXACT = "EXACT"
+    DIVERGENT = "DIVERGENT"
+    SPLIT_IDENTITY = "SPLIT_IDENTITY"
+
+
 @dataclass(frozen=True, slots=True)
 class LegalCorpusApprovalDurableRecord:
     """Immutable, unverified read model of one persisted approval envelope.
@@ -185,6 +197,38 @@ class LegalCorpusApprovalAdmissionResult:
 
     state: LegalCorpusApprovalAdmissionState
     record: LegalCorpusApprovalDurableRecord
+
+
+@dataclass(frozen=True, slots=True)
+class LegalCorpusApprovalPreflight:
+    """Immutable evidence of one complete, non-mutating identity preflight.
+
+    ``matched_identities`` contains the distinct physical row identities in
+    selector order. ``selector_to_row_identity`` is an immutable audit view of
+    every selector that resolved a row. This result never claims approval,
+    commit, durability, or current authority.
+    """
+
+    state: LegalCorpusApprovalPreflightState
+    matched_record: LegalCorpusApprovalDurableRecord | None
+    matched_identities: tuple[str, ...]
+    selector_to_row_identity: tuple[tuple[str, str], ...]
+    collision_code: str | None
+
+    def __post_init__(self) -> None:
+        """Reject mutable or structurally invalid reconciliation evidence."""
+        if not isinstance(self.state, LegalCorpusApprovalPreflightState):
+            raise TypeError("state must be LegalCorpusApprovalPreflightState")
+        if not isinstance(self.matched_identities, tuple):
+            raise TypeError("matched_identities must be a tuple")
+        if not isinstance(self.selector_to_row_identity, tuple):
+            raise TypeError("selector_to_row_identity must be a tuple")
+        if any(
+            not isinstance(item, tuple) or len(item) != 2
+            or not all(isinstance(value, str) for value in item)
+            for item in self.selector_to_row_identity
+        ):
+            raise TypeError("selector_to_row_identity must contain string pairs")
 
 
 @dataclass(frozen=True, slots=True)
@@ -435,6 +479,14 @@ def _physical_key(row: Mapping[str, Any], record: LegalCorpusApprovalDurableReco
     return _canonical_bytes(record.to_document())
 
 
+def _row_identity(row: Mapping[str, Any], record: LegalCorpusApprovalDurableRecord) -> str:
+    """Return a stable public identity token without exposing row metadata."""
+    if "_id" in row:
+        return f"mongo:{row['_id']!s}"
+    digest = hashlib.sha3_512(_canonical_bytes(record.to_document())).hexdigest()
+    return f"semantic:{digest}"
+
+
 def _collect_matches(source: Any, authorization: LegalCorpusApprovalAuthorization, session: Any) -> list[_IdentityMatch]:
     """Read all identity selectors before any admission insert."""
     matches: list[_IdentityMatch] = []
@@ -445,46 +497,95 @@ def _collect_matches(source: Any, authorization: LegalCorpusApprovalAuthorizatio
     return matches
 
 
-def _adjudicate_matches(
-    matches: list[_IdentityMatch],
+def _preflight_core(
+    source: Any,
     authorization: LegalCorpusApprovalAuthorization,
+    session: Any,
+) -> LegalCorpusApprovalPreflight:
+    """Reconcile all five selectors before any caller-owned admission write."""
+    matches = _collect_matches(source, authorization, session)
+    if not matches:
+        return LegalCorpusApprovalPreflight(
+            LegalCorpusApprovalPreflightState.ABSENT,
+            None,
+            (),
+            (),
+            None,
+        )
+
+    identities = tuple(_row_identity(match.row, match.record) for match in matches)
+    selector_map = tuple(
+        (match.selector, _row_identity(match.row, match.record))
+        for match in matches
+    )
+    physical = {_physical_key(match.row, match.record) for match in matches}
+    if len(physical) != 1:
+        return LegalCorpusApprovalPreflight(
+            LegalCorpusApprovalPreflightState.SPLIT_IDENTITY,
+            None,
+            tuple(dict.fromkeys(identities)),
+            selector_map,
+            None,
+        )
+
+    target_bytes = _canonical_bytes(_durable_document(authorization))
+    expected_selector_count = len(_identity_queries(authorization))
+    collision_code: str | None = None
+    if len(matches) != expected_selector_count:
+        collision_code = _collision_code(matches[0].selector)
+    else:
+        for match in matches:
+            if _canonical_bytes(match.record.to_document()) != target_bytes:
+                collision_code = _collision_code(match.selector)
+                break
+    if collision_code is not None:
+        return LegalCorpusApprovalPreflight(
+            LegalCorpusApprovalPreflightState.DIVERGENT,
+            matches[0].record,
+            tuple(dict.fromkeys(identities)),
+            selector_map,
+            collision_code,
+        )
+    return LegalCorpusApprovalPreflight(
+        LegalCorpusApprovalPreflightState.EXACT,
+        matches[0].record,
+        tuple(dict.fromkeys(identities)),
+        selector_map,
+        None,
+    )
+
+
+def _admission_from_preflight(
+    preflight: LegalCorpusApprovalPreflight,
     *,
     duplicate_error: DuplicateKeyError | None = None,
 ) -> LegalCorpusApprovalAdmissionResult:
-    """Classify exact, divergent, split, and unavailable identity matches."""
-    if not matches:
+    """Translate one shared preflight into the historical admission contract."""
+    if preflight.state is LegalCorpusApprovalPreflightState.ABSENT:
         error = LegalCorpusApprovalRegistryError("LEGAL_CORPUS_APPROVAL_DUPLICATE_UNAVAILABLE")
         if duplicate_error is None:
             raise error
         raise error from duplicate_error
-    target = _durable_document(authorization)
-    target_bytes = _canonical_bytes(target)
-    physical = {_physical_key(match.row, match.record) for match in matches}
-    if len(physical) != 1:
+    if preflight.state is LegalCorpusApprovalPreflightState.SPLIT_IDENTITY:
         error = LegalCorpusApprovalRegistryError("LEGAL_CORPUS_APPROVAL_IMMUTABILITY_CONFLICT")
         if duplicate_error is None:
             raise error
         raise error from duplicate_error
-    for match in matches:
-        if _canonical_bytes(match.record.to_document()) != target_bytes:
-            error = LegalCorpusApprovalRegistryError(_collision_code(match.selector))
-            if duplicate_error is None:
-                raise error
-            raise error from duplicate_error
+    if preflight.state is LegalCorpusApprovalPreflightState.DIVERGENT:
+        error = LegalCorpusApprovalRegistryError(
+            preflight.collision_code or "LEGAL_CORPUS_APPROVAL_IMMUTABILITY_CONFLICT"
+        )
+        if duplicate_error is None:
+            raise error
+        raise error from duplicate_error
+    if preflight.matched_record is None:
+        error = LegalCorpusApprovalRegistryError("LEGAL_CORPUS_APPROVAL_PERSISTED_INVALID")
+        if duplicate_error is None:
+            raise error
+        raise error from duplicate_error
     return LegalCorpusApprovalAdmissionResult(
         LegalCorpusApprovalAdmissionState.EXACT_REPLAY,
-        _record_from_authorization(match.record.authorization for match in matches),
-    )
-
-
-def _record_from_authorization(
-    authorizations: Any,
-) -> LegalCorpusApprovalDurableRecord:
-    """Create one immutable unverified record from a converged authorization."""
-    authorization = next(iter(authorizations))
-    return LegalCorpusApprovalDurableRecord(
-        authorization,
-        authorization.approval_evidence.evidence_fingerprint,
+        preflight.matched_record,
     )
 
 
@@ -568,17 +669,17 @@ class LegalCorpusApprovalRegistry:
             raise LegalCorpusApprovalRegistryError("LEGAL_CORPUS_APPROVAL_AUTHORITY_INPUT_INVALID")
         authorization = proof.authorization
         source = _target(collection)
-        matches = _collect_matches(source, authorization, session)
-        if matches:
-            return _adjudicate_matches(matches, authorization)
+        preflight = _preflight_core(source, authorization, session)
+        if preflight.state is not LegalCorpusApprovalPreflightState.ABSENT:
+            return _admission_from_preflight(preflight)
         payload = _durable_document(authorization)
         insert_payload = deepcopy(payload)
         try:
             source.insert_one(insert_payload, session=session)
         except DuplicateKeyError as error:
             try:
-                raced = _collect_matches(source, authorization, session)
-                return _adjudicate_matches(raced, authorization, duplicate_error=error)
+                raced = _preflight_core(source, authorization, session)
+                return _admission_from_preflight(raced, duplicate_error=error)
             except LegalCorpusApprovalRegistryError as reconciliation_error:
                 if reconciliation_error.__cause__ is not error:
                     raise reconciliation_error from error
@@ -592,6 +693,23 @@ class LegalCorpusApprovalRegistry:
                 authorization.approval_evidence.evidence_fingerprint,
             ),
         )
+
+    @staticmethod
+    def preflight_verified_approval(
+        proof: VerifiedLegalCorpusApprovalAuthorization,
+        collection: Any = None,
+        *,
+        session: Any = None,
+    ) -> LegalCorpusApprovalPreflight:
+        """Read all five identities without writing or owning transactions.
+
+        The returned state is a bounded persistence observation only. The
+        method never inserts, updates, deletes, creates indexes, starts a
+        transaction, or treats a match as approval or commit evidence.
+        """
+        if not isinstance(proof, VerifiedLegalCorpusApprovalAuthorization):
+            raise LegalCorpusApprovalRegistryError("LEGAL_CORPUS_APPROVAL_AUTHORITY_INPUT_INVALID")
+        return _preflight_core(_target(collection), proof.authorization, session)
 
     @staticmethod
     def get_by_approval_evidence_id(
@@ -618,6 +736,8 @@ __all__ = [
     "LegalCorpusApprovalAdmissionResult",
     "LegalCorpusApprovalAdmissionState",
     "LegalCorpusApprovalDurableRecord",
+    "LegalCorpusApprovalPreflight",
+    "LegalCorpusApprovalPreflightState",
     "LegalCorpusApprovalRegistry",
     "LegalCorpusApprovalRegistryError",
     "VERSION",
@@ -625,7 +745,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_approval_registry.py
-# VERSION: v1.0.0-R1D-B0F-B4-R9B-P3-P1-LEGAL-CORPUS-APPROVAL-REGISTRY
+# VERSION: v1.1.0-R1D-B0F-B4-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY
 # AUTHORITY BOUNDARY: append-only persistence of already-verified PLATFORM approval evidence
 # TENANT POSTURE: no tenant/principal authority; acceptance remains separate
 # FAIL-CLOSED POSTURE: closed hydration, identity splits, divergent replay, and duplicate ambiguity reject

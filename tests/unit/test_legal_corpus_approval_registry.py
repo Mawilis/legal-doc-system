@@ -1,7 +1,7 @@
 """Direct certificate for the signed legal-corpus approval registry.
 
 TITLE: WILSY OS Legal Corpus Approval Registry Direct Certificate
-VERSION: v1.4.0-R1D-B0F-R9B-P3-P1-R4-C1-LEGAL-CORPUS-APPROVAL-REGISTRY-CERT
+VERSION: v1.5.0-R1D-B0F-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the lossless normalized approval envelope,
          closed hydration, exact replay, collision law, and caller-owned
@@ -11,8 +11,10 @@ COLLABORATION / OWNERSHIP: Certifies the P3-P1 registry only. The future
                             approval service owns document coordination,
                             transactions, retries, and commit truth.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.4.0-P3-P1-R4 narrows the divergent DuplicateKey assertion to the
-           source-justified authorization identity collision outcome.
+CHANGELOG: v1.5.0-R1D-B0F-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY-CERT
+           independently certifies the non-mutating complete five-selector
+           preflight, immutable identity evidence, and shared admission
+           reconciliation core.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic Ed25519 material is memory-only test
                             material; no key is written, printed, or admitted.
@@ -303,7 +305,7 @@ def _error(call: Callable[[], Any]) -> str:
 
 
 def test_contract_is_closed_and_lossless() -> None:
-    assert registry.VERSION == "v1.0.0-R1D-B0F-B4-R9B-P3-P1-LEGAL-CORPUS-APPROVAL-REGISTRY"
+    assert registry.VERSION == "v1.1.0-R1D-B0F-B4-R9B-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY"
     assert registry.COLLECTION == "legal_corpus_approval_evidence"
     assert registry.AUTHORIZATION_STRUCTURAL_FIELDS == _EXPECTED_TOP_LEVEL_FIELDS
     assert registry.APPROVAL_EVIDENCE_FIELDS == _EXPECTED_EVIDENCE_FIELDS
@@ -360,6 +362,128 @@ def test_exact_replay_is_non_authoritative_and_writes_once() -> None:
     assert collection.successful_inserts == 0
     assert not isinstance(second.record, VerifiedLegalCorpusApprovalAuthorization)
     assert second.record.to_document() == _stored(proof)
+
+
+def test_preflight_absent_reads_all_five_and_never_writes() -> None:
+    proof = _proof()
+    collection = FakeCollection()
+    result = registry.LegalCorpusApprovalRegistry.preflight_verified_approval(
+        proof, collection, session="preflight-session"
+    )
+    assert result.state is registry.LegalCorpusApprovalPreflightState.ABSENT
+    assert result.matched_record is None
+    assert result.matched_identities == ()
+    assert result.selector_to_row_identity == ()
+    assert result.collision_code is None
+    assert len(collection.find_calls) == 5
+    assert collection.insert_calls == []
+    assert collection.indexes == []
+    assert all(call_session == "preflight-session" for _, call_session in collection.find_calls)
+
+
+def test_preflight_exact_returns_complete_immutable_identity_evidence() -> None:
+    proof = _proof()
+    collection = FakeCollection([dict(_stored(proof), _id="approval-row-001")])
+    result = registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+    assert result.state is registry.LegalCorpusApprovalPreflightState.EXACT
+    assert result.matched_record is not None
+    assert result.matched_record.to_document() == _stored(proof)
+    assert result.matched_identities == ("mongo:approval-row-001",)
+    assert tuple(selector for selector, _ in result.selector_to_row_identity) == (
+        "evidence_id", "authorization_id", "authorization_idempotency",
+        "evidence_idempotency", "target_version",
+    )
+    assert all(identity == "mongo:approval-row-001" for _, identity in result.selector_to_row_identity)
+    assert result.collision_code is None
+    with pytest.raises(FrozenInstanceError):
+        result.state = registry.LegalCorpusApprovalPreflightState.ABSENT  # type: ignore[misc]
+    with pytest.raises(AttributeError):
+        result.matched_identities.append("x")  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    "alternate_proof",
+    [
+        lambda: _proof(authorization_changes={"authorization_id": "223e4567-e89b-42d3-a456-426614174010"}),
+        lambda: _proof(authorization_changes={"idempotency_key": "323e4567-e89b-42d3-a456-426614174002"}),
+        lambda: _proof(evidence_changes={"idempotency_key": "evidence-idempotency-divergent"}),
+        lambda: _proof(approved_document=_target(version="1.0.0-OTHER")),
+    ],
+)
+def test_preflight_partial_identity_is_divergent_and_fail_closed(
+    alternate_proof: Callable[[], VerifiedLegalCorpusApprovalAuthorization],
+) -> None:
+    proof = _proof()
+    collection = FakeCollection([_stored(alternate_proof())])
+    result = registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+    assert result.state is registry.LegalCorpusApprovalPreflightState.DIVERGENT
+    assert result.matched_record is not None
+    assert result.collision_code in {
+        "LEGAL_CORPUS_APPROVAL_AUTHORIZATION_ID_COLLISION",
+        "LEGAL_CORPUS_APPROVAL_IDEMPOTENCY_CONFLICT",
+        "LEGAL_CORPUS_APPROVAL_IMMUTABILITY_CONFLICT",
+        "LEGAL_CORPUS_APPROVAL_EVIDENCE_ID_COLLISION",
+    }
+    assert collection.insert_calls == []
+
+
+def test_preflight_split_identity_reports_selector_rows_without_repair() -> None:
+    proof = _proof()
+    row_a = _stored(_proof(authorization_changes={"authorization_id": "223e4567-e89b-42d3-a456-426614174010"}))
+    row_b = _stored(_proof(evidence_changes={"approval_evidence_id": "approval-evidence-002"}))
+    row_a["_id"] = "preflight-row-a"
+    row_b["_id"] = "preflight-row-b"
+    collection = FakeCollection([row_a, row_b])
+    result = registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+    assert result.state is registry.LegalCorpusApprovalPreflightState.SPLIT_IDENTITY
+    assert result.matched_record is None
+    assert result.matched_identities == ("mongo:preflight-row-a", "mongo:preflight-row-b")
+    assert {identity for _, identity in result.selector_to_row_identity} == {
+        "mongo:preflight-row-a", "mongo:preflight-row-b",
+    }
+    assert result.collision_code is None
+    assert collection.insert_calls == []
+
+
+def test_preflight_rejects_proof_only_input_and_corrupt_or_unreadable_rows() -> None:
+    assert _error(lambda: registry.LegalCorpusApprovalRegistry.preflight_verified_approval(cast(Any, {}))) == "LEGAL_CORPUS_APPROVAL_AUTHORITY_INPUT_INVALID"
+    proof = _proof()
+    corrupt = _stored(proof)
+    corrupt["approval_evidence"].pop("evidence_fingerprint")
+    assert _error(lambda: registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, FakeCollection([corrupt]))) == "LEGAL_CORPUS_APPROVAL_PERSISTED_INVALID"
+    lower = PyMongoError("preflight-read")
+    collection = FakeCollection()
+    collection.read_error = lower
+    with pytest.raises(registry.LegalCorpusApprovalRegistryError) as captured:
+        registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+    assert captured.value.code == "LEGAL_CORPUS_APPROVAL_READ_FAILED"
+    assert captured.value.__cause__ is lower
+    assert collection.insert_calls == []
+
+
+def test_preflight_without_driver_id_uses_stable_semantic_identity() -> None:
+    proof = _proof()
+    result = registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, FakeCollection([_stored(proof)]))
+    assert result.state is registry.LegalCorpusApprovalPreflightState.EXACT
+    assert result.matched_identities[0].startswith("semantic:")
+    assert len(result.matched_identities[0].split(":", 1)[1]) == 128
+
+
+def test_admission_and_public_preflight_share_reconciliation_core(monkeypatch: pytest.MonkeyPatch) -> None:
+    proof = _proof()
+    collection = FakeCollection([_stored(proof)])
+    calls: list[str] = []
+    original = registry._preflight_core
+
+    def observe(source: Any, authorization: Any, session: Any) -> Any:
+        calls.append("shared-core")
+        return original(source, authorization, session)
+
+    monkeypatch.setattr(registry, "_preflight_core", observe)
+    registry.LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+    registry.LegalCorpusApprovalRegistry.admit_verified_approval(proof, collection)
+    assert calls == ["shared-core", "shared-core"]
+    assert collection.insert_calls == []
 
 
 @pytest.mark.parametrize("selector", [
