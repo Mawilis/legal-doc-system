@@ -1,7 +1,7 @@
 """Canonical WILSY OS production legal-corpus draft.
 
 TITLE: WILSY OS Required Platform Legal Corpus Drafts
-VERSION: v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PLATFORM-LEGAL-CORPUS
+VERSION: v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-RUNTIME-CATALOG
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the first substantive institutional Charter draft as an
          immutable, server-digested legal-document value without provisioning,
@@ -10,10 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Legal counsel and governed approval authorities own
                             review and approval; LegalDocumentRegistry owns
                             later durable persistence.
-CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.2.0 preserves the immutable Charter and five 1.0.0-DRAFT
-           identities and authors five human-directed 1.1.0-DRAFT successors
-           with lifecycle-neutral prose; no persistence or authority changes.
+CERTIFICATION / UPDATE DATE: 2026-09-20
+CHANGELOG: v1.3.0 preserves all historical and reviewed-successor values and
+           adds one pure source-owned eleven-value runtime catalog/resolver;
+           no document value, digest, authority, or persistence semantics change.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No personal, secret, corporate-registration, or
                             client tenant data is embedded in this draft.
@@ -37,7 +37,7 @@ from tools.eos.legal_operations.domain.legal_acceptance import (
 )
 
 
-VERSION: Final[str] = "v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PLATFORM-LEGAL-CORPUS"
+VERSION: Final[str] = "v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-RUNTIME-CATALOG"
 DOCUMENT_ID: Final[str] = "WILSY-OS-INSTITUTIONAL-CHARTER"
 DOCUMENT_VERSION: Final[str] = "1.0.0-DRAFT"
 CONTENT_REFERENCE: Final[str] = "wilsy-os://legal/institutional-charter/1.0.0-draft"
@@ -1378,6 +1378,46 @@ PLATFORM_LEGAL_CORPUS_DRAFTS: Final[tuple[LegalDocumentVersion, ...]] = (
 )
 
 
+class LegalCorpusCanonicalDraftResolutionError(ValueError):
+    """Fail-closed error for exact source-owned runtime catalog resolution."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS: Final[tuple[LegalDocumentVersion, ...]] = (
+    *PLATFORM_LEGAL_CORPUS_DRAFTS,
+    *PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS,
+)
+
+
+def resolve_platform_legal_corpus_draft(
+    document_id: str,
+    version: str,
+) -> LegalDocumentVersion:
+    """Resolve one exact draft identity from the immutable source catalog.
+
+    This pure platform resolver accepts only exact ``document_id`` and
+    ``version`` identity, requires exactly one source value, and rejects every
+    non-draft or unknown/ambiguous identity. It performs no I/O, authority
+    issuance, persistence, or caller-content lookup.
+    """
+    matches = tuple(
+        document
+        for document in PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS
+        if document.document_id == document_id and document.version == version
+    )
+    if not matches:
+        raise LegalCorpusCanonicalDraftResolutionError("CANONICAL_DOCUMENT_UNKNOWN")
+    if len(matches) != 1:
+        raise LegalCorpusCanonicalDraftResolutionError("CANONICAL_DOCUMENT_DUPLICATE")
+    document = matches[0]
+    if document.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED:
+        raise LegalCorpusCanonicalDraftResolutionError("NON_DRAFT_CANONICAL_SOURCE")
+    return document
+
+
 def get_user_terms_draft() -> LegalDocumentVersion:
     """Return the immutable User Terms draft without persistence or authority changes."""
     return USER_TERMS_DRAFT
@@ -1460,7 +1500,10 @@ __all__ = [
     "JURISDICTION",
     "LOCALE",
     "PLATFORM_LEGAL_CORPUS_DRAFTS",
+    "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS",
     "PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS",
+    "LegalCorpusCanonicalDraftResolutionError",
+    "resolve_platform_legal_corpus_draft",
     "VERSION",
     "get_acceptable_use_draft",
     "get_admin_responsibility_notice_draft",
@@ -1477,7 +1520,7 @@ __all__ = [
 
 
 # ARTIFACT: production_legal_corpus.py
-# VERSION: v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PLATFORM-LEGAL-CORPUS
+# VERSION: v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-RUNTIME-CATALOG
 # AUTHORITY BOUNDARY: historical drafts and human-directed successor values only
 # TENANT POSTURE: platform corpus draft; no tenant acceptance or binding truth
 # FAIL-CLOSED POSTURE: draft remains review-required and cannot imply approval

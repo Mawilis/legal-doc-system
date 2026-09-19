@@ -1,7 +1,7 @@
 """Caller-owned service for composing legal-corpus draft admission.
 
 TITLE: WILSY OS Legal Corpus Draft Provisioning Service
-VERSION: v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-PROVISIONING-SERVICE
+VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-PROVISIONING-SERVICE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Composes the server-owned draft corpus, immutable document registry,
          and immutable provisioning-authority registry inside one active
@@ -13,9 +13,9 @@ COLLABORATION / OWNERSHIP: The operator/deployment command supplies already-
                             adjudication boundaries. R8I will certify this
                             composition service.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.1.0-R9B-P7-A2-R1 generalizes canonical-source resolution across
-           all six platform drafts while retaining pair-state and transaction
-           boundaries.
+CHANGELOG: v1.2.0-R9B-P7-A3-R2 resolves R8D evidence through the source-owned
+           eleven-value runtime catalog while retaining pair-state, immutable
+           admission, and caller-owned transaction boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Caller payloads cannot supply legal content,
                             status, digest, path, URL, tenant, or approval
@@ -56,7 +56,7 @@ from tools.eos.legal_operations.registry.legal_document_registry import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-PROVISIONING-SERVICE"
+VERSION: Final[str] = "v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-PROVISIONING-SERVICE"
 
 
 class LegalCorpusProvisioningServiceError(RuntimeError):
@@ -97,17 +97,15 @@ def _active_session(session: Any) -> Any:
 
 def _canonical_document_for(evidence: LegalCorpusProvisioningAuthorityEvidence) -> Any:
     """Resolve the closed server-owned draft named by R8D evidence."""
-    matches = tuple(
-        document
-        for document in production_legal_corpus.PLATFORM_LEGAL_CORPUS_DRAFTS
-        if document.document_id == evidence.source_document_id
-        and document.version == evidence.source_version
-    )
-    if len(matches) != 1 or matches[0].status.value != "DRAFT_REVIEW_REQUIRED":
+    try:
+        return production_legal_corpus.resolve_platform_legal_corpus_draft(
+            evidence.source_document_id,
+            evidence.source_version,
+        )
+    except ValueError as error:
         raise LegalCorpusProvisioningServiceError(
             "LEGAL_CORPUS_PROVISIONING_CANONICAL_SOURCE_UNAVAILABLE"
-        )
-    return matches[0]
+        ) from error
 
 
 def _document_result(document: Any, evidence: LegalCorpusProvisioningAuthorityEvidence, state: LegalCorpusProvisioningResultState) -> LegalCorpusProvisioningResult:
@@ -272,7 +270,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_provisioning_service.py
-# VERSION: v1.1.0-R9B-P7-A2-R1-LEGAL-CORPUS-PROVISIONING-SERVICE
+# VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-PROVISIONING-SERVICE
 # AUTHORITY BOUNDARY: caller-owned composition of draft document and authority evidence only
 # TENANT POSTURE: PLATFORM-scoped corpus; no tenant/principal authority
 # FAIL-CLOSED POSTURE: active transaction, pair state, source identity, and writes reject safely
