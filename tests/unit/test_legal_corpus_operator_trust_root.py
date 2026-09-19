@@ -1,7 +1,7 @@
 """Direct certificate for the R8O-P4-R7 legal-corpus operator trust root.
 
 TITLE: WILSY OS Legal Corpus Operator Trust-Root Direct Certificate
-VERSION: v1.2.0-R1D-B0F-B4-R8O-P4-R7-C1-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
+VERSION: v1.3.0-R9B-P7-A2-R2-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the immutable, two-record PLATFORM-scoped Ed25519 public-key
          trust root: one historical RETIRED record and one human-admitted ACTIVE
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Direct certificate for the R8O-P4-R7 production
                            trust-root artifact; signed authorization and the
                            operator command remain separate boundaries.
-CERTIFICATION / UPDATE DATE: 2026-09-18
+CERTIFICATION / UPDATE DATE: 2026-09-19
 CHANGELOG: v1.3.0-R9B-P7-A2-R2-LEGAL-CORPUS-OPERATOR-TRUST-ROOT-CERT
            certifies the exact historical RETIRED record and the exact new
            ACTIVE record, independent public-key identity, fingerprints,
