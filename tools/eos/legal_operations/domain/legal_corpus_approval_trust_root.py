@@ -1,20 +1,20 @@
 """Immutable public trust metadata for legal-corpus document approval.
 
 TITLE: WILSY OS Legal Corpus Approval Trust Root Domain
-VERSION: v1.0.0-R1D-B0F-B4-R9B-P2-R4-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
+VERSION: v1.1.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the distinct, source-owned Ed25519 public-key trust lineage
          for PLATFORM ``LEGAL_CORPUS_DOCUMENT_APPROVAL``. This value domain
-         contains no production key until a separately governed ceremony.
+         contains exactly one admitted production public key from the
+         separately governed R9B-P5 ceremony.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_corpus_approval_trust_root.py
 COLLABORATION / OWNERSHIP: A future signed approval-authorisation verifier
                             consumes this trust root; this module owns only
                             immutable public metadata and lifecycle predicates.
-CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.0.0-R1D-B0F-R9B-P2-R4 establishes the approval-specific trust
-           identity, strict raw Ed25519 public-key metadata validation,
-           deterministic SHA3-512 fingerprints, historical-verification and
-           fresh-issuance predicates, and a zero-key pre-ceremony root.
+CERTIFICATION / UPDATE DATE: 2026-09-19
+CHANGELOG: v1.1.0-R1D-B0F-R9B-P5-R1 admits exactly one frozen public
+           Ed25519 approval key from the completed human-governed ceremony;
+           private key material remains outside this repository.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Public metadata only. No private key, secret,
                             filesystem, network, database, signing, or
@@ -45,7 +45,7 @@ from types import MappingProxyType
 from typing import Final, Mapping
 
 
-VERSION: Final[str] = "v1.0.0-R1D-B0F-B4-R9B-P2-R4-LEGAL-CORPUS-APPROVAL-TRUST-ROOT"
+VERSION: Final[str] = "v1.1.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT"
 APPROVAL_SCOPE: Final[str] = "PLATFORM"
 APPROVAL_AUTHORITY_ROLE: Final[str] = "WILSY_OS_LEGAL_CORPUS_APPROVAL_AUTHORITY"
 APPROVAL_ISSUER_IDENTITY: Final[str] = "WILSY_OS_LEGAL_CORPUS_APPROVAL_AUTHORITY:V1"
@@ -55,6 +55,14 @@ APPROVAL_TRUST_ROOT_PROVENANCE: Final[str] = "WILSY_LEGAL_CORPUS_APPROVAL_TRUST_
 ED25519_ALGORITHM: Final[str] = "Ed25519"
 PUBLIC_KEY_ENCODING: Final[str] = "base64url_without_padding_raw_32_bytes"
 KEY_ID_PREFIX: Final[str] = "prdca-key:legal-corpus-approval-"
+
+# R9B-P5-R1 public ceremony metadata. These constants intentionally contain no
+# private key, signature, filesystem path, or secret-loading logic.
+_PRODUCTION_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
+_PRODUCTION_PUBLIC_KEY_BASE64URL: Final[str] = "MgzL6fXojmva5bRPonUOdVLOEZFRJHd6gA1kJa1SXGE"
+_PRODUCTION_VALID_FROM: Final[datetime] = datetime(2026, 9, 19, 10, 3, 24, 50717, tzinfo=timezone.utc)
+_PRODUCTION_VALID_UNTIL: Final[datetime] = datetime(2026, 9, 20, 10, 3, 24, 50717, tzinfo=timezone.utc)
+_PRODUCTION_TRUST_FINGERPRINT: Final[str] = "898f01c1e1bbc0caf9d70f70f2bc9db97ab24b56d35641fa678732e8269fcdd0608fcb68a8fb79f200ea5cc413e370a7afb5696fc74b572cc4c5618eecd9bc81"
 
 _KEY_ID = re.compile(r"^prdca-key:legal-corpus-approval-[a-f0-9]{32}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -385,7 +393,24 @@ class LegalCorpusApprovalTrustRoot:
         return len(self.trusted_keys)
 
 
-PRODUCTION_APPROVAL_TRUSTED_KEYS: Final[tuple[LegalCorpusApprovalTrustedKey, ...]] = ()
+_PRODUCTION_APPROVAL_KEY: Final[LegalCorpusApprovalTrustedKey] = LegalCorpusApprovalTrustedKey(
+    key_id=_PRODUCTION_KEY_ID,
+    issuer_identity=APPROVAL_ISSUER_IDENTITY,
+    authority_role=APPROVAL_AUTHORITY_ROLE,
+    authority_domain=APPROVAL_AUTHORITY_DOMAIN,
+    algorithm=ED25519_ALGORITHM,
+    public_key_base64url=_PRODUCTION_PUBLIC_KEY_BASE64URL,
+    valid_from=_PRODUCTION_VALID_FROM,
+    valid_until=_PRODUCTION_VALID_UNTIL,
+    status=LegalCorpusApprovalTrustStatus.ACTIVE,
+    revision=1,
+    permitted_operations=frozenset({APPROVAL_OPERATION}),
+    scope=APPROVAL_SCOPE,
+    trust_root_provenance=APPROVAL_TRUST_ROOT_PROVENANCE,
+    trust_fingerprint=_PRODUCTION_TRUST_FINGERPRINT,
+)
+
+PRODUCTION_APPROVAL_TRUSTED_KEYS: Final[tuple[LegalCorpusApprovalTrustedKey, ...]] = (_PRODUCTION_APPROVAL_KEY,)
 PRODUCTION_APPROVAL_TRUST_ROOT: Final[LegalCorpusApprovalTrustRoot] = LegalCorpusApprovalTrustRoot(
     trusted_keys=PRODUCTION_APPROVAL_TRUSTED_KEYS
 )
@@ -411,7 +436,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_approval_trust_root.py
-# VERSION: v1.0.0-R1D-B0F-B4-R9B-P2-R4-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
+# VERSION: v1.1.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
 # AUTHORITY BOUNDARY: immutable PLATFORM approval public-key trust metadata only
 # TENANT POSTURE: no tenant, principal, or membership authority
 # FAIL-CLOSED POSTURE: invalid metadata, revoked keys, duplicates, and unknown keys reject
