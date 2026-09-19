@@ -1,31 +1,31 @@
 """Signed platform authorization for one exact legal-corpus draft.
 
 TITLE: WILSY OS Legal Corpus Operator Authorization Domain
-VERSION: v1.1.1-R1D-B0F-B4-R8J-JA-LEGAL-CORPUS-OPERATOR-AUTHORIZATION
+VERSION: v1.2.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Verifies an externally issued Ed25519 authorization against the
          canonical C1 operator trust root, which may contain governed public
-         verification keys, and the Institutional Charter draft, then derives
+         verification keys, and the closed platform legal corpus, then derives
          frozen R8D evidence without persistence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_corpus_operator_authorization.py
 COLLABORATION / OWNERSHIP: An external governed issuer creates the signed
                            envelope; this value verifies it; R8D evidence
                            remains the next downstream immutable value.
 CERTIFICATION / UPDATE DATE: 2026-09-18
-CHANGELOG: v1.1.1-R1D-B0F-B4-R8J-JA repairs stale empty-production-trust-root
-           sovereign metadata to reflect the governed C1 public-key root, with
-           one production public key admitted at this gate. The patch makes no
-           authorization-verification, signature, lifetime, Charter-binding,
-           R8D-mapping, signing, private-key, or authorization-issuance change.
+CHANGELOG: v1.2.0-R9B-P7-A2-R1 generalizes exact canonical resolution from the
+           Institutional Charter to every closed platform legal-corpus draft;
+           trust, signature, lifetime, scope, operation, and R8D boundaries
+           remain unchanged.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Only opaque identifiers, public-key-derived issuer
                             identity, timestamps, and integrity digests are
                             represented; no secret material is accepted.
 TENANT BOUNDARY: PLATFORM scope only; no tenant or principal authority exists.
 AUTHORITY BOUNDARY: Verification of externally signed draft-admission evidence
-                    only; D1 resolves only the canonical C1 trust root, rejects
-                    caller-supplied trust, and does not issue, sign, approve,
-                    persist, consume, or execute an authorization.
+                    only; D1 resolves only the canonical C1 trust root and the
+                    closed server-owned corpus, rejects caller-supplied trust
+                    and documents, and does not issue, sign, approve, persist,
+                    consume, or execute an authorization.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive for financial
                               execution and settlement truth.
 TRANSACTION BOUNDARY: Pure in-process value and verification; no database,
@@ -71,10 +71,10 @@ from tools.eos.legal_operations.domain.legal_corpus_provisioning_authority impor
     LegalCorpusProvisioningAuthoritySource,
     LegalCorpusProvisioningOperation,
 )
-from tools.eos.legal_operations.production_legal_corpus import get_institutional_charter_draft
+from tools.eos.legal_operations.production_legal_corpus import PLATFORM_LEGAL_CORPUS_DRAFTS
 
 
-VERSION: Final[str] = "v1.1.1-R1D-B0F-B4-R8J-JA-LEGAL-CORPUS-OPERATOR-AUTHORIZATION"
+VERSION: Final[str] = "v1.2.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION"
 SCHEMA: Final[str] = "WILSY-LEGAL-CORPUS-OPERATOR-AUTHORIZATION/V1"
 AUTHORITY_SCOPE: Final[str] = TRUST_ROOT_SCOPE
 AUTHORIZED_OPERATION: Final[str] = TRUST_ROOT_AUTHORIZED_OPERATION
@@ -141,11 +141,36 @@ class LegalCorpusOperatorAuthorizationKeyValidityError(LegalCorpusOperatorAuthor
 
 
 class LegalCorpusOperatorAuthorizationCanonicalDocumentError(LegalCorpusOperatorAuthorizationError):
-    """Reject a signed claim that does not equal the server-owned Charter."""
+    """Reject a signed claim that does not equal one server-owned draft."""
 
 
 class LegalCorpusOperatorAuthorizationDerivationError(LegalCorpusOperatorAuthorizationError):
     """Reject inability to derive frozen R8D evidence after verification."""
+
+
+def resolve_canonical_legal_corpus_document(
+    source_document_id: str,
+    source_version: str,
+) -> LegalDocumentVersion:
+    """Resolve one exact identity from the closed server-owned corpus.
+
+    This pure resolver accepts only the signed source identity and rejects
+    unknown or duplicate identities and every non-draft source. It never
+    accepts caller-supplied document content or performs I/O.
+    """
+    matches = tuple(
+        document
+        for document in PLATFORM_LEGAL_CORPUS_DRAFTS
+        if document.document_id == source_document_id and document.version == source_version
+    )
+    if not matches:
+        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("CANONICAL_DOCUMENT_UNKNOWN")
+    if len(matches) != 1:
+        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("CANONICAL_DOCUMENT_DUPLICATE")
+    document = matches[0]
+    if document.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED:
+        raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("NON_DRAFT_CANONICAL_SOURCE")
+    return document
 
 
 class LegalCorpusOperatorAuthorizationOperation(StrEnum):
@@ -205,12 +230,13 @@ def _r8d_evidence_id(authorization_id: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class LegalCorpusOperatorAuthorization:
-    """Immutable externally signed authority for one exact Charter draft.
+    """Immutable externally signed authority for one exact platform draft.
 
     Construction checks shape and signed semantics only. ``verify`` resolves
     the canonical in-process trust root, authenticates the Ed25519 payload,
     evaluates the exact zero-skew validity window, requires an ACTIVE
-    operational key, and binds the claims to the server-owned Charter.
+    operational key, and binds the claims to the exact server-owned platform
+    draft named by the signed source identity.
     Successful verification authorizes a new transaction attempt at that
     instant; the caller must verify again for a fresh retry. Expiry after a
     transaction starts and post-attempt readback are outside this pure domain
@@ -384,9 +410,10 @@ class LegalCorpusOperatorAuthorization:
             raise LegalCorpusOperatorAuthorizationNotYetValidError("AUTHORIZATION_NOT_YET_VALID")
         if now > self.expires_at:
             raise LegalCorpusOperatorAuthorizationExpiredError("AUTHORIZATION_EXPIRED")
-        document = get_institutional_charter_draft()
-        if document.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED:
-            raise LegalCorpusOperatorAuthorizationCanonicalDocumentError("NON_DRAFT_CANONICAL_SOURCE")
+        document = resolve_canonical_legal_corpus_document(
+            self.source_document_id,
+            self.source_version,
+        )
         bindings = (
             (self.source_document_id, document.document_id),
             (self.source_agreement_type, document.agreement_type),
@@ -501,7 +528,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_operator_authorization.py
-# VERSION: v1.1.1-R1D-B0F-B4-R8J-JA-LEGAL-CORPUS-OPERATOR-AUTHORIZATION
+# VERSION: v1.2.0-R9B-P7-A2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION
 # AUTHORITY BOUNDARY: external-signature verification and deterministic R8D derivation only
 # TENANT POSTURE: PLATFORM scope; no tenant or principal authority
 # FAIL-CLOSED POSTURE: canonical C1 public-key trust, invalid signatures, drift, and expiry reject
