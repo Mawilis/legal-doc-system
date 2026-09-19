@@ -12,7 +12,7 @@ COLLABORATION / OWNERSHIP: Git owns commit identity; GitHub owns governed PR
                            state; campaign owners own the signed dirty-work
                            manifest. This guard owns no repository mutation.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.0.0-R1D-B0F-REPOSITORY-CONVERGENCE-R1 establishes explicit
+CHANGELOG: v1.0.1-R1D-B0F-REPOSITORY-CONVERGENCE-R1 establishes explicit
            local/tracking/remote/main parity, governed-PR pending state, and
            NUL-safe dirty-work accountability with SHA3-512 preservation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; audit evidence.
@@ -113,6 +113,12 @@ def _ref(ref: str) -> str:
     return _git("rev-parse", ref)
 
 
+def _upstream_ref() -> str:
+    """Resolve the configured upstream ref independently from remote naming."""
+
+    return _git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+
+
 def _counts(local: str, remote_main: str) -> tuple[int, int, str]:
     try:
         merge_base = _git("merge-base", local, remote_main)
@@ -163,7 +169,8 @@ def parity_evidence(
     """Collect and adjudicate all branch identities without changing Git state."""
 
     local = _ref("HEAD")
-    tracking = _ref(f"{remote}/{operating_branch}")
+    tracking_ref = _upstream_ref()
+    tracking = _ref(tracking_ref)
     remote_operating = _ref(f"{remote}/{operating_branch}")
     remote_main = _ref(f"{remote}/{base_branch}")
     ahead, behind, merge_base = _counts(local, remote_main)
@@ -302,7 +309,7 @@ if __name__ == "__main__":
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: branch parity and dirty-work accountability guard
-# VERSION: v1.0.0-R1D-B0F-REPOSITORY-CONVERGENCE-R1
+# VERSION: v1.0.1-R1D-B0F-REPOSITORY-CONVERGENCE-R1
 # AUTHORITY BOUNDARY: evidence classification only; no Git mutation authority
 # TENANT POSTURE: repository-level; no tenant data
 # FAIL-CLOSED POSTURE: mismatches and unaccounted dirty work deny closure
