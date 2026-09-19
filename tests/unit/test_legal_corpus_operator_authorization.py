@@ -1,10 +1,11 @@
 """Direct certificate for the R8O-P4-R7-R3 signed operator authorization domain.
 
 TITLE: WILSY OS R8O-P4-R7-R3 Signed Legal-Corpus Operator Authorization Certificate
-VERSION: v1.5.1-R9B-P7-A2-R2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
+VERSION: v1.6.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the two-record production trust root after its governed
-         RETIRED/revision-2 preservation and ACTIVE/revision-1 admission, while
+         RETIRED/revision-2 preservation and retirement of the second record,
+         while
          retaining test-owned ACTIVE authorization coverage, the signed envelope,
          canonical Charter, and deterministic R8D evidence boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_operator_authorization.py
@@ -15,10 +16,11 @@ COLLABORATION / OWNERSHIP: Certifies the E1 domain artifact against C1's
                            separate evidence. R8D authority, corpus source,
                            and PRDCA crypto certificates remain separate.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.5.1-R9B-P7-A2-R2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
-           derives the new ACTIVE-key fixture timestamp from its frozen
-           production validity interval, preserving the two-record root,
-           retired-key rejection, and the 30-minute authorization envelope.
+CHANGELOG: v1.6.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
+           certifies the second production record as RETIRED/revision 2 with
+           unchanged validity and public identity, and requires the exact
+           operationally-inactive rejection code while preserving test-owned
+           ACTIVE authorization coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Test-only key material is deterministic and local;
                             no production secret, environment trust, file key,
@@ -106,6 +108,7 @@ PRODUCTION_PUBLIC_KEY = "jfG0IANHA_tSNyjyurpBtTId98fG2l_LhifnfQJ2cXg"
 RETIRED_PRODUCTION_KEY_FINGERPRINT = "1ea7ec1e18355b4181d6b652c05be296deb2bb02cf0d5504e1e2ede82278572ee66178df141a4f98cf280af122fb2f55eebedb44262fa552f215c38a5bec2e38"
 NEW_PRODUCTION_KEY_ID = "prdca-key:legal-corpus-159cfa91f279b045407396cd3ec8dca2"
 NEW_PRODUCTION_PUBLIC_KEY = "vlN3rieZr9YwuvQ6AwW_dD1aN06B2MLGqlFsxacgCpM"
+RETIRED_SECOND_PRODUCTION_KEY_FINGERPRINT = "2154bc424e68de0091d68fa74fca74b05ef3a13607e93fca4ec155f0b96840e55624de465defc8ba4a3bdfdc20a7e6b913ed2fff0e03d3cdaa78e27a6c1ef276"
 ISSUER_IDENTITY = "issuer:r8j-d2-test"
 TEST_SEED = bytes(range(32))
 WRONG_TEST_SEED = bytes(range(1, 33))
@@ -278,17 +281,20 @@ def test_production_root_resolves_retired_key_and_rejects_fresh_authority(monkey
     )
 
 
-def test_new_active_production_key_resolves_without_fabricating_authority(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The new public record resolves, but resolution alone issues nothing."""
+def test_retired_production_key_resolves_without_fabricating_authority(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The retired public record resolves but cannot issue fresh D1 authority."""
     production_key = LegalCorpusOperatorTrustRoot.resolve(NEW_PRODUCTION_KEY_ID)
     assert production_key.public_key_base64url == NEW_PRODUCTION_PUBLIC_KEY
-    assert production_key.status is LegalCorpusOperatorKeyStatus.ACTIVE
-    assert production_key.revision == 1
+    assert production_key.status is LegalCorpusOperatorKeyStatus.RETIRED
+    assert production_key.revision == 2
+    assert production_key.fingerprint == RETIRED_SECOND_PRODUCTION_KEY_FINGERPRINT
     assert production_key.permitted_operations == frozenset({AUTHORIZED_OPERATION})
     assert LegalCorpusOperatorTrustRoot.production_key_count() == 2
     test_time = production_key.valid_from + timedelta(hours=1)
     assert production_key.valid_until is not None
     assert production_key.valid_from <= test_time < production_key.valid_until
+    assert production_key.can_verify_at(AUTHORIZED_OPERATION, test_time)
+    assert not production_key.can_issue(AUTHORIZED_OPERATION, test_time)
     signing_key = Ed25519PrivateKey.from_private_bytes(TEST_SEED)
     authorization = _authorization(
         signing_key,
@@ -298,7 +304,9 @@ def test_new_active_production_key_resolves_without_fabricating_authority(monkey
         expires_at=test_time + timedelta(minutes=5),
     )
     _patch_clock(monkeypatch, test_time)
-    _expect_code(LegalCorpusOperatorAuthorizationSignatureError, authorization.verify)
+    with pytest.raises(LegalCorpusOperatorAuthorizationUntrustedKeyError) as captured:
+        authorization.verify()
+    assert captured.value.code == "TRUSTED_KEY_NOT_OPERATIONALLY_ACTIVE"
 
 
 def test_production_key_wrong_signature_matrix_is_not_unknown_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -814,7 +822,7 @@ def test_dependency_and_side_effect_boundary_is_pure() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_authorization.py
-# VERSION: v1.5.1-R9B-P7-A2-R2-R1-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
+# VERSION: v1.6.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: direct certificate evidence only; no authorization issuance
 # TENANT POSTURE: PLATFORM corpus scope; no tenant or principal authority
 # FAIL-CLOSED POSTURE: malformed, untrusted, divergent, expired, tampered, and retired-production values reject
