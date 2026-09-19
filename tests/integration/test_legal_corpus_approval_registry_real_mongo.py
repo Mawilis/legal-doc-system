@@ -1,7 +1,7 @@
 """B4-R9B-P3-P4 isolated real-Mongo certificate for approval evidence.
 
 TITLE: WILSY OS Legal Corpus Approval Registry Real-Mongo Certificate
-VERSION: v1.1.0-R1D-B0F-B4-R9B-P3-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY-REAL-MONGO-CERT
+VERSION: v1.4.0-R1D-B0F-B4-R9B-P4-R5-R4-LEGAL-CORPUS-APPROVAL-REGISTRY-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the append-only approval-evidence registry
          against a dedicated writable replica set without claiming approval,
@@ -11,9 +11,10 @@ COLLABORATION / OWNERSHIP: The governed registry owns immutable evidence
                             persistence only. This certificate owns isolated
                             fixtures and caller-owned transaction observation.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.1.0 repairs the governed nested approved_at assertion and builds
-           split-identity race fixtures from valid semantic inputs before
-           fingerprinting, signing, and governed verification.
+CHANGELOG: v1.4.0 repairs the ABSENT preflight lifecycle oracle to distinguish
+           a fresh unmaterialized collection from the deployment index plan;
+           the five-selector field/value comparison remains independently
+           certified.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic Ed25519 material is memory-only and no
                             credentials or private keys are logged or stored.
@@ -91,6 +92,7 @@ from tools.eos.legal_operations.registry.legal_corpus_approval_registry import (
     AUTHORIZATION_STRUCTURAL_FIELDS,
     COLLECTION,
     LegalCorpusApprovalAdmissionState,
+    LegalCorpusApprovalPreflightState,
     LegalCorpusApprovalRegistry,
     LegalCorpusApprovalRegistryError,
 )
@@ -99,7 +101,6 @@ from tools.eos.legal_operations.registry.legal_corpus_approval_registry import (
 UTC = timezone.utc
 NOW = datetime(2026, 9, 19, 12, 0, 0, 123456, tzinfo=UTC)
 URI_ENV = "TEST_VENDOR_MONGO_URI"
-DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
 REPLICA_SET = "wilsyVendorCertRS"
 RUN_ID = os.environ.get("WILSY_R9B_P3_P4_RUN_ID", "").strip()
 if not RUN_ID or any(ch not in "0123456789abcdef" for ch in RUN_ID.casefold()):
@@ -429,7 +430,9 @@ def _fresh_database(client: MongoClient[Any], label: str) -> Iterator[Any]:
 @pytest.fixture(scope="module")
 def mongo_runtime() -> Iterator[tuple[MongoClient[Any], dict[str, Any]]]:
     """Anchor the sanctioned writable local replica set and clean namespaces."""
-    uri = os.environ.get(URI_ENV, DEFAULT_URI)
+    uri = os.environ.get(URI_ENV, "").strip()
+    if not uri:
+        pytest.fail("R9B_P4_R5_ENVIRONMENT_BLOCKER:TEST_VENDOR_MONGO_URI_MISSING")
     client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=3000, replicaSet=REPLICA_SET, retryWrites=True)
     try:
         hello = client.admin.command("hello")
@@ -471,16 +474,32 @@ class RecordingCollection:
 
     def __init__(self, collection: Any) -> None:
         self.collection = collection
+        self.find_queries: list[dict[str, Any]] = []
         self.find_sessions: list[Any] = []
         self.insert_sessions: list[Any] = []
 
     def find_one(self, query: dict[str, Any], *, session: Any = None) -> Any:
+        self.find_queries.append(deepcopy(query))
         self.find_sessions.append(session)
         return self.collection.find_one(query, session=session)
 
     def insert_one(self, document: dict[str, Any], *, session: Any = None) -> Any:
         self.insert_sessions.append(session)
         return self.collection.insert_one(document, session=session)
+
+
+class ReadOnlyRealCollection:
+    """Expose only real-Mongo reads so preflight cannot mutate by accident."""
+
+    def __init__(self, collection: Any) -> None:
+        self.collection = collection
+        self.find_queries: list[dict[str, Any]] = []
+        self.find_sessions: list[Any] = []
+
+    def find_one(self, query: dict[str, Any], *, session: Any = None) -> Any:
+        self.find_queries.append(deepcopy(query))
+        self.find_sessions.append(session)
+        return self.collection.find_one(query, session=session)
 
 
 class RaceCollection(RecordingCollection):
@@ -524,6 +543,151 @@ def test_admission_does_not_auto_create_custom_indexes(mongo_runtime: tuple[Mong
         assert result.state is LegalCorpusApprovalAdmissionState.CREATED
         assert list(collection.list_indexes())[0]["name"] == "_id_"
         assert len(list(collection.list_indexes())) == 1
+
+
+def test_real_mongo_preflight_absent_is_complete_and_non_mutating(
+    mongo_runtime: tuple[MongoClient[Any], dict[str, Any]],
+) -> None:
+    """Certify ABSENT across all five selectors without any durable mutation."""
+    client, _ = mongo_runtime
+    with _fresh_database(client, "preflight_absent") as database:
+        collection = _collection(database)
+        proof = _proof("preflightabsent")
+        before_collection_exists = COLLECTION in database.list_collection_names()
+        before_indexes = list(collection.list_indexes()) if before_collection_exists else []
+        before_index_definitions = tuple(
+            (item["name"], tuple(item["key"].items()), bool(item.get("unique", False)))
+            for item in before_indexes
+        )
+        before_count = collection.count_documents({})
+        recording = ReadOnlyRealCollection(collection)
+        result = LegalCorpusApprovalRegistry.preflight_verified_approval(proof, recording)
+        after_collection_exists = COLLECTION in database.list_collection_names()
+        after_indexes = list(collection.list_indexes()) if after_collection_exists else []
+        after_index_definitions = tuple(
+            (item["name"], tuple(item["key"].items()), bool(item.get("unique", False)))
+            for item in after_indexes
+        )
+        assert result.state is LegalCorpusApprovalPreflightState.ABSENT
+        assert result.matched_record is None
+        assert result.matched_identities == ()
+        assert result.selector_to_row_identity == ()
+        assert result.collision_code is None
+        assert len(recording.find_queries) == 5
+        expected_queries = [
+            [("approval_evidence.approval_evidence_id", proof.approval_evidence.approval_evidence_id)],
+            [("authorization_id", proof.authorization.authorization_id)],
+            [
+                ("scope", proof.authorization.scope.value),
+                ("operation", proof.authorization.operation.value),
+                ("idempotency_key", proof.authorization.idempotency_key),
+            ],
+            [
+                ("scope", proof.authorization.scope.value),
+                ("operation", proof.authorization.operation.value),
+                ("approval_evidence.idempotency_key", proof.approval_evidence.idempotency_key),
+            ],
+            [
+                ("scope", proof.authorization.scope.value),
+                ("operation", proof.authorization.operation.value),
+                ("approval_evidence.approved_document_id", proof.approval_evidence.approved_document_id),
+                ("approval_evidence.approved_version", proof.approval_evidence.approved_version),
+            ],
+        ]
+        assert [list(query.items()) for query in recording.find_queries] == expected_queries
+        assert before_collection_exists is False
+        assert after_collection_exists is False
+        assert before_count == 0 and collection.count_documents({}) == 0
+        assert len(before_indexes) == 0 and len(after_indexes) == 0
+        assert before_index_definitions == after_index_definitions
+
+
+def test_real_mongo_preflight_exact_matches_one_physical_row_without_id(
+    mongo_runtime: tuple[MongoClient[Any], dict[str, Any]],
+) -> None:
+    """Certify EXACT when every selector resolves the same durable row."""
+    client, _ = mongo_runtime
+    with _fresh_database(client, "preflight_exact") as database:
+        collection = _collection(database)
+        proof = _proof("preflightexact")
+        row = _independent_document(proof)
+        collection.insert_one(deepcopy(row))
+        stored = collection.find_one({"authorization_id": proof.authorization.authorization_id})
+        assert stored is not None and stored.get("_id") is not None
+        result = LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+        assert result.state is LegalCorpusApprovalPreflightState.EXACT
+        assert result.matched_record is not None
+        assert result.matched_record.to_document() == row
+        assert "_id" not in result.matched_record.to_document()
+        assert len(result.matched_identities) == 1
+        assert len(result.selector_to_row_identity) == 5
+        assert {identity for _, identity in result.selector_to_row_identity} == set(result.matched_identities)
+        assert result.collision_code is None
+        assert collection.count_documents({}) == 1
+
+
+def test_real_mongo_preflight_divergent_identity_is_source_justified(
+    mongo_runtime: tuple[MongoClient[Any], dict[str, Any]],
+) -> None:
+    """Certify a reachable valid identity collision with divergent semantics."""
+    client, _ = mongo_runtime
+    with _fresh_database(client, "preflight_divergent") as database:
+        collection = _collection(database)
+        incoming = _proof("preflightdivergentincoming")
+        divergent = _proof(
+            "preflightdivergentrow",
+            evidence_id=incoming.approval_evidence.approval_evidence_id,
+        )
+        assert divergent.approval_evidence.approved_document.version != incoming.approval_evidence.approved_document.version
+        collection.insert_one(_independent_document(divergent))
+        result = LegalCorpusApprovalRegistry.preflight_verified_approval(incoming, collection)
+        assert result.state is LegalCorpusApprovalPreflightState.DIVERGENT
+        assert result.collision_code == "LEGAL_CORPUS_APPROVAL_EVIDENCE_ID_COLLISION"
+        assert result.matched_record is not None
+        assert result.matched_record.to_document() == _independent_document(divergent)
+        assert len(result.selector_to_row_identity) == 1
+        assert result.selector_to_row_identity[0][0] == "evidence_id"
+        assert collection.count_documents({}) == 1
+
+
+def test_real_mongo_preflight_split_identity_reports_complete_selector_evidence(
+    mongo_runtime: tuple[MongoClient[Any], dict[str, Any]],
+) -> None:
+    """Certify SPLIT_IDENTITY and forbid implicit repair or backfill."""
+    client, _ = mongo_runtime
+    with _fresh_database(client, "preflight_split") as database:
+        collection = _collection(database)
+        incoming, _, _, _, row_a, row_b = _split_fixture("preflightsplit")
+        collection.insert_one(row_a)
+        collection.insert_one(row_b)
+        before_count = collection.count_documents({})
+        result = LegalCorpusApprovalRegistry.preflight_verified_approval(incoming, collection)
+        assert result.state is LegalCorpusApprovalPreflightState.SPLIT_IDENTITY
+        assert result.matched_record is None
+        assert result.collision_code is None
+        assert len(result.matched_identities) == 2
+        assert len(result.selector_to_row_identity) == 2
+        assert {selector for selector, _ in result.selector_to_row_identity} == {"evidence_id", "authorization_id"}
+        assert len({identity for _, identity in result.selector_to_row_identity}) == 2
+        assert collection.count_documents({}) == before_count == 2
+
+
+def test_real_mongo_preflight_persisted_invalid_is_not_absent(
+    mongo_runtime: tuple[MongoClient[Any], dict[str, Any]],
+) -> None:
+    """Certify reachable corruption fails closed instead of becoming ABSENT."""
+    client, _ = mongo_runtime
+    with _fresh_database(client, "preflight_invalid") as database:
+        collection = _collection(database)
+        proof = _proof("preflightinvalid")
+        collection.insert_one(_independent_document(proof))
+        raw = collection.find_one({"approval_evidence.approval_evidence_id": proof.approval_evidence.approval_evidence_id})
+        assert raw is not None
+        collection.update_one({"_id": raw["_id"]}, {"$set": {"approval_evidence.source_content": "corrupted"}})
+        with pytest.raises(LegalCorpusApprovalRegistryError) as captured:
+            LegalCorpusApprovalRegistry.preflight_verified_approval(proof, collection)
+        assert captured.value.code == "LEGAL_CORPUS_APPROVAL_PERSISTED_INVALID"
+        assert collection.count_documents({}) == 1
 
 
 @pytest.mark.parametrize("bad", [None, {}, object(), False, "proof"])
@@ -728,6 +892,10 @@ def test_session_forwarding_and_caller_transaction_ownership(
         with client.start_session() as session:
             recording = RecordingCollection(collection)
             session.start_transaction()
+            preflight = LegalCorpusApprovalRegistry.preflight_verified_approval(proof, recording, session=session)
+            assert preflight.state is LegalCorpusApprovalPreflightState.ABSENT
+            assert len(recording.find_sessions) == 5
+            assert all(item is session for item in recording.find_sessions)
             result = LegalCorpusApprovalRegistry.admit_verified_approval(proof, recording, session=session)
             assert session.in_transaction is True
             assert result.state is LegalCorpusApprovalAdmissionState.CREATED
@@ -763,7 +931,7 @@ def test_independent_contract_constants_are_closed() -> None:
 
 
 # ARTIFACT: test_legal_corpus_approval_registry_real_mongo.py
-# VERSION: v1.1.0-R1D-B0F-B4-R9B-P3-P4-R2-LEGAL-CORPUS-APPROVAL-REGISTRY-REAL-MONGO-CERT
+# VERSION: v1.4.0-R1D-B0F-B4-R9B-P4-R5-R4-LEGAL-CORPUS-APPROVAL-REGISTRY-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: isolated durable PLATFORM approval-evidence registry only
 # TENANT POSTURE: exact per-run UUID namespace; no tenant or principal authority
 # FAIL-CLOSED POSTURE: real index, schema, replay, collision, race, corruption,
