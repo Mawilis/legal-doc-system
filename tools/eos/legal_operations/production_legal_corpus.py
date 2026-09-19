@@ -1,7 +1,7 @@
 """Canonical WILSY OS production legal-corpus draft.
 
 TITLE: WILSY OS Required Platform Legal Corpus Drafts
-VERSION: v1.1.0-R1D-B0F-R9B-P7-A1-REQUIRED-PLATFORM-LEGAL-CORPUS
+VERSION: v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PLATFORM-LEGAL-CORPUS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the first substantive institutional Charter draft as an
          immutable, server-digested legal-document value without provisioning,
@@ -10,9 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Legal counsel and governed approval authorities own
                             review and approval; LegalDocumentRegistry owns
                             later durable persistence.
-CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.1.0 preserves the immutable Charter draft and authors the five
-           required platform legal-document family drafts.
+CERTIFICATION / UPDATE DATE: 2026-09-19
+CHANGELOG: v1.2.0 preserves the immutable Charter and five 1.0.0-DRAFT
+           identities and authors five human-directed 1.1.0-DRAFT successors
+           with lifecycle-neutral prose; no persistence or authority changes.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No personal, secret, corporate-registration, or
                             client tenant data is embedded in this draft.
@@ -36,7 +37,7 @@ from tools.eos.legal_operations.domain.legal_acceptance import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-R1D-B0F-R9B-P7-A1-REQUIRED-PLATFORM-LEGAL-CORPUS"
+VERSION: Final[str] = "v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PLATFORM-LEGAL-CORPUS"
 DOCUMENT_ID: Final[str] = "WILSY-OS-INSTITUTIONAL-CHARTER"
 DOCUMENT_VERSION: Final[str] = "1.0.0-DRAFT"
 CONTENT_REFERENCE: Final[str] = "wilsy-os://legal/institutional-charter/1.0.0-draft"
@@ -242,6 +243,9 @@ governed, and durable authorities.
 
 
 DRAFT_AUTHORING_TIMESTAMP: Final[datetime] = datetime(2026, 9, 19, tzinfo=timezone.utc)
+REVIEWED_SUCCESSOR_AUTHORING_TIMESTAMP: Final[datetime] = datetime(
+    2026, 9, 19, 12, 0, tzinfo=timezone.utc
+)
 
 USER_TERMS_CONTENT: Final[str] = """WILSY OS USER TERMS
 
@@ -725,6 +729,485 @@ commercial term, or financial authority.
 """
 
 
+USER_TERMS_REVIEWED_SUCCESSOR_CONTENT: Final[str] = """WILSY OS USER TERMS
+
+1. Scope and relationship to the Institutional Charter
+
+These User Terms describe general use of WILSY OS within the principles of the
+WILSY OS Institutional Charter. They are platform-use terms and are not a
+master subscription agreement, order form, data processing agreement,
+service-level schedule, employment agreement, or grant of signing authority.
+A separate governed approval record is required before any version is treated
+as effective for the scope stated in that record. A later version may refine a
+subject only through its own governed scope, effective point, and succession
+record.
+
+2. Authenticated accounts and responsible use
+
+Access is provided to an authenticated person through identity controls made
+available by WILSY OS. The person using an account must protect credentials,
+authenticators, recovery material, and active sessions; report suspected
+compromise through the authenticated support or security mechanism; and stop
+knowingly permitting unauthorised activity attributed to the account.
+Authentication establishes a presented identity. It does not establish every
+permission or authority needed for an operation.
+
+3. Tenant and organisation context
+
+WILSY OS may operate across distinct tenant, organisation, matter, case,
+workflow, district, or other institutional scopes. A user must select and use
+only a scope to which the authenticated authority grants access. A tenant
+owner, administrator, or super-administrator does not automatically become an
+authorised signatory, legal representative, counsel, financial approver, or
+execution operator. User acknowledgement or acceptance is attributable to the
+user and is not an organisation signature or organisation-binding authority.
+
+4. Permissions and permitted access
+
+Permitted access is limited to roles, permissions, assignments, and resource
+boundaries granted by the relevant WILSY OS authority. Users must not bypass a
+permission check, infer access from a visible identifier, query another
+tenant, or use a client projection as proof of missing authority. Absence,
+conflict, or stale state must be reported or fail closed rather than replaced
+with an invented success.
+
+5. Assistance, decisions, and evidence
+
+WILSY OS may provide retrieval, organisation, analysis, explanation,
+recommendation, and other tool assistance. Model output is not legal advice,
+legal authority, a governed approval record, signatory authority, service
+evidence, execution, payment, or settlement. Users remain responsible for
+consequential decisions, source review, lawful instructions, and confirmation
+that an action was performed by its designated authority. A provider response,
+browser display, model result, location, timestamp, or uploaded image is not
+self-authenticating WILSY OS truth.
+
+6. User content and institutional integrity
+
+Users must submit only content they are lawfully entitled and authorised to
+submit. Content should be accurate to the user's knowledge, appropriately
+scoped, and handled with care where it contains personal, confidential,
+privileged, or legally sensitive information. Users must not alter, suppress,
+fabricate, backdate, replay divergently, or misrepresent records, evidence,
+workflow state, service events, invoices, payments, approvals, or settlement.
+Immutable or append-only evidence may remain preserved when a projection or
+account association is later removed.
+
+7. Prohibited circumvention and misuse
+
+Users must not use WILSY OS for unlawful access, credential theft, malware,
+destructive activity, unauthorised scraping, resource exhaustion, security
+probing, impersonation, fraud, harassment, threats, rights-infringing
+content, or evasion of monitoring and access controls. The Acceptable Use
+Policy supplies additional security and misuse boundaries. Users must not
+treat AI output as fabricated legal evidence, bypass review or signature
+controls, or ask a non-Kennel surface to invent financial execution or
+settlement truth.
+
+8. Integrations, availability, and technical limitations
+
+Third-party integrations, models, payment networks, courier systems, devices,
+and other providers may supply capability, transport, standards, or observed
+data. They do not become canonical WILSY OS authorities merely because they
+return a response. Integrations may be unavailable, delayed, rate-limited,
+incorrect, or changed. No unstated uptime or service-level promise is made by
+these terms. Users must use the designated recovery and support path when a
+result is unavailable or ambiguous.
+
+9. Intellectual property and lawful compliance
+
+Users retain whatever rights they lawfully hold in submitted material, subject
+to permissions necessary to operate the selected workflow and preserve
+required evidence. WILSY OS platform materials, interface elements, and
+governed records remain subject to rights applicable to their source; these
+terms do not create a corporate ownership statement or transfer rights. Users
+must comply with applicable law, professional duties, court or regulator
+orders, confidentiality obligations, and their own institutional policies.
+
+10. Suspension, cessation, and version succession
+
+Access may be restricted or suspended to protect security, tenant isolation,
+records, people, or lawful operations. Suspension does not by itself delete
+immutable evidence or decide a disputed legal issue. Historical authority and
+evidence remain governed by their own retention and lifecycle rules. Version
+succession must identify the predecessor, effective point, and governing
+record; a newer version does not silently rewrite an older record.
+
+11. Governance contacts and lifecycle separation
+
+Questions, rights requests, security reports, and legal concerns should use
+the authenticated support, legal, privacy, or security contact mechanism made
+available by WILSY OS. The existence of these terms does not itself create
+acceptance, organisation binding, signatory authority, commercial obligation,
+financial execution, or settlement. Each such outcome requires its separate
+designated authority and durable evidence.
+"""
+
+
+ACCEPTABLE_USE_REVIEWED_SUCCESSOR_CONTENT: Final[str] = """WILSY OS ACCEPTABLE USE POLICY
+
+1. Purpose and relationship to the Institutional Charter
+
+This Acceptable Use Policy describes prohibited misuse of WILSY OS platform
+capability and operates consistently with the Institutional Charter. It is
+not a commercial order, organisation signature, financial authority, or
+substitute for a specific law, court order, or professional duty. A separate
+governed record determines the applicable scope and effective point.
+
+2. Lawful and authorised use
+
+Use WILSY OS only for lawful, authorised institutional work and only within
+the tenant, organisation, matter, case, workflow, district, and permission
+boundaries granted to the authenticated principal. Do not use another
+person's credentials, tokens, recovery material, session, or device
+assertion. Do not infer authority from a role label, tenant ownership,
+SUPER_ADMIN access, an administrator badge, or a successful login.
+Authentication is not blanket authorisation.
+
+3. Access, isolation, and security abuse
+
+Prohibited activity includes bypassing tenant isolation; enumerating or
+disclosing another tenant's records; unauthorised access or privilege
+elevation; credential capture; token theft; malware; ransomware; destructive
+commands; data poisoning; denial-of-service; resource exhaustion;
+unauthorised scraping; automated traffic that defeats rate or safety controls;
+security probing or vulnerability testing without an expressly authorised
+scope; and interference with audit, identity, evidence, or availability
+controls.
+
+4. Deception, content, and harm
+
+Do not impersonate a person or institution, commit fraud, mislead a court,
+regulator, client, tenant, provider, or operator, or submit content known to
+be unlawful, rights-infringing, malicious, threatening, harassing,
+exploitative, or intended to facilitate harm. Do not use the platform to
+target people with unlawful discrimination, threats, stalking, or
+exploitation. These boundaries protect people, records, security, and legal
+operations without deciding a disputed legal issue.
+
+5. Truth, evidence, and governed transitions
+
+Never fabricate, alter, backdate, delete, replay divergently, or conceal
+legal, operational, service, custody, review, approval, invoice, payment,
+execution, settlement, or audit truth. A provider response, uploaded file,
+location, model answer, browser state, or integration callback is evidence or
+capability, not automatically canonical WILSY OS truth. Attempts are not
+completed services; invoices are not payments; payments are not settlement.
+
+6. AI and authority boundaries
+
+AI assistance may retrieve, summarise, analyse, classify, or recommend. It
+may be inaccurate, incomplete, stale, or unsuitable. AI output is not legal
+advice, legal authority, a governed approval record, signatory authority,
+service evidence, execution, or settlement. Do not present model output as a
+signed instrument, authoritative record, or real-world event. Tool access is
+capability, not authority.
+
+7. Review, signature, and financial circumvention
+
+Do not bypass document review, governed approval, signature verification,
+acceptance, release-authorisation, or operator transaction controls. Do not
+submit a signature or authority representation for another person. Do not ask
+a client, browser, provider, model, or integration to mark a document as
+effective, a user as an authorised signatory, a payment as executed, or a
+balance as settled. Kennel EOS remains the exclusive financial execution and
+settlement authority where the platform constitution assigns that boundary.
+
+8. Secrets, reporting, and enforcement
+
+Do not disclose passwords, private keys, passphrases, recovery codes, tokens,
+or other secrets in content, logs, prompts, tickets, or integrations. Report
+suspected vulnerability, abuse, compromise, or unsafe content through the
+authenticated security or support mechanism made available by WILSY OS. WILSY
+OS may monitor bounded security and integrity signals, preserve evidence,
+restrict access, suspend a session, or require review when necessary. Such
+enforcement does not itself determine legal liability or create financial
+authority; the designated authority and applicable law govern those questions.
+
+9. Version succession and contact boundary
+
+Material changes identify their version, predecessor, effective point, and
+governing record. Concerns should use the authenticated support, legal,
+privacy, or security contact mechanism provided by WILSY OS. The existence of
+this policy does not itself create organisation binding, signature authority,
+commercial obligation, payment execution, or settlement truth.
+"""
+
+
+PRIVACY_NOTICE_REVIEWED_SUCCESSOR_CONTENT: Final[str] = """WILSY OS PRIVACY NOTICE
+
+1. Scope and South African context
+
+This POPIA-aware Privacy Notice describes information categories, purposes,
+boundaries, safeguards, and rights relevant to WILSY OS in the South African
+(ZA) context. It does not create a data-processing agreement or override a
+lawful obligation. Processing and disclosure remain subject to the applicable
+authority, purpose, and lifecycle record.
+
+2. Information that may be handled
+
+Depending on an authorised workflow, WILSY OS may handle account, identity,
+contact, authentication, membership, role, permission, tenant,
+organisation, matter, case, instruction, process, custody, workflow,
+document, audit, acceptance, evidence, billing-eligibility, and operational
+information. It may also receive device, session, security, usage,
+diagnostic, trace, availability, and integration information. AI-enabled
+workflows may handle prompts, selected context, retrieved records, tool
+events, model responses, provenance, and feedback required by their governed
+configuration.
+
+3. Sources and purposes
+
+Information may come from the authenticated person, an authorised institution,
+platform services, security controls, connected capability providers, or
+governed records. Purposes may include authentication, tenant isolation,
+service delivery, workflow coordination, document and evidence integrity,
+security and fraud prevention, support, troubleshooting, auditability,
+operational reporting, product improvement, bounded analytics, and compliance
+with lawful duties. A purpose must remain proportionate, scoped, and
+consistent with its authority; a client or model cannot silently expand it.
+
+4. Responsible-party and operator boundaries
+
+WILSY OS determines the applicable responsible-party and operator roles for a
+particular processing activity from the governing arrangement and instructions.
+Hosting, security, communications, storage, analytics, model, and other
+providers may act as operators or capabilities only within those arrangements.
+A provider or model is not the canonical WILSY OS authority for legal,
+lifecycle, evidence, review, approval, execution, payment, or settlement
+truth. Concrete role allocation remains activity-specific and governed.
+
+5. Lawful grounds and tenant boundaries
+
+Processing grounds are assessed for the relevant activity, including lawful
+service delivery, a legal obligation, a legitimate institutional purpose, or
+another ground available under applicable law. Blanket consent is not treated
+as the answer to every activity. Tenant and organisation boundaries are
+enforced independently from identity and are not overridden by a provider
+response or AI suggestion.
+
+6. Cross-border processing and security safeguards
+
+Information may be processed or supported across jurisdictions only where a
+lawful and governed arrangement permits it. WILSY OS does not assert a
+specific provider location or transfer country here. Access control,
+authentication, least privilege, tenant isolation, secure transport, storage
+protection, logging, monitoring, integrity checks, incident handling, and
+redaction should be applied according to the information and governing
+contract. Safeguards reduce risk but do not promise that every incident is
+impossible.
+
+7. Retention, immutable evidence, and rights
+
+Information should be retained only for a lawful, documented, and necessary
+purpose, subject to the applicable lifecycle and evidence rules. Immutable,
+append-only, legal, audit, review, acceptance, or transaction evidence may
+need to remain preserved even when a projection, account association, or
+ordinary copy is removed. Subject to applicable law and lawful limitations, a
+person may have rights to access, correction, objection, deletion,
+restriction, or another appropriate remedy. A request may be limited where
+retention, privilege, security, third-party rights, or evidence integrity
+requires it.
+
+8. AI transparency and sensitive information
+
+AI processing distinguishes OBSERVED FACT from DERIVED SIGNAL, AI INFERENCE,
+RECOMMENDATION, AUTHORIZATION, and EXECUTION. Model output may be inaccurate,
+incomplete, or stale and is not legal advice or evidence by itself. Users
+should consider whether sensitive, confidential, privileged, or personal
+information is necessary before submitting it to an AI-enabled workflow and
+must use configured platform controls. Consequential decisions remain subject
+to human review and the designated authority.
+
+9. Requests, complaints, and version succession
+
+Questions, access or correction requests, privacy concerns, and complaints
+should use the authenticated support, legal, or privacy contact mechanism made
+available by WILSY OS. The Information Regulator of South Africa may be
+contacted through its official published channels; no mailbox or officer is
+created by this notice. Children or minors are not assigned an unsupported
+eligibility rule here; applicable safeguards require activity-specific review.
+Material changes identify their version, predecessor, effective point, and
+governing record. This notice does not itself create commercial, financial,
+signatory, acceptance, or organisation-binding authority.
+"""
+
+
+AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_CONTENT: Final[str] = """WILSY OS AI ASSISTANCE NOTICE
+
+1. Purpose and authority boundary
+
+This AI Assistance Notice explains the limits of AI-enabled capability in
+WILSY OS. It is not legal advice, a model warranty, a governed approval
+record, a signature, a service record, a financial instruction, or an
+organisation-binding agreement. The existence of this notice does not grant
+an AI system, provider, tool, or user authority to act outside its governed
+scope.
+
+2. Assistance is not institutional authority
+
+AI may assist with retrieval, summarisation, analysis, classification,
+translation, drafting, explanation, search, workflow suggestions, or
+next-action recommendations. It does not autonomously become an institutional
+authority. The governing distinctions remain:
+
+OBSERVED FACT != DERIVED SIGNAL != AI INFERENCE != RECOMMENDATION
+!= AUTHORIZATION != EXECUTION.
+
+AI output may be inaccurate, incomplete, ambiguous, stale, biased, or based on
+an unsuitable source. It must not be represented as legal advice, an
+authoritative record, a valid signature, proof of service, a verified
+identity, a payment, or settlement truth. Human users and designated
+authorities remain responsible for consequential decisions and actual actions.
+
+3. Source, context, and tenant boundaries
+
+An AI response is bounded by source records, permissions, tenant,
+organisation, matter, case, workflow, jurisdiction, and context made
+available to it. Retrieval or tool access does not grant access to records
+outside those boundaries. A model must not select a tenant, elevate a role,
+infer organisation authority, or disclose another tenant's information. If
+source context is unavailable, conflicting, or stale, the result is
+unavailable or requires review rather than an invented outcome.
+
+4. Human review and consequential use
+
+Before relying on an output, a user must inspect the relevant source, check
+scope and date, consider uncertainty, and obtain the review or governed
+decision required by the applicable workflow. AI cannot create a legal-corpus
+approval, signatory authority, organisation acceptance, service evidence,
+release of funds, payment execution, or settled balance. A recommendation is
+not permission, and generated text is not an executed instrument.
+
+5. Tools, providers, and model changes
+
+Tools and external model providers may supply capability, transport,
+retrieval, or analysis. They do not become canonical WILSY OS authorities
+because they returned a response. Providers and models may change, fail, be
+unavailable, or produce different output. WILSY OS should preserve bounded
+provenance, usage, invocation, and audit information where the governing
+configuration requires it, without treating a provider response as canonical
+business, legal, lifecycle, evidence, payment, or settlement truth.
+
+6. Information handling and confidentiality
+
+Users must consider whether personal, confidential, privileged, security,
+client, matter, or legally sensitive information is necessary before entering
+it into an AI-enabled workflow. Use configured access, redaction, retention,
+and provider controls. Do not submit secrets, private keys, passphrases,
+recovery material, or another person's information without lawful authority.
+Processing by a model or capability provider must remain within the relevant
+governed purpose and privacy boundary.
+
+7. Provenance, reporting, and misuse
+
+Generated text should remain associated with the source and context needed to
+evaluate it. Users should report materially incorrect, unsafe,
+discriminatory, confidentiality-threatening, or misleading output through
+the authenticated support, legal, privacy, or security contact mechanism made
+available by WILSY OS. Do not use prompts, tools, or model output to bypass
+review, signature, audit, tenant, security, or Kennel financial boundaries.
+
+8. Version succession and lifecycle separation
+
+Models, providers, retrieval sources, and controls may evolve. A material
+change should identify its version, predecessor, effective point, and governing
+record. This notice does not itself create approval, acceptance, signatory,
+commercial, financial, execution, or settlement authority; each outcome
+requires its separate designated authority and durable evidence.
+"""
+
+
+ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_CONTENT: Final[str] = """WILSY OS ADMINISTRATOR RESPONSIBILITY NOTICE
+
+1. Scope and relationship to the Institutional Charter
+
+This Administrator Responsibility Notice describes elevated operational
+responsibility under the Institutional Charter. It is not a corporate mandate,
+signatory appointment, service-level promise, commercial agreement, or
+financial execution authority. A separate governed record determines the
+scope, effective point, and authority applicable to an administrator.
+
+2. Privilege is responsibility, not signature authority
+
+Administrative access permits bounded platform operations; it does not by
+itself make a person an authorised signatory, legal representative, counsel,
+financial approver, or organisation owner. In particular:
+
+SUPER_ADMIN != AUTHORISED_SIGNATORY.
+
+A tenant owner, administrator, or membership manager is not automatically
+authorised to bind an organisation, accept a commercial agreement, approve a
+legal corpus, sign on behalf of another person, release funds, or declare
+settlement. Authority must come from its designated governed source.
+
+3. Least privilege and membership management
+
+Administrators should grant the minimum role and permission needed for a
+defined task, review access regularly, remove access when a person leaves or
+changes responsibility, and avoid shared accounts. Role changes, invitations,
+offboarding, recovery, integration credentials, and privileged actions should
+remain attributable and auditable. A visible client state does not replace
+server-side permission or tenant validation.
+
+4. Tenant isolation and sensitive records
+
+Administrators must preserve tenant, organisation, matter, case, district,
+workflow, and evidence boundaries. They must not browse, export, disclose, or
+alter another scope without a separately governed purpose. Legal, personal,
+confidential, security, and operational records require careful handling,
+least-privilege access, secure credentials, appropriate support channels, and
+preservation of material audit evidence.
+
+5. Configuration and integration responsibility
+
+Administrators are responsible for reviewing configuration, webhooks, API
+clients, automation, provider credentials, retention settings, and access
+assignments within their granted scope. External integrations and providers
+are capabilities, not canonical WILSY OS authorities. A provider response,
+model recommendation, browser action, or automation result does not prove
+that WILSY authorised or executed an operation.
+
+6. AI and legal-operation boundaries
+
+AI or administrative tooling may retrieve, analyse, explain, or recommend; it
+does not create review completion, governed approval, signatory authority,
+acceptance, organisation binding, service evidence, execution, payment, or
+settlement. Administrators must not ask a model or tool to bypass a
+permission, alter evidence, manufacture a legal fact, or conceal uncertainty.
+User acceptance is an acknowledgement attributable to that user, not an
+organisation signature.
+
+7. Financial and review boundaries
+
+Administrators must not bypass document review, governed approval, signature,
+acceptance, release-authorisation, or transaction controls. A document
+lifecycle state is not RELEASE AUTHORIZED, EXECUTED, or SETTLED. Kennel EOS remains the exclusive
+authority for financial execution and settlement truth where the platform
+constitution assigns that boundary. No administrator action changes that rule
+or authorises a bank, provider, payment destination, paid state, or settled
+state.
+
+8. Incidents, escalation, and evidence preservation
+
+Administrators should promptly use the authenticated security or support
+mechanism for suspected compromise, unauthorised access, data loss, unsafe
+automation, integrity conflict, or material policy breach. Preserve relevant
+logs and immutable evidence; do not delete or rewrite records to conceal an
+incident. Escalation does not itself determine legal liability or authority;
+the designated authority must adjudicate the matter.
+
+9. Version succession and contact boundary
+
+Material changes identify the predecessor, effective point, and governing
+record. Administrators should use the authenticated security, support, legal,
+privacy, or security contact mechanism made available by WILSY OS. The
+existence of this notice does not create corporate identity, registration,
+signatory authority, commercial obligation, financial execution, or settlement
+truth.
+"""
+
+
 def _platform_draft(
     *,
     document_id: str,
@@ -748,6 +1231,33 @@ def _platform_draft(
         sha3_512=canonical_document_digest(content, content_reference),
         created_at=DRAFT_AUTHORING_TIMESTAMP,
         supersedes_document_id=None,
+    )
+
+
+def _platform_reviewed_successor_draft(
+    *,
+    document_id: str,
+    agreement_type: LegalAgreementType,
+    title: str,
+    content_reference: str,
+    content: str,
+    supersedes_document_id: str,
+) -> LegalDocumentVersion:
+    """Construct one human-directed successor value without persistence authority."""
+    return LegalDocumentVersion(
+        document_id=document_id,
+        agreement_type=agreement_type,
+        version="1.1.0-DRAFT",
+        title=title,
+        jurisdiction="ZA",
+        locale="en-ZA",
+        effective_from=REVIEWED_SUCCESSOR_AUTHORING_TIMESTAMP,
+        status=LegalDocumentStatus.DRAFT_REVIEW_REQUIRED,
+        content_reference=content_reference,
+        content=content,
+        sha3_512=canonical_document_digest(content, content_reference),
+        created_at=REVIEWED_SUCCESSOR_AUTHORING_TIMESTAMP,
+        supersedes_document_id=supersedes_document_id,
     )
 
 
@@ -785,6 +1295,55 @@ ADMIN_RESPONSIBILITY_NOTICE_DRAFT: Final[LegalDocumentVersion] = _platform_draft
     title="WILSY OS Administrator Responsibility Notice",
     content_reference="wilsy-os://legal/admin-responsibility-notice/1.0.0-draft",
     content=ADMIN_RESPONSIBILITY_NOTICE_CONTENT,
+)
+
+USER_TERMS_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion] = _platform_reviewed_successor_draft(
+    document_id=USER_TERMS_DRAFT.document_id,
+    agreement_type=USER_TERMS_DRAFT.agreement_type,
+    title=USER_TERMS_DRAFT.title,
+    content_reference="wilsy-os://legal/user-terms/1.1.0-draft",
+    content=USER_TERMS_REVIEWED_SUCCESSOR_CONTENT,
+    supersedes_document_id=USER_TERMS_DRAFT.document_id,
+)
+ACCEPTABLE_USE_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion] = _platform_reviewed_successor_draft(
+    document_id=ACCEPTABLE_USE_DRAFT.document_id,
+    agreement_type=ACCEPTABLE_USE_DRAFT.agreement_type,
+    title=ACCEPTABLE_USE_DRAFT.title,
+    content_reference="wilsy-os://legal/acceptable-use/1.1.0-draft",
+    content=ACCEPTABLE_USE_REVIEWED_SUCCESSOR_CONTENT,
+    supersedes_document_id=ACCEPTABLE_USE_DRAFT.document_id,
+)
+PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion] = _platform_reviewed_successor_draft(
+    document_id=PRIVACY_NOTICE_DRAFT.document_id,
+    agreement_type=PRIVACY_NOTICE_DRAFT.agreement_type,
+    title=PRIVACY_NOTICE_DRAFT.title,
+    content_reference="wilsy-os://legal/privacy-notice/1.1.0-draft",
+    content=PRIVACY_NOTICE_REVIEWED_SUCCESSOR_CONTENT,
+    supersedes_document_id=PRIVACY_NOTICE_DRAFT.document_id,
+)
+AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion] = _platform_reviewed_successor_draft(
+    document_id=AI_ASSISTANCE_NOTICE_DRAFT.document_id,
+    agreement_type=AI_ASSISTANCE_NOTICE_DRAFT.agreement_type,
+    title=AI_ASSISTANCE_NOTICE_DRAFT.title,
+    content_reference="wilsy-os://legal/ai-assistance-notice/1.1.0-draft",
+    content=AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_CONTENT,
+    supersedes_document_id=AI_ASSISTANCE_NOTICE_DRAFT.document_id,
+)
+ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion] = _platform_reviewed_successor_draft(
+    document_id=ADMIN_RESPONSIBILITY_NOTICE_DRAFT.document_id,
+    agreement_type=ADMIN_RESPONSIBILITY_NOTICE_DRAFT.agreement_type,
+    title=ADMIN_RESPONSIBILITY_NOTICE_DRAFT.title,
+    content_reference="wilsy-os://legal/admin-responsibility-notice/1.1.0-draft",
+    content=ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_CONTENT,
+    supersedes_document_id=ADMIN_RESPONSIBILITY_NOTICE_DRAFT.document_id,
+)
+
+PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS: Final[tuple[LegalDocumentVersion, ...]] = (
+    USER_TERMS_REVIEWED_SUCCESSOR_DRAFT,
+    ACCEPTABLE_USE_REVIEWED_SUCCESSOR_DRAFT,
+    PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
+    AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
+    ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
 )
 
 INSTITUTIONAL_CHARTER_DRAFT: Final[LegalDocumentVersion] = LegalDocumentVersion(
@@ -844,9 +1403,35 @@ def get_admin_responsibility_notice_draft() -> LegalDocumentVersion:
     return ADMIN_RESPONSIBILITY_NOTICE_DRAFT
 
 
+def get_user_terms_reviewed_successor_draft() -> LegalDocumentVersion:
+    """Return the human-directed User Terms successor without persistence authority."""
+    return USER_TERMS_REVIEWED_SUCCESSOR_DRAFT
+
+
+def get_acceptable_use_reviewed_successor_draft() -> LegalDocumentVersion:
+    """Return the human-directed Acceptable Use successor without persistence authority."""
+    return ACCEPTABLE_USE_REVIEWED_SUCCESSOR_DRAFT
+
+
+def get_privacy_notice_reviewed_successor_draft() -> LegalDocumentVersion:
+    """Return the human-directed Privacy Notice successor without persistence authority."""
+    return PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT
+
+
+def get_ai_assistance_notice_reviewed_successor_draft() -> LegalDocumentVersion:
+    """Return the human-directed AI Assistance successor without persistence authority."""
+    return AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT
+
+
+def get_admin_responsibility_notice_reviewed_successor_draft() -> LegalDocumentVersion:
+    """Return the human-directed Administrator Responsibility successor without persistence authority."""
+    return ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT
+
+
 __all__ = [
     "AUTHORING_TIMESTAMP",
     "DRAFT_AUTHORING_TIMESTAMP",
+    "REVIEWED_SUCCESSOR_AUTHORING_TIMESTAMP",
     "CHARTER_CONTENT",
     "CONTENT_REFERENCE",
     "DOCUMENT_ID",
@@ -862,9 +1447,20 @@ __all__ = [
     "AI_ASSISTANCE_NOTICE_DRAFT",
     "ADMIN_RESPONSIBILITY_NOTICE_CONTENT",
     "ADMIN_RESPONSIBILITY_NOTICE_DRAFT",
+    "USER_TERMS_REVIEWED_SUCCESSOR_CONTENT",
+    "USER_TERMS_REVIEWED_SUCCESSOR_DRAFT",
+    "ACCEPTABLE_USE_REVIEWED_SUCCESSOR_CONTENT",
+    "ACCEPTABLE_USE_REVIEWED_SUCCESSOR_DRAFT",
+    "PRIVACY_NOTICE_REVIEWED_SUCCESSOR_CONTENT",
+    "PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT",
+    "AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_CONTENT",
+    "AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT",
+    "ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_CONTENT",
+    "ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT",
     "JURISDICTION",
     "LOCALE",
     "PLATFORM_LEGAL_CORPUS_DRAFTS",
+    "PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS",
     "VERSION",
     "get_acceptable_use_draft",
     "get_admin_responsibility_notice_draft",
@@ -872,12 +1468,17 @@ __all__ = [
     "get_institutional_charter_draft",
     "get_privacy_notice_draft",
     "get_user_terms_draft",
+    "get_acceptable_use_reviewed_successor_draft",
+    "get_admin_responsibility_notice_reviewed_successor_draft",
+    "get_ai_assistance_notice_reviewed_successor_draft",
+    "get_privacy_notice_reviewed_successor_draft",
+    "get_user_terms_reviewed_successor_draft",
 ]
 
 
 # ARTIFACT: production_legal_corpus.py
-# VERSION: v1.1.0-R1D-B0F-R9B-P7-A1-REQUIRED-PLATFORM-LEGAL-CORPUS
-# AUTHORITY BOUNDARY: draft institutional Charter text and immutable value only
+# VERSION: v1.2.0-R9B-P7-A3-R1-REVIEWED-SUCCESSOR-PLATFORM-LEGAL-CORPUS
+# AUTHORITY BOUNDARY: historical drafts and human-directed successor values only
 # TENANT POSTURE: platform corpus draft; no tenant acceptance or binding truth
 # FAIL-CLOSED POSTURE: draft remains review-required and cannot imply approval
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
