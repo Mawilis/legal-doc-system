@@ -1,14 +1,14 @@
 """Direct certificate for the branch-convergence governance guard.
 
 TITLE: WILSY OS Branch Convergence Guard Direct Certificate
-VERSION: v1.0.0-R1D-B0F-REPOSITORY-CONVERGENCE-R1-CERT
+VERSION: v1.0.1-R1D-B0F-REPOSITORY-CONVERGENCE-R1-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently exercises parity decisions and dirty-work accountability
          without GitHub, MongoDB, network, staging, or repository mutation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_branch_convergence_guard.py
 COLLABORATION / OWNERSHIP: Tests the executable governance artifact only.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.0.0-R1 certifies parity, governed-PR pending, divergence, and
+CHANGELOG: v1.0.1-R1 certifies independent upstream/remote parity, governed-PR pending, divergence, and
            preserved/new/lost/mutated dirty-work states.
 COMPLIANCE: POPIA section 19; GDPR Article 32; audit evidence.
 SECURITY / PRIVACY POSTURE: Uses deterministic fakes; no secrets or contents.
@@ -61,8 +61,9 @@ def test_tracking_mismatch_fails(monkeypatch) -> None:
     monkeypatch.setattr(
         guard,
         "_ref",
-        lambda ref: {"HEAD": "a", "origin/fg108o4b-knowledge-operating-room": "b", "origin/main": "m"}[ref],
+        lambda ref: {"HEAD": "a", "@{upstream}": "b", "origin/fg108o4b-knowledge-operating-room": "a", "origin/main": "m"}[ref],
     )
+    monkeypatch.setattr(guard, "_upstream_ref", lambda: "@{upstream}")
     monkeypatch.setattr(guard, "_counts", lambda local, main: (0, 0, "m"))
     assert guard.parity_evidence().status == "FAIL"
 
@@ -111,7 +112,7 @@ def test_clean_preserved_manifest_passes(tmp_path: Path, monkeypatch) -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: branch convergence guard direct certificate
-# VERSION: v1.0.0-R1D-B0F-REPOSITORY-CONVERGENCE-R1-CERT
+# VERSION: v1.0.1-R1D-B0F-REPOSITORY-CONVERGENCE-R1-CERT
 # AUTHORITY BOUNDARY: direct governance evidence only
 # TENANT POSTURE: repository-level; no tenant data
 # FAIL-CLOSED POSTURE: negative parity and dirty-work cases are asserted
