@@ -12,7 +12,7 @@ FILE:
     tools/eos/api/api_server.py
 
 VERSION:
-    v1.6.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT
+    v1.7.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -35,6 +35,9 @@ CERTIFICATION / UPDATE DATE:
     2026-08-31
 
 CHANGELOG:
+    v1.7.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
+        - Mounts the authenticated, server-owned versioned legal-document and
+          append-only acceptance authority under /api/legal-acceptance.
     v1.6.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT
         - Mounts the composed authenticated WILSY AI Legal Tool Gateway.
     L7D backend hardening — disables production OpenAPI documentation unless
@@ -121,9 +124,10 @@ from tools.eos.api.legal_operations_router import router as legal_operations_rou
 from tools.eos.api.legal_operations_command_router import router as legal_operations_command_router
 from tools.eos.api.legal_operations_billing_read_router import router as legal_operations_billing_read_router
 from tools.eos.api.wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
+from tools.eos.api.legal_acceptance_router import router as legal_acceptance_router
 
 
-VERSION = "v1.6.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT"
+VERSION = "v1.7.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE"
 
 _PRODUCTION_MODE = os.getenv("WILSY_ENV", os.getenv("ENV", "")).strip().lower() == "production"
 _DOCS_ENABLED = not _PRODUCTION_MODE or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
@@ -166,6 +170,7 @@ app.include_router(legal_operations_router, prefix="/api")
 app.include_router(legal_operations_command_router, prefix="/api")
 app.include_router(legal_operations_billing_read_router, prefix="/api")
 app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
+app.include_router(legal_acceptance_router, prefix="/api")
 
 
 @app.exception_handler(WilsyAPIException)
@@ -239,7 +244,7 @@ async def root(request: Request) -> Any:
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: api_server.py
-# VERSION: v1.6.0-L7B-WILSY-AI-LEGAL-TOOL-MOUNT
+# VERSION: v1.7.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
 # AUTHORITY BOUNDARY: canonical ASGI composition and router registration only; authentication, membership, business-role, permission, authorization, and persistence authority remain outside this artifact
 # TENANT POSTURE: exactly one tenant router is mounted; GET/PUT/DELETE detail operations are governed inside that router; collection GET and POST remain contained; no alternate mount creates cross-tenant authority
 # FAIL-CLOSED POSTURE: application registration never grants authority; tenant persistence is reachable only through activated router dependencies, exact scope/path checks, and bounded persistence contracts
