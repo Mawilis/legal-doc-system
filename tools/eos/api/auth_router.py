@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.0.14-VERIFY-TOKEN-PROJECTION
+VERSION: v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, login, discovery, and logout.
@@ -8,6 +8,17 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE: Discovery uses the shared
+  canonical ACTIVE tenant resolver when available, so aliases cannot select
+  duplicate, inactive, or malformed tenant truth.
+  v1.2.0-TENANT-IDENTITY-PROJECTION: Discovery now returns only durable
+  legal-name and verification fields when present on the authoritative tenant
+  entity; no client-side identity inference is required.
+  v1.1.1-AUTHORITATIVE-MFA-RECONCILIATION: TenantRegistry database-unavailable
+  discovery failures now translate to the bounded HTTP 5xx contract.
+  v1.1.0-AUTHORITATIVE-MFA-RECONCILIATION: Existing OTP secrets now enter an
+  explicit reconciliation challenge without QR disclosure; MFA enrollment is
+  durably re-read before session issuance; tenant discovery has no fallback.
   v1.0.14-VERIFY-TOKEN-PROJECTION: Canonical GET + POST /auth/verify-token share one
   handler and the get_current_identity authority dependency; the public projection is
   bounded to success, status, user.id, and user.email with no tenant, role, permission,
@@ -26,7 +37,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.0.14-VERIFY-TOKEN-PROJECTION"
+VERSION = "v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE"
 
 from fastapi import APIRouter, Depends, HTTPException, status
 import logging
@@ -38,9 +49,13 @@ from pymongo.errors import PyMongoError
 
 from ..saas.domain.auth import AuthRequest, VerifyOTPRequest, DiscoverRequest, AuthResponse
 from ..saas.auth.auth_registry import get_auth_registry
-from ..saas.tenancy.tenant_registry import TenantRegistry
+from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 from ..auth.authentication import get_current_identity
 from ..auth.identity import SovereignIdentity
+from ..auth.workspace_bootstrap_projection import (
+    WorkspaceBootstrapProjectionError,
+    build_workspace_bootstrap_projection,
+)
 
 # ─── Logging Discipline (Mandate §2.6) ──────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -59,7 +74,7 @@ def broadcast_telemetry(
     logger.info(f"[TELEMETRY] {tenant_id} | {category} | {event} | {source} | {metadata}")
 
 
-def _log_error(exc: Exception, context: str, tenant_id: str = "GLOBAL_ROOT") -> None:
+def _log_error(exc: Exception, context: str, tenant_id: str = "unresolved") -> None:
     """Log errors with full traceback if debug mode is enabled."""
     if DEBUG_MODE:
         logger.error(f"[ERROR] {context} | tenant: {tenant_id} | {exc}\n{traceback.format_exc()}")
@@ -70,8 +85,8 @@ def _log_error(exc: Exception, context: str, tenant_id: str = "GLOBAL_ROOT") -> 
 def _tenant_id_from_user(user: Any) -> str:
     """Safe tenant id for error telemetry (never unbound)."""
     if user is None:
-        return "GLOBAL_ROOT"
-    return getattr(user, "tenantId", None) or getattr(user, "tenant_id", None) or "GLOBAL_ROOT"
+        return "unresolved"
+    return getattr(user, "tenantId", None) or getattr(user, "tenant_id", None) or "unresolved"
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -83,21 +98,108 @@ async def _verify_token(identity: SovereignIdentity = Depends(get_current_identi
     return {"success": True, "status": "VERIFIED", "user": {"id": identity.identity_id, "email": identity.email}}
 
 
+def _workspace_bootstrap_http_error(
+    error: WorkspaceBootstrapProjectionError,
+) -> HTTPException:
+    """Translate bounded workspace-composition failure without leaking authority state."""
+    code = str(error)
+    unavailable = {
+        "WORKSPACE_BOOTSTRAP_MEMBERSHIP_AUTHORITY_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE",
+    }
+    if code in unavailable:
+        return HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workspace authority is unavailable.",
+        )
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Workspace access denied.",
+    )
+
+
+@router.get("/workspace-bootstrap")
+async def workspace_bootstrap(
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> dict[str, object]:
+    """Return one server-owned workspace projection after current authority checks."""
+    try:
+        projection = build_workspace_bootstrap_projection(identity=identity)
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    tenant = projection.tenant
+    organization = getattr(tenant, "organization", None)
+
+    tenant_name = (
+        getattr(organization, "organization_name", None)
+        if organization is not None
+        else None
+    )
+    legal_name = (
+        getattr(organization, "legal_name", None)
+        if organization is not None
+        else None
+    )
+    tenant_status = getattr(tenant, "status", None)
+    tenant_status = getattr(tenant_status, "value", tenant_status)
+
+    return {
+        "status": "READY",
+        "user": {
+            "id": projection.principal_id,
+            "email": projection.email,
+        },
+        "workspace": {
+            "tenantId": projection.tenant_id,
+            "businessRole": projection.business_role,
+            "membershipRevision": projection.membership_revision,
+            "businessRoleRevision": projection.business_role_revision,
+            "tenant": {
+                "tenantId": projection.tenant_id,
+                "name": tenant_name,
+                "legalName": legal_name,
+                "status": tenant_status,
+            },
+        },
+    }
+
+
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login", response_model=AuthResponse, response_model_exclude_none=True)
 async def login(request: AuthRequest):
     try:
         auth_registry = get_auth_registry(None)
         user = auth_registry.authenticate(request.email, request.password)
         if not user:
             broadcast_telemetry(
-                "GLOBAL_ROOT", "AUTH", "LOGIN_FAILED", "auth_router", {"email": request.email}
+                "unresolved", "AUTH", "LOGIN_FAILED", "auth_router", {"email": request.email}
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
 
-        # If MFA not registered, generate a setup QR code
+        existing_otp_secret = auth_registry.get_otp_secret(user.id)
+
+        # A durable secret with a missing enrollment flag is reconciliation, not
+        # first-time setup.  Never call get_otp_uri() in this branch: that would
+        # disclose or rotate an already-established provisioning secret.
+        if not user.mfaRegistered and existing_otp_secret:
+            broadcast_telemetry(
+                user.tenantId, "AUTH", "MFA_RECONCILIATION_REQUIRED", "auth_router", {"userId": user.id}
+            )
+            return AuthResponse(
+                status="MFA_RECONCILIATION_REQUIRED",
+                requiresMFA=True,
+                mfaSetup=False,
+                qrCode=None,
+                tempToken=auth_registry.generate_jwt(
+                    user.id, user.tenantId, user.role, user.permissions
+                ),
+            )
+
+        # Only a user with no durable OTP secret may enter first-time setup.
         if not user.mfaRegistered:
             qr_uri = auth_registry.get_otp_uri(user.id, user.email)
             temp_token = auth_registry.generate_jwt(
@@ -143,7 +245,7 @@ async def login(request: AuthRequest):
 
 
 # ─── VALIDATE MFA SETUP ──────────────────────────────────────────────────
-@router.post("/validate-mfa-setup", response_model=AuthResponse)
+@router.post("/validate-mfa-setup", response_model=AuthResponse, response_model_exclude_none=True)
 async def validate_mfa_setup(request: VerifyOTPRequest):
     """
     Validates the OTP entered during MFA setup and marks the user as MFA registered.
@@ -157,7 +259,7 @@ async def validate_mfa_setup(request: VerifyOTPRequest):
         user = auth_registry.get_user_by_email(request.email)
         if not user:
             broadcast_telemetry(
-                "GLOBAL_ROOT", "AUTH", "MFA_SETUP_USER_NOT_FOUND", "auth_router", {"email": request.email}
+                "unresolved", "AUTH", "MFA_SETUP_USER_NOT_FOUND", "auth_router", {"email": request.email}
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
@@ -181,34 +283,39 @@ async def validate_mfa_setup(request: VerifyOTPRequest):
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid OTP code"
             )
 
-        # 3. Mark user as MFA registered
-        auth_registry.update_user(user.id, mfaRegistered=True)
+        # 3. Mark user as MFA registered and prove the durable write before any
+        # session/token is issued.  This is the same path used for legacy users.
+        updated_user = auth_registry.update_user(user.id, mfaRegistered=True)
+        if updated_user is None or not updated_user.mfaRegistered:
+            raise PyMongoError("MFA enrollment persistence could not be confirmed")
+        updated_user = auth_registry.get_user_by_id(updated_user.id)
+        if updated_user is None or not updated_user.mfaRegistered:
+            raise PyMongoError("MFA enrollment durable re-read failed")
 
         # 4. Create a session (so the user is automatically logged in after setup)
-        session = auth_registry.create_session(user)
+        session = auth_registry.create_session(updated_user)
 
         broadcast_telemetry(
-            user.tenantId, "AUTH", "MFA_SETUP_SUCCESS", "auth_router", {"userId": user.id}
+            updated_user.tenantId, "AUTH", "MFA_SETUP_SUCCESS", "auth_router", {"userId": updated_user.id}
         )
 
         user_data = {
-            "id": user.id,
-            "email": user.email,
-            "firstName": user.firstName,
-            "lastName": user.lastName,
-            "role": user.role,
-            "permissions": user.permissions,
-            "tenantId": user.tenantId,
+            "id": updated_user.id,
+            "email": updated_user.email,
+            "firstName": updated_user.firstName,
+            "lastName": updated_user.lastName,
+            "role": updated_user.role,
+            "permissions": updated_user.permissions,
+            "tenantId": updated_user.tenantId,
             "tenantAlias": None,
-            "mfaRegistered": True,
-            "hasSignedCovenant": user.hasSignedCovenant,
+            "mfaRegistered": updated_user.mfaRegistered,
+            "hasSignedCovenant": updated_user.hasSignedCovenant,
         }
 
         return AuthResponse(
             status="AUTHENTICATED",
             token=session.token,
             user=user_data,
-            refreshToken="dummy-refresh-token",
         )
 
     except PyMongoError as e:
@@ -228,8 +335,8 @@ async def validate_mfa_setup(request: VerifyOTPRequest):
 
 
 # ─── VERIFY OTP (and alias) ──────────────────────────────────────────────
-@router.post("/verify-otp", response_model=AuthResponse)
-@router.post("/verify-3fa", response_model=AuthResponse)
+@router.post("/verify-otp", response_model=AuthResponse, response_model_exclude_none=True)
+@router.post("/verify-3fa", response_model=AuthResponse, response_model_exclude_none=True)
 async def verify_otp(request: VerifyOTPRequest):
     user: Any = None
     try:
@@ -241,7 +348,7 @@ async def verify_otp(request: VerifyOTPRequest):
         # Explicitly check None to satisfy type checker
         if code is None:
             broadcast_telemetry(
-                "GLOBAL_ROOT",
+                "unresolved",
                 "AUTH",
                 "OTP_MISSING",
                 "auth_router",
@@ -254,7 +361,7 @@ async def verify_otp(request: VerifyOTPRequest):
 
         if not code.isdigit() or len(code) != 6:
             broadcast_telemetry(
-                "GLOBAL_ROOT",
+                "unresolved",
                 "AUTH",
                 "OTP_MALFORMED",
                 "auth_router",
@@ -269,7 +376,7 @@ async def verify_otp(request: VerifyOTPRequest):
         user = auth_registry.get_user_by_email(request.email)
         if not user:
             broadcast_telemetry(
-                "GLOBAL_ROOT",
+                "unresolved",
                 "AUTH",
                 "OTP_USER_NOT_FOUND",
                 "auth_router",
@@ -280,10 +387,10 @@ async def verify_otp(request: VerifyOTPRequest):
                 detail="User not found.",
             )
 
-        if not user.mfaRegistered:
+        if not user.mfaRegistered and not auth_registry.get_otp_secret(user.id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="MFA enrollment is incomplete. Scan the QR code and validate setup first.",
+                detail="MFA enrollment is incomplete. Complete authenticator setup first.",
             )
 
         if not auth_registry.verify_otp(user.id, code):
@@ -298,6 +405,14 @@ async def verify_otp(request: VerifyOTPRequest):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authenticator code. Check your device time and enter the newest code.",
             )
+
+        if not user.mfaRegistered:
+            updated_user = auth_registry.update_user(user.id, mfaRegistered=True)
+            if updated_user is None or not updated_user.mfaRegistered:
+                raise PyMongoError("MFA reconciliation persistence could not be confirmed")
+            user = auth_registry.get_user_by_id(updated_user.id)
+            if user is None or not user.mfaRegistered:
+                raise PyMongoError("MFA reconciliation durable re-read failed")
 
         session = auth_registry.create_session(user)
         broadcast_telemetry(
@@ -321,7 +436,6 @@ async def verify_otp(request: VerifyOTPRequest):
             status="AUTHENTICATED",
             token=session.token,
             user=user_data,
-            refreshToken="dummy-refresh-token",
         )
 
     except PyMongoError as e:
@@ -344,30 +458,16 @@ async def verify_otp(request: VerifyOTPRequest):
 @router.post("/discover")
 async def discover(request: DiscoverRequest):
     try:
-        tenant = None
-        if hasattr(TenantRegistry, "get_tenant_by_alias"):
+        tenant: Any = None
+        canonical_resolver = getattr(TenantRegistry, "resolve_canonical_tenant", None)
+        if callable(canonical_resolver):
+            tenant = canonical_resolver(request.alias, allow_alias=True)
+        elif hasattr(TenantRegistry, "get_tenant_by_alias"):
             tenant = TenantRegistry.get_tenant_by_alias(request.alias)
         elif hasattr(TenantRegistry, "get"):
             tenant = TenantRegistry.get(request.alias)
 
         if not tenant:
-            if request.alias.lower() == "wilsy":
-                fallback = {
-                    "tenant_id": "WILSY",
-                    "alias": "wilsy",
-                    "name": "Wilsy Sovereign Shard",
-                    "region": "GLOBAL",
-                    "plan": "ENTERPRISE",
-                    "status": "ACTIVE",
-                }
-                broadcast_telemetry(
-                    fallback["tenant_id"],
-                    "AUTH",
-                    "DISCOVER_SUCCESS",
-                    "auth_router",
-                    {"alias": request.alias},
-                )
-                return {"success": True, "tenant": fallback}
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
             )
@@ -379,22 +479,36 @@ async def discover(request: DiscoverRequest):
             "auth_router",
             {"alias": request.alias},
         )
+        tenant_projection: dict[str, Any] = {
+            "tenantId": tenant.tenant_id,
+            "alias": tenant.alias or request.alias,
+            "name": tenant.organization.organization_name,
+            "region": tenant.organization.regions[0]
+            if tenant.organization.regions
+            else "GLOBAL",
+            "plan": tenant.organization.plan.value
+            if hasattr(tenant.organization.plan, "value")
+            else str(tenant.organization.plan),
+            "status": tenant.status,
+        }
+        legal_name = getattr(tenant.organization, "legal_name", None)
+        if isinstance(legal_name, str) and legal_name.strip():
+            tenant_projection["legalName"] = legal_name.strip()
+        verified = getattr(tenant, "verified", None)
+        if isinstance(verified, bool):
+            tenant_projection["verified"] = verified
+
         return {
             "success": True,
-            "tenant": {
-                "tenantId": tenant.tenant_id,
-                "alias": tenant.tenant_id,
-                "name": tenant.organization.organization_name,
-                "region": tenant.organization.regions[0]
-                if tenant.organization.regions
-                else "GLOBAL",
-                "plan": tenant.organization.plan.value
-                if hasattr(tenant.organization.plan, "value")
-                else str(tenant.organization.plan),
-                "status": tenant.status,
-            },
+            "tenant": tenant_projection,
         }
     except PyMongoError as e:
+        _log_error(e, "DISCOVER_DB_ERROR")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error during tenant discovery. Please try again later.",
+        )
+    except TenantRegistryError as e:
         _log_error(e, "DISCOVER_DB_ERROR")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -413,12 +527,12 @@ async def discover(request: DiscoverRequest):
 # ─── LOGOUT ────────────────────────────────────────────────────────────────
 @router.post("/logout")
 async def logout():
-    broadcast_telemetry("GLOBAL_ROOT", "AUTH", "LOGOUT", "auth_router", {})
+    broadcast_telemetry("unresolved", "AUTH", "LOGOUT", "auth_router", {})
     return {"status": "success", "message": "Logged out"}
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.0.14-VERIFY-TOKEN-PROJECTION
+# VERSION: v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
 # AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
 # credential, principal, tenant, authorization, and financial authorities remain separate.
 # TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
