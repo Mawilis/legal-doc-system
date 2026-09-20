@@ -1,24 +1,24 @@
 """Direct certificate for the R8O-P4-R7-R3 signed operator authorization domain.
 
 TITLE: WILSY OS R8O-P4-R7-R3 Signed Legal-Corpus Operator Authorization Certificate
-VERSION: v1.7.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION-CERT
+VERSION: v1.8.0-R9B-P7-A3-H2-R1-ACTIVE-SUCCESSOR-PROVISIONING-KEY-AUTHORIZATION-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certifies the two-record production trust root after its governed
-         RETIRED/revision-2 preservation and retirement of the second record,
-         while
+EPITOME: Certifies the three-record production trust root after preservation
+         of two historical RETIRED/revision-2 records and admission of the
+         exact H2 ACTIVE successor record, while
          retaining test-owned ACTIVE authorization coverage, the signed envelope,
          canonical Charter, and deterministic R8D evidence boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_operator_authorization.py
 COLLABORATION / OWNERSHIP: Certifies the E1 domain artifact against C1's
-                           current two-record resolver; production RETIRED
+                           current three-record resolver; production RETIRED
                            rejection, ACTIVE public-key resolution, and
                            test-owned ACTIVE paths remain
                            separate evidence. R8D authority, corpus source,
                            and PRDCA crypto certificates remain separate.
-CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.7.0-R9B-P7-A3-R2 certifies all five reviewed-successor
-           identities through the source-owned runtime resolver while retaining
-           historical binding and retired production trust-root coverage.
+CERTIFICATION / UPDATE DATE: 2026-09-20
+CHANGELOG: v1.8.0-R9B-P7-A3-H2-R1 certifies the exact H2 ACTIVE successor
+           public-key identity, fingerprint, PLATFORM draft-admission scope,
+           frozen 24-hour lifecycle, and preserved historical RETIRED trust.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Test-only key material is deterministic and local;
                             no production secret, environment trust, file key,
@@ -107,6 +107,11 @@ RETIRED_PRODUCTION_KEY_FINGERPRINT = "1ea7ec1e18355b4181d6b652c05be296deb2bb02cf
 NEW_PRODUCTION_KEY_ID = "prdca-key:legal-corpus-159cfa91f279b045407396cd3ec8dca2"
 NEW_PRODUCTION_PUBLIC_KEY = "vlN3rieZr9YwuvQ6AwW_dD1aN06B2MLGqlFsxacgCpM"
 RETIRED_SECOND_PRODUCTION_KEY_FINGERPRINT = "2154bc424e68de0091d68fa74fca74b05ef3a13607e93fca4ec155f0b96840e55624de465defc8ba4a3bdfdc20a7e6b913ed2fff0e03d3cdaa78e27a6c1ef276"
+H2_SUCCESSOR_KEY_ID = "prdca-key:legal-corpus-a5c22bcb6438d139981f7aec1465f695"
+H2_SUCCESSOR_PUBLIC_KEY = "nocEKzPIR01HXRV0BIxxsGaj0JmZaN75CUbaQS-lIVE"
+H2_SUCCESSOR_FINGERPRINT = "c889b7683e2e523e79db8f9afb6a5610d15908cc9a031d21c733fd60495ce2dfb7629bef0188adcb7a637ab82ca938cecc6f88a1ccf15c0f6a61b51d99077437"
+H2_SUCCESSOR_VALID_FROM = datetime(2026, 9, 20, 1, 30, 21, 168602, tzinfo=timezone.utc)
+H2_SUCCESSOR_VALID_UNTIL = datetime(2026, 9, 21, 1, 30, 21, 168602, tzinfo=timezone.utc)
 ISSUER_IDENTITY = "issuer:r8j-d2-test"
 TEST_SEED = bytes(range(32))
 WRONG_TEST_SEED = bytes(range(1, 33))
@@ -255,11 +260,11 @@ def _rebind_after_trust_root_reload() -> None:
 
 
 def test_production_root_resolves_retired_key_and_rejects_fresh_authority(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The known production record is retired and cannot authorize fresh D1 work."""
+    """Historical production trust rejects fresh D1 while H2 resolves exactly."""
     signing_key = Ed25519PrivateKey.from_private_bytes(TEST_SEED)
     authorization = _authorization(signing_key, key_id=PRODUCTION_KEY_ID)
     production_key = LegalCorpusOperatorTrustRoot.resolve(PRODUCTION_KEY_ID)
-    assert LegalCorpusOperatorTrustRoot.production_key_count() == 2
+    assert LegalCorpusOperatorTrustRoot.production_key_count() == 3
     assert production_key.key_id == PRODUCTION_KEY_ID
     assert production_key.public_key_base64url == PRODUCTION_PUBLIC_KEY
     assert production_key.issuer_identity == "WILSY_OS_LEGAL_CORPUS_RELEASE_AUTHORITY:V1"
@@ -277,6 +282,18 @@ def test_production_root_resolves_retired_key_and_rejects_fresh_authority(monkey
         LegalCorpusOperatorAuthorizationUntrustedKeyError,
         authorization.derive_provisioning_authority_evidence,
     )
+    successor = LegalCorpusOperatorTrustRoot.resolve(H2_SUCCESSOR_KEY_ID)
+    assert successor.key_id == H2_SUCCESSOR_KEY_ID
+    assert successor.public_key_base64url == H2_SUCCESSOR_PUBLIC_KEY
+    assert successor.fingerprint == H2_SUCCESSOR_FINGERPRINT
+    assert successor.status is LegalCorpusOperatorKeyStatus.ACTIVE
+    assert successor.revision == 1
+    assert successor.scope == TRUST_ROOT_SCOPE == "PLATFORM"
+    assert successor.permitted_operations == frozenset({AUTHORIZED_OPERATION})
+    assert successor.valid_from == H2_SUCCESSOR_VALID_FROM
+    assert successor.valid_until == H2_SUCCESSOR_VALID_UNTIL
+    assert successor.can_issue(AUTHORIZED_OPERATION, H2_SUCCESSOR_VALID_FROM + timedelta(hours=12))
+    assert not successor.can_issue(AUTHORIZED_OPERATION, H2_SUCCESSOR_VALID_UNTIL)
 
 
 def test_retired_production_key_resolves_without_fabricating_authority(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -287,7 +304,7 @@ def test_retired_production_key_resolves_without_fabricating_authority(monkeypat
     assert production_key.revision == 2
     assert production_key.fingerprint == RETIRED_SECOND_PRODUCTION_KEY_FINGERPRINT
     assert production_key.permitted_operations == frozenset({AUTHORIZED_OPERATION})
-    assert LegalCorpusOperatorTrustRoot.production_key_count() == 2
+    assert LegalCorpusOperatorTrustRoot.production_key_count() == 3
     test_time = production_key.valid_from + timedelta(hours=1)
     assert production_key.valid_until is not None
     assert production_key.valid_from <= test_time < production_key.valid_until
@@ -349,13 +366,13 @@ def test_unknown_second_key_remains_distinct_from_production_signature_failure(m
 
 
 def test_test_trust_never_becomes_production_trust(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A positive TEST-only seam leaves C1's two-record production root unchanged."""
+    """A positive TEST-only seam leaves C1's three-record root unchanged."""
     signing_key = Ed25519PrivateKey.from_private_bytes(TEST_SEED)
     _patch_test_trust(monkeypatch, _trusted_key(signing_key))
     _patch_clock(monkeypatch, NOW)
     authorization = _authorization(signing_key)
     assert authorization.verify().issuer_identity == ISSUER_IDENTITY
-    assert LegalCorpusOperatorTrustRoot.production_key_count() == 2
+    assert LegalCorpusOperatorTrustRoot.production_key_count() == 3
     assert PRODUCTION_KEY_ID in {item.key_id for item in LegalCorpusOperatorTrustRoot.all_keys()}
 
 
@@ -827,13 +844,13 @@ def test_dependency_and_side_effect_boundary_is_pure() -> None:
     assert not any(token in module.casefold() for module in imports for token in forbidden)
     assert "LegalDocumentRegistry" not in path.read_text(encoding="utf-8")
     assert "MongoClient" not in path.read_text(encoding="utf-8")
-    assert LegalCorpusOperatorTrustRoot.production_key_count() == 2
+    assert LegalCorpusOperatorTrustRoot.production_key_count() == 3
 
 
 # ARTIFACT: test_legal_corpus_operator_authorization.py
-# VERSION: v1.7.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-AUTHORIZATION-CERT
+# VERSION: v1.8.0-R9B-P7-A3-H2-R1-ACTIVE-SUCCESSOR-PROVISIONING-KEY-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: direct certificate evidence only; no authorization issuance
 # TENANT POSTURE: PLATFORM corpus scope; no tenant or principal authority
-# FAIL-CLOSED POSTURE: malformed, untrusted, divergent, expired, tampered, and retired-production values reject
+# FAIL-CLOSED POSTURE: malformed, untrusted, divergent, expired, tampered, and retired-production values reject; H2 lifecycle is exact
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

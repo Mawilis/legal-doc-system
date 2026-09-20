@@ -1,23 +1,24 @@
 """Platform public-key trust root for legal-corpus admission authorization.
 
 TITLE: WILSY OS Legal Corpus Operator Public Trust Root
-VERSION: v1.4.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-TRUST-ROOT
+VERSION: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the immutable, source-owned Ed25519 public-key records for the
-         ``LEGAL_CORPUS_DRAFT_ADMISSION`` authorization verifier. The historical
-         record remains RETIRED while the separately admitted public record is
-         now RETIRED after its governed issuance window; private
-         signing material remains outside this repository.
+         ``LEGAL_CORPUS_DRAFT_ADMISSION`` authorization verifier. Two historical
+         records remain RETIRED and the H2 successor public record is ACTIVE for
+         its single governed 24-hour issuance window; private signing material
+         remains outside this repository.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_corpus_operator_trust_root.py
 COLLABORATION / OWNERSHIP: The signed-authorization verifier consumes this
                            source-owned trust root; an external release or
                            offline signing authority retains private keys. No
                            command, registry, or service may replace this root.
-CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.4.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-TRUST-ROOT retires the
-           separately admitted PLATFORM record at revision 2 without changing
-           its public identity, validity interval, or issuer provenance; no
-           key is revoked, replaced, or erased by this source revision.
+CERTIFICATION / UPDATE DATE: 2026-09-20
+CHANGELOG: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT admits the
+           exact H1 successor public key at revision 1 for the frozen UTC
+           24-hour PLATFORM draft-admission window while preserving both
+           historical RETIRED records; no private material or authorization is
+           created by this source revision.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Public-key material and opaque issuer metadata only;
                             no private key, secret, key-file, network, Mongo,
@@ -27,8 +28,10 @@ TENANT BOUNDARY: PLATFORM scope only; no tenant, principal, membership, or
 AUTHORITY BOUNDARY: Immutable public trust-root verification material only;
                     this artifact does not authenticate a shell user, hold
                     private signing material, sign, issue authorization, verify
-                    a full envelope, or admit a legal document. Retired records
-                    remain historical verification material, not authorization.
+                    a full envelope, or admit a legal document. The one ACTIVE
+                    record is merely source-owned verification material for a
+                    later governed issuer; historical RETIRED records remain
+                    archival verification material, not fresh authority.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive for financial
                               execution and settlement truth.
 FAIL-CLOSED DECLARATION: Unknown keys, malformed public keys, invalid
@@ -52,7 +55,7 @@ from typing import Final, Mapping
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 
-VERSION: Final[str] = "v1.4.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-TRUST-ROOT"
+VERSION: Final[str] = "v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT"
 TRUST_ROOT_SCOPE: Final[str] = "PLATFORM"
 AUTHORITY_DOMAIN: Final[str] = "WILSY_LEGAL_CORPUS_OPERATOR_AUTHORITY"
 AUTHORIZED_OPERATION: Final[str] = "LEGAL_CORPUS_DRAFT_ADMISSION"
@@ -337,10 +340,10 @@ class LegalCorpusOperatorTrustedKey:
         }
 
 
-# R8O-P4-R7 preserves one human-authorized RETIRED public record. R2 admits
-# one separately governed public record now retired after its issuance window;
-# private signing material and authorization issuance remain outside this
-# source artifact.
+# R8O-P4-R7 and R9B-P7-A2-H5 preserve two historical RETIRED public records.
+# H2 admits one separately governed successor public record for exactly one
+# frozen 24-hour issuance window; private signing material and authorization
+# issuance remain outside this source artifact.
 _FIRST_KEY_ID: Final[str] = "prdca-key:legal-corpus-69c7c3e9a67c7e552057d4c0670623be"
 _FIRST_PUBLIC_KEY_BASE64URL: Final[str] = "jfG0IANHA_tSNyjyurpBtTId98fG2l_LhifnfQJ2cXg"
 _FIRST_ISSUER_IDENTITY: Final[str] = "WILSY_OS_LEGAL_CORPUS_RELEASE_AUTHORITY:V1"
@@ -409,7 +412,45 @@ _SECOND_TRUSTED_KEY: Final[LegalCorpusOperatorTrustedKey] = LegalCorpusOperatorT
     trust_root_provenance=TRUST_ROOT_PROVENANCE,
     fingerprint=_SECOND_KEY_FINGERPRINT,
 )
-TRUSTED_KEYS: Final[tuple[LegalCorpusOperatorTrustedKey, ...]] = (_FIRST_TRUSTED_KEY, _SECOND_TRUSTED_KEY)
+_THIRD_KEY_ID: Final[str] = "prdca-key:legal-corpus-a5c22bcb6438d139981f7aec1465f695"
+_THIRD_PUBLIC_KEY_BASE64URL: Final[str] = "nocEKzPIR01HXRV0BIxxsGaj0JmZaN75CUbaQS-lIVE"
+_THIRD_ISSUER_IDENTITY: Final[str] = "WILSY_OS_LEGAL_CORPUS_RELEASE_AUTHORITY:V1"
+_THIRD_VALID_FROM: Final[datetime] = datetime(2026, 9, 20, 1, 30, 21, 168602, tzinfo=timezone.utc)
+_THIRD_VALID_UNTIL: Final[datetime] = datetime(2026, 9, 21, 1, 30, 21, 168602, tzinfo=timezone.utc)
+_THIRD_KEY_FINGERPRINT: Final[str] = LegalCorpusOperatorTrustedKey.fingerprint_for(
+    key_id=_THIRD_KEY_ID,
+    algorithm=ED25519_ALGORITHM,
+    public_key_base64url=_THIRD_PUBLIC_KEY_BASE64URL,
+    issuer_identity=_THIRD_ISSUER_IDENTITY,
+    authority_domain=AUTHORITY_DOMAIN,
+    scope=TRUST_ROOT_SCOPE,
+    permitted_operations=frozenset({AUTHORIZED_OPERATION}),
+    valid_from=_THIRD_VALID_FROM,
+    valid_until=_THIRD_VALID_UNTIL,
+    status=LegalCorpusOperatorKeyStatus.ACTIVE,
+    revision=1,
+    trust_root_provenance=TRUST_ROOT_PROVENANCE,
+)
+_THIRD_TRUSTED_KEY: Final[LegalCorpusOperatorTrustedKey] = LegalCorpusOperatorTrustedKey(
+    key_id=_THIRD_KEY_ID,
+    algorithm=ED25519_ALGORITHM,
+    public_key_base64url=_THIRD_PUBLIC_KEY_BASE64URL,
+    issuer_identity=_THIRD_ISSUER_IDENTITY,
+    authority_domain=AUTHORITY_DOMAIN,
+    scope=TRUST_ROOT_SCOPE,
+    permitted_operations=frozenset({AUTHORIZED_OPERATION}),
+    valid_from=_THIRD_VALID_FROM,
+    valid_until=_THIRD_VALID_UNTIL,
+    status=LegalCorpusOperatorKeyStatus.ACTIVE,
+    revision=1,
+    trust_root_provenance=TRUST_ROOT_PROVENANCE,
+    fingerprint=_THIRD_KEY_FINGERPRINT,
+)
+TRUSTED_KEYS: Final[tuple[LegalCorpusOperatorTrustedKey, ...]] = (
+    _FIRST_TRUSTED_KEY,
+    _SECOND_TRUSTED_KEY,
+    _THIRD_TRUSTED_KEY,
+)
 _TRUSTED_KEY_INDEX: Final[Mapping[str, LegalCorpusOperatorTrustedKey]] = MappingProxyType(
     {record.key_id: record for record in TRUSTED_KEYS}
 )
@@ -455,7 +496,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_operator_trust_root.py
-# VERSION: v1.4.0-R9B-P7-A2-H5-LEGAL-CORPUS-OPERATOR-TRUST-ROOT
+# VERSION: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT
 # AUTHORITY BOUNDARY: immutable PLATFORM public-key trust material only
 # TENANT POSTURE: no tenant, principal, membership, or user authority
 # FAIL-CLOSED POSTURE: unknown keys, malformed records, and drift reject
