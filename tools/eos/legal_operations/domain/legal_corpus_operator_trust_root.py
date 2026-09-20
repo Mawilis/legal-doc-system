@@ -1,24 +1,26 @@
 """Platform public-key trust root for legal-corpus admission authorization.
 
 TITLE: WILSY OS Legal Corpus Operator Public Trust Root
-VERSION: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT
+VERSION: v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the immutable, source-owned Ed25519 public-key records for the
-         ``LEGAL_CORPUS_DRAFT_ADMISSION`` authorization verifier. Two historical
-         records remain RETIRED and the H2 successor public record is ACTIVE for
-         its single governed 24-hour issuance window; private signing material
-         remains outside this repository.
+         ``LEGAL_CORPUS_DRAFT_ADMISSION`` authorization verifier. Three
+         historical records remain RETIRED, including the H2 successor public
+         record now
+         RETIRED after its successful governed successor-provisioning execution; private signing material
+         remains outside this repository and is neither accessed nor erased.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_corpus_operator_trust_root.py
 COLLABORATION / OWNERSHIP: The signed-authorization verifier consumes this
                            source-owned trust root; an external release or
                            offline signing authority retains private keys. No
                            command, registry, or service may replace this root.
 CERTIFICATION / UPDATE DATE: 2026-09-20
-CHANGELOG: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT admits the
-           exact H1 successor public key at revision 1 for the frozen UTC
-           24-hour PLATFORM draft-admission window while preserving both
-           historical RETIRED records; no private material or authorization is
-           created by this source revision.
+CHANGELOG: v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT
+           retires the exact H2 public record at revision 2 while preserving
+           its key identity, public material, issuer, authority domain, scope,
+           permitted operation, and validity interval; no revocation, private
+           key access, private-key deletion, authorization, or document
+           provisioning is performed by this source revision.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Public-key material and opaque issuer metadata only;
                             no private key, secret, key-file, network, Mongo,
@@ -28,17 +30,18 @@ TENANT BOUNDARY: PLATFORM scope only; no tenant, principal, membership, or
 AUTHORITY BOUNDARY: Immutable public trust-root verification material only;
                     this artifact does not authenticate a shell user, hold
                     private signing material, sign, issue authorization, verify
-                    a full envelope, or admit a legal document. The one ACTIVE
-                    record is merely source-owned verification material for a
-                    later governed issuer; historical RETIRED records remain
-                    archival verification material, not fresh authority.
+                    a full envelope, or admit a legal document. All records are
+                    source-owned historical verification material; no record is
+                    fresh issuance authority until a separate governed
+                    successor admission.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive for financial
                               execution and settlement truth.
 FAIL-CLOSED DECLARATION: Unknown keys, malformed public keys, invalid
                           lifecycle records, fingerprint drift, expired
-                          ACTIVE records, and RETIRED-key issuance attempts
-                          reject without fallback authority. Historical R8N
-                          execution and physical erasure are not asserted.
+                          records, and RETIRED-key issuance attempts reject
+                          without fallback authority. H3/H4 execution/archive
+                          history remains external forensic evidence; physical
+                          private-key erasure is not asserted.
 """
 from __future__ import annotations
 
@@ -55,7 +58,7 @@ from typing import Final, Mapping
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 
-VERSION: Final[str] = "v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT"
+VERSION: Final[str] = "v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT"
 TRUST_ROOT_SCOPE: Final[str] = "PLATFORM"
 AUTHORITY_DOMAIN: Final[str] = "WILSY_LEGAL_CORPUS_OPERATOR_AUTHORITY"
 AUTHORIZED_OPERATION: Final[str] = "LEGAL_CORPUS_DRAFT_ADMISSION"
@@ -340,10 +343,10 @@ class LegalCorpusOperatorTrustedKey:
         }
 
 
-# R8O-P4-R7 and R9B-P7-A2-H5 preserve two historical RETIRED public records.
-# H2 admits one separately governed successor public record for exactly one
-# frozen 24-hour issuance window; private signing material and authorization
-# issuance remain outside this source artifact.
+# R8O-P4-R7, R9B-P7-A2-H5, and R9B-P7-A3-H4 preserve three RETIRED public records.
+# H5 preserves the H2 successor public record as RETIRED/revision 2 after its
+# successful governed successor-provisioning execution; private signing material and authorization issuance
+# remain outside this source artifact.
 _FIRST_KEY_ID: Final[str] = "prdca-key:legal-corpus-69c7c3e9a67c7e552057d4c0670623be"
 _FIRST_PUBLIC_KEY_BASE64URL: Final[str] = "jfG0IANHA_tSNyjyurpBtTId98fG2l_LhifnfQJ2cXg"
 _FIRST_ISSUER_IDENTITY: Final[str] = "WILSY_OS_LEGAL_CORPUS_RELEASE_AUTHORITY:V1"
@@ -427,8 +430,8 @@ _THIRD_KEY_FINGERPRINT: Final[str] = LegalCorpusOperatorTrustedKey.fingerprint_f
     permitted_operations=frozenset({AUTHORIZED_OPERATION}),
     valid_from=_THIRD_VALID_FROM,
     valid_until=_THIRD_VALID_UNTIL,
-    status=LegalCorpusOperatorKeyStatus.ACTIVE,
-    revision=1,
+    status=LegalCorpusOperatorKeyStatus.RETIRED,
+    revision=2,
     trust_root_provenance=TRUST_ROOT_PROVENANCE,
 )
 _THIRD_TRUSTED_KEY: Final[LegalCorpusOperatorTrustedKey] = LegalCorpusOperatorTrustedKey(
@@ -441,8 +444,8 @@ _THIRD_TRUSTED_KEY: Final[LegalCorpusOperatorTrustedKey] = LegalCorpusOperatorTr
     permitted_operations=frozenset({AUTHORIZED_OPERATION}),
     valid_from=_THIRD_VALID_FROM,
     valid_until=_THIRD_VALID_UNTIL,
-    status=LegalCorpusOperatorKeyStatus.ACTIVE,
-    revision=1,
+    status=LegalCorpusOperatorKeyStatus.RETIRED,
+    revision=2,
     trust_root_provenance=TRUST_ROOT_PROVENANCE,
     fingerprint=_THIRD_KEY_FINGERPRINT,
 )
@@ -496,7 +499,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_operator_trust_root.py
-# VERSION: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT
+# VERSION: v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT
 # AUTHORITY BOUNDARY: immutable PLATFORM public-key trust material only
 # TENANT POSTURE: no tenant, principal, membership, or user authority
 # FAIL-CLOSED POSTURE: unknown keys, malformed records, and drift reject

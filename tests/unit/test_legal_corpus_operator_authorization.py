@@ -1,11 +1,11 @@
 """Direct certificate for the R8O-P4-R7-R3 signed operator authorization domain.
 
 TITLE: WILSY OS R8O-P4-R7-R3 Signed Legal-Corpus Operator Authorization Certificate
-VERSION: v1.8.0-R9B-P7-A3-H2-R1-ACTIVE-SUCCESSOR-PROVISIONING-KEY-AUTHORIZATION-CERT
+VERSION: v1.9.0-R9B-P7-A3-H4-RETIRED-SUCCESSOR-PROVISIONING-KEY-AUTHORIZATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the three-record production trust root after preservation
          of two historical RETIRED/revision-2 records and admission of the
-         exact H2 ACTIVE successor record, while
+         exact H2 RETIRED successor record, while
          retaining test-owned ACTIVE authorization coverage, the signed envelope,
          canonical Charter, and deterministic R8D evidence boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_operator_authorization.py
@@ -16,9 +16,9 @@ COLLABORATION / OWNERSHIP: Certifies the E1 domain artifact against C1's
                            separate evidence. R8D authority, corpus source,
                            and PRDCA crypto certificates remain separate.
 CERTIFICATION / UPDATE DATE: 2026-09-20
-CHANGELOG: v1.8.0-R9B-P7-A3-H2-R1 certifies the exact H2 ACTIVE successor
-           public-key identity, fingerprint, PLATFORM draft-admission scope,
-           frozen 24-hour lifecycle, and preserved historical RETIRED trust.
+CHANGELOG: v1.9.0-R9B-P7-A3-H4 certifies the exact H2 successor public-key
+           retirement at revision 2, unchanged validity/public identity, and
+           fail-closed rejection of fresh authorization after retirement.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Test-only key material is deterministic and local;
                             no production secret, environment trust, file key,
@@ -109,7 +109,7 @@ NEW_PRODUCTION_PUBLIC_KEY = "vlN3rieZr9YwuvQ6AwW_dD1aN06B2MLGqlFsxacgCpM"
 RETIRED_SECOND_PRODUCTION_KEY_FINGERPRINT = "2154bc424e68de0091d68fa74fca74b05ef3a13607e93fca4ec155f0b96840e55624de465defc8ba4a3bdfdc20a7e6b913ed2fff0e03d3cdaa78e27a6c1ef276"
 H2_SUCCESSOR_KEY_ID = "prdca-key:legal-corpus-a5c22bcb6438d139981f7aec1465f695"
 H2_SUCCESSOR_PUBLIC_KEY = "nocEKzPIR01HXRV0BIxxsGaj0JmZaN75CUbaQS-lIVE"
-H2_SUCCESSOR_FINGERPRINT = "c889b7683e2e523e79db8f9afb6a5610d15908cc9a031d21c733fd60495ce2dfb7629bef0188adcb7a637ab82ca938cecc6f88a1ccf15c0f6a61b51d99077437"
+H2_SUCCESSOR_FINGERPRINT = "74bf32a415f81a6d1f03171321ef9316328366dee19069fde7433021af39c0265cde6ac5b975d175d7ee31e3c5f862e90531f63a1a76d12a476cf550da9fdfd9"
 H2_SUCCESSOR_VALID_FROM = datetime(2026, 9, 20, 1, 30, 21, 168602, tzinfo=timezone.utc)
 H2_SUCCESSOR_VALID_UNTIL = datetime(2026, 9, 21, 1, 30, 21, 168602, tzinfo=timezone.utc)
 ISSUER_IDENTITY = "issuer:r8j-d2-test"
@@ -286,13 +286,13 @@ def test_production_root_resolves_retired_key_and_rejects_fresh_authority(monkey
     assert successor.key_id == H2_SUCCESSOR_KEY_ID
     assert successor.public_key_base64url == H2_SUCCESSOR_PUBLIC_KEY
     assert successor.fingerprint == H2_SUCCESSOR_FINGERPRINT
-    assert successor.status is LegalCorpusOperatorKeyStatus.ACTIVE
-    assert successor.revision == 1
+    assert successor.status is LegalCorpusOperatorKeyStatus.RETIRED
+    assert successor.revision == 2
     assert successor.scope == TRUST_ROOT_SCOPE == "PLATFORM"
     assert successor.permitted_operations == frozenset({AUTHORIZED_OPERATION})
     assert successor.valid_from == H2_SUCCESSOR_VALID_FROM
     assert successor.valid_until == H2_SUCCESSOR_VALID_UNTIL
-    assert successor.can_issue(AUTHORIZED_OPERATION, H2_SUCCESSOR_VALID_FROM + timedelta(hours=12))
+    assert not successor.can_issue(AUTHORIZED_OPERATION, H2_SUCCESSOR_VALID_FROM + timedelta(hours=12))
     assert not successor.can_issue(AUTHORIZED_OPERATION, H2_SUCCESSOR_VALID_UNTIL)
 
 
@@ -848,9 +848,9 @@ def test_dependency_and_side_effect_boundary_is_pure() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_authorization.py
-# VERSION: v1.8.0-R9B-P7-A3-H2-R1-ACTIVE-SUCCESSOR-PROVISIONING-KEY-AUTHORIZATION-CERT
+# VERSION: v1.9.0-R9B-P7-A3-H4-RETIRED-SUCCESSOR-PROVISIONING-KEY-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: direct certificate evidence only; no authorization issuance
 # TENANT POSTURE: PLATFORM corpus scope; no tenant or principal authority
-# FAIL-CLOSED POSTURE: malformed, untrusted, divergent, expired, tampered, and retired-production values reject; H2 lifecycle is exact
+# FAIL-CLOSED POSTURE: malformed, untrusted, divergent, expired, tampered, and retired-production values reject; H4 lifecycle is exact
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
