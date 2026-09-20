@@ -1,21 +1,22 @@
 """Direct certificate for the R8O-P4-R7 legal-corpus operator trust root.
 
 TITLE: WILSY OS Legal Corpus Operator Trust-Root Direct Certificate
-VERSION: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT-CERT
+VERSION: v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the immutable, three-record PLATFORM-scoped Ed25519
-         public-key trust root: two historical RETIRED records and the exact
-         H2-admitted ACTIVE successor public record with a finite 24-hour
-         validity interval.
+         public-key trust root: three RETIRED records, including the exact
+         H2 successor public record preserved with its finite 24-hour validity
+         interval after post-provisioning retirement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_operator_trust_root.py
 COLLABORATION / OWNERSHIP: Direct certificate for the R8O-P4-R7 production
                            trust-root artifact; signed authorization and the
                            operator command remain separate boundaries.
 CERTIFICATION / UPDATE DATE: 2026-09-20
-CHANGELOG: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT-CERT
-           certifies both historical RETIRED records plus the exact H2 ACTIVE
-           successor key, frozen validity interval, fingerprint, lifecycle
-           boundaries, and archival verification semantics.
+CHANGELOG: v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT-CERT
+           certifies the exact H2 successor as RETIRED/revision 2 with
+           unchanged public identity and validity, zero ACTIVE records, and
+           fail-closed lifecycle semantics; H3/H4 execution/archive history remains
+           external forensic evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Deterministic public test material only; no private
                             key, secret, network, Mongo, environment, or file
@@ -88,8 +89,8 @@ _PRODUCTION_KEY_ID = "prdca-key:legal-corpus-69c7c3e9a67c7e552057d4c0670623be"
 _PRODUCTION_PUBLIC_KEY = "jfG0IANHA_tSNyjyurpBtTId98fG2l_LhifnfQJ2cXg"
 _PRODUCTION_PUBLIC_KEY_SHA3_512 = "69c7c3e9a67c7e552057d4c0670623be651f22e95dc69ad142e9174d1f811f3bfb74c7faa172a6d12df38abcde2576b8dd4005640c77649c932d13fbc74f72ac"
 _PRODUCTION_FINGERPRINT = "1ea7ec1e18355b4181d6b652c05be296deb2bb02cf0d5504e1e2ede82278572ee66178df141a4f98cf280af122fb2f55eebedb44262fa552f215c38a5bec2e38"
-_PRODUCTION_SOURCE_BYTES = 23976
-_PRODUCTION_SOURCE_SHA3_512 = "843cd764c34c9863dcff0a6c273c39595aa7c9d4137b79b163367f18b97bf0a5281131a9f4092900b20d1bb9e8e760502866c354d8d838f101e25bb2f54a7782"
+_PRODUCTION_SOURCE_BYTES = 24279
+_PRODUCTION_SOURCE_SHA3_512 = "59e21f2f0131e33e43d7f3bc7f9977059e4922af8feebc62c5522bec3a37da55ce72ba018eae033022d46efd4cbaba2c7b45d9c770d779d90a8b96f4164e25d7"
 _NEW_KEY_ID = "prdca-key:legal-corpus-159cfa91f279b045407396cd3ec8dca2"
 _NEW_PUBLIC_KEY = "vlN3rieZr9YwuvQ6AwW_dD1aN06B2MLGqlFsxacgCpM"
 _NEW_PUBLIC_KEY_SHA3_512 = "159cfa91f279b045407396cd3ec8dca291b135e6cf15c1f017fe68cc7f240df792a978670a410375b06bd2a219132bf0ca4395bcc83ede94a1304008818d72f3"
@@ -99,7 +100,7 @@ _NEW_VALID_UNTIL = datetime(2026, 9, 20, 19, 33, 13, 213194, tzinfo=timezone.utc
 _ADMITTED_KEY_ID = "prdca-key:legal-corpus-a5c22bcb6438d139981f7aec1465f695"
 _ADMITTED_PUBLIC_KEY = "nocEKzPIR01HXRV0BIxxsGaj0JmZaN75CUbaQS-lIVE"
 _ADMITTED_PUBLIC_KEY_SHA3_512 = "a5c22bcb6438d139981f7aec1465f695336f4cda90de83a0abc3f492812dfa401ef2447eb85cf80da09e3fc6a38ed5a17200834c5ec6dc4f155df6933f495286"
-_ADMITTED_TRUST_RECORD_FINGERPRINT = "c889b7683e2e523e79db8f9afb6a5610d15908cc9a031d21c733fd60495ce2dfb7629bef0188adcb7a637ab82ca938cecc6f88a1ccf15c0f6a61b51d99077437"
+_ADMITTED_TRUST_RECORD_FINGERPRINT = "74bf32a415f81a6d1f03171321ef9316328366dee19069fde7433021af39c0265cde6ac5b975d175d7ee31e3c5f862e90531f63a1a76d12a476cf550da9fdfd9"
 _ADMITTED_VALID_FROM = datetime(2026, 9, 20, 1, 30, 21, 168602, tzinfo=timezone.utc)
 _ADMITTED_VALID_UNTIL = datetime(2026, 9, 21, 1, 30, 21, 168602, tzinfo=timezone.utc)
 _PRODUCTION_VALID_FROM = datetime(2026, 9, 18, 5, 32, 16, tzinfo=timezone.utc)
@@ -165,13 +166,13 @@ def _error_code(callable_object: object, *args: object, **kwargs: object) -> str
     return captured.value.code
 
 
-def test_production_root_contains_exactly_three_keys_with_one_active() -> None:
-    """The current root contains two historical and one ACTIVE record."""
-    assert VERSION == "v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT"
+def test_production_root_contains_exactly_three_retired_keys() -> None:
+    """The current root contains three historical RETIRED records."""
+    assert VERSION == "v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT"
     assert LegalCorpusOperatorTrustRoot.production_key_count() == 3
     assert len(LegalCorpusOperatorTrustRoot.all_keys()) == 3
-    assert sum(key.status is LegalCorpusOperatorKeyStatus.ACTIVE for key in TRUSTED_KEYS) == 1
-    assert sum(key.status is LegalCorpusOperatorKeyStatus.RETIRED for key in TRUSTED_KEYS) == 2
+    assert sum(key.status is LegalCorpusOperatorKeyStatus.ACTIVE for key in TRUSTED_KEYS) == 0
+    assert sum(key.status is LegalCorpusOperatorKeyStatus.RETIRED for key in TRUSTED_KEYS) == 3
     assert sum(key.status is LegalCorpusOperatorKeyStatus.REVOKED for key in TRUSTED_KEYS) == 0
     assert _production_record().key_id == _PRODUCTION_KEY_ID
     assert _historical_retired_record().key_id == _NEW_KEY_ID
@@ -204,7 +205,7 @@ def test_exact_historical_retired_production_record_is_fully_bound() -> None:
 
 
 def test_exact_production_record_is_fully_bound() -> None:
-    """Every authority-bearing field of the H2 ACTIVE record is exact."""
+    """Every authority-bearing field of the retired H2 record is exact."""
     record = _active_production_record()
     assert record.key_id == _ADMITTED_KEY_ID
     assert record.algorithm == ED25519_ALGORITHM
@@ -213,8 +214,8 @@ def test_exact_production_record_is_fully_bound() -> None:
     assert record.authority_domain == "WILSY_LEGAL_CORPUS_OPERATOR_AUTHORITY"
     assert record.scope == "PLATFORM"
     assert record.permitted_operations == frozenset({"LEGAL_CORPUS_DRAFT_ADMISSION"})
-    assert record.status is LegalCorpusOperatorKeyStatus.ACTIVE
-    assert record.revision == 1
+    assert record.status is LegalCorpusOperatorKeyStatus.RETIRED
+    assert record.revision == 2
     assert record.valid_from == _ADMITTED_VALID_FROM
     valid_from = record.valid_from
     valid_until = record.valid_until
@@ -335,12 +336,12 @@ def test_production_validity_boundaries_are_deterministic() -> None:
     assert not record.can_issue(AUTHORIZED_OPERATION, _PRODUCTION_VALID_FROM + timedelta(hours=12))
 
 
-def test_active_production_validity_boundaries_are_deterministic() -> None:
-    """The H2 ACTIVE key issues only inside its frozen interval."""
+def test_retired_successor_validity_boundaries_are_deterministic() -> None:
+    """The retired H2 key verifies historically but never issues."""
     record = _active_production_record()
     assert not record.can_issue(AUTHORIZED_OPERATION, _ADMITTED_VALID_FROM - timedelta(microseconds=1))
-    assert record.can_issue(AUTHORIZED_OPERATION, _ADMITTED_VALID_FROM)
-    assert record.can_issue(AUTHORIZED_OPERATION, _ADMITTED_VALID_FROM + timedelta(hours=12))
+    assert not record.can_issue(AUTHORIZED_OPERATION, _ADMITTED_VALID_FROM)
+    assert not record.can_issue(AUTHORIZED_OPERATION, _ADMITTED_VALID_FROM + timedelta(hours=12))
     assert not record.can_issue(AUTHORIZED_OPERATION, _ADMITTED_VALID_UNTIL)
     assert not record.can_verify_at(AUTHORIZED_OPERATION, _ADMITTED_VALID_UNTIL + timedelta(microseconds=1))
 
@@ -516,8 +517,8 @@ def test_source_bootstrap_is_static_three_key_and_side_effect_free() -> None:
     assert reloaded.TRUSTED_KEYS[1].status is reloaded.LegalCorpusOperatorKeyStatus.RETIRED
     assert reloaded.TRUSTED_KEYS[1].revision == 2
     assert reloaded.TRUSTED_KEYS[2].key_id == _ADMITTED_KEY_ID
-    assert reloaded.TRUSTED_KEYS[2].status is reloaded.LegalCorpusOperatorKeyStatus.ACTIVE
-    assert reloaded.TRUSTED_KEYS[2].revision == 1
+    assert reloaded.TRUSTED_KEYS[2].status is reloaded.LegalCorpusOperatorKeyStatus.RETIRED
+    assert reloaded.TRUSTED_KEYS[2].revision == 2
 
 
 def test_d1_uses_the_unchanged_canonical_resolver_contract() -> None:
@@ -532,9 +533,9 @@ def test_d1_uses_the_unchanged_canonical_resolver_contract() -> None:
 
 
 # ARTIFACT: test_legal_corpus_operator_trust_root.py
-# VERSION: v1.5.0-R9B-P7-A3-H2-SUCCESSOR-PROVISIONING-TRUST-ROOT-CERT
+# VERSION: v1.6.0-R9B-P7-A3-H4-POST-PROVISIONING-SUCCESSOR-KEY-RETIREMENT-TRUST-ROOT-CERT
 # AUTHORITY BOUNDARY: direct evidence for public trust-root semantics only
 # TENANT POSTURE: PLATFORM trust only; no tenant or principal authority
-# FAIL-CLOSED POSTURE: exact three-key root, lifecycle boundaries, unknown keys, and invalid trust values reject
+# FAIL-CLOSED POSTURE: exact three-key retired root, lifecycle boundaries, unknown keys, and invalid trust values reject
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
