@@ -1,19 +1,21 @@
-"""Governed external-signer adapter for the first Charter approval.
+"""Governed external-signer adapter for reviewed successor approvals.
 
 TITLE: WILSY OS Legal Corpus Approval Operator Command
-VERSION: v1.0.0-R1D-B0F-R9B-P6-A1-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
+VERSION: v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Separates public approval-envelope preparation, external signature
-         completion, and verified production execution without becoming a new
-         legal authority or owning Mongo transaction lifecycle.
+EPITOME: Separates public reviewed-successor approval-envelope preparation,
+         external signature completion, and verified production execution
+         without becoming a new legal authority or owning Mongo lifecycle.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/legal_corpus_approval_operator_command.py
-COLLABORATION / OWNERSHIP: The production corpus owns the source Charter; the
-                            approval authority and verifier own evidence and
+COLLABORATION / OWNERSHIP: The production corpus owns the five reviewed
+                            successor sources; the approval authority and verifier own evidence and
                             signature semantics; LegalCorpusApprovalOperator
                             alone owns database sessions and transactions.
-CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.0.0 establishes prepare, finalize, and execute phases for the
-           first governed Institutional Charter approval ceremony.
+CERTIFICATION / UPDATE DATE: 2026-09-20
+CHANGELOG: v1.1.0 replaces Charter-only preparation with a closed selector for
+           exactly five server-owned 1.1.0-DRAFT reviewed successors; finalize
+           and execute remain separate and historical Charter approval is not
+           reopened.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Only public metadata and externally supplied
                             signature bytes are handled. No key material,
@@ -87,12 +89,19 @@ from tools.eos.legal_operations.service.legal_corpus_approval_operator import (
     LegalCorpusApprovalOperator,
     LegalCorpusApprovalOperatorResultState,
 )
-from tools.eos.legal_operations.production_legal_corpus import INSTITUTIONAL_CHARTER_DRAFT
+from tools.eos.legal_operations.production_legal_corpus import (
+    PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS,
+)
 
 
-VERSION: Final[str] = "v1.0.0-R1D-B0F-R9B-P6-A1-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND"
-APPROVED_VERSION: Final[str] = "1.0.0-APPROVED"
-APPROVED_REFERENCE: Final[str] = "wilsy-os://legal/institutional-charter/1.0.0-approved"
+VERSION: Final[str] = "v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND"
+REVIEWED_SUCCESSOR_SOURCE_VERSION: Final[str] = "1.1.0-DRAFT"
+REVIEWED_SUCCESSOR_APPROVED_VERSION: Final[str] = "1.1.0-APPROVED"
+APPROVED_VERSION: Final[str] = REVIEWED_SUCCESSOR_APPROVED_VERSION
+REVIEWED_SUCCESSOR_DOCUMENT_IDS: Final[frozenset[str]] = frozenset(
+    document.document_id for document in PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS
+)
+APPROVAL_TRUSTED_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
 AUTHORIZATION_LIFETIME: Final[timedelta] = timedelta(minutes=10)
 SIGNATURE_REFERENCE_PREFIX: Final[str] = "wilsy-os://legal/approval-signature/"
 _ZERO_SIGNATURE: Final[str] = base64.urlsafe_b64encode(b"\x00" * 64).rstrip(b"=").decode("ascii")
@@ -277,13 +286,43 @@ def _authorization_from_payload(payload: Mapping[str, Any]) -> LegalCorpusApprov
         raise LegalCorpusApprovalOperatorCommandError("AUTHORIZATION_INVALID") from None
 
 
+def _reviewed_successor(document_id: str) -> LegalDocumentVersion:
+    """Resolve one exact server-owned reviewed successor by document ID."""
+    if not isinstance(document_id, str) or document_id not in REVIEWED_SUCCESSOR_DOCUMENT_IDS:
+        raise LegalCorpusApprovalOperatorCommandError("REVIEWED_SUCCESSOR_DOCUMENT_REQUIRED")
+    matches = tuple(
+        document
+        for document in PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS
+        if document.document_id == document_id
+    )
+    if len(matches) != 1:
+        raise LegalCorpusApprovalOperatorCommandError("CANONICAL_SOURCE_INVALID")
+    source = matches[0]
+    if (
+        source.version != REVIEWED_SUCCESSOR_SOURCE_VERSION
+        or source.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED
+    ):
+        raise LegalCorpusApprovalOperatorCommandError("CANONICAL_SOURCE_INVALID")
+    return source
+
+
+def _approved_reference(source: LegalDocumentVersion) -> str:
+    """Derive the approved reference from the canonical draft reference."""
+    suffix = "/1.1.0-draft"
+    if not source.content_reference.endswith(suffix):
+        raise LegalCorpusApprovalOperatorCommandError("CANONICAL_SOURCE_INVALID")
+    return source.content_reference[: -len(suffix)] + "/1.1.0-approved"
+
+
 def _approved_target(source: LegalDocumentVersion, effective_from: datetime, approved_at: datetime) -> LegalDocumentVersion:
-    """Construct the sole allowed Charter successor without changing prose."""
-    reference = APPROVED_REFERENCE
+    """Construct the exact approved successor without changing source prose."""
+    if source != _reviewed_successor(source.document_id):
+        raise LegalCorpusApprovalOperatorCommandError("CANONICAL_SOURCE_MISMATCH")
+    reference = _approved_reference(source)
     return LegalDocumentVersion(
         document_id=source.document_id,
-        agreement_type=LegalAgreementType.INSTITUTIONAL_CHARTER,
-        version=APPROVED_VERSION,
+        agreement_type=source.agreement_type,
+        version=REVIEWED_SUCCESSOR_APPROVED_VERSION,
         title=source.title,
         jurisdiction=source.jurisdiction,
         locale=source.locale,
@@ -299,19 +338,16 @@ def _approved_target(source: LegalDocumentVersion, effective_from: datetime, app
 
 def _build_unsigned(
     *,
+    document_id: str,
     approved_at: datetime,
     effective_from: datetime,
     human_authority_representation: str,
     provenance_reference: str,
 ) -> LegalCorpusApprovalAuthorization:
-    """Build public unsigned evidence; construction is not human authorization."""
-    source = INSTITUTIONAL_CHARTER_DRAFT
-    if source != INSTITUTIONAL_CHARTER_DRAFT or source.status is not LegalDocumentStatus.DRAFT_REVIEW_REQUIRED:
-        raise LegalCorpusApprovalOperatorCommandError("CANONICAL_SOURCE_INVALID")
+    """Build public unsigned evidence; construction is not authorization."""
+    source = _reviewed_successor(document_id)
     now = _utc_now()
-    trusted_key = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(
-        "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
-    )
+    trusted_key = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(APPROVAL_TRUSTED_KEY_ID)
     issued_at = now
     expires_at = issued_at + AUTHORIZATION_LIFETIME
     if not trusted_key.can_issue(AUTHORIZED_OPERATION, AUTHORITY_SCOPE, issued_at):
@@ -365,11 +401,12 @@ def _build_unsigned(
 
 
 def _assert_canonical_authorization(authorization: LegalCorpusApprovalAuthorization) -> None:
-    """Reject every source or target that is not the server-owned Charter contract."""
+    """Reject every source or target outside the five reviewed successors."""
     evidence = authorization.approval_evidence
     source = evidence.source_document
     target = evidence.approved_document
-    if source != INSTITUTIONAL_CHARTER_DRAFT:
+    canonical_source = _reviewed_successor(source.document_id)
+    if source != canonical_source:
         raise LegalCorpusApprovalOperatorCommandError("CANONICAL_SOURCE_MISMATCH")
     expected = _approved_target(source, evidence.effective_from, evidence.approved_at)
     if target != expected:
@@ -401,18 +438,20 @@ def _signature_bytes(path: Path) -> str:
     return base64.urlsafe_b64encode(decoded).rstrip(b"=").decode("ascii")
 
 
-def prepare_charter(
+def prepare_reviewed_successor(
     *,
+    document_id: str,
     output_directory: Path,
     approved_at: str,
     effective_from: str,
     human_authority_representation: str,
     provenance_reference: str,
 ) -> tuple[Path, Path]:
-    """Emit public unsigned JSON and canonical payload for external signing."""
+    """Emit one reviewed-successor unsigned JSON and signing payload."""
     approved_at_value = _parse_timestamp(approved_at, "APPROVED_AT_INVALID")
     effective_value = _parse_timestamp(effective_from, "EFFECTIVE_FROM_INVALID")
     authorization = _build_unsigned(
+        document_id=document_id,
         approved_at=approved_at_value,
         effective_from=effective_value,
         human_authority_representation=human_authority_representation,
@@ -433,6 +472,7 @@ def prepare_charter(
 def finalize_authorization(unsigned_authorization_file: Path, signature_file: Path, output_file: Path) -> Path:
     """Attach only externally supplied public signature bytes without verification."""
     unsigned = _authorization_from_payload(_read_json(unsigned_authorization_file))
+    _assert_canonical_authorization(unsigned)
     if unsigned.signature_base64url != _ZERO_SIGNATURE:
         raise LegalCorpusApprovalOperatorCommandError("UNSIGNED_AUTHORIZATION_REQUIRED")
     signature = _signature_bytes(signature_file)
@@ -463,13 +503,14 @@ def execute_authorization(authorization_file: Path) -> LegalCorpusApprovalOperat
     """Verify a completed artifact and delegate execution to the closed operator."""
     authorization = _authorization_from_payload(_read_json(authorization_file))
     _assert_canonical_authorization(authorization)
+    source = _reviewed_successor(authorization.approval_evidence.source_document.document_id)
     try:
         proof = verify_legal_corpus_approval_authorization(
             authorization,
             PRODUCTION_APPROVAL_TRUST_ROOT,
             now=_utc_now(),
             expected_evidence=authorization.approval_evidence,
-            source_document=INSTITUTIONAL_CHARTER_DRAFT,
+            source_document=source,
             approved_document=authorization.approval_evidence.approved_document,
         )
     except Exception as error:
@@ -492,7 +533,8 @@ def _parser() -> argparse.ArgumentParser:
     """Build the bounded three-phase command parser."""
     parser = argparse.ArgumentParser(prog="legal_corpus_approval_operator_command")
     commands = parser.add_subparsers(dest="command", required=True)
-    prepare = commands.add_parser("prepare-charter")
+    prepare = commands.add_parser("prepare-reviewed-successor")
+    prepare.add_argument("--document-id", required=True)
     prepare.add_argument("--output-directory", type=Path, required=True)
     prepare.add_argument("--approved-at", required=True)
     prepare.add_argument("--effective-from", required=True)
@@ -511,8 +553,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run one explicit command phase and return a bounded process status."""
     try:
         args = _parser().parse_args(argv)
-        if args.command == "prepare-charter":
-            prepare_charter(
+        if args.command == "prepare-reviewed-successor":
+            prepare_reviewed_successor(
+                document_id=args.document_id,
                 output_directory=args.output_directory,
                 approved_at=args.approved_at,
                 effective_from=args.effective_from,
@@ -534,20 +577,23 @@ if __name__ == "__main__":
 
 
 __all__ = [
-    "APPROVED_REFERENCE",
     "APPROVED_VERSION",
+    "APPROVAL_TRUSTED_KEY_ID",
     "AUTHORIZATION_LIFETIME",
     "LegalCorpusApprovalOperatorCommandError",
+    "REVIEWED_SUCCESSOR_APPROVED_VERSION",
+    "REVIEWED_SUCCESSOR_DOCUMENT_IDS",
+    "REVIEWED_SUCCESSOR_SOURCE_VERSION",
     "VERSION",
     "execute_authorization",
     "finalize_authorization",
     "main",
-    "prepare_charter",
+    "prepare_reviewed_successor",
 ]
 
 
 # ARTIFACT: legal_corpus_approval_operator_command.py
-# VERSION: v1.0.0-R1D-B0F-R9B-P6-A1-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
+# VERSION: v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
 # AUTHORITY BOUNDARY: public ceremony adapter; verified proof only at execution
 # TENANT POSTURE: PLATFORM corpus; no tenant or principal acceptance authority
 # FAIL-CLOSED POSTURE: canonical source, trust, signature, and result checks reject
