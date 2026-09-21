@@ -1,23 +1,25 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - TENANT API CLIENT [V55.2.1-BROWSER-SHA3]                                                                                  ║
+ * ║ WILSY OS - TENANT API CLIENT [V56.0.0-CANONICAL-AUTH-TRANSPORT]                                                                      ║
  * ║ [LATENCY TELEMETRY | SHA3-512 SEALS | COMPLIANCE HOOKS | ANOMALY DETECTION | EVIDENCE PACKAGES | CIRCUIT BREAKER]                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 55.2.1-BROWSER-SHA3 | PRODUCTION READY                                                                                      ║
- * ║ EPITOME: Browser-compatible SHA3-512 sealing using js-sha3 library.                                                                  ║
+ * ║ VERSION: 56.0.0-CANONICAL-AUTH-TRANSPORT | PRODUCTION READY                                                                          ║
+ * ║ EPITOME: Tenant operations delegated to the canonical authenticated API client; browser-compatible SHA3-512 evidence remains local. ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api/tenantApi.js                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 CHANGE LOG:                                                                                                                       ║
+ * ║   2026-09-17 v56.0.0-CANONICAL-AUTH-TRANSPORT – Removed the private Axios transport; all tenant calls share services/api bearer state and ║
+ * ║   retry only explicitly transient failures (401/403 are terminal).                                                                  ║
  * ║   2026-08-19 v55.2.1-BROWSER-SHA3 – Replaced Node.js crypto with js-sha3 for browser compatibility.                                ║
  * ║   2026-08-06 v55.2.0-PHASE4 – Original version.                                                                                     ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                                        ║
- * ║ DEPENDENCIES:  js-sha3 (browser-compatible), axios, telemetryHelper                                                                  ║
+ * ║ DEPENDENCIES:  js-sha3 (browser-compatible), canonical services/api client, telemetryHelper                                         ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
 import { sha3_512 } from 'js-sha3'; // ✅ Browser-compatible SHA3-512
-import axios from 'axios';
+import api from '../api';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 
 /**
@@ -61,38 +63,14 @@ class TenantApiClient {
       openUntil: null,
     };
 
-    // Axios instance
-    this.client = axios.create({
-      baseURL: this.baseURL,
-      timeout: this.timeout,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Kennel-Shard': this.kennelShard,
-        'X-Kennel-Tenant': this.kennelTenantId,
-      },
-    });
-
-    // Interceptors for circuit breaker
-    this.client.interceptors.response.use(
-      (response) => {
-        // Success: reset failures if state is HALF_OPEN or CLOSED
-        if (this.circuitBreaker.state === 'HALF_OPEN') {
-          this.circuitBreaker.state = 'CLOSED';
-          this.circuitBreaker.failures = 0;
-        }
-        return response;
-      },
-      (error) => {
-        // Increment failures on error
-        this.circuitBreaker.failures += 1;
-        this.circuitBreaker.lastFailure = new Date();
-        if (this.circuitBreaker.failures >= this.circuitBreakerThreshold) {
-          this.circuitBreaker.state = 'OPEN';
-          this.circuitBreaker.openUntil = new Date(Date.now() + 30000); // 30s timeout
-        }
-        return Promise.reject(error);
-      }
-    );
+    // Every tenant request uses AuthProvider's canonical client. A private
+    // Axios instance would bypass the synchronous MFA bearer anchor.
+    this.client = api;
+    const commonHeaders = this.client?.defaults?.headers?.common;
+    if (commonHeaders) {
+      commonHeaders['X-Kennel-Shard'] = this.kennelShard;
+      commonHeaders['X-Kennel-Tenant'] = this.kennelTenantId;
+    }
   }
 
   // ---- Private Helpers ----
@@ -164,6 +142,10 @@ class TenantApiClient {
     for (let attempt = 0; attempt <= this.retryCount; attempt++) {
       try {
         const response = await fn();
+        if (this.circuitBreaker.state === 'HALF_OPEN') {
+          this.circuitBreaker.state = 'CLOSED';
+          this.circuitBreaker.failures = 0;
+        }
         const latencyMs = Math.round(performance.now() - start);
         // Success telemetry
         const payload = response.data;
@@ -186,9 +168,18 @@ class TenantApiClient {
         };
       } catch (err) {
         lastError = err;
-        // If circuit is open, don't retry
+        this.circuitBreaker.failures += 1;
+        this.circuitBreaker.lastFailure = new Date();
+        if (this.circuitBreaker.failures >= this.circuitBreakerThreshold) {
+          this.circuitBreaker.state = 'OPEN';
+          this.circuitBreaker.openUntil = new Date(Date.now() + 30000);
+        }
+        // Authentication and authorization failures are terminal. Only
+        // network/timeouts, 408, 429, and 5xx responses are transient.
+        const status = err?.response?.status;
+        const retryable = status == null || status === 408 || status === 429 || status >= 500;
         if (this.circuitBreaker.state === 'OPEN') break;
-        if (attempt === this.retryCount) {
+        if (!retryable || attempt === this.retryCount) {
           // Final failure: broadcast error
           const latencyMs = Math.round(performance.now() - start);
           broadcastTelemetry('TenantApiClient', action, 'API_ERROR', this.kennelTenantId, {
@@ -404,7 +395,17 @@ export default tenantApiClient;
  * ║ • Evidence package includes: action, requestId, timestamp, latency, breakerState, seal, anomalyScore.                                ║
  * ║ • Compliance metadata (POPIA, GDPR, SOC2, ISO27001) attached to getTenants and export.                                               ║
  * ║ • Kennel EOS headers (X‑Kennel‑Shard, X‑Kennel‑Tenant) injected on every request.                                                     ║
- * ║ • Retry logic with exponential backoff (max 3 retries).                                                                               ║
- * ║ • Version: 55.2.1-BROWSER-SHA3 | Last audit: 2026-08-19 | Certified by AI Engineering.                                               ║
+ * ║ • Retry logic is bounded to network/timeouts, 408, 429, and 5xx; 401/403 are never retried.                                         ║
+ * ║ • Version: 56.0.0-CANONICAL-AUTH-TRANSPORT | Last audit: 2026-09-17 | Certified by AI Engineering.                                  ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+/*
+ * ARTIFACT: client/src/services/api/tenantApi.js
+ * VERSION: 56.0.0-CANONICAL-AUTH-TRANSPORT
+ * AUTHORITY BOUNDARY: tenant transport adapter only; server owns tenant authority
+ * TENANT POSTURE: all calls inherit canonical API tenant scoping and bearer propagation
+ * FAIL-CLOSED POSTURE: authentication/authorization failures are terminal and never retried
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

@@ -1,23 +1,40 @@
-/* eslint-disable */
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE
+ * Version:        v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Operator AI dock. Uses sovereign `api` service exclusively.
  *                 Kennel health and registry are fetched via `/kernel` and
  *                 `/source-registry/health`; canonical billing-intelligence
  *                 evidence is fetched as a separate read-only projection.
  *                 Assistant replies are generated via backend `POST /api/ai/operator`.
+ *                 C1C/C1E legal advisory truth is rendered through the certified
+ *                 R1B transport adapter and remains client-memory-only.
  * Classification: Production Artifact — Institutional Contract
+ * Tenant Boundary: C1E payloads are server-scoped and rendered without client
+ *                   tenant inference or persistence.
+ * Authority Boundary: Python EOS owns legal advisory authority; this file is a
+ *                     projection and exposes no legal command authority.
+ * Financial Authority Boundary: None; Kennel EOS remains exclusive.
+ * Compliance: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * Security / Privacy Posture: Authentication remains in api.js; C1E state is
+ *                              held only in React memory.
  *
  * Contributors:
  *   - Wilson Khanyezi (CEO/Lead Architect) – Mandated Kennel as Source of Truth.
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
+ *   2026-09-17 v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION — Consumed only the
+ *     bounded persisted session projection and replaced identity/tenant defaults
+ *     with an explicit unresolved posture.
+ *   2026-09-17 v4.3.1-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION — Consolidated
+ *     visible product branding to WILSY OS and source-gated secondary tenant identity.
+ *   2026-09-17 v4.3.0-C1E-R1C-LEGAL-ADVISORY-PROJECTION — Added explicit
+ *     evidence-backed Legal Advisory tab using only certified R1B operations;
+ *     no C1E persistence, command affordances, or client-side reinterpretation.
  *   2026-09-13 v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE — Added optional
  *     canonical billing-intelligence evidence projection with explicit UTC
  *     snapshot request and explicit operator-context propagation; no client
@@ -37,14 +54,20 @@
  *   Kennel:     GET /api/kernel (health) + GET /source-registry/health (optional)
  *               GET /billing/intelligence/evidence (optional canonical evidence)
  *               POST /api/ai/operator (Phase 4)
+ *               C1C/C1E legal advisory transport (R1B adapter)
  *
- * Certification Seal: PRODUCTION_READY_v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE
+ * Certification Seal: PRODUCTION_READY_v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
+/* eslint-disable */
+
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import {
+  ArrowUpRight,
   BrainCircuit,
+  FileCheck2,
   History,
   MessageSquareText,
   Minimize2,
@@ -55,6 +78,11 @@ import {
   X,
 } from 'lucide-react';
 import api from '../../services/api.js'; // Sovereign HTTP client – forensic seals, tenant headers, auto refresh
+import {
+  executeWilsyAILegalServices,
+  generateWilsyAILegalNextActions,
+  readWilsyAILegalNextAction,
+} from '../../services/wilsyAIAdvisoryApi.js';
 import {
   buildWilsyDynamicSuggestions,
   recordWilsyAISuggestionUsage,
@@ -96,13 +124,13 @@ function humanizeWilsyAIBackendToken(value = '') {
 /**
  * @function buildWilsyAIProductivityCopy
  * @description Normalises kennel / registry payloads for dock UI.
- * @institutional Ensures fallback data is provided when the source registry is silent.
+ * @institutional Preserves a truthful LIVE_EMPTY posture when the source registry is silent.
  */
 function buildWilsyAIProductivityCopy(payload = {}) {
   if (!payload || typeof payload !== 'object') {
     return {
-      result: 'Workspace intelligence active',
-      workspace: { operatingRole: 'Operator', focus: 'Authority graph' },
+      result: 'LIVE_EMPTY',
+      workspace: { operatingRole: 'UNRESOLVED', focus: 'UNRESOLVED' },
     };
   }
   const nextBestActions = Array.isArray(payload.nextBestActions)
@@ -127,12 +155,12 @@ function buildWilsyAIProductivityCopy(payload = {}) {
 
   return {
     ...payload,
-    result: humanizeWilsyAIBackendToken(payload.result || payload.status) || 'Workspace intelligence active',
+    result: humanizeWilsyAIBackendToken(payload.result || payload.status) || 'LIVE_EMPTY',
     bridge: humanizeWilsyAIBackendToken(payload.bridge),
     workspace: {
       ...(payload.workspace || {}),
-      focus: payload.workspace?.focus || 'Authority graph',
-      operatingRole: payload.workspace?.operatingRole || 'Security Admin',
+      focus: payload.workspace?.focus || 'UNRESOLVED',
+      operatingRole: payload.workspace?.operatingRole || 'UNRESOLVED',
       monetizationSignal: humanizeWilsyAIBackendToken(payload.workspace?.monetizationSignal),
     },
     modelRoute: {
@@ -162,10 +190,88 @@ function buildWilsyAIProductivityCopy(payload = {}) {
 }
 
 /**
+ * @function formatLegalAdvisoryError
+ * @description Maps bounded C1C/C1E transport failures to truthful operator copy.
+ * @institutional Prevents failed, stale, or unauthorized requests from becoming
+ * fabricated recommendations while retaining server-owned conflict classes.
+ */
+function formatLegalAdvisoryError(error) {
+  const status = error?.response?.status ?? error?.status;
+  const detail = error?.response?.data?.detail ?? error?.response?.data?.error;
+  const code = String(detail || error?.code || '').toUpperCase();
+  if (!status && !code) return 'Legal advisory source unavailable; no advisory was generated.';
+  if (status === 403 || code === 'C1E_LEGAL_ACCESS_DENIED') {
+    return 'Current legal advisory authority denied for this workspace.';
+  }
+  if (status === 404 || code === 'C1E_RESOURCE_NOT_FOUND') {
+    return 'Requested legal advisory source or advisory is unavailable.';
+  }
+  if (status === 409 && code === 'C1E_TOOL_ASSISTED_REQUIRED') {
+    return 'Evidence-backed advisory not generated: tool-assisted orchestration is required.';
+  }
+  if (status === 409 && code === 'C1E_SOURCE_SNAPSHOT_STALE') {
+    return 'Source snapshot is stale; no advisory was created from stale evidence.';
+  }
+  if (status === 409) return 'Advisory conflict; no fabricated result was returned.';
+  if (status === 422) return 'Legal advisory request contract rejected.';
+  if (status === 503 && code === 'C1E_ADVISORY_RECONCILIATION_REQUIRED') {
+    return 'Advisory state requires reconciliation; success cannot be claimed.';
+  }
+  if (status === 503) return 'Legal advisory service unavailable; no advisory was generated.';
+  return 'Legal advisory source unavailable; no advisory was generated.';
+}
+
+/**
+ * @function formatAdvisoryValue
+ * @description Performs presentation-only formatting without deriving C1E meaning.
+ */
+function formatAdvisoryValue(value) {
+  if (value === null || value === undefined || value === '') return 'Not supplied';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+/**
+ * @function formatConfidenceScore
+ * @description Displays the server-provided confidence score without recomputation.
+ */
+function formatConfidenceScore(value) {
+  if (typeof value !== 'number') return formatAdvisoryValue(value);
+  return `${(value <= 1 ? value * 100 : value).toFixed(1)}%`;
+}
+
+/**
+ * @function resolveAuthoritativeTenantBrand
+ * @description Resolves an optional organization label only from explicit active
+ * tenant-context authority; email, role, and MASTER fallbacks are excluded.
+ * @param {unknown} tenant - Browser-provided active tenant context.
+ * @returns {string} Proven organization/legal name or an empty string.
+ * @institutional Keeps WILSY OS as the product brand while preventing invented tenant identity.
+ */
+function resolveAuthoritativeTenantBrand(tenant) {
+  if (!tenant || typeof tenant !== 'object') return '';
+  const authority = String(
+    tenant.source || tenant.authority_source || tenant.context_source || tenant.authority || ''
+  ).toUpperCase();
+  if (authority !== 'ACTIVE_TENANT_CONTEXT') return '';
+  return String(
+    tenant.legalName ||
+    tenant.companyName ||
+    tenant.organization?.legalName ||
+    tenant.organization?.legal_name ||
+    tenant.name ||
+    ''
+  ).trim();
+}
+
+/**
  * @function WilsyOSIntelligenceDock
  * @description Kennel Phase‑4 intelligence surface – sovereign api + backend operator.
  */
-export function WilsyOSIntelligenceDock() {
+export function WilsyOSIntelligenceDock({
+  authUser = null,
+  activeTenant = null,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
@@ -176,12 +282,13 @@ export function WilsyOSIntelligenceDock() {
   const [dockContext, setDockContext] = useState(null);
   const [kennelPosture, setKennelPosture] = useState('STANDBY');
   const [errorMessage, setErrorMessage] = useState('');
+  const [legalPrompt, setLegalPrompt] = useState('');
+  const [legalSubmitting, setLegalSubmitting] = useState(false);
+  const [legalRefreshing, setLegalRefreshing] = useState(false);
+  const [legalError, setLegalError] = useState('');
+  const [legalServiceResponse, setLegalServiceResponse] = useState(null);
+  const [legalAdvisory, setLegalAdvisory] = useState(null);
   const messagesEndRef = useRef(null);
-
-  // Optional React context (auth / tenant) – soft failure if outside providers
-  // We'll read from window globals as fallback (populated by auth provider)
-  const authUser = typeof window !== 'undefined' ? window.__WILSY_AUTH_USER__ : null;
-  const activeTenant = typeof window !== 'undefined' ? window.__WILSY_ACTIVE_TENANT__ : null;
 
   /**
    * @function hydrateDockContext
@@ -190,11 +297,11 @@ export function WilsyOSIntelligenceDock() {
    */
   const hydrateDockContext = useCallback(async () => {
     const fallback = buildWilsyAIProductivityCopy({
-      result: 'Workspace intelligence active',
+      result: 'LIVE_EMPTY',
       workspace: {
-        operatingRole: authUser?.role || 'Founder & Architect',
+        operatingRole: authUser?.role || 'UNRESOLVED',
         focus: 'Authority graph',
-        tenantId: activeTenant?.tenantId || activeTenant?._id || 'MASTER',
+        tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
       },
     });
 
@@ -246,8 +353,8 @@ export function WilsyOSIntelligenceDock() {
         bridge: kernel.bridge || registry.bridge,
         workspace: {
           ...(registry.workspace || {}),
-          operatingRole: authUser?.role || registry.workspace?.operatingRole || 'Founder & Architect',
-          tenantId: activeTenant?.tenantId || activeTenant?._id || registry.workspace?.tenantId || 'MASTER',
+          operatingRole: authUser?.role || registry.workspace?.operatingRole || 'UNRESOLVED',
+          tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || registry.workspace?.tenantId || '',
         },
       });
       if (billingIntelligenceEvidence) {
@@ -402,7 +509,7 @@ export function WilsyOSIntelligenceDock() {
         // We can also pass tenantId in body for explicit scoping
         const response = await api.post('/api/ai/operator', requestBody, {
           headers: {
-            'X-Tenant-Id': activeTenant?.tenantId || activeTenant?._id || 'MASTER',
+            'X-Tenant-Id': activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
             'X-Wilsy-Kennel-Posture': kennelPosture,
           },
           timeout: 30000, // Allow up to 30s for engine reasoning
@@ -419,7 +526,7 @@ export function WilsyOSIntelligenceDock() {
           result?.message ||
           result?.answer ||
           result?.result ||
-          'Sovereign intelligence processed your request. Refine the prompt or open the related module for live data.';
+            'Operator source returned no intelligence; no recommendation was generated.';
 
         const assistantTurn = {
           role: 'assistant',
@@ -431,7 +538,7 @@ export function WilsyOSIntelligenceDock() {
             kennelPosture,
             intent: result?.intent,
             domain: result?.domain,
-            tenantId: result?.tenantId || activeTenant?.tenantId || 'MASTER',
+            tenantId: result?.tenantId || activeTenant?.tenantId || authUser?.tenantId || '',
           },
         };
 
@@ -469,11 +576,105 @@ export function WilsyOSIntelligenceDock() {
     ]
   );
 
+  /**
+   * @function handleGenerateLegalAdvisory
+   * @description Explicitly composes C1C tool-assisted evidence with C1E advisory projection.
+   * @institutional C1C/C1E remain server authorities; the Dock owns only a fresh
+   * transport replay key and transient presentation state.
+   */
+  const handleGenerateLegalAdvisory = useCallback(async () => {
+    const exactPrompt = legalPrompt.trim();
+    if (!exactPrompt || legalSubmitting) return;
+
+    setLegalSubmitting(true);
+    setLegalError('');
+    setLegalServiceResponse(null);
+    setLegalAdvisory(null);
+    try {
+      const c1cResponse = await executeWilsyAILegalServices(exactPrompt, uuidv4());
+      const c1cPayload = c1cResponse?.data || {};
+      setLegalServiceResponse({
+        orchestration_id: c1cPayload.orchestration_id,
+        outcome: c1cPayload.outcome,
+        response_text: c1cPayload.response_text,
+        sources: c1cPayload.sources,
+      });
+      if (c1cPayload.outcome !== 'TOOL_ASSISTED') return;
+      if (typeof c1cPayload.orchestration_id !== 'string' || !c1cPayload.orchestration_id) {
+        setLegalError('Tool-assisted orchestration did not return an advisory identity.');
+        return;
+      }
+      const c1eResponse = await generateWilsyAILegalNextActions(c1cPayload.orchestration_id);
+      const advisory = c1eResponse?.data;
+      if (!advisory || typeof advisory !== 'object') {
+        setLegalError('Evidence-backed advisory was unavailable; no fabricated result was returned.');
+        return;
+      }
+      setLegalAdvisory(advisory);
+    } catch (error) {
+      setLegalError(formatLegalAdvisoryError(error));
+      setLegalAdvisory(null);
+    } finally {
+      setLegalSubmitting(false);
+    }
+  }, [legalPrompt, legalSubmitting]);
+
+  /**
+   * @function handleRefreshLegalAdvisory
+   * @description Reads the current server-owned advisory status exactly once.
+   */
+  const handleRefreshLegalAdvisory = useCallback(async () => {
+    const advisoryId = legalAdvisory?.advisory_id;
+    if (!advisoryId || legalRefreshing) return;
+    setLegalRefreshing(true);
+    setLegalError('');
+    try {
+      const response = await readWilsyAILegalNextAction(advisoryId);
+      setLegalAdvisory(response?.data || null);
+    } catch (error) {
+      setLegalError(formatLegalAdvisoryError(error));
+    } finally {
+      setLegalRefreshing(false);
+    }
+  }, [legalAdvisory?.advisory_id, legalRefreshing]);
+
+  /**
+   * @function handleViewSuccessor
+   * @description Reads a server-owned successor advisory without generating a new one.
+   * @param {string} successorId - Persisted successor identity from the stale advisory.
+   */
+  const handleViewSuccessor = useCallback(async (successorId) => {
+    if (!successorId || legalRefreshing) return;
+    setLegalRefreshing(true);
+    setLegalError('');
+    try {
+      const response = await readWilsyAILegalNextAction(successorId);
+      setLegalAdvisory(response?.data || null);
+    } catch (error) {
+      setLegalError(formatLegalAdvisoryError(error));
+    } finally {
+      setLegalRefreshing(false);
+    }
+  }, [legalRefreshing]);
+
+  /**
+   * @function clearLegalAdvisoryView
+   * @description Clears transient C1E presentation state without touching history or storage.
+   */
+  const clearLegalAdvisoryView = useCallback(() => {
+    setLegalPrompt('');
+    setLegalError('');
+    setLegalServiceResponse(null);
+    setLegalAdvisory(null);
+  }, []);
+
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
     authUser?.email ||
     'Operator';
+  const legalStatus = String(legalAdvisory?.status || '').toUpperCase();
+  const authoritativeTenantBrand = resolveAuthoritativeTenantBrand(activeTenant);
 
   return (
     <div className={styles.intelligenceDockContainer} data-wilsy-intelligence-dock="active" data-kennel={kennelPosture}>
@@ -485,7 +686,7 @@ export function WilsyOSIntelligenceDock() {
           title="Open Wilsy OS Intelligence Dock"
         >
           <Sparkles className={styles.launcherIcon} />
-          <span>Wilsy AI</span>
+          <span>WILSY OS</span>
         </button>
       )}
 
@@ -495,10 +696,15 @@ export function WilsyOSIntelligenceDock() {
             <div className={styles.dockHeaderTitle}>
               <BrainCircuit className={styles.headerLogo} />
               <div>
-                <span>Wilsy OS Intelligence Dock</span>
+                <span>WILSY OS Intelligence Dock</span>
                 <small className={styles.kennelBadge} data-posture={kennelPosture}>
                   Kennel {kennelPosture}
                 </small>
+                {authoritativeTenantBrand && (
+                  <small className={styles.workspaceBrand} data-brand-source="ACTIVE_TENANT_CONTEXT">
+                    {authoritativeTenantBrand}
+                  </small>
+                )}
               </div>
             </div>
             <div className={styles.dockHeaderActions}>
@@ -528,7 +734,7 @@ export function WilsyOSIntelligenceDock() {
               onClick={() => setActiveTab('chat')}
             >
               <MessageSquareText size={15} />
-              <span>Ask Wilsy</span>
+              <span>Ask WILSY OS</span>
             </button>
             <button
               type="button"
@@ -537,6 +743,14 @@ export function WilsyOSIntelligenceDock() {
             >
               <Sparkles size={15} />
               <span>Suggestions</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.navTabButton} ${activeTab === 'legalAdvisory' ? styles.activeTab : ''}`}
+              onClick={() => setActiveTab('legalAdvisory')}
+            >
+              <FileCheck2 size={15} />
+              <span>Legal Advisory</span>
             </button>
             <button
               type="button"
@@ -570,7 +784,7 @@ export function WilsyOSIntelligenceDock() {
                       }`}
                     >
                       <div className={styles.bubbleHeader}>
-                        <span>{msg.role === 'user' ? operatorLabel : 'Wilsy AI'}</span>
+                        <span>{msg.role === 'user' ? operatorLabel : 'WILSY OS'}</span>
                         <span>
                           {msg.timestamp
                             ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -653,6 +867,123 @@ export function WilsyOSIntelligenceDock() {
               </div>
             )}
 
+            {activeTab === 'legalAdvisory' && (
+              <div className={styles.legalAdvisoryTab}>
+                <div className={styles.legalAdvisoryHeader}>
+                  <div>
+                    <span className={styles.legalAdvisoryEyebrow}>Legal Advisory</span>
+                    <h4>Evidence-backed Legal Advisory</h4>
+                  </div>
+                  <ShieldCheck size={22} aria-hidden="true" />
+                </div>
+                <p className={styles.legalAdvisoryNotice}>
+                  Evidence-backed advisory · No execution authority
+                </p>
+                <div className={styles.legalAdvisoryPrompt}>
+                  <label htmlFor="legal-advisory-prompt">Legal-service question</label>
+                  <textarea
+                    id="legal-advisory-prompt"
+                    aria-label="Legal advisory prompt"
+                    value={legalPrompt}
+                    onChange={(event) => setLegalPrompt(event.target.value)}
+                    placeholder="Describe the legal-service question…"
+                    rows={4}
+                    disabled={legalSubmitting}
+                  />
+                  <button
+                    type="button"
+                    className={styles.legalAdvisoryGenerate}
+                    onClick={handleGenerateLegalAdvisory}
+                    disabled={legalSubmitting || !legalPrompt.trim()}
+                  >
+                    <FileCheck2 size={16} />
+                    {legalSubmitting ? 'Generating evidence-backed next action…' : 'Generate evidence-backed next action'}
+                  </button>
+                </div>
+
+                {legalError && (
+                  <div className={styles.legalAdvisoryError} role="alert" aria-live="assertive">
+                    {legalError}
+                  </div>
+                )}
+
+                {legalServiceResponse && (
+                  <section className={styles.legalServiceResponse} aria-live="polite">
+                    <h5>Legal service response</h5>
+                    <p>{formatAdvisoryValue(legalServiceResponse.response_text)}</p>
+                    <div className={styles.legalAdvisoryGrid}>
+                      <div className={styles.legalAdvisoryField}>
+                        <small>Orchestration ID</small>
+                        <strong>{formatAdvisoryValue(legalServiceResponse.orchestration_id)}</strong>
+                      </div>
+                      <div className={styles.legalAdvisoryField}>
+                        <small>Outcome</small>
+                        <strong>{formatAdvisoryValue(legalServiceResponse.outcome)}</strong>
+                      </div>
+                    </div>
+                    {Array.isArray(legalServiceResponse.sources) && legalServiceResponse.sources.length > 0 && (
+                      <ul className={styles.legalAdvisorySourceList}>
+                        {legalServiceResponse.sources.map((source, index) => (
+                          <li key={`${formatAdvisoryValue(source)}-${index}`}>{formatAdvisoryValue(source)}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {legalServiceResponse.outcome !== 'TOOL_ASSISTED' && (
+                      <strong className={styles.legalAdvisoryNotGenerated}>
+                        Evidence-backed advisory not generated
+                      </strong>
+                    )}
+                  </section>
+                )}
+
+                {legalAdvisory && (
+                  <section className={styles.legalAdvisoryCard} aria-label="Evidence-backed advisory">
+                    <div className={styles.legalAdvisoryCardHeader}>
+                      <div>
+                        <span className={styles.legalAdvisoryEyebrow}>Evidence-backed advisory</span>
+                        <h5>{formatAdvisoryValue(legalAdvisory.title)}</h5>
+                      </div>
+                      <span
+                        className={`${styles.legalAdvisoryStatus} ${
+                          legalStatus === 'STALE'
+                            ? styles.legalAdvisoryStatusStale
+                            : styles.legalAdvisoryStatusCurrent
+                        }`}
+                      >
+                        {formatAdvisoryValue(legalAdvisory.status)}
+                      </span>
+                    </div>
+                    <p className={styles.legalAdvisoryNoAuthority}>
+                      Evidence-backed advisory · No execution authority
+                    </p>
+                    <div className={styles.legalAdvisoryGrid}>
+                      <div className={styles.legalAdvisoryField}><small>Advisory ID</small><strong>{formatAdvisoryValue(legalAdvisory.advisory_id)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Scope reference</small><strong>{formatAdvisoryValue(legalAdvisory.scope_ref)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Rationale</small><strong>{formatAdvisoryValue(legalAdvisory.rationale)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Confidence score</small><strong>{formatConfidenceScore(legalAdvisory.confidence_score)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Confidence basis</small><strong>{formatAdvisoryValue(legalAdvisory.confidence_basis)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Risk level</small><strong>{formatAdvisoryValue(legalAdvisory.risk_level)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Generated at</small><strong>{formatAdvisoryValue(legalAdvisory.generated_at)}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Superseded by advisory ID</small><strong>{formatAdvisoryValue(legalAdvisory.superseded_by_advisory_id)}</strong></div>
+                    </div>
+                    <div className={styles.legalAdvisoryActions}>
+                      <button type="button" className={styles.legalAdvisoryRefresh} onClick={handleRefreshLegalAdvisory} disabled={legalRefreshing}>
+                        {legalRefreshing ? 'Refreshing status…' : 'Refresh status'}
+                      </button>
+                      {legalAdvisory.superseded_by_advisory_id && (
+                        <button type="button" className={styles.legalAdvisoryRefresh} onClick={() => handleViewSuccessor(legalAdvisory.superseded_by_advisory_id)} disabled={legalRefreshing}>
+                          <ArrowUpRight size={15} /> View successor
+                        </button>
+                      )}
+                      <button type="button" className={styles.legalAdvisoryClear} onClick={clearLegalAdvisoryView}>
+                        Clear local view
+                      </button>
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+
             {activeTab === 'history' && (
               <div className={styles.historyTabContent}>
                 <div className={styles.historyHeaderRow}>
@@ -705,7 +1036,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.2.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
  * ═══════════════════════════════════════════════════════════════════════════════
  * Phase 4 complete: local engine replaced with backend POST /api/ai/operator.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
@@ -713,6 +1044,15 @@ export default WilsyOSIntelligenceDock;
  * M14-P7 complete: optional billing-intelligence evidence remains a separate
  * server-returned canonical projection and is explicitly named in operator context.
  * The dock now uses the sovereign Kennel for all intelligence generation.
+ * C1E-R1C complete: legal advisories remain server-owned, read-only projections;
+ * no legal command, execution, financial authority, or browser persistence exists.
  * Phase 5 next: move conversation history to server (tenant‑scoped).
  * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: WilsyOSIntelligenceDock.jsx
+ * VERSION: v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
+ * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
+ * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
+ * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

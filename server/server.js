@@ -1,21 +1,27 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [V5.2.10‑PROXY‑ORDER‑FIX]                                                              ║
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.4.0-R1D-B0F-B4-R1]                                                               ║
+ * ║ TITLE: Selective legal-acceptance browser-to-Python BFF transport                                                                  ║
+ * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
+ * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
+ * ║ AUTHORITY BOUNDARY: No C1C/C1E/legal/financial authority is interpreted or created                                                ║
+ * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution                                                      ║
  * ║ EPITOME: Production BFF with CORRECT middleware order – proxies run BEFORE body parsers.                                            ║
  * ║          Uses http-proxy-middleware for all Kennel routes, including billing.                                                       ║
  * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 5.2.10‑PROXY‑ORDER‑FIX | PRODUCTION READY                                                                                  ║
+ * ║ VERSION: v5.4.0-R1D-B0F-B4-R1 | PRODUCTION READY                                                                                   ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.2.10):                                                                                                               ║
- * ║   2026-08-24 – Moved all proxy middlewares BEFORE body parsers. Removed custom axios proxy. Reverted to http-proxy-middleware.       ║
- * ║   2026-08-24 – v5.2.9: Attempted axios fix.                                                                                          ║
- * ║   ... (previous history)                                                                                                               ║
+ * ║ 🔧 CHANGE LOG (v5.4.0-R1D-B0F-B4-R1):                                                                                                ║
+ * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
+ * ║   2026-09-17 – Added only the certified C1C legal-services and C1E advisory selective proxies.                                      ║
+ * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
+ * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.2.10‑PROXY‑ORDER‑FIX                                                                       ║
+ * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.4.0-R1D-B0F-B4-R1                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -28,11 +34,18 @@ import { createServer } from 'node:http';
 import mongoose from 'mongoose';
 import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
-const KENNEL_TARGET = (process.env.KENNEL_URL || process.env.KENNEL_EOS_URL || 'http://127.0.0.1:9095').replace(/\/$/, '');
+const KENNEL_TARGET = (
+  process.env.KENNEL_URL ||
+  process.env.KENNEL_EOS_URL ||
+  'http://127.0.0.1:9095'
+).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const BUILD = '5.2.10-PROXY-ORDER-FIX';
+const VERSION = 'v5.4.0-R1D-B0F-B4-R1';
+const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
 
@@ -61,7 +74,8 @@ function forwardInstitutionalHeaders(proxyReq, req) {
   const h = req.headers || {};
   const tenantId =
     h['x-tenant-id'] ||
-    h['x-tenant-id'] ||
+    h['x-wilsy-tenant'] ||
+    h['x-tenant'] ||
     h['x-wilsy-tenant-id'] ||
     req.tenantId ||
     null;
@@ -71,10 +85,9 @@ function forwardInstitutionalHeaders(proxyReq, req) {
     proxyReq.setHeader('x-tenant-id', tenantId);
   }
   const idem =
-    h['x-idempotency-key'] ||
-    h['x-wilsy-idempotency-key'] ||
-    null;
+    h['idempotency-key'] || h['x-idempotency-key'] || h['x-wilsy-idempotency-key'] || null;
   if (idem) {
+    proxyReq.setHeader('Idempotency-Key', idem);
     proxyReq.setHeader('X-Idempotency-Key', idem);
     proxyReq.setHeader('X-Wilsy-Idempotency-Key', idem);
   }
@@ -109,25 +122,40 @@ function buildKennelProxy({ mountPrefix, targetPrefix, timeoutMs }) {
       }
       return rewritten;
     },
-    onProxyReq: (proxyReq, req) => {
-      forwardInstitutionalHeaders(proxyReq, req);
-      // No need to restream – the stream is still raw because proxy runs before body parsers.
-      if (process.env.WILSY_PROXY_DEBUG === '1') {
-        console.log(`[PROXY] ${req.method} ${req.originalUrl || req.url} → ${KENNEL_TARGET}`);
-      }
-    },
-    onError: (err, req, res) => {
-      console.error('[PROXY] Kennel unreachable:', err.message);
-      if (!res.headersSent) {
-        res.status(503).json({
-          success: false,
-          error: 'Kennel service unavailable',
-          message: err.message,
-          timestamp: new Date().toISOString(),
-        });
-      }
+    on: {
+      proxyReq: (proxyReq, req) => {
+        forwardInstitutionalHeaders(proxyReq, req);
+        // No need to restream – the stream is still raw because proxy runs before body parsers.
+        if (process.env.WILSY_PROXY_DEBUG === '1') {
+          console.log(`[PROXY] ${req.method} ${req.originalUrl || req.url} → ${KENNEL_TARGET}`);
+        }
+      },
+      error: (err, req, res) => {
+        console.error('[PROXY] Kennel unreachable:', err.message);
+        if (!res.headersSent) {
+          res.status(503).json({
+            success: false,
+            error: 'Kennel service unavailable',
+            message: err.message,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      },
     },
   });
+}
+
+/**
+ * Build a method- and-shape constrained proxy for the certified legal surfaces.
+ * The mounted middleware receives the suffix after `mountPrefix`; only the
+ * exact C1C collection route or one C1E advisory-id route is forwarded.
+ */
+function buildSelectiveLegalProxy({ mountPrefix, targetPrefix, allowed }) {
+  const proxy = buildKennelProxy({ mountPrefix, targetPrefix });
+  return (req, res, next) => {
+    if (!allowed(req.method, req.url || '/')) return next();
+    return proxy(req, res, next);
+  };
 }
 
 // ─── EXPRESS APP FACTORY ──────────────────────────────────────────────────
@@ -199,14 +227,26 @@ function createApp() {
   // ─── PROXY TO KENNEL – MUST RUN BEFORE BODY PARSERS ──────────────────
   // This ensures raw request streams are forwarded untouched.
   app.use('/api/auth', buildKennelProxy({ mountPrefix: '/api/auth', targetPrefix: '/api/auth' }));
-  app.use('/api/tenants', buildKennelProxy({ mountPrefix: '/api/tenants', targetPrefix: '/api/tenants' }));
+  app.use(
+    '/api/tenants',
+    buildKennelProxy({ mountPrefix: '/api/tenants', targetPrefix: '/api/tenants' })
+  );
   app.use(
     '/api/business/tenants',
     buildKennelProxy({ mountPrefix: '/api/business/tenants', targetPrefix: '/api/tenants' })
   );
-  app.use('/api/employees', buildKennelProxy({ mountPrefix: '/api/employees', targetPrefix: '/api/employees' }));
-  app.use('/api/kernel', buildKennelProxy({ mountPrefix: '/api/kernel', targetPrefix: '/api/kernel' }));
-  app.use('/api/plans', buildKennelProxy({ mountPrefix: '/api/plans', targetPrefix: '/api/plans' }));
+  app.use(
+    '/api/employees',
+    buildKennelProxy({ mountPrefix: '/api/employees', targetPrefix: '/api/employees' })
+  );
+  app.use(
+    '/api/kernel',
+    buildKennelProxy({ mountPrefix: '/api/kernel', targetPrefix: '/api/kernel' })
+  );
+  app.use(
+    '/api/plans',
+    buildKennelProxy({ mountPrefix: '/api/plans', targetPrefix: '/api/plans' })
+  );
   app.use(
     '/api/subscriptions',
     buildKennelProxy({ mountPrefix: '/api/subscriptions', targetPrefix: '/api/subscriptions' })
@@ -229,6 +269,49 @@ function createApp() {
   );
   app.use('/auth', buildKennelProxy({ mountPrefix: '/auth', targetPrefix: '/api/auth' }));
 
+  // C1C/C1E transport-only bridge.  These selective mounts deliberately sit
+  // before body parsers so POST streams reach Python EOS byte-for-byte.  Node
+  // forwards headers and responses but never interprets advisory semantics.
+  app.use(
+    '/api/wilsy-ai/legal-services',
+    buildSelectiveLegalProxy({
+      mountPrefix: '/api/wilsy-ai/legal-services',
+      targetPrefix: '/api/wilsy-ai/legal-services',
+      allowed: (method, suffix) => {
+        const pathOnly = String(suffix || '/').split('?', 1)[0];
+        return method === 'POST' && (pathOnly === '/' || pathOnly === '');
+      },
+    })
+  );
+  app.use(
+    '/api/wilsy-ai/legal-next-actions',
+    buildSelectiveLegalProxy({
+      mountPrefix: '/api/wilsy-ai/legal-next-actions',
+      targetPrefix: '/api/wilsy-ai/legal-next-actions',
+      allowed: (method, suffix) => {
+        const pathOnly = String(suffix || '/').split('?', 1)[0];
+        return (
+          (method === 'POST' && (pathOnly === '/' || pathOnly === '')) ||
+          (method === 'GET' && /^\/[^/]+$/.test(pathOnly))
+        );
+      },
+    })
+  );
+  app.use(
+    '/api/legal-acceptance',
+    buildSelectiveLegalProxy({
+      mountPrefix: '/api/legal-acceptance',
+      targetPrefix: '/api/legal-acceptance',
+      allowed: (method, suffix) => {
+        const pathOnly = String(suffix || '/').split('?', 1)[0];
+        return (
+          (method === 'GET' && (pathOnly === '/status' || /^\/documents\/[^/]+$/.test(pathOnly))) ||
+          (method === 'POST' && pathOnly === '/accept')
+        );
+      },
+    })
+  );
+
   // ─── BODY PARSERS – AFTER PROXIES ──────────────────────────────────────
   // These will parse bodies for any local routes that need them (currently none).
   app.use(express.json({ limit: '50mb' }));
@@ -249,7 +332,7 @@ function createApp() {
       error: 'BFF_ROUTE_NOT_PROXIED',
       message:
         `No selective Kennel proxy for ${req.method} /api${req.url}. ` +
-        'Owned prefixes: /api/auth, /api/tenants, /api/business/tenants, /api/employees, /api/kernel, /api/plans, /api/subscriptions, /api/billing → /billing.',
+        'Owned prefixes: /api/auth, /api/tenants, /api/business/tenants, /api/employees, /api/kernel, /api/plans, /api/subscriptions, /api/billing → /billing, exact legal-acceptance routes, and exact C1C/C1E legal-advisory routes.',
       path: `/api${req.url}`,
       timestamp: new Date().toISOString(),
     });
@@ -375,10 +458,12 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error('[WILSY] ❌ Bootstrap failed:', err);
-  process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((err) => {
+    console.error('[WILSY] ❌ Bootstrap failed:', err);
+    process.exit(1);
+  });
+}
 
 export default createApp;
 
@@ -386,10 +471,13 @@ export default createApp;
  * ═══════════════════════════════════════════════════════════════════════════════
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
  * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT — 10/10 SOVEREIGN GRADE
- * Version:         v5.2.10‑PROXY‑ORDER‑FIX
+ * Status:          CERTIFIED PRODUCTION ARTIFACT
+ * Version:         v5.4.0-R1D-B0F-B4-R1
  * Fix:             Correct middleware order – proxies before body parsers.
- *                  This resolves the partial‑payment timeout by forwarding raw streams.
+ *                  Added selective legal-acceptance and C1C/C1E browser-to-Python transport only.
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
+ * Authority boundary: transport only; Python EOS remains sovereign for C1C/C1E.
+ * Tenant posture: institutional headers are forwarded, never invented.
+ * Financial execution authority: Kennel EOS exclusively.
  * ═══════════════════════════════════════════════════════════════════════════════
  */

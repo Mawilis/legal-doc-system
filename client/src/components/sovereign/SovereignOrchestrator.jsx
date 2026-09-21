@@ -1,16 +1,17 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN ORCHESTRATOR [V55.3.0-MARS-STABILIZED]                                                                            ║
+ * ║ WILSY OS - SOVEREIGN ORCHESTRATOR [V55.4.0-AUTHENTICATED-BUSINESS-GATE]                                                               ║
  * ║ [NEURAL PRE-FETCH ENGINE | FEDERATED DATA SYNC | FORENSIC TELEMETRY BUS | AUTONOMOUS HEALING | BUSINESS CONTEXT FUSION]               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 55.3.0-MARS | PRODUCTION HARDENED | EPITOME RELEASE                                                                           ║
+ * ║ VERSION: 55.4.0-AUTHENTICATED-BUSINESS-GATE | PRODUCTION HARDENED | EPITOME RELEASE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignOrchestrator.jsx                        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated total system unification. The mesh must be self-healing, predictive, and forensic.    ║
  * ║ • AI Engineering (DeepSeek & Gemini) – FORTIFIED: Added Auth-Gatekeeper to obliterate 401 cascades on mount. AbortController enabled.  ║
  * ║ • AI Engineering (DeepSeek) – FIXED: Injected BusinessProvider wrapper to eliminate 'useBusiness' errors in dashboards. [2026-08-01]   ║
+ * ║ • AI Engineering (Codex) – AUTH-GATED: BusinessProvider now mounts only after authoritative authentication. [2026-09-17]             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  *
  * @fileoverview Sovereign Orchestrator – the Central Nervous System of WILSY OS.
@@ -43,6 +44,7 @@ import { broadcastTelemetry } from '../../utils/telemetryHelper';
 // unified BusinessContext. Without this, `useBusiness()` throws an error.
 import { BusinessProvider } from '../../contexts/BusinessContext';
 import { useTenants } from '../../contexts/tenantContext';
+import { useAuth } from '../../contexts/authContext.jsx';
 
 /**
  * @context SovereignContext
@@ -101,7 +103,10 @@ export const SovereignOrchestrator = ({ children }) => {
 
   // ─── Tenant context for BusinessProvider ────────────────────────────────────
   const tenantContext = useTenants() || {};
-  const activeTenantId = tenantContext.activeTenant?.tenantId || 'MASTER';
+  const { isAuthenticated, user } = useAuth();
+  const activeTenantId = isAuthenticated
+    ? (tenantContext.activeTenant?.tenantId || user?.tenantId || '')
+    : '';
 
   /**
    * @function predictivePrefetch
@@ -112,9 +117,10 @@ export const SovereignOrchestrator = ({ children }) => {
    * @returns {Promise<void>}
    */
   const predictivePrefetch = useCallback(async (tenantId) => {
-    // 🛡️ AUTH-GATEKEEPER: Bail if no token (prevents 401/403 loops)
+    // AUTH-GATEKEEPER: token presence alone is not an authenticated identity.
+    // Require the server-projected user and tenant before protected requests.
     const token = localStorage.getItem('wilsy_auth_token');
-    if (!token) return;
+    if (!isAuthenticated || !user?.id || !user?.tenantId || !token || !tenantId) return;
 
     const startTime = performance.now();
     const prefetchTargets = [
@@ -163,7 +169,7 @@ export const SovereignOrchestrator = ({ children }) => {
     }
 
     setMeshHealth('OPTIMAL');
-  }, []);
+  }, [isAuthenticated, user]);
 
   /**
    * @function initializeMesh
@@ -172,9 +178,10 @@ export const SovereignOrchestrator = ({ children }) => {
   const initializeMesh = useCallback(() => {
     if (isInitialized.current) return;
 
-    // 🛡️ AUTH-GATEKEEPER: Ensure token exists before mesh init
+    // AUTH-GATEKEEPER: ensure a complete server-authenticated identity exists
+    // before wiring protected telemetry or prefetch requests.
     const token = localStorage.getItem('wilsy_auth_token');
-    if (!token) return;
+    if (!isAuthenticated || !user?.id || !user?.tenantId || !token) return;
 
     console.log('[WILSY-OS] Neural Mesh Initializing...');
     broadcastTelemetry('SYSTEM_CORE', 'MESH', 'INIT_START', 'Orchestrator');
@@ -188,15 +195,15 @@ export const SovereignOrchestrator = ({ children }) => {
 
     // Start predictive pre‑fetch cycle (every 60 seconds)
     prefetchTimerRef.current = setInterval(() => {
-      if (localStorage.getItem('wilsy_auth_token')) {
-        predictivePrefetch('GLOBAL_ROOT');
+      if (isAuthenticated && user?.tenantId && localStorage.getItem('wilsy_auth_token')) {
+        predictivePrefetch(user.tenantId);
       }
     }, 60000);
 
     setMeshHealth('OPERATIONAL');
     broadcastTelemetry('SYSTEM_CORE', 'MESH', 'INIT_COMPLETE', 'Orchestrator');
     isInitialized.current = true;
-  }, [predictivePrefetch]);
+  }, [isAuthenticated, predictivePrefetch, user]);
 
   /**
    * @function autonomousHealingLoop
@@ -294,11 +301,15 @@ export const SovereignOrchestrator = ({ children }) => {
   }), [triggerGlobalSync, predictivePrefetch, registerShard, unregisterShard, meshHealth, activeShards, lastSyncTimestamp]);
 
   // ─── Wrap children with BusinessProvider to provide unified context ────────
+  const applicationTree = isAuthenticated ? (
+    <BusinessProvider tenantId={activeTenantId}>
+      {children}
+    </BusinessProvider>
+  ) : children;
+
   return (
     <SovereignContext.Provider value={contextValue}>
-      <BusinessProvider tenantId={activeTenantId}>
-        {children}
-      </BusinessProvider>
+      {applicationTree}
     </SovereignContext.Provider>
   );
 };
@@ -321,3 +332,17 @@ export const useSovereignMesh = () => {
 };
 
 export default SovereignOrchestrator;
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * WILSY OS SOVEREIGN ARTIFACT SEAL
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: SovereignOrchestrator
+ * VERSION: v55.4.0-AUTHENTICATED-BUSINESS-GATE
+ * AUTHORITY BOUNDARY: Mesh coordination only; authentication remains AuthProvider authority.
+ * TENANT POSTURE: BusinessProvider receives tenant identity only after authenticated state.
+ * FAIL-CLOSED POSTURE: Unauthenticated trees do not mount BusinessProvider or protected fetches.
+ * FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
