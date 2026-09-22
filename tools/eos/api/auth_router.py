@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER
+VERSION: v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, recovery initiation, password-reset completion, login,
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER: Adds authenticated, bodyless recovery-contact
+  verification initiation and completion routes. Current ACCESS identity supplies
+  tenant/principal binding; callers may propose only an email address or present
+  one verification bearer. Python EOS owns lifecycle and VERIFIED promotion;
+  Node remains HMAC-authenticated delivery transport only.
   v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER: Adds one public,
   unauthenticated, bodyless 202 recovery-initiation route. Exact principal
   admission, capability issuance, cooldown, and delivery execute only as a
@@ -55,7 +60,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER"
+VERSION = "v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER"
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
 import logging
@@ -80,6 +85,15 @@ from ..saas.auth.password_recovery_delivery import (
 from ..saas.auth.password_recovery_request_service import (
     PasswordRecoveryRequestService,
     PasswordRecoveryRequestServiceError,
+)
+from ..saas.auth.recovery_contact_verification_delivery import (
+    NodeRecoveryContactVerificationDelivery,
+    RecoveryContactVerificationDeliveryError,
+)
+from ..saas.auth.recovery_contact_verification_service import (
+    RecoveryContactVerificationService,
+    RecoveryContactVerificationServiceCode,
+    RecoveryContactVerificationServiceError,
 )
 from ..saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
@@ -197,6 +211,134 @@ async def workspace_bootstrap(
             },
         },
     }
+
+
+# ─── RECOVERY CONTACT VERIFICATION ─────────────────────────────────────────
+class RecoveryContactVerificationInitiationRequest(BaseModel):
+    """Authenticated request to establish email-possession recovery authority.
+
+    Tenant/principal identity comes only from the current ACCESS identity. The
+    caller may propose one bounded email address but cannot assert VERIFIED
+    state, principal identity, tenant identity, challenge lifetime, or delivery
+    authority.
+    """
+
+    address: StrictStr = Field(..., min_length=3, max_length=320)
+
+    class Config:
+        extra = "forbid"
+
+
+class RecoveryContactVerificationCompletionRequest(BaseModel):
+    """Authenticated presentation of one transient verification bearer."""
+
+    verification_token: StrictStr = Field(..., min_length=32, max_length=4096)
+
+    class Config:
+        extra = "forbid"
+
+
+def _recovery_contact_verification_http_error(
+    error: RecoveryContactVerificationServiceError,
+) -> HTTPException:
+    """Translate stable service codes without exposing contact or bearer truth."""
+
+    if error.code in {
+        RecoveryContactVerificationServiceCode.INVALID_REQUEST,
+        RecoveryContactVerificationServiceCode.CHALLENGE_INVALID,
+    }:
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recovery contact verification request is invalid or expired.",
+        )
+    if error.code is RecoveryContactVerificationServiceCode.REPLACEMENT_FORBIDDEN:
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A verified recovery contact is already bound.",
+        )
+    if error.code is RecoveryContactVerificationServiceCode.PRINCIPAL_UNAVAILABLE:
+        return HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Recovery contact verification is not available.",
+        )
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Recovery contact verification is temporarily unavailable.",
+    )
+
+
+@router.post(
+    "/recovery-contact/verification",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def request_recovery_contact_verification(
+    request: RecoveryContactVerificationInitiationRequest,
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> Response:
+    """Issue and deliver one authenticated recovery-contact possession challenge."""
+
+    try:
+        delivery = NodeRecoveryContactVerificationDelivery()
+        RecoveryContactVerificationService(delivery=delivery).request_verification(
+            tenant_id=identity.tenant_id,
+            principal_id=identity.identity_id,
+            address=request.address,
+        )
+    except RecoveryContactVerificationServiceError as error:
+        raise _recovery_contact_verification_http_error(error) from None
+    except RecoveryContactVerificationDeliveryError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery contact verification is temporarily unavailable.",
+        ) from None
+    except Exception:
+        _log_error(
+            RuntimeError("RECOVERY_CONTACT_VERIFICATION_REQUEST_UNEXPECTED_ERROR"),
+            "RECOVERY_CONTACT_VERIFICATION_REQUEST_UNEXPECTED_ERROR",
+            identity.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery contact verification is temporarily unavailable.",
+        ) from None
+    return Response(status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post(
+    "/recovery-contact/verification/complete",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def complete_recovery_contact_verification(
+    request: RecoveryContactVerificationCompletionRequest,
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> Response:
+    """Consume one challenge and promote only its exact PENDING contact."""
+
+    try:
+        delivery = NodeRecoveryContactVerificationDelivery()
+        RecoveryContactVerificationService(delivery=delivery).complete_verification(
+            tenant_id=identity.tenant_id,
+            principal_id=identity.identity_id,
+            verification_token=request.verification_token,
+        )
+    except RecoveryContactVerificationServiceError as error:
+        raise _recovery_contact_verification_http_error(error) from None
+    except RecoveryContactVerificationDeliveryError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery contact verification is temporarily unavailable.",
+        ) from None
+    except Exception:
+        _log_error(
+            RuntimeError("RECOVERY_CONTACT_VERIFICATION_COMPLETION_UNEXPECTED_ERROR"),
+            "RECOVERY_CONTACT_VERIFICATION_COMPLETION_UNEXPECTED_ERROR",
+            identity.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery contact verification is temporarily unavailable.",
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ─── PASSWORD RECOVERY INITIATION ──────────────────────────────────────────
@@ -727,7 +869,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER
+# VERSION: v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER
 # AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
 # credential, principal, tenant, authorization, and financial authorities remain separate.
 # TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
