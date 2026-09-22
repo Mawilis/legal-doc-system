@@ -1,7 +1,7 @@
 """ASGI certificate for the WILSY OS password-recovery engine.
 
 TITLE: WILSY OS Password Recovery Engine HTTP ASGI Certificate
-VERSION: v1.0.1-R10E45-PASSWORD-RECOVERY-ENGINE-HTTP-TYPE-CLOSURE
+VERSION: v1.0.2-R10E49-PASSWORD-RECOVERY-ENGINE-HTTP-MESSAGE-TYPE-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the mounted recovery-request and recovery-contact verification
          HTTP boundaries through the canonical FastAPI app without Mongo, SMTP,
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Exercises tools.eos.api.server.app and the R10E auth
                            router with service doubles at orchestration seams.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.1-R10E45-PASSWORD-RECOVERY-ENGINE-HTTP-TYPE-CLOSURE introduces mounted
+CHANGELOG: v1.0.2-R10E49-PASSWORD-RECOVERY-ENGINE-HTTP-MESSAGE-TYPE-CLOSURE introduces mounted
            ASGI evidence for generic 202 recovery initiation, strict transport
            schemas, uniform anti-enumeration failure behavior, authenticated
            no-body recovery-email verification issuance, capability-only
@@ -100,7 +100,7 @@ async def _invoke_asgi(
         "root_path": "",
     }
     incoming = [{"type": "http.request", "body": body, "more_body": False}]
-    messages: list[dict[str, Any]] = []
+    messages: list[Message] = []
 
     async def receive() -> dict[str, Any]:
         if incoming:
@@ -423,7 +423,7 @@ def test_routes_are_post_only() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_engine_http.py
-# VERSION: v1.0.1-R10E45-PASSWORD-RECOVERY-ENGINE-HTTP-TYPE-CLOSURE
+# VERSION: v1.0.2-R10E49-PASSWORD-RECOVERY-ENGINE-HTTP-MESSAGE-TYPE-CLOSURE
 # AUTHORITY BOUNDARY: mounted ASGI transport evidence only
 # TENANT POSTURE: public tenant values are selectors; authenticated route uses identity
 # FAIL-CLOSED POSTURE: malformed/rate/invalid/internal states never become success
