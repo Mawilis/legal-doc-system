@@ -1,25 +1,36 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - ACCOUNT COMMAND CENTER [V3.0.15-OMEGA-PHASE5]                                                                ║
- * ║ COMMAND AUTHORITY | OPERATING SKINS | FORENSIC COMMAND CONSOLE | TENANT IDENTITY | SECURITY | COMPLIANCE               ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/account/WilsyAccountCommandCenter.jsx      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                  ║
- * ║ • Wilson Khanyezi (Founder/Architect) – Sovereign Account Command Center mandate, forensic showroom integration.        ║
- * ║ • AI Engineering (Gemini) – ENGINEERED: Production cockpit with JSDoc, telemetry, and full mandate compliance.          ║
- * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001.                                                             ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 FEATURES:                                                                                                             ║
- * ║   1. Showroom‑grade account cockpit with operating skins, mode selection, and tenant switching.                          ║
- * ║   2. Forensic bridge integration with backend‑owned Merkle proof and seal authority.                                    ║
- * ║   3. Compliance command board with live regulatory posture and evidence export.                                         ║
- * ║   4. Telemetry for every user action (mode change, skin selection, tenant switch, forensic refresh).                    ║
- * ║   5. Kennel EOS awareness – tenant isolation via useTenants and x-tenant headers.                                       ║
- * ║   6. Error‑safe execution with graceful degradation.                                                                     ║
- * ║   7. JSDoc documentation for all exported functions and components.                                                     ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * WILSY OS — ACCOUNT COMMAND CENTER
+ * VERSION: v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Presents the authenticated account, tenant, security, compliance,
+ *          operating-skin, and forensic command cockpit while keeping browser
+ *          controls projection-only and delegating durable authority to
+ *          canonical backend services.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/account/WilsyAccountCommandCenter.jsx
+ * COLLABORATION / OWNERSHIP: Authenticated dashboard callers supply user and
+ *                            tenant projections; Python EOS owns identity,
+ *                            recovery-contact, authentication, and tenant truth.
+ * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING — Wires the certified authenticated recovery-email
+ *            security control into both desktop and mobile Security Command
+ *            panels, using authenticated user email for display only while the
+ *            Python endpoint re-reads durable principal/email truth. Also
+ *            upgrades this legacy cockpit to the current sovereign header/seal
+ *            contract without changing its existing account-command behavior.
+ *            v3.0.15-OMEGA-PHASE5 — Prior certified account command cockpit.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No password, recovery token, verification token,
+ *                             SMTP credential, or durable recovery authority is
+ *                             created or persisted in this client artifact.
+ * TENANT BOUNDARY: Tenant and user values are presentation inputs only; recovery
+ *                  verification requests carry no browser-supplied tenant,
+ *                  principal, email, token, or verified-contact authority.
+ * AUTHORITY BOUNDARY: Authenticated presentation and transport invocation only;
+ *                     Python EOS remains sovereign for recovery-contact truth,
+ *                     authentication, authorization, and persistence.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains the exclusive
+ *                               financial execution and settlement authority.
  */
 
 // WILSY_R8A_ACCOUNT_EXTRACTION_BOUNDARY: R18AC command cockpit preserves extracted Account chrome guard compatibility without restoring legacy override debt.
@@ -69,6 +80,7 @@ import {
   reconcileWilsyThemeRuntime
 } from './wilsyAccountThemeTokens.js';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
+import RecoveryContactSecurityControl from './RecoveryContactSecurityControl.jsx';
 
 export const WILSY_ACCOUNT_CHROME_RESET_VERSION = 'R18AD1F-ACCOUNT-IMPORT-NEWLINE-REPAIR';
 export const WILSY_ACCOUNT_COMMAND_AUTHORITY_COCKPIT_VERSION = 'R18AD1F-ACCOUNT-IMPORT-NEWLINE-REPAIR';
@@ -5571,6 +5583,7 @@ export function WilsyAccountCommandCenter({
                 <article><small>MFA posture</small><strong>{resolvedSecuritySummary.mfaStatus || 'Ready for enforcement'}</strong></article>
                 <article><small>Operating backend</small><strong>{accountIdentityPostureError || accountIdentityPosture.dbLabel || 'Data command fabric pending'}</strong></article>
                 <article><small>Data authority</small><strong>{accountIdentityPostureError || accountIdentityPosture.matchedCollectionsLabel || 'Data authority pending'}</strong></article>
+                <RecoveryContactSecurityControl email={user?.email || ''} compact />
               </section>
             )}
 
@@ -5727,6 +5740,7 @@ export function WilsyAccountCommandCenter({
               <article className="wac-security-card"><Building2 size={24} /><small>Operating backend</small><strong>{accountIdentityPostureError || accountIdentityPosture.dbLabel || 'Data command fabric pending'}</strong></article>
               <article className="wac-security-card"><Globe2 size={24} /><small>Data authority</small><strong>{accountIdentityPostureError || accountIdentityPosture.matchedCollectionsLabel || 'Data authority pending'}</strong></article>
             </div>
+            <RecoveryContactSecurityControl email={user?.email || ''} />
           </section>
         )}
 
@@ -6313,20 +6327,11 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyAccountCommandCenter v3.0.15-OMEGA-PHASE5
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         3.0.15-OMEGA-PHASE5
- * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
- * Health Check:
- *   ✅ Showroom-grade account cockpit
- *   ✅ Operating skin switchboard with 25+ skins
- *   ✅ Forensic bridge with backend Merkle proof authority
- *   ✅ Compliance command board with regulatory posture
- *   ✅ Telemetry for every user action
- *   ✅ Kennel EOS awareness (tenant isolation)
- *   ✅ Error-safe execution with graceful degradation
- *   ✅ JSDoc documentation for all exported functions
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: WilsyAccountCommandCenter.jsx
+ * VERSION: v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING
+ * AUTHORITY BOUNDARY: authenticated account/security presentation and transport invocation only
+ * TENANT POSTURE: no browser-supplied recovery tenant/email/verified-contact authority
+ * FAIL-CLOSED POSTURE: recovery verification remains unavailable unless canonical Python authority accepts the authenticated request
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
