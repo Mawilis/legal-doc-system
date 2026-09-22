@@ -1,0 +1,84 @@
+# WILSY OS — R10F RECOVERY SECURITY PRODUCT CERTIFICATION
+# TITLE: Authenticated recovery-security product wiring certification
+# VERSION: v1.0.0-R10F3-RECOVERY-SECURITY-PRODUCT-CERTIFICATION
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Certifies that the verified recovery-contact engine is reachable from
+#          authenticated Account Security without browser email/tenant authority.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/r10f-recovery-security-product-certification.yml
+# COLLABORATION / OWNERSHIP: Client Account Security projects the canonical R10E
+#                            Python recovery/contact-verification authority.
+# CERTIFICATION / UPDATE DATE: 2026-09-22
+# CHANGELOG: v1.0.0-R10F3-RECOVERY-SECURITY-PRODUCT-CERTIFICATION adds direct recovery-security wiring tests,
+#            frozen reset transport regression, and production client build.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+# SECURITY / PRIVACY POSTURE: Synthetic client tests only; no mail/network secret.
+# TENANT BOUNDARY: Browser tenant/email projections cannot establish recovery truth.
+# AUTHORITY BOUNDARY: Certification orchestration only; Python EOS owns recovery truth.
+# FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+
+name: R10F Recovery Security Product Certification
+
+on:
+  pull_request:
+    branches:
+      - fg108o4b-knowledge-operating-room
+    paths:
+      - "client/src/components/account/WilsyAccountCommandCenter.jsx"
+      - "client/src/components/account/RecoveryContactSecurityControl.jsx"
+      - "client/src/__tests__/components/recoveryContactSecurityWiring.test.jsx"
+      - "client/src/services/api.js"
+      - "client/package.json"
+      - "client/package-lock.json"
+      - ".github/workflows/r10f-recovery-security-product-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r10f-recovery-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  recovery-security-product:
+    name: Recovery Security Product
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Run recovery-security wiring certificate
+        working-directory: client
+        run: |
+          npm run test:run -- \
+            src/__tests__/components/recoveryContactSecurityWiring.test.jsx
+
+      - name: Run frozen password-reset transport certificate
+        working-directory: client
+        run: |
+          npm run test:run -- \
+            src/__tests__/services/passwordResetApi.test.js
+
+      - name: Build recovery-enabled client
+        working-directory: client
+        run: npm run build
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: r10f-recovery-security-product-certification.yml
+# VERSION: v1.0.0-R10F3-RECOVERY-SECURITY-PRODUCT-CERTIFICATION
+# AUTHORITY BOUNDARY: CI certification orchestration only
+# TENANT POSTURE: no browser tenant/email authority admitted
+# FAIL-CLOSED POSTURE: focused test, frozen reset regression, or build failure blocks
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
