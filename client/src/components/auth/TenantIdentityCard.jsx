@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PREMIUM TENANT IDENTITY PROJECTION
- * VERSION: v1.3.0-FINAL-PIXEL-CLOSURE
+ * VERSION: v1.4.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the bounded, server-issued tenant identity beside the
  *          permanent WILSY OS platform trust mark without creating branding,
@@ -9,7 +9,12 @@
  * COLLABORATION / OWNERSHIP: TenantDiscovery and SovereignLogin consume this
  *                            projection; Python EOS owns tenant truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.3.0-FINAL-PIXEL-CLOSURE — Makes monogram precedence follow
+ * CHANGELOG: v1.4.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY — Refines the
+ *            institutional hierarchy by suppressing presentation-duplicate
+ *            workspace aliases, preserving genuinely distinct aliases,
+ *            reducing monogram visual dominance, and rendering verified state
+ *            as compact trust evidence without changing tenant authority.
+ *            v1.3.0-FINAL-PIXEL-CLOSURE — Makes monogram precedence follow
  *            authoritative display name first, removes punctuation and
  *            corporate designators from fallback initials, and removes the
  *            redundant platform image from the trust row.
@@ -32,6 +37,7 @@
  */
 
 import React from 'react';
+import { BadgeCheck } from 'lucide-react';
 
 /**
  * @description Derive a neutral monogram from authoritative display/legal text.
@@ -68,6 +74,20 @@ export function tenantMonogram(tenant = {}) {
 }
 
 /**
+ * @description Compare two authoritative identity strings for presentation-only
+ * duplication without changing, normalizing, or inferring persisted tenant truth.
+ * @param {string} left - First already-trimmed display value.
+ * @param {string} right - Second already-trimmed display value.
+ * @returns {boolean} True only when both non-empty values are presentation-equal.
+ * @institutional Prevents duplicate metadata rows while preserving distinct
+ * authoritative values exactly as received for rendering.
+ */
+function samePresentationValue(left, right) {
+  if (!left || !right) return false;
+  return left.toLocaleLowerCase() === right.toLocaleLowerCase();
+}
+
+/**
  * @description Render the permanent platform mark and bounded tenant identity.
  * @param {object} props - Component properties.
  * @param {object|null} props.tenant - Authoritative discovery projection.
@@ -83,6 +103,16 @@ export default function TenantIdentityCard({ tenant, className = '', integrated 
   const displayName = typeof tenant.name === 'string' ? tenant.name.trim() : '';
   const alias = typeof tenant.alias === 'string' ? tenant.alias.trim() : '';
   const monogram = tenantMonogram(tenant);
+  const showDisplayName = Boolean(
+    legalName
+    && displayName
+    && !samePresentationValue(legalName, displayName)
+  );
+  const showAlias = Boolean(
+    alias
+    && !samePresentationValue(alias, displayName)
+    && !samePresentationValue(alias, legalName)
+  );
 
   const shellStyle = integrated ? integratedCardStyle : cardStyle;
 
@@ -97,12 +127,15 @@ export default function TenantIdentityCard({ tenant, className = '', integrated 
           <strong style={legalName ? primaryNameStyle : displayNameStyle}>
             {legalName || displayName || 'Workspace'}
           </strong>
-          {legalName && displayName && legalName !== displayName && (
+          {showDisplayName && (
             <span style={secondaryNameStyle}>{displayName}</span>
           )}
-          {alias && <span style={aliasStyle}>Workspace: {alias}</span>}
+          {showAlias && <span style={aliasStyle}>Workspace: {alias}</span>}
           {tenant.verified === true && (
-            <span style={verifiedStyle} role="status">Verified workspace</span>
+            <span style={verifiedStyle} role="status">
+              <BadgeCheck size={13} aria-hidden="true" />
+              <span>Verified workspace</span>
+            </span>
           )}
         </div>
       </div>
@@ -114,7 +147,7 @@ export default function TenantIdentityCard({ tenant, className = '', integrated 
   );
 }
 
-const identityRowStyle = { display: 'flex', alignItems: 'center', gap: '20px' };
+const identityRowStyle = { display: 'flex', alignItems: 'center', gap: '18px' };
 const cardStyle = {
   marginBottom: '28px', padding: '20px', border: '1px solid rgba(213,176,79,.22)',
   borderRadius: '12px', background: 'linear-gradient(145deg, rgba(37,38,38,.86), rgba(25,27,28,.76))',
@@ -123,28 +156,28 @@ const integratedCardStyle = {
   margin: 0, padding: 0, border: 0, borderRadius: 0, background: 'transparent',
 };
 const identityMarkStyle = {
-  display: 'grid', placeItems: 'center', flex: '0 0 72px', width: '72px', height: '72px',
-  border: '1px solid rgba(213,176,79,.42)', borderRadius: '50%',
-  background: 'radial-gradient(circle at 50% 40%, rgba(213,176,79,.16), rgba(20,22,23,.1) 68%)', color: '#e4c66f',
+  display: 'grid', placeItems: 'center', flex: '0 0 64px', width: '64px', height: '64px',
+  border: '1px solid rgba(213,176,79,.34)', borderRadius: '50%',
+  background: 'radial-gradient(circle at 50% 40%, rgba(213,176,79,.12), rgba(20,22,23,.08) 70%)', color: '#e4c66f',
 };
 const identityMarkTextStyle = {
-  margin: 0, color: '#f2d681', fontSize: '23px', fontWeight: 700, letterSpacing: '.08em', lineHeight: 1,
+  margin: 0, color: '#f2d681', fontSize: '21px', fontWeight: 700, letterSpacing: '.07em', lineHeight: 1,
 };
-const identityTextStyle = { display: 'grid', gap: '6px', minWidth: 0 };
+const identityTextStyle = { display: 'grid', gap: '5px', minWidth: 0 };
 const eyebrowStyle = { color: '#a9a59b', fontSize: '10px', fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase' };
-const primaryNameStyle = { color: '#fbf8f0', fontSize: '21px', lineHeight: 1.15, letterSpacing: '-.01em' };
-const displayNameStyle = { color: '#fbf8f0', fontSize: '21px', lineHeight: 1.15, letterSpacing: '-.01em' };
-const secondaryNameStyle = { color: '#d0cbc0', fontSize: '14px' };
-const aliasStyle = { color: '#aaa69c', fontSize: '12px', letterSpacing: '.04em' };
-const verifiedStyle = { color: '#c9e7d5', fontSize: '11px', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' };
+const primaryNameStyle = { color: '#fbf8f0', fontSize: '22px', lineHeight: 1.12, letterSpacing: '-.015em' };
+const displayNameStyle = { color: '#fbf8f0', fontSize: '22px', lineHeight: 1.12, letterSpacing: '-.015em' };
+const secondaryNameStyle = { color: '#c9c4b9', fontSize: '14px', lineHeight: 1.35 };
+const aliasStyle = { color: '#918e86', fontSize: '11px', letterSpacing: '.035em' };
+const verifiedStyle = { display: 'inline-flex', alignItems: 'center', gap: '6px', width: 'fit-content', marginTop: '2px', color: '#c9e7d5', fontSize: '10px', fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase' };
 const trustRowStyle = {
-  display: 'flex', alignItems: 'center', gap: '9px', marginTop: '22px', color: '#b8b6ae',
+  display: 'flex', alignItems: 'center', gap: '9px', marginTop: '20px', color: '#b8b6ae',
   fontSize: '11px', letterSpacing: '.08em', textTransform: 'uppercase',
 };
 const trustAccentStyle = { width: '8px', height: '8px', borderRadius: '50%', background: '#d5b04f', boxShadow: '0 0 0 4px rgba(213,176,79,.12)' };
 /**
  * ARTIFACT: TenantIdentityCard.jsx
- * VERSION: v1.3.0-FINAL-PIXEL-CLOSURE
+ * VERSION: v1.4.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY
  * AUTHORITY BOUNDARY: bounded tenant presentation only
  * TENANT POSTURE: legal name, display name, alias, and verified state are
  *                 rendered only when supplied by the authoritative projection;
