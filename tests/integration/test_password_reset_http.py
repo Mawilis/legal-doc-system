@@ -1,7 +1,7 @@
 """WILSY OS password-reset HTTP/ASGI certificate.
 
 TITLE: WILSY OS Password Reset HTTP ASGI Certificate
-VERSION: v1.0.0-R10D5-PASSWORD-RESET-HTTP-ASGI-CERT
+VERSION: v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the mounted FastAPI password-reset completion boundary
          without changing production, contacting MongoDB, using a localhost
@@ -12,7 +12,12 @@ COLLABORATION / OWNERSHIP: Exercises the canonical ``tools.eos.api.server``
                            the reset transaction remains owned by the frozen
                            PasswordResetService.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10D5-PASSWORD-RESET-HTTP-ASGI-CERT establishes in-process
+CHANGELOG: v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY narrows the historical R10D byte-freeze to the
+           reset service and its direct/real-Mongo certificates. The shared auth
+           router is intentionally governed by behavioral reset-handler evidence
+           because later certified auth routes may extend the same file without
+           altering R10D reset authority.
+           v1.0.0-R10D5-PASSWORD-RESET-HTTP-ASGI-CERT establishes in-process
            ASGI evidence for the public /api prefix, strict request parsing,
            one-call service delegation, bounded failures, secret hygiene,
            OpenAPI privacy, and preservation of PRE_AUTH routing.
@@ -51,8 +56,7 @@ from tools.eos.saas.auth.password_reset_service import (
 )
 
 
-VERSION = "v1.0.0-R10D5-PASSWORD-RESET-HTTP-ASGI-CERT"
-R10D4_ROUTER_SHA3_512 = "e9d6ffa7af8ce724913c414042688a986a437f9f1d1a3f32ed7c607bb13a5510ac91fe07aad1c95137013d76743a58011efaa45b61a47f259fe186eaf277edb2"
+VERSION = "v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY"
 R10D1_SHA3_512 = "4d36e73fadc923953f7ccfed79c973525ba4b641505d90b35f6b4f6976eac802c15c52d48c34043186283a098d43fe7e1cdd61f2d929466ce169fbc67e395795"
 R10D2_SHA3_512 = "d29be7a2e1a1031d33a168b3544edfaaac9ea14b1041acb4e6d7018cb7c952db429a8bcbde06d1bf1ad46fbb914e1a5374ae8f593e7e5c5efb5377491a23b55d"
 R10D3_SHA3_512 = "de89a1382b8734b660bf30ac63ee3dd3aaf60382674bb04656db4a142db109772bc679815a2ddf34f916b77282c3c4550ff5d5ca2a539c1e7a5b29494f89cee7"
@@ -536,24 +540,29 @@ def test_reset_handler_has_no_direct_token_or_persistence_authority() -> None:
     assert all(item not in handler for item in forbidden)
 
 
-def test_frozen_r10d_artifact_identities_remain_exact() -> None:
-    """R10D production and certificate artifacts remain byte-for-byte frozen."""
+def test_frozen_r10d_reset_service_and_certificates_remain_exact() -> None:
+    """Freeze reset authority while permitting governed shared-router growth.
+
+    The shared auth router is certified above by exact reset-handler behavior,
+    request shape, route topology, and absence of direct mutation authority.
+    Later governed auth routes may extend that file without invalidating the
+    frozen reset service or its direct and real-Mongo certificates.
+    """
 
     import hashlib
 
     expected = {
-        "tools/eos/api/auth_router.py": R10D4_ROUTER_SHA3_512,
         "tools/eos/saas/auth/password_reset_service.py": R10D1_SHA3_512,
         "tests/unit/test_password_reset_service.py": R10D2_SHA3_512,
         "tests/integration/test_password_reset_service_real_mongo.py": R10D3_SHA3_512,
     }
     for filename, digest in expected.items():
         actual = hashlib.sha3_512(Path(filename).read_bytes()).hexdigest()
-        assert actual == digest if filename != "tools/eos/api/auth_router.py" else actual == R10D4_ROUTER_SHA3_512
+        assert actual == digest
 
 
 # ARTIFACT: test_password_reset_http.py
-# VERSION: v1.0.0-R10D5-PASSWORD-RESET-HTTP-ASGI-CERT
+# VERSION: v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY
 # AUTHORITY BOUNDARY: mounted ASGI transport evidence only; no production authority
 # TENANT POSTURE: tenant selector forwarding is tested without trusting it as reset authority
 # FAIL-CLOSED POSTURE: malformed, unusable, policy, internal, and unexpected cases never pass

@@ -2,7 +2,7 @@
 /**
  * ===============================================================================
  * WILSY OS — SOVEREIGN OPERATING SYSTEM
- * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.1.0-R10D6-RESET-API-INTEGRATION]
+ * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API]
  * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  * ===============================================================================
  * Epitome:
@@ -25,6 +25,8 @@
  *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  *
  * Change Log:
+ *     2026-09-22 v74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API — Added authenticated current-email verification request and public single-use verification completion transport seams without browser-supplied email authority or session creation.
+ *     2026-09-22 v74.2.0-R10E9-RECOVERY-REQUEST-API — Added the enumeration-safe public recovery-request transport seam with exact tenant/email serialization, skipAuth, no bearer dependency, and no client retry or session mutation.
  *     2026-09-22 v74.1.0-R10D6-RESET-API-INTEGRATION — Added the single public password-reset transport seam with exact three-field serialization, no bearer dependency, and no automatic retry or session mutation.
  *     2026-09-21 v74.0.2-401-BEARER-CLASSIFICATION — Classifies 401 responses by actual bearer participation so pre-auth and MFA failures cannot erase a concurrently established authenticated browser session.
  *     2026-08-22 v74.0.1-MFA-PUBLIC-CONTRACT — Exempted strict EOS OTP and enrollment validation bodies from seal-field injection.
@@ -535,6 +537,63 @@ api.interceptors.response.use(
 // ============================================================================
 
 /**
+ * @function requestPasswordRecovery
+ * @description Submits the exact unauthenticated recovery-request payload to the
+ *     canonical Python request endpoint. The server response is intentionally
+ *     generic and does not reveal account, verified-contact, issuance, or
+ *     delivery truth.
+ * @param {Object} input - Transport-only recovery request inputs.
+ * @param {string} input.tenantId - Selected workspace identifier forwarded as tenant_id.
+ * @param {string} input.email - Work email forwarded as the lookup value.
+ * @returns {Promise<Object>} Axios response; successful status is 202 with generic copy.
+ * @collaboration R10E9 — Consumed only by the governed recovery-request UI.
+ * @institutional This method owns transport only; it never creates recovery,
+ *     identity, session, role, MFA, tenant, or financial authority.
+ */
+const requestPasswordRecovery = ({ tenantId, email }) => api.post(
+  '/auth/request-password-reset',
+  {
+    tenant_id: tenantId,
+    email,
+  },
+  { skipAuth: true },
+);
+
+/**
+ * @function requestRecoveryContactVerification
+ * @description Requests email-control verification for the current authenticated
+ *     principal. The browser supplies no email, tenant, principal, or token body;
+ *     Python EOS derives durable principal/email authority from ACCESS identity.
+ * @returns {Promise<Object>} Axios response with bounded verification status.
+ * @institutional Transport only; requires the existing authenticated bearer and
+ *     cannot create verified-contact authority by itself.
+ */
+const requestRecoveryContactVerification = () => api.post(
+  '/auth/recovery-contact/request-verification',
+  {},
+);
+
+/**
+ * @function completeRecoveryContactVerification
+ * @description Submits one public tenant selector and transient verification
+ *     capability from the governed email link. Successful completion is bodyless
+ *     HTTP 204 and creates no authenticated browser session.
+ * @param {Object} input - Verification completion transport values.
+ * @param {string} input.tenantId - Tenant lookup selector.
+ * @param {string} input.verificationToken - Single-use email-control capability.
+ * @returns {Promise<Object>} Axios response; success contains no authority body.
+ * @institutional Transport only; Python EOS owns verification/contact truth.
+ */
+const completeRecoveryContactVerification = ({ tenantId, verificationToken }) => api.post(
+  '/auth/recovery-contact/verify',
+  {
+    tenant_id: tenantId,
+    verification_token: verificationToken,
+  },
+  { skipAuth: true },
+);
+
+/**
  * @function resetPassword
  * @description Submits the exact unauthenticated recovery completion payload to
  *     the canonical Python reset endpoint and accepts its bodyless 204 result.
@@ -646,6 +705,9 @@ const verifyStatementSeal = (statementId) => {
 
 export default api;
 export {
+  requestPasswordRecovery,
+  requestRecoveryContactVerification,
+  completeRecoveryContactVerification,
   resetPassword,
   getStatements,
   generateStatement,
@@ -662,7 +724,7 @@ export {
  * Status: CERTIFIED GOLD PRODUCTION READY
  * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Version: V74.1.0-R10D6-RESET-API-INTEGRATION
+ * Version: V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API
  * Architecture: BIBLICAL WORTH BILLIONS. NO CHILD'S PLAY.
  * Kennel Context: Fully integrated with tenant and role metadata.
  * ===============================================================================
