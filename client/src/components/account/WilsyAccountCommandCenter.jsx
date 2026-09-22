@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * WILSY OS — ACCOUNT COMMAND CENTER
- * VERSION: v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING
+ * VERSION: v3.1.1-R10E55-RECOVERY-CONTACT-SECURITY-WIRING
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated account, tenant, security, compliance,
  *          operating-skin, and forensic command cockpit while keeping browser
@@ -12,7 +12,10 @@
  *                            tenant projections; Python EOS owns identity,
  *                            recovery-contact, authentication, and tenant truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING — Wires the certified authenticated recovery-email
+ * CHANGELOG: v3.1.1-R10E55-RECOVERY-CONTACT-SECURITY-WIRING — Reconciles the recovery campaign gate sequence after
+ *            the branch had already advanced through R10E54; runtime behavior
+ *            is unchanged from the immediately prior recovery-security wiring.
+ *            v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING — Wires the certified authenticated recovery-email
  *            security control into both desktop and mobile Security Command
  *            panels, using authenticated user email for display only while the
  *            Python endpoint re-reads durable principal/email truth. Also
@@ -6328,7 +6331,7 @@ if (typeof window !== 'undefined') {
 
 /**
  * ARTIFACT: WilsyAccountCommandCenter.jsx
- * VERSION: v3.1.0-R10E37-RECOVERY-CONTACT-SECURITY-WIRING
+ * VERSION: v3.1.1-R10E55-RECOVERY-CONTACT-SECURITY-WIRING
  * AUTHORITY BOUNDARY: authenticated account/security presentation and transport invocation only
  * TENANT POSTURE: no browser-supplied recovery tenant/email/verified-contact authority
  * FAIL-CLOSED POSTURE: recovery verification remains unavailable unless canonical Python authority accepts the authenticated request
