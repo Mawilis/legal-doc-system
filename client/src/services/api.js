@@ -2,7 +2,7 @@
 /**
  * ===============================================================================
  * WILSY OS — SOVEREIGN OPERATING SYSTEM
- * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.1.0-R10D6-RESET-API-INTEGRATION]
+ * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.2.0-R10E20-PASSWORD-RECOVERY-REQUEST-API]
  * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  * ===============================================================================
  * Epitome:
@@ -25,6 +25,7 @@
  *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  *
  * Change Log:
+ *     2026-09-22 v74.2.0-R10E20-PASSWORD-RECOVERY-REQUEST-API — Added the enumeration-safe public password-recovery initiation transport with exact tenant_id/email serialization, explicit public-path exemption, no bearer dependency, no automatic retry, and no session mutation.
  *     2026-09-22 v74.1.0-R10D6-RESET-API-INTEGRATION — Added the single public password-reset transport seam with exact three-field serialization, no bearer dependency, and no automatic retry or session mutation.
  *     2026-09-21 v74.0.2-401-BEARER-CLASSIFICATION — Classifies 401 responses by actual bearer participation so pre-auth and MFA failures cannot erase a concurrently established authenticated browser session.
  *     2026-08-22 v74.0.1-MFA-PUBLIC-CONTRACT — Exempted strict EOS OTP and enrollment validation bodies from seal-field injection.
@@ -410,6 +411,7 @@ api.interceptors.request.use(
       || /^\/auth\/verify-3fa$/i.test(config.url)
       || /^\/auth\/otp\/verify$/i.test(config.url)
       || /^\/auth\/otp\/send$/i.test(config.url)
+      || /^\/auth\/request-password-reset$/i.test(config.url)
       || /^\/auth\/reset-password$/i.test(config.url);
 
     if (!isPublicPath) {
@@ -535,6 +537,28 @@ api.interceptors.response.use(
 // ============================================================================
 
 /**
+ * @function requestPasswordReset
+ * @description Submits the exact public Forgot Password initiation payload to
+ *     the canonical Python endpoint and accepts its bodyless 202 response.
+ * @param {Object} input - Transport-only recovery request selectors.
+ * @param {string} input.tenantId - Canonical workspace selector forwarded as tenant_id.
+ * @param {string} input.email - Login email selector forwarded unchanged.
+ * @returns {Promise<Object>} Axios response; successful responses contain no body.
+ * @collaboration R10E20 — Python EOS owns principal admission, verified recovery
+ *     contact authority, capability issuance, cooldown, persistence, and delivery.
+ * @institutional This method owns transport only and never exposes account
+ *     existence, recovery bearer, principal identity, or delivery outcome.
+ */
+const requestPasswordReset = ({ tenantId, email }) => api.post(
+  '/auth/request-password-reset',
+  {
+    tenant_id: tenantId,
+    email,
+  },
+  { skipAuth: true },
+);
+
+/**
  * @function resetPassword
  * @description Submits the exact unauthenticated recovery completion payload to
  *     the canonical Python reset endpoint and accepts its bodyless 204 result.
@@ -646,6 +670,7 @@ const verifyStatementSeal = (statementId) => {
 
 export default api;
 export {
+  requestPasswordReset,
   resetPassword,
   getStatements,
   generateStatement,
@@ -662,7 +687,7 @@ export {
  * Status: CERTIFIED GOLD PRODUCTION READY
  * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Version: V74.1.0-R10D6-RESET-API-INTEGRATION
+ * Version: V74.2.0-R10E20-PASSWORD-RECOVERY-REQUEST-API
  * Architecture: BIBLICAL WORTH BILLIONS. NO CHILD'S PLAY.
  * Kennel Context: Fully integrated with tenant and role metadata.
  * ===============================================================================
