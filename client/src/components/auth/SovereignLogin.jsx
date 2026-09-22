@@ -1,6 +1,6 @@
 /**
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE
+ * VERSION: v3.6.1-R10D9D-AUTH-SHELL-BREATHING-ROOM
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE — Places the pre-authentication
+ * CHANGELOG: v3.6.1-R10D9D-AUTH-SHELL-BREATHING-ROOM — Adds a deliberate
+ *            viewport-safe lower brand gutter so the sign-in panel and trust
+ *            boundary finish with clear visual breathing room without changing
+ *            authentication, recovery navigation, or responsive flow.
+ *            v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE — Places the pre-authentication
  *            recovery action beside the password label, preserves its
  *            keyboard/pointer target, and keeps the content-driven shell and
  *            footer in normal flow across short and narrow viewports.
@@ -114,7 +118,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
   );
 }
 
-const pageStyle = { minHeight: '100dvh', width: '100%', boxSizing: 'border-box', display: 'grid', justifyItems: 'center', alignItems: 'start', padding: 'clamp(24px, 4vh, 40px) clamp(20px, 3vw, 48px)', overflowX: 'hidden', overflowY: 'auto', background: '#101112', color: '#f5f1e8', fontFamily: 'Inter, system-ui, sans-serif' };
+const pageStyle = { minHeight: '100dvh', width: '100%', boxSizing: 'border-box', display: 'grid', justifyItems: 'center', alignItems: 'start', padding: 'clamp(24px, 4vh, 40px) clamp(20px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))', overflowX: 'hidden', overflowY: 'auto', background: '#101112', color: '#f5f1e8', fontFamily: 'Inter, system-ui, sans-serif' };
 const panelStyle = { width: 'min(1120px, 100%)', minHeight: 0, height: 'auto', boxSizing: 'border-box', padding: 'clamp(34px, 4vh, 44px) clamp(52px, 4vw, 64px) 30px', background: 'linear-gradient(145deg, #1c1e20, #141617)', border: '1px solid rgba(213,176,79,.3)', borderRadius: '16px', boxShadow: '0 30px 90px rgba(0,0,0,.42)' };
 const brandRow = { display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '20px', borderBottom: '1px solid rgba(245,241,232,.1)', color: '#d5b04f' };
 const platformMarkStyle = { width: '46px', height: '46px', objectFit: 'cover', objectPosition: '50% 13%', borderRadius: '8px', background: '#fff' };
@@ -138,7 +142,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE
+ * VERSION: v3.6.1-R10D9D-AUTH-SHELL-BREATHING-ROOM
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated
