@@ -248,7 +248,7 @@ const ExecutiveControlRoom = React.lazy(() => import('../control-room/ExecutiveC
 
 // ALL DEPARTMENT MODULES
 const CRMDashboard = React.lazy(() => import('../crm/CRMDashboard'));
-const HRDashboard = React.lazy(() => import('../hr/HRDashboard'));
+const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
 const SalesDashboard = React.lazy(() => import('../sales/SalesDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const COODashboard = React.lazy(() => import('../coo/COODashboard'));
