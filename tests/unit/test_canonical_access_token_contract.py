@@ -1,7 +1,7 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.0.1-R1D-B0F-B4-R2-CLEAN-CHECKOUT-REPAIR
+VERSION: v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.1-R1D-B0F-B4-R2-CLEAN-CHECKOUT-REPAIR removes premature
+CHANGELOG: v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION reconciles
+           protected ACCESS fixtures with the F9 purpose/revision contract while
+           preserving server-side principal and workspace authority assertions.
+           v1.0.1-R1D-B0F-B4-R2-CLEAN-CHECKOUT-REPAIR removes premature
            legal-acceptance router coupling so this certificate is independently
            runnable from a clean published checkout.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -71,6 +74,30 @@ class _PrincipalRepository:
         return PrincipalAuthority(principal_id, self.status, 0)
 
 
+class _CredentialRevisionRegistry:
+    """Deterministic durable-revision fixture for the real authentication seam."""
+
+    def __init__(self, calls: list[tuple[str, str]] | None = None, revision: int = 0) -> None:
+        self.calls = calls if calls is not None else []
+        self.revision = revision
+
+    def get_credential_revision(self, tenant_id: str, principal_id: str) -> int:
+        self.calls.append((tenant_id, principal_id))
+        return self.revision
+
+
+def _install_durable_revision(
+    monkeypatch: pytest.MonkeyPatch,
+    calls: list[tuple[str, str]] | None = None,
+    revision: int = 0,
+) -> _CredentialRevisionRegistry:
+    """Bind authentication to a recording, matching durable revision authority."""
+
+    registry = _CredentialRevisionRegistry(calls, revision)
+    monkeypatch.setattr(authentication, "AuthRegistry", lambda: registry)
+    return registry
+
+
 def _request() -> Request:
     return Request({"type": "http", "method": "GET", "path": "/", "headers": []})
 
@@ -79,7 +106,13 @@ def _credentials(token: str) -> HTTPAuthorizationCredentials:
     return HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
 
-def _run_identity(token: str, repository: _PrincipalRepository) -> SovereignIdentity:
+def _run_identity(
+    token: str,
+    repository: _PrincipalRepository,
+    monkeypatch: pytest.MonkeyPatch,
+    durable_calls: list[tuple[str, str]] | None = None,
+) -> SovereignIdentity:
+    _install_durable_revision(monkeypatch, durable_calls)
     return asyncio.run(
         authentication.get_current_identity(
             _request(), _credentials(token), None, repository  # type: ignore[arg-type]
@@ -121,13 +154,18 @@ def test_auth_registry_has_no_independent_crypto_authority() -> None:
 
 def test_canonical_token_round_trips_through_current_identity(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("WILSY_JWT_SECRET", SECRET)
+    durable_calls: list[tuple[str, str]] = []
+    _install_durable_revision(monkeypatch, durable_calls)
     token = jwt_provider.create_access_token(
-        {"identity_id": PRINCIPAL, "tenant_id": TENANT, "roles": ["FIELD_DEPUTY"], "permissions": ["legal:read"]}
+        {"identity_id": PRINCIPAL, "tenant_id": TENANT, "roles": ["FIELD_DEPUTY"], "permissions": ["legal:read"]},
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
     )
-    identity = _run_identity(token, _PrincipalRepository())
+    identity = _run_identity(token, _PrincipalRepository(), monkeypatch, durable_calls)
     assert identity.identity_id == PRINCIPAL
     assert identity.tenant_id == TENANT
     assert identity.status is PrincipalStatus.ACTIVE
+    assert durable_calls == [(TENANT, PRINCIPAL)]
 
 
 def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
@@ -135,6 +173,15 @@ def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
 ) -> None:
     monkeypatch.setenv("WILSY_JWT_SECRET", SECRET)
     issuer = AuthRegistry(cast(Any, _TenantRegistry()))
+    durable_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        issuer,
+        "get_credential_revision",
+        lambda tenant_id, principal_id, **_kwargs: durable_calls.append(
+            (tenant_id, principal_id)
+        )
+        or 0,
+    )
     user = SimpleNamespace(
         id=PRINCIPAL,
         email="principal@example.com",
@@ -159,7 +206,9 @@ def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
 
         def create_session(self, _user: SimpleNamespace) -> SimpleNamespace:
             return SimpleNamespace(
-                token=issuer.generate_jwt(user.id, user.tenantId, user.role, user.permissions)
+                token=issuer.generate_access_jwt(
+                    user.id, user.tenantId, user.role, user.permissions
+                )
             )
 
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: _MfaRegistry())
@@ -167,8 +216,12 @@ def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
         auth_router.verify_otp(VerifyOTPRequest(email=user.email, code="123456"))
     )
     assert response.token is not None
-    assert jwt_provider.verify_access_token(response.token) is not None
-    assert _run_identity(response.token, _PrincipalRepository()).identity_id == PRINCIPAL
+    payload = jwt_provider.verify_access_token(response.token)
+    assert payload is not None
+    assert payload["token_purpose"] == "ACCESS"
+    assert payload["credential_revision"] == 0
+    assert _run_identity(response.token, _PrincipalRepository(), monkeypatch).identity_id == PRINCIPAL
+    assert durable_calls == [(TENANT, PRINCIPAL)]
 
 
 def test_missing_secret_fails_closed_for_issue_and_verify(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -214,19 +267,12 @@ def test_expired_invalid_signature_and_inactive_principal_fail_closed(monkeypatc
     assert jwt_provider.verify_access_token(token[:-1] + ("a" if token[-1] != "a" else "b")) is None
     monkeypatch.setattr(jwt_provider.time, "time", real_time)
     fresh = jwt_provider.create_access_token(
-        {"identity_id": PRINCIPAL, "tenant_id": TENANT, "roles": [], "permissions": []}
+        {"identity_id": PRINCIPAL, "tenant_id": TENANT, "roles": [], "permissions": []},
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
     )
     with pytest.raises(Exception):
-        _run_identity(fresh, _PrincipalRepository(PrincipalStatus.SUSPENDED))
-
-
-# ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.0.1-R1D-B0F-B4-R2-CLEAN-CHECKOUT-REPAIR
-# AUTHORITY BOUNDARY: deterministic token interoperability evidence only
-# TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
-# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, and inactive principals deny
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
+        _run_identity(fresh, _PrincipalRepository(PrincipalStatus.SUSPENDED), monkeypatch)
 
 
 def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
@@ -244,8 +290,11 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             # Deliberately forged transport projections.
             "roles": ["SUPER_ADMIN"],
             "permissions": ["*"],
-        }
+        },
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
     )
+    _install_durable_revision(monkeypatch)
 
     projection_calls: list[tuple[str, str, tuple[str, ...], tuple[str, ...]]] = []
 
@@ -350,8 +399,11 @@ def test_workspace_bootstrap_http_denial_is_bounded_403(
             "tenant_id": TENANT,
             "roles": ["SUPER_ADMIN"],
             "permissions": ["*"],
-        }
+        },
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
     )
+    _install_durable_revision(monkeypatch)
 
     def _denied(**_kwargs: Any) -> Any:
         raise WorkspaceBootstrapProjectionError(
@@ -398,8 +450,11 @@ def test_workspace_bootstrap_http_authority_outage_is_bounded_503(
             "tenant_id": TENANT,
             "roles": ["FIELD_DEPUTY"],
             "permissions": ["legal:read"],
-        }
+        },
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
     )
+    _install_durable_revision(monkeypatch)
 
     outage_codes = (
         "WORKSPACE_BOOTSTRAP_MEMBERSHIP_AUTHORITY_UNAVAILABLE",
@@ -435,3 +490,12 @@ def test_workspace_bootstrap_http_authority_outage_is_bounded_503(
             "detail": "Workspace authority is unavailable."
         }
         assert code not in response.text
+
+
+# ARTIFACT: test_canonical_access_token_contract.py
+# VERSION: v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION
+# AUTHORITY BOUNDARY: deterministic token interoperability evidence only
+# TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
+# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, and inactive principals deny
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

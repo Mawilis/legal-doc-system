@@ -1,10 +1,15 @@
 """Wilsy OS authentication projection guarded by durable principal authority.
 
 TITLE: WILSY OS Authentication Projection
-VERSION: v1.1.0-PRINCIPAL-AUTHORITY-PROJECTION
+VERSION: v1.2.0-R10C2F9-ACCESS-PURPOSE-DURABLE-REVISION-ENFORCEMENT
 AUTHORITY: Cryptographic credential verification and current PrincipalAuthority gating.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authentication.py
-CHANGELOG: v1.1.0 removes synthetic identity/API-key authority and requires durable ACTIVE status.
+CHANGELOG:
+    v1.2.0-R10C2F9-ACCESS-PURPOSE-DURABLE-REVISION-ENFORCEMENT requires
+    ACCESS purpose and a fresh exact durable credential revision before any
+    protected identity projection; PRE_AUTH and legacy-purpose tokens fail
+    closed without changing router, provider, or AuthRegistry authority.
+    v1.1.0 removes synthetic identity/API-key authority and requires durable ACTIVE status.
 SECURITY/PRIVACY POSTURE: Missing or malformed credentials fail closed; secrets are never logged.
 TENANT BOUNDARY: Tenant claims remain non-authoritative request context; membership is a later contract.
 AUTHORITY BOUNDARY: SovereignIdentity is a projection, not lifecycle, credential, tenant, role, or financial authority.
@@ -30,10 +35,11 @@ from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBea
 from tools.eos.api.exceptions import UnauthorizedAccessException
 from tools.eos.auth.audit import log_auth_event
 from tools.eos.auth.identity import SovereignIdentity
-from tools.eos.auth.jwt_provider import verify_access_token
+from tools.eos.auth.jwt_provider import CREDENTIAL_REVISION_MAX, TokenPurpose, verify_access_token
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityNotFoundError, PrincipalAuthorityRepository, PrincipalAuthorityRepositoryError
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.saas.auth.auth_registry import AuthRegistry
 
 security_scheme = HTTPBearer(auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
@@ -56,13 +62,29 @@ def _resolve_authority(repository: PrincipalAuthorityRepository, principal_id: s
     except PrincipalAuthorityRepositoryError as error:
         raise UnauthorizedAccessException("Authentication authority is unavailable.") from error
 
+def _valid_access_revision(value: object) -> bool:
+    """Accept only the provider's bounded, non-boolean integer revision shape."""
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and 0 <= value <= CREDENTIAL_REVISION_MAX
+    )
+
 async def get_current_identity(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security_scheme),
     api_key: Optional[str] = Security(api_key_header),
     repository: PrincipalAuthorityRepository = Depends(get_principal_authority_repository),
 ) -> SovereignIdentity:
-    """Authenticate a credential only after durable ACTIVE principal resolution."""
+    """Authenticate one ACCESS JWT against current durable principal authority.
+
+    Cryptographic verification is followed by exact ACCESS-purpose and
+    credential-revision checks.  The durable revision is read through
+    ``AuthRegistry.get_credential_revision`` only after the canonical principal
+    is ACTIVE, and the token is accepted only on exact equality.  PRE_AUTH,
+    legacy-purpose, stale, future, malformed, missing, and unavailable states
+    fail closed without exposing revision values or owning persistence.
+    """
     del request
     if api_key:
         log_auth_event("API_KEY_AUTH", "unresolved", False, {"reason": "principal_resolution_required"})
@@ -73,6 +95,13 @@ async def get_current_identity(
     payload = verify_access_token(credentials.credentials)
     if not payload:
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "invalid_credential"})
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+    if payload.get("token_purpose") != TokenPurpose.ACCESS.value:
+        log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "access_purpose_required"})
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+    token_revision = payload.get("credential_revision")
+    if not _valid_access_revision(token_revision):
+        log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "credential_revision_required"})
         raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
     principal_id = _claim(payload, "identity_id")
     if principal_id is None:
@@ -85,6 +114,27 @@ async def get_current_identity(
     tenant_id = _claim(payload, "tenant_id")
     if tenant_id is None:
         raise UnauthorizedAccessException("Tenant context is required.")
+    try:
+        durable_revision = AuthRegistry().get_credential_revision(
+            tenant_id,
+            authority.principal_id,
+        )
+    except Exception as error:
+        log_auth_event(
+            "JWT_AUTH",
+            authority.principal_id,
+            False,
+            {"reason": "credential_revision_unavailable"},
+        )
+        raise UnauthorizedAccessException("Authentication authority is unavailable.") from error
+    if token_revision != durable_revision:
+        log_auth_event(
+            "JWT_AUTH",
+            authority.principal_id,
+            False,
+            {"reason": "credential_revision_mismatch"},
+        )
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
     identity = SovereignIdentity(
         identity_id=authority.principal_id,
         tenant_id=tenant_id,
@@ -101,7 +151,7 @@ async def get_current_identity(
 __all__ = ["get_current_identity", "get_principal_authority_repository", "security_scheme", "api_key_header"]
 
 # ARTIFACT: authentication.py
-# VERSION: v1.1.0-PRINCIPAL-AUTHORITY-PROJECTION
+# VERSION: v1.2.0-R10C2F9-ACCESS-PURPOSE-DURABLE-REVISION-ENFORCEMENT
 # AUTHORITY BOUNDARY: credential verification plus durable ACTIVE principal gate
 # TENANT POSTURE: tenant claim is context only; membership authority is separate
 # FAIL-CLOSED POSTURE: missing, invalid, absent, unavailable, suspended, and revoked authority denies

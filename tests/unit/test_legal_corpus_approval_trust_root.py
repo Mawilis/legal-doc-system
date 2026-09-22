@@ -1,19 +1,21 @@
-"""Direct certificate for the R9B-P5-R1 approval trust-root admission.
+"""Direct certificate for the R9B-P5-R2 approval trust-root succession.
 
 TITLE: WILSY OS Legal Corpus Approval Trust-Root Direct Certificate
-VERSION: v1.3.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT-CERT
+VERSION: v1.4.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-TRUST-ROOT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Adversarially certifies immutable approval public-key trust metadata,
-         lifecycle predicates, deterministic integrity, and exact admission of
-         one frozen ceremony public key without signing or persistence.
+         predecessor retirement, successor admission, lifecycle predicates,
+         deterministic integrity, and historical verification without signing
+         or persistence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_approval_trust_root.py
-COLLABORATION / OWNERSHIP: Certifies the R9B-P5-R1 public admission after the
-                            human ceremony; the operator-held private key and
-                            all signing remain outside this repository.
-CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.3.0-R9B-P5-R1 replaces the pre-ceremony zero-key assertion with
-           independent exact production-key identity, lifecycle, and leakage
-           evidence while preserving the R5-R3 adversarial coverage.
+COLLABORATION / OWNERSHIP: Certifies the R9B-P5-R2 public successor admission
+                            after the external ceremony; the predecessor's
+                            historical identity and all private/signing
+                            material remain outside this repository.
+CERTIFICATION / UPDATE DATE: 2026-09-21
+CHANGELOG: v1.4.0-R9B-P5-R2 independently certifies the exact retired
+           predecessor and active successor membership, fingerprints, time
+           windows, and historical-verification boundary.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic public bytes only; no private material,
                             key generation, network, database, or filesystem
@@ -496,61 +498,98 @@ def test_trust_root_membership_is_immutable_duplicate_safe_and_fail_closed() -> 
     _assert_code(lambda: root.resolve("bad"), "APPROVAL_TRUST_KEY_ID_INVALID")
 
 
-_PRODUCTION_KEY_ID = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
-_PRODUCTION_PUBLIC_KEY = "MgzL6fXojmva5bRPonUOdVLOEZFRJHd6gA1kJa1SXGE"
-_PRODUCTION_PUBLIC_SHA3 = "f8bc464615e8047f008909c36750348b4d7e3158bd912c0db5f3afbe2ebbe5da434eb9254f34d77bd7f0eb1b9ed6cfb113d917cce59a6bdb3548cd9aa42a1501"
-_PRODUCTION_FINGERPRINT = "898f01c1e1bbc0caf9d70f70f2bc9db97ab24b56d35641fa678732e8269fcdd0608fcb68a8fb79f200ea5cc413e370a7afb5696fc74b572cc4c5618eecd9bc81"
-_PRODUCTION_VALID_FROM = datetime(2026, 9, 19, 10, 3, 24, 50717, tzinfo=UTC)
-_PRODUCTION_VALID_UNTIL = datetime(2026, 9, 20, 10, 3, 24, 50717, tzinfo=UTC)
+_PREDECESSOR_KEY_ID = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
+_PREDECESSOR_PUBLIC_KEY = "MgzL6fXojmva5bRPonUOdVLOEZFRJHd6gA1kJa1SXGE"
+_PREDECESSOR_PUBLIC_SHA3 = "f8bc464615e8047f008909c36750348b4d7e3158bd912c0db5f3afbe2ebbe5da434eb9254f34d77bd7f0eb1b9ed6cfb113d917cce59a6bdb3548cd9aa42a1501"
+_PREDECESSOR_FINGERPRINT = "88b2c725e8545c8a88259a74a517266202a99daa0145ed90dbef458e8e41bbdecbd24bc9a777acece7a9a5ebe0c20aa0e77ea210ee4b027c14058a65edcdeaad"
+_PREDECESSOR_VALID_FROM = datetime(2026, 9, 19, 10, 3, 24, 50717, tzinfo=UTC)
+_PREDECESSOR_VALID_UNTIL = datetime(2026, 9, 20, 10, 3, 24, 50717, tzinfo=UTC)
+_SUCCESSOR_KEY_ID = "prdca-key:legal-corpus-approval-2084472fec6f273b537255d0b2dff9fb"
+_SUCCESSOR_PUBLIC_KEY = "12o_Ya2-muW1IXlcdIJF_Hu-2Nn3aKdIIqb4DYNcp9Q"
+_SUCCESSOR_PUBLIC_SHA3 = "2084472fec6f273b537255d0b2dff9fbc648985307c473e3993127e6d8f2cc178750fc744cee8c6b510b7d3f7e76a69f9046472e499debc87efe7a87081cb007"
+_SUCCESSOR_FINGERPRINT = "f25151e216e1fadf4728c59583b64e84692685e6b12a0ed85a303e92e6a0039d1914151f9d070e6349083713464e4a753b1bd19a72031c94594385935f390b95"
+_SUCCESSOR_VALID_FROM = datetime(2026, 9, 21, 19, 48, 56, 907799, tzinfo=UTC)
+_SUCCESSOR_VALID_UNTIL = datetime(2026, 9, 22, 19, 48, 56, 907799, tzinfo=UTC)
 
 
-def test_production_root_admits_exactly_one_frozen_public_key() -> None:
-    assert PRODUCTION_APPROVAL_TRUST_ROOT.production_key_count() == 1
+def test_production_root_admits_exact_predecessor_and_successor_public_keys() -> None:
+    assert PRODUCTION_APPROVAL_TRUST_ROOT.production_key_count() == 2
     assert PRODUCTION_APPROVAL_TRUSTED_KEYS == PRODUCTION_APPROVAL_TRUST_ROOT.all_keys()
-    key = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_PRODUCTION_KEY_ID)
-    assert key.key_id == _PRODUCTION_KEY_ID
-    assert key.public_key_base64url == _PRODUCTION_PUBLIC_KEY
-    raw = base64.urlsafe_b64decode(_PRODUCTION_PUBLIC_KEY + "==")
+    predecessor = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_PREDECESSOR_KEY_ID)
+    assert predecessor.key_id == _PREDECESSOR_KEY_ID
+    assert predecessor.public_key_base64url == _PREDECESSOR_PUBLIC_KEY
+    raw = base64.urlsafe_b64decode(_PREDECESSOR_PUBLIC_KEY + "==")
     assert len(raw) == 32
-    assert hashlib.sha3_512(raw).hexdigest() == _PRODUCTION_PUBLIC_SHA3
-    assert LegalCorpusApprovalTrustedKey.derive_key_id(_PRODUCTION_PUBLIC_KEY) == _PRODUCTION_KEY_ID
-    assert key.trust_fingerprint == _PRODUCTION_FINGERPRINT
+    assert hashlib.sha3_512(raw).hexdigest() == _PREDECESSOR_PUBLIC_SHA3
+    assert LegalCorpusApprovalTrustedKey.derive_key_id(_PREDECESSOR_PUBLIC_KEY) == _PREDECESSOR_KEY_ID
+    assert predecessor.trust_fingerprint == _PREDECESSOR_FINGERPRINT
     assert _independent_trust_fingerprint({
-        "key_id": key.key_id,
-        "issuer_identity": key.issuer_identity,
-        "authority_role": key.authority_role,
-        "authority_domain": key.authority_domain,
-        "algorithm": key.algorithm,
-        "public_key_base64url": key.public_key_base64url,
-        "valid_from": key.valid_from,
-        "valid_until": key.valid_until,
-        "status": key.status,
-        "revision": key.revision,
-        "permitted_operations": key.permitted_operations,
-        "scope": key.scope,
-        "trust_root_provenance": key.trust_root_provenance,
-    }) == _PRODUCTION_FINGERPRINT
-    assert key.valid_from == _PRODUCTION_VALID_FROM
-    assert key.valid_until == _PRODUCTION_VALID_UNTIL
-    assert key.status is LegalCorpusApprovalTrustStatus.ACTIVE
-    assert key.revision == 1
-    assert key.issuer_identity == APPROVAL_ISSUER_IDENTITY
-    assert key.authority_role == APPROVAL_AUTHORITY_ROLE
-    assert key.authority_domain == APPROVAL_AUTHORITY_DOMAIN
-    assert key.algorithm == ED25519_ALGORITHM
-    assert key.scope == APPROVAL_SCOPE
-    assert key.permitted_operations == frozenset({APPROVAL_OPERATION})
-    assert key.trust_root_provenance == APPROVAL_TRUST_ROOT_PROVENANCE
-    assert PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_PRODUCTION_KEY_ID) is key
+        "key_id": predecessor.key_id,
+        "issuer_identity": predecessor.issuer_identity,
+        "authority_role": predecessor.authority_role,
+        "authority_domain": predecessor.authority_domain,
+        "algorithm": predecessor.algorithm,
+        "public_key_base64url": predecessor.public_key_base64url,
+        "valid_from": predecessor.valid_from,
+        "valid_until": predecessor.valid_until,
+        "status": predecessor.status,
+        "revision": predecessor.revision,
+        "permitted_operations": predecessor.permitted_operations,
+        "scope": predecessor.scope,
+        "trust_root_provenance": predecessor.trust_root_provenance,
+    }) == _PREDECESSOR_FINGERPRINT
+    assert predecessor.valid_from == _PREDECESSOR_VALID_FROM
+    assert predecessor.valid_until == _PREDECESSOR_VALID_UNTIL
+    assert predecessor.status is LegalCorpusApprovalTrustStatus.RETIRED
+    assert predecessor.revision == 2
+
+    successor = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_SUCCESSOR_KEY_ID)
+    assert successor.key_id == _SUCCESSOR_KEY_ID
+    assert successor.public_key_base64url == _SUCCESSOR_PUBLIC_KEY
+    successor_raw = base64.urlsafe_b64decode(_SUCCESSOR_PUBLIC_KEY + "==")
+    assert len(successor_raw) == 32
+    assert hashlib.sha3_512(successor_raw).hexdigest() == _SUCCESSOR_PUBLIC_SHA3
+    assert LegalCorpusApprovalTrustedKey.derive_key_id(_SUCCESSOR_PUBLIC_KEY) == _SUCCESSOR_KEY_ID
+    assert successor.trust_fingerprint == _SUCCESSOR_FINGERPRINT
+    assert _independent_trust_fingerprint({
+        "key_id": successor.key_id,
+        "issuer_identity": successor.issuer_identity,
+        "authority_role": successor.authority_role,
+        "authority_domain": successor.authority_domain,
+        "algorithm": successor.algorithm,
+        "public_key_base64url": successor.public_key_base64url,
+        "valid_from": successor.valid_from,
+        "valid_until": successor.valid_until,
+        "status": successor.status,
+        "revision": successor.revision,
+        "permitted_operations": successor.permitted_operations,
+        "scope": successor.scope,
+        "trust_root_provenance": successor.trust_root_provenance,
+    }) == _SUCCESSOR_FINGERPRINT
+    assert successor.valid_from == _SUCCESSOR_VALID_FROM
+    assert successor.valid_until == _SUCCESSOR_VALID_UNTIL
+    assert successor.status is LegalCorpusApprovalTrustStatus.ACTIVE
+    assert successor.revision == 1
+    assert successor.issuer_identity == APPROVAL_ISSUER_IDENTITY
+    assert successor.authority_role == APPROVAL_AUTHORITY_ROLE
+    assert successor.authority_domain == APPROVAL_AUTHORITY_DOMAIN
+    assert successor.algorithm == ED25519_ALGORITHM
+    assert successor.scope == APPROVAL_SCOPE
+    assert successor.permitted_operations == frozenset({APPROVAL_OPERATION})
+    assert successor.trust_root_provenance == APPROVAL_TRUST_ROOT_PROVENANCE
+    assert PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_SUCCESSOR_KEY_ID) is successor
 
 
-def test_production_key_lifecycle_is_bounded_and_active() -> None:
-    key = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_PRODUCTION_KEY_ID)
-    assert key.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _PRODUCTION_VALID_FROM)
-    assert not key.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _PRODUCTION_VALID_FROM - timedelta(microseconds=1))
-    assert key.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _PRODUCTION_VALID_UNTIL - timedelta(microseconds=1))
-    assert not key.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _PRODUCTION_VALID_UNTIL)
-    assert key.can_verify_at(APPROVAL_OPERATION, APPROVAL_SCOPE, _PRODUCTION_VALID_FROM)
+def test_production_key_lifecycle_is_bounded_and_successor_is_only_issuer() -> None:
+    predecessor = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_PREDECESSOR_KEY_ID)
+    assert not predecessor.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _PREDECESSOR_VALID_FROM)
+    assert predecessor.can_verify_at(APPROVAL_OPERATION, APPROVAL_SCOPE, _PREDECESSOR_VALID_FROM)
+    successor = PRODUCTION_APPROVAL_TRUST_ROOT.resolve(_SUCCESSOR_KEY_ID)
+    assert not successor.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _SUCCESSOR_VALID_FROM - timedelta(microseconds=1))
+    assert successor.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _SUCCESSOR_VALID_FROM)
+    assert successor.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _SUCCESSOR_VALID_UNTIL - timedelta(microseconds=1))
+    assert not successor.can_issue(APPROVAL_OPERATION, APPROVAL_SCOPE, _SUCCESSOR_VALID_UNTIL)
+    assert successor.can_verify_at(APPROVAL_OPERATION, APPROVAL_SCOPE, _SUCCESSOR_VALID_FROM)
 
 
 def test_production_root_has_no_private_material_or_r8_shortcuts() -> None:
@@ -591,7 +630,7 @@ def test_public_contract_does_not_create_filesystem_or_network_behavior() -> Non
 
 
 # ARTIFACT: test_legal_corpus_approval_trust_root.py
-# VERSION: v1.3.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT-CERT
+# VERSION: v1.4.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-TRUST-ROOT-CERT
 # AUTHORITY BOUNDARY: direct unit evidence for public approval trust metadata only
 # TENANT POSTURE: PLATFORM-only; no tenant or principal authority
 # FAIL-CLOSED POSTURE: unsupported trust records, keys, lifecycle, and shortcuts reject

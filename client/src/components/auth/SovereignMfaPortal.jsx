@@ -98,21 +98,170 @@ export default function SovereignMfaPortal({ onVerificationSuccess }) {
   );
 }
 
-const pageStyle = { minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px', background: '#101112', color: '#f5f1e8', fontFamily: 'Inter, system-ui, sans-serif' };
-const cardStyle = { width: 'min(100%, 480px)', padding: '44px', background: '#17191b', border: '1px solid rgba(213,176,79,.28)', borderRadius: '12px', boxShadow: '0 24px 70px rgba(0,0,0,.35)' };
-const brandRow = { display: 'flex', alignItems: 'center', gap: '10px', color: '#d5b04f', fontSize: '13px', letterSpacing: '.2em', fontWeight: 700 };
-const titleStyle = { margin: '22px 0 10px', fontSize: '34px', lineHeight: 1.1, fontWeight: 650 };
-const copyStyle = { color: '#b8b6ae', lineHeight: 1.55 };
-const tenantStyle = { display: 'grid', gap: '4px', margin: '20px 0 10px', padding: '12px 14px', borderLeft: '3px solid #d5b04f', background: '#202224' };
-const emailStyle = { color: '#d6d1c5', fontSize: '14px', margin: '20px 0' };
-const qrWrap = { display: 'grid', placeItems: 'center', padding: '16px', margin: '18px auto 24px', width: 'fit-content', background: '#fff', borderRadius: '8px' };
-const qrStyle = { width: '280px', height: '280px', display: 'block' };
-const formStyle = { display: 'grid', gap: '10px' };
-const labelStyle = { color: '#d8d4c9', fontSize: '14px', fontWeight: 600 };
-const otpStyle = { width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '7px', border: '1px solid #4d4f51', background: '#0f1011', color: '#fff', fontSize: '28px', letterSpacing: '.42em', textAlign: 'center', outlineColor: '#d5b04f' };
-const buttonStyle = { display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '9px', marginTop: '12px', padding: '14px 18px', border: 0, borderRadius: '7px', background: '#d5b04f', color: '#141414', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
-const backButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', marginTop: '24px', padding: 0, border: 0, background: 'none', color: '#bbb8ae', cursor: 'pointer' };
-const errorStyle = { display: 'flex', gap: '8px', color: '#ffb5b5', fontSize: '14px' };
+const pageStyle = {
+  width: '100%',
+  height: '100dvh',
+  minHeight: '100dvh',
+  boxSizing: 'border-box',
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 'clamp(10px, 1.8vh, 20px)',
+  background: 'radial-gradient(circle at 50% 12%, rgba(213,176,79,.055), transparent 32%), #0a0c0d',
+  color: '#f7f4ec',
+  fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+};
+const cardStyle = {
+  width: 'min(100%, 520px)',
+  maxHeight: 'calc(100dvh - 20px)',
+  overflowY: 'auto',
+  boxSizing: 'border-box',
+  padding: 'clamp(20px, 2.8vh, 30px)',
+  background: 'linear-gradient(145deg, rgba(25,28,29,.99), rgba(15,17,18,.995))',
+  border: '1px solid rgba(213,176,79,.30)',
+  borderRadius: '18px',
+  boxShadow: '0 36px 100px rgba(0,0,0,.58), inset 0 0 0 1px rgba(255,255,255,.018)',
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'rgba(213,176,79,.22) transparent'
+};
+const brandRow = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  paddingBottom: '14px',
+  marginBottom: '16px',
+  color: '#d5b04f',
+  fontSize: '12px',
+  letterSpacing: '.20em',
+  fontWeight: 800,
+  borderBottom: '1px solid rgba(255,255,255,.065)'
+};
+const titleStyle = {
+  margin: '0 0 7px',
+  color: '#fbf9f3',
+  fontSize: 'clamp(27px, 4vh, 34px)',
+  lineHeight: 1.04,
+  letterSpacing: '-.035em',
+  fontWeight: 720
+};
+const copyStyle = {
+  margin: '0 0 10px',
+  color: '#a5a7a2',
+  fontSize: '12px',
+  lineHeight: 1.55
+};
+const tenantStyle = {
+  display: 'grid',
+  gap: '3px',
+  margin: '8px 0 6px',
+  padding: '9px 12px',
+  borderLeft: '3px solid #d5b04f',
+  borderRadius: '0 8px 8px 0',
+  background: 'rgba(255,255,255,.035)',
+  color: '#f1eee6',
+  fontSize: '12px',
+  fontWeight: 650
+};
+const emailStyle = {
+  margin: '7px 0 9px',
+  color: '#aaa8a1',
+  fontSize: '11px',
+  overflowWrap: 'anywhere'
+};
+const qrWrap = {
+  width: 'fit-content',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  display: 'grid',
+  placeItems: 'center',
+  padding: '8px',
+  margin: '8px auto 10px',
+  background: '#ffffff',
+  border: '1px solid rgba(213,176,79,.30)',
+  borderRadius: '10px',
+  boxShadow: '0 15px 36px rgba(0,0,0,.30)'
+};
+const qrStyle = {
+  width: 'min(178px, 21vh, 62vw)',
+  height: 'auto',
+  aspectRatio: '1 / 1',
+  display: 'block'
+};
+const formStyle = {
+  display: 'grid',
+  gap: '7px',
+  width: '100%',
+  marginTop: '7px'
+};
+const labelStyle = {
+  color: '#999b96',
+  fontSize: '9px',
+  fontWeight: 800,
+  letterSpacing: '.16em',
+  textTransform: 'uppercase'
+};
+const otpStyle = {
+  width: '100%',
+  height: '50px',
+  boxSizing: 'border-box',
+  padding: '8px 14px',
+  borderRadius: '9px',
+  border: '1px solid rgba(213,176,79,.27)',
+  background: '#0d0f10',
+  color: '#f5f2e9',
+  fontSize: '21px',
+  fontWeight: 650,
+  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+  letterSpacing: '.30em',
+  textAlign: 'center',
+  outlineColor: '#d5b04f'
+};
+const buttonStyle = {
+  width: '100%',
+  minHeight: '46px',
+  marginTop: '2px',
+  padding: '10px 15px',
+  border: 0,
+  borderRadius: '9px',
+  display: 'inline-flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '8px',
+  background: 'linear-gradient(135deg, #dfba50 0%, #c59d36 100%)',
+  color: '#121313',
+  fontSize: '11px',
+  fontWeight: 800,
+  letterSpacing: '.04em',
+  cursor: 'pointer',
+  boxShadow: '0 11px 26px rgba(171,130,31,.15)'
+};
+const backButtonStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '7px',
+  marginTop: '10px',
+  padding: '6px 0',
+  border: 0,
+  background: 'none',
+  color: '#898b86',
+  fontSize: '10px',
+  cursor: 'pointer'
+};
+const errorStyle = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '8px',
+  marginTop: '2px',
+  padding: '8px 10px',
+  borderRadius: '8px',
+  border: '1px solid rgba(244,114,114,.25)',
+  background: 'rgba(127,29,29,.10)',
+  color: '#f5b4b4',
+  fontSize: '10px',
+  lineHeight: 1.4
+};
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignMfaPortal.jsx

@@ -1,13 +1,24 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
+VERSION: v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
-MFA setup and verification, login, discovery, and logout.
+MFA setup and verification, password-reset completion, login, discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER: Exposes the certified R10D1
+  password-reset transaction through one unauthenticated transport route. The
+  adapter forwards only the tenant selector, recovery capability, and proposed
+  password, leaves capability/policy/persistence authority to the service,
+  returns no session or token, and preserves the existing PRE_AUTH and full
+  access routing topology.
+  v1.4.0-R10C2F8R-EXPLICIT-PREAUTH-ROUTER: The three current MFA/3FA
+  challenge issuers now use the explicit PRE_AUTH AuthRegistry seam. The
+  canonical tenant-source semantics, ACCESS issuance, verifier behavior,
+  durable revision enforcement, session/refresh authority, reset authority,
+  and Node authority remain unchanged.
   v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE: Discovery uses the shared
   canonical ACTIVE tenant resolver when available, so aliases cannot select
   duplicate, inactive, or malformed tenant truth.
@@ -37,18 +48,25 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE"
+VERSION = "v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER"
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 import logging
 import traceback
 import os
+from pydantic import BaseModel, Field, StrictStr
 from typing import Any, Optional
 
 from pymongo.errors import PyMongoError
 
 from ..saas.domain.auth import AuthRequest, VerifyOTPRequest, DiscoverRequest, AuthResponse
 from ..saas.auth.auth_registry import get_auth_registry
+from ..saas.auth.password_reset_service import (
+    PasswordResetCode,
+    PasswordResetService,
+    PasswordResetServiceError,
+)
+from ..saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 from ..auth.authentication import get_current_identity
 from ..auth.identity import SovereignIdentity
@@ -166,6 +184,92 @@ async def workspace_bootstrap(
     }
 
 
+# ─── PASSWORD RESET COMPLETION ─────────────────────────────────────────────
+class PasswordResetRequest(BaseModel):
+    """Bounded transport input for unauthenticated reset completion.
+
+    The request carries only a tenant lookup selector, the transient recovery
+    capability, and the proposed password. Durable capability binding,
+    password policy, hashing, credential revision, revocation, and transaction
+    ownership remain in ``PasswordResetService``. Strict strings prevent
+    coercion of structured or numeric authority fields into transport values;
+    the bounds limit request size without reproducing password policy.
+    """
+
+    tenant_id: StrictStr = Field(..., min_length=1, max_length=256)
+    recovery_token: StrictStr = Field(..., min_length=1, max_length=4096)
+    new_password: StrictStr = Field(..., min_length=1, max_length=4096)
+
+    class Config:
+        """Reject browser-supplied authority fields not owned by this adapter."""
+
+        extra = "forbid"
+
+
+def _password_reset_http_error(error: PasswordResetServiceError) -> HTTPException:
+    """Map service outcomes to privacy-bounded client/server responses.
+
+    Recovery lifecycle states intentionally share one client-visible response,
+    while policy rejection is client-correctable without exposing checker
+    details. Persistence, hashing, transaction, and unexpected failures remain
+    bounded server errors with no exception text or durable-state disclosure.
+    """
+
+    if error.code in {
+        PasswordResetCode.INVALID_REQUEST,
+        PasswordResetCode.RECOVERY_INVALID,
+        PasswordResetCode.RECOVERY_REPLAYED,
+    }:
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password reset request is invalid or expired.",
+        )
+    if error.code is PasswordResetCode.POLICY_REJECTED:
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The new password does not meet password requirements.",
+        )
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Password reset is temporarily unavailable.",
+    )
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+async def complete_password_reset(request: PasswordResetRequest) -> Response:
+    """Complete one recovery-authorized password reset without auto-login.
+
+    The route is intentionally unauthenticated: the durable recovery
+    capability, not an access JWT or browser identity claim, is the reset
+    authority. Exactly one certified service call performs the caller-owned
+    transaction. A successful reset returns no token, session, revision, hash,
+    or capability projection; the user must authenticate through normal login
+    and MFA afterward.
+    """
+
+    try:
+        service = PasswordResetService(
+            blocklist_checker=PwnedPasswordBlocklistChecker(),
+        )
+        service.reset_password(
+            tenant_id=request.tenant_id,
+            recovery_token=request.recovery_token,
+            new_password=request.new_password,
+            context_terms=None,
+        )
+    except PasswordResetServiceError as error:
+        raise _password_reset_http_error(error) from None
+    except Exception:
+        # Never render exception text: provider, database, and transaction
+        # failures may carry secret-bearing or durable-state diagnostics.
+        _log_error(RuntimeError("PASSWORD_RESET_UNEXPECTED_ERROR"), "PASSWORD_RESET_UNEXPECTED_ERROR")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Password reset is temporarily unavailable.",
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=AuthResponse, response_model_exclude_none=True)
 async def login(request: AuthRequest):
@@ -194,7 +298,7 @@ async def login(request: AuthRequest):
                 requiresMFA=True,
                 mfaSetup=False,
                 qrCode=None,
-                tempToken=auth_registry.generate_jwt(
+                tempToken=auth_registry.generate_pre_auth_jwt(
                     user.id, user.tenantId, user.role, user.permissions
                 ),
             )
@@ -202,7 +306,7 @@ async def login(request: AuthRequest):
         # Only a user with no durable OTP secret may enter first-time setup.
         if not user.mfaRegistered:
             qr_uri = auth_registry.get_otp_uri(user.id, user.email)
-            temp_token = auth_registry.generate_jwt(
+            temp_token = auth_registry.generate_pre_auth_jwt(
                 user.id, user.tenantId, user.role, user.permissions
             )
             broadcast_telemetry(
@@ -220,7 +324,7 @@ async def login(request: AuthRequest):
             user.tenantId, "AUTH", "MFA_CHALLENGE_REQUIRED", "auth_router", {"userId": user.id}
         )
 
-        temp_token = auth_registry.generate_jwt(
+        temp_token = auth_registry.generate_pre_auth_jwt(
             user.id, user.tenantId, user.role, user.permissions
         )
         return AuthResponse(
@@ -532,7 +636,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.3.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
+# VERSION: v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER
 # AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
 # credential, principal, tenant, authorization, and financial authorities remain separate.
 # TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.

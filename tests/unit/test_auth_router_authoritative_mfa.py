@@ -1,7 +1,7 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.2.1-PYRIGHT-CLOSURE-CERT
+VERSION: v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
@@ -10,6 +10,13 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministi
                            registry and tenant doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG:
+  v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR —
+  Preserves the F8A PRE_AUTH fixture reconciliation unchanged and repairs
+  only its accidentally regressed certificate version lineage and metadata;
+  no test or production semantics changed.
+  v1.1.0-R10C2F8A-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-RECONCILIATION —
+  Reconciles the deterministic registry fixture with the explicit PRE_AUTH
+  issuer while retaining generic compatibility and all authority assertions.
   v1.2.1-PYRIGHT-CLOSURE-CERT — Aligns the deterministic registry double's
   reread return annotation with its fail-closed inactive state.
   v1.1.0-AUTHORITATIVE-MFA-ROUTING-CERT — Added next-login reconciliation
@@ -57,6 +64,9 @@ class _Registry:
         self.update_calls = 0
         self.reread_calls = 0
         self.session_calls = 0
+        self.generic_issuer_calls: list[tuple[Any, ...]] = []
+        self.pre_auth_issuer_calls: list[tuple[str, str, str, list[str]]] = []
+        self.access_issuer_calls: list[tuple[Any, ...]] = []
         self.persisted = user.mfaRegistered
 
     def authenticate(self, _email: str, _password: str) -> SimpleNamespace:
@@ -70,7 +80,24 @@ class _Registry:
         return "otpauth://totp/Wilsy%20OS"
 
     def generate_jwt(self, *_args: Any) -> str:
+        self.generic_issuer_calls.append(_args)
         return "temporary-token"
+
+    def generate_pre_auth_jwt(
+        self,
+        user_id: str,
+        tenant_id: str,
+        role: str,
+        permissions: list[str],
+    ) -> str:
+        self.pre_auth_issuer_calls.append(
+            (user_id, tenant_id, role, list(permissions))
+        )
+        return "temporary-token"
+
+    def generate_access_jwt(self, *_args: Any, **_kwargs: Any) -> str:
+        self.access_issuer_calls.append(_args)
+        raise AssertionError("MFA challenge must not use ACCESS issuance")
 
     def verify_otp(self, _user_id: str, _code: str) -> bool:
         return True
@@ -122,6 +149,13 @@ def test_login_exposes_exact_authoritative_mfa_state(
     if not qr_expected:
         assert registry.get_uri_calls == 0
     assert response.refreshToken is None
+    assert response.tempToken == "temporary-token"
+    assert registry.pre_auth_issuer_calls == [
+        ("WILSYAUTH-test", "TENANT-TEST", "FIELD_DEPUTY", ["legal:read"])
+    ]
+    assert registry.generic_issuer_calls == []
+    assert registry.access_issuer_calls == []
+    assert registry.session_calls == 0
 
 
 def test_legacy_otp_verification_persists_and_rereads_before_session(
@@ -169,6 +203,11 @@ def test_reconciled_user_returns_normal_mfa_challenge_on_next_login(
     assert response.status == "MFA_REQUIRED"
     assert response.qrCode is None
     assert registry.get_uri_calls == 0
+    assert registry.pre_auth_issuer_calls == [
+        ("WILSYAUTH-test", "TENANT-TEST", "FIELD_DEPUTY", ["legal:read"])
+    ]
+    assert registry.generic_issuer_calls == []
+    assert registry.access_issuer_calls == []
 
 
 def test_invalid_otp_fails_closed_without_session(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -284,7 +323,7 @@ def test_direct_terminal_or_financial_authority_is_not_exposed() -> None:
 
 """
 ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-VERSION: v1.2.1-PYRIGHT-CLOSURE-CERT
+VERSION: v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR
 AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 TENANT POSTURE: unknown aliases fail closed without directory enumeration
 FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session

@@ -2,7 +2,7 @@
 /**
  * ===============================================================================
  * WILSY OS — SOVEREIGN OPERATING SYSTEM
- * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.0.0-INSTITUTIONAL-SEAL]
+ * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.1.0-R10D6-RESET-API-INTEGRATION]
  * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  * ===============================================================================
  * Epitome:
@@ -25,6 +25,8 @@
  *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  *
  * Change Log:
+ *     2026-09-22 v74.1.0-R10D6-RESET-API-INTEGRATION — Added the single public password-reset transport seam with exact three-field serialization, no bearer dependency, and no automatic retry or session mutation.
+ *     2026-09-21 v74.0.2-401-BEARER-CLASSIFICATION — Classifies 401 responses by actual bearer participation so pre-auth and MFA failures cannot erase a concurrently established authenticated browser session.
  *     2026-08-22 v74.0.1-MFA-PUBLIC-CONTRACT — Exempted strict EOS OTP and enrollment validation bodies from seal-field injection.
  *     2026-08-14 v74.0.0-INSTITUTIONAL-SEAL — Upgraded documentation to full mandate compliance.
  *     2026-08-07 v73.2.1-AUTH-FIX — Simplified 401 handling, removed refresh loop.
@@ -72,16 +74,36 @@ const sourceBackoffUntil = new Map();
  * @institutional Mandatory for POPIA §19 data segregation.
  */
 const resolveRequestTenantId = () => {
-  const storedTenant = localStorage.getItem('discoveredTenant');
-  if (!storedTenant || storedTenant === 'undefined' || storedTenant === 'null') return 'GLOBAL_ROOT';
+  // Authenticated server-issued tenant projection is authoritative when
+  // present. Discovery is only the bounded pre-auth fallback.
+  const storedTenant = (
+    localStorage.getItem('wilsy_active_tenant')
+    || localStorage.getItem('discoveredTenant')
+  );
+
+  if (
+    !storedTenant
+    || storedTenant === 'undefined'
+    || storedTenant === 'null'
+  ) {
+    return 'GLOBAL_ROOT';
+  }
 
   try {
     const parsedTenant = JSON.parse(storedTenant);
+
     if (parsedTenant && typeof parsedTenant === 'object') {
-      return String(parsedTenant.alias || parsedTenant.tenantId || parsedTenant.id || 'GLOBAL_ROOT').trim() || 'GLOBAL_ROOT';
+      // X-Tenant-ID is durable authorization scope, therefore the canonical
+      // tenant identifier must outrank display/discovery aliases.
+      return String(
+        parsedTenant.tenantId
+        || parsedTenant.id
+        || parsedTenant.alias
+        || 'GLOBAL_ROOT'
+      ).trim() || 'GLOBAL_ROOT';
     }
   } catch {
-    // Legacy installations may hold the scalar tenant identifier directly.
+    // Legacy installations may hold a scalar tenant identifier directly.
   }
 
   return String(storedTenant).trim() || 'GLOBAL_ROOT';
@@ -367,7 +389,7 @@ api.interceptors.request.use(
     }
 
     const token = getStoredToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token && !config.skipAuth) config.headers.Authorization = `Bearer ${token}`;
 
     // Force Tenant ID injection to prevent 403 authorization fractures
     config.headers['X-Tenant-ID'] = resolveRequestTenantId();
@@ -387,14 +409,26 @@ api.interceptors.request.use(
       || /^\/auth\/verify-otp$/i.test(config.url)
       || /^\/auth\/verify-3fa$/i.test(config.url)
       || /^\/auth\/otp\/verify$/i.test(config.url)
-      || /^\/auth\/otp\/send$/i.test(config.url);
+      || /^\/auth\/otp\/send$/i.test(config.url)
+      || /^\/auth\/reset-password$/i.test(config.url);
 
     if (!isPublicPath) {
       const traceId = generateTraceAnchor ? generateTraceAnchor() : `TRC-${Date.now()}`;
       const timestamp = getSyncedTimestamp();
       const nonce = `NONCE-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-      if (config.data && typeof config.data === 'object') {
+      // Strict server-owned request contracts must retain the exact caller
+      // payload. Forensic time remains transport evidence in the dedicated
+      // x-forensic-timestamp header and request seal; it is not legal body truth.
+      const preservesCanonicalRequestBody = /^\/legal-acceptance\/accept$/i.test(
+        config.url
+      );
+
+      if (
+        !preservesCanonicalRequestBody
+        && config.data
+        && typeof config.data === 'object'
+      ) {
         config.data.timestamp = timestamp;
       }
 
@@ -450,21 +484,45 @@ api.interceptors.response.use(
       sourceBackoffUntil.set(getSourceBackoffKey(originalRequest), Date.now() + SOURCE_BACKOFF_MS);
     }
 
-    // If it's a 401 and we're not already on login, clear session and redirect.
+    // A 401 proves browser-session expiry only when that failed request
+    // actually participated in bearer authentication. Public/pre-auth/MFA
+    // challenge requests can legitimately return 401 and must never erase a
+    // concurrently established authenticated session.
     if (error.response?.status === 401) {
-      // If the request explicitly skips auth redirect, just reject.
       if (originalRequest?.skipAuthRedirect) {
         return Promise.reject(error);
       }
 
-      const path = (typeof window !== 'undefined' && window.location?.pathname) || '';
-      // Avoid redirect loop when already on login page.
+      const challengePath = /^\/auth\/(?:login|sovereign-login|verify-otp|verify-3fa|validate-mfa-setup|otp\/verify|otp\/send)$/i.test(url);
+
+      if (challengePath) {
+        return Promise.reject(error);
+      }
+
+      const requestHeaders = originalRequest?.headers;
+      const authorization = typeof requestHeaders?.get === 'function'
+        ? requestHeaders.get('Authorization')
+        : requestHeaders?.Authorization || requestHeaders?.authorization;
+
+      const carriedBearer = (
+        typeof authorization === 'string'
+        && /^Bearer\s+\S+$/i.test(authorization.trim())
+      );
+
+      if (!carriedBearer) {
+        return Promise.reject(error);
+      }
+
+      const path = (
+        typeof window !== 'undefined'
+        && window.location?.pathname
+      ) || '';
+
       if (!path.startsWith('/login')) {
         purgeTokens();
-        // Optionally, pass an expired flag to show a message.
         window.location.href = '/login?expired=true';
       }
-      // Return a rejected promise to stop further processing.
+
       return Promise.reject(error);
     }
 
@@ -475,6 +533,30 @@ api.interceptors.response.use(
 // ============================================================================
 // 📊 STATEMENT API FUNCTIONS
 // ============================================================================
+
+/**
+ * @function resetPassword
+ * @description Submits the exact unauthenticated recovery completion payload to
+ *     the canonical Python reset endpoint and accepts its bodyless 204 result.
+ * @param {Object} input - Transport-only reset inputs.
+ * @param {string} input.tenantId - Tenant selector forwarded as tenant_id.
+ * @param {string} input.recoveryToken - Single-use capability forwarded unchanged.
+ * @param {string} input.newPassword - Proposed password forwarded unchanged.
+ * @returns {Promise<Object>} Axios response; successful responses contain no body.
+ * @collaboration R10D6 — Consumed by the future reset UI; the server owns
+ *     recovery lifecycle, password policy, hashing, revision, and revocation.
+ * @institutional This method owns transport only and never grants identity,
+ *     session, role, MFA, financial, or other authority.
+ */
+const resetPassword = ({ tenantId, recoveryToken, newPassword }) => api.post(
+  '/auth/reset-password',
+  {
+    tenant_id: tenantId,
+    recovery_token: recoveryToken,
+    new_password: newPassword,
+  },
+  { skipAuth: true },
+);
 
 /**
  * @function getStatements
@@ -564,6 +646,7 @@ const verifyStatementSeal = (statementId) => {
 
 export default api;
 export {
+  resetPassword,
   getStatements,
   generateStatement,
   sealStatement,
@@ -579,7 +662,7 @@ export {
  * Status: CERTIFIED GOLD PRODUCTION READY
  * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Version: V74.0.0-INSTITUTIONAL-SEAL
+ * Version: V74.1.0-R10D6-RESET-API-INTEGRATION
  * Architecture: BIBLICAL WORTH BILLIONS. NO CHILD'S PLAY.
  * Kennel Context: Fully integrated with tenant and role metadata.
  * ===============================================================================

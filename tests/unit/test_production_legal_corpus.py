@@ -1,19 +1,17 @@
 """Direct certificate for the historical and reviewed-successor platform corpus.
 
 TITLE: WILSY OS Required Platform Legal Corpus Certificate
-VERSION: v1.4.1-R9B-P7-A3-R2-R1-REVIEWED-SUCCESSOR-RUNTIME-CATALOG-CERT
+VERSION: v1.5.1-R9B-P0-CHARTER-IDENTITY-FREEZE-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certifies the immutable Charter source plus five substantive,
+EPITOME: Certifies the immutable Charter source plus six substantive,
          review-required platform legal-document drafts without provisioning,
          approval, acceptance, signing, or commercial execution authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_production_legal_corpus.py
 COLLABORATION / OWNERSHIP: Direct certificate for production_legal_corpus and
                             its immutable legal-document domain contract.
 CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.4.1 repairs the resolver ambiguity/non-draft certificate
-           fixture to construct domain-valid LegalDocumentVersion values
-           without serialized enum primitive rehydration; production runtime
-           semantics are unchanged.
+CHANGELOG: v1.5.1 pins the exact Charter successor source digest so prose,
+           reference, and source identity cannot drift silently.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Platform drafts only; tenant acceptance remains separate.
 AUTHORITY BOUNDARY: Draft evidence only; no review, approval, signature,
@@ -46,6 +44,7 @@ from tools.eos.legal_operations.domain.legal_acceptance import (
 
 CHARTER_ID = "WILSY-OS-INSTITUTIONAL-CHARTER"
 CHARTER_DIGEST = "c67cab37c2c8bbb38ecdb44f2295c46e39b6f01d25cb618a8c9a6a7dc5194f69608cbeacc5f7c00166cde0ae6d620b8d5b22555f46cfd9faa06b5c8a53bfaf6a"
+CHARTER_SUCCESSOR_DIGEST = "53516595a0216987ea3038ca2cddd25a3f5f9b47db1fed6f87a7e6fc45b0707fcc8ca14625de16ea06ce4dd091b39b1ff9af11da118b62cadc34b6339b08f6f5"
 EXPECTED = (
     (LegalAgreementType.INSTITUTIONAL_CHARTER, CHARTER_ID, "WILSY OS Institutional Charter", "wilsy-os://legal/institutional-charter/1.0.0-draft", "CHARTER_CONTENT"),
     (LegalAgreementType.USER_TERMS, "WILSY-OS-USER-TERMS", "WILSY OS User Terms", "wilsy-os://legal/user-terms/1.0.0-draft", "USER_TERMS_CONTENT"),
@@ -57,6 +56,7 @@ EXPECTED = (
 NEW_FAMILIES = tuple(item[0] for item in EXPECTED[1:])
 PLACEHOLDER_PATTERNS = ("[COMPANY NAME]", "[TBD]", "[ADDRESS]", "[EMAIL]", "TODO", "FIXME")
 SUCCESSOR_EXPECTED = (
+    (LegalAgreementType.INSTITUTIONAL_CHARTER, CHARTER_ID, "wilsy-os://legal/institutional-charter/1.1.0-draft", "INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_CONTENT"),
     (LegalAgreementType.USER_TERMS, "WILSY-OS-USER-TERMS", "wilsy-os://legal/user-terms/1.1.0-draft", "USER_TERMS_REVIEWED_SUCCESSOR_CONTENT"),
     (LegalAgreementType.ACCEPTABLE_USE, "WILSY-OS-ACCEPTABLE-USE", "wilsy-os://legal/acceptable-use/1.1.0-draft", "ACCEPTABLE_USE_REVIEWED_SUCCESSOR_CONTENT"),
     (LegalAgreementType.PRIVACY_NOTICE, "WILSY-OS-PRIVACY-NOTICE", "wilsy-os://legal/privacy-notice/1.1.0-draft", "PRIVACY_NOTICE_REVIEWED_SUCCESSOR_CONTENT"),
@@ -139,6 +139,33 @@ def test_charter_source_identity_and_content_digest_are_unchanged() -> None:
     assert charter.agreement_type is LegalAgreementType.INSTITUTIONAL_CHARTER
 
 
+def test_charter_successor_is_a_distinct_lifecycle_neutral_source() -> None:
+    """The 1.1.0 Charter successor preserves principles without self-status prose."""
+    historical = corpus.INSTITUTIONAL_CHARTER_DRAFT
+    successor = corpus.INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_DRAFT
+    normalized = _normalize_semantic_text(successor.content)
+    assert successor.document_id == historical.document_id == CHARTER_ID
+    assert successor.agreement_type is LegalAgreementType.INSTITUTIONAL_CHARTER
+    assert successor.version == "1.1.0-DRAFT"
+    assert successor.status is LegalDocumentStatus.DRAFT_REVIEW_REQUIRED
+    assert successor.content_reference == "wilsy-os://legal/institutional-charter/1.1.0-draft"
+    assert successor.supersedes_document_id == historical.document_id
+    assert successor.content != historical.content
+    assert successor.sha3_512 != historical.sha3_512
+    assert successor.sha3_512 == CHARTER_SUCCESSOR_DIGEST
+    assert successor.sha3_512 == canonical_document_digest(successor.content, successor.content_reference)
+    assert len(successor.content.encode("utf-8")) > 1_000
+    assert all(_normalize_semantic_text(phrase) not in normalized for phrase in SUCCESSOR_FORBIDDEN_PHRASES)
+    assert "approved" not in normalized
+    assert "charter authority and lifecycle boundary" in normalized
+    assert "authenticated user" in normalized
+    assert "organisation signature authority" in normalized
+    assert "commercial, financial, and legal execution" in normalized
+    assert "historical versions remain immutable" in normalized
+    assert "separate lifecycle records" in normalized
+    assert corpus.get_institutional_charter_reviewed_successor_draft() is successor
+
+
 def test_new_drafts_share_one_explicit_authorship_timestamp_only() -> None:
     """The five new drafts have one aware authorship instant distinct from Charter history."""
     new_drafts = corpus.PLATFORM_LEGAL_CORPUS_DRAFTS[1:]
@@ -205,14 +232,14 @@ def test_historical_five_drafts_remain_exactly_preserved() -> None:
 
 
 def test_reviewed_successor_tuple_and_identity_are_exact() -> None:
-    """The five successor values are immutable source succession only."""
+    """The six successor values are immutable source succession only."""
     successors = corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS
-    historical = corpus.PLATFORM_LEGAL_CORPUS_DRAFTS[1:]
+    historical = corpus.PLATFORM_LEGAL_CORPUS_DRAFTS
     assert isinstance(successors, tuple)
-    assert len(successors) == 5
+    assert len(successors) == 6
     assert tuple(value.agreement_type for value in successors) == tuple(item[0] for item in SUCCESSOR_EXPECTED)
-    assert len({value.document_id for value in successors}) == 5
-    assert len({(value.document_id, value.version) for value in successors}) == 5
+    assert len({value.document_id for value in successors}) == 6
+    assert len({(value.document_id, value.version) for value in successors}) == 6
     for old, successor, expected in zip(historical, successors, SUCCESSOR_EXPECTED, strict=True):
         family, document_id, reference, content_name = expected
         assert successor.agreement_type is family
@@ -250,6 +277,7 @@ def test_reviewed_successors_are_immutable_and_getters_are_repeatable() -> None:
     for successor, getter in zip(
         corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS,
         (
+            corpus.get_institutional_charter_reviewed_successor_draft,
             corpus.get_user_terms_reviewed_successor_draft,
             corpus.get_acceptable_use_reviewed_successor_draft,
             corpus.get_privacy_notice_reviewed_successor_draft,
@@ -263,15 +291,15 @@ def test_reviewed_successors_are_immutable_and_getters_are_repeatable() -> None:
             successor.version = "2.0.0"  # type: ignore[misc]
 
 
-def test_canonical_runtime_catalog_and_exact_resolver_cover_all_eleven_values() -> None:
+def test_canonical_runtime_catalog_and_exact_resolver_cover_all_twelve_values() -> None:
     """The source-owned resolver separates historical and successor versions."""
     catalog = corpus.PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS
     assert isinstance(catalog, tuple)
-    assert len(catalog) == 11
-    assert len({(value.document_id, value.version) for value in catalog}) == 11
+    assert len(catalog) == 12
+    assert len({(value.document_id, value.version) for value in catalog}) == 12
     for value in catalog:
         assert corpus.resolve_platform_legal_corpus_draft(value.document_id, value.version) is value
-    for historical, successor in zip(corpus.PLATFORM_LEGAL_CORPUS_DRAFTS[1:], corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS, strict=True):
+    for historical, successor in zip(corpus.PLATFORM_LEGAL_CORPUS_DRAFTS, corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS, strict=True):
         assert corpus.resolve_platform_legal_corpus_draft(historical.document_id, "1.0.0-DRAFT") is historical
         assert corpus.resolve_platform_legal_corpus_draft(successor.document_id, "1.1.0-DRAFT") is successor
     with pytest.raises(corpus.LegalCorpusCanonicalDraftResolutionError, match="CANONICAL_DOCUMENT_UNKNOWN"):
@@ -296,7 +324,8 @@ def test_public_api_is_exact_and_repeatable() -> None:
     assert set(corpus.__all__) == {
         "AUTHORING_TIMESTAMP", "DRAFT_AUTHORING_TIMESTAMP", "REVIEWED_SUCCESSOR_AUTHORING_TIMESTAMP", "CHARTER_CONTENT",
         "CONTENT_REFERENCE", "DOCUMENT_ID", "DOCUMENT_VERSION",
-        "INSTITUTIONAL_CHARTER_DRAFT", "USER_TERMS_CONTENT", "USER_TERMS_DRAFT",
+        "INSTITUTIONAL_CHARTER_DRAFT", "INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_CONTENT", "INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_DRAFT",
+        "USER_TERMS_CONTENT", "USER_TERMS_DRAFT",
         "ACCEPTABLE_USE_CONTENT", "ACCEPTABLE_USE_DRAFT", "PRIVACY_NOTICE_CONTENT",
         "PRIVACY_NOTICE_DRAFT", "AI_ASSISTANCE_NOTICE_CONTENT", "AI_ASSISTANCE_NOTICE_DRAFT",
         "ADMIN_RESPONSIBILITY_NOTICE_CONTENT", "ADMIN_RESPONSIBILITY_NOTICE_DRAFT",
@@ -308,6 +337,7 @@ def test_public_api_is_exact_and_repeatable() -> None:
         "JURISDICTION", "LOCALE", "PLATFORM_LEGAL_CORPUS_DRAFTS", "PLATFORM_LEGAL_CORPUS_CANONICAL_DRAFTS", "PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS", "LegalCorpusCanonicalDraftResolutionError", "resolve_platform_legal_corpus_draft", "VERSION",
         "get_acceptable_use_draft", "get_admin_responsibility_notice_draft",
         "get_ai_assistance_notice_draft", "get_institutional_charter_draft",
+        "get_institutional_charter_reviewed_successor_draft",
         "get_privacy_notice_draft", "get_user_terms_draft",
         "get_acceptable_use_reviewed_successor_draft",
         "get_admin_responsibility_notice_reviewed_successor_draft",
@@ -363,7 +393,7 @@ def test_source_does_not_use_mutable_corpus_collection() -> None:
 
 
 # ARTIFACT: test_production_legal_corpus.py
-# VERSION: v1.4.1-R9B-P7-A3-R2-R1-REVIEWED-SUCCESSOR-RUNTIME-CATALOG-CERT
+# VERSION: v1.5.1-R9B-P0-CHARTER-IDENTITY-FREEZE-CERT
 # AUTHORITY BOUNDARY: historical and successor draft-corpus evidence only
 # TENANT POSTURE: platform corpus inspection only; no tenant acceptance state
 # FAIL-CLOSED POSTURE: identity, digest, lifecycle, text, and authority drift fail

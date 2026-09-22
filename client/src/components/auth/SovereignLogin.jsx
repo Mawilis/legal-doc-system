@@ -1,14 +1,22 @@
 /**
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.5.0-FINAL-PIXEL-CLOSURE
+ * VERSION: v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/SovereignLogin.jsx
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v3.5.0-FINAL-PIXEL-CLOSURE — Centers a bounded 1120px panel,
+ * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE — Places the pre-authentication
+ *            recovery action beside the password label, preserves its
+ *            keyboard/pointer target, and keeps the content-driven shell and
+ *            footer in normal flow across short and narrow viewports.
+ *            v3.5.1-R10D9A-FORGOT-PASSWORD-ENTRYPOINT — Adds one
+ *            pre-authentication Forgot password? navigation action to the
+ *            certified `/reset-password` route without sending form data or
+ *            invoking reset authority.
+ *            v3.5.0-FINAL-PIXEL-CLOSURE — Centers a bounded 1120px panel,
  *            balances the identity/form columns, and keeps the natural-flow
  *            auth surface visible on desktop, short, and mobile viewports.
  *            v3.4.0-VIEWPORT-SAFE-AUTH — Makes the page shell a natural-flow,
@@ -85,7 +93,12 @@ export default function SovereignLogin({ onLoginSuccess }) {
             <form onSubmit={handleSubmit} style={formStyle}>
               <label htmlFor="work-email" style={labelStyle}>Work email</label>
               <input id="work-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} required />
-              <label htmlFor="work-password" style={labelStyle}>Password</label>
+              <div style={passwordLabelRowStyle}>
+                <label htmlFor="work-password" style={passwordLabelStyle}>Password</label>
+                <button type="button" onClick={() => navigate('/reset-password')} style={forgotPasswordButtonStyle}>
+                  Forgot password?
+                </button>
+              </div>
               <input id="work-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} style={inputStyle} required />
               {(error || authError) && <div role="alert" style={errorStyle}><AlertCircle size={16} /><span>{error || authError}</span></div>}
               <button type="submit" disabled={loading || !email.trim() || !password} style={buttonStyle}>
@@ -114,15 +127,18 @@ const titleStyle = { margin: '0 0 10px', fontSize: 'clamp(34px, 5vw, 50px)', lin
 const subtitleStyle = { margin: '0 0 26px', color: '#b8b6ae', lineHeight: 1.55, fontSize: '14px' };
 const formStyle = { display: 'grid', gap: '10px' };
 const labelStyle = { marginTop: '7px', color: '#d8d4c9', fontSize: '14px', fontWeight: 600 };
+const passwordLabelRowStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', minHeight: '44px' };
+const passwordLabelStyle = { ...labelStyle, marginTop: 0 };
 const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '14px 15px', borderRadius: '7px', border: '1px solid #4d4f51', background: '#0f1011', color: '#fff', fontSize: '16px', outlineColor: '#d5b04f' };
 const buttonStyle = { display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '9px', marginTop: '14px', padding: '14px 18px', border: 0, borderRadius: '7px', background: '#d5b04f', color: '#141414', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
+const forgotPasswordButtonStyle = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', margin: 0, padding: '10px 0', border: 0, background: 'none', color: '#d5b04f', fontSize: '13px', fontWeight: 650, textDecoration: 'underline', textUnderlineOffset: '3px', cursor: 'pointer' };
 const backButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', marginTop: '24px', padding: 0, border: 0, background: 'none', color: '#bbb8ae', cursor: 'pointer' };
 const errorStyle = { display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '8px', color: '#ffb5b5', fontSize: '14px' };
 const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16px', paddingTop: '18px', borderTop: '1px solid rgba(245,241,232,.1)', color: '#777873', fontSize: '10px', letterSpacing: '.1em', textTransform: 'uppercase' };
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.5.0-FINAL-PIXEL-CLOSURE
+ * VERSION: v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated

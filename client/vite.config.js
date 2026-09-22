@@ -1,16 +1,18 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.3.8-KENNEL-AUTH-OWNER]                                                            ║
+ * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.3.9-EOS-LEGAL-ACCEPTANCE-OWNER]                                                            ║
  * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.3.8-KENNEL-AUTH-OWNER | PRODUCTION READY                                                                               ║
+ * ║ VERSION: 2.3.9-EOS-LEGAL-ACCEPTANCE-OWNER | PRODUCTION READY                                                                               ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME:                                                                                                                             ║
  * ║ Routes Node-owned /api traffic to port 4000 while explicitly rewriting EOS invoice paths to port 9095.                              ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v2.3.8):                                                                                                               ║
+ * ║ 🔧 CHANGE LOG (v2.3.9):
+ * ║   1. Routes Python-EOS-owned /api/legal-acceptance directly to port 9095 so authenticated legal gating cannot fall through Node.
+ * ║ 🔧 PRIOR CHANGE LOG (v2.3.8):                                                                                                               ║
  * ║   1. Routed /api/auth directly to the verified Kennel auth router; the live Node bootstrap was proxying it as /auth/login.         ║
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.7):                                                                                                        ║
  * ║   1. Routed Kennel billing read models through /api/billing/* with the required /api removal only at the EOS boundary.             ║
@@ -116,6 +118,39 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Python EOS owns authenticated legal-acceptance authority.
+      // Preserve /api because the EOS router is mounted under /api.
+      '/api/legal-acceptance': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.info(`[WILSY-PROXY-DISPATCH-LEGAL-ACCEPTANCE] ${req.method} ${req.url} -> ${proxyReq.path}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.info(`[WILSY-PROXY-RETURN-LEGAL-ACCEPTANCE] ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error(
+              '[WILSY-PROXY-FATAL-LEGAL-ACCEPTANCE]',
+              err.message,
+            );
+            if (!res.headersSent) {
+              res.writeHead(
+                502,
+                { 'Content-Type': 'application/json' },
+              );
+              res.end(JSON.stringify({
+                success: false,
+                message: 'Legal acceptance EOS backend unreachable on port 9095.',
+                error: err.message,
+              }));
+            }
+          });
+        },
+      },
+
       // Kennel owns the tenant and employee directories used by BillingHUD typeaheads.
       '/api/tenants': {
         target: 'http://localhost:9095',
@@ -164,7 +199,7 @@ export default defineConfig({
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.3.8-KENNEL-AUTH-OWNER
+ * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.3.9-EOS-LEGAL-ACCEPTANCE-OWNER
  * ═══════════════════════════════════════════════════════════════════════════════════
  * Status: CERTIFIED PRODUCTION ARTIFACT
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2

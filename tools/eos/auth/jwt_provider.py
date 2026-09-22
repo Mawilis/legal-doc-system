@@ -12,13 +12,24 @@ Biblical Worth Billions:
     "In the mouth of two or three witnesses shall every word be established."
     — 2 Corinthians 13:1
 
-VERSION: v1.2.0-R1D-B0F-B4-R2-CANONICAL-TOKEN-CONTRACT
+VERSION: v1.3.0-R10C2F4-JWT-PURPOSE-CREDENTIAL-REVISION-CONTRACT
 AUTHORITY: Credential signing and verification only; no identity or tenant authority.
 TENANT BOUNDARY: Claims are untrusted projections until downstream durable admission.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive financial execution authority.
-CHANGELOG: v1.2.0-R1D-B0F-B4-R2-CANONICAL-TOKEN-CONTRACT makes this module the
-            sole access-token encoder/verifier and enforces the canonical
+CHANGELOG: v1.3.0-R10C2F4-JWT-PURPOSE-CREDENTIAL-REVISION-CONTRACT adds the
+            explicit ACCESS/PRE_AUTH purpose vocabulary and validates the
+            optional credential_revision claim while retaining temporary
+            acceptance of both claims' absence; durable revision comparison,
+            reset invalidation, and caller migration remain outside this gate.
+            v1.2.0-R1D-B0F-B4-R2-CANONICAL-TOKEN-CONTRACT made this module the
+            sole access-token encoder/verifier and enforced the canonical
             identity/tenant projection; v1.1.0 removed the hard-coded fallback.
+SECURITY POSTURE: Purpose and revision claims are structural JWT data only;
+                 cryptographic validity does not grant durable authority.
+PERSISTENCE POSTURE: This module performs no database or repository access.
+LEGACY COMPATIBILITY: Missing purpose/revision claims remain structurally
+                       accepted only while callers migrate to the explicit
+                       contract; later authentication cutover owns enforcement.
 
 Collaboration & Ownership:
     - Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
@@ -33,11 +44,27 @@ import hashlib
 import base64
 import json
 import time
+from enum import Enum
 from typing import Any, Dict, Optional
 
-VERSION = "v1.2.0-R1D-B0F-B4-R2-CANONICAL-TOKEN-CONTRACT"
+VERSION = "v1.3.0-R10C2F4-JWT-PURPOSE-CREDENTIAL-REVISION-CONTRACT"
 ALGORITHM = "HS256"
 REQUIRED_CLAIMS = ("identity_id", "tenant_id", "iat", "exp")
+CREDENTIAL_REVISION_CLAIM = "credential_revision"
+TOKEN_PURPOSE_CLAIM = "token_purpose"
+CREDENTIAL_REVISION_MAX = 9_223_372_036_854_775_807
+
+
+class TokenPurpose(str, Enum):
+    """Canonical purpose values carried by migrated JWT issuers.
+
+    Authority remains with downstream authentication.  This enum only limits
+    the provider-owned serialized vocabulary and does not decide whether a
+    token may access a protected route.
+    """
+
+    ACCESS = "ACCESS"
+    PRE_AUTH = "PRE_AUTH"
 
 
 def _signing_secret() -> str:
@@ -59,8 +86,41 @@ def _base64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data.encode("utf-8"))
 
 
+def _purpose_value(value: Any) -> Optional[str]:
+    """Return a canonical purpose value or ``None`` for an invalid value."""
+    if isinstance(value, TokenPurpose):
+        return value.value
+    if isinstance(value, str):
+        try:
+            return TokenPurpose(value).value
+        except ValueError:
+            return None
+    return None
+
+
+def _valid_credential_revision(value: Any) -> bool:
+    """Validate the bounded JSON integer representation of a revision."""
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and 0 <= value <= CREDENTIAL_REVISION_MAX
+    )
+
+
+def _validate_optional_claims(payload: Dict[str, Any]) -> bool:
+    """Validate present purpose/revision claims without requiring either one."""
+    if TOKEN_PURPOSE_CLAIM in payload:
+        purpose = payload[TOKEN_PURPOSE_CLAIM]
+        if _purpose_value(purpose) is None:
+            return False
+    if CREDENTIAL_REVISION_CLAIM in payload:
+        if not _valid_credential_revision(payload[CREDENTIAL_REVISION_CLAIM]):
+            return False
+    return True
+
+
 def _validate_identity_claims(payload: Dict[str, Any]) -> bool:
-    """Validate the canonical projection without granting durable authority."""
+    """Validate canonical and optional claims without granting durable authority."""
     for name in ("identity_id", "tenant_id"):
         value = payload.get(name)
         if not isinstance(value, str) or not value.strip() or value != value.strip():
@@ -76,16 +136,39 @@ def _validate_identity_claims(payload: Dict[str, Any]) -> bool:
         value = payload.get(name)
         if not isinstance(value, int) or isinstance(value, bool):
             return False
-    return payload["exp"] > payload["iat"]
+    return payload["exp"] > payload["iat"] and _validate_optional_claims(payload)
 
 
-def create_access_token(identity_data: Dict[str, Any], expires_in_seconds: int = 86400) -> str:
-    """Encodes a cryptographically signed sovereign JWT token."""
+def create_access_token(
+    identity_data: Dict[str, Any],
+    expires_in_seconds: int = 86400,
+    *,
+    token_purpose: Optional[TokenPurpose | str] = None,
+    credential_revision: Optional[int] = None,
+) -> str:
+    """Encode a signed token while preserving the legacy caller shape.
+
+    ``token_purpose`` and ``credential_revision`` are optional, keyword-only
+    structural claims.  Exact ACCESS/PRE_AUTH values and bounded integer
+    revisions are serialized when supplied; omitted claims are not invented.
+    This provider never reads durable state, hashes credentials, or decides
+    route authority.  Missing claims remain temporarily compatible until the
+    later issuer and authentication cutover.
+    """
     if not isinstance(identity_data, dict):
         raise TypeError("identity_data must be a mapping")
     if not isinstance(expires_in_seconds, int) or isinstance(expires_in_seconds, bool) or expires_in_seconds <= 0:
         raise ValueError("expires_in_seconds must be a positive integer")
     payload = dict(identity_data)
+    if token_purpose is not None:
+        purpose = _purpose_value(token_purpose)
+        if purpose is None:
+            raise ValueError("token_purpose is invalid")
+        payload[TOKEN_PURPOSE_CLAIM] = purpose
+    if credential_revision is not None:
+        if not _valid_credential_revision(credential_revision):
+            raise ValueError("credential_revision is invalid")
+        payload[CREDENTIAL_REVISION_CLAIM] = credential_revision
     now = int(time.time())
     payload["iat"] = now
     payload["exp"] = now + expires_in_seconds
@@ -146,7 +229,7 @@ def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
 
 
 # ARTIFACT: jwt_provider.py
-# VERSION: v1.2.0-R1D-B0F-B4-R2-CANONICAL-TOKEN-CONTRACT
+# VERSION: v1.3.0-R10C2F4-JWT-PURPOSE-CREDENTIAL-REVISION-CONTRACT
 # AUTHORITY BOUNDARY: credential signing and verification only.
 # TENANT POSTURE: token claims are untrusted context until durable admission.
 # FAIL-CLOSED POSTURE: absent or malformed signing configuration cannot mint or validate tokens.

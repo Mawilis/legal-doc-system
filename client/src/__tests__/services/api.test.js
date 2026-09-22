@@ -26,12 +26,26 @@ import axios from 'axios';
 // HOISTED MOCKS (must be before vi.mock)
 // ──────────────────────────────────────────────────────────────────────────────
 
-const { mockAxiosInstance, localStorageMock } = vi.hoisted(() => {
+const {
+  mockAxiosInstance,
+  localStorageMock,
+  requestInterceptorCapture,
+} = vi.hoisted(() => {
+  const requestInterceptorCapture = {
+    fulfilled: null,
+    rejected: null,
+  };
+
   const mockAxiosInstance = {
     get: vi.fn(),
     post: vi.fn(),
     interceptors: {
-      request: { use: vi.fn() },
+      request: {
+        use: vi.fn((fulfilled, rejected) => {
+          requestInterceptorCapture.fulfilled = fulfilled;
+          requestInterceptorCapture.rejected = rejected;
+        }),
+      },
       response: { use: vi.fn() },
     },
   };
@@ -46,7 +60,11 @@ const { mockAxiosInstance, localStorageMock } = vi.hoisted(() => {
     };
   })();
 
-  return { mockAxiosInstance, localStorageMock };
+  return {
+    mockAxiosInstance,
+    localStorageMock,
+    requestInterceptorCapture,
+  };
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -106,6 +124,113 @@ describe('api.js – Sovereign HTTP Client', () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Strict legal-acceptance transport contract
+  // ──────────────────────────────────────────────────────────────────────────
+
+  describe('Legal acceptance transport contract', () => {
+    const tenantId = 'WILSYTENANT-4CD2FZ4O';
+
+    const bindAuthenticatedTransport = () => {
+      localStorageMock.setItem('wilsy_auth_token', 'bounded-test-token');
+
+      // Current authenticated projection is authoritative where supported.
+      localStorageMock.setItem(
+        'wilsy_active_tenant',
+        JSON.stringify({
+          tenantId,
+          alias: 'wilsy',
+        }),
+      );
+
+      // Preserve compatibility with discovery-backed installations.
+      localStorageMock.setItem(
+        'discoveredTenant',
+        JSON.stringify({
+          tenantId,
+          alias: 'wilsy',
+        }),
+      );
+    };
+
+    it('preserves the exact five-field legal-acceptance body while retaining forensic headers', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+
+      bindAuthenticatedTransport();
+
+      const originalBody = {
+        document_id: 'terms-v1',
+        document_version: '1.1.0-APPROVED',
+        document_sha3_512: 'a'.repeat(128),
+        acceptance_method: 'ACCEPTANCE',
+        locale: 'en-ZA',
+      };
+
+      const config = {
+        url: '/legal-acceptance/accept',
+        method: 'post',
+        data: { ...originalBody },
+        headers: {
+          'Idempotency-Key': 'legal-acceptance-test-1',
+        },
+      };
+
+      const sealed = await requestInterceptorCapture.fulfilled(config);
+
+      expect(sealed.data).toEqual(originalBody);
+      expect(Object.keys(sealed.data).sort()).toEqual(
+        Object.keys(originalBody).sort(),
+      );
+      expect(sealed.data).not.toHaveProperty('timestamp');
+
+      expect(sealed.headers['Idempotency-Key']).toBe(
+        'legal-acceptance-test-1',
+      );
+      expect(sealed.headers.Authorization).toBe(
+        'Bearer bounded-test-token',
+      );
+      expect(sealed.headers['X-Tenant-ID']).toBe(tenantId);
+
+      expect(sealed.headers['x-trace-id']).toEqual(expect.any(String));
+      expect(sealed.headers['x-forensic-timestamp']).toEqual(
+        expect.any(String),
+      );
+      expect(sealed.headers['x-cryptographic-nonce']).toEqual(
+        expect.any(String),
+      );
+      expect(sealed.headers['x-request-seal']).toEqual(
+        expect.any(String),
+      );
+    });
+
+    it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+
+      bindAuthenticatedTransport();
+
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/statements/generate',
+        method: 'post',
+        data: {
+          clientId: 'client-1',
+          period: '2026-09',
+        },
+        headers: {},
+      });
+
+      expect(sealed.data.clientId).toBe('client-1');
+      expect(sealed.data.period).toBe('2026-09');
+      expect(sealed.data.timestamp).toEqual(expect.any(String));
+
+      expect(sealed.headers['x-forensic-timestamp']).toEqual(
+        expect.any(String),
+      );
+      expect(sealed.headers['x-request-seal']).toEqual(
+        expect.any(String),
+      );
+    });
   });
 
   // ──────────────────────────────────────────────────────────────────────────
