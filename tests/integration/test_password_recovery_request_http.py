@@ -1,7 +1,7 @@
 """Canonical ASGI certificate for enumeration-safe password-recovery initiation.
 
 TITLE: WILSY OS Password Recovery Request HTTP ASGI Certificate
-VERSION: v1.0.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ASGI-CERT
+VERSION: v1.1.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the mounted public Forgot Password initiation route, bodyless
          202 contract, strict request shape, and post-response work scheduling
@@ -11,6 +11,10 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.server.app and the real auth
                            router while patching only the background worker.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.1.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE-CERT — Certifies enumeration-safe process-local edge throttling:
+    permitted requests still schedule exactly one background task, throttled
+    requests retain the identical bodyless 202 and schedule none, and account
+    email never becomes visible in the public response contract.
   v1.0.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ASGI-CERT — Adds in-process ASGI evidence for
     canonical /api prefix, public unauthenticated 202 acceptance, strict body
     validation, exact background scheduling, no account-state projection, route
@@ -132,6 +136,7 @@ def background_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str]]:
         calls.append((tenant_id, email))
 
     monkeypatch.setattr(auth_router, "_execute_password_recovery_request", record)
+    monkeypatch.setattr(auth_router, "_password_recovery_edge_allowed", lambda *_args: True)
     return calls
 
 
@@ -150,6 +155,22 @@ def test_public_request_is_bodyless_202_and_schedules_one_background_call(
     rendered_headers = repr(result.headers)
     assert EMAIL_SENTINEL not in result.text and EMAIL_SENTINEL not in rendered_headers
     assert TENANT_SENTINEL not in result.text and TENANT_SENTINEL not in rendered_headers
+
+
+def test_edge_throttle_preserves_bodyless_202_and_schedules_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+    background_calls: list[tuple[str, str]],
+) -> None:
+    monkeypatch.setattr(auth_router, "_password_recovery_edge_allowed", lambda *_args: False)
+
+    result = _request(_valid_payload())
+
+    assert result.raised is None
+    assert result.status_code == 202
+    assert result.body == b""
+    assert background_calls == []
+    assert EMAIL_SENTINEL not in result.text
+    assert TENANT_SENTINEL not in result.text
 
 
 def test_route_is_public_and_does_not_require_access_bearer(
@@ -225,7 +246,7 @@ def test_effective_route_is_mounted_once() -> None:
 
 
 # ARTIFACT: tests/integration/test_password_recovery_request_http.py
-# VERSION: v1.0.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ASGI-CERT
+# VERSION: v1.1.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE-CERT
 # AUTHORITY BOUNDARY: canonical ASGI recovery-initiation transport evidence only
 # TENANT POSTURE: tenant_id is selector-only and never grants membership
 # FAIL-CLOSED POSTURE: malformed/extra caller authority cannot schedule recovery work
