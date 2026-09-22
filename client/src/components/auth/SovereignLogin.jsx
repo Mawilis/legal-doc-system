@@ -1,6 +1,6 @@
 /**
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.6.2-R10D9D-VISIBLE-BOTTOM-GUTTER
+ * VERSION: v3.7.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
@@ -8,7 +8,13 @@
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v3.6.2-R10D9D-VISIBLE-BOTTOM-GUTTER — Makes the lower brand
+ * CHANGELOG: v3.7.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION — Finalizes the
+ *            institutional sign-in composition by removing the redundant
+ *            workspace-identity eyebrow, top-aligning the tenant projection
+ *            with the credential column, and anchoring tenant identity in a
+ *            restrained presentation surface without changing authentication,
+ *            recovery navigation, tenant authority, or control geometry.
+ *            v3.6.2-R10D9D-VISIBLE-BOTTOM-GUTTER — Makes the lower brand
  *            gutter visible in the initial desktop viewport by compacting
  *            vertical shell chrome only; field sizing, recovery navigation,
  *            authentication, MFA, tenant authority, and responsive scrolling
@@ -93,7 +99,6 @@ export default function SovereignLogin({ onLoginSuccess }) {
         </header>
         <div style={contentGridStyle} data-testid="login-content-grid">
           <div style={identityZoneStyle}>
-            <span style={sectionEyebrowStyle}>Workspace identity</span>
             <TenantIdentityCard tenant={resolvedTenant} integrated />
           </div>
           <div style={authZoneStyle}>
@@ -128,10 +133,9 @@ const panelStyle = { width: 'min(1120px, 100%)', minHeight: 0, height: 'auto', b
 const brandRow = { display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '14px', borderBottom: '1px solid rgba(245,241,232,.1)', color: '#d5b04f' };
 const platformMarkStyle = { width: '46px', height: '46px', objectFit: 'cover', objectPosition: '50% 13%', borderRadius: '8px', background: '#fff' };
 const brandCopyStyle = { display: 'grid', gap: '3px' };
-const contentGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', alignItems: 'center', columnGap: 'clamp(48px, 6vw, 80px)', rowGap: 'clamp(28px, 5vw, 56px)', padding: 'clamp(24px, 3vh, 30px) 0 20px' };
-const identityZoneStyle = { display: 'grid', alignContent: 'center', gap: '18px', width: '100%', maxWidth: '360px', paddingRight: 0 };
+const contentGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', alignItems: 'start', columnGap: 'clamp(48px, 6vw, 80px)', rowGap: 'clamp(28px, 5vw, 56px)', padding: 'clamp(24px, 3vh, 30px) 0 20px' };
+const identityZoneStyle = { display: 'grid', alignContent: 'start', width: '100%', maxWidth: '390px', boxSizing: 'border-box', padding: '22px 24px 20px', border: '1px solid rgba(213,176,79,.18)', borderRadius: '12px', background: 'linear-gradient(145deg, rgba(37,38,38,.34), rgba(19,21,22,.18))', alignSelf: 'start' };
 const authZoneStyle = { minWidth: 0, width: '100%', maxWidth: '470px', justifySelf: 'end' };
-const sectionEyebrowStyle = { color: '#a9a59b', fontSize: '10px', fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase' };
 const titleStyle = { margin: '0 0 10px', fontSize: 'clamp(34px, 5vw, 50px)', lineHeight: 1.02, fontWeight: 650, letterSpacing: '-.035em' };
 const subtitleStyle = { margin: '0 0 20px', color: '#b8b6ae', lineHeight: 1.55, fontSize: '14px' };
 const formStyle = { display: 'grid', gap: '10px' };
@@ -147,7 +151,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.6.2-R10D9D-VISIBLE-BOTTOM-GUTTER
+ * VERSION: v3.7.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated
