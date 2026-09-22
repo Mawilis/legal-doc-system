@@ -1,43 +1,35 @@
 /* eslint-disable */
 /**
- * ===============================================================================
- * WILSY OS — SOVEREIGN OPERATING SYSTEM
- * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API]
- * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
- * ===============================================================================
- * Epitome:
- *     Primary cryptographic and atomic HTTP bridge between the Wilsy OS React
- *     Frontend and the FG211 Kernel Gateway. Enforces deterministic SHA3-512
- *     request signing, automatic 401 session healing (simplified: redirects to
- *     login on token expiry), millisecond clock synchronization, and tenant‑forced
- *     headers to eliminate network deadlocks and security fractures under sovereign
- *     production standards. Includes public‑path exemption for authentication
- *     endpoints, throttled console logging, and enterprise‑grade statement APIs.
- *
- * Biblical Worth Billions:
- *     "In the mouth of two or three witnesses shall every word be established."
- *     — 2 Corinthians 13:1
- *
- * Collaboration & Ownership:
- *     - Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
- *     - AI Engineering: Interceptor simplification, source backoff protection,
- *       and full mandate compliance.
- *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
- *
- * Change Log:
- *     2026-09-22 v74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API — Added authenticated current-email verification request and public single-use verification completion transport seams without browser-supplied email authority or session creation.
- *     2026-09-22 v74.2.0-R10E9-RECOVERY-REQUEST-API — Added the enumeration-safe public recovery-request transport seam with exact tenant/email serialization, skipAuth, no bearer dependency, and no client retry or session mutation.
- *     2026-09-22 v74.1.0-R10D6-RESET-API-INTEGRATION — Added the single public password-reset transport seam with exact three-field serialization, no bearer dependency, and no automatic retry or session mutation.
- *     2026-09-21 v74.0.2-401-BEARER-CLASSIFICATION — Classifies 401 responses by actual bearer participation so pre-auth and MFA failures cannot erase a concurrently established authenticated browser session.
- *     2026-08-22 v74.0.1-MFA-PUBLIC-CONTRACT — Exempted strict EOS OTP and enrollment validation bodies from seal-field injection.
- *     2026-08-14 v74.0.0-INSTITUTIONAL-SEAL — Upgraded documentation to full mandate compliance.
- *     2026-08-07 v73.2.1-AUTH-FIX — Simplified 401 handling, removed refresh loop.
- *     2026-07-30 v73.0.0 — Baseline with statement APIs.
- *
- * Governance Compliance:
- *     POPIA §19 (tenant isolation), GDPR §32 (cryptographic sealing),
- *     SOC2 §CC7.2 (audit trail & incident logging).
- * ===============================================================================
+ * WILSY OS — INSTITUTIONAL HTTP CLIENT
+ * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
+ * VERSION: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Provides the governed browser HTTP transport seam while preserving
+ *          server-owned authentication, recovery, tenant, credential, and
+ *          financial authority.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
+ * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
+ *                            Python EOS owns auth/recovery business truth and
+ *                            server contracts; external HTTP is transport only.
+ * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK — Adds public-path interlocks for password-recovery request
+ *            and recovery-contact verification completion so strict Python
+ *            request bodies are not mutated with forensic timestamp metadata.
+ *            V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API — Added authenticated recovery-contact verification and
+ *            public verification-completion transport seams.
+ *            V74.2.0-R10E9-RECOVERY-REQUEST-API — Added public recovery request.
+ *            V74.1.0-R10D6-RESET-API-INTEGRATION — Added public reset transport.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Public recovery/reset payloads remain exact;
+ *                             authenticated requests may carry transport-only
+ *                             forensic metadata but no browser-owned authority.
+ * TENANT BOUNDARY: Browser tenant values are transport selectors/projections;
+ *                  server-side canonical tenant resolution remains sovereign.
+ * AUTHORITY BOUNDARY: HTTP transport, bearer forwarding, and transport evidence
+ *                     only; no recovery, identity, role, credential, MFA, or
+ *                     settlement truth is created by this client.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains the exclusive
+ *                               financial execution and settlement authority.
  */
 
 import axios from 'axios';
@@ -412,6 +404,8 @@ api.interceptors.request.use(
       || /^\/auth\/verify-3fa$/i.test(config.url)
       || /^\/auth\/otp\/verify$/i.test(config.url)
       || /^\/auth\/otp\/send$/i.test(config.url)
+      || /^\/auth\/request-password-reset$/i.test(config.url)
+      || /^\/auth\/recovery-contact\/verify$/i.test(config.url)
       || /^\/auth\/reset-password$/i.test(config.url);
 
     if (!isPublicPath) {
@@ -718,14 +712,11 @@ export {
 };
 
 /**
- * ===============================================================================
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS HTTP BRIDGE
- * ===============================================================================
- * Status: CERTIFIED GOLD PRODUCTION READY
- * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
- * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Version: V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API
- * Architecture: BIBLICAL WORTH BILLIONS. NO CHILD'S PLAY.
- * Kennel Context: Fully integrated with tenant and role metadata.
- * ===============================================================================
+ * ARTIFACT: client/src/services/api.js
+ * VERSION: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK
+ * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
+ * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
+ * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
