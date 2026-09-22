@@ -1,16 +1,20 @@
 """Direct certificate for WILSY OS password-recovery email delivery.
 
 TITLE: WILSY OS Password Recovery Email Delivery Direct Certificate
-VERSION: v1.0.0-R10E28-PASSWORD-RECOVERY-EMAIL-DELIVERY-CERT
+VERSION: v1.1.0-R10E71-PRODUCTION-EMAIL-CONFIG-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certifies strict recovery-specific SMTP configuration, encrypted
-         transport, bounded message construction, and fail-closed secret-free
-         delivery errors without granting recovery authority.
+EPITOME: Certifies strict production SMTP profile selection, dedicated-profile
+         precedence, encrypted transport, bounded message construction, and
+         fail-closed secret-free delivery errors without recovery authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_password_recovery_email_delivery.py
 COLLABORATION / OWNERSHIP: Exercises password_recovery_email_delivery.py with
                            monkeypatched SMTP capability only; no network.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E28-PASSWORD-RECOVERY-EMAIL-DELIVERY-CERT introduces direct
+CHANGELOG: v1.1.0-R10E71-PRODUCTION-EMAIL-CONFIG-CERT adds deterministic
+           evidence for complete dedicated/EMAIL/SMTP profile selection,
+           dedicated-profile fail-closed precedence, legacy SMTP password alias
+           handling, and conflicting-password rejection without network access.
+           v1.0.0-R10E28-PASSWORD-RECOVERY-EMAIL-DELIVERY-CERT introduced direct
            evidence for environment validation, STARTTLS/SSL paths, login and
            message dispatch ordering, secret-bearing link placement, bounded
            copy, invalid-message rejection, and stable delivery failure.
@@ -143,37 +147,141 @@ def test_configuration_rejects_missing_or_malformed_values() -> None:
     assert ssl_error.value.code == "RECOVERY_EMAIL_SSL_INVALID"
 
 
-def test_environment_requires_recovery_specific_configuration(monkeypatch) -> None:
-    for key in (
-        "WILSY_RECOVERY_SMTP_HOST",
-        "WILSY_RECOVERY_SMTP_PORT",
-        "WILSY_RECOVERY_SMTP_USERNAME",
-        "WILSY_RECOVERY_SMTP_PASSWORD",
-        "WILSY_RECOVERY_EMAIL_FROM",
-        "WILSY_RECOVERY_SMTP_SSL",
-    ):
+ENV_KEYS = (
+    "WILSY_RECOVERY_SMTP_HOST",
+    "WILSY_RECOVERY_SMTP_PORT",
+    "WILSY_RECOVERY_SMTP_USERNAME",
+    "WILSY_RECOVERY_SMTP_PASSWORD",
+    "WILSY_RECOVERY_EMAIL_FROM",
+    "WILSY_RECOVERY_SMTP_SSL",
+    "EMAIL_HOST",
+    "EMAIL_PORT",
+    "EMAIL_USER",
+    "EMAIL_PASS",
+    "EMAIL_FROM",
+    "EMAIL_SECURE",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASS",
+    "SMTP_PASSWORD",
+    "SMTP_FROM",
+    "SMTP_SECURE",
+)
+
+
+def _clear_mail_environment(monkeypatch) -> None:
+    for key in ENV_KEYS:
         monkeypatch.delenv(key, raising=False)
+
+
+def test_environment_requires_one_complete_production_profile(monkeypatch) -> None:
+    _clear_mail_environment(monkeypatch)
 
     with pytest.raises(PasswordRecoveryEmailDeliveryError) as captured:
         PasswordRecoveryEmailConfiguration.from_environment()
     assert captured.value.code == "RECOVERY_EMAIL_CONFIGURATION_MISSING"
 
-    monkeypatch.setenv("WILSY_RECOVERY_SMTP_HOST", "smtp.wilsy.example")
+
+def test_dedicated_recovery_profile_has_highest_precedence(monkeypatch) -> None:
+    _clear_mail_environment(monkeypatch)
+    monkeypatch.setenv("WILSY_RECOVERY_SMTP_HOST", "smtp.recovery.wilsy.example")
     monkeypatch.setenv("WILSY_RECOVERY_SMTP_PORT", "587")
     monkeypatch.setenv("WILSY_RECOVERY_SMTP_USERNAME", "recovery-user")
-    monkeypatch.setenv("WILSY_RECOVERY_SMTP_PASSWORD", "secret")
+    monkeypatch.setenv("WILSY_RECOVERY_SMTP_PASSWORD", "recovery-secret")
     monkeypatch.setenv("WILSY_RECOVERY_EMAIL_FROM", "recovery@wilsy.example")
     monkeypatch.setenv("WILSY_RECOVERY_SMTP_SSL", "false")
+
+    monkeypatch.setenv("EMAIL_HOST", "smtp.email-profile.example")
+    monkeypatch.setenv("EMAIL_PORT", "465")
+    monkeypatch.setenv("EMAIL_USER", "email-user")
+    monkeypatch.setenv("EMAIL_PASS", "email-secret")
+    monkeypatch.setenv("EMAIL_FROM", "email@wilsy.example")
+    monkeypatch.setenv("EMAIL_SECURE", "true")
+
+    config = PasswordRecoveryEmailConfiguration.from_environment()
+    assert config == PasswordRecoveryEmailConfiguration(
+        host="smtp.recovery.wilsy.example",
+        port=587,
+        username="recovery-user",
+        password="recovery-secret",
+        sender="recovery@wilsy.example",
+        use_ssl=False,
+    )
+
+
+def test_partial_dedicated_profile_fails_closed_instead_of_falling_back(monkeypatch) -> None:
+    _clear_mail_environment(monkeypatch)
+    monkeypatch.setenv("WILSY_RECOVERY_SMTP_HOST", "smtp.partial.example")
+    monkeypatch.setenv("EMAIL_HOST", "smtp.email-profile.example")
+    monkeypatch.setenv("EMAIL_PORT", "587")
+    monkeypatch.setenv("EMAIL_USER", "email-user")
+    monkeypatch.setenv("EMAIL_PASS", "email-secret")
+    monkeypatch.setenv("EMAIL_FROM", "email@wilsy.example")
+    monkeypatch.setenv("EMAIL_SECURE", "false")
+
+    with pytest.raises(PasswordRecoveryEmailDeliveryError) as captured:
+        PasswordRecoveryEmailConfiguration.from_environment()
+    assert captured.value.code == "RECOVERY_EMAIL_CONFIGURATION_MISSING"
+
+
+def test_existing_email_profile_can_supply_recovery_transport(monkeypatch) -> None:
+    _clear_mail_environment(monkeypatch)
+    monkeypatch.setenv("EMAIL_HOST", "email-smtp.af-south-1.amazonaws.com")
+    monkeypatch.setenv("EMAIL_PORT", "587")
+    monkeypatch.setenv("EMAIL_USER", "ses-user")
+    monkeypatch.setenv("EMAIL_PASS", "ses-secret")
+    monkeypatch.setenv("EMAIL_FROM", "noreply@wilsy.example")
+    monkeypatch.setenv("EMAIL_SECURE", "false")
+
+    config = PasswordRecoveryEmailConfiguration.from_environment()
+    assert config == PasswordRecoveryEmailConfiguration(
+        host="email-smtp.af-south-1.amazonaws.com",
+        port=587,
+        username="ses-user",
+        password="ses-secret",
+        sender="noreply@wilsy.example",
+        use_ssl=False,
+    )
+
+
+@pytest.mark.parametrize("password_key", ["SMTP_PASSWORD", "SMTP_PASS"])
+def test_existing_smtp_profile_supports_governed_password_aliases(
+    monkeypatch,
+    password_key,
+) -> None:
+    _clear_mail_environment(monkeypatch)
+    monkeypatch.setenv("SMTP_HOST", "smtp.wilsy.example")
+    monkeypatch.setenv("SMTP_PORT", "465")
+    monkeypatch.setenv("SMTP_USER", "smtp-user")
+    monkeypatch.setenv(password_key, "smtp-secret")
+    monkeypatch.setenv("SMTP_FROM", "smtp@wilsy.example")
+    monkeypatch.setenv("SMTP_SECURE", "true")
 
     config = PasswordRecoveryEmailConfiguration.from_environment()
     assert config == PasswordRecoveryEmailConfiguration(
         host="smtp.wilsy.example",
-        port=587,
-        username="recovery-user",
-        password="secret",
-        sender="recovery@wilsy.example",
-        use_ssl=False,
+        port=465,
+        username="smtp-user",
+        password="smtp-secret",
+        sender="smtp@wilsy.example",
+        use_ssl=True,
     )
+
+
+def test_conflicting_smtp_password_aliases_fail_closed(monkeypatch) -> None:
+    _clear_mail_environment(monkeypatch)
+    monkeypatch.setenv("SMTP_HOST", "smtp.wilsy.example")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_USER", "smtp-user")
+    monkeypatch.setenv("SMTP_PASSWORD", "secret-a")
+    monkeypatch.setenv("SMTP_PASS", "secret-b")
+    monkeypatch.setenv("SMTP_FROM", "smtp@wilsy.example")
+    monkeypatch.setenv("SMTP_SECURE", "false")
+
+    with pytest.raises(PasswordRecoveryEmailDeliveryError) as captured:
+        PasswordRecoveryEmailConfiguration.from_environment()
+    assert captured.value.code == "RECOVERY_EMAIL_CONFIGURATION_CONFLICT"
 
 
 def test_message_contains_only_authorized_recipient_link_and_expiry() -> None:
@@ -264,7 +372,7 @@ def test_constructor_rejects_unvalidated_configuration() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_email_delivery.py
-# VERSION: v1.0.0-R10E28-PASSWORD-RECOVERY-EMAIL-DELIVERY-CERT
+# VERSION: v1.1.0-R10E71-PRODUCTION-EMAIL-CONFIG-CERT
 # AUTHORITY BOUNDARY: deterministic direct transport evidence only
 # TENANT POSTURE: adapter remains tenant-authority-stateless
 # FAIL-CLOSED POSTURE: invalid configuration/message and SMTP failure reject

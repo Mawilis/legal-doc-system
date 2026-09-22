@@ -1,7 +1,7 @@
 """SMTP delivery adapter for WILSY OS password recovery.
 
 TITLE: WILSY OS Password Recovery Email Delivery Adapter
-VERSION: v1.0.0-R10E7-PASSWORD-RECOVERY-EMAIL-DELIVERY
+VERSION: v1.1.1-R10E70A-PYRIGHT-NARROWING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Delivers one already-authorized recovery link through configured SMTP
          without generating tokens, verifying contacts, mutating credentials,
@@ -11,7 +11,16 @@ COLLABORATION / OWNERSHIP: R10E3 supplies one transient secret-bearing delivery
                            message. This adapter owns only mail transport to the
                            already-authorized recipient.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E7-PASSWORD-RECOVERY-EMAIL-DELIVERY introduces explicit
+CHANGELOG: v1.1.1-R10E70A-PYRIGHT-NARROWING replaces tuple-membership null checks
+           with explicit per-value guards so Pyright can prove the same fail-closed
+           non-null configuration contract without changing runtime selection.
+           v1.1.0-R10E70-PRODUCTION-EMAIL-CONFIG-BINDING binds recovery mail
+           to one complete server-owned SMTP profile without mixing partial
+           profiles: dedicated WILSY_RECOVERY_* settings remain highest
+           precedence, followed by the existing production EMAIL_* profile and
+           legacy SMTP_* profile. No host, credential, sender, port, or TLS
+           default is invented; incomplete/ambiguous configuration fails closed.
+           v1.0.0-R10E7-PASSWORD-RECOVERY-EMAIL-DELIVERY introduced explicit
            recovery-specific SMTP configuration, mandatory TLS, no credential
            defaults, privacy-safe message construction, and secret-free errors.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -38,7 +47,7 @@ from typing import Final
 
 from .password_recovery_request_service import PasswordRecoveryDeliveryMessage
 
-VERSION: Final[str] = "v1.0.0-R10E7-PASSWORD-RECOVERY-EMAIL-DELIVERY"
+VERSION: Final[str] = "v1.1.1-R10E70A-PYRIGHT-NARROWING"
 
 
 class PasswordRecoveryEmailDeliveryError(RuntimeError):
@@ -78,31 +87,117 @@ class PasswordRecoveryEmailConfiguration:
 
     @classmethod
     def from_environment(cls) -> "PasswordRecoveryEmailConfiguration":
-        """Load recovery-specific SMTP settings without permissive defaults."""
+        """Load one complete production SMTP profile without mixing authority.
 
-        try:
-            port = int(os.environ["WILSY_RECOVERY_SMTP_PORT"])
-        except (KeyError, ValueError) as error:
+        Dedicated recovery settings remain authoritative when any
+        WILSY_RECOVERY_* variable is configured. Otherwise the adapter may
+        consume one already-established server-owned production mail profile:
+        EMAIL_* first, then SMTP_*. Partial profiles are never merged.
+        No SMTP endpoint, credential, sender, port, or TLS posture is defaulted.
+        """
+
+        dedicated = {
+            "host": "WILSY_RECOVERY_SMTP_HOST",
+            "port": "WILSY_RECOVERY_SMTP_PORT",
+            "username": "WILSY_RECOVERY_SMTP_USERNAME",
+            "password": "WILSY_RECOVERY_SMTP_PASSWORD",
+            "sender": "WILSY_RECOVERY_EMAIL_FROM",
+            "secure": "WILSY_RECOVERY_SMTP_SSL",
+        }
+        email_profile = {
+            "host": "EMAIL_HOST",
+            "port": "EMAIL_PORT",
+            "username": "EMAIL_USER",
+            "password": "EMAIL_PASS",
+            "sender": "EMAIL_FROM",
+            "secure": "EMAIL_SECURE",
+        }
+        smtp_profile = {
+            "host": "SMTP_HOST",
+            "port": "SMTP_PORT",
+            "username": "SMTP_USER",
+            "sender": "SMTP_FROM",
+            "secure": "SMTP_SECURE",
+        }
+
+        def value(name: str) -> str | None:
+            raw = os.environ.get(name)
+            if raw is None or not raw.strip():
+                return None
+            return raw
+
+        def complete(profile: dict[str, str]) -> bool:
+            return all(value(name) is not None for name in profile.values())
+
+        def build(
+            profile: dict[str, str],
+            *,
+            password_name: str | None = None,
+        ) -> "PasswordRecoveryEmailConfiguration":
+            selected_password_name = password_name or profile["password"]
+            try:
+                port_raw = value(profile["port"])
+                secure_raw = value(profile["secure"])
+                host = value(profile["host"])
+                username = value(profile["username"])
+                password = value(selected_password_name)
+                sender = value(profile["sender"])
+                if (
+                    port_raw is None
+                    or secure_raw is None
+                    or host is None
+                    or username is None
+                    or password is None
+                    or sender is None
+                ):
+                    raise ValueError
+                port = int(port_raw)
+                secure_text = secure_raw.strip().lower()
+                if secure_text not in {"true", "false"}:
+                    raise ValueError
+                return cls(
+                    host=host,
+                    port=port,
+                    username=username,
+                    password=password,
+                    sender=sender,
+                    use_ssl=secure_text == "true",
+                )
+            except (TypeError, ValueError) as error:
+                raise PasswordRecoveryEmailDeliveryError(
+                    "RECOVERY_EMAIL_CONFIGURATION_MISSING"
+                ) from error
+
+        dedicated_present = any(value(name) is not None for name in dedicated.values())
+        if dedicated_present:
+            if not complete(dedicated):
+                raise PasswordRecoveryEmailDeliveryError(
+                    "RECOVERY_EMAIL_CONFIGURATION_MISSING"
+                )
+            return build(dedicated)
+
+        if complete(email_profile):
+            return build(email_profile)
+
+        smtp_password = value("SMTP_PASSWORD")
+        smtp_pass = value("SMTP_PASS")
+        if smtp_password is not None and smtp_pass is not None and smtp_password != smtp_pass:
             raise PasswordRecoveryEmailDeliveryError(
-                "RECOVERY_EMAIL_CONFIGURATION_MISSING"
-            ) from error
-        try:
-            use_ssl_raw = os.environ["WILSY_RECOVERY_SMTP_SSL"].strip().lower()
-            if use_ssl_raw not in {"true", "false"}:
-                raise ValueError
-            use_ssl = use_ssl_raw == "true"
-            return cls(
-                host=os.environ["WILSY_RECOVERY_SMTP_HOST"],
-                port=port,
-                username=os.environ["WILSY_RECOVERY_SMTP_USERNAME"],
-                password=os.environ["WILSY_RECOVERY_SMTP_PASSWORD"],
-                sender=os.environ["WILSY_RECOVERY_EMAIL_FROM"],
-                use_ssl=use_ssl,
+                "RECOVERY_EMAIL_CONFIGURATION_CONFLICT"
             )
-        except (KeyError, ValueError) as error:
-            raise PasswordRecoveryEmailDeliveryError(
-                "RECOVERY_EMAIL_CONFIGURATION_MISSING"
-            ) from error
+        password_name = (
+            "SMTP_PASSWORD"
+            if smtp_password is not None
+            else "SMTP_PASS"
+            if smtp_pass is not None
+            else None
+        )
+        if complete(smtp_profile) and password_name is not None:
+            return build(smtp_profile, password_name=password_name)
+
+        raise PasswordRecoveryEmailDeliveryError(
+            "RECOVERY_EMAIL_CONFIGURATION_MISSING"
+        )
 
 
 class PasswordRecoveryEmailDelivery:
@@ -207,7 +302,7 @@ __all__ = [
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: password_recovery_email_delivery.py
-# VERSION: v1.0.0-R10E7-PASSWORD-RECOVERY-EMAIL-DELIVERY
+# VERSION: v1.1.1-R10E70A-PYRIGHT-NARROWING
 # AUTHORITY BOUNDARY: external encrypted SMTP delivery capability only
 # TENANT POSTURE: no tenant authority; recipient is pre-authorized upstream
 # FAIL-CLOSED POSTURE: configuration, TLS, auth, and delivery failure rejects

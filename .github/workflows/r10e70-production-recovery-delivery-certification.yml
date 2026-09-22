@@ -1,0 +1,127 @@
+# WILSY OS — R10E70 PRODUCTION RECOVERY DELIVERY CERTIFICATION
+# TITLE: R10E70 Production Recovery Delivery Certification
+# VERSION: v1.0.0-R10E75-STATIC-DIRECT-ENV-CERTIFICATION
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Executes bounded compile, Pyright, deterministic configuration/mail
+#          certificates, and synthetic production-environment gate evidence.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/r10e70-production-recovery-delivery-certification.yml
+# COLLABORATION / OWNERSHIP: R10E70-R10E74 production configuration surfaces only.
+# CERTIFICATION / UPDATE DATE: 2026-09-22
+# CHANGELOG: v1.0.0-R10E75-STATIC-DIRECT-ENV-CERTIFICATION introduces PR-time
+#            compile/type/direct evidence plus positive and fail-closed negative
+#            production environment validation with synthetic values only.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+# SECURITY / PRIVACY POSTURE: CI uses synthetic SMTP/app configuration only.
+# TENANT BOUNDARY: No production tenant, database, or email provider is accessed.
+# AUTHORITY BOUNDARY: Certification evidence only; no recovery/runtime authority.
+# FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+# FAIL-CLOSED POSTURE: Compile, type, direct certificate, shell syntax, or
+#                      environment-gate drift fails CI.
+
+name: R10E70 Production Recovery Delivery Certification
+
+on:
+  pull_request:
+    branches:
+      - fg108o4b-knowledge-operating-room
+    paths:
+      - "tools/eos/saas/auth/password_recovery_email_delivery.py"
+      - "tools/eos/api/auth_router.py"
+      - "tests/unit/test_password_recovery_email_delivery.py"
+      - "tests/unit/test_password_recovery_production_configuration.py"
+      - "validate-env.sh"
+      - ".github/workflows/r10e70-production-recovery-delivery-certification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  static-direct-env-certification:
+    name: R10E70 Static Direct and Production Env
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Create bounded Python environment
+        run: |
+          python3 -m venv .r10e70-venv
+          .r10e70-venv/bin/python -m pip install --upgrade pip==25.3
+          .r10e70-venv/bin/python -m pip install -r requirements.txt
+          .r10e70-venv/bin/python -m pip install pytest==9.1.1 pyotp==2.9.0
+
+      - name: Compile production and direct certificates
+        run: |
+          .r10e70-venv/bin/python -m py_compile \
+            tools/eos/saas/auth/password_recovery_email_delivery.py \
+            tools/eos/api/auth_router.py \
+            tests/unit/test_password_recovery_email_delivery.py \
+            tests/unit/test_password_recovery_production_configuration.py
+
+      - name: Pyright production configuration contracts
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath .r10e70-venv/bin/python \
+            tools/eos/saas/auth/password_recovery_email_delivery.py \
+            tools/eos/api/auth_router.py
+
+      - name: Run deterministic recovery configuration certificates
+        run: |
+          .r10e70-venv/bin/python -m pytest -q \
+            tests/unit/test_password_recovery_email_delivery.py \
+            tests/unit/test_password_recovery_production_configuration.py
+
+      - name: Validate production environment gate shell syntax
+        run: bash -n validate-env.sh
+
+      - name: Certify complete production recovery configuration admission
+        run: |
+          mkdir -p server
+          cat > server/.env.production <<'EOF'
+          JWT_SECRET=synthetic-jwt
+          JWT_REFRESH_SECRET=synthetic-refresh
+          MONGODB_URI=mongodb://127.0.0.1:27017/wilsy_synthetic
+          FORENSIC_HMAC_KEY=synthetic-forensic
+          ADMIN_EMAIL=admin@example.com
+          ADMIN_PASSWORD=synthetic-admin
+          USER_ENCRYPTION_KEY=synthetic-user-encryption
+          AUDIT_ENCRYPTION_KEY=synthetic-audit-encryption
+          APP_URL=https://app.wilsy.example
+          EMAIL_HOST=email-smtp.af-south-1.amazonaws.com
+          EMAIL_PORT=587
+          EMAIL_USER=synthetic-ses-user
+          EMAIL_PASS=synthetic-ses-secret
+          EMAIL_FROM=noreply@wilsy.example
+          EMAIL_SECURE=false
+          EOF
+          chmod 600 server/.env.production
+          bash validate-env.sh
+
+      - name: Certify partial dedicated recovery profile fails closed
+        run: |
+          printf '\nWILSY_RECOVERY_SMTP_HOST=smtp.partial.example\n' >> server/.env.production
+          if bash validate-env.sh; then
+            echo "ERROR: partial dedicated recovery profile was incorrectly admitted"
+            exit 1
+          fi
+          echo "EXPECTED_FAIL_CLOSED=YES"
+
+# ============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: r10e70-production-recovery-delivery-certification.yml
+# VERSION: v1.0.0-R10E75-STATIC-DIRECT-ENV-CERTIFICATION
+# AUTHORITY BOUNDARY: CI certification evidence only
+# TENANT POSTURE: synthetic configuration only; no production tenant access
+# FAIL-CLOSED POSTURE: any compile/type/direct/env-gate drift fails the workflow
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ============================================================================
