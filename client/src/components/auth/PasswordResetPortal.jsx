@@ -3,7 +3,7 @@
  * WILSY OS — PASSWORD RESET PORTAL
  * ============================================================================
  * TITLE: Browser password-reset completion surface
- * VERSION: v1.2.1-R10D9D-AUTH-SHELL-BREATHING-ROOM
+ * VERSION: v1.2.2-R10D9D-VISIBLE-BOTTOM-GUTTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the unauthenticated recovery completion form and delegates
  *           all reset authority to the certified Python-backed client method.
@@ -12,6 +12,10 @@
  * Python EOS owns recovery, policy, hashing, revision, and revocation truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-09-22 v1.2.2-R10D9D-VISIBLE-BOTTOM-GUTTER — Makes the lower brand
+ *   gutter visible in the initial desktop viewport by compacting vertical shell
+ *   chrome and form rhythm only; workspace context, recovery authority, reset
+ *   transport, secret handling, and responsive scrolling remain unchanged.
  *   2026-09-22 v1.2.1-R10D9D-AUTH-SHELL-BREATHING-ROOM — Adds a deliberate
  *   viewport-safe lower brand gutter so the recovery panel finishes with
  *   premium visual breathing room without changing workspace selection,
@@ -272,7 +276,7 @@ const pageStyle = {
   display: 'grid',
   justifyItems: 'center',
   alignItems: 'start',
-  padding: 'clamp(20px, 4vh, 42px) clamp(18px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))',
+  padding: 'clamp(24px, 3.2vh, 32px) clamp(18px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))',
   overflowX: 'hidden',
   overflowY: 'auto',
   background: 'radial-gradient(circle at 50% 12%, rgba(213,176,79,.06), transparent 34%), #0a0c0d',
@@ -283,7 +287,7 @@ const pageStyle = {
 const panelStyle = {
   width: 'min(100%, 1080px)',
   boxSizing: 'border-box',
-  padding: 'clamp(24px, 4vh, 38px)',
+  padding: 'clamp(24px, 3vh, 30px) clamp(24px, 4vh, 38px) 24px',
   background: 'linear-gradient(145deg, rgba(25,28,29,.99), rgba(15,17,18,.995))',
   border: '1px solid rgba(213,176,79,.30)',
   borderRadius: '18px',
@@ -294,8 +298,8 @@ const brandRow = {
   display: 'flex',
   alignItems: 'center',
   gap: '10px',
-  paddingBottom: '14px',
-  marginBottom: '24px',
+  paddingBottom: '12px',
+  marginBottom: '18px',
   color: '#d5b04f',
   fontSize: '12px',
   letterSpacing: '.20em',
@@ -313,7 +317,7 @@ const titleStyle = {
 };
 
 const copyStyle = {
-  margin: '0 0 24px',
+  margin: '0 0 18px',
   color: '#a5a7a2',
   fontSize: '13px',
   lineHeight: 1.55,
@@ -378,7 +382,7 @@ const formStyle = {
 };
 
 const labelStyle = {
-  marginTop: '8px',
+  marginTop: '6px',
   color: '#d8d4c9',
   fontSize: '12px',
   fontWeight: 650,
@@ -387,7 +391,7 @@ const labelStyle = {
 const inputStyle = {
   width: '100%',
   boxSizing: 'border-box',
-  padding: '13px 14px',
+  padding: '11px 14px',
   borderRadius: '8px',
   border: '1px solid #4d4f51',
   background: '#0f1011',
@@ -409,7 +413,7 @@ const buttonStyle = {
   alignItems: 'center',
   gap: '9px',
   minHeight: '46px',
-  marginTop: '14px',
+  marginTop: '10px',
   padding: '12px 18px',
   border: 0,
   borderRadius: '8px',
@@ -424,7 +428,7 @@ const backButtonStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '7px',
-  marginTop: '22px',
+  marginTop: '16px',
   padding: 0,
   border: 0,
   background: 'none',
@@ -472,7 +476,7 @@ const successPanelStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: Browser password-reset completion surface
- * VERSION: v1.2.1-R10D9D-AUTH-SHELL-BREATHING-ROOM
+ * VERSION: v1.2.2-R10D9D-VISIBLE-BOTTOM-GUTTER
  * AUTHORITY BOUNDARY: Client presentation and certified transport invocation
  * TENANT POSTURE: Caller-supplied tenant value is forwarded, never granted
  * FAIL-CLOSED POSTURE: Only server-confirmed HTTP 204 produces success
