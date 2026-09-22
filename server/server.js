@@ -1,28 +1,29 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.5.0-R10E6-RECOVERY-DELIVERY-INTERNAL-MOUNT]                                     ║
- * ║ TITLE: Transport-only BFF with internal recovery-delivery ingress                                                                  ║
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.6.0-R10E17-RECOVERY-CONTACT-VERIFICATION-INTERNAL-MOUNT]                            ║
+ * ║ TITLE: Transport-only BFF with separated internal recovery delivery ingress                                                      ║
  * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
  * ║ AUTHORITY BOUNDARY: No C1C/C1E/legal/financial authority is interpreted or created                                                ║
  * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution                                                      ║
- * ║ EPITOME: Production BFF preserving raw proxy order plus one authenticated local recovery-delivery transport ingress.              ║
+ * ║ EPITOME: Production BFF preserving raw proxy order plus dedicated authenticated password-recovery and contact-verification ingress. ║
  * ║          Uses http-proxy-middleware for all Kennel routes, including billing.                                                       ║
  * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v5.5.0-R10E6-RECOVERY-DELIVERY-INTERNAL-MOUNT | PRODUCTION READY                                                        ║
+ * ║ VERSION: v5.6.0-R10E17-RECOVERY-CONTACT-VERIFICATION-INTERNAL-MOUNT | PRODUCTION READY                                               ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.5.0-R10E6-RECOVERY-DELIVERY-INTERNAL-MOUNT):                                                                      ║
+ * ║ 🔧 CHANGE LOG (v5.6.0-R10E17-RECOVERY-CONTACT-VERIFICATION-INTERNAL-MOUNT):                                                             ║
+ * ║   2026-09-22 – Mounted a separately keyed HMAC recovery-contact verification delivery bridge beside password recovery.            ║
  * ║   2026-09-22 – Mounted the HMAC-authenticated internal password-recovery delivery bridge after JSON parsing and outside auth proxy. ║
  * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
  * ║   2026-09-17 – Added only the certified C1C legal-services and C1E advisory selective proxies.                                      ║
  * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
  * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.5.0-R10E6-RECOVERY-DELIVERY-INTERNAL-MOUNT                                               ║
+ * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.6.0-R10E17-RECOVERY-CONTACT-VERIFICATION-INTERNAL-MOUNT                                      ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -38,6 +39,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import passwordRecoveryDeliveryRouter from './routes/passwordRecoveryDelivery.js';
+import recoveryContactVerificationDeliveryRouter from './routes/recoveryContactVerificationDelivery.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const KENNEL_TARGET = (
@@ -46,7 +48,7 @@ const KENNEL_TARGET = (
   'http://127.0.0.1:9095'
 ).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const VERSION = 'v5.5.0-R10E6-RECOVERY-DELIVERY-INTERNAL-MOUNT';
+const VERSION = 'v5.6.0-R10E17-RECOVERY-CONTACT-VERIFICATION-INTERNAL-MOUNT';
 const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
@@ -320,11 +322,13 @@ function createApp() {
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 }, useTempFiles: false }));
 
-  // Internal recovery transport ingress. This route is deliberately local to
-  // the Node BFF, after JSON parsing and outside the public /api/auth proxy.
-  // HMAC authentication is owned by the route; Python EOS retains all recovery
-  // issuance, lifecycle, credential, and tenant authority.
+  // Internal recovery transport ingress. These routes are deliberately local
+  // to the Node BFF, after JSON parsing and outside the public /api/auth proxy.
+  // Each bridge owns only its dedicated HMAC authentication and SMTP delegation;
+  // Python EOS retains recovery issuance, recovery-contact verification,
+  // lifecycle, credential, principal, and tenant authority.
   app.use('/internal/auth', passwordRecoveryDeliveryRouter);
+  app.use('/internal/auth', recoveryContactVerificationDeliveryRouter);
 
   /**
    * @route POST /api/generate/pdf
@@ -480,10 +484,10 @@ export default createApp;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v5.5.0-R10E6-RECOVERY-DELIVERY-INTERNAL-MOUNT
- * Fix:             Preserves proxies before body parsers and mounts only the authenticated
- *                  internal password-recovery delivery bridge after JSON parsing.
- *                  Public auth requests continue to proxy to Python EOS unchanged.
+ * Version:         v5.6.0-R10E17-RECOVERY-CONTACT-VERIFICATION-INTERNAL-MOUNT
+ * Fix:             Preserves proxies before body parsers and mounts dedicated authenticated
+ *                  password-recovery and recovery-contact-verification delivery bridges after
+ *                  JSON parsing. Public auth requests continue to proxy to Python EOS unchanged.
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
  * Authority boundary: transport only; Python EOS remains sovereign for auth/recovery and C1C/C1E.
  * Tenant posture: institutional headers are forwarded, never invented.
