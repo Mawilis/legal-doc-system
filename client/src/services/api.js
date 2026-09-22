@@ -2,7 +2,7 @@
 /**
  * ===============================================================================
  * WILSY OS — SOVEREIGN OPERATING SYSTEM
- * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.2.0-R10E20-PASSWORD-RECOVERY-REQUEST-API]
+ * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.3.0-R10E24-RECOVERY-CONTACT-VERIFICATION-API]
  * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  * ===============================================================================
  * Epitome:
@@ -25,6 +25,7 @@
  *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
  *
  * Change Log:
+ *     2026-09-22 v74.3.0-R10E24-RECOVERY-CONTACT-VERIFICATION-API — Added authenticated recovery-contact verification initiation/completion transport, strict-body preservation under the signed interceptor, and exact one-field serialization without moving verification authority into the browser.
  *     2026-09-22 v74.2.0-R10E20-PASSWORD-RECOVERY-REQUEST-API — Added the enumeration-safe public password-recovery initiation transport with exact tenant_id/email serialization, explicit public-path exemption, no bearer dependency, no automatic retry, and no session mutation.
  *     2026-09-22 v74.1.0-R10D6-RESET-API-INTEGRATION — Added the single public password-reset transport seam with exact three-field serialization, no bearer dependency, and no automatic retry or session mutation.
  *     2026-09-21 v74.0.2-401-BEARER-CLASSIFICATION — Classifies 401 responses by actual bearer participation so pre-auth and MFA failures cannot erase a concurrently established authenticated browser session.
@@ -422,8 +423,9 @@ api.interceptors.request.use(
       // Strict server-owned request contracts must retain the exact caller
       // payload. Forensic time remains transport evidence in the dedicated
       // x-forensic-timestamp header and request seal; it is not legal body truth.
-      const preservesCanonicalRequestBody = /^\/legal-acceptance\/accept$/i.test(
-        config.url
+      const preservesCanonicalRequestBody = (
+        /^\/legal-acceptance\/accept$/i.test(config.url)
+        || /^\/auth\/recovery-contact\/verification(?:\/complete)?$/i.test(config.url)
       );
 
       if (
@@ -535,6 +537,35 @@ api.interceptors.response.use(
 // ============================================================================
 // 📊 STATEMENT API FUNCTIONS
 // ============================================================================
+
+/**
+ * @function requestRecoveryContactVerification
+ * @description Requests one authenticated recovery-contact possession challenge.
+ * @param {Object} input - Transport-only verification input.
+ * @param {string} input.address - Proposed recovery email address.
+ * @returns {Promise<Object>} Axios response; successful responses contain no body.
+ * @institutional ACCESS identity supplies tenant/principal binding server-side;
+ *     the browser cannot assert VERIFIED state or challenge authority.
+ */
+const requestRecoveryContactVerification = ({ address }) => api.post(
+  '/auth/recovery-contact/verification',
+  { address },
+);
+
+/**
+ * @function completeRecoveryContactVerification
+ * @description Presents one transient verification bearer to the protected
+ *     Python completion endpoint.
+ * @param {Object} input - Transport-only completion input.
+ * @param {string} input.verificationToken - One-time possession challenge.
+ * @returns {Promise<Object>} Axios response; HTTP 204 is success.
+ * @institutional The browser forwards the bearer only; Python EOS owns challenge
+ *     validation and exact PENDING-to-VERIFIED contact promotion.
+ */
+const completeRecoveryContactVerification = ({ verificationToken }) => api.post(
+  '/auth/recovery-contact/verification/complete',
+  { verification_token: verificationToken },
+);
 
 /**
  * @function requestPasswordReset
@@ -670,6 +701,8 @@ const verifyStatementSeal = (statementId) => {
 
 export default api;
 export {
+  requestRecoveryContactVerification,
+  completeRecoveryContactVerification,
   requestPasswordReset,
   resetPassword,
   getStatements,
@@ -687,7 +720,7 @@ export {
  * Status: CERTIFIED GOLD PRODUCTION READY
  * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Version: V74.2.0-R10E20-PASSWORD-RECOVERY-REQUEST-API
+ * Version: V74.3.0-R10E24-RECOVERY-CONTACT-VERIFICATION-API
  * Architecture: BIBLICAL WORTH BILLIONS. NO CHILD'S PLAY.
  * Kennel Context: Fully integrated with tenant and role metadata.
  * ===============================================================================
