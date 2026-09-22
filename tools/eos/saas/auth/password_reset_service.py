@@ -91,7 +91,7 @@ from .password_reset_notification_registry import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-R10G9-ATOMIC-RESET-NOTIFICATION-INTENT"
+VERSION: Final[str] = "v1.1.1-R10G9A-NOTIFICATION-INTENT-FAILURE-MAPPING"
 
 
 class PasswordResetCode(StrEnum):
@@ -434,17 +434,20 @@ class PasswordResetService:
             raise PasswordResetServiceError(PasswordResetCode.HASHING_FAILED)
 
         try:
+            notification_id = self._notification_id_factory()
+        except Exception:
+            raise PasswordResetServiceError(
+                PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE
+            ) from None
+
+        try:
             notification = PasswordResetNotification.issue(
-                notification_id=self._notification_id_factory(),
+                notification_id=notification_id,
                 tenant_id=capability.tenant_id,
                 principal_id=capability.principal_id,
                 occurred_at=self._clock(),
             )
-        except (PasswordResetNotificationError, Exception) as error:
-            if isinstance(error, PasswordResetNotificationError):
-                raise PasswordResetServiceError(
-                    PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE
-                ) from None
+        except PasswordResetNotificationError:
             raise PasswordResetServiceError(
                 PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE
             ) from None
