@@ -61,7 +61,7 @@ from tools.eos.saas.auth.password_reset_service import (
 )
 
 
-VERSION = "v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT"
+VERSION = "v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT"
 NOW = datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-a"
@@ -660,9 +660,23 @@ def test_notification_intent_uses_durable_capability_identity_only() -> None:
     assert notice.tenant_id == TENANT
     assert notice.principal_id == PRINCIPAL
     assert notice.notification_id == NOTIFICATION_ID
-    rendered = repr(notice.to_document()).lower()
-    for forbidden in ("email", "address", "password", "recovery_token", "token_digest"):
-        assert forbidden not in rendered
+    document = notice.to_document()
+    forbidden_fields = {
+        "email",
+        "recipient",
+        "address",
+        "password",
+        "recovery_token",
+        "token",
+        "token_digest",
+        "capability_digest",
+        "jwt",
+        "session",
+        "refresh_token",
+        "mfa_secret",
+    }
+    assert forbidden_fields.isdisjoint(document)
+    assert document["channel"] == "EMAIL"
 
 
 def test_post_commit_dispatch_failure_does_not_rewrite_committed_reset_truth() -> None:
