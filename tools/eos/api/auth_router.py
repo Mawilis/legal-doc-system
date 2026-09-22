@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION
+VERSION: v1.9.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, recovery initiation, password-reset completion, login,
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.9.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE: Adds enumeration-safe process-local abuse suppression to the
+  public recovery-request route. The limiter key is SHA3-512 of tenant selector
+  plus socket peer only (never email); throttled requests retain the identical
+  bodyless 202 contract and simply suppress background issuance work. Durable
+  principal cooldown remains the authoritative issuance control.
   v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION: Removes the Node/SMTP delivery dependency from recovery-contact
   verification completion. Initiation still constructs the delivery adapter;
   completion now invokes Python/Mongo authority only, so an already-delivered
@@ -64,9 +69,10 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION"
+VERSION = "v1.9.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE"
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
+import hashlib
 import logging
 import traceback
 import os
@@ -102,6 +108,7 @@ from ..saas.auth.recovery_contact_verification_service import (
 from ..saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 from ..auth.authentication import get_current_identity
+from ..wiring.middleware.enterprise_rate_limiter import rate_limiter
 from ..auth.identity import SovereignIdentity
 from ..auth.workspace_bootstrap_projection import (
     WorkspaceBootstrapProjectionError,
@@ -357,6 +364,33 @@ class PasswordRecoveryInitiationRequest(BaseModel):
         extra = "forbid"
 
 
+PASSWORD_RECOVERY_EDGE_CAPACITY = 5.0
+PASSWORD_RECOVERY_EDGE_REFILL_RATE = 1.0 / 60.0
+
+
+def _password_recovery_edge_allowed(request: Request, tenant_id: str) -> bool:
+    """Apply non-authoritative local abuse suppression without enumeration signals.
+
+    The bucket key contains no email/account identifier. A stable SHA3-512 digest
+    of the syntactically supplied tenant selector plus the direct socket peer is
+    used only for this process-local defense layer. Any limiter failure suppresses
+    background recovery work but does not alter the public 202 response.
+    """
+
+    try:
+        peer = request.client.host if request.client is not None else "unknown"
+        material = f"{tenant_id.strip()}|{peer}".encode("utf-8")
+        client_key = "password-recovery:" + hashlib.sha3_512(material).hexdigest()
+        allowed, _metadata = rate_limiter.check_rate_limit(
+            client_key,
+            capacity=PASSWORD_RECOVERY_EDGE_CAPACITY,
+            refill_rate=PASSWORD_RECOVERY_EDGE_REFILL_RATE,
+        )
+        return bool(allowed)
+    except Exception:
+        return False
+
+
 def _execute_password_recovery_request(tenant_id: str, email: str) -> None:
     """Execute recovery initiation after the HTTP response boundary.
 
@@ -397,6 +431,7 @@ def _execute_password_recovery_request(tenant_id: str, email: str) -> None:
 async def request_password_reset(
     request: PasswordRecoveryInitiationRequest,
     background_tasks: BackgroundTasks,
+    http_request: Request,
 ) -> Response:
     """Accept one Forgot Password request without revealing account existence.
 
@@ -407,11 +442,12 @@ async def request_password_reset(
     role, permission, or tenant authority is projected to the browser.
     """
 
-    background_tasks.add_task(
-        _execute_password_recovery_request,
-        request.tenant_id,
-        request.email,
-    )
+    if _password_recovery_edge_allowed(http_request, request.tenant_id):
+        background_tasks.add_task(
+            _execute_password_recovery_request,
+            request.tenant_id,
+            request.email,
+        )
     return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
@@ -867,7 +903,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION
+# VERSION: v1.9.0-R10E30-ENUMERATION-SAFE-EDGE-THROTTLE
 # AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
 # credential, principal, tenant, authorization, and financial authorities remain separate.
 # TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
