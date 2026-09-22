@@ -1,7 +1,7 @@
 """Direct certificate for post-reset security email delivery.
 
 TITLE: WILSY OS Password Reset Notification Email Delivery Certificate
-VERSION: v1.0.0-R10G8-PASSWORD-RESET-NOTIFICATION-EMAIL-CERT
+VERSION: v1.0.1-R10G13-DECODED-MESSAGE-CERTIFICATE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies token-free message construction, encrypted SMTP ordering,
          reuse of the certified recovery SMTP configuration, and secret-free
@@ -10,7 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises R10G7 with monkeypatched SMTP only; no
                            network, production credentials, or account data.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10G8-PASSWORD-RESET-NOTIFICATION-EMAIL-CERT — Adds direct
+CHANGELOG: v1.0.1-R10G13-DECODED-MESSAGE-CERTIFICATE — Decodes MIME text/plain content before semantic
+           copy assertions so quoted-printable transport wrapping cannot create
+           a false certificate failure.
+           v1.0.0-R10G8-PASSWORD-RESET-NOTIFICATION-EMAIL-CERT — Adds direct
            STARTTLS/SSL, token/link exclusion, message timestamp, configuration
            reuse, invalid-message, and stable transport-failure evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -116,7 +119,9 @@ def test_security_message_is_token_free_link_free_and_timestamped() -> None:
     assert email["Subject"] == "Your WILSY OS password was changed"
     assert email["From"] == "security@wilsy.example"
     assert email["To"] == RECIPIENT
-    rendered = email.as_string()
+    plain = email.get_body(preferencelist=("plain",))
+    assert plain is not None
+    rendered = plain.get_content()
     assert "2026-09-22 21:15 UTC" in rendered
     assert "administrator or security team" in rendered
     assert "http://" not in rendered
@@ -207,7 +212,7 @@ def test_smtp_failure_is_stable_and_secret_free(monkeypatch) -> None:
 
 
 # ARTIFACT: test_password_reset_notification_email_delivery.py
-# VERSION: v1.0.0-R10G8-PASSWORD-RESET-NOTIFICATION-EMAIL-CERT
+# VERSION: v1.0.1-R10G13-DECODED-MESSAGE-CERTIFICATE
 # AUTHORITY BOUNDARY: deterministic token-free SMTP evidence only
 # TENANT POSTURE: external adapter remains tenant-authority-stateless
 # FAIL-CLOSED POSTURE: invalid configuration/message and SMTP failure reject
