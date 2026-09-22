@@ -1,7 +1,7 @@
 """Direct certificate for WILSY OS password-recovery request issuance.
 
 TITLE: WILSY OS Password Recovery Request Service Direct Certificate
-VERSION: v1.0.0-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT
+VERSION: v1.0.1-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the R10E3 issuance boundary without network or Mongo runtime:
          verified-contact admission, anti-enumeration absence, current-email
@@ -12,7 +12,10 @@ COLLABORATION / OWNERSHIP: Exercises R10E3 with deterministic in-memory authorit
                            doubles; it does not replace real-Mongo or real-mail
                            certification.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT introduces bounded
+CHANGELOG: v1.0.1-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT corrects slots-dataclass surface
+           assertions to inspect declared fields rather than __dict__, preserving
+           all R10E4 behavioral coverage.
+           v1.0.0-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT introduces bounded
            direct evidence for issuance, absence, tenant/email drift, rate
            limiting, trusted-origin validation, fragment secret placement,
            capability revocation on delivery failure, and no raw-token return.
@@ -30,6 +33,7 @@ FAIL-CLOSED POSTURE: Dependency and revocation failure assertions must raise
 from __future__ import annotations
 
 import hashlib
+from dataclasses import fields
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
@@ -224,7 +228,7 @@ def test_absent_verified_contact_is_generic_and_never_issues_or_delivers() -> No
     )
 
     assert result == PasswordRecoveryRequestResult()
-    assert result.__dict__ == {"accepted": True}
+    assert tuple(field.name for field in fields(result)) == ("accepted",)
     assert contacts.calls == [{
         "tenant_id": TENANT,
         "channel": VerifiedRecoveryContactChannel.EMAIL,
@@ -383,7 +387,7 @@ def test_delivery_failure_with_unconfirmed_revocation_fails_closed() -> None:
 def test_result_surface_never_contains_identity_delivery_or_capability_truth() -> None:
     result = PasswordRecoveryRequestResult()
     assert result.accepted is True
-    assert set(result.__dict__) == {"accepted"}
+    assert tuple(field.name for field in fields(result)) == ("accepted",)
     rendered = repr(result).lower()
     for forbidden in ("email", "tenant", "principal", "token", "delivery", "capability"):
         assert forbidden not in rendered
@@ -393,7 +397,7 @@ def test_result_surface_never_contains_identity_delivery_or_capability_truth() -
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_request_service.py
-# VERSION: v1.0.0-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT
+# VERSION: v1.0.1-R10E4-PASSWORD-RECOVERY-REQUEST-DIRECT-CERT
 # AUTHORITY BOUNDARY: deterministic direct certificate only
 # TENANT POSTURE: synthetic exact-tenant evidence; cross-tenant issuance rejected
 # FAIL-CLOSED POSTURE: rate, dependency, delivery, and revocation failures reject
