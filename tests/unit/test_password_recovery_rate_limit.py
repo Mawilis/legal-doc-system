@@ -1,7 +1,7 @@
 """Direct certificate for the WILSY OS password-recovery rate gate.
 
 TITLE: WILSY OS Password Recovery Rate Limit Direct Certificate
-VERSION: v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE
+VERSION: v1.0.2-R10E56-MONGO-UTC-ROUNDTRIP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies deterministic namespaced recovery throttling, durable
          counter behavior, fail-closed persistence, and secret-free bucket
@@ -10,7 +10,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises password_recovery_rate_limit.py with an
                            in-memory PyMongo-shaped collection only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE introduces direct
+CHANGELOG: v1.0.2-R10E56-MONGO-UTC-ROUNDTRIP-CERT adds direct evidence that PyMongo's default
+           naive BSON-UTC datetime decoding is normalized back to explicit UTC
+           before durable bucket-state comparison, without weakening corruption
+           rejection.
+           v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE introduces direct
            evidence for index shape, fixed-window admission, exact limit
            rejection, namespace isolation, deterministic bucket identity,
            validation, state mismatch rejection, and persistence failure.
@@ -54,6 +58,7 @@ class _FakeCollection:
         self.indexes: list[tuple[list[tuple[str, int]], dict[str, object]]] = []
         self.fail_indexes = False
         self.fail_write = False
+        self.decode_bson_datetimes_naive = False
         self.corrupt_next: dict[str, object] | None = None
 
     def create_index(self, keys, **kwargs):
@@ -77,6 +82,10 @@ class _FakeCollection:
         increment = update.get("$inc", {}).get("count", 0)
         row["count"] = row.get("count", 0) + increment
         result = deepcopy(row)
+        if self.decode_bson_datetimes_naive:
+            bucket_start = result.get("bucket_start")
+            if isinstance(bucket_start, datetime) and bucket_start.tzinfo is not None:
+                result["bucket_start"] = bucket_start.replace(tzinfo=None)
         if self.corrupt_next is not None:
             result.update(self.corrupt_next)
             self.corrupt_next = None
@@ -235,6 +244,23 @@ def test_request_inputs_fail_closed(tenant_id, digest, observed_at, code) -> Non
     assert captured.value.code == code
 
 
+def test_pymongo_naive_bson_utc_round_trip_is_admitted() -> None:
+    collection = _FakeCollection()
+    collection.decode_bson_datetimes_naive = True
+
+    _gate(collection).require_allowed(
+        tenant_id=TENANT,
+        address_digest=DIGEST,
+        observed_at=OBSERVED,
+    )
+
+    assert len(collection.rows) == 1
+    row = next(iter(collection.rows.values()))
+    assert row["tenant_id"] == TENANT
+    assert row["address_digest"] == DIGEST
+    assert row["count"] == 1
+
+
 def test_persisted_state_mismatch_fails_closed() -> None:
     collection = _FakeCollection()
     collection.corrupt_next = {"tenant_id": "OTHER-TENANT"}
@@ -305,7 +331,7 @@ def test_bucket_identity_is_secret_free_and_deterministic_for_same_window() -> N
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_rate_limit.py
-# VERSION: v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE
+# VERSION: v1.0.2-R10E56-MONGO-UTC-ROUNDTRIP-CERT
 # AUTHORITY BOUNDARY: deterministic direct test evidence only
 # TENANT POSTURE: namespace + exact tenant/address-digest isolation certified
 # FAIL-CLOSED POSTURE: invalid policy, state, and persistence failure reject
