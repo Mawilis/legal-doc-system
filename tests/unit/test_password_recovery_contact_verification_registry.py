@@ -1,7 +1,7 @@
 """Direct certificate for WILSY OS recovery-contact verification persistence.
 
 TITLE: WILSY OS Recovery Contact Verification Registry Direct Certificate
-VERSION: v1.0.0-R10E31-RECOVERY-CONTACT-VERIFICATION-REGISTRY-CERT
+VERSION: v1.0.1-R10E51-RECOVERY-CONTACT-VERIFICATION-REGISTRY-BOUNDARY-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies digest-only verification persistence, uniqueness, exact
          tenant/token lookup, caller-session propagation, lifecycle CAS,
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises the R10E16 registry against one deterministic
                            PyMongo-shaped fake; no real Mongo or network.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E31-RECOVERY-CONTACT-VERIFICATION-REGISTRY-CERT introduces
+CHANGELOG: v1.0.1-R10E51-RECOVERY-CONTACT-VERIFICATION-REGISTRY-BOUNDARY-CLOSURE introduces
            direct evidence for indexes, insert-only uniqueness, tenant/token
            lookup, session forwarding, consume/revoke/expire compare-and-set,
            replay/expiry conflicts, metadata corruption rejection, and stable
@@ -34,6 +34,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.auth.password_recovery_contact_verification import (
     RecoveryContactVerification,
+    RecoveryContactVerificationError,
     RecoveryContactVerificationStatus,
 )
 from tools.eos.saas.auth.password_recovery_contact_verification_registry import (
@@ -242,9 +243,9 @@ def test_revoke_and_expire_enforce_correct_time_boundaries() -> None:
     expiring = _verification(verification_id="WILSYVERIFY-REG-EXPIRE")
     expire_registry.create(expiring)
 
-    with pytest.raises(RecoveryContactVerificationLifecycleConflictError) as early:
+    with pytest.raises(RecoveryContactVerificationError) as early:
         expire_registry.expire(expiring, EXPIRES - timedelta(microseconds=1))
-    assert early.value.code == "RECOVERY_CONTACT_VERIFICATION_EXPIRY_BOUNDARY_NOT_REACHED"
+    assert str(early.value) == "EXPIRY_BOUNDARY_NOT_REACHED"
 
     expired = expire_registry.expire(expiring, EXPIRES)
     assert expired.status is RecoveryContactVerificationStatus.EXPIRED
@@ -345,7 +346,7 @@ def test_index_insert_read_and_update_failures_are_stable() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_contact_verification_registry.py
-# VERSION: v1.0.0-R10E31-RECOVERY-CONTACT-VERIFICATION-REGISTRY-CERT
+# VERSION: v1.0.1-R10E51-RECOVERY-CONTACT-VERIFICATION-REGISTRY-BOUNDARY-CLOSURE
 # AUTHORITY BOUNDARY: deterministic verification-persistence test evidence only
 # TENANT POSTURE: exact tenant/token binding and caller-session propagation
 # FAIL-CLOSED POSTURE: duplicate, replayed, expired, corrupt, divergent state rejects
