@@ -1,13 +1,20 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER
+VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
-MFA setup and verification, password-reset completion, login, discovery, and logout.
+MFA setup and verification, password-recovery request and reset completion, login,
+discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP: Adds one unauthenticated, enumeration-safe
+  password-recovery request route backed exclusively by the R10E Python
+  verified-contact, rate-limit, issuance, and delivery chain. The adapter uses
+  server-owned UTC time, configured trusted origin/SMTP capability, generic 202
+  acceptance for absent or internal delivery outcomes, bounded 429 throttling,
+  and returns no principal, contact, capability, token, or delivery truth.
   v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER: Exposes the certified R10D1
   password-reset transaction through one unauthenticated transport route. The
   adapter forwards only the tenant selector, recovery capability, and proposed
@@ -48,9 +55,11 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER"
+VERSION = "v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from datetime import datetime, timezone
+from functools import lru_cache
 import logging
 import traceback
 import os
@@ -67,6 +76,15 @@ from ..saas.auth.password_reset_service import (
     PasswordResetServiceError,
 )
 from ..saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
+from ..saas.auth.password_recovery_contact_registry import VerifiedRecoveryContactRegistry
+from ..saas.auth.password_recovery_email_delivery import PasswordRecoveryEmailDelivery
+from ..saas.auth.password_recovery_rate_limit import PasswordRecoveryRateLimit
+from ..saas.auth.password_recovery_registry import PasswordRecoveryCapabilityRegistry
+from ..saas.auth.password_recovery_request_service import (
+    PasswordRecoveryRequestRateLimitedError,
+    PasswordRecoveryRequestService,
+    PasswordRecoveryRequestServiceError,
+)
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 from ..auth.authentication import get_current_identity
 from ..auth.identity import SovereignIdentity
@@ -181,6 +199,91 @@ async def workspace_bootstrap(
                 "status": tenant_status,
             },
         },
+    }
+
+
+# ─── PASSWORD RECOVERY REQUEST ─────────────────────────────────────────────
+class PasswordRecoveryStartRequest(BaseModel):
+    """Bounded unauthenticated input for recovery initiation.
+
+    The browser supplies only the selected tenant lookup value and email lookup
+    value. It cannot assert principal identity, verification status, capability
+    identity, token material, expiry, delivery channel, or password authority.
+    """
+
+    tenant_id: StrictStr = Field(..., min_length=1, max_length=256)
+    email: StrictStr = Field(..., min_length=3, max_length=320)
+
+    class Config:
+        """Reject caller-supplied recovery authority fields."""
+
+        extra = "forbid"
+
+
+@lru_cache(maxsize=1)
+def _password_recovery_request_service() -> PasswordRecoveryRequestService:
+    """Build and index the canonical recovery-request chain once per process.
+
+    Configuration is server-owned. The public application origin is never
+    derived from request Host, and SMTP credentials are loaded only by the
+    transport adapter. Index creation remains outside transaction callbacks.
+    """
+
+    contact_registry = VerifiedRecoveryContactRegistry()
+    capability_registry = PasswordRecoveryCapabilityRegistry()
+    rate_limit = PasswordRecoveryRateLimit()
+    contact_registry.ensure_indexes()
+    capability_registry.ensure_indexes()
+    rate_limit.ensure_indexes()
+    origin = os.environ.get("WILSY_PUBLIC_APP_ORIGIN", "")
+    return PasswordRecoveryRequestService(
+        contact_registry=contact_registry,
+        capability_registry=capability_registry,
+        auth_registry=get_auth_registry(None),
+        rate_limit_gate=rate_limit,
+        delivery_adapter=PasswordRecoveryEmailDelivery.from_environment(),
+        public_reset_origin=origin,
+    )
+
+
+@router.post("/request-password-reset", status_code=status.HTTP_202_ACCEPTED)
+async def request_password_reset(request: PasswordRecoveryStartRequest) -> dict[str, str]:
+    """Accept one password-recovery request without exposing account existence.
+
+    Missing/stale verified contact, delivery failure, and capability issuance
+    failure are never projected to the caller because doing so would create an
+    existence oracle. Operational failures are logged using stable code-only
+    context and the response remains the same generic acceptance. A uniformly
+    applied rate-limit rejection may return 429.
+    """
+
+    try:
+        service = _password_recovery_request_service()
+        service.request_password_reset(
+            tenant_id=request.tenant_id,
+            email=request.email,
+            observed_at=datetime.now(timezone.utc),
+        )
+    except PasswordRecoveryRequestRateLimitedError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many password recovery requests. Please try again later.",
+        ) from None
+    except PasswordRecoveryRequestServiceError as error:
+        _log_error(
+            RuntimeError(error.code),
+            "PASSWORD_RECOVERY_REQUEST_INTERNAL",
+            tenant_id=request.tenant_id,
+        )
+    except Exception:
+        _log_error(
+            RuntimeError("PASSWORD_RECOVERY_REQUEST_UNEXPECTED_ERROR"),
+            "PASSWORD_RECOVERY_REQUEST_UNEXPECTED_ERROR",
+            tenant_id=request.tenant_id,
+        )
+    return {
+        "status": "accepted",
+        "message": "If recovery is available for this account, instructions will be sent.",
     }
 
 
@@ -636,10 +739,10 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER
-# AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
-# credential, principal, tenant, authorization, and financial authorities remain separate.
-# TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
-# FAIL-CLOSED POSTURE: Authentication failures remain fail-closed through get_current_identity.
+# VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP
+# AUTHORITY BOUNDARY: Authentication/recovery HTTP routing and bounded projections only;
+# credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
+# TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
+# FAIL-CLOSED POSTURE: auth fails closed; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
