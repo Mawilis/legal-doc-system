@@ -1,7 +1,7 @@
 """Direct certificate for WILSY OS recovery-contact verification state.
 
 TITLE: WILSY OS Recovery Contact Verification Domain Direct Certificate
-VERSION: v1.0.0-R10E30-RECOVERY-CONTACT-VERIFICATION-DOMAIN-CERT
+VERSION: v1.0.1-R10E47-RECOVERY-CONTACT-VERIFICATION-DOMAIN-TYPE-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies immutable digest-only email-control verification lifecycle,
          exact tenant/principal binding, single-use transitions, strict UTC,
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises password_recovery_contact_verification.py
                            only; no Mongo, delivery, HTTP, or credential mutation.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E30-RECOVERY-CONTACT-VERIFICATION-DOMAIN-CERT introduces
+CHANGELOG: v1.0.1-R10E47-RECOVERY-CONTACT-VERIFICATION-DOMAIN-TYPE-CLOSURE introduces
            issuance, consume/revoke/expire, replay, expiry-boundary, malformed
            identifier/digest/time, contradictory terminal-state, serialization,
            hydration, and raw-secret exclusion evidence.
@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import pytest
 
@@ -137,7 +138,7 @@ def test_assert_usable_rejects_before_issue_and_at_expiry() -> None:
     ],
 )
 def test_malformed_immutable_fields_fail_closed(field, value, code) -> None:
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         verification_id="WILSYRECOVERYVERIFY-CERT-1",
         tenant_id="WILSY-TENANT-VERIFY-CERT",
         principal_id="WILSY-PRINCIPAL-VERIFY-CERT",
@@ -226,7 +227,7 @@ def test_contradictory_terminal_state_is_rejected() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_contact_verification.py
-# VERSION: v1.0.0-R10E30-RECOVERY-CONTACT-VERIFICATION-DOMAIN-CERT
+# VERSION: v1.0.1-R10E47-RECOVERY-CONTACT-VERIFICATION-DOMAIN-TYPE-CLOSURE
 # AUTHORITY BOUNDARY: immutable verification-domain test evidence only
 # TENANT POSTURE: exact tenant/principal/address/token digest binding certified
 # FAIL-CLOSED POSTURE: malformed, replayed, expired, revoked state rejects
