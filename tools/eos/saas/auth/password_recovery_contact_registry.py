@@ -1,7 +1,7 @@
 """Durable registry for WILSY OS verified password-recovery contacts.
 
 TITLE: WILSY OS Verified Recovery Contact Registry
-VERSION: v1.0.0-R10E2-VERIFIED-RECOVERY-CONTACT-REGISTRY
+VERSION: v1.1.0-R10E19-SINGLE-ACTIVE-RECOVERY-CONTACT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persists tenant-scoped, digest-only verified recovery-contact authority
          and exposes exact ACTIVE lookup plus atomic revocation.
@@ -11,7 +11,11 @@ COLLABORATION / OWNERSHIP: A separately governed verifier/provisioner creates
                            service may read ACTIVE authority. This registry owns
                            persistence only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E2-VERIFIED-RECOVERY-CONTACT-REGISTRY establishes the
+CHANGELOG: v1.1.0-R10E19-SINGLE-ACTIVE-RECOVERY-CONTACT enforces at most one ACTIVE
+           recovery contact per tenant/principal/channel and adds exact ACTIVE
+           principal lookup so email-change verification can replace prior
+           authority atomically without accumulating stale active contacts.
+           v1.0.0-R10E2-VERIFIED-RECOVERY-CONTACT-REGISTRY establishes the
            verified_recovery_contacts collection, deterministic identity and
            ACTIVE-address uniqueness indexes, strict R10E1 hydration, exact
            tenant-scoped lookups, insert-only creation, and caller-session CAS
@@ -48,7 +52,7 @@ from .password_recovery_contact import (
     VerifiedRecoveryContactStatus,
 )
 
-VERSION: Final[str] = "v1.0.0-R10E2-VERIFIED-RECOVERY-CONTACT-REGISTRY"
+VERSION: Final[str] = "v1.1.0-R10E19-SINGLE-ACTIVE-RECOVERY-CONTACT"
 COLLECTION: Final[str] = "verified_recovery_contacts"
 
 
@@ -214,6 +218,18 @@ class VerifiedRecoveryContactRegistry:
                 [
                     ("tenant_id", ASCENDING),
                     ("principal_id", ASCENDING),
+                    ("channel", ASCENDING),
+                ],
+                unique=True,
+                partialFilterExpression={
+                    "status": VerifiedRecoveryContactStatus.ACTIVE.value,
+                },
+                name="verified_recovery_contact_active_principal_unique",
+            )
+            source.create_index(
+                [
+                    ("tenant_id", ASCENDING),
+                    ("principal_id", ASCENDING),
                     ("status", ASCENDING),
                     ("verified_at", ASCENDING),
                 ],
@@ -324,6 +340,47 @@ class VerifiedRecoveryContactRegistry:
             )
         return contact
 
+    def get_active_by_principal(
+        self,
+        *,
+        tenant_id: str,
+        principal_id: str,
+        channel: VerifiedRecoveryContactChannel = VerifiedRecoveryContactChannel.EMAIL,
+        session: Any | None = None,
+    ) -> VerifiedRecoveryContact | None:
+        """Read the sole ACTIVE contact authority for one tenant/principal/channel.
+
+        This lookup never accepts an address and therefore cannot infer another
+        principal from contact material. The partial unique index guarantees at
+        most one ACTIVE result for the binding.
+        """
+
+        if (
+            not isinstance(tenant_id, str)
+            or not tenant_id.strip()
+            or tenant_id != tenant_id.strip()
+            or not isinstance(principal_id, str)
+            or not principal_id.strip()
+            or principal_id != principal_id.strip()
+            or not isinstance(channel, VerifiedRecoveryContactChannel)
+        ):
+            raise VerifiedRecoveryContactNotFoundError("RECOVERY_CONTACT_NOT_FOUND")
+        try:
+            row = self._source().find_one(
+                {
+                    "tenant_id": tenant_id,
+                    "principal_id": principal_id,
+                    "channel": channel.value,
+                    "status": VerifiedRecoveryContactStatus.ACTIVE.value,
+                },
+                **_session_kwargs(session),
+            )
+        except PyMongoError as error:
+            raise VerifiedRecoveryContactPersistenceError(
+                "RECOVERY_CONTACT_READ_FAILED"
+            ) from error
+        return None if row is None else _hydrate(row)
+
     def revoke(
         self,
         contact: VerifiedRecoveryContact,
@@ -392,7 +449,7 @@ __all__ = [
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: password_recovery_contact_registry.py
-# VERSION: v1.0.0-R10E2-VERIFIED-RECOVERY-CONTACT-REGISTRY
+# VERSION: v1.1.0-R10E19-SINGLE-ACTIVE-RECOVERY-CONTACT
 # AUTHORITY BOUNDARY: durable digest-only verified recovery-contact evidence
 # TENANT POSTURE: exact tenant scope; ACTIVE lookup never broadens across tenants
 # FAIL-CLOSED POSTURE: duplicate, corrupt, stale, and persistence failure rejects
