@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PASSWORD RECOVERY CLIENT API CERTIFICATE
- * VERSION: v1.0.0-R10E55-PASSWORD-RECOVERY-API-CERT
+ * VERSION: v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies exact browser transport for recovery request, authenticated
  *          recovery-contact verification request, and public verification
@@ -10,7 +10,9 @@
  *                            through a synthetic Axios instance; Python EOS owns
  *                            all recovery, contact, credential, and tenant truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v1.0.0-R10E55-PASSWORD-RECOVERY-API-CERT — Adds exact path/body/auth-mode evidence for all R10E
+ * CHANGELOG: v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT — Narrows static method-source slices to executable method
+ *            bodies so adjacent JSDoc cannot create false authority matches.
+ *            v1.0.0-R10E55-PASSWORD-RECOVERY-API-CERT — Adds exact path/body/auth-mode evidence for all R10E
  *            recovery transports, including proof that authenticated contact
  *            verification sends an empty body and public capability consumers
  *            remain skipAuth.
@@ -292,9 +294,15 @@ describe('R10E55 password recovery client API certificate', () => {
     expect(verifyStart).toBeGreaterThan(contactStart);
     expect(resetStart).toBeGreaterThan(verifyStart);
 
-    const requestSource = source.slice(requestStart, contactStart);
-    const contactSource = source.slice(contactStart, verifyStart);
-    const verifySource = source.slice(verifyStart, resetStart);
+    const methodSource = (start) => {
+      const end = source.indexOf('\n\n/**', start);
+      expect(end).toBeGreaterThan(start);
+      return source.slice(start, end);
+    };
+
+    const requestSource = methodSource(requestStart);
+    const contactSource = methodSource(contactStart);
+    const verifySource = methodSource(verifyStart);
 
     expect(requestSource).toContain("'/auth/request-password-reset'");
     expect(requestSource).toContain('{ skipAuth: true }');
@@ -334,7 +342,7 @@ describe('R10E55 password recovery client API certificate', () => {
 
 /**
  * ARTIFACT: passwordRecoveryApi.test.js
- * VERSION: v1.0.0-R10E55-PASSWORD-RECOVERY-API-CERT
+ * VERSION: v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT
  * AUTHORITY BOUNDARY: deterministic Axios transport evidence only
  * TENANT POSTURE: public tenant selectors remain lookup-only; authenticated verification sends none
  * FAIL-CLOSED POSTURE: transport failures reject without local authority or retry
