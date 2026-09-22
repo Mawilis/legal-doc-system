@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP
+VERSION: v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,13 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP: Adds authenticated recovery-contact verification
+  request and capability-authorized completion routes. The request route derives
+  the address only from current durable principal state, uses a separate
+  namespaced recovery rate budget, and returns no raw verification material.
+  Completion accepts only tenant selector + single-use verification capability,
+  atomically establishes verified-contact authority, returns no session/token,
+  and leaves password-reset authority unchanged.
   v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP: Adds one unauthenticated, enumeration-safe
   password-recovery request route backed exclusively by the R10E Python
   verified-contact, rate-limit, issuance, and delivery chain. The adapter uses
@@ -55,7 +62,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP"
+VERSION = "v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -77,6 +84,21 @@ from ..saas.auth.password_reset_service import (
 )
 from ..saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
 from ..saas.auth.password_recovery_contact_registry import VerifiedRecoveryContactRegistry
+from ..saas.auth.password_recovery_contact_verification_email_delivery import (
+    RecoveryContactVerificationEmailDelivery,
+)
+from ..saas.auth.password_recovery_contact_verification_registry import (
+    RecoveryContactVerificationRegistry,
+)
+from ..saas.auth.password_recovery_contact_verification_request_service import (
+    RecoveryContactVerificationRequestError,
+    RecoveryContactVerificationRequestService,
+)
+from ..saas.auth.password_recovery_contact_verification_service import (
+    RecoveryContactVerificationCode,
+    RecoveryContactVerificationService,
+    RecoveryContactVerificationServiceError,
+)
 from ..saas.auth.password_recovery_email_delivery import PasswordRecoveryEmailDelivery
 from ..saas.auth.password_recovery_rate_limit import PasswordRecoveryRateLimit
 from ..saas.auth.password_recovery_registry import PasswordRecoveryCapabilityRegistry
@@ -285,6 +307,137 @@ async def request_password_reset(request: PasswordRecoveryStartRequest) -> dict[
         "status": "accepted",
         "message": "If recovery is available for this account, instructions will be sent.",
     }
+
+
+# ─── RECOVERY CONTACT VERIFICATION ─────────────────────────────────────────
+class RecoveryContactVerificationCompleteRequest(BaseModel):
+    """Capability-only input for recovery-contact verification completion."""
+
+    tenant_id: StrictStr = Field(..., min_length=1, max_length=256)
+    verification_token: StrictStr = Field(..., min_length=1, max_length=4096)
+
+    class Config:
+        """Reject browser-supplied principal, address, or contact authority."""
+
+        extra = "forbid"
+
+
+@lru_cache(maxsize=1)
+def _recovery_contact_verification_request_service(
+) -> RecoveryContactVerificationRequestService:
+    """Build authenticated recovery-contact verification issuance once/process."""
+
+    verification_registry = RecoveryContactVerificationRegistry()
+    contact_registry = VerifiedRecoveryContactRegistry()
+    rate_limit = PasswordRecoveryRateLimit(
+        namespace="recovery-contact-verification",
+    )
+    verification_registry.ensure_indexes()
+    contact_registry.ensure_indexes()
+    rate_limit.ensure_indexes()
+    return RecoveryContactVerificationRequestService(
+        verification_registry=verification_registry,
+        contact_registry=contact_registry,
+        auth_registry=get_auth_registry(None),
+        rate_limit_gate=rate_limit,
+        delivery_adapter=RecoveryContactVerificationEmailDelivery.from_environment(),
+        public_origin=os.environ.get("WILSY_PUBLIC_APP_ORIGIN", ""),
+    )
+
+
+@lru_cache(maxsize=1)
+def _recovery_contact_verification_completion_service(
+) -> RecoveryContactVerificationService:
+    """Build completion composition and ensure its durable indexes once/process."""
+
+    verification_registry = RecoveryContactVerificationRegistry()
+    contact_registry = VerifiedRecoveryContactRegistry()
+    verification_registry.ensure_indexes()
+    contact_registry.ensure_indexes()
+    return RecoveryContactVerificationService(
+        verification_registry=verification_registry,
+        contact_registry=contact_registry,
+        auth_registry=get_auth_registry(None),
+    )
+
+
+@router.post(
+    "/recovery-contact/request-verification",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def request_recovery_contact_verification(
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> dict[str, str]:
+    """Issue verification only for the current durable principal email.
+
+    The route accepts no email or tenant body fields. ACCESS authentication
+    supplies selectors only; the service re-reads durable principal/email truth.
+    """
+
+    try:
+        result = _recovery_contact_verification_request_service().request_verification(
+            identity=identity,
+            observed_at=datetime.now(timezone.utc),
+        )
+    except RecoveryContactVerificationRequestError as error:
+        if error.code == "RECOVERY_CONTACT_VERIFICATION_RATE_LIMITED":
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many recovery-email verification requests. Please try again later.",
+            ) from None
+        _log_error(
+            RuntimeError(error.code),
+            "RECOVERY_CONTACT_VERIFICATION_REQUEST_FAILED",
+            tenant_id=identity.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery email verification is temporarily unavailable.",
+        ) from None
+    return {"status": result.status}
+
+
+@router.post(
+    "/recovery-contact/verify",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def complete_recovery_contact_verification(
+    request: RecoveryContactVerificationCompleteRequest,
+) -> Response:
+    """Consume one email-control capability and establish verified contact truth.
+
+    The route is intentionally unauthenticated so a single-use verification
+    link can complete across devices. The capability is bound durably to exact
+    tenant/principal/address digests and produces no login session or JWT.
+    """
+
+    try:
+        _recovery_contact_verification_completion_service().verify_contact(
+            tenant_id=request.tenant_id,
+            verification_token=request.verification_token,
+        )
+    except RecoveryContactVerificationServiceError as error:
+        if error.code in {
+            RecoveryContactVerificationCode.INVALID_REQUEST,
+            RecoveryContactVerificationCode.VERIFICATION_INVALID,
+            RecoveryContactVerificationCode.VERIFICATION_REPLAYED,
+            RecoveryContactVerificationCode.PRINCIPAL_MISMATCH,
+            RecoveryContactVerificationCode.EMAIL_CHANGED,
+        }:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Recovery email verification link is invalid or expired.",
+            ) from None
+        _log_error(
+            RuntimeError(error.code.value),
+            "RECOVERY_CONTACT_VERIFICATION_COMPLETE_FAILED",
+            tenant_id=request.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery email verification is temporarily unavailable.",
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ─── PASSWORD RESET COMPLETION ─────────────────────────────────────────────
@@ -739,8 +892,8 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP
-# AUTHORITY BOUNDARY: Authentication/recovery HTTP routing and bounded projections only;
+# VERSION: v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only;
 # credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
 # TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
 # FAIL-CLOSED POSTURE: auth fails closed; recovery initiation is enumeration-safe generic acceptance.
