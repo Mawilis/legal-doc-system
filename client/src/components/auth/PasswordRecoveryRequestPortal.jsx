@@ -3,7 +3,7 @@
  * WILSY OS — PASSWORD RECOVERY REQUEST PORTAL
  * ============================================================================
  * TITLE: Browser password-recovery initiation surface
- * VERSION: v1.1.0-R10E13-RECOVERY-CONTEXT-HANDOFF
+ * VERSION: v1.2.0-R10E69-RECOVERY-VERTICAL-BALANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects one workspace/email recovery request and delegates all
  *           contact verification, rate limiting, capability issuance, and
@@ -14,6 +14,10 @@
  *   contact, rate-limit, issuance, and delivery orchestration.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-09-22 v1.2.0-R10E69-RECOVERY-VERTICAL-BALANCE — Vertically centers
+ *   the compact recovery-request panel with safe overflow fallback so desktop
+ *   composition preserves balanced viewport breathing room without changing
+ *   recovery authority, transport, copy, tenant presentation, or panel width.
  *   2026-09-22 v1.1.0-R10E13-RECOVERY-CONTEXT-HANDOFF — Reuses the
  *   ephemeral workspace object carried from login/discovery before falling back
  *   to AuthContext, preserving direct-entry fallback and keeping tenant context
@@ -207,7 +211,7 @@ const pageStyle = {
   boxSizing: 'border-box',
   display: 'grid',
   justifyItems: 'center',
-  alignItems: 'start',
+  alignItems: 'safe center',
   padding: 'clamp(24px, 3.2vh, 32px) clamp(18px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))',
   overflowX: 'hidden',
   overflowY: 'auto',
@@ -266,7 +270,7 @@ const successCopyStyle = { margin: 0, color: '#aeb8b1', fontSize: '12px', lineHe
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: PasswordRecoveryRequestPortal.jsx
- * VERSION: v1.1.0-R10E13-RECOVERY-CONTEXT-HANDOFF
+ * VERSION: v1.2.0-R10E69-RECOVERY-VERTICAL-BALANCE
  * AUTHORITY BOUNDARY: client presentation and certified transport invocation
  * TENANT POSTURE: selected workspace is lookup context only; no authority grant
  * FAIL-CLOSED POSTURE: only HTTP 202 produces generic accepted state
