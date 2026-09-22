@@ -1,7 +1,7 @@
 """Direct certificate for password-recovery request orchestration.
 
 TITLE: WILSY OS Password Recovery Request Service Direct Certificate
-VERSION: v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-SERVICE-CERT
+VERSION: v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact ACTIVE-principal admission, replacement recovery-window
          issuance, post-commit delivery, cooldown suppression, compensation,
@@ -12,6 +12,10 @@ COLLABORATION / OWNERSHIP: Test-only evidence for the R10E3 service. Registry,
                            deterministic fakes; production files are read-only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-CERT — Adds direct evidence that login email is selector-only,
+    explicit VERIFIED recovery-contact authority is required before issuance,
+    the contact address is the sole delivery destination, and contact evidence
+    is re-read with the issuance transaction session before capability creation.
   v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-SERVICE-CERT — Adds direct deterministic evidence for request admission,
     exact transaction/session propagation, prior-window expiry/revocation,
     30-minute TTL, 60-second cooldown, digest-only persistence, post-commit
@@ -20,7 +24,8 @@ CHANGELOG:
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic bearer values only; tests assert raw
                             tokens never enter persisted capability state.
-TENANT BOUNDARY: Synthetic exact tenant/email principal resolution only.
+TENANT BOUNDARY: Synthetic exact tenant/email principal selection plus explicit
+                 tenant/principal VERIFIED recovery-contact authority.
 AUTHORITY BOUNDARY: Recovery issuance orchestration evidence; no password, JWT,
                     MFA, role, membership, session, or financial authority.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusively financial.
@@ -42,6 +47,10 @@ from tools.eos.saas.auth.password_recovery import (
     PasswordRecoveryCapability,
     PasswordRecoveryCapabilityStatus,
 )
+from tools.eos.saas.auth.recovery_contact import (
+    RecoveryContactAuthority,
+    RecoveryContactVerificationMethod,
+)
 from tools.eos.saas.auth.password_recovery_request_service import (
     RECOVERY_COOLDOWN,
     RECOVERY_TTL,
@@ -54,6 +63,7 @@ from tools.eos.saas.auth.password_recovery_request_service import (
 
 NOW = datetime(2026, 9, 22, 16, 0, 0, tzinfo=timezone.utc)
 RAW_TOKEN = "synthetic-recovery-token-value-0123456789-ABCDE"
+RECOVERY_ADDRESS = "recovery-address@example.com"
 
 
 class _Session:
@@ -108,6 +118,45 @@ class _PrincipalRepository:
         if self.status is None:
             raise PrincipalAuthorityNotFoundError("PRINCIPAL_AUTHORITY_NOT_FOUND")
         return SimpleNamespace(principal_id=principal_id, status=self.status, revision=4)
+
+
+def _verified_contact(address: str = RECOVERY_ADDRESS) -> RecoveryContactAuthority:
+    return RecoveryContactAuthority.pending(
+        contact_id="recovery-contact-a",
+        tenant_id="TENANT-ONE",
+        principal_id="principal-a",
+        address=address,
+        created_at=NOW - timedelta(days=1),
+    ).verify(
+        verified_at=NOW - timedelta(hours=23),
+        method=RecoveryContactVerificationMethod.EMAIL_CHALLENGE,
+    )
+
+
+class _ContactRegistry:
+    def __init__(
+        self,
+        contact: RecoveryContactAuthority | None = None,
+        *,
+        transactional_contact: RecoveryContactAuthority | None | object = ...,
+    ) -> None:
+        self.contact = _verified_contact() if contact is None else contact
+        self.transactional_contact = transactional_contact
+        self.calls: list[tuple[str, str, datetime, Any]] = []
+
+    def resolve_verified_for_principal(
+        self,
+        *,
+        tenant_id: str,
+        principal_id: str,
+        observed_at: datetime,
+        session: Any | None = None,
+    ) -> RecoveryContactAuthority | None:
+        self.calls.append((tenant_id, principal_id, observed_at, session))
+        if session is not None and self.transactional_contact is not ...:
+            value = self.transactional_contact
+            return value if isinstance(value, RecoveryContactAuthority) else None
+        return self.contact
 
 
 class _Registry:
@@ -194,11 +243,20 @@ def _service(
     auth: _Auth | None = None,
     principal: _PrincipalRepository | None = None,
     registry: _Registry | None = None,
+    contact_registry: _ContactRegistry | None = None,
     delivery_fail: bool = False,
-) -> tuple[PasswordRecoveryRequestService, _Client, _Registry, _Delivery, list[str]]:
+) -> tuple[
+    PasswordRecoveryRequestService,
+    _Client,
+    _Registry,
+    _ContactRegistry,
+    _Delivery,
+    list[str],
+]:
     events: list[str] = []
     client = _Client(events)
     recovery = registry or _Registry()
+    contacts = contact_registry or _ContactRegistry()
     delivery = _Delivery(events, fail=delivery_fail)
     service = PasswordRecoveryRequestService(
         delivery=delivery,
@@ -206,11 +264,12 @@ def _service(
         auth_registry=auth or _Auth(),
         recovery_registry=recovery,
         principal_repository=principal or _PrincipalRepository(),
+        contact_registry=contacts,
         clock=lambda: NOW,
         token_factory=lambda: RAW_TOKEN,
         capability_id_factory=lambda: "WILSYREC-CERT",
     )
-    return service, client, recovery, delivery, events
+    return service, client, recovery, contacts, delivery, events
 
 
 def test_constants_and_public_result_are_bounded() -> None:
@@ -225,7 +284,7 @@ def test_constants_and_public_result_are_bounded() -> None:
 
 @pytest.mark.parametrize("email", ["", "invalid", "a@b", "a @example.com", None])
 def test_invalid_request_fails_before_persistence_or_delivery(email: object) -> None:
-    service, client, registry, delivery, _events = _service()
+    service, client, registry, _contacts, delivery, _events = _service()
     with pytest.raises(PasswordRecoveryRequestServiceError) as error:
         service.request_recovery(tenant_id="TENANT-ONE", email=email)  # type: ignore[arg-type]
     assert error.value.code is PasswordRecoveryRequestCode.INVALID_REQUEST
@@ -235,8 +294,8 @@ def test_invalid_request_fails_before_persistence_or_delivery(email: object) -> 
 
 
 def test_absent_and_inactive_principals_return_same_receipt_without_delivery() -> None:
-    absent, absent_client, _registry, absent_delivery, _events = _service(auth=_Auth(None))
-    inactive, inactive_client, _registry2, inactive_delivery, _events2 = _service(
+    absent, absent_client, _registry, _contacts, absent_delivery, _events = _service(auth=_Auth(None))
+    inactive, inactive_client, _registry2, _contacts2, inactive_delivery, _events2 = _service(
         principal=_PrincipalRepository(PrincipalStatus.SUSPENDED)
     )
     assert absent.request_recovery(tenant_id="TENANT-ONE", email="person@example.com") == PasswordRecoveryRequestResult()
@@ -249,7 +308,7 @@ def test_success_expires_and_revokes_prior_windows_then_delivers_after_commit() 
     expired = _capability("expired", NOW - timedelta(hours=2), NOW - timedelta(hours=1))
     older = _capability("older", NOW - timedelta(minutes=10), NOW + timedelta(minutes=20))
     registry = _Registry([expired, older])
-    service, client, recovery, delivery, events = _service(registry=registry)
+    service, client, recovery, contacts, delivery, events = _service(registry=registry)
 
     result = service.request_recovery(tenant_id="TENANT-ONE", email=" PERSON@EXAMPLE.COM ")
 
@@ -263,17 +322,60 @@ def test_success_expires_and_revokes_prior_windows_then_delivers_after_commit() 
     assert created.token_digest == hashlib.sha3_512(RAW_TOKEN.encode("utf-8")).hexdigest()
     assert RAW_TOKEN not in repr(created)
     assert delivery.calls == [{
-        "recipient_email": "person@example.com",
+        "recipient_email": RECOVERY_ADDRESS,
         "recovery_token": RAW_TOKEN,
         "expires_at": NOW + timedelta(minutes=30),
     }]
+    assert len(contacts.calls) == 2
+    assert contacts.calls[0][0:2] == ("TENANT-ONE", "principal-a")
+    assert contacts.calls[0][3] is None
+    assert contacts.calls[1][0:2] == ("TENANT-ONE", "principal-a")
+    assert contacts.calls[1][3] is client.sessions[0]
     assert events.index("transaction-commit") < events.index("delivery")
+
+
+def test_missing_verified_contact_returns_generic_receipt_without_issuance_or_delivery() -> None:
+    contacts = _ContactRegistry()
+    contacts.contact = None
+    service, client, recovery, contact_registry, delivery, _events = _service(
+        contact_registry=contacts
+    )
+    result = service.request_recovery(
+        tenant_id="TENANT-ONE",
+        email="person@example.com",
+    )
+    assert result == PasswordRecoveryRequestResult()
+    assert client.sessions == []
+    assert recovery.calls == []
+    assert delivery.calls == []
+    assert len(contact_registry.calls) == 1
+    assert contact_registry.calls[0][3] is None
+
+
+def test_transactional_contact_revocation_suppresses_capability_and_delivery() -> None:
+    contacts = _ContactRegistry(
+        contact=_verified_contact(),
+        transactional_contact=None,
+    )
+    service, client, recovery, contact_registry, delivery, _events = _service(
+        contact_registry=contacts
+    )
+    result = service.request_recovery(
+        tenant_id="TENANT-ONE",
+        email="person@example.com",
+    )
+    assert result == PasswordRecoveryRequestResult()
+    assert len(client.sessions) == 1
+    assert recovery.calls == []
+    assert delivery.calls == []
+    assert len(contact_registry.calls) == 2
+    assert contact_registry.calls[1][3] is client.sessions[0]
 
 
 def test_recent_active_window_enforces_cooldown_without_reissue_or_delivery() -> None:
     recent = _capability("recent", NOW - timedelta(seconds=30), NOW + timedelta(minutes=29))
     registry = _Registry([recent])
-    service, _client, recovery, delivery, _events = _service(registry=registry)
+    service, _client, recovery, _contacts, delivery, _events = _service(registry=registry)
     result = service.request_recovery(tenant_id="TENANT-ONE", email="person@example.com")
     assert result == PasswordRecoveryRequestResult()
     assert [call[0] for call in recovery.calls] == ["list"]
@@ -283,12 +385,14 @@ def test_recent_active_window_enforces_cooldown_without_reissue_or_delivery() ->
 
 def test_transaction_reresolves_principal_with_same_session() -> None:
     auth = _Auth()
-    service, client, _recovery, _delivery, _events = _service(auth=auth)
+    service, client, _recovery, contacts, _delivery, _events = _service(auth=auth)
     service.request_recovery(tenant_id="TENANT-ONE", email="person@example.com")
     assert len(auth.calls) == 2
     assert auth.calls[0] == ("TENANT-ONE", "person@example.com", None)
     assert auth.calls[1][0:2] == ("TENANT-ONE", "person@example.com")
     assert auth.calls[1][2] is client.sessions[0]
+    assert len(contacts.calls) == 2
+    assert contacts.calls[1][3] is client.sessions[0]
 
 
 def test_delivery_failure_compensates_new_capability_and_emits_no_secret_in_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -297,7 +401,7 @@ def test_delivery_failure_compensates_new_capability_and_emits_no_secret_in_erro
         "tools.eos.saas.auth.password_recovery_request_service.log_auth_event",
         lambda *args, **kwargs: audit_calls.append((*args, kwargs)),
     )
-    service, client, recovery, delivery, events = _service(delivery_fail=True)
+    service, client, recovery, _contacts, delivery, events = _service(delivery_fail=True)
     with pytest.raises(PasswordRecoveryRequestServiceError) as error:
         service.request_recovery(tenant_id="TENANT-ONE", email="person@example.com")
     assert error.value.code is PasswordRecoveryRequestCode.DELIVERY_FAILURE
@@ -317,6 +421,8 @@ def test_service_source_never_returns_logs_or_persists_raw_token() -> None:
     assert "recovery_token=raw_token" in source
     assert "log_auth_event" in source
     assert "recipient_email" in source
+    assert "recipient_email=normalized_email" not in source
+    assert "resolve_verified_for_principal" in source
     assert "passwordHash" not in source
     assert "generate_jwt" not in source
     assert "create_session" not in source
@@ -324,9 +430,9 @@ def test_service_source_never_returns_logs_or_persists_raw_token() -> None:
 
 
 # ARTIFACT: tests/unit/test_password_recovery_request_service.py
-# VERSION: v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-SERVICE-CERT
+# VERSION: v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-CERT
 # AUTHORITY BOUNDARY: deterministic recovery-request orchestration evidence only
-# TENANT POSTURE: exact tenant/email lookup and tenant/principal capability lifecycle
+# TENANT POSTURE: login email is selector-only; VERIFIED tenant/principal recovery contact owns delivery destination
 # FAIL-CLOSED POSTURE: invalid, ambiguous, transaction, and delivery failure returns no recovery secret
 # FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
