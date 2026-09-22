@@ -1,7 +1,7 @@
 """Direct certificate for WILSY OS post-reset notification dispatch.
 
 TITLE: WILSY OS Password Reset Notification Dispatcher Direct Certificate
-VERSION: v1.0.0-R10G6-PASSWORD-RESET-NOTIFICATION-DISPATCHER-CERT
+VERSION: v1.0.1-R10G12-DISPATCHER-EMAIL-FIXTURE-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies server-derived recipient authority, exact tenant/principal
          binding, stale-recipient rejection, token-free delivery, retry evidence,
@@ -10,7 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises R10G5 with deterministic registry, auth,
                            and delivery fakes; performs no network or Mongo I/O.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10G6-PASSWORD-RESET-NOTIFICATION-DISPATCHER-CERT — Adds direct
+CHANGELOG: v1.0.1-R10G12-DISPATCHER-EMAIL-FIXTURE-CLOSURE — Replaces reserved .test email fixtures with
+           standards-valid example.com addresses so the certificate reaches
+           dispatcher behavior under the canonical EmailStr validator.
+           v1.0.0-R10G6-PASSWORD-RESET-NOTIFICATION-DISPATCHER-CERT — Adds direct
            evidence that callers cannot nominate recipients, only ACTIVE verified
            contact matching current durable principal email permits delivery,
            transport failure remains retryable, and success is durably terminal.
@@ -59,7 +62,7 @@ TENANT = "WILSY-TENANT-R10G-DISPATCH"
 PRINCIPAL = "WILSYAUTH-R10G-DISPATCH"
 NOTICE_ID = "WILSYRESETNOTICE-R10G-DISPATCH"
 CONTACT_ID = "WILSYCONTACT-R10G-DISPATCH"
-EMAIL = "verified.user@example.test"
+EMAIL = "verified.user@example.com"
 OCCURRED = datetime(2026, 9, 22, 21, 0, tzinfo=UTC)
 
 
@@ -244,7 +247,7 @@ def test_already_sent_is_idempotent_and_does_not_redeliver() -> None:
     [
         (None, _user(), "PASSWORD_RESET_NOTIFICATION_RECIPIENT_UNAVAILABLE"),
         (
-            _contact(digest=recovery_address_digest("other@example.test")),
+            _contact(digest=recovery_address_digest("other@example.com")),
             _user(),
             "PASSWORD_RESET_NOTIFICATION_RECIPIENT_STALE",
         ),
@@ -360,7 +363,7 @@ def test_invalid_selectors_and_naive_time_reject_before_delivery() -> None:
 
 
 # ARTIFACT: test_password_reset_notification_dispatcher.py
-# VERSION: v1.0.0-R10G6-PASSWORD-RESET-NOTIFICATION-DISPATCHER-CERT
+# VERSION: v1.0.1-R10G12-DISPATCHER-EMAIL-FIXTURE-CLOSURE
 # AUTHORITY BOUNDARY: deterministic verified-recipient dispatch evidence only
 # TENANT POSTURE: exact tenant/contact/principal binding certified
 # FAIL-CLOSED POSTURE: stale recipient, cross-tenant, transport, and evidence failure reject
