@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PREMIUM TENANT IDENTITY CERTIFICATE
- * VERSION: v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT
+ * VERSION: v1.7.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the bounded discovery/login identity projection, permanent
  *          platform trust mark, and neutral tenant-logo fallback.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: Exercises TenantDiscovery, SovereignLogin, and
  *                            TenantIdentityCard without network or auth writes.
  * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT — Certifies the
+ * CHANGELOG: v1.7.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE-CERT — Certifies
+ *            reset-parity login architecture: one full-width page heading
+ *            precedes the balanced identity/credentials grid, panel width is
+ *            bounded to the shared auth grammar, and existing tenant/auth
+ *            presentation safeguards remain intact.
+ *            v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT — Certifies the
  *            final login composition: no redundant workspace-identity eyebrow,
  *            top-aligned identity/form columns, bounded natural-flow geometry,
  *            and unchanged authoritative tenant projection semantics.
@@ -177,7 +182,11 @@ describe('premium tenant identity projection', () => {
     expect(screen.getByTestId('login-panel')).not.toHaveStyle({ height: '100vh' });
     expect(screen.getByTestId('login-panel').parentElement).toHaveStyle({ minHeight: '100dvh', overflowX: 'hidden', overflowY: 'auto' });
     expect(screen.getByTestId('login-panel').getAttribute('style')).toContain('min-height: 0');
+    expect(screen.getByTestId('login-panel').getAttribute('style')).toContain('width: min(1080px, 100%)');
+    expect(screen.getByTestId('login-page-heading')).toHaveTextContent('Sign in');
+    expect(screen.getByTestId('login-page-heading').nextElementSibling).toBe(screen.getByTestId('login-content-grid'));
     expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('auto-fit');
+    expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('min(100%, 320px)');
     expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('align-items: start');
     expect(screen.queryByText('Workspace identity')).not.toBeInTheDocument();
   });
@@ -185,7 +194,7 @@ describe('premium tenant identity projection', () => {
 
 /**
  * ARTIFACT: TenantIdentityPremium.test.jsx
- * VERSION: v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT
+ * VERSION: v1.7.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE-CERT
  * AUTHORITY BOUNDARY: deterministic client projection certificate only
  * TENANT POSTURE: no alias-specific logo or inferred legal identity
  * FAIL-CLOSED POSTURE: absent tenant identity is never fabricated
