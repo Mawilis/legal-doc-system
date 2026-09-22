@@ -1,6 +1,6 @@
 /**
  * WILSY OS — RECOVERY CONTACT CLIENT CERTIFICATE
- * VERSION: v1.0.0-R10E38-RECOVERY-CONTACT-CLIENT-CERT
+ * VERSION: v1.0.1-R10E56-RECOVERY-CONTACT-CLIENT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the authenticated recovery-email security control and its
  *          reachable account-security mounts without granting browser email,
@@ -10,7 +10,10 @@
  *                            statically certifies its Account Command Center
  *                            desktop/mobile mount contract.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v1.0.0-R10E38-RECOVERY-CONTACT-CLIENT-CERT — Adds direct client evidence for request semantics,
+ * CHANGELOG: v1.0.1-R10E56-RECOVERY-CONTACT-CLIENT-CERT — Reconciles the recovery campaign gate sequence after
+ *            the branch had already advanced through R10E54; certificate
+ *            behavior is unchanged from the immediately prior client evidence.
+ *            v1.0.0-R10E38-RECOVERY-CONTACT-CLIENT-CERT — Adds direct client evidence for request semantics,
  *            pending suppression, bounded success/failure states, zero-argument
  *            authenticated transport, and two reachable account-security mounts.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -121,7 +124,7 @@ describe('authenticated recovery contact security control', () => {
 
 /**
  * ARTIFACT: RecoveryContactSecurityControl.test.jsx
- * VERSION: v1.0.0-R10E38-RECOVERY-CONTACT-CLIENT-CERT
+ * VERSION: v1.0.1-R10E56-RECOVERY-CONTACT-CLIENT-CERT
  * AUTHORITY BOUNDARY: deterministic recovery client presentation/transport evidence only
  * TENANT POSTURE: no browser-supplied tenant/email/recovery-contact authority
  * FAIL-CLOSED POSTURE: unexpected server outcomes render bounded unavailable copy
