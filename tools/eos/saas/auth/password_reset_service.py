@@ -1,7 +1,7 @@
 """WILSY OS password-reset transaction orchestration.
 
 TITLE: WILSY OS Password Reset Transaction Service
-VERSION: v1.1.0-R10G9-ATOMIC-RESET-NOTIFICATION-INTENT
+VERSION: v1.1.1-R10G9A-NOTIFICATION-INTENT-FAILURE-MAPPING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Composes recovery capability, password policy, credential revision,
          session/refresh revocation, capability consumption, and durable
@@ -13,7 +13,11 @@ COLLABORATION / OWNERSHIP: The HTTP adapter supplies the recovery token and
                            reset transaction; child registries own caller-session
                            persistence. R10G5 may perform post-commit delivery.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.1.0-R10G9-ATOMIC-RESET-NOTIFICATION-INTENT — Adds one stable
+CHANGELOG: v1.1.1-R10G9A-NOTIFICATION-INTENT-FAILURE-MAPPING — Separates notification-ID factory failure from
+           notification-domain validation failure so each maps explicitly to
+           notification-intent persistence failure without a redundant broad
+           exception tuple.
+           v1.1.0-R10G9-ATOMIC-RESET-NOTIFICATION-INTENT — Adds one stable
            notification identity/event per reset call, creates PENDING
            PASSWORD_RESET_COMPLETED notification intent on the same transaction
            session after capability consumption, and invokes an injected
@@ -93,7 +97,7 @@ from .password_reset_notification_registry import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-R10G9-ATOMIC-RESET-NOTIFICATION-INTENT"
+VERSION: Final[str] = "v1.1.1-R10G9A-NOTIFICATION-INTENT-FAILURE-MAPPING"
 
 
 class PasswordResetCode(StrEnum):
@@ -428,17 +432,20 @@ class PasswordResetService:
             raise PasswordResetServiceError(PasswordResetCode.HASHING_FAILED)
 
         try:
+            notification_id = self._notification_id_factory()
+        except Exception:
+            raise PasswordResetServiceError(
+                PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE
+            ) from None
+
+        try:
             notification = PasswordResetNotification.issue(
-                notification_id=self._notification_id_factory(),
+                notification_id=notification_id,
                 tenant_id=capability.tenant_id,
                 principal_id=capability.principal_id,
                 occurred_at=self._clock(),
             )
-        except (PasswordResetNotificationError, Exception) as error:
-            if isinstance(error, PasswordResetNotificationError):
-                raise PasswordResetServiceError(
-                    PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE
-                ) from None
+        except PasswordResetNotificationError:
             raise PasswordResetServiceError(
                 PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE
             ) from None
@@ -556,7 +563,7 @@ __all__ = [
 
 
 # ARTIFACT: password_reset_service.py
-# VERSION: v1.1.0-R10G9-ATOMIC-RESET-NOTIFICATION-INTENT
+# VERSION: v1.1.1-R10G9A-NOTIFICATION-INTENT-FAILURE-MAPPING
 # AUTHORITY BOUNDARY: atomic password-reset plus durable notification-intent orchestration only
 # TENANT POSTURE: durable recovery capability supplies exact tenant/principal for reset and notice
 # FAIL-CLOSED POSTURE: pre-commit reset/notice failures deny success; post-commit dispatch failure cannot undo reset
