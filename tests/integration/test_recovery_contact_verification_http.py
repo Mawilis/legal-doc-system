@@ -1,7 +1,7 @@
 """Canonical ASGI certificate for recovery-contact verification HTTP authority.
 
 TITLE: WILSY OS Recovery Contact Verification HTTP ASGI Certificate
-VERSION: v1.0.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ASGI-CERT
+VERSION: v1.1.0-R10E29-DELIVERY-INDEPENDENT-HTTP-COMPLETION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies authenticated initiation/completion transport for explicit
          recovery-contact possession verification without MongoDB, Node, SMTP,
@@ -12,6 +12,9 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.server.app and the real auth
                            collaborators with deterministic test doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.1.0-R10E29-DELIVERY-INDEPENDENT-HTTP-COMPLETION-CERT — Adds mounted evidence that completion never constructs the
+  Node delivery adapter and remains available after challenge delivery even when
+  transport configuration is absent, while initiation still requires delivery.
   v1.0.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ASGI-CERT — Adds mounted ASGI evidence for ACCESS-bound tenant/principal
   identity, strict initiation/completion request shapes, bodyless 202/204 success,
   bounded service/delivery failures, route uniqueness, and no recovery-secret
@@ -169,8 +172,9 @@ def service_calls(
         pass
 
     class FakeService:
-        def __init__(self, *, delivery: object) -> None:
-            assert isinstance(delivery, FakeDelivery)
+        def __init__(self, *, delivery: object | None = None) -> None:
+            if delivery is not None:
+                assert isinstance(delivery, FakeDelivery)
 
         def request_verification(
             self, *, tenant_id: str, principal_id: str, address: str
@@ -313,8 +317,9 @@ def test_service_failures_map_to_bounded_http_status(
         pass
 
     class FailingService:
-        def __init__(self, *, delivery: object) -> None:
-            assert isinstance(delivery, FakeDelivery)
+        def __init__(self, *, delivery: object | None = None) -> None:
+            if delivery is not None:
+                assert isinstance(delivery, FakeDelivery)
 
         def request_verification(self, **_: object) -> object:
             raise RecoveryContactVerificationServiceError(code)
@@ -327,6 +332,37 @@ def test_service_failures_map_to_bounded_http_status(
 
     assert _post(REQUEST_PATH, {"address": ADDRESS_SENTINEL}).status_code == expected
     assert _post(COMPLETE_PATH, {"verification_token": TOKEN_SENTINEL}).status_code == expected
+
+
+def test_completion_never_constructs_delivery_adapter(
+    monkeypatch: pytest.MonkeyPatch,
+    identity: SovereignIdentity,
+) -> None:
+    canonical_app.dependency_overrides[auth_router.get_current_identity] = lambda: identity
+
+    class ForbiddenDelivery:
+        def __init__(self) -> None:
+            raise AssertionError("completion must not construct delivery transport")
+
+    class CompletionOnlyService:
+        def __init__(self, *, delivery: object | None = None) -> None:
+            assert delivery is None
+
+        def complete_verification(self, **kwargs: object) -> object:
+            assert kwargs == {
+                "tenant_id": TENANT_SENTINEL,
+                "principal_id": PRINCIPAL_SENTINEL,
+                "verification_token": TOKEN_SENTINEL,
+            }
+            return object()
+
+    monkeypatch.setattr(auth_router, "NodeRecoveryContactVerificationDelivery", ForbiddenDelivery)
+    monkeypatch.setattr(auth_router, "RecoveryContactVerificationService", CompletionOnlyService)
+
+    result = _post(COMPLETE_PATH, {"verification_token": TOKEN_SENTINEL})
+    assert result.raised is None
+    assert result.status_code == 204
+    assert result.body == b""
 
 
 def test_delivery_configuration_failure_is_503_without_secret_projection(
@@ -387,7 +423,7 @@ def test_effective_routes_are_each_mounted_once() -> None:
 
 
 # ARTIFACT: tests/integration/test_recovery_contact_verification_http.py
-# VERSION: v1.0.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ASGI-CERT
+# VERSION: v1.1.0-R10E29-DELIVERY-INDEPENDENT-HTTP-COMPLETION-CERT
 # AUTHORITY BOUNDARY: mounted ASGI recovery-contact verification transport evidence only
 # TENANT POSTURE: tenant/principal binding derives only from protected ACCESS identity
 # FAIL-CLOSED POSTURE: malformed, caller-authority, lifecycle, delivery, and persistence failures do not verify contact
