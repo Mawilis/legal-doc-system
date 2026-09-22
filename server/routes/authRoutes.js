@@ -1,29 +1,35 @@
-/* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - IDENTITY GATEWAY ROUTES [V46.1.0-OMEGA-RESTORED]                                                                           ║
- * ║ [INVESTOR SLA HUD | ADAPTIVE BREAKER ENRICHMENT | FORENSIC QR SEALING | MESH-BROADCASTED | TRILLION-DOLLAR SPEC]                      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ WHY GLOBAL ENTERPRISES CHOOSE WILSY OS OVER LEGACY GATEWAYS:                                                                         ║
- * ║   • SOVEREIGN MESH BROADCASTING: Every authentication event is propagated live in real time to the boardroom telemetry HUD.            ║
- * ║   • FINANCIAL FORTRESS: Raw Redis suspension checks enforce a 402 Settlement Wall for frozen enterprise tenants.                       ║
- * ║   • QUANTUM-RESISTANT JWTs: Strict HS512 cryptographic signing securing institutional sessions against advanced threats.              ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 46.1.0-OMEGA-RESTORED | PRODUCTION READY | NO CHILD'S PLACE                                                                   ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | INSTITUTIONAL AUTHORITY | BOARDROOM READY                                                         ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/authRoutes.js                                                      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated zero-loss preservation and strict shard-isolated execution sequence.                  ║
- * ║ • AI Engineering (Gemini) - ARCHITECTURAL UPGRADE: Refactored route bindings, strict middleware protection, and verified JSDoc coverage.║
- * ║ • Cline (Executor) - Terminal pipeline deployment and artifact synchronization.                                                        ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- *
- * @fileoverview authRoutes.js – Defines all REST endpoints for identity discovery, credential verification, Google Authenticator 3FA,
- * token refreshing, hardware anchoring, and sovereign recovery within WILSY OS.
- * @author Wilson Khanyezi <wilson@wilsy.ai>
- * @author AI Engineering (Gemini) – Sovereign Collaborative Partner
- * @copyright 2026 WILSY OS – All rights reserved.
+ * WILSY OS — NODE AUTH TRANSPORT ROUTES
+ * TITLE: Node Authentication Transport Router
+ * VERSION: v47.0.0-R10E65-RETIRE-NODE-RECOVERY-ROUTE
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Binds the retained Node authentication transport endpoints while
+ *          explicitly excluding password-recovery/reset authority now owned
+ *          by canonical Python EOS recovery services.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/authRoutes.js
+ * COLLABORATION / OWNERSHIP: Node controllers remain transport/orchestration
+ *                            surfaces for legacy auth paths; Python EOS
+ *                            tools/eos/api/auth_router.py owns canonical
+ *                            password recovery and reset HTTP authority.
+ * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: v47.0.0-R10E65-RETIRE-NODE-RECOVERY-ROUTE — Removes the public
+ *            /reset-password-sovereign route and its controller binding after
+ *            R10E64 certified the Python recovery request, verified-contact,
+ *            delivery, reset-completion, ASGI, real-Mongo, and client flow.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: This router accepts no password-recovery token,
+ *                             recovery email, reset password, or recovery
+ *                             capability material.
+ * TENANT BOUNDARY: Route binding creates no tenant truth; downstream canonical
+ *                  authorities remain responsible for tenant admission.
+ * AUTHORITY BOUNDARY: Node transport/orchestration only. Password recovery,
+ *                     recovery-contact verification, reset capability issuance,
+ *                     and password-reset mutation belong exclusively to Python EOS.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains the exclusive
+ *                               financial execution and settlement authority.
+ * FAIL-CLOSED POSTURE: No Node password-recovery/reset route is exposed by
+ *                      this router; canonical recovery requests must traverse
+ *                      the Python EOS auth API.
  */
 
 import express from 'express';
@@ -37,107 +43,80 @@ import {
   getMe,
   logout,
   anchorHardwareDevice,
-  resetPasswordSovereign,
   revokeBiometric,
   verifyForensicChain,
   verifyOTP,
   setupMFA,
-  validateMFASetup
+  validateMFASetup,
 } from '../controllers/authController.js';
 import { protectSovereign } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 /**
- * @route   POST /api/auth/discover
- * @desc    Discover tenant shard prior to authentication ceremony
- * @access  Public
+ * Discover the tenant transport context before authentication.
+ * This route grants no tenant membership or password-recovery authority.
  */
 router.post('/discover', discoverTenant);
 router.get('/discover', discoverTenant);
 
 /**
- * @route   POST /api/auth/register
- * @desc    Initialize sovereign tenant and administrative identity
- * @access  Public
+ * Forward legacy registration transport to its existing controller.
+ * This binding does not grant password-recovery/reset authority.
  */
 router.post('/register', register);
 
 /**
- * @route   POST /api/auth/login
- * @desc    Verify primary credentials and issue MFA challenge (MFA_REQUIRED / MFA_SETUP)
- * @access  Public
+ * Forward legacy primary-credential login transport.
+ * Password recovery is intentionally absent from this Node router.
  */
 router.post('/login', login);
 
 /**
- * @route   POST /api/auth/verify-3fa
- * @desc    Verify Google Authenticator TOTP code and issue permanent Sovereign JWT (HS512)
- * @access  Public
+ * Forward retained MFA verification transport.
+ * These routes do not issue password-recovery capabilities.
  */
 router.post('/verify-3fa', verify3FA);
 router.post('/verify-otp', verifyOTP);
 
 /**
- * @route   POST /api/auth/refresh
- * @desc    Silent session re-anchoring and token refresh
- * @access  Public (Bearer token required)
+ * Forward retained refresh transport.
+ * Recovery/reset capability issuance is not available through this route.
  */
 router.post('/refresh', refresh);
 
 /**
- * @route   POST /api/auth/webauthn-challenge
- * @desc    Issue WebAuthn challenge for hardware/biometric authentication
- * @access  Public
+ * Forward retained WebAuthn challenge transport.
  */
 router.post('/webauthn-challenge', getWebAuthnChallenge);
 
 /**
- * @route   GET /api/auth/me
- * @desc    Return currently authenticated Wilsy OS sovereign identity profile
- * @access  Private (Sovereign Guarded)
+ * Project the current authenticated identity through the existing guard.
  */
 router.get('/me', protectSovereign, getMe);
 
 /**
- * @route   POST /api/auth/logout
- * @desc    Dissolve active sovereign authentication session
- * @access  Private (Sovereign Guarded)
+ * Forward authenticated logout transport.
  */
 router.post('/logout', protectSovereign, logout);
 
 /**
- * @route   POST /api/auth/anchor-hardware
- * @desc    Anchor hardware device / security key to sovereign identity
- * @access  Private (Sovereign Guarded)
+ * Forward authenticated hardware-anchor transport.
  */
 router.post('/anchor-hardware', protectSovereign, anchorHardwareDevice);
 
 /**
- * @route   POST /api/auth/reset-password-sovereign
- * @desc    Initiate sovereign password recovery protocol
- * @access  Public
- */
-router.post('/reset-password-sovereign', resetPasswordSovereign);
-
-/**
- * @route   POST /api/auth/revoke-biometric
- * @desc    Revoke biometric or hardware authentication material
- * @access  Private (Sovereign Guarded)
+ * Forward authenticated biometric revocation transport.
  */
 router.post('/revoke-biometric', protectSovereign, revokeBiometric);
 
 /**
- * @route   GET /api/auth/verify-forensic-chain
- * @desc    Verify cryptographic integrity of forensic audit chain
- * @access  Private (Sovereign Guarded)
+ * Forward authenticated forensic-chain verification transport.
  */
 router.get('/verify-forensic-chain', protectSovereign, verifyForensicChain);
 
 /**
- * @route   POST /api/auth/setup-mfa
- * @desc    Placeholder / configuration route for MFA setup
- * @access  Private (Sovereign Guarded)
+ * Forward retained MFA setup/validation transport.
  */
 router.post('/setup-mfa', protectSovereign, setupMFA);
 router.post('/validate-mfa-setup', validateMFASetup);
@@ -145,6 +124,11 @@ router.post('/validate-mfa-setup', validateMFASetup);
 export default router;
 
 /**
- * @seal Wilsy OS Institutional Seal - Certified Gold Production Ready
- * @hash SHA-256: 489e2f8d09c317b2b7371c6d1f7c83f98e64c0291f0a2839d88c9f0a20e17142
+ * ARTIFACT: server/routes/authRoutes.js
+ * VERSION: v47.0.0-R10E65-RETIRE-NODE-RECOVERY-ROUTE
+ * AUTHORITY BOUNDARY: Node auth transport/orchestration only; no recovery/reset authority
+ * TENANT POSTURE: route binding creates no tenant truth or cross-tenant fallback
+ * FAIL-CLOSED POSTURE: legacy Node password-recovery/reset route is absent
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
