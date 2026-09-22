@@ -3,7 +3,7 @@
  * WILSY OS — PASSWORD RESET PORTAL
  * ============================================================================
  * TITLE: Browser password-reset completion surface
- * VERSION: v1.2.0-R10D9C-AUTH-LAYOUT-CLOSURE
+ * VERSION: v1.2.1-R10D9D-AUTH-SHELL-BREATHING-ROOM
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the unauthenticated recovery completion form and delegates
  *           all reset authority to the certified Python-backed client method.
@@ -12,6 +12,10 @@
  * Python EOS owns recovery, policy, hashing, revision, and revocation truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-09-22 v1.2.1-R10D9D-AUTH-SHELL-BREATHING-ROOM — Adds a deliberate
+ *   viewport-safe lower brand gutter so the recovery panel finishes with
+ *   premium visual breathing room without changing workspace selection,
+ *   recovery authority, transport, or responsive flow.
  *   2026-09-22 v1.2.0-R10D9C-AUTH-LAYOUT-CLOSURE — Uses a responsive
  *   evidence-and-form composition on wide screens, keeps one-column flow on
  *   narrow screens, and makes recovery verification hierarchy explicit
@@ -268,7 +272,7 @@ const pageStyle = {
   display: 'grid',
   justifyItems: 'center',
   alignItems: 'start',
-  padding: 'clamp(20px, 4vh, 42px) clamp(18px, 3vw, 48px) max(28px, env(safe-area-inset-bottom))',
+  padding: 'clamp(20px, 4vh, 42px) clamp(18px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))',
   overflowX: 'hidden',
   overflowY: 'auto',
   background: 'radial-gradient(circle at 50% 12%, rgba(213,176,79,.06), transparent 34%), #0a0c0d',
@@ -468,7 +472,7 @@ const successPanelStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: Browser password-reset completion surface
- * VERSION: v1.2.0-R10D9C-AUTH-LAYOUT-CLOSURE
+ * VERSION: v1.2.1-R10D9D-AUTH-SHELL-BREATHING-ROOM
  * AUTHORITY BOUNDARY: Client presentation and certified transport invocation
  * TENANT POSTURE: Caller-supplied tenant value is forwarded, never granted
  * FAIL-CLOSED POSTURE: Only server-confirmed HTTP 204 produces success
