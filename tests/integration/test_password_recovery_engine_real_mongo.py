@@ -1,7 +1,7 @@
 """Real-Mongo certificate for the WILSY OS password-recovery engine.
 
 TITLE: WILSY OS Password Recovery Engine Real-Mongo Certificate
-VERSION: v1.0.0-R10E35-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-CERT
+VERSION: v1.0.1-R10E46-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-TYPE-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies verified recovery-contact persistence, email-control
          verification lifecycle, atomic contact enrollment, replay rejection,
@@ -12,7 +12,7 @@ COLLABORATION / OWNERSHIP: Exercises R10E1/R10E15 domains, R10E16/R10E19
                            registries, R10E18 rate gate, R10E21 completion
                            transaction, and canonical AuthRegistry reads only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E35-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-CERT introduces
+CHANGELOG: v1.0.1-R10E46-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-TYPE-CLOSURE introduces
            loopback-only replica-set evidence for real indexes, digest-only
            durability, single-ACTIVE contact authority, exact tenant isolation,
            transaction-scoped verification completion, changed-contact
@@ -82,7 +82,7 @@ from tools.eos.saas.auth.password_recovery_request_service import (
 )
 from tools.eos.saas.tenancy import tenant_registry as tenant_registry_module
 
-VERSION = "v1.0.0-R10E35-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-CERT"
+VERSION = "v1.0.1-R10E46-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-TYPE-CLOSURE"
 URI_ENV = "R10E35_PASSWORD_RECOVERY_MONGO_URI"
 FALLBACK_URI_ENV = "TEST_VENDOR_MONGO_URI"
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
@@ -273,7 +273,7 @@ def _verification(
 def _contact(
     *,
     contact_id: str,
-    digest: str,
+    digest: str = ADDRESS_DIGEST,
     verified_at: datetime = BASE_TIME - timedelta(days=1),
 ) -> VerifiedRecoveryContact:
     return VerifiedRecoveryContact.issue(
@@ -570,7 +570,7 @@ def test_real_transaction_smoke(bound_context: MongoContext) -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_engine_real_mongo.py
-# VERSION: v1.0.0-R10E35-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-CERT
+# VERSION: v1.0.1-R10E46-PASSWORD-RECOVERY-ENGINE-REAL-MONGO-TYPE-CLOSURE
 # AUTHORITY BOUNDARY: disposable real-Mongo recovery-engine evidence only
 # TENANT POSTURE: UUID-isolated loopback DB; exact tenant/principal/digest scope
 # FAIL-CLOSED POSTURE: unavailable Mongo, drift, replay, cross-tenant access reject
