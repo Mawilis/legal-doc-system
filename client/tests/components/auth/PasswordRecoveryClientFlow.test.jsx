@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PASSWORD RECOVERY CLIENT FLOW CERTIFICATE
- * VERSION: v1.0.1-R10E59-PASSWORD-RECOVERY-CLIENT-FLOW-CERT
+ * VERSION: v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the browser projection from recovery request through
  *          verification-link confirmation and reset-link completion, including
@@ -10,7 +10,10 @@
  *                            RecoveryContactVerificationPortal, and
  *                            PasswordResetPortal with mocked transport only.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v1.0.1-R10E59-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Disambiguates repeated recovery-link guidance and waits
+ * CHANGELOG: v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Replaces an over-broad anti-enumeration negative regex
+ *            with positive privacy-copy evidence plus bounded forbidden
+ *            disclosure phrases; production recovery behavior is unchanged.
+ *            v1.0.1-R10E59-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Disambiguates repeated recovery-link guidance and waits
  *            for the actual post-reset success surface, eliminating false
  *            certificate matches without changing production client behavior.
  *            v1.0.0-R10E56-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Adds direct client-flow evidence for generic 202
@@ -122,7 +125,12 @@ describe('R10E56 password recovery client flow certificate', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(
       'If recovery is available for this account, secure instructions will be sent.',
     );
-    expect(screen.queryByText(/account exists|contact exists|verified contact found/i)).not.toBeInTheDocument();
+    expect(screen.getByText(
+      /does not reveal whether an account or recovery contact exists/i,
+    )).toBeInTheDocument();
+    expect(screen.queryByText(
+      /account found|verified recovery contact found|recovery contact available/i,
+    )).not.toBeInTheDocument();
   });
 
   it('scrubs verification capability from the address bar before explicit completion', async () => {
@@ -234,7 +242,7 @@ describe('R10E56 password recovery client flow certificate', () => {
 
 /**
  * ARTIFACT: PasswordRecoveryClientFlow.test.jsx
- * VERSION: v1.0.1-R10E59-PASSWORD-RECOVERY-CLIENT-FLOW-CERT
+ * VERSION: v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection and mocked transport evidence only
  * TENANT POSTURE: workspace/fragment tenant values remain lookup selectors only
  * FAIL-CLOSED POSTURE: missing/mismatched capability inputs cannot create verified contact or reset
