@@ -1,7 +1,7 @@
 """Durable request-density gate for WILSY OS password recovery.
 
 TITLE: WILSY OS Password Recovery Rate Limit Gate
-VERSION: v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT
+VERSION: v1.1.1-R10E55-MONGO-UTC-ROUNDTRIP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Applies one deterministic tenant/address-digest fixed-window request
          limit before password-recovery contact lookup or issuance.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: R10E3 invokes this gate equally for existent and
                            absent contacts. Mongo provides atomic counter
                            capability only; it does not become recovery authority.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT adds a validated namespace to bucket identity and
+CHANGELOG: v1.1.1-R10E55-MONGO-UTC-ROUNDTRIP normalizes BSON-decoded naive UTC bucket timestamps
+           back to explicit UTC before durable-state comparison so real Mongo
+           round-trips do not create false corruption while malformed/non-UTC
+           state still fails closed.
+           v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT adds a validated namespace to bucket identity and
            persisted/query metadata so anonymous reset requests and authenticated
            recovery-contact verification maintain independent security budgets.
            v1.0.0-R10E6-PASSWORD-RECOVERY-RATE-LIMIT introduces deterministic
@@ -45,7 +49,7 @@ from .password_recovery_request_service import (
     PasswordRecoveryRequestRateLimitedError,
 )
 
-VERSION: Final[str] = "v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT"
+VERSION: Final[str] = "v1.1.1-R10E55-MONGO-UTC-ROUNDTRIP"
 COLLECTION: Final[str] = "password_recovery_request_limits"
 DEFAULT_WINDOW: Final[timedelta] = timedelta(minutes=15)
 DEFAULT_MAX_REQUESTS: Final[int] = 5
@@ -73,6 +77,24 @@ def _utc(value: object) -> datetime:
     if value.tzinfo is None or value.utcoffset() != timezone.utc.utcoffset(value):
         raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_TIME_INVALID")
     return value
+
+
+def _persisted_utc(value: object) -> datetime:
+    """Hydrate one BSON datetime as explicit UTC for integrity comparison.
+
+    PyMongo decodes BSON UTC datetimes as naive values unless a tz-aware codec
+    is configured. This helper interprets only that documented naive BSON form
+    as UTC, normalizes already-aware UTC values, and rejects non-datetime or
+    non-UTC-aware values so persistence corruption never widens admission.
+    """
+
+    if not isinstance(value, datetime):
+        raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_STATE_INVALID")
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    if value.utcoffset() != timezone.utc.utcoffset(value):
+        raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_STATE_INVALID")
+    return value.astimezone(timezone.utc)
 
 
 def _validated_tenant(value: object) -> str:
@@ -233,11 +255,12 @@ class PasswordRecoveryRateLimit:
 
         if not isinstance(row, dict):
             raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_STATE_INVALID")
+        persisted_start = _persisted_utc(row.get("bucket_start"))
         if (
             row.get("namespace") != self._namespace
             or row.get("tenant_id") != tenant
             or row.get("address_digest") != digest
-            or row.get("bucket_start") != start
+            or persisted_start != start
         ):
             raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_STATE_MISMATCH")
         count = row.get("count")
@@ -261,7 +284,7 @@ __all__ = [
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: password_recovery_rate_limit.py
-# VERSION: v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT
+# VERSION: v1.1.1-R10E55-MONGO-UTC-ROUNDTRIP
 # AUTHORITY BOUNDARY: durable request-density capability only
 # TENANT POSTURE: namespace + exact tenant/address-digest bucket identity
 # FAIL-CLOSED POSTURE: persistence/state failure never bypasses throttling
