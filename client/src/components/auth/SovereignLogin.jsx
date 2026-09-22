@@ -1,6 +1,6 @@
 /**
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.8.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE
+ * VERSION: v3.9.0-R10E23-FORGOT-PASSWORD-REQUEST-ENTRYPOINT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v3.8.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE — Brings sign-in
+ * CHANGELOG: v3.9.0-R10E23-FORGOT-PASSWORD-REQUEST-ENTRYPOINT — Routes the pre-authentication Forgot Password
+ *            action to the enumeration-safe /forgot-password request journey,
+ *            carrying only the current email field as ephemeral navigation state;
+ *            tenant context remains the existing discovery projection and no
+ *            recovery capability or account truth enters the browser route.
+ *            v3.8.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE — Brings sign-in
  *            into the same institutional page grammar as password reset by
  *            promoting the page title above a balanced identity-and-credentials
  *            task grid, widening the tenant identity surface, and tightening
@@ -117,7 +122,11 @@ export default function SovereignLogin({ onLoginSuccess }) {
               <input id="work-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} required />
               <div style={passwordLabelRowStyle}>
                 <label htmlFor="work-password" style={passwordLabelStyle}>Password</label>
-                <button type="button" onClick={() => navigate('/reset-password')} style={forgotPasswordButtonStyle}>
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password', { state: { email: email.trim() } })}
+                  style={forgotPasswordButtonStyle}
+                >
                   Forgot password?
                 </button>
               </div>
@@ -160,7 +169,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.8.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE
+ * VERSION: v3.9.0-R10E23-FORGOT-PASSWORD-REQUEST-ENTRYPOINT
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated
