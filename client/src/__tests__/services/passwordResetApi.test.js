@@ -2,17 +2,20 @@
  * ============================================================================
  * WILSY OS — PASSWORD RESET API CERTIFICATE
  * ============================================================================
- * TITLE: Client password-reset transport contract certificate
- * VERSION: v1.0.0-R10D7-CLIENT-PASSWORD-RESET-API-CERT
+ * TITLE: Client password-recovery transport contract certificate
+ * VERSION: v1.1.0-R10E20-CLIENT-PASSWORD-RECOVERY-API-CERT
  * AUTHORITY: Wilsy OS Core Governance
- * EPITOME: Certifies the real resetPassword client method at the Axios seam
- * without contacting a network, changing browser authority, or duplicating
- * server-side recovery semantics.
+ * EPITOME: Certifies the real requestPasswordReset and resetPassword client
+ * methods at the Axios seam without contacting a network, changing browser
+ * authority, or duplicating server-side recovery semantics.
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/passwordResetApi.test.js
  * COLLABORATION / OWNERSHIP: R10D7 client certification; production transport
  * remains owned by client/src/services/api.js and reset authority by Python EOS.
  * CERTIFICATION DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-09-22 v1.1.0-R10E20-CLIENT-PASSWORD-RECOVERY-API-CERT — Adds exact enumeration-safe recovery initiation
+ *   transport, public-path payload preservation, bodyless-202 semantics, and
+ *   no bearer/retry/storage mutation while retaining reset completion evidence.
  *   2026-09-22 v1.0.0-R10D7-CLIENT-PASSWORD-RESET-API-CERT — Certified exact
  *   unauthenticated reset transport, body preservation, 204 semantics, and
  *   fail-closed error behavior through the live client method.
@@ -133,7 +136,17 @@ Object.defineProperty(window, 'sessionStorage', {
   writable: true,
 });
 
-import api, { resetPassword } from '../../services/api.js';
+import api, { requestPasswordReset, resetPassword } from '../../services/api.js';
+
+const REQUEST_INPUT = Object.freeze({
+  tenantId: 'tenant-r10e20-synthetic',
+  email: 'recovery-r10e20@example.com',
+});
+
+const requestTransport = () => ({
+  tenant_id: REQUEST_INPUT.tenantId,
+  email: REQUEST_INPUT.email,
+});
 
 const RESET_INPUT = Object.freeze({
   tenantId: 'tenant-r10d7-synthetic',
@@ -152,7 +165,7 @@ const readApiSource = () => readFileSync(
   'utf8',
 );
 
-describe('R10D7 client password-reset API certificate', () => {
+describe('R10E20 client password-recovery API certificate', () => {
   let consoleLogSpy;
   let consoleWarnSpy;
   let consoleErrorSpy;
@@ -172,6 +185,111 @@ describe('R10D7 client password-reset API certificate', () => {
     consoleLogSpy.mockRestore();
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+  });
+
+  it('uses requestPasswordReset with the exact public POST path, options, and two-field body', async () => {
+    const response = { status: 202, data: undefined, headers: {} };
+    mockAxiosInstance.post.mockResolvedValueOnce(response);
+
+    const result = await requestPasswordReset(REQUEST_INPUT);
+
+    expect(result).toBe(response);
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/auth/request-password-reset',
+      requestTransport(),
+      { skipAuth: true },
+    );
+    const [path, body, options] = mockAxiosInstance.post.mock.calls[0];
+    expect(path).toBe('/auth/request-password-reset');
+    expect(Object.keys(body).sort()).toEqual(['email', 'tenant_id']);
+    expect(body).toEqual(requestTransport());
+    expect(options).toEqual({ skipAuth: true });
+    expect(api.defaults.baseURL).toBe('/api');
+  });
+
+  it('preserves recovery-request payload through the public interceptor without bearer or seal mutation', async () => {
+    expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+    localStorageMock.setItem('wilsy_auth_token', 'synthetic-access-token');
+    localStorageMock.setItem('wilsy_refresh_token', 'synthetic-refresh-token');
+    localStorageMock.setItem('wilsy_active_tenant', JSON.stringify({
+      tenantId: REQUEST_INPUT.tenantId,
+      alias: 'synthetic-tenant',
+    }));
+
+    const body = requestTransport();
+    const sealed = await requestInterceptorCapture.fulfilled({
+      url: '/auth/request-password-reset',
+      method: 'post',
+      data: body,
+      skipAuth: true,
+      headers: {},
+    });
+
+    expect(sealed.data).toEqual(body);
+    expect(Object.keys(sealed.data).sort()).toEqual(['email', 'tenant_id']);
+    expect(sealed.data).not.toHaveProperty('timestamp');
+    expect(sealed.headers.Authorization).toBeUndefined();
+    expect(sealed.headers['X-Tenant-ID']).toBe(REQUEST_INPUT.tenantId);
+    expect(sealed.headers['x-request-seal']).toBeUndefined();
+    expect(sealed.headers['x-forensic-timestamp']).toBeUndefined();
+    expect(sealed.headers['x-cryptographic-nonce']).toBeUndefined();
+    expect(mockGenerateTraceAnchor).not.toHaveBeenCalled();
+    expect(mockBroadcastTelemetry).not.toHaveBeenCalled();
+    expect(mockBridgeLog).not.toHaveBeenCalled();
+  });
+
+  it('accepts a bodyless 202 recovery-request response without browser authority mutation', async () => {
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      status: 202,
+      data: undefined,
+      headers: {},
+    });
+
+    const result = await requestPasswordReset(REQUEST_INPUT);
+    const intercepted = await responseInterceptorCapture.fulfilled(result);
+
+    expect(result.status).toBe(202);
+    expect(result.data).toBeUndefined();
+    expect(intercepted).toBe(result);
+    expect(localStorageMock.setItem).not.toHaveBeenCalled();
+    expect(localStorageMock.removeItem).not.toHaveBeenCalled();
+    expect(sessionStorageMock.setItem).not.toHaveBeenCalled();
+    expect(sessionStorageMock.removeItem).not.toHaveBeenCalled();
+  });
+
+  it.each([400, 422, 503])(
+    'rejects recovery-request HTTP %s without retry, refresh, success conversion, or storage mutation',
+    async (status) => {
+      const error = {
+        response: { status, data: { detail: 'synthetic failure' } },
+        config: { url: '/auth/request-password-reset', method: 'post', skipAuth: true },
+      };
+      mockAxiosInstance.post.mockRejectedValueOnce(error);
+
+      await expect(requestPasswordReset(REQUEST_INPUT)).rejects.toBe(error);
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+      await expect(responseInterceptorCapture.rejected(error)).rejects.toBe(error);
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('audits requestPasswordReset for exact transport-only authority', () => {
+    const source = readApiSource();
+    const methodStart = source.indexOf('const requestPasswordReset =');
+    const methodEnd = source.indexOf('\n\n/**', methodStart);
+    expect(methodStart).toBeGreaterThanOrEqual(0);
+    expect(methodEnd).toBeGreaterThan(methodStart);
+    const methodSource = source.slice(methodStart, methodEnd);
+
+    expect(methodSource).toContain("'/auth/request-password-reset'");
+    expect(methodSource).toContain('tenant_id: tenantId');
+    expect(methodSource).toContain('email');
+    expect(methodSource).toContain('{ skipAuth: true }');
+    expect(methodSource).not.toContain("'/api/");
+    expect(methodSource).not.toMatch(/localStorage|sessionStorage|window\.location|refresh/i);
+    expect(methodSource).not.toMatch(/recoveryToken|jwt|role|permission|mfa|principal|verified|mongo|fetch|WebSocket/i);
+    expect(source).toContain("/^\\/auth\\/request-password-reset$/i.test(config.url)");
   });
 
   it('uses the live resetPassword method with the exact POST path, options, and three-field body', async () => {
@@ -325,7 +443,7 @@ describe('R10D7 client password-reset API certificate', () => {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: Client password-reset API certificate
- * VERSION: v1.0.0-R10D7-CLIENT-PASSWORD-RESET-API-CERT
+ * VERSION: v1.1.0-R10E20-CLIENT-PASSWORD-RECOVERY-API-CERT
  * AUTHORITY BOUNDARY: Synthetic Axios seam only; no server or browser authority
  * TENANT POSTURE: Exact caller tenant projection is asserted, never granted
  * FAIL-CLOSED POSTURE: Non-204 HTTP failures reject and are never retried
