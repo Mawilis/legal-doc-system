@@ -1,7 +1,7 @@
 """Direct unit certificate for the WILSY OS password-recovery registry.
 
 TITLE: WILSY OS Password Recovery Registry Direct Certificate
-VERSION: v1.0.0-R10B3-PASSWORD-RECOVERY-REGISTRY-CERT
+VERSION: v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the exact R10B2 registry API against deterministic,
          in-memory PyMongo-shaped spies without contacting Mongo or changing
@@ -13,7 +13,10 @@ COLLABORATION / OWNERSHIP: Tests
                             no service, router, client, or database runtime is
                             exercised here.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10B3-PASSWORD-RECOVERY-REGISTRY-CERT certifies collection identity, deterministic indexes,
+CHANGELOG: v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY-CERT adds direct evidence for
+           exact tenant/principal ACTIVE-capability reads, strict hydration,
+           session propagation, cross-principal exclusion, and zero mutation.
+           v1.0.0-R10B3-PASSWORD-RECOVERY-REGISTRY-CERT certifies collection identity, deterministic indexes,
            insert-only creation, tenant-scoped reads, domain hydration,
            lifecycle CAS predicates, replay classification, session
            forwarding, and forbidden-authority boundaries.
@@ -115,6 +118,11 @@ class RecordingCollection:
             if self._matches(row, query):
                 return deepcopy(row)
         return None
+    def find(self, query: dict[str, Any], **options: Any) -> list[dict[str, Any]]:
+        self.calls.append({"method": "find", "query": deepcopy(query), "options": options})
+        if self.fail_reads:
+            raise PyMongoError("synthetic read failure")
+        return [deepcopy(row) for row in self.rows if self._matches(row, query)]
 
     def find_one_and_update(
         self,
@@ -253,6 +261,64 @@ def test_capability_and_digest_reads_are_exactly_tenant_scoped() -> None:
     assert registry.get_by_capability_id(tenant_id="tenant-a", capability_id=capability.capability_id, session=session) == capability
     assert registry.get_by_token_digest(tenant_id="tenant-a", token_digest=capability.token_digest, session=session) == capability
 
+
+def test_active_principal_read_is_exact_hydrated_and_session_bound() -> None:
+    registry, collection, session = _registry()
+    first = _capability("cap-active-one", "synthetic-active-one")
+    second = _capability("cap-active-two", "synthetic-active-two")
+    other_principal = _capability("cap-other-principal", "synthetic-other-principal", principal_id="principal-b")
+    other_tenant = _capability("cap-other-tenant", "synthetic-other-tenant", tenant_id="tenant-b")
+    for capability in (first, second, other_principal, other_tenant):
+        registry.create(capability, session=session)
+    collection.calls.clear()
+
+    result = registry.list_active_for_principal(
+        tenant_id="tenant-a", principal_id="principal-a", session=session
+    )
+
+    assert result == (first, second)
+    call = _last_call(collection, "find")
+    assert call["query"] == {
+        "tenant_id": "tenant-a",
+        "principal_id": "principal-a",
+        "status": PasswordRecoveryCapabilityStatus.ACTIVE.value,
+    }
+    assert call["options"]["session"] is session
+    assert not any(call["method"] in {"insert_one", "find_one_and_update"} for call in collection.calls)
+
+
+def test_active_principal_read_excludes_terminal_and_rejects_corruption() -> None:
+    registry, collection, session = _registry()
+    active = _capability("cap-active", "synthetic-active")
+    terminal = _capability("cap-terminal", "synthetic-terminal")
+    registry.create(active, session=session)
+    registry.create(terminal, session=session)
+    registry.revoke(terminal, BASE_TIME + timedelta(minutes=5), session=session)
+    collection.calls.clear()
+
+    assert registry.list_active_for_principal(
+        tenant_id="tenant-a", principal_id="principal-a", session=session
+    ) == (active,)
+
+    collection.rows[0]["token_digest"] = "corrupt"
+    with pytest.raises(PasswordRecoveryCapabilityPersistedRecordInvalidError):
+        registry.list_active_for_principal(
+            tenant_id="tenant-a", principal_id="principal-a", session=session
+        )
+
+
+def test_active_principal_read_validates_scope_and_maps_persistence_failure() -> None:
+    registry, collection, session = _registry()
+    with pytest.raises(PasswordRecoveryCapabilityRegistryError) as invalid:
+        registry.list_active_for_principal(tenant_id="", principal_id="principal-a", session=session)
+    assert invalid.value.code == "RECOVERY_PRINCIPAL_QUERY_INVALID"
+
+    collection.fail_reads = True
+    with pytest.raises(PasswordRecoveryCapabilityPersistenceError) as failure:
+        registry.list_active_for_principal(
+            tenant_id="tenant-a", principal_id="principal-a", session=session
+        )
+    assert failure.value.code == "RECOVERY_PRINCIPAL_ACTIVE_READ_FAILED"
 
 @pytest.mark.parametrize(
     ("field", "value"),
@@ -405,7 +471,7 @@ def test_registry_does_not_own_transactions_or_forbidden_authority() -> None:
 
 
 # ARTIFACT: test_password_recovery_registry.py
-# VERSION: v1.0.0-R10B3-PASSWORD-RECOVERY-REGISTRY-CERT
+# VERSION: v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY-CERT
 # AUTHORITY BOUNDARY: direct unit evidence for recovery-capability registry behavior only
 # TENANT POSTURE: exact tenant-scoped fake reads and lifecycle predicates
 # FAIL-CLOSED POSTURE: corruption, duplicate, replay, conflict, and persistence failure remain explicit
