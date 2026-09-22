@@ -3,7 +3,7 @@
  * WILSY OS — PASSWORD RESET PORTAL
  * ============================================================================
  * TITLE: Browser password-reset completion surface
- * VERSION: v1.2.2-R10D9D-VISIBLE-BOTTOM-GUTTER
+ * VERSION: v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the unauthenticated recovery completion form and delegates
  *           all reset authority to the certified Python-backed client method.
@@ -12,6 +12,11 @@
  * Python EOS owns recovery, policy, hashing, revision, and revocation truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-09-22 v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF — Consumes
+ *   tenant/recovery values from the governed URL fragment, seeds the existing
+ *   reset lookup fields, immediately scrubs the secret fragment from browser
+ *   history/address display, and replaces manual token entry with a bounded
+ *   "recovery link loaded" state while preserving manual fallback.
  *   2026-09-22 v1.2.2-R10D9D-VISIBLE-BOTTOM-GUTTER — Makes the lower brand
  *   gutter visible in the initial desktop viewport by compacting vertical shell
  *   chrome and form rhythm only; workspace context, recovery authority, reset
@@ -34,7 +39,9 @@
  *   pending protection, bodyless-204 success, and safe status messaging.
  * COMPLIANCE: POPIA §19, GDPR §32, SOC2 §CC7.2; client projection only.
  * SECURITY / PRIVACY POSTURE: Password and recovery capability values remain
- *   component state, are never logged or persisted, and are cleared on success.
+ *   transient component state, are never logged or persisted, and are cleared
+ *   on success; fragment-delivered capabilities are removed from the address
+ *   bar immediately after initial hydration.
  * TENANT BOUNDARY: AuthContext's server-backed tenant projection is used only
  *                 as a reset lookup selector; the browser neither resolves nor
  *                 grants tenant authority.
@@ -44,9 +51,9 @@
  * ============================================================================
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { resetPassword } from '../../services/api.js';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
@@ -58,6 +65,19 @@ import TenantIdentityCard from './TenantIdentityCard.jsx';
  * @institutional Prevents the browser from reconstructing recovery lifecycle or
  * exposing Axios configuration, identity, or capability material.
  */
+const recoveryFragmentValues = (hash) => {
+  if (typeof hash !== 'string' || !hash.startsWith('#')) {
+    return { tenantId: '', recoveryToken: '' };
+  }
+  const params = new URLSearchParams(hash.slice(1));
+  const tenantId = params.get('tenant') || '';
+  const recoveryToken = params.get('recovery') || '';
+  return {
+    tenantId: tenantId.length <= 256 ? tenantId : '',
+    recoveryToken: recoveryToken.length <= 4096 ? recoveryToken : '',
+  };
+};
+
 const messageForResetFailure = (status) => {
   if (status === 400) {
     return 'We could not reset your password. Check the recovery information and password requirements, then try again.';
@@ -95,12 +115,21 @@ export default function PasswordResetPortal({
   initialRecoveryToken = '',
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { tenant: selectedTenant } = useAuth();
+  const linkValues = useMemo(
+    () => recoveryFragmentValues(location.hash),
+    [location.hash],
+  );
   const contextTenantId = typeof selectedTenant?.tenantId === 'string'
     ? selectedTenant.tenantId.trim()
     : '';
-  const [manualTenantId, setManualTenantId] = useState(() => String(initialTenantId ?? ''));
-  const [recoveryToken, setRecoveryToken] = useState(() => String(initialRecoveryToken ?? ''));
+  const [manualTenantId, setManualTenantId] = useState(
+    () => String(initialTenantId || linkValues.tenantId || ''),
+  );
+  const [recoveryToken, setRecoveryToken] = useState(
+    () => String(initialRecoveryToken || linkValues.recoveryToken || ''),
+  );
   const [newPassword, setNewPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [pending, setPending] = useState(false);
@@ -109,6 +138,16 @@ export default function PasswordResetPortal({
 
   const tenantId = contextTenantId || manualTenantId;
   const hasSelectedWorkspace = Boolean(contextTenantId);
+  const recoveryLinkLoaded = Boolean(linkValues.recoveryToken);
+
+  useEffect(() => {
+    if (!recoveryLinkLoaded) return;
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${location.pathname}${location.search}`,
+    );
+  }, [location.pathname, location.search, recoveryLinkLoaded]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -202,25 +241,38 @@ export default function PasswordResetPortal({
             )}
             <section aria-labelledby="recovery-verification-title" style={recoveryBriefStyle}>
               <h2 id="recovery-verification-title" style={sectionTitleStyle}>Recovery verification</h2>
-              <p style={helpStyle}>Use the one-time recovery value issued for this reset. Keep it private.</p>
+              <p style={helpStyle}>
+                {recoveryLinkLoaded
+                  ? 'Secure recovery link loaded. The server will validate it when you submit.'
+                  : 'Use the one-time recovery value issued for this reset. Keep it private.'}
+              </p>
             </section>
           </div>
 
           <div style={resetFormColumnStyle}>
             <form onSubmit={handleSubmit} aria-busy={pending} style={formStyle}>
-              <label htmlFor="reset-recovery-token" style={labelStyle}>Recovery information</label>
-              <input
-                id="reset-recovery-token"
-                name="recoveryToken"
-                type="password"
-                autoComplete="one-time-code"
-                value={recoveryToken}
-                onChange={(event) => setRecoveryToken(event.target.value)}
-                aria-describedby="reset-recovery-help"
-                style={inputStyle}
-                required
-              />
-              <p id="reset-recovery-help" style={helpStyle}>Enter the one-time recovery value. Keep it private; it is used once.</p>
+              {recoveryLinkLoaded ? (
+                <div role="status" aria-live="polite" style={recoveryLinkStatusStyle}>
+                  <ShieldCheck size={17} aria-hidden="true" />
+                  <span>Secure recovery link loaded. The capability has been removed from the address bar.</span>
+                </div>
+              ) : (
+                <>
+                  <label htmlFor="reset-recovery-token" style={labelStyle}>Recovery information</label>
+                  <input
+                    id="reset-recovery-token"
+                    name="recoveryToken"
+                    type="password"
+                    autoComplete="one-time-code"
+                    value={recoveryToken}
+                    onChange={(event) => setRecoveryToken(event.target.value)}
+                    aria-describedby="reset-recovery-help"
+                    style={inputStyle}
+                    required
+                  />
+                  <p id="reset-recovery-help" style={helpStyle}>Enter the one-time recovery value. Keep it private; it is used once.</p>
+                </>
+              )}
 
               <label htmlFor="reset-new-password" style={labelStyle}>New password</label>
               <input
@@ -400,6 +452,20 @@ const inputStyle = {
   outlineColor: '#d5b04f',
 };
 
+const recoveryLinkStatusStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  margin: '6px 0 4px',
+  padding: '11px 12px',
+  border: '1px solid rgba(185,233,199,.20)',
+  borderRadius: '8px',
+  color: '#b9e9c7',
+  background: 'rgba(28,49,36,.18)',
+  fontSize: '12px',
+  lineHeight: 1.45,
+};
+
 const helpStyle = {
   margin: '-2px 0 0',
   color: '#777a76',
@@ -476,7 +542,7 @@ const successPanelStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: Browser password-reset completion surface
- * VERSION: v1.2.2-R10D9D-VISIBLE-BOTTOM-GUTTER
+ * VERSION: v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF
  * AUTHORITY BOUNDARY: Client presentation and certified transport invocation
  * TENANT POSTURE: Caller-supplied tenant value is forwarded, never granted
  * FAIL-CLOSED POSTURE: Only server-confirmed HTTP 204 produces success
