@@ -1,7 +1,7 @@
 """Direct deterministic certificate for the WILSY OS reset orchestrator.
 
 TITLE: WILSY OS Password Reset Service Direct Certificate
-VERSION: v1.0.0-R10D2-PASSWORD-RESET-SERVICE-DIRECT-CERT
+VERSION: v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the public password-reset service boundary, ordering,
          durable-authority composition, failure handling, replay posture,
@@ -12,7 +12,15 @@ COLLABORATION / OWNERSHIP: Certifies
                            production transaction and real-Mongo behavior are
                            reserved for later evidence gates.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10D2 establishes direct public-entrypoint coverage for
+CHANGELOG: v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT — Tightens notification secret-hygiene evidence to
+           forbidden persisted field names rather than rejecting the legitimate
+           non-secret EMAIL channel enum value.
+           v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT extends the frozen R10D2 certificate with
+           atomic reset-notification intent creation, exact session propagation,
+           retry-stable notification identity, rollback on notification
+           persistence failure, post-commit-only dispatch, and non-fatal
+           certified delivery failure.
+           v1.0.0-R10D2-PASSWORD-RESET-SERVICE-DIRECT-CERT establishes direct public-entrypoint coverage for
            policy and hashing order, transactional capability revalidation,
            credential CAS, exact revocation, consume, replay, retry rereads,
            authority exclusion, and secret-safe results.
@@ -43,6 +51,13 @@ from tools.eos.saas.auth.password_recovery import (
     PasswordRecoveryCapability,
     PasswordRecoveryCapabilityStatus,
 )
+from tools.eos.saas.auth.password_reset_notification import PasswordResetNotification
+from tools.eos.saas.auth.password_reset_notification_dispatcher import (
+    PasswordResetNotificationDispatchError,
+)
+from tools.eos.saas.auth.password_reset_notification_registry import (
+    PasswordResetNotificationRegistryError,
+)
 from tools.eos.saas.auth.password_reset_service import (
     PasswordResetCode,
     PasswordResetResult,
@@ -51,13 +66,14 @@ from tools.eos.saas.auth.password_reset_service import (
 )
 
 
-VERSION = "v1.0.0-R10D2-PASSWORD-RESET-SERVICE-DIRECT-CERT"
+VERSION = "v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT"
 NOW = datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-a"
 RECOVERY_TOKEN = "synthetic-recovery-token"
 TOKEN_DIGEST = hashlib.sha3_512(RECOVERY_TOKEN.encode("utf-8")).hexdigest()
 NEW_PASSWORD = "synthetic valid password 123"
+NOTIFICATION_ID = "WILSYRESETNOTICE-R10G10-CERT"
 
 
 def _capability(
@@ -298,24 +314,108 @@ class RecordingAuthRegistry:
         return 3
 
 
+
+class RecordingNotificationRegistry:
+    """Synthetic notification registry recording exact transaction participation."""
+
+    def __init__(self, *, failure: bool = False) -> None:
+        self.failure = failure
+        self.create_calls: list[tuple[PasswordResetNotification, object | None]] = []
+
+    def create(
+        self,
+        notification: PasswordResetNotification,
+        *,
+        session: object | None = None,
+    ) -> PasswordResetNotification:
+        """Record one notification-intent insert on the caller session."""
+
+        self.create_calls.append((notification, session))
+        if self.failure:
+            raise PasswordResetNotificationRegistryError(
+                "SYNTHETIC_NOTIFICATION_CREATE_FAILED"
+            )
+        return notification
+
+
+class RecordingNotificationDispatcher:
+    """Synthetic post-commit dispatcher with stable optional failure."""
+
+    def __init__(
+        self,
+        *,
+        failure: bool = False,
+        client: RecordingClient | None = None,
+    ) -> None:
+        self.failure = failure
+        self.client = client
+        self.calls: list[tuple[str, str, datetime]] = []
+        self.committed_at_call: list[bool] = []
+
+    def dispatch(
+        self,
+        *,
+        tenant_id: str,
+        notification_id: str,
+        observed_at: datetime,
+    ) -> object:
+        """Record post-commit dispatch without external transport."""
+
+        self.calls.append((tenant_id, notification_id, observed_at))
+        committed = bool(
+            self.client is not None
+            and self.client.session is not None
+            and self.client.session.committed
+        )
+        self.committed_at_call.append(committed)
+        if self.failure:
+            raise PasswordResetNotificationDispatchError(
+                "PASSWORD_RESET_NOTIFICATION_DELIVERY_FAILED"
+            )
+        return object()
+
+
+def _notification_registry(service: PasswordResetService) -> RecordingNotificationRegistry:
+    """Return the deterministic injected notification registry."""
+
+    value = service._notification_registry
+    assert isinstance(value, RecordingNotificationRegistry)
+    return value
+
+
+def _notification_dispatcher(service: PasswordResetService) -> RecordingNotificationDispatcher:
+    """Return the deterministic injected post-commit dispatcher."""
+
+    value = service._notification_dispatcher
+    assert isinstance(value, RecordingNotificationDispatcher)
+    return value
+
+
 def _service(
     recovery: RecordingRecoveryRegistry | None = None,
     auth: RecordingAuthRegistry | None = None,
     checker: RecordingChecker | None = None,
     client: RecordingClient | None = None,
+    notification: RecordingNotificationRegistry | None = None,
+    dispatcher: RecordingNotificationDispatcher | None = None,
 ) -> tuple[PasswordResetService, RecordingRecoveryRegistry, RecordingAuthRegistry, RecordingClient]:
-    """Construct the real service with only deterministic injected authorities."""
+    """Construct the real service with deterministic injected authorities."""
 
     registry = recovery or RecordingRecoveryRegistry([_capability()])
     authority = auth or RecordingAuthRegistry()
     mongo = client or RecordingClient()
+    notice_registry = notification or RecordingNotificationRegistry()
+    notice_dispatcher = dispatcher or RecordingNotificationDispatcher(client=mongo)
     return (
         PasswordResetService(
             client=mongo,
             recovery_registry=registry,
             auth_registry=authority,
+            notification_registry=notice_registry,
+            notification_dispatcher=notice_dispatcher,
             blocklist_checker=checker or RecordingChecker(),
             clock=lambda: NOW,
+            notification_id_factory=lambda: NOTIFICATION_ID,
         ),
         registry,
         authority,
@@ -362,7 +462,17 @@ def test_success_order_and_public_receipt() -> None:
     ]
     assert checker.calls == [NEW_PASSWORD]
     assert recovery.consume_calls[0][0].principal_id == PRINCIPAL
-    assert client.session is not None and client.session.committed
+    notices = _notification_registry(service)
+    dispatcher = _notification_dispatcher(service)
+    assert len(notices.create_calls) == 1
+    notice, notice_session = notices.create_calls[0]
+    assert notice.notification_id == NOTIFICATION_ID
+    assert notice.tenant_id == TENANT
+    assert notice.principal_id == PRINCIPAL
+    assert dispatcher.calls == [(TENANT, NOTIFICATION_ID, NOW)]
+    assert dispatcher.committed_at_call == [True]
+    assert client.session is not None and notice_session is client.session
+    assert client.session.committed
 
 
 def test_policy_rejection_starts_no_transaction() -> None:
@@ -525,6 +635,94 @@ def test_recovery_consume_failure_aborts_without_success() -> None:
     assert client.session is not None and client.session.aborted
 
 
+
+def test_notification_persistence_failure_aborts_reset_before_commit() -> None:
+    """Reset success requires atomic durable notification intent."""
+
+    notices = RecordingNotificationRegistry(failure=True)
+    dispatcher = RecordingNotificationDispatcher()
+    service, recovery, auth, client = _service(
+        notification=notices,
+        dispatcher=dispatcher,
+    )
+
+    _assert_failure(service, PasswordResetCode.NOTIFICATION_PERSISTENCE_FAILURE)
+
+    assert client.session is not None and client.session.aborted
+    assert not client.session.committed
+    assert len(notices.create_calls) == 1
+    assert dispatcher.calls == []
+
+
+def test_notification_intent_uses_durable_capability_identity_only() -> None:
+    """Caller cannot nominate notification tenant, principal, or recipient."""
+
+    service, recovery, auth, client = _service()
+    _reset(service)
+
+    notices = _notification_registry(service)
+    notice = notices.create_calls[0][0]
+    assert notice.tenant_id == TENANT
+    assert notice.principal_id == PRINCIPAL
+    assert notice.notification_id == NOTIFICATION_ID
+    document = notice.to_document()
+    forbidden_fields = {
+        "email",
+        "recipient",
+        "address",
+        "password",
+        "recovery_token",
+        "token",
+        "token_digest",
+        "capability_digest",
+        "jwt",
+        "session",
+        "refresh_token",
+        "mfa_secret",
+    }
+    assert forbidden_fields.isdisjoint(document)
+    assert document["channel"] == "EMAIL"
+
+
+def test_post_commit_dispatch_failure_does_not_rewrite_committed_reset_truth() -> None:
+    """Certified delivery failure leaves the committed reset receipt valid."""
+
+    client = RecordingClient()
+    dispatcher = RecordingNotificationDispatcher(failure=True, client=client)
+    service, recovery, auth, client = _service(
+        client=client,
+        dispatcher=dispatcher,
+    )
+
+    result = _reset(service)
+
+    assert result == PasswordResetResult()
+    assert client.session is not None and client.session.committed
+    assert dispatcher.calls == [(TENANT, NOTIFICATION_ID, NOW)]
+    assert dispatcher.committed_at_call == [True]
+    assert len(_notification_registry(service).create_calls) == 1
+
+
+def test_notification_identity_is_created_once_per_public_call_across_callback_retry() -> None:
+    """Whole-transaction callback retries preserve one logical notification ID."""
+
+    recovery = RetryRecoveryRegistry([_capability(), _capability()])
+    client = RecordingClient(retry_once=True)
+    service, recovery, auth, client = _service(
+        recovery=recovery,
+        client=client,
+    )
+
+    _reset(service)
+
+    notices = _notification_registry(service)
+    assert len(notices.create_calls) == 2
+    first, second = notices.create_calls
+    assert first[0].notification_id == second[0].notification_id == NOTIFICATION_ID
+    assert first[0].occurred_at == second[0].occurred_at == NOW
+    assert _notification_dispatcher(service).calls == [(TENANT, NOTIFICATION_ID, NOW)]
+
+
 def test_transaction_wrapper_failure_claims_no_success() -> None:
     """A transaction-wrapper fracture returns no bounded success receipt."""
 
@@ -547,6 +745,9 @@ def test_exact_same_session_reaches_every_mutation() -> None:
     assert auth.session_calls[0][2] is session
     assert auth.refresh_calls[0][2] is session
     assert recovery.consume_calls[0][1] is session
+    notices = _notification_registry(service)
+    assert len(notices.create_calls) == 1
+    assert notices.create_calls[0][1] is session
 
 
 def test_replay_after_success_is_rejected() -> None:
@@ -574,6 +775,11 @@ def test_callback_retry_rereads_capability_and_revision() -> None:
     assert all(call[2] is client.session for call in recovery.lookup_calls[1:])
     assert all(call[2] is client.session for call in auth.revision_calls)
     assert all(call[4] is client.session for call in auth.cas_calls)
+    notices = _notification_registry(service)
+    assert len(notices.create_calls) == 2
+    assert {notice.notification_id for notice, _session in notices.create_calls} == {NOTIFICATION_ID}
+    assert all(session is client.session for _notice, session in notices.create_calls)
+    assert _notification_dispatcher(service).calls == [(TENANT, NOTIFICATION_ID, NOW)]
 
 
 def test_no_token_or_authenticated_session_issuance() -> None:
@@ -686,7 +892,9 @@ def test_service_source_has_no_live_transport_or_database_client_creation() -> N
     assert "urllib" not in source
     assert "requests" not in source
     assert "httpx" not in source
+    assert "smtplib" not in source
     assert "start_session()" in source
+    assert "notification_registry.create(notification, session=session)" in source
 
 
 def test_transaction_failure_has_no_partial_success_claim() -> None:
@@ -787,10 +995,11 @@ def test_result_is_minimal_and_non_sensitive() -> None:
     result = _reset(service)
     assert result.status == "PASSWORD_RESET_COMMITTED"
     assert set(result.__dataclass_fields__) == {"status"}
+    assert NOTIFICATION_ID not in repr(result)
 
 
 # ARTIFACT: test_password_reset_service.py
-# VERSION: v1.0.0-R10D2-PASSWORD-RESET-SERVICE-DIRECT-CERT
+# VERSION: v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT
 # AUTHORITY BOUNDARY: deterministic direct certificate only; no production authority
 # TENANT POSTURE: exact synthetic tenant/principal propagation is asserted
 # FAIL-CLOSED POSTURE: invalid, replayed, partial, and unavailable paths require denial
