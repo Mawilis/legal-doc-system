@@ -1,7 +1,7 @@
 """Durable registry for immutable WILSY OS password-recovery capabilities.
 
 TITLE: WILSY OS Password Recovery Capability Registry
-VERSION: v1.0.0-R10B2-PASSWORD-RECOVERY-REGISTRY
+VERSION: v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persists and atomically transitions one tenant-scoped,
          digest-only password-recovery capability through the certified
@@ -13,7 +13,12 @@ COLLABORATION / OWNERSHIP: A later recovery service supplies policy-approved
                            this registry owns only collection persistence,
                            hydration, indexes, and lifecycle CAS.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10B2 establishes the canonical
+CHANGELOG: v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY adds an exact
+           tenant/principal ACTIVE-capability read seam for issuance services;
+           it strictly hydrates every matching row, forwards caller sessions,
+           and owns no lifecycle transition, issuance policy, token material,
+           delivery, credential, or transaction authority.
+           v1.0.0-R10B2 establishes the canonical
            password_recovery_capabilities collection contract, deterministic
            uniqueness/query indexes, strict domain hydration, tenant-scoped
            reads, insert-only creation, and caller-session CAS transitions.
@@ -52,7 +57,7 @@ from .password_recovery import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-R10B2-PASSWORD-RECOVERY-REGISTRY"
+VERSION: Final[str] = "v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY"
 COLLECTION: Final[str] = "password_recovery_capabilities"
 _ISSUED_AT_EPOCH_US: Final[str] = "_issued_at_epoch_us"
 _EXPIRES_AT_EPOCH_US: Final[str] = "_expires_at_epoch_us"
@@ -354,6 +359,55 @@ class PasswordRecoveryCapabilityRegistry:
             raise PasswordRecoveryCapabilityPersistenceError("RECOVERY_READ_FAILED") from error
         return None if row is None else _hydrate(row)
 
+    def list_active_for_principal(
+        self,
+        *,
+        tenant_id: str,
+        principal_id: str,
+        session: Any | None = None,
+    ) -> tuple[PasswordRecoveryCapability, ...]:
+        """Read every ACTIVE capability for one exact tenant/principal pair.
+
+        This bounded persistence seam exists so an issuance orchestrator can
+        reconcile earlier recovery windows before creating a replacement.
+        Every returned row is hydrated through the immutable recovery domain
+        and must retain the requested tenant/principal/status binding. Raw
+        recovery token material is never accepted or returned. The optional
+        caller session is forwarded unchanged; this method performs no
+        transition, issuance, retry, transaction, delivery, or credential work.
+        """
+
+        if (
+            not isinstance(tenant_id, str)
+            or not tenant_id.strip()
+            or not isinstance(principal_id, str)
+            or not principal_id.strip()
+        ):
+            raise PasswordRecoveryCapabilityRegistryError("RECOVERY_PRINCIPAL_QUERY_INVALID")
+        query = {
+            "tenant_id": tenant_id,
+            "principal_id": principal_id,
+            "status": PasswordRecoveryCapabilityStatus.ACTIVE.value,
+        }
+        try:
+            rows = self._source().find(query, **_session_kwargs(session))
+            capabilities = tuple(_hydrate(row) for row in rows)
+        except PasswordRecoveryCapabilityPersistedRecordInvalidError:
+            raise
+        except PyMongoError as error:
+            raise PasswordRecoveryCapabilityPersistenceError(
+                "RECOVERY_PRINCIPAL_ACTIVE_READ_FAILED"
+            ) from error
+        for capability in capabilities:
+            if (
+                capability.tenant_id != tenant_id
+                or capability.principal_id != principal_id
+                or capability.status is not PasswordRecoveryCapabilityStatus.ACTIVE
+            ):
+                raise PasswordRecoveryCapabilityPersistedRecordInvalidError(
+                    "RECOVERY_PERSISTED_RECORD_INVALID"
+                )
+        return capabilities
     def _transition(
         self,
         capability: PasswordRecoveryCapability,
@@ -459,7 +513,7 @@ __all__ = [
 
 
 # ARTIFACT: password_recovery_registry.py
-# VERSION: v1.0.0-R10B2-PASSWORD-RECOVERY-REGISTRY
+# VERSION: v1.1.0-R10E2-ACTIVE-PRINCIPAL-RECOVERY-QUERY
 # AUTHORITY BOUNDARY: digest-only capability persistence and lifecycle CAS; no credential authority
 # TENANT POSTURE: exact tenant-scoped reads and mutations; no cross-tenant fallback
 # FAIL-CLOSED POSTURE: duplicate, absent, corrupt, divergent, stale, and persistence states reject
