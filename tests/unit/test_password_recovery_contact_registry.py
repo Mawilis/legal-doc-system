@@ -1,7 +1,7 @@
 """Direct certificate for the WILSY OS verified recovery-contact registry.
 
 TITLE: WILSY OS Verified Recovery Contact Registry Direct Certificate
-VERSION: v1.0.0-R10E29-VERIFIED-RECOVERY-CONTACT-REGISTRY-CERT
+VERSION: v1.0.1-R10E50-VERIFIED-RECOVERY-CONTACT-REGISTRY-CORRUPTION-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies digest-only tenant/principal recovery-contact persistence,
          single-ACTIVE authority, exact lookup, caller-session forwarding,
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises password_recovery_contact_registry.py
                            against one deterministic PyMongo-shaped fake.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E29-VERIFIED-RECOVERY-CONTACT-REGISTRY-CERT introduces
+CHANGELOG: v1.0.1-R10E50-VERIFIED-RECOVERY-CONTACT-REGISTRY-CORRUPTION-CLOSURE introduces
            direct evidence for indexes, insert-only creation, single ACTIVE
            principal/address constraints, tenant isolation, exact ACTIVE reads,
            session propagation, durable revocation, replay/conflict handling,
@@ -296,7 +296,7 @@ def test_corrupt_persisted_state_is_rejected() -> None:
     collection = _FakeCollection()
     contact = _contact()
     row = contact.to_document()
-    row["channel"] = "SMS"
+    row["schema"] = "CORRUPT-SCHEMA"
     collection.rows.append(row)
 
     with pytest.raises(VerifiedRecoveryContactPersistedRecordInvalidError) as captured:
@@ -371,7 +371,7 @@ def test_index_insert_read_and_update_failures_are_stable() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_contact_registry.py
-# VERSION: v1.0.0-R10E29-VERIFIED-RECOVERY-CONTACT-REGISTRY-CERT
+# VERSION: v1.0.1-R10E50-VERIFIED-RECOVERY-CONTACT-REGISTRY-CORRUPTION-CLOSURE
 # AUTHORITY BOUNDARY: deterministic persistence test evidence only
 # TENANT POSTURE: exact tenant/digest/principal isolation certified
 # FAIL-CLOSED POSTURE: duplicate, corrupt, replayed, and persistence failure reject
