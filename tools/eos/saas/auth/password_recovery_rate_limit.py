@@ -1,7 +1,7 @@
 """Durable request-density gate for WILSY OS password recovery.
 
 TITLE: WILSY OS Password Recovery Rate Limit Gate
-VERSION: v1.0.0-R10E6-PASSWORD-RECOVERY-RATE-LIMIT
+VERSION: v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Applies one deterministic tenant/address-digest fixed-window request
          limit before password-recovery contact lookup or issuance.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: R10E3 invokes this gate equally for existent and
                            absent contacts. Mongo provides atomic counter
                            capability only; it does not become recovery authority.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E6-PASSWORD-RECOVERY-RATE-LIMIT introduces deterministic
+CHANGELOG: v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT adds a validated namespace to bucket identity and
+           persisted/query metadata so anonymous reset requests and authenticated
+           recovery-contact verification maintain independent security budgets.
+           v1.0.0-R10E6-PASSWORD-RECOVERY-RATE-LIMIT introduces deterministic
            15-minute buckets, five-request default admission, SHA3-512 bucket
            identities, atomic upsert/increment, TTL cleanup metadata, stable
            rate-limit rejection, and fail-closed persistence errors.
@@ -42,10 +45,11 @@ from .password_recovery_request_service import (
     PasswordRecoveryRequestRateLimitedError,
 )
 
-VERSION: Final[str] = "v1.0.0-R10E6-PASSWORD-RECOVERY-RATE-LIMIT"
+VERSION: Final[str] = "v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT"
 COLLECTION: Final[str] = "password_recovery_request_limits"
 DEFAULT_WINDOW: Final[timedelta] = timedelta(minutes=15)
 DEFAULT_MAX_REQUESTS: Final[int] = 5
+DEFAULT_NAMESPACE: Final[str] = "password-reset"
 
 
 def _target(collection: Any | None) -> Any:
@@ -101,10 +105,31 @@ def _window_start(observed_at: datetime, window: timedelta) -> datetime:
     return datetime.fromtimestamp(floored, tz=timezone.utc)
 
 
-def _bucket_id(tenant_id: str, address_digest: str, bucket_start: datetime) -> str:
+def _namespace(value: object) -> str:
+    """Validate one bounded rate-policy namespace."""
+
+    if not isinstance(value, str):
+        raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_NAMESPACE_INVALID")
+    normalized = value.strip()
+    if (
+        not normalized
+        or normalized != value
+        or len(normalized) > 64
+        or any(not (character.isalnum() or character in {"-", "_"}) for character in normalized)
+    ):
+        raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_NAMESPACE_INVALID")
+    return normalized
+
+
+def _bucket_id(
+    namespace: str,
+    tenant_id: str,
+    address_digest: str,
+    bucket_start: datetime,
+) -> str:
     """Derive opaque deterministic bucket identity without raw address material."""
 
-    canonical = f"{tenant_id}|{address_digest}|{bucket_start.isoformat()}"
+    canonical = f"{namespace}|{tenant_id}|{address_digest}|{bucket_start.isoformat()}"
     return hashlib.sha3_512(canonical.encode("utf-8")).hexdigest()
 
 
@@ -122,8 +147,9 @@ class PasswordRecoveryRateLimit:
         *,
         window: timedelta = DEFAULT_WINDOW,
         max_requests: int = DEFAULT_MAX_REQUESTS,
+        namespace: str = DEFAULT_NAMESPACE,
     ) -> None:
-        """Bind one optional collection and bounded fixed-window policy."""
+        """Bind one collection, bounded fixed-window policy, and security namespace."""
 
         if (
             not isinstance(window, timedelta)
@@ -136,6 +162,7 @@ class PasswordRecoveryRateLimit:
         self._collection = collection
         self._window = window
         self._max_requests = max_requests
+        self._namespace = _namespace(namespace)
 
     def _source(self) -> Any:
         """Return configured or canonical rate-limit collection."""
@@ -148,7 +175,7 @@ class PasswordRecoveryRateLimit:
         source = self._source()
         try:
             source.create_index(
-                [("tenant_id", ASCENDING), ("address_digest", ASCENDING), ("bucket_start", ASCENDING)],
+                [("namespace", ASCENDING), ("tenant_id", ASCENDING), ("address_digest", ASCENDING), ("bucket_start", ASCENDING)],
                 unique=False,
                 name="password_recovery_rate_lookup",
             )
@@ -181,13 +208,14 @@ class PasswordRecoveryRateLimit:
         observed = _utc(observed_at)
         start = _window_start(observed, self._window)
         expires_at = start + self._window + timedelta(minutes=1)
-        bucket_id = _bucket_id(tenant, digest, start)
+        bucket_id = _bucket_id(self._namespace, tenant, digest, start)
 
         try:
             row = self._source().find_one_and_update(
                 {"_id": bucket_id},
                 {
                     "$setOnInsert": {
+                        "namespace": self._namespace,
                         "tenant_id": tenant,
                         "address_digest": digest,
                         "bucket_start": start,
@@ -206,7 +234,8 @@ class PasswordRecoveryRateLimit:
         if not isinstance(row, dict):
             raise PasswordRecoveryRequestDependencyError("RECOVERY_RATE_STATE_INVALID")
         if (
-            row.get("tenant_id") != tenant
+            row.get("namespace") != self._namespace
+            or row.get("tenant_id") != tenant
             or row.get("address_digest") != digest
             or row.get("bucket_start") != start
         ):
@@ -221,6 +250,7 @@ class PasswordRecoveryRateLimit:
 __all__ = [
     "COLLECTION",
     "DEFAULT_MAX_REQUESTS",
+    "DEFAULT_NAMESPACE",
     "DEFAULT_WINDOW",
     "PasswordRecoveryRateLimit",
     "VERSION",
@@ -231,9 +261,9 @@ __all__ = [
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: password_recovery_rate_limit.py
-# VERSION: v1.0.0-R10E6-PASSWORD-RECOVERY-RATE-LIMIT
+# VERSION: v1.1.0-R10E18-NAMESPACED-RECOVERY-RATE-LIMIT
 # AUTHORITY BOUNDARY: durable request-density capability only
-# TENANT POSTURE: exact tenant/address-digest bucket identity
+# TENANT POSTURE: namespace + exact tenant/address-digest bucket identity
 # FAIL-CLOSED POSTURE: persistence/state failure never bypasses throttling
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
