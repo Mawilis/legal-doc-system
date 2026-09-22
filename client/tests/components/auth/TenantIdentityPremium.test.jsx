@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PREMIUM TENANT IDENTITY CERTIFICATE
- * VERSION: v1.4.0-FINAL-PIXEL-CLOSURE-CERT
+ * VERSION: v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the bounded discovery/login identity projection, permanent
  *          platform trust mark, and neutral tenant-logo fallback.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: Exercises TenantDiscovery, SovereignLogin, and
  *                            TenantIdentityCard without network or auth writes.
  * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.4.0-FINAL-PIXEL-CLOSURE-CERT — Certifies display-first
+ * CHANGELOG: v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT — Certifies
+ *            presentation-duplicate alias suppression, preservation of genuinely
+ *            distinct workspace aliases, compact verified-state evidence, and
+ *            continued absence of internal tenant identifiers.
+ *            v1.4.0-FINAL-PIXEL-CLOSURE-CERT — Certifies display-first
  *            monograms, punctuation-free corporate-name fallbacks, a single
  *            platform mark, and balanced natural-flow login geometry.
  *            v1.3.0-VIEWPORT-SAFE-AUTH-CERT — Added natural-flow viewport
@@ -118,7 +122,7 @@ describe('premium tenant identity projection', () => {
     expect(tenantMonogram({ name: 'Acme, (Pty) Ltd' })).toMatch(/^[A-Z]{1,2}$/);
   });
 
-  it('renders the authoritative legal name as primary for the live wilsy-shaped projection', () => {
+  it('suppresses a presentation-duplicate alias for the live wilsy-shaped projection', () => {
     render(<TenantIdentityCard tenant={{
       tenantId: 'WILSYTENANT-4CD2FZ4O',
       alias: 'wilsy',
@@ -128,7 +132,9 @@ describe('premium tenant identity projection', () => {
     }} />);
 
     expect(screen.getByText('Wilsy (Pty) Ltd')).toBeInTheDocument();
-    expect(screen.getByText('Workspace: wilsy')).toBeInTheDocument();
+    expect(screen.getByText('wilsy')).toBeInTheDocument();
+    expect(screen.queryByText('Workspace: wilsy')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Verified workspace');
     expect(screen.queryByText('WILSYTENANT-4CD2FZ4O')).not.toBeInTheDocument();
   });
 
@@ -174,7 +180,7 @@ describe('premium tenant identity projection', () => {
 
 /**
  * ARTIFACT: TenantIdentityPremium.test.jsx
- * VERSION: v1.4.0-FINAL-PIXEL-CLOSURE-CERT
+ * VERSION: v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT
  * AUTHORITY BOUNDARY: deterministic client projection certificate only
  * TENANT POSTURE: no alias-specific logo or inferred legal identity
  * FAIL-CLOSED POSTURE: absent tenant identity is never fabricated
