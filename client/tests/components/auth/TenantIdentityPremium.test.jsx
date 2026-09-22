@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PREMIUM TENANT IDENTITY CERTIFICATE
- * VERSION: v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT
+ * VERSION: v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the bounded discovery/login identity projection, permanent
  *          platform trust mark, and neutral tenant-logo fallback.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: Exercises TenantDiscovery, SovereignLogin, and
  *                            TenantIdentityCard without network or auth writes.
  * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT — Certifies
+ * CHANGELOG: v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT — Certifies the
+ *            final login composition: no redundant workspace-identity eyebrow,
+ *            top-aligned identity/form columns, bounded natural-flow geometry,
+ *            and unchanged authoritative tenant projection semantics.
+ *            v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT — Certifies
  *            presentation-duplicate alias suppression, preservation of genuinely
  *            distinct workspace aliases, compact verified-state evidence, and
  *            continued absence of internal tenant identifiers.
@@ -174,13 +178,14 @@ describe('premium tenant identity projection', () => {
     expect(screen.getByTestId('login-panel').parentElement).toHaveStyle({ minHeight: '100dvh', overflowX: 'hidden', overflowY: 'auto' });
     expect(screen.getByTestId('login-panel').getAttribute('style')).toContain('min-height: 0');
     expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('auto-fit');
-    expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('align-items: center');
+    expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('align-items: start');
+    expect(screen.queryByText('Workspace identity')).not.toBeInTheDocument();
   });
 });
 
 /**
  * ARTIFACT: TenantIdentityPremium.test.jsx
- * VERSION: v1.5.0-R10D9E-PREMIUM-TENANT-IDENTITY-HIERARCHY-CERT
+ * VERSION: v1.6.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION-CERT
  * AUTHORITY BOUNDARY: deterministic client projection certificate only
  * TENANT POSTURE: no alias-specific logo or inferred legal identity
  * FAIL-CLOSED POSTURE: absent tenant identity is never fabricated
