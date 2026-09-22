@@ -1,7 +1,7 @@
 """Wilsy OS credential-revision direct certificate.
 
 TITLE: WILSY OS AuthRegistry Credential Revision Direct Certificate
-VERSION: v1.1.0-R10C2F6A-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION
+VERSION: v1.2.0-R10E1-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the F1 AuthRegistry credential-revision
          persistence primitives with deterministic, offline recording fakes.
@@ -11,6 +11,10 @@ COLLABORATION / OWNERSHIP: Test-only evidence; production AuthRegistry,
                            read-only and caller-owned.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.2.0-R10E1-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION —
+    Advances only the exact production-version oracle to AuthRegistry v1.10
+    after the separately certified recovery lookup seam; every credential-
+    revision semantic assertion remains unchanged.
   v1.1.0-R10C2F6A-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION —
     Advances the exact production-version oracle from the F1/v1.8 authority
     to the F6/v1.9 candidate while preserving every F2 credential-revision
@@ -215,7 +219,7 @@ def _user_calls(collection: _RecordingCollection, operation: str) -> list[dict[s
 
 
 def test_public_api_signatures_and_certificate_version() -> None:
-    assert auth_registry_module.VERSION == "v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING"
+    assert auth_registry_module.VERSION == "v1.10.0-R10E1-TENANT-EMAIL-RECOVERY-LOOKUP"
     assert list(inspect.signature(AuthRegistry.get_credential_revision).parameters) == [
         "self", "tenant_id", "user_id", "session"
     ]
@@ -598,7 +602,7 @@ def test_certificate_is_offline_and_does_not_construct_clients() -> None:
 
 
 # ARTIFACT: tests/unit/test_auth_registry_credential_revision.py
-# VERSION: v1.1.0-R10C2F6A-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION
+# VERSION: v1.2.0-R10E1-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION
 # AUTHORITY BOUNDARY: direct offline evidence for AuthRegistry F1 primitives
 # TENANT POSTURE: exact tenant + principal predicates are required
 # FAIL-CLOSED POSTURE: malformed state, races, count anomalies, and readback drift fail
