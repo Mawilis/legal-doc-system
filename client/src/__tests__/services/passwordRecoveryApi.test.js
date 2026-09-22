@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PASSWORD RECOVERY CLIENT API CERTIFICATE
- * VERSION: v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT
+ * VERSION: v1.1.0-R10E62-PASSWORD-RECOVERY-API-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies exact browser transport for recovery request, authenticated
  *          recovery-contact verification request, and public verification
@@ -10,7 +10,10 @@
  *                            through a synthetic Axios instance; Python EOS owns
  *                            all recovery, contact, credential, and tenant truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT — Narrows static method-source slices to executable method
+ * CHANGELOG: v1.1.0-R10E62-PASSWORD-RECOVERY-API-CERT — Certifies the R10E61 public-path interlock: public
+ *            recovery request/verification bodies remain exact and timestamp-free,
+ *            while authenticated verification may carry transport timestamp only.
+ *            v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT — Narrows static method-source slices to executable method
  *            bodies so adjacent JSDoc cannot create false authority matches.
  *            v1.0.0-R10E55-PASSWORD-RECOVERY-API-CERT — Adds exact path/body/auth-mode evidence for all R10E
  *            recovery transports, including proof that authenticated contact
@@ -241,10 +244,12 @@ describe('R10E55 password recovery client API certificate', () => {
         headers: {},
       },
     ]) {
+      const expectedData = { ...config.data };
       const sealed = await requestInterceptorCapture.fulfilled(config);
       expect(sealed.headers.Authorization).toBeUndefined();
       expect(sealed.skipAuth).toBe(true);
-      expect(sealed.data).toEqual(config.data);
+      expect(sealed.data).toEqual(expectedData);
+      expect(sealed.data).not.toHaveProperty('timestamp');
     }
   });
 
@@ -260,7 +265,8 @@ describe('R10E55 password recovery client API certificate', () => {
     });
 
     expect(sealed.headers.Authorization).toBe('Bearer synthetic-access-token');
-    expect(sealed.data).toEqual({});
+    expect(Object.keys(sealed.data)).toEqual(['timestamp']);
+    expect(sealed.data.timestamp).toEqual(expect.any(String));
     expect(sealed.data).not.toHaveProperty('email');
     expect(sealed.data).not.toHaveProperty('tenant_id');
     expect(sealed.data).not.toHaveProperty('principal_id');
@@ -313,6 +319,8 @@ describe('R10E55 password recovery client API certificate', () => {
     expect(verifySource).toContain('tenant_id: tenantId');
     expect(verifySource).toContain('verification_token: verificationToken');
     expect(verifySource).toContain('{ skipAuth: true }');
+    expect(source).toContain('/^\\/auth\\/request-password-reset$/i.test(config.url)');
+    expect(source).toContain('/^\\/auth\\/recovery-contact\\/verify$/i.test(config.url)');
 
     for (const methodSource of [requestSource, contactSource, verifySource]) {
       expect(methodSource).not.toMatch(/localStorage|sessionStorage|window\.location|hashPassword|bcrypt|mongo|role|permission|mfaRegistered/i);
@@ -342,7 +350,7 @@ describe('R10E55 password recovery client API certificate', () => {
 
 /**
  * ARTIFACT: passwordRecoveryApi.test.js
- * VERSION: v1.0.1-R10E58-PASSWORD-RECOVERY-API-CERT
+ * VERSION: v1.1.0-R10E62-PASSWORD-RECOVERY-API-CERT
  * AUTHORITY BOUNDARY: deterministic Axios transport evidence only
  * TENANT POSTURE: public tenant selectors remain lookup-only; authenticated verification sends none
  * FAIL-CLOSED POSTURE: transport failures reject without local authority or retry
