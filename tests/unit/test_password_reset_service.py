@@ -1,7 +1,7 @@
 """Direct deterministic certificate for the WILSY OS reset orchestrator.
 
 TITLE: WILSY OS Password Reset Service Direct Certificate
-VERSION: v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT
+VERSION: v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the public password-reset service boundary, ordering,
          durable-authority composition, failure handling, replay posture,
@@ -12,7 +12,10 @@ COLLABORATION / OWNERSHIP: Certifies
                            production transaction and real-Mongo behavior are
                            reserved for later evidence gates.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT extends the frozen R10D2 certificate with
+CHANGELOG: v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT — Tightens notification secret-hygiene evidence to
+           forbidden persisted field names rather than rejecting the legitimate
+           non-secret EMAIL channel enum value.
+           v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT extends the frozen R10D2 certificate with
            atomic reset-notification intent creation, exact session propagation,
            retry-stable notification identity, rollback on notification
            persistence failure, post-commit-only dispatch, and non-fatal
@@ -63,7 +66,7 @@ from tools.eos.saas.auth.password_reset_service import (
 )
 
 
-VERSION = "v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT"
+VERSION = "v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT"
 NOW = datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-a"
@@ -662,9 +665,23 @@ def test_notification_intent_uses_durable_capability_identity_only() -> None:
     assert notice.tenant_id == TENANT
     assert notice.principal_id == PRINCIPAL
     assert notice.notification_id == NOTIFICATION_ID
-    rendered = repr(notice.to_document()).lower()
-    for forbidden in ("email", "address", "password", "recovery_token", "token_digest"):
-        assert forbidden not in rendered
+    document = notice.to_document()
+    forbidden_fields = {
+        "email",
+        "recipient",
+        "address",
+        "password",
+        "recovery_token",
+        "token",
+        "token_digest",
+        "capability_digest",
+        "jwt",
+        "session",
+        "refresh_token",
+        "mfa_secret",
+    }
+    assert forbidden_fields.isdisjoint(document)
+    assert document["channel"] == "EMAIL"
 
 
 def test_post_commit_dispatch_failure_does_not_rewrite_committed_reset_truth() -> None:
@@ -982,7 +999,7 @@ def test_result_is_minimal_and_non_sensitive() -> None:
 
 
 # ARTIFACT: test_password_reset_service.py
-# VERSION: v1.1.0-R10G10-ATOMIC-RESET-NOTIFICATION-CERT
+# VERSION: v1.1.1-R10G14-NOTIFICATION-SECRET-SHAPE-CERT
 # AUTHORITY BOUNDARY: deterministic direct certificate only; no production authority
 # TENANT POSTURE: exact synthetic tenant/principal propagation is asserted
 # FAIL-CLOSED POSTURE: invalid, replayed, partial, and unavailable paths require denial
