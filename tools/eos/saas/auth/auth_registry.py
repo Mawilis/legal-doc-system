@@ -1,7 +1,7 @@
 """Wilsy OS canonical authentication registry.
 
 TITLE: WILSY OS Authentication Registry
-VERSION: v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING
+VERSION: v1.10.0-R10E1-TENANT-EMAIL-RECOVERY-LOOKUP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns password, JWT, OTP, session, and refresh-token business semantics
          while consuming the caller-established canonical Kernel database.
@@ -32,6 +32,12 @@ CHANGELOG:
     zero without write-on-read; malformed values fail closed. This version
     does not change JWT issuance/verification, reset orchestration, refresh
     compatibility, Node authority, or transaction ownership.
+  v1.10.0-R10E1-TENANT-EMAIL-RECOVERY-LOOKUP — Adds one exact
+    canonical-tenant + normalized-email recovery lookup that returns only the
+    durable principal identifier, detects ambiguous duplicate rows fail-closed,
+    forwards caller sessions, and exposes no password hash, role, permission,
+    session, token, MFA, or tenant grant. It does not issue recovery capability
+    material, decide principal lifecycle, or deliver messages.
   v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING — Adds explicit ACCESS and
     PRE_AUTH issuer seams, binds create_session ACCESS tokens to a fresh exact
     durable credential revision read, propagates caller sessions through that
@@ -78,7 +84,7 @@ from tools.eos.auth.principal_authority_repository import (
 )
 from tools.eos.auth.principal_status import PrincipalStatus
 
-VERSION = "v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING"
+VERSION = "v1.10.0-R10E1-TENANT-EMAIL-RECOVERY-LOOKUP"
 
 # Configuration
 JWT_EXPIRY_HOURS = 24
@@ -658,6 +664,79 @@ class AuthRegistry:
             return None
         return self._doc_to_user(doc)
 
+    def resolve_principal_id_by_email_for_tenant(
+        self,
+        tenant_id: str,
+        email: str,
+        *,
+        session: Any = None,
+    ) -> Optional[str]:
+        """Resolve one exact recovery candidate without returning credentials.
+
+        The caller supplies a canonical tenant identifier and login email.
+        Email normalization matches the existing login contract: surrounding
+        whitespace is removed and casing is lowered. The durable users query
+        is scoped by both tenantId and normalized email. Scoped absence returns
+        None; multiple matches fail closed as ambiguous durable identity.
+
+        The matching row is hydrated through the existing strict user contract
+        before only its principal identifier is returned. Password hashes,
+        roles, permissions, MFA state, sessions, refresh tokens, JWTs, recovery
+        capability state, and tenant grants are never returned. The optional
+        caller session is forwarded unchanged; this method owns no transaction,
+        retry, recovery issuance, delivery, or financial authority.
+        """
+
+        canonical = self._require_canonical_tenant(tenant_id)
+        canonical_tenant_id = canonical.tenant_id
+        if not isinstance(email, str):
+            raise AuthRegistryTenantError("AUTH_RECOVERY_EMAIL_INVALID")
+        normalized_email = email.strip().lower()
+        if not normalized_email or len(normalized_email) > 320:
+            raise AuthRegistryTenantError("AUTH_RECOVERY_EMAIL_INVALID")
+
+        users = self._collection("users")
+        try:
+            cursor = self._call_collection(
+                users,
+                "find",
+                {
+                    "tenantId": canonical_tenant_id,
+                    "email": normalized_email,
+                },
+                session=session,
+            )
+            limiter = getattr(cursor, "limit", None)
+            if callable(limiter):
+                cursor = limiter(2)
+            matches = list(cursor)
+        except PyMongoError as error:
+            raise AuthRegistryTenantError(
+                "AUTH_RECOVERY_PRINCIPAL_LOOKUP_FAILED"
+            ) from error
+
+        if not matches:
+            return None
+        if len(matches) != 1:
+            raise AuthRegistryTenantError("AUTH_RECOVERY_PRINCIPAL_AMBIGUOUS")
+
+        try:
+            user = self._doc_to_user(matches[0])
+        except Exception as error:
+            raise AuthRegistryTenantError(
+                "AUTH_RECOVERY_PRINCIPAL_INVALID"
+            ) from error
+        if (
+            user.tenantId != canonical_tenant_id
+            or str(user.email).strip().lower() != normalized_email
+            or not isinstance(user.id, str)
+            or not user.id.strip()
+        ):
+            raise AuthRegistryTenantError(
+                "AUTH_RECOVERY_PRINCIPAL_BINDING_INVALID"
+            )
+        return user.id
+
     def get_user_by_id(self, user_id: str, *, session: Any = None) -> Optional[User]:
         """Retrieve user by ID from MongoDB."""
         doc, _ = self._resolve_user_identity(user_id, session=session)
@@ -877,7 +956,7 @@ __all__ = ["AuthRegistry", "AuthRegistryTenantError", "get_auth_registry"]
 
 """
 ARTIFACT: tools/eos/saas/auth/auth_registry.py
-VERSION: v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING
+VERSION: v1.10.0-R10E1-TENANT-EMAIL-RECOVERY-LOOKUP
 AUTHORITY BOUNDARY: authentication business semantics; TenantRegistry owns canonical tenant validation
 TENANT POSTURE: users, JWTs, sessions, credential reads/CAS, and refresh validation require one ACTIVE canonical tenant_id; revocations are tenant_id + user_id scoped
 FAIL-CLOSED POSTURE: unavailable, missing, duplicate, inactive, or pseudo tenant references, malformed credential revisions, corrupt-present refresh tenant fields, and missing/inactive durable principal authority issue no final auth material
