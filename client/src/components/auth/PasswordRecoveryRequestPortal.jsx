@@ -3,7 +3,7 @@
  * WILSY OS — PASSWORD RECOVERY REQUEST PORTAL
  * ============================================================================
  * TITLE: Browser password-recovery initiation surface
- * VERSION: v1.0.0-R10E10-PASSWORD-RECOVERY-REQUEST-UI
+ * VERSION: v1.1.0-R10E13-RECOVERY-CONTEXT-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects one workspace/email recovery request and delegates all
  *           contact verification, rate limiting, capability issuance, and
@@ -14,6 +14,10 @@
  *   contact, rate-limit, issuance, and delivery orchestration.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-09-22 v1.1.0-R10E13-RECOVERY-CONTEXT-HANDOFF — Reuses the
+ *   ephemeral workspace object carried from login/discovery before falling back
+ *   to AuthContext, preserving direct-entry fallback and keeping tenant context
+ *   presentation/lookup-only.
  *   2026-09-22 v1.0.0-R10E10-PASSWORD-RECOVERY-REQUEST-UI — Adds an
  *   unauthenticated, enumeration-safe recovery-request form with selected
  *   workspace reuse, direct-entry fallback, generic 202 acknowledgement,
@@ -49,8 +53,12 @@ export default function PasswordRecoveryRequestPortal() {
   const navigate = useNavigate();
   const location = useLocation();
   const { tenant: selectedTenant } = useAuth();
-  const contextTenantId = typeof selectedTenant?.tenantId === 'string'
-    ? selectedTenant.tenantId.trim()
+  const routedTenant = location.state?.tenant && typeof location.state.tenant === 'object'
+    ? location.state.tenant
+    : null;
+  const recoveryTenant = routedTenant || selectedTenant;
+  const contextTenantId = typeof recoveryTenant?.tenantId === 'string'
+    ? recoveryTenant.tenantId.trim()
     : '';
   const initialEmail = typeof location.state?.email === 'string'
     ? location.state.email
@@ -106,7 +114,7 @@ export default function PasswordRecoveryRequestPortal() {
           <div style={evidenceColumnStyle}>
             {hasSelectedWorkspace ? (
               <section aria-label="Selected workspace" style={workspaceContextStyle}>
-                <TenantIdentityCard tenant={selectedTenant} integrated />
+                <TenantIdentityCard tenant={recoveryTenant} integrated />
                 <p style={workspaceHelpStyle}>Using the workspace you selected during discovery.</p>
               </section>
             ) : (
@@ -258,7 +266,7 @@ const successCopyStyle = { margin: 0, color: '#aeb8b1', fontSize: '12px', lineHe
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: PasswordRecoveryRequestPortal.jsx
- * VERSION: v1.0.0-R10E10-PASSWORD-RECOVERY-REQUEST-UI
+ * VERSION: v1.1.0-R10E13-RECOVERY-CONTEXT-HANDOFF
  * AUTHORITY BOUNDARY: client presentation and certified transport invocation
  * TENANT POSTURE: selected workspace is lookup context only; no authority grant
  * FAIL-CLOSED POSTURE: only HTTP 202 produces generic accepted state
