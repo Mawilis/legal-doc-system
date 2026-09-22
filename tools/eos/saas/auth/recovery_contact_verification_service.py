@@ -1,7 +1,7 @@
 """Authenticated recovery-contact enrollment and verification orchestration.
 
 TITLE: WILSY OS Recovery Contact Verification Service
-VERSION: v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE
+VERSION: v1.1.0-R10E28-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Lets one already-authenticated ACTIVE principal prove possession of an
          explicit recovery email before that address can authorize password
@@ -14,6 +14,11 @@ COLLABORATION / OWNERSHIP: PrincipalAuthorityRepository owns current principal
                            adapter owns email transport capability only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.1.0-R10E28-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION — Decouples already-delivered challenge completion from
+    SMTP/Node transport availability. Delivery becomes an initiation-only
+    dependency; request_verification fails before persistence when no delivery
+    port is configured, while complete_verification requires only Python/Mongo
+    authorities and the presented bearer.
   v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE — Establishes authenticated
     recovery-contact enrollment, 15-minute SHA3-512 digest-only possession
     challenges, transactional challenge supersession, post-commit delivery,
@@ -85,7 +90,7 @@ from .recovery_contact_verification_registry import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE"
+VERSION: Final[str] = "v1.1.0-R10E28-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION"
 VERIFICATION_TTL: Final[timedelta] = timedelta(minutes=15)
 VERIFICATION_TOKEN_BYTES: Final[int] = 32
 CONTACT_ID_PREFIX: Final[str] = "WILSYRECOVERYCONTACT-"
@@ -327,7 +332,7 @@ class RecoveryContactVerificationService:
     def __init__(
         self,
         *,
-        delivery: RecoveryContactVerificationDelivery,
+        delivery: RecoveryContactVerificationDelivery | None = None,
         client: _MongoClient | None = None,
         principal_repository: _PrincipalAuthority | None = None,
         contact_registry: _ContactRegistry | None = None,
@@ -339,8 +344,6 @@ class RecoveryContactVerificationService:
     ) -> None:
         """Bind dependencies without opening persistence or retaining secrets."""
 
-        if delivery is None:
-            raise TypeError("recovery contact verification delivery is required")
         self._delivery = delivery
         self._client = client
         self._principal_repository = principal_repository
@@ -495,6 +498,10 @@ class RecoveryContactVerificationService:
         tenant = _identifier(tenant_id)
         principal = _identifier(principal_id)
         recipient = _email(address)
+        if self._delivery is None:
+            raise RecoveryContactVerificationServiceError(
+                RecoveryContactVerificationServiceCode.DELIVERY_FAILURE
+            )
         self._require_active_principal(tenant, principal)
 
         contacts = self._contacts_or_default()
@@ -773,7 +780,7 @@ __all__ = [
 
 
 # ARTIFACT: tools/eos/saas/auth/recovery_contact_verification_service.py
-# VERSION: v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE
+# VERSION: v1.1.0-R10E28-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION
 # AUTHORITY BOUNDARY: authenticated recovery-contact possession-verification orchestration only
 # TENANT POSTURE: exact authenticated tenant/principal binding; identity email metadata grants no recovery authority
 # FAIL-CLOSED POSTURE: inactive, stale, replayed, expired, replacement, transaction, and delivery failures never verify contact
