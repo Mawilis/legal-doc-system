@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER
+VERSION: v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, recovery initiation, password-reset completion, login,
@@ -9,6 +9,10 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION: Removes the Node/SMTP delivery dependency from recovery-contact
+  verification completion. Initiation still constructs the delivery adapter;
+  completion now invokes Python/Mongo authority only, so an already-delivered
+  challenge can complete even if delivery transport is unavailable.
   v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER: Adds authenticated, bodyless recovery-contact
   verification initiation and completion routes. Current ACCESS identity supplies
   tenant/principal binding; callers may propose only an email address or present
@@ -60,7 +64,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER"
+VERSION = "v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION"
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
 import logging
@@ -315,19 +319,13 @@ async def complete_recovery_contact_verification(
     """Consume one challenge and promote only its exact PENDING contact."""
 
     try:
-        delivery = NodeRecoveryContactVerificationDelivery()
-        RecoveryContactVerificationService(delivery=delivery).complete_verification(
+        RecoveryContactVerificationService().complete_verification(
             tenant_id=identity.tenant_id,
             principal_id=identity.identity_id,
             verification_token=request.verification_token,
         )
     except RecoveryContactVerificationServiceError as error:
         raise _recovery_contact_verification_http_error(error) from None
-    except RecoveryContactVerificationDeliveryError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Recovery contact verification is temporarily unavailable.",
-        ) from None
     except Exception:
         _log_error(
             RuntimeError("RECOVERY_CONTACT_VERIFICATION_COMPLETION_UNEXPECTED_ERROR"),
@@ -869,7 +867,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.7.0-R10E19-RECOVERY-CONTACT-VERIFICATION-HTTP-ADAPTER
+# VERSION: v1.8.0-R10E29-DELIVERY-INDEPENDENT-VERIFICATION-COMPLETION
 # AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
 # credential, principal, tenant, authorization, and financial authorities remain separate.
 # TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
