@@ -1,18 +1,23 @@
 """WILSY OS password-recovery request and issuance orchestration.
 
 TITLE: WILSY OS Password Recovery Request Service
-VERSION: v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-ORCHESTRATION
+VERSION: v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-BINDING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Admits one exact ACTIVE principal, supersedes earlier recovery windows,
          persists one digest-only capability transactionally, and delegates
          post-commit delivery without returning account-existence or token truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/auth/password_recovery_request_service.py
-COLLABORATION / OWNERSHIP: AuthRegistry resolves the exact tenant/email principal;
+COLLABORATION / OWNERSHIP: AuthRegistry resolves the tenant/login-email selector;
                            PrincipalAuthorityRepository owns current lifecycle truth;
+                           RecoveryContactAuthorityRegistry owns verified delivery contact;
                            PasswordRecoveryCapabilityRegistry owns capability persistence;
                            an injected delivery adapter owns transport capability only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-BINDING — Requires explicit VERIFIED recovery-contact authority before
+    capability issuance or delivery, re-resolves contact evidence inside the
+    issuance transaction, and uses the verified contact address—not login-email
+    existence—as the sole delivery destination. Account lookup remains selector-only.
   v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-ORCHESTRATION — Establishes enumeration-safe request orchestration,
     30-minute single-use capability issuance, 60-second principal cooldown,
     transactional expiry/revocation of prior ACTIVE recovery windows, SHA3-512
@@ -22,9 +27,11 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Raw recovery tokens exist only transiently in the
                             request call stack and delivery invocation. They are
                             never persisted, logged, returned, or retained on
-                            the service object.
+                            the service object. Login-email existence is never
+                            treated as verified recovery-delivery authority.
 TENANT BOUNDARY: Caller tenant_id is accepted only through AuthRegistry canonical
-                 tenant resolution; all capability state is exact tenant/principal.
+                 tenant resolution; recovery delivery additionally requires exact
+                 tenant/principal VERIFIED recovery-contact evidence.
 AUTHORITY BOUNDARY: This service owns recovery issuance orchestration only.
                     It grants no login, MFA, role, permission, membership, JWT,
                     session, refresh, password, or tenant authority.
@@ -62,8 +69,14 @@ from .password_recovery_registry import (
     PasswordRecoveryCapabilityRegistry,
     PasswordRecoveryCapabilityRegistryError,
 )
+from .recovery_contact_registry import (
+    RecoveryContactAuthorityRegistry,
+    RecoveryContactPersistedRecordInvalidError,
+    RecoveryContactPersistenceError,
+    RecoveryContactRegistryError,
+)
 
-VERSION: Final[str] = "v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-ORCHESTRATION"
+VERSION: Final[str] = "v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-BINDING"
 RECOVERY_TTL: Final[timedelta] = timedelta(minutes=30)
 RECOVERY_COOLDOWN: Final[timedelta] = timedelta(seconds=60)
 RECOVERY_TOKEN_BYTES: Final[int] = 32
@@ -136,6 +149,17 @@ class _PrincipalAuthority(Protocol):
     def get(principal_id: str, *, session: Any | None = None) -> Any: ...
 
 
+class _RecoveryContactRegistry(Protocol):
+    def resolve_verified_for_principal(
+        self,
+        *,
+        tenant_id: str,
+        principal_id: str,
+        observed_at: datetime,
+        session: Any | None = None,
+    ) -> Any | None: ...
+
+
 class PasswordRecoveryDelivery(Protocol):
     """Transport-only port. Implementations receive no password or auth authority."""
 
@@ -201,6 +225,7 @@ class PasswordRecoveryRequestService:
         auth_registry: _AuthRecoveryLookup | None = None,
         recovery_registry: _RecoveryRegistry | None = None,
         principal_repository: _PrincipalAuthority | None = None,
+        contact_registry: _RecoveryContactRegistry | None = None,
         clock: Callable[[], datetime] | None = None,
         token_factory: Callable[[], str] | None = None,
         capability_id_factory: Callable[[], str] | None = None,
@@ -214,6 +239,7 @@ class PasswordRecoveryRequestService:
         self._auth_registry = auth_registry
         self._recovery_registry = recovery_registry
         self._principal_repository = principal_repository
+        self._contact_registry = contact_registry
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._token_factory = token_factory or (lambda: secrets.token_urlsafe(RECOVERY_TOKEN_BYTES))
         self._capability_id_factory = capability_id_factory or (
@@ -234,6 +260,9 @@ class PasswordRecoveryRequestService:
 
     def _principal_or_default(self) -> _PrincipalAuthority:
         return self._principal_repository or PrincipalAuthorityRepository
+
+    def _contact_or_default(self) -> _RecoveryContactRegistry:
+        return self._contact_registry or RecoveryContactAuthorityRegistry()
 
     def _eligible_principal(
         self, tenant_id: str, email: str, *, session: Any | None = None
@@ -256,6 +285,40 @@ class PasswordRecoveryRequestService:
             raise PasswordRecoveryRequestServiceError(
                 PasswordRecoveryRequestCode.AUTHORITY_UNAVAILABLE
             ) from error
+
+    def _verified_recipient(
+        self,
+        tenant_id: str,
+        principal_id: str,
+        *,
+        observed_at: datetime,
+        session: Any | None = None,
+    ) -> str | None:
+        """Resolve explicit VERIFIED recovery-contact evidence or scoped absence."""
+
+        try:
+            contact = self._contact_or_default().resolve_verified_for_principal(
+                tenant_id=tenant_id,
+                principal_id=principal_id,
+                observed_at=observed_at,
+                session=session,
+            )
+        except (
+            RecoveryContactPersistedRecordInvalidError,
+            RecoveryContactPersistenceError,
+            RecoveryContactRegistryError,
+        ) as error:
+            raise PasswordRecoveryRequestServiceError(
+                PasswordRecoveryRequestCode.PERSISTENCE_FAILURE
+            ) from error
+        if contact is None:
+            return None
+        address = getattr(contact, "address", None)
+        if not isinstance(address, str) or not address:
+            raise PasswordRecoveryRequestServiceError(
+                PasswordRecoveryRequestCode.AUTHORITY_UNAVAILABLE
+            )
+        return address
 
     def _compensate_delivery_failure(
         self, *, tenant_id: str, capability: PasswordRecoveryCapability
@@ -306,6 +369,18 @@ class PasswordRecoveryRequestService:
         tenant_selector = tenant_id.strip()
         normalized_email = _normalise_email(email)
 
+        principal_id = self._eligible_principal(tenant_selector, normalized_email)
+        if principal_id is None:
+            return PasswordRecoveryRequestResult()
+
+        initial_recipient = self._verified_recipient(
+            tenant_selector,
+            principal_id,
+            observed_at=_utc_observation(self._clock),
+        )
+        if initial_recipient is None:
+            return PasswordRecoveryRequestResult()
+
         raw_token = self._token_factory()
         capability_id = self._capability_id_factory()
         if not isinstance(raw_token, str) or len(raw_token) < 32:
@@ -314,13 +389,9 @@ class PasswordRecoveryRequestService:
             raise PasswordRecoveryRequestServiceError(PasswordRecoveryRequestCode.AUTHORITY_UNAVAILABLE)
         token_digest = _digest_token(raw_token)
 
-        principal_id = self._eligible_principal(tenant_selector, normalized_email)
-        if principal_id is None:
-            return PasswordRecoveryRequestResult()
-
         registry = self._recovery_or_default()
         client = self._client_or_fail()
-        holder: dict[str, PasswordRecoveryCapability | bool] = {}
+        holder: dict[str, PasswordRecoveryCapability | str | bool] = {}
 
         def callback(session: Any) -> None:
             current_principal = self._eligible_principal(
@@ -331,6 +402,15 @@ class PasswordRecoveryRequestService:
                 return
 
             observed = _utc_observation(self._clock)
+            recipient = self._verified_recipient(
+                tenant_selector,
+                principal_id,
+                observed_at=observed,
+                session=session,
+            )
+            if recipient is None:
+                holder["suppressed"] = True
+                return
             active = registry.list_active_for_principal(
                 tenant_id=tenant_selector, principal_id=principal_id, session=session
             )
@@ -358,6 +438,7 @@ class PasswordRecoveryRequestService:
             )
             registry.create(capability, session=session)
             holder["capability"] = capability
+            holder["recipient_email"] = recipient
 
         try:
             with client.start_session() as session:
@@ -369,6 +450,9 @@ class PasswordRecoveryRequestService:
             PasswordRecoveryCapabilityPersistedRecordInvalidError,
             PasswordRecoveryCapabilityPersistenceError,
             PasswordRecoveryCapabilityRegistryError,
+            RecoveryContactPersistedRecordInvalidError,
+            RecoveryContactPersistenceError,
+            RecoveryContactRegistryError,
         ) as error:
             raise PasswordRecoveryRequestServiceError(
                 PasswordRecoveryRequestCode.PERSISTENCE_FAILURE
@@ -379,12 +463,20 @@ class PasswordRecoveryRequestService:
             ) from error
 
         capability = holder.get("capability")
+        recipient_email = holder.get("recipient_email")
         if not isinstance(capability, PasswordRecoveryCapability):
             return PasswordRecoveryRequestResult()
+        if not isinstance(recipient_email, str) or not recipient_email:
+            self._compensate_delivery_failure(
+                tenant_id=tenant_selector, capability=capability
+            )
+            raise PasswordRecoveryRequestServiceError(
+                PasswordRecoveryRequestCode.AUTHORITY_UNAVAILABLE
+            )
 
         try:
             self._delivery.deliver_password_recovery(
-                recipient_email=normalized_email,
+                recipient_email=recipient_email,
                 recovery_token=raw_token,
                 expires_at=capability.expires_at,
             )
@@ -423,9 +515,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/saas/auth/password_recovery_request_service.py
-# VERSION: v1.0.0-R10E3-PASSWORD-RECOVERY-REQUEST-ORCHESTRATION
+# VERSION: v1.1.0-R10E11-VERIFIED-RECOVERY-CONTACT-BINDING
 # AUTHORITY BOUNDARY: exact principal admission and recovery-capability issuance orchestration only
-# TENANT POSTURE: canonical tenant/email resolution; durable capabilities remain exact tenant/principal
+# TENANT POSTURE: login email is selector-only; delivery requires exact VERIFIED tenant/principal recovery-contact authority
 # FAIL-CLOSED POSTURE: ambiguity, corruption, transaction, and delivery failures return no secret or auth material
 # FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
