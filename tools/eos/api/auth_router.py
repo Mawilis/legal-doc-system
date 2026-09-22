@@ -1,13 +1,20 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER
+VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
-MFA setup and verification, password-reset completion, login, discovery, and logout.
+MFA setup and verification, recovery initiation, password-reset completion, login,
+discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER: Adds one public,
+  unauthenticated, bodyless 202 recovery-initiation route. Exact principal
+  admission, capability issuance, cooldown, and delivery execute only as a
+  post-response background task; account absence, inactive lifecycle, throttle,
+  and delivery outcome never enter the HTTP response contract. Node remains
+  transport-only and no recovery bearer is returned.
   v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER: Exposes the certified R10D1
   password-reset transaction through one unauthenticated transport route. The
   adapter forwards only the tenant selector, recovery capability, and proposed
@@ -48,9 +55,9 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER"
+VERSION = "v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER"
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
 import logging
 import traceback
 import os
@@ -65,6 +72,14 @@ from ..saas.auth.password_reset_service import (
     PasswordResetCode,
     PasswordResetService,
     PasswordResetServiceError,
+)
+from ..saas.auth.password_recovery_delivery import (
+    NodePasswordRecoveryDelivery,
+    PasswordRecoveryDeliveryError,
+)
+from ..saas.auth.password_recovery_request_service import (
+    PasswordRecoveryRequestService,
+    PasswordRecoveryRequestServiceError,
 )
 from ..saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
@@ -182,6 +197,82 @@ async def workspace_bootstrap(
             },
         },
     }
+
+
+# ─── PASSWORD RECOVERY INITIATION ──────────────────────────────────────────
+class PasswordRecoveryInitiationRequest(BaseModel):
+    """Bounded public input for enumeration-safe recovery initiation.
+
+    The browser supplies only a tenant lookup selector and login email. Neither
+    value is recovery authority. Exact principal admission, current lifecycle,
+    capability issuance, cooldown, and delivery remain server-owned.
+    """
+
+    tenant_id: StrictStr = Field(..., min_length=1, max_length=256)
+    email: StrictStr = Field(..., min_length=3, max_length=320)
+
+    class Config:
+        """Reject caller-asserted recovery, principal, or delivery authority."""
+
+        extra = "forbid"
+
+
+def _execute_password_recovery_request(tenant_id: str, email: str) -> None:
+    """Execute recovery initiation after the HTTP response boundary.
+
+    All operational outcomes are intentionally detached from the public
+    response to avoid account-enumeration signals. Only stable internal codes
+    are logged; recipient email, recovery token, principal data, and provider
+    diagnostics are never passed to the router logger.
+    """
+
+    try:
+        delivery = NodePasswordRecoveryDelivery()
+        PasswordRecoveryRequestService(delivery=delivery).request_recovery(
+            tenant_id=tenant_id,
+            email=email,
+        )
+    except PasswordRecoveryRequestServiceError as error:
+        _log_error(
+            RuntimeError(error.code.value),
+            "PASSWORD_RECOVERY_REQUEST_BACKGROUND_FAILURE",
+        )
+    except PasswordRecoveryDeliveryError as error:
+        _log_error(
+            RuntimeError(error.code.value),
+            "PASSWORD_RECOVERY_DELIVERY_CONFIGURATION_FAILURE",
+        )
+    except Exception:
+        _log_error(
+            RuntimeError("PASSWORD_RECOVERY_REQUEST_UNEXPECTED_ERROR"),
+            "PASSWORD_RECOVERY_REQUEST_UNEXPECTED_ERROR",
+        )
+
+
+@router.post(
+    "/request-password-reset",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_class=Response,
+)
+async def request_password_reset(
+    request: PasswordRecoveryInitiationRequest,
+    background_tasks: BackgroundTasks,
+) -> Response:
+    """Accept one Forgot Password request without revealing account existence.
+
+    Syntactically valid requests always receive the same bodyless 202 response.
+    The post-response task performs exact tenant/email principal resolution,
+    ACTIVE lifecycle admission, cooldown, capability issuance, and delivery.
+    No recovery token, principal, account state, delivery result, session, JWT,
+    role, permission, or tenant authority is projected to the browser.
+    """
+
+    background_tasks.add_task(
+        _execute_password_recovery_request,
+        request.tenant_id,
+        request.email,
+    )
+    return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
 # ─── PASSWORD RESET COMPLETION ─────────────────────────────────────────────
@@ -636,7 +727,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.5.0-R10D4-PASSWORD-RESET-HTTP-ADAPTER
+# VERSION: v1.6.0-R10E8-PASSWORD-RECOVERY-REQUEST-HTTP-ADAPTER
 # AUTHORITY BOUNDARY: Authentication HTTP routing and bounded projections only;
 # credential, principal, tenant, authorization, and financial authorities remain separate.
 # TENANT POSTURE: verify-token never certifies tenant membership; tenant context is downstream.
