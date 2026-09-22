@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP
+VERSION: v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING: Resolves the trusted public
+  recovery-link origin only from server-owned deployment configuration, preferring
+  WILSY_PUBLIC_APP_ORIGIN and then established WILSY_PUBLIC_APP_URL, CLIENT_URL,
+  FRONTEND_URL, or APP_URL aliases. Request Host remains excluded and the recovery
+  service still validates HTTPS/origin shape fail closed.
   v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP: Adds authenticated recovery-contact verification
   request and capability-authorized completion routes. The request route derives
   the address only from current durable principal state, uses a separate
@@ -242,6 +247,28 @@ class PasswordRecoveryStartRequest(BaseModel):
         extra = "forbid"
 
 
+def _configured_password_recovery_origin() -> str:
+    """Return one server-owned public app origin without trusting request Host.
+
+    The dedicated recovery setting has precedence. Existing production app URL
+    aliases are accepted only as deployment configuration and are still subject
+    to the recovery service's strict HTTPS/origin validation. An explicitly set
+    empty higher-precedence value is returned unchanged so misconfiguration fails
+    closed instead of silently falling through to another alias.
+    """
+
+    for name in (
+        "WILSY_PUBLIC_APP_ORIGIN",
+        "WILSY_PUBLIC_APP_URL",
+        "CLIENT_URL",
+        "FRONTEND_URL",
+        "APP_URL",
+    ):
+        if name in os.environ:
+            return os.environ[name]
+    return ""
+
+
 @lru_cache(maxsize=1)
 def _password_recovery_request_service() -> PasswordRecoveryRequestService:
     """Build and index the canonical recovery-request chain once per process.
@@ -257,7 +284,7 @@ def _password_recovery_request_service() -> PasswordRecoveryRequestService:
     contact_registry.ensure_indexes()
     capability_registry.ensure_indexes()
     rate_limit.ensure_indexes()
-    origin = os.environ.get("WILSY_PUBLIC_APP_ORIGIN", "")
+    origin = _configured_password_recovery_origin()
     return PasswordRecoveryRequestService(
         contact_registry=contact_registry,
         capability_registry=capability_registry,
@@ -892,7 +919,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP
+# VERSION: v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only;
 # credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
 # TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
