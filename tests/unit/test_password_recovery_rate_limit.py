@@ -1,7 +1,7 @@
 """Direct certificate for the WILSY OS password-recovery rate gate.
 
 TITLE: WILSY OS Password Recovery Rate Limit Direct Certificate
-VERSION: v1.0.0-R10E27-PASSWORD-RECOVERY-RATE-LIMIT-CERT
+VERSION: v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies deterministic namespaced recovery throttling, durable
          counter behavior, fail-closed persistence, and secret-free bucket
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises password_recovery_rate_limit.py with an
                            in-memory PyMongo-shaped collection only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E27-PASSWORD-RECOVERY-RATE-LIMIT-CERT introduces direct
+CHANGELOG: v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE introduces direct
            evidence for index shape, fixed-window admission, exact limit
            rejection, namespace isolation, deterministic bucket identity,
            validation, state mismatch rejection, and persistence failure.
@@ -187,7 +187,9 @@ def test_new_fixed_window_resets_admission_without_mutating_prior_bucket() -> No
     )
 
     assert len(collection.rows) == 2
-    assert sorted(row["count"] for row in collection.rows.values()) == [1, 1]
+    counts = [row["count"] for row in collection.rows.values()]
+    assert all(isinstance(value, int) and not isinstance(value, bool) for value in counts)
+    assert sorted(value for value in counts if isinstance(value, int)) == [1, 1]
 
 
 @pytest.mark.parametrize(
@@ -303,7 +305,7 @@ def test_bucket_identity_is_secret_free_and_deterministic_for_same_window() -> N
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_rate_limit.py
-# VERSION: v1.0.0-R10E27-PASSWORD-RECOVERY-RATE-LIMIT-CERT
+# VERSION: v1.0.1-R10E48-PASSWORD-RECOVERY-RATE-LIMIT-TYPE-CLOSURE
 # AUTHORITY BOUNDARY: deterministic direct test evidence only
 # TENANT POSTURE: namespace + exact tenant/address-digest isolation certified
 # FAIL-CLOSED POSTURE: invalid policy, state, and persistence failure reject
