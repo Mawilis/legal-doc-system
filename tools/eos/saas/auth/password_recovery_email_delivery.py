@@ -1,7 +1,7 @@
 """SMTP delivery adapter for WILSY OS password recovery.
 
 TITLE: WILSY OS Password Recovery Email Delivery Adapter
-VERSION: v1.1.0-R10E70-PRODUCTION-EMAIL-CONFIG-BINDING
+VERSION: v1.1.1-R10E70A-PYRIGHT-NARROWING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Delivers one already-authorized recovery link through configured SMTP
          without generating tokens, verifying contacts, mutating credentials,
@@ -11,7 +11,10 @@ COLLABORATION / OWNERSHIP: R10E3 supplies one transient secret-bearing delivery
                            message. This adapter owns only mail transport to the
                            already-authorized recipient.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.1.0-R10E70-PRODUCTION-EMAIL-CONFIG-BINDING binds recovery mail
+CHANGELOG: v1.1.1-R10E70A-PYRIGHT-NARROWING replaces tuple-membership null checks
+           with explicit per-value guards so Pyright can prove the same fail-closed
+           non-null configuration contract without changing runtime selection.
+           v1.1.0-R10E70-PRODUCTION-EMAIL-CONFIG-BINDING binds recovery mail
            to one complete server-owned SMTP profile without mixing partial
            profiles: dedicated WILSY_RECOVERY_* settings remain highest
            precedence, followed by the existing production EMAIL_* profile and
@@ -44,7 +47,7 @@ from typing import Final
 
 from .password_recovery_request_service import PasswordRecoveryDeliveryMessage
 
-VERSION: Final[str] = "v1.1.0-R10E70-PRODUCTION-EMAIL-CONFIG-BINDING"
+VERSION: Final[str] = "v1.1.1-R10E70A-PYRIGHT-NARROWING"
 
 
 class PasswordRecoveryEmailDeliveryError(RuntimeError):
@@ -139,7 +142,14 @@ class PasswordRecoveryEmailConfiguration:
                 username = value(profile["username"])
                 password = value(selected_password_name)
                 sender = value(profile["sender"])
-                if None in (port_raw, secure_raw, host, username, password, sender):
+                if (
+                    port_raw is None
+                    or secure_raw is None
+                    or host is None
+                    or username is None
+                    or password is None
+                    or sender is None
+                ):
                     raise ValueError
                 port = int(port_raw)
                 secure_text = secure_raw.strip().lower()
@@ -292,7 +302,7 @@ __all__ = [
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: password_recovery_email_delivery.py
-# VERSION: v1.1.0-R10E70-PRODUCTION-EMAIL-CONFIG-BINDING
+# VERSION: v1.1.1-R10E70A-PYRIGHT-NARROWING
 # AUTHORITY BOUNDARY: external encrypted SMTP delivery capability only
 # TENANT POSTURE: no tenant authority; recipient is pre-authorized upstream
 # FAIL-CLOSED POSTURE: configuration, TLS, auth, and delivery failure rejects
