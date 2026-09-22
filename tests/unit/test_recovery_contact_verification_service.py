@@ -1,7 +1,7 @@
 """Direct certificate for authenticated recovery-contact verification service.
 
 TITLE: WILSY OS Recovery Contact Verification Service Direct Certificate
-VERSION: v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE-CERT
+VERSION: v1.1.0-R10E28-DELIVERY-INDEPENDENT-COMPLETION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies authenticated contact enrollment and atomic possession verification
          without MongoDB, SMTP, network, or JWT-email authority.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Deterministic fakes certify the R10E14 service contract.
 CERTIFICATION / UPDATE DATE: 2026-09-22
 CHANGELOG:
+  v1.1.0-R10E28-DELIVERY-INDEPENDENT-COMPLETION-CERT — Certifies that verification completion succeeds without a
+  delivery dependency after a challenge has already been issued, while missing
+  delivery fails initiation before any session or persistence mutation.
   v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE-CERT — Certifies ACTIVE
     principal admission, PENDING contact creation/replacement, verified-contact
     replacement denial, challenge supersession, 15-minute digest-only issuance,
@@ -320,6 +323,59 @@ def test_request_creates_pending_contact_and_digest_only_challenge_then_delivers
     assert events.index("transaction-commit") < events.index("delivery")
 
 
+def test_missing_delivery_fails_initiation_before_session_or_persistence() -> None:
+    events: list[str] = []
+    client = _Client(events)
+    contacts = _Contacts()
+    challenges = _Challenges()
+    service = RecoveryContactVerificationService(
+        client=client,
+        principal_repository=_Principal(),
+        contact_registry=contacts,
+        challenge_registry=challenges,
+        clock=lambda: NOW,
+        token_factory=lambda: RAW,
+    )
+
+    with pytest.raises(RecoveryContactVerificationServiceError) as error:
+        service.request_verification(
+            tenant_id="TENANT-ONE",
+            principal_id="principal-one",
+            address=ADDRESS,
+        )
+
+    assert error.value.code is RecoveryContactVerificationServiceCode.DELIVERY_FAILURE
+    assert client.sessions == []
+    assert contacts.current is None
+    assert challenges.items == []
+
+
+def test_already_delivered_challenge_completes_without_delivery_dependency() -> None:
+    service, client, contacts, challenges, _delivery, _events = _service()
+    service.request_verification(
+        tenant_id="TENANT-ONE",
+        principal_id="principal-one",
+        address=ADDRESS,
+    )
+
+    completion_only = RecoveryContactVerificationService(
+        client=client,
+        principal_repository=_Principal(),
+        contact_registry=contacts,
+        challenge_registry=challenges,
+        clock=lambda: NOW,
+    )
+    result = completion_only.complete_verification(
+        tenant_id="TENANT-ONE",
+        principal_id="principal-one",
+        verification_token=RAW,
+    )
+
+    assert result.status == "RECOVERY_CONTACT_VERIFIED"
+    assert contacts.current is not None
+    assert contacts.current.status is RecoveryContactStatus.VERIFIED
+
+
 def test_existing_verified_same_address_returns_without_challenge_or_delivery() -> None:
     contacts = _Contacts(_verified())
     service, client, _contacts, challenges, delivery, _events = _service(contacts=contacts)
@@ -476,7 +532,7 @@ def test_inactive_principal_denies_before_contact_or_challenge_mutation() -> Non
 
 
 # ARTIFACT: tests/unit/test_recovery_contact_verification_service.py
-# VERSION: v1.0.0-R10E14-RECOVERY-CONTACT-VERIFICATION-SERVICE-CERT
+# VERSION: v1.1.0-R10E28-DELIVERY-INDEPENDENT-COMPLETION-CERT
 # AUTHORITY BOUNDARY: deterministic authenticated recovery-contact verification orchestration evidence
 # TENANT POSTURE: exact authenticated tenant/principal binding; identity email grants no recovery authority
 # FAIL-CLOSED POSTURE: inactive, replacement, replay, expiry, delivery, and transaction failures never verify contact
