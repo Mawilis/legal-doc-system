@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - ACCOUNT COMMAND CENTER [V3.0.15-OMEGA-PHASE5]                                                                ║
+ * ║ WILSY OS - ACCOUNT COMMAND CENTER [V3.0.16-R10E27-RECOVERY-CONTACT-SECURITY-ACTION]                                                                ║
  * ║ COMMAND AUTHORITY | OPERATING SKINS | FORENSIC COMMAND CONSOLE | TENANT IDENTITY | SECURITY | COMPLIANCE               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/account/WilsyAccountCommandCenter.jsx      ║
@@ -18,7 +18,8 @@
  * ║   4. Telemetry for every user action (mode change, skin selection, tenant switch, forensic refresh).                    ║
  * ║   5. Kennel EOS awareness – tenant isolation via useTenants and x-tenant headers.                                       ║
  * ║   6. Error‑safe execution with graceful degradation.                                                                     ║
- * ║   7. JSDoc documentation for all exported functions and components.                                                     ║
+ * ║   7. JSDoc documentation for all exported functions and components.
+ * ║   8. Authenticated recovery-contact verification entry point in the Security command panel.                                                     ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -5571,6 +5572,15 @@ export function WilsyAccountCommandCenter({
                 <article><small>MFA posture</small><strong>{resolvedSecuritySummary.mfaStatus || 'Ready for enforcement'}</strong></article>
                 <article><small>Operating backend</small><strong>{accountIdentityPostureError || accountIdentityPosture.dbLabel || 'Data command fabric pending'}</strong></article>
                 <article><small>Data authority</small><strong>{accountIdentityPostureError || accountIdentityPosture.matchedCollectionsLabel || 'Data authority pending'}</strong></article>
+                <div className="wac-mobile-actions">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRoute('open_recovery_contact_security', '/account/recovery-contact')}
+                  >
+                    <ShieldCheck size={15} />
+                    Recovery contact
+                  </button>
+                </div>
               </section>
             )}
 
@@ -5726,6 +5736,16 @@ export function WilsyAccountCommandCenter({
               <article className="wac-security-card"><ShieldCheck size={24} /><small>Account activity</small><strong>{resolvedSecuritySummary.activityStatus || 'Command receipts active'}</strong></article>
               <article className="wac-security-card"><Building2 size={24} /><small>Operating backend</small><strong>{accountIdentityPostureError || accountIdentityPosture.dbLabel || 'Data command fabric pending'}</strong></article>
               <article className="wac-security-card"><Globe2 size={24} /><small>Data authority</small><strong>{accountIdentityPostureError || accountIdentityPosture.matchedCollectionsLabel || 'Data authority pending'}</strong></article>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className="wac-secondary"
+                onClick={() => handleOpenRoute('open_recovery_contact_security', '/account/recovery-contact')}
+              >
+                <ShieldCheck size={16} />
+                Recovery contact
+              </button>
             </div>
           </section>
         )}
@@ -6314,10 +6334,10 @@ if (typeof window !== 'undefined') {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyAccountCommandCenter v3.0.15-OMEGA-PHASE5
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyAccountCommandCenter v3.0.16-R10E27-RECOVERY-CONTACT-SECURITY-ACTION
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         3.0.15-OMEGA-PHASE5
+ * Version:         3.0.16-R10E27-RECOVERY-CONTACT-SECURITY-ACTION
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Showroom-grade account cockpit
