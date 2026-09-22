@@ -4,7 +4,7 @@
  * WILSY OS — SOVEREIGN APPLICATION ROOT (KENNEL-ALIGNED)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/App.jsx
- * Version:        v19.2.0-R10E22-PASSWORD-RECOVERY-REQUEST-ROUTE
+ * Version:        v19.3.0-R10E26-RECOVERY-CONTACT-SECURITY-ROUTE
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Updated to use new TenantContext (tenantContext) and useTenants.
  * Classification: Production Artifact – Institutional Contract
@@ -24,6 +24,9 @@
  *   2026-09-17 v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE — Replaces the
  *     legacy covenant/signature gate with the server-owned versioned legal
  *     acceptance projection and preserves /covenant as a compatibility route.
+ *   2026-09-22 v19.3.0-R10E26-RECOVERY-CONTACT-SECURITY-ROUTE — Adds the protected /account/recovery-contact security
+ *     route for authenticated recovery-contact possession verification while
+ *     preserving public recovery/reset routes and all existing authority gates.
  *   2026-09-22 v19.2.0-R10E22-PASSWORD-RECOVERY-REQUEST-ROUTE — Adds the public /forgot-password recovery-request
  *     route and router exemption, preserving the existing reset completion route
  *     and all authenticated workspace gates.
@@ -48,7 +51,7 @@
  *   Upstream:   react, react-router-dom, lucide-react, ../contexts/authContext,
  *               ./contexts/tenantContext, ../components/sovereign/SovereignOrchestrator,
  *               ../components/sovereign/DataOrchestrator, ../utils/telemetryHelper.
- *   Downstream: SovereignLogin, PasswordRecoveryPortal, PasswordResetPortal, SovereignMfaPortal, LegalAcceptanceGate, SovereignDashboardController,
+ *   Downstream: SovereignLogin, PasswordRecoveryPortal, PasswordResetPortal, RecoveryContactSecurityPortal, SovereignMfaPortal, LegalAcceptanceGate, SovereignDashboardController,
  *               Sovereign_TenantManager.
  *   Shared:     wilsy_auth_token, wilsy_sovereign_user, discoveredTenant,
  *               useAuth().login, useTenants().switchTenant, and the
@@ -69,6 +72,7 @@ import { broadcastTelemetry } from './utils/telemetryHelper.js';
 import SovereignLogin from './components/auth/SovereignLogin.jsx';
 import PasswordRecoveryPortal from './components/auth/PasswordRecoveryPortal.jsx';
 import PasswordResetPortal from './components/auth/PasswordResetPortal.jsx';
+import RecoveryContactSecurityPortal from './components/auth/RecoveryContactSecurityPortal.jsx';
 import TenantDiscovery from './components/sovereign/TenantDiscovery.jsx';
 import LegalAcceptanceGate from './components/auth/LegalAcceptanceGate.jsx';
 import SovereignDashboardController from './components/sovereign/SovereignDashboardController.jsx';
@@ -224,6 +228,11 @@ const SovereignRouter = () => {
       <Route path="/login" element={<SovereignLogin />} />
       <Route path="/forgot-password" element={<PasswordRecoveryPortal />} />
       <Route path="/reset-password" element={<PasswordResetPortal />} />
+      <Route path="/account/recovery-contact" element={
+        isAuthenticated && user
+          ? <RecoveryContactSecurityPortal />
+          : <Navigate to="/discovery" replace />
+      } />
       <Route path="/mfa" element={
         [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
           ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
@@ -411,7 +420,7 @@ export default App;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS APPLICATION ROOT (AUTH-GATED)
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status: CERTIFIED PRODUCTION ARTIFACT
- * Version: v19.2.0-R10E22-PASSWORD-RECOVERY-REQUEST-ROUTE
+ * Version: v19.3.0-R10E26-RECOVERY-CONTACT-SECURITY-ROUTE
  * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
  * Compliance: POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
@@ -422,6 +431,7 @@ export default App;
  *   ✅ /tms ROUTE PROTECTED – only founders/superadmins can access
  *   ✅ No legacy imports
  *   ✅ /forgot-password PUBLIC RECOVERY REQUEST ROUTE — enumeration-safe initiation only
+ *   ✅ /account/recovery-contact PROTECTED SECURITY ROUTE — authenticated possession verification only
  *   ✅ /reset-password PUBLIC RESET PORTAL ROUTE — no invented deep-link contract
  * ═══════════════════════════════════════════════════════════════════════════════
  */
