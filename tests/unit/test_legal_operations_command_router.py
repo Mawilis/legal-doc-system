@@ -1,7 +1,7 @@
 """Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT
+VERSION: v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service command input
          boundaries, bound-Deputy field evidence composition, transaction ownership, path
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: L8-3 command certificate; canonical intake,
                             acceptance/receipt, directory, lifecycle, persistence, and field-service
                             orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT certifies bound-Deputy ownership enforcement,
+CHANGELOG: 2026-09-23 v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
+           repairs certificate-only static narrowing for the required binding result
+           and rebinds the exact production VERSION assertion to v1.5.0; production
+           behavior, field-command authority, runtime coverage, and fixtures are unchanged.
+           2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT certifies bound-Deputy ownership enforcement,
            server-derived observation provenance/receipt/execution identifiers,
            atomic P5M->P5D/P5E dispatch, replay receipt reuse, forbidden browser
            authority fields, and sheriff compatibility on legacy command routes.
@@ -743,6 +747,7 @@ def test_bound_deputy_scope_enforces_binding_and_preserves_sheriff_legacy(
         session,
         required=True,
     )
+    assert binding is not None
     assert binding.deputy_id == current.deputy_id
     assert seen[0][0:2] == (TENANT, "principal-deputy-l8-6e")
     assert seen[0][3] is session
@@ -1124,11 +1129,11 @@ def test_allocation_dispatches_only_p4a_and_never_accepts_caller_state(monkeypat
 def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
     names = set(vars(command_api))
     assert not any(token in names for token in {"Invoice", "Payment", "Settlement", "MongoClient", "mongo_client", "_client"})
-    assert command_api.VERSION == "v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
+    assert command_api.VERSION == "v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE"
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT
+# VERSION: v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
