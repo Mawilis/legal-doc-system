@@ -1,12 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.12.0-C1E-R1
+VERSION: v1.13.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-17.
-CHANGELOG: 2026-09-17 v1.12.0-C1E-R1 certifies exact seven-role legal-advisory
+CERTIFICATION/UPDATE DATE: 2026-09-23.
+CHANGELOG: 2026-09-23 v1.13.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-ELIGIBILITY-CERT
+certifies legal_directory_write eligibility only for tenant_sheriff and explicit
+denial for every other tenant business role; policy remains non-authorizing.
+2026-09-17 v1.12.0-C1E-R1 certifies exact seven-role legal-advisory
 eligibility for generate/read operations.
 2026-09-15 v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY-CERT certifies
 the bounded WILSY AI Legal Tool Gateway eligibility for seven legal personas,
@@ -41,7 +44,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.16.0-C1E-R1"
+    assert VERSION == "v1.17.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -78,7 +81,7 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         "tenant_legal_paralegal": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_sheriff": {"legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_sheriff": {"legal_directory_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_deputy": {"legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_client": {"legal_invoice_read"},
     }
@@ -88,6 +91,27 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         assert tenant_role_operation_eligibility(role, "financial_execution") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_client", "legal_instruction_read") == DENY
     assert tenant_role_operation_eligibility("tenant_deputy", "legal_instruction_read") == DENY
+
+
+def test_directory_provisioning_eligibility_is_sheriff_only() -> None:
+    """Directory provisioning eligibility is exact, own-tenant policy only."""
+    operation = "legal_directory_write"
+    assert operation in OPERATIONS
+    assert tenant_role_operation_eligibility("tenant_sheriff", operation) == ELIGIBLE
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_sheriff"}
+    assert tenant_role_operation_eligibility("tenant_deputy", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_partner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_owner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_admin", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_client", operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
 
 def test_platform_billing_release_is_tenant_owner_only() -> None:
     assert "platform_billing_release" in OPERATIONS
@@ -293,11 +317,9 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.12.0-C1E-R1
+# VERSION: v1.13.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
-# TENANT POSTURE: WILSY AI capacity-read and billing-intelligence evidence-read eligibility remain policy-only; no membership or tenant authority is granted
+# TENANT POSTURE: directory and other tenant eligibility remains policy-only; no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
-# CHANGELOG: 2026-09-17 v1.11.0-C1C-R1B refreshes stale dedicated
-# legal-services eligibility expectations without weakening policy authority.
 # END OF WILSY OS SOVEREIGN ARTIFACT
