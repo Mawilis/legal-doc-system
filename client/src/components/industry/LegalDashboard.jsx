@@ -1820,6 +1820,9 @@ export default function LegalDashboard({
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
   const [clientMatters, setClientMatters] = useState(EMPTY_CLIENT_MATTERS);
+  const [practiceWorkspace, setPracticeWorkspace] = useState(
+    EMPTY_PRACTICE_WORKSPACE,
+  );
   const [deputyCapabilities, setDeputyCapabilities] = useState(
     EMPTY_DEPUTY_CAPABILITIES,
   );
@@ -1840,11 +1843,12 @@ export default function LegalDashboard({
       setQueues(EMPTY_QUEUES);
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
+      setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setError({
         kind: 'LEGAL_ROLE_SCOPE_REQUIRED',
         message:
-          'This Legal OS surface requires an explicit SHERIFF, DEPUTY, or LEGAL_CLIENT presentation scope. No privileged endpoint was queried.',
+          'This Legal OS surface requires a published Legal Practice, Legal Finance, SHERIFF, DEPUTY, or LEGAL_CLIENT presentation scope. No privileged endpoint was queried.',
       });
       setLoading(false);
       setRefreshing(false);
@@ -1873,6 +1877,7 @@ export default function LegalDashboard({
           return next;
         });
         setClientMatters(EMPTY_CLIENT_MATTERS);
+        setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
         setLastUpdated(new Date());
         return { deputyWork: work, deputyCapabilities: capabilityPacket };
       }
@@ -1885,14 +1890,41 @@ export default function LegalDashboard({
         setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
         setCommandState(null);
         setObservationDrafts({});
+        setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
         setLastUpdated(new Date());
         return { clientMatters: result };
+      }
+
+      if (roleMode === ROLE_MODES.LEGAL_PRACTICE) {
+        const result = await getLegalPracticeWorkspace();
+        setPracticeWorkspace(result);
+        setQueues(EMPTY_QUEUES);
+        setDeputyWork(EMPTY_DEPUTY_WORK);
+        setClientMatters(EMPTY_CLIENT_MATTERS);
+        setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
+        setCommandState(null);
+        setObservationDrafts({});
+        setLastUpdated(new Date());
+        return { practiceWorkspace: result };
+      }
+
+      if (roleMode === ROLE_MODES.LEGAL_FINANCE) {
+        setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+        setQueues(EMPTY_QUEUES);
+        setDeputyWork(EMPTY_DEPUTY_WORK);
+        setClientMatters(EMPTY_CLIENT_MATTERS);
+        setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
+        setCommandState(null);
+        setObservationDrafts({});
+        setLastUpdated(new Date());
+        return { legalFinance: true };
       }
 
       const result = await getSheriffOperationalQueues();
       setQueues(result);
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
+      setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setLastUpdated(new Date());
       return { queues: result };
@@ -1924,6 +1956,12 @@ export default function LegalDashboard({
               ? 'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.'
               : detail || 'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.',
         });
+      } else if (status === 403 && roleMode === ROLE_MODES.LEGAL_PRACTICE) {
+        setError({
+          kind: 'LEGAL_PRACTICE_WORKSPACE_DENIED',
+          message:
+            detail || 'The Legal Practice workspace requires current instruction, allocation, attempt and return read authority.',
+        });
       } else if (status === 403) {
         setError({
           kind: 'SHERIFF_AUTHORITY_REQUIRED',
@@ -1938,7 +1976,10 @@ export default function LegalDashboard({
         });
       } else {
         setError({
-          kind: 'QUEUE_READ_FAILED',
+          kind:
+            roleMode === ROLE_MODES.LEGAL_PRACTICE
+              ? 'LEGAL_PRACTICE_WORKSPACE_READ_FAILED'
+              : 'QUEUE_READ_FAILED',
           message:
             caught?.message || 'Certified Legal Operations truth could not be loaded.',
         });
@@ -1947,6 +1988,7 @@ export default function LegalDashboard({
       setQueues(EMPTY_QUEUES);
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
+      setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       return null;
     } finally {
@@ -2165,6 +2207,8 @@ export default function LegalDashboard({
     || tenantConfig?.id
     || 'Awaiting authorized tenant';
 
+  const isPracticeMode = roleMode === ROLE_MODES.LEGAL_PRACTICE;
+  const isFinanceMode = roleMode === ROLE_MODES.LEGAL_FINANCE;
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
   const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
@@ -2179,6 +2223,33 @@ export default function LegalDashboard({
           </p>
         </div>
       </div>
+    );
+  }
+
+  if (isPracticeMode) {
+    return (
+      <LegalPracticeWorkspace
+        error={error}
+        lastUpdated={lastUpdated}
+        onLogout={onLogout}
+        onRefresh={() => loadOperationalTruth({ refresh: true })}
+        refreshing={refreshing}
+        roleView={roleView}
+        tenantConfig={tenantConfig}
+        user={user}
+        workspace={practiceWorkspace}
+      />
+    );
+  }
+
+  if (isFinanceMode) {
+    return (
+      <LegalFinanceWorkspace
+        onLogout={onLogout}
+        roleView={roleView}
+        tenantConfig={tenantConfig}
+        user={user}
+      />
     );
   }
 
