@@ -1,21 +1,30 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
+ * VERSION: v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
- * EPITOME: Enhances the certified sheriff cockpit with the L8-6C bound-deputy
- *          personal active-work surface. SHERIFF sees only tenant-wide certified
- *          queues; DEPUTY sees only personal ALLOCATED/ATTEMPTED work derived
- *          from the immutable principal-to-Deputy binding. Browser role labels
- *          choose presentation only and never create authority.
+ * EPITOME: Preserves the certified sheriff cockpit while upgrading the bound-
+ *          Deputy surface with L8-6D capability-correlated, L8-6G governed field
+ *          commands. The browser submits observation facts only; Python EOS owns
+ *          IAM, P5M lineage/provenance, lifecycle mutation and service execution.
+ *          Command success is shown only after canonical post-command refresh.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
- * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; P1/P2/L8-0/
- *                            L8-5 own lifecycle/read truth; L8-5C owns sheriff
- *                            queues; L8-6B owns principal-to-Deputy binding;
- *                            L8-6C owns deputy personal work; the client adapter
- *                            owns bounded validation; this component owns
- *                            presentation only.
+ * COLLABORATION / OWNERSHIP: Python EOS IAM owns authority; P1/P2 own lifecycle/
+ *                            snapshot truth; L8-5C owns sheriff queues; L8-6B owns
+ *                            immutable principal-to-Deputy binding; L8-6C owns
+ *                            deputy work; L8-6D owns state-valid capabilities;
+ *                            L8-6G owns field-command composition/P5M lineage;
+ *                            L8-6H owns client transport validation. This component
+ *                            owns responsive presentation and user observation
+ *                            capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT clarifies empty-state copy as explicit
+ * CHANGELOG: 2026-09-23 v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT adds exact deputy capability/work parity checks,
+ *            touch-friendly begin/completed/not-completed field controls, explicit
+ *            observation reference/time capture, pseudonymous browser field-device
+ *            provenance, per-command pending/error/success states, and mandatory
+ *            canonical refresh before success. No P5M sequence/fingerprint,
+ *            tenant/deputy authority, GPS, AI, billing or financial truth is
+ *            created by the component.
+ *            2026-09-23 v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT clarifies empty-state copy as explicit
  *            non-synthetic-work language; runtime role-scoped queue behavior
  *            is unchanged.
  *            2026-09-23 v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT adds an exact DEPUTY personal-work mode,
@@ -29,17 +38,21 @@
  *            payment states. It renders only office receipt, deputy assignment
  *            and active attempt queues returned by the certified backend.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Authenticated transport only; no secrets are
- *                             rendered or persisted by this component.
+ * SECURITY / PRIVACY POSTURE: Authenticated transport only. A pseudonymous
+ *                             browser field-device reference may be stored locally
+ *                             solely for P5M ordering provenance; it is not IAM,
+ *                             deputy identity, GPS, biometric or legal truth.
  * TENANT BOUNDARY: Canonical tenant scope comes from the server response after
  *                  durable authorization; deputy identity additionally comes
  *                  only from the server-bound L8-6B/L8-6C projection.
- * AUTHORITY BOUNDARY: Read-only presentation. roleView selects presentation
- *                     mode only; Python EOS independently authorizes each read.
+ * AUTHORITY BOUNDARY: Presentation and observation-command initiation only.
+ *                     roleView/capability display never grants authority; Python
+ *                     EOS independently re-authorizes and creates all legal truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * FAIL-CLOSED DECLARATION: Unknown role scope, 401/403/503, malformed payloads,
- *                          tenant drift or deputy drift render bounded states
- *                          with no mock or cross-role fallback.
+ * FAIL-CLOSED DECLARATION: Unknown role, denied/unavailable reads, work/capability
+ *                          drift, malformed observation, command failure, or failed
+ *                          canonical refresh never falls back, crosses roles, or
+ *                          displays command success.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -55,6 +68,7 @@ import {
   Loader2,
   LockKeyhole,
   LogOut,
+  Play,
   RefreshCw,
   Scale,
   ShieldCheck,
@@ -64,11 +78,14 @@ import {
 
 import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
+  getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getSheriffOperationalQueues,
+  recordDeputyFieldOutcome,
+  transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 
-const DASHBOARD_VERSION = 'v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT';
+const DASHBOARD_VERSION = 'v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -85,6 +102,23 @@ const EMPTY_DEPUTY_WORK = Object.freeze({
   activeAttempts: Object.freeze([]),
 });
 
+
+const EMPTY_DEPUTY_CAPABILITIES = Object.freeze({
+  tenantId: '',
+  visibility: '',
+  deputyId: '',
+  capabilities: Object.freeze([]),
+});
+
+const FIELD_DEVICE_STORAGE_KEY =
+  'wilsy.legal-operations.field-device.v1';
+
+const FIELD_COMMAND_KIND = Object.freeze({
+  BEGIN: 'TRANSITION_TO_ATTEMPTED',
+  COMPLETED: 'RECORD_COMPLETED_OUTCOME',
+  NOT_COMPLETED: 'RECORD_NOT_COMPLETED_OUTCOME',
+});
+
 const ROLE_MODES = Object.freeze({
   SHERIFF: 'SHERIFF',
   DEPUTY: 'DEPUTY',
@@ -99,6 +133,100 @@ function resolveRoleMode(value) {
   if (token.includes('SHERIFF')) return ROLE_MODES.SHERIFF;
   if (token.includes('DEPUTY')) return ROLE_MODES.DEPUTY;
   return ROLE_MODES.UNRESOLVED;
+}
+
+function createOpaqueBrowserToken() {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  if (typeof globalThis.crypto?.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function resolveBrowserFieldDeviceId() {
+  const create = () => `browser-device:${createOpaqueBrowserToken()}`;
+  try {
+    const existing = globalThis.localStorage?.getItem(FIELD_DEVICE_STORAGE_KEY);
+    if (
+      typeof existing === 'string'
+      && /^browser-device:[A-Za-z0-9-]+$/.test(existing)
+    ) {
+      return existing;
+    }
+    const value = create();
+    globalThis.localStorage?.setItem(FIELD_DEVICE_STORAGE_KEY, value);
+    return value;
+  } catch {
+    return create();
+  }
+}
+
+function createFieldEventId() {
+  return `browser-event:${createOpaqueBrowserToken()}`;
+}
+
+function localDateTimeValue(date = new Date()) {
+  const local = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60_000,
+  );
+  return local.toISOString().slice(0, 16);
+}
+
+function canonicalObservedAt(value) {
+  const parsed = new Date(value);
+  if (!value || Number.isNaN(parsed.getTime())) {
+    throw new Error('LEGAL_OPERATIONS_OBSERVATION_TIME_REQUIRED');
+  }
+  return parsed.toISOString();
+}
+
+function assertDeputyWorkCapabilityParity(work, capabilityPacket) {
+  if (
+    work.tenantId !== capabilityPacket.tenantId
+    || work.deputyId !== capabilityPacket.deputyId
+  ) {
+    throw new Error('LEGAL_OPERATIONS_DEPUTY_CAPABILITY_PARITY_INVALID');
+  }
+
+  const byAttempt = new Map();
+  for (const capability of capabilityPacket.capabilities) {
+    if (byAttempt.has(capability.attemptId)) {
+      throw new Error('LEGAL_OPERATIONS_DEPUTY_CAPABILITY_PARITY_INVALID');
+    }
+    byAttempt.set(capability.attemptId, capability);
+  }
+
+  if (byAttempt.size !== work.activeAttempts.length) {
+    throw new Error('LEGAL_OPERATIONS_DEPUTY_CAPABILITY_PARITY_INVALID');
+  }
+
+  for (const attempt of work.activeAttempts) {
+    const capability = byAttempt.get(attempt.attempt_id);
+    if (
+      !capability
+      || capability.tenantId !== attempt.tenant_id
+      || capability.deputyId !== attempt.deputy_id
+      || capability.instructionId !== attempt.instruction_id
+      || capability.documentId !== attempt.document_id
+      || capability.currentState !== attempt.state
+    ) {
+      throw new Error('LEGAL_OPERATIONS_DEPUTY_CAPABILITY_PARITY_INVALID');
+    }
+  }
+
+  return byAttempt;
+}
+
+function commandErrorMessage(caught) {
+  return (
+    caught?.response?.data?.detail
+    || caught?.message
+    || 'Governed Legal Operations command failed.'
+  );
 }
 
 const BLOCKED_CAPABILITIES = Object.freeze([
@@ -249,6 +377,144 @@ function AttemptQueueRow({ item }) {
   );
 }
 
+function DeputyAttemptRow({
+  item,
+  capability,
+  draft,
+  commandState,
+  fieldDeviceId,
+  onDraftChange,
+  onCommand,
+}) {
+  const pending =
+    commandState?.status === 'pending'
+    && commandState?.attemptId === item.attempt_id;
+  const attemptMessage =
+    commandState?.attemptId === item.attempt_id ? commandState : null;
+  const commandKinds = capability?.nextCommandKinds || [];
+  const canBegin = commandKinds.includes(FIELD_COMMAND_KIND.BEGIN);
+  const canComplete = commandKinds.includes(FIELD_COMMAND_KIND.COMPLETED);
+  const canNotComplete = commandKinds.includes(FIELD_COMMAND_KIND.NOT_COMPLETED);
+  const commandReady =
+    Boolean(fieldDeviceId)
+    && Boolean(draft?.observationReference?.trim())
+    && Boolean(draft?.occurredAt);
+
+  return (
+    <div>
+      <AttemptQueueRow item={item} />
+      <div className="border-t border-stone-900 bg-black/20 px-5 py-5">
+        {!capability ? (
+          <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 text-xs text-red-300">
+            Canonical field capability is unavailable for this active attempt. Commands remain closed.
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-500">
+                  Observation evidence reference
+                </span>
+                <input
+                  aria-label={`Observation evidence reference for ${item.attempt_id}`}
+                  value={draft?.observationReference || ''}
+                  onChange={(event) => onDraftChange(
+                    item.attempt_id,
+                    'observationReference',
+                    event.target.value,
+                  )}
+                  placeholder="Reference the governed field observation"
+                  className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-stone-950 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-700/60"
+                />
+                <span className="mt-1 block text-[10px] leading-4 text-stone-600">
+                  Reference only. The browser does not create sovereign evidence fingerprints.
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-500">
+                  Observed at
+                </span>
+                <input
+                  aria-label={`Observed at for ${item.attempt_id}`}
+                  type="datetime-local"
+                  value={draft?.occurredAt || ''}
+                  onChange={(event) => onDraftChange(
+                    item.attempt_id,
+                    'occurredAt',
+                    event.target.value,
+                  )}
+                  className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-stone-950 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-700/60"
+                />
+                <span className="mt-1 block text-[10px] leading-4 text-stone-600">
+                  Browser-observed time; Python EOS validates chronology.
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              {canBegin && (
+                <button
+                  type="button"
+                  disabled={pending || !commandReady}
+                  onClick={() => onCommand(item, FIELD_COMMAND_KIND.BEGIN)}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/15 px-5 py-3 text-sm font-black text-amber-200 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                >
+                  {pending ? <Loader2 className="animate-spin" size={17} /> : <Play size={17} />}
+                  Begin attempt
+                </button>
+              )}
+              {canComplete && (
+                <button
+                  type="button"
+                  disabled={pending || !commandReady}
+                  onClick={() => onCommand(item, FIELD_COMMAND_KIND.COMPLETED)}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-700/40 bg-emerald-500/15 px-5 py-3 text-sm font-black text-emerald-200 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                >
+                  {pending ? <Loader2 className="animate-spin" size={17} /> : <CheckCircle2 size={17} />}
+                  Record completed outcome
+                </button>
+              )}
+              {canNotComplete && (
+                <button
+                  type="button"
+                  disabled={pending || !commandReady}
+                  onClick={() => onCommand(item, FIELD_COMMAND_KIND.NOT_COMPLETED)}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-stone-700 bg-stone-900 px-5 py-3 text-sm font-black text-stone-200 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                >
+                  {pending ? <Loader2 className="animate-spin" size={17} /> : <AlertTriangle size={17} />}
+                  Record not completed
+                </button>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase tracking-wider text-stone-600">
+              <span>State: {capability.currentState}</span>
+              <span>Device provenance: {fieldDeviceId || 'Unavailable'}</span>
+              <span>Sequence lineage: server-owned</span>
+            </div>
+
+            {attemptMessage && (
+              <div
+                role={attemptMessage.status === 'error' ? 'alert' : 'status'}
+                className={
+                  attemptMessage.status === 'error'
+                    ? 'mt-4 rounded-xl border border-red-900/40 bg-red-950/15 p-3 text-xs text-red-300'
+                    : attemptMessage.status === 'success'
+                      ? 'mt-4 rounded-xl border border-emerald-900/40 bg-emerald-950/15 p-3 text-xs text-emerald-300'
+                      : 'mt-4 rounded-xl border border-amber-900/40 bg-amber-950/15 p-3 text-xs text-amber-300'
+                }
+              >
+                {attemptMessage.message}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CapabilityBoundary() {
   return (
     <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
@@ -292,6 +558,18 @@ export default function LegalDashboard({
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
+  const [deputyCapabilities, setDeputyCapabilities] = useState(
+    EMPTY_DEPUTY_CAPABILITIES,
+  );
+  const [observationDrafts, setObservationDrafts] = useState({});
+  const [commandState, setCommandState] = useState(null);
+  const [fieldDeviceId] = useState(
+    () => (
+      resolveRoleMode(roleView) === ROLE_MODES.DEPUTY
+        ? resolveBrowserFieldDeviceId()
+        : ''
+    ),
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -305,6 +583,7 @@ export default function LegalDashboard({
     if (roleMode === ROLE_MODES.UNRESOLVED) {
       setQueues(EMPTY_QUEUES);
       setDeputyWork(EMPTY_DEPUTY_WORK);
+      setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setError({
         kind: 'LEGAL_ROLE_SCOPE_REQUIRED',
         message:
@@ -317,15 +596,35 @@ export default function LegalDashboard({
 
     try {
       if (roleMode === ROLE_MODES.DEPUTY) {
-        const result = await getDeputyPersonalActiveWork();
-        setDeputyWork(result);
+        const [work, capabilityPacket] = await Promise.all([
+          getDeputyPersonalActiveWork(),
+          getDeputyFieldCapabilities(),
+        ]);
+        assertDeputyWorkCapabilityParity(work, capabilityPacket);
+        setDeputyWork(work);
+        setDeputyCapabilities(capabilityPacket);
         setQueues(EMPTY_QUEUES);
-      } else {
-        const result = await getSheriffOperationalQueues();
-        setQueues(result);
-        setDeputyWork(EMPTY_DEPUTY_WORK);
+        setObservationDrafts((current) => {
+          const next = {};
+          const observedAt = localDateTimeValue();
+          for (const attempt of work.activeAttempts) {
+            next[attempt.attempt_id] = current[attempt.attempt_id] || {
+              observationReference: '',
+              occurredAt: observedAt,
+            };
+          }
+          return next;
+        });
+        setLastUpdated(new Date());
+        return { deputyWork: work, deputyCapabilities: capabilityPacket };
       }
+
+      const result = await getSheriffOperationalQueues();
+      setQueues(result);
+      setDeputyWork(EMPTY_DEPUTY_WORK);
+      setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setLastUpdated(new Date());
+      return { queues: result };
     } catch (caught) {
       const status = caught?.response?.status;
       const detail = caught?.response?.data?.detail;
@@ -368,6 +667,8 @@ export default function LegalDashboard({
 
       setQueues(EMPTY_QUEUES);
       setDeputyWork(EMPTY_DEPUTY_WORK);
+      setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
+      return null;
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -387,6 +688,147 @@ export default function LegalDashboard({
       active = false;
     };
   }, [loadOperationalTruth]);
+
+  const capabilityByAttempt = useMemo(
+    () => new Map(
+      deputyCapabilities.capabilities.map((capability) => [
+        capability.attemptId,
+        capability,
+      ]),
+    ),
+    [deputyCapabilities],
+  );
+
+  const updateObservationDraft = useCallback((attemptId, field, value) => {
+    setObservationDrafts((current) => ({
+      ...current,
+      [attemptId]: {
+        ...(current[attemptId] || {
+          observationReference: '',
+          occurredAt: localDateTimeValue(),
+        }),
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  const runDeputyFieldCommand = useCallback(async (attempt, commandKind) => {
+    const capability = capabilityByAttempt.get(attempt.attempt_id);
+    if (
+      !capability
+      || !capability.nextCommandKinds.includes(commandKind)
+    ) {
+      setCommandState({
+        status: 'error',
+        attemptId: attempt.attempt_id,
+        message: 'Canonical field capability does not permit this command.',
+      });
+      return;
+    }
+
+    const draft = observationDrafts[attempt.attempt_id];
+    const observationReference = draft?.observationReference?.trim();
+    if (!observationReference) {
+      setCommandState({
+        status: 'error',
+        attemptId: attempt.attempt_id,
+        message: 'A governed observation evidence reference is required.',
+      });
+      return;
+    }
+
+    let occurredAt;
+    try {
+      occurredAt = canonicalObservedAt(draft?.occurredAt);
+    } catch (caught) {
+      setCommandState({
+        status: 'error',
+        attemptId: attempt.attempt_id,
+        message: commandErrorMessage(caught),
+      });
+      return;
+    }
+
+    if (!fieldDeviceId) {
+      setCommandState({
+        status: 'error',
+        attemptId: attempt.attempt_id,
+        message: 'Browser field-device provenance is unavailable.',
+      });
+      return;
+    }
+
+    const command = {
+      attemptId: attempt.attempt_id,
+      currentEvidenceIdentity: capability.currentEvidenceIdentity,
+      deviceId: fieldDeviceId,
+      eventId: createFieldEventId(),
+      occurredAt,
+      observationReference,
+    };
+    setCommandState({
+      status: 'pending',
+      attemptId: attempt.attempt_id,
+      message: 'Submitting observation to Python EOS and awaiting canonical refresh…',
+    });
+
+    try {
+      if (commandKind === FIELD_COMMAND_KIND.BEGIN) {
+        await transitionDeputyFieldAttempt(command);
+      } else {
+        await recordDeputyFieldOutcome({
+          ...command,
+          outcome:
+            commandKind === FIELD_COMMAND_KIND.COMPLETED
+              ? 'COMPLETED'
+              : 'NOT_COMPLETED',
+        });
+      }
+
+      const refreshed = await loadOperationalTruth({ refresh: true });
+      if (!refreshed?.deputyWork || !refreshed?.deputyCapabilities) {
+        throw new Error('LEGAL_OPERATIONS_CANONICAL_REFRESH_FAILED');
+      }
+
+      const refreshedAttempt = refreshed.deputyWork.activeAttempts.find(
+        (value) => value.attempt_id === attempt.attempt_id,
+      );
+      const refreshedCapability = refreshed.deputyCapabilities.capabilities.find(
+        (value) => value.attemptId === attempt.attempt_id,
+      );
+
+      if (commandKind === FIELD_COMMAND_KIND.BEGIN) {
+        if (
+          refreshedAttempt?.state !== 'ATTEMPTED'
+          || refreshedCapability?.currentState !== 'ATTEMPTED'
+        ) {
+          throw new Error('LEGAL_OPERATIONS_CANONICAL_REFRESH_MISMATCH');
+        }
+      } else if (refreshedAttempt || refreshedCapability) {
+        throw new Error('LEGAL_OPERATIONS_CANONICAL_REFRESH_MISMATCH');
+      }
+
+      setCommandState({
+        status: 'success',
+        attemptId: attempt.attempt_id,
+        message:
+          commandKind === FIELD_COMMAND_KIND.BEGIN
+            ? 'Canonical refresh confirms this attempt is now ATTEMPTED.'
+            : 'Canonical refresh confirms the terminal attempt left active work.',
+      });
+    } catch (caught) {
+      setCommandState({
+        status: 'error',
+        attemptId: attempt.attempt_id,
+        message: commandErrorMessage(caught),
+      });
+    }
+  }, [
+    capabilityByAttempt,
+    fieldDeviceId,
+    loadOperationalTruth,
+    observationDrafts,
+  ]);
 
   const metrics = useMemo(() => {
     if (roleMode === ROLE_MODES.DEPUTY) {
@@ -450,7 +892,7 @@ export default function LegalDashboard({
                 </div>
                 <p className="mt-1 text-sm text-stone-400">
                   {isDeputyMode
-                    ? 'Binding-scoped personal active work. No tenant-wide queue leakage.'
+                    ? 'Binding-scoped field work with server-authorized commands. No tenant-wide queue leakage.'
                     : isSheriffMode
                       ? 'Evidence-backed operational queues. No mock legal truth.'
                       : 'Privileged Legal Operations queues remain closed until role scope resolves.'}
@@ -608,12 +1050,21 @@ export default function LegalDashboard({
 
             <QueuePanel
               title="My active service work"
-              subtitle="Binding-scoped ALLOCATED / ATTEMPTED ServiceAttempt current states"
+              subtitle="Binding-scoped active attempts with exact server-derived field capabilities"
               icon={Clock3}
               rows={deputyWork.activeAttempts}
               emptyMessage="No active service attempts are assigned to this bound deputy."
               renderRow={(item) => (
-                <AttemptQueueRow key={item.attempt_id} item={item} />
+                <DeputyAttemptRow
+                  key={item.attempt_id}
+                  item={item}
+                  capability={capabilityByAttempt.get(item.attempt_id)}
+                  draft={observationDrafts[item.attempt_id]}
+                  commandState={commandState}
+                  fieldDeviceId={fieldDeviceId}
+                  onDraftChange={updateObservationDraft}
+                  onCommand={runDeputyFieldCommand}
+                />
               )}
             />
           </>
@@ -663,10 +1114,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
- * AUTHORITY BOUNDARY: role-scoped sheriff/deputy read presentation only; browser role labels never authorize
- * TENANT POSTURE: server-authorized tenant response only; deputy rows additionally match bound deputy_id
- * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable evidence, tenant/deputy drift never falls back or crosses roles
+ * VERSION: v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT
+ * AUTHORITY BOUNDARY: role-scoped presentation and observation-command initiation only; Python EOS independently authorizes and creates legal truth
+ * TENANT POSTURE: server-authorized tenant/deputy work and exact capability parity required before any deputy command is exposed
+ * FAIL-CLOSED POSTURE: unresolved role, read/capability drift, malformed observation, command failure or failed canonical refresh never shows success or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
