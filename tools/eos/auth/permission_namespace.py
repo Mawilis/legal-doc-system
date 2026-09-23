@@ -1,17 +1,21 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM
+VERSION: v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
 and the own-tenant WILSY AI usage-capacity and billing-intelligence evidence
-read capabilities plus field-service outcome/return and process-service directory
-provisioning capabilities without
+read capabilities plus field-service outcome/return, process-service directory
+provisioning, and sheriff-office acceptance/receipt capabilities without
 granting typed subject authority, possession, cross-tenant authority, or
 financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM adds one dedicated
+    own-tenant acceptance/office-receipt permission. It remains membership-
+    gated, non-cross-tenant, non-financial, and non-self-authorizing; receipt
+    authority remains distinct from allocation and service.
     2026-09-23 v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM adds one
     dedicated own-tenant process-service directory provisioning permission;
     metadata remains membership-gated, non-cross-tenant, non-financial, and
@@ -86,7 +90,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM"
+VERSION = "v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -342,6 +346,10 @@ _PERMISSIONS: Final = MappingProxyType(
         "legal_operations:directory:write": _meta(
             "legal_operations:directory:write", "TENANT", "TENANT",
             "provision own-tenant process-service directory identities", tenant=True,
+        ),
+        "legal_operations:receipt:write": _meta(
+            "legal_operations:receipt:write", "TENANT", "TENANT",
+            "accept own-tenant instructions and record sheriff-office receipt", tenant=True,
         ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
@@ -599,7 +607,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM
+# VERSION: v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: directory provisioning and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
