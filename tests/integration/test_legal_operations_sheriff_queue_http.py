@@ -1,7 +1,7 @@
 """Direct ASGI certificate for sheriff operational queue reads.
 
 TITLE: WILSY OS Sheriff Operational Queue HTTP Certificate
-VERSION: v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+VERSION: v1.0.2-L8-6C-ROUTER-COMPAT-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
 AUTHORITY: Direct ASGI certificate for authenticated sheriff queue projection.
 EPITOME: Prove the L8-6A route admits only already-authorized sheriff context,
          delegates exact tenant scope to L8-5C, exposes only three certified
@@ -13,7 +13,11 @@ COLLABORATION / OWNERSHIP: Certificate for L8-6A HTTP composition only. IAM
                             authority remains in tenant authorization; L8-5C
                             remains canonical queue-membership authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+CHANGELOG: 2026-09-23 v1.0.2-L8-6C-ROUTER-COMPAT-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+           rebinds the sealed sheriff operational-queue certificate to the
+           additive L8-6C read router while preserving sheriff-only tenant-wide
+           queue behavior and all prior projection/fail-closed assertions.
+           2026-09-23 v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
            repairs forbidden-field certification to inspect response object
            keys rather than ambiguous substrings inside legitimate tenant_id
            and entity_id keys; route semantics and authority are unchanged.
@@ -58,7 +62,7 @@ from tools.eos.legal_operations.domain.legal_operations_operational_queues impor
 )
 
 
-VERSION = "v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT"
+VERSION = "v1.0.2-L8-6C-ROUTER-COMPAT-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT"
 TENANT = "tenant-sheriff"
 
 
@@ -275,13 +279,13 @@ def test_unexpected_queue_failure_is_bounded_persistence_unavailable(
 
 def test_router_binding_is_exact_l8_6a_release() -> None:
     """Certificate remains bound to the intended sheriff queue API release."""
-    assert legal_router.VERSION == "v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API"
+    assert legal_router.VERSION == "v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API"
     assert legal_router._QUEUE_READ.permission_id == "legal_operations:queue:read"
     assert legal_router._QUEUE_READ.operation == "legal_queue_read"
 
 
 # ARTIFACT: test_legal_operations_sheriff_queue_http.py
-# VERSION: v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+# VERSION: v1.0.2-L8-6C-ROUTER-COMPAT-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
 # AUTHORITY BOUNDARY: direct ASGI sheriff operational-queue projection certificate only
 # TENANT POSTURE: exact already-authorized sheriff tenant forwarded to L8-5C
 # FAIL-CLOSED POSTURE: auth gaps, queue evidence failure, leakage, and outages deny
