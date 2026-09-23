@@ -86,12 +86,24 @@ def test_api_server_production_docs_gate(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 class _TenantScopedEmptyCollection:
+    """Synthetic exact-scope empty collection for read-boundary certificates."""
+
     def __init__(self) -> None:
         self.queries: list[dict[str, object]] = []
 
-    def find_one(self, query: dict[str, object]) -> None:
-        self.queries.append(query)
+    def find_one(self, query: dict[str, object], **_kwargs: object) -> None:
+        """Record one exact single-record predicate and return bounded absence."""
+        self.queries.append(dict(query))
         return None
+
+    def find(
+        self,
+        query: dict[str, object],
+        **_kwargs: object,
+    ) -> tuple[dict[str, object], ...]:
+        """Record one exact history predicate and return bounded empty history."""
+        self.queries.append(dict(query))
+        return ()
 
 
 def _tenant_context(tenant_id: str = "tenant-a") -> SimpleNamespace:
@@ -169,7 +181,7 @@ def test_hostile_identifiers_are_bounded(identifier: str) -> None:
 
 
 # ARTIFACT: test_l7d_backend_hardening.py
-# VERSION: v1.0.0-L7D-BACKEND-HARDENING-CERT
+# VERSION: v1.0.1-L7D-BACKEND-HARDENING-CERT
 # AUTHORITY BOUNDARY: security certificate evidence only.
 # TENANT POSTURE: no tenant authority is created.
 # FAIL-CLOSED POSTURE: hostile defaults and internal errors are rejected.
