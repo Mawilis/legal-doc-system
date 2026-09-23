@@ -1,13 +1,16 @@
 """Host-backed certificate for the P5 offline field-evidence journal.
 
 TITLE: Process-Service Offline Field Evidence Real-Mongo Certificate
-VERSION: v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT
+VERSION: v1.2.0-L8-6F-P5M-SEQUENCE-HEAD-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Verify durable immutable observation replay, exact tenant/event receipt
-         resolution, ordering, tenant isolation, and caller-owned transaction semantics against MongoDB.
+EPITOME: Verify durable immutable observation replay, exact event command+receipt
+         recovery, validated sequence-head resolution, ordering, tenant isolation,
+         and caller-owned transaction semantics against MongoDB.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_process_service_field_evidence_real_mongo.py
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT certifies exact tenant/event replay lookup on the real journal, foreign-tenant absence, strict hydration, and session-safe persistence semantics.
+CHANGELOG: 2026-09-23 v1.2.0-L8-6F-P5M-SEQUENCE-HEAD-REAL-MONGO-CERT certifies exact durable event command+receipt
+           recovery plus contiguous tenant/attempt/device journal-head resolution.
+           2026-09-23 v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT certifies exact tenant/event replay lookup on the real journal, foreign-tenant absence, strict hydration, and session-safe persistence semantics.
            2026-09-14 v1.0.0 establishes host-backed P5 evidence coverage.
 TENANT BOUNDARY: Every operation is exact tenant scoped; foreign evidence is absence.
 AUTHORITY BOUNDARY: Sync evidence only; no legal attempt/service/return mutation.
@@ -35,7 +38,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 from tools.eos.legal_operations.registry.process_service_allocation_registry import ProcessServiceAllocationCurrent, ProcessServiceAllocationReceipt, _record_for as allocation_record_for
 from tools.eos.legal_operations.registry.process_service_field_evidence_registry import ProcessServiceFieldEvidenceRegistry
 
-VERSION = "v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REAL-MONGO-CERT"
+VERSION = "v1.2.0-L8-6F-P5M-SEQUENCE-HEAD-REAL-MONGO-CERT"
 MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 BASE = datetime(2026, 9, 14, 8, 0, tzinfo=timezone.utc)
@@ -152,6 +155,36 @@ def test_real_mongo_field_evidence_contract(mongo_context: tuple[MongoClient, An
             )
     assert by_event.to_dict() == first.to_dict()
     assert by_event.fingerprint == first.fingerprint
+    with client.start_session() as session:
+        with session.start_transaction():
+            replay_command, replay_receipt = (
+                ProcessServiceFieldEvidenceRegistry.resolve_command_receipt_by_event(
+                    "tenant-a",
+                    "event-1",
+                    journal,
+                    session=session,
+                )
+            )
+            head = ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+                "tenant-a",
+                "attempt-1",
+                "device-1",
+                journal,
+                session=session,
+            )
+    assert replay_command.event_id == "event-1"
+    assert replay_command.sequence_number == 1
+    assert replay_command.evidence_fingerprint == first.evidence_fingerprint
+    assert replay_receipt.to_dict() == first.to_dict()
+    assert head is not None
+    assert head.to_dict() == second.to_dict()
+    assert head.sequence_number == 2
+    assert ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+        "tenant-a",
+        "attempt-1",
+        "device-absent",
+        journal,
+    ) is None
     with pytest.raises(Exception):
         ProcessServiceFieldEvidenceRegistry.resolve_by_event(
             "tenant-b",
@@ -177,7 +210,7 @@ def test_real_mongo_field_evidence_contract(mongo_context: tuple[MongoClient, An
 
 
 # ARTIFACT: test_process_service_field_evidence_real_mongo.py
-# VERSION: v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT
+# VERSION: v1.2.0-L8-6F-P5M-SEQUENCE-HEAD-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: host-backed immutable evidence persistence only.
 # FAIL-CLOSED POSTURE: runtime/product failures are never converted to success.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
