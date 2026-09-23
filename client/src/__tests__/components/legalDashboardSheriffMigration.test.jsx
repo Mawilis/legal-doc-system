@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves the canonical LegalDashboard preserves certified
  *          SHERIFF/DEPUTY/LEGAL_CLIENT behavior while adding role-resolved Legal
@@ -8,8 +8,10 @@
  *          workspace, finance, intake and ReturnOfService adapter contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the full cockpit regression suite
- *            to production v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE and adapter v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT, adds the new
+ * CHANGELOG: 2026-09-24 v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds preserved SHERIFF/DEPUTY/CLIENT
+ *            regression behavior to v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; no role semantics changed.
+ *            2026-09-23 v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the full cockpit regression suite
+ *            to production v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE and adapter v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION, adds the new
  *            adapter mocks, and repairs the old duplicate "Open matters" metric
  *            selector without weakening product behavior.
  *            2026-09-23 v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT certifies production v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME:
@@ -81,7 +83,7 @@ const {
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION',
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
@@ -832,7 +834,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY BOUNDARY: deterministic Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed command wiring evidence only
  * TENANT POSTURE: all role surfaces remain server-authorized; practice uses D11 snapshot truth, client uses D7 visibility, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, menu/search state, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
