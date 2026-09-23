@@ -1,10 +1,10 @@
 /**
  * WILSY OS — LEGAL CLIENT COCKPIT VISUAL GATE
- * VERSION: v1.0.0-L8-7V1-LEGAL-CLIENT-VISUAL-GATE
+ * VERSION: v1.1.0-L8-7D9-LEGAL-CLIENT-WORKSPACE-VISUAL-GATE
  * AUTHORITY: Test-support only. Imports the real production LegalDashboard and
  *            real application CSS while replacing only the browser service
  *            module with deterministic sanitized D7-shaped visual evidence.
- * PRODUCTION IMPACT: NONE.
+ * PRODUCTION IMPACT: NONE. D9 shared chrome Auth/Tenant context is mocked only for deterministic visual certification.
  * FAIL-CLOSED: Any SHERIFF/DEPUTY read or command invoked by LEGAL_CLIENT mode
  *              throws immediately so cross-role visual leakage cannot hide.
  */
@@ -13,6 +13,10 @@ import react from '@vitejs/plugin-react';
 
 const VIRTUAL_ID = 'virtual:wilsy-legal-operations-visual-service';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
+const AUTH_CONTEXT_ID = 'virtual:wilsy-legal-client-auth-context';
+const AUTH_CONTEXT_RESOLVED_ID = '\0' + AUTH_CONTEXT_ID;
+const TENANT_CONTEXT_ID = 'virtual:wilsy-legal-client-tenant-context';
+const TENANT_CONTEXT_RESOLVED_ID = '\0' + TENANT_CONTEXT_ID;
 
 const visualServiceModule = String.raw`
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
@@ -78,11 +82,38 @@ export async function recordDeputyFieldOutcome() {
 }
 `;
 
+const visualAuthContextModule = String.raw`
+export const useAuth = () => ({
+  user: {
+    id: 'principal-visual-client',
+    email: 'client@visual.wilsy.test',
+    role: 'tenant_legal_client',
+    tenantId: 'tenant-visual-cert',
+  },
+  tenant: {
+    tenantId: 'tenant-visual-cert',
+    displayName: 'Mabaso Legal Client Workspace',
+    status: 'ACTIVE',
+  },
+});
+`;
+
+const visualTenantContextModule = String.raw`
+export const useTenants = () => ({
+  activeTenant: {
+    tenantId: 'tenant-visual-cert',
+    displayName: 'Mabaso Legal Client Workspace',
+    status: 'ACTIVE',
+  },
+  tenants: [],
+});
+`;
+
 export default defineConfig({
   plugins: [
     react(),
     {
-      name: 'wilsy-l8-7v1-legal-client-visual-service',
+      name: 'wilsy-l8-7d9-legal-client-workspace-visual-service',
       enforce: 'pre',
       resolveId(source) {
         if (
@@ -91,10 +122,29 @@ export default defineConfig({
         ) {
           return RESOLVED_ID;
         }
+        if (
+          source.endsWith('/contexts/authContext')
+          || source.endsWith('/contexts/authContext.jsx')
+          || source.endsWith('contexts/authContext')
+          || source.endsWith('contexts/authContext.jsx')
+        ) {
+          return AUTH_CONTEXT_RESOLVED_ID;
+        }
+        if (
+          source.endsWith('/contexts/tenantContext')
+          || source.endsWith('/contexts/tenantContext.jsx')
+          || source.endsWith('contexts/tenantContext')
+          || source.endsWith('contexts/tenantContext.jsx')
+        ) {
+          return TENANT_CONTEXT_RESOLVED_ID;
+        }
         return null;
       },
       load(id) {
-        return id === RESOLVED_ID ? visualServiceModule : null;
+        if (id === RESOLVED_ID) return visualServiceModule;
+        if (id === AUTH_CONTEXT_RESOLVED_ID) return visualAuthContextModule;
+        if (id === TENANT_CONTEXT_RESOLVED_ID) return visualTenantContextModule;
+        return null;
       },
     },
   ],
@@ -109,7 +159,7 @@ export default defineConfig({
 /**
  * SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: vite.legal-client-visual.config.js
- * VERSION: v1.0.0-L8-7V1-LEGAL-CLIENT-VISUAL-GATE
+ * VERSION: v1.1.0-L8-7D9-LEGAL-CLIENT-WORKSPACE-VISUAL-GATE
  * AUTHORITY BOUNDARY: visual test-support transport fixture only
  * PRODUCTION IMPACT: none
  * END OF WILSY OS SOVEREIGN ARTIFACT
