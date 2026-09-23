@@ -1,15 +1,19 @@
 """L7B host-backed live HTTP, IAM, and P4A-to-P5F certificate.
 
 TITLE: Wilsy OS Legal Operations Command API Real-Mongo Certificate
-VERSION: v1.1.0-L7B-LIVE-IAM-FULL-COMMAND-CHAIN-RM-CERT
+VERSION: v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT
 AUTHORITY: Host-backed certificate for authenticated command composition.
 EPITOME: Prove actual FastAPI POST dispatch, durable IAM resolution, live P4A
          allocation, canonical P5A/P5B bridging, and the P5C-P5F command chain.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_command_router_real_mongo.py
 COLLABORATION / OWNERSHIP: The certificate owns only fixtures and observations;
                             P1/P2/P4/P5 remain canonical authorities.
-CERTIFICATION / UPDATE DATE: 2026-09-15
-CHANGELOG: v1.1.0 proves actual FastAPI POST transport, live
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT migrates the
+           certificate fixture to canonical tenant_business_roles plus
+           role_assignments and overrides the composed HTTP role reader rather
+           than the retired single-store provider seam.
+           v1.1.0 proved actual FastAPI POST transport, live
            RequireTenantAuthorization over durable principal/membership/
            business-role/granting-role truth, live P4A allocation, canonical
            P5A/P5B bridge, P5C/P5D/P5E/P5F commands, and rollback/denial safety.
@@ -54,7 +58,21 @@ from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
-from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+from tools.eos.auth.role_assignment_repository import (
+    RoleAssignmentNotFoundError,
+    RoleAssignmentRepository,
+    RoleAssignmentRepositoryError,
+)
+from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    TenantBusinessRoleNotFoundError,
+    TenantBusinessRoleRepository,
+    TenantBusinessRoleRepositoryError,
+)
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
@@ -86,7 +104,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION = "v1.1.0-L7B-LIVE-IAM-FULL-COMMAND-CHAIN-RM-CERT"
+VERSION = "v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT"
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 BASE = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
@@ -131,13 +149,53 @@ class _MembershipReader:
 
 
 class _RoleReader:
-    """Resolve durable business and granting assignments without supplying claims."""
+    """Resolve business and granting roles from their canonical split stores."""
 
-    def __init__(self, collection: Any) -> None:
-        self._collection = collection
+    def __init__(
+        self,
+        authorization_collection: Any,
+        business_collection: Any,
+    ) -> None:
+        self._authorization_collection = authorization_collection
+        self._business_collection = business_collection
 
-    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> Any:
-        return RoleAssignmentRepository.resolve(principal_id, tenant_id, role_id, self._collection, session=session)
+    def resolve(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        role_id: str,
+        *,
+        session: Any = None,
+    ) -> Any:
+        if role_id in TENANT_ROLES:
+            try:
+                value = TenantBusinessRoleRepository.resolve(
+                    principal_id,
+                    tenant_id,
+                    self._business_collection,
+                    session=session,
+                )
+            except TenantBusinessRoleNotFoundError as error:
+                raise RoleAssignmentNotFoundError(
+                    "TENANT_BUSINESS_ROLE_NOT_FOUND"
+                ) from error
+            except TenantBusinessRoleRepositoryError as error:
+                raise RoleAssignmentRepositoryError(
+                    "TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"
+                ) from error
+            if value.business_role != role_id:
+                raise RoleAssignmentNotFoundError(
+                    "TENANT_BUSINESS_ROLE_NOT_FOUND"
+                )
+            return value
+
+        return RoleAssignmentRepository.resolve(
+            principal_id,
+            tenant_id,
+            role_id,
+            self._authorization_collection,
+            session=session,
+        )
 
 
 @pytest.fixture
@@ -177,6 +235,7 @@ def mongo_context() -> Iterator[dict[str, Any]]:
             "principal": database.get_collection("principal_authorities"),
             "membership": database.get_collection("tenant_memberships"),
             "roles": database.get_collection("role_assignments"),
+            "business_roles": database.get_collection("tenant_business_roles"),
         }
         LegalOperationsLifecycleRegistry.ensure_indexes(collections["lifecycle"])
         ProcessServiceAllocationRegistry.ensure_indexes(collections["allocation_receipts"], collections["allocation_current"])
@@ -187,6 +246,7 @@ def mongo_context() -> Iterator[dict[str, Any]]:
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
         RoleAssignmentRepository.ensure_indexes(collections["roles"])
+        TenantBusinessRoleRepository.ensure_indexes(collections["business_roles"])
         yield {"client": client, "database": database, "collections": collections}
     except BaseException:
         active_error = True
@@ -255,7 +315,19 @@ def _seed_fixture(collections: dict[str, Any], *, business_role: str = "tenant_s
         collections["allocation_current"].insert_one(expected_current.to_dict(), session=session)
         PrincipalAuthorityRepository.create(PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0), collections["principal"], session=session)
         TenantMembershipRepository.insert(TenantMembershipAuthority(principal_id, tenant, TenantMembershipStatus.ACTIVE, 0), collections["membership"], session=session)
-        RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal_id, tenant, business_role, RoleAssignmentStatus.ACTIVE, 0), collections["roles"], session=session)
+        TenantBusinessRoleRepository.insert(
+            TenantBusinessRoleAuthority(
+                principal_id,
+                tenant,
+                business_role,
+                TenantBusinessRoleStatus.ACTIVE,
+                0,
+                BASE,
+                None,
+            ),
+            collections["business_roles"],
+            session=session,
+        )
         RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal_id, tenant, grant_role, RoleAssignmentStatus.ACTIVE, 0), collections["roles"], session=session)
         session.commit_transaction()
     source_identities = {
@@ -286,7 +358,6 @@ def _app(context: dict[str, Any], fixture: _Fixture) -> FastAPI:
     """Compose production RequireTenantAuthorization with durable Mongo readers."""
     import tools.eos.api.tenant_authorization_http as authorization_http
     import tools.eos.auth.authentication as authentication
-    import tools.eos.auth.authorization as authorization
     import tools.eos.auth.tenant_access as tenant_access
 
     app = FastAPI()
@@ -295,7 +366,10 @@ def _app(context: dict[str, Any], fixture: _Fixture) -> FastAPI:
     app.dependency_overrides[authorization_http.get_current_identity] = lambda: _identity_projection(fixture.principal_id, fixture.tenant)
     app.dependency_overrides[authentication.get_principal_authority_repository] = lambda: _PrincipalReader(collections["principal"])
     app.dependency_overrides[tenant_access.get_tenant_membership_repository] = lambda: _MembershipReader(collections["membership"])
-    app.dependency_overrides[authorization.get_role_assignment_repository] = lambda: _RoleReader(collections["roles"])
+    app.dependency_overrides[authorization_http.get_role_assignment_repository] = lambda: _RoleReader(
+        collections["roles"],
+        collections["business_roles"],
+    )
     app.include_router(command_api.router, prefix="/api")
     return app
 
@@ -400,9 +474,9 @@ def test_real_mongo_live_iam_denials_and_p4_rollback(mongo_context: dict[str, An
 
 
 # ARTIFACT: test_legal_operations_command_router_real_mongo.py
-# VERSION: v1.1.0-L7B-LIVE-IAM-FULL-COMMAND-CHAIN-RM-CERT
+# VERSION: v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT
 # AUTHORITY BOUNDARY: host-backed actual HTTP/IAM/composition certificate only
-# TENANT POSTURE: UUID-isolated database and explicit tenant predicates
+# TENANT POSTURE: UUID-isolated database, split durable IAM stores, and explicit tenant predicates
 # FAIL-CLOSED POSTURE: only pre-yield host absence may skip
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
