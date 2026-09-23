@@ -1,27 +1,36 @@
 """WILSY OS Legal Operations field-service command boundary.
 
 TITLE: Legal Operations Field-Service Command API
-VERSION: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API
+VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P4/P5 remain canonical authorities.
-EPITOME: Translate authenticated tenant-scoped command requests into one
-         canonical field-service orchestrator inside one caller-owned Mongo
-         transaction, without accepting caller-manufactured legal truth.
+EPITOME: Translate authenticated tenant-scoped directory and field-service
+         command requests into one canonical orchestrator inside one API-owned
+         Mongo transaction, without accepting browser-supplied tenant authority
+         or collapsing provisioning into allocation/service truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
-CERTIFICATION / UPDATE DATE: 2026-09-15
-CHANGELOG: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API establishes authenticated
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API adds three
+           sheriff-authorized own-tenant directory provisioning commands for
+           District, SheriffOffice, and Deputy. Tenant scope comes only from
+           RequireTenantAuthorization; the request cannot supply tenant_id;
+           L8-1 performs canonical parent/history validation inside the same
+           API-owned transaction.
+           v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API established authenticated
            allocation, attempt creation/transition, terminal-outcome, and
            return command boundaries using evidence locators only.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY / PRIVACY POSTURE: Request bodies contain locators and observations;
-                            tenant, state, lineage, fingerprints, and outcomes
-                            are rehydrated or derived from canonical evidence.
+SECURITY / PRIVACY POSTURE: Request bodies contain bounded directory facts,
+                            locators, and observations; tenant authority comes
+                            only from durable authorization and lifecycle state,
+                            lineage, fingerprints, and outcomes remain canonical.
 TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
-AUTHORITY BOUNDARY: This module never constructs or mutates legal truth itself;
-                    exactly one canonical orchestrator is called per command.
+AUTHORITY BOUNDARY: This module composes authenticated command transport and
+                    transaction mechanics only; exactly one canonical directory
+                    or field-service orchestrator is called per command.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
@@ -53,6 +62,11 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 from tools.eos.legal_operations.domain.process_service_assignment_authority import authorize_process_service_assignment
 from tools.eos.legal_operations.orchestration.process_service_allocation_orchestrator import orchestrate_process_service_allocation
+from tools.eos.legal_operations.orchestration.process_service_directory_provisioning_orchestrator import (
+    provision_deputy,
+    provision_district,
+    provision_sheriff_office,
+)
 from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrator import orchestrate_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_attempt_outcome_orchestrator import transition_process_service_attempt_outcome
 from tools.eos.legal_operations.orchestration.process_service_attempt_transition_orchestrator import transition_process_service_attempt
@@ -69,13 +83,41 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API"
+VERSION: Final[str] = "v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
 
 class _CommandModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class DistrictProvisioningCommand(_CommandModel):
+    """Bounded District facts; tenant authority is always server-derived."""
+
+    district_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    jurisdiction_code: str = Field(min_length=1)
+    evidence_reference: str = Field(min_length=1)
+
+
+class SheriffOfficeProvisioningCommand(_CommandModel):
+    """Bounded SheriffOffice facts under one canonical District identity."""
+
+    sheriff_office_id: str = Field(min_length=1)
+    district_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    evidence_reference: str = Field(min_length=1)
+
+
+class DeputyProvisioningCommand(_CommandModel):
+    """Bounded Deputy facts under one canonical SheriffOffice identity."""
+
+    deputy_id: str = Field(min_length=1)
+    sheriff_office_id: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    badge_reference: str = Field(min_length=1)
+    evidence_reference: str = Field(min_length=1)
 
 
 class AllocationCommand(_CommandModel):
@@ -228,10 +270,87 @@ def _ctx(permission: str, operation: str) -> RequireTenantAuthorization:
     return RequireTenantAuthorization(permission, operation)
 
 
+_DIRECTORY = _ctx("legal_operations:directory:write", "legal_directory_write")
 _ALLOCATE = _ctx("legal_operations:allocation:write", "legal_allocation_write")
 _ATTEMPT = _ctx("legal_operations:attempt:write", "legal_attempt_write")
 _OUTCOME = _ctx("legal_operations:attempt_outcome:write", "legal_attempt_outcome_write")
 _RETURN = _ctx("legal_operations:return:write", "legal_return_write")
+
+
+@router.post("/directory/districts")
+async def provision_district_command(
+    command: DistrictProvisioningCommand,
+    context: TenantAuthorizationContext = Depends(_DIRECTORY),
+) -> dict[str, Any]:
+    """Provision or exactly replay one own-tenant canonical District."""
+
+    def run(session: Any, db: Any) -> Any:
+        return provision_district(
+            tenant_id=context.tenant_id,
+            district_id=command.district_id,
+            name=command.name,
+            jurisdiction_code=command.jurisdiction_code,
+            evidence_reference=command.evidence_reference,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            session=session,
+        )
+
+    try:
+        result = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return result.to_dict()
+
+
+@router.post("/directory/sheriff-offices")
+async def provision_sheriff_office_command(
+    command: SheriffOfficeProvisioningCommand,
+    context: TenantAuthorizationContext = Depends(_DIRECTORY),
+) -> dict[str, Any]:
+    """Provision or exactly replay one own-tenant SheriffOffice under P1/P2 truth."""
+
+    def run(session: Any, db: Any) -> Any:
+        return provision_sheriff_office(
+            tenant_id=context.tenant_id,
+            sheriff_office_id=command.sheriff_office_id,
+            district_id=command.district_id,
+            name=command.name,
+            evidence_reference=command.evidence_reference,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            session=session,
+        )
+
+    try:
+        result = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return result.to_dict()
+
+
+@router.post("/directory/deputies")
+async def provision_deputy_command(
+    command: DeputyProvisioningCommand,
+    context: TenantAuthorizationContext = Depends(_DIRECTORY),
+) -> dict[str, Any]:
+    """Provision or exactly replay one own-tenant Deputy under canonical office lineage."""
+
+    def run(session: Any, db: Any) -> Any:
+        return provision_deputy(
+            tenant_id=context.tenant_id,
+            deputy_id=command.deputy_id,
+            sheriff_office_id=command.sheriff_office_id,
+            display_name=command.display_name,
+            badge_reference=command.badge_reference,
+            evidence_reference=command.evidence_reference,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            session=session,
+        )
+
+    try:
+        result = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return result.to_dict()
 
 
 @router.post("/allocations")
@@ -357,8 +476,8 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API
-# AUTHORITY BOUNDARY: authenticated command composition; P1/P4/P5 remain canonical
+# VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
+# AUTHORITY BOUNDARY: authenticated directory/field-service command composition; P1/P2/L8-1/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
