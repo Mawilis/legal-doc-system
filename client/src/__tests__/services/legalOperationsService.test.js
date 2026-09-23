@@ -1,15 +1,20 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT
+ * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
- * EPITOME: Certifies sheriff/deputy reads plus L8-6D field capabilities and
- *          L8-6G bound-Deputy transition/outcome transport, exact endpoint/body
- *          use, immutable adaptation, fail-closed scope/state/response validation,
- *          and exclusion of browser-owned IAM, P5M lineage, provenance,
- *          execution, billing, AI, payment, or settlement truth.
+ * EPITOME: Certifies sheriff/deputy reads and deputy field commands plus the
+ *          D7 LEGAL_CLIENT matter adapter, including exact D6 endpoint use,
+ *          D5 schema/version/field validation, immutable safe-card adaptation,
+ *          and exclusion of browser-owned scope, lifecycle, evidence, billing,
+ *          AI, payment, execution or settlement truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT certifies exact field-capability GET transport,
+ * CHANGELOG: 2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT certifies exact
+ *            /legal-operations/client/matters GET transport, D5 schema/version/
+ *            visibility binding, exact four-field matter cards, deterministic
+ *            order/uniqueness, malformed/extra-field rejection, deep freezing,
+ *            zero browser request authority, and production v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT alignment.
+2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT certifies exact field-capability GET transport,
  *            transition/outcome POST whitelists, rejection of sequence/provenance
  *            authority fields before transport, response attempt/device/event
  *            binding, terminal outcome binding, immutability, and production
@@ -40,6 +45,7 @@ import {
   __legalOperationsServiceInternals,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
+  getLegalClientMatters,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
   transitionDeputyFieldAttempt,
@@ -71,6 +77,28 @@ const payload = () => ({
     },
   ],
 });
+
+const clientMatterPayload = () => ({
+  schema: 'WILSY-LEGAL-CLIENT-MATTER-PROJECTION/V1',
+  version: 'v1.0.0-L8-7D5-CLIENT-MATTER-PROJECTION',
+  tenant_id: 'tenant-client',
+  visibility: 'LEGAL_CLIENT_EXPLICIT_MATTERS',
+  matters: [
+    {
+      case_matter_id: 'matter-a',
+      matter_reference: 'CLIENT-001',
+      opened_at: '2026-09-23T18:00:00+00:00',
+      state: 'OPEN',
+    },
+    {
+      case_matter_id: 'matter-b',
+      matter_reference: 'CLIENT-002',
+      opened_at: '2026-09-23T18:05:00+00:00',
+      state: 'CLOSED',
+    },
+  ],
+});
+
 
 const deputyPayload = () => ({
   tenant_id: 'tenant-deputy',
@@ -204,7 +232,7 @@ const outcomeInput = () => ({
   outcome: 'COMPLETED',
 });
 
-describe('L8-6H role-scoped Legal Operations client adapter', () => {
+describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -294,6 +322,136 @@ describe('L8-6H role-scoped Legal Operations client adapter', () => {
       'revenue',
       'client_name',
       'ai_score',
+    ]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+  });
+
+  it('reads exact D6 client matters with no browser-owned request scope', async () => {
+    mockGet.mockResolvedValueOnce({ data: clientMatterPayload() });
+
+    const result = await getLegalClientMatters();
+
+    expect(mockGet).toHaveBeenCalledTimes(1);
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/client/matters',
+    );
+    expect(result).toEqual({
+      schema: 'WILSY-LEGAL-CLIENT-MATTER-PROJECTION/V1',
+      version: 'v1.0.0-L8-7D5-CLIENT-MATTER-PROJECTION',
+      tenantId: 'tenant-client',
+      visibility: 'LEGAL_CLIENT_EXPLICIT_MATTERS',
+      matters: [
+        {
+          caseMatterId: 'matter-a',
+          matterReference: 'CLIENT-001',
+          openedAt: '2026-09-23T18:00:00+00:00',
+          state: 'OPEN',
+        },
+        {
+          caseMatterId: 'matter-b',
+          matterReference: 'CLIENT-002',
+          openedAt: '2026-09-23T18:05:00+00:00',
+          state: 'CLOSED',
+        },
+      ],
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.matters)).toBe(true);
+    expect(Object.isFrozen(result.matters[0])).toBe(true);
+    expect(Object.isFrozen(result.matters[1])).toBe(true);
+  });
+
+  it('rejects client schema, version, visibility, state, timestamp, and extra-field drift', () => {
+    const validate =
+      __legalOperationsServiceInternals.assertCanonicalClientMatterPayload;
+
+    for (const invalid of [
+      { ...clientMatterPayload(), schema: 'WILSY-LEGAL-CLIENT-MATTER-PROJECTION/V2' },
+      { ...clientMatterPayload(), version: 'vNext' },
+      { ...clientMatterPayload(), visibility: 'AUDIT_VISIBLE' },
+      {
+        ...clientMatterPayload(),
+        matters: [
+          {
+            ...clientMatterPayload().matters[0],
+            state: 'ATTEMPTED',
+          },
+        ],
+      },
+      {
+        ...clientMatterPayload(),
+        matters: [
+          {
+            ...clientMatterPayload().matters[0],
+            opened_at: 'not-a-timestamp',
+          },
+        ],
+      },
+      { ...clientMatterPayload(), instruction_id: 'instruction-leak' },
+    ]) {
+      expect(() => validate(invalid)).toThrow(
+        'LEGAL_OPERATIONS_CLIENT_MATTER',
+      );
+    }
+  });
+
+  it('rejects duplicate or unsorted client matters rather than normalizing server drift', () => {
+    const validate =
+      __legalOperationsServiceInternals.assertCanonicalClientMatterPayload;
+
+    const duplicate = clientMatterPayload();
+    duplicate.matters[1].case_matter_id = 'matter-a';
+    expect(() => validate(duplicate)).toThrow(
+      'LEGAL_OPERATIONS_CLIENT_MATTER_SCOPE_INVALID',
+    );
+
+    const unsorted = clientMatterPayload();
+    unsorted.matters = [...unsorted.matters].reverse();
+    expect(() => validate(unsorted)).toThrow(
+      'LEGAL_OPERATIONS_CLIENT_MATTER_SCOPE_INVALID',
+    );
+  });
+
+  it('projects only the D5 client-safe field set and no internal or financial truth', () => {
+    const result =
+      __legalOperationsServiceInternals.assertCanonicalClientMatterPayload(
+        clientMatterPayload(),
+      );
+
+    expect(Object.keys(result).sort()).toEqual([
+      'matters',
+      'schema',
+      'tenantId',
+      'version',
+      'visibility',
+    ]);
+    expect(Object.keys(result.matters[0]).sort()).toEqual([
+      'caseMatterId',
+      'matterReference',
+      'openedAt',
+      'state',
+    ]);
+
+    const serialized = JSON.stringify(result).toLowerCase();
+    for (const forbidden of [
+      'principal',
+      'client_principal',
+      'instruction',
+      'document',
+      'deputy',
+      'attempt',
+      'evidence',
+      'fingerprint',
+      'return',
+      'invoice',
+      'billing',
+      'payment',
+      'settlement',
+      'revenue',
+      'ai_',
+      'authorized',
+      'role',
     ]) {
       expect(serialized).not.toContain(forbidden);
     }
@@ -530,17 +688,17 @@ describe('L8-6H role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT',
+      'v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT
- * AUTHORITY BOUNDARY: sheriff/deputy read and bound field-command client adapter certificate only
- * TENANT POSTURE: cross-tenant and cross-deputy rows reject before presentation
- * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/command-response drift rejects before presentation or transport success
+ * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT
+ * AUTHORITY BOUNDARY: sheriff/deputy/client read and bound deputy field-command browser adapter certificate only
+ * TENANT POSTURE: server client/tenant/deputy scope is authoritative; browser cannot create client or matter scope
+ * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
