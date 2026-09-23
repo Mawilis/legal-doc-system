@@ -1,22 +1,25 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT
+ * VERSION: v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY: Client presentation/wiring certification only.
- * EPITOME: Proves LegalDashboard preserves certified SHERIFF and governed
- *          DEPUTY modes while elevating LEGAL_CLIENT into the shared WILSY OS
- *          dashboard chrome with functional Overview / My Matters / Access &
- *          Privacy navigation, safe visible-matter search, responsive rail
- *          semantics, and no cross-role or fabricated module behavior.
+ * EPITOME: Proves the canonical LegalDashboard preserves certified
+ *          SHERIFF/DEPUTY/LEGAL_CLIENT behavior while adding role-resolved Legal
+ *          Practice and Legal Finance workspaces backed only by certified
+ *          workspace, finance, intake and ReturnOfService adapter contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT certifies production v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME:
+ * CHANGELOG: 2026-09-23 v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the full cockpit regression suite
+ *            to production v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE and adapter v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT, adds the new
+ *            adapter mocks, and repairs the old duplicate "Open matters" metric
+ *            selector without weakening product behavior.
+ *            2026-09-23 v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT certifies production v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME:
  *            shared OS chrome presence, functional client navigation rail,
  *            Overview/My Matters/Access & Privacy lane switching, search over
  *            already-sanitized D7 matter fields, refresh/open-matters actions,
  *            tenant/operator shell composition, denied/unavailable shell
  *            persistence, no unsupported client modules, and unchanged
  *            SHERIFF/DEPUTY endpoint behavior.
-2026-09-23 v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR rebinds D8 to v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME,
+ *            2026-09-23 v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR rebinds D8 to v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME,
  *            proves the machine denial code remains visible exactly once and
  *            separately proves bounded human-readable denial guidance; no
  *            production authority or endpoint semantics changed.
@@ -54,28 +57,40 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalFinanceEvidence,
+  getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
+  registerLegalIntake,
   transitionDeputyFieldAttempt,
 } = vi.hoisted(() => ({
+  generateLegalReturnOfService: vi.fn(),
   getDeputyFieldCapabilities: vi.fn(),
   getDeputyPersonalActiveWork: vi.fn(),
   getLegalClientMatters: vi.fn(),
+  getLegalFinanceEvidence: vi.fn(),
+  getLegalPracticeWorkspace: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
   recordDeputyFieldOutcome: vi.fn(),
+  registerLegalIntake: vi.fn(),
   transitionDeputyFieldAttempt: vi.fn(),
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT',
+  generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalFinanceEvidence,
+  getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
+  registerLegalIntake,
   transitionDeputyFieldAttempt,
 }));
 
@@ -271,11 +286,15 @@ function installLocalStorageStub() {
 
 describe('L8-7D8 governed Legal Operations cockpit', () => {
   beforeEach(() => {
+    generateLegalReturnOfService.mockReset();
     getDeputyFieldCapabilities.mockReset();
     getDeputyPersonalActiveWork.mockReset();
     getLegalClientMatters.mockReset();
+    getLegalFinanceEvidence.mockReset();
+    getLegalPracticeWorkspace.mockReset();
     getSheriffOperationalQueues.mockReset();
     recordDeputyFieldOutcome.mockReset();
+    registerLegalIntake.mockReset();
     transitionDeputyFieldAttempt.mockReset();
     const localStorage = installLocalStorageStub();
     localStorage.clear();
@@ -379,7 +398,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(screen.getByText('Visible matter snapshot')).toBeInTheDocument();
 
     const visibleMetric = screen.getByText('Visible matters').closest('article');
-    const openMetric = screen.getByText('Open matters').closest('article');
+    const openMetric = screen.getByText('Open matters', { selector: 'p' }).closest('article');
     const closedMetric = screen.getByText('Closed matters').closest('article');
     expect(visibleMetric).toHaveTextContent('3');
     expect(openMetric).toHaveTextContent('2');
@@ -753,13 +772,25 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
       "getLegalClientMatters",
     );
     expect(source).toContain(
+      "getLegalPracticeWorkspace",
+    );
+    expect(source).toContain(
+      "getLegalFinanceEvidence",
+    );
+    expect(source).toContain(
+      "registerLegalIntake",
+    );
+    expect(source).toContain(
+      "generateLegalReturnOfService",
+    );
+    expect(source).toContain(
       "transitionDeputyFieldAttempt",
     );
     expect(source).toContain(
       "recordDeputyFieldOutcome",
     );
     expect(source).toContain(
-      "v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME",
+      "v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE",
     );
     expect(source).toContain('WilsyOSDashboardChrome');
     expect(source).toContain('CLIENT_WORKSPACE_VIEWS');
@@ -801,9 +832,9 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT
- * AUTHORITY BOUNDARY: deterministic SHERIFF/DEPUTY presentation, LEGAL_CLIENT shared workspace navigation/search, and governed deputy observation-command wiring evidence only
- * TENANT POSTURE: client matter membership derives only from D7; deputy commands still require exact server-authorized work/capability parity
+ * VERSION: v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * AUTHORITY BOUNDARY: deterministic Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed command wiring evidence only
+ * TENANT POSTURE: all role surfaces remain server-authorized; practice uses D11 snapshot truth, client uses D7 visibility, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, menu/search state, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
