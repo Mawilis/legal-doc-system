@@ -1,13 +1,14 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.6.0-L8-7D6-CLIENT-MATTER-READ-API
+VERSION: v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
-EPITOME: Preserve exact authorized internal/sheriff/deputy reads while adding
-         one dedicated LEGAL_CLIENT /client/matters route that owns a snapshot
-         transaction and returns only the D5 explicitly-visible sanitized
-         CaseMatter projection, without opening internal entity reads or
-         creating lifecycle, service, return, billing, AI, payment or settlement truth.
+EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
+         adding one snapshot-consistent legal-practice workspace projection for
+         current instruction/document/attempt/execution/return truth. The
+         workspace requires conjunctive instruction, allocation, attempt and
+         return read authority and never creates lifecycle, billing, payment,
+         AI, execution or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_router.py
 COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             P2 owns immutable persistence/history hydration,
@@ -20,7 +21,18 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-7D5 owns sanitized client matter projection, and
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.6.0-L8-7D6-CLIENT-MATTER-READ-API adds GET /client/matters under the exact
+CHANGELOG: 2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /workspace for the exact current
+           legal-practice roles tenant_legal_partner, tenant_legal_attorney,
+           tenant_legal_paralegal and tenant_legal_secretary. Admission requires
+           all four existing instruction/allocation/attempt/return read
+           permission-operation pairs for the same tenant/principal/business
+           role. One API-owned snapshot transaction enumerates deterministic
+           L8-5 current models for LegalInstruction, ProcessDocument,
+           ServiceAttempt, ServiceExecution and ReturnOfService, exposes only a
+           bounded field whitelist plus opaque exact-snapshot evidence locators,
+           and returns deterministic lifecycle counts. It creates no new IAM,
+           matter, service, billing, invoice, AI, payment or settlement truth.
+           2026-09-23 v1.6.0-L8-7D6-CLIENT-MATTER-READ-API adds GET /client/matters under the exact
            legal_operations:client_matter:read / legal_client_matter_read
            authorization dependency. The route derives tenant/principal only
            from authenticated context, owns one Mongo snapshot transaction,
@@ -82,11 +94,12 @@ AUTHORITY BOUNDARY: Read projection only. Queue/capability visibility grants no
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement. Legal reads never infer paid or
                               settled truth.
-TRANSACTION BOUNDARY: Existing internal/sheriff/deputy reads retain read-only
-                      collection semantics. The D6 client matter route alone
-                      owns one read-only Mongo snapshot transaction spanning D5
-                      current IAM, visibility and bound-matter reads; it commits
-                      on success and aborts on failure. Command transactions remain separate.
+TRANSACTION BOUNDARY: Existing exact internal/sheriff/deputy reads retain
+                      read-only collection semantics. The D6 client-matter route
+                      and D11 legal-practice workspace each own one read-only
+                      Mongo snapshot transaction for their multi-read projection;
+                      both commit on success and abort on failure. Command
+                      transactions remain separate.
 FAIL-CLOSED DECLARATION: Missing authority, malformed identity, internal
                          client-policy violations, snapshot/session failure,
                          D5 IAM/visibility/bound-matter failure, absent exact
@@ -124,6 +137,7 @@ from tools.eos.legal_operations.domain.legal_operations_operational_queues impor
 from tools.eos.legal_operations.domain.legal_operations_read_model import (
     LegalOperationsReadModelError,
     get_entity_read_model,
+    list_entity_read_models,
 )
 from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
@@ -133,12 +147,23 @@ from tools.eos.legal_operations.registry.legal_client_matter_visibility_registry
 )
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION as LIFECYCLE_COLLECTION,
+    LegalOperationsLifecycleRegistry,
 )
 
 
-VERSION: Final[str] = "v1.6.0-L8-7D6-CLIENT-MATTER-READ-API"
+VERSION: Final[str] = "v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
+_LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
+    {
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+    }
+)
+_WORKSPACE_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1"
+_WORKSPACE_VISIBILITY: Final[str] = "LEGAL_PRACTICE_WORKSPACE"
 _T = TypeVar("_T")
 
 
@@ -181,6 +206,199 @@ def _client_projection_transaction(callback: Callable[[Any, Any], _T]) -> _T:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
         ) from error
+
+
+def _workspace_projection_transaction(callback: Callable[[Any, Any], _T]) -> _T:
+    """Run one legal-practice workspace read in one API-owned snapshot.
+
+    The endpoint owns only session lifecycle. It never retries, mutates durable
+    evidence, or weakens the four independent current-authorization checks.
+    """
+    client, database = _db_handles()
+    if client is None or database is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        )
+    try:
+        with client.start_session() as session:
+            session.start_transaction(read_concern=ReadConcern("snapshot"))
+            try:
+                result = callback(session, database)
+                session.commit_transaction()
+                return result
+            except Exception:
+                if bool(getattr(session, "in_transaction", False)):
+                    session.abort_transaction()
+                raise
+    except (HTTPException, LegalOperationsReadModelError):
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        ) from error
+
+
+def _workspace_context(
+    *contexts: TenantAuthorizationContext,
+) -> TenantAuthorizationContext:
+    """Require one exact legal-practice principal/tenant/business-role scope."""
+    if not contexts:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="LEGAL_OPERATIONS_WORKSPACE_DENIED",
+        )
+    first = contexts[0]
+    principal_id = first.identity.identity_id
+    role = first.decision.business_role
+    if role not in _LEGAL_PRACTICE_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="LEGAL_OPERATIONS_WORKSPACE_DENIED",
+        )
+    for context in contexts[1:]:
+        if (
+            context.tenant_id != first.tenant_id
+            or context.identity.identity_id != principal_id
+            or context.decision.business_role != role
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="LEGAL_OPERATIONS_WORKSPACE_SCOPE_MISMATCH",
+            )
+    return first
+
+
+_WORKSPACE_FIELDS: Final[dict[str, tuple[str, ...]]] = {
+    "LegalInstruction": (
+        "instruction_id",
+        "case_matter_id",
+        "document_id",
+        "registered_at",
+        "state",
+    ),
+    "ProcessDocument": (
+        "document_id",
+        "case_matter_id",
+        "document_type",
+        "registered_at",
+        "state",
+    ),
+    "ServiceAttempt": (
+        "attempt_id",
+        "instruction_id",
+        "document_id",
+        "deputy_id",
+        "allocated_at",
+        "state",
+    ),
+    "ServiceExecution": (
+        "service_execution_id",
+        "attempt_id",
+        "instruction_id",
+        "document_id",
+        "outcome",
+        "executed_at",
+    ),
+    "ReturnOfService": (
+        "return_id",
+        "instruction_id",
+        "document_id",
+        "attempt_id",
+        "service_execution_id",
+        "service_outcome",
+        "generated_at",
+        "state",
+    ),
+}
+
+
+def _workspace_rows(
+    *,
+    tenant_id: str,
+    entity_type: str,
+    collection: Any,
+    session: Any,
+) -> list[dict[str, Any]]:
+    """Project deterministic current rows plus opaque exact-snapshot locators."""
+    fields = _WORKSPACE_FIELDS[entity_type]
+    models = list_entity_read_models(
+        tenant_id=tenant_id,
+        entity_type=entity_type,
+        lifecycle_collection=collection,
+        session=session,
+    )
+    rows: list[dict[str, Any]] = []
+    for model in models:
+        payload = _project(model.current)
+        row = {field: payload[field] for field in fields if field in payload}
+        if set(row) != set(fields):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="LEGAL_OPERATIONS_WORKSPACE_PROJECTION_INVALID",
+            )
+        row["evidence_identity"] = (
+            LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+                model.current,
+                collection,
+                session=session,
+            )
+        )
+        rows.append(row)
+    return rows
+
+
+def _workspace_summary(
+    *,
+    instructions: list[dict[str, Any]],
+    documents: list[dict[str, Any]],
+    attempts: list[dict[str, Any]],
+    executions: list[dict[str, Any]],
+    returns: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Return deterministic counts only; counts create no lifecycle inference."""
+    def count(rows: list[dict[str, Any]], field: str, value: str) -> int:
+        return sum(1 for row in rows if row.get(field) == value)
+
+    return {
+        "instructions_total": len(instructions),
+        "instructions_registered": count(instructions, "state", "REGISTERED"),
+        "instructions_accepted": count(instructions, "state", "ACCEPTED"),
+        "instructions_closed": count(instructions, "state", "CLOSED"),
+        "instructions_cancelled": count(instructions, "state", "CANCELLED"),
+        "documents_total": len(documents),
+        "documents_registered": count(documents, "state", "REGISTERED"),
+        "documents_received": count(documents, "state", "RECEIVED"),
+        "documents_allocated": count(
+            documents,
+            "state",
+            "ALLOCATED_TO_DEPUTY",
+        ),
+        "documents_returned": count(
+            documents,
+            "state",
+            "RETURNED_TO_CLIENT",
+        ),
+        "attempts_total": len(attempts),
+        "attempts_allocated": count(attempts, "state", "ALLOCATED"),
+        "attempts_attempted": count(attempts, "state", "ATTEMPTED"),
+        "attempts_completed": count(attempts, "state", "COMPLETED"),
+        "attempts_not_completed": count(
+            attempts,
+            "state",
+            "NOT_COMPLETED",
+        ),
+        "attempts_cancelled": count(attempts, "state", "CANCELLED"),
+        "executions_total": len(executions),
+        "executions_completed": count(executions, "outcome", "COMPLETED"),
+        "executions_not_completed": count(
+            executions,
+            "outcome",
+            "NOT_COMPLETED",
+        ),
+        "returns_total": len(returns),
+    }
 
 
 def get_lifecycle_collection() -> Any:
@@ -305,6 +523,10 @@ _ATTEMPT_READ = RequireTenantAuthorization(
     "legal_operations:attempt:read",
     "legal_attempt_read",
 )
+_ALLOCATION_READ = RequireTenantAuthorization(
+    "legal_operations:allocation:read",
+    "legal_allocation_read",
+)
 _RETURN_READ = RequireTenantAuthorization(
     "legal_operations:return:read",
     "legal_return_read",
@@ -323,6 +545,90 @@ _CLIENT_MATTER_READ = RequireTenantAuthorization(
 )
 
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations"])
+
+
+@router.get("/workspace")
+async def get_legal_practice_workspace_projection(
+    instruction_context: TenantAuthorizationContext = Depends(_INSTRUCTION_READ),
+    allocation_context: TenantAuthorizationContext = Depends(_ALLOCATION_READ),
+    attempt_context: TenantAuthorizationContext = Depends(_ATTEMPT_READ),
+    return_context: TenantAuthorizationContext = Depends(_RETURN_READ),
+) -> dict[str, object]:
+    """Return one snapshot-consistent current Legal Operations practice workspace.
+
+    Admission is conjunctive: all four existing instruction, allocation,
+    attempt, and return read authorities must be current for the same exact
+    authenticated principal, tenant, and published legal-practice business role.
+    The response enumerates only current canonical P1 lifecycle projections and
+    opaque current-snapshot evidence locators. It does not expose history,
+    evidence references/fingerprints, client identity, billing, invoice,
+    payment, AI, financial-execution, or settlement truth.
+    """
+    context = _workspace_context(
+        instruction_context,
+        allocation_context,
+        attempt_context,
+        return_context,
+    )
+
+    def run(session: Any, database: Any) -> dict[str, object]:
+        collection = database.get_collection(LIFECYCLE_COLLECTION)
+        instructions = _workspace_rows(
+            tenant_id=context.tenant_id,
+            entity_type="LegalInstruction",
+            collection=collection,
+            session=session,
+        )
+        documents = _workspace_rows(
+            tenant_id=context.tenant_id,
+            entity_type="ProcessDocument",
+            collection=collection,
+            session=session,
+        )
+        attempts = _workspace_rows(
+            tenant_id=context.tenant_id,
+            entity_type="ServiceAttempt",
+            collection=collection,
+            session=session,
+        )
+        executions = _workspace_rows(
+            tenant_id=context.tenant_id,
+            entity_type="ServiceExecution",
+            collection=collection,
+            session=session,
+        )
+        returns = _workspace_rows(
+            tenant_id=context.tenant_id,
+            entity_type="ReturnOfService",
+            collection=collection,
+            session=session,
+        )
+        return {
+            "schema": _WORKSPACE_SCHEMA,
+            "version": VERSION,
+            "tenant_id": context.tenant_id,
+            "visibility": _WORKSPACE_VISIBILITY,
+            "summary": _workspace_summary(
+                instructions=instructions,
+                documents=documents,
+                attempts=attempts,
+                executions=executions,
+                returns=returns,
+            ),
+            "instructions": instructions,
+            "documents": documents,
+            "attempts": attempts,
+            "executions": executions,
+            "returns": returns,
+        }
+
+    try:
+        return _workspace_projection_transaction(run)
+    except LegalOperationsReadModelError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_WORKSPACE_EVIDENCE_UNAVAILABLE",
+        ) from error
 
 
 @router.get("/client/matters")
@@ -595,7 +901,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.6.0-L8-7D6-CLIENT-MATTER-READ-API
+# VERSION: v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API
 # AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy reads plus explicitly-visible LEGAL_CLIENT matter projection only; mutation IAM/commands remain separate
 # TENANT POSTURE: exact authorized internal/sheriff/deputy scope plus D6 tenant/principal-bound client snapshot projection; foreign evidence is bounded
 # FAIL-CLOSED POSTURE: internal policy gaps, denied client IAM, snapshot failure, visibility/matter corruption, absent history/locator, divergence and outages deny
