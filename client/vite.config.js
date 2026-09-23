@@ -1,16 +1,20 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.3.9-EOS-LEGAL-ACCEPTANCE-OWNER]                                                            ║
+ * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.0-L8-6A-EOS-LEGAL-OPERATIONS-OWNER]                                                            ║
  * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.3.9-EOS-LEGAL-ACCEPTANCE-OWNER | PRODUCTION READY                                                                               ║
+ * ║ VERSION: 2.4.0-L8-6A-EOS-LEGAL-OPERATIONS-OWNER | PRODUCTION READY                                                                               ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME:                                                                                                                             ║
- * ║ Routes Node-owned /api traffic to port 4000 while explicitly rewriting EOS invoice paths to port 9095.                              ║
+ * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095 while preserving   ║
+ * ║ the Node BFF catch-all for Node-owned /api traffic.                                                                                  ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v2.3.9):
+ * ║ 🔧 CHANGE LOG (v2.4.0):
+ * ║   1. Routes Python-EOS-owned /api/legal-operations directly to port 9095 so L8-6A sheriff queue reads cannot fall through Node.      ║
+ * ║   2. Preserves the /api prefix because the Legal Operations router is mounted under /api.                                             ║
+ * ║ 🔧 PRIOR CHANGE LOG (v2.3.9):
  * ║   1. Routes Python-EOS-owned /api/legal-acceptance directly to port 9095 so authenticated legal gating cannot fall through Node.
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.8):                                                                                                               ║
  * ║   1. Routed /api/auth directly to the verified Kennel auth router; the live Node bootstrap was proxying it as /auth/login.         ║
@@ -118,6 +122,39 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Python EOS owns authenticated Legal Operations read/command authority.
+      // Preserve /api because the EOS router is mounted under /api.
+      '/api/legal-operations': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.info(`[WILSY-PROXY-DISPATCH-LEGAL-OPERATIONS] ${req.method} ${req.url} -> ${proxyReq.path}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.info(`[WILSY-PROXY-RETURN-LEGAL-OPERATIONS] ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error(
+              '[WILSY-PROXY-FATAL-LEGAL-OPERATIONS]',
+              err.message,
+            );
+            if (!res.headersSent) {
+              res.writeHead(
+                502,
+                { 'Content-Type': 'application/json' },
+              );
+              res.end(JSON.stringify({
+                success: false,
+                message: 'Legal Operations EOS backend unreachable on port 9095.',
+                error: err.message,
+              }));
+            }
+          });
+        },
+      },
+
       // Python EOS owns authenticated legal-acceptance authority.
       // Preserve /api because the EOS router is mounted under /api.
       '/api/legal-acceptance': {
@@ -199,7 +236,7 @@ export default defineConfig({
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.3.9-EOS-LEGAL-ACCEPTANCE-OWNER
+ * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.4.0-L8-6A-EOS-LEGAL-OPERATIONS-OWNER
  * ═══════════════════════════════════════════════════════════════════════════════════
  * Status: CERTIFIED PRODUCTION ARTIFACT
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
@@ -209,6 +246,8 @@ export default defineConfig({
  *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
  *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
  *   /api/kernel → http://localhost:9095/api/kernel
+ *   /api/legal-operations → http://localhost:9095/api/legal-operations
+ *   /api/legal-acceptance → http://localhost:9095/api/legal-acceptance
  *   /api/tenants, /api/employees → http://localhost:9095
  *   /api       → http://localhost:4000 (Node BFF)
  * ═══════════════════════════════════════════════════════════════════════════════════
