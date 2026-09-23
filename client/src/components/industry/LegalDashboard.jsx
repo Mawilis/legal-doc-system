@@ -27,7 +27,7 @@
  *            and explicit client-scope copy. No unsupported Documents, Billing,
  *            Messages, AI, service, return, payment, or settlement menu is
  *            fabricated. SHERIFF and DEPUTY render paths remain unchanged.
-2026-09-23 v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR keeps the exact D8 client-denial machine
+ *            2026-09-23 v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR keeps the exact D8 client-denial machine
  *            code as the error heading while replacing duplicate opaque body
  *            copy with bounded human-readable guidance. Authorization, endpoint
  *            selection, matter visibility and all SHERIFF/DEPUTY behavior remain unchanged.
