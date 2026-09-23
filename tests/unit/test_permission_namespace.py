@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.17.0-L8-6A-SHERIFF-QUEUE-READ-IAM-CERT
+VERSION: v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
+    certifies legal_operations:deputy_queue:read as one exact canonical TENANT
+    permission for binding-scoped personal active-work projection only, with
+    membership required, no cross-tenant capability, no financial execution,
+    and no self-authorizing behavior.
     2026-09-23 v1.17.0-L8-6A-SHERIFF-QUEUE-READ-IAM-CERT
     certifies legal_operations:queue:read as one exact canonical TENANT
     permission with non-cross-tenant, non-financial, non-self-authorizing
@@ -65,12 +70,12 @@ import json
 
 import pytest
 
-VERSION = "v1.17.0-L8-6A-SHERIFF-QUEUE-READ-IAM-CERT"
+VERSION = "v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM"
+    assert POLICY_VERSION == "v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -103,6 +108,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:directory:write",
         "legal_operations:receipt:write",
         "legal_operations:queue:read",
+        "legal_operations:deputy_queue:read",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -205,6 +211,19 @@ def test_permission_canon_properties() -> None:
     assert queue_read.financial_execution_capable is False
     assert queue_read.authorizes_by_itself is False
     assert queue_read.disposition is PermissionDisposition.CANONICAL
+
+    deputy_queue_read = permission_metadata("legal_operations:deputy_queue:read")
+    assert deputy_queue_read.namespace == "TENANT"
+    assert deputy_queue_read.scope_kind == "TENANT"
+    assert (
+        deputy_queue_read.business_capability
+        == "read binding-scoped own active service-attempt work"
+    )
+    assert deputy_queue_read.tenant_membership_required is True
+    assert deputy_queue_read.cross_tenant_capable is False
+    assert deputy_queue_read.financial_execution_capable is False
+    assert deputy_queue_read.authorizes_by_itself is False
+    assert deputy_queue_read.disposition is PermissionDisposition.CANONICAL
 
     command_permissions = {
         "legal_operations:directory:write":
@@ -492,7 +511,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.17.0-L8-6A-SHERIFF-QUEUE-READ-IAM-CERT
+# VERSION: v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: directory and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
