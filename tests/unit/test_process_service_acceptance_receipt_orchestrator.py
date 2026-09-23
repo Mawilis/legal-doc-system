@@ -1,7 +1,7 @@
 """Direct certificate for Legal Operations acceptance and office receipt.
 
 TITLE: WILSY OS Process Service Acceptance and Receipt Direct Certificate
-VERSION: v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
+VERSION: v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
 AUTHORITY: Direct certificate for L8-3 instruction acceptance and office receipt only.
 EPITOME: Prove active-transaction LegalInstruction ACCEPTED, ProcessDocument
          RECEIVED, sequence-two RECEIVED_IN_OFFICE custody, canonical
@@ -15,7 +15,11 @@ COLLABORATION / OWNERSHIP: Certificate for
                             L8-1 owns directory truth, L8-2 owns registration,
                             and authenticated transport remains a later gate.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
+           rebinds the direct certificate to production v1.1.0 and its
+           canonical P2 document-custody-history dependency without changing
+           the L8-3 acceptance/receipt authority assertions.
+           2026-09-23 v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
            establishes adversarial direct evidence for acceptance plus office
            receipt, exact replay after later valid progression, partial and
            divergent durable state rejection, timestamp validation, foreign
@@ -69,7 +73,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT"
+VERSION = "v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT"
 BASE = datetime(2026, 9, 23, 9, 0, tzinfo=timezone.utc)
 TENANT = "tenant-l8-3"
 FOREIGN_TENANT = "tenant-l8-3-foreign"
@@ -523,13 +527,13 @@ def test_versions_are_frozen_to_l8_3_release() -> None:
     """Certificate remains bound to the intended production release."""
     assert (
         PRODUCTION_VERSION
-        == "v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
+        == "v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
     )
-    assert VERSION == "v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT"
+    assert VERSION == "v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT"
 
 
 # ARTIFACT: test_process_service_acceptance_receipt_orchestrator.py
-# VERSION: v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
+# VERSION: v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT-CERT
 # AUTHORITY BOUNDARY: direct L8-3 acceptance/office-receipt certificate only
 # TENANT POSTURE: exact synthetic tenant and caller-session propagation
 # FAIL-CLOSED POSTURE: invalid transaction/scope/time/partial/divergence rejects
