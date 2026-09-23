@@ -1,15 +1,22 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR
+ * VERSION: v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves LegalDashboard preserves certified SHERIFF and governed
- *          DEPUTY modes while adding an exact LEGAL_CLIENT matter cockpit that
- *          calls only the D7 client adapter, renders only sanitized matter cards
- *          and derived OPEN/CLOSED counts, performs no cross-role fallback, and
- *          creates no browser legal/service/financial truth.
+ *          DEPUTY modes while elevating LEGAL_CLIENT into the shared WILSY OS
+ *          dashboard chrome with functional Overview / My Matters / Access &
+ *          Privacy navigation, safe visible-matter search, responsive rail
+ *          semantics, and no cross-role or fabricated module behavior.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR rebinds D8 to v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR,
+ * CHANGELOG: 2026-09-23 v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT certifies production v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME:
+ *            shared OS chrome presence, functional client navigation rail,
+ *            Overview/My Matters/Access & Privacy lane switching, search over
+ *            already-sanitized D7 matter fields, refresh/open-matters actions,
+ *            tenant/operator shell composition, denied/unavailable shell
+ *            persistence, no unsupported client modules, and unchanged
+ *            SHERIFF/DEPUTY endpoint behavior.
+2026-09-23 v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR rebinds D8 to v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME,
  *            proves the machine denial code remains visible exactly once and
  *            separately proves bounded human-readable denial guidance; no
  *            production authority or endpoint semantics changed.
@@ -70,6 +77,33 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
   transitionDeputyFieldAttempt,
+}));
+
+vi.mock('../../contexts/authContext', () => ({
+  useAuth: () => ({
+    user: {
+      id: 'principal-client',
+      email: 'client@example.test',
+      role: 'tenant_legal_client',
+      tenantId: 'tenant-client',
+    },
+    tenant: {
+      tenantId: 'tenant-client',
+      displayName: 'Client Visual Tenant',
+      status: 'ACTIVE',
+    },
+  }),
+}));
+
+vi.mock('../../contexts/tenantContext', () => ({
+  useTenants: () => ({
+    activeTenant: {
+      tenantId: 'tenant-client',
+      displayName: 'Client Visual Tenant',
+      status: 'ACTIVE',
+    },
+    tenants: [],
+  }),
 }));
 
 import LegalDashboard from '../../components/industry/LegalDashboard.jsx';
@@ -307,10 +341,16 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(screen.queryByText('document-office')).not.toBeInTheDocument();
   });
 
-  it('renders only sanitized LEGAL_CLIENT matters and derived counts', async () => {
+  it('renders the shared WILSY OS client workspace chrome with real menu lanes', async () => {
     getLegalClientMatters.mockResolvedValueOnce(liveClientMatters());
 
-    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+    const { container } = render(
+      <LegalDashboard
+        roleView="LEGAL_CLIENT"
+        user={{ id: 'principal-client', email: 'client@example.test' }}
+        tenantConfig={{ tenantId: 'tenant-client', displayName: 'Client Visual Tenant' }}
+      />,
+    );
 
     await waitFor(() => {
       expect(getLegalClientMatters).toHaveBeenCalledTimes(1);
@@ -319,31 +359,98 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
     expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
 
+    const chrome = container.querySelector('[data-wilsy-os-dashboard-chrome="true"]');
+    expect(chrome).not.toBeNull();
+    expect(chrome).toHaveAttribute('data-wilsy-dashboard-key', 'legal-client');
+
+    expect(screen.getByText('Client Matter Workspace')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', {
+      name: 'Legal client workspace navigation',
+    })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'My Matters' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Access & Privacy' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open matters' })).toBeInTheDocument();
+
     expect(await screen.findByText('CLIENT-001')).toBeInTheDocument();
     expect(screen.getByText('CLIENT-002')).toBeInTheDocument();
     expect(screen.getByText('CLIENT-003')).toBeInTheDocument();
-    expect(screen.getByText('Matter matter-a')).toBeInTheDocument();
-    expect(screen.getByText('Matter matter-b')).toBeInTheDocument();
-    expect(screen.getByText('Matter matter-c')).toBeInTheDocument();
-    expect(screen.getByText(/Tenant: tenant-client/i)).toBeInTheDocument();
-    expect(screen.getByText(/Role view: LEGAL_CLIENT/i)).toBeInTheDocument();
-    expect(screen.getByText('Client matter cockpit')).toBeInTheDocument();
-    expect(screen.getByText('My matters')).toBeInTheDocument();
-    expect(screen.getByText('Client visibility boundary')).toBeInTheDocument();
+    expect(screen.getByText('Visible matter snapshot')).toBeInTheDocument();
 
-    const visibleCard = screen.getByText('Visible matters').closest('div.rounded-2xl');
-    const openCard = screen.getByText('Open matters').closest('div.rounded-2xl');
-    const closedCard = screen.getByText('Closed matters').closest('div.rounded-2xl');
-    expect(visibleCard).toHaveTextContent('3');
-    expect(openCard).toHaveTextContent('2');
-    expect(closedCard).toHaveTextContent('1');
+    const visibleMetric = screen.getByText('Visible matters').closest('article');
+    const openMetric = screen.getByText('Open matters').closest('article');
+    const closedMetric = screen.getByText('Closed matters').closest('article');
+    expect(visibleMetric).toHaveTextContent('3');
+    expect(openMetric).toHaveTextContent('2');
+    expect(closedMetric).toHaveTextContent('1');
 
     expect(screen.queryByText('Office receipt')).not.toBeInTheDocument();
     expect(screen.queryByText('Deputy assignment')).not.toBeInTheDocument();
     expect(screen.queryByText('Active service attempts')).not.toBeInTheDocument();
     expect(screen.queryByText('My active service work')).not.toBeInTheDocument();
     expect(screen.queryByText('WILSY AI readiness')).not.toBeInTheDocument();
-    expect(screen.queryByText('Same-day / urgent prioritisation')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Documents' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Billing' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Messages' })).not.toBeInTheDocument();
+  });
+
+  it('switches client menu lanes and keeps privacy scope explicit', async () => {
+    getLegalClientMatters.mockResolvedValueOnce(liveClientMatters());
+
+    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+
+    await screen.findByText('Visible matter snapshot');
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Matters' }));
+    expect(screen.getByText('My matters')).toBeInTheDocument();
+    expect(screen.queryByText('Visible matter snapshot')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Access & Privacy' }));
+    expect(screen.getByText('Available in this client projection')).toBeInTheDocument();
+    expect(screen.getByText('Access & privacy boundary')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'My Matters' })).toBeInTheDocument();
+    expect(screen.queryByText('Visible matter snapshot')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }));
+    expect(screen.getByText('Visible matter snapshot')).toBeInTheDocument();
+  });
+
+  it('filters only already-visible sanitized matters through workspace search', async () => {
+    getLegalClientMatters.mockResolvedValueOnce(liveClientMatters());
+
+    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+
+    await screen.findByText('CLIENT-001');
+    const search = screen.getByRole('textbox', { name: 'Workspace search' });
+    fireEvent.change(search, { target: { value: 'CLIENT-002' } });
+
+    expect(screen.getByText('My matters')).toBeInTheDocument();
+    expect(screen.getByText('CLIENT-002')).toBeInTheDocument();
+    expect(screen.queryByText('CLIENT-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('CLIENT-003')).not.toBeInTheDocument();
+    expect(getLegalClientMatters).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses top chrome actions for matter navigation and canonical refresh only', async () => {
+    getLegalClientMatters
+      .mockResolvedValueOnce(liveClientMatters())
+      .mockResolvedValueOnce(liveClientMatters());
+
+    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+
+    await screen.findByText('Visible matter snapshot');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open matters' }));
+    expect(screen.getByText('My matters')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh truth' }));
+    await waitFor(() => {
+      expect(getLegalClientMatters).toHaveBeenCalledTimes(2);
+    });
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+    expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
   });
 
   it('renders the certified empty client visibility result without probing internal queues', async () => {
@@ -384,7 +491,8 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
     expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
-    expect(screen.queryByText('My matters')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'My Matters' })).toBeInTheDocument();
+    expect(screen.queryByText('Visible matter snapshot')).not.toBeInTheDocument();
     expect(screen.queryByText('document-office')).not.toBeInTheDocument();
     expect(screen.queryByText('attempt-mine')).not.toBeInTheDocument();
   });
@@ -650,8 +758,13 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
       "recordDeputyFieldOutcome",
     );
     expect(source).toContain(
-      "v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR",
+      "v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME",
     );
+    expect(source).toContain('WilsyOSDashboardChrome');
+    expect(source).toContain('CLIENT_WORKSPACE_VIEWS');
+    expect(source).toContain("'Overview'");
+    expect(source).toContain("'My Matters'");
+    expect(source).toContain("'Access & Privacy'");
     expect(source).not.toContain('API_BASE_URL');
     expect(source).not.toContain('fetch(');
 
@@ -687,10 +800,10 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR
- * AUTHORITY BOUNDARY: deterministic SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed deputy observation-command wiring evidence only
+ * VERSION: v5.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME-CERT
+ * AUTHORITY BOUNDARY: deterministic SHERIFF/DEPUTY presentation, LEGAL_CLIENT shared workspace navigation/search, and governed deputy observation-command wiring evidence only
  * TENANT POSTURE: client matter membership derives only from D7; deputy commands still require exact server-authorized work/capability parity
- * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
+ * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, menu/search state, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
