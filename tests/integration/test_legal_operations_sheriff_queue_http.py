@@ -1,7 +1,7 @@
 """Direct ASGI certificate for sheriff operational queue reads.
 
 TITLE: WILSY OS Sheriff Operational Queue HTTP Certificate
-VERSION: v1.0.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+VERSION: v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
 AUTHORITY: Direct ASGI certificate for authenticated sheriff queue projection.
 EPITOME: Prove the L8-6A route admits only already-authorized sheriff context,
          delegates exact tenant scope to L8-5C, exposes only three certified
@@ -13,7 +13,11 @@ COLLABORATION / OWNERSHIP: Certificate for L8-6A HTTP composition only. IAM
                             authority remains in tenant authorization; L8-5C
                             remains canonical queue-membership authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+           repairs forbidden-field certification to inspect response object
+           keys rather than ambiguous substrings inside legitimate tenant_id
+           and entity_id keys; route semantics and authority are unchanged.
+           2026-09-23 v1.0.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
            establishes authentication denial, exact sheriff tenant delegation,
            bounded three-queue output, projection filtering, L8-5C error
            translation, infrastructure error translation, and router-version
@@ -54,7 +58,7 @@ from tools.eos.legal_operations.domain.legal_operations_operational_queues impor
 )
 
 
-VERSION = "v1.0.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT"
+VERSION = "v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT"
 TENANT = "tenant-sheriff"
 
 
@@ -119,6 +123,19 @@ class _QueueSpy:
             raise self.error
         assert self.queues is not None
         return self.queues
+
+
+def _all_mapping_keys(value: object) -> set[str]:
+    """Collect exact mapping keys recursively without substring ambiguity."""
+    keys: set[str] = set()
+    if isinstance(value, dict):
+        for key, item in value.items():
+            keys.add(str(key).casefold())
+            keys.update(_all_mapping_keys(item))
+    elif isinstance(value, list):
+        for item in value:
+            keys.update(_all_mapping_keys(item))
+    return keys
 
 
 def _context() -> TenantAuthorizationContext:
@@ -207,8 +224,8 @@ def test_authorized_sheriff_delegates_exact_tenant_and_projects_only_three_queue
     ]
     assert spy.calls == [(TENANT, collection)]
 
-    serialized = str(body).casefold()
-    for forbidden in (
+    response_keys = _all_mapping_keys(body)
+    for forbidden_key in (
         "_id",
         "credentials",
         "token",
@@ -223,7 +240,7 @@ def test_authorized_sheriff_delegates_exact_tenant_and_projects_only_three_queue
         "ai_score",
         "client_name",
     ):
-        assert forbidden not in serialized
+        assert forbidden_key not in response_keys
 
 
 def test_l8_5c_queue_failure_is_bounded_evidence_unavailable(
@@ -264,7 +281,7 @@ def test_router_binding_is_exact_l8_6a_release() -> None:
 
 
 # ARTIFACT: test_legal_operations_sheriff_queue_http.py
-# VERSION: v1.0.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
+# VERSION: v1.0.1-L8-6A-SHERIFF-OPERATIONAL-QUEUE-HTTP-CERT
 # AUTHORITY BOUNDARY: direct ASGI sheriff operational-queue projection certificate only
 # TENANT POSTURE: exact already-authorized sheriff tenant forwarded to L8-5C
 # FAIL-CLOSED POSTURE: auth gaps, queue evidence failure, leakage, and outages deny
