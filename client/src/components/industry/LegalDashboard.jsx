@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT
+ * VERSION: v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: Preserves certified SHERIFF and governed DEPUTY modes while adding
  *          an exact LEGAL_CLIENT cockpit backed only by the D7 sanitized matter
@@ -18,7 +18,11 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT adds an exact LEGAL_CLIENT role mode that calls
+ * CHANGELOG: 2026-09-23 v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR keeps the exact D8 client-denial machine
+ *            code as the error heading while replacing duplicate opaque body
+ *            copy with bounded human-readable guidance. Authorization, endpoint
+ *            selection, matter visibility and all SHERIFF/DEPUTY behavior remain unchanged.
+ *            2026-09-23 v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT adds an exact LEGAL_CLIENT role mode that calls
  *            only getLegalClientMatters(), renders visible/open/closed counts and
  *            safe matter cards, handles client-specific denial/unavailability
  *            without cross-role fallback, preserves SHERIFF/DEPUTY behavior, and
@@ -95,7 +99,7 @@ import {
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 
-const DASHBOARD_VERSION = 'v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT';
+const DASHBOARD_VERSION = 'v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -693,7 +697,9 @@ export default function LegalDashboard({
         setError({
           kind: 'LEGAL_CLIENT_MATTER_READ_DENIED',
           message:
-            detail || 'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.',
+            detail === 'LEGAL_CLIENT_MATTER_READ_DENIED'
+              ? 'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.'
+              : detail || 'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.',
         });
       } else if (status === 403) {
         setError({
@@ -1292,7 +1298,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT
+ * VERSION: v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR
  * AUTHORITY BOUNDARY: governed SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus deputy observation-command initiation only; Python EOS owns authority and legal truth
  * TENANT POSTURE: server-authorized tenant/client/deputy projections are required; client matter membership comes only from D5/D7 and deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable client/internal read, capability drift, malformed observation, command failure or failed refresh never invents truth or cross-role fallback
