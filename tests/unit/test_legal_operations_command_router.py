@@ -1,7 +1,7 @@
 """Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.4.0-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT
+VERSION: v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service command input
          boundaries, one-orchestrator dispatch, transaction ownership, path
@@ -12,7 +12,10 @@ COLLABORATION / OWNERSHIP: L8-3 command certificate; canonical intake,
                             acceptance/receipt, directory, lifecycle, persistence, and field-service
                             orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.4.0-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the existing
+CHANGELOG: 2026-09-23 v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the historical command
+           regression certificate to production v1.4.1 after sovereign
+           authority-declaration alignment; command behavior is unchanged.
+           2026-09-23 v1.4.0-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the existing
            intake/receipt/directory/P4/P5 command regression certificate to the
            additive L8-6B router release and exact new deputy-principal-binding
            route; all prior command assertions remain unchanged.
@@ -800,11 +803,11 @@ def test_allocation_dispatches_only_p4a_and_never_accepts_caller_state(monkeypat
 def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
     names = set(vars(command_api))
     assert not any(token in names for token in {"Invoice", "Payment", "Settlement", "MongoClient", "mongo_client", "_client"})
-    assert command_api.VERSION == "v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
+    assert command_api.VERSION == "v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.4.0-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT
+# VERSION: v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
