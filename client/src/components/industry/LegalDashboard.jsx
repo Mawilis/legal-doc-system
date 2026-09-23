@@ -24,7 +24,7 @@
  *            without cross-role fallback, preserves SHERIFF/DEPUTY behavior, and
  *            keeps responsive one-column mobile stacking. No internal legal,
  *            service, billing, AI or financial truth is inferred or displayed.
-2026-09-23 v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT adds exact deputy capability/work parity checks,
+ *            2026-09-23 v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT adds exact deputy capability/work parity checks,
  *            touch-friendly begin/completed/not-completed field controls, explicit
  *            observation reference/time capture, pseudonymous browser field-device
  *            provenance, per-command pending/error/success states, and mandatory
