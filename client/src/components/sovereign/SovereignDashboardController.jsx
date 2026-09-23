@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.2.0-L8-6C-LEGAL-ROLE-ROUTING
+ * VERSION: v18.2.1-L8-6C-LEGAL-ROLE-ROUTING
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
  *          identity and tenant context. L8-6C adds the Legal OS shard for
@@ -14,7 +14,10 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v18.2.0-L8-6C-LEGAL-ROLE-ROUTING adds LEGAL_DASHBOARD as an existing-controller
+ * CHANGELOG: 2026-09-23 v18.2.1-L8-6C-LEGAL-ROLE-ROUTING removes the superseded decorative pre-sovereign
+ *            controller header after the L8-6C migration; runtime routing is
+ *            unchanged.
+ *            2026-09-23 v18.2.0-L8-6C-LEGAL-ROLE-ROUTING adds LEGAL_DASHBOARD as an existing-controller
  *            shard, maps normalized SHERIFF/TENANT_SHERIFF and
  *            DEPUTY/TENANT_DEPUTY roles to Legal OS, and forwards the
  *            authenticated normalized role only as roleView presentation input.
@@ -31,32 +34,7 @@
  * FAIL-CLOSED DECLARATION: Unknown dashboard/role resolution does not create
  *                          Legal Operations authority or cross-role fallback.
  */
-/**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS — SOVEREIGN DASHBOARD CONTROLLER [V18.1.1-BOTTOM-BLEED-FIX]                                                              ║
- * ║ [ROLE AUTO-DETECTION | FOUNDER_ARCHITECT | SUPER_ADMIN | KERNEL BRIDGE AWARE | FOUNDER RETURN DOCK | MOUNT TELEMETRY]                 ║
- * ║ [BILLING HUB INTEGRATION — REPLACED LEGACY FINANCE DASHBOARD WITH BILLINGHUD]                                                         ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 18.1.1-BOTTOM-BLEED-FIX | PRODUCTION READY | TOP 0.01%                                                                       ║
- * ║ EPITOME: Institutional Command Center resolver. Mounts the correct shard from forensic identity, tenant context, and Kennel bridge     ║
- * ║          health. Now routes all billing/finance signals to the sovereign BillingHUD, obliterating the legacy FinanceDashboard.         ║
- * ║ FIX: Wraps all dashboard shards in an overflow‑enabled container to allow BillingHUD's 208px padding to expand without clipping.       ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignDashboardController.jsx                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                    ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) — Mandated login-time dashboard auto-detection, founder return, billion-tenant scale.          ║
- * ║ • AI Engineering — V18.0.0: Kennel bridge health probe, SUPER_ADMIN→Founder authority, zero-placeholder production hardening.         ║
- * ║ • AI Engineering — V18.1.0: Integrated BillingHUD to replace legacy FinanceDashboard; all billing/finance signals now route to       ║
- * ║   the new sovereign billing nucleus, eliminating 404 errors and providing forensic‑grade billing command centre.                       ║
- * ║ • AI Engineering — V18.1.1: Fixed bottom bleed by adding overflow wrapper around guardedShard; removed reliance on hardcoded spacer. ║
- * ║ CHANGE LOG:                                                                                                                            ║
- * ║   2026-08-02 v18.1.1-BOTTOM-BLEED-FIX — Wrapped guardedShard in div with overflow-y:auto to allow BillingHUD padding to expand.      ║
- * ║   2026-08-02 v18.1.0-BILLING-INTEGRATION — Replaced FinanceDashboard import with BillingHUD. Updated DASHBOARD_KEYS mapping.          ║
- * ║   2026-07-31 v18.0.1-CONSOLE-DISCIPLINE — Mount log once per session; DEV-only console; kernelHealth removed from mount deps.         ║
- * ║   2026-07-31 v18.0.0-KENNEL-SEALED — Integrated kernel bridge awareness; strengthened founder authority; institutional seal header.   ║
- * ║   2026-07-30 v17.2.2-SUPER_ADMIN-FIX — Added SUPER_ADMIN to Founder authority tokens and dashboard resolver.                          ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- */
+
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
@@ -247,7 +225,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.2.0-L8-6C-LEGAL-ROLE-ROUTING';
+const CONTROLLER_VERSION = 'v18.2.1-L8-6C-LEGAL-ROLE-ROUTING';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -968,7 +946,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.2.0-L8-6C-LEGAL-ROLE-ROUTING
+ * VERSION: v18.2.1-L8-6C-LEGAL-ROLE-ROUTING
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: active tenant projection is preserved; Legal OS role routing cannot widen server tenant scope
  * FAIL-CLOSED POSTURE: unknown roles/dashboards do not manufacture Legal Operations access or cross-role fallback
