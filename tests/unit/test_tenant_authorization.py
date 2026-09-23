@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+VERSION: v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,11 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+CHANGELOG: 2026-09-23 v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+certifies legal_queue_read -> legal_operations:queue:read as an exact
+sheriff-only conjunctive authorization binding, with deputy denial, crossed-pair
+rejection, and unchanged financial-execution prohibition.
+2026-09-23 v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
 repairs the remaining stale WILSY AI Legal Tool runtime-version assertion to
 the current v1.17.0 L8-3 receipt-binding production release; authorization,
 grant, scope, and fail-closed semantics are unchanged.
@@ -811,10 +815,61 @@ def test_l8_3_receipt_binding_is_exact_and_sheriff_only() -> None:
     ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
 
 
+def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
+    """Operational queue reads require the exact sheriff IAM conjunction."""
+
+    assert ta._BINDINGS["legal_queue_read"] == "legal_operations:queue:read"
+    assert list(ta._BINDINGS).count("legal_queue_read") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:queue:read",
+        operation="legal_queue_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_sheriff",
+        "SHERIFF",
+    )
+
+    for business_role, grant_role in (
+        ("tenant_deputy", "DEPUTY"),
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+        ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
+        ("tenant_legal_secretary", "LEGAL_SECRETARY"),
+        ("tenant_legal_finance", "LEGAL_FINANCE"),
+        ("tenant_legal_client", "LEGAL_CLIENT"),
+    ):
+        denied = _decision(
+            permission_id="legal_operations:queue:read",
+            operation="legal_queue_read",
+            business_repository=_business(business_role),
+            assignment_repository=_assignments(grant_role, "SHERIFF"),
+        )
+        assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    assert _decision(
+        permission_id="legal_operations:queue:read",
+        operation="legal_attempt_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    assert _decision(
+        permission_id="legal_operations:attempt:read",
+        operation="legal_queue_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.17.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING"
+    assert ta.VERSION == "v1.18.0-L8-6A-SHERIFF-QUEUE-READ-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -828,7 +883,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.17.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING"
+    assert ta.VERSION == "v1.18.0-L8-6A-SHERIFF-QUEUE-READ-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -1705,7 +1760,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+# VERSION: v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required; directory and receipt authority are sheriff-only
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
