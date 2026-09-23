@@ -1,20 +1,24 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT
+ * VERSION: v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
- * EPITOME: Certifies sheriff/deputy reads and deputy field commands plus the
- *          D7 LEGAL_CLIENT matter adapter, including exact D6 endpoint use,
- *          D5 schema/version/field validation, immutable safe-card adaptation,
- *          and exclusion of browser-owned scope, lifecycle, evidence, billing,
- *          AI, payment, execution or settlement truth.
+ * EPITOME: Certifies the canonical Legal Operations browser adapter across
+ *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
+ *          evidence lookup, governed initial intake, ReturnOfService generation
+ *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT certifies exact
+ * CHANGELOG: 2026-09-23 v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT binds production v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT and certifies
+ *            D11 workspace schema/count/order/evidence integrity, exact finance
+ *            lookup with no caller tenant scope, L8-2 intake request/response
+ *            lineage, ReturnOfService command binding, immutability and
+ *            fail-closed malformed evidence handling.
+ *            2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT certifies exact
  *            /legal-operations/client/matters GET transport, D5 schema/version/
  *            visibility binding, exact four-field matter cards, deterministic
  *            order/uniqueness, malformed/extra-field rejection, deep freezing,
  *            zero browser request authority, and production v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT alignment.
-2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT certifies exact field-capability GET transport,
+ *            2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT certifies exact field-capability GET transport,
  *            transition/outcome POST whitelists, rejection of sequence/provenance
  *            authority fields before transport, response attempt/device/event
  *            binding, terminal outcome binding, immutability, and production
@@ -43,11 +47,15 @@ vi.mock('../../services/api.js', () => ({
 import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
   __legalOperationsServiceInternals,
+  generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalFinanceEvidence,
+  getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
+  registerLegalIntake,
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 
@@ -97,6 +105,203 @@ const clientMatterPayload = () => ({
       state: 'CLOSED',
     },
   ],
+});
+
+
+const workspacePayload = () => ({
+  schema: 'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1',
+  version: 'v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API',
+  tenant_id: 'tenant-law',
+  visibility: 'LEGAL_PRACTICE_WORKSPACE',
+  summary: {
+    instructions_total: 2,
+    instructions_registered: 1,
+    instructions_accepted: 1,
+    instructions_closed: 0,
+    instructions_cancelled: 0,
+    documents_total: 2,
+    documents_registered: 0,
+    documents_received: 1,
+    documents_allocated: 1,
+    documents_returned: 0,
+    attempts_total: 1,
+    attempts_allocated: 0,
+    attempts_attempted: 1,
+    attempts_completed: 0,
+    attempts_not_completed: 0,
+    attempts_cancelled: 0,
+    executions_total: 1,
+    executions_completed: 1,
+    executions_not_completed: 0,
+    returns_total: 0,
+  },
+  instructions: [
+    {
+      instruction_id: 'instruction-1',
+      case_matter_id: 'matter-1',
+      document_id: 'document-1',
+      registered_at: '2026-09-23T14:00:00+00:00',
+      state: 'REGISTERED',
+      evidence_identity: 'a'.repeat(128),
+    },
+    {
+      instruction_id: 'instruction-2',
+      case_matter_id: 'matter-2',
+      document_id: 'document-2',
+      registered_at: '2026-09-23T14:05:00+00:00',
+      state: 'ACCEPTED',
+      evidence_identity: 'b'.repeat(128),
+    },
+  ],
+  documents: [
+    {
+      document_id: 'document-1',
+      case_matter_id: 'matter-1',
+      document_type: 'summons',
+      registered_at: '2026-09-23T14:01:00+00:00',
+      state: 'RECEIVED',
+      evidence_identity: 'c'.repeat(128),
+    },
+    {
+      document_id: 'document-2',
+      case_matter_id: 'matter-2',
+      document_type: 'notice',
+      registered_at: '2026-09-23T14:06:00+00:00',
+      state: 'ALLOCATED_TO_DEPUTY',
+      evidence_identity: 'd'.repeat(128),
+    },
+  ],
+  attempts: [
+    {
+      attempt_id: 'attempt-1',
+      instruction_id: 'instruction-2',
+      document_id: 'document-2',
+      deputy_id: 'deputy-1',
+      allocated_at: '2026-09-23T14:10:00+00:00',
+      state: 'ATTEMPTED',
+      evidence_identity: 'e'.repeat(128),
+    },
+  ],
+  executions: [
+    {
+      service_execution_id: 'execution-1',
+      attempt_id: 'attempt-1',
+      instruction_id: 'instruction-2',
+      document_id: 'document-2',
+      outcome: 'COMPLETED',
+      executed_at: '2026-09-23T14:20:00+00:00',
+      evidence_identity: 'f'.repeat(128),
+    },
+  ],
+  returns: [],
+});
+
+const intakeInput = () => ({
+  caseMatterId: 'matter-intake-1',
+  matterReference: 'CASE-2026-0100',
+  caseOpenedAt: '2026-09-23T15:00:00+00:00',
+  matterEvidenceReference: 'matter-evidence-1',
+  instructionId: 'instruction-intake-1',
+  instructionRegisteredAt: '2026-09-23T15:00:00+00:00',
+  instructionEvidenceReference: 'instruction-evidence-1',
+  documentId: 'document-intake-1',
+  documentType: 'summons',
+  documentRegisteredAt: '2026-09-23T15:00:00+00:00',
+  documentRegistrationEvidenceReference: 'document-evidence-1',
+  registrationCustodyEventId: 'custody-intake-1',
+});
+
+const intakeResponse = () => {
+  const input = intakeInput();
+  const base = {
+    schema: 'WILSY-LEGAL-OPERATIONS-LIFECYCLE/V1',
+    version: 'v1.0.0-LEGAL-OPERATIONS-LIFECYCLE',
+    tenant_id: 'tenant-law',
+  };
+  return {
+    disposition: 'CREATED',
+    case_matter: {
+      ...base,
+      entity_type: 'CaseMatter',
+      case_matter_id: input.caseMatterId,
+      matter_reference: input.matterReference,
+      opened_at: input.caseOpenedAt,
+      evidence_reference: input.matterEvidenceReference,
+      state: 'OPEN',
+      transition_history: [],
+    },
+    instruction: {
+      ...base,
+      entity_type: 'LegalInstruction',
+      instruction_id: input.instructionId,
+      case_matter_id: input.caseMatterId,
+      document_id: input.documentId,
+      registered_at: input.instructionRegisteredAt,
+      evidence_reference: input.instructionEvidenceReference,
+      state: 'REGISTERED',
+      transition_history: [],
+    },
+    document: {
+      ...base,
+      entity_type: 'ProcessDocument',
+      document_id: input.documentId,
+      case_matter_id: input.caseMatterId,
+      document_type: input.documentType,
+      registered_at: input.documentRegisteredAt,
+      registration_evidence_reference: input.documentRegistrationEvidenceReference,
+      state: 'REGISTERED',
+      transition_history: [],
+    },
+    custody_event: {
+      ...base,
+      entity_type: 'DocumentCustodyEvent',
+      custody_event_id: input.registrationCustodyEventId,
+      document_id: input.documentId,
+      event_type: 'REGISTERED',
+      occurred_at: input.documentRegisteredAt,
+      sequence_number: 1,
+      evidence_reference: input.documentRegistrationEvidenceReference,
+      from_holder_reference: null,
+      to_holder_reference: null,
+    },
+  };
+};
+
+const returnInput = () => ({
+  executionId: 'execution-1',
+  executionEvidenceIdentity: 'f'.repeat(128),
+  returnId: 'return-1',
+  generatedAt: '2026-09-23T15:30:00+00:00',
+});
+
+const returnResponse = () => ({
+  data: {
+    schema: 'WILSY-LEGAL-OPERATIONS-LIFECYCLE/V1',
+    version: 'v1.0.0-LEGAL-OPERATIONS-LIFECYCLE',
+    entity_type: 'ReturnOfService',
+    tenant_id: 'tenant-law',
+    return_id: 'return-1',
+    instruction_id: 'instruction-2',
+    document_id: 'document-2',
+    attempt_id: 'attempt-1',
+    service_execution_id: 'execution-1',
+    service_outcome: 'COMPLETED',
+    service_evidence_reference: 'service-evidence',
+    service_evidence_fingerprint: '9'.repeat(128),
+    generated_at: '2026-09-23T15:30:00+00:00',
+    state: 'GENERATED',
+  },
+});
+
+const financeResponse = () => ({
+  tenant_id: 'tenant-law',
+  entity_type: 'ClientInvoice',
+  entity_identity: 'invoice-1',
+  visibility: 'FINANCE_VISIBLE',
+  data: {
+    invoice_id: 'invoice-1',
+    status: 'ISSUED',
+  },
 });
 
 
