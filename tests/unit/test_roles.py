@@ -1,13 +1,17 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.13.0-C1E-R1
+VERSION: v1.14.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-13.
+CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.14.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS-CERT
+    certifies that legal_operations:directory:write is granted only to SHERIFF
+    and remains absent from partner, attorney, paralegal, secretary, finance,
+    deputy, client, general enterprise, system, and service roles.
     2026-09-17 v1.13.0-C1E-R1 certifies the seven-role legal-advisory
     generate/read grant set and explicit exclusion of all other roles.
     2026-09-15 v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT certifies the
@@ -61,9 +65,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.18.0-C1E-R1"
+    assert POLICY_VERSION == "v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS"
 
-VERSION = "v1.12.0-C1E-R1-ROLE-GRANTS-CERT"
+VERSION = "v1.14.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -115,6 +119,7 @@ TENANT_PERMISSIONS = {
     "billing_intelligence:evidence:read",
     "legal_operations:instruction:read",
     "legal_operations:instruction:write",
+    "legal_operations:directory:write",
     "legal_operations:allocation:read",
     "legal_operations:allocation:write",
     "legal_operations:attempt:read",
@@ -166,6 +171,21 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_SECRETARY"]
+    assert "legal_operations:directory:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:directory:write" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    for role in (
+        "LEGAL_PARTNER",
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_SECRETARY",
+        "LEGAL_FINANCE",
+        "LEGAL_CLIENT",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+    ):
+        assert "legal_operations:directory:write" not in ROLE_PERMISSIONS_MAP[role]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert all("financial_execution" not in grants for grants in ROLE_PERMISSIONS_MAP.values())
@@ -251,6 +271,7 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
         ("wilsy_ai:usage_capacity:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("billing_intelligence:evidence:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("legal_operations:directory:write", ("SHERIFF",)),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
         ("inbound_merchant_configuration:register", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
@@ -458,9 +479,9 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.13.0-C1E-R1
+# VERSION: v1.14.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity and billing-intelligence evidence reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# TENANT POSTURE: directory and other role definitions remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
