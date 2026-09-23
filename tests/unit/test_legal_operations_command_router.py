@@ -49,9 +49,9 @@ CHANGELOG: 2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT certifies bo
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
                  command bodies cannot establish tenant scope.
-AUTHORITY BOUNDARY: Exactly one canonical intake, acceptance/receipt, directory, or field-service
-                    orchestrator is invoked per command; transport never
-                    constructs lifecycle truth.
+AUTHORITY BOUNDARY: Ordinary commands dispatch one canonical orchestrator;
+                    L8-6E field commands certify only the bounded P5M -> P5D/P5E
+                    chain, and transport never constructs lifecycle truth.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution authority; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Extra authority fields, path divergence, invalid state,
