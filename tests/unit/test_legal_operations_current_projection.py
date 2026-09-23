@@ -1,7 +1,7 @@
 """Direct certificate for deterministic Legal Operations current projection.
 
 TITLE: Wilsy OS Legal Operations Current Snapshot Projection Certificate
-VERSION: v1.0.0-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
+VERSION: v1.0.1-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove linear-history current selection, exact replay tolerance and
          fail-closed rejection of forks, static drift, tenant/identity/type
@@ -12,8 +12,12 @@ COLLABORATION / OWNERSHIP: Direct certificate for
                             remains lifecycle authority and P2 remains
                             persistence/hydration authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
-           establishes adversarial direct coverage for the L8-0 pure
+CHANGELOG: 2026-09-23 v1.0.1-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
+           narrows the resolved instruction value to LegalInstruction after
+           an exact expected_type gate so Pyright can certify state/history
+           access without weakening runtime assertions.
+           2026-09-23 v1.0.0-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
+           established adversarial direct coverage for the L8-0 pure
            current-history projection contract.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic in-memory values only; no database,
@@ -118,9 +122,12 @@ def test_instruction_linear_history_resolves_unique_longest_snapshot() -> None:
         occurred_at=NOW + timedelta(minutes=2),
     )
 
-    current = resolve_current_lifecycle_snapshot(
-        (accepted, registered, closed),
-        expected_type=LegalInstruction,
+    current = cast(
+        LegalInstruction,
+        resolve_current_lifecycle_snapshot(
+            (accepted, registered, closed),
+            expected_type=LegalInstruction,
+        ),
     )
 
     assert current is closed
@@ -302,7 +309,7 @@ def test_empty_and_unsupported_inputs_fail_closed() -> None:
 
 
 # ARTIFACT: test_legal_operations_current_projection.py
-# VERSION: v1.0.0-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
+# VERSION: v1.0.1-L8-0-LEGAL-OPERATIONS-CURRENT-PROJECTION-CERT
 # AUTHORITY BOUNDARY: direct projection certificate only; no mutation authority
 # TENANT POSTURE: explicit synthetic tenant scope; cross-tenant input rejects
 # FAIL-CLOSED POSTURE: ambiguity, forks, drift and unsupported input must reject
