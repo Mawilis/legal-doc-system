@@ -1,17 +1,24 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API
+VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
-EPITOME: Resolve complete P2 immutable entity history through the deterministic
-         L8-0 current-snapshot projection before exposing bounded cockpit reads.
+EPITOME: Delegate exact authorized entity reads to the deterministic L8-5
+         current-plus-history read model while exposing only bounded canonical
+         P1 projections and preserving existing current-read compatibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_router.py
 COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             P2 owns immutable persistence/history hydration,
                             L8-0 owns deterministic current-state projection,
-                            and tenant authorization owns access authority.
+                            L8-5 owns entity read-model composition, and tenant
+                            authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API replaces
+CHANGELOG: 2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+           wires authenticated exact reads through the certified L8-5 entity
+           read model, preserves the existing current projection in data, and
+           adds sanitized immutable history without exposing P2 envelopes or
+           creating new IAM vocabulary.
+           2026-09-23 v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API replaces
            arbitrary single-row lifecycle selection with exact complete P2
            history retrieval plus deterministic current projection, preserving
            bounded foreign absence and existing client-policy denial.
@@ -22,7 +29,7 @@ SECURITY / PRIVACY POSTURE: JWT claims and X-Tenant-ID never create authority;
                              persistence access follows successful durable
                              tenant authorization. Secrets and transport
                              internals are excluded from response projections.
-TENANT BOUNDARY: Every history query binds the exact authorized tenant, exact
+TENANT BOUNDARY: Every read-model query binds the exact authorized tenant,
                  canonical entity type, and exact entity identity. Foreign
                  absence is returned as bounded 404 without disclosure.
 AUTHORITY BOUNDARY: Read projection only. This router cannot create, accept,
@@ -31,9 +38,8 @@ AUTHORITY BOUNDARY: Read projection only. This router cannot create, accept,
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement. Legal reads never infer paid or
                               settled truth.
-TRANSACTION BOUNDARY: Read composition owns no Mongo session or transaction;
-                      P2 receives the collection and performs read-only exact
-                      history enumeration.
+TRANSACTION BOUNDARY: HTTP composition owns no Mongo session or transaction;
+                      L8-5 forwards read-only collection/session semantics to P2.
 FAIL-CLOSED DECLARATION: Missing authority, malformed identity, client-policy
                          gaps, absent exact history, P2 corruption/outage,
                          history forks/divergence, and invalid projections deny.
@@ -49,32 +55,18 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
-from tools.eos.legal_operations.domain.legal_operations_current_projection import (
-    LegalOperationsCurrentProjectionError,
-    resolve_current_lifecycle_snapshot,
-)
-from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
-    LegalInstruction,
-    ReturnOfService,
-    ServiceAttempt,
-    ServiceExecution,
+from tools.eos.legal_operations.domain.legal_operations_read_model import (
+    LegalOperationsReadModelError,
+    get_entity_read_model,
 )
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION as LIFECYCLE_COLLECTION,
-    LegalOperationsLifecycleRegistry,
-    LegalOperationsLifecycleRegistryError,
 )
 
 
-VERSION: Final[str] = "v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API"
+VERSION: Final[str] = "v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
-_ENTITY_CLASSES: Final[dict[str, type[Any]]] = {
-    "LegalInstruction": LegalInstruction,
-    "ServiceAttempt": ServiceAttempt,
-    "ServiceExecution": ServiceExecution,
-    "ReturnOfService": ReturnOfService,
-}
 
 
 def get_lifecycle_collection() -> Any:
@@ -117,15 +109,17 @@ def _resource(
     context: TenantAuthorizationContext,
     collection: Any,
 ) -> dict[str, Any]:
-    """Return deterministic current truth for one authorized exact entity.
+    """Return deterministic current-plus-history truth for one authorized entity.
 
-    Authorization precedes persistence access. The method requests the complete
-    exact tenant/type/entity history from P2, returns 404 for exact-scope
-    absence, and delegates current-state selection to the L8-0 deterministic
-    projection authority. P2 corruption or projection divergence becomes a
-    bounded evidence-unavailable response; arbitrary historical selection is
-    forbidden. The method is read-only and owns no transaction or financial
-    authority.
+    Authorization precedes read-model access. L8-5 composes the complete exact
+    P2 history with L8-0 deterministic current selection. Exact-scope absence is
+    a bounded 404; corrupt, divergent, or otherwise invalid canonical evidence
+    is bounded as evidence unavailable. The HTTP projection preserves the
+    existing current snapshot in data for compatibility and adds sanitized
+    canonical P1 snapshots in history. Raw P2 envelopes are never exposed.
+
+    This method is read-only and owns no lifecycle, transaction, billing,
+    payment, financial execution, or settlement authority.
     """
     if context.decision.business_role == _CLIENT_ROLE:
         raise HTTPException(
@@ -138,35 +132,19 @@ def _resource(
             detail="LEGAL_OPERATION_NOT_FOUND",
         )
 
-    expected_type = _ENTITY_CLASSES.get(entity_type)
-    if expected_type is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LEGAL_OPERATIONS_PROJECTION_INVALID",
-        )
-
     try:
-        history = LegalOperationsLifecycleRegistry.get_entity_history(
-            context.tenant_id,
-            entity_type,
-            entity_identity,
-            collection,
+        model = get_entity_read_model(
+            tenant_id=context.tenant_id,
+            entity_type=entity_type,
+            entity_identity=entity_identity,
+            lifecycle_collection=collection,
         )
-        if not history:
+    except LegalOperationsReadModelError as error:
+        if error.code == "L8_5_ENTITY_NOT_FOUND":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="LEGAL_OPERATION_NOT_FOUND",
-            )
-        value = resolve_current_lifecycle_snapshot(
-            history,
-            expected_type=expected_type,
-        )
-    except HTTPException:
-        raise
-    except (
-        LegalOperationsLifecycleRegistryError,
-        LegalOperationsCurrentProjectionError,
-    ) as error:
+            ) from error
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_EVIDENCE_UNAVAILABLE",
@@ -178,13 +156,13 @@ def _resource(
         ) from error
 
     return {
-        "tenant_id": context.tenant_id,
-        "entity_type": entity_type,
-        "entity_identity": entity_identity,
+        "tenant_id": model.tenant_id,
+        "entity_type": model.entity_type,
+        "entity_identity": model.entity_identity,
         "visibility": "AUDIT_VISIBLE",
-        "data": _project(value),
+        "data": _project(model.current),
+        "history": [_project(value) for value in model.history],
     }
-
 
 _INSTRUCTION_READ = RequireTenantAuthorization(
     "legal_operations:instruction:read",
@@ -264,9 +242,9 @@ __all__ = ["VERSION", "get_lifecycle_collection", "router"]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API
-# AUTHORITY BOUNDARY: authenticated deterministic read projection only; P1/P2/L8-0 remain canonical owners
-# TENANT POSTURE: exact authorized tenant/type/entity history; foreign absence is bounded
+# VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+# AUTHORITY BOUNDARY: authenticated current-plus-history projection only; P1/P2/L8-0/L8-5 retain canonical ownership
+# TENANT POSTURE: exact authorized tenant/type/entity read model; foreign absence is bounded
 # FAIL-CLOSED POSTURE: absent history, corruption, divergence, policy gaps, and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
