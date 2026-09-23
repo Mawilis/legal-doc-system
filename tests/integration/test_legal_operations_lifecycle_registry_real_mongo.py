@@ -1,7 +1,7 @@
 """Host-backed certificate for the Legal Operations P2 evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Registry Real-Mongo Certificate
-VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+VERSION: v1.3.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-RM-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify real replica-set durability, immutable snapshot progression,
          tenant/entity-class enumeration, indexed document-custody history,
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: Host-backed P2 certificate only; P1 owns lifecycle,
                             service, return, and evidence semantics. The test
                             caller owns Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: 2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+CHANGELOG: 2026-09-23 v1.3.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-RM-CERT
+           certifies exact opaque snapshot evidence-identity lookup on the real
+           replica set, including caller-owned transaction/session use,
+           foreign-tenant absence and unchanged durable-row count.
+           2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
            adds explicit exact-LegalInstruction runtime certification and
            static tuple narrowing for real-Mongo enumeration assertions;
            production behavior and authority contracts remain unchanged.
@@ -76,7 +80,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT"
+VERSION = "v1.3.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -292,8 +296,60 @@ def test_real_tenant_entity_snapshot_enumeration_is_exact_and_deterministic(
         collection,
     ) == ()
     assert P2_VERSION == (
-        "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
+        "v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR"
     )
+
+
+def test_real_snapshot_evidence_locator_is_exact_tenant_bound_and_transaction_safe(
+    mongo_context: Any,
+) -> None:
+    """Certify one opaque locator without exposing or mutating the P2 envelope."""
+    client, _, collection = mongo_context
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    value = ServiceAttempt(
+        tenant_id=tenant,
+        attempt_id="attempt-locator",
+        instruction_id="instruction-locator",
+        document_id="document-locator",
+        deputy_id="deputy-locator",
+        allocated_at=NOW,
+        allocation_evidence_reference="allocation-locator",
+    )
+    LegalOperationsLifecycleRegistry.create(value, collection)
+    raw = _record(collection, tenant, "ServiceAttempt", value.attempt_id)
+    before = collection.count_documents({"tenant_id": tenant})
+
+    with client.start_session() as session:
+        session.start_transaction()
+        locator = LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            value,
+            collection,
+            session=session,
+        )
+        session.commit_transaction()
+
+    assert locator == raw["evidence_identity"]
+    assert isinstance(locator, str)
+    assert len(locator) == 128
+    assert collection.count_documents({"tenant_id": tenant}) == before
+
+    foreign_value = ServiceAttempt(
+        tenant_id=f"tenant-{uuid.uuid4().hex}",
+        attempt_id=value.attempt_id,
+        instruction_id=value.instruction_id,
+        document_id=value.document_id,
+        deputy_id=value.deputy_id,
+        allocated_at=value.allocated_at,
+        allocation_evidence_reference=value.allocation_evidence_reference,
+    )
+    with pytest.raises(
+        LegalOperationsLifecycleRegistryError,
+        match="M2_EVIDENCE_NOT_FOUND",
+    ):
+        LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            foreign_value,
+            collection,
+        )
 
 
 def test_real_document_custody_history_is_exact_tenant_document_scope(
@@ -364,7 +420,7 @@ def test_real_document_custody_history_is_exact_tenant_document_scope(
         "missing-document",
         collection,
     ) == ()
-    assert P2_VERSION == "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
+    assert P2_VERSION == "v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR"
 
 
 def test_real_exact_replay_has_one_durable_row(mongo_context: Any) -> None:
@@ -535,8 +591,8 @@ def test_real_persisted_records_have_no_financial_authority_fields(mongo_context
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry_real_mongo.py
-# VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
-# AUTHORITY BOUNDARY: host-backed P2 persistence, tenant-entity enumeration, and strict hydration certificate only.
+# VERSION: v1.3.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-RM-CERT
+# AUTHORITY BOUNDARY: host-backed P2 persistence, tenant-entity enumeration, strict hydration, and exact opaque snapshot-locator certificate only.
 # TENANT POSTURE: UUID-isolated explicit tenant scope; foreign records disclose nothing.
 # FAIL-CLOSED POSTURE: unavailable/wrong host runtime and corrupt durable evidence fail certification.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
