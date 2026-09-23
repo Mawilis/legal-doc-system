@@ -1,7 +1,7 @@
 """Direct adversarial certificate for P5 mobile/offline field evidence.
 
 TITLE: WILSY OS Process-Service Field Evidence and Command Capability Certificate
-VERSION: v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
+VERSION: v1.3.1-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT-REPAIR
 AUTHORITY: Direct certification of P5M evidence and L8-6D read projection.
 EPITOME: Preserve offline evidence ordering/provenance/replay certification,
          prove exact tenant/event command+receipt recovery and validated sequence
@@ -16,7 +16,11 @@ COLLABORATION / OWNERSHIP: Direct certificate for P5M authority/registry/
                             lifecycle, P2 owns snapshot identity, and callers
                             own authorization and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
+CHANGELOG: 2026-09-23 v1.3.1-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT-REPAIR
+           repairs certificate-only Pyright narrowing for nested durable payload
+           corruption setup; production registry behavior and runtime assertions
+           are unchanged.
+           2026-09-23 v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
            certifies exact event command+receipt recovery, empty/head resolution,
            caller-session forwarding, contiguous 1..N sequence validation, and
            fail-closed rejection of durable sequence-history corruption.
@@ -338,8 +342,12 @@ def test_registry_recovers_exact_event_command_and_contiguous_sequence_head() ->
 
     corrupted = dict(collection.rows[1])
     corrupted["sequence_number"] = 3
-    corrupted_command = dict(corrupted["command_payload"])
-    corrupted_receipt = dict(corrupted["receipt_payload"])
+    command_payload = corrupted["command_payload"]
+    receipt_payload = corrupted["receipt_payload"]
+    assert isinstance(command_payload, dict)
+    assert isinstance(receipt_payload, dict)
+    corrupted_command = dict(command_payload)
+    corrupted_receipt = dict(receipt_payload)
     corrupted_command["sequence_number"] = 3
     corrupted_receipt["sequence_number"] = 3
     corrupted["command_payload"] = corrupted_command
@@ -515,7 +523,7 @@ def test_projections_are_scoped_derived_views() -> None:
 
 
 # ARTIFACT: test_process_service_field_evidence.py
-# VERSION: v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
+# VERSION: v1.3.1-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT-REPAIR
 # AUTHORITY BOUNDARY: direct P5M evidence acceptance plus L8-6D state-capability projection certificate only.
 # TENANT POSTURE: exact synthetic P1/P2/P5M tenant scope; cross-tenant projection inputs reject.
 # FAIL-CLOSED POSTURE: no evidence, command authorization, service or financial truth is inferred from projection state.
