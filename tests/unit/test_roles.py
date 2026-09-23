@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.17.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS-CERT
+VERSION: v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,6 +8,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
+    certifies legal_operations:client_visibility:write is granted exactly to
+    LEGAL_PARTNER, LEGAL_ATTORNEY, and LEGAL_PARALEGAL, with explicit denial
+    for LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT, SHERIFF, DEPUTY,
+    ENTERPRISE_ADMIN, AUDITOR, SOVEREIGN_ARCHITECT, SERVICE_WORKER and all
+    provider-policy roles. Static grants remain non-possessory and non-
+    self-authorizing.
     2026-09-23 v1.17.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS-CERT
     certifies legal_operations:deputy_queue:read is granted only to DEPUTY and
     is absent from SHERIFF and every other authorization role, preserving the
@@ -75,9 +82,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS"
+    assert POLICY_VERSION == "v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS"
 
-VERSION = "v1.17.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS-CERT"
+VERSION = "v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -133,6 +140,7 @@ TENANT_PERMISSIONS = {
     "legal_operations:receipt:write",
     "legal_operations:queue:read",
     "legal_operations:deputy_queue:read",
+    "legal_operations:client_visibility:write",
     "legal_operations:allocation:read",
     "legal_operations:allocation:write",
     "legal_operations:attempt:read",
@@ -166,6 +174,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     """Legal personas receive only the certified legal-operation capabilities."""
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
         "legal_operations:instruction:read", "legal_operations:instruction:write",
+        "legal_operations:client_visibility:write",
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
@@ -181,6 +190,29 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read",
     ]
     assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
+    visibility_permission = "legal_operations:client_visibility:write"
+    assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
+    assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
+    assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
+    for role in (
+        "LEGAL_SECRETARY",
+        "LEGAL_FINANCE",
+        "LEGAL_CLIENT",
+        "SHERIFF",
+        "DEPUTY",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+        "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN",
+        "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN",
+        "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+    ):
+        assert visibility_permission not in ROLE_PERMISSIONS_MAP[role]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_SECRETARY"]
@@ -228,6 +260,19 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     for role in ("ENTERPRISE_ADMIN", "AUDITOR", "LEGAL_CLIENT", "SOVEREIGN_ARCHITECT", "SERVICE_WORKER"):
         assert "wilsy_ai:legal_advisory:generate" not in ROLE_PERMISSIONS_MAP[role]
 
+
+
+def test_client_visibility_write_is_granted_only_to_approved_law_firm_roles() -> None:
+    """L8-7C2 grant set is exact and cannot leak to client or operational roles."""
+    permission = "legal_operations:client_visibility:write"
+    expected = ("LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_PARTNER")
+    assert get_roles_granting_permission(permission) == expected
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in expected:
+            assert grants.count(permission) == 1
+        else:
+            assert permission not in grants
 
 
 def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> None:
@@ -297,6 +342,10 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("legal_operations:receipt:write", ("SHERIFF",)),
         ("legal_operations:queue:read", ("SHERIFF",)),
         ("legal_operations:deputy_queue:read", ("DEPUTY",)),
+        (
+            "legal_operations:client_visibility:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_PARTNER"),
+        ),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
         ("inbound_merchant_configuration:register", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
@@ -365,6 +414,11 @@ def test_tenant_permission_reverse_lookup_is_exact(
         "billing_intelligence:evidence:read ",
         "billing_intelligence:evidence:READ",
         "billing_intelligence:evidence",
+        "legal_operations:client_visibility:*",
+        "legal_operations:client_visibility",
+        "LEGAL_OPERATIONS:CLIENT_VISIBILITY:WRITE",
+        " legal_operations:client_visibility:write",
+        "legal_operations:client_visibility:write ",
     ),
 )
 def test_forbidden_unknown_partial_and_wildcard_like_permissions_never_grant(
@@ -504,9 +558,9 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.17.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS-CERT
+# VERSION: v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: directory and other role definitions remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# TENANT POSTURE: client-visibility and other role definitions remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
