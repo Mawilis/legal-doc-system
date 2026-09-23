@@ -1,7 +1,7 @@
 """Canonical instruction acceptance and office-receipt orchestration.
 
 TITLE: WILSY OS Process Service Acceptance and Receipt Orchestrator
-VERSION: v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+VERSION: v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
 AUTHORITY: Wilsy OS Legal Operations instruction-acceptance and office-receipt composition.
 EPITOME: Advance one tenant-scoped registered LegalInstruction to ACCEPTED,
          one linked ProcessDocument to RECEIVED, and append one sequence-two
@@ -16,7 +16,11 @@ COLLABORATION / OWNERSHIP: P1 owns lifecycle/custody value semantics; P2 owns
                             owns only acceptance plus physical office receipt.
                             HTTP/IAM admission remains a separate boundary.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+CHANGELOG: 2026-09-23 v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+           removes direct knowledge of P2 durable record schema by consuming
+           the canonical P2 tenant/document custody-history API, preserving
+           strict hydration, caller-session propagation, and P1 chain validation.
+           2026-09-23 v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
            fail-closes malformed or naive accepted/received timestamps through
            a stable L8-3 error before chronology comparison or database writes.
            2026-09-23 v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
@@ -80,7 +84,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
+VERSION: Final[str] = "v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
 
 
 class ProcessServiceAcceptanceReceiptDisposition(StrEnum):
@@ -275,45 +279,20 @@ def _custody_chain(
     lifecycle_collection: Any,
     session: object,
 ) -> tuple[DocumentCustodyEvent, ...]:
-    """Hydrate and validate the complete tenant/document custody chain."""
+    """Load P2-owned custody history and validate P1 chronology/current order."""
     try:
-        rows = tuple(
-            lifecycle_collection.find(
-                {
-                    "tenant_id": tenant_id,
-                    "entity_type": "DocumentCustodyEvent",
-                    "p1_payload.document_id": document_id,
-                },
-                session=session,
-            )
-        )
-    except Exception as error:
-        _fail("L8_3_CUSTODY_READ_FAILED", error)
-    if not rows:
-        _fail("L8_3_CUSTODY_HISTORY_NOT_FOUND")
-
-    events: list[DocumentCustodyEvent] = []
-    for row in rows:
-        if not isinstance(row, dict):
-            _fail("L8_3_CUSTODY_ROW_INVALID")
-        evidence_identity = row.get("evidence_identity")
-        if not isinstance(evidence_identity, str) or not evidence_identity:
-            _fail("L8_3_CUSTODY_ROW_INVALID")
-        try:
-            value = LegalOperationsLifecycleRegistry.get(
+        events = list(
+            LegalOperationsLifecycleRegistry.get_document_custody_history(
                 tenant_id,
-                evidence_identity,
+                document_id,
                 lifecycle_collection,
                 session=session,
             )
-        except LegalOperationsLifecycleRegistryError as error:
-            _fail("L8_3_CUSTODY_HYDRATION_FAILED", error)
-        if type(value) is not DocumentCustodyEvent:
-            _fail("L8_3_CUSTODY_TYPE_INVALID")
-        event = cast(DocumentCustodyEvent, value)
-        if event.document_id != document_id:
-            _fail("L8_3_CUSTODY_SCOPE_INVALID")
-        events.append(event)
+        )
+    except LegalOperationsLifecycleRegistryError as error:
+        _fail("L8_3_CUSTODY_HISTORY_READ_FAILED", error)
+    if not events:
+        _fail("L8_3_CUSTODY_HISTORY_NOT_FOUND")
 
     events.sort(key=lambda event: event.sequence_number)
     try:
@@ -650,7 +629,7 @@ __all__ = [
 
 
 # ARTIFACT: process_service_acceptance_receipt_orchestrator.py
-# VERSION: v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+# VERSION: v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
 # AUTHORITY BOUNDARY: instruction acceptance and physical office receipt only
 # TENANT POSTURE: exact tenant histories, exact instruction/document lineage, canonical SheriffOffice destination
 # FAIL-CLOSED POSTURE: active transaction, complete history, chronology, exact replay, custody integrity, and non-healing divergence are mandatory
