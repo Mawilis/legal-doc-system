@@ -1,39 +1,35 @@
 /* eslint-disable */
 /**
- * ===============================================================================
- * WILSY OS — SOVEREIGN OPERATING SYSTEM
- * MODULE: DIPLOMATIC BRIDGE & INSTITUTIONAL HTTP CLIENT [V74.0.0-INSTITUTIONAL-SEAL]
- * FILE: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
- * ===============================================================================
- * Epitome:
- *     Primary cryptographic and atomic HTTP bridge between the Wilsy OS React
- *     Frontend and the FG211 Kernel Gateway. Enforces deterministic SHA3-512
- *     request signing, automatic 401 session healing (simplified: redirects to
- *     login on token expiry), millisecond clock synchronization, and tenant‑forced
- *     headers to eliminate network deadlocks and security fractures under sovereign
- *     production standards. Includes public‑path exemption for authentication
- *     endpoints, throttled console logging, and enterprise‑grade statement APIs.
- *
- * Biblical Worth Billions:
- *     "In the mouth of two or three witnesses shall every word be established."
- *     — 2 Corinthians 13:1
- *
- * Collaboration & Ownership:
- *     - Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
- *     - AI Engineering: Interceptor simplification, source backoff protection,
- *       and full mandate compliance.
- *     - File Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
- *
- * Change Log:
- *     2026-08-22 v74.0.1-MFA-PUBLIC-CONTRACT — Exempted strict EOS OTP and enrollment validation bodies from seal-field injection.
- *     2026-08-14 v74.0.0-INSTITUTIONAL-SEAL — Upgraded documentation to full mandate compliance.
- *     2026-08-07 v73.2.1-AUTH-FIX — Simplified 401 handling, removed refresh loop.
- *     2026-07-30 v73.0.0 — Baseline with statement APIs.
- *
- * Governance Compliance:
- *     POPIA §19 (tenant isolation), GDPR §32 (cryptographic sealing),
- *     SOC2 §CC7.2 (audit trail & incident logging).
- * ===============================================================================
+ * WILSY OS — INSTITUTIONAL HTTP CLIENT
+ * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
+ * VERSION: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Provides the governed browser HTTP transport seam while preserving
+ *          server-owned authentication, recovery, tenant, credential, and
+ *          financial authority.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api.js
+ * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
+ *                            Python EOS owns auth/recovery business truth and
+ *                            server contracts; external HTTP is transport only.
+ * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK — Adds public-path interlocks for password-recovery request
+ *            and recovery-contact verification completion so strict Python
+ *            request bodies are not mutated with forensic timestamp metadata.
+ *            V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API — Added authenticated recovery-contact verification and
+ *            public verification-completion transport seams.
+ *            V74.2.0-R10E9-RECOVERY-REQUEST-API — Added public recovery request.
+ *            V74.1.0-R10D6-RESET-API-INTEGRATION — Added public reset transport.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Public recovery/reset payloads remain exact;
+ *                             authenticated requests may carry transport-only
+ *                             forensic metadata but no browser-owned authority.
+ * TENANT BOUNDARY: Browser tenant values are transport selectors/projections;
+ *                  server-side canonical tenant resolution remains sovereign.
+ * AUTHORITY BOUNDARY: HTTP transport, bearer forwarding, and transport evidence
+ *                     only; no recovery, identity, role, credential, MFA, or
+ *                     settlement truth is created by this client.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains the exclusive
+ *                               financial execution and settlement authority.
  */
 
 import axios from 'axios';
@@ -72,16 +68,36 @@ const sourceBackoffUntil = new Map();
  * @institutional Mandatory for POPIA §19 data segregation.
  */
 const resolveRequestTenantId = () => {
-  const storedTenant = localStorage.getItem('discoveredTenant');
-  if (!storedTenant || storedTenant === 'undefined' || storedTenant === 'null') return 'GLOBAL_ROOT';
+  // Authenticated server-issued tenant projection is authoritative when
+  // present. Discovery is only the bounded pre-auth fallback.
+  const storedTenant = (
+    localStorage.getItem('wilsy_active_tenant')
+    || localStorage.getItem('discoveredTenant')
+  );
+
+  if (
+    !storedTenant
+    || storedTenant === 'undefined'
+    || storedTenant === 'null'
+  ) {
+    return 'GLOBAL_ROOT';
+  }
 
   try {
     const parsedTenant = JSON.parse(storedTenant);
+
     if (parsedTenant && typeof parsedTenant === 'object') {
-      return String(parsedTenant.alias || parsedTenant.tenantId || parsedTenant.id || 'GLOBAL_ROOT').trim() || 'GLOBAL_ROOT';
+      // X-Tenant-ID is durable authorization scope, therefore the canonical
+      // tenant identifier must outrank display/discovery aliases.
+      return String(
+        parsedTenant.tenantId
+        || parsedTenant.id
+        || parsedTenant.alias
+        || 'GLOBAL_ROOT'
+      ).trim() || 'GLOBAL_ROOT';
     }
   } catch {
-    // Legacy installations may hold the scalar tenant identifier directly.
+    // Legacy installations may hold a scalar tenant identifier directly.
   }
 
   return String(storedTenant).trim() || 'GLOBAL_ROOT';
@@ -367,7 +383,7 @@ api.interceptors.request.use(
     }
 
     const token = getStoredToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token && !config.skipAuth) config.headers.Authorization = `Bearer ${token}`;
 
     // Force Tenant ID injection to prevent 403 authorization fractures
     config.headers['X-Tenant-ID'] = resolveRequestTenantId();
@@ -387,14 +403,28 @@ api.interceptors.request.use(
       || /^\/auth\/verify-otp$/i.test(config.url)
       || /^\/auth\/verify-3fa$/i.test(config.url)
       || /^\/auth\/otp\/verify$/i.test(config.url)
-      || /^\/auth\/otp\/send$/i.test(config.url);
+      || /^\/auth\/otp\/send$/i.test(config.url)
+      || /^\/auth\/request-password-reset$/i.test(config.url)
+      || /^\/auth\/recovery-contact\/verify$/i.test(config.url)
+      || /^\/auth\/reset-password$/i.test(config.url);
 
     if (!isPublicPath) {
       const traceId = generateTraceAnchor ? generateTraceAnchor() : `TRC-${Date.now()}`;
       const timestamp = getSyncedTimestamp();
       const nonce = `NONCE-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-      if (config.data && typeof config.data === 'object') {
+      // Strict server-owned request contracts must retain the exact caller
+      // payload. Forensic time remains transport evidence in the dedicated
+      // x-forensic-timestamp header and request seal; it is not legal body truth.
+      const preservesCanonicalRequestBody = /^\/legal-acceptance\/accept$/i.test(
+        config.url
+      );
+
+      if (
+        !preservesCanonicalRequestBody
+        && config.data
+        && typeof config.data === 'object'
+      ) {
         config.data.timestamp = timestamp;
       }
 
@@ -450,21 +480,45 @@ api.interceptors.response.use(
       sourceBackoffUntil.set(getSourceBackoffKey(originalRequest), Date.now() + SOURCE_BACKOFF_MS);
     }
 
-    // If it's a 401 and we're not already on login, clear session and redirect.
+    // A 401 proves browser-session expiry only when that failed request
+    // actually participated in bearer authentication. Public/pre-auth/MFA
+    // challenge requests can legitimately return 401 and must never erase a
+    // concurrently established authenticated session.
     if (error.response?.status === 401) {
-      // If the request explicitly skips auth redirect, just reject.
       if (originalRequest?.skipAuthRedirect) {
         return Promise.reject(error);
       }
 
-      const path = (typeof window !== 'undefined' && window.location?.pathname) || '';
-      // Avoid redirect loop when already on login page.
+      const challengePath = /^\/auth\/(?:login|sovereign-login|verify-otp|verify-3fa|validate-mfa-setup|otp\/verify|otp\/send)$/i.test(url);
+
+      if (challengePath) {
+        return Promise.reject(error);
+      }
+
+      const requestHeaders = originalRequest?.headers;
+      const authorization = typeof requestHeaders?.get === 'function'
+        ? requestHeaders.get('Authorization')
+        : requestHeaders?.Authorization || requestHeaders?.authorization;
+
+      const carriedBearer = (
+        typeof authorization === 'string'
+        && /^Bearer\s+\S+$/i.test(authorization.trim())
+      );
+
+      if (!carriedBearer) {
+        return Promise.reject(error);
+      }
+
+      const path = (
+        typeof window !== 'undefined'
+        && window.location?.pathname
+      ) || '';
+
       if (!path.startsWith('/login')) {
         purgeTokens();
-        // Optionally, pass an expired flag to show a message.
         window.location.href = '/login?expired=true';
       }
-      // Return a rejected promise to stop further processing.
+
       return Promise.reject(error);
     }
 
@@ -475,6 +529,87 @@ api.interceptors.response.use(
 // ============================================================================
 // 📊 STATEMENT API FUNCTIONS
 // ============================================================================
+
+/**
+ * @function requestPasswordRecovery
+ * @description Submits the exact unauthenticated recovery-request payload to the
+ *     canonical Python request endpoint. The server response is intentionally
+ *     generic and does not reveal account, verified-contact, issuance, or
+ *     delivery truth.
+ * @param {Object} input - Transport-only recovery request inputs.
+ * @param {string} input.tenantId - Selected workspace identifier forwarded as tenant_id.
+ * @param {string} input.email - Work email forwarded as the lookup value.
+ * @returns {Promise<Object>} Axios response; successful status is 202 with generic copy.
+ * @collaboration R10E9 — Consumed only by the governed recovery-request UI.
+ * @institutional This method owns transport only; it never creates recovery,
+ *     identity, session, role, MFA, tenant, or financial authority.
+ */
+const requestPasswordRecovery = ({ tenantId, email }) => api.post(
+  '/auth/request-password-reset',
+  {
+    tenant_id: tenantId,
+    email,
+  },
+  { skipAuth: true },
+);
+
+/**
+ * @function requestRecoveryContactVerification
+ * @description Requests email-control verification for the current authenticated
+ *     principal. The browser supplies no email, tenant, principal, or token body;
+ *     Python EOS derives durable principal/email authority from ACCESS identity.
+ * @returns {Promise<Object>} Axios response with bounded verification status.
+ * @institutional Transport only; requires the existing authenticated bearer and
+ *     cannot create verified-contact authority by itself.
+ */
+const requestRecoveryContactVerification = () => api.post(
+  '/auth/recovery-contact/request-verification',
+  {},
+);
+
+/**
+ * @function completeRecoveryContactVerification
+ * @description Submits one public tenant selector and transient verification
+ *     capability from the governed email link. Successful completion is bodyless
+ *     HTTP 204 and creates no authenticated browser session.
+ * @param {Object} input - Verification completion transport values.
+ * @param {string} input.tenantId - Tenant lookup selector.
+ * @param {string} input.verificationToken - Single-use email-control capability.
+ * @returns {Promise<Object>} Axios response; success contains no authority body.
+ * @institutional Transport only; Python EOS owns verification/contact truth.
+ */
+const completeRecoveryContactVerification = ({ tenantId, verificationToken }) => api.post(
+  '/auth/recovery-contact/verify',
+  {
+    tenant_id: tenantId,
+    verification_token: verificationToken,
+  },
+  { skipAuth: true },
+);
+
+/**
+ * @function resetPassword
+ * @description Submits the exact unauthenticated recovery completion payload to
+ *     the canonical Python reset endpoint and accepts its bodyless 204 result.
+ * @param {Object} input - Transport-only reset inputs.
+ * @param {string} input.tenantId - Tenant selector forwarded as tenant_id.
+ * @param {string} input.recoveryToken - Single-use capability forwarded unchanged.
+ * @param {string} input.newPassword - Proposed password forwarded unchanged.
+ * @returns {Promise<Object>} Axios response; successful responses contain no body.
+ * @collaboration R10D6 — Consumed by the future reset UI; the server owns
+ *     recovery lifecycle, password policy, hashing, revision, and revocation.
+ * @institutional This method owns transport only and never grants identity,
+ *     session, role, MFA, financial, or other authority.
+ */
+const resetPassword = ({ tenantId, recoveryToken, newPassword }) => api.post(
+  '/auth/reset-password',
+  {
+    tenant_id: tenantId,
+    recovery_token: recoveryToken,
+    new_password: newPassword,
+  },
+  { skipAuth: true },
+);
 
 /**
  * @function getStatements
@@ -564,6 +699,10 @@ const verifyStatementSeal = (statementId) => {
 
 export default api;
 export {
+  requestPasswordRecovery,
+  requestRecoveryContactVerification,
+  completeRecoveryContactVerification,
+  resetPassword,
   getStatements,
   generateStatement,
   sealStatement,
@@ -573,14 +712,11 @@ export {
 };
 
 /**
- * ===============================================================================
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS HTTP BRIDGE
- * ===============================================================================
- * Status: CERTIFIED GOLD PRODUCTION READY
- * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
- * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Version: V74.0.0-INSTITUTIONAL-SEAL
- * Architecture: BIBLICAL WORTH BILLIONS. NO CHILD'S PLAY.
- * Kennel Context: Fully integrated with tenant and role metadata.
- * ===============================================================================
+ * ARTIFACT: client/src/services/api.js
+ * VERSION: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK
+ * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
+ * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
+ * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

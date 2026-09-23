@@ -11,8 +11,8 @@ TITLE:
 FILE:
     tools/eos/saas/tenancy/tenant_registry.py
 
-    VERSION:
-    v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION
+VERSION:
+    v1.6.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -35,6 +35,18 @@ CERTIFICATION / UPDATE DATE:
     2026-08-30
 
 CHANGELOG:
+    v1.6.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
+        - Adds one canonical tenant resolver for identity-reference validation.
+        - Requires exactly one ACTIVE tenants.tenant_id row, detects duplicate
+          identity rows, and permits alias input only through this authoritative
+          server-side resolution seam.
+        - Rejects reserved pseudo-tenant identifiers during tenant creation.
+
+    v1.5.0-KERNEL-DB-LAZY-BOUND
+        - Removes the private driver/URI/database lifecycle.
+        - Resolves the canonical kernel database lazily at operation time.
+        - Preserves explicit collection and caller-session seams.
+
     v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION
         - Adds optional keyword-only caller session forwarding to get.
         - Preserves no-session lookup behavior and transaction ownership.
@@ -106,36 +118,80 @@ import copy
 import hashlib
 import json
 import logging
-import os
-from pymongo.collection import Collection
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from pymongo import MongoClient
+from pymongo.collection import Collection
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from ...auth.tenant_authority_policy import PROFILE_MUTABLE_FIELDS_V1
+from ...kernel import db as kernel_db
 from ..domain.tenant import OrganizationProfile, SubscriptionPlan, TenantEntity
 
 
-VERSION = "v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION"
+VERSION = "v1.6.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE"
+
+_RESERVED_PSEUDO_TENANT_IDS = frozenset(
+    {
+        "MASTER",
+        "GLOBAL_ROOT",
+        "WILSY",
+        "WILSY_GLOBAL_ROOT",
+        "WILSY_MASTER",
+        "WILSY-SOVEREIGN-ROOT",
+        "ROOT",
+    }
+)
 
 logger = logging.getLogger("WilsyOS.SaaS.Tenancy.TenantRegistry")
 
-MONGO_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017/wilsy")
-client = MongoClient(MONGO_URI, connect=False)
-db = client.get_database("wilsy")
-tenants_collection = db["tenants"]
+# Compatibility-only substitution slot for existing deterministic tests and
+# explicit migration harnesses. It is deliberately None in production: no
+# collection, client, URI, or database is created during module import.
+tenants_collection: Collection | None = None
 
 _PROFILE_MUTABLE_FIELDS = frozenset(PROFILE_MUTABLE_FIELDS_V1)
 _REQUIRED_TEXT_PROFILE_FIELDS = frozenset({"name", "industry"})
 _OPTIONAL_TEXT_PROFILE_FIELDS = (
     _PROFILE_MUTABLE_FIELDS - _REQUIRED_TEXT_PROFILE_FIELDS
 )
+
+
+def _resolve_collection(
+    collection: Collection | None = None,
+) -> Collection:
+    """Resolve the canonical tenant collection lazily at operation time.
+
+    Explicit caller collections remain authoritative for transaction/test seams.
+    Otherwise the sole application database owner, ``kernel_db``, supplies the
+    database. A missing canonical database is infrastructure unavailability, not
+    tenant absence, and therefore raises a bounded registry error.
+    """
+    if collection is not None:
+        return collection
+
+    # Existing tests and migration harnesses may temporarily substitute this
+    # compatibility slot. Production leaves it as None and uses kernel_db.
+    override = globals().get("tenants_collection")
+    if override is not None:
+        return override
+
+    try:
+        database = kernel_db.get_database()
+    except Exception as exc:
+        raise TenantRegistryError("TENANT_REGISTRY_DB_UNAVAILABLE") from exc
+
+    if database is None:
+        raise TenantRegistryError("TENANT_REGISTRY_DB_UNAVAILABLE")
+
+    try:
+        return database["tenants"]
+    except Exception as exc:
+        raise TenantRegistryError("TENANT_REGISTRY_DB_UNAVAILABLE") from exc
 
 
 class TenantRegistryError(RuntimeError):
@@ -445,6 +501,40 @@ def _validate_profile_update_input(
             )
 
 
+def _count_documents(
+    source: Collection,
+    query: dict[str, Any],
+    *,
+    session: ClientSession | None = None,
+) -> int:
+    """Count exact durable candidates while preserving caller session scope."""
+    counter = cast(Any, getattr(source, "count_documents", None))
+    if callable(counter):
+        try:
+            count_value: Any = counter(query, session=session)
+        except TypeError:
+            count_value = counter(query)
+        return int(count_value)
+
+    finder = cast(Any, getattr(source, "find", None))
+    if callable(finder):
+        try:
+            cursor: Any = finder(query, session=session)
+        except TypeError:
+            cursor = finder(query)
+        return sum(1 for _ in cursor)
+
+    finder_one = cast(Any, getattr(source, "find_one", None))
+    if callable(finder_one):
+        try:
+            document = finder_one(query, session=session)
+        except TypeError:
+            document = finder_one(query)
+        return 1 if document is not None else 0
+
+    raise TenantRegistryError("TENANT_REGISTRY_RESOLVER_UNAVAILABLE")
+
+
 def _build_profile_update(
     doc: dict[str, Any],
     payload: dict[str, Any],
@@ -520,6 +610,100 @@ class TenantRegistry:
     """
 
     @staticmethod
+    def resolve_canonical_tenant(
+        tenant_reference: str,
+        *,
+        collection: Collection | None = None,
+        session: ClientSession | None = None,
+        allow_alias: bool = False,
+    ) -> TenantEntity:
+        """Resolve exactly one ACTIVE canonical tenant for an identity reference.
+
+        ``tenant_id`` is the only durable identity authority.  Alias resolution
+        is opt-in and occurs only here, before a caller persists a user or
+        issues authentication material.  Duplicate, missing, malformed, or
+        inactive rows fail closed and never create or rewrite tenant truth.
+
+        Authority:
+            Canonical tenant identity validation only; this method grants no
+            membership, role, permission, JWT, or financial authority.
+
+        Tenant scope:
+            Every read targets the supplied tenant reference and optional caller
+            session; no transport header or role can redirect it.
+
+        Failure semantics:
+            Raises ``TenantRegistryError`` for invalid, absent, duplicate,
+            inactive, corrupt, or unavailable canonical tenant truth.
+        """
+        if not isinstance(tenant_reference, str) or not tenant_reference.strip():
+            raise TenantRegistryError("TENANT_REGISTRY_TENANT_REFERENCE_INVALID")
+
+        reference = tenant_reference.strip()
+        source = _resolve_collection(collection)
+
+        canonical_filter = {"tenant_id": reference}
+        try:
+            canonical_count = _count_documents(
+                source,
+                canonical_filter,
+                session=session,
+            )
+        except PyMongoError as exc:
+            raise TenantRegistryError(
+                "TENANT_REGISTRY_CANONICAL_LOOKUP_UNAVAILABLE"
+            ) from exc
+
+        lookup_filter = canonical_filter
+        if canonical_count == 0 and allow_alias:
+            lookup_filter = {
+                "alias": {"$regex": f"^{reference}$", "$options": "i"}
+            }
+            try:
+                alias_count = _count_documents(
+                    source,
+                    lookup_filter,
+                    session=session,
+                )
+            except PyMongoError as exc:
+                raise TenantRegistryError(
+                    "TENANT_REGISTRY_CANONICAL_LOOKUP_UNAVAILABLE"
+                ) from exc
+            if alias_count != 1:
+                code = (
+                    "TENANT_REGISTRY_CANONICAL_DUPLICATE"
+                    if alias_count > 1
+                    else "TENANT_REGISTRY_CANONICAL_NOT_FOUND"
+                )
+                raise TenantRegistryError(code)
+        elif canonical_count != 1:
+            code = (
+                "TENANT_REGISTRY_CANONICAL_DUPLICATE"
+                if canonical_count > 1
+                else "TENANT_REGISTRY_CANONICAL_NOT_FOUND"
+            )
+            raise TenantRegistryError(code)
+
+        try:
+            try:
+                document = source.find_one(lookup_filter, session=session)
+            except TypeError:
+                document = source.find_one(lookup_filter)
+        except PyMongoError as exc:
+            raise TenantRegistryError(
+                "TENANT_REGISTRY_CANONICAL_LOOKUP_UNAVAILABLE"
+            ) from exc
+
+        if not isinstance(document, dict):
+            raise TenantRegistryError("TENANT_REGISTRY_CANONICAL_NOT_FOUND")
+        entity = _doc_to_entity_for_get(document)
+        if entity.tenant_id != document.get("tenant_id"):
+            raise TenantRegistryError("TENANT_REGISTRY_CANONICAL_INVALID_DOCUMENT")
+        if str(entity.status).upper() != "ACTIVE":
+            raise TenantRegistryError("TENANT_REGISTRY_CANONICAL_INACTIVE")
+        return entity
+
+    @staticmethod
     def list(
         skip: int = 0,
         limit: int = 20,
@@ -528,9 +712,10 @@ class TenantRegistry:
         """List tenants using the preserved legacy tolerant/fallback semantics."""
         del tenant_id_header
         try:
-            total = tenants_collection.count_documents({})
+            source = _resolve_collection()
+            total = source.count_documents({})
             cursor = (
-                tenants_collection.find({}, {"_id": 0})
+                source.find({}, {"_id": 0})
                 .skip(skip)
                 .limit(limit)
             )
@@ -546,7 +731,7 @@ class TenantRegistry:
                         doc.get("_id"),
                     )
             return {"items": items, "total": total}
-        except PyMongoError as exc:
+        except (PyMongoError, TenantRegistryError) as exc:
             logger.error("Tenant list failed: %s", exc)
             return {"items": [], "total": 0}
 
@@ -561,7 +746,7 @@ class TenantRegistry:
         """Resolve one tenant with strict absence/outage/corruption semantics."""
         del tenant_id_header
         try:
-            source = collection if collection is not None else tenants_collection
+            source = _resolve_collection(collection)
             doc = source.find_one({"tenant_id": tenant_id}, session=session)
             if not doc and len(tenant_id) == 24:
                 try:
@@ -579,6 +764,12 @@ class TenantRegistry:
             raise TenantRegistryError(
                 "TENANT_REGISTRY_GET_UNAVAILABLE"
             ) from exc
+        except TenantRegistryError as exc:
+            if str(exc) == "TENANT_REGISTRY_DB_UNAVAILABLE":
+                raise TenantRegistryError(
+                    "TENANT_REGISTRY_GET_UNAVAILABLE"
+                ) from exc
+            raise
 
     @staticmethod
     def get_tenant_by_alias(
@@ -590,16 +781,23 @@ class TenantRegistry:
         if not alias:
             return None
 
-        doc = tenants_collection.find_one(
-            {
-                "$or": [
-                    {"alias": {"$regex": f"^{alias}$", "$options": "i"}},
-                    {"tenant_id": {"$regex": f"^{alias}$", "$options": "i"}},
-                    {"name": {"$regex": f"^{alias}$", "$options": "i"}},
-                ]
-            }
-        )
-        return _doc_to_entity(doc) if doc else None
+        try:
+            source = _resolve_collection()
+            doc = source.find_one(
+                {
+                    "$or": [
+                        {"alias": {"$regex": f"^{alias}$", "$options": "i"}},
+                        {"tenant_id": {"$regex": f"^{alias}$", "$options": "i"}},
+                        {"name": {"$regex": f"^{alias}$", "$options": "i"}},
+                    ]
+                }
+            )
+            return _doc_to_entity(doc) if doc else None
+        except (PyMongoError, TenantRegistryError) as exc:
+            logger.error("Tenant alias lookup unavailable: %s", exc)
+            raise TenantRegistryError(
+                "TENANT_REGISTRY_ALIAS_LOOKUP_UNAVAILABLE"
+            ) from exc
 
     @staticmethod
     def create(
@@ -621,6 +819,15 @@ class TenantRegistry:
             tenant_id = payload.get("tenant_id")
             if not tenant_id:
                 tenant_id = f"WILSYTENANT-{uuid.uuid4().hex[:8].upper()}"
+            if (
+                not isinstance(tenant_id, str)
+                or not tenant_id.strip()
+                or tenant_id.strip().upper() in _RESERVED_PSEUDO_TENANT_IDS
+            ):
+                return {
+                    "success": False,
+                    "error": "Canonical tenant_id is required; reserved pseudo-tenant identifiers are forbidden.",
+                }
 
             now = datetime.now(timezone.utc)
             now_iso = now.isoformat()
@@ -670,10 +877,11 @@ class TenantRegistry:
                 ).encode("utf-8")
             ).hexdigest().upper()
 
+            source = _resolve_collection()
             if session is None:
-                tenants_collection.insert_one(doc)
+                source.insert_one(doc)
             else:
-                tenants_collection.insert_one(doc, session=session)
+                source.insert_one(doc, session=session)
             return {
                 "success": True,
                 "tenant": _doc_to_entity(doc),
@@ -683,6 +891,9 @@ class TenantRegistry:
                 "success": False,
                 "error": "Tenant ID already exists.",
             }
+        except TenantRegistryError as exc:
+            logger.error("Tenant create unavailable: %s", exc)
+            return {"success": False, "error": str(exc)}
         except PyMongoError as exc:
             logger.error("Tenant create failed: %s", exc)
             return {"success": False, "error": str(exc)}
@@ -701,7 +912,8 @@ class TenantRegistry:
         """
         del tenant_id_header
         try:
-            doc = tenants_collection.find_one({"tenant_id": tenant_id})
+            source = _resolve_collection()
+            doc = source.find_one({"tenant_id": tenant_id})
             if not doc:
                 return {"success": False, "error": "Tenant not found."}
 
@@ -752,7 +964,7 @@ class TenantRegistry:
                     "error": "No fields to update.",
                 }
 
-            result = tenants_collection.update_one(
+            result = source.update_one(
                 {"tenant_id": tenant_id},
                 {"$set": update_fields},
             )
@@ -762,7 +974,7 @@ class TenantRegistry:
                     "error": "No changes made.",
                 }
 
-            updated_doc = tenants_collection.find_one(
+            updated_doc = source.find_one(
                 {"tenant_id": tenant_id}
             )
             if not updated_doc:
@@ -775,6 +987,9 @@ class TenantRegistry:
                 "success": True,
                 "tenant": _doc_to_entity(updated_doc),
             }
+        except TenantRegistryError as exc:
+            logger.error("Tenant update unavailable: %s", exc)
+            return {"success": False, "error": str(exc)}
         except PyMongoError as exc:
             logger.error("Tenant update failed: %s", exc)
             return {"success": False, "error": str(exc)}
@@ -823,7 +1038,8 @@ class TenantRegistry:
         _validate_profile_update_input(tenant_id, payload)
 
         try:
-            existing_doc = tenants_collection.find_one(
+            source = _resolve_collection()
+            existing_doc = source.find_one(
                 {"tenant_id": tenant_id}
             )
             if existing_doc is None:
@@ -835,7 +1051,7 @@ class TenantRegistry:
                 payload,
             )
 
-            result = tenants_collection.update_one(
+            result = source.update_one(
                 {"tenant_id": tenant_id},
                 {"$set": update_fields},
             )
@@ -844,7 +1060,7 @@ class TenantRegistry:
                     "TENANT_REGISTRY_PROFILE_UPDATE_INCONSISTENT_STATE"
                 )
 
-            updated_doc = tenants_collection.find_one(
+            updated_doc = source.find_one(
                 {"tenant_id": tenant_id}
             )
             if updated_doc is None:
@@ -853,7 +1069,11 @@ class TenantRegistry:
                 )
 
             return _doc_to_entity_for_profile_update(updated_doc)
-        except TenantRegistryError:
+        except TenantRegistryError as exc:
+            if str(exc) == "TENANT_REGISTRY_DB_UNAVAILABLE":
+                raise TenantRegistryError(
+                    "TENANT_REGISTRY_PROFILE_UPDATE_UNAVAILABLE"
+                ) from exc
             raise
         except PyMongoError as exc:
             logger.error("Tenant profile update unavailable: %s", exc)
@@ -869,11 +1089,17 @@ class TenantRegistry:
         """Archive one tenant using the preserved soft-delete contract."""
         del tenant_id_header
         try:
-            result = tenants_collection.update_one(
+            source = _resolve_collection()
+            result = source.update_one(
                 {"tenant_id": tenant_id},
                 {"$set": {"status": "ARCHIVED"}},
             )
             return result.modified_count > 0
+        except TenantRegistryError as exc:
+            logger.error("Tenant archive unavailable: %s", exc)
+            raise TenantRegistryError(
+                "TENANT_REGISTRY_ARCHIVE_UNAVAILABLE"
+            ) from exc
         except PyMongoError as exc:
             logger.error("Tenant archive unavailable: %s", exc)
             raise TenantRegistryError(
@@ -892,7 +1118,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: tenant_registry.py
-# VERSION: v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION
+# VERSION: v1.6.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE
 # AUTHORITY BOUNDARY: tenant persistence, hydration, exact six-field profile mutation, and bounded persistence failure signaling only; no authentication or authorization authority
 # TENANT POSTURE: update_profile targets only its explicit tenant_id; no header/JWT/role/request-state scope can redirect persistence
 # FAIL-CLOSED POSTURE: invalid target/input/persisted truth fails explicitly; genuine absence alone returns None; same-value profile mutation succeeds; Mongo outage raises TENANT_REGISTRY_PROFILE_UPDATE_UNAVAILABLE

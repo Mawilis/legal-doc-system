@@ -1,13 +1,14 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — Sovereign Intelligence Dock Unit Tests (M14-P7 Evidence Projection)
+ * Wilsy OS — Sovereign Intelligence Dock Unit Tests (C1E-R1C Legal Advisory Projection)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
- * Version:        v1.1.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE-CERT
+ * Version:        v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Certifies canonical billing-intelligence evidence projection,
  *                 explicit snapshot requests, payload preservation, and
  *                 fail-quiet optional behavior alongside the Phase 4 operator seam.
+ *                 C1E legal-advisory projection is explicit, read-only, and memory-only.
  * Classification: Production Test Artifact — Institutional Contract
  *
  * Contributors:
@@ -15,16 +16,21 @@
  *   - AI Engineering – Corrected POST argument count; added third arg matcher.
  *
  * Change Log:
+ *   2026-09-17 v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT — Added WILSY OS brand,
+ *     single-runtime, and source-gated tenant-brand certificates while preserving R1C coverage.
+ *   2026-09-17 v1.2.0-C1E-R1C-LEGAL-ADVISORY-PROJECTION-CERT — Added C1C/C1E sequencing, governed status,
+ *     replay/error, stale-successor, and authority-boundary certificates.
  *   2026-09-13 v1.1.0-M14-P7 — Added exact billing-intelligence evidence GET,
  *     canonical payload preservation, explicit operator-context propagation,
  *     and no-fabrication failure certificates.
  *   2026-08-07 v1.0.8-KENNEL-PHASE4 — Fixed POST calls to include third argument.
  *
- * Certification Seal: PRODUCTION_READY_v1.1.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE-CERT
+ * Certification Seal: PRODUCTION_READY_v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import React from 'react';
+import { readFileSync } from 'node:fs';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import api from '../../../src/services/api.js';
@@ -49,6 +55,9 @@ const {
   mockCreateThread,
   mockPersistTurn,
   mockClearThreads,
+  mockExecuteLegalServices,
+  mockGenerateLegalNextActions,
+  mockReadLegalNextAction,
 } = vi.hoisted(() => {
   const mockApiGet = vi.fn();
   const mockApiPost = vi.fn();
@@ -60,6 +69,9 @@ const {
   const mockCreateThread = vi.fn(() => ({ id: 'newThread', title: 'New Sovereign Session' }));
   const mockPersistTurn = vi.fn();
   const mockClearThreads = vi.fn();
+  const mockExecuteLegalServices = vi.fn();
+  const mockGenerateLegalNextActions = vi.fn();
+  const mockReadLegalNextAction = vi.fn();
 
   return {
     mockApiGet,
@@ -70,6 +82,9 @@ const {
     mockCreateThread,
     mockPersistTurn,
     mockClearThreads,
+    mockExecuteLegalServices,
+    mockGenerateLegalNextActions,
+    mockReadLegalNextAction,
   };
 });
 
@@ -82,6 +97,12 @@ vi.mock('../../../src/services/api.js', () => ({
     get: mockApiGet,
     post: mockApiPost,
   },
+}));
+
+vi.mock('../../../src/services/wilsyAIAdvisoryApi.js', () => ({
+  executeWilsyAILegalServices: mockExecuteLegalServices,
+  generateWilsyAILegalNextActions: mockGenerateLegalNextActions,
+  readWilsyAILegalNextAction: mockReadLegalNextAction,
 }));
 
 vi.mock('../../../src/components/intelligence/wilsyAIDynamicSuggestionEngine.js', () => ({
@@ -97,7 +118,7 @@ let mockThreads = [
 vi.mock('../../../src/components/intelligence/wilsyAIConversationHistoryEngine.js', () => ({
   loadWilsyAIConversationThreads: mockLoadThreads,
   createWilsyAIConversationThread: mockCreateThread,
-  persistWilsyAIConversationTurn: vi.fn((threadId, turn) => {
+  persistWilsyAIConversationTurn: mockPersistTurn.mockImplementation((threadId, turn) => {
     const thread = mockThreads.find(t => t.id === threadId);
     if (thread) thread.messages.push(turn);
     return [...mockThreads];
@@ -109,6 +130,30 @@ mockLoadThreads.mockImplementation(() => mockThreads);
 
 import WilsyOSIntelligenceDock from '../../../src/components/intelligence/WilsyOSIntelligenceDock.jsx';
 
+const openLegalAdvisory = async () => {
+  fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+  fireEvent.click(screen.getByRole('button', { name: /Legal Advisory/i }));
+  await waitFor(() => expect(screen.getByText('Evidence-backed Legal Advisory')).toBeInTheDocument());
+};
+
+const advisoryFixture = (overrides = {}) => ({
+  advisory_id: 'adv-001',
+  scope_ref: 'matter-001',
+  title: 'Confirm service address',
+  rationale: 'The source record requires an address check.',
+  confidence_score: 0.87,
+  confidence_basis: { source_count: 2 },
+  risk_level: 'MEDIUM',
+  generated_at: '2026-09-17T09:00:00Z',
+  status: 'CURRENT',
+  superseded_by_advisory_id: null,
+  ...overrides,
+});
+
+const rejectedResponse = (status, detail) => Object.assign(new Error(detail), {
+  response: { status, data: { detail } },
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // TESTS
 // ──────────────────────────────────────────────────────────────────────────────
@@ -118,6 +163,9 @@ describe('WilsyOSIntelligenceDock', () => {
     vi.clearAllMocks();
     mockApiGet.mockReset();
     mockApiPost.mockReset();
+    mockExecuteLegalServices.mockReset();
+    mockGenerateLegalNextActions.mockReset();
+    mockReadLegalNextAction.mockReset();
     mockThreads = [
       { id: 'thread1', title: 'Thread 1', messages: [] },
       { id: 'thread2', title: 'Thread 2', messages: [] },
@@ -129,15 +177,71 @@ describe('WilsyOSIntelligenceDock', () => {
   it('renders the launcher button when dock is closed', () => {
     render(<WilsyOSIntelligenceDock />);
     expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
-    expect(screen.queryByText('Wilsy OS Intelligence Dock')).not.toBeInTheDocument();
+    expect(screen.queryByText('WILSY OS Intelligence Dock')).not.toBeInTheDocument();
   });
 
   it('opens the dock when launcher is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => {
-      expect(screen.getByText('Wilsy OS Intelligence Dock')).toBeInTheDocument();
+      expect(screen.getByText('WILSY OS Intelligence Dock')).toBeInTheDocument();
     });
+  });
+
+  it('uses WILSY OS for the Dock-owned closed launcher and never exposes Wilsy AI as product copy', () => {
+    render(<WilsyOSIntelligenceDock />);
+    expect(screen.getByText('WILSY OS')).toBeInTheDocument();
+    expect(screen.queryByText('Wilsy AI')).not.toBeInTheDocument();
+    expect(screen.queryByText('WILSY AI')).not.toBeInTheDocument();
+  });
+
+  it('uses WILSY OS in the open Dock header and Ask surface', async () => {
+    render(<WilsyOSIntelligenceDock />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('WILSY OS Intelligence Dock')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Ask WILSY OS/i })).toBeInTheDocument();
+  });
+
+  it('uses WILSY OS as the assistant identity without changing generic operator transport', async () => {
+    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'Brand-safe reply' } } });
+    render(<WilsyOSIntelligenceDock />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('Brand-safe reply')).toBeInTheDocument());
+    expect(screen.getByText('WILSY OS')).toBeInTheDocument();
+    expect(screen.queryByText('Wilsy AI')).not.toBeInTheDocument();
+  });
+
+  it('displays Wilsy (Pty) Ltd only when active tenant context explicitly proves it', async () => {
+    const activeTenant = {
+      tenantId: 'WILSY_ROOT',
+      legalName: 'Wilsy (Pty) Ltd',
+      source: 'ACTIVE_TENANT_CONTEXT',
+    };
+    render(<WilsyOSIntelligenceDock activeTenant={activeTenant} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('Wilsy (Pty) Ltd')).toBeInTheDocument());
+  });
+
+  it('does not fabricate Wilsy (Pty) Ltd from unknown or MASTER-only tenant context', async () => {
+    window.__WILSY_ACTIVE_TENANT__ = { tenantId: 'MASTER' };
+    render(<WilsyOSIntelligenceDock />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('WILSY OS Intelligence Dock')).toBeInTheDocument());
+    expect(screen.queryByText('Wilsy (Pty) Ltd')).not.toBeInTheDocument();
+  });
+
+  it('certifies the Dock runtime lives inside the authoritative App tree with no independent React root', () => {
+    const mainSource = readFileSync(`${process.cwd()}/src/main.jsx`, 'utf8');
+    const appSource = readFileSync(`${process.cwd()}/src/App.jsx`, 'utf8');
+
+    expect(mainSource).not.toMatch(/import\s+WilsyOSIntelligenceDockRuntime/);
+    expect(mainSource).not.toMatch(/createRoot\(dockRoot\)/);
+    expect(mainSource).not.toContain('wilsy-os-intelligence-dock-root');
+
+    expect(appSource).toMatch(/import\s+WilsyOSIntelligenceDockRuntime/);
+    expect(appSource.match(/<WilsyOSIntelligenceDockRuntime\b/g)).toHaveLength(1);
   });
 
   it('requests canonical billing evidence with an explicit aware ISO as_of boundary', async () => {
@@ -382,15 +486,138 @@ describe('WilsyOSIntelligenceDock', () => {
       expect(screen.getByLabelText('Send')).toBeDisabled();
     });
   });
+
+  it('keeps Legal Advisory distinct and never auto-runs C1C/C1E', async () => {
+    render(<WilsyOSIntelligenceDock />);
+    expect(mockExecuteLegalServices).not.toHaveBeenCalled();
+    expect(mockGenerateLegalNextActions).not.toHaveBeenCalled();
+    await openLegalAdvisory();
+    expect(screen.getByRole('button', { name: /Suggestions/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /History/i })).toBeInTheDocument();
+    expect(mockExecuteLegalServices).not.toHaveBeenCalled();
+  });
+
+  it('requires explicit prompt submission, creates one UUID replay key, and sequences C1C before C1E', async () => {
+    mockExecuteLegalServices.mockResolvedValue({
+      status: 200,
+      data: { orchestration_id: 'orch-001', outcome: 'TOOL_ASSISTED', response_text: 'Evidence found', sources: ['registry'] },
+    });
+    mockGenerateLegalNextActions.mockResolvedValue({ status: 201, data: advisoryFixture() });
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Check service address' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
+    await waitFor(() => expect(mockGenerateLegalNextActions).toHaveBeenCalledWith('orch-001'));
+    expect(mockExecuteLegalServices).toHaveBeenCalledTimes(1);
+    expect(mockExecuteLegalServices).toHaveBeenCalledWith('Check service address', expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i));
+    expect(mockExecuteLegalServices.mock.invocationCallOrder[0]).toBeLessThan(mockGenerateLegalNextActions.mock.invocationCallOrder[0]);
+  });
+
+  it('does not call C1E for a non-tool-assisted C1C outcome', async () => {
+    mockExecuteLegalServices.mockResolvedValue({ status: 200, data: { orchestration_id: 'orch-002', outcome: 'DIRECT_RESPONSE', response_text: 'Service response', sources: [] } });
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Status?' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
+    await waitFor(() => expect(screen.getByText('Legal service response')).toBeInTheDocument());
+    expect(screen.getByText('Evidence-backed advisory not generated')).toBeInTheDocument();
+    expect(mockGenerateLegalNextActions).not.toHaveBeenCalled();
+  });
+
+  it('renders the server-owned advisory fields and current status without rewriting rationale', async () => {
+    mockExecuteLegalServices.mockResolvedValue({ status: 200, data: { orchestration_id: 'orch-003', outcome: 'TOOL_ASSISTED', response_text: 'Evidence', sources: ['source-a'] } });
+    mockGenerateLegalNextActions.mockResolvedValue({ status: 200, data: advisoryFixture() });
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Evidence-backed advisory' })).toBeInTheDocument());
+    for (const field of ['adv-001', 'matter-001', 'Confirm service address', 'The source record requires an address check.', '87.0%', 'source_count', 'MEDIUM', '2026-09-17T09:00:00Z']) {
+      expect(screen.getByText(field, { exact: false })).toBeInTheDocument();
+    }
+    expect(screen.getByText('CURRENT')).toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalledWith('/api/ai/operator', expect.anything(), expect.anything());
+  });
+
+  it('renders stale state and only permits read-only refresh or successor viewing', async () => {
+    const stale = advisoryFixture({ status: 'STALE', superseded_by_advisory_id: 'adv-002' });
+    mockExecuteLegalServices.mockResolvedValue({ status: 200, data: { orchestration_id: 'orch-004', outcome: 'TOOL_ASSISTED', response_text: 'Evidence', sources: [] } });
+    mockGenerateLegalNextActions.mockResolvedValue({ status: 201, data: stale });
+    mockReadLegalNextAction.mockResolvedValue({ status: 200, data: advisoryFixture({ advisory_id: 'adv-002', title: 'Successor', status: 'CURRENT' }) });
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
+    await waitFor(() => expect(screen.getByText('STALE')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Execute|Approve|Serve|Issue|Release|Pay|Settle|Invoice|Quote|Send command/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /View successor/i }));
+    await waitFor(() => expect(mockReadLegalNextAction).toHaveBeenCalledWith('adv-002'));
+    fireEvent.click(screen.getByRole('button', { name: /Refresh status/i }));
+    await waitFor(() => expect(mockReadLegalNextAction).toHaveBeenCalledWith('adv-002'));
+    expect(mockGenerateLegalNextActions).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [403, 'C1E_LEGAL_ACCESS_DENIED', /authority denied/i],
+    [404, 'C1E_RESOURCE_NOT_FOUND', /unavailable/i],
+    [409, 'C1E_TOOL_ASSISTED_REQUIRED', /tool-assisted orchestration is required/i],
+    [409, 'C1E_SOURCE_SNAPSHOT_STALE', /source snapshot is stale/i],
+    [409, 'C1E_ADVISORY_CONFLICT', /advisory conflict/i],
+    [422, 'VALIDATION_ERROR', /request contract rejected/i],
+    [503, 'C1E_ADVISORY_RECONCILIATION_REQUIRED', /requires reconciliation/i],
+    [503, 'C1E_ADVISORY_UNAVAILABLE', /service unavailable/i],
+  ])('maps C1C failures (%s) without creating an advisory', async (status, detail, message) => {
+    mockExecuteLegalServices.mockRejectedValue(rejectedResponse(status, detail));
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message));
+    expect(mockExecuteLegalServices).toHaveBeenCalledTimes(1);
+    expect(mockGenerateLegalNextActions).not.toHaveBeenCalled();
+    expect(screen.queryByRole('region', { name: 'Evidence-backed advisory' })).not.toBeInTheDocument();
+  });
+
+  it('maps network failure, does not retry, and keeps C1E out of browser persistence and history', async () => {
+    mockExecuteLegalServices.mockRejectedValue(new Error('offline'));
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/source unavailable/i));
+    expect(mockExecuteLegalServices).toHaveBeenCalledTimes(1);
+    expect(mockPersistTurn).not.toHaveBeenCalled();
+    expect(setItem).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
+  it('keeps generic Suggestions separate from the C1E advisory surface', async () => {
+    render(<WilsyOSIntelligenceDock />);
+    await openLegalAdvisory();
+    expect(screen.queryByText('Dynamic Sovereign Suggestions')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Suggestions/i }));
+    expect(screen.getByText('Dynamic Sovereign Suggestions')).toBeInTheDocument();
+    expect(screen.queryByText('Evidence-backed Legal Advisory')).not.toBeInTheDocument();
+  });
 });
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.1.0-M14-P7-BILLING-INTELLIGENCE-EVIDENCE-CERT
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Direct tests certify the canonical billing-intelligence GET projection,
  * explicit snapshot boundary, unchanged payload forwarding, and fail-quiet behavior.
  * Broader client/CI certification remains a separate gate beyond this direct certificate.
  * Host-backed billing-intelligence evidence remains a separate runtime gate.
+ * C1E-R1C legal advisory proof remains a read-only client projection; no command
+ * or financial authority is introduced by these tests.
+ * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
+ * VERSION: v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
+ * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
+ * TENANT POSTURE: adapter calls preserve authenticated api.js context
+ * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
+ * FINANCIAL EXECUTION AUTHORITY: none
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  * ═══════════════════════════════════════════════════════════════════════════════
  */

@@ -1,7 +1,7 @@
 """Governed external-signer adapter for reviewed successor approvals.
 
 TITLE: WILSY OS Legal Corpus Approval Operator Command
-VERSION: v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
+VERSION: v1.2.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Separates public reviewed-successor approval-envelope preparation,
          external signature completion, and verified production execution
@@ -11,11 +11,10 @@ COLLABORATION / OWNERSHIP: The production corpus owns the five reviewed
                             successor sources; the approval authority and verifier own evidence and
                             signature semantics; LegalCorpusApprovalOperator
                             alone owns database sessions and transactions.
-CERTIFICATION / UPDATE DATE: 2026-09-20
-CHANGELOG: v1.1.0 replaces Charter-only preparation with a closed selector for
-           exactly five server-owned 1.1.0-DRAFT reviewed successors; finalize
-           and execute remain separate and historical Charter approval is not
-           reopened.
+CERTIFICATION / UPDATE DATE: 2026-09-21
+CHANGELOG: v1.2.0 binds fresh issuance to the explicit R9B-P5-R2 successor
+           approval key while retaining key-ID-driven historical verification
+           for the retired predecessor; finalize and execute remain separate.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Only public metadata and externally supplied
                             signature bytes are handled. No key material,
@@ -94,14 +93,14 @@ from tools.eos.legal_operations.production_legal_corpus import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND"
+VERSION: Final[str] = "v1.2.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND"
 REVIEWED_SUCCESSOR_SOURCE_VERSION: Final[str] = "1.1.0-DRAFT"
 REVIEWED_SUCCESSOR_APPROVED_VERSION: Final[str] = "1.1.0-APPROVED"
 APPROVED_VERSION: Final[str] = REVIEWED_SUCCESSOR_APPROVED_VERSION
 REVIEWED_SUCCESSOR_DOCUMENT_IDS: Final[frozenset[str]] = frozenset(
     document.document_id for document in PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS
 )
-APPROVAL_TRUSTED_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
+APPROVAL_TRUSTED_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-2084472fec6f273b537255d0b2dff9fb"
 AUTHORIZATION_LIFETIME: Final[timedelta] = timedelta(minutes=10)
 SIGNATURE_REFERENCE_PREFIX: Final[str] = "wilsy-os://legal/approval-signature/"
 _ZERO_SIGNATURE: Final[str] = base64.urlsafe_b64encode(b"\x00" * 64).rstrip(b"=").decode("ascii")
@@ -411,7 +410,7 @@ def _assert_canonical_authorization(authorization: LegalCorpusApprovalAuthorizat
     expected = _approved_target(source, evidence.effective_from, evidence.approved_at)
     if target != expected:
         raise LegalCorpusApprovalOperatorCommandError("APPROVED_TARGET_MISMATCH")
-    if authorization.key_id != PRODUCTION_APPROVAL_TRUST_ROOT.all_keys()[0].key_id:
+    if authorization.key_id != APPROVAL_TRUSTED_KEY_ID:
         raise LegalCorpusApprovalOperatorCommandError("PRODUCTION_APPROVAL_KEY_REQUIRED")
 
 
@@ -593,7 +592,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_approval_operator_command.py
-# VERSION: v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
+# VERSION: v1.2.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND
 # AUTHORITY BOUNDARY: public ceremony adapter; verified proof only at execution
 # TENANT POSTURE: PLATFORM corpus; no tenant or principal acceptance authority
 # FAIL-CLOSED POSTURE: canonical source, trust, signature, and result checks reject

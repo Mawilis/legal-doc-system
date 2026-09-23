@@ -3,12 +3,14 @@
  * ║ WILSY OS – SOVEREIGN TENANT CONTEXT (KENNEL INTEGRATED)                                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ FILE:           client/src/contexts/tenantContext.jsx                                                                                ║
- * ║ VERSION:        v6.1.0-KENNEL-ALIGNED                                                                                                ║
+ * ║ VERSION:        v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP                                                                                  ║
  * ║ AUTHORITY:      Wilsy OS Core Governance                                                                                            ║
  * ║ EPITOME:        Production tenant context using Kennel API (tenantApi). Provides tenant CRUD, resolution, and isolation.             ║
  * ║ CLASSIFICATION: Production Artifact                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 CHANGE LOG:                                                                                                                        ║
+ * ║   2026-09-17 v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP – Hydrates only the authenticated tenant, removes bootstrap directory fetch, and     ║
+ * ║   fails closed on discovered/authenticated tenant mismatch; same-tenant switching is idempotent.                                    ║
  * ║   2026-08-19 v6.1.0-KENNEL-ALIGNED – Fixed import path and method calls to match tenantApi (getTenants, getTenant).                 ║
  * ║   2026-08-19 v6.0.0-KENNEL-INTEGRATED – Original version with incorrect path/methods.                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -29,6 +31,8 @@ export const TenantContext = createContext({
   tenants: [],
   loading: false,
   error: null,
+  bootstrapReady: true,
+  authorityMismatch: false,
   resolveTenant: async () => null,
   switchTenant: async () => {},
   refreshTenants: async () => {},
@@ -40,11 +44,13 @@ export const TenantContext = createContext({
 
 // ─── Provider Component ──────────────────────────────────────────────────────
 
-export const TenantProvider = ({ children }) => {
+export const TenantProvider = ({ children, initialTenant = null, authenticatedTenantId = '' }) => {
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActiveTenant] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [authorityMismatch, setAuthorityMismatch] = useState(false);
   const [accessPosture, setAccessPosture] = useState({ state: 'ACTIVE', source: 'UNRESOLVED', updatedAt: null });
 
   /**
@@ -95,18 +101,73 @@ export const TenantProvider = ({ children }) => {
     }
   }, [activeTenant, tenantIdentifier]);
 
-  // ─── Load persisted tenant from localStorage on mount ────────────────────
+  // ─── Hydrate exactly the selected/authenticated tenant (never the directory) ─
   useEffect(() => {
-    const saved = localStorage.getItem('wilsy_active_tenant');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setActiveTenant(parsed);
-      } catch {
-        // ignore
-      }
+    let cancelled = false;
+    const expectedId = String(authenticatedTenantId || '').trim();
+    let persisted = null;
+    try {
+      const saved = localStorage.getItem('wilsy_active_tenant');
+      persisted = saved ? JSON.parse(saved) : null;
+    } catch {
+      persisted = null;
     }
-  }, []);
+    const candidate = initialTenant || persisted;
+    const candidateId = tenantIdentifier(candidate);
+
+    const finish = () => {
+      if (!cancelled) setBootstrapReady(true);
+    };
+
+    if (candidate && expectedId && candidateId !== expectedId) {
+      setActiveTenant(null);
+      setAuthorityMismatch(true);
+      setError("AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH");
+      finish();
+      return () => { cancelled = true; };
+    }
+
+    if (candidate && !expectedId) {
+      setActiveTenant((previous) => tenantIdentifier(previous) === candidateId ? previous : candidate);
+      setAuthorityMismatch(false);
+      setError(null);
+      finish();
+      return () => { cancelled = true; };
+    }
+
+    if (!expectedId) {
+      finish();
+      return () => { cancelled = true; };
+    }
+
+    setLoading(true);
+    tenantApi.getTenant(expectedId)
+      .then((response) => {
+        if (cancelled) return;
+        const resolved = response?.data;
+        const resolvedId = tenantIdentifier(resolved);
+        if (!resolved || resolvedId !== expectedId) {
+          setAuthorityMismatch(true);
+          setError('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+          return;
+        }
+        setActiveTenant(resolved);
+        setTenants((previous) => previous.some((item) => tenantIdentifier(item) === resolvedId)
+          ? previous : [...previous, resolved]);
+        localStorage.setItem('wilsy_active_tenant', JSON.stringify(resolved));
+        setAuthorityMismatch(false);
+        setError(null);
+      })
+      .catch((requestError) => {
+        if (!cancelled) setError(requestError.response?.data?.message || requestError.message || 'Tenant authority is unavailable.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+        finish();
+      });
+
+    return () => { cancelled = true; };
+  }, [authenticatedTenantId, initialTenant, tenantIdentifier]);
 
   // ─── Refresh tenant list from Kennel ──────────────────────────────────────
   const refreshTenants = useCallback(async () => {
@@ -116,7 +177,7 @@ export const TenantProvider = ({ children }) => {
       const response = await tenantApi.getTenants();
       const tenantList = Array.isArray(response?.data) ? response.data : [];
       setTenants(tenantList);
-      if (activeTenant && !tenantList.some(t => t.tenant_id === activeTenant.tenant_id)) {
+      if (tenantList.length && activeTenant && !tenantList.some(t => tenantIdentifier(t) === tenantIdentifier(activeTenant))) {
         setActiveTenant(null);
         localStorage.removeItem('wilsy_active_tenant');
       }
@@ -126,12 +187,7 @@ export const TenantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [activeTenant]);
-
-  // ─── Initial fetch on mount ───────────────────────────────────────────────
-  useEffect(() => {
-    refreshTenants();
-  }, []);
+  }, [activeTenant, tenantIdentifier]);
 
   useEffect(() => {
     refreshAccessPosture(activeTenant);
@@ -166,26 +222,35 @@ export const TenantProvider = ({ children }) => {
 
   // ─── Switch active tenant ─────────────────────────────────────────────────
   const switchTenant = useCallback(async (tenantId) => {
+    const requestedId = String(tenantId || '').trim();
+    if (!requestedId) throw new Error('A canonical tenant identifier is required.');
+    if (tenantIdentifier(activeTenant).toLowerCase() === requestedId.toLowerCase()) return activeTenant;
     setLoading(true);
     setError(null);
     try {
-      let tenant = tenants.find(t => t.tenant_id === tenantId);
+      let tenant = tenants.find(t => tenantIdentifier(t).toLowerCase() === requestedId.toLowerCase());
       if (!tenant) {
-        const response = await tenantApi.getTenant(tenantId);
+        const response = await tenantApi.getTenant(requestedId);
         tenant = response?.data;
         if (!tenant) throw new Error('Tenant not found.');
-        setTenants(prev => [...prev, tenant]);
+        setTenants((prev) => prev.some((item) => tenantIdentifier(item) === tenantIdentifier(tenant)) ? prev : [...prev, tenant]);
       }
-      setActiveTenant(tenant);
+      const resolvedId = tenantIdentifier(tenant);
+      if (authenticatedTenantId && resolvedId !== String(authenticatedTenantId).trim()) {
+        setAuthorityMismatch(true);
+        throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+      }
+      if (tenantIdentifier(activeTenant) !== resolvedId) setActiveTenant(tenant);
       localStorage.setItem('wilsy_active_tenant', JSON.stringify(tenant));
-      await refreshTenants();
+      setAuthorityMismatch(false);
+      return tenant;
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Failed to switch tenant.';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [tenants, refreshTenants]);
+  }, [activeTenant, authenticatedTenantId, tenantIdentifier, tenants]);
 
   // ─── Exposed context value ────────────────────────────────────────────────
   const contextValue = useMemo(() => ({
@@ -193,6 +258,8 @@ export const TenantProvider = ({ children }) => {
     tenants,
     loading,
     error,
+    bootstrapReady,
+    authorityMismatch,
     resolveTenant,
     switchTenant,
     refreshTenants,
@@ -200,7 +267,7 @@ export const TenantProvider = ({ children }) => {
     isReadOnly: ['SUSPENDED_READONLY', 'TERMINATED'].includes(accessPosture.state),
     refreshAccessPosture,
     setActiveTenant,
-  }), [activeTenant, tenants, loading, error, resolveTenant, switchTenant, refreshTenants, accessPosture, refreshAccessPosture]);
+  }), [activeTenant, tenants, loading, error, bootstrapReady, authorityMismatch, resolveTenant, switchTenant, refreshTenants, accessPosture, refreshAccessPosture]);
 
   return (
     <TenantContext.Provider value={contextValue}>
@@ -211,6 +278,8 @@ export const TenantProvider = ({ children }) => {
 
 TenantProvider.propTypes = {
   children: PropTypes.node.isRequired,
+  initialTenant: PropTypes.object,
+  authenticatedTenantId: PropTypes.string,
 };
 
 export const useTenants = () => {
@@ -225,13 +294,13 @@ export default TenantContext;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — tenantContext v6.1.0-KENNEL-ALIGNED
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — tenantContext v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v6.1.0-KENNEL-ALIGNED
- * Fixes:           Corrected import path to ../services/api/tenantApi.
- *                  Replaced tenantApi.list() with tenantApi.getTenants() and extracted .data.
- *                  Replaced tenantApi.get() with tenantApi.getTenant() and extracted .data.
+ * Version:         v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP
+ * Fixes:           Authenticated tenant bootstrap is exact and directory-free; mismatches fail closed.
+ *                  Same-tenant switches are idempotent and explicit directory refresh remains available.
+ *                  Corrected import path to ../services/api/tenantApi and canonical response extraction.
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ All API calls use correct tenantApi methods

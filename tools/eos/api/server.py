@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.16.0-C1E-R1-GOVERNED-LEGAL-ADVISORY
+VERSION: v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mounts sovereign Python API routers, including authenticated PayShap
          evidence ingress and the C1B authenticated reasoning command with a
@@ -11,6 +11,8 @@ COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG: v1.15.0-C1C-R1B-GOVERNED-LEGAL-ORCHESTRATION composes the durable
 C1C root registry and fail-closed canonical evidence/accounting seam.
+v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE mounts the authenticated,
+server-owned versioned legal-document and append-only acceptance authority.
 v1.14.0-C1C-R1-GOVERNED-LEGAL-ORCHESTRATION composes one immutable
 server-owned legal read registry and bounded legal-services route;
 v1.13.0-C1B-R23-PRODUCTION-PROVIDER composes one optional,
@@ -74,6 +76,7 @@ from .wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_rout
 from .wilsy_ai_reasoning_router import router as wilsy_ai_reasoning_router
 from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_router
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
+from .legal_acceptance_router import router as legal_acceptance_router
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.auth.authentication import get_principal_authority_repository
@@ -94,7 +97,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import COLLECTIO
 from tools.eos.saas.domain.wilsy_ai_usage_observation import WilsyAIUsageObservation
 from tools.eos.intelligence.registry.ai_tool_orchestration_registry import AIToolOrchestrationRegistry, COLLECTION as C1C_ORCHESTRATION_COLLECTION, ensure_indexes as ensure_c1c_indexes
 
-VERSION = "v1.16.0-C1E-R1-GOVERNED-LEGAL-ADVISORY"
+VERSION = "v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -375,6 +378,7 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_reasoning_router, prefix="/api")
         app.include_router(wilsy_ai_legal_services_router, prefix="/api")
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
+        app.include_router(legal_acceptance_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
@@ -391,7 +395,7 @@ class WilsyAPIServer:
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
-            "(kernel, auth, billing, employees, internal authority, PayShap evidence).",
+            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance).",
             self.title,
             self.version,
         )
@@ -405,7 +409,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.16.0-C1E-R1-GOVERNED-LEGAL-ADVISORY
+# VERSION: v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

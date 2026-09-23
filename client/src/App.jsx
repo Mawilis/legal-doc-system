@@ -4,7 +4,7 @@
  * WILSY OS — SOVEREIGN APPLICATION ROOT (KENNEL-ALIGNED)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/App.jsx
- * Version:        v18.5.0-KENNEL-ALIGNED
+ * Version:        v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Updated to use new TenantContext (tenantContext) and useTenants.
  * Classification: Production Artifact – Institutional Contract
@@ -21,6 +21,25 @@
  *   • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001.
  *
  * 🔄 Change Log:
+ *   2026-09-22 v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE — Adds the public
+ *     /verify-recovery-contact capability-consumer route for explicit
+ *     email-control confirmation while keeping verification authority in
+ *     Python EOS and protected application routing unchanged.
+ *   2026-09-22 v19.2.0-R10E11-PASSWORD-RECOVERY-REQUEST-ROUTE — Adds the public
+ *     /forgot-password recovery-request portal as a distinct pre-authentication
+ *     route while preserving /reset-password as the capability-consumer route.
+ *     No recovery authority or deep-link parsing is introduced in App.
+ *   2026-09-17 v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE — Replaces the
+ *     legacy covenant/signature gate with the server-owned versioned legal
+ *     acceptance projection and preserves /covenant as a compatibility route.
+ *   2026-09-22 v19.1.0-R10D9-PASSWORD-RESET-ROUTE — Exposes the certified
+ *     unauthenticated PasswordResetPortal at the explicit /reset-password route;
+ *     no recovery-link parameter contract or reset business logic is introduced.
+ *   2026-09-17 v18.7.0-POST-MFA-BOOTSTRAP-GATE — Hydrates the exact selected
+ *     tenant before mounting protected runtime consumers and removes router-driven
+ *     tenant switching that caused the post-MFA update-depth loop.
+ *   2026-09-17 v18.6.0-AUTH-GATED-TENANT-CONTEXT — Mount TenantProvider only after
+ *     authoritative authentication so discovery never triggers a full directory fetch.
  *   2026-08-19 v18.5.0-KENNEL-ALIGNED — Switched to new tenant context (tenantContext) and useTenants hook.
  *   2026-08-07 v18.4.0-PHASE5-TMS-GUARD — Added ProtectedTmsRoute guard; route /tms now checks canManageTenants.
  *   2026-08-06 v18.3.0-PHASE5-TMS-ROUTE — Added /tms route for TMS cockpit.
@@ -34,31 +53,36 @@
  *   Upstream:   react, react-router-dom, lucide-react, ../contexts/authContext,
  *               ./contexts/tenantContext, ../components/sovereign/SovereignOrchestrator,
  *               ../components/sovereign/DataOrchestrator, ../utils/telemetryHelper.
- *   Downstream: SovereignLogin, SovereignMfaPortal, CovenantPortal, SovereignDashboardController,
+ *   Downstream: SovereignLogin, PasswordRecoveryRequestPortal, RecoveryContactVerificationPortal, PasswordResetPortal, SovereignMfaPortal, LegalAcceptanceGate, SovereignDashboardController,
  *               Sovereign_TenantManager.
  *   Shared:     wilsy_auth_token, wilsy_sovereign_user, discoveredTenant,
- *               useAuth().login, useTenants().switchTenant.
+ *               useAuth().login, useTenants().switchTenant, and the
+ *               server-owned /api/legal-acceptance status contract.
  *
- * 🏛️ Certification Seal: PRODUCTION_READY_v18.5.0-KENNEL-ALIGNED
+ * 🏛️ Certification Seal: PRODUCTION_READY_v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/authContext.jsx';
+import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { Loader2 } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
 
 import SovereignLogin from './components/auth/SovereignLogin.jsx';
+import PasswordRecoveryRequestPortal from './components/auth/PasswordRecoveryRequestPortal.jsx';
+import RecoveryContactVerificationPortal from './components/auth/RecoveryContactVerificationPortal.jsx';
+import PasswordResetPortal from './components/auth/PasswordResetPortal.jsx';
 import TenantDiscovery from './components/sovereign/TenantDiscovery.jsx';
-import CovenantPortal from './components/auth/CovenantPortal.jsx';
-import Sovereign_Signature_Pad from './components/auth/Sovereign_Signature_Pad.jsx';
+import LegalAcceptanceGate from './components/auth/LegalAcceptanceGate.jsx';
 import SovereignDashboardController from './components/sovereign/SovereignDashboardController.jsx';
 import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
+import api from './services/api';
+import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
@@ -108,27 +132,21 @@ const ProtectedTmsRoute = ({ user, children }) => {
  * @epitome "Institutional Finality"
  */
 const SovereignRouter = () => {
-  const { isAuthenticated, user, loading: authLoading, updateSovereignIdentity } = useAuth();
+  const { isAuthenticated, user, authStage, loading: authLoading, updateSovereignIdentity } = useAuth();
   // ✅ Use the new useTenants hook instead of useTenantContext
-  const { activeTenant: currentTenant, switchTenant, refreshTenants, loading: tenantLoading } = useTenants();
+  const {
+    activeTenant: currentTenant,
+    loading: tenantLoading,
+    bootstrapReady,
+    error: tenantError,
+    authorityMismatch,
+  } = useTenants();
 
   const mesh = useSovereignMesh();
   const dataStream = useSovereignData();
 
-  const [forceBypassLoading, setForceBypassLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Deadlock fail-safe for loading states
-  useEffect(() => {
-    const deadlockTimer = setTimeout(() => {
-      if (authLoading || tenantLoading) {
-        console.warn('[ORCHESTRATOR-FAILSAFE] Context resolution delayed. Forcing sovereign session bypass.');
-        setForceBypassLoading(true);
-      }
-    }, 1500);
-    return () => clearTimeout(deadlockTimer);
-  }, [authLoading, tenantLoading]);
 
   // Telemetry & Context Initialization – Suppressed in DEV to prevent console flooding
   useEffect(() => {
@@ -146,10 +164,6 @@ const SovereignRouter = () => {
         path: location.pathname
       });
 
-      if (isAuthenticated && !currentTenant && (user?.tenantAlias || user?.tenantId)) {
-        switchTenant(user.tenantAlias || user.tenantId);
-      }
-
       broadcastTelemetry("GLOBAL_ROOT", "NAV_EVENT", "ROUTE_CHANGE", "App", {
         path: location.pathname,
         userId: user?.id,
@@ -161,43 +175,34 @@ const SovereignRouter = () => {
         console.error('[ORCHESTRATOR-ERROR] Failed in lifecycle telemetry audit:', err);
       }
     }
-  }, [isAuthenticated, currentTenant, user, location.pathname, switchTenant, mesh?.meshHealth, dataStream?.version]);
+  }, [isAuthenticated, currentTenant, user, location.pathname, mesh?.meshHealth, dataStream?.version]);
 
   // 🛡️ Deterministic navigation state-machine.
   const targetPath = useMemo(() => {
-    // 1. Allow unauthenticated transit during active challenge and onboarding phases
-    if (['/login', '/discovery', '/mfa', '/mfa-setup', '/covenant', '/signature', '/dashboard', '/tms'].includes(location.pathname)) {
-      return null; // No redirect needed, stay on the current route.
-    }
+    const isMfaChallenge = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
+    if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') return isMfaChallenge ? null : '/login';
+    if (
+      location.pathname === '/reset-password'
+      || location.pathname === '/forgot-password'
+      || location.pathname === '/verify-recovery-contact'
+    ) return null;
+    if (location.pathname === '/login' || location.pathname === '/discovery') return isAuthenticated ? '/' : null;
 
-    // 2. Not authenticated: go to discovery or login
+    // Protected application routes always require an authenticated identity.
     if (!isAuthenticated) {
-      const hasTenant = localStorage.getItem('discoveredTenant') || currentTenant;
-      return hasTenant ? '/login' : '/discovery';
+      return '/discovery';
     }
 
-    // 3. Authenticated, but user object is still hydrating
+    // Authenticated, but user object is still hydrating: wait, never bypass.
     if (!user) {
-      try {
-        const saved = localStorage.getItem('wilsy_sovereign_user');
-        if (saved) JSON.parse(saved);
-      } catch (e) { /* fall through */ }
-      return null; // Wait for AuthProvider to populate
+      return null;
     }
 
-    // 4. Enforce workflow: MFA Enrollment
-    if (user.mfaRegistered === false) {
-      return '/mfa';
-    }
-
-    // 5. Enforce workflow: Covenant Signing
-    if (user.mfaRegistered !== false && !user.hasSignedCovenant) {
-      return '/covenant';
-    }
-
-    // 6. All requirements met – redirect to Dashboard
-    return '/';
-  }, [location.pathname, isAuthenticated, user, currentTenant]);
+    // Versioned legal acceptance is server-derived; the gate owns its own
+    // status read and remains reachable at the compatibility /covenant path.
+    if (location.pathname === '/covenant') return null;
+    return ['/', '/dashboard'].includes(location.pathname) ? null : '/';
+  }, [location.pathname, isAuthenticated, user, currentTenant, authStage]);
 
   // Execute the deterministic navigation
   useEffect(() => {
@@ -207,7 +212,7 @@ const SovereignRouter = () => {
   }, [targetPath, location.pathname, navigate]);
 
   // Loading Screen
-  if ((authLoading || tenantLoading) && !forceBypassLoading) {
+  if (authLoading || (isAuthenticated && (!user || !bootstrapReady || tenantLoading))) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-black">
         <Loader2 className="w-16 h-16 text-[#D4AF37] animate-spin mb-4" />
@@ -219,64 +224,34 @@ const SovereignRouter = () => {
     );
   }
 
+  if (isAuthenticated && (authorityMismatch || tenantError || !currentTenant)) {
+    return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (tenantError || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
+  }
+
   return (
     <Routes>
-      <Route path="/discovery" element={<TenantDiscovery onTenantConfirmed={async (tenantData) => {
-        try {
-          const code = typeof tenantData === 'string' ? tenantData : (tenantData?.tenantId || tenantData?.code || tenantData?.alias || 'MASTER');
-          await switchTenant(code);
-          localStorage.setItem('discoveredTenant', JSON.stringify(tenantData));
-          navigate('/login', { replace: true });
-        } catch (err) { console.error('[DISCOVERY-ERROR]', err); }
-      }} />} />
+      <Route path="/discovery" element={<TenantDiscovery />} />
       <Route path="/login" element={<SovereignLogin />} />
-      <Route path="/mfa" element={<SovereignMfaPortal />} />
-      <Route path="/mfa-setup" element={<SovereignMfaPortal onVerificationSuccess={async (userData) => {
-        try {
-          if (updateSovereignIdentity) {
-            await updateSovereignIdentity({ mfaRegistered: true });
-          }
-          const targetPath = (userData?.hasSignedCovenant || user?.hasSignedCovenant) ? '/' : '/covenant';
-          navigate(targetPath, { replace: true });
-        } catch (err) { console.error('[MFA-ERROR]', err); }
-      }} />} />
-      <Route path="/covenant" element={
-        user?.hasSignedCovenant ? <Navigate to="/" replace /> :
-        <CovenantPortal tenantDNA={currentTenant?.id} onAccept={async (signData) => {
-          try {
-            if (updateSovereignIdentity) {
-              await updateSovereignIdentity({ hasSignedCovenant: true, signatureHash: signData?.hash });
-            }
-            console.log('[COVENANT-SEALED] Enterprise agreement executed.');
-            navigate('/', { replace: true });
-          } catch (err) {
-            console.error('[COVENANT-ERROR]', err);
-          }
-        }} />
+      <Route path="/forgot-password" element={<PasswordRecoveryRequestPortal />} />
+      <Route path="/verify-recovery-contact" element={<RecoveryContactVerificationPortal />} />
+      <Route path="/reset-password" element={<PasswordResetPortal />} />
+      <Route path="/mfa" element={
+        [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
+          ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
       } />
-      <Route path="/signature" element={<Sovereign_Signature_Pad tenantDNA={currentTenant?.id} onSignComplete={async (signData) => {
-        try {
-          if (updateSovereignIdentity) {
-            await updateSovereignIdentity({ hasSignedCovenant: true, signatureHash: signData.hash });
-          }
-          navigate('/', { replace: true });
-        } catch (err) { console.error('[SIGNATURE-ERROR]', err); }
-      }} />} />
-      <Route path="/" element={
-        isAuthenticated ? (
-          user?.mfaRegistered === false ? <Navigate to="/mfa" replace /> :
-          !user?.hasSignedCovenant ? <Navigate to="/covenant" replace /> :
-          <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary>
-        ) : <Navigate to="/discovery" replace />
+      <Route path="/mfa-setup" element={
+        [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
+          ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
       } />
+      <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
+      <Route path="/signature" element={<Navigate to="/covenant" replace />} />
+      <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to="/discovery" replace />} />
       {/* Explicit /dashboard route for soft navigation */}
       <Route path="/dashboard" element={
-        isAuthenticated ? (
-          <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary>
-        ) : <Navigate to="/discovery" replace />
+        isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to="/discovery" replace />
       } />
       <Route path="/ledger" element={
-        isAuthenticated ? (
+        isAuthenticated && user ? (
           <ErrorBoundary>
             <LedgerExplorer
               tenantId={currentTenant?.id || currentTenant?.tenantId || user?.tenantId || null}
@@ -287,7 +262,7 @@ const SovereignRouter = () => {
       } />
       {/* 🆕 /tms route with permission guard – ONLY for founders/superadmins */}
       <Route path="/tms" element={
-        isAuthenticated ? (
+        isAuthenticated && user ? (
           <ProtectedTmsRoute user={user}>
             <ErrorBoundary><Sovereign_TenantManager /></ErrorBoundary>
           </ProtectedTmsRoute>
@@ -305,7 +280,6 @@ const SovereignRouter = () => {
  *              - SovereignOrchestrator (mesh)
  *              - DataOrchestratorProvider (data stream)
  *              - AuthProvider (authentication)
- *              - TenantProvider (new sovereign tenant context)
  *              - Router
  * @returns {JSX.Element} The application root.
  * @institutional This is the institutional contract root; all providers are layered
@@ -313,15 +287,118 @@ const SovereignRouter = () => {
  * @collaboration Wilson Khanyezi & AI Engineering (2026-08-19)
  * @epitome "Institutional Finality"
  */
+const WorkspaceBootstrapSurface = () => (
+  <div data-testid="workspace-bootstrap" className="flex min-h-screen flex-col items-center justify-center bg-black text-center">
+    <Loader2 className="mb-4 h-12 w-12 animate-spin text-[#D4AF37]" />
+    <p className="font-mono text-xs tracking-widest uppercase text-[#D4AF37]">Preparing secure workspace</p>
+    <p className="mt-2 max-w-md px-6 font-mono text-[10px] tracking-widest uppercase text-gray-500">Validating authenticated tenant authority...</p>
+  </div>
+);
+
+
+const WorkspaceBootstrapError = ({ message }) => (
+  <div data-testid="workspace-bootstrap-error" role="alert" className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
+    <p className="font-mono text-xs tracking-widest uppercase text-red-300">Workspace access is unavailable</p>
+    <p className="mt-3 max-w-lg font-mono text-[10px] tracking-widest uppercase text-gray-500">{message}</p>
+  </div>
+);
+
+/**
+ * @description Resolve server-owned legal acceptance before mounting protected consumers.
+ * @collaboration AuthenticatedTenantBoundary, LegalAcceptanceGate, and RuntimeComposition.
+ * @institutional Prevents dashboard, billing, AI, and tenant-management hydration
+ *              from racing ahead of the legal acceptance decision.
+ * @param {{runtime?: React.ReactNode}} props Optional runtime seam for deterministic certificates.
+ * @returns {JSX.Element} Loading, bounded legal, unavailable, or protected runtime surface.
+ */
+export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition /> }) => {
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState('LOADING');
+  const [plan, setPlan] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    api.get('/legal-acceptance/status').then((response) => {
+      if (!active) return;
+      const nextPlan = response.data;
+      setPlan(nextPlan);
+      setPhase(nextPlan?.status === 'COMPLETE' ? 'COMPLETE' : 'REQUIRED');
+    }).catch((requestError) => {
+      if (!active) return;
+      setError(requestError?.response?.data?.detail || 'LEGAL_ACCEPTANCE_STATUS_UNAVAILABLE');
+      setPhase('UNAVAILABLE');
+    });
+    return () => { active = false; };
+  }, []);
+
+  if (phase === 'LOADING') return <WorkspaceBootstrapSurface />;
+  if (phase === 'UNAVAILABLE') return <WorkspaceBootstrapError message={error} />;
+  if (phase === 'REQUIRED') {
+    return (
+      <Routes>
+        <Route path="/covenant" element={<LegalAcceptanceGate initialPlan={plan} onComplete={() => navigate('/', { replace: true })} />} />
+        <Route path="*" element={<Navigate to="/covenant" replace />} />
+      </Routes>
+    );
+  }
+  return runtime;
+};
+
+const RuntimeComposition = () => (
+  <SovereignOrchestrator>
+    <DataOrchestratorProvider>
+      <SovereignRouter />
+    </DataOrchestratorProvider>
+  </SovereignOrchestrator>
+);
+
+const AuthenticatedRuntimeComposition = () => {
+  const { isAuthenticated, user } = useAuth();
+  const { activeTenant } = useTenants();
+
+  if (!isAuthenticated || !user?.id || !user?.tenantId || !activeTenant) {
+    return <WorkspaceBootstrapError message="AUTHENTICATED_WORKSPACE_UNRESOLVED" />;
+  }
+
+  return (
+    <>
+      <RuntimeComposition />
+      <WilsyOSIntelligenceDockRuntime
+        authenticated
+        authUser={user}
+        activeTenant={activeTenant}
+      />
+    </>
+  );
+};
+
+const AuthenticatedTenantBoundary = () => {
+  const { isAuthenticated, tenant, user } = useAuth();
+  if (!isAuthenticated) return <RuntimeComposition />;
+  return (
+    <TenantProvider initialTenant={tenant} authenticatedTenantId={String(user?.tenantId || '')}>
+      <AuthenticatedBootstrapBoundary />
+    </TenantProvider>
+  );
+};
+
+const AuthenticatedBootstrapBoundary = () => {
+  const { activeTenant, bootstrapReady, loading, error, authorityMismatch } = useTenants();
+  if (!bootstrapReady || loading) return <WorkspaceBootstrapSurface />;
+  if (authorityMismatch || error || !activeTenant) {
+    return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (error || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
+  }
+  return (
+    <LegalAcceptanceBoundary runtime={<AuthenticatedRuntimeComposition />} />
+  );
+};
+
 function App() {
   return (
     <ErrorBoundary>
-      <SovereignOrchestrator>
-        <DataOrchestratorProvider>
-          <AuthProvider>
-            {/* 🛡️ New sovereign TenantProvider wrapping the entire router */}
-            <TenantProvider>
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AuthProvider>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Suspense fallback={
                   <div className="flex flex-col items-center justify-center h-screen bg-black">
                     <Loader2 className="w-16 h-16 text-[#D4AF37] animate-spin mb-4" />
@@ -329,14 +406,11 @@ function App() {
                   </div>
                 }>
                   <div className="wilsy-os-container h-screen bg-black text-white">
-                    <SovereignRouter />
+                    <AuthenticatedTenantBoundary />
                   </div>
                 </Suspense>
               </Router>
-            </TenantProvider>
-          </AuthProvider>
-        </DataOrchestratorProvider>
-      </SovereignOrchestrator>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
@@ -345,18 +419,21 @@ export default App;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS APPLICATION ROOT (KENNEL-ALIGNED)
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS APPLICATION ROOT (AUTH-GATED)
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status: CERTIFIED PRODUCTION ARTIFACT
- * Version: v18.5.0-KENNEL-ALIGNED
+ * Version: v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE
  * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
  * Compliance: POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ NAVIGATION GUARD STABLE
  *   ✅ updateSovereignIdentity ROBUST
- *   ✅ TenantContext INTEGRATED (new tenantContext)
+ *   ✅ TenantContext mounted only after authenticated identity
  *   ✅ Kennel EOS PROPAGATED
  *   ✅ /tms ROUTE PROTECTED – only founders/superadmins can access
  *   ✅ No legacy imports
+ *   ✅ /forgot-password PUBLIC RECOVERY REQUEST ROUTE — no recovery authority
+ *   ✅ /verify-recovery-contact PUBLIC SINGLE-USE VERIFICATION ROUTE — no session creation
+ *   ✅ /reset-password PUBLIC RESET PORTAL ROUTE — capability consumer remains separate
  * ═══════════════════════════════════════════════════════════════════════════════
  */

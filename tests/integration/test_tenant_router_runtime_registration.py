@@ -12,7 +12,7 @@ FILE:
     tests/integration/test_tenant_router_runtime_registration.py
 
 VERSION:
-    v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT
+    v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -33,10 +33,14 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-08-31
+    2026-09-20
 
 CHANGELOG:
-    v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT
+    v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT
+        - Advances only the canonical API-server version lock after the
+          production legal-acceptance mount while preserving the certified
+          tenant-router surface and authority semantics unchanged.
+    v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT
         - Certifies the dedicated Legal Operations read router is mounted once
           while the existing tenant-router five-route surface remains exact.
     v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT
@@ -136,9 +140,9 @@ from tools.eos.saas.tenancy.tenant_registry import (
 )
 
 
-VERSION = "v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT"
+VERSION = "v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT"
 EXPECTED_API_SERVER_VERSION = (
-    "v1.5.0-L7B-LEGAL-OPERATIONS-COMMAND-MOUNT"
+    "v1.7.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE"
 )
 EXPECTED_TENANT_ROUTER_VERSION = (
     "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
@@ -395,7 +399,7 @@ def _entity(
 
 def test_versions_lock_c2_into_unchanged_canonical_app() -> None:
     """C2 advances governance versions while preserving app composition."""
-    assert VERSION == "v1.3.0-L7A-LEGAL-OPERATIONS-READ-API-MOUNT-CERT"
+    assert VERSION == "v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT"
     assert API_SERVER_VERSION == EXPECTED_API_SERVER_VERSION
     assert TENANT_ROUTER_VERSION == EXPECTED_TENANT_ROUTER_VERSION
 

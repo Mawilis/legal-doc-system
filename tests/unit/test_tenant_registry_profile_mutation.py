@@ -91,7 +91,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 
 
 EXPECTED_DOMAIN_VERSION = "v1.4.0-TENANT-PROFILE-SECTOR-TRUTH"
-EXPECTED_REGISTRY_VERSION = "v1.4.2-TENANT-GET-CALLER-SESSION-PARTICIPATION"
+EXPECTED_REGISTRY_VERSION = "v1.6.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE"
 EXPECTED_FIELDS = frozenset(
     {"name", "alias", "industry", "region", "sector", "legal_name"}
 )

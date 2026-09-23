@@ -142,26 +142,6 @@ export const normalizeSovereignRole = (role = 'unauthenticated') => {
   return ROLE_ALIASES[upper] || raw.toLowerCase() || 'unauthenticated';
 };
 
-/**
- * @function readStoredAccessUser
- * @description Reads authenticated user identity from Wilsy OS storage keys without inventing a privileged fallback.
- * @returns {Object|null} Stored user packet or null.
- * @collaboration Missing identity must never become founder access; this is the client-side zero-trust guardrail.
- */
-export const readStoredAccessUser = () => {
-  const candidateKeys = ['wilsy_user', 'userData', 'user'];
-  for (const key of candidateKeys) {
-    const raw = localStorage.getItem(key);
-    if (!raw || raw === 'undefined' || raw === 'null') continue;
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return parsed;
-    } catch {
-      continue;
-    }
-  }
-  return null;
-};
 
 /**
  * @function resolvePermissionSet
@@ -224,18 +204,21 @@ export const useSovereignAccess = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = readStoredAccessUser();
-    setIdentity(authUser || storedUser || null);
+    setIdentity(authUser || null);
     setIsLoading(false);
   }, [authUser]);
 
   const accessPacket = useMemo(() => {
-    const user = identity || {};
-    const authenticated = Boolean(isAuthenticated || localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token'));
-    const userRole = authenticated ? normalizeSovereignRole(user.role || user.userRole || 'user') : 'unauthenticated';
-    const permissions = resolvePermissionSet(user, userRole);
-    const tenantId = user.tenantId || user.activeTenantId || user.tenant || 'UNRESOLVED_TENANT';
-    const userEmail = user.email || user.userEmail || null;
+    const authenticated = Boolean(isAuthenticated && identity);
+    const user = authenticated ? identity : {};
+    const userRole = authenticated
+      ? normalizeSovereignRole(user.role || user.userRole || 'user')
+      : 'unauthenticated';
+    const permissions = authenticated ? resolvePermissionSet(user, userRole) : [];
+    const tenantId = authenticated
+      ? (user.tenantId || user.activeTenantId || user.tenant || 'UNRESOLVED_TENANT')
+      : 'UNRESOLVED_TENANT';
+    const userEmail = authenticated ? (user.email || user.userEmail || null) : null;
     const roleLevel = ROLE_LEVELS[userRole] || 0;
 
     return {

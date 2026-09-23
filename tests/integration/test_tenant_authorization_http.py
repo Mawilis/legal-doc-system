@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Tenant Authorization HTTP Certification.
-VERSION: v1.0.0-TENANT-AUTHORIZATION-HTTP-CERT
+VERSION: v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING-CERT
 AUTHORITY: Test-local ASGI certification of the reusable tenant dependency.
 EPITOME: Proves HTTP translation without production route wiring or persistence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_tenant_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.0 certifies positive, denied, unavailable, scope, and transport boundaries.
+CERTIFICATION/UPDATE DATE: 2026-09-21.
+CHANGELOG: v1.1.0 directly certifies separate durable business-role and authorization-role store routing; v1.0.0 certified positive, denied, unavailable, scope, and transport boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: Test-local identities only; projected roles and tenants never grant authority.
 TENANT BOUNDARY: X-Tenant-ID is explicit scope and durable membership remains authoritative.
@@ -57,7 +57,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.0.0-TENANT-AUTHORIZATION-HTTP-CERT"
+VERSION = "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING-CERT"
 EXPECTED_PRIMARY_BLOB = "11f4033f16b3bffd08a3b2e0789a7fa326fba942"
 _PID = "p"
 _TENANT = "tenant-a"
@@ -931,9 +931,9 @@ def test_authorization_is_read_only_for_success_denial_and_financial() -> None:
 
 
 def test_primary_contract_version_and_expected_blob_constant() -> None:
-    assert VERSION == "v1.0.0-TENANT-AUTHORIZATION-HTTP-CERT"
+    assert VERSION == "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING-CERT"
     assert EXPECTED_PRIMARY_BLOB == "11f4033f16b3bffd08a3b2e0789a7fa326fba942"
-    assert boundary.VERSION == "v1.0.0-TENANT-AUTHORIZATION-HTTP"
+    assert boundary.VERSION == "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING"
 
 
 # ARTIFACT: test_tenant_authorization_http.py
@@ -943,3 +943,69 @@ def test_primary_contract_version_and_expected_blob_constant() -> None:
 # FAIL-CLOSED POSTURE: only AUTHORIZED succeeds; unavailable maps to 503
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+def test_http_role_reader_separates_business_and_authorization_stores(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """tenant_owner and ENTERPRISE_ADMIN resolve from distinct stores."""
+
+    authorization_reader = _RecordingReader(
+        {
+            (_PID, _TENANT, "ENTERPRISE_ADMIN"): _role(
+                "ENTERPRISE_ADMIN"
+            )
+        }
+    )
+
+    class BusinessValue:
+        business_role = "tenant_owner"
+        status = RoleAssignmentStatus.ACTIVE
+
+    class BusinessRepository:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str]] = []
+
+        def resolve(
+            self,
+            principal_id: str,
+            tenant_id: str,
+            *,
+            session: object = None,
+        ) -> object:
+            assert session is None
+            self.calls.append((principal_id, tenant_id))
+            return BusinessValue()
+
+    business_repository = BusinessRepository()
+
+    monkeypatch.setattr(
+        boundary,
+        "_get_role_assignment_repository",
+        lambda: authorization_reader,
+    )
+    monkeypatch.setattr(
+        boundary,
+        "TenantBusinessRoleRepository",
+        lambda: business_repository,
+    )
+
+    reader = boundary.get_role_assignment_repository()
+
+    business = reader.resolve(
+        _PID,
+        _TENANT,
+        "tenant_owner",
+    )
+    assert business.business_role == "tenant_owner"
+    assert business_repository.calls == [(_PID, _TENANT)]
+    assert authorization_reader.read_calls == []
+
+    authorization = reader.resolve(
+        _PID,
+        _TENANT,
+        "ENTERPRISE_ADMIN",
+    )
+    assert authorization.role_id == "ENTERPRISE_ADMIN"
+    assert authorization_reader.read_calls == [
+        (_PID, _TENANT, "ENTERPRISE_ADMIN")
+    ]

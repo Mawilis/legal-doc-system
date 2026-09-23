@@ -1,275 +1,135 @@
-/* eslint-disable */
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * WILSY OS — SOVEREIGN DISCOVERY GATEWAY (v2.4.0‑RESPONSE‑FIX)
- * ═══════════════════════════════════════════════════════════════════════════════
- * File:           client/src/components/sovereign/TenantDiscovery.jsx
- * Version:        v2.4.0-RESPONSE-FIX
- * Authority:      Wilsy OS Core Governance
- * Epitome:        Extracts tenants from correct response path (response.data.data.tenants).
- * Classification: Production Artifact – Institutional Contract
- *
- * 🔧 CHANGE LOG:
- *   2026-08-19 v2.4.0-RESPONSE-FIX – Fixed response path for tenant list.
- *   2026-08-19 v2.3.0-MATCH-ORG-NAME – Added fallback to organization.organization_name.
- *
- * 🔗 Forensic Relationships:
- *   Uses tenantApi.getTenants() and extracts from response.data.data.tenants.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * WILSY OS — SECURE WORKSPACE DISCOVERY
+ * VERSION: v3.2.0-INSTITUTIONAL-AUTH-BRAND
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Resolves one organization/workspace through the bounded server
+ *          discovery contract; never downloads or filters a tenant directory.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/TenantDiscovery.jsx
+ * COLLABORATION / OWNERSHIP: authContext owns the exact `/api/auth/discover`
+ *                            transport; this component is presentation only.
+ * CERTIFICATION / UPDATE DATE: 2026-09-17
+ * CHANGELOG: v3.2.0-INSTITUTIONAL-AUTH-BRAND — Uses the established WILSY
+ *            brand asset and a restrained institutional discovery panel.
+ *            v3.1.0-PREMIUM-TENANT-IDENTITY — Restored the real WILSY OS
+ *            platform mark and added a bounded premium tenant identity slot.
+ *            Tenant legal name and verification remain server-issued only.
+ *            v3.0.0-SERVER-SIDE-EXACT-DISCOVERY — Removed full-directory fetch,
+ *            kinetic security theater, synthetic tenant fallback, and client
+ *            tenant-search authority.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Only the matched bounded tenant projection is shown.
+ * TENANT BOUNDARY: No tenant is persisted unless returned by authoritative server discovery.
+ * AUTHORITY BOUNDARY: Discovery projection only; no authentication or authorization grant.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  AlertCircle, ArrowRight, Shield, Zap, Cpu, Lock, RefreshCw,
-  Fingerprint, Activity, Search, BrainCircuit, Terminal, CheckCircle
-} from 'lucide-react';
-import { useTenants } from '../../contexts/tenantContext';
-import { useAuth } from '../../contexts/authContext';
-import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
-import tenantApi from '../../services/api/tenantApi';
-import styles from './TenantDiscovery.module.css';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
-import { useSovereignMesh } from '../sovereign/SovereignOrchestrator.jsx';
-import { useSovereignData } from '../sovereign/DataOrchestrator.jsx';
+import React, { useState } from 'react';
+import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/authContext.jsx';
+import TenantIdentityCard from '../auth/TenantIdentityCard.jsx';
+import wilsyBrandAsset from '../../assets/logo/wilsy.jpeg';
 
-const TenantDiscovery = ({ savedTenant }) => {
+export default function TenantDiscovery({ savedTenant }) {
   const navigate = useNavigate();
-  const mesh = useSovereignMesh();
-  const { activeTenant, switchTenant } = useTenants();
-  const { discoverTenant } = useAuth();
+  const location = useLocation();
+  const { discoverTenant, loading: authLoading } = useAuth();
+  const [alias, setAlias] = useState(savedTenant?.alias || '');
+  const [tenant, setTenant] = useState(null);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const [tenantInput, setTenantInput] = useState(savedTenant || '');
-  const [error, setError] = useState(null);
-  const [eosKernelStatus, setEosKernelStatus] = useState('QUANTUM_LATTICE_SYNCED');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-
-  // Kinetic UI (entropy simulation)
-  const [lastKeystroke, setLastKeystroke] = useState(Date.now());
-  const [kineticScore, setKineticScore] = useState(100);
-  const [threatLevel, setThreatLevel] = useState('HUMAN_VERIFIED_SECURE');
-
-  // Boot status animation
-  useEffect(() => {
-    const bootTimer = setTimeout(() => setEosKernelStatus('EOS_KERNEL_ACTIVE_SECURE'), 800);
-    return () => clearTimeout(bootTimer);
-  }, []);
-
-  // ─── Kinetic input handler ──────────────────────────────────────────────
-  const handleKineticInput = (e) => {
-    const val = e.target.value;
-    setTenantInput(val);
-
-    const now = Date.now();
-    const delta = now - lastKeystroke;
-    setLastKeystroke(now);
-
-    if (delta > 0 && delta < 18 && val.length > 1) {
-      setKineticScore(prev => Math.max(0, prev - 25));
-      if (kineticScore < 50) setThreatLevel('AI_AUTOMATED_VECTOR_LOCKED');
-      broadcastTelemetry('EOS_KERNEL_CORE', 'SECURITY_EVENT', 'KINETIC_ANOMALY_NEUTRALIZED', 'TenantDiscovery', { delta, score: kineticScore });
-      mesh?.propagate?.('EOS_KERNEL_CORE', { delta, score: kineticScore }, 'KINETIC_VECTOR_ISOLATED')
-        .catch(err => console.debug('[EOS Kernel] Kinetic anomaly broadcast failed:', err));
-    } else {
-      setKineticScore(prev => Math.min(100, prev + 5));
-      if (kineticScore >= 50 && threatLevel !== 'HUMAN_VERIFIED_SECURE') setThreatLevel('HUMAN_VERIFIED_SECURE');
-    }
-  };
-
-  // ─── Submission handler ──────────────────────────────────────────────────
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const cleanAlias = tenantInput.trim().toLowerCase();
-    if (!cleanAlias) {
-      setError('ENTER SECURE SHARD ALIAS');
-      return;
-    }
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    setError(null);
-    setIsVerified(false);
-
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const cleanAlias = alias.trim();
+    if (!cleanAlias || submitting) return;
+    setSubmitting(true);
+    setError('');
     try {
-      // ✅ Fetch ALL tenants – extract from correct response path
-      const response = await tenantApi.getTenants();
-      // The API client returns: { data: rawResponse, telemetry, seal, evidence }
-      // rawResponse = { data: { tenants: [...] } }
-      const allTenants = response?.data?.data?.tenants || response?.data?.tenants || [];
-
-      // Find the first tenant that matches the alias (case‑insensitive)
-      const matchedTenant = allTenants.find(t =>
-        t.organization?.organization_name?.toLowerCase() === cleanAlias ||
-        t.name?.toLowerCase() === cleanAlias ||
-        t.alias?.toLowerCase() === cleanAlias ||
-        t.tenant_id?.toLowerCase() === cleanAlias
-      );
-
-      if (matchedTenant) {
-        // Store tenant in context and localStorage
-        await switchTenant(matchedTenant.tenant_id);
-        localStorage.setItem('discoveredTenant', JSON.stringify(matchedTenant));
-
-        broadcastTelemetry('EOS_KERNEL_CORE', 'SYSTEM_EVENT', 'TENANT_SOVEREIGN_RESOLVED', 'TenantDiscovery', {
-          tenant: matchedTenant.tenant_id,
-          alias: cleanAlias,
-        });
-        mesh?.propagate?.(matchedTenant.tenant_id, { alias: cleanAlias }, 'QUANTUM_HANDSHAKE_SUCCESS')
-          .catch(err => console.debug('[EOS Kernel] Handshake propagate failed:', err));
-
-        setIsVerified(true);
-
-        // Navigate to login with tenant state
-        navigate('/login', { replace: true, state: { tenant: matchedTenant } });
-      } else {
-        setError('IDENTITY REJECTION: SHARD UNREGISTERED IN EOS LATTICE.');
-        broadcastTelemetry('EOS_KERNEL_CORE', 'SECURITY_EVENT', 'TENANT_NOT_FOUND', 'TenantDiscovery', { reason: 'Not Found', alias: cleanAlias });
-        mesh?.propagate?.('EOS_KERNEL_CORE', { alias: cleanAlias }, 'SHARD_NOT_FOUND').catch(e => console.debug);
-      }
-    } catch (err) {
-      console.error('[EOS-KERNEL] Lattice exception:', err);
-      const errorMsg = err.response?.data?.message || err.message || 'EOS KERNEL LATTICE FRACTURE. VERIFY NUCLEUS ENCLAVE.';
-      setError(errorMsg);
-      broadcastTelemetry('EOS_KERNEL_CORE', 'SECURITY_EVENT', 'EOS_FRACTURE', 'TenantDiscovery', { reason: errorMsg });
-      mesh?.propagate?.('EOS_KERNEL_CORE', { error: errorMsg }, 'DISCOVERY_FRACTURE').catch(e => console.debug);
+      const resolved = await discoverTenant(cleanAlias);
+      setTenant(resolved);
+      navigate('/login', {
+        replace: true,
+        state: { tenant: resolved, from: location.pathname },
+      });
+    } catch (discoveryError) {
+      setTenant(null);
+      setError(discoveryError.message || 'Workspace discovery is unavailable. Please retry.');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className={styles.discoveryWrapper}>
-      <div className={styles.quantumGridOverlay}></div>
-      <div className={styles.nebulaGlow}></div>
-      <div className={styles.scanline}></div>
-
-      <div className={styles.discoveryCard}>
-        <div className={styles.kineticBorder}></div>
-        <div className={styles.cornerAccentTL}></div>
-        <div className={styles.cornerAccentBR}></div>
-
-        <div className={styles.discoveryLogoHeader}>
-          <div className={styles.logoGroup}>
-            <div className={styles.logoBezel}>
-              <div className={styles.logoHalo}></div>
-              <img src={wilsyLogo} alt="WILSY OS" className={styles.discoveryLogo} />
-            </div>
-            <div className={styles.brandTitle}>
-              <span className={styles.mainBrand}>WILSY OS</span>
-              <span className={styles.shardTag}>QUANTUM_EOS_KERNEL</span>
-            </div>
-          </div>
-          <div className={styles.telemetryStack}>
-            <div className={styles.teleLine}>
-              <Activity size={10} className={styles.goldText} />
-              <span className={styles.teleText}>LATTICE: 100%</span>
-            </div>
-            <div className={styles.teleLine}>
-              <Terminal size={10} className={styles.goldText} />
-              <span className={styles.teleText}>{eosKernelStatus}</span>
-            </div>
-          </div>
+    <main style={pageStyle}>
+      <section style={cardStyle} aria-labelledby="discovery-title">
+        <div style={platformBrandStyle}>
+          <img src={wilsyBrandAsset} alt="WILSY OS platform mark" style={platformMarkStyle} />
+          <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
         </div>
+        <h1 id="discovery-title" style={titleStyle}>Secure Workspace Access</h1>
+        <p style={copyStyle}>Enter your organization or workspace identifier to continue.</p>
 
-        <div className={styles.discoveryContentArea}>
-          <div className={styles.titleBlock}>
-            <h1 className={styles.discoveryTitle}>SOVEREIGN</h1>
-            <h2 className={styles.discoveryGoldAccent}>DISCOVERY</h2>
+        {tenant && (
+          <TenantIdentityCard tenant={tenant} />
+        )}
+
+        <form onSubmit={handleSubmit} style={formStyle}>
+          <label htmlFor="workspace-alias" style={labelStyle}>Organization / workspace</label>
+          <input
+            id="workspace-alias"
+            name="alias"
+            value={alias}
+            onChange={(event) => setAlias(event.target.value)}
+            placeholder="e.g. acme-law"
+            autoComplete="organization"
+            disabled={submitting || authLoading}
+            style={inputStyle}
+            required
+          />
+          <button type="submit" disabled={submitting || authLoading || !alias.trim()} style={buttonStyle}>
+            {submitting || authLoading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+            <span>Continue securely</span>
+          </button>
+        </form>
+
+        {error && (
+          <div role="alert" style={errorStyle}>
+            <AlertCircle size={16} aria-hidden="true" />
+            <span>{error}</span>
           </div>
-
-          <div className={styles.institutionalDivider}>
-            <div className={styles.dividerGlow}></div>
-          </div>
-
-          <p className={styles.discoverySubtitle}>
-            EOS KERNEL CRYPTOGRAPHIC IDENTITY ARBITRATION | QUANTUM‑ISOLATED ZERO‑TRUST ENCLAVE.
-          </p>
-
-          <form onSubmit={handleSubmit} className={styles.discoveryForm}>
-            <div className={styles.kineticHud}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <BrainCircuit size={10} /> {threatLevel}
-              </span>
-              <span>BIOMETRIC_ENTROPY: {kineticScore}%</span>
-            </div>
-
-            <div className={styles.inputContainer}>
-              <label className={styles.discoveryLabel}>
-                <Fingerprint size={12} className={styles.goldText} /> SECURE_SHARD_ALIAS_INPUT
-              </label>
-              <div className={styles.inputFocusGroup}>
-                <Search size={18} className={styles.inputIcon} />
-                <input
-                  type="text"
-                  value={tenantInput}
-                  onChange={handleKineticInput}
-                  placeholder="ENTER_ENTERPRISE_ALIAS"
-                  className={styles.discoveryInput}
-                  disabled={isSubmitting}
-                  autoComplete="off"
-                />
-                {isVerified && <CheckCircle size={18} className={styles.verifiedIcon} />}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className={styles.discoveryButton}
-              disabled={isSubmitting || kineticScore < 40}
-            >
-              {isSubmitting ? (
-                <div className={styles.loadingFlex}>
-                  <RefreshCw className={styles.spin} size={18} /> <span>ARBITRATING_QUANTUM_SHARD...</span>
-                </div>
-              ) : (
-                <div className={styles.loadingFlex}>
-                  <span>AUTHORIZE QUANTUM GATEWAY</span> <ArrowRight size={18} />
-                </div>
-              )}
-            </button>
-          </form>
-
-          {error && (
-            <div className={styles.discoveryError} role="alert">
-              <AlertCircle size={14} /> <span>{error}</span>
-            </div>
-          )}
-        </div>
-
-        <div className={styles.discoveryFooter}>
-          <div className={styles.hudGrid}>
-            <div className={styles.hudItem}><Shield size={10} /> <span>NIST_SP_800_207_LATTICE</span></div>
-            <div className={styles.hudItem}><Lock size={10} /> <span>PQE_QUANTUM_RESILIENT</span></div>
-            <div className={styles.hudItem}><Cpu size={10} /> <span>LATENCY: {activeTenant?.latency || 0.12} MS</span></div>
-            <div className={styles.hudItem}>
-              <Zap size={10} className={styles.goldText} />
-              <span>LATTICE_BREAKER: SECURE</span>
-            </div>
-          </div>
-          <div className={styles.specTag}>V2.4.0-RESPONSE-FIX</div>
-        </div>
-      </div>
-
-      <div className={styles.backgroundBranding}>WILSY OS — BEYOND THE SCREEN</div>
-    </div>
+        )}
+      </section>
+    </main>
   );
-};
+}
 
-export default TenantDiscovery;
+const pageStyle = {
+  minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px',
+  background: '#101112', color: '#f5f1e8', fontFamily: 'Inter, system-ui, sans-serif',
+};
+const cardStyle = {
+  width: 'min(100%, 560px)', padding: '44px clamp(28px, 6vw, 58px) 38px', background: 'linear-gradient(145deg, #1c1e20, #141617)',
+  border: '1px solid rgba(213,176,79,.3)', borderRadius: '16px',
+  boxShadow: '0 30px 90px rgba(0,0,0,.42)',
+};
+const platformBrandStyle = { display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '28px', borderBottom: '1px solid rgba(245,241,232,.1)', color: '#d5b04f' };
+const platformMarkStyle = { width: '46px', height: '46px', objectFit: 'cover', objectPosition: '50% 13%', borderRadius: '8px', background: '#fff' };
+const brandCopyStyle = { display: 'grid', gap: '3px' };
+const titleStyle = { margin: '38px 0 10px', fontSize: 'clamp(32px, 5vw, 48px)', lineHeight: 1.04, fontWeight: 650, letterSpacing: '-.035em' };
+const copyStyle = { margin: '0 0 32px', color: '#b8b6ae', lineHeight: 1.6, fontSize: '15px' };
+const formStyle = { display: 'grid', gap: '10px' };
+const labelStyle = { color: '#d8d4c9', fontSize: '14px', fontWeight: 600 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '14px 15px', borderRadius: '7px', border: '1px solid #4d4f51', background: '#0f1011', color: '#fff', fontSize: '16px', outlineColor: '#d5b04f' };
+const buttonStyle = { display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '12px', padding: '14px 18px', border: 0, borderRadius: '7px', background: '#d5b04f', color: '#141414', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
+const errorStyle = { display: 'flex', gap: '9px', alignItems: 'flex-start', marginTop: '18px', padding: '12px', border: '1px solid #9e4b4b', borderRadius: '7px', color: '#ffb5b5', background: 'rgba(120,30,30,.18)' };
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — TenantDiscovery v2.4.0‑RESPONSE‑FIX
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v2.4.0-RESPONSE-FIX
- * Fixes:           Extracts tenants from correct response path (response.data.data.tenants).
- * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
- * Health Check:
- *   ✅ Robust extraction of tenant list from API response.
- *   ✅ Checks organization.organization_name, name, alias, tenant_id.
- *   ✅ Full telemetry and error handling.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: client/src/components/sovereign/TenantDiscovery.jsx
+ * VERSION: v3.2.0-INSTITUTIONAL-AUTH-BRAND
+ * AUTHORITY BOUNDARY: bounded discovery projection only
+ * TENANT POSTURE: no client-side directory enumeration or fallback tenant
+ * FAIL-CLOSED POSTURE: discovery failure leaves tenant unresolved
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

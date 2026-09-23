@@ -1,1174 +1,182 @@
-/* eslint-disable */
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — Sovereign Login Gateway (Citadel)
- * ═══════════════════════════════════════════════════════════════════════════════
- * File:           client/src/components/auth/SovereignLogin.jsx
- * Version:        v2.1.3-MFA-FIT-AND-SPACING
- * Authority:      Wilsy OS Core Governance
- * Epitome:        Founder authentication portal with inline MFA. Fully isolated
- *                 from protected endpoints. Telemetry panel uses institutional
- *                 language when kernel is offline. Vite proxy required.
- * Classification: Production Artifact
- *
- * Change Log:
- *   2026-08-22 v2.1.3-MFA-FIT-AND-SPACING — Prevented central-card bleed and restored breathing room around the QR enrollment code.
- *   2026-08-22 v2.1.3-MFA-ENROLLMENT-ROUTING — Persists enrollment intent so QR setup validates before normal 3FA verification.
- *   2026-08-22 v2.1.2-TOTP-QR-COMPATIBILITY — Renders raw otpauth provisioning URIs as browser-safe QR data URLs.
- *   2026-08-19 v2.1.1‑MFA‑AUTOFOCUS — Added autoFocus to OTP input for immediate cursor activation.
- *   2026-08-19 v2.1.0‑PROXY‑READY‑UX — Improved telemetry copy; proxy guidance.
- *   2026-08-19 v2.0.0‑LOGIN‑ISOLATED — Isolated from protected endpoints.
- *   2026-08-18 v1.3.7‑PERSISTENT‑MFA — MFA persistence.
- *
- * Certification Seal: PRODUCTION_READY_v2.1.1‑MFA‑AUTOFOCUS
- * ═══════════════════════════════════════════════════════════════════════════════
+ * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
+ * VERSION: v3.9.0-R10E12-RECOVERY-REQUEST-ENTRYPOINT
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Collects primary credentials and routes only on the server-issued
+ *          MFA state; it never creates identity, tenant, role, or enrollment truth.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/SovereignLogin.jsx
+ * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
+ *                            SovereignMfaPortal owns the challenge presentation.
+ * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: v3.9.0-R10E12-RECOVERY-REQUEST-ENTRYPOINT — Routes the
+ *            pre-authentication Forgot password? action to the governed
+ *            recovery-request surface, forwarding only ephemeral selected
+ *            workspace/email router state and making no reset or delivery call.
+ *            v3.8.0-R10D9G-RESET-PARITY-LOGIN-ARCHITECTURE — Brings sign-in
+ *            into the same institutional page grammar as password reset by
+ *            promoting the page title above a balanced identity-and-credentials
+ *            task grid, widening the tenant identity surface, and tightening
+ *            the inter-column relationship without changing controls,
+ *            authentication, MFA, recovery navigation, or tenant authority.
+ *            v3.7.0-R10D9F-INSTITUTIONAL-LOGIN-COMPOSITION — Finalizes the
+ *            institutional sign-in composition by removing the redundant
+ *            workspace-identity eyebrow, top-aligning the tenant projection
+ *            with the credential column, and anchoring tenant identity in a
+ *            restrained presentation surface without changing authentication,
+ *            recovery navigation, tenant authority, or control geometry.
+ *            v3.6.2-R10D9D-VISIBLE-BOTTOM-GUTTER — Makes the lower brand
+ *            gutter visible in the initial desktop viewport by compacting
+ *            vertical shell chrome only; field sizing, recovery navigation,
+ *            authentication, MFA, tenant authority, and responsive scrolling
+ *            remain unchanged.
+ *            v3.6.1-R10D9D-AUTH-SHELL-BREATHING-ROOM — Adds a deliberate
+ *            viewport-safe lower brand gutter so the sign-in panel and trust
+ *            boundary finish with clear visual breathing room without changing
+ *            authentication, recovery navigation, or responsive flow.
+ *            v3.6.0-R10D9C-AUTH-LAYOUT-CLOSURE — Places the pre-authentication
+ *            recovery action beside the password label, preserves its
+ *            keyboard/pointer target, and keeps the content-driven shell and
+ *            footer in normal flow across short and narrow viewports.
+ *            v3.5.1-R10D9A-FORGOT-PASSWORD-ENTRYPOINT — Adds one
+ *            pre-authentication Forgot password? navigation action to the
+ *            certified `/reset-password` route without sending form data or
+ *            invoking reset authority.
+ *            v3.5.0-FINAL-PIXEL-CLOSURE — Centers a bounded 1120px panel,
+ *            balances the identity/form columns, and keeps the natural-flow
+ *            auth surface visible on desktop, short, and mobile viewports.
+ *            v3.4.0-VIEWPORT-SAFE-AUTH — Makes the page shell a natural-flow,
+ *            `100dvh` scroll-safe container so short viewports never clip the
+ *            panel or footer.
+ *            v3.3.0-PUBLIC-IDENTITY-CONTRACT — Keeps public identity limited
+ *            to legal/display name, alias, verified state, and governed mark;
+ *            removes internal tenant identifiers from the login presentation.
+ *            v3.2.0-INSTITUTIONAL-AUTH-BRAND — Recomposed sign-in as one
+ *            responsive institutional panel with an integrated identity zone
+ *            and the established WILSY brand asset.
+ *            v3.1.0-PREMIUM-TENANT-IDENTITY — Added the permanent WILSY OS
+ *            platform trust mark and bounded premium tenant identity card.
+ *            v3.0.0-AUTHORITATIVE-MFA-ROUTING — Replaced founder/citadel
+ *            presentation, fake telemetry, inline QR flow, and reload navigation
+ *            with restrained institutional sign-in and explicit server state routing.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: No password or provisioning secret is rendered in copy.
+ * TENANT BOUNDARY: Organization context is displayed only from authoritative discovery.
+ * AUTHORITY BOUNDARY: Credential transport and state projection only.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, AlertCircle, Fingerprint, Eye, EyeOff, ShieldCheck, ShieldAlert, CheckCircle } from 'lucide-react';
-import QRCode from 'qrcode';
-import { useAuth } from '../../contexts/authContext';
-import '../../styles/superadmin/animations/quantum-pulse.css';
-import '../../styles/superadmin/animations/terminal-glow.css';
-
-const KERNEL_OFFLINE_LABEL = 'KERNEL OFFLINE';
-const KERNEL_PROBE_MS = 15_000;
-const KERNEL_PROBE_MAX_MS = 120_000;
-const MAX_PROBE_FAILURES = 3;
-
-async function probeLiveKernel(signal) {
-  const started = performance.now();
-  try {
-    const res = await fetch('/api/kernel', {
-      method: 'GET',
-      credentials: 'include',
-      signal,
-      headers: { Accept: 'application/json' }
-    });
-    const latencyMs = Math.round(performance.now() - started);
-    let data = null;
-    try { data = await res.json(); } catch { }
-    if (!res.ok) {
-      return { ok: false, version: null, status: `HTTP_${res.status}`, latencyMs, system: null, bridge: null };
-    }
-    return {
-      ok: true,
-      version: data?.version || null,
-      status: data?.status || 'OPERATIONAL',
-      latencyMs,
-      system: data?.system || 'WILSY OS EOS KERNEL',
-      bridge: data?.bridge || data?.contract || null,
-      timestamp: data?.timestamp || null
-    };
-  } catch {
-    return { ok: false, version: null, status: 'UNREACHABLE', latencyMs: Math.round(performance.now() - started), system: null, bridge: null };
-  }
-}
+import React, { useState } from 'react';
+import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
+import TenantIdentityCard from './TenantIdentityCard.jsx';
+import wilsyBrandAsset from '../../assets/logo/wilsy.jpeg';
 
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
-  const { verifyOTP, login: contextLogin, discoverTenant } = useAuth();
-  const [mode, setMode] = useState('founder');
+  const location = useLocation();
+  const { login, loading, error: authError, tenant } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  // MFA state (hoisted + persisted)
-  const [showMfa, setShowMfa] = useState(false);
-  const [mfaData, setMfaData] = useState(null);
-  const [otp, setOtp] = useState('');
-  const [verifying, setVerifying] = useState(false);
-  const [mfaError, setMfaError] = useState('');
-  const [renderedMfaQr, setRenderedMfaQr] = useState(null);
+  const resolvedTenant = location.state?.tenant || tenant;
 
-  useEffect(() => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
     try {
-      const stored = sessionStorage.getItem('wilsy_mfa_pending');
-      if (stored === 'true') {
-        setShowMfa(true);
-        const data = sessionStorage.getItem('wilsy_mfa_data');
-        if (data) setMfaData(JSON.parse(data));
-      }
-    } catch { }
-  }, []);
-
-  useEffect(() => {
-    let disposed = false;
-    const provisioningUri = mfaData?.qrCode;
-
-    if (!provisioningUri) {
-      setRenderedMfaQr(null);
-      return () => { disposed = true; };
-    }
-
-    if (!provisioningUri.startsWith('otpauth://')) {
-      setRenderedMfaQr(provisioningUri);
-      return () => { disposed = true; };
-    }
-
-    QRCode.toDataURL(provisioningUri, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
-      width: 360,
-      color: { dark: '#000000', light: '#FFFFFF' }
-    })
-      .then((dataUrl) => {
-        if (!disposed) setRenderedMfaQr(dataUrl);
-      })
-      .catch((error) => {
-        console.error('[MFA-QR] Failed to encode provisioning URI.', error);
-        if (!disposed) setMfaError('Unable to render the enrollment QR code. Please restart sign-in.');
-      });
-
-    return () => { disposed = true; };
-  }, [mfaData?.qrCode]);
-
-  // Kernel probe state
-  const [kernelInfo, setKernelInfo] = useState({
-    ok: false,
-    version: null,
-    status: 'PROBING',
-    latencyMs: 0,
-    system: null,
-    bridge: null
-  });
-  const [probeFailedCount, setProbeFailedCount] = useState(0);
-  const [probingStopped, setProbingStopped] = useState(false);
-
-  const [forensicHistory, setForensicHistory] = useState([]);
-  const mountedRef = useRef(true);
-
-  const addForensicEntry = useCallback((msg, color = '#E8C547') => {
-    setForensicHistory((prev) => [
-      { time: new Date().toLocaleTimeString(), msg, color },
-      ...prev
-    ].slice(0, 8));
-  }, []);
-
-  const reportTelemetryError = useCallback(async (errPayload) => {
-    if (import.meta.env.DEV) return;
-    try {
-      await fetch('/api/telemetry/error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(errPayload)
-      });
-    } catch { }
-  }, []);
-
-  // Kernel probing with backoff + stop after 3 failures
-  useEffect(() => {
-    mountedRef.current = true;
-    let controller = new AbortController();
-    let timeoutId = null;
-    let currentBackoff = KERNEL_PROBE_MS;
-    let failures = 0;
-
-    const run = async () => {
-      if (!mountedRef.current || probingStopped) return;
-      const info = await probeLiveKernel(controller.signal);
-      if (!mountedRef.current) return;
-      setKernelInfo(info);
-      if (info.ok) {
-        failures = 0;
-        currentBackoff = KERNEL_PROBE_MS;
-        setProbeFailedCount(0);
-        addForensicEntry(`[OK] KERNEL_LIVE v${info.version} · ${info.latencyMs}ms`, '#34D399');
-      } else {
-        failures += 1;
-        setProbeFailedCount(failures);
-        const newBackoff = Math.min(KERNEL_PROBE_MAX_MS, KERNEL_PROBE_MS * Math.pow(2, failures - 1));
-        currentBackoff = newBackoff;
-        addForensicEntry(`[WARN] KERNEL_${info.status} (attempt ${failures})`, '#F87171');
-        if (failures >= MAX_PROBE_FAILURES) {
-          setProbingStopped(true);
-          addForensicEntry('[INFO] Kernel probing stopped after repeated failures.', '#9CA3AF');
-          return;
-        }
-      }
-      timeoutId = setTimeout(() => {
-        controller.abort();
-        controller = new AbortController();
-        run();
-      }, currentBackoff);
-    };
-
-    run();
-
-    return () => {
-      mountedRef.current = false;
-      controller.abort();
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [addForensicEntry, probingStopped]);
-
-  const handleTenantDiscovery = async () => {
-    try {
-      addForensicEntry('[TENANT-DISCOVERY] Opening discovery surface...', '#E8C547');
-      navigate('/discovery', { state: { from: 'citadel' } });
-    } catch (err) {
-      addForensicEntry(`[TENANT-DISCOVERY] Navigate failed: ${err.message}`, '#F87171');
-      try {
-        const tenant = await discoverTenant?.();
-        if (tenant) {
-          addForensicEntry(`[TENANT-DISCOVERY] Resolved: ${tenant.alias || tenant.tenantId}`, '#34D399');
-          navigate('/mfa', { state: { email: '', tempToken: null, qrCode: null } });
-        } else {
-          setMode('founder');
-        }
-      } catch (e2) {
-        addForensicEntry(`[TENANT-DISCOVERY] Failed: ${e2.message}`, '#F87171');
-        setMode('founder');
-      }
-    }
-  };
-
-  const versionLabel = kernelInfo.ok && kernelInfo.version
-    ? `WILSY OS KERNEL  v${kernelInfo.version}`
-    : KERNEL_OFFLINE_LABEL;
-
-  const sealState = !kernelInfo.ok ? 'SOVEREIGN SIGNAL LOST' : kernelInfo.status === 'OPERATIONAL' ? 'SECURE' : 'DEGRADED';
-  const sealColor = sealState === 'SECURE' ? '#34D399' : '#F87171';
-
-  const formatMetric = (value, suffix = '') => {
-    if (value == null || Number.isNaN(value)) return '—';
-    return `${value}${suffix}`;
-  };
-
-  // OTP handlers
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault();
-    if (!otp || otp.length < 6) {
-      setMfaError('Enter the 6-digit OTP.');
-      return;
-    }
-    setVerifying(true);
-    setMfaError('');
-    addForensicEntry('[3FA] Verifying OTP...', '#E8C547');
-    try {
-      const result = await verifyOTP(
-        mfaData.email,
-        otp,
-        null,
-        null,
-        mfaData?.mfaSetup === true || Boolean(mfaData?.qrCode)
-      );
-      if (result && result.success) {
-        addForensicEntry('[3FA-OK] OTP verified. Access granted.', '#34D399');
-        if (result.token) {
-          localStorage.setItem('token', result.token);
-          if (result.user) localStorage.setItem('user', JSON.stringify(result.user));
-        }
-        try {
-          sessionStorage.removeItem('wilsy_mfa_pending');
-          sessionStorage.removeItem('wilsy_mfa_data');
-        } catch { }
-        addForensicEntry('[3FA] Reloading page to update session...', '#E8C547');
-        window.location.href = '/';
+      const result = await login(email.trim(), password);
+      if ([AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED].includes(result.status)) {
+        navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
         return;
       }
-      const errMsg = result?.message || 'Invalid OTP. Try again.';
-      setMfaError(errMsg);
-      addForensicEntry(`[3FA-ERROR] ${errMsg}`, '#F87171');
-    } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || 'OTP verification failed.';
-      setMfaError(errMsg);
-      addForensicEntry(`[3FA-ERROR] ${errMsg}`, '#F87171');
-    } finally {
-      setVerifying(false);
+      if (result.status === 'AUTHENTICATED') {
+        onLoginSuccess?.(result.user);
+        navigate('/', { replace: true });
+      }
+    } catch (loginError) {
+      setError(loginError?.response?.data?.detail || loginError?.response?.data?.message || loginError.message || 'Authentication service unavailable.');
     }
-  };
-
-  const handleCancelMfa = () => {
-    setShowMfa(false);
-    setMfaData(null);
-    setOtp('');
-    setMfaError('');
-    addForensicEntry('[3FA] Cancelled.', '#9CA3AF');
-    try {
-      sessionStorage.removeItem('wilsy_mfa_pending');
-      sessionStorage.removeItem('wilsy_mfa_data');
-    } catch { }
   };
 
   return (
-    <div style={gateContainer}>
-      <style>{`
-        @keyframes sovereignButtonPulse {
-          0% { box-shadow: 0 4px 24px rgba(212,175,55,0.28); transform: scale(1); }
-          50% { box-shadow: 0 0 36px rgba(212,175,55,0.55), inset 0 0 12px rgba(255,255,255,0.2); transform: scale(1.008); }
-          100% { box-shadow: 0 4px 24px rgba(212,175,55,0.28); transform: scale(1); }
-        }
-        .sovereign-action-btn {
-          animation: sovereignButtonPulse 3.2s infinite ease-in-out;
-        }
-        .sovereign-action-btn:hover:not(:disabled) {
-          background: linear-gradient(135deg, #F0D78C 0%, #D4AF37 100%) !important;
-          box-shadow: 0 0 48px rgba(212,175,55,0.75) !important;
-          transform: translateY(-2px) scale(1.012) !important;
-        }
-        .sovereign-action-btn:active:not(:disabled) {
-          transform: translateY(1px) scale(0.99) !important;
-        }
-        .sovereign-action-btn:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-          animation: none;
-          filter: grayscale(0.35);
-        }
-        .citadel-link:hover {
-          color: #F5E6A8 !important;
-        }
-        .citadel-input:focus {
-          border-color: rgba(212,175,55,0.65) !important;
-          box-shadow: 0 0 0 3px rgba(212,175,55,0.18) !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .sovereign-action-btn { animation: none !important; }
-        }
-      `}</style>
-
-      <div className="quantum-pulse" style={pulseOverlay} aria-hidden="true" />
-
-      {/* LEFT — Narrative */}
-      <section style={narrativePanel} aria-label="Citadel introduction">
-        <div style={narrativeContent}>
-          <div style={badgeContainer}>
-            <span style={sovereignBadgeTag}>{versionLabel}</span>
-            <span
-              style={{
-                ...liveIndicatorDot,
-                backgroundColor: kernelInfo.ok ? '#34D399' : '#9CA3AF',
-                boxShadow: kernelInfo.ok ? '0 0 10px #34D399' : 'none'
-              }}
-              aria-label={kernelInfo.ok ? 'Kernel online' : 'Kernel offline'}
-            />
-          </div>
-
-          <h1 style={biblicalHeaderStyle}>THE CITADEL</h1>
-
-          <p style={biblicalText}>
-            Every sovereign identity token is a key to a citadel of incorruptible truth.
-            Behind this screen lies a system where contracts are eternal.
-          </p>
-
-          <p style={taglineStyle} role="doc-subtitle">
-            INSTITUTIONAL INTEGRITY · CRYPTOGRAPHIC CERTAINTY · ZERO-LOSS GOVERNANCE
-          </p>
+    <main style={pageStyle}>
+      <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel">
+        <header style={brandRow}>
+          <img src={wilsyBrandAsset} alt="WILSY OS platform mark" style={platformMarkStyle} />
+          <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
+        </header>
+        <div style={headingStyle} data-testid="login-page-heading">
+          <h1 id="login-title" style={titleStyle}>Sign in</h1>
+          <p style={subtitleStyle}>Continue securely into your institution's workspace.</p>
         </div>
-      </section>
-
-      {/* CENTER — Ignition */}
-      <section style={ignitionPanel} aria-label="Authentication">
-        <div className="terminal-glow" style={loginCard}>
-          <div style={logoWrapper}>
-            <img
-              src="/assets/images/superadmin/wilsy.jpeg"
-              alt="Wilsy OS"
-              style={logoStyle}
-              width={68}
-              height={68}
-            />
+        <div style={contentGridStyle} data-testid="login-content-grid">
+          <div style={identityZoneStyle}>
+            <TenantIdentityCard tenant={resolvedTenant} integrated />
           </div>
-
-          <div style={stepIndicator} role="list" aria-label="Authentication stages">
-            <div style={step(mode === 'founder')} role="listitem">FOUNDER</div>
-            <div style={stepSeparator} aria-hidden="true" />
-            <div style={step(mode === 'otp' || mode === '3fa')} role="listitem">3FA</div>
-          </div>
-
-          {mode === 'founder' ? (
-            <FounderLoginModule
-              onLoginSuccess={onLoginSuccess}
-              addForensicEntry={addForensicEntry}
-              reportTelemetryError={reportTelemetryError}
-              onSwitchToTenant={() => setMode('tenant')}
-              onOpenCovenant={() => navigate('/covenant')}
-              onTenantDiscovery={handleTenantDiscovery}
-              onNavigateHome={() => {
-                if (onLoginSuccess) onLoginSuccess();
-                navigate('/', { replace: true });
-              }}
-              contextLogin={contextLogin}
-              showMfa={showMfa}
-              setShowMfa={setShowMfa}
-              mfaData={mfaData}
-              setMfaData={setMfaData}
-              renderedMfaQr={renderedMfaQr}
-              otp={otp}
-              setOtp={setOtp}
-              verifying={verifying}
-              setVerifying={setVerifying}
-              mfaError={mfaError}
-              setMfaError={setMfaError}
-              handleOtpSubmit={handleOtpSubmit}
-              handleCancelMfa={handleCancelMfa}
-            />
-          ) : (
-            <TenantLoginModule onBackToFounder={() => setMode('founder')} />
-          )}
-
-          <div style={footerWatermark}>
-            {kernelInfo.ok
-              ? `${kernelInfo.system || 'WILSY OS EOS KERNEL'} · v${kernelInfo.version}${kernelInfo.bridge ? ` · ${kernelInfo.bridge}` : ''}`
-              : 'WILSY OS · AWAITING KERNEL'}
-          </div>
-        </div>
-      </section>
-
-      {/* RIGHT — Telemetry with institutional language */}
-      <section style={telemetryPanel} aria-label="EOS Kennel kernel telemetry">
-        <div style={telemetryHeader}>
-          <ShieldCheck size={16} color="#E8C547" aria-hidden="true" />
-          <span>EOS KENNEL KERNEL TELEMETRY</span>
-        </div>
-
-        <div style={metricBox}>
-          <div style={metricLabelRow}>
-            <span style={metricLabel}>KERNEL SEAL</span>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: sealColor, letterSpacing: '0.08em' }}>
-              {sealState}
-            </span>
-          </div>
-          <div style={metricValue}>
-            {kernelInfo.ok ? (kernelInfo.latencyMs > 0 ? `${kernelInfo.latencyMs}ms` : 'SECURE') : '⛓️ SIGNAL LOST'}
-          </div>
-          <div style={sourceSilentNote}>
-            {kernelInfo.ok
-              ? `Kernel bridge active · v${kernelInfo.version}`
-              : 'Awaiting bridge handshake — check proxy & kernel accessibility'}
-          </div>
-        </div>
-
-        <div style={submetricGrid}>
-          <div style={submetric}>
-            <span style={metricLabel}>ADAPTIVE SHARDS</span>
-            <div style={subValue}>
-              {kernelInfo.ok ? formatMetric(1024 + (kernelInfo.latencyMs || 0) * 4) : '—'}
-            </div>
-          </div>
-          <div style={submetric}>
-            <span style={metricLabel}>SLA LATENCY</span>
-            <div style={subValue}>
-              {kernelInfo.ok ? `${kernelInfo.latencyMs}ms` : '—'}
-            </div>
-          </div>
-        </div>
-
-        <div style={submetricGrid}>
-          <div style={{ ...submetric, borderColor: 'rgba(232,197,71,0.28)' }}>
-            <span style={metricLabel}>BREAKER STATE</span>
-            <div style={{ ...subValue, color: kernelInfo.ok ? '#34D399' : '#9CA3AF' }}>
-              {kernelInfo.ok ? 'STANDBY' : '—'}
-            </div>
-          </div>
-          <div style={submetric}>
-            <span style={metricLabel}>UPTIME SCORE</span>
-            <div style={{ ...subValue, color: kernelInfo.ok ? '#34D399' : '#9CA3AF' }}>
-              {kernelInfo.ok ? '100%' : '—'}
-            </div>
-          </div>
-        </div>
-
-        <div style={forensicLog} aria-live="polite" aria-relevant="additions">
-          <div style={{ color: '#E8C547', marginBottom: 8, fontWeight: 700, letterSpacing: '0.12em' }}>
-            // LIVE KERNEL AUDIT STREAM
-          </div>
-          {forensicHistory.length === 0 ? (
-            <div style={{ color: '#9CA3AF' }}>Awaiting kernel events…</div>
-          ) : (
-            forensicHistory.map((entry, i) => (
-              <div key={`${entry.time}-${i}`} style={{ color: entry.color, marginBottom: 6, wordBreak: 'break-word' }}>
-                [{entry.time}] {entry.msg}
+          <div style={authZoneStyle}>
+            <form onSubmit={handleSubmit} style={formStyle}>
+              <label htmlFor="work-email" style={labelStyle}>Work email</label>
+              <input id="work-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} required />
+              <div style={passwordLabelRowStyle}>
+                <label htmlFor="work-password" style={passwordLabelStyle}>Password</label>
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password', {
+                    state: {
+                      tenant: resolvedTenant,
+                      email: email.trim(),
+                    },
+                  })}
+                  style={forgotPasswordButtonStyle}
+                >
+                  Forgot password?
+                </button>
               </div>
-            ))
-          )}
-        </div>
-
-        {!kernelInfo.ok && (
-          <div style={kernelWarnBanner} role="status">
-            <ShieldAlert size={14} aria-hidden="true" />
-            <span>Kernel bridge offline — login may still work; version badge degraded</span>
+              <input id="work-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} style={inputStyle} required />
+              {(error || authError) && <div role="alert" style={errorStyle}><AlertCircle size={16} /><span>{error || authError}</span></div>}
+              <button type="submit" disabled={loading || !email.trim() || !password} style={buttonStyle}>
+                {loading ? <Loader2 size={18} className="animate-spin" /> : null}<span>Continue securely</span>
+              </button>
+            </form>
+            <button type="button" onClick={() => navigate('/discovery', { replace: true })} style={backButtonStyle}><ArrowLeft size={16} /> Back to workspace discovery</button>
           </div>
-        )}
+        </div>
+        <footer style={footerStyle}><span>Private workspace access</span><span>WILSY OS trust boundary</span></footer>
       </section>
-    </div>
+    </main>
   );
 }
 
-// ─── FounderLoginModule ──────────────────────────────────────────────────────
-const FounderLoginModule = ({
-  onLoginSuccess,
-  onOpenCovenant,
-  onTenantDiscovery,
-  addForensicEntry,
-  reportTelemetryError,
-  contextLogin,
-  onNavigateHome,
-  showMfa,
-  setShowMfa,
-  mfaData,
-  setMfaData,
-  renderedMfaQr,
-  otp,
-  setOtp,
-  verifying,
-  setVerifying,
-  mfaError,
-  setMfaError,
-  handleOtpSubmit,
-  handleCancelMfa
-}) => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('wilsonkhanyezi@gmail.com');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+const pageStyle = { minHeight: '100dvh', width: '100%', boxSizing: 'border-box', display: 'grid', justifyItems: 'center', alignItems: 'start', padding: 'clamp(24px, 3.2vh, 32px) clamp(20px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))', overflowX: 'hidden', overflowY: 'auto', background: '#101112', color: '#f5f1e8', fontFamily: 'Inter, system-ui, sans-serif' };
+const panelStyle = { width: 'min(1080px, 100%)', minHeight: 0, height: 'auto', boxSizing: 'border-box', padding: 'clamp(24px, 3vh, 30px) clamp(24px, 4vh, 38px) 24px', background: 'linear-gradient(145deg, #1c1e20, #141617)', border: '1px solid rgba(213,176,79,.3)', borderRadius: '16px', boxShadow: '0 30px 90px rgba(0,0,0,.42)' };
+const brandRow = { display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '14px', borderBottom: '1px solid rgba(245,241,232,.1)', color: '#d5b04f' };
+const platformMarkStyle = { width: '46px', height: '46px', objectFit: 'cover', objectPosition: '50% 13%', borderRadius: '8px', background: '#fff' };
+const brandCopyStyle = { display: 'grid', gap: '3px' };
+const contentGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', alignItems: 'start', columnGap: 'clamp(36px, 5vw, 64px)', rowGap: 'clamp(28px, 5vw, 48px)', padding: '22px 0 20px' };
+const identityZoneStyle = { display: 'grid', alignContent: 'start', width: '100%', boxSizing: 'border-box', padding: '22px 24px 20px', border: '1px solid rgba(213,176,79,.18)', borderRadius: '12px', background: 'linear-gradient(145deg, rgba(37,38,38,.34), rgba(19,21,22,.18))', alignSelf: 'start' };
+const authZoneStyle = { minWidth: 0, width: '100%' };
+const headingStyle = { paddingTop: '22px' };
+const titleStyle = { margin: '0 0 8px', fontSize: 'clamp(28px, 4vh, 36px)', lineHeight: 1.04, fontWeight: 720, letterSpacing: '-.035em' };
+const subtitleStyle = { margin: 0, color: '#a5a7a2', lineHeight: 1.55, fontSize: '13px' };
+const formStyle = { display: 'grid', gap: '10px' };
+const labelStyle = { marginTop: '7px', color: '#d8d4c9', fontSize: '14px', fontWeight: 600 };
+const passwordLabelRowStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', minHeight: '44px' };
+const passwordLabelStyle = { ...labelStyle, marginTop: 0 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '14px 15px', borderRadius: '7px', border: '1px solid #4d4f51', background: '#0f1011', color: '#fff', fontSize: '16px', outlineColor: '#d5b04f' };
+const buttonStyle = { display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '9px', marginTop: '14px', padding: '14px 18px', border: 0, borderRadius: '7px', background: '#d5b04f', color: '#141414', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
+const forgotPasswordButtonStyle = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', margin: 0, padding: '10px 0', border: 0, background: 'none', color: '#d5b04f', fontSize: '13px', fontWeight: 650, textDecoration: 'underline', textUnderlineOffset: '3px', cursor: 'pointer' };
+const backButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', marginTop: '18px', padding: 0, border: 0, background: 'none', color: '#bbb8ae', cursor: 'pointer' };
+const errorStyle = { display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '8px', color: '#ffb5b5', fontSize: '14px' };
+const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16px', paddingTop: '14px', borderTop: '1px solid rgba(245,241,232,.1)', color: '#777873', fontSize: '10px', letterSpacing: '.1em', textTransform: 'uppercase' };
 
-  const MIN_PASSWORD_LENGTH = 8;
-  const isPasswordValid = password.length >= MIN_PASSWORD_LENGTH;
-
-  useEffect(() => {
-    if (error) setError('');
-    if (mfaError) setMfaError('');
-  }, [email, password, otp, mfaError, error]);
-
-  const handleCredentialsSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      setError('Sovereign identity token is required.');
-      return;
-    }
-    if (!isPasswordValid) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
-      return;
-    }
-    setLoading(true);
-    setError('');
-    addForensicEntry('[IDENTITY-SIGNAL] Initiating EOS Kernel Handshake...', '#E8C547');
-
-    try {
-      const data = await contextLogin(email, password);
-      console.log('[LOGIN] Response data:', data);
-
-      if (data && (data.status === 'MFA_REQUIRED' || data.status === 'MFA_SETUP')) {
-        addForensicEntry('[3FA] Switching to inline MFA...', '#E8C547');
-        const mfaPayload = {
-          email: data.email || email,
-          userId: data.userId,
-          qrCode: data.qrCode || null,
-          mfaSetup: data.status === 'MFA_SETUP' || Boolean(data.qrCode)
-        };
-        setMfaData(mfaPayload);
-        setShowMfa(true);
-        try {
-          sessionStorage.setItem('wilsy_mfa_pending', 'true');
-          sessionStorage.setItem('wilsy_mfa_data', JSON.stringify(mfaPayload));
-        } catch { }
-        setLoading(false);
-        return;
-      }
-
-      if (data && (data.status === 'AUTHENTICATED' || data.success === true)) {
-        addForensicEntry('[IDENTITY-OK] Direct Access Granted.', '#34D399');
-        onNavigateHome();
-        setLoading(false);
-        return;
-      }
-
-      const errorMsg = data?.error || data?.message || 'Authentication failed. Please check credentials.';
-      setError(errorMsg);
-      addForensicEntry(`[AUTH-ERROR] ${errorMsg}`, '#F87171');
-      setLoading(false);
-    } catch (err) {
-      const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Authentication service unavailable.';
-      setError(errorMsg);
-      addForensicEntry(`[AUTH-ERROR] ${errorMsg}`, '#F87171');
-      reportTelemetryError({ error: errorMsg, context: 'credentials_submit' });
-      setLoading(false);
-    }
-  };
-
-  if (showMfa) {
-    return (
-      <div style={mfaPanelStyle}>
-        <h2 style={{ ...gatewayTitle, color: '#FAFAFA' }}>THREE‑FACTOR AUTHENTICATION</h2>
-        {renderedMfaQr && (
-          <div style={mfaQrSectionStyle}>
-            <p style={{ color: '#D4D4D4', fontSize: '0.8rem', marginBottom: 12 }}>
-              Scan the QR code with your authenticator app.
-            </p>
-            <img src={renderedMfaQr} alt="QR Code for MFA" style={mfaQrImageStyle} />
-            <p style={{ color: '#737373', fontSize: '0.7rem', marginTop: 12 }}>Then enter the 6‑digit code below.</p>
-            <button
-              type="button"
-              onClick={() => setMfaData({ ...mfaData, qrCode: null })}
-              style={{ ...linkButtonStyle, color: '#E8C547', marginTop: 8 }}
-            >
-              I have scanned the QR code
-            </button>
-          </div>
-        )}
-        <form onSubmit={handleOtpSubmit} style={formStyle}>
-          <div style={inputGroup}>
-            <label htmlFor="mfa-otp" style={labelStyle}>ENTER 6‑DIGIT OTP</label>
-            <input
-              id="mfa-otp"
-              className="citadel-input"
-              type="text"
-              maxLength="6"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="123456"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-              style={inputStyle}
-              required
-              autoFocus // 👈 Added autoFocus to match cursor in the screenshot
-            />
-          </div>
-          {mfaError && (
-            <div style={forensicError} role="alert">
-              <AlertCircle size={16} aria-hidden="true" />
-              <span>[3FA-ERROR] {mfaError}</span>
-            </div>
-          )}
-          <button
-            type="submit"
-            className="sovereign-action-btn"
-            style={buttonStyle}
-            disabled={verifying || otp.length < 6}
-          >
-            {verifying ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <CheckCircle size={18} aria-hidden="true" />}
-            <span>VERIFY OTP</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleCancelMfa}
-            style={{ ...linkButtonStyle, color: '#9CA3AF', marginTop: 16, fontSize: '0.65rem' }}
-          >
-            Cancel
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h2 style={gatewayTitle}><span>FOUNDER IDENTITY</span></h2>
-
-      {error && (
-        <div style={forensicError} role="alert">
-          <AlertCircle size={16} aria-hidden="true" />
-          <span>[AUTH-ERROR] {error}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleCredentialsSubmit} style={formStyle} noValidate>
-        <div style={inputGroup}>
-          <label htmlFor="citadel-email" style={labelStyle}>
-            SOVEREIGN IDENTITY TOKEN
-          </label>
-          <input
-            id="citadel-email"
-            className="citadel-input"
-            type="email"
-            autoComplete="username"
-            placeholder="founder@domain.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={inputStyle}
-            required
-          />
-        </div>
-
-        <div style={inputGroup}>
-          <label htmlFor="citadel-password" style={labelStyle}>
-            MASTER FORENSIC KEY
-          </label>
-          <div style={{ position: 'relative' }}>
-            <input
-              id="citadel-password"
-              className="citadel-input"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={inputStyle}
-              required
-              minLength={MIN_PASSWORD_LENGTH}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={visibilityToggle}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <EyeOff size={18} color="#E8C547" /> : <Eye size={18} color="#A3A3A3" />}
-            </button>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="sovereign-action-btn"
-          style={buttonStyle}
-          disabled={loading || !isPasswordValid}
-        >
-          {loading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Fingerprint size={18} aria-hidden="true" />}
-          <span>INITIATE 3FA SEQUENCE</span>
-        </button>
-      </form>
-
-      <div style={utilityLinks}>
-        <button type="button" className="citadel-link" onClick={onTenantDiscovery} style={linkButtonStyle}>
-          TENANT DISCOVERY
-        </button>
-        <span style={{ color: '#525252' }} aria-hidden="true">·</span>
-        <button type="button" className="citadel-link" onClick={onOpenCovenant} style={linkButtonStyle}>
-          COVENANT
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const TenantLoginModule = ({ onBackToFounder }) => (
-  <div style={{ padding: '30px 0', textAlign: 'center' }}>
-    <h2 style={gatewayTitle}>TENANT GATEWAY</h2>
-    <p style={{ color: '#A3A3A3', fontSize: '0.8rem', marginBottom: 28, lineHeight: 1.6 }}>
-      Secure access for subsidiary nodes
-    </p>
-    <button type="button" onClick={onBackToFounder} className="sovereign-action-btn" style={buttonStyle}>
-      BACK TO FOUNDER
-    </button>
-  </div>
-);
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-const gateContainer = {
-  display: 'flex',
-  height: '100vh',
-  backgroundColor: '#030303',
-  overflow: 'hidden',
-  position: 'relative',
-  fontFamily: '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-};
-
-const pulseOverlay = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: 0,
-  opacity: 0.07,
-  background: 'radial-gradient(circle at 50% 40%, rgba(212,175,55,0.18) 0%, transparent 65%)',
-  pointerEvents: 'none'
-};
-
-const narrativePanel = {
-  flex: 1.1,
-  borderRight: '1px solid rgba(212,175,55,0.18)',
-  padding: '72px 64px',
-  display: 'flex',
-  alignItems: 'center',
-  background: 'linear-gradient(160deg, #060606 0%, #020202 100%)',
-  zIndex: 1
-};
-
-const narrativeContent = { maxWidth: 520 };
-
-const badgeContainer = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 10,
-  padding: '8px 16px',
-  background: 'rgba(212,175,55,0.1)',
-  border: '1px solid rgba(212,175,55,0.35)',
-  borderRadius: 999,
-  marginBottom: 32
-};
-
-const sovereignBadgeTag = {
-  color: '#F0D78C',
-  fontSize: '0.7rem',
-  fontWeight: 800,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  fontFamily: '"JetBrains Mono", ui-monospace, monospace'
-};
-
-const liveIndicatorDot = {
-  width: 8,
-  height: 8,
-  borderRadius: '50%',
-  flexShrink: 0
-};
-
-const biblicalHeaderStyle = {
-  color: '#FAFAFA',
-  fontSize: 'clamp(2.25rem, 4vw, 3.15rem)',
-  letterSpacing: '0.14em',
-  marginBottom: 28,
-  fontWeight: 900,
-  lineHeight: 1.05,
-  textShadow: '0 0 40px rgba(212,175,55,0.25)'
-};
-
-const biblicalText = {
-  color: '#D4D4D4',
-  lineHeight: 1.85,
-  fontSize: '1.05rem',
-  fontStyle: 'italic',
-  marginBottom: 36,
-  fontWeight: 400,
-  maxWidth: '36ch'
-};
-
-const taglineStyle = {
-  fontSize: '0.72rem',
-  color: '#E8C547',
-  letterSpacing: '0.16em',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  marginBottom: 16,
-  lineHeight: 1.5
-};
-
-const ignitionPanel = {
-  flex: 1.35,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1,
-  padding: '12px 18px',
-  overflow: 'hidden'
-};
-
-const loginCard = {
-  width: 'min(460px, 100%)',
-  padding: '24px 44px',
-  boxSizing: 'border-box',
-  maxHeight: 'calc(100vh - 24px)',
-  overflowY: 'auto',
-  background: 'rgba(10,10,10,0.94)',
-  border: '1px solid rgba(212,175,55,0.38)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: 10,
-  boxShadow: '0 28px 56px rgba(0,0,0,0.75), 0 0 40px rgba(212,175,55,0.08)'
-};
-
-const logoStyle = {
-  width: 68,
-  height: 68,
-  borderRadius: '50%',
-  border: '2px solid #D4AF37',
-  padding: 4,
-  marginBottom: 16,
-  boxShadow: '0 0 24px rgba(212,175,55,0.28)',
-  objectFit: 'cover'
-};
-
-const logoWrapper = { textAlign: 'center' };
-
-const gatewayTitle = {
-  color: '#FAFAFA',
-  letterSpacing: '0.2em',
-  marginBottom: 28,
-  fontSize: '0.85rem',
-  fontWeight: 800,
-  textTransform: 'uppercase',
-  textAlign: 'center'
-};
-
-const formStyle = { display: 'flex', flexDirection: 'column' };
-const inputGroup = { marginBottom: 20, textAlign: 'left' };
-
-const mfaPanelStyle = { padding: '8px 0 0' };
-
-const mfaQrSectionStyle = {
-  textAlign: 'center',
-  margin: '22px 0 24px',
-  paddingTop: 2
-};
-
-const mfaQrImageStyle = {
-  width: 152,
-  height: 152,
-  display: 'block',
-  margin: '0 auto',
-  border: '1px solid rgba(212,175,55,0.3)',
-  borderRadius: 8
-};
-
-const labelStyle = {
-  color: '#E5E5E5',
-  fontSize: '0.68rem',
-  letterSpacing: '0.14em',
-  marginBottom: 8,
-  display: 'block',
-  fontWeight: 700
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: '15px 16px',
-  background: '#0A0A0A',
-  border: '1px solid rgba(212,175,55,0.28)',
-  color: '#FAFAFA',
-  fontSize: '0.95rem',
-  outline: 'none',
-  borderRadius: 6,
-  transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-  boxSizing: 'border-box'
-};
-
-const visibilityToggle = {
-  position: 'absolute',
-  right: 14,
-  top: '50%',
-  transform: 'translateY(-50%)',
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  display: 'flex',
-  padding: 4
-};
-
-const buttonStyle = {
-  width: '100%',
-  padding: 17,
-  background: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)',
-  color: '#0A0A0A',
-  fontWeight: 800,
-  cursor: 'pointer',
-  letterSpacing: '0.14em',
-  border: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  justifyContent: 'center',
-  borderRadius: 6,
-  boxShadow: '0 4px 20px rgba(212,175,55,0.28)',
-  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-  marginTop: 8,
-  fontSize: '0.78rem'
-};
-
-const forensicError = {
-  background: 'rgba(239,68,68,0.12)',
-  border: '1px solid rgba(248,113,113,0.55)',
-  color: '#FECACA',
-  padding: '12px 14px',
-  fontSize: '0.78rem',
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: 10,
-  marginBottom: 18,
-  borderRadius: 6,
-  fontWeight: 600,
-  lineHeight: 1.45
-};
-
-const utilityLinks = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: 14,
-  marginTop: 28
-};
-
-const linkButtonStyle = {
-  background: 'none',
-  border: 'none',
-  color: '#D4D4D4',
-  cursor: 'pointer',
-  fontSize: '0.68rem',
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  fontWeight: 700,
-  transition: 'color 0.15s',
-  padding: '6px 4px'
-};
-
-const telemetryPanel = {
-  flex: 0.95,
-  background: 'linear-gradient(165deg, #050505 0%, #0A0A0A 100%)',
-  borderLeft: '1px solid rgba(212,175,55,0.18)',
-  padding: '40px 32px',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  zIndex: 1
-};
-
-const telemetryHeader = {
-  color: '#F0D78C',
-  fontSize: '0.72rem',
-  letterSpacing: '0.16em',
-  marginBottom: 26,
-  fontWeight: 800,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10
-};
-
-const metricBox = {
-  marginBottom: 18,
-  background: 'rgba(12,12,12,0.9)',
-  border: '1px solid rgba(212,175,55,0.24)',
-  padding: '16px 18px',
-  borderRadius: 6
-};
-
-const metricLabelRow = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 8
-};
-
-const metricLabel = {
-  color: '#A3A3A3',
-  letterSpacing: '0.12em',
-  fontSize: '0.65rem',
-  fontWeight: 700
-};
-
-const metricValue = {
-  color: '#FAFAFA',
-  fontSize: '1.35rem',
-  fontWeight: 800,
-  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-  letterSpacing: '0.04em'
-};
-
-const sourceSilentNote = {
-  marginTop: 8,
-  fontSize: '0.62rem',
-  color: '#737373',
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase'
-};
-
-const submetricGrid = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 12,
-  marginBottom: 12
-};
-
-const submetric = {
-  background: 'rgba(10,10,10,0.95)',
-  padding: 14,
-  border: '1px solid rgba(212,175,55,0.2)',
-  borderRadius: 6
-};
-
-const subValue = {
-  color: '#E8C547',
-  fontSize: '1.05rem',
-  marginTop: 6,
-  fontWeight: 800,
-  fontFamily: '"JetBrains Mono", ui-monospace, monospace'
-};
-
-const forensicLog = {
-  marginTop: 16,
-  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-  fontSize: '0.62rem',
-  lineHeight: 1.75,
-  borderTop: '1px solid rgba(212,175,55,0.22)',
-  paddingTop: 14,
-  minHeight: 140,
-  maxHeight: 160,
-  overflow: 'auto',
-  background: 'rgba(0,0,0,0.45)',
-  padding: 12,
-  borderRadius: 6,
-  color: '#D4D4D4'
-};
-
-const kernelWarnBanner = {
-  marginTop: 14,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  padding: '10px 12px',
-  borderRadius: 6,
-  border: '1px solid rgba(163,163,163,0.35)',
-  background: 'rgba(24,24,24,0.9)',
-  color: '#A3A3A3',
-  fontSize: '0.65rem',
-  letterSpacing: '0.04em',
-  lineHeight: 1.4
-};
-
-const footerWatermark = {
-  color: '#737373',
-  fontSize: '0.58rem',
-  marginTop: 32,
-  textAlign: 'center',
-  letterSpacing: '0.1em',
-  fontWeight: 600,
-  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-  lineHeight: 1.5
-};
-
-const stepIndicator = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 14,
-  marginBottom: 24
-};
-
-const step = (active) => ({
-  color: active ? '#F0D78C' : '#737373',
-  fontSize: '0.65rem',
-  fontWeight: 800,
-  letterSpacing: '0.16em'
-});
-
-const stepSeparator = {
-  width: 24,
-  height: 1,
-  background: 'rgba(212,175,55,0.35)'
-};
-
-export {
-  gateContainer,
-  pulseOverlay,
-  narrativePanel,
-  ignitionPanel,
-  loginCard,
-  logoWrapper,
-  logoStyle,
-  gatewayTitle,
-  formStyle,
-  inputGroup,
-  labelStyle,
-  inputStyle,
-  visibilityToggle,
-  buttonStyle,
-  forensicError,
-  utilityLinks,
-  linkButtonStyle,
-  telemetryPanel,
-  telemetryHeader,
-  metricBox,
-  metricLabelRow,
-  metricLabel,
-  metricValue,
-  submetricGrid,
-  submetric,
-  subValue,
-  forensicLog,
-  footerWatermark,
-  stepIndicator,
-  step,
-  stepSeparator
-};
+/**
+ * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
+ * VERSION: v3.9.0-R10E12-RECOVERY-REQUEST-ENTRYPOINT
+ * AUTHORITY BOUNDARY: credential transport and server-state routing only
+ * TENANT POSTURE: no client tenant, role, or Founder fallback
+ * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

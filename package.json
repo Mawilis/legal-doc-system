@@ -9,6 +9,7 @@
     "dev": "node scripts/start-dev-stack.mjs",
     "dev:client": "cd client && npm run dev",
     "dev:kernel": "./.venv/bin/python -m uvicorn tools.eos.api.server:app --host 127.0.0.1 --port 9095",
+    "prod:kernel": "NODE_ENV=production ./.venv/bin/python -m dotenv -f server/.env.production run -- ./.venv/bin/python -m uvicorn tools.eos.api.server:app --host 127.0.0.1 --port 9095",
     "build": "cd client && npm run build",
     "preview": "cd client && npm run preview",
     "test": "cd client && npm run test",

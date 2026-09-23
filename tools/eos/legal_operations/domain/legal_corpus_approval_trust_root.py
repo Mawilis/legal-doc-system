@@ -1,19 +1,20 @@
 """Immutable public trust metadata for legal-corpus document approval.
 
 TITLE: WILSY OS Legal Corpus Approval Trust Root Domain
-VERSION: v1.1.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
+VERSION: v1.2.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the distinct, source-owned Ed25519 public-key trust lineage
          for PLATFORM ``LEGAL_CORPUS_DOCUMENT_APPROVAL``. This value domain
-         contains exactly one admitted production public key from the
-         separately governed R9B-P5 ceremony.
+         contains one historical retired predecessor and one active successor
+         public key from separately governed R9B-P5 ceremonies.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_corpus_approval_trust_root.py
 COLLABORATION / OWNERSHIP: A future signed approval-authorisation verifier
                             consumes this trust root; this module owns only
                             immutable public metadata and lifecycle predicates.
-CERTIFICATION / UPDATE DATE: 2026-09-19
-CHANGELOG: v1.1.0-R1D-B0F-R9B-P5-R1 admits exactly one frozen public
-           Ed25519 approval key from the completed human-governed ceremony;
+CERTIFICATION / UPDATE DATE: 2026-09-21
+CHANGELOG: v1.2.0-R1D-B0F-R9B-P5-R2 retires the expired predecessor by
+           lifecycle metadata only, admits exactly one externally governed
+           successor public key, and preserves historical verification;
            private key material remains outside this repository.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Public metadata only. No private key, secret,
@@ -45,7 +46,7 @@ from types import MappingProxyType
 from typing import Final, Mapping
 
 
-VERSION: Final[str] = "v1.1.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT"
+VERSION: Final[str] = "v1.2.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-TRUST-ROOT"
 APPROVAL_SCOPE: Final[str] = "PLATFORM"
 APPROVAL_AUTHORITY_ROLE: Final[str] = "WILSY_OS_LEGAL_CORPUS_APPROVAL_AUTHORITY"
 APPROVAL_ISSUER_IDENTITY: Final[str] = "WILSY_OS_LEGAL_CORPUS_APPROVAL_AUTHORITY:V1"
@@ -56,13 +57,20 @@ ED25519_ALGORITHM: Final[str] = "Ed25519"
 PUBLIC_KEY_ENCODING: Final[str] = "base64url_without_padding_raw_32_bytes"
 KEY_ID_PREFIX: Final[str] = "prdca-key:legal-corpus-approval-"
 
-# R9B-P5-R1 public ceremony metadata. These constants intentionally contain no
-# private key, signature, filesystem path, or secret-loading logic.
-_PRODUCTION_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
-_PRODUCTION_PUBLIC_KEY_BASE64URL: Final[str] = "MgzL6fXojmva5bRPonUOdVLOEZFRJHd6gA1kJa1SXGE"
-_PRODUCTION_VALID_FROM: Final[datetime] = datetime(2026, 9, 19, 10, 3, 24, 50717, tzinfo=timezone.utc)
-_PRODUCTION_VALID_UNTIL: Final[datetime] = datetime(2026, 9, 20, 10, 3, 24, 50717, tzinfo=timezone.utc)
-_PRODUCTION_TRUST_FINGERPRINT: Final[str] = "898f01c1e1bbc0caf9d70f70f2bc9db97ab24b56d35641fa678732e8269fcdd0608fcb68a8fb79f200ea5cc413e370a7afb5696fc74b572cc4c5618eecd9bc81"
+# R9B-P5 public ceremony metadata. These constants intentionally contain no
+# private key, signature, filesystem path, or secret-loading logic. The
+# predecessor retains its original public identity and validity interval while
+# the successor is the sole fresh-issuance key.
+_PREDECESSOR_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-f8bc464615e8047f008909c36750348b"
+_PREDECESSOR_PUBLIC_KEY_BASE64URL: Final[str] = "MgzL6fXojmva5bRPonUOdVLOEZFRJHd6gA1kJa1SXGE"
+_PREDECESSOR_VALID_FROM: Final[datetime] = datetime(2026, 9, 19, 10, 3, 24, 50717, tzinfo=timezone.utc)
+_PREDECESSOR_VALID_UNTIL: Final[datetime] = datetime(2026, 9, 20, 10, 3, 24, 50717, tzinfo=timezone.utc)
+_PREDECESSOR_TRUST_FINGERPRINT: Final[str] = "88b2c725e8545c8a88259a74a517266202a99daa0145ed90dbef458e8e41bbdecbd24bc9a777acece7a9a5ebe0c20aa0e77ea210ee4b027c14058a65edcdeaad"
+_SUCCESSOR_KEY_ID: Final[str] = "prdca-key:legal-corpus-approval-2084472fec6f273b537255d0b2dff9fb"
+_SUCCESSOR_PUBLIC_KEY_BASE64URL: Final[str] = "12o_Ya2-muW1IXlcdIJF_Hu-2Nn3aKdIIqb4DYNcp9Q"
+_SUCCESSOR_VALID_FROM: Final[datetime] = datetime(2026, 9, 21, 19, 48, 56, 907799, tzinfo=timezone.utc)
+_SUCCESSOR_VALID_UNTIL: Final[datetime] = datetime(2026, 9, 22, 19, 48, 56, 907799, tzinfo=timezone.utc)
+_SUCCESSOR_TRUST_FINGERPRINT: Final[str] = "f25151e216e1fadf4728c59583b64e84692685e6b12a0ed85a303e92e6a0039d1914151f9d070e6349083713464e4a753b1bd19a72031c94594385935f390b95"
 
 _KEY_ID = re.compile(r"^prdca-key:legal-corpus-approval-[a-f0-9]{32}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -393,24 +401,44 @@ class LegalCorpusApprovalTrustRoot:
         return len(self.trusted_keys)
 
 
-_PRODUCTION_APPROVAL_KEY: Final[LegalCorpusApprovalTrustedKey] = LegalCorpusApprovalTrustedKey(
-    key_id=_PRODUCTION_KEY_ID,
+_PRODUCTION_APPROVAL_PREDECESSOR: Final[LegalCorpusApprovalTrustedKey] = LegalCorpusApprovalTrustedKey(
+    key_id=_PREDECESSOR_KEY_ID,
     issuer_identity=APPROVAL_ISSUER_IDENTITY,
     authority_role=APPROVAL_AUTHORITY_ROLE,
     authority_domain=APPROVAL_AUTHORITY_DOMAIN,
     algorithm=ED25519_ALGORITHM,
-    public_key_base64url=_PRODUCTION_PUBLIC_KEY_BASE64URL,
-    valid_from=_PRODUCTION_VALID_FROM,
-    valid_until=_PRODUCTION_VALID_UNTIL,
+    public_key_base64url=_PREDECESSOR_PUBLIC_KEY_BASE64URL,
+    valid_from=_PREDECESSOR_VALID_FROM,
+    valid_until=_PREDECESSOR_VALID_UNTIL,
+    status=LegalCorpusApprovalTrustStatus.RETIRED,
+    revision=2,
+    permitted_operations=frozenset({APPROVAL_OPERATION}),
+    scope=APPROVAL_SCOPE,
+    trust_root_provenance=APPROVAL_TRUST_ROOT_PROVENANCE,
+    trust_fingerprint=_PREDECESSOR_TRUST_FINGERPRINT,
+)
+
+_PRODUCTION_APPROVAL_SUCCESSOR: Final[LegalCorpusApprovalTrustedKey] = LegalCorpusApprovalTrustedKey(
+    key_id=_SUCCESSOR_KEY_ID,
+    issuer_identity=APPROVAL_ISSUER_IDENTITY,
+    authority_role=APPROVAL_AUTHORITY_ROLE,
+    authority_domain=APPROVAL_AUTHORITY_DOMAIN,
+    algorithm=ED25519_ALGORITHM,
+    public_key_base64url=_SUCCESSOR_PUBLIC_KEY_BASE64URL,
+    valid_from=_SUCCESSOR_VALID_FROM,
+    valid_until=_SUCCESSOR_VALID_UNTIL,
     status=LegalCorpusApprovalTrustStatus.ACTIVE,
     revision=1,
     permitted_operations=frozenset({APPROVAL_OPERATION}),
     scope=APPROVAL_SCOPE,
     trust_root_provenance=APPROVAL_TRUST_ROOT_PROVENANCE,
-    trust_fingerprint=_PRODUCTION_TRUST_FINGERPRINT,
+    trust_fingerprint=_SUCCESSOR_TRUST_FINGERPRINT,
 )
 
-PRODUCTION_APPROVAL_TRUSTED_KEYS: Final[tuple[LegalCorpusApprovalTrustedKey, ...]] = (_PRODUCTION_APPROVAL_KEY,)
+PRODUCTION_APPROVAL_TRUSTED_KEYS: Final[tuple[LegalCorpusApprovalTrustedKey, ...]] = (
+    _PRODUCTION_APPROVAL_PREDECESSOR,
+    _PRODUCTION_APPROVAL_SUCCESSOR,
+)
 PRODUCTION_APPROVAL_TRUST_ROOT: Final[LegalCorpusApprovalTrustRoot] = LegalCorpusApprovalTrustRoot(
     trusted_keys=PRODUCTION_APPROVAL_TRUSTED_KEYS
 )
@@ -436,7 +464,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_corpus_approval_trust_root.py
-# VERSION: v1.1.0-R1D-B0F-R9B-P5-R1-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
+# VERSION: v1.2.0-R1D-B0F-R9B-P5-R2-LEGAL-CORPUS-APPROVAL-TRUST-ROOT
 # AUTHORITY BOUNDARY: immutable PLATFORM approval public-key trust metadata only
 # TENANT POSTURE: no tenant, principal, or membership authority
 # FAIL-CLOSED POSTURE: invalid metadata, revoked keys, duplicates, and unknown keys reject

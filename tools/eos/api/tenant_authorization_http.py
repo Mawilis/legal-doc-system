@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Tenant Authorization HTTP Boundary.
-VERSION: v1.0.0-TENANT-AUTHORIZATION-HTTP
+VERSION: v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING
 AUTHORITY: FastAPI dependency translation of frozen durable tenant authorization.
 EPITOME: Binds authenticated identity and explicit tenant scope to current truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/tenant_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-08-30.
-CHANGELOG: v1.0.0 establishes fail-closed tenant authorization HTTP dependency.
+CERTIFICATION/UPDATE DATE: 2026-09-21.
+CHANGELOG: v1.1.0 routes governed tenant business-role identifiers to dedicated tenant_business_roles truth while preserving authorization-role resolution in role_assignments; v1.0.0 established the fail-closed tenant authorization HTTP dependency.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: Transport projections never grant authority; malformed scope denies.
 TENANT BOUNDARY: X-Tenant-ID is explicit request scope and never membership evidence.
@@ -18,12 +18,24 @@ from typing import Any
 from fastapi import Depends, Header, status
 from tools.eos.api.exceptions import ForbiddenOperationException, WilsyAPIException
 from tools.eos.auth.authentication import get_current_identity, get_principal_authority_repository
-from tools.eos.auth.authorization import get_role_assignment_repository
+from tools.eos.auth.authorization import (
+    get_role_assignment_repository as _get_role_assignment_repository,
+)
+from tools.eos.auth.role_assignment_repository import (
+    RoleAssignmentNotFoundError,
+    RoleAssignmentRepositoryError,
+)
+from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+from tools.eos.auth.tenant_business_role_repository import (
+    TenantBusinessRoleNotFoundError,
+    TenantBusinessRoleRepository,
+    TenantBusinessRoleRepositoryError,
+)
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
 from tools.eos.auth.tenant_authorization import TenantAuthorizationDecision, TenantAuthorizationReason, authorize_tenant_operation
 
-VERSION = "v1.0.0-TENANT-AUTHORIZATION-HTTP"
+VERSION = "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING"
 _UNAVAILABLE = frozenset({TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE})
 _DENIED = frozenset({TenantAuthorizationReason.INVALID_INPUT, TenantAuthorizationReason.PRINCIPAL_NOT_FOUND, TenantAuthorizationReason.PRINCIPAL_INACTIVE, TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND, TenantAuthorizationReason.MEMBERSHIP_INACTIVE, TenantAuthorizationReason.NO_ACTIVE_TENANT_BUSINESS_ROLE, TenantAuthorizationReason.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES, TenantAuthorizationReason.PERMISSION_UNKNOWN, TenantAuthorizationReason.PERMISSION_NOT_CANONICAL, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH, TenantAuthorizationReason.PERMISSION_NOT_GRANTED, TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, TenantAuthorizationReason.SYSTEM_AUTHORITY_REQUIRED, TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED})
 
@@ -32,6 +44,81 @@ class TenantAuthorizationContext:
     identity: SovereignIdentity
     tenant_id: str
     decision: TenantAuthorizationDecision
+
+
+class _TenantAuthorityRoleReader:
+    """Resolve each role namespace from its canonical durable store."""
+
+    def __init__(
+        self,
+        *,
+        authorization_repository: Any,
+        business_repository: Any,
+    ) -> None:
+        self._authorization_repository = authorization_repository
+        self._business_repository = business_repository
+
+    def resolve(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        role_id: str,
+        *,
+        session: Any = None,
+    ) -> object:
+        if role_id in TENANT_ROLES:
+            try:
+                value = (
+                    self._business_repository.resolve(
+                        principal_id,
+                        tenant_id,
+                    )
+                    if session is None
+                    else self._business_repository.resolve(
+                        principal_id,
+                        tenant_id,
+                        session=session,
+                    )
+                )
+            except TenantBusinessRoleNotFoundError as exc:
+                raise RoleAssignmentNotFoundError(
+                    "TENANT_BUSINESS_ROLE_NOT_FOUND"
+                ) from exc
+            except TenantBusinessRoleRepositoryError as exc:
+                raise RoleAssignmentRepositoryError(
+                    "TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"
+                ) from exc
+
+            if getattr(value, "business_role", None) != role_id:
+                raise RoleAssignmentNotFoundError(
+                    "TENANT_BUSINESS_ROLE_NOT_FOUND"
+                )
+
+            return value
+
+        return (
+            self._authorization_repository.resolve(
+                principal_id,
+                tenant_id,
+                role_id,
+            )
+            if session is None
+            else self._authorization_repository.resolve(
+                principal_id,
+                tenant_id,
+                role_id,
+                session=session,
+            )
+        )
+
+
+def get_role_assignment_repository() -> _TenantAuthorityRoleReader:
+    """Compose separate business-role and authorization-role stores."""
+    return _TenantAuthorityRoleReader(
+        authorization_repository=_get_role_assignment_repository(),
+        business_repository=TenantBusinessRoleRepository(),
+    )
+
 
 class RequireTenantAuthorization:
     """FastAPI dependency requiring one canonical permission and operation."""
@@ -56,7 +143,7 @@ class RequireTenantAuthorization:
 
 __all__ = ["VERSION", "TenantAuthorizationContext", "RequireTenantAuthorization"]
 # ARTIFACT: tenant_authorization_http.py
-# VERSION: v1.0.0-TENANT-AUTHORIZATION-HTTP
+# VERSION: v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING
 # AUTHORITY BOUNDARY: HTTP dependency composition only; no authentication truth ownership
 # TENANT POSTURE: explicit X-Tenant-ID scope with durable membership required
 # FAIL-CLOSED POSTURE: only AUTHORIZED succeeds; unknown reasons deny or unavailable

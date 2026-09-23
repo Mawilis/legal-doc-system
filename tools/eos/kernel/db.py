@@ -5,11 +5,12 @@ EPITOME: WILSY OS - SOVEREIGN KENNEL DATABASE ANCHOR (ATLAS-RESILIENT)
 STANDARD: BIBLICAL WORTH BILLIONS NO CHILD'S PLACE
 ===============================================================================
 File:           tools/eos/kernel/db.py
-Version:        v2.1.0-L7D-B-BOOTSTRAP-HARDENING
+Version:        v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI
 Authority:      Wilsy OS Core Governance
 Classification: Production Artifact (Zero-Downtime Architecture)
-CHANGELOG: v2.1.0-L7D-B-BOOTSTRAP-HARDENING makes database lifecycle explicit,
-            import-inert, and caller-owned at the API application boundary.
+CHANGELOG: v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI makes MONGODB_URI the sole
+            database authority, blocks repository dotenv rescue in production,
+            and preserves explicit caller-owned lifecycle semantics.
 
 COLLABORATION COMMENTS:
 - @Wilson: Added conditional TLS options for development to bypass SSL
@@ -35,10 +36,20 @@ from pymongo import MongoClient, errors
 logger = logging.getLogger(__name__)
 
 # The kernel is launched directly by the root development command, so it does
-# not inherit Node's dotenv bootstrap.  Load the repository environment before
-# resolving persistence configuration; never overwrite deployment-provided
-# values.
-load_dotenv(Path(__file__).resolve().parents[3] / ".env", override=False)
+# not inherit Node's dotenv bootstrap. Repository dotenv is a development/test
+# convenience only; production must receive MONGODB_URI from deployment.
+_REPOSITORY_ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
+
+
+def _is_production_environment() -> bool:
+    """Return whether deployment configuration is explicitly production."""
+    return os.getenv("ENV", "").strip().lower() in {"production", "prod"}
+
+
+def _load_nonproduction_dotenv() -> None:
+    """Load repository dotenv only outside production and never override env."""
+    if not _is_production_environment():
+        load_dotenv(_REPOSITORY_ENV_PATH, override=False)
 
 # --- Configuration ---
 MAX_RETRY_ATTEMPTS = int(os.getenv('WILSY_KENNEL_DB_MAX_RETRIES', 5))
@@ -55,15 +66,14 @@ _retry_stop = None
 
 
 def resolve_mongo_uri():
-    """Resolve MongoDB URI from environment variables."""
-    uri = (
-        os.getenv('MONGODB_URI') or
-        os.getenv('MONGO_URI') or
-        os.getenv('DATABASE_URL') or
-        os.getenv('WILSY_MONGO_URI') or
-        ''
-    )
-    return str(uri).strip()
+    """Resolve the sole canonical URI, failing closed when it is absent.
+
+    ``MONGODB_URI`` is deployment authority. In non-production, the repository
+    ``.env`` may populate it when the process did not already provide it. No
+    alternate authority participates.
+    """
+    _load_nonproduction_dotenv()
+    return str(os.getenv("MONGODB_URI") or "").strip()
 
 
 def get_db_status():
@@ -116,7 +126,7 @@ def connect_db(force_reconnect=False):
         return False, "MONGODB_URI missing"
 
     # Determine environment
-    is_dev = os.getenv('ENV') != 'production'
+    is_dev = not _is_production_environment()
 
     # PyMongo connection options.  Local certification Mongo is deliberately
     # non-TLS; Atlas and production remain TLS-first unless explicitly opted
@@ -253,9 +263,8 @@ __all__ = [
     'stop_background_reanchor', 'resolve_mongo_uri',
 ]
 
-# END OF WILSY OS SOVEREIGN ARTIFACT
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.1.0-L7D-B-BOOTSTRAP-HARDENING
+# VERSION: v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.

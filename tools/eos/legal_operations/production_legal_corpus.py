@@ -1,7 +1,7 @@
 """Canonical WILSY OS production legal-corpus draft.
 
 TITLE: WILSY OS Required Platform Legal Corpus Drafts
-VERSION: v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-RUNTIME-CATALOG
+VERSION: v1.4.0-R9B-P0-INSTITUTIONAL-CHARTER-SUCCESSOR
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines the first substantive institutional Charter draft as an
          immutable, server-digested legal-document value without provisioning,
@@ -11,9 +11,10 @@ COLLABORATION / OWNERSHIP: Legal counsel and governed approval authorities own
                             review and approval; LegalDocumentRegistry owns
                             later durable persistence.
 CERTIFICATION / UPDATE DATE: 2026-09-20
-CHANGELOG: v1.3.0 preserves all historical and reviewed-successor values and
-           adds one pure source-owned eleven-value runtime catalog/resolver;
-           no document value, digest, authority, or persistence semantics change.
+CHANGELOG: v1.4.0 preserves every historical Charter and platform value and
+           adds one lifecycle-neutral 1.1.0 Charter successor to the pure
+           source-owned six-family reviewed-successor catalog; no approval,
+           persistence, authority, or historical digest semantics change.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No personal, secret, corporate-registration, or
                             client tenant data is embedded in this draft.
@@ -37,7 +38,7 @@ from tools.eos.legal_operations.domain.legal_acceptance import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-RUNTIME-CATALOG"
+VERSION: Final[str] = "v1.4.0-R9B-P0-INSTITUTIONAL-CHARTER-SUCCESSOR"
 DOCUMENT_ID: Final[str] = "WILSY-OS-INSTITUTIONAL-CHARTER"
 DOCUMENT_VERSION: Final[str] = "1.0.0-DRAFT"
 CONTENT_REFERENCE: Final[str] = "wilsy-os://legal/institutional-charter/1.0.0-draft"
@@ -239,6 +240,129 @@ not provision a production document, create review or approval evidence, create
 acceptance evidence, grant signatory authority, or create a commercial or
 financial obligation. Those outcomes require their separate authenticated,
 governed, and durable authorities.
+"""
+
+
+INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_CONTENT: Final[str] = """WILSY OS INSTITUTIONAL CHARTER
+
+1. Purpose and institutional mission
+
+WILSY OS is a governed institutional operating system for organisations and
+their authorised people. It coordinates work, records, evidence, decisions,
+and operational capability while preserving a clear boundary between what is
+observed, what is derived, what is recommended, and what an authorised human
+or governed execution system may do. Durable accountability requires that
+important state is attributable, scoped, reviewable, and represented according
+to its actual authority.
+
+2. Sovereignty of institutional truth
+
+WILSY owns the canonical business, legal, lifecycle, evidence, and intelligence
+truth represented by its governed authorities. External providers, models,
+devices, browsers, payment networks, courier systems, and integrations may
+provide transport, capability, standards, or observations; they do not become
+a canonical WILSY authority merely because they return a response, status,
+location, score, token, or recommendation. A projection, cache, interface,
+webhook, or model response cannot override durable authority.
+
+3. Human accountability and responsible assistance
+
+People remain accountable for decisions and actions taken under their granted
+institutional authority. WILSY OS may assist with retrieval, organisation,
+analysis, drafting, explanation, and recommendation, but model output is not
+legal advice, legal authority, execution, settlement, or proof of a real-world
+event. Assistance must preserve attribution, source provenance, bounded policy,
+and appropriate human review; it must not conceal uncertainty or fabricate
+what a tool or provider performed.
+
+4. Separation of observation, inference, recommendation, and execution
+
+An observed fact is an identified source record. A derived signal is a
+reproducible computation. AI inference is an interpretation that may require
+review. A recommendation proposes an action; authorization is a bounded
+decision issued by its designated authority; execution is a mutation performed
+by its owner; settlement is a separately evidenced financial state. None of
+these states may be silently collapsed into another. An attempt is not service,
+service is not a return, a return is not an invoice, and an invoice is not
+payment or settlement.
+
+5. Tenant isolation and stewardship
+
+Each tenant and organisation is a distinct institutional scope. Access,
+queries, mutations, projections, evidence, and replay reconciliation carry the
+authenticated tenant boundary unless an explicitly governed platform operation
+applies. Absence in one tenant must not disclose another tenant's state.
+Identity, membership, role, permission, and district or jurisdiction authority
+are independently validated. Information is handled for a legitimate governed
+purpose, with minimised personal data, controlled retention, and an auditable
+record of material authority decisions.
+
+6. Identity and authority
+
+Authentication establishes who is present; it does not establish every
+permission or authority needed for an action. Authorization is evaluated for
+the authenticated principal, scope, operation, resource, role, and assignment
+required by the domain. A platform administrator or tenant owner is not thereby
+an authorised signatory, legal representative, financial approver, or execution
+operator. Acknowledgement attributable only to the authenticated user is not an
+organisation signature and does not bind an organisation.
+
+7. Evidence integrity and forensic posture
+
+Material records are canonicalised deterministically, bound to semantic source
+fields, and protected by immutable or append-only persistence where required.
+Cryptographic fingerprints such as SHA3-512 are integrity evidence over a
+defined payload; they do not prove facts outside that payload. Replay with the
+same identity and payload resolves to the same durable evidence, while divergent
+replay, corrupt hydration, missing provenance, and ambiguous conflict fail
+closed. Absence of evidence is not evidence of completion.
+
+8. Governance and lifecycle
+
+Institutional change follows governed discovery, authority mapping,
+implementation, review, certification, observation, and controlled evolution.
+Lifecycle states retain distinct meanings. Registration is not receipt;
+allocation is not an attempt; completion is not a return; a return is not an
+invoice; and none of these states is settlement. A new material version
+succeeds its predecessor without mutating historical truth. Retirement affects
+future selection while preserving historical records.
+
+9. Security and privacy stewardship
+
+WILSY OS applies defence in depth across identity, transport, storage, tenant
+boundaries, least privilege, auditability, integrity checks, and evidence.
+Secrets and credentials remain configuration material. Material incidents,
+integrity conflicts, unsafe automation, and suspected compromise use the
+authenticated escalation path and preserve relevant evidence.
+
+10. Commercial and financial separation
+
+Commercial, legal, and financial execution require their own governed
+authorities and durable evidence. Kennel EOS remains the exclusive authority
+for financial execution and settlement truth where the platform constitution
+assigns that boundary. No platform document or user acknowledgement creates a
+bank instruction, provider execution, payment destination, paid state, or
+settled state.
+
+11. Amendment and succession
+
+Amendments proceed through governed version succession that identifies the
+predecessor, effective point, source identity, and governing record. Historical
+versions remain immutable and are never rewritten to make a later decision
+appear earlier. A successor is evaluated on its own content, scope, authority,
+and lifecycle evidence.
+
+13. Charter authority and lifecycle boundary
+
+This Charter states institutional principles and operating boundaries. Any
+acknowledgement is attributable only to the authenticated user and does not
+create organisation signature authority, representation, or binding effect.
+Commercial, financial, and legal execution requires separate governed
+authority, authorization, and durable evidence. Review, approval, release,
+acceptance, signature, organisation binding, execution, and settlement are
+separate lifecycle records owned by their designated authorities. This prose
+does not create any of those records or authorities, and the Charter's
+historical versions remain immutable.
 """
 
 
@@ -1338,14 +1462,6 @@ ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion
     supersedes_document_id=ADMIN_RESPONSIBILITY_NOTICE_DRAFT.document_id,
 )
 
-PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS: Final[tuple[LegalDocumentVersion, ...]] = (
-    USER_TERMS_REVIEWED_SUCCESSOR_DRAFT,
-    ACCEPTABLE_USE_REVIEWED_SUCCESSOR_DRAFT,
-    PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
-    AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
-    ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
-)
-
 INSTITUTIONAL_CHARTER_DRAFT: Final[LegalDocumentVersion] = LegalDocumentVersion(
     document_id=DOCUMENT_ID,
     agreement_type=LegalAgreementType.INSTITUTIONAL_CHARTER,
@@ -1363,9 +1479,33 @@ INSTITUTIONAL_CHARTER_DRAFT: Final[LegalDocumentVersion] = LegalDocumentVersion(
 )
 
 
+INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_DRAFT: Final[LegalDocumentVersion] = _platform_reviewed_successor_draft(
+    document_id=INSTITUTIONAL_CHARTER_DRAFT.document_id,
+    agreement_type=INSTITUTIONAL_CHARTER_DRAFT.agreement_type,
+    title=INSTITUTIONAL_CHARTER_DRAFT.title,
+    content_reference="wilsy-os://legal/institutional-charter/1.1.0-draft",
+    content=INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_CONTENT,
+    supersedes_document_id=INSTITUTIONAL_CHARTER_DRAFT.document_id,
+)
+
+PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS: Final[tuple[LegalDocumentVersion, ...]] = (
+    INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_DRAFT,
+    USER_TERMS_REVIEWED_SUCCESSOR_DRAFT,
+    ACCEPTABLE_USE_REVIEWED_SUCCESSOR_DRAFT,
+    PRIVACY_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
+    AI_ASSISTANCE_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
+    ADMIN_RESPONSIBILITY_NOTICE_REVIEWED_SUCCESSOR_DRAFT,
+)
+
+
 def get_institutional_charter_draft() -> LegalDocumentVersion:
     """Return the immutable Charter draft without persistence or authority changes."""
     return INSTITUTIONAL_CHARTER_DRAFT
+
+
+def get_institutional_charter_reviewed_successor_draft() -> LegalDocumentVersion:
+    """Return the Charter successor without persistence or authority changes."""
+    return INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_DRAFT
 
 
 PLATFORM_LEGAL_CORPUS_DRAFTS: Final[tuple[LegalDocumentVersion, ...]] = (
@@ -1477,6 +1617,8 @@ __all__ = [
     "DOCUMENT_ID",
     "DOCUMENT_VERSION",
     "INSTITUTIONAL_CHARTER_DRAFT",
+    "INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_CONTENT",
+    "INSTITUTIONAL_CHARTER_REVIEWED_SUCCESSOR_DRAFT",
     "USER_TERMS_CONTENT",
     "USER_TERMS_DRAFT",
     "ACCEPTABLE_USE_CONTENT",
@@ -1509,6 +1651,7 @@ __all__ = [
     "get_admin_responsibility_notice_draft",
     "get_ai_assistance_notice_draft",
     "get_institutional_charter_draft",
+    "get_institutional_charter_reviewed_successor_draft",
     "get_privacy_notice_draft",
     "get_user_terms_draft",
     "get_acceptable_use_reviewed_successor_draft",
@@ -1520,7 +1663,7 @@ __all__ = [
 
 
 # ARTIFACT: production_legal_corpus.py
-# VERSION: v1.3.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-RUNTIME-CATALOG
+# VERSION: v1.4.0-R9B-P0-INSTITUTIONAL-CHARTER-SUCCESSOR
 # AUTHORITY BOUNDARY: historical drafts and human-directed successor values only
 # TENANT POSTURE: platform corpus draft; no tenant acceptance or binding truth
 # FAIL-CLOSED POSTURE: draft remains review-required and cannot imply approval

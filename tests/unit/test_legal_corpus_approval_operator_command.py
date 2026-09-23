@@ -1,17 +1,18 @@
 """Direct certificate for the reviewed-successor approval command.
 
 TITLE: WILSY OS Legal Corpus Approval Operator Command Certificate
-VERSION: v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND-CERT
+VERSION: v1.3.0-R9B-P5-R2-APPROVAL-KEY-REBIND-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Independently certifies the closed five-document selector, canonical
+EPITOME: Independently certifies the closed six-document selector, canonical
          source/target derivation, external-signature handoff, hydration, and
          verifier/operator boundary without approving or persisting production.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_corpus_approval_operator_command.py
 COLLABORATION / OWNERSHIP: Tests the command adapter against the source-owned
                             production catalog and closed approval contracts.
-CERTIFICATION / UPDATE DATE: 2026-09-20
-CHANGELOG: v1.1.0 replaces the historical Charter-only certificate with
-           bounded coverage for exactly five reviewed 1.1.0-DRAFT successors.
+CERTIFICATION / UPDATE DATE: 2026-09-21
+CHANGELOG: v1.3.0 certifies explicit successor-key issuance binding while
+           preserving exact Charter source/target identity and reference
+           transition.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic signatures and temporary public artifacts
                             only; no production secret or database is used.
@@ -44,14 +45,15 @@ from tools.eos.legal_operations.production_legal_corpus import (
 )
 
 UTC = timezone.utc
-APPROVED_AT = "2026-09-19T12:00:00Z"
+APPROVED_AT = "2026-09-21T20:00:00Z"
 EFFECTIVE_FROM = "2026-10-01T00:00:00Z"
+CHARTER_APPROVED_TARGET_DIGEST = "a31a7bfa51e0ef6a1fd6b90bc475ae416b2e0ba00be079d6cdadb113062de8bed06eab09f1a6d4536f5ddf58b76edb3b6964ac4993581f7320908e74da00cda1"
 SOURCE_PATH = Path(command.__file__).resolve()
 
 
 def _prepare(tmp_path: Path, document_id: str) -> tuple[Path, Path, dict[str, Any]]:
     original = command._utc_now
-    command._utc_now = lambda: datetime(2026, 9, 19, 11, 0, tzinfo=UTC)
+    command._utc_now = lambda: datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
     try:
         unsigned, payload = command.prepare_reviewed_successor(
             document_id=document_id, output_directory=tmp_path, approved_at=APPROVED_AT,
@@ -83,6 +85,9 @@ def test_prepare_binds_each_exact_server_successor_and_derives_target(tmp_path: 
     assert evidence["approved_version"] == "1.1.0-APPROVED"
     assert evidence["approved_status"] == "APPROVED"
     assert evidence["approved_content"] == source.content
+    if source.document_id == "WILSY-OS-INSTITUTIONAL-CHARTER":
+        assert evidence["source_sha3_512"] == "53516595a0216987ea3038ca2cddd25a3f5f9b47db1fed6f87a7e6fc45b0707fcc8ca14625de16ea06ce4dd091b39b1ff9af11da118b62cadc34b6339b08f6f5"
+        assert evidence["approved_sha3_512"] == CHARTER_APPROVED_TARGET_DIGEST
     assert evidence["approved_content_reference"] == source.content_reference.replace("1.1.0-draft", "1.1.0-approved")
     assert evidence["approved_sha3_512"] == canonical_document_digest(
         source.content, evidence["approved_content_reference"]
@@ -90,13 +95,31 @@ def test_prepare_binds_each_exact_server_successor_and_derives_target(tmp_path: 
     assert evidence["approved_supersedes_document_id"] == source.document_id
     assert evidence["approved_effective_from"] == "2026-10-01T00:00:00.000000+00:00"
     assert evidence["approved_created_at"] == evidence["approved_at"]
-    assert document["key_id"] == PRODUCTION_APPROVAL_TRUST_ROOT.all_keys()[0].key_id
+    assert document["key_id"] == command.APPROVAL_TRUSTED_KEY_ID
+    assert document["key_id"] == PRODUCTION_APPROVAL_TRUST_ROOT.all_keys()[1].key_id
     assert len(base64.urlsafe_b64decode(cast(str, document["nonce"]) + "==")) == 32
     assert payload.read_bytes() == canonical_signed_payload(command._authorization_from_payload(document))
 
 
-@pytest.mark.parametrize("document_id", ["WILSY-OS-INSTITUTIONAL-CHARTER", "WILSY-OS-USER-TERMS-LEGACY", "UNKNOWN-DOCUMENT"])
-def test_prepare_rejects_historical_charter_and_unknown_sources(tmp_path: Path, document_id: str):
+def test_prepare_selects_the_charter_successor_and_never_the_historical_source(tmp_path: Path):
+    """The approval command resolves Charter 1.1.0 and derives only its target."""
+    source = PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS[0]
+    assert source.document_id == "WILSY-OS-INSTITUTIONAL-CHARTER"
+    assert source.version == "1.1.0-DRAFT"
+    _, _, document = _prepare(tmp_path, source.document_id)
+    evidence = cast(dict[str, Any], document["approval_evidence"])
+    assert evidence["source_version"] == "1.1.0-DRAFT"
+    assert evidence["approved_version"] == "1.1.0-APPROVED"
+    assert evidence["source_content_reference"] == "wilsy-os://legal/institutional-charter/1.1.0-draft"
+    assert evidence["approved_content_reference"] == "wilsy-os://legal/institutional-charter/1.1.0-approved"
+    assert evidence["approved_content"] == source.content
+    assert evidence["approved_sha3_512"] == canonical_document_digest(
+        source.content, "wilsy-os://legal/institutional-charter/1.1.0-approved"
+    )
+
+
+@pytest.mark.parametrize("document_id", ["WILSY-OS-USER-TERMS-LEGACY", "UNKNOWN-DOCUMENT"])
+def test_prepare_rejects_unknown_sources(tmp_path: Path, document_id: str):
     with pytest.raises(command.LegalCorpusApprovalOperatorCommandError, match="REVIEWED_SUCCESSOR_DOCUMENT_REQUIRED"):
         command.prepare_reviewed_successor(document_id=document_id, output_directory=tmp_path, approved_at=APPROVED_AT,
                                            effective_from=EFFECTIVE_FROM, human_authority_representation="human", provenance_reference="ref")
@@ -112,8 +135,8 @@ def test_prepare_requires_explicit_times_and_governance_inputs(tmp_path: Path):
                                            effective_from=EFFECTIVE_FROM, human_authority_representation=" ", provenance_reference="ref")
 
 
-def test_prepare_rejects_expired_production_issuance_window(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(command, "_utc_now", lambda: datetime(2026, 9, 20, 10, 3, 24, 50718, tzinfo=UTC))
+def test_prepare_rejects_pre_successor_issuance_window(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(command, "_utc_now", lambda: datetime(2026, 9, 21, 19, 48, 56, 907798, tzinfo=UTC))
     with pytest.raises(command.LegalCorpusApprovalOperatorCommandError, match="CANNOT_ISSUE"):
         command.prepare_reviewed_successor(document_id=PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS[0].document_id,
                                            output_directory=tmp_path, approved_at=APPROVED_AT, effective_from=EFFECTIVE_FROM,
@@ -200,7 +223,7 @@ def test_execute_rejects_expired_artifact(tmp_path: Path, monkeypatch):
     signature = tmp_path / "signature.bin"
     signature.write_bytes(b"q" * 64)
     command.finalize_authorization(unsigned, signature, signed)
-    monkeypatch.setattr(command, "_utc_now", lambda: datetime(2026, 9, 20, 10, 4, tzinfo=UTC))
+    monkeypatch.setattr(command, "_utc_now", lambda: datetime(2026, 9, 22, 19, 48, 56, 907800, tzinfo=UTC))
     with pytest.raises(command.LegalCorpusApprovalOperatorCommandError, match="VERIFICATION_FAILED"):
         command.execute_authorization(signed)
 
@@ -219,7 +242,7 @@ def test_help_and_source_leakage_audit():
 
 
 # ARTIFACT: test_legal_corpus_approval_operator_command.py
-# VERSION: v1.1.0-R1D-B0F-R9B-P7-A3-LEGAL-CORPUS-APPROVAL-OPERATOR-COMMAND-CERT
+# VERSION: v1.3.0-R9B-P5-R2-APPROVAL-KEY-REBIND-CERT
 # AUTHORITY BOUNDARY: direct command evidence only; no production approval
 # TENANT POSTURE: PLATFORM-only synthetic certificate data
 # FAIL-CLOSED POSTURE: invalid command artifacts and authority drift reject
