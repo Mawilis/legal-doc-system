@@ -1,12 +1,18 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
+VERSION: v1.17.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
+CHANGELOG: 2026-09-23 v1.17.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY-CERT
+certifies legal_client_visibility_write as an exact own-tenant provisioning
+operation eligible only for tenant_legal_partner, tenant_legal_attorney, and
+tenant_legal_paralegal. Client, secretary, finance, sheriff, deputy, general
+tenant and specialized provider roles remain denied; policy stays non-
+authorizing and non-financial.
+2026-09-23 v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
 certifies legal_deputy_queue_read eligibility only for tenant_deputy, with
 tenant_sheriff and every other business role denied and policy-only semantics.
 2026-09-23 v1.15.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY-CERT
@@ -53,7 +59,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.20.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY"
+    assert VERSION == "v1.21.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -85,9 +91,9 @@ def test_matrix_boundaries() -> None:
 def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     """Each legal persona has bounded eligibility and no financial execution."""
     expected = {
-        "tenant_legal_partner": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_attorney": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_paralegal": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_partner": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_attorney": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_paralegal": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_sheriff": {"legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
@@ -100,6 +106,53 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         assert tenant_role_operation_eligibility(role, "financial_execution") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_client", "legal_instruction_read") == DENY
     assert tenant_role_operation_eligibility("tenant_deputy", "legal_instruction_read") == DENY
+
+
+def test_client_visibility_write_eligibility_is_exact_law_firm_only() -> None:
+    """L8-7C3A client-visibility provisioning eligibility is exact and non-authorizing."""
+    operation = "legal_client_visibility_write"
+    approved = {
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+    }
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == approved
+    for role in TENANT_ROLES - approved:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_client",
+        operation,
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_sheriff",
+        operation,
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_deputy",
+        operation,
+    ) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+    for malformed in (
+        "legal_client_visibility",
+        "legal_client_visibility_write ",
+        " legal_client_visibility_write",
+        "LEGAL_CLIENT_VISIBILITY_WRITE",
+        "legal_client_visibility_*",
+        None,
+        123,
+    ):
+        assert all(
+            tenant_role_operation_eligibility(role, malformed) == DENY
+            for role in TENANT_ROLES
+        )
 
 
 def test_deputy_personal_queue_read_eligibility_is_deputy_only() -> None:
@@ -391,7 +444,7 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
+# VERSION: v1.17.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: directory/receipt and other tenant eligibility remains policy-only; no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
