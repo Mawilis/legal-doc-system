@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+VERSION: v1.15.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,12 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+CHANGELOG: 2026-09-23 v1.15.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING-CERT
+certifies legal_deputy_queue_read -> legal_operations:deputy_queue:read as an
+exact deputy-only conjunctive authorization binding with sheriff denial,
+crossed business/authorization-role rejection, permission-operation mismatch
+rejection, and unchanged financial-execution prohibition.
+2026-09-23 v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
 repairs the certificate runtime VERSION to the current L8-6A release; test
 semantics, IAM authority, and sheriff-only queue-read behavior are unchanged.
 2026-09-23 v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
@@ -91,7 +96,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT"
+VERSION = "v1.15.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -818,6 +823,59 @@ def test_l8_3_receipt_binding_is_exact_and_sheriff_only() -> None:
     ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
 
 
+def test_l8_6c_deputy_personal_queue_binding_is_exact_and_deputy_only() -> None:
+    """Personal work reads require the exact deputy IAM conjunction."""
+
+    assert (
+        ta._BINDINGS["legal_deputy_queue_read"]
+        == "legal_operations:deputy_queue:read"
+    )
+    assert list(ta._BINDINGS).count("legal_deputy_queue_read") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("DEPUTY"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_deputy",
+        "DEPUTY",
+    )
+
+    sheriff = _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF", "DEPUTY"),
+    )
+    assert sheriff.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    crossed_deputy = _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("SHERIFF"),
+    )
+    assert crossed_deputy.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    assert _decision(
+        permission_id="legal_operations:queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("DEPUTY"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    assert _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("DEPUTY"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
 def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
     """Operational queue reads require the exact sheriff IAM conjunction."""
 
@@ -872,7 +930,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.18.0-L8-6A-SHERIFF-QUEUE-READ-BINDING"
+    assert ta.VERSION == "v1.19.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -886,7 +944,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.18.0-L8-6A-SHERIFF-QUEUE-READ-BINDING"
+    assert ta.VERSION == "v1.19.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -1763,9 +1821,9 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+# VERSION: v1.15.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
-# TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required; directory and receipt authority are sheriff-only
+# TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required; sheriff queues and deputy personal queues remain distinct
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
