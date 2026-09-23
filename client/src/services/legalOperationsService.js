@@ -1,12 +1,12 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT
+ * VERSION: v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
- * EPITOME: Preserves certified sheriff/deputy reads and deputy field commands
- *          while adding the exact D6 LEGAL_CLIENT matter projection transport.
- *          The browser supplies no tenant, principal, client, matter, role,
- *          visibility, lifecycle or financial authority; it validates the exact
- *          D5 schema, adapts only safe matter cards, and freezes the result.
+ * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
+ *          practice-workspace projection, exact finance evidence lookups,
+ *          initial-intake registration, ReturnOfService generation and bound
+ *          Deputy field commands. Browser input never establishes tenant,
+ *          principal, role, lifecycle, service, money or settlement authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/legalOperationsService.js
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; L8-5C owns
  *                            sheriff queues; L8-6B owns immutable binding; L8-6C
@@ -17,19 +17,26 @@
  *                            owns exact browser response validation and immutable
  *                            presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT adds exact GET /legal-operations/workspace
+ * CHANGELOG: 2026-09-23 v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT adds strict initial-intake registration
+ *            transport for the existing L8-2 command. The request accepts only
+ *            explicit opaque case/instruction/document/custody identities,
+ *            timestamps, document type, matter reference and evidence
+ *            references; tenant/principal/role remain server-derived. Response
+ *            validation requires exact registration-only P1 facts and CREATED
+ *            or REPLAYED disposition before presentation success.
+ *            2026-09-23 v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT adds exact GET /legal-operations/workspace
  *            validation/adaptation for the D11 legal-practice workspace,
  *            exact tariff-assessment/billing-eligibility/invoice read adapters,
  *            and the existing ReturnOfService generation command. Browser input
  *            never supplies tenant/principal/role, money, service outcome,
  *            payment or settlement truth.
-2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT adds GET /legal-operations/client/matters,
+ *            2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT adds GET /legal-operations/client/matters,
  *            validates the exact D5 schema/version/visibility and exact four-field
  *            matter-card contract, rejects malformed/extra/missing/duplicate/
  *            unsorted matter evidence, maps only case ID/reference/opened time/
  *            OPEN-or-CLOSED state to immutable camelCase presentation data, and
  *            admits no browser-owned tenant/client/matter/role/visibility input.
-2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT adds exact deputy field-capability reads plus
+ *            2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT adds exact deputy field-capability reads plus
  *            bound transition/outcome POST adapters. Request whitelists exclude
  *            tenant/principal/deputy authority, P5M sequence lineage, evidence
  *            fingerprints, receipt identity, execution identity/time, billing,
@@ -60,7 +67,7 @@
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT';
+  'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -234,6 +241,30 @@ const LEGAL_FINANCE_KINDS = Object.freeze({
     entityType: 'ClientInvoice',
   }),
 });
+
+const LEGAL_INTAKE_INPUT_KEYS = Object.freeze([
+  'caseMatterId',
+  'matterReference',
+  'caseOpenedAt',
+  'matterEvidenceReference',
+  'instructionId',
+  'instructionRegisteredAt',
+  'instructionEvidenceReference',
+  'documentId',
+  'documentType',
+  'documentRegisteredAt',
+  'documentRegistrationEvidenceReference',
+  'registrationCustodyEventId',
+]);
+
+const P1_BASE_KEYS = Object.freeze(['schema', 'version', 'entity_type', 'tenant_id']);
+const LEGAL_INTAKE_RESPONSE_KEYS = Object.freeze([
+  'disposition',
+  'case_matter',
+  'instruction',
+  'document',
+  'custody_event',
+]);
 
 
 const DEPUTY_CAPABILITY_RESPONSE_KEYS = Object.freeze([
@@ -739,6 +770,191 @@ function assertCanonicalReturnCommandResponse(value, input) {
 }
 
 
+function assertRegistrationSnapshot(
+  value,
+  {
+    entityType,
+    expectedKeys,
+    stateKey = null,
+    stateValue = null,
+    expectedIdentity = null,
+    identityKey = null,
+  },
+) {
+  const errorCode = 'LEGAL_OPERATIONS_INTAKE_RESPONSE_INVALID';
+  assertExactKeys(value, [...P1_BASE_KEYS, ...expectedKeys], errorCode);
+  if (
+    value.schema !== 'WILSY-LEGAL-OPERATIONS-LIFECYCLE/V1'
+    || value.version !== 'v1.0.0-LEGAL-OPERATIONS-LIFECYCLE'
+    || value.entity_type !== entityType
+    || !isCanonicalText(value.tenant_id)
+  ) {
+    throw new Error(errorCode);
+  }
+  if (
+    identityKey
+    && (
+      !isCanonicalText(value[identityKey])
+      || (expectedIdentity && value[identityKey] !== expectedIdentity)
+    )
+  ) {
+    throw new Error(errorCode);
+  }
+  if (stateKey && value[stateKey] !== stateValue) {
+    throw new Error(errorCode);
+  }
+  if ('transition_history' in value && (
+    !Array.isArray(value.transition_history)
+    || value.transition_history.length !== 0
+  )) {
+    throw new Error(errorCode);
+  }
+  return value;
+}
+
+function assertLegalIntakeInput(value) {
+  const errorCode = 'LEGAL_OPERATIONS_INTAKE_INPUT_INVALID';
+  assertExactKeys(value, LEGAL_INTAKE_INPUT_KEYS, errorCode);
+  for (const key of [
+    'caseMatterId',
+    'matterReference',
+    'matterEvidenceReference',
+    'instructionId',
+    'instructionEvidenceReference',
+    'documentId',
+    'documentType',
+    'documentRegistrationEvidenceReference',
+    'registrationCustodyEventId',
+  ]) {
+    if (!isCanonicalText(value[key])) throw new Error(errorCode);
+  }
+  for (const key of [
+    'caseOpenedAt',
+    'instructionRegisteredAt',
+    'documentRegisteredAt',
+  ]) {
+    if (!isCanonicalTimestamp(value[key])) throw new Error(errorCode);
+  }
+  if (
+    Date.parse(value.caseOpenedAt) > Date.parse(value.instructionRegisteredAt)
+    || Date.parse(value.instructionRegisteredAt) > Date.parse(value.documentRegisteredAt)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({ ...value });
+}
+
+function assertCanonicalLegalIntakeResponse(value, input) {
+  const errorCode = 'LEGAL_OPERATIONS_INTAKE_RESPONSE_INVALID';
+  assertExactKeys(value, LEGAL_INTAKE_RESPONSE_KEYS, errorCode);
+  if (!['CREATED', 'REPLAYED'].includes(value.disposition)) {
+    throw new Error(errorCode);
+  }
+
+  const matter = assertRegistrationSnapshot(value.case_matter, {
+    entityType: 'CaseMatter',
+    identityKey: 'case_matter_id',
+    expectedIdentity: input.caseMatterId,
+    stateKey: 'state',
+    stateValue: 'OPEN',
+    expectedKeys: [
+      'case_matter_id',
+      'matter_reference',
+      'opened_at',
+      'evidence_reference',
+      'state',
+      'transition_history',
+    ],
+  });
+  const instruction = assertRegistrationSnapshot(value.instruction, {
+    entityType: 'LegalInstruction',
+    identityKey: 'instruction_id',
+    expectedIdentity: input.instructionId,
+    stateKey: 'state',
+    stateValue: 'REGISTERED',
+    expectedKeys: [
+      'instruction_id',
+      'case_matter_id',
+      'document_id',
+      'registered_at',
+      'evidence_reference',
+      'state',
+      'transition_history',
+    ],
+  });
+  const document = assertRegistrationSnapshot(value.document, {
+    entityType: 'ProcessDocument',
+    identityKey: 'document_id',
+    expectedIdentity: input.documentId,
+    stateKey: 'state',
+    stateValue: 'REGISTERED',
+    expectedKeys: [
+      'document_id',
+      'case_matter_id',
+      'document_type',
+      'registered_at',
+      'registration_evidence_reference',
+      'state',
+      'transition_history',
+    ],
+  });
+  const custody = assertRegistrationSnapshot(value.custody_event, {
+    entityType: 'DocumentCustodyEvent',
+    identityKey: 'custody_event_id',
+    expectedIdentity: input.registrationCustodyEventId,
+    expectedKeys: [
+      'custody_event_id',
+      'document_id',
+      'event_type',
+      'occurred_at',
+      'sequence_number',
+      'evidence_reference',
+      'from_holder_reference',
+      'to_holder_reference',
+    ],
+  });
+
+  if (
+    matter.matter_reference !== input.matterReference
+    || matter.opened_at !== input.caseOpenedAt
+    || matter.evidence_reference !== input.matterEvidenceReference
+    || instruction.case_matter_id !== input.caseMatterId
+    || instruction.document_id !== input.documentId
+    || instruction.registered_at !== input.instructionRegisteredAt
+    || instruction.evidence_reference !== input.instructionEvidenceReference
+    || document.case_matter_id !== input.caseMatterId
+    || document.document_type !== input.documentType
+    || document.registered_at !== input.documentRegisteredAt
+    || document.registration_evidence_reference
+      !== input.documentRegistrationEvidenceReference
+    || custody.document_id !== input.documentId
+    || custody.event_type !== 'REGISTERED'
+    || custody.occurred_at !== input.documentRegisteredAt
+    || custody.sequence_number !== 1
+    || custody.evidence_reference !== input.documentRegistrationEvidenceReference
+    || custody.from_holder_reference !== null
+    || custody.to_holder_reference !== null
+    || new Set([
+      matter.tenant_id,
+      instruction.tenant_id,
+      document.tenant_id,
+      custody.tenant_id,
+    ]).size !== 1
+  ) {
+    throw new Error(errorCode);
+  }
+
+  return Object.freeze({
+    disposition: value.disposition,
+    tenantId: matter.tenant_id,
+    caseMatter: freezeValue(matter),
+    instruction: freezeValue(instruction),
+    document: freezeValue(document),
+    custodyEvent: freezeValue(custody),
+  });
+}
+
+
 function assertCanonicalDeputyFieldCapabilitiesPayload(value) {
   assertExactKeys(
     value,
@@ -897,6 +1113,27 @@ function toFieldCommandBody(input, { terminal = false } = {}) {
   return Object.freeze(body);
 }
 
+export async function registerLegalIntake(value) {
+  const input = assertLegalIntakeInput(value);
+  const response = await api.post('/legal-operations/intake/registrations', {
+    case_matter_id: input.caseMatterId,
+    matter_reference: input.matterReference,
+    case_opened_at: input.caseOpenedAt,
+    matter_evidence_reference: input.matterEvidenceReference,
+    instruction_id: input.instructionId,
+    instruction_registered_at: input.instructionRegisteredAt,
+    instruction_evidence_reference: input.instructionEvidenceReference,
+    document_id: input.documentId,
+    document_type: input.documentType,
+    document_registered_at: input.documentRegisteredAt,
+    document_registration_evidence_reference:
+      input.documentRegistrationEvidenceReference,
+    registration_custody_event_id: input.registrationCustodyEventId,
+  });
+  return assertCanonicalLegalIntakeResponse(response?.data, input);
+}
+
+
 export async function getLegalPracticeWorkspace() {
   const response = await api.get('/legal-operations/workspace');
   return assertCanonicalLegalWorkspacePayload(response?.data);
@@ -991,6 +1228,10 @@ export const __legalOperationsServiceInternals = Object.freeze({
   CLIENT_MATTER_RESPONSE_KEYS,
   CLIENT_MATTER_KEYS,
   CLIENT_MATTER_STATES,
+  assertLegalIntakeInput,
+  assertCanonicalLegalIntakeResponse,
+  LEGAL_INTAKE_INPUT_KEYS,
+  LEGAL_INTAKE_RESPONSE_KEYS,
   assertCanonicalLegalWorkspacePayload,
   assertCanonicalFinanceEvidence,
   assertReturnCommandInput,
@@ -1014,8 +1255,8 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT
- * AUTHORITY BOUNDARY: role-scoped sheriff/deputy/client read and deputy-command browser transport validation only
+ * VERSION: v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT
+ * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command browser transport validation only
  * TENANT POSTURE: server tenant/client/deputy scope remains authoritative; browser cannot establish tenant, client or matter authority
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
