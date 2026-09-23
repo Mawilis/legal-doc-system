@@ -1,5 +1,37 @@
 /* eslint-disable */
 /**
+ * TITLE: WILSY OS Sovereign Dashboard Controller
+ * VERSION: v18.2.0-L8-6C-LEGAL-ROLE-ROUTING
+ * AUTHORITY: Authenticated client dashboard routing and presentation composition.
+ * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
+ *          identity and tenant context. L8-6C adds the Legal OS shard for
+ *          SHERIFF/DEPUTY presentation without moving IAM, tenant, lifecycle,
+ *          deputy-binding, queue, service, billing or financial authority into
+ *          the browser.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignDashboardController.jsx
+ * COLLABORATION / OWNERSHIP: AuthProvider owns authenticated identity projection;
+ *                            TenantContext owns selected tenant projection;
+ *                            Python EOS owns authorization and Legal Operations
+ *                            truth; dashboard components own presentation only.
+ * CERTIFICATION / UPDATE DATE: 2026-09-23
+ * CHANGELOG: 2026-09-23 v18.2.0-L8-6C-LEGAL-ROLE-ROUTING adds LEGAL_DASHBOARD as an existing-controller
+ *            shard, maps normalized SHERIFF/TENANT_SHERIFF and
+ *            DEPUTY/TENANT_DEPUTY roles to Legal OS, and forwards the
+ *            authenticated normalized role only as roleView presentation input.
+ *            2026-08-02 18.1.1-BOTTOM-BLEED-FIX preserved overflow for BillingHUD.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Routing uses authenticated client projections;
+ *                             roleView is non-authoritative and cannot grant API
+ *                             access or manufacture tenant/deputy identity.
+ * TENANT BOUNDARY: Active tenant remains selected by governed tenant context;
+ *                  dashboard routing cannot widen server tenant scope.
+ * AUTHORITY BOUNDARY: Client routing only. Python EOS independently authorizes
+ *                     Legal Operations, IAM, lifecycle and binding reads.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * FAIL-CLOSED DECLARATION: Unknown dashboard/role resolution does not create
+ *                          Legal Operations authority or cross-role fallback.
+ */
+/**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS — SOVEREIGN DASHBOARD CONTROLLER [V18.1.1-BOTTOM-BLEED-FIX]                                                              ║
  * ║ [ROLE AUTO-DETECTION | FOUNDER_ARCHITECT | SUPER_ADMIN | KERNEL BRIDGE AWARE | FOUNDER RETURN DOCK | MOUNT TELEMETRY]                 ║
@@ -48,6 +80,7 @@ const SalesDashboard = React.lazy(() => import('../sales/SalesDashboard'));
 const BillingHUD = React.lazy(() => import('../billing/BillingHUD'));
 const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
+const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
 
 export const DASHBOARD_KEYS = Object.freeze({
   FOUNDER: 'FOUNDER_DASHBOARD',
@@ -58,7 +91,8 @@ export const DASHBOARD_KEYS = Object.freeze({
   SALES: 'SALES_DASHBOARD',
   FINANCE: 'FINANCE_DASHBOARD',   // ⬅️ Now resolves to BillingHUD
   HR: 'HR_DASHBOARD',
-  IT: 'IT_DASHBOARD'
+  IT: 'IT_DASHBOARD',
+  LEGAL: 'LEGAL_DASHBOARD'
 });
 
 const DASHBOARD_LABELS = Object.freeze({
@@ -70,7 +104,8 @@ const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.SALES]: 'Sales Dashboard',
   [DASHBOARD_KEYS.FINANCE]: 'Billing Hub',  // ⬅️ Updated label
   [DASHBOARD_KEYS.HR]: 'HR Dashboard',
-  [DASHBOARD_KEYS.IT]: 'IT Dashboard'
+  [DASHBOARD_KEYS.IT]: 'IT Dashboard',
+  [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS'
 });
 
 const DASHBOARD_ALIASES = Object.freeze({
@@ -114,7 +149,10 @@ const DASHBOARD_ALIASES = Object.freeze({
   IT: DASHBOARD_KEYS.IT,
   IT_DASHBOARD: DASHBOARD_KEYS.IT,
   SECURITY: DASHBOARD_KEYS.IT,
-  TECHNOLOGY: DASHBOARD_KEYS.IT
+  TECHNOLOGY: DASHBOARD_KEYS.IT,
+  LEGAL: DASHBOARD_KEYS.LEGAL,
+  LEGAL_DASHBOARD: DASHBOARD_KEYS.LEGAL,
+  LEGAL_OS: DASHBOARD_KEYS.LEGAL
 });
 
 const ROLE_DASHBOARD_MAP = Object.freeze({
@@ -146,6 +184,10 @@ const ROLE_DASHBOARD_MAP = Object.freeze({
   SALES_REPRESENTATIVE: DASHBOARD_KEYS.SALES,
   TENANT_ADMIN: DASHBOARD_KEYS.GENERAL,
   TENANT_OWNER: DASHBOARD_KEYS.EXECUTIVE,
+  SHERIFF: DASHBOARD_KEYS.LEGAL,
+  TENANT_SHERIFF: DASHBOARD_KEYS.LEGAL,
+  DEPUTY: DASHBOARD_KEYS.LEGAL,
+  TENANT_DEPUTY: DASHBOARD_KEYS.LEGAL,
   USER: DASHBOARD_KEYS.GENERAL
 });
 
@@ -205,7 +247,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = '18.1.1-BOTTOM-BLEED-FIX';
+const CONTROLLER_VERSION = 'v18.2.0-L8-6C-LEGAL-ROLE-ROUTING';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -823,6 +865,14 @@ const SovereignDashboardController = ({ user: propUser }) => {
     dashboardShard = <HRDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.IT) {
     dashboardShard = <ITDashboard user={user} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.LEGAL) {
+    dashboardShard = (
+      <LegalDashboard
+        user={user}
+        tenantConfig={activeTenant}
+        roleView={role}
+      />
+    );
   } else if (dashboardKey === DASHBOARD_KEYS.GENERAL) {
     dashboardShard = <GeneralDashboard user={user} />;
   } else {
@@ -917,22 +967,11 @@ const SovereignDashboardController = ({ user: propUser }) => {
 export default SovereignDashboardController;
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — SOVEREIGN DASHBOARD CONTROLLER
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         18.1.1-BOTTOM-BLEED-FIX
- * Kennel Bridge:   probeKernelBridge() → GET /api/kernel (public, Contract v1.1.0)
- * Authority Map:   SUPER_ADMIN / FOUNDER_ARCHITECT → FOUNDER_DASHBOARD
- * Billing Route:   FINANCE_DASHBOARD → BillingHUD (legacy FinanceDashboard removed)
- * Scale Target:    1B+ tenants | Top 0.01%
- * Compliance:      POPIA / GDPR / SOC2 aligned
- * ──────────────────────────────────────────────────────────────────────────────
- * HEALTH CHECK (v18.1.1):
- * ✅ Overflow wrapper added for BillingHUD padding expansion.
- * ✅ No CSS overrides; layout preserved for all other shards.
- * ✅ Kennel bridge health probe operational.
- * ✅ Founder return dock functional.
- * ✅ All dashboard resolutions intact.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: SovereignDashboardController.jsx
+ * VERSION: v18.2.0-L8-6C-LEGAL-ROLE-ROUTING
+ * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
+ * TENANT POSTURE: active tenant projection is preserved; Legal OS role routing cannot widen server tenant scope
+ * FAIL-CLOSED POSTURE: unknown roles/dashboards do not manufacture Legal Operations access or cross-role fallback
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
