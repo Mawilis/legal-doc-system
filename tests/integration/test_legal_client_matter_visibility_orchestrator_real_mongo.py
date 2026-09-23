@@ -302,7 +302,7 @@ def _seed_case(
     return value
 
 
-def _readers(collections: dict[str, Any]) -> tuple[object, object, object, object]:
+def _readers(collections: dict[str, Any]) -> tuple[Any, Any, Any, Any]:
     return (
         _PrincipalReader(collections["principal"]),
         _MembershipReader(collections["membership"]),
