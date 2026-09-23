@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT
+ * VERSION: v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -8,7 +8,10 @@
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT binds production v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT and certifies
+ * CHANGELOG: 2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
+ *            every D11 workspace state/outcome summary counter is recomputed
+ *            from validated rows; total-preserving breakdown drift rejects.
+ *            2026-09-23 v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT binds production v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT and certifies
  *            D11 workspace schema/count/order/evidence integrity, exact finance
  *            lookup with no caller tenant scope, L8-2 intake request/response
  *            lineage, ReturnOfService command binding, immutability and
@@ -885,6 +888,13 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
       'LEGAL_OPERATIONS_WORKSPACE_SUMMARY_MISMATCH',
     );
 
+    const breakdownDrift = workspacePayload();
+    breakdownDrift.summary.attempts_attempted = 0;
+    breakdownDrift.summary.attempts_allocated = 1;
+    expect(() => validate(breakdownDrift)).toThrow(
+      'LEGAL_OPERATIONS_WORKSPACE_SUMMARY_MISMATCH',
+    );
+
     const unsorted = workspacePayload();
     unsorted.instructions.reverse();
     expect(() => validate(unsorted)).toThrow(
@@ -1021,14 +1031,14 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT',
+      'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT
+ * VERSION: v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT
  * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success
