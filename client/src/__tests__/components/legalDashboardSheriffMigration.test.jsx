@@ -1,15 +1,21 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR
+ * VERSION: v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT
  * AUTHORITY: Client presentation/wiring certification only.
- * EPITOME: Proves LegalDashboard preserves the certified SHERIFF cockpit while
- *          correlating L8-6C deputy work with L8-6D command capability, exposing
- *          touch-friendly governed L8-6G field controls, requiring canonical
- *          post-command refresh before success, performing no cross-role fallback,
- *          and creating no browser P5M sequence/provenance/legal/financial truth.
+ * EPITOME: Proves LegalDashboard preserves certified SHERIFF and governed
+ *          DEPUTY modes while adding an exact LEGAL_CLIENT matter cockpit that
+ *          calls only the D7 client adapter, renders only sanitized matter cards
+ *          and derived OPEN/CLOSED counts, performs no cross-role fallback, and
+ *          creates no browser legal/service/financial truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR installs a deterministic in-memory localStorage
+ * CHANGELOG: 2026-09-23 v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT certifies LEGAL_CLIENT role resolution,
+ *            exact getLegalClientMatters-only transport selection, safe visible/
+ *            OPEN/CLOSED counts, sanitized matter cards, empty/denied/unavailable
+ *            client states, no sheriff/deputy fallback or internal panel leakage,
+ *            responsive stacking classes, preserved deputy governed commands,
+ *            production v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT, and D7 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT alignment.
+2026-09-23 v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR installs a deterministic in-memory localStorage
  *            stub inside this certificate because the repository Vitest/JSDOM
  *            harness does not expose localStorage in the current Node runtime.
  *            Production cockpit behavior and shared test harness remain unchanged.
@@ -39,21 +45,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
+  getLegalClientMatters,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
   transitionDeputyFieldAttempt,
 } = vi.hoisted(() => ({
   getDeputyFieldCapabilities: vi.fn(),
   getDeputyPersonalActiveWork: vi.fn(),
+  getLegalClientMatters: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
   recordDeputyFieldOutcome: vi.fn(),
   transitionDeputyFieldAttempt: vi.fn(),
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT',
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
+  getLegalClientMatters,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
   transitionDeputyFieldAttempt,
@@ -100,6 +109,38 @@ const liveQueues = () => ({
       allocated_at: '2026-09-23T10:20:00+00:00',
     },
   ],
+});
+
+const liveClientMatters = () => ({
+  schema: 'WILSY-LEGAL-CLIENT-MATTER-PROJECTION/V1',
+  version: 'v1.0.0-L8-7D5-CLIENT-MATTER-PROJECTION',
+  tenantId: 'tenant-client',
+  visibility: 'LEGAL_CLIENT_EXPLICIT_MATTERS',
+  matters: [
+    {
+      caseMatterId: 'matter-a',
+      matterReference: 'CLIENT-001',
+      openedAt: '2026-09-23T10:00:00+00:00',
+      state: 'OPEN',
+    },
+    {
+      caseMatterId: 'matter-b',
+      matterReference: 'CLIENT-002',
+      openedAt: '2026-09-22T10:00:00+00:00',
+      state: 'CLOSED',
+    },
+    {
+      caseMatterId: 'matter-c',
+      matterReference: 'CLIENT-003',
+      openedAt: '2026-09-21T10:00:00+00:00',
+      state: 'OPEN',
+    },
+  ],
+});
+
+const emptyClientMatters = () => ({
+  ...liveClientMatters(),
+  matters: [],
 });
 
 const CURRENT_EVIDENCE = 'a'.repeat(128);
@@ -190,10 +231,11 @@ function installLocalStorageStub() {
   return storage;
 }
 
-describe('L8-6I governed deputy Legal Operations cockpit', () => {
+describe('L8-7D8 governed Legal Operations cockpit', () => {
   beforeEach(() => {
     getDeputyFieldCapabilities.mockReset();
     getDeputyPersonalActiveWork.mockReset();
+    getLegalClientMatters.mockReset();
     getSheriffOperationalQueues.mockReset();
     recordDeputyFieldOutcome.mockReset();
     transitionDeputyFieldAttempt.mockReset();
@@ -261,6 +303,102 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
     expect(screen.queryByText('document-office')).not.toBeInTheDocument();
   });
 
+  it('renders only sanitized LEGAL_CLIENT matters and derived counts', async () => {
+    getLegalClientMatters.mockResolvedValueOnce(liveClientMatters());
+
+    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+
+    await waitFor(() => {
+      expect(getLegalClientMatters).toHaveBeenCalledTimes(1);
+    });
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+    expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
+
+    expect(await screen.findByText('CLIENT-001')).toBeInTheDocument();
+    expect(screen.getByText('CLIENT-002')).toBeInTheDocument();
+    expect(screen.getByText('CLIENT-003')).toBeInTheDocument();
+    expect(screen.getByText('Matter matter-a')).toBeInTheDocument();
+    expect(screen.getByText('Matter matter-b')).toBeInTheDocument();
+    expect(screen.getByText('Matter matter-c')).toBeInTheDocument();
+    expect(screen.getByText(/Tenant: tenant-client/i)).toBeInTheDocument();
+    expect(screen.getByText(/Role view: LEGAL_CLIENT/i)).toBeInTheDocument();
+    expect(screen.getByText('Client matter cockpit')).toBeInTheDocument();
+    expect(screen.getByText('My matters')).toBeInTheDocument();
+    expect(screen.getByText('Client visibility boundary')).toBeInTheDocument();
+
+    const visibleCard = screen.getByText('Visible matters').closest('div.rounded-2xl');
+    const openCard = screen.getByText('Open matters').closest('div.rounded-2xl');
+    const closedCard = screen.getByText('Closed matters').closest('div.rounded-2xl');
+    expect(visibleCard).toHaveTextContent('3');
+    expect(openCard).toHaveTextContent('2');
+    expect(closedCard).toHaveTextContent('1');
+
+    expect(screen.queryByText('Office receipt')).not.toBeInTheDocument();
+    expect(screen.queryByText('Deputy assignment')).not.toBeInTheDocument();
+    expect(screen.queryByText('Active service attempts')).not.toBeInTheDocument();
+    expect(screen.queryByText('My active service work')).not.toBeInTheDocument();
+    expect(screen.queryByText('WILSY AI readiness')).not.toBeInTheDocument();
+    expect(screen.queryByText('Same-day / urgent prioritisation')).not.toBeInTheDocument();
+  });
+
+  it('renders the certified empty client visibility result without probing internal queues', async () => {
+    getLegalClientMatters.mockResolvedValueOnce(emptyClientMatters());
+
+    render(<LegalDashboard roleView="TENANT_LEGAL_CLIENT" />);
+
+    expect(
+      await screen.findByText(
+        'No matters are currently visible to this authenticated legal client.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Empty is a valid certified result/i)).toBeInTheDocument();
+    expect(getLegalClientMatters).toHaveBeenCalledTimes(1);
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+    expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
+  });
+
+  it('keeps client denial bounded and never falls back to sheriff or deputy endpoints', async () => {
+    getLegalClientMatters.mockRejectedValueOnce({
+      response: {
+        status: 403,
+        data: { detail: 'LEGAL_CLIENT_MATTER_READ_DENIED' },
+      },
+    });
+
+    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+
+    expect(
+      await screen.findByText('LEGAL_CLIENT_MATTER_READ_DENIED'),
+    ).toBeInTheDocument();
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+    expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
+    expect(screen.queryByText('My matters')).not.toBeInTheDocument();
+    expect(screen.queryByText('document-office')).not.toBeInTheDocument();
+    expect(screen.queryByText('attempt-mine')).not.toBeInTheDocument();
+  });
+
+  it('keeps client evidence outage explicit with no synthetic matter fallback', async () => {
+    getLegalClientMatters.mockRejectedValueOnce({
+      response: {
+        status: 503,
+        data: { detail: 'LEGAL_OPERATIONS_CLIENT_PROJECTION_UNAVAILABLE' },
+      },
+    });
+
+    render(<LegalDashboard roleView="LEGAL_CLIENT" />);
+
+    expect(await screen.findByText('EVIDENCE_UNAVAILABLE')).toBeInTheDocument();
+    expect(
+      screen.getByText('LEGAL_OPERATIONS_CLIENT_PROJECTION_UNAVAILABLE'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('My matters')).not.toBeInTheDocument();
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+  });
+
   it('keeps deputy denial bounded and never falls back to sheriff queues', async () => {
     getDeputyPersonalActiveWork.mockRejectedValueOnce({
       response: {
@@ -290,6 +428,7 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
     ).toBeInTheDocument();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
     expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
+    expect(getLegalClientMatters).not.toHaveBeenCalled();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
   });
 
@@ -493,13 +632,16 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
       "getDeputyFieldCapabilities",
     );
     expect(source).toContain(
+      "getLegalClientMatters",
+    );
+    expect(source).toContain(
       "transitionDeputyFieldAttempt",
     );
     expect(source).toContain(
       "recordDeputyFieldOutcome",
     );
     expect(source).toContain(
-      "v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT",
+      "v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT",
     );
     expect(source).not.toContain('API_BASE_URL');
     expect(source).not.toContain('fetch(');
@@ -521,6 +663,10 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
       'setClients(',
       'setDeputies(',
       'showRegisterModal',
+      'clientName',
+      'client_name',
+      'invoiceAmount',
+      'paymentStatus',
       'sequenceNumber',
       'previousEventFingerprint',
       'evidenceFingerprint',
@@ -532,10 +678,10 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR
- * AUTHORITY BOUNDARY: deterministic role-scoped presentation and governed deputy observation-command wiring evidence only
- * TENANT POSTURE: exact server-authorized deputy work/capability parity is required before command controls render
- * FAIL-CLOSED POSTURE: unresolved/denied/drifted reads, command errors and failed canonical refresh never cross-fallback or claim success
+ * VERSION: v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT
+ * AUTHORITY BOUNDARY: deterministic SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed deputy observation-command wiring evidence only
+ * TENANT POSTURE: client matter membership derives only from D7; deputy commands still require exact server-authorized work/capability parity
+ * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
