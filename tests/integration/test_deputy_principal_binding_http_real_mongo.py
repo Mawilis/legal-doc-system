@@ -1,7 +1,7 @@
 """Live-IAM real-Mongo certificate for sheriff deputy-binding commands.
 
 TITLE: WILSY OS Deputy Principal Binding HTTP Live-IAM Real-Mongo Certificate
-VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
+VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
 AUTHORITY: Host-backed certification of actor IAM + target L8-6B composition.
 EPITOME: Prove an independently authorized SHERIFF actor may invoke the binding
          command while the target principal must separately satisfy ACTIVE
@@ -11,7 +11,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Host HTTP certificate only. Tenant authorization owns
                             actor admission; L8-6B owns target identity proof.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
+CHANGELOG: 2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
+           rebinds the live-IAM HTTP certificate to production v1.4.1 after
+           sovereign authority-declaration alignment; runtime evidence is unchanged.
+           2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
            scopes the command-router DB-handle patch to each pytest test via
            MonkeyPatch so no dropped fixture database can leak across tests.
            2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
@@ -88,7 +91,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT"
+VERSION = "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -574,15 +577,15 @@ def test_real_foreign_deputy_is_bounded_absence_and_response_has_no_grant_truth(
         assert forbidden not in keys
 
     assert command_api.VERSION == (
-        "v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
+        "v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
     )
     assert VERSION == (
-        "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT"
+        "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT"
     )
 
 
 # ARTIFACT: test_deputy_principal_binding_http_real_mongo.py
-# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
+# VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-RM-CERT
 # AUTHORITY BOUNDARY: live-IAM real-Mongo sheriff actor + target deputy binding HTTP certificate only
 # TENANT POSTURE: actor IAM, target IAM, Deputy and binding all exact-tenant scoped
 # FAIL-CLOSED POSTURE: deputy actor, wrong target role, foreign Deputy, runtime/persistence failures deny
