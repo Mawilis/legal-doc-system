@@ -1,7 +1,7 @@
 """Durable, provider-neutral Legal Operations lifecycle evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry
-VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
+VERSION: v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist, enumerate exact entity, tenant/entity-class, and document-
          custody history, and strictly hydrate immutable P1 Legal Operations
@@ -12,7 +12,15 @@ COLLABORATION / OWNERSHIP: P2 persistence owner; the P1 domain remains the
                             exclusive lifecycle/evidence authority. Callers own
                             Mongo sessions and transaction boundaries.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
+CHANGELOG: 2026-09-23 v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR
+           adds one read-only exact snapshot-evidence locator primitive for
+           L8-6D field-command composition. The method binds canonical tenant,
+           entity type, entity identity and P1 fingerprint, strictly hydrates
+           the one durable row, rejects absence/ambiguity/corruption, forwards
+           caller-owned sessions unchanged, and returns only the validated
+           SHA3-512 evidence_identity. It exposes no raw P2 envelope and owns
+           no current-state, IAM, command, service, return or financial truth.
+           2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
            adds deterministic exact-tenant/entity-class snapshot enumeration
            for L8-5 read-model composition. It reuses the existing tenant/type/
            identity history index, strictly hydrates every row, preserves
@@ -77,7 +85,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
+VERSION: Final[str] = "v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR"
 COLLECTION: Final[str] = "legal_operations_lifecycle_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -710,6 +718,86 @@ class LegalOperationsLifecycleRegistry:
         return tuple(history)
 
     @staticmethod
+    def get_snapshot_evidence_identity(
+        value: P1Value,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> str:
+        """Return the exact persisted evidence locator for one canonical snapshot.
+
+        The caller supplies a complete canonical P1 value, not a transport or
+        database record. This read binds the value's exact tenant, entity type,
+        entity identity and P1 fingerprint, forwards the caller-owned session,
+        strictly hydrates the single durable row, and returns only its validated
+        SHA3-512 evidence_identity.
+
+        The method performs no current-state selection, lifecycle transition,
+        authorization, command mutation, service/outcome inference, return
+        generation, billing, payment, financial execution or settlement. It
+        never exposes Mongo _id, source_payload, source_fingerprint, or the raw
+        persisted P2 envelope. Absence, duplicate exact-fingerprint records,
+        scope divergence, record corruption, or persistence failure reject
+        fail-closed.
+        """
+        if not isinstance(
+            value,
+            (
+                LegalInstruction,
+                CaseMatter,
+                ProcessDocument,
+                District,
+                SheriffOffice,
+                Deputy,
+                DocumentCustodyEvent,
+                ServiceAttempt,
+                ServiceExecution,
+                ReturnOfService,
+            ),
+        ):
+            _fail("M2_P1_VALUE_REQUIRED")
+        tenant = _tenant(value.tenant_id)
+        entity_type = type(value).__name__
+        entity_identity = _entity_identity(value)
+        p1_fingerprint = _require_sha3(
+            value.fingerprint,
+            "M2_P1_FINGERPRINT_INVALID",
+        )
+        query = {
+            "tenant_id": tenant,
+            "entity_type": entity_type,
+            "entity_identity": entity_identity,
+            "p1_fingerprint": p1_fingerprint,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+        if not documents:
+            _fail("M2_EVIDENCE_NOT_FOUND")
+        if len(documents) != 1:
+            _fail("M2_SNAPSHOT_LOCATOR_AMBIGUOUS")
+        document = documents[0]
+        if not isinstance(document, Mapping):
+            _fail("M2_RECORD_SCHEMA_INVALID")
+        hydrated = _hydrate_record(cast(Mapping[str, Any], document))
+        if (
+            type(hydrated) is not type(value)
+            or hydrated.tenant_id != tenant
+            or _entity_identity(hydrated) != entity_identity
+            or hydrated.fingerprint != p1_fingerprint
+            or hydrated.to_dict() != value.to_dict()
+        ):
+            _fail("M2_SNAPSHOT_LOCATOR_SCOPE_MISMATCH")
+        evidence_identity = cast(Mapping[str, Any], document).get(
+            "evidence_identity"
+        )
+        return _require_sha3(
+            evidence_identity,
+            "M2_EVIDENCE_IDENTITY_INVALID",
+        )
+
+    @staticmethod
     def get(tenant_id: str, evidence_identity: str, collection: Any, *, session: Any = None) -> P1Value:
         """Read one immutable snapshot by exact tenant-scoped evidence identity."""
         tenant = _tenant(tenant_id)
@@ -735,8 +823,8 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_lifecycle_registry.py
-# VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
-# AUTHORITY BOUNDARY: durable P1 evidence persistence, exact entity/tenant-entity/custody enumeration, and strict hydration only.
+# VERSION: v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR
+# AUTHORITY BOUNDARY: durable P1 evidence persistence, exact entity/tenant-entity/custody enumeration, strict hydration, and opaque exact-snapshot evidence locator reads only.
 # TENANT POSTURE: every record and lookup is explicitly tenant-scoped.
 # FAIL-CLOSED POSTURE: corruption, divergence, unsupported types, and outages reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
