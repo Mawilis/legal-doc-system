@@ -1,7 +1,7 @@
 """Binding-scoped personal active work for Legal Operations deputies.
 
 TITLE: WILSY OS Deputy Personal Active Work Projection
-VERSION: v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
+VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
 AUTHORITY: Deterministic read-only projection of one bound deputy's active attempts.
 EPITOME: Resolve one immutable L8-6B principal-to-Deputy binding, derive the
          canonical deputy_id, compose deterministic L8-5 current ServiceAttempt
@@ -14,7 +14,11 @@ COLLABORATION / OWNERSHIP: L8-6B owns immutable principal-to-Deputy identity
                             ServiceAttempt truth; this module owns personal queue
                             membership only. IAM/HTTP/client remain separate gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
+CHANGELOG: 2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
+           makes the public aggregate independently validate canonical tenant,
+           principal and deputy identities plus immutable tuple queue shape;
+           binding-derived membership semantics remain unchanged.
+           2026-09-23 v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
            establishes binding-derived deputy identity, exact-tenant current
            attempt enumeration, ALLOCATED/ATTEMPTED-only personal membership,
            deterministic attempt ordering, session propagation, and fail-closed
@@ -44,6 +48,7 @@ FAIL-CLOSED DECLARATION: Missing/corrupt binding, read-model failure, type or
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Final, NoReturn, cast
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
@@ -63,7 +68,11 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK"
+VERSION: Final[str] = "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK"
+_IDENTITY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset(
+    {"default", "global", "global_root", "root", "master", "*"}
+)
 
 
 class DeputyPersonalActiveWorkError(RuntimeError):
@@ -81,6 +90,21 @@ def _fail(code: str, cause: BaseException | None = None) -> NoReturn:
     if cause is None:
         raise error
     raise error from cause
+
+
+def _identity(name: str, value: object) -> str:
+    """Require one exact opaque identity without normalization or defaults."""
+    if not isinstance(value, str) or _IDENTITY.fullmatch(value) is None:
+        _fail(f"L8_6C_{name.upper()}_INVALID")
+    return cast(str, value)
+
+
+def _tenant(value: object) -> str:
+    """Require one canonical non-pseudo tenant identity."""
+    tenant_id = _identity("tenant_id", value)
+    if tenant_id.casefold() in _FORBIDDEN_TENANTS:
+        _fail("L8_6C_TENANT_ID_INVALID")
+    return tenant_id
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,7 +126,12 @@ class DeputyPersonalActiveWork:
     active_attempts: tuple[LegalOperationsEntityReadModel, ...]
 
     def __post_init__(self) -> None:
-        """Revalidate exact tenant/deputy/state membership for every result."""
+        """Revalidate exact identity, immutable shape and queue membership."""
+        _tenant(self.tenant_id)
+        _identity("principal_id", self.principal_id)
+        _identity("deputy_id", self.deputy_id)
+        if not isinstance(self.active_attempts, tuple):
+            _fail("L8_6C_ACTIVE_ATTEMPTS_INVALID")
         for model in self.active_attempts:
             if model.tenant_id != self.tenant_id:
                 _fail("L8_6C_TENANT_MISMATCH")
@@ -226,7 +255,7 @@ __all__ = [
 
 
 # ARTIFACT: deputy_personal_active_work.py
-# VERSION: v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
+# VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
 # AUTHORITY BOUNDARY: binding-scoped deterministic personal active-work projection only
 # TENANT POSTURE: exact tenant/principal binding plus bound-deputy ServiceAttempt filtering
 # FAIL-CLOSED POSTURE: missing/corrupt binding, read-model/type/tenant/state drift rejects without fallback
