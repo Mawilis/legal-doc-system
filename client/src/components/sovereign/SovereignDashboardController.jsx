@@ -1,20 +1,25 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.2.1-L8-6C-LEGAL-ROLE-ROUTING
+ * VERSION: v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
- *          identity and tenant context. L8-6C adds the Legal OS shard for
- *          SHERIFF/DEPUTY presentation without moving IAM, tenant, lifecycle,
- *          deputy-binding, queue, service, billing or financial authority into
- *          the browser.
+ *          identity and tenant context. L8-7D10 converges every published Legal
+ *          business role on the single canonical WILSY Legal OS shard while
+ *          leaving server IAM, tenant, lifecycle, service, billing and financial
+ *          authority entirely outside browser routing.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignDashboardController.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider owns authenticated identity projection;
  *                            TenantContext owns selected tenant projection;
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v18.2.1-L8-6C-LEGAL-ROLE-ROUTING removes the superseded decorative pre-sovereign
+ * CHANGELOG: 2026-09-23 v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE maps LEGAL_PARTNER, LEGAL_ATTORNEY,
+ *            LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT and
+ *            their TENANT_* business-role aliases to the canonical Legal OS
+ *            shard. Existing SHERIFF/DEPUTY mappings remain unchanged. Browser
+ *            routing still grants no permission or business authority.
+2026-09-23 v18.2.1-L8-6C-LEGAL-ROLE-ROUTING removes the superseded decorative pre-sovereign
  *            controller header after the L8-6C migration; runtime routing is
  *            unchanged.
  *            2026-09-23 v18.2.0-L8-6C-LEGAL-ROLE-ROUTING adds LEGAL_DASHBOARD as an existing-controller
@@ -162,6 +167,18 @@ const ROLE_DASHBOARD_MAP = Object.freeze({
   SALES_REPRESENTATIVE: DASHBOARD_KEYS.SALES,
   TENANT_ADMIN: DASHBOARD_KEYS.GENERAL,
   TENANT_OWNER: DASHBOARD_KEYS.EXECUTIVE,
+  LEGAL_PARTNER: DASHBOARD_KEYS.LEGAL,
+  TENANT_LEGAL_PARTNER: DASHBOARD_KEYS.LEGAL,
+  LEGAL_ATTORNEY: DASHBOARD_KEYS.LEGAL,
+  TENANT_LEGAL_ATTORNEY: DASHBOARD_KEYS.LEGAL,
+  LEGAL_PARALEGAL: DASHBOARD_KEYS.LEGAL,
+  TENANT_LEGAL_PARALEGAL: DASHBOARD_KEYS.LEGAL,
+  LEGAL_SECRETARY: DASHBOARD_KEYS.LEGAL,
+  TENANT_LEGAL_SECRETARY: DASHBOARD_KEYS.LEGAL,
+  LEGAL_FINANCE: DASHBOARD_KEYS.LEGAL,
+  TENANT_LEGAL_FINANCE: DASHBOARD_KEYS.LEGAL,
+  LEGAL_CLIENT: DASHBOARD_KEYS.LEGAL,
+  TENANT_LEGAL_CLIENT: DASHBOARD_KEYS.LEGAL,
   SHERIFF: DASHBOARD_KEYS.LEGAL,
   TENANT_SHERIFF: DASHBOARD_KEYS.LEGAL,
   DEPUTY: DASHBOARD_KEYS.LEGAL,
@@ -225,7 +242,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.2.1-L8-6C-LEGAL-ROLE-ROUTING';
+const CONTROLLER_VERSION = 'v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -946,7 +963,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.2.1-L8-6C-LEGAL-ROLE-ROUTING
+ * VERSION: v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: active tenant projection is preserved; Legal OS role routing cannot widen server tenant scope
  * FAIL-CLOSED POSTURE: unknown roles/dashboards do not manufacture Legal Operations access or cross-role fallback
