@@ -1,16 +1,20 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS
+VERSION: v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
 usage-capacity and billing-intelligence evidence access, and dedicated inbound
 merchant-configuration/provider-policy administration plus least-privilege
-field-service outcome/return commands and sheriff-only process-service directory
-provisioning without creating current possession authority.
+field-service outcome/return commands, sheriff-only process-service directory
+provisioning, and sheriff-only office-receipt authority without creating deputy
+possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS grants
+    legal_operations:receipt:write only to SHERIFF; legal-practice, deputy,
+    client, enterprise, service, and system roles remain excluded.
     2026-09-23 v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS grants
     legal_operations:directory:write only to the SHERIFF authorization role;
     partner, attorney, paralegal, secretary, finance, deputy, client, general
@@ -84,7 +88,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS"
+VERSION = "v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -171,6 +175,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     ],
     "SHERIFF": [
         "legal_operations:directory:write",
+        "legal_operations:receipt:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -285,7 +290,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS
+# VERSION: v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; directory provisioning remains own-tenant and SHERIFF-grant scoped
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
