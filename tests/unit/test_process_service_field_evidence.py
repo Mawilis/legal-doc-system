@@ -1,7 +1,7 @@
 """Direct adversarial certificate for P5 mobile/offline field evidence.
 
 TITLE: WILSY OS Process-Service Field Evidence and Command Capability Certificate
-VERSION: v1.1.0-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+VERSION: v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
 AUTHORITY: Direct certification of P5M evidence and L8-6D read projection.
 EPITOME: Preserve offline evidence ordering/provenance/replay certification and
          prove the field-command capability descriptor maps only canonical
@@ -14,7 +14,11 @@ COLLABORATION / OWNERSHIP: Direct certificate for P5M authority/registry/
                             lifecycle, P2 owns snapshot identity, and callers
                             own authorization and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+CHANGELOG: 2026-09-23 v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+           repairs the sovereign module-header terminator so the certificate
+           imports as valid Python; test assertions, runtime coverage, authority
+           boundaries, and production behavior remain unchanged.
+           2026-09-23 v1.1.0-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
            adds exact ALLOCATED and ATTEMPTED command-capability mapping,
            immutable descriptor validation, terminal-state rejection, malformed
            locator rejection, and non-authority/non-financial shape proof.
@@ -31,7 +35,8 @@ FINANCIAL AUTHORITY BOUNDARY: No financial semantics; Kennel EOS exclusively
                               owns financial execution and settlement.
 FAIL-CLOSED DECLARATION: Invalid identity, ordering, provenance, replay, tenant,
                          state-command mapping, or locator rejects deterministically.
-"""from __future__ import annotations
+"""
+from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
@@ -359,7 +364,7 @@ def test_projections_are_scoped_derived_views() -> None:
 
 
 # ARTIFACT: test_process_service_field_evidence.py
-# VERSION: v1.1.0-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+# VERSION: v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
 # AUTHORITY BOUNDARY: direct P5M evidence acceptance plus L8-6D state-capability projection certificate only.
 # TENANT POSTURE: exact synthetic P1/P2/P5M tenant scope; cross-tenant projection inputs reject.
 # FAIL-CLOSED POSTURE: no evidence, command authorization, service or financial truth is inferred from projection state.
