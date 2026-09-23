@@ -1,13 +1,13 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
+VERSION: v1.6.0-L8-7D6-CLIENT-MATTER-READ-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
-EPITOME: Preserve exact authorized entity, sheriff-queue and bound-deputy
-         active-work reads while exposing a deputy-only L8-6D field-capability
-         projection that carries exact opaque P2 current-snapshot locators and
-         state-valid command kinds without granting mutation authority or
-         creating service, return, billing, AI, payment, or settlement truth.
+EPITOME: Preserve exact authorized internal/sheriff/deputy reads while adding
+         one dedicated LEGAL_CLIENT /client/matters route that owns a snapshot
+         transaction and returns only the D5 explicitly-visible sanitized
+         CaseMatter projection, without opening internal entity reads or
+         creating lifecycle, service, return, billing, AI, payment or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_router.py
 COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             P2 owns immutable persistence/history hydration,
@@ -17,9 +17,19 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             principal-to-Deputy identity binding, L8-6C owns
                             deputy personal active-work membership, L8-6D
                             composes exact P2 locators with P5M state capability,
-                            and tenant authorization owns access authority.
+                            L8-7D5 owns sanitized client matter projection, and
+                            tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
+CHANGELOG: 2026-09-23 v1.6.0-L8-7D6-CLIENT-MATTER-READ-API adds GET /client/matters under the exact
+           legal_operations:client_matter:read / legal_client_matter_read
+           authorization dependency. The route derives tenant/principal only
+           from authenticated context, owns one Mongo snapshot transaction,
+           re-authorizes D5 current IAM inside that transaction, and returns
+           the D5 safe payload unchanged. Existing client denial on internal
+           instruction/attempt/execution/return projections remains intact.
+           No caller-supplied matter/client/role/state/visibility authority and
+           no lifecycle, service, return, billing, AI or financial mutation is added.
+2026-09-23 v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
            adds the DEPUTY-only /deputy/field-capabilities route backed by the
            L8-6D personal capability composer. The route derives tenant and
            principal scope only from authenticated authorization context,
@@ -72,29 +82,40 @@ AUTHORITY BOUNDARY: Read projection only. Queue/capability visibility grants no
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement. Legal reads never infer paid or
                               settled truth.
-TRANSACTION BOUNDARY: HTTP composition owns no Mongo session or transaction;
-                      L8-5/L8-5C/L8-6B/L8-6C/L8-6D use read-only collection
-                      semantics; command transactions remain separate.
-FAIL-CLOSED DECLARATION: Missing authority, malformed identity, client-policy
-                         gaps, absent exact history/locator, P2 corruption/outage,
-                         history forks/divergence, queue/capability projection
-                         failure, and invalid projections deny.
+TRANSACTION BOUNDARY: Existing internal/sheriff/deputy reads retain read-only
+                      collection semantics. The D6 client matter route alone
+                      owns one read-only Mongo snapshot transaction spanning D5
+                      current IAM, visibility and bound-matter reads; it commits
+                      on success and aborts on failure. Command transactions remain separate.
+FAIL-CLOSED DECLARATION: Missing authority, malformed identity, internal
+                         client-policy violations, snapshot/session failure,
+                         D5 IAM/visibility/bound-matter failure, absent exact
+                         history/locator, P2 corruption/outage, divergence,
+                         queue/capability failure and invalid projections deny.
 """
 from __future__ import annotations
 
 import re
-from typing import Any, Final
+from typing import Any, Callable, Final, TypeVar
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pymongo.read_concern import ReadConcern
 
 from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
+    get_role_assignment_repository,
 )
+from tools.eos.auth.authentication import get_principal_authority_repository
+from tools.eos.auth.tenant_access import get_tenant_membership_repository
 from tools.eos.legal_operations.domain.deputy_personal_active_work import (
     DeputyPersonalActiveWorkError,
     get_deputy_personal_active_work,
     get_deputy_personal_field_capabilities,
+)
+from tools.eos.legal_operations.domain.legal_client_matter_projection import (
+    LegalClientMatterProjectionError,
+    get_legal_client_matter_projection,
 )
 from tools.eos.legal_operations.domain.legal_operations_operational_queues import (
     LegalOperationsOperationalQueueError,
@@ -107,14 +128,59 @@ from tools.eos.legal_operations.domain.legal_operations_read_model import (
 from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
 )
+from tools.eos.legal_operations.registry.legal_client_matter_visibility_registry import (
+    COLLECTION as CLIENT_VISIBILITY_COLLECTION,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION as LIFECYCLE_COLLECTION,
 )
 
 
-VERSION: Final[str] = "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
+VERSION: Final[str] = "v1.6.0-L8-7D6-CLIENT-MATTER-READ-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
+_T = TypeVar("_T")
+
+
+def _db_handles() -> tuple[Any, Any]:
+    """Resolve configured kernel client/database only when the client route runs."""
+    from tools.eos.kernel.db import get_client, get_database
+
+    return get_client(), get_database()
+
+
+def _client_projection_transaction(callback: Callable[[Any, Any], _T]) -> _T:
+    """Run one client projection in one API-owned read-only snapshot transaction.
+
+    D5 requires one active caller-owned session across current IAM, visibility,
+    and bound-matter reads. This API boundary owns that session lifecycle only:
+    it starts a snapshot transaction, commits a successful read, aborts on any
+    projection failure, performs no retry, and creates no durable authority.
+    """
+    client, database = _db_handles()
+    if client is None or database is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        )
+    try:
+        with client.start_session() as session:
+            session.start_transaction(read_concern=ReadConcern("snapshot"))
+            try:
+                result = callback(session, database)
+                session.commit_transaction()
+                return result
+            except Exception:
+                if bool(getattr(session, "in_transaction", False)):
+                    session.abort_transaction()
+                raise
+    except (HTTPException, LegalClientMatterProjectionError):
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        ) from error
 
 
 def get_lifecycle_collection() -> Any:
@@ -251,8 +317,67 @@ _DEPUTY_QUEUE_READ = RequireTenantAuthorization(
     "legal_operations:deputy_queue:read",
     "legal_deputy_queue_read",
 )
+_CLIENT_MATTER_READ = RequireTenantAuthorization(
+    "legal_operations:client_matter:read",
+    "legal_client_matter_read",
+)
 
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations"])
+
+
+@router.get("/client/matters")
+async def get_legal_client_matter_projection_route(
+    context: TenantAuthorizationContext = Depends(_CLIENT_MATTER_READ),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, object]:
+    """Return the authenticated LEGAL_CLIENT's explicitly visible matters only.
+
+    HTTP admission first requires the exact D4 permission/operation pair. The
+    route then owns one read-only snapshot transaction and D5 independently
+    re-evaluates current IAM inside that snapshot before reading ACTIVE L8-7B
+    visibility and exact current P1 CaseMatter evidence.
+
+    Tenant and principal scope come exclusively from the authorized context.
+    The request accepts no client identifier, matter identifier, role, state,
+    visibility, evidence, service, return, invoice, payment, AI or settlement
+    claim. Existing internal entity routes remain separately denied to the
+    tenant_legal_client business role.
+
+    D5's already-sanitized schema is returned unchanged. IAM revocation races
+    fail closed as 403; visibility/matter/snapshot/persistence failures are
+    bounded as 503. This route mutates no legal or financial truth.
+    """
+
+    def run(session: Any, database: Any) -> dict[str, object]:
+        result = get_legal_client_matter_projection(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            visibility_collection=database.get_collection(
+                CLIENT_VISIBILITY_COLLECTION
+            ),
+            lifecycle_collection=database.get_collection(LIFECYCLE_COLLECTION),
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            business_role_repository=role_assignment_repository,
+            role_assignment_repository=role_assignment_repository,
+            session=session,
+        )
+        return result.to_dict()
+
+    try:
+        return _client_projection_transaction(run)
+    except LegalClientMatterProjectionError as error:
+        if error.code.startswith("L8_7D5_CLIENT_AUTHORIZATION_DENIED_"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="LEGAL_CLIENT_MATTER_READ_DENIED",
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_CLIENT_PROJECTION_UNAVAILABLE",
+        ) from error
 
 
 @router.get("/operational-queues")
@@ -464,14 +589,15 @@ __all__ = [
     "VERSION",
     "get_deputy_principal_binding_collection",
     "get_lifecycle_collection",
+    "get_legal_client_matter_projection_route",
     "router",
 ]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
-# AUTHORITY BOUNDARY: authenticated entity, sheriff queue, bound-deputy active-work, and deputy field-capability reads only; mutation IAM/commands remain separate
-# TENANT POSTURE: exact authorized entity/sheriff scope plus authenticated-principal-to-Deputy binding and exact current P2 capability locators; foreign evidence is bounded
-# FAIL-CLOSED POSTURE: absent history/locator, corruption, divergence, policy gaps, queue/capability failures, and outages deny
+# VERSION: v1.6.0-L8-7D6-CLIENT-MATTER-READ-API
+# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy reads plus explicitly-visible LEGAL_CLIENT matter projection only; mutation IAM/commands remain separate
+# TENANT POSTURE: exact authorized internal/sheriff/deputy scope plus D6 tenant/principal-bound client snapshot projection; foreign evidence is bounded
+# FAIL-CLOSED POSTURE: internal policy gaps, denied client IAM, snapshot failure, visibility/matter corruption, absent history/locator, divergence and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
