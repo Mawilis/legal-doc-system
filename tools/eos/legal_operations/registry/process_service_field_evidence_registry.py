@@ -1,15 +1,19 @@
 """Durable journal for immutable offline process-service field evidence.
 
 TITLE: Wilsy OS Process-Service Offline Field-Evidence Registry
-VERSION: v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REGISTRY
+VERSION: v1.1.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Persist and strictly hydrate P5 mobile observation commands and sync
-         receipts without deriving legal-service or financial truth.
+EPITOME: Persist, strictly hydrate, and resolve P5 mobile observation receipts
+         by immutable tenant/event identity without deriving legal-service or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/registry/process_service_field_evidence_registry.py
 COLLABORATION / OWNERSHIP: P5 evidence journal only; P1/P2 remain lifecycle
                             authorities and callers own sessions/transactions.
-CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REGISTRY
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.1.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP
+           adds exact tenant/event receipt resolution for replay-safe server composition;
+           hydration, tenant isolation, immutable journal semantics, and lifecycle/financial
+           authority boundaries remain unchanged.
+           2026-09-14 v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REGISTRY
            establishes strict append-only evidence persistence and replay.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Every read, write, replay, and sequence check is tenant scoped.
@@ -41,7 +45,7 @@ from tools.eos.legal_operations.domain.process_service_field_evidence_authority 
     hydrate_offline_field_evidence_sync_receipt,
 )
 
-VERSION: Final[str] = "v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REGISTRY"
+VERSION: Final[str] = "v1.1.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP"
 SCHEMA: Final[str] = "WILSY-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REGISTRY/V1"
 COLLECTION: Final[str] = "process_service_field_evidence"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -209,6 +213,7 @@ class ProcessServiceFieldEvidenceRegistry:
     ``persist`` performs one insert and strict replay reconciliation.  It
     never starts, commits, aborts, or retains a Mongo client/transaction.
     ``get`` is exact tenant-scoped and reports foreign evidence as not found.
+    ``resolve_by_event`` provides the same strict hydration by immutable event identity.
     """
 
     @staticmethod
@@ -307,11 +312,43 @@ class ProcessServiceFieldEvidenceRegistry:
         return receipt
 
 
+    @staticmethod
+    def resolve_by_event(
+        tenant_id: str,
+        event_id: str,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> OfflineFieldEvidenceSyncReceipt:
+        """Hydrate one exact tenant-scoped journal receipt by immutable event identity.
+
+        Event identity is already tenant-unique in the durable P5M journal. This
+        lookup creates no observation, receipt, lifecycle transition, service,
+        return, billing, payment, execution, or settlement truth. Persisted
+        evidence is always strictly hydrated before return.
+        """
+        tenant = _tenant(tenant_id)
+        event = _identity(event_id, "P5M_EVENT_ID_INVALID")
+        try:
+            document = collection.find_one(
+                {"tenant_id": tenant, "event_id": event},
+                session=session,
+            )
+        except PyMongoError as error:
+            _fail("P5M_PERSISTENCE_UNAVAILABLE", error)
+        if document is None:
+            _fail("P5M_EVIDENCE_NOT_FOUND")
+        receipt = _hydrate_record(document)
+        if receipt.tenant_id != tenant or receipt.event_id != event:
+            _fail("P5M_BINDING_MISMATCH")
+        return receipt
+
+
 __all__ = ["COLLECTION", "SCHEMA", "VERSION", "ProcessServiceFieldEvidenceRegistry", "ProcessServiceFieldEvidenceRegistryError"]
 
 
 # ARTIFACT: process_service_field_evidence_registry.py
-# VERSION: v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REGISTRY
+# VERSION: v1.1.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP
 # AUTHORITY BOUNDARY: durable immutable evidence journal and strict hydration only.
 # TENANT POSTURE: every operation is exact tenant scoped; foreign existence is hidden.
 # FAIL-CLOSED POSTURE: corruption, divergence, gaps, and conflicts reject.
