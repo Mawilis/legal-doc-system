@@ -1,7 +1,7 @@
 """Evidence-backed operational queues for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Operational Queue Projection
-VERSION: v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
+VERSION: v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
 AUTHORITY: Wilsy OS Legal Operations deterministic queue projection.
 EPITOME: Derive only those tenant-scoped operational queues whose membership
          is directly proven by canonical L8-5 current lifecycle state, without
@@ -15,7 +15,11 @@ COLLABORATION / OWNERSHIP: P1 owns lifecycle facts; P2 owns immutable durable
                             Intelligence, and client rendering remain separate
                             bounded gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
+CHANGELOG: 2026-09-23 v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
+           makes the exported aggregate and queue entrypoint validate canonical
+           non-pseudo tenant identity even when every queue is empty; queue
+           membership semantics and authority boundaries are unchanged.
+           2026-09-23 v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
            establishes three exact evidence-backed queues: REGISTERED process
            documents awaiting office receipt, RECEIVED process documents
            awaiting deputy allocation, and ALLOCATED/ATTEMPTED service attempts
@@ -45,6 +49,7 @@ FAIL-CLOSED DECLARATION: Read-model failure, type drift, tenant drift, or
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Final, NoReturn, cast
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
@@ -60,7 +65,9 @@ from tools.eos.legal_operations.domain.legal_operations_read_model import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES"
+VERSION: Final[str] = "v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES"
+_IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_FORBIDDEN_TENANTS = frozenset({"default", "global", "global_root", "root", "master", "*"})
 
 
 class LegalOperationsOperationalQueueError(RuntimeError):
@@ -83,12 +90,23 @@ def _fail(
     raise error from cause
 
 
+def _tenant(value: object) -> str:
+    """Require one canonical explicit tenant even for an empty queue result."""
+    if not isinstance(value, str) or _IDENTITY.fullmatch(value) is None:
+        _fail("L8_5C_TENANT_INVALID")
+    tenant_id = cast(str, value)
+    if tenant_id.casefold() in _FORBIDDEN_TENANTS:
+        _fail("L8_5C_TENANT_INVALID")
+    return tenant_id
+
+
 def _validate_tenant(
     tenant_id: str,
     models: tuple[LegalOperationsEntityReadModel, ...],
 ) -> None:
-    """Require every source model to remain inside the requested tenant."""
-    if any(model.tenant_id != tenant_id for model in models):
+    """Require canonical tenant scope and every model to remain inside it."""
+    tenant = _tenant(tenant_id)
+    if any(model.tenant_id != tenant for model in models):
         _fail("L8_5C_TENANT_MISMATCH")
 
 
@@ -224,15 +242,16 @@ def get_operational_queues(
     return, assignment-authority, custody-holder, or financial inference is
     performed. Any upstream read-model failure rejects the whole projection.
     """
+    tenant = _tenant(tenant_id)
     try:
         documents = list_entity_read_models(
-            tenant_id=tenant_id,
+            tenant_id=tenant,
             entity_type="ProcessDocument",
             lifecycle_collection=lifecycle_collection,
             session=session,
         )
         attempts = list_entity_read_models(
-            tenant_id=tenant_id,
+            tenant_id=tenant,
             entity_type="ServiceAttempt",
             lifecycle_collection=lifecycle_collection,
             session=session,
@@ -241,15 +260,15 @@ def get_operational_queues(
         _fail("L8_5C_READ_MODEL_UNAVAILABLE", error)
 
     office_receipt, deputy_assignment = _process_document_queues(
-        tenant_id,
+        tenant,
         documents,
     )
     active_attempts = _active_attempt_queue(
-        tenant_id,
+        tenant,
         attempts,
     )
     return LegalOperationsOperationalQueues(
-        tenant_id=tenant_id,
+        tenant_id=tenant,
         office_receipt=office_receipt,
         deputy_assignment=deputy_assignment,
         active_attempts=active_attempts,
@@ -265,7 +284,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_operational_queues.py
-# VERSION: v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
+# VERSION: v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES
 # AUTHORITY BOUNDARY: deterministic evidence-backed queue projection only; no command or financial authority
 # TENANT POSTURE: exact L8-5 tenant-scoped ProcessDocument and ServiceAttempt models only
 # FAIL-CLOSED POSTURE: read-model/type/tenant/state drift rejects without guessed or partial queue truth
