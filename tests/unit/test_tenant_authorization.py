@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.13.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+VERSION: v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,11 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.13.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+CHANGELOG: 2026-09-23 v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+repairs the remaining stale WILSY AI Legal Tool runtime-version assertion to
+the current v1.17.0 L8-3 receipt-binding production release; authorization,
+grant, scope, and fail-closed semantics are unchanged.
+2026-09-23 v1.13.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
 certifies legal_receipt_write -> legal_operations:receipt:write as an exact
 sheriff-only conjunctive authorization binding with deputy/legal-client denial.
 2026-09-23 v1.12.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-BINDING-CERT
@@ -80,7 +84,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.13.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT"
+VERSION = "v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -824,7 +828,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.16.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-BINDING"
+    assert ta.VERSION == "v1.17.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -1701,7 +1705,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.13.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+# VERSION: v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required; directory and receipt authority are sheriff-only
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
