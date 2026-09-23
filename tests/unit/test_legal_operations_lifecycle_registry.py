@@ -1,16 +1,21 @@
 """Direct adversarial certificate for the Legal Operations P2 registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry Certificate
-VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certify immutable snapshot persistence, exact factory provenance,
-         strict hydration, replay integrity, and tenant/session boundaries.
+EPITOME: Certify immutable snapshot persistence, exact entity-history
+         enumeration, exact factory provenance, strict hydration, replay
+         integrity, and tenant/session boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_lifecycle_registry.py
 COLLABORATION / OWNERSHIP: Direct certificate for the P2 registry only; P1
                             remains lifecycle/evidence authority and callers own
                             Mongo sessions and transactions.
-CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT adds
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT adds
+           exact tenant/type/entity history enumeration, caller-session
+           forwarding, foreign absence, strict multi-row hydration/corruption,
+           invalid-scope, and history-read persistence-failure proofs.
+           2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT added
            direct labeled-transient conflict translation, uncertain-commit
            exclusion, and generic persistence regression proofs.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -81,6 +86,15 @@ class FakeCollection:
                 return deepcopy(document)
         return None
 
+    def find(self, query: dict[str, object], *, session: object = None) -> list[dict[str, Any]]:
+        """Return all exact matches while recording caller-owned session scope."""
+        self.calls.append(("find", session, deepcopy(query)))
+        return [
+            deepcopy(document)
+            for document in self.docs
+            if all(document.get(key) == value for key, value in query.items())
+        ]
+
     def insert_one(self, document: dict[str, object], *, session: object = None) -> object:
         self.calls.append(("insert_one", session, deepcopy(document)))
         if self.raise_duplicate:
@@ -125,6 +139,18 @@ class FailureCollection(FakeCollection):
 
     def insert_one(self, document: dict[str, object], *, session: object = None) -> object:
         self.calls.append(("insert_one", session, deepcopy(document)))
+        raise self.error
+
+
+class HistoryFailureCollection(FakeCollection):
+    """Collection that raises one real PyMongo error from the history read path."""
+
+    def __init__(self, error: OperationFailure) -> None:
+        super().__init__()
+        self.error = error
+
+    def find(self, query: dict[str, object], *, session: object = None) -> list[dict[str, Any]]:
+        self.calls.append(("find", session, deepcopy(query)))
         raise self.error
 
 
@@ -225,6 +251,101 @@ def test_index_contract_and_immutable_snapshot_progression() -> None:
     assert first["evidence_identity"] != second["evidence_identity"]
     assert LegalOperationsLifecycleRegistry.get("tenant-a", first["evidence_identity"], collection).to_dict() == initial.to_dict()
     assert LegalOperationsLifecycleRegistry.get("tenant-a", second["evidence_identity"], collection).to_dict() == accepted.to_dict()
+
+
+def test_exact_entity_history_hydrates_all_snapshots_and_forwards_session() -> None:
+    """History retrieval returns all exact-scope P1 snapshots without choosing current."""
+    collection = FakeCollection()
+    session = FakeSession(in_transaction=True)
+    initial = instruction()
+    accepted = initial.transition_to(
+        LegalInstructionState.ACCEPTED,
+        evidence_reference="accepted",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    persisted_record(initial, collection, session=session)
+    persisted_record(accepted, collection, session=session)
+
+    history = LegalOperationsLifecycleRegistry.get_entity_history(
+        "tenant-a",
+        "LegalInstruction",
+        "instruction-1",
+        collection,
+        session=session,
+    )
+
+    assert tuple(value.to_dict() for value in history) == (
+        initial.to_dict(),
+        accepted.to_dict(),
+    )
+    history_calls = [call for call in collection.calls if call[0] == "find"]
+    assert history_calls == [
+        (
+            "find",
+            session,
+            {
+                "tenant_id": "tenant-a",
+                "entity_type": "LegalInstruction",
+                "entity_identity": "instruction-1",
+            },
+        )
+    ]
+    assert LegalOperationsLifecycleRegistry.get_entity_history(
+        "tenant-b",
+        "LegalInstruction",
+        "instruction-1",
+        collection,
+        session=session,
+    ) == ()
+
+
+def test_entity_history_rejects_invalid_scope_corruption_and_persistence_failure() -> None:
+    """Invalid scope, any corrupt history row, and Mongo read failures reject."""
+    collection = FakeCollection()
+    initial = instruction()
+    accepted = initial.transition_to(
+        LegalInstructionState.ACCEPTED,
+        evidence_reference="accepted",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    persisted_record(initial, collection)
+    persisted_record(accepted, collection)
+
+    expect_code(
+        "M2_INVALID_TENANT",
+        lambda: LegalOperationsLifecycleRegistry.get_entity_history(
+            "global", "LegalInstruction", "instruction-1", collection
+        ),
+    )
+    expect_code(
+        "M2_ENTITY_TYPE_UNSUPPORTED",
+        lambda: LegalOperationsLifecycleRegistry.get_entity_history(
+            "tenant-a", "UnknownEntity", "instruction-1", collection
+        ),
+    )
+    expect_code(
+        "M2_ENTITY_ID_INVALID",
+        lambda: LegalOperationsLifecycleRegistry.get_entity_history(
+            "tenant-a", "LegalInstruction", "invalid/identity", collection
+        ),
+    )
+
+    collection.docs[1]["p1_fingerprint"] = "x" * 128
+    expect_code(
+        "M2_P1_FINGERPRINT_INVALID",
+        lambda: LegalOperationsLifecycleRegistry.get_entity_history(
+            "tenant-a", "LegalInstruction", "instruction-1", collection
+        ),
+    )
+
+    error = _operation_failure(27186)
+    failing = HistoryFailureCollection(error)
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.get_entity_history(
+            "tenant-a", "LegalInstruction", "instruction-1", failing
+        )
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
 
 
 def test_exact_replay_compares_complete_record_and_provenance_divergence_rejects() -> None:
@@ -477,8 +598,8 @@ def test_outside_transaction_transient_error_is_not_retry_required() -> None:
     assert caught.value.__cause__ is error
 
 
-def test_p2_production_version_is_the_repaired_patch() -> None:
-    assert P2_VERSION == "v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+def test_p2_production_version_is_the_history_release() -> None:
+    assert P2_VERSION == "v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
 
 
 def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> None:
@@ -492,8 +613,8 @@ def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> 
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry.py
-# VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
-# AUTHORITY BOUNDARY: direct P2 persistence/hydration certificate only.
+# VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+# AUTHORITY BOUNDARY: direct P2 persistence/history/hydration certificate only.
 # TENANT POSTURE: explicit synthetic tenants; foreign evidence is undisclosed.
 # FAIL-CLOSED POSTURE: malformed records, provenance, races, and sources reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution/settlement.
