@@ -1,7 +1,7 @@
 """Canonical provisioning orchestration for the Process Service directory.
 
 TITLE: WILSY OS Process Service Directory Provisioning Orchestrator
-VERSION: v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
+VERSION: v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
 AUTHORITY: Wilsy OS Legal Operations directory composition over canonical P1/P2 truth.
 EPITOME: Create or exactly replay tenant-scoped District, SheriffOffice, and
          Deputy directory facts inside one caller-owned active transaction,
@@ -14,8 +14,13 @@ COLLABORATION / OWNERSHIP: P1 owns immutable directory value semantics; P2 owns
                             this orchestrator owns only governed provisioning
                             composition. HTTP/IAM admission remains separate.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
-           establishes transaction-required create/exact-replay provisioning
+CHANGELOG: 2026-09-23 v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
+           replaces the generic variadic P1 constructor helper with exact
+           typed District, SheriffOffice, and Deputy constructors so static
+           analysis proves the same fail-closed runtime contract without casts
+           or weakened validation.
+           2026-09-23 v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
+           established transaction-required create/exact-replay provisioning
            for District, SheriffOffice, and Deputy with canonical parent
            resolution, lineage validation, divergence rejection, and no
            lifecycle allocation/service/financial authority.
@@ -65,7 +70,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING"
+VERSION: Final[str] = "v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING"
 
 _DirectoryValue = District | SheriffOffice | Deputy
 _TDirectory = TypeVar("_TDirectory", District, SheriffOffice, Deputy)
@@ -157,10 +162,64 @@ def _active_transaction(session: object) -> object:
     return session
 
 
-def _construct(factory: type[_TDirectory], *args: object) -> _TDirectory:
-    """Construct one exact P1 directory value and normalize domain failures."""
+def _construct_district(
+    tenant_id: str,
+    district_id: str,
+    name: str,
+    jurisdiction_code: str,
+    evidence_reference: str,
+) -> District:
+    """Construct one exact District and normalize P1 validation failures."""
     try:
-        return factory(*args)
+        return District(
+            tenant_id,
+            district_id,
+            name,
+            jurisdiction_code,
+            evidence_reference,
+        )
+    except LegalOperationsLifecycleError as error:
+        _fail("L8_1_DIRECTORY_VALUE_INVALID", error)
+
+
+def _construct_sheriff_office(
+    tenant_id: str,
+    sheriff_office_id: str,
+    district_id: str,
+    name: str,
+    evidence_reference: str,
+) -> SheriffOffice:
+    """Construct one exact SheriffOffice and normalize P1 validation failures."""
+    try:
+        return SheriffOffice(
+            tenant_id,
+            sheriff_office_id,
+            district_id,
+            name,
+            evidence_reference,
+        )
+    except LegalOperationsLifecycleError as error:
+        _fail("L8_1_DIRECTORY_VALUE_INVALID", error)
+
+
+def _construct_deputy(
+    tenant_id: str,
+    deputy_id: str,
+    sheriff_office_id: str,
+    display_name: str,
+    badge_reference: str,
+    evidence_reference: str,
+) -> Deputy:
+    """Construct one exact Deputy and normalize P1 validation failures."""
+    try:
+        return Deputy(
+            tenant_id,
+            deputy_id,
+            sheriff_office_id,
+            display_name,
+            badge_reference,
+            evidence_reference,
+        )
     except LegalOperationsLifecycleError as error:
         _fail("L8_1_DIRECTORY_VALUE_INVALID", error)
 
@@ -273,8 +332,7 @@ def provision_district(
     jurisdiction from external providers or create allocation/service authority.
     """
     active_session = _active_transaction(session)
-    value = _construct(
-        District,
+    value = _construct_district(
         tenant_id,
         district_id,
         name,
@@ -315,8 +373,7 @@ def provision_sheriff_office(
     if district is None:
         _fail("L8_1_DISTRICT_NOT_FOUND")
 
-    value = _construct(
-        SheriffOffice,
+    value = _construct_sheriff_office(
         tenant_id,
         sheriff_office_id,
         district_id,
@@ -372,8 +429,7 @@ def provision_deputy(
     if office.district_id != district.district_id:
         _fail("L8_1_DISTRICT_OFFICE_LINEAGE_MISMATCH")
 
-    value = _construct(
-        Deputy,
+    value = _construct_deputy(
         tenant_id,
         deputy_id,
         sheriff_office_id,
@@ -403,7 +459,7 @@ __all__ = [
 
 
 # ARTIFACT: process_service_directory_provisioning_orchestrator.py
-# VERSION: v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
+# VERSION: v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING
 # AUTHORITY BOUNDARY: transaction-scoped District/SheriffOffice/Deputy provisioning composition only
 # TENANT POSTURE: exact tenant history and writes; canonical parent lineage required
 # FAIL-CLOSED POSTURE: inactive transaction, absence, corruption, divergence, and lineage mismatch reject
