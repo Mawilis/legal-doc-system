@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT
+ * VERSION: v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Preserves certified sheriff/deputy reads and deputy field commands
  *          while adding the exact D6 LEGAL_CLIENT matter projection transport.
@@ -17,7 +17,13 @@
  *                            owns exact browser response validation and immutable
  *                            presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT adds GET /legal-operations/client/matters,
+ * CHANGELOG: 2026-09-23 v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT adds exact GET /legal-operations/workspace
+ *            validation/adaptation for the D11 legal-practice workspace,
+ *            exact tariff-assessment/billing-eligibility/invoice read adapters,
+ *            and the existing ReturnOfService generation command. Browser input
+ *            never supplies tenant/principal/role, money, service outcome,
+ *            payment or settlement truth.
+2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT adds GET /legal-operations/client/matters,
  *            validates the exact D5 schema/version/visibility and exact four-field
  *            matter-card contract, rejects malformed/extra/missing/duplicate/
  *            unsorted matter evidence, maps only case ID/reference/opened time/
@@ -54,7 +60,7 @@
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT';
+  'v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -103,6 +109,131 @@ const CLIENT_MATTER_STATES = Object.freeze([
   'OPEN',
   'CLOSED',
 ]);
+
+const LEGAL_WORKSPACE_SCHEMA =
+  'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1';
+const LEGAL_WORKSPACE_VERSION =
+  'v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API';
+const LEGAL_WORKSPACE_VISIBILITY =
+  'LEGAL_PRACTICE_WORKSPACE';
+
+const LEGAL_WORKSPACE_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'visibility',
+  'summary',
+  'instructions',
+  'documents',
+  'attempts',
+  'executions',
+  'returns',
+]);
+
+const LEGAL_WORKSPACE_SUMMARY_KEYS = Object.freeze([
+  'instructions_total',
+  'instructions_registered',
+  'instructions_accepted',
+  'instructions_closed',
+  'instructions_cancelled',
+  'documents_total',
+  'documents_registered',
+  'documents_received',
+  'documents_allocated',
+  'documents_returned',
+  'attempts_total',
+  'attempts_allocated',
+  'attempts_attempted',
+  'attempts_completed',
+  'attempts_not_completed',
+  'attempts_cancelled',
+  'executions_total',
+  'executions_completed',
+  'executions_not_completed',
+  'returns_total',
+]);
+
+const LEGAL_WORKSPACE_ROW_KEYS = Object.freeze({
+  instructions: Object.freeze([
+    'instruction_id',
+    'case_matter_id',
+    'document_id',
+    'registered_at',
+    'state',
+    'evidence_identity',
+  ]),
+  documents: Object.freeze([
+    'document_id',
+    'case_matter_id',
+    'document_type',
+    'registered_at',
+    'state',
+    'evidence_identity',
+  ]),
+  attempts: Object.freeze([
+    'attempt_id',
+    'instruction_id',
+    'document_id',
+    'deputy_id',
+    'allocated_at',
+    'state',
+    'evidence_identity',
+  ]),
+  executions: Object.freeze([
+    'service_execution_id',
+    'attempt_id',
+    'instruction_id',
+    'document_id',
+    'outcome',
+    'executed_at',
+    'evidence_identity',
+  ]),
+  returns: Object.freeze([
+    'return_id',
+    'instruction_id',
+    'document_id',
+    'attempt_id',
+    'service_execution_id',
+    'service_outcome',
+    'generated_at',
+    'state',
+    'evidence_identity',
+  ]),
+});
+
+const LEGAL_WORKSPACE_STATES = Object.freeze({
+  instructions: Object.freeze(['REGISTERED', 'ACCEPTED', 'CLOSED', 'CANCELLED']),
+  documents: Object.freeze([
+    'REGISTERED',
+    'RECEIVED',
+    'ALLOCATED_TO_DEPUTY',
+    'RETURNED_TO_CLIENT',
+  ]),
+  attempts: Object.freeze([
+    'ALLOCATED',
+    'ATTEMPTED',
+    'COMPLETED',
+    'NOT_COMPLETED',
+    'CANCELLED',
+  ]),
+  executions: Object.freeze(['COMPLETED', 'NOT_COMPLETED']),
+  returns: Object.freeze(['GENERATED']),
+});
+
+const LEGAL_FINANCE_KINDS = Object.freeze({
+  TARIFF_ASSESSMENT: Object.freeze({
+    route: 'tariff-assessments',
+    entityType: 'TariffAssessment',
+  }),
+  BILLING_ELIGIBILITY: Object.freeze({
+    route: 'billing-eligibilities',
+    entityType: 'ProcessServiceBillingEligibility',
+  }),
+  INVOICE: Object.freeze({
+    route: 'invoices',
+    entityType: 'ClientInvoice',
+  }),
+});
 
 
 const DEPUTY_CAPABILITY_RESPONSE_KEYS = Object.freeze([
@@ -400,6 +531,214 @@ function assertCanonicalClientMatterPayload(value) {
 }
 
 
+function assertSha3(value, errorCode) {
+  if (!SHA3_512_PATTERN.test(value)) {
+    throw new Error(errorCode);
+  }
+  return value;
+}
+
+function assertSortedRows(rows, identityKey, errorCode) {
+  let prior = null;
+  for (const row of rows) {
+    const current = row[identityKey];
+    if (!isCanonicalText(current) || (prior !== null && current < prior)) {
+      throw new Error(errorCode);
+    }
+    prior = current;
+  }
+}
+
+function assertCanonicalLegalWorkspacePayload(value) {
+  const errorCode = 'LEGAL_OPERATIONS_WORKSPACE_RESPONSE_INVALID';
+  assertExactKeys(value, LEGAL_WORKSPACE_RESPONSE_KEYS, errorCode);
+  if (
+    value.schema !== LEGAL_WORKSPACE_SCHEMA
+    || value.version !== LEGAL_WORKSPACE_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || value.visibility !== LEGAL_WORKSPACE_VISIBILITY
+    || !isPlainObject(value.summary)
+  ) {
+    throw new Error(errorCode);
+  }
+
+  assertExactKeys(value.summary, LEGAL_WORKSPACE_SUMMARY_KEYS, errorCode);
+  for (const key of LEGAL_WORKSPACE_SUMMARY_KEYS) {
+    if (
+      !Number.isInteger(value.summary[key])
+      || value.summary[key] < 0
+    ) {
+      throw new Error(errorCode);
+    }
+  }
+
+  const identityKeys = {
+    instructions: 'instruction_id',
+    documents: 'document_id',
+    attempts: 'attempt_id',
+    executions: 'service_execution_id',
+    returns: 'return_id',
+  };
+
+  const timestampKeys = {
+    instructions: 'registered_at',
+    documents: 'registered_at',
+    attempts: 'allocated_at',
+    executions: 'executed_at',
+    returns: 'generated_at',
+  };
+
+  const stateKeys = {
+    instructions: 'state',
+    documents: 'state',
+    attempts: 'state',
+    executions: 'outcome',
+    returns: 'state',
+  };
+
+  const arrays = {};
+  for (const [name, expectedKeys] of Object.entries(LEGAL_WORKSPACE_ROW_KEYS)) {
+    const rows = value[name];
+    if (!Array.isArray(rows)) throw new Error(errorCode);
+    assertSortedRows(rows, identityKeys[name], errorCode);
+
+    arrays[name] = Object.freeze(rows.map((row) => {
+      assertExactKeys(row, expectedKeys, errorCode);
+      for (const [key, item] of Object.entries(row)) {
+        if (key === 'evidence_identity') {
+          assertSha3(item, errorCode);
+        } else if (key === timestampKeys[name]) {
+          if (!isCanonicalTimestamp(item)) throw new Error(errorCode);
+        } else if (key === stateKeys[name]) {
+          if (!LEGAL_WORKSPACE_STATES[name].includes(item)) {
+            throw new Error(errorCode);
+          }
+        } else if (!isCanonicalText(item)) {
+          throw new Error(errorCode);
+        }
+      }
+      return Object.freeze({ ...row });
+    }));
+  }
+
+  if (
+    value.summary.instructions_total !== arrays.instructions.length
+    || value.summary.documents_total !== arrays.documents.length
+    || value.summary.attempts_total !== arrays.attempts.length
+    || value.summary.executions_total !== arrays.executions.length
+    || value.summary.returns_total !== arrays.returns.length
+  ) {
+    throw new Error('LEGAL_OPERATIONS_WORKSPACE_SUMMARY_MISMATCH');
+  }
+
+  return Object.freeze({
+    schema: value.schema,
+    version: value.version,
+    tenantId: value.tenant_id,
+    visibility: value.visibility,
+    summary: Object.freeze({ ...value.summary }),
+    instructions: arrays.instructions,
+    documents: arrays.documents,
+    attempts: arrays.attempts,
+    executions: arrays.executions,
+    returns: arrays.returns,
+  });
+}
+
+function assertCanonicalFinanceEvidence(value, expectedEntityType) {
+  const errorCode = 'LEGAL_OPERATIONS_FINANCE_RESPONSE_INVALID';
+  assertExactKeys(
+    value,
+    ['tenant_id', 'entity_type', 'entity_identity', 'visibility', 'data'],
+    errorCode,
+  );
+  if (
+    !isCanonicalText(value.tenant_id)
+    || value.entity_type !== expectedEntityType
+    || !isCanonicalText(value.entity_identity)
+    || value.visibility !== 'FINANCE_VISIBLE'
+    || !isPlainObject(value.data)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({
+    tenantId: value.tenant_id,
+    entityType: value.entity_type,
+    entityIdentity: value.entity_identity,
+    visibility: value.visibility,
+    data: freezeValue(value.data),
+  });
+}
+
+function assertReturnCommandInput(value) {
+  const errorCode = 'LEGAL_OPERATIONS_RETURN_COMMAND_INPUT_INVALID';
+  assertExactKeys(
+    value,
+    ['executionId', 'executionEvidenceIdentity', 'returnId', 'generatedAt'],
+    errorCode,
+  );
+  if (
+    !isCanonicalText(value.executionId)
+    || !SHA3_512_PATTERN.test(value.executionEvidenceIdentity)
+    || !isCanonicalText(value.returnId)
+    || !isCanonicalTimestamp(value.generatedAt)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({ ...value });
+}
+
+function assertCanonicalReturnCommandResponse(value, input) {
+  const errorCode = 'LEGAL_OPERATIONS_RETURN_COMMAND_RESPONSE_INVALID';
+  assertExactKeys(value, ['data'], errorCode);
+  const data = value.data;
+  if (!isPlainObject(data)) throw new Error(errorCode);
+  const required = [
+    'schema',
+    'version',
+    'entity_type',
+    'tenant_id',
+    'return_id',
+    'instruction_id',
+    'document_id',
+    'attempt_id',
+    'service_execution_id',
+    'service_outcome',
+    'service_evidence_reference',
+    'service_evidence_fingerprint',
+    'generated_at',
+    'state',
+  ];
+  assertExactKeys(data, required, errorCode);
+  if (
+    data.entity_type !== 'ReturnOfService'
+    || data.return_id !== input.returnId
+    || data.service_execution_id !== input.executionId
+    || !isCanonicalText(data.tenant_id)
+    || !isCanonicalText(data.instruction_id)
+    || !isCanonicalText(data.document_id)
+    || !isCanonicalText(data.attempt_id)
+    || !['COMPLETED', 'NOT_COMPLETED'].includes(data.service_outcome)
+    || !isCanonicalTimestamp(data.generated_at)
+    || data.state !== 'GENERATED'
+    || !SHA3_512_PATTERN.test(data.service_evidence_fingerprint)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({
+    tenantId: data.tenant_id,
+    returnId: data.return_id,
+    instructionId: data.instruction_id,
+    documentId: data.document_id,
+    attemptId: data.attempt_id,
+    serviceExecutionId: data.service_execution_id,
+    serviceOutcome: data.service_outcome,
+    generatedAt: data.generated_at,
+    state: data.state,
+  });
+}
+
+
 function assertCanonicalDeputyFieldCapabilitiesPayload(value) {
   assertExactKeys(
     value,
@@ -558,6 +897,39 @@ function toFieldCommandBody(input, { terminal = false } = {}) {
   return Object.freeze(body);
 }
 
+export async function getLegalPracticeWorkspace() {
+  const response = await api.get('/legal-operations/workspace');
+  return assertCanonicalLegalWorkspacePayload(response?.data);
+}
+
+export async function getLegalFinanceEvidence(kind, identity) {
+  const contract = LEGAL_FINANCE_KINDS[kind];
+  if (!contract || !isCanonicalText(identity)) {
+    throw new Error('LEGAL_OPERATIONS_FINANCE_LOOKUP_INPUT_INVALID');
+  }
+  const response = await api.get(
+    `/legal-operations/${contract.route}/${encodeURIComponent(identity)}`,
+  );
+  return assertCanonicalFinanceEvidence(
+    response?.data,
+    contract.entityType,
+  );
+}
+
+export async function generateLegalReturnOfService(value) {
+  const input = assertReturnCommandInput(value);
+  const response = await api.post(
+    `/legal-operations/executions/${encodeURIComponent(input.executionId)}/return`,
+    {
+      execution_evidence_identity: input.executionEvidenceIdentity,
+      return_id: input.returnId,
+      generated_at: input.generatedAt,
+    },
+  );
+  return assertCanonicalReturnCommandResponse(response?.data, input);
+}
+
+
 export async function getSheriffOperationalQueues() {
   const response = await api.get('/legal-operations/operational-queues');
   return assertCanonicalQueuePayload(response?.data);
@@ -619,6 +991,18 @@ export const __legalOperationsServiceInternals = Object.freeze({
   CLIENT_MATTER_RESPONSE_KEYS,
   CLIENT_MATTER_KEYS,
   CLIENT_MATTER_STATES,
+  assertCanonicalLegalWorkspacePayload,
+  assertCanonicalFinanceEvidence,
+  assertReturnCommandInput,
+  assertCanonicalReturnCommandResponse,
+  LEGAL_WORKSPACE_SCHEMA,
+  LEGAL_WORKSPACE_VERSION,
+  LEGAL_WORKSPACE_VISIBILITY,
+  LEGAL_WORKSPACE_RESPONSE_KEYS,
+  LEGAL_WORKSPACE_SUMMARY_KEYS,
+  LEGAL_WORKSPACE_ROW_KEYS,
+  LEGAL_WORKSPACE_STATES,
+  LEGAL_FINANCE_KINDS,
   DEPUTY_CAPABILITY_RESPONSE_KEYS,
   DEPUTY_CAPABILITY_KEYS,
   FIELD_COMMAND_KINDS,
@@ -630,7 +1014,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT
+ * VERSION: v1.4.0-L8-7D12-LEGAL-PRACTICE-WORKSPACE-CLIENT
  * AUTHORITY BOUNDARY: role-scoped sheriff/deputy/client read and deputy-command browser transport validation only
  * TENANT POSTURE: server tenant/client/deputy scope remains authoritative; browser cannot establish tenant, client or matter authority
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
