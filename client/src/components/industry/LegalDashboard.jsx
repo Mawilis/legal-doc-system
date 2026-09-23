@@ -1,23 +1,30 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT
+ * VERSION: v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
- * EPITOME: Preserves the certified sheriff cockpit while upgrading the bound-
- *          Deputy surface with L8-6D capability-correlated, L8-6G governed field
- *          commands. The browser submits observation facts only; Python EOS owns
- *          IAM, P5M lineage/provenance, lifecycle mutation and service execution.
- *          Command success is shown only after canonical post-command refresh.
+ * EPITOME: Preserves certified SHERIFF and governed DEPUTY modes while adding
+ *          an exact LEGAL_CLIENT cockpit backed only by the D7 sanitized matter
+ *          adapter. Client mode presents explicitly-visible current matters and
+ *          derived OPEN/CLOSED counts only; it never probes internal queues,
+ *          deputy work, service evidence, billing, AI or financial truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns authority; P1/P2 own lifecycle/
  *                            snapshot truth; L8-5C owns sheriff queues; L8-6B owns
  *                            immutable principal-to-Deputy binding; L8-6C owns
  *                            deputy work; L8-6D owns state-valid capabilities;
  *                            L8-6G owns field-command composition/P5M lineage;
- *                            L8-6H owns client transport validation. This component
- *                            owns responsive presentation and user observation
- *                            capture only.
+ *                            D5/D6 own sanitized LEGAL_CLIENT projection and
+ *                            authenticated snapshot transport; D7 owns browser
+ *                            validation. This component owns responsive
+ *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT adds exact deputy capability/work parity checks,
+ * CHANGELOG: 2026-09-23 v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT adds an exact LEGAL_CLIENT role mode that calls
+ *            only getLegalClientMatters(), renders visible/open/closed counts and
+ *            safe matter cards, handles client-specific denial/unavailability
+ *            without cross-role fallback, preserves SHERIFF/DEPUTY behavior, and
+ *            keeps responsive one-column mobile stacking. No internal legal,
+ *            service, billing, AI or financial truth is inferred or displayed.
+2026-09-23 v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT adds exact deputy capability/work parity checks,
  *            touch-friendly begin/completed/not-completed field controls, explicit
  *            observation reference/time capture, pseudonymous browser field-device
  *            provenance, per-command pending/error/success states, and mandatory
@@ -42,17 +49,19 @@
  *                             browser field-device reference may be stored locally
  *                             solely for P5M ordering provenance; it is not IAM,
  *                             deputy identity, GPS, biometric or legal truth.
- * TENANT BOUNDARY: Canonical tenant scope comes from the server response after
- *                  durable authorization; deputy identity additionally comes
- *                  only from the server-bound L8-6B/L8-6C projection.
- * AUTHORITY BOUNDARY: Presentation and observation-command initiation only.
- *                     roleView/capability display never grants authority; Python
- *                     EOS independently re-authorizes and creates all legal truth.
+ * TENANT BOUNDARY: Canonical tenant scope comes only from certified server
+ *                  projections; deputy identity remains server-bound and client
+ *                  matter membership comes only from explicit D5/D7 visibility.
+ * AUTHORITY BOUNDARY: Presentation and deputy observation-command initiation
+ *                     only. roleView/display state never grants SHERIFF, DEPUTY
+ *                     or LEGAL_CLIENT authority; Python EOS independently
+ *                     authorizes and owns all legal truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * FAIL-CLOSED DECLARATION: Unknown role, denied/unavailable reads, work/capability
- *                          drift, malformed observation, command failure, or failed
- *                          canonical refresh never falls back, crosses roles, or
- *                          displays command success.
+ * FAIL-CLOSED DECLARATION: Unknown role, denied/unavailable client/internal
+ *                          reads, work/capability drift, malformed observation,
+ *                          command failure, or failed canonical refresh never
+ *                          falls back, crosses roles, invents matters, or displays
+ *                          command success.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -80,12 +89,13 @@ import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
+  getLegalClientMatters,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 
-const DASHBOARD_VERSION = 'v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT';
+const DASHBOARD_VERSION = 'v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -100,6 +110,14 @@ const EMPTY_DEPUTY_WORK = Object.freeze({
   visibility: '',
   deputyId: '',
   activeAttempts: Object.freeze([]),
+});
+
+const EMPTY_CLIENT_MATTERS = Object.freeze({
+  schema: '',
+  version: '',
+  tenantId: '',
+  visibility: '',
+  matters: Object.freeze([]),
 });
 
 
@@ -122,6 +140,7 @@ const FIELD_COMMAND_KIND = Object.freeze({
 const ROLE_MODES = Object.freeze({
   SHERIFF: 'SHERIFF',
   DEPUTY: 'DEPUTY',
+  LEGAL_CLIENT: 'LEGAL_CLIENT',
   UNRESOLVED: 'UNRESOLVED',
 });
 
@@ -132,6 +151,12 @@ function resolveRoleMode(value) {
     .toUpperCase();
   if (token.includes('SHERIFF')) return ROLE_MODES.SHERIFF;
   if (token.includes('DEPUTY')) return ROLE_MODES.DEPUTY;
+  if (
+    token === 'LEGAL_CLIENT'
+    || token === 'TENANT_LEGAL_CLIENT'
+  ) {
+    return ROLE_MODES.LEGAL_CLIENT;
+  }
   return ROLE_MODES.UNRESOLVED;
 }
 
@@ -377,6 +402,31 @@ function AttemptQueueRow({ item }) {
   );
 }
 
+function ClientMatterRow({ item }) {
+  return (
+    <div className="grid gap-4 px-5 py-4 md:grid-cols-[1.2fr_1fr_0.8fr_auto] md:items-center">
+      <div>
+        <p className="text-sm font-black text-white">{item.matterReference}</p>
+        <p className="mt-1 text-[11px] text-stone-500">
+          Matter {item.caseMatterId}
+        </p>
+      </div>
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-stone-600">
+          Opened
+        </p>
+        <p className="mt-1 text-xs font-semibold text-stone-300">
+          {formatTimestamp(item.openedAt)}
+        </p>
+      </div>
+      <div className="text-xs leading-5 text-stone-500">
+        Explicitly visible to this authenticated legal client.
+      </div>
+      <StatePill state={item.state} />
+    </div>
+  );
+}
+
 function DeputyAttemptRow({
   item,
   capability,
@@ -542,6 +592,7 @@ export default function LegalDashboard({
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
+  const [clientMatters, setClientMatters] = useState(EMPTY_CLIENT_MATTERS);
   const [deputyCapabilities, setDeputyCapabilities] = useState(
     EMPTY_DEPUTY_CAPABILITIES,
   );
@@ -561,11 +612,12 @@ export default function LegalDashboard({
     if (roleMode === ROLE_MODES.UNRESOLVED) {
       setQueues(EMPTY_QUEUES);
       setDeputyWork(EMPTY_DEPUTY_WORK);
+      setClientMatters(EMPTY_CLIENT_MATTERS);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setError({
         kind: 'LEGAL_ROLE_SCOPE_REQUIRED',
         message:
-          'This Legal OS surface requires an explicit SHERIFF or DEPUTY presentation scope. No privileged queue endpoint was queried.',
+          'This Legal OS surface requires an explicit SHERIFF, DEPUTY, or LEGAL_CLIENT presentation scope. No privileged endpoint was queried.',
       });
       setLoading(false);
       setRefreshing(false);
@@ -593,13 +645,27 @@ export default function LegalDashboard({
           }
           return next;
         });
+        setClientMatters(EMPTY_CLIENT_MATTERS);
         setLastUpdated(new Date());
         return { deputyWork: work, deputyCapabilities: capabilityPacket };
+      }
+
+      if (roleMode === ROLE_MODES.LEGAL_CLIENT) {
+        const result = await getLegalClientMatters();
+        setClientMatters(result);
+        setQueues(EMPTY_QUEUES);
+        setDeputyWork(EMPTY_DEPUTY_WORK);
+        setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
+        setCommandState(null);
+        setObservationDrafts({});
+        setLastUpdated(new Date());
+        return { clientMatters: result };
       }
 
       const result = await getSheriffOperationalQueues();
       setQueues(result);
       setDeputyWork(EMPTY_DEPUTY_WORK);
+      setClientMatters(EMPTY_CLIENT_MATTERS);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setLastUpdated(new Date());
       return { queues: result };
@@ -623,6 +689,12 @@ export default function LegalDashboard({
               ? 'No immutable principal-to-Deputy identity binding is available for this authenticated deputy.'
               : 'Personal active work is restricted to the canonical DEPUTY authority.',
         });
+      } else if (status === 403 && roleMode === ROLE_MODES.LEGAL_CLIENT) {
+        setError({
+          kind: 'LEGAL_CLIENT_MATTER_READ_DENIED',
+          message:
+            detail || 'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.',
+        });
       } else if (status === 403) {
         setError({
           kind: 'SHERIFF_AUTHORITY_REQUIRED',
@@ -645,6 +717,7 @@ export default function LegalDashboard({
 
       setQueues(EMPTY_QUEUES);
       setDeputyWork(EMPTY_DEPUTY_WORK);
+      setClientMatters(EMPTY_CLIENT_MATTERS);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       return null;
     } finally {
@@ -815,6 +888,23 @@ export default function LegalDashboard({
   ]);
 
   const metrics = useMemo(() => {
+    if (roleMode === ROLE_MODES.LEGAL_CLIENT) {
+      const openMatters = clientMatters.matters.filter(
+        (matter) => matter.state === 'OPEN',
+      ).length;
+      const closedMatters = clientMatters.matters.filter(
+        (matter) => matter.state === 'CLOSED',
+      ).length;
+      return {
+        visibleMatters: clientMatters.matters.length,
+        openMatters,
+        closedMatters,
+        officeReceipt: 0,
+        deputyAssignment: 0,
+        activeAttempts: 0,
+        totalCurrentWork: clientMatters.matters.length,
+      };
+    }
     if (roleMode === ROLE_MODES.DEPUTY) {
       return {
         officeReceipt: 0,
@@ -832,16 +922,23 @@ export default function LegalDashboard({
       activeAttempts,
       totalCurrentWork: officeReceipt + deputyAssignment + activeAttempts,
     };
-  }, [deputyWork, queues, roleMode]);
+  }, [clientMatters, deputyWork, queues, roleMode]);
 
   const tenantLabel =
-    (roleMode === ROLE_MODES.DEPUTY ? deputyWork.tenantId : queues.tenantId)
+    (
+      roleMode === ROLE_MODES.DEPUTY
+        ? deputyWork.tenantId
+        : roleMode === ROLE_MODES.LEGAL_CLIENT
+          ? clientMatters.tenantId
+          : queues.tenantId
+    )
     || tenantConfig?.tenantId
     || tenantConfig?.id
     || 'Awaiting authorized tenant';
 
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
+  const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
 
   if (loading) {
     return (
@@ -871,7 +968,13 @@ export default function LegalDashboard({
                     WILSY Legal OS
                   </h1>
                   <span className="rounded-full border border-emerald-800/40 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-400">
-                    {isDeputyMode ? 'Bound deputy cockpit' : isSheriffMode ? 'Certified sheriff cockpit' : 'Role scope unresolved'}
+                    {isDeputyMode
+                      ? 'Bound deputy cockpit'
+                      : isSheriffMode
+                        ? 'Certified sheriff cockpit'
+                        : isClientMode
+                          ? 'Client matter cockpit'
+                          : 'Role scope unresolved'}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-stone-400">
@@ -879,7 +982,9 @@ export default function LegalDashboard({
                     ? 'Binding-scoped field work with server-authorized commands. No tenant-wide queue leakage.'
                     : isSheriffMode
                       ? 'Evidence-backed operational queues. No mock legal truth.'
-                      : 'Privileged Legal Operations queues remain closed until role scope resolves.'}
+                      : isClientMode
+                        ? 'Explicitly visible current matters only. Internal Legal Operations evidence remains closed.'
+                        : 'Privileged Legal Operations surfaces remain closed until role scope resolves.'}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase tracking-wider text-stone-600">
                   <span>Tenant: {tenantLabel}</span>
@@ -1015,6 +1120,60 @@ export default function LegalDashboard({
           </>
         )}
 
+        {isClientMode && (
+          <>
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <QueueMetric
+                icon={FileText}
+                label="Visible matters"
+                value={metrics.visibleMatters}
+                description="Only matters with a current ACTIVE client visibility relation."
+              />
+              <QueueMetric
+                icon={Clock3}
+                label="Open matters"
+                value={metrics.openMatters}
+                description="Current canonical CaseMatter state is OPEN."
+              />
+              <QueueMetric
+                icon={CheckCircle2}
+                label="Closed matters"
+                value={metrics.closedMatters}
+                description="Current canonical CaseMatter state is CLOSED."
+              />
+            </section>
+
+            <QueuePanel
+              title="My matters"
+              subtitle="Explicit visibility only · current canonical CaseMatter projection"
+              icon={FileText}
+              rows={clientMatters.matters}
+              emptyMessage="No matters are currently visible to this authenticated legal client."
+              renderRow={(item) => (
+                <ClientMatterRow key={item.caseMatterId} item={item} />
+              )}
+            />
+
+            <section className="rounded-2xl border border-sky-900/30 bg-sky-950/10 p-5">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 text-sky-400" size={19} />
+                <div>
+                  <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
+                    Client visibility boundary
+                  </h2>
+                  <p className="mt-2 max-w-4xl text-xs leading-6 text-stone-400">
+                    This view contains matter identity, client-facing reference,
+                    opened time and current OPEN/CLOSED state only. Internal
+                    instructions, documents, deputies, attempts, service or return
+                    evidence, invoices, payments, AI outputs and settlement truth
+                    are deliberately not available in this projection.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
         {isDeputyMode && (
           <>
             {commandState && (
@@ -1087,7 +1246,8 @@ export default function LegalDashboard({
           </>
         )}
 
-        <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        {!isClientMode && (
+          <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <CapabilityBoundary />
 
           <div className="rounded-2xl border border-violet-900/30 bg-gradient-to-br from-violet-950/20 via-stone-950 to-stone-950 p-5">
@@ -1119,6 +1279,7 @@ export default function LegalDashboard({
             </div>
           </div>
         </section>
+        )}
 
         <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
           <span>{DASHBOARD_VERSION}</span>
@@ -1131,10 +1292,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v7.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT
- * AUTHORITY BOUNDARY: role-scoped presentation and observation-command initiation only; Python EOS independently authorizes and creates legal truth
- * TENANT POSTURE: server-authorized tenant/deputy work and exact capability parity required before any deputy command is exposed
- * FAIL-CLOSED POSTURE: unresolved role, read/capability drift, malformed observation, command failure or failed canonical refresh never shows success or cross-role fallback
+ * VERSION: v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT
+ * AUTHORITY BOUNDARY: governed SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus deputy observation-command initiation only; Python EOS owns authority and legal truth
+ * TENANT POSTURE: server-authorized tenant/client/deputy projections are required; client matter membership comes only from D5/D7 and deputy commands require exact capability parity
+ * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable client/internal read, capability drift, malformed observation, command failure or failed refresh never invents truth or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
