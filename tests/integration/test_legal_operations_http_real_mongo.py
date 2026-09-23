@@ -1,13 +1,17 @@
 """TITLE: WILSY OS Legal Operations live-IAM read API real-Mongo certificate.
-VERSION: v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT
+VERSION: v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
 AUTHORITY: Host-backed certificate for durable tenant authorization and canonical projections.
 EPITOME: Proves the real RequireTenantAuthorization chain resolves durable principal,
-membership, business-role, and granting-role truth before a real P2 projection.
+membership, business-role, and granting-role truth before exact P2 history is
+resolved through deterministic L8-0 current-state projection.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; P1/P2 remain canonical authorities.
-CERTIFICATION / UPDATE DATE: 2026-09-15
-CHANGELOG: v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT removes the final-authorization
-override and certifies durable principal, membership, business-role, granting-role,
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT adds real-Mongo
+multi-snapshot current selection and fork rejection while preserving the full
+durable IAM authorization chain before lifecycle access.
+v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT removed the final-authorization override
+and certified durable principal, membership, business-role, granting-role,
 revocation, inactive-state, ambiguity, cross-tenant, and client-policy denials.
 v1.0.0-L7A-LEGAL-OPERATIONS-READ-API-RM-CERT certified own-tenant visibility,
 foreign absence, and bounded output on Mongo.
@@ -21,7 +25,7 @@ FAIL-CLOSED DECLARATION: Host availability alone may skip; all post-hello produc
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import os
 from typing import Any, Iterator
 import uuid
@@ -38,14 +42,17 @@ import tools.eos.api.legal_operations_router as legal_router
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
-from tools.eos.legal_operations.domain.legal_operations_lifecycle import LegalInstruction
+from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
+    LegalInstruction,
+    LegalInstructionState,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION,
     LegalOperationsLifecycleRegistry,
 )
 
 
-VERSION = "v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT"
+VERSION = "v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT"
 MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 NOW = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
@@ -186,9 +193,14 @@ class _LifecycleReader:
         self._calls = calls
 
     def find_one(self, query: Any, **kwargs: Any) -> Any:
-        del kwargs
+        """Delegate exact single-record reads while preserving caller options."""
         self._calls.append("lifecycle")
-        return self._collection.find_one(query)
+        return self._collection.find_one(query, **kwargs)
+
+    def find(self, query: Any, **kwargs: Any) -> Any:
+        """Delegate exact history reads while preserving caller session/options."""
+        self._calls.append("lifecycle")
+        return self._collection.find(query, **kwargs)
 
 
 def _app(
@@ -280,6 +292,46 @@ def test_real_mongo_live_iam_authorizes_and_precedes_lifecycle_read(mongo_contex
     assert "authorization_role" in calls
     assert "lifecycle" in calls
     assert max(calls.index("principal"), calls.index("membership"), calls.index("business_role"), calls.index("authorization_role")) < calls.index("lifecycle")
+
+
+def test_real_mongo_multiple_snapshots_resolve_current_and_forks_reject(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Complete durable history resolves one linear current state and rejects forks."""
+    tenant, registered, calls = _prepare(mongo_context)
+    accepted = registered.transition_to(
+        LegalInstructionState.ACCEPTED,
+        evidence_reference="accepted-evidence",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            accepted,
+            mongo_context["lifecycle"],
+        )
+        == accepted
+    )
+
+    response = _request(mongo_context, tenant, calls)
+    assert response.status_code == 200
+    assert response.json()["data"] == accepted.to_dict()
+
+    cancelled = registered.transition_to(
+        LegalInstructionState.CANCELLED,
+        evidence_reference="cancelled-evidence",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            cancelled,
+            mongo_context["lifecycle"],
+        )
+        == cancelled
+    )
+
+    divergent = _request(mongo_context, tenant, calls)
+    assert divergent.status_code == 503
+    assert divergent.json()["detail"] == "LEGAL_OPERATIONS_EVIDENCE_UNAVAILABLE"
 
 
 def test_real_mongo_revoked_grant_denies_before_lifecycle(mongo_context: dict[str, Any]) -> None:
@@ -379,8 +431,8 @@ def test_real_mongo_unknown_resource_and_projection_boundary_remain_bounded(mong
 
 
 # ARTIFACT: test_legal_operations_http_real_mongo.py
-# VERSION: v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT
-# AUTHORITY BOUNDARY: real-Mongo live-IAM read projection certificate only
+# VERSION: v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
+# AUTHORITY BOUNDARY: real-Mongo live-IAM deterministic current-read projection certificate only
 # TENANT POSTURE: exact tenant predicates, durable membership, and foreign absence
 # FAIL-CLOSED POSTURE: post-hello failures are certificate failures
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
