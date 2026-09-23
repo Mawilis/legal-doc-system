@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.19.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM-CERT
+VERSION: v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
+    certifies legal_operations:client_matter:read as one exact canonical
+    TENANT permission for future explicitly-bound LEGAL_CLIENT matter
+    projection only. It is membership-gated, non-cross-tenant, non-financial
+    and non-self-authorizing, and raises canon cardinality to exactly 61
+    canonical permissions / 64 total rows.
     2026-09-23 v1.19.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM-CERT
     certifies legal_operations:client_visibility:write as one exact canonical
     TENANT permission for bounded future client-to-matter grant/revoke
@@ -81,12 +87,12 @@ import json
 
 import pytest
 
-VERSION = "v1.19.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM-CERT"
+VERSION = "v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM"
+    assert POLICY_VERSION == "v1.24.0-L8-7D1-CLIENT-MATTER-READ-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -121,6 +127,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:queue:read",
         "legal_operations:deputy_queue:read",
         "legal_operations:client_visibility:write",
+        "legal_operations:client_matter:read",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -157,9 +164,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 60
+    ) == 61
 
-    assert len(rows) == 63
+    assert len(rows) == 64
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -252,6 +259,22 @@ def test_permission_canon_properties() -> None:
     assert client_visibility_write.financial_execution_capable is False
     assert client_visibility_write.authorizes_by_itself is False
     assert client_visibility_write.disposition is PermissionDisposition.CANONICAL
+
+    client_matter_read = permission_metadata(
+        "legal_operations:client_matter:read"
+    )
+    assert client_matter_read.namespace == "TENANT"
+    assert client_matter_read.scope_kind == "TENANT"
+    assert (
+        client_matter_read.business_capability
+        == "read explicitly-bound own legal-client matters"
+    )
+    assert client_matter_read.tenant_membership_required is True
+    assert client_matter_read.system_assignment_required is False
+    assert client_matter_read.cross_tenant_capable is False
+    assert client_matter_read.financial_execution_capable is False
+    assert client_matter_read.authorizes_by_itself is False
+    assert client_matter_read.disposition is PermissionDisposition.CANONICAL
 
     command_permissions = {
         "legal_operations:directory:write":
@@ -441,6 +464,11 @@ def test_permission_canon_properties() -> None:
         "LEGAL_OPERATIONS:CLIENT_VISIBILITY:WRITE",
         " legal_operations:client_visibility:write",
         "legal_operations:client_visibility:write ",
+        "legal_operations:client_matter:*",
+        "legal_operations:client_matter",
+        "LEGAL_OPERATIONS:CLIENT_MATTER:READ",
+        " legal_operations:client_matter:read",
+        "legal_operations:client_matter:read ",
     )
 
     for value in invalid:
@@ -544,9 +572,9 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.19.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM-CERT
+# VERSION: v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
+# TENANT POSTURE: client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
