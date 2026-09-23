@@ -1,12 +1,13 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR
+ * VERSION: v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
- * EPITOME: Preserves certified SHERIFF and governed DEPUTY modes while adding
- *          an exact LEGAL_CLIENT cockpit backed only by the D7 sanitized matter
- *          adapter. Client mode presents explicitly-visible current matters and
- *          derived OPEN/CLOSED counts only; it never probes internal queues,
- *          deputy work, service evidence, billing, AI or financial truth.
+ * EPITOME: Preserves certified SHERIFF and governed DEPUTY modes while elevating
+ *          LEGAL_CLIENT into the shared WILSY OS workspace chrome. Client mode
+ *          now has a real responsive navigation rail, tenant/operator plate,
+ *          searchable visible-matter workspace, refresh/open-matters actions,
+ *          and bounded Overview / My Matters / Access & Privacy lanes backed
+ *          only by the D7 sanitized matter adapter.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns authority; P1/P2 own lifecycle/
  *                            snapshot truth; L8-5C owns sheriff queues; L8-6B owns
@@ -18,7 +19,15 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR keeps the exact D8 client-denial machine
+ * CHANGELOG: 2026-09-23 v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME wraps LEGAL_CLIENT in the certified shared
+ *            WilsyOSDashboardChrome without changing Python-EOS authority.
+ *            Adds functional Overview, My Matters, and Access & Privacy menu
+ *            lanes; visible-matter search; top tenant/operator chrome; live
+ *            refresh; open-matters navigation; responsive 64px mobile rail;
+ *            and explicit client-scope copy. No unsupported Documents, Billing,
+ *            Messages, AI, service, return, payment, or settlement menu is
+ *            fabricated. SHERIFF and DEPUTY render paths remain unchanged.
+2026-09-23 v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR keeps the exact D8 client-denial machine
  *            code as the error heading while replacing duplicate opaque body
  *            copy with bounded human-readable guidance. Authorization, endpoint
  *            selection, matter visibility and all SHERIFF/DEPUTY behavior remain unchanged.
@@ -49,16 +58,19 @@
  *            payment states. It renders only office receipt, deputy assignment
  *            and active attempt queues returned by the certified backend.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Authenticated transport only. A pseudonymous
+ * SECURITY / PRIVACY POSTURE: Authenticated transport only. Client navigation
+ *                             filters presentation over already-sanitized D7 data
+ *                             and never creates scope or authority. A pseudonymous
  *                             browser field-device reference may be stored locally
  *                             solely for P5M ordering provenance; it is not IAM,
  *                             deputy identity, GPS, biometric or legal truth.
  * TENANT BOUNDARY: Canonical tenant scope comes only from certified server
  *                  projections; deputy identity remains server-bound and client
  *                  matter membership comes only from explicit D5/D7 visibility.
- * AUTHORITY BOUNDARY: Presentation and deputy observation-command initiation
- *                     only. roleView/display state never grants SHERIFF, DEPUTY
- *                     or LEGAL_CLIENT authority; Python EOS independently
+ * AUTHORITY BOUNDARY: Presentation, client workspace navigation/search, and
+ *                     deputy observation-command initiation only. Menu state,
+ *                     roleView, search and display state never grant SHERIFF,
+ *                     DEPUTY or LEGAL_CLIENT authority; Python EOS independently
  *                     authorizes and owns all legal truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  * FAIL-CLOSED DECLARATION: Unknown role, denied/unavailable client/internal
@@ -98,8 +110,9 @@ import {
   recordDeputyFieldOutcome,
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
+import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR';
+const DASHBOARD_VERSION = 'v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -146,6 +159,12 @@ const ROLE_MODES = Object.freeze({
   DEPUTY: 'DEPUTY',
   LEGAL_CLIENT: 'LEGAL_CLIENT',
   UNRESOLVED: 'UNRESOLVED',
+});
+
+const CLIENT_WORKSPACE_VIEWS = Object.freeze({
+  OVERVIEW: 'OVERVIEW',
+  MATTERS: 'MATTERS',
+  ACCESS: 'ACCESS',
 });
 
 function resolveRoleMode(value) {
@@ -431,6 +450,279 @@ function ClientMatterRow({ item }) {
   );
 }
 
+function LegalClientWorkspace({
+  clientMatters,
+  error,
+  lastUpdated,
+  metrics,
+  onLogout,
+  onRefresh,
+  refreshing,
+  tenantConfig,
+  user,
+}) {
+  const [activeView, setActiveView] = useState(CLIENT_WORKSPACE_VIEWS.OVERVIEW);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredMatters = useMemo(
+    () => (
+      normalizedQuery
+        ? clientMatters.matters.filter((matter) => (
+          matter.caseMatterId.toLowerCase().includes(normalizedQuery)
+          || matter.matterReference.toLowerCase().includes(normalizedQuery)
+        ))
+        : clientMatters.matters
+    ),
+    [clientMatters.matters, normalizedQuery],
+  );
+
+  const chromeMetrics = useMemo(() => ([
+    {
+      id: 'visible',
+      label: 'Visible matters',
+      value: metrics.visibleMatters,
+      detail: 'ACTIVE visibility only',
+    },
+    {
+      id: 'open',
+      label: 'Open matters',
+      value: metrics.openMatters,
+      detail: 'Current CaseMatter OPEN',
+    },
+    {
+      id: 'closed',
+      label: 'Closed matters',
+      value: metrics.closedMatters,
+      detail: 'Current CaseMatter CLOSED',
+    },
+  ]), [metrics.closedMatters, metrics.openMatters, metrics.visibleMatters]);
+
+  const navItems = [
+    {
+      id: CLIENT_WORKSPACE_VIEWS.OVERVIEW,
+      label: 'Overview',
+      icon: ClipboardList,
+    },
+    {
+      id: CLIENT_WORKSPACE_VIEWS.MATTERS,
+      label: 'My Matters',
+      icon: FileText,
+    },
+    {
+      id: CLIENT_WORKSPACE_VIEWS.ACCESS,
+      label: 'Access & Privacy',
+      icon: ShieldCheck,
+    },
+  ];
+
+  const tenant = {
+    ...(tenantConfig || {}),
+    tenantId:
+      clientMatters.tenantId
+      || tenantConfig?.tenantId
+      || tenantConfig?.id
+      || '',
+  };
+  const operator = {
+    ...(user || {}),
+    displayName:
+      user?.displayName
+      || user?.name
+      || user?.email
+      || 'Authenticated legal client',
+    role: 'LEGAL_CLIENT',
+  };
+
+  const leftRail = (
+    <nav aria-label="Legal client workspace navigation">
+      {navItems.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          data-active={activeView === id ? 'true' : 'false'}
+          aria-current={activeView === id ? 'page' : undefined}
+          onClick={() => setActiveView(id)}
+          title={label}
+        >
+          <Icon size={16} />
+          <span>{label}</span>
+        </button>
+      ))}
+      {typeof onLogout === 'function' && (
+        <button type="button" onClick={onLogout} title="Sign out">
+          <LogOut size={16} />
+          <span>Sign out</span>
+        </button>
+      )}
+    </nav>
+  );
+
+  const errorSurface = error ? (
+    <section className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 text-red-400" size={20} />
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">
+            {error.kind}
+          </p>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-stone-300">
+            {error.message}
+          </p>
+          <p className="mt-2 text-[11px] text-stone-600">
+            WILSY Legal OS does not substitute browser fixtures when canonical evidence is unavailable.
+          </p>
+        </div>
+      </div>
+    </section>
+  ) : null;
+
+  let workspaceContent = null;
+
+  if (!error && activeView === CLIENT_WORKSPACE_VIEWS.OVERVIEW) {
+    workspaceContent = (
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-amber-900/30 bg-gradient-to-br from-amber-950/15 via-stone-950 to-stone-950 p-5">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">
+                Client workspace
+              </p>
+              <h2 className="mt-2 text-xl font-black text-white">
+                Your explicitly visible legal matters
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+                This workspace is limited to current matters granted to this authenticated legal client. Internal Legal Operations evidence remains closed.
+              </p>
+            </div>
+            <div className="rounded-xl border border-stone-800 bg-black/35 px-4 py-3 text-right">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                Evidence refresh
+              </p>
+              <p className="mt-1 text-xs font-semibold text-stone-300">
+                {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Not available'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <QueuePanel
+          title="Visible matter snapshot"
+          subtitle="Current certified client projection"
+          icon={FileText}
+          rows={filteredMatters.slice(0, 4)}
+          emptyMessage={
+            normalizedQuery
+              ? 'No visible matters match this search.'
+              : 'No matters are currently visible to this authenticated legal client.'
+          }
+          renderRow={(item) => (
+            <ClientMatterRow key={item.caseMatterId} item={item} />
+          )}
+        />
+      </div>
+    );
+  } else if (!error && activeView === CLIENT_WORKSPACE_VIEWS.MATTERS) {
+    workspaceContent = (
+      <QueuePanel
+        title="My matters"
+        subtitle="Explicit visibility only · current canonical CaseMatter projection"
+        icon={FileText}
+        rows={filteredMatters}
+        emptyMessage={
+          normalizedQuery
+            ? 'No visible matters match this search.'
+            : 'No matters are currently visible to this authenticated legal client.'
+        }
+        renderRow={(item) => (
+          <ClientMatterRow key={item.caseMatterId} item={item} />
+        )}
+      />
+    );
+  } else if (!error && activeView === CLIENT_WORKSPACE_VIEWS.ACCESS) {
+    workspaceContent = (
+      <div className="grid gap-5 xl:grid-cols-2">
+        <section className="rounded-2xl border border-emerald-900/30 bg-emerald-950/10 p-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 text-emerald-400" size={19} />
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
+                Available in this client projection
+              </h2>
+              <ul className="mt-4 space-y-3 text-sm text-stone-300">
+                <li>Matter identity and client-facing reference</li>
+                <li>Opened timestamp</li>
+                <li>Current OPEN or CLOSED matter state</li>
+                <li>Only matters with current ACTIVE client visibility</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-sky-900/30 bg-sky-950/10 p-5">
+          <div className="flex items-start gap-3">
+            <LockKeyhole className="mt-0.5 text-sky-400" size={19} />
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
+                Access & privacy boundary
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-stone-400">
+                Internal instructions, documents, deputies, service attempts,
+                service or return evidence, invoices, payments, AI outputs and
+                settlement truth are deliberately unavailable in this projection.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <WilsyOSDashboardChrome
+      dashboardKey="legal-client"
+      commandLabel="WILSY Legal OS"
+      title="Client Matter Workspace"
+      role="LEGAL_CLIENT"
+      posture={error ? 'SOURCE_GAPS' : 'LIVE'}
+      tenant={tenant}
+      operator={operator}
+      storyMessages={[
+        'Explicit visibility only',
+        'Current CaseMatter truth',
+        'Python EOS remains sovereign',
+      ]}
+      search={{
+        value: searchQuery,
+        placeholder: 'Search visible matters',
+        onChange: (event) => {
+          setSearchQuery(event.target.value);
+          if (event.target.value) setActiveView(CLIENT_WORKSPACE_VIEWS.MATTERS);
+        },
+        onFocus: () => setActiveView(CLIENT_WORKSPACE_VIEWS.MATTERS),
+      }}
+      actions={{
+        liveSyncLabel: 'Refresh truth',
+        onLiveSync: onRefresh,
+        isRefreshing: refreshing,
+        primaryActionLabel: 'Open matters',
+        onPrimaryAction: () => setActiveView(CLIENT_WORKSPACE_VIEWS.MATTERS),
+      }}
+      metrics={chromeMetrics}
+      leftRail={leftRail}
+    >
+      <div className="space-y-6">
+        {errorSurface}
+        {workspaceContent}
+        <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
+          <span>{DASHBOARD_VERSION}</span>
+          <span>Presentation only · Python EOS remains sovereign legal truth</span>
+        </footer>
+      </div>
+    </WilsyOSDashboardChrome>
+  );
+}
+
 function DeputyAttemptRow({
   item,
   capability,
@@ -592,6 +884,7 @@ export default function LegalDashboard({
   onLogout,
   tenantConfig,
   roleView = 'LEGAL_VIEW',
+  user = null,
 }) {
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
@@ -959,6 +1252,22 @@ export default function LegalDashboard({
     );
   }
 
+  if (isClientMode) {
+    return (
+      <LegalClientWorkspace
+        clientMatters={clientMatters}
+        error={error}
+        lastUpdated={lastUpdated}
+        metrics={metrics}
+        onLogout={onLogout}
+        onRefresh={() => loadOperationalTruth({ refresh: true })}
+        refreshing={refreshing}
+        tenantConfig={tenantConfig}
+        user={user}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#080706] text-white">
       <div className="border-b border-amber-900/25 bg-gradient-to-r from-black via-stone-950 to-black">
@@ -1298,10 +1607,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR
- * AUTHORITY BOUNDARY: governed SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus deputy observation-command initiation only; Python EOS owns authority and legal truth
+ * VERSION: v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME
+ * AUTHORITY BOUNDARY: governed SHERIFF/DEPUTY presentation, LEGAL_CLIENT shared workspace navigation/search, and deputy observation-command initiation only; Python EOS owns authority and legal truth
  * TENANT POSTURE: server-authorized tenant/client/deputy projections are required; client matter membership comes only from D5/D7 and deputy commands require exact capability parity
- * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable client/internal read, capability drift, malformed observation, command failure or failed refresh never invents truth or cross-role fallback
+ * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable client/internal read, menu/search state, capability drift, malformed observation, command failure or failed refresh never invents truth or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
