@@ -1,9 +1,12 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS VISUAL GATE
- * VERSION: v1.0.0-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE
+ * VERSION: v1.0.1-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE-EVIDENCE-ALIGNMENT
  * AUTHORITY: Test-support only; imports the real production LegalDashboard and CSS.
  * EPITOME: Deterministic LEGAL_PARTNER visual evidence for the complete D14
  *          workspace while denying client/sheriff/deputy cross-role access.
+ * CHANGELOG: 2026-09-24 v1.0.1 aligns synthetic document/attempt/execution
+ *            lifecycle states so every displayed execution has a terminal
+ *            source attempt and every active attempt has an allocated document.
  * PRODUCTION IMPACT: NONE.
  * FAIL-CLOSED: Unintended role transport throws immediately.
  */
@@ -40,14 +43,14 @@ export async function getLegalPracticeWorkspace() {
       instructions_cancelled: 0,
       documents_total: 6,
       documents_registered: 1,
-      documents_received: 2,
-      documents_allocated: 2,
+      documents_received: 1,
+      documents_allocated: 3,
       documents_returned: 1,
       attempts_total: 3,
-      attempts_allocated: 1,
+      attempts_allocated: 0,
       attempts_attempted: 1,
       attempts_completed: 1,
-      attempts_not_completed: 0,
+      attempts_not_completed: 1,
       attempts_cancelled: 0,
       executions_total: 2,
       executions_completed: 1,
@@ -65,14 +68,14 @@ export async function getLegalPracticeWorkspace() {
     documents: Object.freeze([
       Object.freeze({ document_id:'document-2026-001',case_matter_id:'matter-2026-001',document_type:'SUMMONS',registered_at:'2026-09-23T08:11:00+02:00',state:'ALLOCATED_TO_DEPUTY',evidence_identity:evidence('1') }),
       Object.freeze({ document_id:'document-2026-002',case_matter_id:'matter-2026-002',document_type:'NOTICE OF MOTION',registered_at:'2026-09-23T08:41:00+02:00',state:'REGISTERED',evidence_identity:evidence('2') }),
-      Object.freeze({ document_id:'document-2026-003',case_matter_id:'matter-2026-003',document_type:'WARRANT',registered_at:'2026-09-23T09:16:00+02:00',state:'RECEIVED',evidence_identity:evidence('3') }),
+      Object.freeze({ document_id:'document-2026-003',case_matter_id:'matter-2026-003',document_type:'WARRANT',registered_at:'2026-09-23T09:16:00+02:00',state:'ALLOCATED_TO_DEPUTY',evidence_identity:evidence('3') }),
       Object.freeze({ document_id:'document-2026-004',case_matter_id:'matter-2026-004',document_type:'SUBPOENA',registered_at:'2026-09-23T10:06:00+02:00',state:'RECEIVED',evidence_identity:evidence('4') }),
       Object.freeze({ document_id:'document-2026-005',case_matter_id:'matter-2026-005',document_type:'COURT ORDER',registered_at:'2026-09-23T11:21:00+02:00',state:'ALLOCATED_TO_DEPUTY',evidence_identity:evidence('5') }),
       Object.freeze({ document_id:'document-2026-006',case_matter_id:'matter-2026-006',document_type:'SUMMONS',registered_at:'2026-09-22T14:31:00+02:00',state:'RETURNED_TO_CLIENT',evidence_identity:evidence('6') }),
     ]),
     attempts: Object.freeze([
-      Object.freeze({ attempt_id:'attempt-2026-001',instruction_id:'instruction-2026-001',document_id:'document-2026-001',deputy_id:'deputy-jhb-014',allocated_at:'2026-09-23T09:00:00+02:00',state:'ATTEMPTED',evidence_identity:evidence('7') }),
-      Object.freeze({ attempt_id:'attempt-2026-002',instruction_id:'instruction-2026-003',document_id:'document-2026-003',deputy_id:'deputy-pta-008',allocated_at:'2026-09-23T10:30:00+02:00',state:'ALLOCATED',evidence_identity:evidence('8') }),
+      Object.freeze({ attempt_id:'attempt-2026-001',instruction_id:'instruction-2026-001',document_id:'document-2026-001',deputy_id:'deputy-jhb-014',allocated_at:'2026-09-23T09:00:00+02:00',state:'NOT_COMPLETED',evidence_identity:evidence('7') }),
+      Object.freeze({ attempt_id:'attempt-2026-002',instruction_id:'instruction-2026-003',document_id:'document-2026-003',deputy_id:'deputy-pta-008',allocated_at:'2026-09-23T10:30:00+02:00',state:'ATTEMPTED',evidence_identity:evidence('8') }),
       Object.freeze({ attempt_id:'attempt-2026-003',instruction_id:'instruction-2026-006',document_id:'document-2026-006',deputy_id:'deputy-jhb-021',allocated_at:'2026-09-22T15:00:00+02:00',state:'COMPLETED',evidence_identity:evidence('9') }),
     ]),
     executions: Object.freeze([
@@ -169,7 +172,7 @@ export default defineConfig({
 /**
  * SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: vite.legal-operations-visual.config.js
- * VERSION: v1.0.0-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE
+ * VERSION: v1.0.1-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE-EVIDENCE-ALIGNMENT
  * AUTHORITY BOUNDARY: deterministic visual test support only
  * PRODUCTION IMPACT: none
  * END OF WILSY OS SOVEREIGN ARTIFACT
