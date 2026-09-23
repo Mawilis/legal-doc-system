@@ -1,12 +1,13 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API
+VERSION: v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
-EPITOME: Preserve exact authorized L8-5 entity reads and expose the certified
-         L8-5C operational queues through a sheriff-only tenant-scoped read
-         route without creating deputy identity, queue, billing, urgency,
-         geospatial, client, AI, or financial truth.
+EPITOME: Preserve exact authorized entity, sheriff-queue and bound-deputy
+         active-work reads while exposing a deputy-only L8-6D field-capability
+         projection that carries exact opaque P2 current-snapshot locators and
+         state-valid command kinds without granting mutation authority or
+         creating service, return, billing, AI, payment, or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_router.py
 COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             P2 owns immutable persistence/history hydration,
@@ -14,10 +15,20 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-5 owns entity read-model composition, L8-5C owns
                             sheriff operational queue membership, L8-6B owns
                             principal-to-Deputy identity binding, L8-6C owns
-                            deputy personal active-work membership, and tenant
-                            authorization owns access authority.
+                            deputy personal active-work membership, L8-6D
+                            composes exact P2 locators with P5M state capability,
+                            and tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API
+CHANGELOG: 2026-09-23 v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
+           adds the DEPUTY-only /deputy/field-capabilities route backed by the
+           L8-6D personal capability composer. The route derives tenant and
+           principal scope only from authenticated authorization context,
+           returns exact current P2 snapshot locators plus state-valid command
+           kinds, and grants no mutation authority; existing transition/outcome
+           routes independently re-authorize their command permissions.
+           Also removes the obsolete sheriff-route statement that canonical
+           principal-to-Deputy binding did not yet exist.
+           2026-09-23 v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API
            adds the DEPUTY-only /deputy/active-work route. The route derives
            principal identity from the authenticated context, resolves the
            immutable L8-6B binding, and exposes only that bound deputy's
@@ -50,21 +61,24 @@ SECURITY / PRIVACY POSTURE: JWT claims and X-Tenant-ID never create authority;
                              internals are excluded from response projections.
 TENANT BOUNDARY: Entity reads bind the exact authorized tenant/type/identity;
                  sheriff queues bind the exact authorized sheriff tenant; deputy
-                 personal work additionally binds the authenticated principal
-                 to one canonical Deputy identity. Foreign evidence is never
+                 personal work and field capabilities additionally bind the
+                 authenticated principal to one canonical Deputy identity and
+                 exact current snapshot locators. Foreign evidence is never
                  admitted or disclosed.
-AUTHORITY BOUNDARY: Read projection only. Queue visibility grants no receipt,
-                    allocation, attempt, service, return, billing, invoice,
-                    payment, execution, settlement, or deputy impersonation.
+AUTHORITY BOUNDARY: Read projection only. Queue/capability visibility grants no
+                    receipt, allocation, attempt mutation, service, return,
+                    billing, invoice, payment, execution, settlement, or deputy
+                    impersonation. State capability is not IAM authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement. Legal reads never infer paid or
                               settled truth.
 TRANSACTION BOUNDARY: HTTP composition owns no Mongo session or transaction;
-                      L8-5/L8-5C/L8-6B/L8-6C use read-only collection semantics.
+                      L8-5/L8-5C/L8-6B/L8-6C/L8-6D use read-only collection
+                      semantics; command transactions remain separate.
 FAIL-CLOSED DECLARATION: Missing authority, malformed identity, client-policy
-                         gaps, absent exact history, P2 corruption/outage,
-                         history forks/divergence, queue projection failure,
-                         and invalid projections deny.
+                         gaps, absent exact history/locator, P2 corruption/outage,
+                         history forks/divergence, queue/capability projection
+                         failure, and invalid projections deny.
 """
 from __future__ import annotations
 
@@ -80,6 +94,7 @@ from tools.eos.api.tenant_authorization_http import (
 from tools.eos.legal_operations.domain.deputy_personal_active_work import (
     DeputyPersonalActiveWorkError,
     get_deputy_personal_active_work,
+    get_deputy_personal_field_capabilities,
 )
 from tools.eos.legal_operations.domain.legal_operations_operational_queues import (
     LegalOperationsOperationalQueueError,
@@ -97,7 +112,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API"
+VERSION: Final[str] = "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 
@@ -253,10 +268,10 @@ async def get_operational_queue_projection(
     deputy_assignment, and ALLOCATED/ATTEMPTED ServiceAttempt ->
     active_attempts. The response projects current P1 values only.
 
-    This route deliberately exposes no personal deputy queue because no
-    principal-to-deputy identity binding is canonical yet. It also exposes no
-    urgency, distance, return-generation, billing-readiness, invoice, payment,
-    settlement, AI ranking, or financial truth.
+    This sheriff route deliberately exposes no deputy-personal projection;
+    those reads use the distinct binding-scoped deputy routes below. It also
+    exposes no urgency, distance, return-generation, billing-readiness, invoice,
+    payment, settlement, AI ranking, or financial truth.
     """
     try:
         queues = get_operational_queues(
@@ -336,6 +351,56 @@ async def get_deputy_personal_active_work_projection(
     }
 
 
+@router.get("/deputy/field-capabilities")
+async def get_deputy_field_capability_projection(
+    context: TenantAuthorizationContext = Depends(_DEPUTY_QUEUE_READ),
+    lifecycle_collection: Any = Depends(get_lifecycle_collection),
+    binding_collection: Any = Depends(get_deputy_principal_binding_collection),
+) -> dict[str, Any]:
+    """Return state-valid field command descriptors for the authenticated deputy.
+
+    Current IAM first proves legal_deputy_queue_read for the exact tenant and
+    principal. L8-6D then reuses L8-6C bound personal active work, resolves the
+    exact persisted P2 evidence identity for each current ALLOCATED/ATTEMPTED
+    ServiceAttempt, and projects only its state-valid next command kinds.
+
+    The response capability is not mutation authorization. Existing attempt
+    transition/outcome command routes independently require their own current
+    IAM permissions and validate supplied field observations. This route accepts
+    no tenant_id, principal_id, deputy_id, evidence locator, lifecycle state,
+    service outcome, billing, payment, settlement, location, or AI input.
+    """
+    try:
+        personal = get_deputy_personal_field_capabilities(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            binding_collection=binding_collection,
+            lifecycle_collection=lifecycle_collection,
+        )
+    except DeputyPersonalActiveWorkError as error:
+        if error.code == "L8_6C_BINDING_REQUIRED":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="DEPUTY_IDENTITY_BINDING_REQUIRED",
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_DEPUTY_FIELD_CAPABILITY_UNAVAILABLE",
+        ) from error
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        ) from error
+
+    return {
+        "tenant_id": personal.tenant_id,
+        "visibility": "DEPUTY_FIELD_COMMAND_CAPABILITIES",
+        "deputy_id": personal.deputy_id,
+        "capabilities": [value.to_dict() for value in personal.capabilities],
+    }
+
+
 @router.get("/instructions/{entity_identity}")
 async def get_instruction(
     entity_identity: str,
@@ -404,9 +469,9 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API
-# AUTHORITY BOUNDARY: authenticated entity, sheriff queue, and bound-deputy personal active-work projections only; P1/P2/L8-0/L8-5/L8-5C/L8-6B/L8-6C retain canonical ownership
-# TENANT POSTURE: exact authorized entity/sheriff tenant scope plus authenticated-principal-to-Deputy personal work binding; foreign evidence is bounded
-# FAIL-CLOSED POSTURE: absent history, corruption, divergence, policy gaps, queue failures, and outages deny
+# VERSION: v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
+# AUTHORITY BOUNDARY: authenticated entity, sheriff queue, bound-deputy active-work, and deputy field-capability reads only; mutation IAM/commands remain separate
+# TENANT POSTURE: exact authorized entity/sheriff scope plus authenticated-principal-to-Deputy binding and exact current P2 capability locators; foreign evidence is bounded
+# FAIL-CLOSED POSTURE: absent history/locator, corruption, divergence, policy gaps, queue/capability failures, and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
