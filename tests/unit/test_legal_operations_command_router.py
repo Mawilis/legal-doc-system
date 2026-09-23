@@ -1,17 +1,23 @@
-"""Direct certificate for the L7B Legal Operations field-service command API.
+"""Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
+VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
-EPITOME: Proves authenticated directory/field-service command input
+EPITOME: Proves authenticated intake/directory/field-service command input
          boundaries, one-orchestrator dispatch, transaction ownership, path
          binding, tenant derivation, and fail-closed exclusion of browser-
-         manufactured tenant, legal, or financial truth.
+         manufactured tenant, lifecycle, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_command_router.py
-COLLABORATION / OWNERSHIP: L7B certificate; domain and orchestrator contracts
-                            are read-only authorities under test.
+COLLABORATION / OWNERSHIP: L8-2 command certificate; canonical intake,
+                            directory, lifecycle, persistence, and field-service
+                            orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT adds
+CHANGELOG: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT adds
+           direct proof for the authenticated intake registration route:
+           server-derived tenant scope, forbidden tenant_id in the body, exact
+           one-L8-2 dispatch, API-owned commit/abort behavior, and structured
+           L8-2 failure projection without inventing acceptance or receipt.
+           v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT added
            direct proof that structured L8-1 missing-parent failures survive
            the transaction boundary, abort exactly once, and project as 404.
            v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT added
@@ -23,8 +29,9 @@ CHANGELOG: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT adds
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
                  command bodies cannot establish tenant scope.
-AUTHORITY BOUNDARY: Exactly one canonical orchestrator is invoked per command;
-                    transport never constructs lifecycle truth.
+AUTHORITY BOUNDARY: Exactly one canonical intake, directory, or field-service
+                    orchestrator is invoked per command; transport never
+                    constructs lifecycle truth.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution authority; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Extra authority fields, path divergence, invalid state,
@@ -111,7 +118,31 @@ def context() -> TenantAuthorizationContext:
         auth_method="TEST",
         status=PrincipalStatus.ACTIVE,
     )
-    decision = TenantAuthorizationDecision(True, TenantAuthorizationReason.AUTHORIZED, "tenant_sheriff", "SHERIFF")
+    decision = TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_sheriff",
+        "SHERIFF",
+    )
+    return TenantAuthorizationContext(identity, TENANT, decision)
+
+
+def intake_context() -> TenantAuthorizationContext:
+    """Return an authorized legal-partner context for intake command composition."""
+    identity = SovereignIdentity(
+        identity_id="principal-l8-2",
+        tenant_id=TENANT,
+        username="legal-partner",
+        email="partner@example.test",
+        auth_method="TEST",
+        status=PrincipalStatus.ACTIVE,
+    )
+    decision = TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_legal_partner",
+        "LEGAL_PARTNER",
+    )
     return TenantAuthorizationContext(identity, TENANT, decision)
 
 
@@ -146,6 +177,7 @@ def attempt(state: ServiceAttemptState = ServiceAttemptState.ALLOCATED) -> Servi
 def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> None:
     paths = {route.path for route in command_api.router.routes}  # type: ignore[reportAttributeAccessIssue]
     assert paths == {
+        "/legal-operations/intake/registrations",
         "/legal-operations/directory/districts",
         "/legal-operations/directory/sheriff-offices",
         "/legal-operations/directory/deputies",
@@ -169,6 +201,142 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
                 "tenant_id": TENANT,
             }
         )
+    with pytest.raises(ValidationError):
+        command_api.IntakeRegistrationCommand.model_validate(
+            {
+                "case_matter_id": "matter-1",
+                "matter_reference": "CASE-1",
+                "case_opened_at": BASE,
+                "matter_evidence_reference": "matter-source",
+                "instruction_id": "instruction-1",
+                "instruction_registered_at": BASE + timedelta(minutes=1),
+                "instruction_evidence_reference": "instruction-source",
+                "document_id": "document-1",
+                "document_type": "summons",
+                "document_registered_at": BASE + timedelta(minutes=2),
+                "document_registration_evidence_reference": "document-source",
+                "registration_custody_event_id": "custody-1",
+                "tenant_id": TENANT,
+            }
+        )
+
+
+def test_intake_command_uses_authorized_tenant_one_l8_2_orchestrator_and_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Intake body cannot establish tenant scope and dispatches exactly once."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    seen: list[tuple[str, object, str, str, str]] = []
+
+    def fake_intake(**kwargs: Any) -> Any:
+        seen.append(
+            (
+                kwargs["tenant_id"],
+                kwargs["session"],
+                kwargs["case_matter_id"],
+                kwargs["instruction_id"],
+                kwargs["document_id"],
+            )
+        )
+        assert kwargs["session"].in_transaction is True
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "case_matter": {"case_matter_id": kwargs["case_matter_id"]},
+                "instruction": {"instruction_id": kwargs["instruction_id"]},
+                "document": {"document_id": kwargs["document_id"]},
+                "custody_event": {
+                    "custody_event_id": kwargs["registration_custody_event_id"]
+                },
+            }
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "register_process_service_intake",
+        fake_intake,
+    )
+    command = command_api.IntakeRegistrationCommand(
+        case_matter_id="matter-l8-2",
+        matter_reference="CASE-L8-2",
+        case_opened_at=BASE,
+        matter_evidence_reference="matter-source",
+        instruction_id="instruction-l8-2",
+        instruction_registered_at=BASE + timedelta(minutes=1),
+        instruction_evidence_reference="instruction-source",
+        document_id="document-l8-2",
+        document_type="summons",
+        document_registered_at=BASE + timedelta(minutes=2),
+        document_registration_evidence_reference="document-source",
+        registration_custody_event_id="custody-l8-2",
+    )
+
+    result = asyncio.run(
+        command_api.register_process_service_intake_command(
+            command,
+            intake_context(),
+        )
+    )
+
+    assert result["disposition"] == "CREATED"
+    assert seen == [
+        (
+            TENANT,
+            client.session,
+            "matter-l8-2",
+            "instruction-l8-2",
+            "document-l8-2",
+        )
+    ]
+    assert client.session.events == ["start", "commit", "end"]
+
+
+def test_intake_structured_failure_aborts_and_maps_to_422(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L8-2 registration failures survive transaction abort and stay bounded."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    def fail(**_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceIntakeRegistrationError(
+            "L8_2_PARTIAL_REGISTRATION"
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "register_process_service_intake",
+        fail,
+    )
+    command = command_api.IntakeRegistrationCommand(
+        case_matter_id="matter-l8-2",
+        matter_reference="CASE-L8-2",
+        case_opened_at=BASE,
+        matter_evidence_reference="matter-source",
+        instruction_id="instruction-l8-2",
+        instruction_registered_at=BASE + timedelta(minutes=1),
+        instruction_evidence_reference="instruction-source",
+        document_id="document-l8-2",
+        document_type="summons",
+        document_registered_at=BASE + timedelta(minutes=2),
+        document_registration_evidence_reference="document-source",
+        registration_custody_event_id="custody-l8-2",
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.register_process_service_intake_command(
+                command,
+                intake_context(),
+            )
+        )
+
+    assert error.value.status_code == 422
+    assert error.value.detail == "LEGAL_OPERATIONS_COMMAND_INVALID"
+    assert client.session.events == ["start", "abort", "end"]
 
 
 def test_directory_commands_use_authorized_tenant_one_l8_1_orchestrator_and_commit(
@@ -465,8 +633,8 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
-# AUTHORITY BOUNDARY: direct directory/field-service command composition certificate only
+# VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
+# AUTHORITY BOUNDARY: direct intake/directory/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
