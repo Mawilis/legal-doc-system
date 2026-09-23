@@ -1,18 +1,23 @@
 """Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
+VERSION: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
-EPITOME: Proves authenticated intake/directory/field-service command input
+EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service command input
          boundaries, one-orchestrator dispatch, transaction ownership, path
          binding, tenant derivation, and fail-closed exclusion of browser-
          manufactured tenant, lifecycle, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_command_router.py
-COLLABORATION / OWNERSHIP: L8-2 command certificate; canonical intake,
-                            directory, lifecycle, persistence, and field-service
+COLLABORATION / OWNERSHIP: L8-3 command certificate; canonical intake,
+                            acceptance/receipt, directory, lifecycle, persistence, and field-service
                             orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT binds the
+CHANGELOG: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API-CERT adds
+           direct proof for the sheriff-only acceptance/office-receipt route,
+           body tenant exclusion, exact one-L8-3 dispatch, API transaction
+           commit/abort, structured L8-3 failure projection, and the canonical
+           P2 custody-history allocation read dependency.
+           v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT binds the
            direct command certificate to production v1.2.1, preserving the
            exact intake/directory/field-service runtime contract while the
            transport uses the current non-deprecated HTTP 422 status alias.
@@ -33,7 +38,7 @@ CHANGELOG: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT binds the
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
                  command bodies cannot establish tenant scope.
-AUTHORITY BOUNDARY: Exactly one canonical intake, directory, or field-service
+AUTHORITY BOUNDARY: Exactly one canonical intake, acceptance/receipt, directory, or field-service
                     orchestrator is invoked per command; transport never
                     constructs lifecycle truth.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
@@ -182,6 +187,7 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
     paths = {route.path for route in command_api.router.routes}  # type: ignore[reportAttributeAccessIssue]
     assert paths == {
         "/legal-operations/intake/registrations",
+        "/legal-operations/intake/acceptance-receipts",
         "/legal-operations/directory/districts",
         "/legal-operations/directory/sheriff-offices",
         "/legal-operations/directory/deputies",
@@ -220,6 +226,20 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
                 "document_registered_at": BASE + timedelta(minutes=2),
                 "document_registration_evidence_reference": "document-source",
                 "registration_custody_event_id": "custody-1",
+                "tenant_id": TENANT,
+            }
+        )
+    with pytest.raises(ValidationError):
+        command_api.AcceptanceReceiptCommand.model_validate(
+            {
+                "instruction_id": "instruction-1",
+                "document_id": "document-1",
+                "sheriff_office_id": "office-1",
+                "accepted_at": BASE + timedelta(minutes=10),
+                "acceptance_evidence_reference": "acceptance-source",
+                "received_at": BASE + timedelta(minutes=15),
+                "receipt_evidence_reference": "receipt-source",
+                "receipt_custody_event_id": "custody-received-1",
                 "tenant_id": TENANT,
             }
         )
@@ -341,6 +361,147 @@ def test_intake_structured_failure_aborts_and_maps_to_422(
     assert error.value.status_code == 422
     assert error.value.detail == "LEGAL_OPERATIONS_COMMAND_INVALID"
     assert client.session.events == ["start", "abort", "end"]
+
+
+def test_acceptance_receipt_command_uses_sheriff_tenant_one_l8_3_and_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Receipt command derives tenant from sheriff context and dispatches L8-3 once."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    seen: list[tuple[str, object, str, str, str]] = []
+
+    def fake_receipt(**kwargs: Any) -> Any:
+        seen.append(
+            (
+                kwargs["tenant_id"],
+                kwargs["session"],
+                kwargs["instruction_id"],
+                kwargs["document_id"],
+                kwargs["sheriff_office_id"],
+            )
+        )
+        assert kwargs["session"].in_transaction is True
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "accepted_instruction": {"state": "ACCEPTED"},
+                "received_document": {"state": "RECEIVED"},
+                "receipt_custody_event": {"event_type": "RECEIVED_IN_OFFICE"},
+            }
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "accept_instruction_and_receive_document",
+        fake_receipt,
+    )
+    command = command_api.AcceptanceReceiptCommand(
+        instruction_id="instruction-l8-3",
+        document_id="document-l8-3",
+        sheriff_office_id="office-l8-3",
+        accepted_at=BASE + timedelta(minutes=10),
+        acceptance_evidence_reference="acceptance-source",
+        received_at=BASE + timedelta(minutes=15),
+        receipt_evidence_reference="receipt-source",
+        receipt_custody_event_id="custody-received-l8-3",
+    )
+
+    result = asyncio.run(
+        command_api.accept_and_receive_process_service_command(
+            command,
+            context(),
+        )
+    )
+
+    assert result["disposition"] == "CREATED"
+    assert seen == [
+        (
+            TENANT,
+            client.session,
+            "instruction-l8-3",
+            "document-l8-3",
+            "office-l8-3",
+        )
+    ]
+    assert client.session.events == ["start", "commit", "end"]
+
+
+def test_acceptance_receipt_structured_failure_aborts_and_maps_to_422(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Structured L8-3 divergence aborts and remains a bounded invalid command."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    def fail(**_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceAcceptanceReceiptError(
+            "L8_3_PARTIAL_ACCEPTANCE_RECEIPT"
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "accept_instruction_and_receive_document",
+        fail,
+    )
+    command = command_api.AcceptanceReceiptCommand(
+        instruction_id="instruction-l8-3",
+        document_id="document-l8-3",
+        sheriff_office_id="office-l8-3",
+        accepted_at=BASE + timedelta(minutes=10),
+        acceptance_evidence_reference="acceptance-source",
+        received_at=BASE + timedelta(minutes=15),
+        receipt_evidence_reference="receipt-source",
+        receipt_custody_event_id="custody-received-l8-3",
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.accept_and_receive_process_service_command(
+                command,
+                context(),
+            )
+        )
+
+    assert error.value.status_code == 422
+    assert error.value.detail == "LEGAL_OPERATIONS_COMMAND_INVALID"
+    assert client.session.events == ["start", "abort", "end"]
+
+
+def test_allocation_prior_custody_uses_canonical_p2_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Transport never queries P2 durable custody record shape directly."""
+
+    marker = object()
+    seen: list[tuple[str, str, object, object]] = []
+
+    def fake_history(
+        tenant: str,
+        document_id: str,
+        collection: Any,
+        *,
+        session: object = None,
+    ) -> tuple[Any, ...]:
+        seen.append((tenant, document_id, collection, session))
+        return ()
+
+    monkeypatch.setattr(
+        command_api.LegalOperationsLifecycleRegistry,
+        "get_document_custody_history",
+        staticmethod(fake_history),
+    )
+    collection = object()
+    session = object()
+    assert command_api._prior_custody(
+        collection,
+        TENANT,
+        "document-l8-3",
+        session,
+    ) == ()
+    assert seen == [(TENANT, "document-l8-3", collection, session)]
 
 
 def test_directory_commands_use_authorized_tenant_one_l8_1_orchestrator_and_commit(
@@ -637,8 +798,8 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
-# AUTHORITY BOUNDARY: direct intake/directory/field-service command composition certificate only
+# VERSION: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API-CERT
+# AUTHORITY BOUNDARY: direct intake/receipt/directory/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
