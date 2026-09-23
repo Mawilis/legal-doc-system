@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
+VERSION: v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,6 +8,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
+    certifies legal_operations:client_matter:read is granted exactly to
+    LEGAL_CLIENT and to no other role. The grant remains static/non-possessory,
+    requires later tenant_legal_client current authorization plus an ACTIVE
+    visibility binding, and does not expose tenant-wide matters, sheriff/deputy
+    queues, internal instructions, service evidence, billing execution, payment,
+    execution or settlement authority.
     2026-09-23 v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
     certifies legal_operations:client_visibility:write is granted exactly to
     LEGAL_PARTNER, LEGAL_ATTORNEY, and LEGAL_PARALEGAL, with explicit denial
@@ -82,9 +89,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS"
+    assert POLICY_VERSION == "v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT"
 
-VERSION = "v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT"
+VERSION = "v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -141,6 +148,7 @@ TENANT_PERMISSIONS = {
     "legal_operations:queue:read",
     "legal_operations:deputy_queue:read",
     "legal_operations:client_visibility:write",
+    "legal_operations:client_matter:read",
     "legal_operations:allocation:read",
     "legal_operations:allocation:write",
     "legal_operations:attempt:read",
@@ -189,7 +197,10 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "wilsy_ai:legal_services:execute",
         "wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read",
     ]
-    assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
+    assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == [
+        "legal_operations:invoice:read",
+        "legal_operations:client_matter:read",
+    ]
     visibility_permission = "legal_operations:client_visibility:write"
     assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
     assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
@@ -275,6 +286,18 @@ def test_client_visibility_write_is_granted_only_to_approved_law_firm_roles() ->
             assert permission not in grants
 
 
+def test_client_matter_read_is_granted_only_to_legal_client() -> None:
+    """L8-7D2 projection-read grant is exact and cannot leak to internal roles."""
+    permission = "legal_operations:client_matter:read"
+    assert get_roles_granting_permission(permission) == ("LEGAL_CLIENT",)
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role == "LEGAL_CLIENT":
+            assert grants.count(permission) == 1
+        else:
+            assert permission not in grants
+
+
 def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> None:
     """Role expansion remains exact, deterministic and non-authoritative."""
     assert get_permissions_for_roles(
@@ -345,6 +368,10 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         (
             "legal_operations:client_visibility:write",
             ("LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_PARTNER"),
+        ),
+        (
+            "legal_operations:client_matter:read",
+            ("LEGAL_CLIENT",),
         ),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
@@ -419,6 +446,11 @@ def test_tenant_permission_reverse_lookup_is_exact(
         "LEGAL_OPERATIONS:CLIENT_VISIBILITY:WRITE",
         " legal_operations:client_visibility:write",
         "legal_operations:client_visibility:write ",
+        "legal_operations:client_matter:*",
+        "legal_operations:client_matter",
+        "LEGAL_OPERATIONS:CLIENT_MATTER:READ",
+        " legal_operations:client_matter:read",
+        "legal_operations:client_matter:read ",
     ),
 )
 def test_forbidden_unknown_partial_and_wildcard_like_permissions_never_grant(
@@ -558,9 +590,9 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
+# VERSION: v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: client-visibility and other role definitions remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# TENANT POSTURE: client-matter read is statically granted only to LEGAL_CLIENT; current tenant-scoped possession and ACTIVE visibility remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
