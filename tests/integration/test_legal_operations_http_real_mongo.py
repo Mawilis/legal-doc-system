@@ -1,13 +1,17 @@
-"""TITLE: WILSY OS Legal Operations live-IAM read API real-Mongo certificate.
-VERSION: v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
+"""TITLE: WILSY OS Legal Operations live-IAM current/history read API real-Mongo certificate.
+VERSION: v1.3.0-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT
 AUTHORITY: Host-backed certificate for durable tenant authorization and canonical projections.
 EPITOME: Proves the real RequireTenantAuthorization chain resolves durable principal,
-membership, business-role, and granting-role truth before exact P2 history is
-resolved through deterministic L8-0 current-state projection.
+membership, business-role, and granting-role truth before the canonical L8-5
+entity read model exposes deterministic current-plus-history projections.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; P1/P2 remain canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT aligns the host-backed
+CHANGELOG: v1.3.0-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT certifies the L8-5 HTTP
+current-plus-history projection through the unchanged durable principal,
+membership, business-role, and granting-role chain, preserving current data
+compatibility while proving canonical immutable history and no raw P2 leakage.
+v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT aligns the host-backed
 IAM fixture with the canonical dedicated tenant_business_roles store introduced
 by tenant_authorization_http v1.1.0, preserving separate business-role and
 authorization-role truth while retaining deterministic current-read proofs.
@@ -22,7 +26,7 @@ foreign absence, and bounded output on Mongo.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID-isolated database and synthetic identifiers; no secrets or provider calls.
 TENANT BOUNDARY: Every read predicate includes the exact authorized tenant.
-AUTHORITY BOUNDARY: Certificate and read projection only; no lifecycle or command mutation.
+AUTHORITY BOUNDARY: Certificate and current/history read projection only; no lifecycle or command mutation.
 TRANSACTION BOUNDARY: This certificate uses no transaction; the registry owns none.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution and settlement.
 FAIL-CLOSED DECLARATION: Host availability alone may skip; all post-hello product failures fail.
@@ -56,7 +60,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT"
+VERSION = "v1.3.0-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT"
 MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 NOW = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
@@ -366,6 +370,7 @@ def test_real_mongo_live_iam_authorizes_and_precedes_lifecycle_read(mongo_contex
     response = _request(mongo_context, tenant, calls)
     assert response.status_code == 200
     assert response.json()["data"] == value.to_dict()
+    assert response.json()["history"] == [value.to_dict()]
     assert "principal" in calls
     assert "membership" in calls
     assert "business_role" in calls
@@ -395,6 +400,10 @@ def test_real_mongo_multiple_snapshots_resolve_current_and_forks_reject(
     response = _request(mongo_context, tenant, calls)
     assert response.status_code == 200
     assert response.json()["data"] == accepted.to_dict()
+    history = response.json()["history"]
+    assert len(history) == 2
+    assert registered.to_dict() in history
+    assert accepted.to_dict() in history
 
     cancelled = registered.transition_to(
         LegalInstructionState.CANCELLED,
@@ -505,15 +514,23 @@ def test_real_mongo_unknown_resource_and_projection_boundary_remain_bounded(mong
     assert "stack_trace" not in missing.text
     assert own.status_code == 200
     payload = own.json()["data"]
+    history = own.json()["history"]
     assert payload == value.to_dict()
+    assert history == [value.to_dict()]
     assert "_id" not in payload
+    assert all(
+        forbidden not in snapshot
+        for snapshot in (payload, *history)
+        for forbidden in ("_id", "p1_payload", "source_payload")
+    )
     assert not any(token in key.casefold() for key in payload for token in ("payment", "settlement", "invoice", "billing_execution"))
+    assert legal_router.VERSION == "v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
 
 
 # ARTIFACT: test_legal_operations_http_real_mongo.py
-# VERSION: v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
-# AUTHORITY BOUNDARY: real-Mongo live-IAM deterministic current-read projection certificate only
+# VERSION: v1.3.0-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT
+# AUTHORITY BOUNDARY: real-Mongo live-IAM deterministic current-plus-history projection certificate only
 # TENANT POSTURE: exact tenant predicates, durable membership, and foreign absence
-# FAIL-CLOSED POSTURE: post-hello failures are certificate failures
+# FAIL-CLOSED POSTURE: post-hello failures, read-model divergence, and projection leakage fail certification
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
