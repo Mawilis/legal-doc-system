@@ -1,19 +1,26 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+VERSION: v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
-EPITOME: Delegate exact authorized entity reads to the deterministic L8-5
-         current-plus-history read model while exposing only bounded canonical
-         P1 projections and preserving existing current-read compatibility.
+EPITOME: Preserve exact authorized L8-5 entity reads and expose the certified
+         L8-5C operational queues through a sheriff-only tenant-scoped read
+         route without creating deputy identity, queue, billing, urgency,
+         geospatial, client, AI, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_router.py
 COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             P2 owns immutable persistence/history hydration,
                             L8-0 owns deterministic current-state projection,
-                            L8-5 owns entity read-model composition, and tenant
-                            authorization owns access authority.
+                            L8-5 owns entity read-model composition, L8-5C owns
+                            evidence-backed operational queue membership, and
+                            tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+CHANGELOG: 2026-09-23 v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API
+           adds the sheriff-only operational-queue read route backed exclusively
+           by certified L8-5C queue membership and returns only current canonical
+           queue items; DEPUTY receives no tenant-wide queue access and no
+           unsupported dashboard truth is synthesized.
+           2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
            aligns every public route docstring with the current-plus-history
            response contract; runtime behavior, IAM, and authority are unchanged.
            2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
@@ -32,20 +39,21 @@ SECURITY / PRIVACY POSTURE: JWT claims and X-Tenant-ID never create authority;
                              persistence access follows successful durable
                              tenant authorization. Secrets and transport
                              internals are excluded from response projections.
-TENANT BOUNDARY: Every read-model query binds the exact authorized tenant,
-                 canonical entity type, and exact entity identity. Foreign
-                 absence is returned as bounded 404 without disclosure.
-AUTHORITY BOUNDARY: Read projection only. This router cannot create, accept,
-                    receive, allocate, attempt, serve, generate a return, bill,
-                    invoice, pay, execute, settle, or mutate Legal Operations.
+TENANT BOUNDARY: Entity reads bind the exact authorized tenant/type/identity;
+                 operational queues bind the exact authorized sheriff tenant.
+                 Foreign evidence is never admitted or disclosed.
+AUTHORITY BOUNDARY: Read projection only. Queue visibility grants no receipt,
+                    allocation, attempt, service, return, billing, invoice,
+                    payment, execution, settlement, or deputy impersonation.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement. Legal reads never infer paid or
                               settled truth.
 TRANSACTION BOUNDARY: HTTP composition owns no Mongo session or transaction;
-                      L8-5 forwards read-only collection/session semantics to P2.
+                      L8-5/L8-5C forward read-only collection semantics to P2.
 FAIL-CLOSED DECLARATION: Missing authority, malformed identity, client-policy
                          gaps, absent exact history, P2 corruption/outage,
-                         history forks/divergence, and invalid projections deny.
+                         history forks/divergence, queue projection failure,
+                         and invalid projections deny.
 """
 from __future__ import annotations
 
@@ -58,6 +66,10 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
+from tools.eos.legal_operations.domain.legal_operations_operational_queues import (
+    LegalOperationsOperationalQueueError,
+    get_operational_queues,
+)
 from tools.eos.legal_operations.domain.legal_operations_read_model import (
     LegalOperationsReadModelError,
     get_entity_read_model,
@@ -67,7 +79,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
+VERSION: Final[str] = "v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 
@@ -179,8 +191,57 @@ _RETURN_READ = RequireTenantAuthorization(
     "legal_operations:return:read",
     "legal_return_read",
 )
+_QUEUE_READ = RequireTenantAuthorization(
+    "legal_operations:queue:read",
+    "legal_queue_read",
+)
 
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations"])
+
+
+@router.get("/operational-queues")
+async def get_operational_queue_projection(
+    context: TenantAuthorizationContext = Depends(_QUEUE_READ),
+    collection: Any = Depends(get_lifecycle_collection),
+) -> dict[str, Any]:
+    """Return certified sheriff operational queues for the authorized tenant.
+
+    Authentication and conjunctive tenant authorization occur before L8-5C
+    reads. Membership is derived only from canonical current lifecycle state:
+    REGISTERED ProcessDocument -> office_receipt, RECEIVED ProcessDocument ->
+    deputy_assignment, and ALLOCATED/ATTEMPTED ServiceAttempt ->
+    active_attempts. The response projects current P1 values only.
+
+    This route deliberately exposes no personal deputy queue because no
+    principal-to-deputy identity binding is canonical yet. It also exposes no
+    urgency, distance, return-generation, billing-readiness, invoice, payment,
+    settlement, AI ranking, or financial truth.
+    """
+    try:
+        queues = get_operational_queues(
+            tenant_id=context.tenant_id,
+            lifecycle_collection=collection,
+        )
+    except LegalOperationsOperationalQueueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_QUEUE_EVIDENCE_UNAVAILABLE",
+        ) from error
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        ) from error
+
+    return {
+        "tenant_id": queues.tenant_id,
+        "visibility": "SHERIFF_OPERATIONAL_QUEUE",
+        "office_receipt": [_project(model.current) for model in queues.office_receipt],
+        "deputy_assignment": [
+            _project(model.current) for model in queues.deputy_assignment
+        ],
+        "active_attempts": [_project(model.current) for model in queues.active_attempts],
+    }
 
 
 @router.get("/instructions/{entity_identity}")
@@ -246,9 +307,9 @@ __all__ = ["VERSION", "get_lifecycle_collection", "router"]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
-# AUTHORITY BOUNDARY: authenticated current-plus-history projection only; P1/P2/L8-0/L8-5 retain canonical ownership
-# TENANT POSTURE: exact authorized tenant/type/entity read model; foreign absence is bounded
-# FAIL-CLOSED POSTURE: absent history, corruption, divergence, policy gaps, and outages deny
+# VERSION: v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API
+# AUTHORITY BOUNDARY: authenticated entity and sheriff operational-queue projections only; P1/P2/L8-0/L8-5/L8-5C retain canonical ownership
+# TENANT POSTURE: exact authorized entity scope plus sheriff-only exact-tenant operational queues; foreign evidence is bounded
+# FAIL-CLOSED POSTURE: absent history, corruption, divergence, policy gaps, queue failures, and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
