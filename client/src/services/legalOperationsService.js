@@ -1,19 +1,27 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT
+ * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
- * EPITOME: Preserves the certified sheriff tenant-wide queue read while adding
- *          the L8-6C binding-scoped deputy personal active-work read. Browser
- *          role labels never create authority; Python EOS independently
- *          authorizes each endpoint and owns all queue membership truth.
+ * EPITOME: Preserves certified sheriff/deputy reads while adding exact L8-6D
+ *          deputy field-capability transport and L8-6G bound-Deputy transition/
+ *          outcome command transport. Browser input is observation-only;
+ *          Python EOS independently owns IAM, P5M sequence lineage, provenance,
+ *          lifecycle, service-execution, and persistence truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/legalOperationsService.js
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; L8-5C owns
- *                            sheriff queue membership; L8-6B owns immutable
- *                            principal-to-Deputy binding; L8-6C owns deputy
- *                            personal active-work membership; this adapter owns
- *                            exact response validation and immutable adaptation.
+ *                            sheriff queues; L8-6B owns immutable binding; L8-6C
+ *                            owns deputy work; L8-6D owns state capability; L8-6G
+ *                            owns bound field-command composition and P5M lineage.
+ *                            This adapter owns exact browser transport validation
+ *                            and immutable response adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT adds exact
+ * CHANGELOG: 2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT adds exact deputy field-capability reads plus
+ *            bound transition/outcome POST adapters. Request whitelists exclude
+ *            tenant/principal/deputy authority, P5M sequence lineage, evidence
+ *            fingerprints, receipt identity, execution identity/time, billing,
+ *            AI, payment, and settlement truth. Command responses are validated
+ *            against exact attempt/device/event scope and frozen before return.
+ *            2026-09-23 v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT adds exact
  *            /legal-operations/deputy/active-work transport and fail-closed
  *            validation for tenant_id, DEPUTY_PERSONAL_ACTIVE_WORK visibility,
  *            canonical deputy_id, bound-deputy active attempts and
@@ -22,20 +30,22 @@
  *            the aggregate and queue arrays; transport semantics are unchanged.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: No client-supplied tenant, principal, deputy,
- *                             urgency, geospatial, billing, payment or AI truth
- *                             is admitted into the validated server projection.
+ *                             sequence lineage, sovereign fingerprint, execution,
+ *                             billing, payment, settlement, geospatial or AI truth
+ *                             is admitted into the command body or projection.
  * TENANT BOUNDARY: Every projected row must match the server response tenant;
  *                  deputy rows must additionally match the server-bound
  *                  canonical deputy_id.
- * AUTHORITY BOUNDARY: Read transport and validation only. Browser role/display
- *                     state never grants sheriff or deputy authority.
+ * AUTHORITY BOUNDARY: Read/command transport validation only. Browser role,
+ *                     capability, observation, or display state never grants
+ *                     sheriff/deputy authority or creates legal-service truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  */
 
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT';
+  'v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -61,8 +71,147 @@ const ACTIVE_ATTEMPT_STATES = Object.freeze([
   'ATTEMPTED',
 ]);
 
+
+const DEPUTY_CAPABILITY_RESPONSE_KEYS = Object.freeze([
+  'tenant_id',
+  'visibility',
+  'deputy_id',
+  'capabilities',
+]);
+
+const DEPUTY_CAPABILITY_KEYS = Object.freeze([
+  'tenant_id',
+  'attempt_id',
+  'instruction_id',
+  'document_id',
+  'deputy_id',
+  'current_state',
+  'current_evidence_identity',
+  'next_command_kinds',
+]);
+
+const FIELD_COMMAND_KINDS = Object.freeze({
+  TRANSITION_TO_ATTEMPTED: 'TRANSITION_TO_ATTEMPTED',
+  RECORD_COMPLETED_OUTCOME: 'RECORD_COMPLETED_OUTCOME',
+  RECORD_NOT_COMPLETED_OUTCOME: 'RECORD_NOT_COMPLETED_OUTCOME',
+});
+
+const COMMANDS_BY_STATE = Object.freeze({
+  ALLOCATED: Object.freeze([
+    FIELD_COMMAND_KINDS.TRANSITION_TO_ATTEMPTED,
+  ]),
+  ATTEMPTED: Object.freeze([
+    FIELD_COMMAND_KINDS.RECORD_COMPLETED_OUTCOME,
+    FIELD_COMMAND_KINDS.RECORD_NOT_COMPLETED_OUTCOME,
+  ]),
+});
+
+const FIELD_OBSERVATION_KEYS = Object.freeze([
+  'attemptId',
+  'currentEvidenceIdentity',
+  'deviceId',
+  'eventId',
+  'occurredAt',
+  'observationReference',
+]);
+
+const FIELD_OUTCOME_KEYS = Object.freeze([
+  ...FIELD_OBSERVATION_KEYS,
+  'outcome',
+]);
+
+const FIELD_RECEIPT_KEYS = Object.freeze([
+  'tenant_id',
+  'receipt_id',
+  'event_id',
+  'device_id',
+  'sequence_number',
+  'attempt_id',
+  'instruction_id',
+  'document_id',
+  'deputy_id',
+  'district_id',
+  'sheriff_office_id',
+  'evidence_reference',
+  'evidence_fingerprint',
+  'command_fingerprint',
+  'accepted_at',
+  'evidence_identity',
+]);
+
+const SERVICE_ATTEMPT_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'entity_type',
+  'tenant_id',
+  'attempt_id',
+  'instruction_id',
+  'document_id',
+  'deputy_id',
+  'allocated_at',
+  'allocation_evidence_reference',
+  'state',
+  'transition_history',
+]);
+
+const SERVICE_EXECUTION_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'entity_type',
+  'tenant_id',
+  'service_execution_id',
+  'attempt_id',
+  'instruction_id',
+  'document_id',
+  'outcome',
+  'executed_at',
+  'evidence_reference',
+  'evidence_fingerprint',
+]);
+
+const SHA3_512_PATTERN = /^[0-9a-f]{128}$/;
+const TERMINAL_OUTCOMES = Object.freeze(['COMPLETED', 'NOT_COMPLETED']);
+
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+
+function assertExactKeys(value, expectedKeys, errorCode) {
+  if (!isPlainObject(value)) {
+    throw new Error(errorCode);
+  }
+  const keys = Object.keys(value).sort();
+  const expected = [...expectedKeys].sort();
+  if (
+    keys.length !== expected.length
+    || keys.some((key, index) => key !== expected[index])
+  ) {
+    throw new Error(errorCode);
+  }
+}
+
+function isCanonicalText(value) {
+  return typeof value === 'string' && value.trim() === value && Boolean(value);
+}
+
+function isCanonicalTimestamp(value) {
+  if (!isCanonicalText(value)) return false;
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return false;
+  return Number.isFinite(Date.parse(value));
+}
+
+function freezeValue(value) {
+  if (Array.isArray(value)) {
+    return Object.freeze(value.map((item) => freezeValue(item)));
+  }
+  if (isPlainObject(value)) {
+    const frozen = Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, freezeValue(item)]),
+    );
+    return Object.freeze(frozen);
+  }
+  return value;
 }
 
 function assertCanonicalQueuePayload(value) {
@@ -160,6 +309,165 @@ function assertCanonicalDeputyActiveWorkPayload(value) {
   });
 }
 
+
+function assertCanonicalDeputyFieldCapabilitiesPayload(value) {
+  assertExactKeys(
+    value,
+    DEPUTY_CAPABILITY_RESPONSE_KEYS,
+    'LEGAL_OPERATIONS_DEPUTY_CAPABILITY_RESPONSE_INVALID',
+  );
+  if (
+    !isCanonicalText(value.tenant_id)
+    || value.visibility !== 'DEPUTY_FIELD_COMMAND_CAPABILITIES'
+    || !isCanonicalText(value.deputy_id)
+    || !Array.isArray(value.capabilities)
+  ) {
+    throw new Error('LEGAL_OPERATIONS_DEPUTY_CAPABILITY_RESPONSE_INVALID');
+  }
+
+  const capabilities = value.capabilities.map((entry) => {
+    assertExactKeys(
+      entry,
+      DEPUTY_CAPABILITY_KEYS,
+      'LEGAL_OPERATIONS_DEPUTY_CAPABILITY_RESPONSE_INVALID',
+    );
+    const expectedKinds = COMMANDS_BY_STATE[entry.current_state];
+    if (
+      entry.tenant_id !== value.tenant_id
+      || entry.deputy_id !== value.deputy_id
+      || !isCanonicalText(entry.attempt_id)
+      || !isCanonicalText(entry.instruction_id)
+      || !isCanonicalText(entry.document_id)
+      || !expectedKinds
+      || !SHA3_512_PATTERN.test(entry.current_evidence_identity)
+      || !Array.isArray(entry.next_command_kinds)
+      || entry.next_command_kinds.length !== expectedKinds.length
+      || entry.next_command_kinds.some(
+        (kind, index) => kind !== expectedKinds[index],
+      )
+    ) {
+      throw new Error('LEGAL_OPERATIONS_DEPUTY_CAPABILITY_SCOPE_INVALID');
+    }
+    return Object.freeze({
+      tenantId: entry.tenant_id,
+      attemptId: entry.attempt_id,
+      instructionId: entry.instruction_id,
+      documentId: entry.document_id,
+      deputyId: entry.deputy_id,
+      currentState: entry.current_state,
+      currentEvidenceIdentity: entry.current_evidence_identity,
+      nextCommandKinds: Object.freeze([...entry.next_command_kinds]),
+    });
+  });
+
+  return Object.freeze({
+    tenantId: value.tenant_id,
+    visibility: value.visibility,
+    deputyId: value.deputy_id,
+    capabilities: Object.freeze(capabilities),
+  });
+}
+
+function assertFieldObservationInput(value, { terminal = false } = {}) {
+  const keys = terminal ? FIELD_OUTCOME_KEYS : FIELD_OBSERVATION_KEYS;
+  assertExactKeys(
+    value,
+    keys,
+    'LEGAL_OPERATIONS_FIELD_COMMAND_INPUT_INVALID',
+  );
+  if (
+    !isCanonicalText(value.attemptId)
+    || !SHA3_512_PATTERN.test(value.currentEvidenceIdentity)
+    || !isCanonicalText(value.deviceId)
+    || !isCanonicalText(value.eventId)
+    || !isCanonicalTimestamp(value.occurredAt)
+    || !isCanonicalText(value.observationReference)
+    || (
+      terminal
+      && !TERMINAL_OUTCOMES.includes(value.outcome)
+    )
+  ) {
+    throw new Error('LEGAL_OPERATIONS_FIELD_COMMAND_INPUT_INVALID');
+  }
+  return Object.freeze({ ...value });
+}
+
+function assertCanonicalFieldReceipt(value, input) {
+  assertExactKeys(
+    value,
+    FIELD_RECEIPT_KEYS,
+    'LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID',
+  );
+  if (
+    !isCanonicalText(value.tenant_id)
+    || value.attempt_id !== input.attemptId
+    || value.device_id !== input.deviceId
+    || value.event_id !== input.eventId
+    || !Number.isInteger(value.sequence_number)
+    || value.sequence_number < 1
+    || !SHA3_512_PATTERN.test(value.evidence_fingerprint)
+    || !SHA3_512_PATTERN.test(value.command_fingerprint)
+    || !SHA3_512_PATTERN.test(value.evidence_identity)
+    || !isCanonicalTimestamp(value.accepted_at)
+  ) {
+    throw new Error('LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID');
+  }
+  return freezeValue(value);
+}
+
+function assertCanonicalFieldCommandResponse(value, input, { terminal = false } = {}) {
+  assertExactKeys(
+    value,
+    ['data', 'field_evidence'],
+    'LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID',
+  );
+  const receipt = assertCanonicalFieldReceipt(value.field_evidence, input);
+  const data = value.data;
+  const expectedKeys = terminal ? SERVICE_EXECUTION_KEYS : SERVICE_ATTEMPT_KEYS;
+  assertExactKeys(
+    data,
+    expectedKeys,
+    'LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID',
+  );
+
+  if (
+    data.tenant_id !== receipt.tenant_id
+    || data.attempt_id !== input.attemptId
+    || (
+      terminal
+        ? (
+          data.entity_type !== 'ServiceExecution'
+          || data.outcome !== input.outcome
+          || !SHA3_512_PATTERN.test(data.evidence_fingerprint)
+          || data.evidence_fingerprint !== receipt.evidence_fingerprint
+        )
+        : (
+          data.entity_type !== 'ServiceAttempt'
+          || data.state !== 'ATTEMPTED'
+        )
+    )
+  ) {
+    throw new Error('LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID');
+  }
+
+  return Object.freeze({
+    data: freezeValue(data),
+    fieldEvidence: receipt,
+  });
+}
+
+function toFieldCommandBody(input, { terminal = false } = {}) {
+  const body = {
+    current_evidence_identity: input.currentEvidenceIdentity,
+    device_id: input.deviceId,
+    event_id: input.eventId,
+    occurred_at: input.occurredAt,
+    observation_reference: input.observationReference,
+  };
+  if (terminal) body.outcome = input.outcome;
+  return Object.freeze(body);
+}
+
 export async function getSheriffOperationalQueues() {
   const response = await api.get('/legal-operations/operational-queues');
   return assertCanonicalQueuePayload(response?.data);
@@ -170,21 +478,60 @@ export async function getDeputyPersonalActiveWork() {
   return assertCanonicalDeputyActiveWorkPayload(response?.data);
 }
 
+
+export async function getDeputyFieldCapabilities() {
+  const response = await api.get('/legal-operations/deputy/field-capabilities');
+  return assertCanonicalDeputyFieldCapabilitiesPayload(response?.data);
+}
+
+export async function transitionDeputyFieldAttempt(value) {
+  const input = assertFieldObservationInput(value);
+  const response = await api.post(
+    `/legal-operations/deputy/attempts/${encodeURIComponent(input.attemptId)}/transition`,
+    toFieldCommandBody(input),
+  );
+  return assertCanonicalFieldCommandResponse(response?.data, input);
+}
+
+export async function recordDeputyFieldOutcome(value) {
+  const input = assertFieldObservationInput(value, { terminal: true });
+  const response = await api.post(
+    `/legal-operations/deputy/attempts/${encodeURIComponent(input.attemptId)}/outcome`,
+    toFieldCommandBody(input, { terminal: true }),
+  );
+  return assertCanonicalFieldCommandResponse(
+    response?.data,
+    input,
+    { terminal: true },
+  );
+}
+
 export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalQueuePayload,
   assertCanonicalDeputyActiveWorkPayload,
+  assertCanonicalDeputyFieldCapabilitiesPayload,
+  assertFieldObservationInput,
+  assertCanonicalFieldCommandResponse,
+  toFieldCommandBody,
   QUEUE_KEYS,
   RESPONSE_KEYS,
   DEPUTY_RESPONSE_KEYS,
   ACTIVE_ATTEMPT_STATES,
+  DEPUTY_CAPABILITY_RESPONSE_KEYS,
+  DEPUTY_CAPABILITY_KEYS,
+  FIELD_COMMAND_KINDS,
+  COMMANDS_BY_STATE,
+  FIELD_OBSERVATION_KEYS,
+  FIELD_OUTCOME_KEYS,
+  FIELD_RECEIPT_KEYS,
 });
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT
- * AUTHORITY BOUNDARY: role-scoped browser read transport and exact response validation only
- * TENANT POSTURE: server tenant must match every row; deputy work must match server-bound deputy_id
- * FAIL-CLOSED POSTURE: malformed/extra/missing/cross-tenant/cross-deputy/terminal work rejects without fallback
+ * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT
+ * AUTHORITY BOUNDARY: role-scoped read/command browser transport and exact response validation only
+ * TENANT POSTURE: server tenant/deputy/attempt scope must remain internally consistent; client cannot establish tenant authority
+ * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/command-response drift rejects without fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
