@@ -1,7 +1,7 @@
 """Canonical orchestration for principal-to-Deputy identity binding.
 
 TITLE: WILSY OS Deputy Principal Binding Orchestrator
-VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
+VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
 AUTHORITY: L8-6B current-authority composition before immutable identity binding.
 EPITOME: Inside one caller-owned active transaction, prove current ACTIVE
          principal, ACTIVE tenant membership, ACTIVE tenant_deputy business
@@ -14,7 +14,11 @@ COLLABORATION / OWNERSHIP: Principal/membership/business-role/role-assignment
                             relation semantics/persistence; this module owns
                             composition only. HTTP actor admission is separate.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
+CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
+           narrows authority-helper return annotations to their exact immutable
+           principal, membership, business-role, and role-assignment classes;
+           runtime semantics and authority boundaries are unchanged.
+           2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
            establishes transaction-required five-authority validation, exact
            tenant/deputy resolution, immutable binding persistence/replay,
            session propagation, and explicit non-authorizing identity linkage.
@@ -41,25 +45,35 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Final, NoReturn, cast
 
+from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import (
     PrincipalAuthorityNotFoundError,
     PrincipalAuthorityRepository,
     PrincipalAuthorityRepositoryError,
 )
 from tools.eos.auth.principal_status import PrincipalStatus
-from tools.eos.auth.role_assignment import RoleAssignmentStatus
+from tools.eos.auth.role_assignment import (
+    RoleAssignmentAuthority,
+    RoleAssignmentStatus,
+)
 from tools.eos.auth.role_assignment_repository import (
     RoleAssignmentNotFoundError,
     RoleAssignmentRepository,
     RoleAssignmentRepositoryError,
 )
-from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
 from tools.eos.auth.tenant_business_role_repository import (
     TenantBusinessRoleNotFoundError,
     TenantBusinessRoleRepository,
     TenantBusinessRoleRepositoryError,
 )
-from tools.eos.auth.tenant_membership import TenantMembershipStatus
+from tools.eos.auth.tenant_membership import (
+    TenantMembershipAuthority,
+    TenantMembershipStatus,
+)
 from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipNotFoundError,
     TenantMembershipRepository,
@@ -81,7 +95,7 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION"
+VERSION: Final[str] = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION"
 
 
 class DeputyPrincipalBindingOrchestrationError(RuntimeError):
@@ -143,7 +157,7 @@ def _principal(
     collection: Any,
     *,
     session: Any,
-) -> object:
+) -> PrincipalAuthority:
     """Require exact current ACTIVE principal authority."""
     try:
         value = PrincipalAuthorityRepository.get(
@@ -166,7 +180,7 @@ def _membership(
     collection: Any,
     *,
     session: Any,
-) -> object:
+) -> TenantMembershipAuthority:
     """Require exact current ACTIVE tenant membership."""
     try:
         value = TenantMembershipRepository.resolve(
@@ -190,7 +204,7 @@ def _business_role(
     collection: Any,
     *,
     session: Any,
-) -> object:
+) -> TenantBusinessRoleAuthority:
     """Require exact current ACTIVE tenant_deputy business-role evidence."""
     try:
         value = TenantBusinessRoleRepository.resolve(
@@ -217,7 +231,7 @@ def _authorization_role(
     collection: Any,
     *,
     session: Any,
-) -> object:
+) -> RoleAssignmentAuthority:
     """Require exact current ACTIVE DEPUTY authorization-role assignment."""
     try:
         value = RoleAssignmentRepository.resolve(
@@ -353,7 +367,7 @@ __all__ = [
 
 
 # ARTIFACT: deputy_principal_binding_orchestrator.py
-# VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
+# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION
 # AUTHORITY BOUNDARY: current IAM + canonical Deputy validation before immutable identity-link persistence only
 # TENANT POSTURE: exact same tenant/session across principal, membership, roles, Deputy, and binding
 # FAIL-CLOSED POSTURE: inactive/missing/wrong IAM, absent/corrupt Deputy, conflict, persistence, or transaction failure rejects
