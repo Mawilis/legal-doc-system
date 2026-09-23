@@ -1,18 +1,24 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API
+VERSION: v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
-         directory, and field-service commands into one canonical orchestrator inside one
-         API-owned Mongo transaction, without accepting browser-supplied tenant
-         authority or collapsing registration, receipt, allocation, or service truth.
+         directory, deputy-principal identity-binding, and field-service
+         commands into one canonical orchestrator inside one API-owned Mongo
+         transaction without accepting browser-supplied tenant authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API adds one
+CHANGELOG: 2026-09-23 v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API adds one sheriff-only
+           directory command for immutable principal-to-canonical-Deputy
+           identity binding. The request cannot supply tenant authority; L8-6B
+           independently proves target principal, membership, tenant_deputy
+           business role, DEPUTY assignment, and canonical Deputy evidence
+           inside the same API-owned transaction before the binding write.
+           v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API adds one
            sheriff-only legal_operations:receipt:write command that composes
            canonical L8-3 instruction acceptance plus physical office receipt
            inside the API-owned transaction. It also routes allocation custody
@@ -70,6 +76,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
+from tools.eos.auth.principal_authority_repository import (
+    COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION,
+)
+from tools.eos.auth.role_assignment_repository import (
+    COLLECTION as ROLE_ASSIGNMENT_COLLECTION,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    COLLECTION as TENANT_BUSINESS_ROLE_COLLECTION,
+)
+from tools.eos.auth.tenant_membership_repository import (
+    COLLECTION as TENANT_MEMBERSHIP_COLLECTION,
+)
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     District,
     Deputy,
@@ -81,6 +99,10 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     SheriffOffice,
 )
 from tools.eos.legal_operations.domain.process_service_assignment_authority import authorize_process_service_assignment
+from tools.eos.legal_operations.orchestration.deputy_principal_binding_orchestrator import (
+    DeputyPrincipalBindingOrchestrationError,
+    bind_deputy_principal_identity,
+)
 from tools.eos.legal_operations.orchestration.process_service_allocation_orchestrator import orchestrate_process_service_allocation
 from tools.eos.legal_operations.orchestration.process_service_directory_provisioning_orchestrator import (
     ProcessServiceDirectoryProvisioningError,
@@ -100,6 +122,9 @@ from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrat
 from tools.eos.legal_operations.orchestration.process_service_attempt_outcome_orchestrator import transition_process_service_attempt_outcome
 from tools.eos.legal_operations.orchestration.process_service_attempt_transition_orchestrator import transition_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_return_orchestrator import generate_process_service_return
+from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
+    COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import COLLECTION as LIFECYCLE_COLLECTION, LegalOperationsLifecycleRegistry
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
     ALLOCATION_CURRENT_COLLECTION,
@@ -112,7 +137,7 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API"
+VERSION: Final[str] = "v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
@@ -189,6 +214,20 @@ class DeputyProvisioningCommand(_CommandModel):
     display_name: str = Field(min_length=1)
     badge_reference: str = Field(min_length=1)
     evidence_reference: str = Field(min_length=1)
+
+
+class DeputyPrincipalBindingCommand(_CommandModel):
+    """Bounded sheriff-issued L8-6B identity-link request; tenant is server-derived.
+
+    The command may identify the target principal and canonical Deputy plus the
+    binding timestamp/reference. It cannot grant membership, roles, queue
+    access, service authority, client identity, AI authority, or financial truth.
+    """
+
+    principal_id: str = Field(min_length=1)
+    deputy_id: str = Field(min_length=1)
+    bound_at: datetime
+    evidence_reference: str = Field(min_length=1, max_length=512)
 
 
 class AllocationCommand(_CommandModel):
@@ -318,6 +357,7 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         ProcessServiceDirectoryProvisioningError,
         ProcessServiceIntakeRegistrationError,
         ProcessServiceAcceptanceReceiptError,
+        DeputyPrincipalBindingOrchestrationError,
     ):
         raise
     except Exception as error:
@@ -333,6 +373,8 @@ def _http_error(error: BaseException) -> HTTPException:
         code = "LEGAL_OPERATIONS_COMMAND_FAILED"
     if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED"}:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_RETRY_REQUIRED")
+    if code == "L8_6B_BINDING_CONFLICT":
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_DEPUTY_BINDING_CONFLICT")
     if code.endswith("NOT_FOUND") or code in {"P5B_RECEIPT_NOT_FOUND", "P4_RECEIPT_NOT_FOUND", "P4_CURRENT_POINTER_MISSING"}:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LEGAL_OPERATION_NOT_FOUND")
     if "TRANSACTION_REQUIRED" in code or "PERSISTENCE_UNAVAILABLE" in code or "COMMAND_FAILED" in code:
@@ -505,6 +547,56 @@ async def provision_deputy_command(
     return result.to_dict()
 
 
+@router.post("/directory/deputy-principal-bindings")
+async def bind_deputy_principal_command(
+    command: DeputyPrincipalBindingCommand,
+    context: TenantAuthorizationContext = Depends(_DIRECTORY),
+) -> dict[str, object]:
+    """Bind one active deputy principal to one canonical Deputy identity.
+
+    Actor admission uses the existing sheriff-only directory authority. Tenant
+    scope comes only from the authorized context. L8-6B independently proves
+    the target principal's current ACTIVE principal/membership truth,
+    tenant_deputy business role, DEPUTY authorization assignment, and exact
+    canonical Deputy evidence under the same API-owned transaction before the
+    immutable one-to-one binding is persisted or exactly replayed.
+
+    Binding creation grants no queue, attempt, service, return, billing,
+    payment, AI, execution, or settlement authority.
+    """
+
+    def run(session: Any, db: Any) -> Any:
+        return bind_deputy_principal_identity(
+            tenant_id=context.tenant_id,
+            principal_id=command.principal_id,
+            deputy_id=command.deputy_id,
+            bound_at=command.bound_at,
+            evidence_reference=command.evidence_reference,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            binding_collection=_collection(
+                db,
+                DEPUTY_PRINCIPAL_BINDING_COLLECTION,
+            ),
+            principal_collection=_collection(db, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(db, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(
+                db,
+                TENANT_BUSINESS_ROLE_COLLECTION,
+            ),
+            role_assignment_collection=_collection(
+                db,
+                ROLE_ASSIGNMENT_COLLECTION,
+            ),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return value.to_dict()
+
+
 @router.post("/allocations")
 async def allocate_process_service(command: AllocationCommand, context: TenantAuthorizationContext = Depends(_ALLOCATE)) -> dict[str, Any]:
     """Authorize and execute exactly one P4A allocation command."""
@@ -628,8 +720,8 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API
-# AUTHORITY BOUNDARY: authenticated intake/receipt/directory/field-service command composition; P1/P2/L8-1/L8-2/L8-3/P4/P5 remain canonical
+# VERSION: v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
+# AUTHORITY BOUNDARY: authenticated intake/receipt/directory/deputy-binding/field-service command composition; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
