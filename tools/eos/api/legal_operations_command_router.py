@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
+VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped intake, directory, and
          field-service commands into one canonical orchestrator inside one
@@ -12,7 +12,10 @@ COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API adds one
+CHANGELOG: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API replaces the
+           deprecated Starlette 422 status alias with HTTP 422 Unprocessable
+           Content while preserving the exact fail-closed command projection.
+           v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API added one
            legal_operations:instruction:write-authorized own-tenant intake
            registration command. The body cannot supply tenant_id; L8-2 creates
            or exactly replays CaseMatter, LegalInstruction, ProcessDocument,
@@ -99,7 +102,7 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API"
+VERSION: Final[str] = "v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
@@ -306,7 +309,7 @@ def _http_error(error: BaseException) -> HTTPException:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LEGAL_OPERATION_NOT_FOUND")
     if "TRANSACTION_REQUIRED" in code or "PERSISTENCE_UNAVAILABLE" in code or "COMMAND_FAILED" in code:
         return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LEGAL_OPERATIONS_UNAVAILABLE")
-    return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
+    return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
 
 
 def _ctx(permission: str, operation: str) -> RequireTenantAuthorization:
@@ -561,7 +564,7 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
+# VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
 # AUTHORITY BOUNDARY: authenticated intake/directory/field-service command composition; P1/P2/L8-1/L8-2/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
