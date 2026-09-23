@@ -15,7 +15,7 @@
  *            client states, no sheriff/deputy fallback or internal panel leakage,
  *            responsive stacking classes, preserved deputy governed commands,
  *            production v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT, and D7 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT alignment.
-2026-09-23 v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR installs a deterministic in-memory localStorage
+ *            2026-09-23 v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR installs a deterministic in-memory localStorage
  *            stub inside this certificate because the repository Vitest/JSDOM
  *            harness does not expose localStorage in the current Node runtime.
  *            Production cockpit behavior and shared test harness remain unchanged.
