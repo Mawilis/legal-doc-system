@@ -1,12 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.15.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY-CERT
+VERSION: v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.15.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY-CERT
+CHANGELOG: 2026-09-23 v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
+certifies legal_deputy_queue_read eligibility only for tenant_deputy, with
+tenant_sheriff and every other business role denied and policy-only semantics.
+2026-09-23 v1.15.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY-CERT
 certifies legal_queue_read eligibility only for tenant_sheriff, including
 explicit tenant_deputy denial and policy-only/non-authorizing semantics.
 2026-09-23 v1.14.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-ELIGIBILITY-CERT
@@ -50,7 +53,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.19.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY"
+    assert VERSION == "v1.20.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -88,7 +91,7 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_sheriff": {"legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_deputy": {"legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_deputy": {"legal_deputy_queue_read", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_client": {"legal_invoice_read"},
     }
     assert set(expected) <= TENANT_ROLES
@@ -97,6 +100,24 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         assert tenant_role_operation_eligibility(role, "financial_execution") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_client", "legal_instruction_read") == DENY
     assert tenant_role_operation_eligibility("tenant_deputy", "legal_instruction_read") == DENY
+
+
+def test_deputy_personal_queue_read_eligibility_is_deputy_only() -> None:
+    """Binding-scoped personal work is deputy-only policy, not sheriff queue IAM."""
+    operation = "legal_deputy_queue_read"
+    assert operation in OPERATIONS
+    assert tenant_role_operation_eligibility("tenant_deputy", operation) == ELIGIBLE
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_deputy"}
+    for role in TENANT_ROLES - {"tenant_deputy"}:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_sheriff", operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
 
 
 def test_operational_queue_read_eligibility_is_sheriff_only() -> None:
@@ -370,7 +391,7 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.15.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY-CERT
+# VERSION: v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: directory/receipt and other tenant eligibility remains policy-only; no membership or tenant authority is granted
 # FAIL-CLOSED POSTURE: unknown values deny
