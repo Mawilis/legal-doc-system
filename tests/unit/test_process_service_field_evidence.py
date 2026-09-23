@@ -1,10 +1,11 @@
 """Direct adversarial certificate for P5 mobile/offline field evidence.
 
 TITLE: WILSY OS Process-Service Field Evidence and Command Capability Certificate
-VERSION: v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
+VERSION: v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
 AUTHORITY: Direct certification of P5M evidence and L8-6D read projection.
 EPITOME: Preserve offline evidence ordering/provenance/replay certification,
-         prove exact tenant/event receipt recovery for retry-safe composition,
+         prove exact tenant/event command+receipt recovery and validated sequence
+         head resolution for retry-safe server composition,
          and prove the field-command capability descriptor maps only canonical
          active ServiceAttempt states to existing command kinds, binds one
          opaque P2 evidence locator, and never becomes IAM, service, return,
@@ -15,7 +16,11 @@ COLLABORATION / OWNERSHIP: Direct certificate for P5M authority/registry/
                             lifecycle, P2 owns snapshot identity, and callers
                             own authorization and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
+CHANGELOG: 2026-09-23 v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
+           certifies exact event command+receipt recovery, empty/head resolution,
+           caller-session forwarding, contiguous 1..N sequence validation, and
+           fail-closed rejection of durable sequence-history corruption.
+           2026-09-23 v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
            certifies exact tenant/event receipt lookup, caller-session forwarding,
            foreign-tenant absence, and strict persisted-evidence hydration for the
            L8-6E replay-safe P5M composition primitive.
@@ -264,6 +269,98 @@ def test_registry_resolve_by_event_is_exact_tenant_scoped_and_strict() -> None:
     assert invalid.value.code == "P5M_RECEIPT_FINGERPRINT_MISMATCH"
 
 
+def test_registry_recovers_exact_event_command_and_contiguous_sequence_head() -> None:
+    """Recover replay inputs and one strict tenant/attempt/device journal head."""
+    collection = Collection()
+    session = Session()
+
+    assert ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+        "tenant-a",
+        "attempt-1",
+        "device-1",
+        collection,
+        session=session,
+    ) is None
+    assert collection.calls[-1] == ("find", session)
+
+    first_command = command()
+    first_receipt = _issue_sync_receipt(
+        command=first_command,
+        receipt_id="receipt-head-1",
+        accepted_at=BASE + timedelta(minutes=5),
+    )
+    ProcessServiceFieldEvidenceRegistry.persist(
+        first_command,
+        first_receipt,
+        collection,
+        session=session,
+    )
+    second_command = command(
+        sequence=2,
+        previous=first_command.evidence_fingerprint,
+        event="event-2",
+    )
+    second_receipt = _issue_sync_receipt(
+        command=second_command,
+        receipt_id="receipt-head-2",
+        accepted_at=BASE + timedelta(minutes=6),
+    )
+    ProcessServiceFieldEvidenceRegistry.persist(
+        second_command,
+        second_receipt,
+        collection,
+        session=session,
+    )
+
+    replay_command, replay_receipt = (
+        ProcessServiceFieldEvidenceRegistry.resolve_command_receipt_by_event(
+            "tenant-a",
+            "event-1",
+            collection,
+            session=session,
+        )
+    )
+    assert replay_command.to_dict() == first_command.to_dict()
+    assert replay_command.fingerprint == first_command.fingerprint
+    assert replay_receipt.to_dict() == first_receipt.to_dict()
+
+    head = ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+        "tenant-a",
+        "attempt-1",
+        "device-1",
+        collection,
+        session=session,
+    )
+    assert head is not None
+    assert head.to_dict() == second_receipt.to_dict()
+    assert head.sequence_number == 2
+    assert head.evidence_fingerprint == second_command.evidence_fingerprint
+
+    corrupted = dict(collection.rows[1])
+    corrupted["sequence_number"] = 3
+    corrupted_command = dict(corrupted["command_payload"])
+    corrupted_receipt = dict(corrupted["receipt_payload"])
+    corrupted_command["sequence_number"] = 3
+    corrupted_receipt["sequence_number"] = 3
+    corrupted["command_payload"] = corrupted_command
+    corrupted["receipt_payload"] = corrupted_receipt
+    collection.rows[1] = corrupted
+    with pytest.raises(ProcessServiceFieldEvidenceRegistryError) as invalid:
+        ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+            "tenant-a",
+            "attempt-1",
+            "device-1",
+            collection,
+            session=session,
+        )
+    assert invalid.value.code in {
+        "P5M_COMMAND_FINGERPRINT_MISMATCH",
+        "P5M_RECEIPT_FINGERPRINT_MISMATCH",
+        "P5M_SEQUENCE_HISTORY_INVALID",
+        "P5M_RECORD_BINDING_MISMATCH",
+    }
+
+
 def test_orchestrator_uses_canonical_attempt_and_forwards_session(monkeypatch: pytest.MonkeyPatch) -> None:
     source = attempt()
     monkeypatch.setattr(p2.LegalOperationsLifecycleRegistry, "get", staticmethod(lambda *args, **kwargs: source))
@@ -418,7 +515,7 @@ def test_projections_are_scoped_derived_views() -> None:
 
 
 # ARTIFACT: test_process_service_field_evidence.py
-# VERSION: v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
+# VERSION: v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
 # AUTHORITY BOUNDARY: direct P5M evidence acceptance plus L8-6D state-capability projection certificate only.
 # TENANT POSTURE: exact synthetic P1/P2/P5M tenant scope; cross-tenant projection inputs reject.
 # FAIL-CLOSED POSTURE: no evidence, command authorization, service or financial truth is inferred from projection state.
