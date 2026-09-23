@@ -1,18 +1,24 @@
-"""WILSY OS Legal Operations field-service command boundary.
+"""WILSY OS Legal Operations command boundary.
 
-TITLE: Legal Operations Field-Service Command API
-VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
-AUTHORITY: HTTP command composition only; P1/P4/P5 remain canonical authorities.
-EPITOME: Translate authenticated tenant-scoped directory and field-service
-         command requests into one canonical orchestrator inside one API-owned
-         Mongo transaction, without accepting browser-supplied tenant authority
-         or collapsing provisioning into allocation/service truth.
+TITLE: Legal Operations Command API
+VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
+AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/P4/P5 remain canonical authorities.
+EPITOME: Translate authenticated tenant-scoped intake, directory, and
+         field-service commands into one canonical orchestrator inside one
+         API-owned Mongo transaction, without accepting browser-supplied tenant
+         authority or collapsing registration into receipt/allocation/service truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API preserves
+CHANGELOG: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API adds one
+           legal_operations:instruction:write-authorized own-tenant intake
+           registration command. The body cannot supply tenant_id; L8-2 creates
+           or exactly replays CaseMatter, LegalInstruction, ProcessDocument,
+           and REGISTERED custody inside the same API-owned transaction while
+           registration remains distinct from acceptance and office receipt.
+           v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API preserved
            structured L8-1 directory provisioning failures across the API-owned
            transaction boundary so bounded parent absence remains HTTP 404
            instead of being collapsed into generic command-unavailable 503.
@@ -26,15 +32,16 @@ CHANGELOG: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API preserves
            allocation, attempt creation/transition, terminal-outcome, and
            return command boundaries using evidence locators only.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY / PRIVACY POSTURE: Request bodies contain bounded directory facts,
-                            locators, and observations; tenant authority comes
-                            only from durable authorization and lifecycle state,
-                            lineage, fingerprints, and outcomes remain canonical.
+SECURITY / PRIVACY POSTURE: Request bodies contain bounded intake facts,
+                            directory facts, locators, and observations; tenant
+                            authority comes only from durable authorization and
+                            canonical domain/orchestrator layers own lifecycle,
+                            lineage, fingerprints, and outcome truth.
 TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
 AUTHORITY BOUNDARY: This module composes authenticated command transport and
-                    transaction mechanics only; exactly one canonical directory
-                    or field-service orchestrator is called per command.
+                    transaction mechanics only; exactly one canonical intake,
+                    directory, or field-service orchestrator is called per command.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
@@ -72,6 +79,10 @@ from tools.eos.legal_operations.orchestration.process_service_directory_provisio
     provision_district,
     provision_sheriff_office,
 )
+from tools.eos.legal_operations.orchestration.process_service_intake_registration_orchestrator import (
+    ProcessServiceIntakeRegistrationError,
+    register_process_service_intake,
+)
 from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrator import orchestrate_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_attempt_outcome_orchestrator import transition_process_service_attempt_outcome
 from tools.eos.legal_operations.orchestration.process_service_attempt_transition_orchestrator import transition_process_service_attempt
@@ -88,13 +99,36 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API"
+VERSION: Final[str] = "v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
 
 class _CommandModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class IntakeRegistrationCommand(_CommandModel):
+    """Bounded initial Legal Operations intake facts; tenant is server-derived.
+
+    The model carries opaque matter/instruction/document identities, timestamps,
+    document type, and evidence references only. It cannot supply tenant_id,
+    acceptance, receipt, allocation, service, return, invoice, payment,
+    execution, or settlement authority.
+    """
+
+    case_matter_id: str = Field(min_length=1)
+    matter_reference: str = Field(min_length=1)
+    case_opened_at: datetime
+    matter_evidence_reference: str = Field(min_length=1)
+    instruction_id: str = Field(min_length=1)
+    instruction_registered_at: datetime
+    instruction_evidence_reference: str = Field(min_length=1)
+    document_id: str = Field(min_length=1)
+    document_type: str = Field(min_length=1)
+    document_registered_at: datetime
+    document_registration_evidence_reference: str = Field(min_length=1)
+    registration_custody_event_id: str = Field(min_length=1)
 
 
 class DistrictProvisioningCommand(_CommandModel):
@@ -249,7 +283,11 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
                 if bool(getattr(session, "in_transaction", False)):
                     session.abort_transaction()
                 raise
-    except (CommandError, ProcessServiceDirectoryProvisioningError):
+    except (
+        CommandError,
+        ProcessServiceDirectoryProvisioningError,
+        ProcessServiceIntakeRegistrationError,
+    ):
         raise
     except Exception as error:
         raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED", error) from error
@@ -275,11 +313,53 @@ def _ctx(permission: str, operation: str) -> RequireTenantAuthorization:
     return RequireTenantAuthorization(permission, operation)
 
 
+_INTAKE = _ctx("legal_operations:instruction:write", "legal_instruction_write")
 _DIRECTORY = _ctx("legal_operations:directory:write", "legal_directory_write")
 _ALLOCATE = _ctx("legal_operations:allocation:write", "legal_allocation_write")
 _ATTEMPT = _ctx("legal_operations:attempt:write", "legal_attempt_write")
 _OUTCOME = _ctx("legal_operations:attempt_outcome:write", "legal_attempt_outcome_write")
 _RETURN = _ctx("legal_operations:return:write", "legal_return_write")
+
+
+@router.post("/intake/registrations")
+async def register_process_service_intake_command(
+    command: IntakeRegistrationCommand,
+    context: TenantAuthorizationContext = Depends(_INTAKE),
+) -> dict[str, Any]:
+    """Register or exactly replay one own-tenant initial process-service intake.
+
+    Tenant scope is derived exclusively from the authorization context. The API
+    owns the transaction; L8-2 owns registration composition and preserves the
+    distinction between registration, acceptance, receipt, allocation, service,
+    and all financial states.
+    """
+
+    def run(session: Any, db: Any) -> Any:
+        return register_process_service_intake(
+            tenant_id=context.tenant_id,
+            case_matter_id=command.case_matter_id,
+            matter_reference=command.matter_reference,
+            case_opened_at=command.case_opened_at,
+            matter_evidence_reference=command.matter_evidence_reference,
+            instruction_id=command.instruction_id,
+            instruction_registered_at=command.instruction_registered_at,
+            instruction_evidence_reference=command.instruction_evidence_reference,
+            document_id=command.document_id,
+            document_type=command.document_type,
+            document_registered_at=command.document_registered_at,
+            document_registration_evidence_reference=(
+                command.document_registration_evidence_reference
+            ),
+            registration_custody_event_id=command.registration_custody_event_id,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            session=session,
+        )
+
+    try:
+        result = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return result.to_dict()
 
 
 @router.post("/directory/districts")
@@ -481,8 +561,8 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
-# AUTHORITY BOUNDARY: authenticated directory/field-service command composition; P1/P2/L8-1/P4/P5 remain canonical
+# VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
+# AUTHORITY BOUNDARY: authenticated intake/directory/field-service command composition; P1/P2/L8-1/L8-2/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
