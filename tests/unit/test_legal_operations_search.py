@@ -1,7 +1,7 @@
 """Direct certificate for bounded Legal Operations matter search.
 
 TITLE: WILSY OS Legal Operations Matter Search Certificate
-VERSION: v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
+VERSION: v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
 AUTHORITY: Direct adversarial certification of L8-5D canonical search.
 EPITOME: Prove exact and prefix CaseMatter.matter_reference retrieval from
          tenant-scoped L8-5 current models, deterministic ordering and bounds,
@@ -16,7 +16,10 @@ COLLABORATION / OWNERSHIP: Certificate for legal_operations_search.py only.
                             HTTP/IAM, L8-7 client authority, WILSY AI,
                             Intelligence, and client rendering remain separate.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
+           adds constructor-level rejection of mutable search-match containers
+           and rebinds the certificate to production v1.0.1.
+           2026-09-23 v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
            establishes exact/prefix matter-reference search proofs, casefolded
            comparison, deterministic reference/identity ordering, bounded
            limits, empty absence, closed-matter retrieval, tenant/session
@@ -65,7 +68,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT"
+VERSION = "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT"
 NOW = datetime(2026, 9, 23, 13, 0, tzinfo=timezone.utc)
 TENANT = "tenant-l8-5d"
 FOREIGN = "tenant-l8-5d-foreign"
@@ -355,6 +358,29 @@ def test_corrupt_l8_5_source_fails_whole_search_without_partial_results() -> Non
     assert caught.value.__cause__ is not None
 
 
+def test_public_result_rejects_mutable_matches_container() -> None:
+    """Frozen result semantics reject a mutable list supplied by a caller."""
+    collection = FakeCollection()
+    _persist(_matter("matter-a", "CASE-A"), collection)
+    model = get_entity_read_model(
+        tenant_id=TENANT,
+        entity_type="CaseMatter",
+        entity_identity="matter-a",
+        lifecycle_collection=collection,
+    )
+
+    _expect(
+        "L8_5D_MATCHES_INVALID",
+        lambda: LegalOperationsMatterSearchResult(
+            tenant_id=TENANT,
+            query="CASE-A",
+            mode=LegalOperationsMatterSearchMode.EXACT,
+            limit=25,
+            matches=cast(Any, [model]),
+        ),
+    )
+
+
 def test_public_result_self_validation_and_unsupported_search_exclusion() -> None:
     """Public result cannot admit wrong membership or unsupported search authority."""
     collection = FakeCollection()
@@ -412,12 +438,12 @@ def test_public_result_self_validation_and_unsupported_search_exclusion() -> Non
     ):
         assert forbidden not in serialized
 
-    assert PRODUCTION_VERSION == "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH"
-    assert VERSION == "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT"
+    assert PRODUCTION_VERSION == "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH"
+    assert VERSION == "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT"
 
 
 # ARTIFACT: test_legal_operations_search.py
-# VERSION: v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
+# VERSION: v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-CERT
 # AUTHORITY BOUNDARY: direct L8-5D canonical matter-reference search certificate only
 # TENANT POSTURE: exact tenant/session-scoped CaseMatter current read models only
 # FAIL-CLOSED POSTURE: invalid input/evidence/membership rejects without fuzzy, client-name, AI, or partial fallback
