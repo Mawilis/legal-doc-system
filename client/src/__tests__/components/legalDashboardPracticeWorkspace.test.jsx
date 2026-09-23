@@ -1,13 +1,15 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by D11/D13 contracts, with functional lifecycle
  *          navigation, governed intake, ReturnOfService generation, exact
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-23
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: 2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
+ *            v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; workspace behavior and authority are unchanged.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only.
  * TENANT BOUNDARY: Every rendered data packet is a pre-authorized adapter result;
@@ -47,7 +49,7 @@ const {
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION',
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
@@ -431,7 +433,7 @@ describe('D14 production Legal Operations workspace', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
  * FAIL-CLOSED POSTURE: role denial, command failure and cross-role drift never fallback or invent success
