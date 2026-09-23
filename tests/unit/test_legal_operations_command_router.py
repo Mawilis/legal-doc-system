@@ -1,7 +1,7 @@
 """Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
+VERSION: v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service command input
          boundaries, bound-Deputy field evidence composition, transaction ownership, path
@@ -12,7 +12,12 @@ COLLABORATION / OWNERSHIP: L8-3 command certificate; canonical intake,
                             acceptance/receipt, directory, lifecycle, persistence, and field-service
                             orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
+CHANGELOG: 2026-09-23 v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-CERT
+           certifies that deputy browser models reject P5M sequence lineage,
+           new events derive sequence/fingerprint chaining from the server journal
+           head, exact event replays reuse the original immutable command/receipt,
+           and P5M -> P5D/P5E composition remains transaction-bounded.
+           2026-09-23 v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
            repairs certificate-only static narrowing for the required binding result
            and rebinds the exact production VERSION assertion to v1.5.0; production
            behavior, field-command authority, runtime coverage, and fixtures are unchanged.
@@ -54,8 +59,9 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
                  command bodies cannot establish tenant scope.
 AUTHORITY BOUNDARY: Ordinary commands dispatch one canonical orchestrator;
-                    L8-6E field commands certify only the bounded P5M -> P5D/P5E
-                    chain, and transport never constructs lifecycle truth.
+                    L8-6E/L8-6G field commands certify only the bounded P5M ->
+                    P5D/P5E chain with server-owned sequence lineage; transport
+                    never constructs lifecycle truth.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution authority; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Extra authority fields, path divergence, invalid state,
@@ -285,7 +291,6 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         "current_evidence_identity": HEX,
         "device_id": "device-1",
         "event_id": "event-1",
-        "sequence_number": 1,
         "occurred_at": BASE + timedelta(minutes=1),
         "observation_reference": "photo:field-1",
     }
@@ -294,6 +299,8 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         {"principal_id": "principal"},
         {"deputy_id": "deputy"},
         {"evidence_fingerprint": HEX},
+        {"sequence_number": 1},
+        {"previous_event_fingerprint": HEX},
         {"receipt_id": "receipt"},
         {"accepted_at": BASE + timedelta(minutes=2)},
         {"service_execution_id": "execution"},
@@ -775,23 +782,22 @@ def test_bound_deputy_scope_enforces_binding_and_preserves_sheriff_legacy(
         )
 
 
-def test_bound_deputy_field_sync_derives_provenance_and_reuses_receipt(
+def test_bound_deputy_field_sync_derives_sequence_and_reuses_exact_replay(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Browser observation facts become server provenance and replay reuses acceptance."""
+    """Server owns P5M lineage for new events and exact immutable replay."""
     database = Database()
     session = Session()
     session.in_transaction = True
     fixed_now = BASE + timedelta(minutes=9)
+    current = attempt()
     command = command_api.DeputyFieldTransitionCommand(
         current_evidence_identity=HEX,
         device_id="device-1",
-        event_id="event-1",
-        sequence_number=1,
+        event_id="event-5",
         occurred_at=BASE + timedelta(minutes=1),
-        observation_reference="photo:field-1",
+        observation_reference="photo:field-5",
     )
-    current = attempt()
     captured: list[dict[str, Any]] = []
     monkeypatch.setattr(command_api, "_utcnow", lambda: fixed_now)
 
@@ -802,8 +808,17 @@ def test_bound_deputy_field_sync_derives_provenance_and_reuses_receipt(
 
     monkeypatch.setattr(
         command_api.ProcessServiceFieldEvidenceRegistry,
-        "resolve_by_event",
+        "resolve_command_receipt_by_event",
         staticmethod(missing),
+    )
+    journal_head = SimpleNamespace(
+        sequence_number=4,
+        evidence_fingerprint="c" * 128,
+    )
+    monkeypatch.setattr(
+        command_api.ProcessServiceFieldEvidenceRegistry,
+        "resolve_latest_for_attempt_device",
+        staticmethod(lambda *_args, **_kwargs: journal_head),
     )
 
     def fake_sync(**kwargs: Any) -> Any:
@@ -833,30 +848,42 @@ def test_bound_deputy_field_sync_derives_provenance_and_reuses_receipt(
         command_kind="TRANSITION_TO_ATTEMPTED",
         current_evidence_identity=HEX,
         device_id="device-1",
-        event_id="event-1",
-        sequence_number=1,
+        event_id="event-5",
+        sequence_number=5,
         occurred_at=BASE + timedelta(minutes=1),
-        observation_reference="photo:field-1",
-        previous_event_fingerprint=None,
+        observation_reference="photo:field-5",
+        previous_event_fingerprint="c" * 128,
         outcome=None,
     )
+    assert captured[0]["sequence_number"] == 5
+    assert captured[0]["previous_event_fingerprint"] == "c" * 128
     assert captured[0]["evidence_reference"] == expected_reference
     assert captured[0]["evidence_fingerprint"] == expected_fingerprint
-    assert len(expected_fingerprint) == 128
     assert captured[0]["accepted_at"] == fixed_now
-    assert captured[0]["receipt_id"] == command_api._field_receipt_id(TENANT, "event-1")
+    assert captured[0]["receipt_id"] == command_api._field_receipt_id(
+        TENANT,
+        "event-5",
+    )
     assert captured[0]["session"] is session
 
     prior_time = BASE + timedelta(minutes=8)
+    replay_command = SimpleNamespace(
+        attempt_id=current.attempt_id,
+        device_id="device-1",
+        occurred_at=command.occurred_at,
+        evidence_reference=command.observation_reference,
+        sequence_number=5,
+        previous_event_fingerprint="c" * 128,
+        evidence_fingerprint=expected_fingerprint,
+    )
+    replay_receipt = SimpleNamespace(
+        receipt_id="prior-receipt",
+        accepted_at=prior_time,
+    )
     monkeypatch.setattr(
         command_api.ProcessServiceFieldEvidenceRegistry,
-        "resolve_by_event",
-        staticmethod(
-            lambda *_args, **_kwargs: SimpleNamespace(
-                receipt_id="prior-receipt",
-                accepted_at=prior_time,
-            )
-        ),
+        "resolve_command_receipt_by_event",
+        staticmethod(lambda *_args, **_kwargs: (replay_command, replay_receipt)),
     )
     second = command_api._sync_bound_deputy_field_evidence(
         context=deputy_context(),
@@ -868,9 +895,10 @@ def test_bound_deputy_field_sync_derives_provenance_and_reuses_receipt(
         session=session,
     )
     assert first.evidence_fingerprint == second.evidence_fingerprint
+    assert captured[1]["sequence_number"] == 5
+    assert captured[1]["previous_event_fingerprint"] == "c" * 128
     assert captured[1]["receipt_id"] == "prior-receipt"
     assert captured[1]["accepted_at"] == prior_time
-
 
 def test_bound_deputy_field_transition_composes_p5m_then_p5d(
     monkeypatch: pytest.MonkeyPatch,
@@ -909,7 +937,6 @@ def test_bound_deputy_field_transition_composes_p5m_then_p5d(
         current_evidence_identity=HEX,
         device_id="device-1",
         event_id="event-1",
-        sequence_number=1,
         occurred_at=BASE + timedelta(minutes=1),
         observation_reference="photo:field-1",
     )
@@ -961,10 +988,8 @@ def test_bound_deputy_field_outcome_derives_execution_and_composes_p5e(
         current_evidence_identity=HEX,
         device_id="device-1",
         event_id="event-terminal",
-        sequence_number=2,
         occurred_at=BASE + timedelta(minutes=2),
         observation_reference="photo:terminal",
-        previous_event_fingerprint="d" * 128,
         outcome=ServiceAttemptState.COMPLETED,
     )
     result = asyncio.run(
@@ -1129,11 +1154,11 @@ def test_allocation_dispatches_only_p4a_and_never_accepts_caller_state(monkeypat
 def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
     names = set(vars(command_api))
     assert not any(token in names for token in {"Invoice", "Payment", "Settlement", "MongoClient", "mongo_client", "_client"})
-    assert command_api.VERSION == "v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE"
+    assert command_api.VERSION == "v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE"
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
+# VERSION: v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-CERT
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
