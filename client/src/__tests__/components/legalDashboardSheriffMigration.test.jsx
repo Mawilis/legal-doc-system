@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v3.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT
+ * VERSION: v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves LegalDashboard preserves the certified SHERIFF cockpit while
  *          correlating L8-6C deputy work with L8-6D command capability, exposing
@@ -9,7 +9,11 @@
  *          and creating no browser P5M sequence/provenance/legal/financial truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v3.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT certifies exact work/capability parity, browser
+ * CHANGELOG: 2026-09-23 v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR installs a deterministic in-memory localStorage
+ *            stub inside this certificate because the repository Vitest/JSDOM
+ *            harness does not expose localStorage in the current Node runtime.
+ *            Production cockpit behavior and shared test harness remain unchanged.
+ *            2026-09-23 v3.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT certifies exact work/capability parity, browser
  *            field-device provenance-only identity, begin/completed/not-completed
  *            controls, observation capture, command pending/error/success states,
  *            mandatory canonical refresh, terminal disappearance confirmation,
@@ -155,6 +159,37 @@ const emptyDeputyCapabilities = () => ({
   capabilities: [],
 });
 
+function installLocalStorageStub() {
+  const values = new Map();
+  const storage = {
+    getItem: vi.fn((key) => (
+      values.has(String(key)) ? values.get(String(key)) : null
+    )),
+    setItem: vi.fn((key, value) => {
+      values.set(String(key), String(value));
+    }),
+    removeItem: vi.fn((key) => {
+      values.delete(String(key));
+    }),
+    clear: vi.fn(() => {
+      values.clear();
+    }),
+    key: vi.fn((index) => Array.from(values.keys())[index] ?? null),
+    get length() {
+      return values.size;
+    },
+  };
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: storage,
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: storage,
+  });
+  return storage;
+}
+
 describe('L8-6I governed deputy Legal Operations cockpit', () => {
   beforeEach(() => {
     getDeputyFieldCapabilities.mockReset();
@@ -162,8 +197,9 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
     getSheriffOperationalQueues.mockReset();
     recordDeputyFieldOutcome.mockReset();
     transitionDeputyFieldAttempt.mockReset();
-    window.localStorage.clear();
-    window.localStorage.setItem(
+    const localStorage = installLocalStorageStub();
+    localStorage.clear();
+    localStorage.setItem(
       'wilsy.legal-operations.field-device.v1',
       'browser-device:test-device',
     );
@@ -496,7 +532,7 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v3.0.0-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT
+ * VERSION: v3.0.1-L8-6I-DEPUTY-FIELD-COMMAND-COCKPIT-CERT-REPAIR
  * AUTHORITY BOUNDARY: deterministic role-scoped presentation and governed deputy observation-command wiring evidence only
  * TENANT POSTURE: exact server-authorized deputy work/capability parity is required before command controls render
  * FAIL-CLOSED POSTURE: unresolved/denied/drifted reads, command errors and failed canonical refresh never cross-fallback or claim success
