@@ -1,7 +1,7 @@
 """Host-backed certificate for bounded Legal Operations matter search.
 
 TITLE: WILSY OS Legal Operations Matter Search Real-Mongo Certificate
-VERSION: v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
+VERSION: v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
 AUTHORITY: Host-backed certification of canonical L8-5D matter search.
 EPITOME: Prove exact and prefix CaseMatter.matter_reference retrieval on the
          real Mongo replica set with deterministic ordering and bounds,
@@ -15,7 +15,10 @@ COLLABORATION / OWNERSHIP: Host certificate for L8-5D only. P1/P2/L8-0/L8-5
                             authority, WILSY AI, Intelligence, and client
                             rendering remain separate bounded gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
+           rebinds the host certificate to the immutable-result production
+           patch; Mongo/search/runtime assertions are unchanged.
+           2026-09-23 v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
            establishes real replica-set proof for exact/prefix canonical
            matter-reference search, deterministic ordering/limits, empty
            absence, closed-matter retrieval, caller snapshot-session
@@ -68,7 +71,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT"
+VERSION = "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -310,12 +313,12 @@ def test_real_mongo_search_output_excludes_client_ai_and_financial_authority(
     ):
         assert forbidden not in serialized
 
-    assert PRODUCTION_VERSION == "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH"
-    assert VERSION == "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT"
+    assert PRODUCTION_VERSION == "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH"
+    assert VERSION == "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT"
 
 
 # ARTIFACT: test_legal_operations_search_real_mongo.py
-# VERSION: v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
+# VERSION: v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH-RM-CERT
 # AUTHORITY BOUNDARY: host-backed L8-5D canonical matter-reference search certificate only
 # TENANT POSTURE: UUID-isolated exact tenant scope with caller snapshot-session compatibility
 # FAIL-CLOSED POSTURE: runtime/input/corruption/tenant drift rejects without fuzzy, client-name, AI, or partial fallback
