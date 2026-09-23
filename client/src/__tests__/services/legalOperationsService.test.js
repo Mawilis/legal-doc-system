@@ -1,6 +1,6 @@
 /**
  * WILSY OS — SHERIFF OPERATIONAL QUEUE CLIENT CERTIFICATE
- * VERSION: v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT-CERT
+ * VERSION: v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies exact endpoint use, bounded response adaptation, immutable
  *          queue arrays, malformed-shape rejection, and tenant-drift rejection
@@ -8,6 +8,8 @@
  *          authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-23
+ * CHANGELOG: 2026-09-23 v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT-CERT certifies immutable queue-row objects and
+ *            rebinds the adapter certificate to production v1.0.1.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -80,6 +82,9 @@ describe('L8-6A sheriff operational queue client adapter', () => {
     expect(Object.isFrozen(result.officeReceipt)).toBe(true);
     expect(Object.isFrozen(result.deputyAssignment)).toBe(true);
     expect(Object.isFrozen(result.activeAttempts)).toBe(true);
+    expect(Object.isFrozen(result.officeReceipt[0])).toBe(true);
+    expect(Object.isFrozen(result.deputyAssignment[0])).toBe(true);
+    expect(Object.isFrozen(result.activeAttempts[0])).toBe(true);
   });
 
   it('rejects missing, extra, or malformed response fields without fallback', () => {
@@ -146,14 +151,14 @@ describe('L8-6A sheriff operational queue client adapter', () => {
       expect(serialized).not.toContain(forbidden);
     }
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT',
+      'v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT-CERT
+ * VERSION: v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT-CERT
  * AUTHORITY BOUNDARY: client adapter contract certificate only
  * TENANT POSTURE: cross-tenant rows reject before presentation
  * FAIL-CLOSED POSTURE: malformed/extra/missing response shape rejects without mock fallback
