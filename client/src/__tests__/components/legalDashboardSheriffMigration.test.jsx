@@ -1,14 +1,18 @@
 /**
- * WILSY OS — CERTIFIED SHERIFF COCKPIT MIGRATION CERTIFICATE
- * VERSION: v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT
+ * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
+ * VERSION: v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT
  * AUTHORITY: Client presentation/wiring certification only.
- * EPITOME: Proves the registered LegalDashboard consumes the certified queue
- *          adapter, renders only backend-provided queue truth, fails closed on
- *          sheriff authorization denial, and contains no legacy mock sheriff
- *          metrics, clients, GPS, revenue, invoice, or deputy fixture truth.
+ * EPITOME: Proves LegalDashboard preserves the certified SHERIFF cockpit,
+ *          exposes only L8-6C bound personal work for DEPUTY, performs no
+ *          cross-role fallback, avoids privileged reads for unresolved roles,
+ *          and contains no legacy mock/GPS/revenue/billing/deputy fixture truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT rebinds the component certificate to the
+ * CHANGELOG: 2026-09-23 v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT certifies role-scoped SHERIFF/DEPUTY
+ *            endpoint selection, bound-deputy personal-work rendering,
+ *            unresolved-role network silence, no cross-role fallback, and
+ *            removal of obsolete deputy-queue blocked messaging.
+ *            2026-09-23 v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT rebinds the component certificate to the
  *            immutable-row client adapter and corrects duplicate-label
  *            assertions to match the intentional metric + queue-panel UI.
  */
@@ -19,12 +23,14 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getSheriffOperationalQueues } = vi.hoisted(() => ({
+const { getDeputyPersonalActiveWork, getSheriffOperationalQueues } = vi.hoisted(() => ({
+  getDeputyPersonalActiveWork: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT',
+  getDeputyPersonalActiveWork,
   getSheriffOperationalQueues,
 }));
 
@@ -71,8 +77,26 @@ const liveQueues = () => ({
   ],
 });
 
-describe('L8-6A certified sheriff cockpit migration', () => {
+const liveDeputyWork = () => ({
+  tenantId: 'tenant-deputy',
+  visibility: 'DEPUTY_PERSONAL_ACTIVE_WORK',
+  deputyId: 'deputy-bound',
+  activeAttempts: [
+    {
+      tenant_id: 'tenant-deputy',
+      attempt_id: 'attempt-mine',
+      instruction_id: 'instruction-mine',
+      document_id: 'document-mine',
+      deputy_id: 'deputy-bound',
+      state: 'ATTEMPTED',
+      allocated_at: '2026-09-23T10:20:00+00:00',
+    },
+  ],
+});
+
+describe('L8-6C role-scoped Legal Operations cockpit migration', () => {
   beforeEach(() => {
+    getDeputyPersonalActiveWork.mockReset();
     getSheriffOperationalQueues.mockReset();
   });
 
@@ -99,21 +123,51 @@ describe('L8-6A certified sheriff cockpit migration', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders sheriff-authority denial without any browser fixture fallback', async () => {
-    getSheriffOperationalQueues.mockRejectedValueOnce({
-      response: { status: 403, data: { detail: 'Tenant authorization denied.' } },
+  it('renders only the authenticated deputy personal-work projection', async () => {
+    getDeputyPersonalActiveWork.mockResolvedValueOnce(liveDeputyWork());
+
+    render(<LegalDashboard roleView="DEPUTY" />);
+
+    await waitFor(() => {
+      expect(getDeputyPersonalActiveWork).toHaveBeenCalledTimes(1);
+    });
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+
+    expect(await screen.findByText('attempt-mine')).toBeInTheDocument();
+    expect(screen.getAllByText('deputy-bound').length).toBeGreaterThan(0);
+    expect(screen.getByText(/My active service work/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tenant: tenant-deputy/i)).toBeInTheDocument();
+    expect(screen.queryByText('Office receipt')).not.toBeInTheDocument();
+    expect(screen.queryByText('Deputy assignment')).not.toBeInTheDocument();
+    expect(screen.queryByText('document-office')).not.toBeInTheDocument();
+  });
+
+  it('keeps deputy denial bounded and never falls back to sheriff queues', async () => {
+    getDeputyPersonalActiveWork.mockRejectedValueOnce({
+      response: {
+        status: 403,
+        data: { detail: 'DEPUTY_IDENTITY_BINDING_REQUIRED' },
+      },
     });
 
     render(<LegalDashboard roleView="DEPUTY" />);
 
     expect(
-      await screen.findByText('SHERIFF_AUTHORITY_REQUIRED'),
+      await screen.findByText('DEPUTY_IDENTITY_BINDING_REQUIRED'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Deputy personal queues remain blocked/i),
-    ).toBeInTheDocument();
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(screen.queryByText('document-office')).not.toBeInTheDocument();
     expect(screen.queryByText('attempt-active')).not.toBeInTheDocument();
+  });
+
+  it('does not probe privileged queue endpoints for unresolved legal role scope', async () => {
+    render(<LegalDashboard roleView="LEGAL_VIEW" />);
+
+    expect(
+      await screen.findByText('LEGAL_ROLE_SCOPE_REQUIRED'),
+    ).toBeInTheDocument();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
   });
 
   it('keeps unsupported future capabilities explicit instead of synthetic', async () => {
@@ -127,9 +181,9 @@ describe('L8-6A certified sheriff cockpit migration', () => {
     render(<LegalDashboard roleView="SHERIFF" />);
 
     expect(
-      await screen.findByText('Deputy personal queue'),
+      await screen.findByText('Same-day / urgent prioritisation'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Same-day / urgent prioritisation')).toBeInTheDocument();
+    expect(screen.queryByText('Deputy personal queue')).not.toBeInTheDocument();
     expect(screen.getByText('Distance / GPS routing')).toBeInTheDocument();
     expect(screen.getByText('Billing readiness')).toBeInTheDocument();
     expect(screen.getByText('Return-generation queue')).toBeInTheDocument();
@@ -145,7 +199,10 @@ describe('L8-6A certified sheriff cockpit migration', () => {
       "getSheriffOperationalQueues",
     );
     expect(source).toContain(
-      "v5.0.0-L8-6A-CERTIFIED-SHERIFF-COCKPIT",
+      "getDeputyPersonalActiveWork",
+    );
+    expect(source).toContain(
+      "v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT",
     );
     expect(source).not.toContain('API_BASE_URL');
     expect(source).not.toContain('fetch(');
@@ -175,10 +232,10 @@ describe('L8-6A certified sheriff cockpit migration', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT
- * AUTHORITY BOUNDARY: deterministic client presentation/wiring evidence only
- * TENANT POSTURE: only server-authorized queue payloads reach presentation
- * FAIL-CLOSED POSTURE: authorization/evidence failures never create fixture truth
+ * VERSION: v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT
+ * AUTHORITY BOUNDARY: deterministic role-scoped client presentation/wiring evidence only
+ * TENANT POSTURE: only server-authorized sheriff or bound-deputy payloads reach presentation
+ * FAIL-CLOSED POSTURE: unresolved/denied/unavailable roles never cross-fallback or create fixture truth
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
