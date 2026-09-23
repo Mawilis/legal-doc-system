@@ -640,7 +640,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 │   │   ├── financeService.js
 │   │   ├── hrService.js
 │   │   ├── itService.js
-│   │   ├── legalService.js
 │   │   ├── longevityService.js
 │   │   ├── marketingService.js
 │   │   ├── pdfService.js
@@ -1084,7 +1083,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 | `./src/services/financeService.js` | financeService.js | Production Ready |
 | `./src/services/hrService.js` | hrService.js | Production Ready |
 | `./src/services/itService.js` | itService.js | Production Ready |
-| `./src/services/legalService.js` | legalService.js | Production Ready |
 | `./src/services/longevityService.js` | longevityService.js | Production Ready |
 | `./src/services/marketingService.js` | marketingService.js | Production Ready |
 | `./src/services/pdfService.js` | pdfService.js | Production Ready |
