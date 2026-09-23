@@ -858,6 +858,134 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     ).rejects.toThrow('LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID');
   });
 
+  it('reads and freezes the exact D11 legal-practice workspace', async () => {
+    mockGet.mockResolvedValueOnce({ data: workspacePayload() });
+
+    const result = await getLegalPracticeWorkspace();
+
+    expect(mockGet).toHaveBeenCalledWith('/legal-operations/workspace');
+    expect(result.tenantId).toBe('tenant-law');
+    expect(result.visibility).toBe('LEGAL_PRACTICE_WORKSPACE');
+    expect(result.summary.instructions_total).toBe(2);
+    expect(result.instructions[1].state).toBe('ACCEPTED');
+    expect(result.executions[0].outcome).toBe('COMPLETED');
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.summary)).toBe(true);
+    expect(Object.isFrozen(result.instructions)).toBe(true);
+    expect(Object.isFrozen(result.instructions[0])).toBe(true);
+  });
+
+  it('rejects workspace summary, order, locator, and extra-field drift', () => {
+    const validate =
+      __legalOperationsServiceInternals.assertCanonicalLegalWorkspacePayload;
+
+    const summaryDrift = workspacePayload();
+    summaryDrift.summary.instructions_total = 99;
+    expect(() => validate(summaryDrift)).toThrow(
+      'LEGAL_OPERATIONS_WORKSPACE_SUMMARY_MISMATCH',
+    );
+
+    const unsorted = workspacePayload();
+    unsorted.instructions.reverse();
+    expect(() => validate(unsorted)).toThrow(
+      'LEGAL_OPERATIONS_WORKSPACE_RESPONSE_INVALID',
+    );
+
+    const badLocator = workspacePayload();
+    badLocator.attempts[0].evidence_identity = 'not-a-sha3';
+    expect(() => validate(badLocator)).toThrow(
+      'LEGAL_OPERATIONS_WORKSPACE_RESPONSE_INVALID',
+    );
+
+    expect(() => validate({
+      ...workspacePayload(),
+      client_name: 'forbidden',
+    })).toThrow('LEGAL_OPERATIONS_WORKSPACE_RESPONSE_INVALID');
+  });
+
+  it('performs exact finance evidence lookup with no browser tenant authority', async () => {
+    mockGet.mockResolvedValueOnce({ data: financeResponse() });
+
+    const result = await getLegalFinanceEvidence('INVOICE', 'invoice-1');
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/invoices/invoice-1',
+    );
+    expect(result).toEqual({
+      tenantId: 'tenant-law',
+      entityType: 'ClientInvoice',
+      entityIdentity: 'invoice-1',
+      visibility: 'FINANCE_VISIBLE',
+      data: financeResponse().data,
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.data)).toBe(true);
+  });
+
+  it('posts exact initial-intake facts and rejects browser authority fields', async () => {
+    mockPost.mockResolvedValueOnce({ data: intakeResponse() });
+
+    const input = intakeInput();
+    const result = await registerLegalIntake(input);
+
+    expect(mockPost).toHaveBeenCalledWith(
+      '/legal-operations/intake/registrations',
+      {
+        case_matter_id: input.caseMatterId,
+        matter_reference: input.matterReference,
+        case_opened_at: input.caseOpenedAt,
+        matter_evidence_reference: input.matterEvidenceReference,
+        instruction_id: input.instructionId,
+        instruction_registered_at: input.instructionRegisteredAt,
+        instruction_evidence_reference: input.instructionEvidenceReference,
+        document_id: input.documentId,
+        document_type: input.documentType,
+        document_registered_at: input.documentRegisteredAt,
+        document_registration_evidence_reference:
+          input.documentRegistrationEvidenceReference,
+        registration_custody_event_id: input.registrationCustodyEventId,
+      },
+    );
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('tenant_id');
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('principal_id');
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('role');
+    expect(result.disposition).toBe('CREATED');
+    expect(result.tenantId).toBe('tenant-law');
+    expect(Object.isFrozen(result.caseMatter)).toBe(true);
+  });
+
+  it('rejects malformed intake chronology before network transport', async () => {
+    const input = intakeInput();
+    input.caseOpenedAt = '2026-09-23T16:00:00+00:00';
+    input.instructionRegisteredAt = '2026-09-23T15:00:00+00:00';
+
+    await expect(registerLegalIntake(input)).rejects.toThrow(
+      'LEGAL_OPERATIONS_INTAKE_INPUT_INVALID',
+    );
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('generates ReturnOfService from exact server-issued execution evidence only', async () => {
+    mockPost.mockResolvedValueOnce({ data: returnResponse() });
+
+    const input = returnInput();
+    const result = await generateLegalReturnOfService(input);
+
+    expect(mockPost).toHaveBeenCalledWith(
+      '/legal-operations/executions/execution-1/return',
+      {
+        execution_evidence_identity: input.executionEvidenceIdentity,
+        return_id: input.returnId,
+        generated_at: input.generatedAt,
+      },
+    );
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('tenant_id');
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('service_outcome');
+    expect(result.returnId).toBe('return-1');
+    expect(result.serviceOutcome).toBe('COMPLETED');
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+
   it('keeps sheriff and deputy adapters distinct and non-financial', () => {
     const sheriff =
       __legalOperationsServiceInternals.assertCanonicalQueuePayload(payload());
@@ -893,16 +1021,16 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT',
+      'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT-CERT
- * AUTHORITY BOUNDARY: sheriff/deputy/client read and bound deputy field-command browser adapter certificate only
- * TENANT POSTURE: server client/tenant/deputy scope is authoritative; browser cannot create client or matter scope
+ * VERSION: v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT
+ * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command browser adapter certificate only
+ * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
