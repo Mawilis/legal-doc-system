@@ -1,14 +1,20 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT-CERT
+ * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
- * EPITOME: Certifies the unchanged sheriff queue adapter plus the L8-6C deputy
- *          personal active-work adapter, exact endpoint use, immutable
- *          adaptation, fail-closed shape/scope/state validation, and absence
- *          of browser-owned IAM, lifecycle, billing, AI, or financial truth.
+ * EPITOME: Certifies sheriff/deputy reads plus L8-6D field capabilities and
+ *          L8-6G bound-Deputy transition/outcome transport, exact endpoint/body
+ *          use, immutable adaptation, fail-closed scope/state/response validation,
+ *          and exclusion of browser-owned IAM, P5M lineage, provenance,
+ *          execution, billing, AI, payment, or settlement truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT-CERT adds exact deputy personal-work endpoint,
+ * CHANGELOG: 2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT certifies exact field-capability GET transport,
+ *            transition/outcome POST whitelists, rejection of sequence/provenance
+ *            authority fields before transport, response attempt/device/event
+ *            binding, terminal outcome binding, immutability, and production
+ *            v1.2.0 version alignment.
+ *            2026-09-23 v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT-CERT adds exact deputy personal-work endpoint,
  *            bound-deputy/tenant/state rejection, immutability, and production
  *            v1.1.0 binding while preserving sheriff queue assertions.
  *            2026-09-23 v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT-CERT certifies immutable queue-row objects and
@@ -17,21 +23,26 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockGet } = vi.hoisted(() => ({
+const { mockGet, mockPost } = vi.hoisted(() => ({
   mockGet: vi.fn(),
+  mockPost: vi.fn(),
 }));
 
 vi.mock('../../services/api.js', () => ({
   default: {
     get: mockGet,
+    post: mockPost,
   },
 }));
 
 import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
   __legalOperationsServiceInternals,
+  getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getSheriffOperationalQueues,
+  recordDeputyFieldOutcome,
+  transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 
 const payload = () => ({
@@ -77,7 +88,123 @@ const deputyPayload = () => ({
   ],
 });
 
-describe('L8-6C role-scoped Legal Operations client adapter', () => {
+
+const SHA3_A = 'a'.repeat(128);
+const SHA3_B = 'b'.repeat(128);
+const SHA3_C = 'c'.repeat(128);
+const OCCURRED_AT = '2026-09-23T16:00:00+00:00';
+const ACCEPTED_AT = '2026-09-23T16:00:01+00:00';
+
+const capabilityPayload = (state = 'ALLOCATED') => ({
+  tenant_id: 'tenant-deputy',
+  visibility: 'DEPUTY_FIELD_COMMAND_CAPABILITIES',
+  deputy_id: 'deputy-bound',
+  capabilities: [
+    {
+      tenant_id: 'tenant-deputy',
+      attempt_id: 'attempt-bound',
+      instruction_id: 'instruction-bound',
+      document_id: 'document-bound',
+      deputy_id: 'deputy-bound',
+      current_state: state,
+      current_evidence_identity: SHA3_A,
+      next_command_kinds:
+        state === 'ALLOCATED'
+          ? ['TRANSITION_TO_ATTEMPTED']
+          : [
+            'RECORD_COMPLETED_OUTCOME',
+            'RECORD_NOT_COMPLETED_OUTCOME',
+          ],
+    },
+  ],
+});
+
+const fieldReceipt = ({
+  eventId = 'event-mobile-1',
+  sequenceNumber = 1,
+  evidenceFingerprint = SHA3_B,
+} = {}) => ({
+  tenant_id: 'tenant-deputy',
+  receipt_id: 'receipt-mobile-1',
+  event_id: eventId,
+  device_id: 'device-mobile-1',
+  sequence_number: sequenceNumber,
+  attempt_id: 'attempt-bound',
+  instruction_id: 'instruction-bound',
+  document_id: 'document-bound',
+  deputy_id: 'deputy-bound',
+  district_id: 'district-1',
+  sheriff_office_id: 'office-1',
+  evidence_reference: 'photo:attempt-bound',
+  evidence_fingerprint: evidenceFingerprint,
+  command_fingerprint: SHA3_C,
+  accepted_at: ACCEPTED_AT,
+  evidence_identity: SHA3_A,
+});
+
+const attemptedResponse = () => ({
+  data: {
+    schema: 'WILSY-LEGAL-OPERATIONS-LIFECYCLE',
+    version: 'v1',
+    entity_type: 'ServiceAttempt',
+    tenant_id: 'tenant-deputy',
+    attempt_id: 'attempt-bound',
+    instruction_id: 'instruction-bound',
+    document_id: 'document-bound',
+    deputy_id: 'deputy-bound',
+    allocated_at: '2026-09-23T15:00:00+00:00',
+    allocation_evidence_reference: 'allocation-proof',
+    state: 'ATTEMPTED',
+    transition_history: [
+      {
+        prior_state: 'ALLOCATED',
+        resulting_state: 'ATTEMPTED',
+        occurred_at: OCCURRED_AT,
+        evidence_reference: 'photo:attempt-bound',
+        evidence_fingerprint: null,
+      },
+    ],
+  },
+  field_evidence: fieldReceipt(),
+});
+
+const executionResponse = () => ({
+  data: {
+    schema: 'WILSY-LEGAL-OPERATIONS-LIFECYCLE',
+    version: 'v1',
+    entity_type: 'ServiceExecution',
+    tenant_id: 'tenant-deputy',
+    service_execution_id: SHA3_C,
+    attempt_id: 'attempt-bound',
+    instruction_id: 'instruction-bound',
+    document_id: 'document-bound',
+    outcome: 'COMPLETED',
+    executed_at: OCCURRED_AT,
+    evidence_reference: 'photo:attempt-bound',
+    evidence_fingerprint: SHA3_B,
+  },
+  field_evidence: fieldReceipt({
+    eventId: 'event-mobile-2',
+    sequenceNumber: 2,
+  }),
+});
+
+const transitionInput = () => ({
+  attemptId: 'attempt-bound',
+  currentEvidenceIdentity: SHA3_A,
+  deviceId: 'device-mobile-1',
+  eventId: 'event-mobile-1',
+  occurredAt: OCCURRED_AT,
+  observationReference: 'photo:attempt-bound',
+});
+
+const outcomeInput = () => ({
+  ...transitionInput(),
+  eventId: 'event-mobile-2',
+  outcome: 'COMPLETED',
+});
+
+describe('L8-6H role-scoped Legal Operations client adapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -220,6 +347,154 @@ describe('L8-6C role-scoped Legal Operations client adapter', () => {
     );
   });
 
+  it('reads exact deputy field capabilities and preserves state-command mapping', async () => {
+    mockGet.mockResolvedValueOnce({ data: capabilityPayload('ALLOCATED') });
+
+    const result = await getDeputyFieldCapabilities();
+
+    expect(mockGet).toHaveBeenCalledTimes(1);
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/deputy/field-capabilities',
+    );
+    expect(result).toEqual({
+      tenantId: 'tenant-deputy',
+      visibility: 'DEPUTY_FIELD_COMMAND_CAPABILITIES',
+      deputyId: 'deputy-bound',
+      capabilities: [
+        {
+          tenantId: 'tenant-deputy',
+          attemptId: 'attempt-bound',
+          instructionId: 'instruction-bound',
+          documentId: 'document-bound',
+          deputyId: 'deputy-bound',
+          currentState: 'ALLOCATED',
+          currentEvidenceIdentity: SHA3_A,
+          nextCommandKinds: ['TRANSITION_TO_ATTEMPTED'],
+        },
+      ],
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.capabilities)).toBe(true);
+    expect(Object.isFrozen(result.capabilities[0])).toBe(true);
+    expect(Object.isFrozen(result.capabilities[0].nextCommandKinds)).toBe(true);
+  });
+
+  it('rejects capability scope, locator, and state-command drift', () => {
+    const validate =
+      __legalOperationsServiceInternals
+        .assertCanonicalDeputyFieldCapabilitiesPayload;
+
+    const crossDeputy = capabilityPayload();
+    crossDeputy.capabilities[0].deputy_id = 'deputy-other';
+    expect(() => validate(crossDeputy)).toThrow(
+      'LEGAL_OPERATIONS_DEPUTY_CAPABILITY_SCOPE_INVALID',
+    );
+
+    const badLocator = capabilityPayload();
+    badLocator.capabilities[0].current_evidence_identity = 'not-a-sha3';
+    expect(() => validate(badLocator)).toThrow(
+      'LEGAL_OPERATIONS_DEPUTY_CAPABILITY_SCOPE_INVALID',
+    );
+
+    const wrongCommand = capabilityPayload('ALLOCATED');
+    wrongCommand.capabilities[0].next_command_kinds = [
+      'RECORD_COMPLETED_OUTCOME',
+    ];
+    expect(() => validate(wrongCommand)).toThrow(
+      'LEGAL_OPERATIONS_DEPUTY_CAPABILITY_SCOPE_INVALID',
+    );
+  });
+
+  it('posts begin-attempt observation without browser authority or sequence lineage', async () => {
+    mockPost.mockResolvedValueOnce({ data: attemptedResponse() });
+
+    const result = await transitionDeputyFieldAttempt(transitionInput());
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(mockPost).toHaveBeenCalledWith(
+      '/legal-operations/deputy/attempts/attempt-bound/transition',
+      {
+        current_evidence_identity: SHA3_A,
+        device_id: 'device-mobile-1',
+        event_id: 'event-mobile-1',
+        occurred_at: OCCURRED_AT,
+        observation_reference: 'photo:attempt-bound',
+      },
+    );
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('tenant_id');
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('deputy_id');
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('sequence_number');
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty(
+      'previous_event_fingerprint',
+    );
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty(
+      'evidence_fingerprint',
+    );
+    expect(result.data.state).toBe('ATTEMPTED');
+    expect(result.fieldEvidence.sequence_number).toBe(1);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.data)).toBe(true);
+    expect(Object.isFrozen(result.fieldEvidence)).toBe(true);
+  });
+
+  it('posts terminal observation and validates canonical execution evidence', async () => {
+    mockPost.mockResolvedValueOnce({ data: executionResponse() });
+
+    const result = await recordDeputyFieldOutcome(outcomeInput());
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(mockPost).toHaveBeenCalledWith(
+      '/legal-operations/deputy/attempts/attempt-bound/outcome',
+      {
+        current_evidence_identity: SHA3_A,
+        device_id: 'device-mobile-1',
+        event_id: 'event-mobile-2',
+        occurred_at: OCCURRED_AT,
+        observation_reference: 'photo:attempt-bound',
+        outcome: 'COMPLETED',
+      },
+    );
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty(
+      'service_execution_id',
+    );
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('executed_at');
+    expect(result.data.entity_type).toBe('ServiceExecution');
+    expect(result.data.outcome).toBe('COMPLETED');
+    expect(result.data.evidence_fingerprint).toBe(
+      result.fieldEvidence.evidence_fingerprint,
+    );
+  });
+
+  it('rejects browser lineage/authority fields before command transport', async () => {
+    for (const forbidden of [
+      { sequenceNumber: 1 },
+      { previousEventFingerprint: SHA3_A },
+      { evidenceFingerprint: SHA3_A },
+      { receiptId: 'receipt-browser' },
+      { tenantId: 'tenant-browser' },
+      { deputyId: 'deputy-browser' },
+      { serviceExecutionId: 'execution-browser' },
+    ]) {
+      await expect(
+        transitionDeputyFieldAttempt({
+          ...transitionInput(),
+          ...forbidden,
+        }),
+      ).rejects.toThrow('LEGAL_OPERATIONS_FIELD_COMMAND_INPUT_INVALID');
+    }
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('rejects mismatched command response scope instead of presenting success', async () => {
+    const response = attemptedResponse();
+    response.field_evidence.event_id = 'event-other';
+    mockPost.mockResolvedValueOnce({ data: response });
+
+    await expect(
+      transitionDeputyFieldAttempt(transitionInput()),
+    ).rejects.toThrow('LEGAL_OPERATIONS_FIELD_COMMAND_RESPONSE_INVALID');
+  });
+
   it('keeps sheriff and deputy adapters distinct and non-financial', () => {
     const sheriff =
       __legalOperationsServiceInternals.assertCanonicalQueuePayload(payload());
@@ -255,17 +530,17 @@ describe('L8-6C role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT',
+      'v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v1.1.0-L8-6C-ROLE-SCOPED-LEGAL-OPERATIONS-CLIENT-CERT
- * AUTHORITY BOUNDARY: sheriff/deputy client adapter contract certificate only
+ * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT-CERT
+ * AUTHORITY BOUNDARY: sheriff/deputy read and bound field-command client adapter certificate only
  * TENANT POSTURE: cross-tenant and cross-deputy rows reject before presentation
- * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state drift rejects without mock fallback
+ * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/command-response drift rejects before presentation or transport success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
