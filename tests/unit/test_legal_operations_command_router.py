@@ -1,7 +1,7 @@
 """Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
+VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
 EPITOME: Proves authenticated intake/directory/field-service command input
          boundaries, one-orchestrator dispatch, transaction ownership, path
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: L8-2 command certificate; canonical intake,
                             directory, lifecycle, persistence, and field-service
                             orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT adds
+CHANGELOG: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT binds the
+           direct command certificate to production v1.2.1, preserving the
+           exact intake/directory/field-service runtime contract while the
+           transport uses the current non-deprecated HTTP 422 status alias.
+           v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT added
            direct proof for the authenticated intake registration route:
            server-derived tenant scope, forbidden tenant_id in the body, exact
            one-L8-2 dispatch, API-owned commit/abort behavior, and structured
@@ -633,7 +637,7 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
+# VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: direct intake/directory/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
