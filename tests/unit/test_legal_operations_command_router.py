@@ -1,7 +1,7 @@
 """Direct certificate for the L7B Legal Operations field-service command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
+VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
 EPITOME: Proves authenticated directory/field-service command input
          boundaries, one-orchestrator dispatch, transaction ownership, path
@@ -11,7 +11,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: L7B certificate; domain and orchestrator contracts
                             are read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT adds
+CHANGELOG: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT adds
+           direct proof that structured L8-1 missing-parent failures survive
+           the transaction boundary, abort exactly once, and project as 404.
+           v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT added
            District/SheriffOffice/Deputy route, body-authority, exact tenant,
            L8-1 dispatch, and transaction evidence while retaining the L7B
            field-service command regression contract.
@@ -253,6 +256,40 @@ def test_directory_commands_use_authorized_tenant_one_l8_1_orchestrator_and_comm
     ]
 
 
+def test_directory_parent_absence_survives_transaction_and_maps_to_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Structured L8-1 absence aborts and remains bounded HTTP not-found."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    def fail(**_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceDirectoryProvisioningError(
+            "L8_1_DISTRICT_NOT_FOUND"
+        )
+
+    monkeypatch.setattr(command_api, "provision_sheriff_office", fail)
+    command = command_api.SheriffOfficeProvisioningCommand(
+        sheriff_office_id="office-l8-1",
+        district_id="district-missing",
+        name="Central Office",
+        evidence_reference="office-source",
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.provision_sheriff_office_command(
+                command,
+                context(),
+            )
+        )
+
+    assert error.value.status_code == 404
+    assert error.value.detail == "LEGAL_OPERATION_NOT_FOUND"
+    assert client.session.events == ["start", "abort", "end"]
+
+
 def test_attempt_create_uses_one_orchestrator_and_commits(monkeypatch: pytest.MonkeyPatch) -> None:
     client, database = Client(), Database()
     seen: list[tuple[str, object]] = []
@@ -428,7 +465,7 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
+# VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: direct directory/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
