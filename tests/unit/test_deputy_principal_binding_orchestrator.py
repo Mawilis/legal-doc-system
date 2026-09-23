@@ -1,7 +1,7 @@
 """Direct certificate for current-authority deputy-principal binding.
 
 TITLE: WILSY OS Deputy Principal Binding Orchestration Certificate
-VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
 AUTHORITY: Direct adversarial certification of L8-6B authority composition.
 EPITOME: Prove one active transaction and five independent current authorities
          are required before immutable binding persistence: principal,
@@ -12,7 +12,10 @@ COLLABORATION / OWNERSHIP: Certificate for the L8-6B orchestrator; underlying
                             IAM, P1/P2/L8-5, binding value and registry remain
                             independent canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+           clears setup lifecycle observations before the missing-DEPUTY-role
+           assertion so the certificate proves denial before new lifecycle read.
+           2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
            establishes success/replay, transaction, principal/membership/role,
            Deputy scope/evidence, conflict, session propagation, and
            non-authorizing-result proofs.
@@ -70,7 +73,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
+VERSION = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
 NOW = datetime(2026, 9, 23, 16, 30, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-1"
@@ -339,6 +342,7 @@ def test_missing_deputy_and_foreign_deputy_are_exact_absence() -> None:
 def test_missing_deputy_role_assignment_rejects_before_lifecycle_read() -> None:
     stores = _collections()
     _seed(stores, include_role=False)
+    stores["lifecycle"].calls.clear()
     session = FakeSession(True)
 
     _expect(
@@ -346,7 +350,7 @@ def test_missing_deputy_role_assignment_rejects_before_lifecycle_read() -> None:
         lambda: _bind(stores, session),
     )
     assert stores["binding"].docs == []
-    assert stores["lifecycle"].calls
+    assert stores["lifecycle"].calls == []
 
 
 def test_existing_different_binding_conflict_preserves_first_identity() -> None:
@@ -409,12 +413,12 @@ def test_result_is_identity_evidence_not_authorization_or_financial_truth() -> N
         "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION"
     )
     assert VERSION == (
-        "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
+        "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
     )
 
 
 # ARTIFACT: test_deputy_principal_binding_orchestrator.py
-# VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
 # AUTHORITY BOUNDARY: direct five-authority binding composition certificate only
 # TENANT POSTURE: exact same tenant/session across IAM, Deputy, and binding evidence
 # FAIL-CLOSED POSTURE: inactive/missing/wrong authority, absence, conflict, or transaction drift rejects
