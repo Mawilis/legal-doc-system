@@ -405,9 +405,11 @@ describe('L8-6I governed deputy Legal Operations cockpit', () => {
       ),
       { target: { value: 'photo:conflicting-event' } },
     );
-    fireEvent.click(screen.getByRole('button', {
+    const complete = screen.getByRole('button', {
       name: 'Record completed outcome',
-    }));
+    });
+    await waitFor(() => expect(complete).toBeEnabled());
+    fireEvent.click(complete);
 
     expect(
       await screen.findByText('Field command not confirmed'),
