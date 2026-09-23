@@ -1,16 +1,36 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FOUNDER COMMAND CENTER [V60.2.0-TMS-RAIL-ACCESS]                                                                   ║
- * ║ [STRICT ISOLATION MANDATE] ONLY FOUNDER MODULES RENDER INSIDE. ALL OTHERS REDIRECT TO STANDALONE FULL-VIEW.                            ║
- * ║ TOP 0.01% PRODUCTION ARCHITECTURE | MACHINE-GRADE PERFORMANCE | ZERO-LOSS ROUTING | REAL-TIME KENNEL TELEMETRY                        ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 60.2.0-TMS-RAIL-ACCESS | PRODUCTION READY                                                                               ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/FounderDashboard.jsx                           ║
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                               ║
- * ║ • Wilson Khanyezi (Founder/CEO) – Mandated Tenant Management System (TMS) elevation to Quick Access Left Rail.                       ║
- * ║ • AI Engineering (Certified v60.2.0) – Surgically appended `TENANT_MANAGER` to the `SIDEBAR_SHORTCUTS` array.                          ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * WILSY OS — Founder Command Center
+ *
+ * TITLE: WILSY OS Founder Command Center
+ * VERSION: v60.2.1-LEGAL-DASHBOARD-DEDUPE
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Preserve strict Founder command isolation while removing the stale
+ *          legacy LegalDashboard lazy reference so every Founder Legal route
+ *          converges on the canonical standalone LEGAL workspace resolved by
+ *          DashboardRegistry and client dashboard constants.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/FounderDashboard.jsx
+ * COLLABORATION / OWNERSHIP: Founder command/navigation composition only. The
+ *                            canonical Legal Operations client surface remains
+ *                            client/src/components/industry/LegalDashboard.jsx.
+ * CERTIFICATION / UPDATE DATE: 2026-09-23
+ * CHANGELOG: 2026-09-23 v60.2.1-LEGAL-DASHBOARD-DEDUPE removes the unused
+ *            ../legal/LegalDashboard lazy declaration. LEGAL_DASHBOARD already
+ *            redirects to /legal and the canonical dashboard registry resolves
+ *            that workspace to ../components/industry/LegalDashboard. No Founder
+ *            command, tenant, financial, or Legal Operations authority changes.
+ *            Prior v60.2.0-TMS-RAIL-ACCESS behavior is otherwise preserved.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Navigation composition only; no new data,
+ *                             credentials, PII, or authority-bearing payloads.
+ * TENANT BOUNDARY: Existing authenticated active-tenant context is preserved;
+ *                  this deduplication creates no tenant fallback or inference.
+ * AUTHORITY BOUNDARY: Founder navigation/command presentation only. Legal
+ *                     business truth remains Python EOS sovereign authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement authority;
+ *                               Kennel EOS remains exclusive.
+ * FAIL-CLOSED DECLARATION: Non-Founder dashboards remain standalone redirects;
+ *                          no legacy Legal component fallback is retained.
  */
 
 import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef, Component, memo } from 'react';
@@ -253,7 +273,6 @@ const SalesDashboard = React.lazy(() => import('../sales/SalesDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const COODashboard = React.lazy(() => import('../coo/COODashboard'));
 const FinanceDashboard = React.lazy(() => import('../finance/FinanceDashboard'));
-const LegalDashboard = React.lazy(() => import('../legal/LegalDashboard'));
 const MarketingDashboard = React.lazy(() => import('../marketing/MarketingDashboard'));
 const ProductDashboard = React.lazy(() => import('../product/ProductDashboard'));
 const EngineeringDashboard = React.lazy(() => import('../engineering/EngineeringDashboard'));
@@ -1607,3 +1626,14 @@ const getModuleIcon = (key) => {
 
 FounderDashboard.displayName = 'FounderDashboard';
 export default FounderDashboard;
+
+/**
+ * SOVEREIGN ARTIFACT SEAL
+ * ARTIFACT: FounderDashboard.jsx
+ * VERSION: v60.2.1-LEGAL-DASHBOARD-DEDUPE
+ * AUTHORITY BOUNDARY: Founder command/navigation composition only; canonical Legal Operations truth remains Python EOS-owned
+ * TENANT POSTURE: Existing authenticated active-tenant scope preserved; no fallback or cross-tenant inference introduced
+ * FAIL-CLOSED POSTURE: All non-Founder dashboards remain standalone workspace redirects; no legacy Legal dashboard fallback
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
