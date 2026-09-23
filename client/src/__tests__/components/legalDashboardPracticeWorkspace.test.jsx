@@ -263,7 +263,7 @@ describe('D14 production Legal Operations workspace', () => {
     expect(screen.getByText('Certified service executions')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Returns of Service' }));
-    expect(screen.getByText('Returns of Service')).toBeInTheDocument();
+    expect(screen.getAllByText('Returns of Service').length).toBeGreaterThan(1);
 
     expect(getLegalPracticeWorkspace).toHaveBeenCalledTimes(1);
   });
