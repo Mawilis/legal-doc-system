@@ -1,7 +1,7 @@
 """Direct certificate for current-authority deputy-principal binding.
 
 TITLE: WILSY OS Deputy Principal Binding Orchestration Certificate
-VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
 AUTHORITY: Direct adversarial certification of L8-6B authority composition.
 EPITOME: Prove one active transaction and five independent current authorities
          are required before immutable binding persistence: principal,
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: Certificate for the L8-6B orchestrator; underlying
                             IAM, P1/P2/L8-5, binding value and registry remain
                             independent canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+CHANGELOG: 2026-09-23 v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+           marks the four intentional FakeCollection-to-PyMongo repository
+           seams as Any for static analysis; fake runtime behavior, authority
+           ordering, session propagation, and denial assertions are unchanged.
+           2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
            replaces an untyped dict[str, object] kwargs splat in the
            parametrized IAM-denial certificate with explicit typed _seed calls;
            runtime denial semantics and assertions are unchanged.
@@ -37,7 +41,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from pymongo.errors import DuplicateKeyError
@@ -77,7 +81,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
+VERSION = "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
 NOW = datetime(2026, 9, 23, 16, 30, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-1"
@@ -178,7 +182,7 @@ def _seed(
 ) -> None:
     PrincipalAuthorityRepository.create(
         PrincipalAuthority(PRINCIPAL, principal_status, 0),
-        stores["principal"],
+        cast(Any, stores["principal"]),
     )
     TenantMembershipRepository.insert(
         TenantMembershipAuthority(
@@ -187,7 +191,7 @@ def _seed(
             membership_status,
             0,
         ),
-        stores["membership"],
+        cast(Any, stores["membership"]),
     )
     TenantBusinessRoleRepository.insert(
         TenantBusinessRoleAuthority(
@@ -199,7 +203,7 @@ def _seed(
             NOW,
             None,
         ),
-        stores["business"],
+        cast(Any, stores["business"]),
     )
     if include_role:
         RoleAssignmentRepository.insert(
@@ -210,7 +214,7 @@ def _seed(
                 role_status,
                 0,
             ),
-            stores["role"],
+            cast(Any, stores["role"]),
         )
     if include_deputy:
         LegalOperationsLifecycleRegistry.create(
@@ -417,12 +421,12 @@ def test_result_is_identity_evidence_not_authorization_or_financial_truth() -> N
         "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION"
     )
     assert VERSION == (
-        "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
+        "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
     )
 
 
 # ARTIFACT: test_deputy_principal_binding_orchestrator.py
-# VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+# VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
 # AUTHORITY BOUNDARY: direct five-authority binding composition certificate only
 # TENANT POSTURE: exact same tenant/session across IAM, Deputy, and binding evidence
 # FAIL-CLOSED POSTURE: inactive/missing/wrong authority, absence, conflict, or transaction drift rejects
