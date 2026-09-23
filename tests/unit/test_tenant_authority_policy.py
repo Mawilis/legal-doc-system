@@ -446,7 +446,7 @@ def test_policy_facts_cannot_be_mutated() -> None:
 # ARTIFACT: test_tenant_authority_policy.py
 # VERSION: v1.17.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
-# TENANT POSTURE: directory/receipt and other tenant eligibility remains policy-only; no membership or tenant authority is granted
+# TENANT POSTURE: client-visibility and all other tenant eligibility remain policy-only; membership, assignment, permission and tenant authority stay separate
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
