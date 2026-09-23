@@ -1,7 +1,7 @@
 """Direct certificate for deterministic Legal Operations entity read models.
 
 TITLE: WILSY OS Legal Operations Current and History Read Model Certificate
-VERSION: v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
+VERSION: v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
 AUTHORITY: Direct adversarial certification of L8-5 entity read-model composition.
 EPITOME: Prove exact current-plus-history composition, deterministic tenant/type
          listing, full-history current selection, fork rejection, tenant
@@ -15,7 +15,10 @@ COLLABORATION / OWNERSHIP: Certificate for legal_operations_read_model.py only;
                             HTTP/IAM, client policy, and Intelligence remain
                             separate bounded gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
+           corrects the CaseMatter test description to preserve its canonical
+           OPEN/CLOSED lifecycle semantics; runtime assertions are unchanged.
+           2026-09-23 v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
            establishes direct evidence for exact entity current/history, tenant
            entity-class grouping, deterministic ordering, foreign absence,
            unsupported type rejection, divergent history rejection, caller
@@ -61,7 +64,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT"
+VERSION = "v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT"
 NOW = datetime(2026, 9, 23, 10, 30, tzinfo=timezone.utc)
 TENANT = "tenant-l8-5"
 FOREIGN = "tenant-l8-5-foreign"
@@ -221,8 +224,8 @@ def test_tenant_entity_models_group_complete_histories_and_sort_identity() -> No
     assert all(model.tenant_id == TENANT for model in models)
 
 
-def test_immutable_entities_are_composed_without_invented_lifecycle() -> None:
-    """Static CaseMatter identity uses canonical current projection only."""
+def test_registered_matter_is_composed_without_invented_transition() -> None:
+    """An OPEN CaseMatter remains OPEN until canonical close evidence exists."""
     collection = FakeCollection()
     matter = CaseMatter(
         tenant_id=TENANT,
@@ -392,12 +395,12 @@ def test_versions_are_bound_to_l8_5_entity_read_model_release() -> None:
         "v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL"
     )
     assert VERSION == (
-        "v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT"
+        "v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT"
     )
 
 
 # ARTIFACT: test_legal_operations_read_model.py
-# VERSION: v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
+# VERSION: v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-CERT
 # AUTHORITY BOUNDARY: direct L8-5 current-plus-history read-model certificate only
 # TENANT POSTURE: exact synthetic tenant/type/identity scope with foreign absence
 # FAIL-CLOSED POSTURE: unsupported/absent/corrupt/forked/ambiguous evidence rejects
