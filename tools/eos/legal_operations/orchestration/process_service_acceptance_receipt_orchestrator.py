@@ -1,7 +1,7 @@
 """Canonical instruction acceptance and office-receipt orchestration.
 
 TITLE: WILSY OS Process Service Acceptance and Receipt Orchestrator
-VERSION: v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+VERSION: v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
 AUTHORITY: Wilsy OS Legal Operations instruction-acceptance and office-receipt composition.
 EPITOME: Advance one tenant-scoped registered LegalInstruction to ACCEPTED,
          one linked ProcessDocument to RECEIVED, and append one sequence-two
@@ -16,7 +16,10 @@ COLLABORATION / OWNERSHIP: P1 owns lifecycle/custody value semantics; P2 owns
                             owns only acceptance plus physical office receipt.
                             HTTP/IAM admission remains a separate boundary.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+CHANGELOG: 2026-09-23 v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+           fail-closes malformed or naive accepted/received timestamps through
+           a stable L8-3 error before chronology comparison or database writes.
+           2026-09-23 v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
            establishes transaction-required LegalInstruction ACCEPTED,
            ProcessDocument RECEIVED, and DocumentCustodyEvent
            RECEIVED_IN_OFFICE composition with canonical SheriffOffice binding,
@@ -77,7 +80,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
+VERSION: Final[str] = "v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
 
 
 class ProcessServiceAcceptanceReceiptDisposition(StrEnum):
@@ -319,6 +322,17 @@ def _custody_chain(
         _fail("L8_3_CUSTODY_HISTORY_DIVERGENT", error)
 
 
+def _timestamp(name: str, value: object) -> datetime:
+    """Require an aware timestamp and convert malformed input to stable L8-3 failure."""
+    if (
+        not isinstance(value, datetime)
+        or value.tzinfo is None
+        or value.utcoffset() is None
+    ):
+        _fail(f"L8_3_{name.upper()}_INVALID")
+    return value
+
+
 def _construct_expected(
     initial_instruction: LegalInstruction,
     initial_document: ProcessDocument,
@@ -332,25 +346,27 @@ def _construct_expected(
     receipt_custody_event_id: str,
 ) -> tuple[LegalInstruction, ProcessDocument, DocumentCustodyEvent]:
     """Derive the exact P1 acceptance and office-receipt facts from registrations."""
-    if accepted_at > received_at:
+    acceptance_time = _timestamp("accepted_at", accepted_at)
+    receipt_time = _timestamp("received_at", received_at)
+    if acceptance_time > receipt_time:
         _fail("L8_3_ACCEPTANCE_RECEIPT_CHRONOLOGY_INVALID")
     try:
         accepted_instruction = initial_instruction.transition_to(
             LegalInstructionState.ACCEPTED,
             evidence_reference=acceptance_evidence_reference,
-            occurred_at=accepted_at,
+            occurred_at=acceptance_time,
         )
         received_document = initial_document.transition_to(
             ProcessDocumentState.RECEIVED,
             evidence_reference=receipt_evidence_reference,
-            occurred_at=received_at,
+            occurred_at=receipt_time,
         )
         receipt_event = DocumentCustodyEvent(
             tenant_id=initial_document.tenant_id,
             custody_event_id=receipt_custody_event_id,
             document_id=initial_document.document_id,
             event_type=DocumentCustodyEventType.RECEIVED_IN_OFFICE,
-            occurred_at=received_at,
+            occurred_at=receipt_time,
             sequence_number=2,
             evidence_reference=receipt_evidence_reference,
             from_holder_reference=registration_event.to_holder_reference,
@@ -634,7 +650,7 @@ __all__ = [
 
 
 # ARTIFACT: process_service_acceptance_receipt_orchestrator.py
-# VERSION: v1.0.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+# VERSION: v1.0.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
 # AUTHORITY BOUNDARY: instruction acceptance and physical office receipt only
 # TENANT POSTURE: exact tenant histories, exact instruction/document lineage, canonical SheriffOffice destination
 # FAIL-CLOSED POSTURE: active transaction, complete history, chronology, exact replay, custody integrity, and non-healing divergence are mandatory
