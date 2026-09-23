@@ -1,15 +1,20 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
+VERSION: v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Mounts sovereign Python API routers, including authenticated PayShap
-         evidence ingress and the C1B authenticated reasoning command with a
-         server-owned production provider binding.
+EPITOME: Mount sovereign Python API authorities and explicitly bootstrap the
+         durable L8-6B deputy-principal binding uniqueness indexes after
+         database connection, without creating identity bindings or extending
+         Legal Operations/IAM/financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.15.0-C1C-R1B-GOVERNED-LEGAL-ORCHESTRATION composes the durable
+CHANGELOG: 2026-09-23 v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP bootstraps the
+L8-6B deputy-principal binding registry indexes after successful database
+connection so one-to-one tenant/principal and tenant/deputy uniqueness exists
+before any binding command; startup creates no binding or authorization truth.
+v1.15.0-C1C-R1B-GOVERNED-LEGAL-ORCHESTRATION composes the durable
 C1C root registry and fail-closed canonical evidence/accounting seam.
 v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE mounts the authenticated,
 server-owned versioned legal-document and append-only acceptance authority.
@@ -96,8 +101,12 @@ from tools.eos.saas.billing.wilsy_ai_usage_capacity_orchestrator import WilsyAIU
 from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import COLLECTION as OBSERVATION_COLLECTION, WilsyAIUsageObservationRegistry
 from tools.eos.saas.domain.wilsy_ai_usage_observation import WilsyAIUsageObservation
 from tools.eos.intelligence.registry.ai_tool_orchestration_registry import AIToolOrchestrationRegistry, COLLECTION as C1C_ORCHESTRATION_COLLECTION, ensure_indexes as ensure_c1c_indexes
+from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
+    COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
+    DeputyPrincipalBindingRegistry,
+)
 
-VERSION = "v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE"
+VERSION = "v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -310,6 +319,10 @@ class WilsyAPIServer:
                 return
             provider = self.reasoning_provider_binding
             database, client = get_database(), get_client()
+            if database is not None:
+                DeputyPrincipalBindingRegistry.ensure_indexes(
+                    database[DEPUTY_PRINCIPAL_BINDING_COLLECTION]
+                )
             if provider is not None and database is not None and client is not None:
                 ensure_c1c_indexes(database[C1C_ORCHESTRATION_COLLECTION])
                 app.state.wilsy_ai_legal_services_orchestrator = WilsyAIToolOrchestrator(
@@ -409,7 +422,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
+# VERSION: v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
