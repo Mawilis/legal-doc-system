@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS
+VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -12,6 +12,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS grants
+    legal_operations:deputy_queue:read only to DEPUTY for binding-scoped
+    personal active-work projection. SHERIFF retains the distinct tenant-wide
+    legal_operations:queue:read permission and receives no deputy-personal
+    impersonation capability.
     2026-09-23 v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS grants
     legal_operations:queue:read only to SHERIFF for own-tenant certified
     operational-queue projection; DEPUTY and every other role remain excluded.
@@ -91,7 +96,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS"
+VERSION = "v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -187,6 +192,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:return:read",
     ],
     "DEPUTY": [
+        "legal_operations:deputy_queue:read",
         "legal_operations:attempt:read",
         "legal_operations:attempt:write",
         "legal_operations:return:read",
@@ -294,7 +300,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS
+# VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; directory provisioning remains own-tenant and SHERIFF-grant scoped
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
