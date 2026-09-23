@@ -1,7 +1,7 @@
 """Host-backed certificate for Legal Operations entity read models.
 
 TITLE: WILSY OS Legal Operations Entity Read Model Real-Mongo Certificate
-VERSION: v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
+VERSION: v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
 AUTHORITY: Host-backed certification of L8-5 deterministic current/history read models.
 EPITOME: Prove exact tenant/entity current-plus-history composition, tenant-wide
          entity listing, deterministic identity ordering, fork rejection,
@@ -14,7 +14,10 @@ COLLABORATION / OWNERSHIP: P1 owns lifecycle values; P2 owns persistence and
                             HTTP/IAM, queues, search, client policy, and
                             Intelligence remain separate bounded gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
+           corrects the CaseMatter certificate wording to preserve canonical
+           OPEN/CLOSED lifecycle semantics; runtime assertions are unchanged.
+           2026-09-23 v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
            establishes real-Mongo evidence for complete exact history,
            deterministic current selection, multiple-entity listing,
            foreign-tenant absence, history-fork rejection, caller-session
@@ -67,7 +70,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT"
+VERSION = "v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -252,10 +255,10 @@ def test_real_mongo_history_fork_rejects_without_arbitrary_current(
     assert caught.value.code == "L8_5_CURRENT_PROJECTION_INVALID"
 
 
-def test_real_mongo_static_matter_projection_and_financial_boundary(
+def test_real_mongo_open_matter_projection_and_financial_boundary(
     mongo_context: dict[str, Any],
 ) -> None:
-    """Static matter read remains canonical and contains no financial authority."""
+    """OPEN matter read stays canonical and contains no financial authority."""
     lifecycle = mongo_context["lifecycle"]
     tenant = f"tenant-{uuid.uuid4().hex}"
     matter = CaseMatter(
@@ -288,12 +291,12 @@ def test_real_mongo_static_matter_projection_and_financial_boundary(
         "v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL"
     )
     assert VERSION == (
-        "v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT"
+        "v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT"
     )
 
 
 # ARTIFACT: test_legal_operations_read_model_real_mongo.py
-# VERSION: v1.0.0-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
+# VERSION: v1.0.1-L8-5-LEGAL-OPERATIONS-ENTITY-READ-MODEL-RM-CERT
 # AUTHORITY BOUNDARY: host-backed L8-5 current-plus-history read-model certificate only
 # TENANT POSTURE: exact UUID-isolated tenant/type/identity scope with foreign absence
 # FAIL-CLOSED POSTURE: runtime/corruption/fork/ambiguity/financial leakage fails
