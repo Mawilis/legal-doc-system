@@ -1,6 +1,6 @@
 /**
  * WILSY OS — CERTIFIED SHERIFF COCKPIT MIGRATION CERTIFICATE
- * VERSION: v1.0.0-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT
+ * VERSION: v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves the registered LegalDashboard consumes the certified queue
  *          adapter, renders only backend-provided queue truth, fails closed on
@@ -8,6 +8,9 @@
  *          metrics, clients, GPS, revenue, invoice, or deputy fixture truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
+ * CHANGELOG: 2026-09-23 v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT rebinds the component certificate to the
+ *            immutable-row client adapter and corrects duplicate-label
+ *            assertions to match the intentional metric + queue-panel UI.
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,7 +24,7 @@ const { getSheriffOperationalQueues } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT',
   getSheriffOperationalQueues,
 }));
 
@@ -86,10 +89,10 @@ describe('L8-6A certified sheriff cockpit migration', () => {
     expect(screen.getByText('document-received')).toBeInTheDocument();
     expect(screen.getByText('attempt-active')).toBeInTheDocument();
     expect(screen.getByText('deputy-canonical')).toBeInTheDocument();
-    expect(screen.getByText('tenant-sheriff')).toBeInTheDocument();
+    expect(screen.getByText(/Tenant: tenant-sheriff/i)).toBeInTheDocument();
 
-    expect(screen.getByText('Office receipt')).toBeInTheDocument();
-    expect(screen.getByText('Deputy assignment')).toBeInTheDocument();
+    expect(screen.getAllByText('Office receipt').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Deputy assignment').length).toBeGreaterThan(0);
     expect(screen.getByText('Active service attempts')).toBeInTheDocument();
     expect(
       screen.getByText(/No mock legal truth/i),
@@ -172,7 +175,7 @@ describe('L8-6A certified sheriff cockpit migration', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v1.0.0-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT
+ * VERSION: v1.0.1-L8-6A-SHERIFF-COCKPIT-MIGRATION-CERT
  * AUTHORITY BOUNDARY: deterministic client presentation/wiring evidence only
  * TENANT POSTURE: only server-authorized queue payloads reach presentation
  * FAIL-CLOSED POSTURE: authorization/evidence failures never create fixture truth
