@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
+ * VERSION: v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: Enhances the certified sheriff cockpit with the L8-6C bound-deputy
  *          personal active-work surface. SHERIFF sees only tenant-wide certified
@@ -15,7 +15,10 @@
  *                            owns bounded validation; this component owns
  *                            presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT adds an exact DEPUTY personal-work mode,
+ * CHANGELOG: 2026-09-23 v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT clarifies empty-state copy as explicit
+ *            non-synthetic-work language; runtime role-scoped queue behavior
+ *            is unchanged.
+ *            2026-09-23 v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT adds an exact DEPUTY personal-work mode,
  *            preserves the SHERIFF tenant-wide mode, removes the obsolete
  *            "deputy personal queue blocked" roadmap card, prevents unresolved
  *            legal roles from probing either privileged endpoint, and keeps
@@ -65,7 +68,7 @@ import {
   getSheriffOperationalQueues,
 } from '../../services/legalOperationsService.js';
 
-const DASHBOARD_VERSION = 'v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT';
+const DASHBOARD_VERSION = 'v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -169,7 +172,7 @@ function QueuePanel({ title, subtitle, icon: Icon, rows, renderRow, emptyMessage
             <CheckCircle2 className="mx-auto text-emerald-500/70" size={24} />
             <p className="mt-3 text-sm font-bold text-stone-300">{emptyMessage}</p>
             <p className="mt-1 text-xs text-stone-600">
-              Empty is a valid certified result. No placeholder work is generated.
+              Empty is a valid certified result. No synthetic work is generated.
             </p>
           </div>
         ) : (
@@ -660,7 +663,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
+ * VERSION: v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
  * AUTHORITY BOUNDARY: role-scoped sheriff/deputy read presentation only; browser role labels never authorize
  * TENANT POSTURE: server-authorized tenant response only; deputy rows additionally match bound deputy_id
  * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable evidence, tenant/deputy drift never falls back or crosses roles
