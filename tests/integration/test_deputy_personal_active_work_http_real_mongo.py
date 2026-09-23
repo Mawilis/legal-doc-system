@@ -1,29 +1,34 @@
 """Live-IAM real-Mongo certificate for deputy personal active-work reads.
 
-TITLE: WILSY OS Deputy Personal Active Work Live-IAM Real-Mongo Certificate
-VERSION: v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-LIVE-IAM-RM-CERT
-AUTHORITY: Host-backed certification of DEPUTY IAM + L8-6B binding + L8-6C read.
-EPITOME: Prove durable ACTIVE deputy IAM authorizes the personal-work route,
-         immutable principal-to-Deputy binding determines exact deputy identity,
-         real lifecycle history yields only that deputy's ALLOCATED/ATTEMPTED
-         current attempts, terminal/other-deputy work is excluded, SHERIFF is
-         denied, and missing binding never falls back to tenant-wide queues.
+TITLE: WILSY OS Deputy Personal Work and Field Capability Live-IAM Real-Mongo Certificate
+VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
+AUTHORITY: Host-backed certification of DEPUTY IAM + L8-6B/L8-6C/L8-6D reads.
+EPITOME: Preserve durable personal-work proof and certify real current P2
+         ServiceAttempt rows produce exact bound-deputy field capabilities whose
+         opaque evidence locators equal durable evidence_identity values, while
+         SHERIFF and missing binding remain denied without cross-role fallback.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_deputy_personal_active_work_http_real_mongo.py
-COLLABORATION / OWNERSHIP: Host certificate for L8-6C composition only. IAM,
-                            L8-6B, P1/P2/L8-0/L8-5 retain canonical authority.
+COLLABORATION / OWNERSHIP: Host certificate for L8-6C/L8-6D read composition.
+                            IAM, L8-6B, P1/P2/L8-0/L8-5/P5M retain canonical
+                            authority; command mutation remains separately gated.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-LIVE-IAM-RM-CERT
+CHANGELOG: 2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
+           adds real-Mongo field-capability proof for exact durable current
+           evidence_identity, ALLOCATED/ATTEMPTED command-kind mapping, sheriff
+           denial, and router v1.5.0 binding while preserving L8-6C coverage.
+           2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
            establishes durable deputy allow, sheriff denial, exact bound-deputy
            filtering, current-state supersession, missing-binding denial,
            foreign work exclusion, and bounded non-financial response proof.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic principals/deputies/attempts.
 TENANT BOUNDARY: IAM, binding and lifecycle evidence all use one exact tenant.
-AUTHORITY BOUNDARY: Host read certificate only; no lifecycle mutation/service.
+AUTHORITY BOUNDARY: Host personal-work/capability read certificate only; capability is not lifecycle mutation/service authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 TRANSACTION BOUNDARY: Setup uses durable writes; product read route owns no tx.
-FAIL-CLOSED DECLARATION: Runtime/IAM/binding/evidence/scope failure denies
-                         without sheriff queue or invented personal work.
+FAIL-CLOSED DECLARATION: Runtime/IAM/binding/evidence/locator/capability/scope
+                         failure denies without sheriff queue, command fallback,
+                         or invented personal work.
 """
 from __future__ import annotations
 
@@ -90,7 +95,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-LIVE-IAM-RM-CERT"
+VERSION = "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -404,12 +409,14 @@ def _get(
     *,
     principal_id: str,
     tenant_id: str,
+    path: str = "/deputy/active-work",
 ) -> Any:
+    """Issue one authenticated Legal Operations deputy read request."""
     with TestClient(
         _app(context, principal_id=principal_id, tenant_id=tenant_id)
     ) as client:
         return client.get(
-            "/api/legal-operations/deputy/active-work",
+            f"/api/legal-operations{path}",
             headers={"X-Tenant-ID": tenant_id},
         )
 
@@ -485,6 +492,94 @@ def test_real_deputy_gets_only_bound_active_work_with_current_supersession(
     assert "attempt-other" not in str(body)
 
 
+def test_real_deputy_field_capabilities_match_exact_current_p2_locators(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Capability locators equal the actual durable current snapshot identities."""
+    collections = mongo_context["collections"]
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    principal = f"principal-{uuid.uuid4().hex}"
+    deputy_id = f"deputy-{uuid.uuid4().hex}"
+
+    _seed_iam(
+        collections,
+        principal_id=principal,
+        tenant_id=tenant,
+        business_role="tenant_deputy",
+        authorization_role="DEPUTY",
+    )
+    deputy = _deputy(collections, tenant_id=tenant, deputy_id=deputy_id)
+    _bind(
+        collections,
+        tenant_id=tenant,
+        principal_id=principal,
+        deputy=deputy,
+    )
+    _persist_attempt_chain(
+        collections,
+        tenant_id=tenant,
+        attempt_id="attempt-allocated",
+        deputy_id=deputy_id,
+    )
+    _persist_attempt_chain(
+        collections,
+        tenant_id=tenant,
+        attempt_id="attempt-attempted",
+        deputy_id=deputy_id,
+        attempted=True,
+    )
+
+    response = _get(
+        mongo_context,
+        principal_id=principal,
+        tenant_id=tenant,
+        path="/deputy/field-capabilities",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == tenant
+    assert body["visibility"] == "DEPUTY_FIELD_COMMAND_CAPABILITIES"
+    assert body["deputy_id"] == deputy_id
+    assert [value["attempt_id"] for value in body["capabilities"]] == [
+        "attempt-allocated",
+        "attempt-attempted",
+    ]
+
+    rows = list(
+        collections["lifecycle"].find(
+            {
+                "tenant_id": tenant,
+                "entity_type": "ServiceAttempt",
+            }
+        )
+    )
+    by_attempt_state = {
+        (
+            row["entity_identity"],
+            row["p1_payload"]["state"],
+        ): row["evidence_identity"]
+        for row in rows
+    }
+    allocated, attempted = body["capabilities"]
+    assert allocated["current_state"] == "ALLOCATED"
+    assert allocated["current_evidence_identity"] == by_attempt_state[
+        ("attempt-allocated", "ALLOCATED")
+    ]
+    assert allocated["next_command_kinds"] == [
+        "TRANSITION_TO_ATTEMPTED"
+    ]
+    assert attempted["current_state"] == "ATTEMPTED"
+    assert attempted["current_evidence_identity"] == by_attempt_state[
+        ("attempt-attempted", "ATTEMPTED")
+    ]
+    assert attempted["next_command_kinds"] == [
+        "RECORD_COMPLETED_OUTCOME",
+        "RECORD_NOT_COMPLETED_OUTCOME",
+    ]
+    assert all(value["deputy_id"] == deputy_id for value in body["capabilities"])
+
+
 def test_real_sheriff_is_denied_deputy_personal_route(
     mongo_context: dict[str, Any],
 ) -> None:
@@ -504,8 +599,15 @@ def test_real_sheriff_is_denied_deputy_personal_route(
         principal_id=sheriff,
         tenant_id=tenant,
     )
+    capability_response = _get(
+        mongo_context,
+        principal_id=sheriff,
+        tenant_id=tenant,
+        path="/deputy/field-capabilities",
+    )
 
     assert response.status_code == 403
+    assert capability_response.status_code == 403
     assert collections["binding"].count_documents({}) == 0
 
 
@@ -595,17 +697,17 @@ def test_real_response_excludes_sheriff_invented_and_financial_truth(
         assert forbidden not in serialized
 
     assert legal_router.VERSION == (
-        "v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API"
+        "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
     )
     assert VERSION == (
-        "v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-LIVE-IAM-RM-CERT"
+        "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT"
     )
 
 
 # ARTIFACT: test_deputy_personal_active_work_http_real_mongo.py
-# VERSION: v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-LIVE-IAM-RM-CERT
-# AUTHORITY BOUNDARY: live-IAM real-Mongo bound-deputy personal-work read certificate only
+# VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
+# AUTHORITY BOUNDARY: live-IAM real-Mongo bound-deputy personal-work and field-capability read certificate only
 # TENANT POSTURE: exact authorized tenant + immutable principal-to-Deputy binding
-# FAIL-CLOSED POSTURE: sheriff/missing-binding/evidence/scope failures deny without fallback
+# FAIL-CLOSED POSTURE: sheriff/missing-binding/evidence/locator/capability/scope failures deny without queue or command fallback
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
