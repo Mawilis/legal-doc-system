@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="WILSY OS L8-7V1 deterministic LEGAL_CLIENT cockpit visual gate"
+      content="WILSY OS L8-7D9 deterministic LEGAL_CLIENT workspace chrome visual gate"
     />
     <title>WILSY Legal OS — Client Matter Cockpit Visual Gate</title>
   </head>
@@ -23,6 +23,15 @@
           null,
           React.createElement(LegalDashboard, {
             roleView: 'LEGAL_CLIENT',
+            user: {
+              id: 'principal-visual-client',
+              email: 'client@visual.wilsy.test',
+            },
+            tenantConfig: {
+              tenantId: 'tenant-visual-cert',
+              displayName: 'Mabaso Legal Client Workspace',
+              status: 'ACTIVE',
+            },
           }),
         ),
       );
