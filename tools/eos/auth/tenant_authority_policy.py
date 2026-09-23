@@ -1,15 +1,23 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.21.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY
+VERSION: v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
 inbound-collection, merchant-configuration, provider-policy, field-service
 outcome/return roles, sheriff-only process-service directory provisioning, and
-sheriff-only acceptance/office-receipt eligibility.
+sheriff-only acceptance/office-receipt eligibility, plus an exact
+tenant_legal_client-only client-matter projection read eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.21.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY adds legal_client_visibility_write as a
+CHANGELOG: 2026-09-23 v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY adds legal_client_matter_read as an exact
+own-tenant Legal Operations projection operation eligible only to
+tenant_legal_client. Partner, attorney, paralegal, secretary, finance, sheriff,
+deputy, owner/admin/manager/auditor, system and provider roles remain denied.
+Eligibility remains non-authorizing and does not prove ACTIVE visibility,
+matter scope, HTTP access, service/return evidence, billing, payment, execution
+or settlement authority.
+2026-09-23 v1.21.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY adds legal_client_visibility_write as a
 dedicated own-tenant Legal Operations provisioning operation eligible exactly
 to tenant_legal_partner, tenant_legal_attorney, and tenant_legal_paralegal.
 LEGAL_CLIENT, secretary, finance, sheriff, deputy, owner/admin/manager/auditor,
@@ -90,7 +98,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.21.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY"
+VERSION = "v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -125,8 +133,11 @@ ELIGIBILITY = MappingProxyType({
     "tenant_deputy": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_attempt_read": ELIGIBLE, "legal_attempt_write": ELIGIBLE, "legal_return_read": ELIGIBLE}),
     "tenant_legal_client": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_invoice_read": ELIGIBLE}),
 })
-OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
 _eligibility_updates = dict(ELIGIBILITY)
+_client_existing = dict(ELIGIBILITY["tenant_legal_client"])
+_client_existing["legal_client_matter_read"] = ELIGIBLE
+_eligibility_updates["tenant_legal_client"] = MappingProxyType(_client_existing)
 for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary"):
     _existing = dict(ELIGIBILITY[_role])
     if _role in {"tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal"}:
@@ -196,9 +207,9 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.21.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY
+# VERSION: v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
-# TENANT POSTURE: own-tenant client-visibility and other eligibility require separate ACTIVE membership, assignment, permission, target-IAM, and scope checks
+# TENANT POSTURE: own-tenant client-matter and client-visibility eligibility require separate ACTIVE membership, assignment, exact permission binding and visibility scope checks
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
