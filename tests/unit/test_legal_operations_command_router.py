@@ -157,12 +157,14 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
     with pytest.raises(ValidationError):
         command_api.ReturnCommand(**{"execution_evidence_identity": HEX, "return_id": "return", "generated_at": BASE, "tenant_id": TENANT})
     with pytest.raises(ValidationError):
-        command_api.DistrictProvisioningCommand(
-            district_id="district-1",
-            name="District",
-            jurisdiction_code="ZA-GP",
-            evidence_reference="source",
-            tenant_id=TENANT,
+        command_api.DistrictProvisioningCommand.model_validate(
+            {
+                "district_id": "district-1",
+                "name": "District",
+                "jurisdiction_code": "ZA-GP",
+                "evidence_reference": "source",
+                "tenant_id": TENANT,
+            }
         )
 
 
