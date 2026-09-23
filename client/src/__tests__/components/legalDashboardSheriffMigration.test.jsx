@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT
+ * VERSION: v2.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves LegalDashboard preserves the certified SHERIFF cockpit,
  *          exposes only L8-6C bound personal work for DEPUTY, performs no
@@ -8,7 +8,10 @@
  *          and contains no legacy mock/GPS/revenue/billing/deputy fixture truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT certifies role-scoped SHERIFF/DEPUTY
+ * CHANGELOG: 2026-09-23 v2.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT rebinds the role-scoped cockpit certificate
+ *            to production v6.0.1 after the non-behavioral empty-state copy
+ *            cleanup.
+ *            2026-09-23 v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT certifies role-scoped SHERIFF/DEPUTY
  *            endpoint selection, bound-deputy personal-work rendering,
  *            unresolved-role network silence, no cross-role fallback, and
  *            removal of obsolete deputy-queue blocked messaging.
@@ -202,7 +205,7 @@ describe('L8-6C role-scoped Legal Operations cockpit migration', () => {
       "getDeputyPersonalActiveWork",
     );
     expect(source).toContain(
-      "v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT",
+      "v6.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT",
     );
     expect(source).not.toContain('API_BASE_URL');
     expect(source).not.toContain('fetch(');
@@ -232,7 +235,7 @@ describe('L8-6C role-scoped Legal Operations cockpit migration', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v2.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT
+ * VERSION: v2.0.1-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT-CERT
  * AUTHORITY BOUNDARY: deterministic role-scoped client presentation/wiring evidence only
  * TENANT POSTURE: only server-authorized sheriff or bound-deputy payloads reach presentation
  * FAIL-CLOSED POSTURE: unresolved/denied/unavailable roles never cross-fallback or create fixture truth
