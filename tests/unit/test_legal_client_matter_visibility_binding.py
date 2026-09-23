@@ -126,7 +126,7 @@ def test_grant_is_factory_only_canonical_deterministic_and_immutable() -> None:
     assert first.to_dict() == second.to_dict()
 
     with pytest.raises(FrozenInstanceError):
-        first.client_principal_id = "principal-other"  # type: ignore[misc]
+        setattr(first, "client_principal_id", "principal-other")
 
 
 def test_binding_identity_is_relation_stable_while_source_snapshot_is_explicit() -> None:
@@ -212,28 +212,48 @@ def test_revocation_is_monotonic_chronological_and_relation_stable() -> None:
 )
 def test_grant_rejects_malformed_caller_inputs(case: str, expected: str) -> None:
     """Malformed caller-controlled relation provenance fails before use."""
-    kwargs: dict[str, object] = {
-        "client_principal_id": CLIENT,
-        "case_matter": matter(),
-        "granted_by_principal_id": ACTOR,
-        "granted_at": BASE + timedelta(minutes=1),
-        "evidence_reference": "grant-evidence",
-    }
     if case == "bad_client":
-        kwargs["client_principal_id"] = " client "
+        operation = lambda: LegalClientMatterVisibilityBinding.grant(
+            client_principal_id=" client ",
+            case_matter=matter(),
+            granted_by_principal_id=ACTOR,
+            granted_at=BASE + timedelta(minutes=1),
+            evidence_reference="grant-evidence",
+        )
     elif case == "bad_actor":
-        kwargs["granted_by_principal_id"] = ""
+        operation = lambda: LegalClientMatterVisibilityBinding.grant(
+            client_principal_id=CLIENT,
+            case_matter=matter(),
+            granted_by_principal_id="",
+            granted_at=BASE + timedelta(minutes=1),
+            evidence_reference="grant-evidence",
+        )
     elif case == "naive_time":
-        kwargs["granted_at"] = datetime(2026, 9, 23, 18, 1)
+        operation = lambda: LegalClientMatterVisibilityBinding.grant(
+            client_principal_id=CLIENT,
+            case_matter=matter(),
+            granted_by_principal_id=ACTOR,
+            granted_at=datetime(2026, 9, 23, 18, 1),
+            evidence_reference="grant-evidence",
+        )
     elif case == "blank_reference":
-        kwargs["evidence_reference"] = " "
-    elif case == "long_reference":
-        kwargs["evidence_reference"] = "x" * 513
+        operation = lambda: LegalClientMatterVisibilityBinding.grant(
+            client_principal_id=CLIENT,
+            case_matter=matter(),
+            granted_by_principal_id=ACTOR,
+            granted_at=BASE + timedelta(minutes=1),
+            evidence_reference=" ",
+        )
+    else:
+        operation = lambda: LegalClientMatterVisibilityBinding.grant(
+            client_principal_id=CLIENT,
+            case_matter=matter(),
+            granted_by_principal_id=ACTOR,
+            granted_at=BASE + timedelta(minutes=1),
+            evidence_reference="x" * 513,
+        )
 
-    assert_code(
-        expected,
-        lambda: LegalClientMatterVisibilityBinding.grant(**kwargs),  # type: ignore[arg-type]
-    )
+    assert_code(expected, operation)
 
 
 def test_noncanonical_matter_and_forged_lifecycle_metadata_reject() -> None:
