@@ -1,7 +1,7 @@
 """Direct adversarial certificate for the Legal Operations P2 registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry Certificate
-VERSION: v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+VERSION: v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify immutable snapshot persistence, exact entity, tenant/entity-
          class and document-custody enumeration, exact factory provenance,
@@ -11,7 +11,12 @@ COLLABORATION / OWNERSHIP: Direct certificate for the P2 registry only; P1
                             remains lifecycle/evidence authority and callers own
                             Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+CHANGELOG: 2026-09-23 v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-CERT
+           certifies exact persisted evidence-identity lookup for one canonical
+           snapshot, caller-session propagation, exact query shape, absence,
+           ambiguity, corruption and persistence-failure rejection, and proves
+           that no raw P2 envelope or current-state authority is returned.
+           2026-09-23 v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
            adds explicit exact-LegalInstruction runtime certification and
            static tuple narrowing for tenant/entity enumeration assertions;
            production behavior and authority contracts remain unchanged.
@@ -469,6 +474,94 @@ def test_tenant_entity_snapshot_enumeration_rejects_invalid_scope_corruption_and
     assert caught.value.__cause__ is error
 
 
+def test_snapshot_evidence_locator_is_exact_opaque_and_session_bound() -> None:
+    """Exact canonical snapshot returns only its persisted SHA3-512 locator."""
+    collection = FakeCollection()
+    session = FakeSession(in_transaction=True)
+    value = terminal_attempt()
+    record = persisted_record(value, collection, session=session)
+    collection.calls.clear()
+
+    locator = LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+        value,
+        collection,
+        session=session,
+    )
+
+    assert locator == record["evidence_identity"]
+    assert isinstance(locator, str)
+    assert len(locator) == 128
+    assert collection.calls == [
+        (
+            "find",
+            session,
+            {
+                "tenant_id": value.tenant_id,
+                "entity_type": "ServiceAttempt",
+                "entity_identity": value.attempt_id,
+                "p1_fingerprint": value.fingerprint,
+            },
+        )
+    ]
+    assert "source_payload" not in locator
+    assert "source_fingerprint" not in locator
+
+
+def test_snapshot_evidence_locator_rejects_absence_ambiguity_corruption_and_failure() -> None:
+    """Locator lookup never guesses among missing, duplicate, or corrupt rows."""
+    collection = FakeCollection()
+    value = terminal_attempt()
+    record = persisted_record(value, collection)
+
+    absent = terminal_attempt(attempt_id="attempt-absent")
+    expect_code(
+        "M2_EVIDENCE_NOT_FOUND",
+        lambda: LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            absent,
+            collection,
+        ),
+    )
+
+    duplicate = deepcopy(record)
+    duplicate["evidence_identity"] = "b" * 128
+    collection.docs.append(duplicate)
+    expect_code(
+        "M2_SNAPSHOT_LOCATOR_AMBIGUOUS",
+        lambda: LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            value,
+            collection,
+        ),
+    )
+
+    collection.docs = [deepcopy(record)]
+    collection.docs[0]["p1_payload"]["deputy_id"] = "deputy-corrupt"
+    expect_code(
+        "M2_P1_FINGERPRINT_MISMATCH",
+        lambda: LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            value,
+            collection,
+        ),
+    )
+
+    error = _operation_failure(27189)
+    failing = HistoryFailureCollection(error)
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            value,
+            failing,
+        )
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
+
+    expect_code(
+        "M2_P1_VALUE_REQUIRED",
+        lambda: LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+            cast(Any, object()),
+            collection,
+        ),
+    )
+
+
 def test_document_custody_history_hydrates_exact_scope_and_forwards_session() -> None:
     """Custody-history retrieval is tenant/document scoped and non-deriving."""
     collection = FakeCollection()
@@ -867,8 +960,8 @@ def test_outside_transaction_transient_error_is_not_retry_required() -> None:
     assert caught.value.__cause__ is error
 
 
-def test_p2_production_version_is_the_history_release() -> None:
-    assert P2_VERSION == "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
+def test_p2_production_version_is_the_snapshot_locator_release() -> None:
+    assert P2_VERSION == "v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR"
 
 
 def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> None:
@@ -882,8 +975,8 @@ def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> 
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry.py
-# VERSION: v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
-# AUTHORITY BOUNDARY: direct P2 persistence/entity/tenant-entity/custody-history/hydration certificate only.
+# VERSION: v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR-CERT
+# AUTHORITY BOUNDARY: direct P2 persistence/entity/tenant-entity/custody-history/hydration and exact opaque snapshot-locator certificate only.
 # TENANT POSTURE: explicit synthetic tenants; foreign evidence is undisclosed.
 # FAIL-CLOSED POSTURE: malformed records, provenance, races, and sources reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution/settlement.
