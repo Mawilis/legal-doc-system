@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS
+VERSION: v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -7,12 +7,20 @@ usage-capacity and billing-intelligence evidence access, and dedicated inbound
 merchant-configuration/provider-policy administration plus least-privilege
 field-service outcome/return commands, sheriff-only process-service directory
 provisioning, sheriff-only office-receipt authority, and least-privilege
-law-firm client-matter visibility provisioning without creating client read,
+law-firm client-matter visibility provisioning plus one least-privilege
+LEGAL_CLIENT projection-read grant without creating tenant-wide matter reads,
 deputy possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT grants
+    legal_operations:client_matter:read exactly to LEGAL_CLIENT for the future
+    explicitly-bound client matter projection. No law-firm, sheriff, deputy,
+    finance, enterprise, audit, system, service, or provider role receives the
+    grant. Static policy still does not prove current assignment, ACTIVE
+    membership, ACTIVE visibility binding, matter scope, HTTP access, service,
+    billing, payment, execution, or settlement authority.
     2026-09-23 v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS grants
     legal_operations:client_visibility:write only to LEGAL_PARTNER,
     LEGAL_ATTORNEY, and LEGAL_PARALEGAL for future L8-7 grant/revoke
@@ -105,7 +113,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS"
+VERSION = "v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -211,6 +219,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     ],
     "LEGAL_CLIENT": [
         "legal_operations:invoice:read",
+        "legal_operations:client_matter:read",
     ],
     "SERVICE_WORKER": [
         "artifacts:write",
@@ -312,9 +321,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS
+# VERSION: v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; client-visibility provisioning is limited to explicit law-firm grants
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; client-matter read is granted only to LEGAL_CLIENT and remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
