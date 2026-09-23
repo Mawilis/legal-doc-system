@@ -9,13 +9,14 @@
  *          principal, role, lifecycle, service, money or settlement authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/legalOperationsService.js
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; L8-5C owns
- *                            sheriff queues; L8-6B owns immutable binding; L8-6C
- *                            owns deputy work; L8-6D owns state capability; L8-6G
- *                            owns bound field-command composition and P5M lineage;
- *                            D5 owns the sanitized client-matter projection and
- *                            D6 owns authenticated snapshot transport. This adapter
- *                            owns exact browser response validation and immutable
- *                            presentation adaptation only.
+ *                            sheriff queues; L8-6B/C/D/G own deputy binding/work/
+ *                            capability/field-command lineage; D5/D6 own the
+ *                            sanitized client-matter projection/transport; D11
+ *                            owns the practice workspace projection; existing
+ *                            finance-read and command routers own tariff/billing/
+ *                            invoice evidence, intake and ReturnOfService HTTP
+ *                            authority. This adapter owns strict browser transport
+ *                            validation and immutable presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
  * CHANGELOG: 2026-09-23 v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT adds strict initial-intake registration
  *            transport for the existing L8-2 command. The request accepts only
@@ -54,13 +55,15 @@
  *                             matter, role, visibility, deputy, sequence lineage,
  *                             sovereign fingerprint, execution, billing, payment,
  *                             settlement, geospatial or AI truth is admitted.
- * TENANT BOUNDARY: Server response tenant remains authoritative; client-matter
- *                  rows carry no browser-selected tenant/client identity, while
- *                  deputy rows still match the server-bound canonical deputy_id.
- * AUTHORITY BOUNDARY: Read/command transport validation only. Browser role,
- *                     capability, visibility, observation or display state never
- *                     grants sheriff/deputy/client authority or creates legal,
- *                     service, billing or financial truth.
+ * TENANT BOUNDARY: Server response tenant remains authoritative across practice,
+ *                  finance, client and deputy projections. Browser requests never
+ *                  select tenant/principal/role authority; deputy rows remain
+ *                  bound to the server-authorized canonical deputy identity.
+ * AUTHORITY BOUNDARY: Read/intake/return/deputy-command transport validation
+ *                     only. Browser role, menu, capability, generated opaque IDs,
+ *                     visibility, observation or display state never grants legal
+ *                     practice, sheriff, deputy, finance or client authority and
+ *                     never creates service, billing, payment or settlement truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  */
 
@@ -1257,7 +1260,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
  * ARTIFACT: legalOperationsService.js
  * VERSION: v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command browser transport validation only
- * TENANT POSTURE: server tenant/client/deputy scope remains authoritative; browser cannot establish tenant, client or matter authority
+ * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
