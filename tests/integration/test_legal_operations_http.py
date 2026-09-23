@@ -420,8 +420,8 @@ def test_projection_excludes_transport_and_secret_fields() -> None:
     }
 
 
-def test_l8_5_read_contract_remains_bound_under_l8_6a_router_release() -> None:
-    """L8-5 read semantics remain certified under the additive L8-6A router."""
+def test_l8_5_read_contract_remains_bound_under_l8_7d6_router_release() -> None:
+    """L8-5 internal read semantics remain sealed under additive D6."""
     assert legal_router.VERSION == "v1.6.0-L8-7D6-CLIENT-MATTER-READ-API"
 
 
