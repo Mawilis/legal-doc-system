@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT
+ * VERSION: v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -18,7 +18,12 @@
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT adds strict initial-intake registration
+ * CHANGELOG: 2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
+ *            summary counter from the validated canonical rows before exposing
+ *            dashboard metrics. Total-only consistency is no longer sufficient;
+ *            any state-breakdown drift rejects fail-closed without fallback.
+ *            Transport endpoints and authority semantics are unchanged.
+ *            2026-09-23 v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT adds strict initial-intake registration
  *            transport for the existing L8-2 command. The request accepts only
  *            explicit opaque case/instruction/document/custody identities,
  *            timestamps, document type, matter reference and evidence
@@ -70,7 +75,7 @@
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT';
+  'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -655,12 +660,37 @@ function assertCanonicalLegalWorkspacePayload(value) {
     }));
   }
 
+  const countState = (rows, key, state) => (
+    rows.reduce((count, row) => count + (row[key] === state ? 1 : 0), 0)
+  );
+
+  const expectedSummary = {
+    instructions_total: arrays.instructions.length,
+    instructions_registered: countState(arrays.instructions, 'state', 'REGISTERED'),
+    instructions_accepted: countState(arrays.instructions, 'state', 'ACCEPTED'),
+    instructions_closed: countState(arrays.instructions, 'state', 'CLOSED'),
+    instructions_cancelled: countState(arrays.instructions, 'state', 'CANCELLED'),
+    documents_total: arrays.documents.length,
+    documents_registered: countState(arrays.documents, 'state', 'REGISTERED'),
+    documents_received: countState(arrays.documents, 'state', 'RECEIVED'),
+    documents_allocated: countState(arrays.documents, 'state', 'ALLOCATED_TO_DEPUTY'),
+    documents_returned: countState(arrays.documents, 'state', 'RETURNED_TO_CLIENT'),
+    attempts_total: arrays.attempts.length,
+    attempts_allocated: countState(arrays.attempts, 'state', 'ALLOCATED'),
+    attempts_attempted: countState(arrays.attempts, 'state', 'ATTEMPTED'),
+    attempts_completed: countState(arrays.attempts, 'state', 'COMPLETED'),
+    attempts_not_completed: countState(arrays.attempts, 'state', 'NOT_COMPLETED'),
+    attempts_cancelled: countState(arrays.attempts, 'state', 'CANCELLED'),
+    executions_total: arrays.executions.length,
+    executions_completed: countState(arrays.executions, 'outcome', 'COMPLETED'),
+    executions_not_completed: countState(arrays.executions, 'outcome', 'NOT_COMPLETED'),
+    returns_total: arrays.returns.length,
+  };
+
   if (
-    value.summary.instructions_total !== arrays.instructions.length
-    || value.summary.documents_total !== arrays.documents.length
-    || value.summary.attempts_total !== arrays.attempts.length
-    || value.summary.executions_total !== arrays.executions.length
-    || value.summary.returns_total !== arrays.returns.length
+    Object.entries(expectedSummary).some(
+      ([key, expected]) => value.summary[key] !== expected,
+    )
   ) {
     throw new Error('LEGAL_OPERATIONS_WORKSPACE_SUMMARY_MISMATCH');
   }
@@ -1258,7 +1288,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT
+ * VERSION: v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
