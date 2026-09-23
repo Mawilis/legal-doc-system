@@ -41,7 +41,7 @@ CHANGELOG: 2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /work
            instruction/attempt/execution/return projections remains intact.
            No caller-supplied matter/client/role/state/visibility authority and
            no lifecycle, service, return, billing, AI or financial mutation is added.
-2026-09-23 v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
+           2026-09-23 v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API
            adds the DEPUTY-only /deputy/field-capabilities route backed by the
            L8-6D personal capability composer. The route derives tenant and
            principal scope only from authenticated authorization context,
@@ -84,13 +84,18 @@ SECURITY / PRIVACY POSTURE: JWT claims and X-Tenant-ID never create authority;
 TENANT BOUNDARY: Entity reads bind the exact authorized tenant/type/identity;
                  sheriff queues bind the exact authorized sheriff tenant; deputy
                  personal work and field capabilities additionally bind the
-                 authenticated principal to one canonical Deputy identity and
-                 exact current snapshot locators. Foreign evidence is never
-                 admitted or disclosed.
-AUTHORITY BOUNDARY: Read projection only. Queue/capability visibility grants no
-                    receipt, allocation, attempt mutation, service, return,
-                    billing, invoice, payment, execution, settlement, or deputy
-                    impersonation. State capability is not IAM authorization.
+                 authenticated principal to one canonical Deputy identity.
+                 D11 workspace admission requires four current read authorities
+                 for one exact tenant/principal/published practice role, and all
+                 workspace rows remain that tenant's current canonical evidence.
+                 Foreign evidence is never admitted or disclosed.
+AUTHORITY BOUNDARY: Read projection only. D11 workspace visibility is a
+                    composition of existing instruction/allocation/attempt/
+                    return read authority and grants no mutation authority.
+                    Queue/capability visibility grants no receipt, allocation,
+                    attempt mutation, service, return, billing, invoice, payment,
+                    execution, settlement, or deputy impersonation. State
+                    capability is not IAM authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement. Legal reads never infer paid or
                               settled truth.
@@ -100,11 +105,12 @@ TRANSACTION BOUNDARY: Existing exact internal/sheriff/deputy reads retain
                       Mongo snapshot transaction for their multi-read projection;
                       both commit on success and abort on failure. Command
                       transactions remain separate.
-FAIL-CLOSED DECLARATION: Missing authority, malformed identity, internal
-                         client-policy violations, snapshot/session failure,
-                         D5 IAM/visibility/bound-matter failure, absent exact
-                         history/locator, P2 corruption/outage, divergence,
-                         queue/capability failure and invalid projections deny.
+FAIL-CLOSED DECLARATION: Missing or mismatched practice authority, malformed
+                         identity, internal client-policy violations, snapshot/
+                         session failure, D5 IAM/visibility/bound-matter failure,
+                         absent exact history/locator, P2 corruption/outage,
+                         divergence, queue/capability failure and invalid
+                         workspace/client/internal projections deny.
 """
 from __future__ import annotations
 
@@ -896,14 +902,15 @@ __all__ = [
     "get_deputy_principal_binding_collection",
     "get_lifecycle_collection",
     "get_legal_client_matter_projection_route",
+    "get_legal_practice_workspace_projection",
     "router",
 ]
 
 
 # ARTIFACT: legal_operations_router.py
 # VERSION: v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API
-# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy reads plus explicitly-visible LEGAL_CLIENT matter projection only; mutation IAM/commands remain separate
-# TENANT POSTURE: exact authorized internal/sheriff/deputy scope plus D6 tenant/principal-bound client snapshot projection; foreign evidence is bounded
-# FAIL-CLOSED POSTURE: internal policy gaps, denied client IAM, snapshot failure, visibility/matter corruption, absent history/locator, divergence and outages deny
+# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus conjunctively-authorized D11 Legal Practice workspace projection only; mutation IAM/commands remain separate
+# TENANT POSTURE: exact authorized internal/sheriff/deputy/client scope plus one exact tenant/principal/published-practice-role D11 snapshot workspace; foreign evidence is bounded
+# FAIL-CLOSED POSTURE: authority/scope mismatch, internal policy gaps, denied client IAM, snapshot failure, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
