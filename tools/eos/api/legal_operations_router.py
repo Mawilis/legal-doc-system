@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Delegate exact authorized entity reads to the deterministic L8-5
          current-plus-history read model while exposing only bounded canonical
@@ -13,7 +13,10 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-5 owns entity read-model composition, and tenant
                             authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+CHANGELOG: 2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+           aligns every public route docstring with the current-plus-history
+           response contract; runtime behavior, IAM, and authority are unchanged.
+           2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
            wires authenticated exact reads through the certified L8-5 entity
            read model, preserves the existing current projection in data, and
            adds sanitized immutable history without exposing P2 envelopes or
@@ -64,7 +67,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
+VERSION: Final[str] = "v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 
@@ -186,9 +189,10 @@ async def get_instruction(
     context: TenantAuthorizationContext = Depends(_INSTRUCTION_READ),
     collection: Any = Depends(get_lifecycle_collection),
 ) -> dict[str, Any]:
-    """Return deterministic current LegalInstruction truth for one authorized tenant.
+    """Return deterministic current-plus-history LegalInstruction truth.
 
     The route is read-only, applies the existing instruction-read permission,
+    preserves current truth in data, exposes sanitized immutable P1 history,
     and cannot create or transition instruction, document, service, billing,
     payment, execution, or settlement truth.
     """
@@ -201,11 +205,11 @@ async def get_attempt(
     context: TenantAuthorizationContext = Depends(_ATTEMPT_READ),
     collection: Any = Depends(get_lifecycle_collection),
 ) -> dict[str, Any]:
-    """Return deterministic current ServiceAttempt truth without implying service.
+    """Return current-plus-history ServiceAttempt truth without implying service.
 
-    Attempt state remains distinct from successful service and the route owns no
-    lifecycle mutation, transaction, billing, financial execution, or settlement
-    authority.
+    Attempt history remains distinct from certified service evidence and the
+    route owns no lifecycle mutation, transaction, billing, financial execution,
+    or settlement authority.
     """
     return _resource("ServiceAttempt", entity_identity, context, collection)
 
@@ -216,10 +220,10 @@ async def get_execution(
     context: TenantAuthorizationContext = Depends(_RETURN_READ),
     collection: Any = Depends(get_lifecycle_collection),
 ) -> dict[str, Any]:
-    """Return one deterministic ServiceExecution projection from canonical evidence.
+    """Return current-plus-history ServiceExecution canonical projections.
 
-    Service execution remains legal-operational evidence only and is not bank,
-    payment-provider, invoice, payment, or settlement execution truth.
+    Service execution history remains legal-operational evidence only and is not
+    bank, payment-provider, invoice, payment, or settlement execution truth.
     """
     return _resource("ServiceExecution", entity_identity, context, collection)
 
@@ -230,10 +234,10 @@ async def get_return_of_service(
     context: TenantAuthorizationContext = Depends(_RETURN_READ),
     collection: Any = Depends(get_lifecycle_collection),
 ) -> dict[str, Any]:
-    """Return one deterministic ReturnOfService projection without creating a return.
+    """Return current-plus-history ReturnOfService projections without mutation.
 
-    A return is not a tax invoice, payment execution, or settlement fact. The
-    route performs authenticated read composition only.
+    A return or its immutable history is not a tax invoice, payment execution,
+    or settlement fact. The route performs authenticated read composition only.
     """
     return _resource("ReturnOfService", entity_identity, context, collection)
 
@@ -242,7 +246,7 @@ __all__ = ["VERSION", "get_lifecycle_collection", "router"]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
+# VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API
 # AUTHORITY BOUNDARY: authenticated current-plus-history projection only; P1/P2/L8-0/L8-5 retain canonical ownership
 # TENANT POSTURE: exact authorized tenant/type/entity read model; foreign absence is bounded
 # FAIL-CLOSED POSTURE: absent history, corruption, divergence, policy gaps, and outages deny
