@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations field-service command boundary.
 
 TITLE: Legal Operations Field-Service Command API
-VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
+VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped directory and field-service
          command requests into one canonical orchestrator inside one API-owned
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API adds three
+CHANGELOG: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API preserves
+           structured L8-1 directory provisioning failures across the API-owned
+           transaction boundary so bounded parent absence remains HTTP 404
+           instead of being collapsed into generic command-unavailable 503.
+           v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API added three
            sheriff-authorized own-tenant directory provisioning commands for
            District, SheriffOffice, and Deputy. Tenant scope comes only from
            RequireTenantAuthorization; the request cannot supply tenant_id;
@@ -63,6 +67,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 from tools.eos.legal_operations.domain.process_service_assignment_authority import authorize_process_service_assignment
 from tools.eos.legal_operations.orchestration.process_service_allocation_orchestrator import orchestrate_process_service_allocation
 from tools.eos.legal_operations.orchestration.process_service_directory_provisioning_orchestrator import (
+    ProcessServiceDirectoryProvisioningError,
     provision_deputy,
     provision_district,
     provision_sheriff_office,
@@ -83,7 +88,7 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API"
+VERSION: Final[str] = "v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
@@ -244,7 +249,7 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
                 if bool(getattr(session, "in_transaction", False)):
                     session.abort_transaction()
                 raise
-    except CommandError:
+    except (CommandError, ProcessServiceDirectoryProvisioningError):
         raise
     except Exception as error:
         raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED", error) from error
@@ -476,7 +481,7 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
+# VERSION: v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API
 # AUTHORITY BOUNDARY: authenticated directory/field-service command composition; P1/P2/L8-1/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
