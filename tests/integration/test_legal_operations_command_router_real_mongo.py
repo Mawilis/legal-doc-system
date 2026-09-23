@@ -1,7 +1,7 @@
 """L7B host-backed live HTTP, IAM, and P4A-to-P5F certificate.
 
 TITLE: Wilsy OS Legal Operations Command API Real-Mongo Certificate
-VERSION: v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT
+VERSION: v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT
 AUTHORITY: Host-backed certificate for authenticated command composition.
 EPITOME: Prove actual FastAPI POST dispatch, durable IAM resolution, live P4A
          allocation, canonical P5A/P5B bridging, the P5C-P5F command chain, and
@@ -10,7 +10,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: The certificate owns only fixtures and observations;
                             P1/P2/P4/P5 remain canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT adds live tenant_deputy IAM, immutable L8-6B
+CHANGELOG: 2026-09-23 v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT proves live deputy HTTP bodies omit P5M
+           sequence lineage while the server derives durable sequence 1 then 2
+           and preserves immutable prior-event chaining for the same device.
+           2026-09-23 v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT adds live tenant_deputy IAM, immutable L8-6B
            binding, P5M journal persistence, server-derived field provenance,
            atomic deputy transition/outcome commands, and same-tenant wrong-deputy denial.
            v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT migrates the
@@ -573,7 +576,6 @@ def test_real_mongo_bound_deputy_field_bridge(
         "current_evidence_identity": allocated_row["evidence_identity"],
         "device_id": "device-live-1",
         "event_id": "field-event-live-1",
-        "sequence_number": 1,
         "occurred_at": BASE + timedelta(minutes=5),
         "observation_reference": "photo:live-attempt",
     }
@@ -589,6 +591,7 @@ def test_real_mongo_bound_deputy_field_bridge(
     assert transition_body["data"]["state"] == ServiceAttemptState.ATTEMPTED.value
     field_one = transition_body["field_evidence"]
     assert field_one["event_id"] == "field-event-live-1"
+    assert field_one["sequence_number"] == 1
     assert len(field_one["evidence_fingerprint"]) == 128
     assert collections["field_evidence"].count_documents(
         {"tenant_id": fixture.tenant}
@@ -606,10 +609,8 @@ def test_real_mongo_bound_deputy_field_bridge(
         "current_evidence_identity": attempted_row["evidence_identity"],
         "device_id": "device-live-1",
         "event_id": "field-event-live-2",
-        "sequence_number": 2,
         "occurred_at": BASE + timedelta(minutes=6),
         "observation_reference": "photo:live-terminal",
-        "previous_event_fingerprint": field_one["evidence_fingerprint"],
         "outcome": ServiceAttemptState.COMPLETED.value,
     }
     outcome = _post(
@@ -622,6 +623,18 @@ def test_real_mongo_bound_deputy_field_bridge(
     assert outcome.status_code == 200, outcome.text
     outcome_body = outcome.json()
     assert outcome_body["field_evidence"]["event_id"] == "field-event-live-2"
+    assert outcome_body["field_evidence"]["sequence_number"] == 2
+    second_durable = collections["field_evidence"].find_one(
+        {
+            "tenant_id": fixture.tenant,
+            "event_id": "field-event-live-2",
+        }
+    )
+    assert second_durable is not None
+    assert (
+        second_durable["command_payload"]["previous_event_fingerprint"]
+        == field_one["evidence_fingerprint"]
+    )
     execution_id = outcome_body["data"]["service_execution_id"]
     assert isinstance(execution_id, str) and len(execution_id) == 128
     execution_row = collections["lifecycle"].find_one(
@@ -716,7 +729,7 @@ def test_real_mongo_live_iam_denials_and_p4_rollback(mongo_context: dict[str, An
 
 
 # ARTIFACT: test_legal_operations_command_router_real_mongo.py
-# VERSION: v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT
+# VERSION: v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT
 # AUTHORITY BOUNDARY: host-backed actual HTTP/IAM/composition certificate only
 # TENANT POSTURE: UUID-isolated database, split durable IAM stores, and explicit tenant predicates
 # FAIL-CLOSED POSTURE: only pre-yield host absence may skip
