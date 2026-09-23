@@ -1,20 +1,29 @@
 """Binding-scoped personal active work for Legal Operations deputies.
 
-TITLE: WILSY OS Deputy Personal Active Work Projection
-VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
+TITLE: WILSY OS Deputy Personal Active Work and Field Capability Projection
+VERSION: v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY
 AUTHORITY: Deterministic read-only projection of one bound deputy's active attempts.
 EPITOME: Resolve one immutable L8-6B principal-to-Deputy binding, derive the
          canonical deputy_id, compose deterministic L8-5 current ServiceAttempt
-         models, and return only ALLOCATED/ATTEMPTED attempts owned by that
-         exact bound deputy without inventing urgency, distance, routing,
-         completion, return, billing, AI, payment, or financial truth.
+         models, return only ALLOCATED/ATTEMPTED attempts owned by that exact
+         bound deputy, and optionally bind each current attempt to its exact P2
+         snapshot locator plus P5M state-valid next-command descriptor without
+         inventing IAM, service, return, billing, AI, payment, or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/deputy_personal_active_work.py
 COLLABORATION / OWNERSHIP: L8-6B owns immutable principal-to-Deputy identity
                             binding; P1/P2/L8-0/L8-5 own lifecycle/history/current
-                            ServiceAttempt truth; this module owns personal queue
-                            membership only. IAM/HTTP/client remain separate gates.
+                            ServiceAttempt truth; P2 owns snapshot evidence
+                            identity; P5M owns field capability mapping; this
+                            module composes personal queue/capability reads only.
+                            IAM/HTTP/client remain separate gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
+CHANGELOG: 2026-09-23 v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY
+           adds a binding-scoped personal field-capability projection that
+           reuses certified L8-6C personal active work, resolves each exact
+           current P2 snapshot evidence locator under the caller-owned session,
+           applies the P5M state-capability mapping, and rejects the whole result
+           on locator/projection failure without partial capability fallback.
+           2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
            makes the public aggregate independently validate canonical tenant,
            principal and deputy identities plus immutable tuple queue shape;
            binding-derived membership semantics remain unchanged.
@@ -24,26 +33,29 @@ CHANGELOG: 2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
            deterministic attempt ordering, session propagation, and fail-closed
            binding/read-model/type/tenant/state validation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY / PRIVACY POSTURE: Projects only canonical opaque attempt identifiers
-                             already present in Legal Operations evidence. No
-                             credentials, client profile, geolocation, payment,
-                             provider, secret, or AI content is introduced.
+SECURITY / PRIVACY POSTURE: Projects canonical opaque attempt identifiers and,
+                             for the field-capability read only, one exact
+                             SHA3-512 P2 snapshot locator plus state-valid command
+                             kinds. No credentials, client profile, geolocation,
+                             payment, provider secret, or AI content is introduced.
 TENANT BOUNDARY: Binding resolution and every L8-5 read use the same explicit
                  tenant_id; only attempts whose canonical deputy_id equals the
                  bound deputy identity are returned.
 AUTHORITY BOUNDARY: Read projection only. The binding is identity evidence, not
                     authorization; callers must independently prove current IAM.
-                    Queue membership grants no attempt mutation, service,
-                    completion, return, billing, invoice, payment, or settlement.
+                    A field capability means only that the current P1 state can
+                    accept an existing command kind. It does not grant or execute
+                    mutation, service, return, billing, invoice, payment, or settlement.
 FINANCIAL AUTHORITY BOUNDARY: No financial semantics; Kennel EOS exclusively
                               owns financial execution and settlement.
 TRANSACTION BOUNDARY: Caller-owned read session is forwarded unchanged to L8-6B
-                      binding resolution and L8-5. This module starts, commits,
-                      aborts, and retries nothing.
+                      binding resolution, L8-5 enumeration, and every P2 locator
+                      read. This module starts, commits, aborts, and retries nothing.
 FAIL-CLOSED DECLARATION: Missing/corrupt binding, read-model failure, type or
-                         tenant drift, unsupported attempt state, or principal
-                         mismatch rejects the whole projection without fallback
-                         or tenant-wide queue substitution.
+                         tenant drift, unsupported attempt state, principal
+                         mismatch, P2 locator failure, or P5M capability mismatch
+                         rejects the whole projection without fallback, partial
+                         capabilities, or tenant-wide queue substitution.
 """
 from __future__ import annotations
 
@@ -60,15 +72,24 @@ from tools.eos.legal_operations.domain.legal_operations_read_model import (
     LegalOperationsReadModelError,
     list_entity_read_models,
 )
+from tools.eos.legal_operations.domain.process_service_field_evidence_projection import (
+    FieldCommandCapabilityEntry,
+    ProcessServiceFieldEvidenceProjectionError,
+    project_field_command_capability,
+)
 from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
     DeputyPrincipalBindingNotFoundError,
     DeputyPrincipalBindingPersistedRecordInvalidError,
     DeputyPrincipalBindingRegistry,
     DeputyPrincipalBindingRegistryError,
 )
+from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
+    LegalOperationsLifecycleRegistry,
+    LegalOperationsLifecycleRegistryError,
+)
 
 
-VERSION: Final[str] = "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK"
+VERSION: Final[str] = "v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY"
 _IDENTITY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset(
     {"default", "global", "global_root", "root", "master", "*"}
@@ -160,6 +181,46 @@ class DeputyPersonalActiveWork:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class DeputyPersonalFieldCapabilities:
+    """Immutable state-capability projection for one bound deputy principal.
+
+    capabilities has one entry for every current active attempt in the
+    underlying L8-6C personal-work result and preserves that deterministic order.
+    The entries contain opaque P2 locators and state-valid command kinds only.
+    They are not IAM decisions and cannot execute or guarantee a command.
+    """
+
+    tenant_id: str
+    principal_id: str
+    deputy_id: str
+    capabilities: tuple[FieldCommandCapabilityEntry, ...]
+
+    def __post_init__(self) -> None:
+        """Revalidate identity, immutable shape and exact deputy capability scope."""
+        _tenant(self.tenant_id)
+        _identity("principal_id", self.principal_id)
+        _identity("deputy_id", self.deputy_id)
+        if not isinstance(self.capabilities, tuple):
+            _fail("L8_6D_FIELD_CAPABILITIES_INVALID")
+        for value in self.capabilities:
+            if type(value) is not FieldCommandCapabilityEntry:
+                _fail("L8_6D_FIELD_CAPABILITY_INVALID")
+            if value.tenant_id != self.tenant_id:
+                _fail("L8_6D_TENANT_MISMATCH")
+            if value.deputy_id != self.deputy_id:
+                _fail("L8_6D_DEPUTY_SCOPE_MISMATCH")
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize exact bounded capabilities without authorization claims."""
+        return {
+            "tenant_id": self.tenant_id,
+            "principal_id": self.principal_id,
+            "deputy_id": self.deputy_id,
+            "capabilities": [value.to_dict() for value in self.capabilities],
+        }
+
+
 def get_deputy_personal_active_work(
     *,
     tenant_id: str,
@@ -246,18 +307,77 @@ def get_deputy_personal_active_work(
     )
 
 
+def get_deputy_personal_field_capabilities(
+    *,
+    tenant_id: str,
+    principal_id: str,
+    binding_collection: Any,
+    lifecycle_collection: Any,
+    session: Any = None,
+) -> DeputyPersonalFieldCapabilities:
+    """Return exact state-valid field command descriptors for one bound deputy.
+
+    The function first resolves the already-certified L8-6C personal active-work
+    projection. For each current ALLOCATED/ATTEMPTED ServiceAttempt, it asks P2
+    for the exact persisted evidence identity of that current canonical snapshot
+    and then asks P5M for the state-valid command-kind descriptor.
+
+    Every locator read receives the caller-owned session unchanged. Any locator
+    absence/corruption/ambiguity or capability mismatch rejects the entire
+    projection; no partial list is returned. This function performs no IAM
+    decision and no lifecycle/evidence/return/financial mutation.
+    """
+    personal = get_deputy_personal_active_work(
+        tenant_id=tenant_id,
+        principal_id=principal_id,
+        binding_collection=binding_collection,
+        lifecycle_collection=lifecycle_collection,
+        session=session,
+    )
+    capabilities: list[FieldCommandCapabilityEntry] = []
+    for model in personal.active_attempts:
+        if type(model.current) is not ServiceAttempt:
+            _fail("L8_6D_ATTEMPT_MODEL_INVALID")
+        current = cast(ServiceAttempt, model.current)
+        try:
+            locator = LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
+                current,
+                lifecycle_collection,
+                session=session,
+            )
+        except LegalOperationsLifecycleRegistryError as error:
+            _fail("L8_6D_SNAPSHOT_LOCATOR_UNAVAILABLE", error)
+        try:
+            capability = project_field_command_capability(
+                attempt=current,
+                current_evidence_identity=locator,
+            )
+        except ProcessServiceFieldEvidenceProjectionError as error:
+            _fail("L8_6D_FIELD_CAPABILITY_INVALID", error)
+        capabilities.append(capability)
+
+    return DeputyPersonalFieldCapabilities(
+        tenant_id=personal.tenant_id,
+        principal_id=personal.principal_id,
+        deputy_id=personal.deputy_id,
+        capabilities=tuple(capabilities),
+    )
+
+
 __all__ = [
     "VERSION",
     "DeputyPersonalActiveWork",
     "DeputyPersonalActiveWorkError",
+    "DeputyPersonalFieldCapabilities",
     "get_deputy_personal_active_work",
+    "get_deputy_personal_field_capabilities",
 ]
 
 
 # ARTIFACT: deputy_personal_active_work.py
-# VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK
-# AUTHORITY BOUNDARY: binding-scoped deterministic personal active-work projection only
-# TENANT POSTURE: exact tenant/principal binding plus bound-deputy ServiceAttempt filtering
-# FAIL-CLOSED POSTURE: missing/corrupt binding, read-model/type/tenant/state drift rejects without fallback
+# VERSION: v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY
+# AUTHORITY BOUNDARY: binding-scoped deterministic personal active-work and state-capability read projection only
+# TENANT POSTURE: exact tenant/principal binding plus bound-deputy current ServiceAttempt filtering and exact P2 locator scope
+# FAIL-CLOSED POSTURE: binding/read-model/type/tenant/state/locator/capability drift rejects whole projection without fallback
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
