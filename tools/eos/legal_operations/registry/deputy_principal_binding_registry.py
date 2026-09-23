@@ -1,7 +1,7 @@
 """Immutable persistence for canonical deputy-principal identity bindings.
 
 TITLE: WILSY OS Deputy Principal Binding Registry
-VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
 AUTHORITY: Durable immutable persistence and exact resolution of L8-6B bindings.
 EPITOME: Persist one canonical principal-to-Deputy identity relation exactly
          once with unique tenant/principal and tenant/deputy keys, exact replay,
@@ -13,7 +13,13 @@ COLLABORATION / OWNERSHIP: deputy_principal_binding.py owns immutable value
                             semantics; P1 owns Deputy truth; IAM owns principal
                             and role truth; this registry owns persistence only.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+CHANGELOG: 2026-09-23 v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+           classifies one valid natural-key match as an immutable identity
+           conflict rather than persisted corruption, while malformed located
+           rows still fail as corruption. Mongo insert receives a defensive
+           document copy so driver-added _id cannot mutate the canonical
+           comparison payload and fabricate a post-insert conflict.
+           2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
            centralizes two-key replay classification and applies it to both
            ordinary reads and DuplicateKey race recovery; no branch may accept
            one natural key before proving the other is mutually consistent.
@@ -59,7 +65,7 @@ from tools.eos.legal_operations.domain.deputy_principal_binding import (
 )
 
 
-VERSION: Final[str] = "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
+VERSION: Final[str] = "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
 COLLECTION: Final[str] = "legal_operations_deputy_principal_bindings"
 _FIELDS: Final[frozenset[str]] = frozenset(
     {
@@ -219,13 +225,28 @@ def _classify_existing_pair(
     principal_existing: Mapping[str, object] | None,
     deputy_existing: Mapping[str, object] | None,
 ) -> DeputyPrincipalBinding | None:
-    """Require both natural-key lookups to prove one identical durable binding."""
+    """Classify exact replay, natural-key collision, absence, or corruption.
+
+    Neither lookup means the binding is absent. Two exact, mutually identical
+    lookups prove replay. One valid lookup means exactly one natural key is
+    already owned by different immutable binding evidence and therefore is a
+    conflict. Hydration still runs before that classification, so malformed
+    durable evidence remains persisted-record corruption rather than conflict.
+    """
     if principal_existing is None and deputy_existing is None:
         return None
-    if principal_existing is None or deputy_existing is None:
+
+    if principal_existing is None:
+        _hydrate(deputy_existing)
         _fail(
-            "L8_6B_BINDING_PERSISTED_RECORD_INVALID",
-            error_type=DeputyPrincipalBindingPersistedRecordInvalidError,
+            "L8_6B_BINDING_CONFLICT",
+            error_type=DeputyPrincipalBindingConflictError,
+        )
+    if deputy_existing is None:
+        _hydrate(principal_existing)
+        _fail(
+            "L8_6B_BINDING_CONFLICT",
+            error_type=DeputyPrincipalBindingConflictError,
         )
 
     principal_value = _hydrate(principal_existing)
@@ -314,7 +335,7 @@ class DeputyPrincipalBindingRegistry:
             return existing_value
 
         try:
-            target.insert_one(document, session=session)
+            target.insert_one(dict(document), session=session)
         except DuplicateKeyError as error:
             try:
                 raced_principal = target.find_one(principal_query, session=session)
@@ -428,7 +449,7 @@ __all__ = [
 
 
 # ARTIFACT: deputy_principal_binding_registry.py
-# VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+# VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
 # AUTHORITY BOUNDARY: immutable exact-replay binding persistence/resolution only
 # TENANT POSTURE: unique tenant/principal and tenant/deputy keys; foreign rows are absence
 # FAIL-CLOSED POSTURE: conflicts, corruption, absence, database failure, and fingerprint drift reject
