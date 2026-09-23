@@ -1,7 +1,7 @@
 """Direct certificate for immutable deputy-principal binding persistence.
 
 TITLE: WILSY OS Deputy Principal Binding Registry Certificate
-VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
 AUTHORITY: Direct adversarial certificate for L8-6B binding persistence only.
 EPITOME: Prove two-way one-to-one uniqueness, exact immutable replay, tenant
          isolation, caller-session propagation, strict hydration/fingerprint
@@ -11,7 +11,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Certificate for deputy_principal_binding_registry.py;
                             domain value, P1 Deputy, and IAM remain independent.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+CHANGELOG: 2026-09-23 v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+           rebinds the unchanged runtime certificate to production v1.0.4
+           after static non-None collision-branch typing alignment.
+           2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
            makes the fake insert reproduce PyMongo caller-document _id mutation,
            proving production v1.0.3 preserves its canonical comparison payload
            while retaining one-key collision conflict and corruption proofs.
@@ -52,7 +55,7 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
 )
 
 
-VERSION = "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
+VERSION = "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
 NOW = datetime(2026, 9, 23, 16, 0, tzinfo=timezone.utc)
 
 
@@ -330,15 +333,15 @@ def test_registry_exposes_no_update_delete_rebind_or_financial_surface() -> None
         assert forbidden not in keys
 
     assert PRODUCTION_VERSION == (
-        "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
+        "v1.0.4-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
     )
     assert VERSION == (
-        "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
+        "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
     )
 
 
 # ARTIFACT: test_deputy_principal_binding_registry.py
-# VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+# VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct immutable binding persistence/resolution certificate only
 # TENANT POSTURE: exact tenant/principal and tenant/deputy scope only
 # FAIL-CLOSED POSTURE: conflict, corruption, absence, and scope drift reject
