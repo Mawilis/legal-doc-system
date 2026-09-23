@@ -1,10 +1,11 @@
 """Direct adversarial certificate for P5 mobile/offline field evidence.
 
 TITLE: WILSY OS Process-Service Field Evidence and Command Capability Certificate
-VERSION: v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+VERSION: v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
 AUTHORITY: Direct certification of P5M evidence and L8-6D read projection.
-EPITOME: Preserve offline evidence ordering/provenance/replay certification and
-         prove the field-command capability descriptor maps only canonical
+EPITOME: Preserve offline evidence ordering/provenance/replay certification,
+         prove exact tenant/event receipt recovery for retry-safe composition,
+         and prove the field-command capability descriptor maps only canonical
          active ServiceAttempt states to existing command kinds, binds one
          opaque P2 evidence locator, and never becomes IAM, service, return,
          billing, AI, payment, execution, or settlement truth.
@@ -14,7 +15,11 @@ COLLABORATION / OWNERSHIP: Direct certificate for P5M authority/registry/
                             lifecycle, P2 owns snapshot identity, and callers
                             own authorization and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+CHANGELOG: 2026-09-23 v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
+           certifies exact tenant/event receipt lookup, caller-session forwarding,
+           foreign-tenant absence, and strict persisted-evidence hydration for the
+           L8-6E replay-safe P5M composition primitive.
+           2026-09-23 v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
            repairs the sovereign module-header terminator so the certificate
            imports as valid Python; test assertions, runtime coverage, authority
            boundaries, and production behavior remain unchanged.
@@ -210,6 +215,55 @@ def test_registry_ordering_replay_and_divergence() -> None:
     assert gap_error.value.code == "P5M_SEQUENCE_GAP"
 
 
+def test_registry_resolve_by_event_is_exact_tenant_scoped_and_strict() -> None:
+    """Recover one immutable receipt by tenant/event without widening authority."""
+    collection = Collection()
+    source = command()
+    receipt = _issue_sync_receipt(
+        command=source,
+        receipt_id="receipt-event-lookup",
+        accepted_at=BASE + timedelta(minutes=5),
+    )
+    ProcessServiceFieldEvidenceRegistry.persist(
+        source,
+        receipt,
+        collection,
+        session=Session(),
+    )
+
+    session = Session()
+    resolved = ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+        "tenant-a",
+        "event-1",
+        collection,
+        session=session,
+    )
+    assert resolved.to_dict() == receipt.to_dict()
+    assert resolved.fingerprint == receipt.fingerprint
+    assert collection.calls[-1] == ("find_one", session)
+
+    with pytest.raises(ProcessServiceFieldEvidenceRegistryError) as foreign:
+        ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+            "tenant-b",
+            "event-1",
+            collection,
+            session=session,
+        )
+    assert foreign.value.code == "P5M_EVIDENCE_NOT_FOUND"
+
+    corrupted = dict(collection.rows[0])
+    corrupted["receipt_fingerprint"] = "f" * 128
+    collection.rows[0] = corrupted
+    with pytest.raises(ProcessServiceFieldEvidenceRegistryError) as invalid:
+        ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+            "tenant-a",
+            "event-1",
+            collection,
+            session=session,
+        )
+    assert invalid.value.code == "P5M_RECEIPT_FINGERPRINT_MISMATCH"
+
+
 def test_orchestrator_uses_canonical_attempt_and_forwards_session(monkeypatch: pytest.MonkeyPatch) -> None:
     source = attempt()
     monkeypatch.setattr(p2.LegalOperationsLifecycleRegistry, "get", staticmethod(lambda *args, **kwargs: source))
@@ -364,7 +418,7 @@ def test_projections_are_scoped_derived_views() -> None:
 
 
 # ARTIFACT: test_process_service_field_evidence.py
-# VERSION: v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+# VERSION: v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
 # AUTHORITY BOUNDARY: direct P5M evidence acceptance plus L8-6D state-capability projection certificate only.
 # TENANT POSTURE: exact synthetic P1/P2/P5M tenant scope; cross-tenant projection inputs reject.
 # FAIL-CLOSED POSTURE: no evidence, command authorization, service or financial truth is inferred from projection state.
