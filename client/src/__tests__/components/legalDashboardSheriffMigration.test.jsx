@@ -511,7 +511,8 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(
       screen.getByText('LEGAL_OPERATIONS_CLIENT_PROJECTION_UNAVAILABLE'),
     ).toBeInTheDocument();
-    expect(screen.queryByText('My matters')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'My Matters' })).toBeInTheDocument();
+    expect(screen.queryByText('Visible matter snapshot')).not.toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
   });
