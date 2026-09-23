@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
+VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
          directory, deputy-principal identity-binding, and field-service
@@ -12,7 +12,15 @@ COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API aligns the sovereign authority/header
+CHANGELOG: 2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
+           adds bound-Deputy field transition/outcome composition: authenticated
+           principal-to-Deputy scope is re-resolved inside the command transaction,
+           browser observation facts are canonicalized into server-derived SHA3-512
+           field evidence, P5M sync/replay is atomic with P5D/P5E, and terminal
+           ServiceExecution identity is server-derived. Existing sheriff command
+           compatibility remains; tenant_deputy use of legacy transition/outcome
+           routes is additionally binding-scoped.
+            2026-09-23 v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API aligns the sovereign authority/header
            declarations with the already-authored L8-6B identity-binding
            composition; runtime route, IAM, transaction, and error semantics
            are unchanged.
@@ -73,8 +81,10 @@ FAIL-CLOSED DECLARATION: Missing authority, malformed locators, unavailable
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import StrEnum
+import hashlib
+import json
 from typing import Any, Callable, Final, TypeVar, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -93,6 +103,7 @@ from tools.eos.auth.tenant_business_role_repository import (
 from tools.eos.auth.tenant_membership_repository import (
     COLLECTION as TENANT_MEMBERSHIP_COLLECTION,
 )
+from tools.eos.legal_operations.domain.process_service_field_evidence_authority import ProcessServiceFieldEvidenceAuthorityError
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     District,
     Deputy,
@@ -124,11 +135,17 @@ from tools.eos.legal_operations.orchestration.process_service_acceptance_receipt
     accept_instruction_and_receive_document,
 )
 from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrator import orchestrate_process_service_attempt
+from tools.eos.legal_operations.orchestration.process_service_field_evidence_orchestrator import (
+    ProcessServiceFieldEvidenceOrchestratorError,
+    sync_offline_field_evidence,
+)
 from tools.eos.legal_operations.orchestration.process_service_attempt_outcome_orchestrator import transition_process_service_attempt_outcome
 from tools.eos.legal_operations.orchestration.process_service_attempt_transition_orchestrator import transition_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_return_orchestrator import generate_process_service_return
 from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
+    DeputyPrincipalBindingRegistry,
+    DeputyPrincipalBindingRegistryError,
 )
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import COLLECTION as LIFECYCLE_COLLECTION, LegalOperationsLifecycleRegistry
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
@@ -139,12 +156,21 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 from tools.eos.legal_operations.registry.process_service_attempt_authority_registry import RECEIPT_COLLECTION as ATTEMPT_AUTHORITY_COLLECTION
 from tools.eos.legal_operations.registry.process_service_attempt_outcome_registry import COLLECTION as OUTCOME_COLLECTION
 from tools.eos.legal_operations.registry.process_service_attempt_transition_registry import COLLECTION as TRANSITION_COLLECTION
+from tools.eos.legal_operations.registry.process_service_field_evidence_registry import (
+    COLLECTION as FIELD_EVIDENCE_COLLECTION,
+    ProcessServiceFieldEvidenceRegistry,
+    ProcessServiceFieldEvidenceRegistryError,
+)
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
+VERSION: Final[str] = "v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
+_DEPUTY_BUSINESS_ROLE: Final[str] = "tenant_deputy"
+_FIELD_OBSERVATION_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-DEPUTY-FIELD-OBSERVATION/V1"
+_FIELD_RECEIPT_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-DEPUTY-FIELD-RECEIPT-ID/V1"
+_FIELD_EXECUTION_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-DEPUTY-SERVICE-EXECUTION-ID/V1"
 
 
 class _CommandModel(BaseModel):
@@ -285,6 +311,32 @@ class OutcomeCommand(_CommandModel):
     executed_at: datetime
 
 
+class DeputyFieldObservationCommand(_CommandModel):
+    """Bounded bound-Deputy observation; sovereign provenance is server-derived."""
+
+    current_evidence_identity: str = Field(min_length=1)
+    device_id: str = Field(min_length=1, max_length=128)
+    event_id: str = Field(min_length=1, max_length=128)
+    sequence_number: int = Field(ge=1)
+    occurred_at: datetime
+    observation_reference: str = Field(min_length=1, max_length=512)
+    previous_event_fingerprint: str | None = Field(
+        default=None,
+        min_length=128,
+        max_length=128,
+    )
+
+
+class DeputyFieldTransitionCommand(DeputyFieldObservationCommand):
+    """Bounded ALLOCATED -> ATTEMPTED deputy observation."""
+
+
+class DeputyFieldOutcomeCommand(DeputyFieldObservationCommand):
+    """Bounded terminal deputy observation; P1 execution identity/time are server-owned."""
+
+    outcome: ServiceAttemptState
+
+
 class ReturnCommand(_CommandModel):
     """Opaque ServiceExecution locator and return observation passed to P5F."""
 
@@ -327,6 +379,185 @@ def _source(collection: Any, tenant: str, identity: str, expected: type[_T], ses
     return cast(_T, value)
 
 
+def _digest(payload: object) -> str:
+    """Return deterministic lowercase SHA3-512 for server-owned field composition."""
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
+def _utcnow() -> datetime:
+    """Return one timezone-aware server acceptance timestamp."""
+    return datetime.now(timezone.utc)
+
+
+def _bound_deputy(
+    context: TenantAuthorizationContext,
+    database: Any,
+    session: Any,
+    *,
+    required: bool,
+) -> Any | None:
+    """Resolve immutable deputy binding after current IAM; never grant authority."""
+    if context.decision.business_role != _DEPUTY_BUSINESS_ROLE:
+        if required:
+            raise CommandError("LEGAL_OPERATIONS_DEPUTY_COMMAND_REQUIRED")
+        return None
+    return DeputyPrincipalBindingRegistry.resolve_by_principal(
+        context.tenant_id,
+        context.identity.identity_id,
+        _collection(database, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+        session=session,
+    )
+
+
+def _enforce_deputy_attempt_scope(
+    context: TenantAuthorizationContext,
+    current: ServiceAttempt,
+    database: Any,
+    session: Any,
+    *,
+    required: bool,
+) -> Any | None:
+    """Require exact bound-deputy ownership when the actor is or must be a deputy."""
+    binding = _bound_deputy(context, database, session, required=required)
+    if binding is None:
+        return None
+    if current.deputy_id != binding.deputy_id:
+        raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+    return binding
+
+
+def _field_observation_provenance(
+    *,
+    context: TenantAuthorizationContext,
+    current: ServiceAttempt,
+    command_kind: str,
+    current_evidence_identity: str,
+    device_id: str,
+    event_id: str,
+    sequence_number: int,
+    occurred_at: datetime,
+    observation_reference: str,
+    previous_event_fingerprint: str | None,
+    outcome: ServiceAttemptState | None = None,
+) -> tuple[str, str]:
+    """Canonicalize one browser observation into server-owned opaque provenance."""
+    payload = {
+        "schema": _FIELD_OBSERVATION_SCHEMA,
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "deputy_id": current.deputy_id,
+        "attempt_id": current.attempt_id,
+        "source_attempt_fingerprint": current.fingerprint,
+        "current_evidence_identity": current_evidence_identity,
+        "command_kind": command_kind,
+        "device_id": device_id,
+        "event_id": event_id,
+        "sequence_number": sequence_number,
+        "occurred_at": occurred_at.isoformat(),
+        "observation_reference": observation_reference,
+        "previous_event_fingerprint": previous_event_fingerprint,
+        "outcome": outcome.value if outcome is not None else None,
+    }
+    return observation_reference, _digest(payload)
+
+
+def _field_receipt_id(tenant_id: str, event_id: str) -> str:
+    """Derive one stable server-owned P5M receipt locator for an immutable event."""
+    return _digest(
+        {
+            "schema": _FIELD_RECEIPT_SCHEMA,
+            "tenant_id": tenant_id,
+            "event_id": event_id,
+        }
+    )
+
+
+def _field_service_execution_id(
+    *,
+    tenant_id: str,
+    attempt_id: str,
+    evidence_identity: str,
+    outcome: ServiceAttemptState,
+) -> str:
+    """Derive one stable P1 execution locator from accepted terminal field evidence."""
+    return _digest(
+        {
+            "schema": _FIELD_EXECUTION_SCHEMA,
+            "tenant_id": tenant_id,
+            "attempt_id": attempt_id,
+            "field_evidence_identity": evidence_identity,
+            "outcome": outcome.value,
+        }
+    )
+
+
+def _sync_bound_deputy_field_evidence(
+    *,
+    context: TenantAuthorizationContext,
+    current: ServiceAttempt,
+    command: DeputyFieldObservationCommand,
+    command_kind: str,
+    outcome: ServiceAttemptState | None,
+    database: Any,
+    session: Any,
+) -> Any:
+    """Synchronize one canonicalized field observation through existing P5M."""
+    evidence_reference, evidence_fingerprint = _field_observation_provenance(
+        context=context,
+        current=current,
+        command_kind=command_kind,
+        current_evidence_identity=command.current_evidence_identity,
+        device_id=command.device_id,
+        event_id=command.event_id,
+        sequence_number=command.sequence_number,
+        occurred_at=command.occurred_at,
+        observation_reference=command.observation_reference,
+        previous_event_fingerprint=command.previous_event_fingerprint,
+        outcome=outcome,
+    )
+    journal = _collection(database, FIELD_EVIDENCE_COLLECTION)
+    try:
+        prior = ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+            context.tenant_id,
+            command.event_id,
+            journal,
+            session=session,
+        )
+    except ProcessServiceFieldEvidenceRegistryError as error:
+        if error.code != "P5M_EVIDENCE_NOT_FOUND":
+            raise
+        receipt_id = _field_receipt_id(context.tenant_id, command.event_id)
+        accepted_at = _utcnow()
+    else:
+        receipt_id = prior.receipt_id
+        accepted_at = prior.accepted_at
+    return sync_offline_field_evidence(
+        tenant_id=context.tenant_id,
+        attempt_evidence_identity=command.current_evidence_identity,
+        device_id=command.device_id,
+        event_id=command.event_id,
+        sequence_number=command.sequence_number,
+        occurred_at=command.occurred_at,
+        evidence_reference=evidence_reference,
+        evidence_fingerprint=evidence_fingerprint,
+        previous_event_fingerprint=command.previous_event_fingerprint,
+        receipt_id=receipt_id,
+        accepted_at=accepted_at,
+        lifecycle_collection=_collection(database, LIFECYCLE_COLLECTION),
+        allocation_receipt_collection=_collection(database, ALLOCATION_RECEIPT_COLLECTION),
+        allocation_current_collection=_collection(database, ALLOCATION_CURRENT_COLLECTION),
+        journal_collection=journal,
+        session=session,
+    )
+
+
 def _prior_custody(collection: Any, tenant: str, document_id: str, session: Any) -> tuple[Any, ...]:
     """Return canonical P2-hydrated custody history for allocation composition."""
     events = list(
@@ -363,6 +594,10 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         ProcessServiceIntakeRegistrationError,
         ProcessServiceAcceptanceReceiptError,
         DeputyPrincipalBindingOrchestrationError,
+        DeputyPrincipalBindingRegistryError,
+        ProcessServiceFieldEvidenceAuthorityError,
+        ProcessServiceFieldEvidenceOrchestratorError,
+        ProcessServiceFieldEvidenceRegistryError,
     ):
         raise
     except Exception as error:
@@ -376,13 +611,17 @@ def _http_error(error: BaseException) -> HTTPException:
         code = getattr(error, "code", "LEGAL_OPERATIONS_COMMAND_FAILED")
     if not isinstance(code, str):
         code = "LEGAL_OPERATIONS_COMMAND_FAILED"
-    if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED"}:
+    if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED", "P5M_RETRY_TRANSACTION_REQUIRED"}:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_RETRY_REQUIRED")
+    if code == "P5M_REPLAY_CONFLICT":
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_FIELD_EVIDENCE_CONFLICT")
     if code == "L8_6B_BINDING_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_DEPUTY_BINDING_CONFLICT")
+    if code in {"L8_6B_BINDING_NOT_FOUND", "LEGAL_OPERATIONS_DEPUTY_COMMAND_REQUIRED"}:
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="DEPUTY_IDENTITY_BINDING_REQUIRED")
     if code.endswith("NOT_FOUND") or code in {"P5B_RECEIPT_NOT_FOUND", "P4_RECEIPT_NOT_FOUND", "P4_CURRENT_POINTER_MISSING"}:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LEGAL_OPERATION_NOT_FOUND")
-    if "TRANSACTION_REQUIRED" in code or "PERSISTENCE_UNAVAILABLE" in code or "COMMAND_FAILED" in code:
+    if "TRANSACTION_REQUIRED" in code or "PERSISTENCE_UNAVAILABLE" in code or "PERSISTED_RECORD_INVALID" in code or "COMMAND_FAILED" in code:
         return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LEGAL_OPERATIONS_UNAVAILABLE")
     return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
 
@@ -651,6 +890,13 @@ async def transition_process_service_attempt_command(attempt_id: str, command: A
         current = _source(lifecycle, context.tenant_id, command.current_evidence_identity, ServiceAttempt, session)
         if current.attempt_id != attempt_id:
             raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        _enforce_deputy_attempt_scope(
+            context,
+            current,
+            db,
+            session,
+            required=False,
+        )
         return transition_process_service_attempt(
             tenant_id=context.tenant_id,
             current_evidence_identity=command.current_evidence_identity,
@@ -678,6 +924,13 @@ async def record_process_service_outcome_command(attempt_id: str, command: Outco
         current = _source(lifecycle, context.tenant_id, command.current_evidence_identity, ServiceAttempt, session)
         if current.attempt_id != attempt_id:
             raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        _enforce_deputy_attempt_scope(
+            context,
+            current,
+            db,
+            session,
+            required=False,
+        )
         return transition_process_service_attempt_outcome(
             tenant_id=context.tenant_id,
             current_evidence_identity=command.current_evidence_identity,
@@ -696,6 +949,133 @@ async def record_process_service_outcome_command(attempt_id: str, command: Outco
     except Exception as error:
         raise _http_error(error) from error
     return {"data": value.to_dict()}
+
+
+@router.post("/deputy/attempts/{attempt_id}/transition")
+async def transition_bound_deputy_field_attempt_command(
+    attempt_id: str,
+    command: DeputyFieldTransitionCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Atomically journal one bound-Deputy field observation and persist ATTEMPTED."""
+    if not attempt_id.strip():
+        raise HTTPException(status_code=422, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
+
+    def run(session: Any, db: Any) -> tuple[Any, Any]:
+        lifecycle = _collection(db, LIFECYCLE_COLLECTION)
+        current = _source(
+            lifecycle,
+            context.tenant_id,
+            command.current_evidence_identity,
+            ServiceAttempt,
+            session,
+        )
+        if current.attempt_id != attempt_id:
+            raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        _enforce_deputy_attempt_scope(
+            context,
+            current,
+            db,
+            session,
+            required=True,
+        )
+        receipt = _sync_bound_deputy_field_evidence(
+            context=context,
+            current=current,
+            command=command,
+            command_kind="TRANSITION_TO_ATTEMPTED",
+            outcome=None,
+            database=db,
+            session=session,
+        )
+        attempted = transition_process_service_attempt(
+            tenant_id=context.tenant_id,
+            current_evidence_identity=command.current_evidence_identity,
+            lifecycle_collection=lifecycle,
+            transition_collection=_collection(db, TRANSITION_COLLECTION),
+            evidence_reference=receipt.evidence_reference,
+            evidence_fingerprint=receipt.evidence_fingerprint,
+            occurred_at=command.occurred_at,
+            session=session,
+        )
+        return attempted, receipt
+
+    try:
+        value, receipt = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.to_dict(), "field_evidence": receipt.to_dict()}
+
+
+@router.post("/deputy/attempts/{attempt_id}/outcome")
+async def record_bound_deputy_field_outcome_command(
+    attempt_id: str,
+    command: DeputyFieldOutcomeCommand,
+    context: TenantAuthorizationContext = Depends(_OUTCOME),
+) -> dict[str, Any]:
+    """Atomically journal one bound-Deputy terminal observation and derive P1 execution."""
+    if command.outcome not in {
+        ServiceAttemptState.COMPLETED,
+        ServiceAttemptState.NOT_COMPLETED,
+    }:
+        raise HTTPException(
+            status_code=422,
+            detail="LEGAL_OPERATIONS_TERMINAL_OUTCOME_REQUIRED",
+        )
+
+    def run(session: Any, db: Any) -> tuple[Any, Any]:
+        lifecycle = _collection(db, LIFECYCLE_COLLECTION)
+        current = _source(
+            lifecycle,
+            context.tenant_id,
+            command.current_evidence_identity,
+            ServiceAttempt,
+            session,
+        )
+        if current.attempt_id != attempt_id:
+            raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        _enforce_deputy_attempt_scope(
+            context,
+            current,
+            db,
+            session,
+            required=True,
+        )
+        receipt = _sync_bound_deputy_field_evidence(
+            context=context,
+            current=current,
+            command=command,
+            command_kind=f"RECORD_{command.outcome.value}_OUTCOME",
+            outcome=command.outcome,
+            database=db,
+            session=session,
+        )
+        execution_id = _field_service_execution_id(
+            tenant_id=context.tenant_id,
+            attempt_id=current.attempt_id,
+            evidence_identity=receipt.evidence_identity,
+            outcome=command.outcome,
+        )
+        execution = transition_process_service_attempt_outcome(
+            tenant_id=context.tenant_id,
+            current_evidence_identity=command.current_evidence_identity,
+            lifecycle_collection=lifecycle,
+            outcome_collection=_collection(db, OUTCOME_COLLECTION),
+            outcome=command.outcome,
+            evidence_reference=receipt.evidence_reference,
+            evidence_fingerprint=receipt.evidence_fingerprint,
+            occurred_at=command.occurred_at,
+            service_execution_id=execution_id,
+            executed_at=command.occurred_at,
+            session=session,
+        )
+        return execution, receipt
+
+    try:
+        value, receipt = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.to_dict(), "field_evidence": receipt.to_dict()}
 
 
 @router.post("/executions/{execution_id}/return")
@@ -725,8 +1105,8 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
-# AUTHORITY BOUNDARY: authenticated intake/receipt/directory/deputy-binding/field-service command composition; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical
+# VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
+# AUTHORITY BOUNDARY: authenticated intake/receipt/directory/deputy-binding/field-service composition; bound-Deputy field commands canonicalize transport observations while P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
