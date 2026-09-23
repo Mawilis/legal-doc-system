@@ -857,36 +857,36 @@ function PracticeLifecycleRow({ item, kind, action = null }) {
   const definitions = {
     instruction: {
       id: item.instruction_id,
-      secondary: \`Matter \${item.case_matter_id}\`,
-      detail: \`Document \${item.document_id}\`,
+      secondary: `Matter ${item.case_matter_id}`,
+      detail: `Document ${item.document_id}`,
       timestamp: item.registered_at,
       state: item.state,
     },
     document: {
       id: item.document_id,
       secondary: item.document_type,
-      detail: \`Matter \${item.case_matter_id}\`,
+      detail: `Matter ${item.case_matter_id}`,
       timestamp: item.registered_at,
       state: item.state,
     },
     attempt: {
       id: item.attempt_id,
-      secondary: \`Instruction \${item.instruction_id}\`,
-      detail: \`Deputy \${item.deputy_id}\`,
+      secondary: `Instruction ${item.instruction_id}`,
+      detail: `Deputy ${item.deputy_id}`,
       timestamp: item.allocated_at,
       state: item.state,
     },
     execution: {
       id: item.service_execution_id,
-      secondary: \`Attempt \${item.attempt_id}\`,
-      detail: \`Document \${item.document_id}\`,
+      secondary: `Attempt ${item.attempt_id}`,
+      detail: `Document ${item.document_id}`,
       timestamp: item.executed_at,
       state: item.outcome,
     },
     return: {
       id: item.return_id,
-      secondary: \`Execution \${item.service_execution_id}\`,
-      detail: \`Instruction \${item.instruction_id}\`,
+      secondary: `Execution ${item.service_execution_id}`,
+      detail: `Instruction ${item.instruction_id}`,
       timestamp: item.generated_at,
       state: item.state,
     },
@@ -1109,10 +1109,10 @@ function createIntakeDraft() {
   const token = createOpaqueBrowserToken();
   const observedAt = new Date().toISOString();
   return {
-    caseMatterId: \`matter-\${token}\`,
-    instructionId: \`instruction-\${token}\`,
-    documentId: \`document-\${token}\`,
-    registrationCustodyEventId: \`custody-\${token}\`,
+    caseMatterId: `matter-${token}`,
+    instructionId: `instruction-${token}`,
+    documentId: `document-${token}`,
+    registrationCustodyEventId: `custody-${token}`,
     matterReference: '',
     documentType: '',
     matterEvidenceReference: '',
@@ -1155,7 +1155,7 @@ function LegalIntakePanel({ onRefresh, roleToken }) {
       await onRefresh();
       setStatus({
         kind: 'success',
-        message: \`\${result.disposition}: matter, instruction, document and registration custody evidence are canonical.\`,
+        message: `${result.disposition}: matter, instruction, document and registration custody evidence are canonical.`,
       });
       setDraft(createIntakeDraft());
     } catch (caught) {
@@ -1249,13 +1249,13 @@ function LegalIntakePanel({ onRefresh, roleToken }) {
         </div>
 
         {status && (
-          <div className={\`xl:col-span-2 rounded-xl border p-4 text-xs \${
+          <div className={`xl:col-span-2 rounded-xl border p-4 text-xs ${
             status.kind === 'error'
               ? 'border-red-900/40 bg-red-950/15 text-red-300'
               : status.kind === 'success'
                 ? 'border-emerald-900/40 bg-emerald-950/15 text-emerald-300'
                 : 'border-amber-900/40 bg-amber-950/15 text-amber-300'
-          }\`}>
+          }`}>
             {status.message}
           </div>
         )}
@@ -1328,19 +1328,19 @@ function LegalPracticeWorkspace({
       id: 'instructions',
       label: 'Active instructions',
       value: activeInstructions,
-      detail: \`\${workspace.summary.instructions_total} total current instructions\`,
+      detail: `${workspace.summary.instructions_total} total current instructions`,
     },
     {
       id: 'documents',
       label: 'Process documents',
       value: workspace.summary.documents_total,
-      detail: \`\${workspace.summary.documents_received} received · \${workspace.summary.documents_allocated} allocated\`,
+      detail: `${workspace.summary.documents_received} received · ${workspace.summary.documents_allocated} allocated`,
     },
     {
       id: 'service',
       label: 'Active service work',
       value: activeAttempts,
-      detail: \`\${workspace.summary.executions_total} certified executions\`,
+      detail: `${workspace.summary.executions_total} certified executions`,
     },
     {
       id: 'returns',
@@ -1366,7 +1366,7 @@ function LegalPracticeWorkspace({
     const draft = returnDrafts[key] || {
       executionId: key,
       executionEvidenceIdentity: execution.evidence_identity,
-      returnId: \`return-\${createOpaqueBrowserToken()}\`,
+      returnId: `return-${createOpaqueBrowserToken()}`,
       generatedAt: new Date().toISOString(),
     };
     if (!returnDrafts[key]) {
@@ -1383,7 +1383,7 @@ function LegalPracticeWorkspace({
         ...current,
         [key]: {
           kind: 'success',
-          message: \`Return \${result.returnId} generated from certified execution evidence.\`,
+          message: `Return ${result.returnId} generated from certified execution evidence.`,
         },
       }));
     } catch (caught) {
@@ -2608,10 +2608,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME
- * AUTHORITY BOUNDARY: governed SHERIFF/DEPUTY presentation, LEGAL_CLIENT shared workspace navigation/search, and deputy observation-command initiation only; Python EOS owns authority and legal truth
- * TENANT POSTURE: server-authorized tenant/client/deputy projections are required; client matter membership comes only from D5/D7 and deputy commands require exact capability parity
- * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable client/internal read, menu/search state, capability drift, malformed observation, command failure or failed refresh never invents truth or cross-role fallback
+ * VERSION: v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE
+ * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; Python EOS owns authority and legal truth
+ * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D11 snapshot truth, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
+ * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
