@@ -1,18 +1,24 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
-AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/P4/P5 remain canonical authorities.
-EPITOME: Translate authenticated tenant-scoped intake, directory, and
-         field-service commands into one canonical orchestrator inside one
+VERSION: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API
+AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/P4/P5 remain canonical authorities.
+EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
+         directory, and field-service commands into one canonical orchestrator inside one
          API-owned Mongo transaction, without accepting browser-supplied tenant
-         authority or collapsing registration into receipt/allocation/service truth.
+         authority or collapsing registration, receipt, allocation, or service truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API replaces the
+CHANGELOG: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API adds one
+           sheriff-only legal_operations:receipt:write command that composes
+           canonical L8-3 instruction acceptance plus physical office receipt
+           inside the API-owned transaction. It also routes allocation custody
+           reads through the canonical P2 custody-history API instead of
+           depending on P2 durable record shape.
+           v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API replaces the
            deprecated Starlette 422 status alias with HTTP 422 Unprocessable
            Content while preserving the exact fail-closed command projection.
            v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API added one
@@ -36,7 +42,7 @@ CHANGELOG: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API replaces the
            return command boundaries using evidence locators only.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Request bodies contain bounded intake facts,
-                            directory facts, locators, and observations; tenant
+                            acceptance/receipt evidence, directory facts, locators, and observations; tenant
                             authority comes only from durable authorization and
                             canonical domain/orchestrator layers own lifecycle,
                             lineage, fingerprints, and outcome truth.
@@ -44,7 +50,7 @@ TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
 AUTHORITY BOUNDARY: This module composes authenticated command transport and
                     transaction mechanics only; exactly one canonical intake,
-                    directory, or field-service orchestrator is called per command.
+                    acceptance/receipt, directory, or field-service orchestrator is called per command.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
@@ -86,6 +92,10 @@ from tools.eos.legal_operations.orchestration.process_service_intake_registratio
     ProcessServiceIntakeRegistrationError,
     register_process_service_intake,
 )
+from tools.eos.legal_operations.orchestration.process_service_acceptance_receipt_orchestrator import (
+    ProcessServiceAcceptanceReceiptError,
+    accept_instruction_and_receive_document,
+)
 from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrator import orchestrate_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_attempt_outcome_orchestrator import transition_process_service_attempt_outcome
 from tools.eos.legal_operations.orchestration.process_service_attempt_transition_orchestrator import transition_process_service_attempt
@@ -102,7 +112,7 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API"
+VERSION: Final[str] = "v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
@@ -132,6 +142,25 @@ class IntakeRegistrationCommand(_CommandModel):
     document_registered_at: datetime
     document_registration_evidence_reference: str = Field(min_length=1)
     registration_custody_event_id: str = Field(min_length=1)
+
+
+class AcceptanceReceiptCommand(_CommandModel):
+    """Bounded L8-3 acceptance/office-receipt evidence; tenant is server-derived.
+
+    The body may identify the instruction, document, canonical SheriffOffice,
+    explicit acceptance/receipt timestamps, evidence references, and the
+    sequence-two custody event identity. It cannot supply tenant authority,
+    allocation, service, return, invoice, payment, execution, or settlement truth.
+    """
+
+    instruction_id: str = Field(min_length=1)
+    document_id: str = Field(min_length=1)
+    sheriff_office_id: str = Field(min_length=1)
+    accepted_at: datetime
+    acceptance_evidence_reference: str = Field(min_length=1)
+    received_at: datetime
+    receipt_evidence_reference: str = Field(min_length=1)
+    receipt_custody_event_id: str = Field(min_length=1)
 
 
 class DistrictProvisioningCommand(_CommandModel):
@@ -255,17 +284,15 @@ def _source(collection: Any, tenant: str, identity: str, expected: type[_T], ses
 
 
 def _prior_custody(collection: Any, tenant: str, document_id: str, session: Any) -> tuple[Any, ...]:
-    """Hydrate the complete received custody prefix; never infer latest state."""
-    rows = collection.find(
-        {"tenant_id": tenant, "entity_type": "DocumentCustodyEvent", "p1_payload.document_id": document_id},
-        session=session,
+    """Return canonical P2-hydrated custody history for allocation composition."""
+    events = list(
+        LegalOperationsLifecycleRegistry.get_document_custody_history(
+            tenant,
+            document_id,
+            collection,
+            session=session,
+        )
     )
-    events: list[Any] = []
-    for row in rows:
-        identity = row.get("evidence_identity") if isinstance(row, dict) else None
-        if not isinstance(identity, str):
-            raise CommandError("LEGAL_OPERATIONS_CUSTODY_EVIDENCE_INVALID")
-        events.append(LegalOperationsLifecycleRegistry.get(tenant, identity, collection, session=session))
     events.sort(key=lambda event: event.sequence_number)
     return tuple(events)
 
@@ -290,6 +317,7 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         CommandError,
         ProcessServiceDirectoryProvisioningError,
         ProcessServiceIntakeRegistrationError,
+        ProcessServiceAcceptanceReceiptError,
     ):
         raise
     except Exception as error:
@@ -317,6 +345,7 @@ def _ctx(permission: str, operation: str) -> RequireTenantAuthorization:
 
 
 _INTAKE = _ctx("legal_operations:instruction:write", "legal_instruction_write")
+_RECEIPT = _ctx("legal_operations:receipt:write", "legal_receipt_write")
 _DIRECTORY = _ctx("legal_operations:directory:write", "legal_directory_write")
 _ALLOCATE = _ctx("legal_operations:allocation:write", "legal_allocation_write")
 _ATTEMPT = _ctx("legal_operations:attempt:write", "legal_attempt_write")
@@ -354,6 +383,41 @@ async def register_process_service_intake_command(
                 command.document_registration_evidence_reference
             ),
             registration_custody_event_id=command.registration_custody_event_id,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            session=session,
+        )
+
+    try:
+        result = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return result.to_dict()
+
+
+@router.post("/intake/acceptance-receipts")
+async def accept_and_receive_process_service_command(
+    command: AcceptanceReceiptCommand,
+    context: TenantAuthorizationContext = Depends(_RECEIPT),
+) -> dict[str, Any]:
+    """Accept one instruction and record linked physical sheriff-office receipt.
+
+    Tenant scope comes only from the authorization context. L8-3 rehydrates
+    canonical instruction/document/office/custody truth, derives ACCEPTED,
+    RECEIVED, and RECEIVED_IN_OFFICE facts, and rejects partial/divergent
+    evidence without creating allocation, service, or financial authority.
+    """
+
+    def run(session: Any, db: Any) -> Any:
+        return accept_instruction_and_receive_document(
+            tenant_id=context.tenant_id,
+            instruction_id=command.instruction_id,
+            document_id=command.document_id,
+            sheriff_office_id=command.sheriff_office_id,
+            accepted_at=command.accepted_at,
+            acceptance_evidence_reference=command.acceptance_evidence_reference,
+            received_at=command.received_at,
+            receipt_evidence_reference=command.receipt_evidence_reference,
+            receipt_custody_event_id=command.receipt_custody_event_id,
             lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
             session=session,
         )
@@ -564,8 +628,8 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API
-# AUTHORITY BOUNDARY: authenticated intake/directory/field-service command composition; P1/P2/L8-1/L8-2/P4/P5 remain canonical
+# VERSION: v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API
+# AUTHORITY BOUNDARY: authenticated intake/receipt/directory/field-service command composition; P1/P2/L8-1/L8-2/L8-3/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
