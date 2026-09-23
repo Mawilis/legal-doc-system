@@ -1,7 +1,7 @@
 """Host-backed authenticated intake command certificate for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Intake Command API Real-Mongo Certificate
-VERSION: v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
+VERSION: v1.0.3-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
 AUTHORITY: Host-backed certificate for authenticated L8-2 intake command composition.
 EPITOME: Prove live split-store IAM, actual FastAPI POST dispatch, exact
          own-tenant CaseMatter -> LegalInstruction -> ProcessDocument ->
@@ -15,11 +15,14 @@ COLLABORATION / OWNERSHIP: Command API owns HTTP/transaction composition;
                             canonical intake registration; P1/P2/L8-0 own
                             underlying lifecycle, persistence, and history truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
+CHANGELOG: 2026-09-23 v1.0.3-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
+           corrects the prior certificate-history label after the v1.3.0
+           command-router rebind; runtime behavior and assertions are unchanged.
+           2026-09-23 v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
            rebinds the already-certified intake HTTP behavior to shared command
            API v1.3.0 after L8-3 receipt-route addition; intake authority and
            assertions remain unchanged.
-            2026-09-23 v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
+           2026-09-23 v1.0.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
            binds the host certificate to command API v1.2.1 after the
            non-semantic HTTP 422 status-alias cleanup; all live IAM, transaction,
            replay, tenant, partial-state, and non-financial assertions remain.
@@ -99,7 +102,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT"
+VERSION = "v1.0.3-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -684,12 +687,12 @@ def test_real_mongo_intake_rows_exclude_downstream_and_financial_authority(
         "v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API"
     )
     assert VERSION == (
-        "v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT"
+        "v1.0.3-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT"
     )
 
 
 # ARTIFACT: test_legal_operations_intake_command_router_real_mongo.py
-# VERSION: v1.0.2-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
+# VERSION: v1.0.3-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-RM-CERT
 # AUTHORITY BOUNDARY: host-backed live-IAM intake command certificate only
 # TENANT POSTURE: exact tenant with ACTIVE split-store legal-practice IAM truth
 # FAIL-CLOSED POSTURE: runtime/IAM/scope/body/partial/divergence failures deny
