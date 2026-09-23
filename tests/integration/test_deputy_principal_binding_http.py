@@ -1,7 +1,7 @@
 """Direct ASGI certificate for sheriff deputy-principal binding commands.
 
 TITLE: WILSY OS Deputy Principal Binding HTTP Certificate
-VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
+VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
 AUTHORITY: Direct HTTP/transaction certificate for the L8-6B sheriff command.
 EPITOME: Prove the existing sheriff-only directory authority gates binding
          creation, tenant scope is server-derived, exactly one L8-6B composer
@@ -12,7 +12,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: HTTP composition certificate only; IAM owns actor
                             admission and L8-6B owns target identity validation.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
+           rebinds the HTTP certificate to the production v1.4.1 sovereign
+           authority-declaration alignment; runtime assertions are unchanged.
+           2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
            establishes unauthenticated denial, exact sheriff tenant dispatch,
            forbidden body tenant authority, commit/abort ownership, bounded
            error mapping, response shape, and production-version binding.
@@ -55,7 +58,7 @@ from tools.eos.legal_operations.orchestration.deputy_principal_binding_orchestra
 )
 
 
-VERSION = "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT"
+VERSION = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT"
 TENANT = "tenant-sheriff"
 NOW = datetime(2026, 9, 23, 17, 30, tzinfo=timezone.utc)
 
@@ -309,13 +312,13 @@ def test_command_route_and_version_binding_are_exact() -> None:
     assert command_api._DIRECTORY.permission_id == "legal_operations:directory:write"
     assert command_api._DIRECTORY.operation == "legal_directory_write"
     assert command_api.VERSION == (
-        "v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
+        "v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
     )
-    assert VERSION == "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT"
+    assert VERSION == "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT"
 
 
 # ARTIFACT: test_deputy_principal_binding_http.py
-# VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
+# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-HTTP-CERT
 # AUTHORITY BOUNDARY: direct sheriff-gated L8-6B HTTP/transaction certificate only
 # TENANT POSTURE: tenant comes only from authorized sheriff context
 # FAIL-CLOSED POSTURE: auth/body/precondition/conflict/persistence failures abort and deny
