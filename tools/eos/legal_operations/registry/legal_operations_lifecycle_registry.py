@@ -1,16 +1,22 @@
 """Durable, provider-neutral Legal Operations lifecycle evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry
-VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
+VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Persist and strictly hydrate immutable P1 Legal Operations evidence
-         without deriving lifecycle, service, billing, or financial truth.
+EPITOME: Persist, enumerate exact entity history, and strictly hydrate
+         immutable P1 Legal Operations evidence without deriving lifecycle,
+         service, billing, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py
 COLLABORATION / OWNERSHIP: P2 persistence owner; the P1 domain remains the
                             exclusive lifecycle/evidence authority. Callers own
                             Mongo sessions and transaction boundaries.
-CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY translates
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY adds exact
+           tenant/type/entity immutable-history retrieval, propagates the
+           caller session through the indexed history query, hydrates every
+           returned snapshot, and deliberately leaves current-state selection
+           to the separate deterministic L8-0 projection authority.
+           2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY translated
            labeled transient transaction write conflicts into the governed
            whole-transaction retry signal while preserving caller ownership.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -60,7 +66,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION: Final[str] = "v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+VERSION: Final[str] = "v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
 COLLECTION: Final[str] = "legal_operations_lifecycle_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -447,7 +453,14 @@ def _canonical_record(document: Mapping[str, Any]) -> dict[str, Any]:
 
 
 class LegalOperationsLifecycleRegistry:
-    """Persist and strictly hydrate immutable P1 lifecycle evidence."""
+    """Persist, enumerate, and strictly hydrate immutable P1 lifecycle evidence.
+
+    The registry owns no lifecycle transition, current-state selection,
+    authorization, transaction, billing, invoice, payment, execution, or
+    settlement authority. Every public persistence/read method preserves exact
+    tenant scope and propagates caller-owned sessions without starting,
+    committing, aborting, or retrying a transaction.
+    """
 
     @staticmethod
     def ensure_indexes(collection: Any) -> None:
@@ -532,6 +545,53 @@ class LegalOperationsLifecycleRegistry:
         return _hydrate_record(persisted)
 
     @staticmethod
+    def get_entity_history(
+        tenant_id: str,
+        entity_type: str,
+        entity_identity: str,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> tuple[P1Value, ...]:
+        """Read complete immutable history for one exact tenant/type/entity scope.
+
+        This method performs no current-state selection and no mutation. It
+        propagates the caller-owned session into one indexed history query,
+        strictly hydrates every returned record, rejects any scope divergence
+        or corruption, and returns an empty tuple when no record exists for
+        the exact tenant/type/entity predicate. Consumers that need "current"
+        truth must compose the separate deterministic current-projection
+        authority over this complete history. The method has no billing,
+        invoice, payment, financial-execution, or settlement authority.
+        """
+        tenant = _tenant(tenant_id)
+        if not isinstance(entity_type, str) or entity_type not in _ENTITY_TYPES:
+            _fail("M2_ENTITY_TYPE_UNSUPPORTED")
+        if not isinstance(entity_identity, str) or _IDENTITY.fullmatch(entity_identity) is None:
+            _fail("M2_ENTITY_ID_INVALID")
+        query = {
+            "tenant_id": tenant,
+            "entity_type": entity_type,
+            "entity_identity": entity_identity,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+
+        history: list[P1Value] = []
+        for document in documents:
+            if not isinstance(document, Mapping):
+                _fail("M2_RECORD_SCHEMA_INVALID")
+            value = _hydrate_record(cast(Mapping[str, Any], document))
+            if value.tenant_id != tenant:
+                _fail("M2_TENANT_MISMATCH")
+            if type(value).__name__ != entity_type or _entity_identity(value) != entity_identity:
+                _fail("M2_ENTITY_HISTORY_SCOPE_MISMATCH")
+            history.append(value)
+        return tuple(history)
+
+    @staticmethod
     def get(tenant_id: str, evidence_identity: str, collection: Any, *, session: Any = None) -> P1Value:
         """Read one immutable snapshot by exact tenant-scoped evidence identity."""
         tenant = _tenant(tenant_id)
@@ -557,8 +617,8 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_lifecycle_registry.py
-# VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
-# AUTHORITY BOUNDARY: durable P1 evidence persistence and strict hydration only.
+# VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
+# AUTHORITY BOUNDARY: durable P1 evidence persistence, exact history enumeration, and strict hydration only.
 # TENANT POSTURE: every record and lookup is explicitly tenant-scoped.
 # FAIL-CLOSED POSTURE: corruption, divergence, unsupported types, and outages reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
