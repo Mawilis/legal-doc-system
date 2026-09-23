@@ -41,6 +41,7 @@ FAIL-CLOSED DECLARATION: Unavailable/wrong Mongo runtime, IAM mismatch,
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime, timezone
 import os
 import sys
@@ -335,7 +336,7 @@ def _post(
     tenant_id: str,
     principal_id: str,
     path: str,
-    payload: dict[str, object],
+    payload: Mapping[str, object],
     request_tenant: str | None = None,
 ) -> Any:
     """Issue one actual HTTP POST through production authorization and router."""
