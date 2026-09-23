@@ -1,7 +1,7 @@
 """Host-backed certificate for the Legal Operations P2 evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Registry Real-Mongo Certificate
-VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify real replica-set durability, immutable snapshot progression,
          tenant/entity-class enumeration, indexed document-custody history,
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: Host-backed P2 certificate only; P1 owns lifecycle,
                             service, return, and evidence semantics. The test
                             caller owns Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: 2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+CHANGELOG: 2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+           adds explicit exact-LegalInstruction runtime certification and
+           static tuple narrowing for real-Mongo enumeration assertions;
+           production behavior and authority contracts remain unchanged.
+           2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
            certifies P2 v1.3.0 exact tenant/entity-class enumeration against
            real Mongo, including deterministic output, foreign isolation,
            multiple immutable histories, and caller-session compatibility.
@@ -45,7 +49,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import os
-from typing import Any, Iterator
+from typing import Any, Iterator, cast
 import uuid
 
 import pytest
@@ -72,7 +76,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT"
+VERSION = "v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -268,8 +272,10 @@ def test_real_tenant_entity_snapshot_enumeration_is_exact_and_deterministic(
         )
         session.commit_transaction()
 
+    assert all(type(value) is LegalInstruction for value in snapshots)
+    instruction_snapshots = cast(tuple[LegalInstruction, ...], snapshots)
     assert len(snapshots) == 3
-    assert [value.instruction_id for value in snapshots] == [
+    assert [value.instruction_id for value in instruction_snapshots] == [
         "instruction-a",
         "instruction-b",
         "instruction-b",
@@ -529,7 +535,7 @@ def test_real_persisted_records_have_no_financial_authority_fields(mongo_context
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry_real_mongo.py
-# VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+# VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
 # AUTHORITY BOUNDARY: host-backed P2 persistence, tenant-entity enumeration, and strict hydration certificate only.
 # TENANT POSTURE: UUID-isolated explicit tenant scope; foreign records disclose nothing.
 # FAIL-CLOSED POSTURE: unavailable/wrong host runtime and corrupt durable evidence fail certification.
