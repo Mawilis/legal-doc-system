@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -194,15 +194,16 @@ def _install(
 def _project(
     session: FakeSession,
 ) -> LegalClientMatterProjectionSet:
+    reader: Any = SimpleNamespace()
     return get_legal_client_matter_projection(
         tenant_id=TENANT,
         principal_id=PRINCIPAL,
         visibility_collection="visibility",
         lifecycle_collection="lifecycle",
-        principal_repository=SimpleNamespace(),
-        membership_repository=SimpleNamespace(),
-        business_role_repository=SimpleNamespace(),
-        role_assignment_repository=SimpleNamespace(),
+        principal_repository=reader,
+        membership_repository=reader,
+        business_role_repository=reader,
+        role_assignment_repository=reader,
         session=session,
     )
 
@@ -457,7 +458,8 @@ def test_public_projection_constructor_is_immutable_and_exactly_whitelisted() ->
         "authorization_role",
     }
     assert forbidden.isdisjoint(payload)
-    assert forbidden.isdisjoint(payload["matters"][0])
+    matters_payload = cast(list[dict[str, object]], payload["matters"])
+    assert forbidden.isdisjoint(matters_payload[0])
 
     with pytest.raises(Exception):
         value.state = CaseMatterState.CLOSED  # type: ignore[misc]
