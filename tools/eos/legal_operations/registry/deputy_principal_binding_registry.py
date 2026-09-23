@@ -1,7 +1,7 @@
 """Immutable persistence for canonical deputy-principal identity bindings.
 
 TITLE: WILSY OS Deputy Principal Binding Registry
-VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
 AUTHORITY: Durable immutable persistence and exact resolution of L8-6B bindings.
 EPITOME: Persist one canonical principal-to-Deputy identity relation exactly
          once with unique tenant/principal and tenant/deputy keys, exact replay,
@@ -13,7 +13,11 @@ COLLABORATION / OWNERSHIP: deputy_principal_binding.py owns immutable value
                             semantics; P1 owns Deputy truth; IAM owns principal
                             and role truth; this registry owns persistence only.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+CHANGELOG: 2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+           centralizes two-key replay classification and applies it to both
+           ordinary reads and DuplicateKey race recovery; no branch may accept
+           one natural key before proving the other is mutually consistent.
+           2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
            requires both tenant/principal and tenant/deputy natural-key lookups
            to be mutually consistent before exact replay, so pre-index legacy
            duplicate/corrupt rows fail closed instead of short-circuiting.
@@ -55,7 +59,7 @@ from tools.eos.legal_operations.domain.deputy_principal_binding import (
 )
 
 
-VERSION: Final[str] = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
+VERSION: Final[str] = "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
 COLLECTION: Final[str] = "legal_operations_deputy_principal_bindings"
 _FIELDS: Final[frozenset[str]] = frozenset(
     {
@@ -210,6 +214,34 @@ def _hydrate(document: Mapping[str, object]) -> DeputyPrincipalBinding:
     return hydrated
 
 
+def _classify_existing_pair(
+    document: dict[str, object],
+    principal_existing: Mapping[str, object] | None,
+    deputy_existing: Mapping[str, object] | None,
+) -> DeputyPrincipalBinding | None:
+    """Require both natural-key lookups to prove one identical durable binding."""
+    if principal_existing is None and deputy_existing is None:
+        return None
+    if principal_existing is None or deputy_existing is None:
+        _fail(
+            "L8_6B_BINDING_PERSISTED_RECORD_INVALID",
+            error_type=DeputyPrincipalBindingPersistedRecordInvalidError,
+        )
+
+    principal_value = _hydrate(principal_existing)
+    deputy_value = _hydrate(deputy_existing)
+    if (
+        principal_value.to_dict() != document
+        or deputy_value.to_dict() != document
+        or principal_value != deputy_value
+    ):
+        _fail(
+            "L8_6B_BINDING_CONFLICT",
+            error_type=DeputyPrincipalBindingConflictError,
+        )
+    return principal_value
+
+
 class DeputyPrincipalBindingRegistry:
     """Persist and resolve immutable deputy-principal bindings only.
 
@@ -273,23 +305,13 @@ class DeputyPrincipalBindingRegistry:
         except PyMongoError as error:
             _fail("L8_6B_BINDING_PERSISTENCE_UNAVAILABLE", error)
 
-        existing_values = tuple(
-            _hydrate(cast(Mapping[str, object], existing))
-            for existing in (principal_existing, deputy_existing)
-            if existing is not None
+        existing_value = _classify_existing_pair(
+            document,
+            cast(Mapping[str, object] | None, principal_existing),
+            cast(Mapping[str, object] | None, deputy_existing),
         )
-        if existing_values:
-            if any(value.to_dict() != document for value in existing_values):
-                _fail(
-                    "L8_6B_BINDING_CONFLICT",
-                    error_type=DeputyPrincipalBindingConflictError,
-                )
-            if len(existing_values) != 2:
-                _fail(
-                    "L8_6B_BINDING_PERSISTED_RECORD_INVALID",
-                    error_type=DeputyPrincipalBindingPersistedRecordInvalidError,
-                )
-            return existing_values[0]
+        if existing_value is not None:
+            return existing_value
 
         try:
             target.insert_one(document, session=session)
@@ -299,11 +321,16 @@ class DeputyPrincipalBindingRegistry:
                 raced_deputy = target.find_one(deputy_query, session=session)
             except PyMongoError as read_error:
                 _fail("L8_6B_BINDING_PERSISTENCE_UNAVAILABLE", read_error)
-            for raced in (raced_principal, raced_deputy):
-                if raced is not None:
-                    hydrated = _hydrate(cast(Mapping[str, object], raced))
-                    if hydrated.to_dict() == document:
-                        return hydrated
+            try:
+                raced_value = _classify_existing_pair(
+                    document,
+                    cast(Mapping[str, object] | None, raced_principal),
+                    cast(Mapping[str, object] | None, raced_deputy),
+                )
+            except DeputyPrincipalBindingRegistryError as classification_error:
+                raise classification_error from error
+            if raced_value is not None:
+                return raced_value
             _fail(
                 "L8_6B_BINDING_CONFLICT",
                 error,
@@ -401,7 +428,7 @@ __all__ = [
 
 
 # ARTIFACT: deputy_principal_binding_registry.py
-# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+# VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
 # AUTHORITY BOUNDARY: immutable exact-replay binding persistence/resolution only
 # TENANT POSTURE: unique tenant/principal and tenant/deputy keys; foreign rows are absence
 # FAIL-CLOSED POSTURE: conflicts, corruption, absence, database failure, and fingerprint drift reject
