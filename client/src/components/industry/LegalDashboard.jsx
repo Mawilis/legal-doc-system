@@ -1,18 +1,26 @@
 /**
- * WILSY OS — LEGAL OPERATIONS SHERIFF COCKPIT
- * VERSION: v5.0.0-L8-6A-CERTIFIED-SHERIFF-COCKPIT
+ * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
+ * VERSION: v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
- * EPITOME: Replaces the legacy mock sheriff dashboard with an evidence-backed
- *          cockpit consuming only the certified L8-6A operational queue route.
- *          No browser data can create lifecycle, deputy identity, urgency,
- *          distance, billing, client, AI, payment, or settlement truth.
+ * EPITOME: Enhances the certified sheriff cockpit with the L8-6C bound-deputy
+ *          personal active-work surface. SHERIFF sees only tenant-wide certified
+ *          queues; DEPUTY sees only personal ALLOCATED/ATTEMPTED work derived
+ *          from the immutable principal-to-Deputy binding. Browser role labels
+ *          choose presentation only and never create authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; P1/P2/L8-0/
- *                            L8-5/L8-5C own lifecycle/read/queue truth;
- *                            legalOperationsService owns bounded transport
- *                            validation; this component owns presentation only.
+ *                            L8-5 own lifecycle/read truth; L8-5C owns sheriff
+ *                            queues; L8-6B owns principal-to-Deputy binding;
+ *                            L8-6C owns deputy personal work; the client adapter
+ *                            owns bounded validation; this component owns
+ *                            presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v5.0.0-L8-6A-CERTIFIED-SHERIFF-COCKPIT removes all
+ * CHANGELOG: 2026-09-23 v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT adds an exact DEPUTY personal-work mode,
+ *            preserves the SHERIFF tenant-wide mode, removes the obsolete
+ *            "deputy personal queue blocked" roadmap card, prevents unresolved
+ *            legal roles from probing either privileged endpoint, and keeps
+ *            responsive small-screen stacking without inventing mobile truth.
+ *            2026-09-23 v5.0.0-L8-6A-CERTIFIED-SHERIFF-COCKPIT removes all
  *            hard-coded documents, clients, deputies, service attempts,
  *            invoices, revenue, GPS, urgency, addresses, district metrics and
  *            payment states. It renders only office receipt, deputy assignment
@@ -21,12 +29,14 @@
  * SECURITY / PRIVACY POSTURE: Authenticated transport only; no secrets are
  *                             rendered or persisted by this component.
  * TENANT BOUNDARY: Canonical tenant scope comes from the server response after
- *                  durable authorization; tenantConfig is display-only.
- * AUTHORITY BOUNDARY: Read-only presentation. No lifecycle or command mutation.
+ *                  durable authorization; deputy identity additionally comes
+ *                  only from the server-bound L8-6B/L8-6C projection.
+ * AUTHORITY BOUNDARY: Read-only presentation. roleView selects presentation
+ *                     mode only; Python EOS independently authorizes each read.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * FAIL-CLOSED DECLARATION: 401/403/503, malformed payloads, or tenant drift
- *                          render bounded unavailable/restricted states with no
- *                          mock fallback.
+ * FAIL-CLOSED DECLARATION: Unknown role scope, 401/403/503, malformed payloads,
+ *                          tenant drift or deputy drift render bounded states
+ *                          with no mock or cross-role fallback.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -51,10 +61,11 @@ import {
 
 import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
+  getDeputyPersonalActiveWork,
   getSheriffOperationalQueues,
 } from '../../services/legalOperationsService.js';
 
-const DASHBOARD_VERSION = 'v5.0.0-L8-6A-CERTIFIED-SHERIFF-COCKPIT';
+const DASHBOARD_VERSION = 'v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -64,11 +75,30 @@ const EMPTY_QUEUES = Object.freeze({
   activeAttempts: Object.freeze([]),
 });
 
+const EMPTY_DEPUTY_WORK = Object.freeze({
+  tenantId: '',
+  visibility: '',
+  deputyId: '',
+  activeAttempts: Object.freeze([]),
+});
+
+const ROLE_MODES = Object.freeze({
+  SHERIFF: 'SHERIFF',
+  DEPUTY: 'DEPUTY',
+  UNRESOLVED: 'UNRESOLVED',
+});
+
+function resolveRoleMode(value) {
+  const token = String(value || '')
+    .trim()
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .toUpperCase();
+  if (token.includes('SHERIFF')) return ROLE_MODES.SHERIFF;
+  if (token.includes('DEPUTY')) return ROLE_MODES.DEPUTY;
+  return ROLE_MODES.UNRESOLVED;
+}
+
 const BLOCKED_CAPABILITIES = Object.freeze([
-  {
-    title: 'Deputy personal queue',
-    reason: 'Blocked until canonical principal → deputy identity binding exists.',
-  },
   {
     title: 'Same-day / urgent prioritisation',
     reason: 'No canonical urgency field exists in the certified queue model.',
@@ -256,20 +286,42 @@ export default function LegalDashboard({
   tenantConfig,
   roleView = 'LEGAL_VIEW',
 }) {
+  const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
+  const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const loadQueues = useCallback(async ({ refresh = false } = {}) => {
+  const loadOperationalTruth = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
 
+    if (roleMode === ROLE_MODES.UNRESOLVED) {
+      setQueues(EMPTY_QUEUES);
+      setDeputyWork(EMPTY_DEPUTY_WORK);
+      setError({
+        kind: 'LEGAL_ROLE_SCOPE_REQUIRED',
+        message:
+          'This Legal OS surface requires an explicit SHERIFF or DEPUTY presentation scope. No privileged queue endpoint was queried.',
+      });
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
-      const result = await getSheriffOperationalQueues();
-      setQueues(result);
+      if (roleMode === ROLE_MODES.DEPUTY) {
+        const result = await getDeputyPersonalActiveWork();
+        setDeputyWork(result);
+        setQueues(EMPTY_QUEUES);
+      } else {
+        const result = await getSheriffOperationalQueues();
+        setQueues(result);
+        setDeputyWork(EMPTY_DEPUTY_WORK);
+      }
       setLastUpdated(new Date());
     } catch (caught) {
       const status = caught?.response?.status;
@@ -278,50 +330,70 @@ export default function LegalDashboard({
       if (status === 401) {
         setError({
           kind: 'AUTHENTICATION_REQUIRED',
-          message: 'Authentication is required to open the sheriff operational cockpit.',
+          message: 'Authentication is required to open the Legal Operations cockpit.',
+        });
+      } else if (status === 403 && roleMode === ROLE_MODES.DEPUTY) {
+        setError({
+          kind:
+            detail === 'DEPUTY_IDENTITY_BINDING_REQUIRED'
+              ? 'DEPUTY_IDENTITY_BINDING_REQUIRED'
+              : 'DEPUTY_AUTHORITY_REQUIRED',
+          message:
+            detail === 'DEPUTY_IDENTITY_BINDING_REQUIRED'
+              ? 'No immutable principal-to-Deputy identity binding is available for this authenticated deputy.'
+              : 'Personal active work is restricted to the canonical DEPUTY authority.',
         });
       } else if (status === 403) {
         setError({
           kind: 'SHERIFF_AUTHORITY_REQUIRED',
           message:
-            'This tenant-wide operational queue is restricted to the canonical SHERIFF authority. Deputy personal queues remain blocked until deputy identity binding is certified.',
+            'The tenant-wide operational queue is restricted to the canonical SHERIFF authority.',
         });
       } else if (status === 503) {
         setError({
           kind: 'EVIDENCE_UNAVAILABLE',
           message:
-            detail || 'Certified Legal Operations queue evidence is temporarily unavailable.',
+            detail || 'Certified Legal Operations evidence is temporarily unavailable.',
         });
       } else {
         setError({
           kind: 'QUEUE_READ_FAILED',
           message:
-            caught?.message || 'The certified Legal Operations queue could not be loaded.',
+            caught?.message || 'Certified Legal Operations truth could not be loaded.',
         });
       }
 
       setQueues(EMPTY_QUEUES);
+      setDeputyWork(EMPTY_DEPUTY_WORK);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [roleMode]);
 
   useEffect(() => {
     let active = true;
 
     const hydrate = async () => {
       if (!active) return;
-      await loadQueues();
+      await loadOperationalTruth();
     };
 
     hydrate();
     return () => {
       active = false;
     };
-  }, [loadQueues]);
+  }, [loadOperationalTruth]);
 
   const metrics = useMemo(() => {
+    if (roleMode === ROLE_MODES.DEPUTY) {
+      return {
+        officeReceipt: 0,
+        deputyAssignment: 0,
+        activeAttempts: deputyWork.activeAttempts.length,
+        totalCurrentWork: deputyWork.activeAttempts.length,
+      };
+    }
     const officeReceipt = queues.officeReceipt.length;
     const deputyAssignment = queues.deputyAssignment.length;
     const activeAttempts = queues.activeAttempts.length;
@@ -331,13 +403,16 @@ export default function LegalDashboard({
       activeAttempts,
       totalCurrentWork: officeReceipt + deputyAssignment + activeAttempts,
     };
-  }, [queues]);
+  }, [deputyWork, queues, roleMode]);
 
   const tenantLabel =
-    queues.tenantId
+    (roleMode === ROLE_MODES.DEPUTY ? deputyWork.tenantId : queues.tenantId)
     || tenantConfig?.tenantId
     || tenantConfig?.id
     || 'Awaiting authorized tenant';
+
+  const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
+  const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
 
   if (loading) {
     return (
@@ -345,7 +420,7 @@ export default function LegalDashboard({
         <div className="text-center">
           <Loader2 className="mx-auto animate-spin text-amber-400" size={30} />
           <p className="mt-4 text-xs font-black uppercase tracking-[0.22em] text-stone-400">
-            Resolving certified sheriff queue truth
+            Resolving certified Legal Operations truth
           </p>
         </div>
       </div>
@@ -367,15 +442,19 @@ export default function LegalDashboard({
                     WILSY Legal OS
                   </h1>
                   <span className="rounded-full border border-emerald-800/40 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-400">
-                    Certified sheriff cockpit
+                    {isDeputyMode ? 'Bound deputy cockpit' : isSheriffMode ? 'Certified sheriff cockpit' : 'Role scope unresolved'}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-stone-400">
-                  Evidence-backed operational queues. No mock legal truth.
+                  {isDeputyMode
+                    ? 'Binding-scoped personal active work. No tenant-wide queue leakage.'
+                    : isSheriffMode
+                      ? 'Evidence-backed operational queues. No mock legal truth.'
+                      : 'Privileged Legal Operations queues remain closed until role scope resolves.'}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase tracking-wider text-stone-600">
                   <span>Tenant: {tenantLabel}</span>
-                  <span>Role view: {roleView}</span>
+                  <span>Role view: {roleMode}</span>
                   <span>API: {LEGAL_OPERATIONS_CLIENT_VERSION}</span>
                 </div>
               </div>
@@ -392,7 +471,7 @@ export default function LegalDashboard({
               </div>
               <button
                 type="button"
-                onClick={() => loadQueues({ refresh: true })}
+                onClick={() => loadOperationalTruth({ refresh: true })}
                 disabled={refreshing}
                 className="inline-flex items-center gap-2 rounded-xl border border-amber-700/35 bg-amber-500/10 px-4 py-3 text-xs font-black text-amber-300 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -434,74 +513,108 @@ export default function LegalDashboard({
           </section>
         )}
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <QueueMetric
-            icon={Inbox}
-            label="Office receipt"
-            value={metrics.officeReceipt}
-            description="REGISTERED process documents awaiting certified office receipt."
-          />
-          <QueueMetric
-            icon={UserCheck}
-            label="Deputy assignment"
-            value={metrics.deputyAssignment}
-            description="RECEIVED process documents awaiting canonical deputy allocation."
-          />
-          <QueueMetric
-            icon={Clock3}
-            label="Active attempts"
-            value={metrics.activeAttempts}
-            description="ALLOCATED or ATTEMPTED service attempts requiring operational attention."
-          />
-          <QueueMetric
-            icon={ClipboardList}
-            label="Current queue work"
-            value={metrics.totalCurrentWork}
-            description="Derived presentation count: the sum of the three certified queue families above."
-          />
-        </section>
-
-        <div className="grid gap-6 2xl:grid-cols-2">
-          <QueuePanel
-            title="Office receipt"
-            subtitle="Canonical REGISTERED ProcessDocument current states"
-            icon={FileText}
-            rows={queues.officeReceipt}
-            emptyMessage="No documents are awaiting office receipt."
-            renderRow={(item) => (
-              <DocumentQueueRow
-                key={item.document_id}
-                item={item}
-                mode="receipt"
+        {isSheriffMode && (
+          <>
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <QueueMetric
+                icon={Inbox}
+                label="Office receipt"
+                value={metrics.officeReceipt}
+                description="REGISTERED process documents awaiting certified office receipt."
               />
-            )}
-          />
-          <QueuePanel
-            title="Deputy assignment"
-            subtitle="Canonical RECEIVED ProcessDocument current states"
-            icon={FileCheck2}
-            rows={queues.deputyAssignment}
-            emptyMessage="No received documents are awaiting deputy allocation."
-            renderRow={(item) => (
-              <DocumentQueueRow
-                key={item.document_id}
-                item={item}
-                mode="assignment"
+              <QueueMetric
+                icon={UserCheck}
+                label="Deputy assignment"
+                value={metrics.deputyAssignment}
+                description="RECEIVED process documents awaiting canonical deputy allocation."
               />
-            )}
-          />
-        </div>
+              <QueueMetric
+                icon={Clock3}
+                label="Active attempts"
+                value={metrics.activeAttempts}
+                description="ALLOCATED or ATTEMPTED service attempts requiring operational attention."
+              />
+              <QueueMetric
+                icon={ClipboardList}
+                label="Current queue work"
+                value={metrics.totalCurrentWork}
+                description="Derived presentation count: the sum of the three certified queue families above."
+              />
+            </section>
 
-        <QueuePanel
-          title="Active service attempts"
-          subtitle="Canonical ALLOCATED / ATTEMPTED ServiceAttempt current states"
-          icon={Clock3}
-          rows={queues.activeAttempts}
-          emptyMessage="No active service attempts are currently certified."
-          renderRow={(item) => (
-            <AttemptQueueRow key={item.attempt_id} item={item} />
-          )}
-        />
+            <div className="grid gap-6 2xl:grid-cols-2">
+              <QueuePanel
+                title="Office receipt"
+                subtitle="Canonical REGISTERED ProcessDocument current states"
+                icon={FileText}
+                rows={queues.officeReceipt}
+                emptyMessage="No documents are awaiting office receipt."
+                renderRow={(item) => (
+                  <DocumentQueueRow
+                    key={item.document_id}
+                    item={item}
+                    mode="receipt"
+                  />
+                )}
+              />
+              <QueuePanel
+                title="Deputy assignment"
+                subtitle="Canonical RECEIVED ProcessDocument current states"
+                icon={FileCheck2}
+                rows={queues.deputyAssignment}
+                emptyMessage="No received documents are awaiting deputy allocation."
+                renderRow={(item) => (
+                  <DocumentQueueRow
+                    key={item.document_id}
+                    item={item}
+                    mode="assignment"
+                  />
+                )}
+              />
+            </div>
+
+            <QueuePanel
+              title="Active service attempts"
+              subtitle="Canonical ALLOCATED / ATTEMPTED ServiceAttempt current states"
+              icon={Clock3}
+              rows={queues.activeAttempts}
+              emptyMessage="No active service attempts are currently certified."
+              renderRow={(item) => (
+                <AttemptQueueRow key={item.attempt_id} item={item} />
+              )}
+            />
+          </>
+        )}
+
+        {isDeputyMode && (
+          <>
+            <section className="grid gap-4 md:grid-cols-2">
+              <QueueMetric
+                icon={UserCheck}
+                label="Bound deputy"
+                value={deputyWork.deputyId || '—'}
+                description="Canonical Deputy identity derived server-side from the immutable principal binding."
+              />
+              <QueueMetric
+                icon={Clock3}
+                label="My active attempts"
+                value={metrics.activeAttempts}
+                description="Only this bound deputy's current ALLOCATED or ATTEMPTED service attempts."
+              />
+            </section>
+
+            <QueuePanel
+              title="My active service work"
+              subtitle="Binding-scoped ALLOCATED / ATTEMPTED ServiceAttempt current states"
+              icon={Clock3}
+              rows={deputyWork.activeAttempts}
+              emptyMessage="No active service attempts are assigned to this bound deputy."
+              renderRow={(item) => (
+                <AttemptQueueRow key={item.attempt_id} item={item} />
+              )}
+            />
+          </>
+        )}
 
         <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <CapabilityBoundary />
@@ -547,10 +660,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v5.0.0-L8-6A-CERTIFIED-SHERIFF-COCKPIT
- * AUTHORITY BOUNDARY: evidence-backed sheriff presentation only
- * TENANT POSTURE: server-authorized exact tenant response only
- * FAIL-CLOSED POSTURE: unavailable or denied evidence never falls back to mocks
+ * VERSION: v6.0.0-L8-6C-ROLE-SCOPED-LEGAL-COCKPIT
+ * AUTHORITY BOUNDARY: role-scoped sheriff/deputy read presentation only; browser role labels never authorize
+ * TENANT POSTURE: server-authorized tenant response only; deputy rows additionally match bound deputy_id
+ * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable evidence, tenant/deputy drift never falls back or crosses roles
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
