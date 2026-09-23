@@ -1,8 +1,8 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
-AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/P4/P5 remain canonical authorities.
+VERSION: v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
+AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
          directory, deputy-principal identity-binding, and field-service
          commands into one canonical orchestrator inside one API-owned Mongo
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API adds one sheriff-only
+CHANGELOG: 2026-09-23 v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API aligns the sovereign authority/header
+           declarations with the already-authored L8-6B identity-binding
+           composition; runtime route, IAM, transaction, and error semantics
+           are unchanged.
+           2026-09-23 v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API adds one sheriff-only
            directory command for immutable principal-to-canonical-Deputy
            identity binding. The request cannot supply tenant authority; L8-6B
            independently proves target principal, membership, tenant_deputy
@@ -56,7 +60,8 @@ TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
 AUTHORITY BOUNDARY: This module composes authenticated command transport and
                     transaction mechanics only; exactly one canonical intake,
-                    acceptance/receipt, directory, or field-service orchestrator is called per command.
+                    acceptance/receipt, directory, deputy-principal-binding, or
+                    field-service orchestrator is called per command.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
@@ -137,7 +142,7 @@ from tools.eos.legal_operations.registry.process_service_attempt_transition_regi
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
+VERSION: Final[str] = "v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 
@@ -720,7 +725,7 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.4.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
+# VERSION: v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API
 # AUTHORITY BOUNDARY: authenticated intake/receipt/directory/deputy-binding/field-service command composition; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
