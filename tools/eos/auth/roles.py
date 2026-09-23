@@ -1,17 +1,26 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS
+VERSION: v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
 usage-capacity and billing-intelligence evidence access, and dedicated inbound
 merchant-configuration/provider-policy administration plus least-privilege
 field-service outcome/return commands, sheriff-only process-service directory
-provisioning, and sheriff-only office-receipt authority without creating deputy
-possession, service, or financial authority.
+provisioning, sheriff-only office-receipt authority, and least-privilege
+law-firm client-matter visibility provisioning without creating client read,
+deputy possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS grants
+    legal_operations:client_visibility:write only to LEGAL_PARTNER,
+    LEGAL_ATTORNEY, and LEGAL_PARALEGAL for future L8-7 grant/revoke
+    provisioning. LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT, SHERIFF,
+    DEPUTY, ENTERPRISE_ADMIN, AUDITOR, system, service and provider roles remain
+    excluded. Static grant policy does not prove current assignment, membership,
+    target-client eligibility, CaseMatter visibility, client read, service,
+    billing, payment, execution or settlement authority.
     2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS grants
     legal_operations:deputy_queue:read only to DEPUTY for binding-scoped
     personal active-work projection. SHERIFF retains the distinct tenant-wide
@@ -96,7 +105,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS"
+VERSION = "v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -144,6 +153,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:client_visibility:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -154,6 +164,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_ATTORNEY": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:client_visibility:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -164,6 +175,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_PARALEGAL": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:client_visibility:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -300,9 +312,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS
+# VERSION: v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; directory provisioning remains own-tenant and SHERIFF-grant scoped
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; client-visibility provisioning is limited to explicit law-firm grants
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
