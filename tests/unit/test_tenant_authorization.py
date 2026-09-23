@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+VERSION: v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,10 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+CHANGELOG: 2026-09-23 v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+repairs the certificate runtime VERSION to the current L8-6A release; test
+semantics, IAM authority, and sheriff-only queue-read behavior are unchanged.
+2026-09-23 v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
 certifies legal_queue_read -> legal_operations:queue:read as an exact
 sheriff-only conjunctive authorization binding, with deputy denial, crossed-pair
 rejection, and unchanged financial-execution prohibition.
@@ -88,7 +91,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT"
+VERSION = "v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1760,7 +1763,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+# VERSION: v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required; directory and receipt authority are sheriff-only
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
