@@ -1,18 +1,22 @@
 """Host-backed certificate for the Legal Operations P2 evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Registry Real-Mongo Certificate
-VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-RM-CERT
+VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify real replica-set durability, immutable snapshot progression,
-         indexed document-custody history, factory provenance, strict
-         corruption rejection, tenant isolation, and caller-owned transaction
-         semantics for the P2 registry.
+         tenant/entity-class enumeration, indexed document-custody history,
+         factory provenance, strict corruption rejection, tenant isolation, and
+         caller-owned transaction semantics for the P2 registry.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_lifecycle_registry_real_mongo.py
 COLLABORATION / OWNERSHIP: Host-backed P2 certificate only; P1 owns lifecycle,
                             service, return, and evidence semantics. The test
                             caller owns Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-13
-CHANGELOG: 2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-RM-CERT
+CHANGELOG: 2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+           certifies P2 v1.3.0 exact tenant/entity-class enumeration against
+           real Mongo, including deterministic output, foreign isolation,
+           multiple immutable histories, and caller-session compatibility.
+           2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-RM-CERT
            certifies the P2 v1.2.0 tenant/document custody-history index and
            strict real-Mongo query, binds the host certificate to the current
            production version, and treats unavailable/wrong replica runtime as
@@ -68,7 +72,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-RM-CERT"
+VERSION = "v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -221,6 +225,71 @@ def test_real_indexes_and_immutable_snapshot_progression(mongo_context: Any) -> 
     assert initial_identity == "instruction-1"
 
 
+def test_real_tenant_entity_snapshot_enumeration_is_exact_and_deterministic(
+    mongo_context: Any,
+) -> None:
+    """Certify tenant/entity enumeration across multiple immutable histories."""
+    client, _, collection = mongo_context
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    foreign = f"tenant-{uuid.uuid4().hex}"
+
+    first = _instruction(tenant, instruction_id="instruction-b")
+    first_accepted = first.transition_to(
+        LegalInstructionState.ACCEPTED,
+        evidence_reference="accepted-b",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    second = LegalInstruction(
+        tenant_id=tenant,
+        instruction_id="instruction-a",
+        case_matter_id="matter-2",
+        document_id="document-2",
+        registered_at=NOW,
+        evidence_reference="registration-a",
+    )
+    foreign_value = LegalInstruction(
+        tenant_id=foreign,
+        instruction_id="instruction-a",
+        case_matter_id="matter-foreign",
+        document_id="document-foreign",
+        registered_at=NOW,
+        evidence_reference="registration-foreign",
+    )
+    for value in (first_accepted, foreign_value, second, first):
+        LegalOperationsLifecycleRegistry.create(value, collection)
+
+    with client.start_session() as session:
+        session.start_transaction()
+        snapshots = LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+            tenant,
+            "LegalInstruction",
+            collection,
+            session=session,
+        )
+        session.commit_transaction()
+
+    assert len(snapshots) == 3
+    assert [value.instruction_id for value in snapshots] == [
+        "instruction-a",
+        "instruction-b",
+        "instruction-b",
+    ]
+    assert all(value.tenant_id == tenant for value in snapshots)
+    assert LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+        foreign,
+        "LegalInstruction",
+        collection,
+    ) == (foreign_value,)
+    assert LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+        f"tenant-{uuid.uuid4().hex}",
+        "LegalInstruction",
+        collection,
+    ) == ()
+    assert P2_VERSION == (
+        "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
+    )
+
+
 def test_real_document_custody_history_is_exact_tenant_document_scope(
     mongo_context: Any,
 ) -> None:
@@ -289,7 +358,7 @@ def test_real_document_custody_history_is_exact_tenant_document_scope(
         "missing-document",
         collection,
     ) == ()
-    assert P2_VERSION == "v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+    assert P2_VERSION == "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
 
 
 def test_real_exact_replay_has_one_durable_row(mongo_context: Any) -> None:
@@ -460,8 +529,8 @@ def test_real_persisted_records_have_no_financial_authority_fields(mongo_context
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry_real_mongo.py
-# VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-RM-CERT
-# AUTHORITY BOUNDARY: host-backed P2 persistence and strict hydration certificate only.
+# VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-RM-CERT
+# AUTHORITY BOUNDARY: host-backed P2 persistence, tenant-entity enumeration, and strict hydration certificate only.
 # TENANT POSTURE: UUID-isolated explicit tenant scope; foreign records disclose nothing.
 # FAIL-CLOSED POSTURE: unavailable/wrong host runtime and corrupt durable evidence fail certification.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
