@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.15.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS-CERT
+VERSION: v1.16.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,6 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.16.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS-CERT
+    certifies legal_operations:queue:read is granted only to SHERIFF and is
+    absent from DEPUTY and every other authorization role.
     2026-09-23 v1.15.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS-CERT
     certifies that legal_operations:receipt:write is granted only to SHERIFF
     and remains absent from all other authorization roles.
@@ -68,9 +71,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS"
+    assert POLICY_VERSION == "v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS"
 
-VERSION = "v1.15.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS-CERT"
+VERSION = "v1.16.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -124,6 +127,7 @@ TENANT_PERMISSIONS = {
     "legal_operations:instruction:write",
     "legal_operations:directory:write",
     "legal_operations:receipt:write",
+    "legal_operations:queue:read",
     "legal_operations:allocation:read",
     "legal_operations:allocation:write",
     "legal_operations:attempt:read",
@@ -177,8 +181,10 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_SECRETARY"]
     assert "legal_operations:directory:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:receipt:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:queue:read" in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:directory:write" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert "legal_operations:receipt:write" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    assert "legal_operations:queue:read" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
     for role in (
         "LEGAL_PARTNER",
         "LEGAL_ATTORNEY",
@@ -193,6 +199,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     ):
         assert "legal_operations:directory:write" not in ROLE_PERMISSIONS_MAP[role]
         assert "legal_operations:receipt:write" not in ROLE_PERMISSIONS_MAP[role]
+        assert "legal_operations:queue:read" not in ROLE_PERMISSIONS_MAP[role]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert all("financial_execution" not in grants for grants in ROLE_PERMISSIONS_MAP.values())
@@ -280,6 +287,7 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("billing_intelligence:evidence:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("legal_operations:directory:write", ("SHERIFF",)),
         ("legal_operations:receipt:write", ("SHERIFF",)),
+        ("legal_operations:queue:read", ("SHERIFF",)),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
         ("inbound_merchant_configuration:register", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
@@ -487,7 +495,7 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.15.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS-CERT
+# VERSION: v1.16.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: directory and other role definitions remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
