@@ -1,29 +1,36 @@
 """Direct ASGI certificate for deterministic Legal Operations reads.
 
-TITLE: WILSY OS Legal Operations Deterministic Current Read API Certificate
-VERSION: v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API-CERT
+TITLE: WILSY OS Legal Operations Current and History Read API Certificate
+VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
 AUTHORITY: Direct ASGI certificate for tenant-authorized Legal Operations projections.
-EPITOME: Prove authentication, exact tenant/type/entity history delegation,
-         deterministic current-state selection, bounded absence, divergence
-         rejection, client-policy denial, and read-only projection boundaries.
+EPITOME: Prove authentication, exact tenant/type/entity L8-5 delegation,
+         deterministic current-plus-history projection, bounded absence,
+         read-model failure translation, client-policy denial, compatibility,
+         and read-only projection boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_http.py
-COLLABORATION / OWNERSHIP: Certificate for L7A/L8-0 read composition only.
+COLLABORATION / OWNERSHIP: Certificate for L7A/L8-0/L8-5 HTTP composition only.
                             Durable tenant authorization remains independent;
                             P1 owns lifecycle truth, P2 owns immutable history,
-                            and L8-0 owns current-state selection.
+                            L8-0 owns current-state selection, and L8-5 owns
+                            entity read-model composition.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API-CERT
+CHANGELOG: 2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
+           replaces direct P2/L8-0 HTTP spying with the canonical L8-5
+           read-model seam, certifies backward-compatible current data plus
+           sanitized immutable history, exact read-model delegation, bounded
+           absence/error translation, and exclusion of raw P2 envelopes.
+           2026-09-23 v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API-CERT
            replaces arbitrary-row read expectations with complete-history
            delegation, deterministic current selection, fork rejection, exact
            foreign absence, and bounded P2 failure proofs.
            2026-09-15 v1.0.0-L7A-LEGAL-OPERATIONS-READ-API-CERT certified
            authentication, exact tenant scope, bounded hydration, and read-only
            output for the initial read API.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic identifiers and in-memory P1 values only;
                              no real provider, credential, secret, or customer
                              data access.
-TENANT BOUNDARY: Every successful repository delegation receives the exact
+TENANT BOUNDARY: Every successful read-model delegation receives the exact
                  authorized tenant, canonical entity type, and resource identity.
 AUTHORITY BOUNDARY: Certificate and read projection only; no lifecycle,
                     persistence mutation, command, invoice, payment, execution,
@@ -31,8 +38,8 @@ AUTHORITY BOUNDARY: Certificate and read projection only; no lifecycle,
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               and settlement.
 FAIL-CLOSED DECLARATION: Missing credentials/scope, client policy gaps, exact
-                         absence, P2 failure, corruption, and history divergence
-                         deny without arbitrary fallback selection.
+                         absence, read-model failure, corruption, divergence,
+                         and unexpected persistence errors deny without fallback.
 """
 from __future__ import annotations
 
@@ -57,54 +64,61 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     LegalInstruction,
     LegalInstructionState,
 )
-from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
-    LegalOperationsLifecycleRegistryError,
+from tools.eos.legal_operations.domain.legal_operations_read_model import (
+    LegalOperationsEntityReadModel,
+    LegalOperationsReadModelError,
 )
 
 
-VERSION = "v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API-CERT"
+VERSION = "v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT"
 _TENANT = "tenant-alpha"
 _IDENTITY = "instruction-001"
 _NOW = datetime(2026, 9, 23, 7, 0, tzinfo=timezone.utc)
 
 
 class _Collection:
-    """Opaque lifecycle collection marker; P2 owns all persistence semantics."""
+    """Opaque lifecycle collection marker; lower layers own persistence semantics."""
 
 
-class _HistorySpy:
-    """Record exact P2 history requests and return governed synthetic history."""
+class _ReadModelSpy:
+    """Record exact L8-5 requests and return one governed entity read model."""
 
     def __init__(
         self,
-        history: tuple[object, ...] = (),
+        model: LegalOperationsEntityReadModel | None = None,
         *,
         available_tenant: str = _TENANT,
-        error: LegalOperationsLifecycleRegistryError | None = None,
+        error: Exception | None = None,
     ) -> None:
-        self.history = history
+        self.model = model
         self.available_tenant = available_tenant
         self.error = error
         self.calls: list[tuple[str, str, str, object, object]] = []
 
     def read(
         self,
+        *,
         tenant_id: str,
         entity_type: str,
         entity_identity: str,
-        collection: object,
-        *,
+        lifecycle_collection: object,
         session: object = None,
-    ) -> tuple[object, ...]:
-        """Mirror P2's public history contract without selecting current truth."""
+    ) -> LegalOperationsEntityReadModel:
+        """Mirror the public L8-5 exact-entity read-model contract."""
         self.calls.append(
-            (tenant_id, entity_type, entity_identity, collection, session)
+            (
+                tenant_id,
+                entity_type,
+                entity_identity,
+                lifecycle_collection,
+                session,
+            )
         )
         if self.error is not None:
             raise self.error
-        if tenant_id != self.available_tenant:
-            return ()
-        return self.history
+        if tenant_id != self.available_tenant or self.model is None:
+            raise LegalOperationsReadModelError("L8_5_ENTITY_NOT_FOUND")
+        return self.model
 
 
 class _ProjectedValue:
@@ -131,6 +145,22 @@ def _instruction() -> LegalInstruction:
         document_id="document-001",
         registered_at=_NOW,
         evidence_reference="registration-evidence",
+    )
+
+
+def _model(
+    history: tuple[LegalInstruction, ...],
+    *,
+    current: LegalInstruction | None = None,
+) -> LegalOperationsEntityReadModel:
+    """Build one already-certified L8-5 projection for the HTTP boundary."""
+    assert history
+    return LegalOperationsEntityReadModel(
+        tenant_id=_TENANT,
+        entity_type="LegalInstruction",
+        entity_identity=_IDENTITY,
+        current=current or history[-1],
+        history=history,
     )
 
 
@@ -165,7 +195,7 @@ def _app(
     *,
     context: TenantAuthorizationContext | None = None,
 ) -> FastAPI:
-    """Mount the real L7A router with only dependency providers overridden."""
+    """Mount the real read router with only dependency providers overridden."""
     app = FastAPI()
     register_error_handlers(app, debug=False)
     if context is not None:
@@ -175,16 +205,12 @@ def _app(
     return app
 
 
-def _install_history(
+def _install_read_model(
     monkeypatch: pytest.MonkeyPatch,
-    spy: _HistorySpy,
+    spy: _ReadModelSpy,
 ) -> None:
-    """Replace only the P2 history I/O seam; keep the real L8-0 resolver active."""
-    monkeypatch.setattr(
-        legal_router.LegalOperationsLifecycleRegistry,
-        "get_entity_history",
-        staticmethod(spy.read),
-    )
+    """Replace only the L8-5 read-model seam; lower-layer truth stays external."""
+    monkeypatch.setattr(legal_router, "get_entity_read_model", spy.read)
 
 
 def test_missing_authentication_is_denied() -> None:
@@ -197,13 +223,13 @@ def test_missing_authentication_is_denied() -> None:
     assert response.status_code == 401
 
 
-def test_missing_tenant_scope_is_denied_before_history_read(
+def test_missing_tenant_scope_is_denied_before_read_model_access(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Missing explicit tenant scope cannot reach canonical lifecycle history."""
+    """Missing explicit tenant scope cannot reach canonical L8-5 composition."""
     collection = _Collection()
-    spy = _HistorySpy()
-    _install_history(monkeypatch, spy)
+    spy = _ReadModelSpy(_model((_instruction(),)))
+    _install_read_model(monkeypatch, spy)
     app = _app(collection)
 
     async def require_scope(
@@ -221,10 +247,10 @@ def test_missing_tenant_scope_is_denied_before_history_read(
     assert spy.calls == []
 
 
-def test_authorized_read_resolves_unique_current_snapshot_from_complete_history(
+def test_authorized_read_delegates_to_l8_5_and_exposes_current_plus_history(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Unordered exact history resolves the longest canonical linear lineage."""
+    """Exact authorized read preserves current data and adds immutable history."""
     registered = _instruction()
     accepted = registered.transition_to(
         LegalInstructionState.ACCEPTED,
@@ -232,8 +258,8 @@ def test_authorized_read_resolves_unique_current_snapshot_from_complete_history(
         occurred_at=_NOW + timedelta(minutes=1),
     )
     collection = _Collection()
-    spy = _HistorySpy((accepted, registered))
-    _install_history(monkeypatch, spy)
+    spy = _ReadModelSpy(_model((registered, accepted), current=accepted))
+    _install_read_model(monkeypatch, spy)
 
     with TestClient(_app(collection, context=_context())) as client:
         response = client.get(f"/api/legal-operations/instructions/{_IDENTITY}")
@@ -245,6 +271,12 @@ def test_authorized_read_resolves_unique_current_snapshot_from_complete_history(
     assert body["entity_identity"] == _IDENTITY
     assert body["visibility"] == "AUDIT_VISIBLE"
     assert body["data"] == accepted.to_dict()
+    assert body["history"] == [registered.to_dict(), accepted.to_dict()]
+    assert all(
+        key not in snapshot
+        for snapshot in (body["data"], *body["history"])
+        for key in ("_id", "p1_payload", "source_payload", "credentials", "token")
+    )
     assert spy.calls == [
         (_TENANT, "LegalInstruction", _IDENTITY, collection, None)
     ]
@@ -253,10 +285,10 @@ def test_authorized_read_resolves_unique_current_snapshot_from_complete_history(
 def test_foreign_tenant_is_bounded_absence_without_scope_disclosure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Foreign exact scope receives 404 after one foreign-scoped P2 delegation."""
+    """Foreign exact scope receives 404 after one foreign-scoped L8-5 delegation."""
     collection = _Collection()
-    spy = _HistorySpy((_instruction(),))
-    _install_history(monkeypatch, spy)
+    spy = _ReadModelSpy(_model((_instruction(),)))
+    _install_read_model(monkeypatch, spy)
 
     with TestClient(
         _app(collection, context=_context("tenant-foreign"))
@@ -278,10 +310,10 @@ def test_foreign_tenant_is_bounded_absence_without_scope_disclosure(
 def test_unknown_resource_is_bounded_absence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Empty exact P2 history is 404 and never becomes invented current truth."""
+    """L8-5 exact-entity absence is 404 and never becomes invented truth."""
     collection = _Collection()
-    spy = _HistorySpy(())
-    _install_history(monkeypatch, spy)
+    spy = _ReadModelSpy()
+    _install_read_model(monkeypatch, spy)
 
     with TestClient(_app(collection, context=_context())) as client:
         response = client.get(f"/api/legal-operations/instructions/{_IDENTITY}")
@@ -293,13 +325,13 @@ def test_unknown_resource_is_bounded_absence(
     ]
 
 
-def test_client_role_is_fail_closed_before_history_read(
+def test_client_role_is_fail_closed_before_read_model_access(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Internal lifecycle projections remain denied to client role until policy exists."""
     collection = _Collection()
-    spy = _HistorySpy((_instruction(),))
-    _install_history(monkeypatch, spy)
+    spy = _ReadModelSpy(_model((_instruction(),)))
+    _install_read_model(monkeypatch, spy)
 
     with TestClient(
         _app(collection, context=_context(role="tenant_legal_client"))
@@ -311,24 +343,15 @@ def test_client_role_is_fail_closed_before_history_read(
     assert spy.calls == []
 
 
-def test_forked_history_fails_closed_instead_of_selecting_arbitrary_row(
+def test_divergent_read_model_failure_is_bounded_evidence_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Two sibling current candidates become bounded evidence-unavailable."""
-    registered = _instruction()
-    accepted = registered.transition_to(
-        LegalInstructionState.ACCEPTED,
-        evidence_reference="accepted",
-        occurred_at=_NOW + timedelta(minutes=1),
-    )
-    cancelled = registered.transition_to(
-        LegalInstructionState.CANCELLED,
-        evidence_reference="cancelled",
-        occurred_at=_NOW + timedelta(minutes=1),
-    )
+    """L8-0 divergence translated by L8-5 cannot become arbitrary HTTP truth."""
     collection = _Collection()
-    spy = _HistorySpy((registered, accepted, cancelled))
-    _install_history(monkeypatch, spy)
+    spy = _ReadModelSpy(
+        error=LegalOperationsReadModelError("L8_5_CURRENT_PROJECTION_INVALID")
+    )
+    _install_read_model(monkeypatch, spy)
 
     with TestClient(_app(collection, context=_context())) as client:
         response = client.get(f"/api/legal-operations/instructions/{_IDENTITY}")
@@ -337,21 +360,36 @@ def test_forked_history_fails_closed_instead_of_selecting_arbitrary_row(
     assert response.json()["detail"] == "LEGAL_OPERATIONS_EVIDENCE_UNAVAILABLE"
 
 
-def test_p2_failure_is_bounded_and_never_falls_back_to_local_selection(
+def test_l8_5_evidence_failure_is_bounded_without_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """P2 corruption/outage remains bounded evidence-unavailable."""
+    """P2 corruption/outage translated by L8-5 remains evidence-unavailable."""
     collection = _Collection()
-    spy = _HistorySpy(
-        error=LegalOperationsLifecycleRegistryError("M2_P1_FINGERPRINT_MISMATCH")
+    spy = _ReadModelSpy(
+        error=LegalOperationsReadModelError("L8_5_EVIDENCE_UNAVAILABLE")
     )
-    _install_history(monkeypatch, spy)
+    _install_read_model(monkeypatch, spy)
 
     with TestClient(_app(collection, context=_context())) as client:
         response = client.get(f"/api/legal-operations/instructions/{_IDENTITY}")
 
     assert response.status_code == 503
     assert response.json()["detail"] == "LEGAL_OPERATIONS_EVIDENCE_UNAVAILABLE"
+
+
+def test_unexpected_read_failure_is_bounded_persistence_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unexpected infrastructure failure remains a bounded 503 response."""
+    collection = _Collection()
+    spy = _ReadModelSpy(error=RuntimeError("synthetic transport failure"))
+    _install_read_model(monkeypatch, spy)
+
+    with TestClient(_app(collection, context=_context())) as client:
+        response = client.get(f"/api/legal-operations/instructions/{_IDENTITY}")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE"
 
 
 def test_projection_excludes_transport_and_secret_fields() -> None:
@@ -364,15 +402,18 @@ def test_projection_excludes_transport_and_secret_fields() -> None:
     }
 
 
-def test_router_version_is_deterministic_current_read_release() -> None:
-    """Certificate remains bound to the intended production router release."""
-    assert legal_router.VERSION == "v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API"
+def test_router_version_is_l8_5_current_history_read_release() -> None:
+    """Certificate remains bound to the intended L8-5 production router release."""
+    assert (
+        legal_router.VERSION
+        == "v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
+    )
 
 
 # ARTIFACT: test_legal_operations_http.py
-# VERSION: v1.1.0-L8-0-LEGAL-OPERATIONS-CURRENT-READ-API-CERT
-# AUTHORITY BOUNDARY: direct ASGI deterministic read projection certificate only
-# TENANT POSTURE: exact authorized tenant/type/entity delegation and foreign absence
-# FAIL-CLOSED POSTURE: auth gaps, absence, P2 failures, and history divergence deny
+# VERSION: v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
+# AUTHORITY BOUNDARY: direct ASGI authenticated current-plus-history projection certificate only
+# TENANT POSTURE: exact authorized tenant/type/entity L8-5 delegation and foreign absence
+# FAIL-CLOSED POSTURE: auth gaps, absence, read-model failures, divergence, and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
