@@ -1,7 +1,7 @@
 """Live-IAM real-Mongo certificate for sheriff operational queues.
 
 TITLE: WILSY OS Sheriff Operational Queue Live-IAM Real-Mongo Certificate
-VERSION: v1.0.1-L8-6C-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
+VERSION: v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
 AUTHORITY: Host-backed certification of sheriff-only operational queue reads.
 EPITOME: Prove durable principal, membership, business-role, and authorization-
          role truth authorizes SHERIFF queue reads before lifecycle access,
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: Host certificate for L8-6A IAM+HTTP composition.
                             P1/P2/L8-0/L8-5/L8-5C remain canonical lifecycle
                             and queue authorities; IAM remains separate.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6C-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
+CHANGELOG: 2026-09-23 v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
+           rebinds the sealed live-IAM sheriff queue certificate to the
+           additive L8-6D read router; sheriff allow/deputy tenant-wide denial
+           and real-Mongo queue behavior remain unchanged.
+           2026-09-23 v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
            rebinds the sealed live-IAM sheriff queue certificate to the
            additive L8-6C read router; sheriff allow/deputy tenant-wide denial
            and real-Mongo queue assertions are unchanged.
@@ -69,7 +73,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.1-L8-6C-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT"
+VERSION = "v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -556,14 +560,14 @@ def test_real_mongo_foreign_scope_denies_before_lifecycle_access(
 
 def test_live_router_and_iam_bindings_match_l8_6a_release() -> None:
     """Host certificate remains bound to the exact L8-6A API/IAM vocabulary."""
-    assert legal_router.VERSION == "v1.4.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-READ-API"
+    assert legal_router.VERSION == "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
     assert legal_router._QUEUE_READ.permission_id == "legal_operations:queue:read"
     assert legal_router._QUEUE_READ.operation == "legal_queue_read"
-    assert VERSION == "v1.0.1-L8-6C-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT"
+    assert VERSION == "v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT"
 
 
 # ARTIFACT: test_legal_operations_sheriff_queue_http_real_mongo.py
-# VERSION: v1.0.1-L8-6C-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
+# VERSION: v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT
 # AUTHORITY BOUNDARY: live-IAM real-Mongo sheriff operational-queue read certificate only
 # TENANT POSTURE: exact durable sheriff tenant admitted; deputy and foreign scopes deny before lifecycle
 # FAIL-CLOSED POSTURE: runtime/IAM/scope/queue evidence failures deny without personal-deputy or mock fallback
