@@ -389,8 +389,6 @@ function DeputyAttemptRow({
   const pending =
     commandState?.status === 'pending'
     && commandState?.attemptId === item.attempt_id;
-  const attemptMessage =
-    commandState?.attemptId === item.attempt_id ? commandState : null;
   const commandKinds = capability?.nextCommandKinds || [];
   const canBegin = commandKinds.includes(FIELD_COMMAND_KIND.BEGIN);
   const canComplete = commandKinds.includes(FIELD_COMMAND_KIND.COMPLETED);
@@ -494,20 +492,6 @@ function DeputyAttemptRow({
               <span>Sequence lineage: server-owned</span>
             </div>
 
-            {attemptMessage && (
-              <div
-                role={attemptMessage.status === 'error' ? 'alert' : 'status'}
-                className={
-                  attemptMessage.status === 'error'
-                    ? 'mt-4 rounded-xl border border-red-900/40 bg-red-950/15 p-3 text-xs text-red-300'
-                    : attemptMessage.status === 'success'
-                      ? 'mt-4 rounded-xl border border-emerald-900/40 bg-emerald-950/15 p-3 text-xs text-emerald-300'
-                      : 'mt-4 rounded-xl border border-amber-900/40 bg-amber-950/15 p-3 text-xs text-amber-300'
-                }
-              >
-                {attemptMessage.message}
-              </div>
-            )}
           </>
         )}
       </div>
@@ -563,13 +547,7 @@ export default function LegalDashboard({
   );
   const [observationDrafts, setObservationDrafts] = useState({});
   const [commandState, setCommandState] = useState(null);
-  const [fieldDeviceId] = useState(
-    () => (
-      resolveRoleMode(roleView) === ROLE_MODES.DEPUTY
-        ? resolveBrowserFieldDeviceId()
-        : ''
-    ),
-  );
+  const [fieldDeviceId, setFieldDeviceId] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -674,6 +652,12 @@ export default function LegalDashboard({
       setRefreshing(false);
     }
   }, [roleMode]);
+
+  useEffect(() => {
+    if (roleMode === ROLE_MODES.DEPUTY && !fieldDeviceId) {
+      setFieldDeviceId(resolveBrowserFieldDeviceId());
+    }
+  }, [fieldDeviceId, roleMode]);
 
   useEffect(() => {
     let active = true;
@@ -1033,6 +1017,39 @@ export default function LegalDashboard({
 
         {isDeputyMode && (
           <>
+            {commandState && (
+              <section
+                role={commandState.status === 'error' ? 'alert' : 'status'}
+                className={
+                  commandState.status === 'error'
+                    ? 'rounded-2xl border border-red-900/40 bg-red-950/15 p-4 text-sm text-red-300'
+                    : commandState.status === 'success'
+                      ? 'rounded-2xl border border-emerald-900/40 bg-emerald-950/15 p-4 text-sm text-emerald-300'
+                      : 'rounded-2xl border border-amber-900/40 bg-amber-950/15 p-4 text-sm text-amber-300'
+                }
+              >
+                <div className="flex items-center gap-3">
+                  {commandState.status === 'pending' ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : commandState.status === 'success' ? (
+                    <CheckCircle2 size={18} />
+                  ) : (
+                    <AlertTriangle size={18} />
+                  )}
+                  <div>
+                    <p className="font-black">
+                      {commandState.status === 'pending'
+                        ? 'Synchronising governed field evidence'
+                        : commandState.status === 'success'
+                          ? 'Canonical refresh confirmed'
+                          : 'Field command not confirmed'}
+                    </p>
+                    <p className="mt-1 text-xs opacity-80">{commandState.message}</p>
+                  </div>
+                </div>
+              </section>
+            )}
+
             <section className="grid gap-4 md:grid-cols-2">
               <QueueMetric
                 icon={UserCheck}
