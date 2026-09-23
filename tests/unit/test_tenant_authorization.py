@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.16.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING-CERT
+VERSION: v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,15 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.16.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING-CERT
+CHANGELOG: 2026-09-23 v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
+certifies legal_client_matter_read ->
+legal_operations:client_matter:read as the exact conjunctive authorization
+binding for tenant_legal_client + ACTIVE LEGAL_CLIENT only. It proves exact
+success, law-firm/sheriff/deputy/finance denial, crossed permission/operation
+denial, missing/revoked LEGAL_CLIENT denial, and unchanged financial-execution
+prohibition. ACTIVE client-to-matter visibility remains a later independent
+projection gate.
+2026-09-23 v1.16.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING-CERT
 certifies legal_client_visibility_write ->
 legal_operations:client_visibility:write as the exact conjunctive authorization
 binding for approved law-firm provisioning roles. It proves partner/attorney/
@@ -103,7 +111,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.16.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING-CERT"
+VERSION = "v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -830,6 +838,104 @@ def test_l8_3_receipt_binding_is_exact_and_sheriff_only() -> None:
     ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
 
 
+def test_l8_7d4_client_matter_read_binding_authorizes_exact_legal_client_conjunction() -> None:
+    """Explicit client-matter read requires tenant_legal_client plus ACTIVE LEGAL_CLIENT."""
+    assert (
+        ta._BINDINGS["legal_client_matter_read"]
+        == "legal_operations:client_matter:read"
+    )
+    assert list(ta._BINDINGS).count("legal_client_matter_read") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_CLIENT"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_legal_client",
+        "LEGAL_CLIENT",
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_roles"),
+    (
+        ("tenant_legal_partner", ("LEGAL_PARTNER", "LEGAL_CLIENT")),
+        ("tenant_legal_attorney", ("LEGAL_ATTORNEY", "LEGAL_CLIENT")),
+        ("tenant_legal_paralegal", ("LEGAL_PARALEGAL", "LEGAL_CLIENT")),
+        ("tenant_legal_secretary", ("LEGAL_SECRETARY", "LEGAL_CLIENT")),
+        ("tenant_legal_finance", ("LEGAL_FINANCE", "LEGAL_CLIENT")),
+        ("tenant_sheriff", ("SHERIFF", "LEGAL_CLIENT")),
+        ("tenant_deputy", ("DEPUTY", "LEGAL_CLIENT")),
+        ("tenant_owner", ("ENTERPRISE_ADMIN", "LEGAL_CLIENT")),
+        ("tenant_admin", ("ENTERPRISE_ADMIN", "LEGAL_CLIENT")),
+    ),
+)
+def test_l8_7d4_non_client_business_roles_cannot_cross_into_client_projection(
+    business_role: str,
+    authorization_roles: tuple[str, ...],
+) -> None:
+    """Even a supplied LEGAL_CLIENT assignment cannot bypass business-role eligibility."""
+    assignments = _assignments(*authorization_roles)
+    denied = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business(business_role),
+        assignment_repository=assignments,
+    )
+    assert denied.authorized is False
+    assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert denied.business_role == business_role
+    assert denied.authorization_role is None
+    assert assignments.calls == []
+
+
+def test_l8_7d4_missing_revoked_and_crossed_client_read_bindings_fail_closed() -> None:
+    """Final role possession and exact permission-operation pairing remain mandatory."""
+    missing = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments(),
+    )
+    assert missing.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments(
+            revoked_roles=("LEGAL_CLIENT",),
+        ),
+    )
+    assert revoked.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    wrong_permission = _decision(
+        permission_id="legal_operations:invoice:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_CLIENT"),
+    )
+    assert (
+        wrong_permission.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+    wrong_operation = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_invoice_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_CLIENT"),
+    )
+    assert (
+        wrong_operation.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+
 @pytest.mark.parametrize(
     ("business_role", "authorization_role"),
     (
@@ -1044,7 +1150,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.20.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING"
+    assert ta.VERSION == "v1.21.0-L8-7D4-CLIENT-MATTER-READ-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1058,7 +1164,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.20.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING"
+    assert ta.VERSION == "v1.21.0-L8-7D4-CLIENT-MATTER-READ-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -1935,9 +2041,9 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.16.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING-CERT
+# VERSION: v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
-# TENANT POSTURE: exact active principal, membership, eligible business role, exact permission-operation binding, and active scoped final assignment are conjunctively required
+# TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
