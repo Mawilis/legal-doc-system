@@ -1,7 +1,7 @@
 """Direct certificate for Process Service directory provisioning.
 
 TITLE: WILSY OS Process Service Directory Provisioning Certificate
-VERSION: v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
+VERSION: v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
 AUTHORITY: Direct certificate for canonical L8-1 directory composition only.
 EPITOME: Prove transaction-required District -> SheriffOffice -> Deputy
          provisioning, exact replay, tenant isolation, parent lineage,
@@ -12,8 +12,12 @@ COLLABORATION / OWNERSHIP: Certificate for
                             P1/P2/L8-0 remain independent canonical authorities
                             and HTTP/IAM admission remains a later gate.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
-           establishes adversarial direct coverage for create/exact replay,
+CHANGELOG: 2026-09-23 v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
+           narrows union-typed provisioning results to their exact P1 classes
+           before class-specific lineage assertions, preserving all runtime
+           checks while making the certificate statically exact.
+           2026-09-23 v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
+           established adversarial direct coverage for create/exact replay,
            transaction ownership, tenant scope, missing/corrupt parent lineage,
            durable identity divergence, malformed values, and financial-boundary
            exclusion.
@@ -40,6 +44,7 @@ from typing import Any, Callable
 import pytest
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
+    Deputy,
     District,
     SheriffOffice,
 )
@@ -57,7 +62,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT"
+VERSION = "v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT"
 
 
 class FakeSession:
@@ -202,9 +207,16 @@ def test_full_directory_lineage_provisions_in_dependency_order() -> None:
     assert district.disposition is ProcessServiceDirectoryProvisioningDisposition.CREATED
     assert office.disposition is ProcessServiceDirectoryProvisioningDisposition.CREATED
     assert deputy.disposition is ProcessServiceDirectoryProvisioningDisposition.CREATED
-    assert office.value.district_id == district.value.district_id
-    assert deputy.value.sheriff_office_id == office.value.sheriff_office_id
-    assert {type(value).__name__ for value in (district.value, office.value, deputy.value)} == {
+
+    district_value = district.value
+    office_value = office.value
+    deputy_value = deputy.value
+    assert isinstance(district_value, District)
+    assert isinstance(office_value, SheriffOffice)
+    assert isinstance(deputy_value, Deputy)
+    assert office_value.district_id == district_value.district_id
+    assert deputy_value.sheriff_office_id == office_value.sheriff_office_id
+    assert {type(value).__name__ for value in (district_value, office_value, deputy_value)} == {
         "District",
         "SheriffOffice",
         "Deputy",
@@ -429,12 +441,12 @@ def test_malformed_p1_input_is_bounded_and_has_no_write() -> None:
 
 def test_result_and_module_versions_are_frozen_to_l8_1_release() -> None:
     """Certificate remains bound to the intended sovereign production release."""
-    assert PRODUCTION_VERSION == "v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING"
-    assert VERSION == "v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT"
+    assert PRODUCTION_VERSION == "v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING"
+    assert VERSION == "v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT"
 
 
 # ARTIFACT: test_process_service_directory_provisioning_orchestrator.py
-# VERSION: v1.0.0-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
+# VERSION: v1.0.1-L8-1-PROCESS-SERVICE-DIRECTORY-PROVISIONING-CERT
 # AUTHORITY BOUNDARY: direct L8-1 directory provisioning certificate only
 # TENANT POSTURE: exact synthetic tenant and caller-session propagation
 # FAIL-CLOSED POSTURE: invalid transaction/value/parent/history/divergence rejects
