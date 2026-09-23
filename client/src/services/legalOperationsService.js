@@ -1,6 +1,6 @@
 /**
  * WILSY OS — SHERIFF OPERATIONAL QUEUE CLIENT ADAPTER
- * VERSION: v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT
+ * VERSION: v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Reads the authenticated sheriff queue endpoint through the governed
  *          api.js transport, validates its exact bounded shape, and returns no
@@ -11,13 +11,15 @@
  *                            queue truth; this adapter owns browser transport
  *                            validation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
+ * CHANGELOG: 2026-09-23 v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT freezes each validated queue row as well as
+ *            the aggregate and queue arrays; transport semantics are unchanged.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  */
 
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT';
+  'v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -71,12 +73,16 @@ function assertCanonicalQueuePayload(value) {
     }
   }
 
+  const immutableRows = (rows) => Object.freeze(
+    rows.map((item) => Object.freeze({ ...item })),
+  );
+
   return Object.freeze({
     tenantId: value.tenant_id,
     visibility: value.visibility,
-    officeReceipt: Object.freeze([...value.office_receipt]),
-    deputyAssignment: Object.freeze([...value.deputy_assignment]),
-    activeAttempts: Object.freeze([...value.active_attempts]),
+    officeReceipt: immutableRows(value.office_receipt),
+    deputyAssignment: immutableRows(value.deputy_assignment),
+    activeAttempts: immutableRows(value.active_attempts),
   });
 }
 
@@ -93,7 +99,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.0.0-L8-6A-SHERIFF-QUEUE-CLIENT
+ * VERSION: v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT
  * AUTHORITY BOUNDARY: browser read transport and exact response validation only
  * TENANT POSTURE: server-issued queue tenant must match every projected row
  * FAIL-CLOSED POSTURE: malformed shape or tenant drift rejects without mock fallback
