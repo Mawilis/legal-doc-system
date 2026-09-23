@@ -1,7 +1,7 @@
 """Direct ASGI certificate for deterministic Legal Operations reads.
 
 TITLE: WILSY OS Legal Operations Current and History Read API Certificate
-VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
+VERSION: v1.2.2-L8-6A-ROUTER-COMPAT-CURRENT-HISTORY-READ-API-CERT
 AUTHORITY: Direct ASGI certificate for tenant-authorized Legal Operations projections.
 EPITOME: Prove authentication, exact tenant/type/entity L8-5 delegation,
          deterministic current-plus-history projection, bounded absence,
@@ -14,7 +14,11 @@ COLLABORATION / OWNERSHIP: Certificate for L7A/L8-0/L8-5 HTTP composition only.
                             L8-0 owns current-state selection, and L8-5 owns
                             entity read-model composition.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
+CHANGELOG: 2026-09-23 v1.2.2-L8-6A-ROUTER-COMPAT-CURRENT-HISTORY-READ-API-CERT
+           rebinds the sealed L8-5 current/history regression certificate to
+           the additive L8-6A router release while preserving every existing
+           L8-5 behavioral, tenant, projection, and fail-closed assertion.
+           2026-09-23 v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
            rebinds the certificate to the production documentation-alignment
            patch; runtime assertions and authority expectations are unchanged.
            2026-09-23 v1.2.0-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
@@ -73,7 +77,7 @@ from tools.eos.legal_operations.domain.legal_operations_read_model import (
 )
 
 
-VERSION = "v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT"
+VERSION = "v1.2.2-L8-6A-ROUTER-COMPAT-CURRENT-HISTORY-READ-API-CERT"
 _TENANT = "tenant-alpha"
 _IDENTITY = "instruction-001"
 _NOW = datetime(2026, 9, 23, 7, 0, tzinfo=timezone.utc)
@@ -405,16 +409,13 @@ def test_projection_excludes_transport_and_secret_fields() -> None:
     }
 
 
-def test_router_version_is_l8_5_current_history_read_release() -> None:
-    """Certificate remains bound to the intended L8-5 production router release."""
-    assert (
-        legal_router.VERSION
-        == "v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
-    )
+def test_l8_5_read_contract_remains_bound_under_l8_6a_router_release() -> None:
+    """L8-5 read semantics remain certified under the additive L8-6A router."""
+    assert legal_router.VERSION == "v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API"
 
 
 # ARTIFACT: test_legal_operations_http.py
-# VERSION: v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API-CERT
+# VERSION: v1.2.2-L8-6A-ROUTER-COMPAT-CURRENT-HISTORY-READ-API-CERT
 # AUTHORITY BOUNDARY: direct ASGI authenticated current-plus-history projection certificate only
 # TENANT POSTURE: exact authorized tenant/type/entity L8-5 delegation and foreign absence
 # FAIL-CLOSED POSTURE: auth gaps, absence, read-model failures, divergence, and outages deny
