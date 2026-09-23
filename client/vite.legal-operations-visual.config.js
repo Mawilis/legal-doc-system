@@ -1,10 +1,13 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS VISUAL GATE
- * VERSION: v1.0.1-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE-EVIDENCE-ALIGNMENT
+ * VERSION: v1.0.2-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE-SUMMARY-ALIGNMENT
  * AUTHORITY: Test-support only; imports the real production LegalDashboard and CSS.
  * EPITOME: Deterministic LEGAL_PARTNER visual evidence for the complete D14
  *          workspace while denying client/sheriff/deputy cross-role access.
- * CHANGELOG: 2026-09-24 v1.0.1 aligns synthetic document/attempt/execution
+ * CHANGELOG: 2026-09-24 v1.0.2 rebinds the visual virtual adapter to the
+ *            hardened D14 summary-validation version; synthetic state counters
+ *            remain exact with their displayed rows.
+ *            2026-09-24 v1.0.1 aligns synthetic document/attempt/execution
  *            lifecycle states so every displayed execution has a terminal
  *            source attempt and every active attempt has an allocated document.
  * PRODUCTION IMPACT: NONE.
@@ -22,7 +25,7 @@ const TENANT_RESOLVED = '\0' + TENANT_ID;
 
 const serviceModule = String.raw`
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT';
+  'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION';
 
 const evidence = (character) => character.repeat(128);
 const denied = (name) => {
@@ -172,7 +175,7 @@ export default defineConfig({
 /**
  * SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: vite.legal-operations-visual.config.js
- * VERSION: v1.0.1-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE-EVIDENCE-ALIGNMENT
+ * VERSION: v1.0.2-L8-7D14-LEGAL-OPERATIONS-VISUAL-GATE-SUMMARY-ALIGNMENT
  * AUTHORITY BOUNDARY: deterministic visual test support only
  * PRODUCTION IMPACT: none
  * END OF WILSY OS SOVEREIGN ARTIFACT
