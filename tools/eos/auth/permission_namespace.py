@@ -1,17 +1,25 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM
+VERSION: v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
 and the own-tenant WILSY AI usage-capacity and billing-intelligence evidence
 read capabilities plus field-service outcome/return, process-service directory
-provisioning, and sheriff-office acceptance/receipt capabilities without
-granting typed subject authority, possession, cross-tenant authority, or
-financial execution.
+provisioning, sheriff-office acceptance/receipt, and explicit Legal Operations
+client-visibility provisioning vocabulary without granting typed subject
+identity, matter visibility, possession, cross-tenant authority, or financial
+execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM adds the dedicated own-tenant
+    legal_operations:client_visibility:write permission vocabulary for future
+    L8-7 client-to-matter visibility grant/revoke provisioning. The permission
+    is membership-gated, non-cross-tenant, non-financial and non-self-
+    authorizing; it does not itself prove actor role, target LEGAL_CLIENT IAM,
+    CaseMatter scope, current ACTIVE visibility, client reads, service, billing,
+    payment, execution or settlement authority.
     2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM adds the dedicated own-tenant
     legal_operations:deputy_queue:read permission for an authenticated deputy's
     binding-scoped personal active-work projection only. It is non-cross-tenant,
@@ -100,7 +108,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM"
+VERSION = "v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -369,6 +377,11 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:deputy_queue:read", "TENANT", "TENANT",
             "read binding-scoped own active service-attempt work", tenant=True,
         ),
+        "legal_operations:client_visibility:write": _meta(
+            "legal_operations:client_visibility:write", "TENANT", "TENANT",
+            "provision explicit own-tenant legal-client matter visibility",
+            tenant=True,
+        ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
             "read own-tenant process allocations", tenant=True,
@@ -625,9 +638,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM
+# VERSION: v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
-# TENANT POSTURE: directory provisioning and other tenant permissions require separately proven exact ACTIVE tenant membership
+# TENANT POSTURE: client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
