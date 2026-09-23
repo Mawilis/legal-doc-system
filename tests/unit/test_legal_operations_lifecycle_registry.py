@@ -1,17 +1,22 @@
 """Direct adversarial certificate for the Legal Operations P2 registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry Certificate
-VERSION: v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certify immutable snapshot persistence, exact entity and document-
-         custody history enumeration, exact factory provenance, strict
-         hydration, replay integrity, and tenant/session boundaries.
+EPITOME: Certify immutable snapshot persistence, exact entity, tenant/entity-
+         class and document-custody enumeration, exact factory provenance,
+         strict hydration, replay integrity, and tenant/session boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_lifecycle_registry.py
 COLLABORATION / OWNERSHIP: Direct certificate for the P2 registry only; P1
                             remains lifecycle/evidence authority and callers own
                             Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+CHANGELOG: 2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+           certifies exact tenant/entity-class snapshot enumeration, stable
+           identity/fingerprint ordering, caller-session forwarding, foreign
+           absence, unsupported-type rejection, corruption rejection, and
+           persistence-failure translation for the L8-5 foundation.
+           2026-09-23 v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
            certifies the dedicated tenant/document custody-history index and
            query, strict P1 hydration, foreign absence, caller-session
            forwarding, invalid document scope, and read-failure translation.
@@ -344,6 +349,118 @@ def test_exact_entity_history_hydrates_all_snapshots_and_forwards_session() -> N
         collection,
         session=session,
     ) == ()
+
+
+def test_tenant_entity_snapshot_enumeration_is_exact_deterministic_and_session_bound() -> None:
+    """Tenant/entity enumeration returns strict P1 snapshots without current inference."""
+    collection = FakeCollection()
+    session = FakeSession(in_transaction=True)
+    first = instruction(instruction_id="instruction-b")
+    first_accepted = first.transition_to(
+        LegalInstructionState.ACCEPTED,
+        evidence_reference="accepted-b",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    second = instruction(
+        instruction_id="instruction-a",
+        case_matter_id="matter-2",
+        document_id="document-2",
+        evidence_reference="registration-a",
+    )
+    foreign = instruction(
+        tenant_id="tenant-b",
+        instruction_id="instruction-a",
+        case_matter_id="matter-foreign",
+        document_id="document-foreign",
+        evidence_reference="foreign-registration",
+    )
+    for value in (first_accepted, foreign, second, first):
+        persisted_record(value, collection, session=session)
+
+    collection.calls.clear()
+    snapshots = LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+        "tenant-a",
+        "LegalInstruction",
+        collection,
+        session=session,
+    )
+
+    assert len(snapshots) == 3
+    assert all(value.tenant_id == "tenant-a" for value in snapshots)
+    assert [value.instruction_id for value in snapshots] == [
+        "instruction-a",
+        "instruction-b",
+        "instruction-b",
+    ]
+    assert tuple(value.fingerprint for value in snapshots) == tuple(
+        sorted(
+            (second.fingerprint, first.fingerprint, first_accepted.fingerprint),
+            key=lambda fingerprint: (
+                "instruction-a" if fingerprint == second.fingerprint else "instruction-b",
+                fingerprint,
+            ),
+        )
+    )
+    assert collection.calls == [
+        (
+            "find",
+            session,
+            {
+                "tenant_id": "tenant-a",
+                "entity_type": "LegalInstruction",
+            },
+        )
+    ]
+    assert LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+        "tenant-missing",
+        "LegalInstruction",
+        collection,
+        session=session,
+    ) == ()
+
+
+def test_tenant_entity_snapshot_enumeration_rejects_invalid_scope_corruption_and_failure() -> None:
+    """Invalid tenant/type, corrupt rows, and Mongo failures fail closed."""
+    collection = FakeCollection()
+    persisted_record(instruction(), collection)
+
+    expect_code(
+        "M2_INVALID_TENANT",
+        lambda: LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+            "global",
+            "LegalInstruction",
+            collection,
+        ),
+    )
+    expect_code(
+        "M2_ENTITY_TYPE_UNSUPPORTED",
+        lambda: LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+            "tenant-a",
+            "UnknownEntity",
+            collection,
+        ),
+    )
+
+    collection.docs[0]["p1_fingerprint"] = "x" * 128
+    expect_code(
+        "M2_P1_FINGERPRINT_INVALID",
+        lambda: LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+            "tenant-a",
+            "LegalInstruction",
+            collection,
+        ),
+    )
+
+    error = _operation_failure(27188)
+    failing = HistoryFailureCollection(error)
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.get_tenant_entity_snapshots(
+            "tenant-a",
+            "LegalInstruction",
+            failing,
+        )
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
 
 
 def test_document_custody_history_hydrates_exact_scope_and_forwards_session() -> None:
@@ -745,7 +862,7 @@ def test_outside_transaction_transient_error_is_not_retry_required() -> None:
 
 
 def test_p2_production_version_is_the_history_release() -> None:
-    assert P2_VERSION == "v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+    assert P2_VERSION == "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
 
 
 def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> None:
@@ -759,8 +876,8 @@ def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> 
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry.py
-# VERSION: v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
-# AUTHORITY BOUNDARY: direct P2 persistence/entity-custody-history/hydration certificate only.
+# VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+# AUTHORITY BOUNDARY: direct P2 persistence/entity/tenant-entity/custody-history/hydration certificate only.
 # TENANT POSTURE: explicit synthetic tenants; foreign evidence is undisclosed.
 # FAIL-CLOSED POSTURE: malformed records, provenance, races, and sources reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution/settlement.
