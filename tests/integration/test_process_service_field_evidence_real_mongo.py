@@ -1,13 +1,14 @@
 """Host-backed certificate for the P5 offline field-evidence journal.
 
 TITLE: Process-Service Offline Field Evidence Real-Mongo Certificate
-VERSION: v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REAL-MONGO-CERT
+VERSION: v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Verify durable immutable observation replay, ordering, tenant
-         isolation, and caller-owned transaction semantics against MongoDB.
+EPITOME: Verify durable immutable observation replay, exact tenant/event receipt
+         resolution, ordering, tenant isolation, and caller-owned transaction semantics against MongoDB.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_process_service_field_evidence_real_mongo.py
-CERTIFICATION DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0 establishes host-backed P5 evidence coverage.
+CERTIFICATION DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT certifies exact tenant/event replay lookup on the real journal, foreign-tenant absence, strict hydration, and session-safe persistence semantics.
+           2026-09-14 v1.0.0 establishes host-backed P5 evidence coverage.
 TENANT BOUNDARY: Every operation is exact tenant scoped; foreign evidence is absence.
 AUTHORITY BOUNDARY: Sync evidence only; no legal attempt/service/return mutation.
 TRANSACTION BOUNDARY: The test owns sessions, starts/commits/aborts, and P5 propagates them.
@@ -141,6 +142,22 @@ def test_real_mongo_field_evidence_contract(mongo_context: tuple[MongoClient, An
             second = sync_offline_field_evidence(tenant_id="tenant-a", attempt_evidence_identity=identity, device_id="device-1", event_id="event-2", sequence_number=2, occurred_at=BASE + timedelta(minutes=5), evidence_reference="field-2", evidence_fingerprint="c" * 128, previous_event_fingerprint=first.evidence_fingerprint, receipt_id="receipt-2", accepted_at=BASE + timedelta(minutes=6), lifecycle_collection=lifecycle, allocation_receipt_collection=allocation_receipts, allocation_current_collection=allocation_current, journal_collection=journal, session=session)
     assert second.sequence_number == 2
     assert journal.count_documents({}) == 2
+    with client.start_session() as session:
+        with session.start_transaction():
+            by_event = ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+                "tenant-a",
+                "event-1",
+                journal,
+                session=session,
+            )
+    assert by_event.to_dict() == first.to_dict()
+    assert by_event.fingerprint == first.fingerprint
+    with pytest.raises(Exception):
+        ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+            "tenant-b",
+            "event-1",
+            journal,
+        )
     durable = journal.find_one({"evidence_identity": first.evidence_identity})
     assert durable is not None
     assert not {"invoice", "payment", "settlement", "paid_state", "billing_execution"}.intersection(durable)
@@ -160,7 +177,7 @@ def test_real_mongo_field_evidence_contract(mongo_context: tuple[MongoClient, An
 
 
 # ARTIFACT: test_process_service_field_evidence_real_mongo.py
-# VERSION: v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-REAL-MONGO-CERT
+# VERSION: v1.1.0-L8-6E-P5M-EVENT-REPLAY-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: host-backed immutable evidence persistence only.
 # FAIL-CLOSED POSTURE: runtime/product failures are never converted to success.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
