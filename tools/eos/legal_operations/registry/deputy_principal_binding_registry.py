@@ -1,7 +1,7 @@
 """Immutable persistence for canonical deputy-principal identity bindings.
 
 TITLE: WILSY OS Deputy Principal Binding Registry
-VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+VERSION: v1.0.4-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
 AUTHORITY: Durable immutable persistence and exact resolution of L8-6B bindings.
 EPITOME: Persist one canonical principal-to-Deputy identity relation exactly
          once with unique tenant/principal and tenant/deputy keys, exact replay,
@@ -13,7 +13,11 @@ COLLABORATION / OWNERSHIP: deputy_principal_binding.py owns immutable value
                             semantics; P1 owns Deputy truth; IAM owns principal
                             and role truth; this registry owns persistence only.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+CHANGELOG: 2026-09-23 v1.0.4-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+           makes the already-proven one-sided natural-key branches explicit to
+           static analysis with non-None Mapping casts; runtime conflict,
+           corruption, replay, persistence, and authority semantics are unchanged.
+           2026-09-23 v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
            classifies one valid natural-key match as an immutable identity
            conflict rather than persisted corruption, while malformed located
            rows still fail as corruption. Mongo insert receives a defensive
@@ -65,7 +69,7 @@ from tools.eos.legal_operations.domain.deputy_principal_binding import (
 )
 
 
-VERSION: Final[str] = "v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
+VERSION: Final[str] = "v1.0.4-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
 COLLECTION: Final[str] = "legal_operations_deputy_principal_bindings"
 _FIELDS: Final[frozenset[str]] = frozenset(
     {
@@ -237,13 +241,13 @@ def _classify_existing_pair(
         return None
 
     if principal_existing is None:
-        _hydrate(deputy_existing)
+        _hydrate(cast(Mapping[str, object], deputy_existing))
         _fail(
             "L8_6B_BINDING_CONFLICT",
             error_type=DeputyPrincipalBindingConflictError,
         )
     if deputy_existing is None:
-        _hydrate(principal_existing)
+        _hydrate(cast(Mapping[str, object], principal_existing))
         _fail(
             "L8_6B_BINDING_CONFLICT",
             error_type=DeputyPrincipalBindingConflictError,
@@ -449,7 +453,7 @@ __all__ = [
 
 
 # ARTIFACT: deputy_principal_binding_registry.py
-# VERSION: v1.0.3-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
+# VERSION: v1.0.4-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY
 # AUTHORITY BOUNDARY: immutable exact-replay binding persistence/resolution only
 # TENANT POSTURE: unique tenant/principal and tenant/deputy keys; foreign rows are absence
 # FAIL-CLOSED POSTURE: conflicts, corruption, absence, database failure, and fingerprint drift reject
