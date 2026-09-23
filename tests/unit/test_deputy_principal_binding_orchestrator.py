@@ -1,7 +1,7 @@
 """Direct certificate for current-authority deputy-principal binding.
 
 TITLE: WILSY OS Deputy Principal Binding Orchestration Certificate
-VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
 AUTHORITY: Direct adversarial certification of L8-6B authority composition.
 EPITOME: Prove one active transaction and five independent current authorities
          are required before immutable binding persistence: principal,
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: Certificate for the L8-6B orchestrator; underlying
                             IAM, P1/P2/L8-5, binding value and registry remain
                             independent canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+CHANGELOG: 2026-09-23 v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+           replaces an untyped dict[str, object] kwargs splat in the
+           parametrized IAM-denial certificate with explicit typed _seed calls;
+           runtime denial semantics and assertions are unchanged.
+           2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
            clears setup lifecycle observations before the missing-DEPUTY-role
            assertion so the certificate proves denial before new lifecycle read.
            2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
@@ -73,7 +77,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
+VERSION = "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
 NOW = datetime(2026, 9, 23, 16, 30, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-1"
@@ -309,16 +313,16 @@ def test_inactive_or_wrong_current_iam_rejects_before_binding_write(
     code: str,
 ) -> None:
     stores = _collections()
-    kwargs: dict[str, object] = {}
     if mutation == "principal":
-        kwargs["principal_status"] = PrincipalStatus.SUSPENDED
+        _seed(stores, principal_status=PrincipalStatus.SUSPENDED)
     elif mutation == "membership":
-        kwargs["membership_status"] = TenantMembershipStatus.SUSPENDED
+        _seed(stores, membership_status=TenantMembershipStatus.SUSPENDED)
     elif mutation == "business":
-        kwargs["business_role"] = "tenant_sheriff"
+        _seed(stores, business_role="tenant_sheriff")
     elif mutation == "role":
-        kwargs["role_status"] = RoleAssignmentStatus.REVOKED
-    _seed(stores, **kwargs)
+        _seed(stores, role_status=RoleAssignmentStatus.REVOKED)
+    else:
+        raise AssertionError(f"unexpected mutation case: {mutation}")
     session = FakeSession(True)
 
     _expect(code, lambda: _bind(stores, session))
@@ -413,12 +417,12 @@ def test_result_is_identity_evidence_not_authorization_or_financial_truth() -> N
         "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION"
     )
     assert VERSION == (
-        "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
+        "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT"
     )
 
 
 # ARTIFACT: test_deputy_principal_binding_orchestrator.py
-# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
+# VERSION: v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-ORCHESTRATION-CERT
 # AUTHORITY BOUNDARY: direct five-authority binding composition certificate only
 # TENANT POSTURE: exact same tenant/session across IAM, Deputy, and binding evidence
 # FAIL-CLOSED POSTURE: inactive/missing/wrong authority, absence, conflict, or transaction drift rejects
