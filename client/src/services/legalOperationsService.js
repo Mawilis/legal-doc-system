@@ -1,21 +1,29 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT
+ * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
- * EPITOME: Preserves certified sheriff/deputy reads while adding exact L8-6D
- *          deputy field-capability transport and L8-6G bound-Deputy transition/
- *          outcome command transport. Browser input is observation-only;
- *          Python EOS independently owns IAM, P5M sequence lineage, provenance,
- *          lifecycle, service-execution, and persistence truth.
+ * EPITOME: Preserves certified sheriff/deputy reads and deputy field commands
+ *          while adding the exact D6 LEGAL_CLIENT matter projection transport.
+ *          The browser supplies no tenant, principal, client, matter, role,
+ *          visibility, lifecycle or financial authority; it validates the exact
+ *          D5 schema, adapts only safe matter cards, and freezes the result.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/legalOperationsService.js
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; L8-5C owns
  *                            sheriff queues; L8-6B owns immutable binding; L8-6C
  *                            owns deputy work; L8-6D owns state capability; L8-6G
- *                            owns bound field-command composition and P5M lineage.
- *                            This adapter owns exact browser transport validation
- *                            and immutable response adaptation only.
+ *                            owns bound field-command composition and P5M lineage;
+ *                            D5 owns the sanitized client-matter projection and
+ *                            D6 owns authenticated snapshot transport. This adapter
+ *                            owns exact browser response validation and immutable
+ *                            presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT adds exact deputy field-capability reads plus
+ * CHANGELOG: 2026-09-23 v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT adds GET /legal-operations/client/matters,
+ *            validates the exact D5 schema/version/visibility and exact four-field
+ *            matter-card contract, rejects malformed/extra/missing/duplicate/
+ *            unsorted matter evidence, maps only case ID/reference/opened time/
+ *            OPEN-or-CLOSED state to immutable camelCase presentation data, and
+ *            admits no browser-owned tenant/client/matter/role/visibility input.
+2026-09-23 v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT adds exact deputy field-capability reads plus
  *            bound transition/outcome POST adapters. Request whitelists exclude
  *            tenant/principal/deputy authority, P5M sequence lineage, evidence
  *            fingerprints, receipt identity, execution identity/time, billing,
@@ -29,23 +37,24 @@
  *            2026-09-23 v1.0.1-L8-6A-SHERIFF-QUEUE-CLIENT freezes each validated queue row as well as
  *            the aggregate and queue arrays; transport semantics are unchanged.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: No client-supplied tenant, principal, deputy,
- *                             sequence lineage, sovereign fingerprint, execution,
- *                             billing, payment, settlement, geospatial or AI truth
- *                             is admitted into the command body or projection.
- * TENANT BOUNDARY: Every projected row must match the server response tenant;
- *                  deputy rows must additionally match the server-bound
- *                  canonical deputy_id.
+ * SECURITY / PRIVACY POSTURE: No client-supplied tenant, principal, client,
+ *                             matter, role, visibility, deputy, sequence lineage,
+ *                             sovereign fingerprint, execution, billing, payment,
+ *                             settlement, geospatial or AI truth is admitted.
+ * TENANT BOUNDARY: Server response tenant remains authoritative; client-matter
+ *                  rows carry no browser-selected tenant/client identity, while
+ *                  deputy rows still match the server-bound canonical deputy_id.
  * AUTHORITY BOUNDARY: Read/command transport validation only. Browser role,
- *                     capability, observation, or display state never grants
- *                     sheriff/deputy authority or creates legal-service truth.
+ *                     capability, visibility, observation or display state never
+ *                     grants sheriff/deputy/client authority or creates legal,
+ *                     service, billing or financial truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  */
 
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT';
+  'v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -69,6 +78,30 @@ const DEPUTY_RESPONSE_KEYS = Object.freeze([
 const ACTIVE_ATTEMPT_STATES = Object.freeze([
   'ALLOCATED',
   'ATTEMPTED',
+]);
+
+const CLIENT_MATTER_SCHEMA =
+  'WILSY-LEGAL-CLIENT-MATTER-PROJECTION/V1';
+const CLIENT_MATTER_VERSION =
+  'v1.0.0-L8-7D5-CLIENT-MATTER-PROJECTION';
+const CLIENT_MATTER_VISIBILITY =
+  'LEGAL_CLIENT_EXPLICIT_MATTERS';
+const CLIENT_MATTER_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'visibility',
+  'matters',
+]);
+const CLIENT_MATTER_KEYS = Object.freeze([
+  'case_matter_id',
+  'matter_reference',
+  'opened_at',
+  'state',
+]);
+const CLIENT_MATTER_STATES = Object.freeze([
+  'OPEN',
+  'CLOSED',
 ]);
 
 
@@ -310,6 +343,63 @@ function assertCanonicalDeputyActiveWorkPayload(value) {
 }
 
 
+function assertCanonicalClientMatterPayload(value) {
+  assertExactKeys(
+    value,
+    CLIENT_MATTER_RESPONSE_KEYS,
+    'LEGAL_OPERATIONS_CLIENT_MATTER_RESPONSE_INVALID',
+  );
+  if (
+    value.schema !== CLIENT_MATTER_SCHEMA
+    || value.version !== CLIENT_MATTER_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || value.visibility !== CLIENT_MATTER_VISIBILITY
+    || !Array.isArray(value.matters)
+  ) {
+    throw new Error('LEGAL_OPERATIONS_CLIENT_MATTER_RESPONSE_INVALID');
+  }
+
+  const seen = new Set();
+  let priorKey = null;
+  const matters = value.matters.map((entry) => {
+    assertExactKeys(
+      entry,
+      CLIENT_MATTER_KEYS,
+      'LEGAL_OPERATIONS_CLIENT_MATTER_RESPONSE_INVALID',
+    );
+    if (
+      !isCanonicalText(entry.case_matter_id)
+      || !isCanonicalText(entry.matter_reference)
+      || !isCanonicalTimestamp(entry.opened_at)
+      || !CLIENT_MATTER_STATES.includes(entry.state)
+      || seen.has(entry.case_matter_id)
+    ) {
+      throw new Error('LEGAL_OPERATIONS_CLIENT_MATTER_SCOPE_INVALID');
+    }
+    const currentKey = `${entry.case_matter_id}\u0000${entry.matter_reference}`;
+    if (priorKey !== null && currentKey < priorKey) {
+      throw new Error('LEGAL_OPERATIONS_CLIENT_MATTER_SCOPE_INVALID');
+    }
+    priorKey = currentKey;
+    seen.add(entry.case_matter_id);
+    return Object.freeze({
+      caseMatterId: entry.case_matter_id,
+      matterReference: entry.matter_reference,
+      openedAt: entry.opened_at,
+      state: entry.state,
+    });
+  });
+
+  return Object.freeze({
+    schema: value.schema,
+    version: value.version,
+    tenantId: value.tenant_id,
+    visibility: value.visibility,
+    matters: Object.freeze(matters),
+  });
+}
+
+
 function assertCanonicalDeputyFieldCapabilitiesPayload(value) {
   assertExactKeys(
     value,
@@ -484,6 +574,11 @@ export async function getDeputyFieldCapabilities() {
   return assertCanonicalDeputyFieldCapabilitiesPayload(response?.data);
 }
 
+export async function getLegalClientMatters() {
+  const response = await api.get('/legal-operations/client/matters');
+  return assertCanonicalClientMatterPayload(response?.data);
+}
+
 export async function transitionDeputyFieldAttempt(value) {
   const input = assertFieldObservationInput(value);
   const response = await api.post(
@@ -510,6 +605,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalQueuePayload,
   assertCanonicalDeputyActiveWorkPayload,
   assertCanonicalDeputyFieldCapabilitiesPayload,
+  assertCanonicalClientMatterPayload,
   assertFieldObservationInput,
   assertCanonicalFieldCommandResponse,
   toFieldCommandBody,
@@ -517,6 +613,12 @@ export const __legalOperationsServiceInternals = Object.freeze({
   RESPONSE_KEYS,
   DEPUTY_RESPONSE_KEYS,
   ACTIVE_ATTEMPT_STATES,
+  CLIENT_MATTER_SCHEMA,
+  CLIENT_MATTER_VERSION,
+  CLIENT_MATTER_VISIBILITY,
+  CLIENT_MATTER_RESPONSE_KEYS,
+  CLIENT_MATTER_KEYS,
+  CLIENT_MATTER_STATES,
   DEPUTY_CAPABILITY_RESPONSE_KEYS,
   DEPUTY_CAPABILITY_KEYS,
   FIELD_COMMAND_KINDS,
@@ -528,10 +630,10 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.2.0-L8-6H-DEPUTY-FIELD-COMMAND-CLIENT
- * AUTHORITY BOUNDARY: role-scoped read/command browser transport and exact response validation only
- * TENANT POSTURE: server tenant/deputy/attempt scope must remain internally consistent; client cannot establish tenant authority
- * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/command-response drift rejects without fallback
+ * VERSION: v1.3.0-L8-7D7-CLIENT-MATTER-READ-CLIENT
+ * AUTHORITY BOUNDARY: role-scoped sheriff/deputy/client read and deputy-command browser transport validation only
+ * TENANT POSTURE: server tenant/client/deputy scope remains authoritative; browser cannot establish tenant, client or matter authority
+ * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
