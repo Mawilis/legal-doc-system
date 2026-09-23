@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.19.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY
+VERSION: v1.20.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -9,7 +9,12 @@ sheriff-only acceptance/office-receipt eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.19.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY
+CHANGELOG: 2026-09-23 v1.20.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY
+adds legal_deputy_queue_read eligibility only to tenant_deputy for the
+binding-scoped personal active-work projection. tenant_sheriff and every other
+business role remain denied; this eligibility fact grants no authorization,
+binding, lifecycle mutation, service, return, billing, AI, or financial truth.
+2026-09-23 v1.19.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY
 adds legal_queue_read eligibility only to tenant_sheriff for certified
 own-tenant operational-queue projection; tenant_deputy and every other
 business role remain denied, and ELIGIBLE remains policy-only.
@@ -78,7 +83,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.19.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY"
+VERSION = "v1.20.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -113,7 +118,7 @@ ELIGIBILITY = MappingProxyType({
     "tenant_deputy": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_attempt_read": ELIGIBLE, "legal_attempt_write": ELIGIBLE, "legal_return_read": ELIGIBLE}),
     "tenant_legal_client": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_invoice_read": ELIGIBLE}),
 })
-OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
 _eligibility_updates = dict(ELIGIBILITY)
 for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary"):
     _existing = dict(ELIGIBILITY[_role])
@@ -121,6 +126,8 @@ for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant
         _existing["legal_directory_write"] = ELIGIBLE
         _existing["legal_receipt_write"] = ELIGIBLE
         _existing["legal_queue_read"] = ELIGIBLE
+    if _role == "tenant_deputy":
+        _existing["legal_deputy_queue_read"] = ELIGIBLE
     if _role in {"tenant_sheriff", "tenant_deputy"}:
         _existing["legal_attempt_outcome_write"] = ELIGIBLE
     _existing["legal_return_write"] = ELIGIBLE
@@ -180,7 +187,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.19.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY
+# VERSION: v1.20.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant directory/receipt and WILSY AI eligibility require separate ACTIVE membership, assignment, and scope checks
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
