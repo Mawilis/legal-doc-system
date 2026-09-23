@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT
+ * VERSION: v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves LegalDashboard preserves certified SHERIFF and governed
  *          DEPUTY modes while adding an exact LEGAL_CLIENT matter cockpit that
@@ -9,7 +9,11 @@
  *          creates no browser legal/service/financial truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT certifies LEGAL_CLIENT role resolution,
+ * CHANGELOG: 2026-09-23 v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR rebinds D8 to v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR,
+ *            proves the machine denial code remains visible exactly once and
+ *            separately proves bounded human-readable denial guidance; no
+ *            production authority or endpoint semantics changed.
+ *            2026-09-23 v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT certifies LEGAL_CLIENT role resolution,
  *            exact getLegalClientMatters-only transport selection, safe visible/
  *            OPEN/CLOSED counts, sanitized matter cards, empty/denied/unavailable
  *            client states, no sheriff/deputy fallback or internal panel leakage,
@@ -372,6 +376,11 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(
       await screen.findByText('LEGAL_CLIENT_MATTER_READ_DENIED'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Matter visibility is restricted to current authorized LEGAL_CLIENT scope.',
+      ),
+    ).toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
     expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
@@ -641,7 +650,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
       "recordDeputyFieldOutcome",
     );
     expect(source).toContain(
-      "v8.0.0-L8-7D8-CLIENT-MATTER-COCKPIT",
+      "v8.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-DENIAL-COPY-REPAIR",
     );
     expect(source).not.toContain('API_BASE_URL');
     expect(source).not.toContain('fetch(');
@@ -678,7 +687,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v4.0.0-L8-7D8-CLIENT-MATTER-COCKPIT-CERT
+ * VERSION: v4.0.1-L8-7D8-CLIENT-MATTER-COCKPIT-CERT-REPAIR
  * AUTHORITY BOUNDARY: deterministic SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed deputy observation-command wiring evidence only
  * TENANT POSTURE: client matter membership derives only from D7; deputy commands still require exact server-authorized work/capability parity
  * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
