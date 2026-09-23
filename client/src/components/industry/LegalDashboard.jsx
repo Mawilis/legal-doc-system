@@ -830,6 +830,829 @@ function LegalClientWorkspace({
   );
 }
 
+
+function WorkspaceErrorSurface({ error }) {
+  if (!error) return null;
+  return (
+    <section className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 text-red-400" size={20} />
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">
+            {error.kind}
+          </p>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-stone-300">
+            {error.message}
+          </p>
+          <p className="mt-2 text-[11px] text-stone-600">
+            WILSY Legal OS fails closed rather than substituting synthetic legal evidence.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PracticeLifecycleRow({ item, kind, action = null }) {
+  const definitions = {
+    instruction: {
+      id: item.instruction_id,
+      secondary: \`Matter \${item.case_matter_id}\`,
+      detail: \`Document \${item.document_id}\`,
+      timestamp: item.registered_at,
+      state: item.state,
+    },
+    document: {
+      id: item.document_id,
+      secondary: item.document_type,
+      detail: \`Matter \${item.case_matter_id}\`,
+      timestamp: item.registered_at,
+      state: item.state,
+    },
+    attempt: {
+      id: item.attempt_id,
+      secondary: \`Instruction \${item.instruction_id}\`,
+      detail: \`Deputy \${item.deputy_id}\`,
+      timestamp: item.allocated_at,
+      state: item.state,
+    },
+    execution: {
+      id: item.service_execution_id,
+      secondary: \`Attempt \${item.attempt_id}\`,
+      detail: \`Document \${item.document_id}\`,
+      timestamp: item.executed_at,
+      state: item.outcome,
+    },
+    return: {
+      id: item.return_id,
+      secondary: \`Execution \${item.service_execution_id}\`,
+      detail: \`Instruction \${item.instruction_id}\`,
+      timestamp: item.generated_at,
+      state: item.state,
+    },
+  };
+  const view = definitions[kind];
+  return (
+    <div className="grid gap-4 px-5 py-4 lg:grid-cols-[1.3fr_1fr_1fr_auto] lg:items-center">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-black text-white">{view.id}</p>
+        <p className="mt-1 truncate text-[11px] text-stone-500">{view.secondary}</p>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-stone-300">{view.detail}</p>
+        <p className="mt-1 text-[10px] text-stone-600">{formatTimestamp(view.timestamp)}</p>
+      </div>
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+          Evidence locator
+        </p>
+        <p className="mt-1 truncate font-mono text-[10px] text-stone-500" title={item.evidence_identity}>
+          {item.evidence_identity}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+        <StatePill state={view.state} />
+        {action}
+      </div>
+    </div>
+  );
+}
+
+function MatterOperationsPanel({ workspace, searchQuery }) {
+  const normalized = searchQuery.trim().toLowerCase();
+  const matters = useMemo(() => {
+    const byMatter = new Map();
+    for (const instruction of workspace.instructions) {
+      const current = byMatter.get(instruction.case_matter_id) || {
+        caseMatterId: instruction.case_matter_id,
+        instructions: 0,
+        documents: new Set(),
+        activeInstructions: 0,
+      };
+      current.instructions += 1;
+      current.documents.add(instruction.document_id);
+      if (['REGISTERED', 'ACCEPTED'].includes(instruction.state)) {
+        current.activeInstructions += 1;
+      }
+      byMatter.set(instruction.case_matter_id, current);
+    }
+    for (const document of workspace.documents) {
+      const current = byMatter.get(document.case_matter_id) || {
+        caseMatterId: document.case_matter_id,
+        instructions: 0,
+        documents: new Set(),
+        activeInstructions: 0,
+      };
+      current.documents.add(document.document_id);
+      byMatter.set(document.case_matter_id, current);
+    }
+    return [...byMatter.values()]
+      .map((item) => ({
+        ...item,
+        documents: item.documents.size,
+      }))
+      .filter((item) => !normalized || item.caseMatterId.toLowerCase().includes(normalized))
+      .sort((a, b) => a.caseMatterId.localeCompare(b.caseMatterId));
+  }, [normalized, workspace.documents, workspace.instructions]);
+
+  return (
+    <QueuePanel
+      title="Matter operations"
+      subtitle="Derived grouping from canonical instruction/document lineage · not a new CaseMatter state"
+      icon={Scale}
+      rows={matters}
+      emptyMessage={
+        normalized
+          ? 'No current legal work matches this matter search.'
+          : 'No current instruction/document lineage is available for this tenant.'
+      }
+      renderRow={(item) => (
+        <div key={item.caseMatterId} className="grid gap-4 px-5 py-4 md:grid-cols-[1.4fr_1fr_1fr] md:items-center">
+          <div>
+            <p className="text-sm font-black text-white">{item.caseMatterId}</p>
+            <p className="mt-1 text-[11px] text-stone-500">
+              Canonical matter identity referenced by current legal work
+            </p>
+          </div>
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Workload</p>
+            <p className="mt-1 text-xs font-semibold text-stone-300">
+              {item.instructions} instruction(s) · {item.documents} document(s)
+            </p>
+          </div>
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Active instructions</p>
+            <p className="mt-1 text-lg font-black text-amber-300">{item.activeInstructions}</p>
+          </div>
+        </div>
+      )}
+    />
+  );
+}
+
+function LegalFinanceLookup({ roleToken }) {
+  const canReadBilling = BILLING_READ_ROLE_TOKENS.includes(roleToken);
+  const allowedKinds = canReadBilling
+    ? ['TARIFF_ASSESSMENT', 'BILLING_ELIGIBILITY', 'INVOICE']
+    : ['INVOICE'];
+  const [kind, setKind] = useState('INVOICE');
+  const [identity, setIdentity] = useState('');
+  const [result, setResult] = useState(null);
+  const [lookupError, setLookupError] = useState('');
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    if (!allowedKinds.includes(kind)) setKind(allowedKinds[0]);
+  }, [allowedKinds, kind]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setLookupError('');
+    setResult(null);
+    setPending(true);
+    try {
+      setResult(await getLegalFinanceEvidence(kind, identity.trim()));
+    } catch (caught) {
+      setLookupError(commandErrorMessage(caught));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/75">
+      <header className="border-b border-stone-800 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-amber-800/30 bg-amber-500/10 p-2.5 text-amber-400">
+            <Landmark size={18} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
+              Finance evidence
+            </h2>
+            <p className="mt-1 text-[11px] text-stone-500">
+              Exact-ID evidence lookup only · no payment or settlement inference
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div className="p-5">
+        <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[0.8fr_1.6fr_auto] lg:items-end">
+          <label>
+            <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Evidence type</span>
+            <select
+              aria-label="Finance evidence type"
+              value={kind}
+              onChange={(event) => setKind(event.target.value)}
+              className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+            >
+              {allowedKinds.includes('TARIFF_ASSESSMENT') && <option value="TARIFF_ASSESSMENT">Tariff assessment</option>}
+              {allowedKinds.includes('BILLING_ELIGIBILITY') && <option value="BILLING_ELIGIBILITY">Billing eligibility</option>}
+              <option value="INVOICE">Client invoice</option>
+            </select>
+          </label>
+          <label>
+            <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Exact evidence identity</span>
+            <input
+              aria-label="Finance evidence identity"
+              value={identity}
+              onChange={(event) => setIdentity(event.target.value)}
+              placeholder="Enter exact assessment, eligibility or invoice id"
+              className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white outline-none focus:border-amber-700/60"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={pending || !identity.trim()}
+            className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/15 px-5 text-sm font-black text-amber-200 disabled:opacity-40"
+          >
+            {pending ? <Loader2 className="animate-spin" size={17} /> : <Search size={17} />}
+            Verify evidence
+          </button>
+        </form>
+
+        {lookupError && (
+          <p className="mt-4 rounded-xl border border-red-900/40 bg-red-950/15 p-4 text-xs text-red-300">
+            {lookupError}
+          </p>
+        )}
+
+        {result && (
+          <div className="mt-5 rounded-xl border border-emerald-900/30 bg-emerald-950/10 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-wider text-emerald-500">Canonical finance evidence</p>
+                <p className="mt-1 text-sm font-black text-white">{result.entityType}</p>
+                <p className="mt-1 font-mono text-[10px] text-stone-500">{result.entityIdentity}</p>
+              </div>
+              <StatePill state={result.visibility} />
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {Object.entries(result.data).map(([key, value]) => (
+                <div key={key} className="rounded-lg border border-stone-800 bg-black/30 p-3">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">{key.replaceAll('_', ' ')}</p>
+                  <p className="mt-1 break-words text-xs text-stone-300">
+                    {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function createIntakeDraft() {
+  const token = createOpaqueBrowserToken();
+  const observedAt = new Date().toISOString();
+  return {
+    caseMatterId: \`matter-\${token}\`,
+    instructionId: \`instruction-\${token}\`,
+    documentId: \`document-\${token}\`,
+    registrationCustodyEventId: \`custody-\${token}\`,
+    matterReference: '',
+    documentType: '',
+    matterEvidenceReference: '',
+    instructionEvidenceReference: '',
+    documentRegistrationEvidenceReference: '',
+    caseOpenedAt: observedAt,
+    instructionRegisteredAt: observedAt,
+    documentRegisteredAt: observedAt,
+  };
+}
+
+function LegalIntakePanel({ onRefresh, roleToken }) {
+  const canWrite = INTAKE_WRITE_ROLE_TOKENS.includes(roleToken);
+  const [draft, setDraft] = useState(() => createIntakeDraft());
+  const [status, setStatus] = useState(null);
+
+  if (!canWrite) {
+    return (
+      <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-6">
+        <div className="flex items-start gap-3">
+          <LockKeyhole className="mt-0.5 text-stone-500" size={20} />
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">Instruction intake is read-only for this role</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-400">
+              The browser does not elevate instruction:write authority. Use a Partner, Attorney or Paralegal identity with current server authorization.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const update = (field, value) => setDraft((current) => ({ ...current, [field]: value }));
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setStatus({ kind: 'pending', message: 'Registering canonical intake…' });
+    try {
+      const result = await registerLegalIntake(draft);
+      await onRefresh();
+      setStatus({
+        kind: 'success',
+        message: \`\${result.disposition}: matter, instruction, document and registration custody evidence are canonical.\`,
+      });
+      setDraft(createIntakeDraft());
+    } catch (caught) {
+      setStatus({ kind: 'error', message: commandErrorMessage(caught) });
+    }
+  };
+
+  const pending = status?.kind === 'pending';
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/75">
+      <header className="border-b border-stone-800 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-amber-800/30 bg-amber-500/10 p-2.5 text-amber-400">
+            <FilePlus2 size={18} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">New instruction / intake</h2>
+            <p className="mt-1 text-[11px] text-stone-500">
+              Creates registration facts only · not receipt, allocation, service, invoice or payment truth
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <form onSubmit={submit} className="grid gap-5 p-5 xl:grid-cols-2">
+        <label>
+          <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Matter reference</span>
+          <input
+            aria-label="Matter reference"
+            required
+            value={draft.matterReference}
+            onChange={(event) => update('matterReference', event.target.value)}
+            placeholder="e.g. CASE-2026-00142"
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+          />
+        </label>
+        <label>
+          <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Process document type</span>
+          <input
+            aria-label="Process document type"
+            required
+            value={draft.documentType}
+            onChange={(event) => update('documentType', event.target.value)}
+            placeholder="e.g. summons"
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+          />
+        </label>
+        <label>
+          <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Matter evidence reference</span>
+          <input
+            aria-label="Matter evidence reference"
+            required
+            value={draft.matterEvidenceReference}
+            onChange={(event) => update('matterEvidenceReference', event.target.value)}
+            placeholder="Reference the governed intake evidence"
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+          />
+        </label>
+        <label>
+          <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Instruction evidence reference</span>
+          <input
+            aria-label="Instruction evidence reference"
+            required
+            value={draft.instructionEvidenceReference}
+            onChange={(event) => update('instructionEvidenceReference', event.target.value)}
+            placeholder="Reference the instruction evidence"
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+          />
+        </label>
+        <label className="xl:col-span-2">
+          <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Document registration evidence reference</span>
+          <input
+            aria-label="Document registration evidence reference"
+            required
+            value={draft.documentRegistrationEvidenceReference}
+            onChange={(event) => update('documentRegistrationEvidenceReference', event.target.value)}
+            placeholder="Reference the document registration evidence"
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+          />
+        </label>
+
+        <div className="xl:col-span-2 rounded-xl border border-stone-800 bg-black/30 p-4">
+          <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Opaque registration identities</p>
+          <div className="mt-2 grid gap-2 font-mono text-[10px] text-stone-500 md:grid-cols-2">
+            <span>{draft.caseMatterId}</span>
+            <span>{draft.instructionId}</span>
+            <span>{draft.documentId}</span>
+            <span>{draft.registrationCustodyEventId}</span>
+          </div>
+        </div>
+
+        {status && (
+          <div className={\`xl:col-span-2 rounded-xl border p-4 text-xs \${
+            status.kind === 'error'
+              ? 'border-red-900/40 bg-red-950/15 text-red-300'
+              : status.kind === 'success'
+                ? 'border-emerald-900/40 bg-emerald-950/15 text-emerald-300'
+                : 'border-amber-900/40 bg-amber-950/15 text-amber-300'
+          }\`}>
+            {status.message}
+          </div>
+        )}
+
+        <div className="xl:col-span-2 flex justify-end">
+          <button
+            type="submit"
+            disabled={
+              pending
+              || !draft.matterReference.trim()
+              || !draft.documentType.trim()
+              || !draft.matterEvidenceReference.trim()
+              || !draft.instructionEvidenceReference.trim()
+              || !draft.documentRegistrationEvidenceReference.trim()
+            }
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/15 px-6 text-sm font-black text-amber-200 disabled:opacity-40 sm:w-auto"
+          >
+            {pending ? <Loader2 className="animate-spin" size={17} /> : <FilePlus2 size={17} />}
+            Register instruction
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+function LegalPracticeWorkspace({
+  error,
+  lastUpdated,
+  onLogout,
+  onRefresh,
+  refreshing,
+  roleView,
+  tenantConfig,
+  user,
+  workspace,
+}) {
+  const roleToken = normalizeRoleToken(roleView);
+  const canIntake = INTAKE_WRITE_ROLE_TOKENS.includes(roleToken);
+  const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [returnDrafts, setReturnDrafts] = useState({});
+  const [returnStatus, setReturnStatus] = useState({});
+
+  const matches = useCallback((row) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return Object.values(row).some(
+      (value) => typeof value === 'string' && value.toLowerCase().includes(query),
+    );
+  }, [searchQuery]);
+
+  const instructions = workspace.instructions.filter(matches);
+  const documents = workspace.documents.filter(matches);
+  const attempts = workspace.attempts.filter(matches);
+  const executions = workspace.executions.filter(matches);
+  const returns = workspace.returns.filter(matches);
+  const returnedExecutionIds = useMemo(
+    () => new Set(workspace.returns.map((item) => item.service_execution_id)),
+    [workspace.returns],
+  );
+
+  const activeInstructions =
+    workspace.summary.instructions_registered + workspace.summary.instructions_accepted;
+  const activeAttempts =
+    workspace.summary.attempts_allocated + workspace.summary.attempts_attempted;
+
+  const chromeMetrics = [
+    {
+      id: 'instructions',
+      label: 'Active instructions',
+      value: activeInstructions,
+      detail: \`\${workspace.summary.instructions_total} total current instructions\`,
+    },
+    {
+      id: 'documents',
+      label: 'Process documents',
+      value: workspace.summary.documents_total,
+      detail: \`\${workspace.summary.documents_received} received · \${workspace.summary.documents_allocated} allocated\`,
+    },
+    {
+      id: 'service',
+      label: 'Active service work',
+      value: activeAttempts,
+      detail: \`\${workspace.summary.executions_total} certified executions\`,
+    },
+    {
+      id: 'returns',
+      label: 'Returns generated',
+      value: workspace.summary.returns_total,
+      detail: 'Return of Service is separate from invoicing',
+    },
+  ];
+
+  const navItems = [
+    { id: PRACTICE_WORKSPACE_VIEWS.COMMAND, label: 'Command Center', icon: ClipboardList },
+    { id: PRACTICE_WORKSPACE_VIEWS.MATTERS, label: 'Matters', icon: Scale },
+    { id: PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS, label: 'Instructions', icon: Inbox },
+    { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
+    { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
+    { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
+    { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark },
+    ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
+  ];
+
+  const runReturn = async (execution) => {
+    const key = execution.service_execution_id;
+    const draft = returnDrafts[key] || {
+      executionId: key,
+      executionEvidenceIdentity: execution.evidence_identity,
+      returnId: \`return-\${createOpaqueBrowserToken()}\`,
+      generatedAt: new Date().toISOString(),
+    };
+    if (!returnDrafts[key]) {
+      setReturnDrafts((current) => ({ ...current, [key]: draft }));
+    }
+    setReturnStatus((current) => ({
+      ...current,
+      [key]: { kind: 'pending', message: 'Generating governed return…' },
+    }));
+    try {
+      const result = await generateLegalReturnOfService(draft);
+      await onRefresh();
+      setReturnStatus((current) => ({
+        ...current,
+        [key]: {
+          kind: 'success',
+          message: \`Return \${result.returnId} generated from certified execution evidence.\`,
+        },
+      }));
+    } catch (caught) {
+      setReturnStatus((current) => ({
+        ...current,
+        [key]: { kind: 'error', message: commandErrorMessage(caught) },
+      }));
+    }
+  };
+
+  const returnAction = (execution) => {
+    if (returnedExecutionIds.has(execution.service_execution_id)) {
+      return <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Return generated</span>;
+    }
+    const state = returnStatus[execution.service_execution_id];
+    return (
+      <div className="flex flex-col items-end gap-1">
+        <button
+          type="button"
+          disabled={state?.kind === 'pending'}
+          onClick={() => runReturn(execution)}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-emerald-800/40 bg-emerald-500/10 px-3 text-[11px] font-black text-emerald-300 disabled:opacity-40"
+        >
+          {state?.kind === 'pending' ? <Loader2 className="animate-spin" size={14} /> : <FileCheck2 size={14} />}
+          Generate return
+        </button>
+        {state?.kind === 'error' && <span className="max-w-[240px] text-right text-[9px] text-red-400">{state.message}</span>}
+        {state?.kind === 'success' && <span className="max-w-[240px] text-right text-[9px] text-emerald-400">{state.message}</span>}
+      </div>
+    );
+  };
+
+  let content = null;
+  if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.COMMAND) {
+    content = (
+      <div className="space-y-6">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <QueueMetric icon={Inbox} label="Active instructions" value={activeInstructions} description="REGISTERED or ACCEPTED instruction truth." />
+          <QueueMetric icon={FileText} label="Documents in flow" value={workspace.summary.documents_total} description="Current process-document lifecycle snapshots." />
+          <QueueMetric icon={Clock3} label="Active attempts" value={activeAttempts} description="ALLOCATED or ATTEMPTED service work only." />
+          <QueueMetric icon={FileCheck2} label="Returns generated" value={workspace.summary.returns_total} description="Generated ReturnOfService evidence; not invoice truth." />
+        </section>
+        <MatterOperationsPanel workspace={workspace} searchQuery={searchQuery} />
+        <QueuePanel
+          title="Service operations"
+          subtitle="Current service attempts requiring operational awareness"
+          icon={Clock3}
+          rows={attempts.slice(0, 6)}
+          emptyMessage="No current service attempts match this view."
+          renderRow={(item) => <PracticeLifecycleRow key={item.attempt_id} item={item} kind="attempt" />}
+        />
+      </div>
+    );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.MATTERS) {
+    content = <MatterOperationsPanel workspace={workspace} searchQuery={searchQuery} />;
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS) {
+    content = (
+      <QueuePanel
+        title="Legal instructions"
+        subtitle="Current canonical instruction state · registration is not receipt or service"
+        icon={Inbox}
+        rows={instructions}
+        emptyMessage="No current instructions match this view."
+        renderRow={(item) => <PracticeLifecycleRow key={item.instruction_id} item={item} kind="instruction" />}
+      />
+    );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.DOCUMENTS) {
+    content = (
+      <QueuePanel
+        title="Process documents"
+        subtitle="Current document state · custody and service remain separate evidence"
+        icon={FileText}
+        rows={documents}
+        emptyMessage="No current process documents match this view."
+        renderRow={(item) => <PracticeLifecycleRow key={item.document_id} item={item} kind="document" />}
+      />
+    );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.SERVICE) {
+    content = (
+      <div className="space-y-6">
+        <QueuePanel
+          title="Service attempts"
+          subtitle="ATTEMPT is not SERVICE · current attempt truth"
+          icon={Clock3}
+          rows={attempts}
+          emptyMessage="No current service attempts match this view."
+          renderRow={(item) => <PracticeLifecycleRow key={item.attempt_id} item={item} kind="attempt" />}
+        />
+        <QueuePanel
+          title="Certified service executions"
+          subtitle="Explicit COMPLETED / NOT_COMPLETED service outcomes"
+          icon={CheckCircle2}
+          rows={executions}
+          emptyMessage="No certified service executions match this view."
+          renderRow={(item) => (
+            <PracticeLifecycleRow
+              key={item.service_execution_id}
+              item={item}
+              kind="execution"
+              action={returnAction(item)}
+            />
+          )}
+        />
+      </div>
+    );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.RETURNS) {
+    content = (
+      <QueuePanel
+        title="Returns of Service"
+        subtitle="Canonical generated returns · return is not tax invoice or payment"
+        icon={FileCheck2}
+        rows={returns}
+        emptyMessage="No ReturnOfService evidence matches this view."
+        renderRow={(item) => <PracticeLifecycleRow key={item.return_id} item={item} kind="return" />}
+      />
+    );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
+    content = <LegalFinanceLookup roleToken={roleToken} />;
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INTAKE) {
+    content = <LegalIntakePanel onRefresh={onRefresh} roleToken={roleToken} />;
+  }
+
+  const leftRail = (
+    <nav aria-label="Legal practice workspace navigation">
+      {navItems.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          data-active={activeView === id ? 'true' : 'false'}
+          aria-current={activeView === id ? 'page' : undefined}
+          onClick={() => setActiveView(id)}
+          title={label}
+        >
+          <Icon size={16} />
+          <span>{label}</span>
+        </button>
+      ))}
+      {typeof onLogout === 'function' && (
+        <button type="button" onClick={onLogout} title="Sign out">
+          <LogOut size={16} />
+          <span>Sign out</span>
+        </button>
+      )}
+    </nav>
+  );
+
+  const tenant = {
+    ...(tenantConfig || {}),
+    tenantId: workspace.tenantId || tenantConfig?.tenantId || tenantConfig?.id || '',
+  };
+  const operator = {
+    ...(user || {}),
+    displayName: user?.displayName || user?.name || user?.email || 'Authenticated legal operator',
+    role: roleToken || 'LEGAL_PRACTICE',
+  };
+
+  return (
+    <WilsyOSDashboardChrome
+      dashboardKey="legal-practice"
+      commandLabel="WILSY Legal OS"
+      title="Legal Operations Command Center"
+      role={roleToken || 'LEGAL_PRACTICE'}
+      posture={error ? 'SOURCE_GAPS' : 'LIVE'}
+      tenant={tenant}
+      operator={operator}
+      storyMessages={[
+        'Instruction → Document → Attempt → Service → Return',
+        'Current canonical lifecycle truth',
+        'Kennel EOS remains financial execution authority',
+      ]}
+      search={{
+        value: searchQuery,
+        placeholder: 'Search current legal operations',
+        onChange: (event) => setSearchQuery(event.target.value),
+      }}
+      actions={{
+        liveSyncLabel: 'Refresh truth',
+        onLiveSync: onRefresh,
+        isRefreshing: refreshing,
+        primaryActionLabel: canIntake ? 'New instruction' : 'Open instructions',
+        onPrimaryAction: () => setActiveView(
+          canIntake
+            ? PRACTICE_WORKSPACE_VIEWS.INTAKE
+            : PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS,
+        ),
+      }}
+      metrics={chromeMetrics}
+      leftRail={leftRail}
+    >
+      <div className="space-y-6">
+        <WorkspaceErrorSurface error={error} />
+        {content}
+        <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
+          <span>{DASHBOARD_VERSION}</span>
+          <span>Python EOS owns legal truth · Kennel EOS owns financial execution</span>
+        </footer>
+      </div>
+    </WilsyOSDashboardChrome>
+  );
+}
+
+function LegalFinanceWorkspace({
+  onLogout,
+  roleView,
+  tenantConfig,
+  user,
+}) {
+  const roleToken = normalizeRoleToken(roleView);
+  const tenant = {
+    ...(tenantConfig || {}),
+    tenantId: tenantConfig?.tenantId || tenantConfig?.id || '',
+  };
+  const operator = {
+    ...(user || {}),
+    displayName: user?.displayName || user?.name || user?.email || 'Authenticated legal finance operator',
+    role: roleToken || 'LEGAL_FINANCE',
+  };
+
+  return (
+    <WilsyOSDashboardChrome
+      dashboardKey="legal-finance"
+      commandLabel="WILSY Legal OS"
+      title="Legal Finance Evidence"
+      role={roleToken || 'LEGAL_FINANCE'}
+      posture="LIVE"
+      tenant={tenant}
+      operator={operator}
+      storyMessages={[
+        'Tariff assessment ≠ billing eligibility',
+        'Invoice ≠ payment execution',
+        'Kennel EOS owns settlement',
+      ]}
+      metrics={[
+        { id: 'lookup', label: 'Access mode', value: 'Exact ID', detail: 'No broad legal-workspace access' },
+        { id: 'boundary', label: 'Execution authority', value: 'Kennel EOS', detail: 'Read-only finance evidence' },
+      ]}
+      leftRail={(
+        <nav aria-label="Legal finance workspace navigation">
+          <button type="button" data-active="true" aria-current="page" title="Finance Evidence">
+            <Landmark size={16} />
+            <span>Finance Evidence</span>
+          </button>
+          {typeof onLogout === 'function' && (
+            <button type="button" onClick={onLogout} title="Sign out">
+              <LogOut size={16} />
+              <span>Sign out</span>
+            </button>
+          )}
+        </nav>
+      )}
+    >
+      <div className="space-y-6">
+        <LegalFinanceLookup roleToken={roleToken} />
+        <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 text-emerald-400" size={20} />
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">Finance authority boundary</h2>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-stone-400">
+                Legal Finance may verify exact tariff, billing-eligibility and invoice evidence. This surface cannot create service truth, execute payment, move money or mark settlement.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </WilsyOSDashboardChrome>
+  );
+}
+
 function DeputyAttemptRow({
   item,
   capability,
