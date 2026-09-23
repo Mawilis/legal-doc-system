@@ -1,7 +1,7 @@
 """Direct certificate for Legal Operations evidence-backed queues.
 
 TITLE: WILSY OS Legal Operations Operational Queue Projection Certificate
-VERSION: v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
+VERSION: v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
 AUTHORITY: Direct adversarial certification of L8-5C queue projection.
 EPITOME: Prove that operational queue membership is derived only from exact
          canonical current lifecycle state, preserves tenant/session scope,
@@ -15,7 +15,10 @@ COLLABORATION / OWNERSHIP: Certificate for the L8-5C queue projection only.
                             authorities. HTTP/IAM and later queue families
                             remain separate gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
+           adds direct rejection of pseudo-tenant scope for both an empty
+           public aggregate and the queue entrypoint before any persistence read.
+           2026-09-23 v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
            establishes direct proofs for REGISTERED document office-receipt
            membership, RECEIVED document deputy-assignment membership,
            ALLOCATED/ATTEMPTED active-attempt membership, historical
@@ -67,7 +70,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT"
+VERSION = "v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT"
 NOW = datetime(2026, 9, 23, 12, 0, tzinfo=timezone.utc)
 TENANT = "tenant-l8-5c"
 FOREIGN = "tenant-l8-5c-foreign"
@@ -370,6 +373,29 @@ def test_tenant_isolation_and_caller_session_propagate_to_both_enumerations() ->
     ]
 
 
+def test_empty_aggregate_and_entrypoint_reject_pseudo_tenant_before_read() -> None:
+    """Pseudo/global tenant scope rejects even when every queue would be empty."""
+    collection = FakeCollection()
+
+    _expect(
+        "L8_5C_TENANT_INVALID",
+        lambda: LegalOperationsOperationalQueues(
+            tenant_id="global",
+            office_receipt=(),
+            deputy_assignment=(),
+            active_attempts=(),
+        ),
+    )
+    _expect(
+        "L8_5C_TENANT_INVALID",
+        lambda: get_operational_queues(
+            tenant_id="global",
+            lifecycle_collection=collection,
+        ),
+    )
+    assert collection.calls == []
+
+
 def test_corrupt_l8_5_source_fails_whole_projection_without_partial_queue() -> None:
     """P2/L8-5 corruption is translated once and no partial queue is returned."""
     collection = FakeCollection()
@@ -415,10 +441,10 @@ def test_aggregate_constructor_rejects_wrong_queue_membership() -> None:
 def test_public_shape_and_version_exclude_unsupported_queue_authority() -> None:
     """L8-5C exposes only the three evidence-backed queue families."""
     assert PRODUCTION_VERSION == (
-        "v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES"
+        "v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES"
     )
     assert VERSION == (
-        "v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT"
+        "v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT"
     )
     assert {field.name for field in fields(LegalOperationsOperationalQueues)} == {
         "tenant_id",
@@ -438,7 +464,7 @@ def test_public_shape_and_version_exclude_unsupported_queue_authority() -> None:
 
 
 # ARTIFACT: test_legal_operations_operational_queues.py
-# VERSION: v1.0.0-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
+# VERSION: v1.0.1-L8-5C-LEGAL-OPERATIONS-OPERATIONAL-QUEUES-CERT
 # AUTHORITY BOUNDARY: direct L8-5C state-derived queue projection certificate only
 # TENANT POSTURE: exact tenant/session-scoped ProcessDocument and ServiceAttempt evidence
 # FAIL-CLOSED POSTURE: corruption, drift, invalid membership, and unsupported inference reject
