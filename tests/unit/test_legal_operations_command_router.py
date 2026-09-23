@@ -1,16 +1,21 @@
 """Direct certificate for the L7B Legal Operations field-service command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API-CERT
+VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
-EPITOME: Proves authenticated-command input boundaries, one-orchestrator
-         dispatch, caller-owned transactions, path binding, and fail-closed
-         exclusion of caller-manufactured legal or financial truth.
+EPITOME: Proves authenticated directory/field-service command input
+         boundaries, one-orchestrator dispatch, transaction ownership, path
+         binding, tenant derivation, and fail-closed exclusion of browser-
+         manufactured tenant, legal, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: L7B certificate; domain and orchestrator contracts
                             are read-only authorities under test.
-CERTIFICATION DATE: 2026-09-15
-CHANGELOG: v1.0.0 establishes deterministic command-boundary and transaction
+CERTIFICATION DATE: 2026-09-23
+CHANGELOG: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT adds
+           District/SheriffOffice/Deputy route, body-authority, exact tenant,
+           L8-1 dispatch, and transaction evidence while retaining the L7B
+           field-service command regression contract.
+           v1.0.0 established deterministic command-boundary and transaction
            ownership evidence for allocation, attempt, outcome, and return.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
@@ -138,6 +143,9 @@ def attempt(state: ServiceAttemptState = ServiceAttemptState.ALLOCATED) -> Servi
 def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> None:
     paths = {route.path for route in command_api.router.routes}  # type: ignore[reportAttributeAccessIssue]
     assert paths == {
+        "/legal-operations/directory/districts",
+        "/legal-operations/directory/sheriff-offices",
+        "/legal-operations/directory/deputies",
         "/legal-operations/allocations",
         "/legal-operations/attempts",
         "/legal-operations/attempts/{attempt_id}/transition",
@@ -148,6 +156,99 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         command_api.AttemptCommand(**{"attempt_authority_id": "authority", "state": "COMPLETED"})
     with pytest.raises(ValidationError):
         command_api.ReturnCommand(**{"execution_evidence_identity": HEX, "return_id": "return", "generated_at": BASE, "tenant_id": TENANT})
+    with pytest.raises(ValidationError):
+        command_api.DistrictProvisioningCommand(
+            district_id="district-1",
+            name="District",
+            jurisdiction_code="ZA-GP",
+            evidence_reference="source",
+            tenant_id=TENANT,
+        )
+
+
+def test_directory_commands_use_authorized_tenant_one_l8_1_orchestrator_and_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Directory bodies never supply tenant authority and each command commits once."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    seen: list[tuple[str, str, object]] = []
+
+    def fake_district(**kwargs: Any) -> Any:
+        seen.append(("district", kwargs["tenant_id"], kwargs["session"]))
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "value": {"district_id": kwargs["district_id"]},
+            }
+        )
+
+    def fake_office(**kwargs: Any) -> Any:
+        seen.append(("office", kwargs["tenant_id"], kwargs["session"]))
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "value": {"sheriff_office_id": kwargs["sheriff_office_id"]},
+            }
+        )
+
+    def fake_deputy(**kwargs: Any) -> Any:
+        seen.append(("deputy", kwargs["tenant_id"], kwargs["session"]))
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "value": {"deputy_id": kwargs["deputy_id"]},
+            }
+        )
+
+    monkeypatch.setattr(command_api, "provision_district", fake_district)
+    monkeypatch.setattr(command_api, "provision_sheriff_office", fake_office)
+    monkeypatch.setattr(command_api, "provision_deputy", fake_deputy)
+
+    district = command_api.DistrictProvisioningCommand(
+        district_id="district-l8-1",
+        name="Central District",
+        jurisdiction_code="ZA-GP-1",
+        evidence_reference="district-source",
+    )
+    district_result = asyncio.run(
+        command_api.provision_district_command(district, context())
+    )
+    assert district_result["value"]["district_id"] == "district-l8-1"
+    assert client.session.events == ["start", "commit", "end"]
+
+    client.session.events.clear()
+    office = command_api.SheriffOfficeProvisioningCommand(
+        sheriff_office_id="office-l8-1",
+        district_id="district-l8-1",
+        name="Central Office",
+        evidence_reference="office-source",
+    )
+    office_result = asyncio.run(
+        command_api.provision_sheriff_office_command(office, context())
+    )
+    assert office_result["value"]["sheriff_office_id"] == "office-l8-1"
+    assert client.session.events == ["start", "commit", "end"]
+
+    client.session.events.clear()
+    deputy = command_api.DeputyProvisioningCommand(
+        deputy_id="deputy-l8-1",
+        sheriff_office_id="office-l8-1",
+        display_name="Deputy One",
+        badge_reference="badge-1",
+        evidence_reference="deputy-source",
+    )
+    deputy_result = asyncio.run(
+        command_api.provision_deputy_command(deputy, context())
+    )
+    assert deputy_result["value"]["deputy_id"] == "deputy-l8-1"
+    assert client.session.events == ["start", "commit", "end"]
+
+    assert seen == [
+        ("district", TENANT, client.session),
+        ("office", TENANT, client.session),
+        ("deputy", TENANT, client.session),
+    ]
 
 
 def test_attempt_create_uses_one_orchestrator_and_commits(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -325,8 +426,8 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API-CERT
-# AUTHORITY BOUNDARY: direct command composition certificate only
+# VERSION: v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT
+# AUTHORITY BOUNDARY: direct directory/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
