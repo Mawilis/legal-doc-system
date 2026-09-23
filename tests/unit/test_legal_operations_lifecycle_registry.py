@@ -1,7 +1,7 @@
 """Direct adversarial certificate for the Legal Operations P2 registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry Certificate
-VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+VERSION: v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify immutable snapshot persistence, exact entity, tenant/entity-
          class and document-custody enumeration, exact factory provenance,
@@ -11,7 +11,11 @@ COLLABORATION / OWNERSHIP: Direct certificate for the P2 registry only; P1
                             remains lifecycle/evidence authority and callers own
                             Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+CHANGELOG: 2026-09-23 v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+           adds explicit exact-LegalInstruction runtime certification and
+           static tuple narrowing for tenant/entity enumeration assertions;
+           production behavior and authority contracts remain unchanged.
+           2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
            certifies exact tenant/entity-class snapshot enumeration, stable
            identity/fingerprint ordering, caller-session forwarding, foreign
            absence, unsupported-type rejection, corruption rejection, and
@@ -384,10 +388,12 @@ def test_tenant_entity_snapshot_enumeration_is_exact_deterministic_and_session_b
         collection,
         session=session,
     )
+    assert all(type(value) is LegalInstruction for value in snapshots)
+    instruction_snapshots = cast(tuple[LegalInstruction, ...], snapshots)
 
     assert len(snapshots) == 3
     assert all(value.tenant_id == "tenant-a" for value in snapshots)
-    assert [value.instruction_id for value in snapshots] == [
+    assert [value.instruction_id for value in instruction_snapshots] == [
         "instruction-a",
         "instruction-b",
         "instruction-b",
@@ -876,7 +882,7 @@ def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> 
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry.py
-# VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
+# VERSION: v1.3.1-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION-CERT
 # AUTHORITY BOUNDARY: direct P2 persistence/entity/tenant-entity/custody-history/hydration certificate only.
 # TENANT POSTURE: explicit synthetic tenants; foreign evidence is undisclosed.
 # FAIL-CLOSED POSTURE: malformed records, provenance, races, and sources reject.
