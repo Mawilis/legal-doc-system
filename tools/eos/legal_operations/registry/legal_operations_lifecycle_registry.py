@@ -1,17 +1,24 @@
 """Durable, provider-neutral Legal Operations lifecycle evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry
-VERSION: v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
+VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Persist, enumerate exact entity and document-custody history, and
-         strictly hydrate immutable P1 Legal Operations evidence without
-         deriving lifecycle, service, billing, or financial truth.
+EPITOME: Persist, enumerate exact entity, tenant/entity-class, and document-
+         custody history, and strictly hydrate immutable P1 Legal Operations
+         evidence without deriving lifecycle, queue, search, billing, or
+         financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py
 COLLABORATION / OWNERSHIP: P2 persistence owner; the P1 domain remains the
                             exclusive lifecycle/evidence authority. Callers own
                             Mongo sessions and transaction boundaries.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY adds the
+CHANGELOG: 2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
+           adds deterministic exact-tenant/entity-class snapshot enumeration
+           for L8-5 read-model composition. It reuses the existing tenant/type/
+           identity history index, strictly hydrates every row, preserves
+           caller sessions, sorts immutable snapshots deterministically, and
+           deliberately performs no current-state, queue, or search inference.
+           2026-09-23 v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY adds the
            tenant/document-scoped DocumentCustodyEvent history query and its
            dedicated non-unique Mongo index so L8-3+ orchestration consumes
            hydrated P1 custody evidence without depending on P2 record schema.
@@ -70,7 +77,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION: Final[str] = "v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+VERSION: Final[str] = "v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION"
 COLLECTION: Final[str] = "legal_operations_lifecycle_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -605,6 +612,59 @@ class LegalOperationsLifecycleRegistry:
         return tuple(history)
 
     @staticmethod
+    def get_tenant_entity_snapshots(
+        tenant_id: str,
+        entity_type: str,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> tuple[P1Value, ...]:
+        """Read all immutable snapshots for one exact tenant/entity class.
+
+        This is a persistence/hydration primitive for L8-5 read-model
+        composition. The query binds only the validated tenant and one
+        canonical P1 entity type, forwards the caller-owned session unchanged,
+        strictly hydrates every durable row, rejects any tenant/type scope
+        divergence, and returns a deterministic tuple ordered by canonical
+        entity identity then snapshot fingerprint.
+
+        The method does not group histories, choose current state, derive
+        operational queues, perform text search, authorize access, mutate
+        lifecycle truth, or infer billing, payment, execution, or settlement.
+        Exact foreign-tenant evidence is therefore never queried or disclosed.
+        """
+        tenant = _tenant(tenant_id)
+        if not isinstance(entity_type, str) or entity_type not in _ENTITY_TYPES:
+            _fail("M2_ENTITY_TYPE_UNSUPPORTED")
+        query = {
+            "tenant_id": tenant,
+            "entity_type": entity_type,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+
+        snapshots: list[P1Value] = []
+        for document in documents:
+            if not isinstance(document, Mapping):
+                _fail("M2_RECORD_SCHEMA_INVALID")
+            value = _hydrate_record(cast(Mapping[str, Any], document))
+            if value.tenant_id != tenant:
+                _fail("M2_TENANT_MISMATCH")
+            if type(value).__name__ != entity_type:
+                _fail("M2_ENTITY_HISTORY_SCOPE_MISMATCH")
+            snapshots.append(value)
+
+        snapshots.sort(
+            key=lambda value: (
+                _entity_identity(value),
+                value.fingerprint,
+            )
+        )
+        return tuple(snapshots)
+
+    @staticmethod
     def get_document_custody_history(
         tenant_id: str,
         document_id: str,
@@ -675,8 +735,8 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_lifecycle_registry.py
-# VERSION: v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
-# AUTHORITY BOUNDARY: durable P1 evidence persistence, exact entity/custody history enumeration, and strict hydration only.
+# VERSION: v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
+# AUTHORITY BOUNDARY: durable P1 evidence persistence, exact entity/tenant-entity/custody enumeration, and strict hydration only.
 # TENANT POSTURE: every record and lookup is explicitly tenant-scoped.
 # FAIL-CLOSED POSTURE: corruption, divergence, unsupported types, and outages reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
