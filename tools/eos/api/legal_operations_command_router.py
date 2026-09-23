@@ -5,8 +5,8 @@ VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
          directory, deputy-principal identity-binding, and field-service
-         commands into one canonical orchestrator inside one API-owned Mongo
-         transaction without accepting browser-supplied tenant authority.
+         commands into bounded canonical orchestrator composition inside one
+         API-owned Mongo transaction without accepting browser-supplied tenant authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
@@ -20,7 +20,7 @@ CHANGELOG: 2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
            ServiceExecution identity is server-derived. Existing sheriff command
            compatibility remains; tenant_deputy use of legacy transition/outcome
            routes is additionally binding-scoped.
-            2026-09-23 v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API aligns the sovereign authority/header
+           2026-09-23 v1.4.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-COMMAND-API aligns the sovereign authority/header
            declarations with the already-authored L8-6B identity-binding
            composition; runtime route, IAM, transaction, and error semantics
            are unchanged.
@@ -67,9 +67,9 @@ SECURITY / PRIVACY POSTURE: Request bodies contain bounded intake facts,
 TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
 AUTHORITY BOUNDARY: This module composes authenticated command transport and
-                    transaction mechanics only; exactly one canonical intake,
-                    acceptance/receipt, directory, deputy-principal-binding, or
-                    field-service orchestrator is called per command.
+                    transaction mechanics only. Ordinary commands dispatch one
+                    canonical orchestrator; L8-6E deputy field commands compose
+                    only the certified P5M -> P5D/P5E chain in one transaction.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
