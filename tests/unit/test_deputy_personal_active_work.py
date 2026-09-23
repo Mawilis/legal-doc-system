@@ -1,7 +1,7 @@
 """Direct certificate for binding-scoped deputy personal active work.
 
 TITLE: WILSY OS Deputy Personal Active Work Projection Certificate
-VERSION: v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
+VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
 AUTHORITY: Direct adversarial certification of L8-6C personal queue membership.
 EPITOME: Prove exact binding-derived deputy identity, ALLOCATED/ATTEMPTED-only
          membership, other-deputy and terminal exclusion, deterministic upstream
@@ -12,7 +12,10 @@ COLLABORATION / OWNERSHIP: Certificate for deputy_personal_active_work.py only;
                             L8-6B binding, L8-5 read models and IAM remain
                             independent canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
+           adds direct public-aggregate identity and immutable tuple-shape
+           rejection and rebinds the certificate to production v1.0.1.
+           2026-09-23 v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
            establishes exact bound-deputy active membership, exclusion, error,
            session, aggregate-invariant and authority-boundary proofs.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -52,7 +55,7 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
 )
 
 
-VERSION = "v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT"
+VERSION = "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT"
 NOW = datetime(2026, 9, 23, 19, 0, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-1"
@@ -307,6 +310,34 @@ def test_aggregate_rejects_wrong_deputy_or_terminal_membership() -> None:
     assert caught.value.code == "L8_6C_ACTIVE_MEMBERSHIP_INVALID"
 
 
+def test_aggregate_rejects_malformed_identity_and_mutable_queue_shape() -> None:
+    """Public construction is fail-closed even outside the normal binding path."""
+    for field, value, code in (
+        ("tenant_id", "global", "L8_6C_TENANT_ID_INVALID"),
+        ("principal_id", " principal", "L8_6C_PRINCIPAL_ID_INVALID"),
+        ("deputy_id", "deputy 1", "L8_6C_DEPUTY_ID_INVALID"),
+    ):
+        kwargs: dict[str, Any] = {
+            "tenant_id": TENANT,
+            "principal_id": PRINCIPAL,
+            "deputy_id": DEPUTY,
+            "active_attempts": (),
+        }
+        kwargs[field] = value
+        with pytest.raises(DeputyPersonalActiveWorkError) as caught:
+            DeputyPersonalActiveWork(**kwargs)
+        assert caught.value.code == code
+
+    with pytest.raises(DeputyPersonalActiveWorkError) as caught:
+        DeputyPersonalActiveWork(
+            tenant_id=TENANT,
+            principal_id=PRINCIPAL,
+            deputy_id=DEPUTY,
+            active_attempts=[],  # type: ignore[arg-type]
+        )
+    assert caught.value.code == "L8_6C_ACTIVE_ATTEMPTS_INVALID"
+
+
 def test_projection_contains_no_iam_financial_or_invented_queue_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -342,12 +373,12 @@ def test_projection_contains_no_iam_financial_or_invented_queue_fields(
     ):
         assert forbidden not in serialized
 
-    assert PRODUCTION_VERSION == "v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK"
-    assert VERSION == "v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT"
+    assert PRODUCTION_VERSION == "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK"
+    assert VERSION == "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT"
 
 
 # ARTIFACT: test_deputy_personal_active_work.py
-# VERSION: v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
+# VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
 # AUTHORITY BOUNDARY: direct binding-scoped personal active-work projection certificate only
 # TENANT POSTURE: exact tenant/principal binding and bound-deputy attempt membership
 # FAIL-CLOSED POSTURE: binding/evidence/type/tenant/deputy/state drift rejects
