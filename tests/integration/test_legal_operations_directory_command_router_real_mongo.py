@@ -1,7 +1,7 @@
 """Host-backed authenticated directory command certificate for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Directory Command API Real-Mongo Certificate
-VERSION: v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
+VERSION: v1.0.4-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
 AUTHORITY: Host-backed certificate for authenticated L8-1 directory command composition.
 EPITOME: Prove live split-store IAM, actual FastAPI POST dispatch, exact
          own-tenant District -> SheriffOffice -> Deputy provisioning, replay,
@@ -14,11 +14,14 @@ COLLABORATION / OWNERSHIP: Command API owns HTTP/transaction composition;
                             canonical directory provisioning; P1/P2/L8-0 own
                             underlying immutable truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
+CHANGELOG: 2026-09-23 v1.0.4-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
+           corrects the prior certificate-history label after the v1.3.0
+           command-router rebind; runtime behavior and assertions are unchanged.
+           2026-09-23 v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
            rebinds the already-certified directory HTTP behavior to shared
            command API v1.3.0 after L8-3 receipt-route addition; directory
            authority and assertions remain unchanged.
-            2026-09-23 v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
+           2026-09-23 v1.0.2-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
            rebinds the already-certified directory HTTP behavior to shared
            command API v1.2.1 after intake-route addition and HTTP 422
            status-alias cleanup; directory authority and assertions are unchanged.
@@ -98,7 +101,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT"
+VERSION = "v1.0.4-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -651,12 +654,12 @@ def test_real_mongo_directory_rows_exclude_financial_authority(
         "v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API"
     )
     assert VERSION == (
-        "v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT"
+        "v1.0.4-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT"
     )
 
 
 # ARTIFACT: test_legal_operations_directory_command_router_real_mongo.py
-# VERSION: v1.0.3-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
+# VERSION: v1.0.4-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-RM-CERT
 # AUTHORITY BOUNDARY: host-backed live-IAM directory command certificate only
 # TENANT POSTURE: exact tenant with ACTIVE split-store sheriff IAM truth
 # FAIL-CLOSED POSTURE: runtime/IAM/scope/parent/body-override failures deny
