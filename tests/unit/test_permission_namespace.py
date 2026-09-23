@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT
+VERSION: v1.16.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.16.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-CERT
+    certifies legal_operations:receipt:write as one exact canonical TENANT
+    permission with non-cross-tenant, non-financial, non-self-authorizing
+    metadata and malformed-alias rejection.
     2026-09-23 v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT certifies
     the dedicated own-tenant legal_operations:directory:write permission,
     exact non-financial/non-self-authorizing metadata, and fail-closed aliases.
@@ -57,12 +61,12 @@ import json
 
 import pytest
 
-VERSION = "v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT"
+VERSION = "v1.16.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM"
+    assert POLICY_VERSION == "v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -93,6 +97,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:directory:write",
+        "legal_operations:receipt:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -129,9 +134,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 56
+    ) == 57
 
-    assert len(rows) == 59
+    assert len(rows) == 60
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -189,6 +194,8 @@ def test_permission_canon_properties() -> None:
     command_permissions = {
         "legal_operations:directory:write":
             "provision own-tenant process-service directory identities",
+        "legal_operations:receipt:write":
+            "accept own-tenant instructions and record sheriff-office receipt",
         "legal_operations:attempt_outcome:write":
             "record own-tenant terminal service-attempt outcomes",
         "legal_operations:return:write":
@@ -362,6 +369,11 @@ def test_permission_canon_properties() -> None:
         "legal_operations:directory:write ",
         " legal_operations:directory:write",
         "LEGAL_OPERATIONS:DIRECTORY:WRITE",
+        "legal_operations:receipt:*",
+        "legal_operations:receipt",
+        "LEGAL_OPERATIONS:RECEIPT:WRITE",
+        " legal_operations:receipt:write",
+        "legal_operations:receipt:write ",
     )
 
     for value in invalid:
@@ -465,7 +477,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT
+# VERSION: v1.16.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: directory and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
