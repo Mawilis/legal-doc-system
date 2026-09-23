@@ -1,13 +1,13 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME
+ * VERSION: v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
- * EPITOME: Preserves certified SHERIFF and governed DEPUTY modes while elevating
- *          LEGAL_CLIENT into the shared WILSY OS workspace chrome. Client mode
- *          now has a real responsive navigation rail, tenant/operator plate,
- *          searchable visible-matter workspace, refresh/open-matters actions,
- *          and bounded Overview / My Matters / Access & Privacy lanes backed
- *          only by the D7 sanitized matter adapter.
+ * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
+ *          finance, sheriff, deputy and client personas. Law-firm roles receive
+ *          a snapshot-backed operating workspace for instructions, process
+ *          documents, service attempts, certified executions, returns, exact
+ *          finance evidence and governed initial intake; specialist and client
+ *          roles retain least-authority views.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns authority; P1/P2 own lifecycle/
  *                            snapshot truth; L8-5C owns sheriff queues; L8-6B owns
@@ -19,7 +19,17 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME wraps LEGAL_CLIENT in the certified shared
+ * CHANGELOG: 2026-09-23 v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE adds LEGAL_PRACTICE and LEGAL_FINANCE modes.
+ *            Partner/attorney/paralegal/secretary users consume the D11 snapshot
+ *            workspace through D13, navigate Command Center, Matters,
+ *            Instructions, Documents, Service Operations, Returns and permitted
+ *            Finance Evidence, and may register governed initial intake where
+ *            their server role already owns instruction:write. Return-authorized
+ *            legal-practice users can generate ReturnOfService from exact
+ *            server-issued ServiceExecution evidence. LEGAL_FINANCE receives
+ *            exact tariff/billing-eligibility/invoice lookup only. Existing
+ *            SHERIFF, DEPUTY and LEGAL_CLIENT behavior remains role-bounded.
+ *            2026-09-23 v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME wraps LEGAL_CLIENT in the certified shared
  *            WilsyOSDashboardChrome without changing Python-EOS authority.
  *            Adds functional Overview, My Matters, and Access & Privacy menu
  *            lanes; visible-matter search; top tenant/operator chrome; live
@@ -58,26 +68,29 @@
  *            payment states. It renders only office receipt, deputy assignment
  *            and active attempt queues returned by the certified backend.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Authenticated transport only. Client navigation
- *                             filters presentation over already-sanitized D7 data
- *                             and never creates scope or authority. A pseudonymous
+ * SECURITY / PRIVACY POSTURE: Authenticated transport only. Practice workspace
+ *                             rows are bounded current P1 projections with opaque
+ *                             evidence locators; client navigation remains D7
+ *                             sanitized. Browser menus and forms never create
+ *                             tenant, role or lifecycle authority. A pseudonymous
  *                             browser field-device reference may be stored locally
  *                             solely for P5M ordering provenance; it is not IAM,
  *                             deputy identity, GPS, biometric or legal truth.
  * TENANT BOUNDARY: Canonical tenant scope comes only from certified server
  *                  projections; deputy identity remains server-bound and client
  *                  matter membership comes only from explicit D5/D7 visibility.
- * AUTHORITY BOUNDARY: Presentation, client workspace navigation/search, and
- *                     deputy observation-command initiation only. Menu state,
- *                     roleView, search and display state never grant SHERIFF,
- *                     DEPUTY or LEGAL_CLIENT authority; Python EOS independently
+ * AUTHORITY BOUNDARY: Presentation plus initiation of already-authorized
+ *                     intake, ReturnOfService and bound-Deputy commands only.
+ *                     Menu state, roleView, search, generated opaque IDs and
+ *                     display state never grant practice, sheriff, deputy,
+ *                     finance or client authority; Python EOS independently
  *                     authorizes and owns all legal truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * FAIL-CLOSED DECLARATION: Unknown role, denied/unavailable client/internal
- *                          reads, work/capability drift, malformed observation,
- *                          command failure, or failed canonical refresh never
- *                          falls back, crosses roles, invents matters, or displays
- *                          command success.
+ * FAIL-CLOSED DECLARATION: Unknown role, denied/unavailable workspace/client/
+ *                          specialist reads, malformed finance evidence, intake/
+ *                          return/field-command failure, capability drift or
+ *                          failed canonical refresh never falls back across roles,
+ *                          invents truth, or displays command success.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -88,14 +101,17 @@ import {
   ClipboardList,
   Clock3,
   FileCheck2,
+  FilePlus2,
   FileText,
   Inbox,
+  Landmark,
   Loader2,
   LockKeyhole,
   LogOut,
   Play,
   RefreshCw,
   Scale,
+  Search,
   ShieldCheck,
   Sparkles,
   UserCheck,
@@ -103,16 +119,20 @@ import {
 
 import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
+  generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalFinanceEvidence,
+  getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
   recordDeputyFieldOutcome,
+  registerLegalIntake,
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v9.0.0-L8-7D9-CLIENT-WORKSPACE-CHROME';
+const DASHBOARD_VERSION = 'v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -138,6 +158,40 @@ const EMPTY_CLIENT_MATTERS = Object.freeze({
 });
 
 
+const EMPTY_PRACTICE_WORKSPACE = Object.freeze({
+  schema: '',
+  version: '',
+  tenantId: '',
+  visibility: '',
+  summary: Object.freeze({
+    instructions_total: 0,
+    instructions_registered: 0,
+    instructions_accepted: 0,
+    instructions_closed: 0,
+    instructions_cancelled: 0,
+    documents_total: 0,
+    documents_registered: 0,
+    documents_received: 0,
+    documents_allocated: 0,
+    documents_returned: 0,
+    attempts_total: 0,
+    attempts_allocated: 0,
+    attempts_attempted: 0,
+    attempts_completed: 0,
+    attempts_not_completed: 0,
+    attempts_cancelled: 0,
+    executions_total: 0,
+    executions_completed: 0,
+    executions_not_completed: 0,
+    returns_total: 0,
+  }),
+  instructions: Object.freeze([]),
+  documents: Object.freeze([]),
+  attempts: Object.freeze([]),
+  executions: Object.freeze([]),
+  returns: Object.freeze([]),
+});
+
 const EMPTY_DEPUTY_CAPABILITIES = Object.freeze({
   tenantId: '',
   visibility: '',
@@ -155,10 +209,52 @@ const FIELD_COMMAND_KIND = Object.freeze({
 });
 
 const ROLE_MODES = Object.freeze({
+  LEGAL_PRACTICE: 'LEGAL_PRACTICE',
+  LEGAL_FINANCE: 'LEGAL_FINANCE',
   SHERIFF: 'SHERIFF',
   DEPUTY: 'DEPUTY',
   LEGAL_CLIENT: 'LEGAL_CLIENT',
   UNRESOLVED: 'UNRESOLVED',
+});
+
+const PRACTICE_ROLE_TOKENS = Object.freeze([
+  'LEGAL_PARTNER',
+  'TENANT_LEGAL_PARTNER',
+  'LEGAL_ATTORNEY',
+  'TENANT_LEGAL_ATTORNEY',
+  'LEGAL_PARALEGAL',
+  'TENANT_LEGAL_PARALEGAL',
+  'LEGAL_SECRETARY',
+  'TENANT_LEGAL_SECRETARY',
+]);
+
+const INTAKE_WRITE_ROLE_TOKENS = Object.freeze([
+  'LEGAL_PARTNER',
+  'TENANT_LEGAL_PARTNER',
+  'LEGAL_ATTORNEY',
+  'TENANT_LEGAL_ATTORNEY',
+  'LEGAL_PARALEGAL',
+  'TENANT_LEGAL_PARALEGAL',
+]);
+
+const BILLING_READ_ROLE_TOKENS = Object.freeze([
+  'LEGAL_PARTNER',
+  'TENANT_LEGAL_PARTNER',
+  'LEGAL_ATTORNEY',
+  'TENANT_LEGAL_ATTORNEY',
+  'LEGAL_FINANCE',
+  'TENANT_LEGAL_FINANCE',
+]);
+
+const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
+  COMMAND: 'COMMAND',
+  MATTERS: 'MATTERS',
+  INSTRUCTIONS: 'INSTRUCTIONS',
+  DOCUMENTS: 'DOCUMENTS',
+  SERVICE: 'SERVICE',
+  RETURNS: 'RETURNS',
+  FINANCE: 'FINANCE',
+  INTAKE: 'INTAKE',
 });
 
 const CLIENT_WORKSPACE_VIEWS = Object.freeze({
@@ -167,11 +263,22 @@ const CLIENT_WORKSPACE_VIEWS = Object.freeze({
   ACCESS: 'ACCESS',
 });
 
-function resolveRoleMode(value) {
-  const token = String(value || '')
+function normalizeRoleToken(value) {
+  return String(value || '')
     .trim()
     .replace(/[^A-Za-z0-9]+/g, '_')
     .toUpperCase();
+}
+
+function resolveRoleMode(value) {
+  const token = normalizeRoleToken(value);
+  if (PRACTICE_ROLE_TOKENS.includes(token)) return ROLE_MODES.LEGAL_PRACTICE;
+  if (
+    token === 'LEGAL_FINANCE'
+    || token === 'TENANT_LEGAL_FINANCE'
+  ) {
+    return ROLE_MODES.LEGAL_FINANCE;
+  }
   if (token.includes('SHERIFF')) return ROLE_MODES.SHERIFF;
   if (token.includes('DEPUTY')) return ROLE_MODES.DEPUTY;
   if (
