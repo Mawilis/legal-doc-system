@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM
+VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, and provider-policy capabilities
@@ -12,6 +12,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM adds the dedicated own-tenant
+    legal_operations:deputy_queue:read permission for an authenticated deputy's
+    binding-scoped personal active-work projection only. It is non-cross-tenant,
+    non-financial, non-self-authorizing, and does not grant sheriff tenant-wide
+    queue visibility, lifecycle mutation, service completion, return, billing,
+    payment, AI, execution, or settlement authority.
     2026-09-23 v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM adds the dedicated own-tenant
     legal_operations:queue:read permission for authenticated sheriff cockpit
     projection only; it is non-cross-tenant, non-financial, and does not
@@ -94,7 +100,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM"
+VERSION = "v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -359,6 +365,10 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:queue:read", "TENANT", "TENANT",
             "read own-tenant certified sheriff operational queues", tenant=True,
         ),
+        "legal_operations:deputy_queue:read": _meta(
+            "legal_operations:deputy_queue:read", "TENANT", "TENANT",
+            "read binding-scoped own active service-attempt work", tenant=True,
+        ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
             "read own-tenant process allocations", tenant=True,
@@ -615,7 +625,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM
+# VERSION: v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: directory provisioning and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
