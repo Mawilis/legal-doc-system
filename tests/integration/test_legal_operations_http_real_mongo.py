@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Legal Operations live-IAM current/history read API real-Mongo certificate.
-VERSION: v1.3.1-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT
+VERSION: v1.3.2-L8-6A-ROUTER-COMPAT-LIVE-IAM-CURRENT-HISTORY-RM-CERT
 AUTHORITY: Host-backed certificate for durable tenant authorization and canonical projections.
 EPITOME: Proves the real RequireTenantAuthorization chain resolves durable principal,
 membership, business-role, and granting-role truth before the canonical L8-5
@@ -7,6 +7,10 @@ entity read model exposes deterministic current-plus-history projections.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; P1/P2 remain canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.3.2-L8-6A-ROUTER-COMPAT-LIVE-IAM-CURRENT-HISTORY-RM-CERT
+           rebinds the sealed L8-5 live-IAM current/history certificate to the
+           additive L8-6A router release; durable authorization, tenant scope,
+           history, corruption, and projection assertions are unchanged.
 CHANGELOG: v1.3.1-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT rebinds the host certificate to the
 router documentation-alignment patch; runtime, IAM, Mongo, and projection
 assertions are unchanged.
@@ -63,7 +67,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.3.1-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT"
+VERSION = "v1.3.2-L8-6A-ROUTER-COMPAT-LIVE-IAM-CURRENT-HISTORY-RM-CERT"
 MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 NOW = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
@@ -527,11 +531,11 @@ def test_real_mongo_unknown_resource_and_projection_boundary_remain_bounded(mong
         for forbidden in ("_id", "p1_payload", "source_payload")
     )
     assert not any(token in key.casefold() for key in payload for token in ("payment", "settlement", "invoice", "billing_execution"))
-    assert legal_router.VERSION == "v1.2.1-L8-5-LEGAL-OPERATIONS-CURRENT-HISTORY-READ-API"
+    assert legal_router.VERSION == "v1.3.0-L8-6A-SHERIFF-OPERATIONAL-QUEUE-READ-API"
 
 
 # ARTIFACT: test_legal_operations_http_real_mongo.py
-# VERSION: v1.3.1-L8-5-LIVE-IAM-CURRENT-HISTORY-READ-API-RM-CERT
+# VERSION: v1.3.2-L8-6A-ROUTER-COMPAT-LIVE-IAM-CURRENT-HISTORY-RM-CERT
 # AUTHORITY BOUNDARY: real-Mongo live-IAM deterministic current-plus-history projection certificate only
 # TENANT POSTURE: exact tenant predicates, durable membership, and foreign absence
 # FAIL-CLOSED POSTURE: post-hello failures, read-model divergence, and projection leakage fail certification
