@@ -1,10 +1,10 @@
 """Direct certificate for the Legal Operations command API.
 
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT
+VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service command input
-         boundaries, one-orchestrator dispatch, transaction ownership, path
+         boundaries, bound-Deputy field evidence composition, transaction ownership, path
          binding, tenant derivation, and fail-closed exclusion of browser-
          manufactured tenant, lifecycle, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_command_router.py
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: L8-3 command certificate; canonical intake,
                             acceptance/receipt, directory, lifecycle, persistence, and field-service
                             orchestrators remain read-only authorities under test.
 CERTIFICATION DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the historical command
+CHANGELOG: 2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT certifies bound-Deputy ownership enforcement,
+           server-derived observation provenance/receipt/execution identifiers,
+           atomic P5M->P5D/P5E dispatch, replay receipt reuse, forbidden browser
+           authority fields, and sheriff compatibility on legacy command routes.
+           2026-09-23 v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the historical command
            regression certificate to production v1.4.1 after sovereign
            authority-declaration alignment; command behavior is unchanged.
            2026-09-23 v1.4.0-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the existing
@@ -143,6 +147,25 @@ def context() -> TenantAuthorizationContext:
     return TenantAuthorizationContext(identity, TENANT, decision)
 
 
+def deputy_context() -> TenantAuthorizationContext:
+    """Return an authorized tenant_deputy context for personal field commands."""
+    identity = SovereignIdentity(
+        identity_id="principal-deputy-l8-6e",
+        tenant_id=TENANT,
+        username="deputy",
+        email="deputy@example.test",
+        auth_method="TEST",
+        status=PrincipalStatus.ACTIVE,
+    )
+    decision = TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_deputy",
+        "DEPUTY",
+    )
+    return TenantAuthorizationContext(identity, TENANT, decision)
+
+
 def intake_context() -> TenantAuthorizationContext:
     """Return an authorized legal-partner context for intake command composition."""
     identity = SovereignIdentity(
@@ -203,6 +226,8 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         "/legal-operations/attempts",
         "/legal-operations/attempts/{attempt_id}/transition",
         "/legal-operations/attempts/{attempt_id}/outcome",
+        "/legal-operations/deputy/attempts/{attempt_id}/transition",
+        "/legal-operations/deputy/attempts/{attempt_id}/outcome",
         "/legal-operations/executions/{execution_id}/return",
     }
     with pytest.raises(ValidationError):
@@ -251,6 +276,29 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
                 "tenant_id": TENANT,
             }
         )
+
+    base_field = {
+        "current_evidence_identity": HEX,
+        "device_id": "device-1",
+        "event_id": "event-1",
+        "sequence_number": 1,
+        "occurred_at": BASE + timedelta(minutes=1),
+        "observation_reference": "photo:field-1",
+    }
+    for forbidden in (
+        {"tenant_id": TENANT},
+        {"principal_id": "principal"},
+        {"deputy_id": "deputy"},
+        {"evidence_fingerprint": HEX},
+        {"receipt_id": "receipt"},
+        {"accepted_at": BASE + timedelta(minutes=2)},
+        {"service_execution_id": "execution"},
+        {"executed_at": BASE + timedelta(minutes=2)},
+    ):
+        with pytest.raises(ValidationError):
+            command_api.DeputyFieldTransitionCommand.model_validate(
+                {**base_field, **forbidden}
+            )
 
 
 def test_intake_command_uses_authorized_tenant_one_l8_2_orchestrator_and_commits(
@@ -663,6 +711,279 @@ def test_orchestrator_failure_aborts_without_success(monkeypatch: pytest.MonkeyP
     assert client.session.events == ["start", "abort", "end"]
 
 
+def test_bound_deputy_scope_enforces_binding_and_preserves_sheriff_legacy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deputy attempts must match immutable binding; sheriff legacy commands stay compatible."""
+    database = Database()
+    session = Session()
+    session.in_transaction = True
+    seen: list[tuple[str, str, object, object]] = []
+
+    def resolve(
+        tenant_id: str,
+        principal_id: str,
+        collection: object,
+        *,
+        session: object = None,
+    ) -> object:
+        seen.append((tenant_id, principal_id, collection, session))
+        return SimpleNamespace(deputy_id="deputy-l7b")
+
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(resolve),
+    )
+    current = attempt()
+    binding = command_api._enforce_deputy_attempt_scope(
+        deputy_context(),
+        current,
+        database,
+        session,
+        required=True,
+    )
+    assert binding.deputy_id == current.deputy_id
+    assert seen[0][0:2] == (TENANT, "principal-deputy-l8-6e")
+    assert seen[0][3] is session
+
+    assert command_api._enforce_deputy_attempt_scope(
+        context(),
+        current,
+        database,
+        session,
+        required=False,
+    ) is None
+
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(lambda *_args, **_kwargs: SimpleNamespace(deputy_id="other-deputy")),
+    )
+    with pytest.raises(command_api.CommandError, match="LEGAL_OPERATION_NOT_FOUND"):
+        command_api._enforce_deputy_attempt_scope(
+            deputy_context(),
+            current,
+            database,
+            session,
+            required=True,
+        )
+
+
+def test_bound_deputy_field_sync_derives_provenance_and_reuses_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Browser observation facts become server provenance and replay reuses acceptance."""
+    database = Database()
+    session = Session()
+    session.in_transaction = True
+    fixed_now = BASE + timedelta(minutes=9)
+    command = command_api.DeputyFieldTransitionCommand(
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-1",
+        sequence_number=1,
+        occurred_at=BASE + timedelta(minutes=1),
+        observation_reference="photo:field-1",
+    )
+    current = attempt()
+    captured: list[dict[str, Any]] = []
+    monkeypatch.setattr(command_api, "_utcnow", lambda: fixed_now)
+
+    def missing(*_args: Any, **_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceFieldEvidenceRegistryError(
+            "P5M_EVIDENCE_NOT_FOUND"
+        )
+
+    monkeypatch.setattr(
+        command_api.ProcessServiceFieldEvidenceRegistry,
+        "resolve_by_event",
+        staticmethod(missing),
+    )
+
+    def fake_sync(**kwargs: Any) -> Any:
+        captured.append(kwargs)
+        return SimpleNamespace(
+            receipt_id=kwargs["receipt_id"],
+            accepted_at=kwargs["accepted_at"],
+            evidence_reference=kwargs["evidence_reference"],
+            evidence_fingerprint=kwargs["evidence_fingerprint"],
+            evidence_identity="e" * 128,
+            to_dict=lambda: {"event_id": kwargs["event_id"]},
+        )
+
+    monkeypatch.setattr(command_api, "sync_offline_field_evidence", fake_sync)
+    first = command_api._sync_bound_deputy_field_evidence(
+        context=deputy_context(),
+        current=current,
+        command=command,
+        command_kind="TRANSITION_TO_ATTEMPTED",
+        outcome=None,
+        database=database,
+        session=session,
+    )
+    expected_reference, expected_fingerprint = command_api._field_observation_provenance(
+        context=deputy_context(),
+        current=current,
+        command_kind="TRANSITION_TO_ATTEMPTED",
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-1",
+        sequence_number=1,
+        occurred_at=BASE + timedelta(minutes=1),
+        observation_reference="photo:field-1",
+        previous_event_fingerprint=None,
+        outcome=None,
+    )
+    assert captured[0]["evidence_reference"] == expected_reference
+    assert captured[0]["evidence_fingerprint"] == expected_fingerprint
+    assert len(expected_fingerprint) == 128
+    assert captured[0]["accepted_at"] == fixed_now
+    assert captured[0]["receipt_id"] == command_api._field_receipt_id(TENANT, "event-1")
+    assert captured[0]["session"] is session
+
+    prior_time = BASE + timedelta(minutes=8)
+    monkeypatch.setattr(
+        command_api.ProcessServiceFieldEvidenceRegistry,
+        "resolve_by_event",
+        staticmethod(
+            lambda *_args, **_kwargs: SimpleNamespace(
+                receipt_id="prior-receipt",
+                accepted_at=prior_time,
+            )
+        ),
+    )
+    second = command_api._sync_bound_deputy_field_evidence(
+        context=deputy_context(),
+        current=current,
+        command=command,
+        command_kind="TRANSITION_TO_ATTEMPTED",
+        outcome=None,
+        database=database,
+        session=session,
+    )
+    assert first.evidence_fingerprint == second.evidence_fingerprint
+    assert captured[1]["receipt_id"] == "prior-receipt"
+    assert captured[1]["accepted_at"] == prior_time
+
+
+def test_bound_deputy_field_transition_composes_p5m_then_p5d(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One API transaction binds deputy, journals P5M, then persists P5D."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    monkeypatch.setattr(command_api, "_source", lambda *_args, **_kwargs: attempt())
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(lambda *_args, **_kwargs: SimpleNamespace(deputy_id="deputy-l7b")),
+    )
+    receipt = SimpleNamespace(
+        evidence_reference="photo:field-1",
+        evidence_fingerprint="d" * 128,
+        evidence_identity="e" * 128,
+        to_dict=lambda: {"event_id": "event-1", "evidence_fingerprint": "d" * 128},
+    )
+    seen: list[tuple[str, object]] = []
+
+    def fake_sync(**kwargs: Any) -> Any:
+        seen.append(("p5m", kwargs["session"]))
+        return receipt
+
+    def fake_transition(**kwargs: Any) -> ServiceAttempt:
+        assert kwargs["evidence_reference"] == receipt.evidence_reference
+        assert kwargs["evidence_fingerprint"] == receipt.evidence_fingerprint
+        assert kwargs["session"] is client.session
+        seen.append(("p5d", kwargs["session"]))
+        return attempt(ServiceAttemptState.ATTEMPTED)
+
+    monkeypatch.setattr(command_api, "_sync_bound_deputy_field_evidence", fake_sync)
+    monkeypatch.setattr(command_api, "transition_process_service_attempt", fake_transition)
+    command = command_api.DeputyFieldTransitionCommand(
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-1",
+        sequence_number=1,
+        occurred_at=BASE + timedelta(minutes=1),
+        observation_reference="photo:field-1",
+    )
+    result = asyncio.run(
+        command_api.transition_bound_deputy_field_attempt_command(
+            "attempt-l7b",
+            command,
+            deputy_context(),
+        )
+    )
+    assert result["data"]["state"] == "ATTEMPTED"
+    assert result["field_evidence"]["event_id"] == "event-1"
+    assert seen == [("p5m", client.session), ("p5d", client.session)]
+    assert client.session.events == ["start", "commit", "end"]
+
+
+def test_bound_deputy_field_outcome_derives_execution_and_composes_p5e(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Terminal bridge owns execution locator/time and never accepts them from browser."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    current = attempt(ServiceAttemptState.ATTEMPTED)
+    monkeypatch.setattr(command_api, "_source", lambda *_args, **_kwargs: current)
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(lambda *_args, **_kwargs: SimpleNamespace(deputy_id="deputy-l7b")),
+    )
+    receipt = SimpleNamespace(
+        evidence_reference="photo:terminal",
+        evidence_fingerprint="f" * 128,
+        evidence_identity="9" * 128,
+        to_dict=lambda: {"event_id": "event-terminal", "evidence_identity": "9" * 128},
+    )
+    monkeypatch.setattr(
+        command_api,
+        "_sync_bound_deputy_field_evidence",
+        lambda **_kwargs: receipt,
+    )
+    captured: dict[str, Any] = {}
+
+    def fake_outcome(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return SimpleNamespace(to_dict=lambda: {"outcome": "COMPLETED"})
+
+    monkeypatch.setattr(command_api, "transition_process_service_attempt_outcome", fake_outcome)
+    command = command_api.DeputyFieldOutcomeCommand(
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-terminal",
+        sequence_number=2,
+        occurred_at=BASE + timedelta(minutes=2),
+        observation_reference="photo:terminal",
+        previous_event_fingerprint="d" * 128,
+        outcome=ServiceAttemptState.COMPLETED,
+    )
+    result = asyncio.run(
+        command_api.record_bound_deputy_field_outcome_command(
+            "attempt-l7b",
+            command,
+            deputy_context(),
+        )
+    )
+    expected_id = command_api._field_service_execution_id(
+        tenant_id=TENANT,
+        attempt_id="attempt-l7b",
+        evidence_identity=receipt.evidence_identity,
+        outcome=ServiceAttemptState.COMPLETED,
+    )
+    assert captured["service_execution_id"] == expected_id
+    assert len(expected_id) == 128
+    assert captured["executed_at"] == command.occurred_at
+    assert captured["evidence_fingerprint"] == receipt.evidence_fingerprint
+    assert captured["session"] is client.session
+    assert result["field_evidence"]["event_id"] == "event-terminal"
+    assert client.session.events == ["start", "commit", "end"]
+
+
 def test_transition_path_mismatch_aborts_before_orchestrator(monkeypatch: pytest.MonkeyPatch) -> None:
     client, database = Client(), Database()
     monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
@@ -807,7 +1128,7 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT
+# VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
