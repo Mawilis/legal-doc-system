@@ -1,7 +1,7 @@
 """Bounded canonical search for Legal Operations matters.
 
 TITLE: WILSY OS Legal Operations Matter Search
-VERSION: v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
+VERSION: v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
 AUTHORITY: Wilsy OS Legal Operations deterministic read-only search projection.
 EPITOME: Search only canonical CaseMatter.matter_reference values from L8-5
          current read models using exact or prefix matching, with explicit
@@ -15,7 +15,10 @@ COLLABORATION / OWNERSHIP: P1 owns CaseMatter truth; P2 owns durable snapshots;
                             Intelligence, and client rendering remain separate
                             bounded gates.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
+CHANGELOG: 2026-09-23 v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
+           makes the exported search result require an immutable tuple for
+           matches; search semantics and authority boundaries are unchanged.
+           2026-09-23 v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
            establishes canonical matter-reference search with exact/prefix
            modes, NFC input validation, case-insensitive comparison,
            deterministic reference/identity ordering, explicit result bounds,
@@ -59,7 +62,7 @@ from tools.eos.legal_operations.domain.legal_operations_read_model import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH"
+VERSION: Final[str] = "v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH"
 _MAX_QUERY_LENGTH: Final[int] = 256
 _MAX_RESULTS: Final[int] = 100
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -174,6 +177,8 @@ class LegalOperationsMatterSearchResult:
         query = _query(self.query)
         mode = _mode(self.mode)
         limit = _limit(self.limit)
+        if type(self.matches) is not tuple:
+            _fail("L8_5D_MATCHES_INVALID")
         if len(self.matches) > limit:
             _fail("L8_5D_RESULT_LIMIT_EXCEEDED")
 
@@ -275,7 +280,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_search.py
-# VERSION: v1.0.0-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
+# VERSION: v1.0.1-L8-5D-LEGAL-OPERATIONS-MATTER-SEARCH
 # AUTHORITY BOUNDARY: bounded canonical CaseMatter.matter_reference retrieval only; no AI, mutation, client, or financial authority
 # TENANT POSTURE: exact L8-5 tenant-scoped CaseMatter current read models only
 # FAIL-CLOSED POSTURE: invalid scope/query/mode/limit/evidence rejects without fuzzy, client-name, or partial fallback
