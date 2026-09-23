@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Legal Operations live-IAM read API real-Mongo certificate.
-VERSION: v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
+VERSION: v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
 AUTHORITY: Host-backed certificate for durable tenant authorization and canonical projections.
 EPITOME: Proves the real RequireTenantAuthorization chain resolves durable principal,
 membership, business-role, and granting-role truth before exact P2 history is
@@ -7,9 +7,13 @@ resolved through deterministic L8-0 current-state projection.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; P1/P2 remain canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT adds real-Mongo
-multi-snapshot current selection and fork rejection while preserving the full
-durable IAM authorization chain before lifecycle access.
+CHANGELOG: v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT aligns the host-backed
+IAM fixture with the canonical dedicated tenant_business_roles store introduced
+by tenant_authorization_http v1.1.0, preserving separate business-role and
+authorization-role truth while retaining deterministic current-read proofs.
+v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT added real-Mongo multi-snapshot
+current selection and fork rejection while preserving the full durable IAM
+authorization chain before lifecycle access.
 v1.1.0-L7A-LIVE-IAM-READ-API-RM-CERT removed the final-authorization override
 and certified durable principal, membership, business-role, granting-role,
 revocation, inactive-state, ambiguity, cross-tenant, and client-policy denials.
@@ -52,7 +56,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT"
+VERSION = "v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT"
 MONGO_URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 NOW = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
@@ -95,21 +99,29 @@ def mongo_context() -> Iterator[dict[str, Any]]:
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
+    business_role_collection = database.get_collection(
+        "tenant_business_roles",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
     try:
         LegalOperationsLifecycleRegistry.ensure_indexes(collection)
         from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
         from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
         from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+        from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 
         PrincipalAuthorityRepository.ensure_indexes(principal_collection)
         TenantMembershipRepository.ensure_indexes(membership_collection)
         RoleAssignmentRepository.ensure_indexes(role_collection)
+        TenantBusinessRoleRepository.ensure_indexes(business_role_collection)
         yield {
             "database": database,
             "lifecycle": collection,
             "principal": principal_collection,
             "membership": membership_collection,
             "roles": role_collection,
+            "business_roles": business_role_collection,
         }
     finally:
         if database is not None:
@@ -172,17 +184,63 @@ class _MembershipReader:
 
 
 class _RoleReader:
-    """Trace durable business/granting-role lookups without supplying role truth."""
+    """Trace the canonical split business-role and authorization-role stores."""
 
-    def __init__(self, collection: Any, calls: list[str]) -> None:
-        self._collection = collection
+    def __init__(
+        self,
+        authorization_collection: Any,
+        business_collection: Any,
+        calls: list[str],
+    ) -> None:
+        self._authorization_collection = authorization_collection
+        self._business_collection = business_collection
         self._calls = calls
 
-    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> Any:
-        self._calls.append("business_role" if role_id.startswith("tenant_") else "authorization_role")
-        from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+    def resolve(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        role_id: str,
+        *,
+        session: Any = None,
+    ) -> Any:
+        from tools.eos.auth.role_assignment_repository import (
+            RoleAssignmentNotFoundError,
+            RoleAssignmentRepository,
+        )
+        from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+        from tools.eos.auth.tenant_business_role_repository import (
+            TenantBusinessRoleNotFoundError,
+            TenantBusinessRoleRepository,
+        )
 
-        return RoleAssignmentRepository.resolve(principal_id, tenant_id, role_id, self._collection, session=session)
+        if role_id in TENANT_ROLES:
+            self._calls.append("business_role")
+            try:
+                value = TenantBusinessRoleRepository.resolve(
+                    principal_id,
+                    tenant_id,
+                    self._business_collection,
+                    session=session,
+                )
+            except TenantBusinessRoleNotFoundError as error:
+                raise RoleAssignmentNotFoundError(
+                    "TENANT_BUSINESS_ROLE_NOT_FOUND"
+                ) from error
+            if value.business_role != role_id:
+                raise RoleAssignmentNotFoundError(
+                    "TENANT_BUSINESS_ROLE_NOT_FOUND"
+                )
+            return value
+
+        self._calls.append("authorization_role")
+        return RoleAssignmentRepository.resolve(
+            principal_id,
+            tenant_id,
+            role_id,
+            self._authorization_collection,
+            session=session,
+        )
 
 
 class _LifecycleReader:
@@ -210,7 +268,6 @@ def _app(
 ) -> FastAPI:
     """Compose the real final authorization dependency with isolated durable providers."""
     import tools.eos.auth.authentication as authentication
-    import tools.eos.auth.authorization as authorization
     import tools.eos.auth.tenant_access as tenant_access
     import tools.eos.api.tenant_authorization_http as authorization_http
 
@@ -218,11 +275,15 @@ def _app(
     register_error_handlers(app, debug=False)
     principal_reader = _PrincipalReader(collections["principal"], calls)
     membership_reader = _MembershipReader(collections["membership"], calls)
-    role_reader = _RoleReader(collections["roles"], calls)
+    role_reader = _RoleReader(
+        collections["roles"],
+        collections["business_roles"],
+        calls,
+    )
     app.dependency_overrides[authorization_http.get_current_identity] = lambda: _identity(tenant_id)
     app.dependency_overrides[authentication.get_principal_authority_repository] = lambda: principal_reader
     app.dependency_overrides[tenant_access.get_tenant_membership_repository] = lambda: membership_reader
-    app.dependency_overrides[authorization.get_role_assignment_repository] = lambda: role_reader
+    app.dependency_overrides[authorization_http.get_role_assignment_repository] = lambda: role_reader
     app.dependency_overrides[legal_router.get_lifecycle_collection] = lambda: _LifecycleReader(collections["lifecycle"], calls)
     assert legal_router._INSTRUCTION_READ not in app.dependency_overrides
     app.include_router(legal_router.router, prefix="/api")
@@ -236,6 +297,11 @@ def _persist_iam(collections: dict[str, Any], tenant_id: str, *, business_role: 
     from tools.eos.auth.principal_status import PrincipalStatus
     from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
     from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+    from tools.eos.auth.tenant_business_role import (
+        TenantBusinessRoleAuthority,
+        TenantBusinessRoleStatus,
+    )
+    from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
     from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
     from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 
@@ -247,12 +313,26 @@ def _persist_iam(collections: dict[str, Any], tenant_id: str, *, business_role: 
         TenantMembershipAuthority("principal-1", tenant_id, TenantMembershipStatus.ACTIVE, 0),
         collections["membership"],
     )
-    RoleAssignmentRepository.insert(
-        RoleAssignmentAuthority("principal-1", tenant_id, business_role, RoleAssignmentStatus.ACTIVE, 0),
-        collections["roles"],
+    TenantBusinessRoleRepository.insert(
+        TenantBusinessRoleAuthority(
+            "principal-1",
+            tenant_id,
+            business_role,
+            TenantBusinessRoleStatus.ACTIVE,
+            0,
+            NOW,
+            None,
+        ),
+        collections["business_roles"],
     )
     RoleAssignmentRepository.insert(
-        RoleAssignmentAuthority("principal-1", tenant_id, "LEGAL_PARTNER", RoleAssignmentStatus.ACTIVE, 0),
+        RoleAssignmentAuthority(
+            "principal-1",
+            tenant_id,
+            "LEGAL_PARTNER",
+            RoleAssignmentStatus.ACTIVE,
+            0,
+        ),
         collections["roles"],
     )
 
@@ -431,7 +511,7 @@ def test_real_mongo_unknown_resource_and_projection_boundary_remain_bounded(mong
 
 
 # ARTIFACT: test_legal_operations_http_real_mongo.py
-# VERSION: v1.2.0-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
+# VERSION: v1.2.1-L8-0-LIVE-IAM-CURRENT-READ-API-RM-CERT
 # AUTHORITY BOUNDARY: real-Mongo live-IAM deterministic current-read projection certificate only
 # TENANT POSTURE: exact tenant predicates, durable membership, and foreign absence
 # FAIL-CLOSED POSTURE: post-hello failures are certificate failures
