@@ -1,15 +1,19 @@
 """L7B host-backed live HTTP, IAM, and P4A-to-P5F certificate.
 
 TITLE: Wilsy OS Legal Operations Command API Real-Mongo Certificate
-VERSION: v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT
+VERSION: v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT
 AUTHORITY: Host-backed certificate for authenticated command composition.
 EPITOME: Prove actual FastAPI POST dispatch, durable IAM resolution, live P4A
-         allocation, canonical P5A/P5B bridging, and the P5C-P5F command chain.
+         allocation, canonical P5A/P5B bridging, the P5C-P5F command chain, and
+         bound-Deputy P5M->P5D/P5E field command composition.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_command_router_real_mongo.py
 COLLABORATION / OWNERSHIP: The certificate owns only fixtures and observations;
                             P1/P2/P4/P5 remain canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT migrates the
+CHANGELOG: 2026-09-23 v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT adds live tenant_deputy IAM, immutable L8-6B
+           binding, P5M journal persistence, server-derived field provenance,
+           atomic deputy transition/outcome commands, and same-tenant wrong-deputy denial.
+           v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT migrates the
            certificate fixture to canonical tenant_business_roles plus
            role_assignments and overrides the composed HTTP role reader rather
            than the retired single-store provider seam.
@@ -88,12 +92,21 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     SheriffOffice,
 )
 from tools.eos.legal_operations.domain.process_service_attempt_authority import authorize_process_service_attempt
+from tools.eos.legal_operations.orchestration.deputy_principal_binding_orchestrator import bind_deputy_principal_identity
 from tools.eos.legal_operations.registry import legal_operations_lifecycle_registry as p2
 from tools.eos.legal_operations.registry import process_service_attempt_authority_registry as p5b
 from tools.eos.legal_operations.registry import process_service_attempt_outcome_registry as p5e
 from tools.eos.legal_operations.registry import process_service_attempt_transition_registry as p5d
 from tools.eos.legal_operations.registry import process_service_return_registry as p5f
+from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
+    COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
+    DeputyPrincipalBindingRegistry,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import LegalOperationsLifecycleRegistry
+from tools.eos.legal_operations.registry.process_service_field_evidence_registry import (
+    COLLECTION as FIELD_EVIDENCE_COLLECTION,
+    ProcessServiceFieldEvidenceRegistry,
+)
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
     ALLOCATION_CURRENT_COLLECTION,
     ALLOCATION_RECEIPT_COLLECTION,
@@ -104,7 +117,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION = "v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT"
+VERSION = "v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT"
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 BASE = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
@@ -236,6 +249,8 @@ def mongo_context() -> Iterator[dict[str, Any]]:
             "membership": database.get_collection("tenant_memberships"),
             "roles": database.get_collection("role_assignments"),
             "business_roles": database.get_collection("tenant_business_roles"),
+            "bindings": database.get_collection(DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+            "field_evidence": database.get_collection(FIELD_EVIDENCE_COLLECTION),
         }
         LegalOperationsLifecycleRegistry.ensure_indexes(collections["lifecycle"])
         ProcessServiceAllocationRegistry.ensure_indexes(collections["allocation_receipts"], collections["allocation_current"])
@@ -247,6 +262,8 @@ def mongo_context() -> Iterator[dict[str, Any]]:
         TenantMembershipRepository.ensure_indexes(collections["membership"])
         RoleAssignmentRepository.ensure_indexes(collections["roles"])
         TenantBusinessRoleRepository.ensure_indexes(collections["business_roles"])
+        DeputyPrincipalBindingRegistry.ensure_indexes(collections["bindings"])
+        ProcessServiceFieldEvidenceRegistry.ensure_indexes(collections["field_evidence"])
         yield {"client": client, "database": database, "collections": collections}
     except BaseException:
         active_error = True
@@ -349,12 +366,81 @@ def _seed_fixture(collections: dict[str, Any], *, business_role: str = "tenant_s
     return _Fixture(tenant, principal_id, instruction, document, district, office, deputy, prior_events, expected_current, source_identities, command)
 
 
+def _seed_bound_deputy_actor(
+    collections: dict[str, Any],
+    fixture: _Fixture,
+    deputy: Deputy,
+) -> str:
+    """Persist live deputy IAM plus immutable principal-to-Deputy binding."""
+    principal_id = f"principal-deputy-{uuid4().hex}"
+    with collections["lifecycle"].database.client.start_session() as session:
+        session.start_transaction(
+            read_concern=ReadConcern("snapshot"),
+            write_concern=WriteConcern(w="majority", j=True),
+        )
+        PrincipalAuthorityRepository.create(
+            PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0),
+            collections["principal"],
+            session=session,
+        )
+        TenantMembershipRepository.insert(
+            TenantMembershipAuthority(
+                principal_id,
+                fixture.tenant,
+                TenantMembershipStatus.ACTIVE,
+                0,
+            ),
+            collections["membership"],
+            session=session,
+        )
+        TenantBusinessRoleRepository.insert(
+            TenantBusinessRoleAuthority(
+                principal_id,
+                fixture.tenant,
+                "tenant_deputy",
+                TenantBusinessRoleStatus.ACTIVE,
+                0,
+                BASE,
+                None,
+            ),
+            collections["business_roles"],
+            session=session,
+        )
+        RoleAssignmentRepository.insert(
+            RoleAssignmentAuthority(
+                principal_id,
+                fixture.tenant,
+                "DEPUTY",
+                RoleAssignmentStatus.ACTIVE,
+                0,
+            ),
+            collections["roles"],
+            session=session,
+        )
+        bind_deputy_principal_identity(
+            tenant_id=fixture.tenant,
+            principal_id=principal_id,
+            deputy_id=deputy.deputy_id,
+            bound_at=BASE + timedelta(minutes=2),
+            evidence_reference=f"binding:{deputy.deputy_id}",
+            lifecycle_collection=collections["lifecycle"],
+            binding_collection=collections["bindings"],
+            principal_collection=collections["principal"],
+            membership_collection=collections["membership"],
+            business_role_collection=collections["business_roles"],
+            role_assignment_collection=collections["roles"],
+            session=session,
+        )
+        session.commit_transaction()
+    return principal_id
+
+
 def _identity_projection(principal_id: str, tenant_id: str) -> SovereignIdentity:
     """Inject authentication identity only; durable authorization is never injected."""
     return SovereignIdentity(identity_id=principal_id, tenant_id=tenant_id, username="operator", email="operator@example.test", auth_method="TEST", status=PrincipalStatus.ACTIVE)
 
 
-def _app(context: dict[str, Any], fixture: _Fixture) -> FastAPI:
+def _app(context: dict[str, Any], fixture: _Fixture, *, principal_id: str | None = None) -> FastAPI:
     """Compose production RequireTenantAuthorization with durable Mongo readers."""
     import tools.eos.api.tenant_authorization_http as authorization_http
     import tools.eos.auth.authentication as authentication
@@ -363,7 +449,7 @@ def _app(context: dict[str, Any], fixture: _Fixture) -> FastAPI:
     app = FastAPI()
     register_error_handlers(app, debug=False)
     collections = context["collections"]
-    app.dependency_overrides[authorization_http.get_current_identity] = lambda: _identity_projection(fixture.principal_id, fixture.tenant)
+    app.dependency_overrides[authorization_http.get_current_identity] = lambda: _identity_projection(principal_id or fixture.principal_id, fixture.tenant)
     app.dependency_overrides[authentication.get_principal_authority_repository] = lambda: _PrincipalReader(collections["principal"])
     app.dependency_overrides[tenant_access.get_tenant_membership_repository] = lambda: _MembershipReader(collections["membership"])
     app.dependency_overrides[authorization_http.get_role_assignment_repository] = lambda: _RoleReader(
@@ -374,10 +460,10 @@ def _app(context: dict[str, Any], fixture: _Fixture) -> FastAPI:
     return app
 
 
-def _post(context: dict[str, Any], fixture: _Fixture, path: str, payload: dict[str, Any], *, tenant: str | None = None) -> Any:
+def _post(context: dict[str, Any], fixture: _Fixture, path: str, payload: dict[str, Any], *, tenant: str | None = None, principal_id: str | None = None) -> Any:
     """Issue one real HTTP POST through FastAPI and production dependencies."""
     body = {key: value.isoformat() if isinstance(value, datetime) else value for key, value in payload.items()}
-    with TestClient(_app(context, fixture)) as client:
+    with TestClient(_app(context, fixture, principal_id=principal_id)) as client:
         return client.post(path, json=body, headers={"X-Tenant-ID": tenant or fixture.tenant})
 
 
@@ -435,6 +521,162 @@ def test_real_mongo_full_http_chain_uses_live_iam_and_actual_p4a(mongo_context: 
             assert not any(field in row for field in ("payment", "settlement", "paid_state", "refund", "invoice", "billing_execution"))
 
 
+def test_real_mongo_bound_deputy_field_bridge(
+    mongo_context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Certify live bound-Deputy P5M->P5D/P5E composition and wrong-deputy denial."""
+    monkeypatch.setattr(
+        command_api,
+        "_db_handles",
+        lambda: (mongo_context["client"], mongo_context["database"]),
+    )
+    monkeypatch.setattr(
+        command_api,
+        "_utcnow",
+        lambda: BASE + timedelta(minutes=20),
+    )
+    collections = mongo_context["collections"]
+    fixture = _seed_fixture(collections)
+
+    allocated = _post(
+        mongo_context,
+        fixture,
+        "/api/legal-operations/allocations",
+        fixture.command,
+    )
+    assert allocated.status_code == 200, allocated.text
+    attempt_receipt = _bridge_actual_p4(mongo_context, fixture)
+    created = _post(
+        mongo_context,
+        fixture,
+        "/api/legal-operations/attempts",
+        {"attempt_authority_id": attempt_receipt.attempt_authority_id},
+    )
+    assert created.status_code == 200, created.text
+
+    deputy_principal = _seed_bound_deputy_actor(
+        collections,
+        fixture,
+        fixture.deputy,
+    )
+    allocated_row = collections["lifecycle"].find_one(
+        {
+            "tenant_id": fixture.tenant,
+            "entity_type": "ServiceAttempt",
+            "p1_payload.state": "ALLOCATED",
+        }
+    )
+    assert allocated_row is not None
+
+    transition_payload = {
+        "current_evidence_identity": allocated_row["evidence_identity"],
+        "device_id": "device-live-1",
+        "event_id": "field-event-live-1",
+        "sequence_number": 1,
+        "occurred_at": BASE + timedelta(minutes=5),
+        "observation_reference": "photo:live-attempt",
+    }
+    transitioned = _post(
+        mongo_context,
+        fixture,
+        f"/api/legal-operations/deputy/attempts/{attempt_receipt.attempt_id}/transition",
+        transition_payload,
+        principal_id=deputy_principal,
+    )
+    assert transitioned.status_code == 200, transitioned.text
+    transition_body = transitioned.json()
+    assert transition_body["data"]["state"] == ServiceAttemptState.ATTEMPTED.value
+    field_one = transition_body["field_evidence"]
+    assert field_one["event_id"] == "field-event-live-1"
+    assert len(field_one["evidence_fingerprint"]) == 128
+    assert collections["field_evidence"].count_documents(
+        {"tenant_id": fixture.tenant}
+    ) == 1
+
+    attempted_row = collections["lifecycle"].find_one(
+        {
+            "tenant_id": fixture.tenant,
+            "entity_type": "ServiceAttempt",
+            "p1_payload.state": "ATTEMPTED",
+        }
+    )
+    assert attempted_row is not None
+    outcome_payload = {
+        "current_evidence_identity": attempted_row["evidence_identity"],
+        "device_id": "device-live-1",
+        "event_id": "field-event-live-2",
+        "sequence_number": 2,
+        "occurred_at": BASE + timedelta(minutes=6),
+        "observation_reference": "photo:live-terminal",
+        "previous_event_fingerprint": field_one["evidence_fingerprint"],
+        "outcome": ServiceAttemptState.COMPLETED.value,
+    }
+    outcome = _post(
+        mongo_context,
+        fixture,
+        f"/api/legal-operations/deputy/attempts/{attempt_receipt.attempt_id}/outcome",
+        outcome_payload,
+        principal_id=deputy_principal,
+    )
+    assert outcome.status_code == 200, outcome.text
+    outcome_body = outcome.json()
+    assert outcome_body["field_evidence"]["event_id"] == "field-event-live-2"
+    execution_id = outcome_body["data"]["service_execution_id"]
+    assert isinstance(execution_id, str) and len(execution_id) == 128
+    execution_row = collections["lifecycle"].find_one(
+        {
+            "tenant_id": fixture.tenant,
+            "entity_type": "ServiceExecution",
+            "entity_identity": execution_id,
+        }
+    )
+    assert execution_row is not None
+    assert execution_row["p1_payload"]["executed_at"] == (
+        BASE + timedelta(minutes=6)
+    )
+    assert collections["field_evidence"].count_documents(
+        {"tenant_id": fixture.tenant}
+    ) == 2
+
+    other_deputy = Deputy(
+        fixture.tenant,
+        f"other-deputy-{uuid4().hex}",
+        fixture.office.sheriff_office_id,
+        "Deputy Two",
+        "badge-2",
+        "deputy-evidence-2",
+    )
+    LegalOperationsLifecycleRegistry.create(
+        other_deputy,
+        collections["lifecycle"],
+    )
+    other_principal = _seed_bound_deputy_actor(
+        collections,
+        fixture,
+        other_deputy,
+    )
+    before_journal = collections["field_evidence"].count_documents(
+        {"tenant_id": fixture.tenant}
+    )
+    denied = _post(
+        mongo_context,
+        fixture,
+        f"/api/legal-operations/attempts/{attempt_receipt.attempt_id}/transition",
+        {
+            "current_evidence_identity": allocated_row["evidence_identity"],
+            "evidence_reference": "forbidden-cross-deputy",
+            "evidence_fingerprint": HEX_A,
+            "occurred_at": BASE + timedelta(minutes=5),
+        },
+        principal_id=other_principal,
+    )
+    assert denied.status_code == 404, denied.text
+    assert collections["field_evidence"].count_documents(
+        {"tenant_id": fixture.tenant}
+    ) == before_journal
+
+
 def test_real_mongo_live_iam_denials_and_p4_rollback(mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
     """Prove live IAM denials precede legal writes and corrupt P4 rolls back."""
     monkeypatch.setattr(command_api, "_db_handles", lambda: (mongo_context["client"], mongo_context["database"]))
@@ -474,7 +716,7 @@ def test_real_mongo_live_iam_denials_and_p4_rollback(mongo_context: dict[str, An
 
 
 # ARTIFACT: test_legal_operations_command_router_real_mongo.py
-# VERSION: v1.2.0-L8-1-SPLIT-IAM-COMMAND-CHAIN-RM-CERT
+# VERSION: v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT
 # AUTHORITY BOUNDARY: host-backed actual HTTP/IAM/composition certificate only
 # TENANT POSTURE: UUID-isolated database, split durable IAM stores, and explicit tenant predicates
 # FAIL-CLOSED POSTURE: only pre-yield host absence may skip
