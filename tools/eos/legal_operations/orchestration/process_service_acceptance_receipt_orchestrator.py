@@ -1,7 +1,7 @@
 """Canonical instruction acceptance and office-receipt orchestration.
 
 TITLE: WILSY OS Process Service Acceptance and Receipt Orchestrator
-VERSION: v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+VERSION: v1.1.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
 AUTHORITY: Wilsy OS Legal Operations instruction-acceptance and office-receipt composition.
 EPITOME: Advance one tenant-scoped registered LegalInstruction to ACCEPTED,
          one linked ProcessDocument to RECEIVED, and append one sequence-two
@@ -16,7 +16,11 @@ COLLABORATION / OWNERSHIP: P1 owns lifecycle/custody value semantics; P2 owns
                             owns only acceptance plus physical office receipt.
                             HTTP/IAM admission remains a separate boundary.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+CHANGELOG: 2026-09-23 v1.1.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+           makes the exact receipt replay candidate explicit after cardinality
+           validation so static analysis can prove non-empty access without
+           changing runtime replay, tenant, custody, or authority semantics.
+           2026-09-23 v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
            removes direct knowledge of P2 durable record schema by consuming
            the canonical P2 tenant/document custody-history API, preserving
            strict hydration, caller-session propagation, and P1 chain validation.
@@ -84,7 +88,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
+VERSION: Final[str] = "v1.1.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT"
 
 
 class ProcessServiceAcceptanceReceiptDisposition(StrEnum):
@@ -530,9 +534,10 @@ def accept_instruction_and_receive_document(
     )
     if len(receipt_same_id) > 1:
         _fail("L8_3_RECEIPT_IDENTITY_DIVERGENCE")
+    receipt_candidate = receipt_same_id[0] if len(receipt_same_id) == 1 else None
     receipt_exact = bool(
-        receipt_same_id
-        and receipt_same_id[0].fingerprint == expected_receipt.fingerprint
+        receipt_candidate is not None
+        and receipt_candidate.fingerprint == expected_receipt.fingerprint
     )
 
     if _target_state_present(
@@ -558,7 +563,9 @@ def accept_instruction_and_receive_document(
         _fail("L8_3_PARTIAL_ACCEPTANCE_RECEIPT")
 
     if all(present):
-        receipt_event = receipt_same_id[0]
+        if receipt_candidate is None:
+            _fail("L8_3_RECEIPT_IDENTITY_DIVERGENCE")
+        receipt_event = receipt_candidate
         receipt_prefix = tuple(
             event
             for event in custody
@@ -629,7 +636,7 @@ __all__ = [
 
 
 # ARTIFACT: process_service_acceptance_receipt_orchestrator.py
-# VERSION: v1.1.0-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
+# VERSION: v1.1.1-L8-3-PROCESS-SERVICE-ACCEPTANCE-RECEIPT
 # AUTHORITY BOUNDARY: instruction acceptance and physical office receipt only
 # TENANT POSTURE: exact tenant histories, exact instruction/document lineage, canonical SheriffOffice destination
 # FAIL-CLOSED POSTURE: active transaction, complete history, chronology, exact replay, custody integrity, and non-healing divergence are mandatory
