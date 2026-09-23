@@ -1,17 +1,21 @@
 """Direct adversarial certificate for the Legal Operations P2 registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry Certificate
-VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+VERSION: v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certify immutable snapshot persistence, exact entity-history
-         enumeration, exact factory provenance, strict hydration, replay
-         integrity, and tenant/session boundaries.
+EPITOME: Certify immutable snapshot persistence, exact entity and document-
+         custody history enumeration, exact factory provenance, strict
+         hydration, replay integrity, and tenant/session boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_lifecycle_registry.py
 COLLABORATION / OWNERSHIP: Direct certificate for the P2 registry only; P1
                             remains lifecycle/evidence authority and callers own
                             Mongo sessions and transactions.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT adds
+CHANGELOG: 2026-09-23 v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+           certifies the dedicated tenant/document custody-history index and
+           query, strict P1 hydration, foreign absence, caller-session
+           forwarding, invalid document scope, and read-failure translation.
+           2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT added
            exact tenant/type/entity history enumeration, caller-session
            forwarding, foreign absence, strict multi-row hydration/corruption,
            invalid-scope, and history-read persistence-failure proofs.
@@ -41,6 +45,8 @@ import pytest
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
+    DocumentCustodyEvent,
+    DocumentCustodyEventType,
     LegalInstruction,
     LegalInstructionState,
     ServiceAttempt,
@@ -66,6 +72,16 @@ class FakeSession:
         self.in_transaction = in_transaction
 
 
+def _lookup(document: dict[str, Any], key: str) -> Any:
+    """Resolve a Mongo-style dotted path inside one fake durable document."""
+    value: Any = document
+    for part in key.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return None
+        value = value[part]
+    return value
+
+
 class FakeCollection:
     """Deterministic Mongo-compatible collection double for this certificate."""
 
@@ -82,7 +98,7 @@ class FakeCollection:
     def find_one(self, query: dict[str, object], *, session: object = None) -> dict[str, Any] | None:
         self.calls.append(("find_one", session, deepcopy(query)))
         for document in self.docs:
-            if all(document.get(key) == value for key, value in query.items()):
+            if all(_lookup(document, key) == value for key, value in query.items()):
                 return deepcopy(document)
         return None
 
@@ -92,7 +108,7 @@ class FakeCollection:
         return [
             deepcopy(document)
             for document in self.docs
-            if all(document.get(key) == value for key, value in query.items())
+            if all(_lookup(document, key) == value for key, value in query.items())
         ]
 
     def insert_one(self, document: dict[str, object], *, session: object = None) -> object:
@@ -190,6 +206,30 @@ def instruction(**overrides: object) -> LegalInstruction:
     return cast(Any, LegalInstruction)(**values)
 
 
+def custody_event(
+    *,
+    tenant_id: str = "tenant-a",
+    event_id: str = "custody-1",
+    document_id: str = "document-1",
+    event_type: DocumentCustodyEventType = DocumentCustodyEventType.REGISTERED,
+    sequence_number: int = 1,
+    occurred_at: datetime = NOW,
+    evidence_reference: str = "custody-evidence",
+    to_holder_reference: str | None = None,
+) -> DocumentCustodyEvent:
+    """Build one deterministic P1 custody fact for P2 history certification."""
+    return DocumentCustodyEvent(
+        tenant_id=tenant_id,
+        custody_event_id=event_id,
+        document_id=document_id,
+        event_type=event_type,
+        occurred_at=occurred_at,
+        sequence_number=sequence_number,
+        evidence_reference=evidence_reference,
+        to_holder_reference=to_holder_reference,
+    )
+
+
 def terminal_attempt(**overrides: object) -> ServiceAttempt:
     values: dict[str, object] = {
         "tenant_id": "tenant-a",
@@ -230,11 +270,18 @@ def persisted_record(value: Any, collection: FakeCollection, **kwargs: Any) -> d
 def test_index_contract_and_immutable_snapshot_progression() -> None:
     collection = FakeCollection()
     LegalOperationsLifecycleRegistry.ensure_indexes(collection)
-    assert len(collection.indexes) == 2
+    assert len(collection.indexes) == 3
     history = collection.indexes[0]
-    evidence = collection.indexes[1]
+    custody = collection.indexes[1]
+    evidence = collection.indexes[2]
     assert history[0] == [("tenant_id", 1), ("entity_type", 1), ("entity_identity", 1)]
     assert history[1]["unique"] is False
+    assert custody[0] == [
+        ("tenant_id", 1),
+        ("entity_type", 1),
+        ("p1_payload.document_id", 1),
+    ]
+    assert custody[1]["unique"] is False
     assert evidence[0] == [("tenant_id", 1), ("evidence_identity", 1)]
     assert evidence[1]["unique"] is True
 
@@ -297,6 +344,105 @@ def test_exact_entity_history_hydrates_all_snapshots_and_forwards_session() -> N
         collection,
         session=session,
     ) == ()
+
+
+def test_document_custody_history_hydrates_exact_scope_and_forwards_session() -> None:
+    """Custody-history retrieval is tenant/document scoped and non-deriving."""
+    collection = FakeCollection()
+    session = FakeSession(in_transaction=True)
+    first = custody_event()
+    second = custody_event(
+        event_id="custody-2",
+        event_type=DocumentCustodyEventType.RECEIVED_IN_OFFICE,
+        sequence_number=2,
+        occurred_at=NOW + timedelta(minutes=1),
+        evidence_reference="receipt-evidence",
+        to_holder_reference="office-1",
+    )
+    foreign = custody_event(
+        tenant_id="tenant-b",
+        event_id="custody-foreign",
+    )
+    other_document = custody_event(
+        event_id="custody-other",
+        document_id="document-2",
+    )
+    for value in (first, second, foreign, other_document):
+        persisted_record(value, collection, session=session)
+
+    collection.calls.clear()
+    history = LegalOperationsLifecycleRegistry.get_document_custody_history(
+        "tenant-a",
+        "document-1",
+        collection,
+        session=session,
+    )
+
+    assert tuple(value.to_dict() for value in history) == (
+        first.to_dict(),
+        second.to_dict(),
+    )
+    assert collection.calls == [
+        (
+            "find",
+            session,
+            {
+                "tenant_id": "tenant-a",
+                "entity_type": "DocumentCustodyEvent",
+                "p1_payload.document_id": "document-1",
+            },
+        )
+    ]
+    assert LegalOperationsLifecycleRegistry.get_document_custody_history(
+        "tenant-a",
+        "document-missing",
+        collection,
+        session=session,
+    ) == ()
+
+
+def test_document_custody_history_rejects_invalid_scope_corruption_and_read_failure() -> None:
+    """Malformed scope, corrupt matching rows, and Mongo failures reject."""
+    collection = FakeCollection()
+    persisted_record(custody_event(), collection)
+
+    expect_code(
+        "M2_INVALID_TENANT",
+        lambda: LegalOperationsLifecycleRegistry.get_document_custody_history(
+            "global",
+            "document-1",
+            collection,
+        ),
+    )
+    expect_code(
+        "M2_ENTITY_ID_INVALID",
+        lambda: LegalOperationsLifecycleRegistry.get_document_custody_history(
+            "tenant-a",
+            "invalid/document",
+            collection,
+        ),
+    )
+
+    collection.docs[0]["p1_fingerprint"] = "x" * 128
+    expect_code(
+        "M2_P1_FINGERPRINT_INVALID",
+        lambda: LegalOperationsLifecycleRegistry.get_document_custody_history(
+            "tenant-a",
+            "document-1",
+            collection,
+        ),
+    )
+
+    error = _operation_failure(27187)
+    failing = HistoryFailureCollection(error)
+    with pytest.raises(LegalOperationsLifecycleRegistryError) as caught:
+        LegalOperationsLifecycleRegistry.get_document_custody_history(
+            "tenant-a",
+            "document-1",
+            failing,
+        )
+    assert str(caught.value) == "M2_PERSISTENCE_UNAVAILABLE"
+    assert caught.value.__cause__ is error
 
 
 def test_entity_history_rejects_invalid_scope_corruption_and_persistence_failure() -> None:
@@ -599,7 +745,7 @@ def test_outside_transaction_transient_error_is_not_retry_required() -> None:
 
 
 def test_p2_production_version_is_the_history_release() -> None:
-    assert P2_VERSION == "v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+    assert P2_VERSION == "v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
 
 
 def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> None:
@@ -613,8 +759,8 @@ def test_unsupported_inputs_irrelevant_sources_and_non_financial_authority() -> 
 
 
 # ARTIFACT: test_legal_operations_lifecycle_registry.py
-# VERSION: v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
-# AUTHORITY BOUNDARY: direct P2 persistence/history/hydration certificate only.
+# VERSION: v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY-CERT
+# AUTHORITY BOUNDARY: direct P2 persistence/entity-custody-history/hydration certificate only.
 # TENANT POSTURE: explicit synthetic tenants; foreign evidence is undisclosed.
 # FAIL-CLOSED POSTURE: malformed records, provenance, races, and sources reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution/settlement.
