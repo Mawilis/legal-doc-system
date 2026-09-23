@@ -1,18 +1,23 @@
 """Direct certificate for binding-scoped deputy personal active work.
 
 TITLE: WILSY OS Deputy Personal Active Work Projection Certificate
-VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
-AUTHORITY: Direct adversarial certification of L8-6C personal queue membership.
-EPITOME: Prove exact binding-derived deputy identity, ALLOCATED/ATTEMPTED-only
-         membership, other-deputy and terminal exclusion, deterministic upstream
-         ordering, session propagation, fail-closed binding/evidence errors,
-         constructor invariants, and absence of IAM/financial authority.
+VERSION: v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY-CERT
+AUTHORITY: Direct adversarial certification of L8-6C personal work and L8-6D field capability composition.
+EPITOME: Preserve exact binding-derived ALLOCATED/ATTEMPTED personal membership
+         and prove each current attempt receives one exact P2 locator and P5M
+         state-capability descriptor in deterministic order, with caller-session
+         propagation and whole-projection fail-closed behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_deputy_personal_active_work.py
 COLLABORATION / OWNERSHIP: Certificate for deputy_personal_active_work.py only;
                             L8-6B binding, L8-5 read models and IAM remain
                             independent canonical authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
+CHANGELOG: 2026-09-23 v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY-CERT
+           adds exact per-attempt P2 locator/P5M capability composition,
+           deterministic ordering, caller-session locator propagation,
+           locator/capability whole-projection failure, and production v1.1.0
+           binding while preserving all L8-6C personal-work assertions.
+           2026-09-23 v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY-CERT
            adds direct public-aggregate identity and immutable tuple-shape
            rejection and rebinds the certificate to production v1.0.1.
            2026-09-23 v1.0.0-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
@@ -21,10 +26,11 @@ CHANGELOG: 2026-09-23 v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque attempt/deputy identifiers only.
 TENANT BOUNDARY: Exact tenant/principal binding and same-tenant attempt models.
-AUTHORITY BOUNDARY: Read-projection certificate only; binding is not IAM.
+AUTHORITY BOUNDARY: Personal read/capability certificate only; binding and state capability are not IAM.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
-FAIL-CLOSED DECLARATION: Binding/read-model/type/tenant/deputy/state drift
-                         rejects without tenant-wide or fixture fallback.
+FAIL-CLOSED DECLARATION: Binding/read-model/type/tenant/deputy/state/locator/
+                         capability drift rejects without partial, tenant-wide,
+                         or fixture fallback.
 """
 from __future__ import annotations
 
@@ -39,7 +45,9 @@ from tools.eos.legal_operations.domain.deputy_personal_active_work import (
     VERSION as PRODUCTION_VERSION,
     DeputyPersonalActiveWork,
     DeputyPersonalActiveWorkError,
+    DeputyPersonalFieldCapabilities,
     get_deputy_personal_active_work,
+    get_deputy_personal_field_capabilities,
 )
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     ServiceAttempt,
@@ -49,13 +57,20 @@ from tools.eos.legal_operations.domain.legal_operations_read_model import (
     LegalOperationsEntityReadModel,
     LegalOperationsReadModelError,
 )
+from tools.eos.legal_operations.domain.process_service_field_evidence_projection import (
+    FieldCommandKind,
+    ProcessServiceFieldEvidenceProjectionError,
+)
+from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
+    LegalOperationsLifecycleRegistryError,
+)
 from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
     DeputyPrincipalBindingNotFoundError,
     DeputyPrincipalBindingPersistedRecordInvalidError,
 )
 
 
-VERSION = "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT"
+VERSION = "v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY-CERT"
 NOW = datetime(2026, 9, 23, 19, 0, tzinfo=timezone.utc)
 TENANT = "tenant-a"
 PRINCIPAL = "principal-1"
@@ -338,6 +353,126 @@ def test_aggregate_rejects_malformed_identity_and_mutable_queue_shape() -> None:
     assert caught.value.code == "L8_6C_ACTIVE_ATTEMPTS_INVALID"
 
 
+def test_personal_field_capabilities_bind_exact_current_locators_and_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Each active personal attempt gets one exact ordered state capability."""
+    models = (
+        _model(_attempt("attempt-1")),
+        _model(_attempt("attempt-2", state=ServiceAttemptState.ATTEMPTED)),
+    )
+    session = object()
+    seen: list[object] = []
+    locator_seen: list[tuple[str, object]] = []
+    _install_sources(monkeypatch, models, session_seen=seen)
+
+    def locate(value: object, collection: object, *, session: object = None) -> str:
+        assert type(value) is ServiceAttempt
+        attempt_value = value
+        assert collection == "lifecycle"
+        locator_seen.append((attempt_value.attempt_id, session))
+        return ("a" if attempt_value.attempt_id == "attempt-1" else "b") * 128
+
+    monkeypatch.setattr(
+        work.LegalOperationsLifecycleRegistry,
+        "get_snapshot_evidence_identity",
+        staticmethod(locate),
+    )
+
+    result = get_deputy_personal_field_capabilities(
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        binding_collection="binding",
+        lifecycle_collection="lifecycle",
+        session=session,
+    )
+
+    assert isinstance(result, DeputyPersonalFieldCapabilities)
+    assert result.tenant_id == TENANT
+    assert result.principal_id == PRINCIPAL
+    assert result.deputy_id == DEPUTY
+    assert [value.attempt_id for value in result.capabilities] == [
+        "attempt-1",
+        "attempt-2",
+    ]
+    assert result.capabilities[0].next_command_kinds == (
+        FieldCommandKind.TRANSITION_TO_ATTEMPTED,
+    )
+    assert result.capabilities[1].next_command_kinds == (
+        FieldCommandKind.RECORD_COMPLETED_OUTCOME,
+        FieldCommandKind.RECORD_NOT_COMPLETED_OUTCOME,
+    )
+    assert locator_seen == [
+        ("attempt-1", session),
+        ("attempt-2", session),
+    ]
+    assert seen == [session, session]
+
+
+def test_personal_field_capabilities_fail_whole_projection_on_locator_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    models = (
+        _model(_attempt("attempt-1")),
+        _model(_attempt("attempt-2")),
+    )
+    seen: list[object] = []
+    _install_sources(monkeypatch, models, session_seen=seen)
+    calls: list[str] = []
+
+    def locate(value: object, _collection: object, *, session: object = None) -> str:
+        assert type(value) is ServiceAttempt
+        calls.append(value.attempt_id)
+        if value.attempt_id == "attempt-2":
+            raise LegalOperationsLifecycleRegistryError("M2_EVIDENCE_NOT_FOUND")
+        return "c" * 128
+
+    monkeypatch.setattr(
+        work.LegalOperationsLifecycleRegistry,
+        "get_snapshot_evidence_identity",
+        staticmethod(locate),
+    )
+
+    with pytest.raises(DeputyPersonalActiveWorkError) as caught:
+        get_deputy_personal_field_capabilities(
+            tenant_id=TENANT,
+            principal_id=PRINCIPAL,
+            binding_collection="binding",
+            lifecycle_collection="lifecycle",
+        )
+    assert caught.value.code == "L8_6D_SNAPSHOT_LOCATOR_UNAVAILABLE"
+    assert calls == ["attempt-1", "attempt-2"]
+
+
+def test_personal_field_capabilities_fail_closed_on_projection_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    models = (_model(_attempt("attempt-1")),)
+    seen: list[object] = []
+    _install_sources(monkeypatch, models, session_seen=seen)
+    monkeypatch.setattr(
+        work.LegalOperationsLifecycleRegistry,
+        "get_snapshot_evidence_identity",
+        staticmethod(lambda *_args, **_kwargs: "d" * 128),
+    )
+
+    def reject(**_kwargs: object) -> object:
+        raise ProcessServiceFieldEvidenceProjectionError(
+            "P5M_PROJECTION_COMMAND_STATE_MISMATCH"
+        )
+
+    monkeypatch.setattr(work, "project_field_command_capability", reject)
+
+    with pytest.raises(DeputyPersonalActiveWorkError) as caught:
+        get_deputy_personal_field_capabilities(
+            tenant_id=TENANT,
+            principal_id=PRINCIPAL,
+            binding_collection="binding",
+            lifecycle_collection="lifecycle",
+        )
+    assert caught.value.code == "L8_6D_FIELD_CAPABILITY_INVALID"
+
+
 def test_projection_contains_no_iam_financial_or_invented_queue_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -373,14 +508,14 @@ def test_projection_contains_no_iam_financial_or_invented_queue_fields(
     ):
         assert forbidden not in serialized
 
-    assert PRODUCTION_VERSION == "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK"
-    assert VERSION == "v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT"
+    assert PRODUCTION_VERSION == "v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY"
+    assert VERSION == "v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY-CERT"
 
 
 # ARTIFACT: test_deputy_personal_active_work.py
-# VERSION: v1.0.1-L8-6C-DEPUTY-PERSONAL-ACTIVE-WORK-CERT
-# AUTHORITY BOUNDARY: direct binding-scoped personal active-work projection certificate only
+# VERSION: v1.1.0-L8-6D-DEPUTY-PERSONAL-FIELD-CAPABILITY-CERT
+# AUTHORITY BOUNDARY: direct binding-scoped personal active-work and field-capability projection certificate only
 # TENANT POSTURE: exact tenant/principal binding and bound-deputy attempt membership
-# FAIL-CLOSED POSTURE: binding/evidence/type/tenant/deputy/state drift rejects
+# FAIL-CLOSED POSTURE: binding/evidence/type/tenant/deputy/state/locator/capability drift rejects
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
