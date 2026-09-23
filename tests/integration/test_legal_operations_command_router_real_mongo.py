@@ -634,7 +634,7 @@ def test_real_mongo_bound_deputy_field_bridge(
     assert execution_row is not None
     assert execution_row["p1_payload"]["executed_at"] == (
         BASE + timedelta(minutes=6)
-    )
+    ).isoformat()
     assert collections["field_evidence"].count_documents(
         {"tenant_id": fixture.tenant}
     ) == 2
