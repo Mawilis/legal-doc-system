@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
+VERSION: v1.18.1-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.18.1-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
+    corrects the direct-certificate cardinality after the already-certified
+    legal_operations:deputy_queue:read addition: the permission canon now
+    contains exactly 59 canonical permissions and 62 total rows. Production
+    permission semantics and authorization behavior are unchanged.
     2026-09-23 v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
     certifies legal_operations:deputy_queue:read as one exact canonical TENANT
     permission for binding-scoped personal active-work projection only, with
@@ -70,7 +75,7 @@ import json
 
 import pytest
 
-VERSION = "v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT"
+VERSION = "v1.18.1-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -145,9 +150,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 58
+    ) == 59
 
-    assert len(rows) == 61
+    assert len(rows) == 62
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -511,7 +516,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
+# VERSION: v1.18.1-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: directory and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
