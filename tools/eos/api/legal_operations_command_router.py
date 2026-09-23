@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
+VERSION: v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
          directory, deputy-principal identity-binding, and field-service
@@ -12,7 +12,13 @@ COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
+CHANGELOG: 2026-09-23 v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
+           removes browser ownership of P5M sequence_number and previous-event
+           fingerprint for bound-Deputy field commands. The server now recovers
+           exact event replay inputs or derives the next immutable sequence from
+           the certified tenant/attempt/device journal head inside the same
+           transaction before P5M -> P5D/P5E composition.
+           2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
            adds bound-Deputy field transition/outcome composition: authenticated
            principal-to-Deputy scope is re-resolved inside the command transaction,
            browser observation facts are canonicalized into server-derived SHA3-512
@@ -68,8 +74,9 @@ TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
 AUTHORITY BOUNDARY: This module composes authenticated command transport and
                     transaction mechanics only. Ordinary commands dispatch one
-                    canonical orchestrator; L8-6E deputy field commands compose
-                    only the certified P5M -> P5D/P5E chain in one transaction.
+                    canonical orchestrator; L8-6E/L8-6G deputy field commands
+                    compose only the certified P5M -> P5D/P5E chain in one
+                    transaction with sequence lineage derived server-side.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
@@ -164,7 +171,7 @@ from tools.eos.legal_operations.registry.process_service_field_evidence_registry
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE"
+VERSION: Final[str] = "v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 _DEPUTY_BUSINESS_ROLE: Final[str] = "tenant_deputy"
@@ -312,19 +319,13 @@ class OutcomeCommand(_CommandModel):
 
 
 class DeputyFieldObservationCommand(_CommandModel):
-    """Bounded bound-Deputy observation; sovereign provenance is server-derived."""
+    """Bounded bound-Deputy observation; sequence lineage is server-derived."""
 
     current_evidence_identity: str = Field(min_length=1)
     device_id: str = Field(min_length=1, max_length=128)
     event_id: str = Field(min_length=1, max_length=128)
-    sequence_number: int = Field(ge=1)
     occurred_at: datetime
     observation_reference: str = Field(min_length=1, max_length=512)
-    previous_event_fingerprint: str | None = Field(
-        default=None,
-        min_length=128,
-        max_length=128,
-    )
 
 
 class DeputyFieldTransitionCommand(DeputyFieldObservationCommand):
@@ -508,7 +509,46 @@ def _sync_bound_deputy_field_evidence(
     database: Any,
     session: Any,
 ) -> Any:
-    """Synchronize one canonicalized field observation through existing P5M."""
+    """Synchronize one observation with server-owned P5M sequence lineage."""
+    journal = _collection(database, FIELD_EVIDENCE_COLLECTION)
+    try:
+        replay_command, replay_receipt = (
+            ProcessServiceFieldEvidenceRegistry.resolve_command_receipt_by_event(
+                context.tenant_id,
+                command.event_id,
+                journal,
+                session=session,
+            )
+        )
+    except ProcessServiceFieldEvidenceRegistryError as error:
+        if error.code != "P5M_EVIDENCE_NOT_FOUND":
+            raise
+        head = ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+            context.tenant_id,
+            current.attempt_id,
+            command.device_id,
+            journal,
+            session=session,
+        )
+        sequence_number = 1 if head is None else head.sequence_number + 1
+        previous_event_fingerprint = (
+            None if head is None else head.evidence_fingerprint
+        )
+        receipt_id = _field_receipt_id(context.tenant_id, command.event_id)
+        accepted_at = _utcnow()
+    else:
+        if (
+            replay_command.attempt_id != current.attempt_id
+            or replay_command.device_id != command.device_id
+            or replay_command.occurred_at != command.occurred_at
+            or replay_command.evidence_reference != command.observation_reference
+        ):
+            raise ProcessServiceFieldEvidenceRegistryError("P5M_REPLAY_CONFLICT")
+        sequence_number = replay_command.sequence_number
+        previous_event_fingerprint = replay_command.previous_event_fingerprint
+        receipt_id = replay_receipt.receipt_id
+        accepted_at = replay_receipt.accepted_at
+
     evidence_reference, evidence_fingerprint = _field_observation_provenance(
         context=context,
         current=current,
@@ -516,38 +556,30 @@ def _sync_bound_deputy_field_evidence(
         current_evidence_identity=command.current_evidence_identity,
         device_id=command.device_id,
         event_id=command.event_id,
-        sequence_number=command.sequence_number,
+        sequence_number=sequence_number,
         occurred_at=command.occurred_at,
         observation_reference=command.observation_reference,
-        previous_event_fingerprint=command.previous_event_fingerprint,
+        previous_event_fingerprint=previous_event_fingerprint,
         outcome=outcome,
     )
-    journal = _collection(database, FIELD_EVIDENCE_COLLECTION)
-    try:
-        prior = ProcessServiceFieldEvidenceRegistry.resolve_by_event(
-            context.tenant_id,
-            command.event_id,
-            journal,
-            session=session,
-        )
-    except ProcessServiceFieldEvidenceRegistryError as error:
-        if error.code != "P5M_EVIDENCE_NOT_FOUND":
-            raise
-        receipt_id = _field_receipt_id(context.tenant_id, command.event_id)
-        accepted_at = _utcnow()
-    else:
-        receipt_id = prior.receipt_id
-        accepted_at = prior.accepted_at
+    if "replay_command" in locals() and (
+        replay_command.evidence_reference != evidence_reference
+        or replay_command.evidence_fingerprint != evidence_fingerprint
+        or replay_command.previous_event_fingerprint != previous_event_fingerprint
+        or replay_command.sequence_number != sequence_number
+    ):
+        raise ProcessServiceFieldEvidenceRegistryError("P5M_REPLAY_CONFLICT")
+
     return sync_offline_field_evidence(
         tenant_id=context.tenant_id,
         attempt_evidence_identity=command.current_evidence_identity,
         device_id=command.device_id,
         event_id=command.event_id,
-        sequence_number=command.sequence_number,
+        sequence_number=sequence_number,
         occurred_at=command.occurred_at,
         evidence_reference=evidence_reference,
         evidence_fingerprint=evidence_fingerprint,
-        previous_event_fingerprint=command.previous_event_fingerprint,
+        previous_event_fingerprint=previous_event_fingerprint,
         receipt_id=receipt_id,
         accepted_at=accepted_at,
         lifecycle_collection=_collection(database, LIFECYCLE_COLLECTION),
@@ -1105,7 +1137,7 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE
+# VERSION: v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
 # AUTHORITY BOUNDARY: authenticated intake/receipt/directory/deputy-binding/field-service composition; bound-Deputy field commands canonicalize transport observations while P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
