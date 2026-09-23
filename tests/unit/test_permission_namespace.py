@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.14.0-C1E-R1
+VERSION: v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -7,8 +7,11 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-13.
+CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-23 v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT certifies
+    the dedicated own-tenant legal_operations:directory:write permission,
+    exact non-financial/non-self-authorizing metadata, and fail-closed aliases.
     2026-09-17 v1.14.0-C1E-R1 certifies the dedicated legal-advisory
     generate/read permissions and exact tenant-only metadata.
     2026-09-15 v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT certifies
@@ -54,12 +57,12 @@ import json
 
 import pytest
 
-VERSION = "v1.13.0-C1E-R1-PERMISSION-CERT"
+VERSION = "v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.18.0-C1E-R1"
+    assert POLICY_VERSION == "v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -89,6 +92,7 @@ def test_permission_canon_properties() -> None:
         "wilsy_ai:legal_advisory:read",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:directory:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -125,9 +129,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 55
+    ) == 56
 
-    assert len(rows) == 58
+    assert len(rows) == 59
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -183,6 +187,8 @@ def test_permission_canon_properties() -> None:
     assert billing_intelligence.disposition is PermissionDisposition.CANONICAL
 
     command_permissions = {
+        "legal_operations:directory:write":
+            "provision own-tenant process-service directory identities",
         "legal_operations:attempt_outcome:write":
             "record own-tenant terminal service-attempt outcomes",
         "legal_operations:return:write":
@@ -352,6 +358,10 @@ def test_permission_canon_properties() -> None:
         "billing_intelligence:evidence:read ",
         "billing_intelligence:evidence:READ",
         "billing_intelligence:evidence",
+        "legal_operations:directory:*",
+        "legal_operations:directory:write ",
+        " legal_operations:directory:write",
+        "LEGAL_OPERATIONS:DIRECTORY:WRITE",
     )
 
     for value in invalid:
@@ -455,9 +465,9 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.14.0-C1E-R1
+# VERSION: v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
+# TENANT POSTURE: directory and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
