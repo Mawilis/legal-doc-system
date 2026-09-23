@@ -1,7 +1,7 @@
 """Direct certificate for immutable deputy-principal binding persistence.
 
 TITLE: WILSY OS Deputy Principal Binding Registry Certificate
-VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
 AUTHORITY: Direct adversarial certificate for L8-6B binding persistence only.
 EPITOME: Prove two-way one-to-one uniqueness, exact immutable replay, tenant
          isolation, caller-session propagation, strict hydration/fingerprint
@@ -11,7 +11,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Certificate for deputy_principal_binding_registry.py;
                             domain value, P1 Deputy, and IAM remain independent.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+CHANGELOG: 2026-09-23 v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+           adds pre-index two-key inconsistency rejection and rebinds the
+           certificate to production v1.0.2 race/replay hardening.
+           2026-09-23 v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
            establishes direct persistence, replay, both-key conflict, corruption,
            tenant-isolation, index, session, and public-surface proofs.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -45,7 +48,7 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
 )
 
 
-VERSION = "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
+VERSION = "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
 NOW = datetime(2026, 9, 23, 16, 0, tzinfo=timezone.utc)
 
 
@@ -243,6 +246,23 @@ def test_same_identifiers_different_binding_evidence_conflicts() -> None:
     assert len(collection.docs) == 1
 
 
+def test_preindex_inconsistent_natural_keys_reject_instead_of_exact_replay() -> None:
+    """Legacy duplicate-key drift cannot short-circuit through one exact side."""
+    collection = FakeCollection()
+    exact = _binding("principal-1", "deputy-1")
+    conflicting = _binding("principal-2", "deputy-1")
+    collection.docs = [
+        deepcopy(conflicting.to_dict()),
+        deepcopy(exact.to_dict()),
+    ]
+
+    with pytest.raises(DeputyPrincipalBindingConflictError) as caught:
+        DeputyPrincipalBindingRegistry.create(exact, collection)
+
+    assert caught.value.code == "L8_6B_BINDING_CONFLICT"
+    assert len(collection.docs) == 2
+
+
 def test_foreign_tenant_is_absence_and_never_cross_resolves() -> None:
     collection = FakeCollection()
     DeputyPrincipalBindingRegistry.create(_binding(), collection)
@@ -304,15 +324,15 @@ def test_registry_exposes_no_update_delete_rebind_or_financial_surface() -> None
         assert forbidden not in keys
 
     assert PRODUCTION_VERSION == (
-        "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
+        "v1.0.2-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY"
     )
     assert VERSION == (
-        "v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
+        "v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT"
     )
 
 
 # ARTIFACT: test_deputy_principal_binding_registry.py
-# VERSION: v1.0.0-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
+# VERSION: v1.0.1-L8-6B-DEPUTY-PRINCIPAL-BINDING-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct immutable binding persistence/resolution certificate only
 # TENANT POSTURE: exact tenant/principal and tenant/deputy scope only
 # FAIL-CLOSED POSTURE: conflict, corruption, absence, and scope drift reject
