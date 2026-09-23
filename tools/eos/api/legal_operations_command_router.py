@@ -511,6 +511,8 @@ def _sync_bound_deputy_field_evidence(
 ) -> Any:
     """Synchronize one observation with server-owned P5M sequence lineage."""
     journal = _collection(database, FIELD_EVIDENCE_COLLECTION)
+    replay_command: Any | None = None
+    replay_receipt: Any | None = None
     try:
         replay_command, replay_receipt = (
             ProcessServiceFieldEvidenceRegistry.resolve_command_receipt_by_event(
@@ -562,7 +564,7 @@ def _sync_bound_deputy_field_evidence(
         previous_event_fingerprint=previous_event_fingerprint,
         outcome=outcome,
     )
-    if "replay_command" in locals() and (
+    if replay_command is not None and (
         replay_command.evidence_reference != evidence_reference
         or replay_command.evidence_fingerprint != evidence_fingerprint
         or replay_command.previous_event_fingerprint != previous_event_fingerprint
