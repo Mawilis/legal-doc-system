@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE
+ * VERSION: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -8,7 +8,14 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Restores a persisted
+ * CHANGELOG: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Accepts an optional workspace.legalPermissions
+ *            projection only when it is an exact, duplicate-free subset of the
+ *            four D17 Legal Command Center permissions. Server absence preserves
+ *            the legacy role-baseline posture; server presence, including an
+ *            empty array, is marked as authoritative presentation provenance.
+ *            JWT/login/browser permission claims remain excluded from workspace
+ *            projection and Python EOS remains final authorization authority.
+ *            v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Restores a persisted
  *            access-token candidate only after Python EOS workspace-bootstrap
  *            revalidates current principal, membership, business role and exact
  *            tenant truth. Invalid, expired, mismatched or malformed candidates
@@ -34,6 +41,13 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import api from '@/services/api';
+
+const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
+  'legal_operations:instruction:write',
+  'legal_operations:return:write',
+  'legal_operations:billing:read',
+  'legal_operations:invoice:read',
+]);
 
 export const AUTH_STATES = Object.freeze({
   IDLE: 'IDLE',
@@ -168,6 +182,30 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const businessRole = String(workspace?.businessRole || '').trim();
   const membershipRevision = workspace?.membershipRevision;
   const businessRoleRevision = workspace?.businessRoleRevision;
+  const hasLegalPermissionProjection = Object.prototype.hasOwnProperty.call(
+    workspace || {},
+    'legalPermissions',
+  );
+  const legalPermissions = hasLegalPermissionProjection
+    ? workspace.legalPermissions
+    : [];
+
+  if (
+    hasLegalPermissionProjection
+    && (
+      !Array.isArray(legalPermissions)
+      || legalPermissions.some(
+        (permission) => (
+          typeof permission !== 'string'
+          || permission !== permission.trim()
+          || !LEGAL_PRESENTATION_PERMISSION_SET.has(permission)
+        ),
+      )
+      || new Set(legalPermissions).size !== legalPermissions.length
+    )
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_PROJECTION_INVALID');
+  }
 
   if (
     data?.status !== 'READY'
@@ -190,7 +228,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
       email: principal?.email || fallbackEmail,
       tenantId,
       role: businessRole,
-      permissions: [],
+      permissions: [...legalPermissions],
+      legalPermissionsAuthoritative: hasLegalPermissionProjection,
       membershipRevision,
       businessRoleRevision,
       mfaRegistered: true,
@@ -562,12 +601,15 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE
- * AUTHORITY BOUNDARY: browser projection only; Python EOS owns authentication truth
+ * VERSION: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION
+ * AUTHORITY BOUNDARY: browser projection only; workspace legalPermissions are presentation provenance from Python EOS and never browser authorization authority; Python EOS owns authentication and authorization truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant
- * FAIL-CLOSED POSTURE: unrecognized or incomplete server responses fail closed
+ * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses and malformed/duplicate/unknown legalPermissions fail closed; absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Persisted bearer
+ * CHANGELOG: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Preserves the bounded server-owned Legal permission
+ * projection plus explicit provenance for presentation narrowing without trusting
+ * browser/JWT/login permission claims.
+ *            v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Persisted bearer
  * candidates are restored only after Python EOS workspace-bootstrap revalidates
  * current principal, tenant membership, business role and canonical tenant.
  * END OF WILSY OS SOVEREIGN ARTIFACT
