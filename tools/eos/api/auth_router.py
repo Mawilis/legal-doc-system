@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION
+VERSION: v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -7,8 +7,9 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION/UPDATE DATE: 2026-08-29.
+CERTIFICATION/UPDATE DATE: 2026-09-24.
 CHANGELOG:
+  v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION: Re-reads the exact durable AuthRegistry user after workspace-bootstrap has revalidated principal, membership, dedicated business role, and tenant truth, then projects only firstName/lastName as descriptive authenticated-person identity. Missing or tenant/principal-mismatched durable user state fails closed; malformed optional name text is omitted rather than inferred. Names create no membership, role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
   v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION: Extends the authenticated workspace tenant projection with the
   canonical tenant profile's alias, industry, region, and sector as descriptive
   practice context only. These fields come from the already revalidated
@@ -82,7 +83,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION"
+VERSION = "v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -286,6 +287,8 @@ def _workspace_bootstrap_http_error(
         "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID",
     }
     if code in unavailable:
         return HTTPException(
@@ -295,6 +298,50 @@ def _workspace_bootstrap_http_error(
     return HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Workspace access denied.",
+    )
+
+
+def _workspace_principal_profile(
+    projection: Any,
+) -> tuple[str | None, str | None]:
+    """Return descriptive names from the exact durable authenticated user.
+
+    The workspace projection has already re-proven principal, tenant membership,
+    dedicated business role, and canonical tenant truth. This reread binds the
+    descriptive person profile to that exact principal and tenant; it never
+    establishes or modifies authorization. Missing, mismatched, or unavailable
+    durable identity fails closed. Malformed optional name text is omitted rather
+    than normalized, guessed from email, or replaced from browser/login state.
+    """
+    try:
+        registry = get_auth_registry(None)
+        user = registry.get_user_by_id(projection.principal_id)
+    except Exception as error:
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE"
+        ) from error
+
+    if (
+        user is None
+        or getattr(user, "id", None) != projection.principal_id
+        or getattr(user, "tenantId", None) != projection.tenant_id
+    ):
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID"
+        )
+
+    def exact_optional_name(value: object) -> str | None:
+        if (
+            not isinstance(value, str)
+            or not value
+            or value != value.strip()
+        ):
+            return None
+        return value
+
+    return (
+        exact_optional_name(getattr(user, "firstName", None)),
+        exact_optional_name(getattr(user, "lastName", None)),
     )
 
 
@@ -320,6 +367,11 @@ async def workspace_bootstrap(
             membership_repository=membership_repository,
             role_assignment_repository=role_assignment_repository,
         )
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        first_name, last_name = _workspace_principal_profile(projection)
     except WorkspaceBootstrapProjectionError as error:
         raise _workspace_bootstrap_http_error(error) from error
 
@@ -352,6 +404,8 @@ async def workspace_bootstrap(
         "user": {
             "id": projection.principal_id,
             "email": projection.email,
+            "firstName": first_name,
+            "lastName": last_name,
         },
         "workspace": {
             "tenantId": projection.tenant_id,
@@ -1063,9 +1117,9 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; workspace legalPermissions are read-only outputs of the existing tenant authorization compositor, D19 tenant practice-profile fields are descriptive projections from canonical tenant truth only, and neither surface is independent authority; credential, contact-verification, recovery, tenant, authorization, entitlement, operating-model, and financial truth remain separate.
+# VERSION: v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D24A firstName/lastName are descriptive rereads from the exact durable AuthRegistry principal after workspace authority revalidation, workspace legalPermissions remain read-only outputs of the tenant authorization compositor, and D19 tenant practice-profile fields remain descriptive canonical-tenant projections; none creates credential, membership, role, permission, entitlement, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
-# FAIL-CLOSED POSTURE: auth fails closed; workspace permission-authority outages/inconsistency fail closed; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
+# FAIL-CLOSED POSTURE: auth fails closed; workspace permission or durable-principal-profile outage/inconsistency fails closed; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
