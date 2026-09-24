@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY]                                           ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -16,6 +16,7 @@
  * ║ • AI Engineering – Migrated to Web Crypto, made hash functions async, updated all callers.                                          ║
  * ║ • REFINED (2026-08-05) – Removed `crypto-js` CDN, hardened error handling, compliance flags.                                         ║
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
+ * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache required by all session-history operations. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COMPLIANCE:                                                                                                                          ║
  * ║   • POPIA §19 (Accountability)                                                                                                      ║
@@ -32,6 +33,7 @@
 // Python-EOS-owned durable history authority is separately certified, history is
 // deliberately session-memory only so legal prompts are never silently persisted
 // through a legacy or caller-scoped store.
+let conversationCache = [];
 
 // ──────────────────────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS
@@ -382,7 +384,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY
+ * VERSION: v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY
  * AUTHORITY BOUNDARY: transient browser presentation only; no AI, legal, tenant or durable-history authority
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: no uncertified remote conversation persistence route is called; refresh clears session history
