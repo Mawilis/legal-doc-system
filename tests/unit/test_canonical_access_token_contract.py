@@ -1,7 +1,7 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION
+VERSION: v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
@@ -9,7 +9,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION reconciles
+CHANGELOG: v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT certifies workspace-level Legal
+           presentation permissions from the real tenant authorization compositor:
+           forged JWT roles/permissions remain excluded, an auditor receives an
+           authoritative empty subset, a current LEGAL_PARTNER receives only the
+           four bounded Legal Command Center permissions, and granting-role
+           authority outage fails bounded 503.
+           v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION reconciles
            protected ACCESS fixtures with the F9 purpose/revision contract while
            preserving server-side principal and workspace authority assertions.
            v1.0.1-R1D-B0F-B4-R2-CLEAN-CHECKOUT-REPAIR removes premature
@@ -47,6 +53,13 @@ from tools.eos.auth import authentication, jwt_provider
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.role_assignment import RoleAssignmentStatus
+from tools.eos.auth.role_assignment_repository import (
+    RoleAssignmentNotFoundError,
+    RoleAssignmentRepositoryError,
+)
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
+from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.saas.domain.auth import VerifyOTPRequest
 
@@ -72,6 +85,94 @@ class _PrincipalRepository:
 
     def get(self, principal_id: str) -> PrincipalAuthority:
         return PrincipalAuthority(principal_id, self.status, 0)
+
+    def resolve(self, principal_id: str, **_kwargs: Any) -> PrincipalAuthority:
+        return PrincipalAuthority(principal_id, self.status, 0)
+
+
+class _MembershipRepository:
+    """Exact active membership fixture for workspace permission composition."""
+
+    def resolve(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        **_kwargs: Any,
+    ) -> SimpleNamespace:
+        return SimpleNamespace(
+            principal_id=principal_id,
+            tenant_id=tenant_id,
+            status=TenantMembershipStatus.ACTIVE,
+            revision=7,
+        )
+
+
+class _WorkspaceRoleReader:
+    """Composite business/final-role fixture matching tenant authorization HTTP."""
+
+    def __init__(
+        self,
+        *,
+        business_role: str,
+        active_roles: tuple[str, ...] = (),
+        unavailable: bool = False,
+    ) -> None:
+        self.business_role = business_role
+        self.active_roles = frozenset(active_roles)
+        self.unavailable = unavailable
+
+    def resolve(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        role_id: str,
+        **_kwargs: Any,
+    ) -> SimpleNamespace:
+        if self.unavailable:
+            raise RoleAssignmentRepositoryError(
+                "ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
+            )
+        if role_id.startswith("tenant_"):
+            if role_id != self.business_role:
+                raise RoleAssignmentNotFoundError("ROLE_ASSIGNMENT_NOT_FOUND")
+            return SimpleNamespace(
+                principal_id=principal_id,
+                tenant_id=tenant_id,
+                business_role=role_id,
+                status=TenantBusinessRoleStatus.ACTIVE,
+                revision=11,
+            )
+        if role_id in self.active_roles:
+            return SimpleNamespace(
+                principal_id=principal_id,
+                tenant_id=tenant_id,
+                role_id=role_id,
+                status=RoleAssignmentStatus.ACTIVE,
+                revision=13,
+            )
+        raise RoleAssignmentNotFoundError("ROLE_ASSIGNMENT_NOT_FOUND")
+
+
+def _override_workspace_dependencies(
+    app: FastAPI,
+    *,
+    business_role: str = "tenant_auditor",
+    active_roles: tuple[str, ...] = (),
+    unavailable: bool = False,
+) -> None:
+    app.dependency_overrides[
+        authentication.get_principal_authority_repository
+    ] = lambda: _PrincipalRepository()
+    app.dependency_overrides[
+        auth_router.get_tenant_membership_repository
+    ] = lambda: _MembershipRepository()
+    app.dependency_overrides[
+        auth_router.get_tenant_authority_role_repository
+    ] = lambda: _WorkspaceRoleReader(
+        business_role=business_role,
+        active_roles=active_roles,
+        unavailable=unavailable,
+    )
 
 
 class _CredentialRevisionRegistry:
@@ -335,9 +436,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
 
     app = FastAPI()
     app.include_router(auth_router.router)
-    app.dependency_overrides[
-        authentication.get_principal_authority_repository
-    ] = lambda: _PrincipalRepository()
+    _override_workspace_dependencies(app)
 
     response = TestClient(app).get(
         "/auth/workspace-bootstrap",
@@ -356,6 +455,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             "businessRole": "tenant_auditor",
             "membershipRevision": 7,
             "businessRoleRevision": 11,
+            "legalPermissions": [],
             "tenant": {
                 "tenantId": TENANT,
                 "name": "Canonical Tenant",
@@ -369,6 +469,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
     assert "roles" not in serialized["user"]
     assert "permissions" not in serialized["user"]
     assert "role" not in serialized["user"]
+    assert serialized["workspace"]["legalPermissions"] == []
 
     # The real authentication chain may carry forged JWT projections into the
     # candidate identity, but the endpoint must source workspace authority from
@@ -418,9 +519,7 @@ def test_workspace_bootstrap_http_denial_is_bounded_403(
 
     app = FastAPI()
     app.include_router(auth_router.router)
-    app.dependency_overrides[
-        authentication.get_principal_authority_repository
-    ] = lambda: _PrincipalRepository()
+    _override_workspace_dependencies(app)
 
     response = TestClient(app).get(
         "/auth/workspace-bootstrap",
@@ -460,13 +559,12 @@ def test_workspace_bootstrap_http_authority_outage_is_bounded_503(
         "WORKSPACE_BOOTSTRAP_MEMBERSHIP_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE",
     )
 
     app = FastAPI()
     app.include_router(auth_router.router)
-    app.dependency_overrides[
-        authentication.get_principal_authority_repository
-    ] = lambda: _PrincipalRepository()
+    _override_workspace_dependencies(app)
 
     client = TestClient(app)
 
@@ -492,10 +590,143 @@ def test_workspace_bootstrap_http_authority_outage_is_bounded_503(
         assert code not in response.text
 
 
+def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only current full tenant authorization may become Legal UI permission hints."""
+
+    monkeypatch.setenv("WILSY_JWT_SECRET", SECRET)
+    token = jwt_provider.create_access_token(
+        {
+            "identity_id": PRINCIPAL,
+            "tenant_id": TENANT,
+            "email": "principal@example.com",
+            "roles": ["SUPER_ADMIN"],
+            "permissions": ["*"],
+        },
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
+    )
+    _install_durable_revision(monkeypatch)
+
+    def _projection(*, identity: SovereignIdentity, **_kwargs: Any) -> SimpleNamespace:
+        return SimpleNamespace(
+            principal_id=identity.identity_id,
+            email="principal@example.com",
+            tenant_id=identity.tenant_id,
+            business_role="tenant_legal_partner",
+            membership_revision=7,
+            business_role_revision=11,
+            tenant=SimpleNamespace(
+                tenant_id=TENANT,
+                status="ACTIVE",
+                organization=SimpleNamespace(
+                    organization_name="Canonical Law",
+                    legal_name="Canonical Law Inc.",
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        auth_router,
+        "build_workspace_bootstrap_projection",
+        _projection,
+    )
+
+    app = FastAPI()
+    app.include_router(auth_router.router)
+    _override_workspace_dependencies(
+        app,
+        business_role="tenant_legal_partner",
+        active_roles=("LEGAL_PARTNER",),
+    )
+
+    response = TestClient(app).get(
+        "/auth/workspace-bootstrap",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["workspace"]["businessRole"] == "tenant_legal_partner"
+    assert payload["workspace"]["legalPermissions"] == [
+        "legal_operations:billing:read",
+        "legal_operations:instruction:write",
+        "legal_operations:invoice:read",
+        "legal_operations:return:write",
+    ]
+    assert "permissions" not in payload["user"]
+    assert "roles" not in payload["user"]
+    assert "*" not in json.dumps(payload["workspace"]["legalPermissions"])
+
+
+def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Final-role authority outage cannot be mistaken for an empty grant set."""
+
+    monkeypatch.setenv("WILSY_JWT_SECRET", SECRET)
+    token = jwt_provider.create_access_token(
+        {
+            "identity_id": PRINCIPAL,
+            "tenant_id": TENANT,
+            "roles": [],
+            "permissions": [],
+        },
+        token_purpose=jwt_provider.TokenPurpose.ACCESS,
+        credential_revision=0,
+    )
+    _install_durable_revision(monkeypatch)
+
+    def _projection(*, identity: SovereignIdentity, **_kwargs: Any) -> SimpleNamespace:
+        return SimpleNamespace(
+            principal_id=identity.identity_id,
+            email="principal@example.com",
+            tenant_id=identity.tenant_id,
+            business_role="tenant_legal_partner",
+            membership_revision=7,
+            business_role_revision=11,
+            tenant=SimpleNamespace(
+                tenant_id=TENANT,
+                status="ACTIVE",
+                organization=SimpleNamespace(
+                    organization_name="Canonical Law",
+                    legal_name="Canonical Law Inc.",
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        auth_router,
+        "build_workspace_bootstrap_projection",
+        _projection,
+    )
+
+    app = FastAPI()
+    app.include_router(auth_router.router)
+    _override_workspace_dependencies(
+        app,
+        business_role="tenant_legal_partner",
+        active_roles=("LEGAL_PARTNER",),
+        unavailable=True,
+    )
+
+    response = TestClient(app).get(
+        "/auth/workspace-bootstrap",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "Workspace authority is unavailable."
+    }
+    assert "ROLE_ASSIGNMENT" not in response.text
+
+
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.0.2-R10C2F9C-CANONICAL-ACCESS-TOKEN-CERT-RECONCILIATION
-# AUTHORITY BOUNDARY: deterministic token interoperability evidence only
+# VERSION: v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT
+# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal presentation-permission projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
-# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, and inactive principals deny
+# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, and permission-authority outage deny or remain unavailable
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
