@@ -1,6 +1,6 @@
 /**
  * WILSY OS — INSTITUTIONAL LEGAL ADMISSION OPERATING SHELL
- * VERSION: v1.7.0-SERVER-CONFIRMED-FOCUS-FEEDBACK
+ * VERSION: v1.8.0-RECORD-NAVIGATION-SCROLL-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides an operational legal-control workspace with collapsible
  *           system context, compact records, document focus, and explicit
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python legal_acceptance_router/service owns all
  *                            legal truth; this component owns presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-21
- * CHANGELOG: v1.7.0 keeps the acted-on record in focus after POST plus
+ * CHANGELOG: v1.8.0 resets the bounded document reading surface to its top
+ *            whenever focus moves to a different server record, including
+ *            Previous, Next, and Next unresolved navigation. The reset is
+ *            presentation-only and never alters legal evidence or authority.
+ *            v1.7.0 keeps the acted-on record in focus after POST plus
  *            status refresh confirmation, exposes server-confirmed feedback,
  *            and prevents repeat mutation while confirmation is unavailable.
  *            v1.6.1 center-aligns the server-issued document prose inside
@@ -155,7 +159,61 @@ function CommandDeck({ document, index, total, submitting, recordEvidence, confi
 }
 
 function DocumentFocusFrame({ plan, document, documents, index, submitting, error, confirmationState, nextUnresolved, onNextUnresolved, onReturn, onPrevious, onNext, recordEvidence }) {
-  return <main data-testid="document-focus-mode" className="flex h-full min-h-0 flex-col overflow-hidden"><div className="flex min-h-[64px] shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] bg-[#0b0e0c] px-4 py-3 sm:px-6"><div className="min-w-0"><p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">Document focus · {recordTypeFor(document)}</p><h1 className="mt-1 truncate text-lg font-semibold text-stone-100">{document.title}</h1><p className="mt-1 font-mono text-[9px] text-stone-500">{document.version} · {formatDate(document.effectiveFrom)}</p></div><span className="text-[8px] font-bold uppercase tracking-[0.12em] text-stone-500">Server record</span></div><div data-testid="focus-workspace-grid" className="mx-auto grid w-full max-w-[1280px] min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden md:grid-cols-[minmax(0,880px)_280px] md:grid-rows-1 md:gap-6"><div aria-label="Document reading surface" className="flex min-h-0 min-w-0 justify-center overflow-y-auto overscroll-contain px-4 py-5 sm:px-8 sm:py-7"><article className="mx-auto w-full max-w-[860px]"><FocusMetadata document={document} /><details className="mt-3 text-[9px]"><summary className="inline-flex cursor-pointer list-none border border-white/[0.1] px-2.5 py-1.5 font-bold uppercase tracking-[0.12em] text-stone-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Canonical metadata</summary><div className="mt-2 grid gap-1 border border-white/[0.08] bg-black/15 p-2.5 font-mono text-[9px] leading-4 text-stone-500"><span>DOCUMENT_ID · {document.documentId}</span><span>SHA3-512 · {document.sha3_512 || '—'}</span></div></details><div data-testid="legal-document-content" tabIndex="0" className="select-text whitespace-pre-wrap py-7 text-center text-base leading-[1.75] text-stone-200 outline-none focus-visible:ring-1 focus-visible:ring-[#d4af37]/60">{document.content || 'No document text was supplied by the server.'}</div></article></div><CommandDeck document={document} index={index} total={documents.length} submitting={submitting} recordEvidence={recordEvidence} confirmationState={confirmationState} nextUnresolved={nextUnresolved} onNextUnresolved={onNextUnresolved} onPrevious={onPrevious} onNext={onNext} onReturn={onReturn} error={error} /></div></main>;
+  const readingSurfaceRef = useRef(null);
+
+  useEffect(() => {
+    const readingSurface = readingSurfaceRef.current;
+    if (!readingSurface) return;
+    readingSurface.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [document.documentId]);
+
+  return (
+    <main data-testid="document-focus-mode" className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-[64px] shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] bg-[#0b0e0c] px-4 py-3 sm:px-6">
+        <div className="min-w-0">
+          <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">Document focus · {recordTypeFor(document)}</p>
+          <h1 className="mt-1 truncate text-lg font-semibold text-stone-100">{document.title}</h1>
+          <p className="mt-1 font-mono text-[9px] text-stone-500">{document.version} · {formatDate(document.effectiveFrom)}</p>
+        </div>
+        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-stone-500">Server record</span>
+      </div>
+      <div data-testid="focus-workspace-grid" className="mx-auto grid w-full max-w-[1280px] min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden md:grid-cols-[minmax(0,880px)_280px] md:grid-rows-1 md:gap-6">
+        <div
+          ref={readingSurfaceRef}
+          aria-label="Document reading surface"
+          className="flex min-h-0 min-w-0 justify-center overflow-y-auto overscroll-contain px-4 py-5 sm:px-8 sm:py-7"
+        >
+          <article className="mx-auto w-full max-w-[860px]">
+            <FocusMetadata document={document} />
+            <details className="mt-3 text-[9px]">
+              <summary className="inline-flex cursor-pointer list-none border border-white/[0.1] px-2.5 py-1.5 font-bold uppercase tracking-[0.12em] text-stone-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Canonical metadata</summary>
+              <div className="mt-2 grid gap-1 border border-white/[0.08] bg-black/15 p-2.5 font-mono text-[9px] leading-4 text-stone-500">
+                <span>DOCUMENT_ID · {document.documentId}</span>
+                <span>SHA3-512 · {document.sha3_512 || '—'}</span>
+              </div>
+            </details>
+            <div data-testid="legal-document-content" tabIndex="0" className="select-text whitespace-pre-wrap py-7 text-center text-base leading-[1.75] text-stone-200 outline-none focus-visible:ring-1 focus-visible:ring-[#d4af37]/60">
+              {document.content || 'No document text was supplied by the server.'}
+            </div>
+          </article>
+        </div>
+        <CommandDeck
+          document={document}
+          index={index}
+          total={documents.length}
+          submitting={submitting}
+          recordEvidence={recordEvidence}
+          confirmationState={confirmationState}
+          nextUnresolved={nextUnresolved}
+          onNextUnresolved={onNextUnresolved}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          onReturn={onReturn}
+          error={error}
+        />
+      </div>
+    </main>
+  );
 }
 
 /**
@@ -252,7 +310,7 @@ export default function LegalAcceptanceGate({ onComplete, initialPlan = null }) 
 }
 
 // ARTIFACT: LegalAcceptanceGate.jsx
-// VERSION: v1.7.0-SERVER-CONFIRMED-FOCUS-FEEDBACK
+// VERSION: v1.8.0-RECORD-NAVIGATION-SCROLL-RESET
 // AUTHORITY BOUNDARY: client projection only; no signature or commercial execution
 // TENANT POSTURE: server-issued acceptance plan only; no localStorage legal truth
 // FAIL-CLOSED POSTURE: unavailable, incomplete, or integrity-blocked plans never enter workspace
