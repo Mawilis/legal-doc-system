@@ -7,8 +7,9 @@
  *          evidence lookup, governed initial intake, ReturnOfService generation
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
- * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.\n *            2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: 2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.
+ *            2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
  *            every D11 workspace state/outcome summary counter is recomputed
  *            from validated rows; total-preserving breakdown drift rejects.
  *            2026-09-23 v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT binds production v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT and certifies
