@@ -4,7 +4,9 @@
  * AUTHORITY: Test-support only; imports the real production LegalDashboard and CSS.
  * EPITOME: Deterministic LEGAL_PARTNER visual evidence for the complete D14
  *          workspace while denying client/sheriff/deputy cross-role access.
- * CHANGELOG: 2026-09-24 v1.0.3 mirrors the production Vite @ → src alias so\n *            transitive production imports resolve inside the deterministic visual gate.\n *            2026-09-24 v1.0.2 rebinds the visual virtual adapter to the
+ * CHANGELOG: 2026-09-24 v1.0.3 mirrors the production Vite @ → src alias so
+ *            transitive production imports resolve inside the deterministic visual gate.
+ *            2026-09-24 v1.0.2 rebinds the visual virtual adapter to the
  *            hardened D14 summary-validation version; synthetic state counters
  *            remain exact with their displayed rows.
  *            2026-09-24 v1.0.1 aligns synthetic document/attempt/execution
@@ -14,7 +16,8 @@
  * FAIL-CLOSED: Unintended role transport throws immediately.
  */
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';\nimport path from 'path';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
 const SERVICE_ID = 'virtual:wilsy-legal-operations-visual-service';
 const SERVICE_RESOLVED = '\0' + SERVICE_ID;
@@ -164,7 +167,12 @@ export default defineConfig({
       },
     },
   ],
-  resolve: {\n    alias: {\n      '@': path.resolve(__dirname, './src'),\n    },\n  },\n  server: {
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
     host: '127.0.0.1',
     port: 4178,
     strictPort: true,
