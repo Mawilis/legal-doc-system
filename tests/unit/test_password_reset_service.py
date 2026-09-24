@@ -1,7 +1,7 @@
 """Direct deterministic certificate for the WILSY OS reset orchestrator.
 
 TITLE: WILSY OS Password Reset Service Direct Certificate
-VERSION: v1.0.0-R10D2-PASSWORD-RESET-SERVICE-DIRECT-CERT
+VERSION: v1.1.0-R10E76-PASSWORD-POLICY-DEPENDENCY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the public password-reset service boundary, ordering,
          durable-authority composition, failure handling, replay posture,
@@ -11,8 +11,11 @@ COLLABORATION / OWNERSHIP: Certifies
                            tools/eos/saas/auth/password_reset_service.py;
                            production transaction and real-Mongo behavior are
                            reserved for later evidence gates.
-CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10D2 establishes direct public-entrypoint coverage for
+CERTIFICATION / UPDATE DATE: 2026-09-24
+CHANGELOG: v1.1.0-R10E76-PASSWORD-POLICY-DEPENDENCY-CERT distinguishes compromised-password
+           dependency failure from user-correctable policy rejection while
+           freezing pre-transaction/no-consume behavior.
+           v1.0.0-R10D2 establishes direct public-entrypoint coverage for
            policy and hashing order, transactional capability revalidation,
            credential CAS, exact revocation, consume, replay, retry rereads,
            authority exclusion, and secret-safe results.
@@ -380,7 +383,7 @@ def test_blocklist_failure_starts_no_transaction() -> None:
     """An unavailable checker fails closed before hashing or persistence."""
 
     service, recovery, auth, client = _service(checker=RecordingChecker(mode="failure"))
-    _assert_failure(service, PasswordResetCode.POLICY_REJECTED)
+    _assert_failure(service, PasswordResetCode.POLICY_DEPENDENCY_FAILURE)
     assert client.start_count == 0
     assert auth.hash_calls == []
     assert recovery.consume_calls == []
@@ -790,7 +793,7 @@ def test_result_is_minimal_and_non_sensitive() -> None:
 
 
 # ARTIFACT: test_password_reset_service.py
-# VERSION: v1.0.0-R10D2-PASSWORD-RESET-SERVICE-DIRECT-CERT
+# VERSION: v1.1.0-R10E76-PASSWORD-POLICY-DEPENDENCY-CERT
 # AUTHORITY BOUNDARY: deterministic direct certificate only; no production authority
 # TENANT POSTURE: exact synthetic tenant/principal propagation is asserted
 # FAIL-CLOSED POSTURE: invalid, replayed, partial, and unavailable paths require denial
