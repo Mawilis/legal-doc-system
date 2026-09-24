@@ -1,11 +1,11 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API
+VERSION: v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
-         adding one snapshot-consistent legal-practice workspace projection for
-         current instruction/document/attempt/execution/return truth. The
+         exposing one snapshot-consistent legal-practice workspace projection for
+         current matter/instruction/document/attempt/execution/return truth. The
          workspace requires conjunctive instruction, allocation, attempt and
          return read authority and never creates lifecycle, billing, payment,
          AI, execution or settlement truth.
@@ -20,8 +20,9 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             composes exact P2 locators with P5M state capability,
                             L8-7D5 owns sanitized client matter projection, and
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /workspace for the exact current
+CERTIFICATION / UPDATE DATE: 2026-09-24
+CHANGELOG: 2026-09-24 v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API adds canonical CaseMatter rows and matter counts to the existing practice workspace so a durably registered matter is directly discoverable after intake. CaseMatter is read from the same exact-tenant snapshot as the existing lifecycle families, exposes only case_matter_id, matter_reference, opened_at, state and opaque evidence_identity, and creates no new lifecycle, IAM, client, billing, payment, AI or settlement authority.
+           2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /workspace for the exact current
            legal-practice roles tenant_legal_partner, tenant_legal_attorney,
            tenant_legal_paralegal and tenant_legal_secretary. Admission requires
            all four existing instruction/allocation/attempt/return read
@@ -85,11 +86,11 @@ TENANT BOUNDARY: Entity reads bind the exact authorized tenant/type/identity;
                  sheriff queues bind the exact authorized sheriff tenant; deputy
                  personal work and field capabilities additionally bind the
                  authenticated principal to one canonical Deputy identity.
-                 D11 workspace admission requires four current read authorities
+                 D15 workspace admission requires four current read authorities
                  for one exact tenant/principal/published practice role, and all
                  workspace rows remain that tenant's current canonical evidence.
                  Foreign evidence is never admitted or disclosed.
-AUTHORITY BOUNDARY: Read projection only. D11 workspace visibility is a
+AUTHORITY BOUNDARY: Read projection only. D15 workspace visibility is a
                     composition of existing instruction/allocation/attempt/
                     return read authority and grants no mutation authority.
                     Queue/capability visibility grants no receipt, allocation,
@@ -101,7 +102,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
                               settled truth.
 TRANSACTION BOUNDARY: Existing exact internal/sheriff/deputy reads retain
                       read-only collection semantics. The D6 client-matter route
-                      and D11 legal-practice workspace each own one read-only
+                      and D15 legal-practice workspace each own one read-only
                       Mongo snapshot transaction for their multi-read projection;
                       both commit on success and abort on failure. Command
                       transactions remain separate.
@@ -157,7 +158,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API"
+VERSION: Final[str] = "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -168,7 +169,7 @@ _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
         "tenant_legal_secretary",
     }
 )
-_WORKSPACE_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1"
+_WORKSPACE_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2"
 _WORKSPACE_VISIBILITY: Final[str] = "LEGAL_PRACTICE_WORKSPACE"
 _T = TypeVar("_T")
 
@@ -277,6 +278,12 @@ def _workspace_context(
 
 
 _WORKSPACE_FIELDS: Final[dict[str, tuple[str, ...]]] = {
+    "CaseMatter": (
+        "case_matter_id",
+        "matter_reference",
+        "opened_at",
+        "state",
+    ),
     "LegalInstruction": (
         "instruction_id",
         "case_matter_id",
@@ -357,6 +364,7 @@ def _workspace_rows(
 
 def _workspace_summary(
     *,
+    matters: list[dict[str, Any]],
     instructions: list[dict[str, Any]],
     documents: list[dict[str, Any]],
     attempts: list[dict[str, Any]],
@@ -368,6 +376,9 @@ def _workspace_summary(
         return sum(1 for row in rows if row.get(field) == value)
 
     return {
+        "matters_total": len(matters),
+        "matters_open": count(matters, "state", "OPEN"),
+        "matters_closed": count(matters, "state", "CLOSED"),
         "instructions_total": len(instructions),
         "instructions_registered": count(instructions, "state", "REGISTERED"),
         "instructions_accepted": count(instructions, "state", "ACCEPTED"),
@@ -565,7 +576,7 @@ async def get_legal_practice_workspace_projection(
     Admission is conjunctive: all four existing instruction, allocation,
     attempt, and return read authorities must be current for the same exact
     authenticated principal, tenant, and published legal-practice business role.
-    The response enumerates only current canonical P1 lifecycle projections and
+    The response enumerates current canonical CaseMatter and P1 lifecycle projections and
     opaque current-snapshot evidence locators. It does not expose history,
     evidence references/fingerprints, client identity, billing, invoice,
     payment, AI, financial-execution, or settlement truth.
@@ -579,6 +590,12 @@ async def get_legal_practice_workspace_projection(
 
     def run(session: Any, database: Any) -> dict[str, object]:
         collection = database.get_collection(LIFECYCLE_COLLECTION)
+        matters = _workspace_rows(
+            tenant_id=context.tenant_id,
+            entity_type="CaseMatter",
+            collection=collection,
+            session=session,
+        )
         instructions = _workspace_rows(
             tenant_id=context.tenant_id,
             entity_type="LegalInstruction",
@@ -615,12 +632,14 @@ async def get_legal_practice_workspace_projection(
             "tenant_id": context.tenant_id,
             "visibility": _WORKSPACE_VISIBILITY,
             "summary": _workspace_summary(
+                matters=matters,
                 instructions=instructions,
                 documents=documents,
                 attempts=attempts,
                 executions=executions,
                 returns=returns,
             ),
+            "matters": matters,
             "instructions": instructions,
             "documents": documents,
             "attempts": attempts,
@@ -908,9 +927,9 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API
-# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus conjunctively-authorized D11 Legal Practice workspace projection only; mutation IAM/commands remain separate
-# TENANT POSTURE: exact authorized internal/sheriff/deputy/client scope plus one exact tenant/principal/published-practice-role D11 snapshot workspace; foreign evidence is bounded
+# VERSION: v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API
+# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus conjunctively-authorized D15 Legal Practice workspace projection including canonical CaseMatter truth only; mutation IAM/commands remain separate
+# TENANT POSTURE: exact authorized internal/sheriff/deputy/client scope plus one exact tenant/principal/published-practice-role D15 snapshot workspace; foreign evidence is bounded
 # FAIL-CLOSED POSTURE: authority/scope mismatch, internal policy gaps, denied client IAM, snapshot failure, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
