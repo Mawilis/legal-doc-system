@@ -3,15 +3,20 @@
  * WILSY OS — PASSWORD RESET PORTAL
  * ============================================================================
  * TITLE: Browser password-reset completion surface
- * VERSION: v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF
+ * VERSION: v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the unauthenticated recovery completion form and delegates
  *           all reset authority to the certified Python-backed client method.
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/PasswordResetPortal.jsx
  * COLLABORATION / OWNERSHIP: R10D8 browser surface; api.js owns transport and
  * Python EOS owns recovery, policy, hashing, revision, and revocation truth.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
+ *   2026-09-24 v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE — Projects the
+ *   canonical Python password-policy boundaries before submission, rejects
+ *   locally provable length/control/UTF-8-byte violations without spending
+ *   recovery authority, and distinguishes safe reset-link versus password
+ *   policy HTTP feedback while keeping server authority fail closed.
  *   2026-09-22 v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF — Consumes
  *   tenant/recovery values from the governed URL fragment, seeds the existing
  *   reset lookup fields, immediately scrubs the secret fragment from browser
@@ -58,12 +63,55 @@ import { useAuth } from '../../contexts/authContext.jsx';
 import { resetPassword } from '../../services/api.js';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
 
+
+const PASSWORD_POLICY = Object.freeze({
+  minCharacters: 15,
+  maxCharacters: 64,
+  maxUtf8Bytes: 72,
+});
+
+const RESET_FAILURE_DETAIL = Object.freeze({
+  recoveryInvalid: 'Password reset request is invalid or expired.',
+  policyRejected: 'The new password does not meet password requirements.',
+});
+
 /**
- * @description Maps bounded server transport outcomes to safe user-facing copy.
- * @param {number|undefined} status - HTTP status returned by the reset route.
- * @returns {string} Non-sensitive status message.
- * @institutional Prevents the browser from reconstructing recovery lifecycle or
- * exposing Axios configuration, identity, or capability material.
+ * @description Detect locally provable canonical password-policy violations.
+ * @param {string} candidate - Transient prospective password held only in component state.
+ * @returns {string} Empty string when locally admissible, otherwise safe corrective guidance.
+ * @authorityProjection Mirrors non-network rules owned by Python password_policy.py only;
+ *   server-side compromised-password checking remains authoritative on submission.
+ */
+const localPasswordPolicyMessage = (candidate) => {
+  if (candidate.length < PASSWORD_POLICY.minCharacters) {
+    return `Use at least ${PASSWORD_POLICY.minCharacters} characters for your new password.`;
+  }
+  if (candidate.length > PASSWORD_POLICY.maxCharacters) {
+    return `Use no more than ${PASSWORD_POLICY.maxCharacters} characters for your new password.`;
+  }
+
+  const hasProhibitedCodePoint = [...candidate].some((character) => {
+    const codePoint = character.codePointAt(0);
+    return codePoint <= 0x1f
+      || (codePoint >= 0x7f && codePoint <= 0x9f)
+      || (codePoint >= 0xd800 && codePoint <= 0xdfff);
+  });
+  if (hasProhibitedCodePoint) {
+    return 'Control characters are not allowed in the new password.';
+  }
+
+  if (new TextEncoder().encode(candidate).length > PASSWORD_POLICY.maxUtf8Bytes) {
+    return `Keep the password within ${PASSWORD_POLICY.maxUtf8Bytes} UTF-8 bytes.`;
+  }
+  return '';
+};
+
+/**
+ * @description Read bounded recovery-link values from the URL fragment.
+ * @param {string} hash - Current location fragment.
+ * @returns {{tenantId: string, recoveryToken: string}} Bounded transient lookup values.
+ * @secretHandling The raw fragment is never logged or persisted and is scrubbed
+ *   from browser history immediately after initial component hydration.
  */
 const recoveryFragmentValues = (hash) => {
   if (typeof hash !== 'string' || !hash.startsWith('#')) {
@@ -78,17 +126,31 @@ const recoveryFragmentValues = (hash) => {
   };
 };
 
-const messageForResetFailure = (status) => {
+/**
+ * @description Map only known bounded reset responses to actionable user feedback.
+ * @param {number|undefined} status - HTTP status returned by the reset route.
+ * @param {unknown} detail - Optional bounded server detail; arbitrary text is never rendered.
+ * @returns {string} Non-sensitive corrective message.
+ * @institutional Recovery lifecycle remains privacy-bounded while password-policy
+ *   rejection is kept distinct from an unusable one-time recovery capability.
+ */
+const messageForResetFailure = (status, detail) => {
+  if (status === 400 && detail === RESET_FAILURE_DETAIL.recoveryInvalid) {
+    return 'This recovery link is invalid, expired, or already used. Request a new password reset email.';
+  }
+  if (status === 400 && detail === RESET_FAILURE_DETAIL.policyRejected) {
+    return 'WILSY could not accept this password under the security policy. Review the requirements above and choose a different password.';
+  }
   if (status === 400) {
-    return 'We could not reset your password. Check the recovery information and password requirements, then try again.';
+    return 'We could not reset your password. Request a new recovery link or review the password requirements above.';
   }
   if (status === 422) {
-    return 'The reset request could not be validated. Check the fields and try again.';
+    return 'The reset request could not be validated. Check the workspace and password fields, then try again.';
   }
   if (status === 503) {
-    return 'Password reset is temporarily unavailable. Please try again later.';
+    return 'Password reset is temporarily unavailable. Your password has not been changed; please try again later.';
   }
-  return 'We could not confirm the password reset. Please try again later.';
+  return 'We could not confirm the password reset. Your password has not been changed; please try again later.';
 };
 
 /**
@@ -158,6 +220,11 @@ export default function PasswordResetPortal({
       setError('Enter the workspace, recovery information, and new password to continue.');
       return;
     }
+    const localPolicyError = localPasswordPolicyMessage(newPassword);
+    if (localPolicyError) {
+      setError(localPolicyError);
+      return;
+    }
     if (newPassword !== confirmation) {
       setError('The password confirmation does not match.');
       return;
@@ -179,7 +246,10 @@ export default function PasswordResetPortal({
       setRecoveryToken('');
       setSuccess(true);
     } catch (resetError) {
-      setError(messageForResetFailure(resetError?.response?.status));
+      setError(messageForResetFailure(
+        resetError?.response?.status,
+        resetError?.response?.data?.detail,
+      ));
     } finally {
       setPending(false);
     }
@@ -274,6 +344,23 @@ export default function PasswordResetPortal({
                 </>
               )}
 
+              <section
+                id="reset-password-requirements"
+                aria-labelledby="reset-password-requirements-title"
+                style={passwordRequirementsStyle}
+              >
+                <h2 id="reset-password-requirements-title" style={passwordRequirementsTitleStyle}>Password requirements</h2>
+                <ul style={passwordRequirementsListStyle}>
+                  <li>Use 15–64 characters.</li>
+                  <li>Keep the password within 72 UTF-8 bytes.</li>
+                  <li>Do not use control characters.</li>
+                  <li>Use a password that passes WILSY&apos;s compromised-password safety check.</li>
+                </ul>
+                <p style={passwordRequirementsNoteStyle}>
+                  Spaces and ordinary Unicode are allowed. Uppercase letters, numbers, and symbols are not mandatory.
+                </p>
+              </section>
+
               <label htmlFor="reset-new-password" style={labelStyle}>New password</label>
               <input
                 id="reset-new-password"
@@ -282,11 +369,13 @@ export default function PasswordResetPortal({
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                aria-describedby="reset-password-help"
+                minLength={PASSWORD_POLICY.minCharacters}
+                maxLength={PASSWORD_POLICY.maxCharacters}
+                aria-describedby="reset-password-requirements reset-password-help"
                 style={inputStyle}
                 required
               />
-              <p id="reset-password-help" style={helpStyle}>Choose a strong, unique password. Requirements are checked securely when you submit.</p>
+              <p id="reset-password-help" style={helpStyle}>Choose a unique password that meets every requirement above. WILSY performs the compromised-password check securely when you submit.</p>
 
               <label htmlFor="reset-confirm-password" style={labelStyle}>Confirm new password</label>
               <input
@@ -473,6 +562,38 @@ const helpStyle = {
   lineHeight: 1.45,
 };
 
+
+const passwordRequirementsStyle = {
+  margin: '10px 0 4px',
+  padding: '12px 14px',
+  border: '1px solid rgba(213,176,79,.20)',
+  borderRadius: '8px',
+  background: 'rgba(213,176,79,.045)',
+};
+
+const passwordRequirementsTitleStyle = {
+  margin: '0 0 7px',
+  color: '#e6d29a',
+  fontSize: '12px',
+  fontWeight: 750,
+  letterSpacing: '.06em',
+};
+
+const passwordRequirementsListStyle = {
+  margin: '0',
+  paddingLeft: '18px',
+  color: '#aaa99f',
+  fontSize: '11px',
+  lineHeight: 1.55,
+};
+
+const passwordRequirementsNoteStyle = {
+  margin: '7px 0 0',
+  color: '#85867f',
+  fontSize: '11px',
+  lineHeight: 1.45,
+};
+
 const buttonStyle = {
   display: 'inline-flex',
   justifyContent: 'center',
@@ -542,7 +663,7 @@ const successPanelStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: Browser password-reset completion surface
- * VERSION: v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF
+ * VERSION: v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE
  * AUTHORITY BOUNDARY: Client presentation and certified transport invocation
  * TENANT POSTURE: Caller-supplied tenant value is forwarded, never granted
  * FAIL-CLOSED POSTURE: Only server-confirmed HTTP 204 produces success
