@@ -1,13 +1,18 @@
 /**
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT
+ * VERSION: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT certifies that a
+ * CHANGELOG: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT certifies bounded consumption of the server-owned
+ *            workspace.legalPermissions projection: exact permissions and
+ *            authoritative empty lists retain provenance, field absence preserves
+ *            compatibility posture, and malformed/duplicate/unknown permissions
+ *            fail session promotion closed without trusting login/JWT claims.
+ *            v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT certifies that a
  *            persisted bearer candidate survives browser remount only after
  *            workspace-bootstrap revalidates current server authority; forged,
  *            mismatched or rejected candidates fail closed while discovered
@@ -49,6 +54,7 @@ const authoritativeUser = {
 const workspaceBootstrap = ({
   tenantId = 'TENANT-BROWSER',
   businessRole = 'tenant_auditor',
+  legalPermissions,
 } = {}) => ({
   data: {
     status: 'READY',
@@ -61,6 +67,7 @@ const workspaceBootstrap = ({
       businessRole,
       membershipRevision: 7,
       businessRoleRevision: 11,
+      ...(legalPermissions === undefined ? {} : { legalPermissions }),
       tenant: {
         tenantId,
         name: `Canonical ${tenantId}`,
@@ -188,6 +195,10 @@ describe('authoritative authentication state machine', () => {
     }));
     api.get.mockResolvedValueOnce(workspaceBootstrap({
       businessRole: 'tenant_legal_partner',
+      legalPermissions: [
+        'legal_operations:instruction:write',
+        'legal_operations:return:write',
+      ],
     }));
 
     renderHarness();
@@ -218,7 +229,102 @@ describe('authoritative authentication state machine', () => {
       tenantId: 'TENANT-BROWSER',
       role: 'tenant_legal_partner',
     });
+    expect(persistedUser.permissions).toEqual([
+      'legal_operations:instruction:write',
+      'legal_operations:return:write',
+    ]);
+    expect(persistedUser.legalPermissionsAuthoritative).toBe(true);
+  });
+
+  it('preserves an authoritative empty Legal permission projection distinctly from absence', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    }));
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      businessRole: 'tenant_legal_partner',
+      legalPermissions: [],
+    }));
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    });
+
+    const persistedUser = JSON.parse(
+      window.localStorage.getItem('wilsy_sovereign_user'),
+    );
     expect(persistedUser.permissions).toEqual([]);
+    expect(persistedUser.legalPermissionsAuthoritative).toBe(true);
+  });
+
+  it('preserves legacy compatibility provenance when Legal permissions are absent', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    }));
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      businessRole: 'tenant_legal_partner',
+    }));
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    });
+
+    const persistedUser = JSON.parse(
+      window.localStorage.getItem('wilsy_sovereign_user'),
+    );
+    expect(persistedUser.permissions).toEqual([]);
+    expect(persistedUser.legalPermissionsAuthoritative).toBe(false);
+  });
+
+  it.each([
+    {
+      label: 'unknown permission',
+      legalPermissions: ['legal_operations:unknown:write'],
+    },
+    {
+      label: 'duplicate permission',
+      legalPermissions: [
+        'legal_operations:instruction:write',
+        'legal_operations:instruction:write',
+      ],
+    },
+    {
+      label: 'non-array permission projection',
+      legalPermissions: 'legal_operations:instruction:write',
+    },
+  ])('fails session promotion closed for $label', async ({ legalPermissions }) => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    }));
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      businessRole: 'tenant_legal_partner',
+      legalPermissions,
+    }));
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE);
+    });
+
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('wilsy_sovereign_user')).toBeNull();
   });
 
   it('purges a mismatched restored identity but retains discovered tenant context', async () => {
@@ -408,13 +514,15 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT
- * AUTHORITY BOUNDARY: deterministic browser projection certificate only
- * CHANGELOG: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT — Added valid
- * restore, principal-mismatch denial, rejected-bearer purge, discovered-tenant
- * continuity, canonical bearer restoration and server projection evidence.
+ * VERSION: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT
+ * AUTHORITY BOUNDARY: deterministic browser projection certificate only; workspace Legal permission provenance is presentation-only and never authorization authority
+ * CHANGELOG: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT — Added exact, empty, absent and malformed Legal
+ * permission-projection evidence while retaining anti-JWT/browser-authority proofs.
+ *            v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT — Added valid restore, principal-mismatch denial,
+ * rejected-bearer purge, discovered-tenant continuity, canonical bearer restoration
+ * and server projection evidence.
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant
- * FAIL-CLOSED POSTURE: session exists only after bounded authenticated response
+ * FAIL-CLOSED POSTURE: session exists only after bounded authenticated response; malformed/duplicate/unknown Legal permission projections prevent promotion
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
