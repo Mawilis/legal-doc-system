@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT
+ * VERSION: v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -8,7 +8,7 @@
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
+ * CHANGELOG: 2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.\n *            2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
  *            every D11 workspace state/outcome summary counter is recomputed
  *            from validated rows; total-preserving breakdown drift rejects.
  *            2026-09-23 v2.0.0-L8-7D13-LEGAL-OPERATIONS-ADAPTER-CERT binds production v1.5.0-L8-7D13-LEGAL-INTAKE-CLIENT and certifies
@@ -198,6 +198,38 @@ const workspacePayload = () => ({
   ],
   returns: [],
 });
+
+const workspaceV2Payload = () => {
+  const base = workspacePayload();
+  return {
+    ...base,
+    schema: 'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2',
+    version: 'v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API',
+    summary: {
+      matters_total: 2,
+      matters_open: 1,
+      matters_closed: 1,
+      ...base.summary,
+    },
+    matters: [
+      {
+        case_matter_id: 'matter-1',
+        matter_reference: 'CASE-2026-0001',
+        opened_at: '2026-09-23T13:50:00+00:00',
+        state: 'OPEN',
+        evidence_identity: '1'.repeat(128),
+      },
+      {
+        case_matter_id: 'matter-2',
+        matter_reference: 'CASE-2026-0002',
+        opened_at: '2026-09-23T13:55:00+00:00',
+        state: 'CLOSED',
+        evidence_identity: '2'.repeat(128),
+      },
+    ],
+  };
+};
+
 
 const intakeInput = () => ({
   caseMatterId: 'matter-intake-1',
@@ -932,6 +964,56 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     expect(Object.isFrozen(result.data)).toBe(true);
   });
 
+  it('accepts D15 V2 first-class matters while preserving exact canonical matter truth', async () => {
+    mockGet.mockResolvedValueOnce({ data: workspaceV2Payload() });
+
+    const result = await getLegalPracticeWorkspace();
+
+    expect(mockGet).toHaveBeenCalledWith('/legal-operations/workspace');
+    expect(result.schema).toBe('WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2');
+    expect(result.version).toBe('v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API');
+    expect(result.summary).toEqual(expect.objectContaining({
+      matters_total: 2,
+      matters_open: 1,
+      matters_closed: 1,
+    }));
+    expect(result.matters).toEqual([
+      expect.objectContaining({
+        case_matter_id: 'matter-1',
+        matter_reference: 'CASE-2026-0001',
+        state: 'OPEN',
+      }),
+      expect.objectContaining({
+        case_matter_id: 'matter-2',
+        matter_reference: 'CASE-2026-0002',
+        state: 'CLOSED',
+      }),
+    ]);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.matters)).toBe(true);
+    expect(Object.isFrozen(result.matters[0])).toBe(true);
+  });
+
+  it.each([
+    ['unsorted matter rows', (value) => value.matters.reverse()],
+    ['extra matter field', (value) => { value.matters[0].client_name = 'forbidden'; }],
+    ['invalid matter state', (value) => { value.matters[0].state = 'ARCHIVED'; }],
+    ['invalid matter evidence', (value) => { value.matters[0].evidence_identity = 'bad'; }],
+    ['matter summary drift', (value) => { value.summary.matters_open = 2; }],
+    ['mixed V2 shape with V1 identity', (value) => {
+      value.schema = 'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1';
+      value.version = 'v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API';
+    }],
+  ])('rejects D15 V2 %s fail-closed', async (_label, mutate) => {
+    const value = workspaceV2Payload();
+    mutate(value);
+    mockGet.mockResolvedValueOnce({ data: value });
+
+    await expect(getLegalPracticeWorkspace()).rejects.toThrow(
+      /LEGAL_OPERATIONS_WORKSPACE_(?:RESPONSE_INVALID|SUMMARY_MISMATCH)/,
+    );
+  });
+
   it('posts exact initial-intake facts and rejects browser authority fields', async () => {
     mockPost.mockResolvedValueOnce({ data: intakeResponse() });
 
@@ -1031,14 +1113,14 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION',
+      'v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT
+ * VERSION: v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT
  * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success
