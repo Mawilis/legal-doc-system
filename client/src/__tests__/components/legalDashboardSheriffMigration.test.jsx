@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves the canonical LegalDashboard preserves certified
  *          SHERIFF/DEPUTY/LEGAL_CLIENT behavior while adding role-resolved Legal
@@ -8,7 +8,8 @@
  *          workspace, finance, intake and ReturnOfService adapter contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-24 v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds preserved SHERIFF/DEPUTY/CLIENT
+ * CHANGELOG: 2026-09-24 v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT aligns the LEGAL_CLIENT Open matters metric assertion with the shared chrome's semantic metric-label element; production role behavior is unchanged.
+ *            2026-09-24 v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds preserved SHERIFF/DEPUTY/CLIENT
  *            regression behavior to v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; no role semantics changed.
  *            2026-09-23 v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the full cockpit regression suite
  *            to production v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE and adapter v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION, adds the new
@@ -400,7 +401,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(screen.getByText('Visible matter snapshot')).toBeInTheDocument();
 
     const visibleMetric = screen.getByText('Visible matters').closest('article');
-    const openMetric = screen.getByText('Open matters', { selector: 'p' }).closest('article');
+    const openMetric = screen.getByText('Open matters', { selector: 'small' }).closest('article');
     const closedMetric = screen.getByText('Closed matters').closest('article');
     expect(visibleMetric).toHaveTextContent('3');
     expect(openMetric).toHaveTextContent('2');
@@ -834,7 +835,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
  * AUTHORITY BOUNDARY: deterministic Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed command wiring evidence only
  * TENANT POSTURE: all role surfaces remain server-authorized; practice uses D11 snapshot truth, client uses D7 visibility, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, menu/search state, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
