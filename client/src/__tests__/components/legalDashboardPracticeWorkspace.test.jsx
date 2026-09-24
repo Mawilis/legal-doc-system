@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by D11/D13 contracts, with functional lifecycle
@@ -8,7 +8,7 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT disambiguates the Process documents module assertion by targeting the active semantic heading rather than an intentionally repeated summary label.
+ * CHANGELOG: 2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT binds the production dashboard to the D15 V2 workspace, proves canonical matter rendering/search/drilldown, linked lifecycle operating-room composition, and post-intake navigation to the refreshed persisted matter without adding browser authority.
  *            2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
  *            v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; workspace behavior and authority are unchanged.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -50,7 +50,7 @@ const {
 }));
 
 vi.mock('../../services/legalOperationsService.js', () => ({
-  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION',
+  LEGAL_OPERATIONS_CLIENT_VERSION: 'v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY',
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
@@ -98,19 +98,22 @@ const EVIDENCE_C = 'c'.repeat(128);
 const EVIDENCE_D = 'd'.repeat(128);
 const EVIDENCE_E = 'e'.repeat(128);
 
-const practiceWorkspace = ({ withReturn = false } = {}) => ({
-  schema: 'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1',
-  version: 'v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API',
+const practiceWorkspace = ({ withReturn = false, withNewMatter = false } = {}) => ({
+  schema: 'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2',
+  version: 'v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API',
   tenantId: 'tenant-law',
   visibility: 'LEGAL_PRACTICE_WORKSPACE',
   summary: {
-    instructions_total: 2,
+    matters_total: withNewMatter ? 3 : 2,
+    matters_open: withNewMatter ? 2 : 1,
+    matters_closed: 1,
+    instructions_total: withNewMatter ? 3 : 2,
     instructions_registered: 1,
     instructions_accepted: 1,
     instructions_closed: 0,
     instructions_cancelled: 0,
-    documents_total: 2,
-    documents_registered: 0,
+    documents_total: withNewMatter ? 3 : 2,
+    documents_registered: withNewMatter ? 1 : 0,
     documents_received: 1,
     documents_allocated: 1,
     documents_returned: 0,
@@ -125,6 +128,29 @@ const practiceWorkspace = ({ withReturn = false } = {}) => ({
     executions_not_completed: 0,
     returns_total: withReturn ? 1 : 0,
   },
+  matters: [
+    {
+      case_matter_id: 'matter-001',
+      matter_reference: 'CASE-2026-0001',
+      opened_at: '2026-09-23T16:55:00+00:00',
+      state: 'OPEN',
+      evidence_identity: EVIDENCE_A,
+    },
+    {
+      case_matter_id: 'matter-002',
+      matter_reference: 'CASE-2026-0002',
+      opened_at: '2026-09-23T17:00:00+00:00',
+      state: 'CLOSED',
+      evidence_identity: EVIDENCE_B,
+    },
+    ...(withNewMatter ? [{
+      case_matter_id: 'matter-created-9001',
+      matter_reference: 'CASE-2026-9001',
+      opened_at: '2026-09-24T05:00:00+00:00',
+      state: 'OPEN',
+      evidence_identity: EVIDENCE_C,
+    }] : []),
+  ],
   instructions: [
     {
       instruction_id: 'instruction-001',
@@ -142,6 +168,14 @@ const practiceWorkspace = ({ withReturn = false } = {}) => ({
       state: 'ACCEPTED',
       evidence_identity: EVIDENCE_B,
     },
+    ...(withNewMatter ? [{
+      instruction_id: 'instruction-created-9001',
+      case_matter_id: 'matter-created-9001',
+      document_id: 'document-created-9001',
+      registered_at: '2026-09-24T05:01:00+00:00',
+      state: 'REGISTERED',
+      evidence_identity: EVIDENCE_D,
+    }] : []),
   ],
   documents: [
     {
@@ -160,6 +194,14 @@ const practiceWorkspace = ({ withReturn = false } = {}) => ({
       state: 'ALLOCATED_TO_DEPUTY',
       evidence_identity: EVIDENCE_C,
     },
+    ...(withNewMatter ? [{
+      document_id: 'document-created-9001',
+      case_matter_id: 'matter-created-9001',
+      document_type: 'summons',
+      registered_at: '2026-09-24T05:02:00+00:00',
+      state: 'REGISTERED',
+      evidence_identity: EVIDENCE_E,
+    }] : []),
   ],
   attempts: [
     {
@@ -200,7 +242,7 @@ const practiceWorkspace = ({ withReturn = false } = {}) => ({
     : [],
 });
 
-describe('D14 production Legal Operations workspace', () => {
+describe('D15 first-class Legal Matter Operating Room', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -241,10 +283,32 @@ describe('D14 production Legal Operations workspace', () => {
       expect(screen.getByRole('button', { name: menu })).toBeInTheDocument();
     }
 
+    expect(screen.getByText('CASE-2026-0001')).toBeInTheDocument();
     expect(screen.getByText('matter-001')).toBeInTheDocument();
     expect(screen.getByText('attempt-001')).toBeInTheDocument();
     expect(screen.getAllByText('Active instructions').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Returns generated').length).toBeGreaterThan(0);
+  });
+
+  it('searches first-class matters and opens one canonical Matter Operating Room', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+    render(<LegalDashboard roleView="LEGAL_ATTORNEY" />);
+
+    await screen.findByText('Legal Operations Command Center');
+    const search = screen.getByPlaceholderText('Search matter reference, ID or linked legal work');
+    fireEvent.change(search, { target: { value: 'CASE-2026-0001' } });
+
+    expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
+    expect(screen.getByText('CASE-2026-0001')).toBeInTheDocument();
+    expect(screen.queryByText('CASE-2026-0002')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open matter' }));
+
+    expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
+    expect(screen.getByText('instruction-001')).toBeInTheDocument();
+    expect(screen.getByText('document-001')).toBeInTheDocument();
+    expect(screen.getByText(EVIDENCE_A)).toBeInTheDocument();
+    expect(getLegalPracticeWorkspace).toHaveBeenCalledTimes(1);
   });
 
   it('switches across real lifecycle modules without new network scope', async () => {
@@ -272,12 +336,20 @@ describe('D14 production Legal Operations workspace', () => {
   });
 
   it('registers governed intake and refreshes canonical workspace before success', async () => {
-    getLegalPracticeWorkspace
-      .mockResolvedValueOnce(practiceWorkspace())
-      .mockResolvedValueOnce(practiceWorkspace());
-    registerLegalIntake.mockResolvedValueOnce({
-      disposition: 'CREATED',
-      tenantId: 'tenant-law',
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+    registerLegalIntake.mockImplementationOnce(async (submitted) => {
+      const refreshed = practiceWorkspace({ withNewMatter: true });
+      refreshed.matters[2].case_matter_id = submitted.caseMatterId;
+      refreshed.instructions[2].case_matter_id = submitted.caseMatterId;
+      refreshed.documents[2].case_matter_id = submitted.caseMatterId;
+      refreshed.instructions[2].instruction_id = submitted.instructionId;
+      refreshed.instructions[2].document_id = submitted.documentId;
+      refreshed.documents[2].document_id = submitted.documentId;
+      getLegalPracticeWorkspace.mockResolvedValueOnce(refreshed);
+      return {
+        disposition: 'CREATED',
+        tenantId: 'tenant-law',
+      };
     });
 
     render(<LegalDashboard roleView="LEGAL_PARALEGAL" />);
@@ -328,6 +400,10 @@ describe('D14 production Legal Operations workspace', () => {
     expect(
       await screen.findByText(/CREATED: matter, instruction, document/i),
     ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
+    expect(screen.getByText('CASE-2026-9001')).toBeInTheDocument();
+    expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
+    expect(screen.getByText(submitted.caseMatterId)).toBeInTheDocument();
   });
 
   it('keeps secretary intake read-only while retaining operational visibility', async () => {
@@ -434,7 +510,7 @@ describe('D14 production Legal Operations workspace', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT
  * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
  * FAIL-CLOSED POSTURE: role denial, command failure and cross-role drift never fallback or invent success
