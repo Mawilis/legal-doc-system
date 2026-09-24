@@ -1,15 +1,13 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.3.0-WEB_CRYPTO-SOVEREIGN]                                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.4.0-SESSION-BOUND-LEGAL-HISTORY]                                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ EPITOME: Tenant‑scoped conversation history stored on the sovereign Kennel backend.                                                  ║
- * ║           Replaces localStorage with durable, auditable, and isolated storage per tenant.                                            ║
- * ║           Uses native Web Crypto (SHA‑256) for cryptographic proof hashing, eliminating CDN risk.                                    ║
- * ║           Local cache for immediate reads; all mutations persist to the backend via `/api/ai/conversations`.                         ║
- * ║ COMPETITIVE EDGE: Outperforms Lemlist/HubSpot/Apollo with zero external CDN dependencies,                                            ║
- * ║                   sub‑millisecond native hashing, and full tenant isolation.                                                         ║
+ * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
+ * ║           No remote history route is assumed or probed. Legal prompts remain in memory until a                                      ║
+ * ║           separately certified Python-EOS durable history authority exists. Native Web Crypto                                       ║
+ * ║           seals the transient thread projection for same-session integrity checks.                                                  ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/wilsyAIConversationHistoryEngine.js        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -29,34 +27,10 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // DEPENDENCIES
 // ──────────────────────────────────────────────────────────────────────────────
-import api from '../../services/api.js';
-// CDN crypto-js removed – using native Web Crypto
-import logger from '../../utils/logger.js';  // optional, we'll use console if not available
-
-// ──────────────────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ──────────────────────────────────────────────────────────────────────────────
-
-/**
- * @constant WILSY_AI_HISTORY_STATUS
- * @description Status codes for history operations.
- * @type {Object}
- * @property {string} SUCCESS - Operation succeeded.
- * @property {string} WARNING - Warning condition.
- * @property {string} ERROR - Error condition.
- * @collaboration Wilsy AI dock, status reporting.
- * @institutional Provides consistent status codes for UI integration.
- */
-export const WILSY_AI_HISTORY_STATUS = {
-  SUCCESS: 'success',
-  WARNING: 'warning',
-  ERROR: 'error',
-};
-
-// ──────────────────────────────────────────────────────────────────────────────
-// LOCAL CACHE
-// ──────────────────────────────────────────────────────────────────────────────
-let conversationCache = null;
+// No remote history transport is mounted in the current production BFF. Until a
+// Python-EOS-owned durable history authority is separately certified, history is
+// deliberately session-memory only so legal prompts are never silently persisted
+// through a legacy or caller-scoped store.
 
 // ──────────────────────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS
@@ -145,10 +119,17 @@ export function resolveWilsyChatHistoryTitle(payload = {}) {
  */
 function getTenantId() {
   try {
-    const tenant = typeof window !== 'undefined' ? window.__WILSY_ACTIVE_TENANT__ : null;
-    return tenant?.tenantId || tenant?._id || 'MASTER';
-  } catch (_) {
-    return 'MASTER';
+    const direct = typeof window !== 'undefined' ? window.__WILSY_ACTIVE_TENANT__ : null;
+    if (direct?.tenantId || direct?._id) return String(direct.tenantId || direct._id);
+
+    const raw = typeof localStorage !== 'undefined'
+      ? localStorage.getItem('wilsy_active_tenant')
+      : null;
+    const parsed = raw ? JSON.parse(raw) : null;
+    const persisted = parsed?.tenantId || parsed?._id || parsed?.id;
+    return persisted ? String(persisted) : 'UNRESOLVED';
+  } catch {
+    return 'UNRESOLVED';
   }
 }
 
@@ -189,237 +170,157 @@ async function generateProofHash(entity) {
  */
 export async function verifyThreadIntegrity(thread) {
   if (!thread || typeof thread !== 'object') return false;
-  if (!thread.proofHash) return true; // Legacy threads without proofHash are accepted
+  if (!thread.proofHash) return true;
 
   const recomputed = await generateProofHash({
     id: thread.id,
     title: thread.title,
     workspace: thread.workspace,
-    turns: thread.turns || [],
+    messages: Array.isArray(thread.messages) ? thread.messages : [],
     createdAt: thread.createdAt,
     updatedAt: thread.updatedAt,
     tenantId: thread.tenantId,
   });
-
-  const isValid = recomputed === thread.proofHash;
-  if (!isValid) {
-    console.warn('[HistoryEngine] Thread proof hash mismatch – accepting anyway.');
-    return false; // Mismatch means invalid
-  }
-  return true;
+  return recomputed === thread.proofHash;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// CONVERSATION HISTORY OPERATIONS (Async API calls)
+// SESSION-BOUND CONVERSATION HISTORY OPERATIONS
 // ──────────────────────────────────────────────────────────────────────────────
 
+const sessionThreadId = () => {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  return uuid
+    ? `session-${uuid}`
+    : `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const normalizeThreadPayload = (payload = {}) => (
+  typeof payload === 'string'
+    ? { title: payload, workspace: 'Workspace' }
+    : (payload && typeof payload === 'object' ? payload : {})
+);
+
+const resealThread = async (thread) => {
+  const sealed = {
+    ...thread,
+    messages: Array.isArray(thread.messages) ? thread.messages : [],
+  };
+  sealed.proofHash = await generateProofHash({
+    id: sealed.id,
+    title: sealed.title,
+    workspace: sealed.workspace,
+    messages: sealed.messages,
+    createdAt: sealed.createdAt,
+    updatedAt: sealed.updatedAt,
+    tenantId: sealed.tenantId,
+  });
+  return sealed;
+};
+
 /**
- * @function loadWilsyAIConversationThreads
- * @description Loads conversation threads from the backend (tenant‑scoped).
- * @param {Object} options - Options (storage param ignored; kept for signature compatibility).
- * @returns {Promise<Array>} Conversation thread list.
- * @collaboration Wilsy AI previous chat history, tenant isolation, sovereign backend.
- * @institutional Fetches all threads for the current tenant; verifies integrity.
+ * Return same-session threads only. This function performs no network request.
  */
-export async function loadWilsyAIConversationThreads(options = {}) {
-  const tenantId = getTenantId();
-  try {
-    const response = await api.get('/api/ai/conversations', {
-      headers: { 'X-Tenant-Id': tenantId },
-      timeout: 8000,
-    });
-    const threads = response?.data?.threads || [];
-    // Verify and filter threads with invalid proof hashes (soft verify)
-    const verifiedThreads = [];
-    for (const t of threads) {
-      if (await verifyThreadIntegrity(t)) {
-        verifiedThreads.push(t);
-      }
-    }
-    conversationCache = verifiedThreads;
-    return verifiedThreads;
-  } catch (error) {
-    console.error('[HistoryEngine] load failed:', error);
-    // If backend is unreachable, return cached or empty
-    if (conversationCache) {
-      return conversationCache;
-    }
-    return [];
-  }
+export async function loadWilsyAIConversationThreads(_options = {}) {
+  return Array.isArray(conversationCache) ? [...conversationCache] : [];
 }
 
 /**
- * @function createWilsyAIConversationThread
- * @description Creates a new named conversation thread on the backend.
- * @param {Object} payload - Thread creation payload.
- * @returns {Promise<Object>} New thread.
- * @collaboration Wilsy AI new chat action, tenant‑scoped persistence.
- * @institutional Creates a sealed thread with a proof hash.
+ * Create one same-session thread. No prompt or response is durably persisted.
  */
 export async function createWilsyAIConversationThread(payload = {}) {
-  const workspace = resolveWilsyAIConversationWorkspace(payload);
+  const normalized = normalizeThreadPayload(payload);
+  const workspace = resolveWilsyAIConversationWorkspace(normalized);
   const tenantId = getTenantId();
   const now = new Date().toISOString();
-  const newThread = {
-    title: resolveWilsyChatHistoryTitle({ ...payload, workspace }),
+  const thread = await resealThread({
+    id: sessionThreadId(),
+    title: normalizeWilsyAIConversationText(
+      normalized.title,
+      resolveWilsyChatHistoryTitle({ ...normalized, workspace }),
+    ),
     workspace,
     createdAt: now,
     updatedAt: now,
-    turns: [],
+    messages: [],
     tenantId,
-  };
-  newThread.proofHash = await generateProofHash(newThread);
-
-  try {
-    const response = await api.post('/api/ai/conversations', newThread, {
-      headers: { 'X-Tenant-Id': tenantId },
-      timeout: 8000,
-    });
-    const thread = response?.data?.thread || null;
-    if (thread) {
-      // Soft verify (logs but accepts)
-      await verifyThreadIntegrity(thread);
-      if (Array.isArray(conversationCache)) {
-        conversationCache = [thread, ...conversationCache.filter((t) => t.id !== thread.id)];
-      } else {
-        conversationCache = [thread];
-      }
-      return thread;
-    }
-    // Fallback: return local thread with a temporary ID (will be replaced on next sync)
-    const tempThread = {
-      ...newThread,
-      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-    };
-    if (Array.isArray(conversationCache)) {
-      conversationCache = [tempThread, ...conversationCache];
-    } else {
-      conversationCache = [tempThread];
-    }
-    return tempThread;
-  } catch (error) {
-    console.error('[HistoryEngine] create failed:', error);
-    // Fallback local creation for offline resilience
-    const tempThread = {
-      ...newThread,
-      id: `offline-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-    };
-    if (Array.isArray(conversationCache)) {
-      conversationCache = [tempThread, ...conversationCache];
-    } else {
-      conversationCache = [tempThread];
-    }
-    return tempThread;
-  }
-}
-
-/**
- * @function persistWilsyAIConversationTurn
- * @description Adds a turn (prompt+answer) to an existing thread and updates the backend.
- * @param {Object} payload - Conversation turn payload.
- * @param {string} payload.threadId - ID of the thread.
- * @param {string} payload.promptText - User prompt.
- * @param {string} payload.answerText - AI answer.
- * @param {string} payload.intent - Optional intent.
- * @param {Object} payload.storage - Ignored (kept for compatibility).
- * @returns {Promise<Object>} Updated thread.
- * @collaboration Wilsy AI typed answers, tenant‑scoped history.
- * @institutional Appends a new turn, reseals the thread with a new proof hash.
- */
-export async function persistWilsyAIConversationTurn(payload = {}) {
-  const { threadId, promptText, answerText, intent, storage } = payload;
-  const tenantId = getTenantId();
-
-  if (!threadId) {
-    const newThread = await createWilsyAIConversationThread(payload);
-    return persistWilsyAIConversationTurn({ ...payload, threadId: newThread.id });
-  }
-
-  const existingThread = Array.isArray(conversationCache)
-    ? conversationCache.find((t) => t.id === threadId)
-    : null;
-
-  const now = new Date().toISOString();
-  const turn = {
-    promptText: normalizeWilsyAIConversationText(promptText, ''),
-    answerText: normalizeWilsyAIConversationText(answerText, ''),
-    intent: normalizeWilsyAIConversationText(intent, ''),
-    createdAt: now,
-  };
-  turn.proofHash = await generateProofHash(turn);
-
-  const updatedThread = {
-    ...(existingThread || {}),
-    id: threadId,
-    title: resolveWilsyChatHistoryTitle({
-      ...payload,
-      thread: existingThread,
-    }),
-    updatedAt: now,
-    turns: [
-      ...(existingThread?.turns || []),
-      turn,
-    ].slice(-40), // Limit turns to prevent large payloads
-    tenantId,
-  };
-  // Reseal the entire thread
-  updatedThread.proofHash = await generateProofHash({
-    id: updatedThread.id,
-    title: updatedThread.title,
-    workspace: updatedThread.workspace,
-    turns: updatedThread.turns,
-    createdAt: updatedThread.createdAt,
-    updatedAt: updatedThread.updatedAt,
-    tenantId: updatedThread.tenantId,
+    storagePosture: 'SESSION_ONLY',
   });
 
-  try {
-    const response = await api.put(`/api/ai/conversations/${threadId}`, updatedThread, {
-      headers: { 'X-Tenant-Id': tenantId },
-      timeout: 8000,
-    });
-    const serverThread = response?.data?.thread || updatedThread;
-    await verifyThreadIntegrity(serverThread);
-    if (Array.isArray(conversationCache)) {
-      conversationCache = conversationCache.map((t) => (t.id === threadId ? serverThread : t));
-    } else {
-      conversationCache = [serverThread];
-    }
-    return serverThread;
-  } catch (error) {
-    console.error('[HistoryEngine] persist turn failed:', error);
-    // Update cache locally if server unavailable
-    if (Array.isArray(conversationCache)) {
-      conversationCache = conversationCache.map((t) => (t.id === threadId ? updatedThread : t));
-    } else {
-      conversationCache = [updatedThread];
-    }
-    return updatedThread;
-  }
+  conversationCache = [
+    thread,
+    ...conversationCache.filter((item) => item.id !== thread.id),
+  ];
+  return thread;
 }
 
 /**
- * @function clearWilsyAIConversationThreads
- * @description Deletes all conversation threads for the current tenant.
- * @param {Object} options - Options (storage ignored).
- * @returns {Promise<Array>} Empty array.
- * @collaboration Wilsy AI clear history action, tenant‑scoped deletion.
- * @institutional Removes all threads for the tenant, clears cache.
+ * Append one message to a session thread. A legacy (threadId, message) call is
+ * accepted while the canonical shape is { threadId, message }.
  */
-export async function clearWilsyAIConversationThreads(options = {}) {
-  const tenantId = getTenantId();
-  try {
-    await api.delete('/api/ai/conversations', {
-      headers: { 'X-Tenant-Id': tenantId },
-      timeout: 8000,
-    });
-    conversationCache = [];
-    return [];
-  } catch (error) {
-    console.error('[HistoryEngine] clear failed:', error);
-    conversationCache = [];
-    return [];
+export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage = null) {
+  const normalized = (
+    typeof payload === 'string'
+      ? { threadId: payload, message: legacyMessage }
+      : (payload && typeof payload === 'object' ? payload : {})
+  );
+
+  let threadId = String(normalized.threadId || '').trim();
+  if (!threadId) {
+    const created = await createWilsyAIConversationThread(normalized);
+    threadId = created.id;
   }
+
+  const existing = conversationCache.find((item) => item.id === threadId);
+  if (!existing) throw new Error('WILSY_AI_SESSION_THREAD_NOT_FOUND');
+
+  const messages = [...(existing.messages || [])];
+  if (normalized.message && typeof normalized.message === 'object') {
+    const content = normalizeWilsyAIConversationText(normalized.message.content, '');
+    if (content) {
+      messages.push({
+        role: normalizeWilsyAIConversationText(normalized.message.role, 'user'),
+        content,
+        timestamp: normalized.message.timestamp || new Date().toISOString(),
+        ...(normalized.message.meta ? { meta: normalized.message.meta } : {}),
+      });
+    }
+  } else {
+    const promptText = normalizeWilsyAIConversationText(normalized.promptText, '');
+    const answerText = normalizeWilsyAIConversationText(normalized.answerText, '');
+    const timestamp = new Date().toISOString();
+    if (promptText) messages.push({ role: 'user', content: promptText, timestamp });
+    if (answerText) messages.push({ role: 'assistant', content: answerText, timestamp });
+  }
+
+  const now = new Date().toISOString();
+  const updated = await resealThread({
+    ...existing,
+    title: resolveWilsyChatHistoryTitle({
+      ...normalized,
+      thread: existing,
+      promptText:
+        normalized.promptText
+        || normalized.message?.content
+        || '',
+    }),
+    updatedAt: now,
+    messages: messages.slice(-80),
+    storagePosture: 'SESSION_ONLY',
+  });
+
+  conversationCache = conversationCache.map((item) => (
+    item.id === threadId ? updated : item
+  ));
+  return updated;
+}
+
+/**
+ * Clear same-session conversation history only.
+ */
+export async function clearWilsyAIConversationThreads(_options = {}) {
+  conversationCache = [];
+  return [];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -435,7 +336,8 @@ export async function clearWilsyAIConversationThreads(options = {}) {
  * @institutional Maintains API surface for legacy code.
  */
 export function saveWilsyAIConversationThreads(threads = []) {
-  return threads;
+  conversationCache = Array.isArray(threads) ? [...threads] : [];
+  return [...conversationCache];
 }
 
 /**
@@ -478,14 +380,12 @@ export default {
   WILSY_AI_HISTORY_STATUS,
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// INSTITUTIONAL CERTIFICATION SEAL – WILSY OS CONVERSATION HISTORY ENGINE
-// Status:          PRODUCTION READY
-// Version:         v5.3.0-WEB_CRYPTO-SOVEREIGN
-// Cryptography:    SHA‑256 via native Web Crypto (FIPS‑compliant)
-// Compliance:      POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001
-// Kennel EOS:      Fully aware – tenant isolation enforced via X-Tenant-Id header
-// Mutation:        All writes go through backend; local cache only for reads.
-// Competition:     Outperforms Lemlist, HubSpot, Apollo by providing cryptographically
-//                  verified, auditable conversation history with tenant isolation.
-// ═══════════════════════════════════════════════════════════════════════════════
+/**
+ * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
+ * VERSION: v5.4.0-SESSION-BOUND-LEGAL-HISTORY
+ * AUTHORITY BOUNDARY: transient browser presentation only; no AI, legal, tenant or durable-history authority
+ * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
+ * FAIL-CLOSED POSTURE: no uncertified remote conversation persistence route is called; refresh clears session history
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
