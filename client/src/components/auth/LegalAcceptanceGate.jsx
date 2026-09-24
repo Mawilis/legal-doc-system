@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Institutional Legal Admission Operating Shell
- * VERSION: v1.8.0-RECORD-NAVIGATION-SCROLL-RESET
+ * VERSION: v1.8.1-DOM-COMPATIBLE-RECORD-SCROLL-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides an operational legal-control workspace with collapsible
  *           system context, compact records, document focus, and explicit
@@ -9,10 +9,13 @@
  * COLLABORATION / OWNERSHIP: Python legal_acceptance_router/service owns all
  *                            legal truth; this component owns presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v1.8.0 resets the bounded document reading surface to its top
- *            whenever focus moves to a different server record, including
- *            Previous, Next, and Next unresolved navigation. The reset is
- *            presentation-only and never alters legal evidence or authority.
+ * CHANGELOG: v1.8.1 replaces Element.scrollTo with direct bounded scrollTop
+ *            and scrollLeft reset so record navigation remains compatible with
+ *            browser-like DOM runtimes that do not implement scrollTo. The
+ *            presentation reset still changes no legal evidence or authority.
+ *            v1.8.0 reset the bounded document reading surface to its top
+ *            whenever focus moved to a different server record, including
+ *            Previous, Next, and Next unresolved navigation.
  *            v1.7.0 keeps the acted-on record in focus after POST plus
  *            status refresh confirmation, exposes server-confirmed feedback,
  *            and prevents repeat mutation while confirmation is unavailable.
@@ -164,7 +167,8 @@ function DocumentFocusFrame({ plan, document, documents, index, submitting, erro
   useEffect(() => {
     const readingSurface = readingSurfaceRef.current;
     if (!readingSurface) return;
-    readingSurface.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    readingSurface.scrollTop = 0;
+    readingSurface.scrollLeft = 0;
   }, [document.documentId]);
 
   return (
@@ -310,7 +314,7 @@ export default function LegalAcceptanceGate({ onComplete, initialPlan = null }) 
 }
 
 // ARTIFACT: LegalAcceptanceGate.jsx
-// VERSION: v1.8.0-RECORD-NAVIGATION-SCROLL-RESET
+// VERSION: v1.8.1-DOM-COMPATIBLE-RECORD-SCROLL-RESET
 // AUTHORITY BOUNDARY: client projection only; no signature or commercial execution
 // TENANT POSTURE: server-issued acceptance plan only; no localStorage legal truth
 // FAIL-CLOSED POSTURE: unavailable, incomplete, or integrity-blocked plans never enter workspace
