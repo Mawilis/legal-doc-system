@@ -1,7 +1,7 @@
 """WILSY OS development-only legal persona provisioning orchestrator.
 
 TITLE: WILSY OS Developer Legal Persona Provisioner
-VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER
+VERSION: v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Development-only, owner-authorized orchestration that atomically creates
          one ordinary-login legal test principal without mutating the founder
@@ -12,6 +12,10 @@ COLLABORATION / OWNERSHIP: Python EOS auth orchestration owns the transaction;
                            bounded transaction participants.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG:
+  v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER — Repairs static type narrowing in the bounded request validator by
+    validating each string input explicitly before returning the typed tuple.
+    Runtime acceptance, authority, tenant, transaction, password, MFA, and
+    financial semantics are unchanged.
   v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER — Establishes an explicitly
     non-production legal-persona provisioning boundary for eight canonical
     Legal OS personas. Requires an exact ACTIVE tenant owner plus ACTIVE
@@ -98,7 +102,7 @@ from tools.eos.saas.auth.password_policy import (
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 
 
-VERSION: Final[str] = "v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER"
+VERSION: Final[str] = "v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER"
 _ENABLE_ENV: Final[str] = "WILSY_DEVELOPER_PERSONA_PROVISIONING"
 _ALLOWED_ENVIRONMENTS: Final[frozenset[str]] = frozenset(
     {"development", "dev", "local", "test", "testing"}
@@ -250,12 +254,19 @@ def _require_request(
         raise DeveloperPersonaProvisioningError(
             DeveloperPersonaProvisioningCode.INVALID_REQUEST
         )
-    values = (tenant_id, email, first_name, last_name)
-    if not all(
-        isinstance(value, str)
-        and bool(value)
-        and value == value.strip()
-        for value in values
+    if (
+        not isinstance(tenant_id, str)
+        or not tenant_id
+        or tenant_id != tenant_id.strip()
+        or not isinstance(email, str)
+        or not email
+        or email != email.strip()
+        or not isinstance(first_name, str)
+        or not first_name
+        or first_name != first_name.strip()
+        or not isinstance(last_name, str)
+        or not last_name
+        or last_name != last_name.strip()
     ):
         raise DeveloperPersonaProvisioningError(
             DeveloperPersonaProvisioningCode.INVALID_REQUEST
@@ -593,7 +604,7 @@ __all__ = [
 
 
 # ARTIFACT: tools/eos/auth/developer_persona_provisioner.py
-# VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER
+# VERSION: v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER
 # AUTHORITY BOUNDARY: development-only owner-authorized legal test-principal admission
 # TENANT POSTURE: exact owner principal + tenant + membership + tenant_owner + ENTERPRISE_ADMIN scope; no cross-tenant provisioning
 # FAIL-CLOSED POSTURE: production, disabled flag, malformed request, policy rejection, authority drift, conflicts, and persistence failure deny
