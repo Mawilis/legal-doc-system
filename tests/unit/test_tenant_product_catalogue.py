@@ -37,7 +37,7 @@ from tools.eos.saas.entitlement.product_catalogue import (
 
 def test_exact_closed_product_catalogue() -> None:
     products = list_tenant_products()
-    assert [item.product_id.value for item in products] == [
+    assert [item.product_id for item in products] == [
         "LEGAL_OPERATIONS",
         "BILLING",
         "CRM",
@@ -177,7 +177,7 @@ def test_catalogue_has_no_product_dependencies_until_explicitly_certified() -> N
 
 
 def test_full_enterprise_must_be_future_explicit_composition_not_wildcard() -> None:
-    identifiers = {item.product_id.value for item in list_tenant_products()}
+    identifiers = {item.product_id for item in list_tenant_products()}
     assert "FULL_ENTERPRISE" not in identifiers
     assert "ALL" not in identifiers
     assert "*" not in identifiers
