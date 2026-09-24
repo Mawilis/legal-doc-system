@@ -1,15 +1,15 @@
-"""D11 direct HTTP certificate for the Legal Practice workspace.
+"""D15 direct HTTP certificate for the Legal Practice workspace.
 
-TITLE: WILSY OS Legal Practice Workspace HTTP Certificate
-VERSION: v1.0.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-HTTP-CERT
-AUTHORITY: Direct HTTP certificate for the D11 read-only practice projection.
+TITLE: WILSY OS First-Class Legal Matter Workspace HTTP Certificate
+VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT
+AUTHORITY: Direct HTTP certificate for the D15 read-only practice projection.
 EPITOME: Prove conjunctive same-principal/tenant/role admission, exact current
-         lifecycle field whitelists, deterministic summary counts, opaque
+         CaseMatter/lifecycle field whitelists, deterministic summary counts, opaque
          evidence locators, bounded role denial and no financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_practice_workspace_http.py
 COLLABORATION / OWNERSHIP: Certificate for tools/eos/api/legal_operations_router.py
-                            v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API.
-CERTIFICATION / UPDATE DATE: 2026-09-23
+                            v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API.
+CERTIFICATION / UPDATE DATE: 2026-09-24
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identities only.
 TENANT BOUNDARY: Every successful workspace context is exact tenant/principal/
@@ -17,6 +17,7 @@ TENANT BOUNDARY: Every successful workspace context is exact tenant/principal/
 AUTHORITY BOUNDARY: Read projection certificate only; no lifecycle mutation,
                     service execution, return, invoice, payment or settlement.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+CHANGELOG: 2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT adds direct canonical CaseMatter projection, field-whitelist, matter-count and version binding coverage while preserving D11 role/scope/read-only guarantees.
 FAIL-CLOSED DECLARATION: Scope mismatch, unsupported role and malformed
                          projection reject without fallback or inferred truth.
 """
@@ -39,7 +40,7 @@ from tools.eos.auth.tenant_authorization import (
 )
 
 
-VERSION = "v1.0.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-HTTP-CERT"
+VERSION = "v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT"
 TENANT = "tenant-law"
 PRINCIPAL = "principal-law"
 EVIDENCE = "a" * 128
@@ -96,6 +97,12 @@ def _context(
 def _payloads() -> dict[str, dict[str, object]]:
     """Return one current row for every D11 lifecycle family."""
     return {
+        "CaseMatter": {
+            "case_matter_id": "matter-1",
+            "matter_reference": "CASE-2026-0001",
+            "opened_at": "2026-09-23T13:55:00+00:00",
+            "state": "OPEN",
+        },
         "LegalInstruction": {
             "instruction_id": "instruction-1",
             "case_matter_id": "matter-1",
@@ -186,11 +193,14 @@ def test_workspace_http_projects_current_lifecycle_and_summary(
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["schema"] == "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1"
-    assert payload["version"] == "v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API"
+    assert payload["schema"] == "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2"
+    assert payload["version"] == "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
     assert payload["tenant_id"] == TENANT
     assert payload["visibility"] == "LEGAL_PRACTICE_WORKSPACE"
     assert payload["summary"] == {
+        "matters_total": 1,
+        "matters_open": 1,
+        "matters_closed": 0,
         "instructions_total": 1,
         "instructions_registered": 0,
         "instructions_accepted": 1,
@@ -212,6 +222,15 @@ def test_workspace_http_projects_current_lifecycle_and_summary(
         "executions_not_completed": 0,
         "returns_total": 1,
     }
+    assert payload["matters"] == [
+        {
+            "case_matter_id": "matter-1",
+            "matter_reference": "CASE-2026-0001",
+            "opened_at": "2026-09-23T13:55:00+00:00",
+            "state": "OPEN",
+            "evidence_identity": EVIDENCE,
+        }
+    ]
     assert payload["instructions"][0]["evidence_identity"] == EVIDENCE
     assert payload["executions"][0]["outcome"] == "COMPLETED"
     assert payload["returns"][0]["state"] == "GENERATED"
@@ -292,18 +311,40 @@ def test_workspace_row_whitelist_discards_unapproved_current_fields(
     ]
 
 
+def test_workspace_matter_row_whitelist_exposes_only_first_class_case_truth(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CaseMatter projection exposes only D15 operating identity plus locator."""
+    _install_projection_seams(monkeypatch)
+    rows = legal_router._workspace_rows(
+        tenant_id=TENANT,
+        entity_type="CaseMatter",
+        collection=object(),
+        session="snapshot-session",
+    )
+    assert rows == [
+        {
+            "case_matter_id": "matter-1",
+            "matter_reference": "CASE-2026-0001",
+            "opened_at": "2026-09-23T13:55:00+00:00",
+            "state": "OPEN",
+            "evidence_identity": EVIDENCE,
+        }
+    ]
+
+
 def test_workspace_version_and_authority_surface_are_frozen() -> None:
-    """D11 remains read-only and bound to the intended production version."""
-    assert legal_router.VERSION == "v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API"
-    assert VERSION == "v1.0.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-HTTP-CERT"
+    """D15 remains read-only and bound to the intended production version."""
+    assert legal_router.VERSION == "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
+    assert VERSION == "v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")
 
 
 # ARTIFACT: test_legal_operations_practice_workspace_http.py
-# VERSION: v1.0.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-HTTP-CERT
-# AUTHORITY BOUNDARY: D11 read-only practice workspace HTTP certificate
+# VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT
+# AUTHORITY BOUNDARY: D15 read-only first-class matter practice workspace HTTP certificate
 # TENANT POSTURE: same exact tenant/principal/published-practice-role required
 # FAIL-CLOSED POSTURE: scope/role/projection drift rejects without fallback
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
