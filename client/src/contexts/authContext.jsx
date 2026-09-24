@@ -1,16 +1,22 @@
 /**
  * WILSY OS — AUTHORITATIVE BROWSER AUTHENTICATION CONTEXT
- * VERSION: v51.0.0-R1D-B0F-B4-R4-WORKSPACE-BOOTSTRAP
+ * VERSION: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/authContext.jsx
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v51.0.0-R1D-B0F-B4-R4-WORKSPACE-BOOTSTRAP — Anchors and clears
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Restores a persisted
+ *            access-token candidate only after Python EOS workspace-bootstrap
+ *            revalidates current principal, membership, business role and exact
+ *            tenant truth. Invalid, expired, mismatched or malformed candidates
+ *            are purged while the server-discovered tenant selection is retained
+ *            for a fresh login rather than forcing redundant discovery.
+ *            v51.0.0-R1D-B0F-B4-R4-WORKSPACE-BOOTSTRAP — Anchored and cleared
  *            the canonical API bearer synchronously at MFA/session boundaries
- *            so dependent tenant bootstrap requests cannot race state effects.
+ *            so dependent tenant bootstrap requests could not race state effects.
  *            v49.0.0-R1D-B0F-B3B-TENANT-SOURCE — Compares the discovered
  *            server-issued tenant projection with the authenticated durable
  *            principal before persisting browser session state; mismatch fails closed.
@@ -72,6 +78,64 @@ const anchorCanonicalBearer = (accessToken) => {
   if (!commonHeaders) return;
   if (accessToken) commonHeaders.Authorization = `Bearer ${accessToken}`;
   else delete commonHeaders.Authorization;
+};
+
+
+/**
+ * Return one persisted access-token candidate without treating it as authority.
+ * Python EOS must revalidate it before any authenticated browser state exists.
+ */
+const readPersistedAccessTokenCandidate = () => {
+  try {
+    return String(
+      localStorage.getItem('wilsy_auth_token')
+      || localStorage.getItem('token')
+      || '',
+    ).trim();
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Return the last server-discovered tenant projection for navigation continuity.
+ * This projection is not authentication, membership, role, or workspace authority.
+ */
+const readPersistedDiscoveredTenant = () => {
+  try {
+    const raw = localStorage.getItem('discoveredTenant');
+    const value = raw ? JSON.parse(raw) : null;
+    return value && typeof value === 'object' ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Return the last bounded authenticated user projection as comparison metadata.
+ * The returned value never establishes authority by itself.
+ */
+const readPersistedUserProjection = () => {
+  try {
+    const raw = localStorage.getItem('wilsy_sovereign_user');
+    const value = raw ? JSON.parse(raw) : null;
+    return value && typeof value === 'object' ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Purge browser authentication authority while preserving discovered tenant
+ * navigation context for a fresh login.
+ */
+const clearPersistedSessionAuthority = () => {
+  anchorCanonicalBearer(null);
+  localStorage.removeItem('wilsy_auth_token');
+  localStorage.removeItem('token');
+  localStorage.removeItem('wilsy_sovereign_user');
+  localStorage.removeItem('wilsy_refresh_token');
+  localStorage.removeItem('wilsy_active_tenant');
 };
 
 const candidateSessionProjection = (data, fallbackEmail = '') => {
@@ -139,34 +203,104 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => {
-    // Browser persistence is never authentication authority. Until the
-    // server-owned workspace/session bootstrap exists, restored credentials
-    // fail closed and require a fresh authenticated server transition.
-    anchorCanonicalBearer(null);
-    localStorage.removeItem('wilsy_auth_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('wilsy_sovereign_user');
-    localStorage.removeItem('wilsy_refresh_token');
-    return null;
-  });
-  const [tenant, setTenant] = useState(() => {
-    try {
-      const saved = localStorage.getItem('discoveredTenant');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Persisted bearer material is only a candidate. It remains unanchored until
+  // Python EOS revalidates it through workspace-bootstrap.
+  const [token, setToken] = useState(null);
+  const [tenant, setTenant] = useState(() => readPersistedDiscoveredTenant());
   const [authStage, setAuthStage] = useState(AUTH_STATES.IDLE);
   const [pendingEmail, setPendingEmail] = useState('');
   const [qrCodeData, setQrCodeData] = useState(null);
   const [mfaTempToken, setMfaTempToken] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(
+    () => Boolean(readPersistedAccessTokenCandidate()),
+  );
   const [error, setError] = useState(null);
 
   const isAuthenticated = Boolean(token && user && authStage === AUTH_STATES.AUTHENTICATED);
   const mfaRequired = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
+
+  useEffect(() => {
+    let active = true;
+    const candidateToken = readPersistedAccessTokenCandidate();
+
+    if (!candidateToken) {
+      anchorCanonicalBearer(null);
+      setLoading(false);
+      return () => { active = false; };
+    }
+
+    const restore = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await api.get('/auth/workspace-bootstrap', {
+          headers: {
+            Authorization: `Bearer ${candidateToken}`,
+          },
+        });
+        if (!active) return;
+
+        const persistedUser = readPersistedUserProjection();
+        const authoritative = boundedWorkspaceProjection(
+          response?.data || {},
+          persistedUser?.email || '',
+        );
+
+        const persistedPrincipalId = String(persistedUser?.id || '').trim();
+        if (
+          persistedPrincipalId
+          && persistedPrincipalId !== authoritative.user.id
+        ) {
+          throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+        }
+
+        const discoveredTenant = readPersistedDiscoveredTenant();
+        const discoveredTenantId = String(
+          discoveredTenant?.tenantId || '',
+        ).trim();
+        if (
+          discoveredTenantId
+          && discoveredTenantId !== authoritative.user.tenantId
+        ) {
+          throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+        }
+
+        // Only the revalidated READY server projection may restore authority.
+        anchorCanonicalBearer(candidateToken);
+        localStorage.setItem('wilsy_auth_token', candidateToken);
+        localStorage.setItem('token', candidateToken);
+        localStorage.setItem(
+          'wilsy_sovereign_user',
+          JSON.stringify(authoritative.user),
+        );
+        localStorage.setItem(
+          'wilsy_active_tenant',
+          JSON.stringify(authoritative.tenant),
+        );
+
+        setToken(candidateToken);
+        setUser(authoritative.user);
+        setTenant(authoritative.tenant);
+        setAuthStage(AUTH_STATES.AUTHENTICATED);
+        emitAuthState(AUTH_STATES.AUTHENTICATED);
+      } catch {
+        if (!active) return;
+        clearPersistedSessionAuthority();
+        setToken(null);
+        setUser(null);
+        setTenant(readPersistedDiscoveredTenant());
+        setAuthStage(AUTH_STATES.IDLE);
+        setError(null);
+        emitAuthState(AUTH_STATES.IDLE);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void restore();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -427,12 +561,13 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v51.0.0-R1D-B0F-B4-R4-WORKSPACE-BOOTSTRAP
+ * VERSION: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE
  * AUTHORITY BOUNDARY: browser projection only; Python EOS owns authentication truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant
  * FAIL-CLOSED POSTURE: unrecognized or incomplete server responses fail closed
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v51.0.0-R1D-B0F-B4-R4-WORKSPACE-BOOTSTRAP — Synchronous bearer
- * anchoring and clearing close the post-MFA tenant bootstrap race.
+ * CHANGELOG: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Persisted bearer
+ * candidates are restored only after Python EOS workspace-bootstrap revalidates
+ * current principal, tenant membership, business role and canonical tenant.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
