@@ -1,31 +1,65 @@
 /**
- * WILSY OS — PRE-WORKSPACE LEGAL ACCEPTANCE BARRIER CERTIFICATE
- * VERSION: v1.0.0-R1D-B0F-B4-R1
+ * TITLE: WILSY OS Pre-Workspace Legal Acceptance Barrier Certificate
+ * VERSION: v1.1.0-SAME-SESSION-LEGAL-RELEASE-CERT
  * AUTHORITY: Wilsy OS Core Governance; client projection evidence only
  * EPITOME: Proves that legal status resolves before protected workspace
  *           composition and that required/unavailable states fail closed.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/App.legalAcceptanceBarrier.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises App's LegalAcceptanceBoundary and its
  *                            server-owned status transport.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.0.0 certifies loading, required, unavailable, and complete
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: v1.1.0-SAME-SESSION-LEGAL-RELEASE-CERT certifies that the final
+ *            server-confirmed acceptance transitions the boundary from REQUIRED
+ *            to COMPLETE and mounts protected runtime without browser reload.
+ *            v1.0.0 certified loading, required, unavailable, and complete
  *            composition ordering without protected endpoint prefetch.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic legal plans only; no credential,
+ *                             evidence, token, or tenant authority is persisted.
  * AUTHORITY BOUNDARY: Client presentation only; Python EOS owns legal truth.
+ * TENANT BOUNDARY: Only the server-issued plan tenant is represented.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  */
 import React from 'react';
 import { readFileSync } from 'node:fs';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LegalAcceptanceBoundary } from '../../src/App.jsx';
 import api from '../../src/services/api';
 
 vi.mock('../../src/services/api', () => ({
-  default: { get: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn() },
 }));
 
 const required = { status: 'DOCUMENT_APPROVAL_REQUIRED', tenantId: 'tenant-1', documents: [] };
+
+const requiredAcceptance = {
+  status: 'USER_TERMS_REQUIRED',
+  tenantId: 'tenant-1',
+  documents: [
+    {
+      agreementType: 'USER_TERMS',
+      documentId: 'terms-v1',
+      version: '1.1.0-APPROVED',
+      sha3_512: 'b'.repeat(128),
+      title: 'WILSY OS User Terms',
+      locale: 'en-ZA',
+      effectiveFrom: '2026-09-20T00:00:00Z',
+      content: 'Server-issued legal terms.',
+      accepted: false,
+    },
+  ],
+};
+
+const completeAcceptance = {
+  ...requiredAcceptance,
+  status: 'COMPLETE',
+  documents: requiredAcceptance.documents.map((document) => ({
+    ...document,
+    accepted: true,
+  })),
+};
 
 describe('LegalAcceptanceBoundary', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -60,6 +94,28 @@ describe('LegalAcceptanceBoundary', () => {
     await waitFor(() => expect(screen.getByTestId('protected-runtime')).toBeInTheDocument());
   });
 
+  it('releases protected runtime in the same session after final server-confirmed acceptance', async () => {
+    api.get
+      .mockResolvedValueOnce({ data: requiredAcceptance })
+      .mockResolvedValueOnce({ data: completeAcceptance });
+    api.post.mockResolvedValueOnce({ data: { status: 'RECORDED' } });
+
+    render(
+      <MemoryRouter initialEntries={['/covenant']}>
+        <LegalAcceptanceBoundary runtime={<div data-testid="protected-runtime" />} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /review document/i }));
+    fireEvent.click(screen.getByRole('button', { name: /record acceptance/i }));
+
+    await waitFor(() => expect(screen.getByTestId('protected-runtime')).toBeInTheDocument());
+
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId('document-focus-mode')).not.toBeInTheDocument();
+  });
+
   it('does not re-prompt on a fresh mount after durable server COMPLETE', async () => {
     api.get.mockResolvedValue({ data: { status: 'COMPLETE', tenantId: 'tenant-1', documents: [] } });
 
@@ -91,7 +147,7 @@ describe('LegalAcceptanceBoundary', () => {
 });
 
 // ARTIFACT: App.legalAcceptanceBarrier.test.jsx
-// VERSION: v1.0.0-R1D-B0F-B4-R1
+// VERSION: v1.1.0-SAME-SESSION-LEGAL-RELEASE-CERT
 // AUTHORITY BOUNDARY: deterministic pre-workspace barrier certificate only
 // TENANT POSTURE: legal status is server-issued; no local legal truth
 // FAIL-CLOSED POSTURE: unresolved, required, or unavailable status blocks runtime
