@@ -3,15 +3,15 @@
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
+ * Version:        v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
  * Authority:      Wilsy OS Core Governance
- * Epitome:        Operator AI dock. Uses sovereign `api` service exclusively.
- *                 Kennel health and registry are fetched via `/kernel` and
- *                 `/source-registry/health`; canonical billing-intelligence
- *                 evidence is fetched as a separate read-only projection.
- *                 Assistant replies are generated via backend `POST /api/ai/operator`.
- *                 C1C/C1E legal advisory truth is rendered through the certified
- *                 R1B transport adapter and remains client-memory-only.
+ * Epitome:        Authority-aware operator dock. Kernel posture comes only from
+ *                 the canonical /kernel transport. Legal workspace Ask requests
+ *                 use certified C1C legal-services transport rather than the
+ *                 unmounted legacy /api/ai/operator route. Billing-intelligence
+ *                 evidence is probed only for the bounded legal-finance role.
+ *                 Conversation history is explicitly session-memory only until a
+ *                 Python-EOS durable history authority is separately certified.
  * Classification: Production Artifact — Institutional Contract
  * Tenant Boundary: C1E payloads are server-scoped and rendered without client
  *                   tenant inference or persistence.
@@ -27,7 +27,7 @@
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
- *   2026-09-17 v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION — Consumed only the
+ *   2026-09-17 v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME — Consumed only the
  *     bounded persisted session projection and replaced identity/tenant defaults
  *     with an explicit unresolved posture.
  *   2026-09-17 v4.3.1-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION — Consolidated
@@ -51,12 +51,12 @@
  *   Upstream:   ../../services/api, authContext/tenantContext (soft),
  *               suggestion + history engines
  *   Downstream: App shell, Boardroom, Founder chrome
- *   Kennel:     GET /api/kernel (health) + GET /source-registry/health (optional)
- *               GET /billing/intelligence/evidence (optional canonical evidence)
- *               POST /api/ai/operator (Phase 4)
+ *   Kennel:     GET /api/kernel (health)
+ *               GET /billing/intelligence/evidence (LEGAL_FINANCE optimization only)
+ *               C1C legal-services transport for legal workspace Ask
  *               C1C/C1E legal advisory transport (R1B adapter)
  *
- * Certification Seal: PRODUCTION_READY_v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
+ * Certification Seal: PRODUCTION_READY_v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -264,6 +264,25 @@ function resolveAuthoritativeTenantBrand(tenant) {
   ).trim();
 }
 
+const normalizeDockRole = (role) => String(role || '').trim().toUpperCase();
+
+const isLegalDockRole = (role) => {
+  const token = normalizeDockRole(role);
+  return (
+    token.startsWith('LEGAL_')
+    || token.startsWith('TENANT_LEGAL_')
+    || token === 'SHERIFF'
+    || token === 'DEPUTY'
+    || token === 'TENANT_SHERIFF'
+    || token === 'TENANT_DEPUTY'
+  );
+};
+
+const canProbeBillingIntelligence = (role) => (
+  ['LEGAL_FINANCE', 'TENANT_LEGAL_FINANCE'].includes(normalizeDockRole(role))
+);
+
+
 /**
  * @function WilsyOSIntelligenceDock
  * @description Kennel Phase‑4 intelligence surface – sovereign api + backend operator.
@@ -306,26 +325,23 @@ export function WilsyOSIntelligenceDock({
     });
 
     let billingIntelligenceEvidence;
-    try {
-      // `as_of` is only the requested evidence snapshot boundary. The
-      // server remains sovereign for tenant authorization, observations,
-      // aggregation, fingerprints, and unsupported-output declarations.
-      const asOf = new Date().toISOString();
-      const billingRes = await api.get('/billing/intelligence/evidence', {
-        params: { as_of: asOf },
-        timeout: 8000,
-      });
-      if (
-        billingRes?.status === 200
-        && billingRes?.data
-        && typeof billingRes.data === 'object'
-      ) {
-        // Preserve the canonical server payload unchanged; no client
-        // normalization, recomputation, or authorization inference.
-        billingIntelligenceEvidence = billingRes.data;
+    if (canProbeBillingIntelligence(authUser?.role)) {
+      try {
+        const asOf = new Date().toISOString();
+        const billingRes = await api.get('/billing/intelligence/evidence', {
+          params: { as_of: asOf },
+          timeout: 8000,
+        });
+        if (
+          billingRes?.status === 200
+          && billingRes?.data
+          && typeof billingRes.data === 'object'
+        ) {
+          billingIntelligenceEvidence = billingRes.data;
+        }
+      } catch {
+        // Optional finance evidence remains server-authorized and fail-quiet.
       }
-    } catch {
-      // Optional billing evidence is fail-quiet; never fabricate billing facts.
     }
 
     try {
@@ -335,26 +351,13 @@ export function WilsyOSIntelligenceDock({
       const live = String(kernel.status || '').toUpperCase() === 'OPERATIONAL';
       setKennelPosture(live ? 'OPERATIONAL' : 'DEGRADED');
 
-      let registry = {};
-      try {
-        const regRes = await api.get('/source-registry/health', {
-          params: { wilsyAiContext: 'RESOLVE' },
-          timeout: 6000,
-        });
-        if (regRes?.status === 200) registry = regRes.data || {};
-      } catch {
-        // optional surface – quiet
-      }
-
       const normalizedDockContext = buildWilsyAIProductivityCopy({
-        ...registry,
-        result: live ? 'WILSY_AI_SOVEREIGN_CONTEXT_RESOLVED' : registry.result,
+        result: live ? 'WILSY_AI_SOVEREIGN_CONTEXT_RESOLVED' : 'SOURCE_DEGRADED',
         kennel: kernel,
-        bridge: kernel.bridge || registry.bridge,
+        bridge: kernel.bridge,
         workspace: {
-          ...(registry.workspace || {}),
-          operatingRole: authUser?.role || registry.workspace?.operatingRole || 'UNRESOLVED',
-          tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || registry.workspace?.tenantId || '',
+          operatingRole: authUser?.role || 'UNRESOLVED',
+          tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
         },
       });
       if (billingIntelligenceEvidence) {
@@ -381,10 +384,13 @@ export function WilsyOSIntelligenceDock({
    * @description Creates a new conversation thread without clearing existing history.
    * @institutional Allows operators to compartmentalize conversations by topic.
    */
-  const handleNewThread = useCallback(() => {
+  const handleNewThread = useCallback(async () => {
     try {
-      const fresh = createWilsyAIConversationThread('New Sovereign Session');
-      setConversationThreads(prev => [fresh, ...prev]);
+      const fresh = await createWilsyAIConversationThread({
+        title: 'New Sovereign Session',
+        workspace: 'WILSY OS',
+      });
+      setConversationThreads((prev) => [fresh, ...prev.filter((item) => item.id !== fresh.id)]);
       setActiveThreadId(fresh.id);
     } catch (err) {
       setErrorMessage(err?.message || 'Failed to create a new thread.');
@@ -399,7 +405,7 @@ export function WilsyOSIntelligenceDock({
   const handleRefresh = useCallback(async () => {
     setErrorMessage('');
     try {
-      const refreshed = loadWilsyAIConversationThreads() || [];
+      const refreshed = await loadWilsyAIConversationThreads();
       setConversationThreads(refreshed);
       if (!refreshed.find(t => t.id === activeThreadId)) {
         setActiveThreadId(refreshed[0]?.id || null);
@@ -411,19 +417,31 @@ export function WilsyOSIntelligenceDock({
   }, [activeThreadId, hydrateDockContext]);
 
   useEffect(() => {
-    let threads = [];
-    try {
-      threads = loadWilsyAIConversationThreads() || [];
-    } catch {
-      threads = [];
-    }
-    if (!threads.length) {
-      const fresh = createWilsyAIConversationThread('New Sovereign Session');
-      threads = [fresh];
-    }
-    setConversationThreads(threads);
-    setActiveThreadId(threads[0]?.id || null);
-    hydrateDockContext();
+    let active = true;
+    const hydrate = async () => {
+      try {
+        let threads = await loadWilsyAIConversationThreads();
+        if (!threads.length) {
+          const fresh = await createWilsyAIConversationThread({
+            title: 'New Sovereign Session',
+            workspace: 'WILSY OS',
+          });
+          threads = [fresh];
+        }
+        if (active) {
+          setConversationThreads(threads);
+          setActiveThreadId(threads[0]?.id || null);
+        }
+      } catch {
+        if (active) {
+          setConversationThreads([]);
+          setActiveThreadId(null);
+        }
+      }
+      await hydrateDockContext();
+    };
+    void hydrate();
+    return () => { active = false; };
   }, [hydrateDockContext]);
 
   useEffect(() => {
@@ -473,15 +491,23 @@ export function WilsyOSIntelligenceDock({
       let threadId = activeThreadId;
       try {
         if (!threadId) {
-          const fresh = createWilsyAIConversationThread(
-            text.slice(0, 48) || 'New Sovereign Session'
-          );
+          const fresh = await createWilsyAIConversationThread({
+            title: text.slice(0, 48) || 'New Sovereign Session',
+            promptText: text,
+            workspace: 'WILSY OS',
+          });
           threadId = fresh.id;
           setActiveThreadId(threadId);
           setConversationThreads((prev) => [fresh, ...prev.filter((t) => t.id !== fresh.id)]);
         }
-        const afterUser = persistWilsyAIConversationTurn(threadId, userTurn);
-        setConversationThreads([...afterUser]);
+        const afterUser = await persistWilsyAIConversationTurn({
+          threadId,
+          message: userTurn,
+        });
+        setConversationThreads((prev) => [
+          afterUser,
+          ...prev.filter((item) => item.id !== afterUser.id),
+        ]);
       } catch (err) {
         setErrorMessage(err?.message || 'Failed to record operator turn.');
         setIsSubmitting(false);
@@ -489,35 +515,45 @@ export function WilsyOSIntelligenceDock({
       }
 
       try {
-        // --- Phase 4: Backend call to /api/ai/operator ---
-        const { billingIntelligenceEvidence, ...operatorDockContext } = dockContext || {};
-        const requestBody = {
-          prompt: text,
-          context: {
-            ...operatorDockContext,
-            ...(billingIntelligenceEvidence
-              ? { canonicalBillingIntelligenceEvidence: billingIntelligenceEvidence }
-              : {}),
-            threadId,
-            history: activeThread?.messages || [],
-          },
-          forcedIntent: '',
-          kennelPosture: kennelPosture,
-        };
+        let result;
+        if (isLegalDockRole(authUser?.role)) {
+          const response = await executeWilsyAILegalServices(text, uuidv4());
+          const legal = response?.data || {};
+          result = {
+            reply:
+              legal.response_text
+              || 'The legal-services authority returned no response text.',
+            source: 'WILSY_AI_LEGAL_SERVICES',
+            phase: 'C1C',
+            intent: legal.outcome || 'LEGAL_SERVICES',
+            domain: 'LEGAL',
+            tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
+          };
+        } else {
+          const { billingIntelligenceEvidence, ...operatorDockContext } = dockContext || {};
+          const requestBody = {
+            prompt: text,
+            context: {
+              ...operatorDockContext,
+              ...(billingIntelligenceEvidence
+                ? { canonicalBillingIntelligenceEvidence: billingIntelligenceEvidence }
+                : {}),
+              threadId,
+              history: activeThread?.messages || [],
+            },
+            forcedIntent: '',
+            kennelPosture,
+          };
 
-        // Inject tenant header via api service (already handles x-tenant-id)
-        // We can also pass tenantId in body for explicit scoping
-        const response = await api.post('/api/ai/operator', requestBody, {
-          headers: {
-            'X-Tenant-Id': activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
-            'X-Wilsy-Kennel-Posture': kennelPosture,
-          },
-          timeout: 30000, // Allow up to 30s for engine reasoning
-        });
-
-        const result = response?.data?.intelligence || response?.data?.data || null;
-        if (!result) {
-          throw new Error('Backend returned empty intelligence.');
+          const response = await api.post('/ai/operator', requestBody, {
+            headers: {
+              'X-Tenant-Id': activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
+              'X-Wilsy-Kennel-Posture': kennelPosture,
+            },
+            timeout: 30000,
+          });
+          result = response?.data?.intelligence || response?.data?.data || null;
+          if (!result) throw new Error('Backend returned empty intelligence.');
         }
 
         const content =
@@ -542,8 +578,14 @@ export function WilsyOSIntelligenceDock({
           },
         };
 
-        const afterAssistant = persistWilsyAIConversationTurn(threadId, assistantTurn);
-        setConversationThreads([...afterAssistant]);
+        const afterAssistant = await persistWilsyAIConversationTurn({
+          threadId,
+          message: assistantTurn,
+        });
+        setConversationThreads((prev) => [
+          afterAssistant,
+          ...prev.filter((item) => item.id !== afterAssistant.id),
+        ]);
       } catch (err) {
         // Fallback: use local engine only if backend fails (but Phase 4 removes local engine)
         // We can either show an error or use a simple fallback message.
@@ -556,8 +598,14 @@ export function WilsyOSIntelligenceDock({
           timestamp: new Date().toISOString(),
         };
         try {
-          const afterFail = persistWilsyAIConversationTurn(threadId, failTurn);
-          setConversationThreads([...afterFail]);
+          const afterFail = await persistWilsyAIConversationTurn({
+            threadId,
+            message: failTurn,
+          });
+          setConversationThreads((prev) => [
+            afterFail,
+            ...prev.filter((item) => item.id !== afterFail.id),
+          ]);
         } catch {
           /* ignore */
         }
@@ -1036,7 +1084,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
  * ═══════════════════════════════════════════════════════════════════════════════
  * Phase 4 complete: local engine replaced with backend POST /api/ai/operator.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
@@ -1049,7 +1097,7 @@ export default WilsyOSIntelligenceDock;
  * Phase 5 next: move conversation history to server (tenant‑scoped).
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.3.2-AUTHENTICATED-RUNTIME-PROJECTION
+ * VERSION: v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
