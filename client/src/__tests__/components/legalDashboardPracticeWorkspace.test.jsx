@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT
+ * VERSION: v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT certifies D17 server-bound permission provenance in the Legal Command Center: an authoritative empty Legal permission projection removes Partner intake/return/finance affordances while retaining read-only workspace visibility, and authoritative-empty LEGAL_FINANCE performs no finance evidence transport. Absent server provenance still preserves the D16 role baseline.
+ * CHANGELOG: 2026-09-24 v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT certifies the D18 visible authority-posture surface: server-authoritative projections, compatibility role baselines and legacy narrowing hints are labeled distinctly; effective lanes match the already-certified presentation gates; explanatory posture cannot widen commands or create Legal/financial authority.
+ *            2026-09-24 v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT certifies D17 server-bound permission provenance in the Legal Command Center: an authoritative empty Legal permission projection removes Partner intake/return/finance affordances while retaining read-only workspace visibility, and authoritative-empty LEGAL_FINANCE performs no finance evidence transport. Absent server provenance still preserves the D16 role baseline.
  *            2026-09-24 v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT certifies permission-aware narrowing for Legal Practice/Finance presentation: explicit legal permission hints can remove intake, ReturnOfService and finance affordances but cannot widen the canonical role envelope; absent legal permission hints preserve the certified role baseline.
  *            2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT binds the production dashboard to the D15 V2 workspace, proves canonical matter rendering/search/drilldown, linked lifecycle operating-room composition, and post-intake navigation to the refreshed persisted matter without adding browser authority.
  *            2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
@@ -491,6 +492,47 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(generateLegalReturnOfService.mock.calls[0][0]).not.toHaveProperty('tenantId');
   });
 
+  it('shows compatibility role-baseline provenance when no explicit Legal permissions exist', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{ id: 'principal-partner-baseline' }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+    const posture = screen.getByLabelText('Legal presentation authority posture');
+    expect(within(posture).getByText('Role baseline compatibility')).toBeInTheDocument();
+    expect(within(posture).getByText('LEGAL_PARTNER')).toBeInTheDocument();
+    expect(within(posture).getByText(
+      'Intake · Return generation · Billing evidence · Invoice evidence',
+    )).toBeInTheDocument();
+    expect(within(posture).getByText(/Python EOS re-authorizes every Legal Operations request/i)).toBeInTheDocument();
+  });
+
+  it('shows legacy narrowing provenance without presenting it as server authority', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_ATTORNEY"
+        user={{
+          id: 'principal-attorney-legacy-narrow',
+          permissions: ['legal_operations:instruction:write'],
+        }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+    const posture = screen.getByLabelText('Legal presentation authority posture');
+    expect(within(posture).getByText('Legacy narrowing hints')).toBeInTheDocument();
+    expect(within(posture).getByText('Intake')).toBeInTheDocument();
+    expect(within(posture).queryByText(/Return generation/)).not.toBeInTheDocument();
+    expect(within(posture).queryByText(/Billing evidence/)).not.toBeInTheDocument();
+  });
+
   it('narrows a Partner to explicit invoice-read presentation without widening browser authority', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
 
@@ -557,6 +599,11 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
     await screen.findByText('Legal Operations Command Center');
 
+    const posture = screen.getByLabelText('Legal presentation authority posture');
+    expect(within(posture).getByText('Server permission projection')).toBeInTheDocument();
+    expect(within(posture).getByText('LEGAL_PARTNER')).toBeInTheDocument();
+    expect(within(posture).getByText('Read-only')).toBeInTheDocument();
+
     expect(screen.getByRole('button', { name: 'Matters' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Instructions' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
@@ -584,6 +631,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     );
 
     expect(await screen.findByText('Legal Finance Evidence')).toBeInTheDocument();
+    const posture = screen.getByLabelText('Legal presentation authority posture');
+    expect(within(posture).getByText('Server permission projection')).toBeInTheDocument();
+    expect(within(posture).getByText('LEGAL_FINANCE')).toBeInTheDocument();
+    expect(within(posture).getByText('Read-only')).toBeInTheDocument();
     expect(
       screen.getByText('Finance evidence is read-only for this permission posture'),
     ).toBeInTheDocument();
@@ -720,10 +771,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT
- * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D17 server-bound Legal permission provenance and browser hints may only narrow the canonical role envelope and never prove authorization
+ * VERSION: v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT
+ * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D18 posture text reports provenance/effective lanes but neither it nor D17/browser permission hints can widen the canonical role envelope or prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
- * FAIL-CLOSED POSTURE: role denial, explicit/server-authoritative permission narrowing including an empty grant set, command failure and cross-role drift never fallback, widen role scope or invent success
+ * FAIL-CLOSED POSTURE: role denial, explicit/server-authoritative permission narrowing including an empty grant set, misleading authority provenance, command failure and cross-role drift never fallback, widen role scope, invent operating-model authority or invent success
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
