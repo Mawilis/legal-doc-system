@@ -2724,9 +2724,9 @@ export default function LegalDashboard({
       ),
     );
     const labels = [];
-    if (kinds.has(FIELD_COMMANDS.BEGIN)) labels.push('Begin attempt');
-    if (kinds.has(FIELD_COMMANDS.COMPLETED)) labels.push('Record completed outcome');
-    if (kinds.has(FIELD_COMMANDS.NOT_COMPLETED)) labels.push('Record not completed');
+    if (kinds.has(FIELD_COMMAND_KIND.BEGIN)) labels.push('Begin attempt');
+    if (kinds.has(FIELD_COMMAND_KIND.COMPLETED)) labels.push('Record completed outcome');
+    if (kinds.has(FIELD_COMMAND_KIND.NOT_COMPLETED)) labels.push('Record not completed');
     return labels;
   }, [deputyCapabilities.capabilities]);
 
