@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION
+ * VERSION: v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION presents the authenticated canonical tenant practice profile inside Legal Practice workspaces: legal/name identity plus alias, industry, region and sector when projected by Python EOS workspace-bootstrap. The panel is descriptive only and explicitly cannot establish law-firm operating model, role, permission, plan, subscription, branding, billing, payment, execution or settlement authority.
+ * CHANGELOG: 2026-09-25 v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION consumes only the authenticated firstName/lastName projection already admitted by AuthContext, presents the exact human name as primary Legal operator identity across practice, finance, client and role-activity posture, and retains authenticated email as secondary identity when distinct. It never parses email, role labels, tenant data or browser storage into a person name; malformed/absent name text is ignored and existing email/opaque-principal fallback remains descriptive only. No membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority is created.
+ *            2026-09-24 v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION presents the authenticated canonical tenant practice profile inside Legal Practice workspaces: legal/name identity plus alias, industry, region and sector when projected by Python EOS workspace-bootstrap. The panel is descriptive only and explicitly cannot establish law-firm operating model, role, permission, plan, subscription, branding, billing, payment, execution or settlement authority.
  *            2026-09-24 v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE makes every published Legal persona visibly identity/activity aware. Practice and Finance posture now includes the authenticated principal; LEGAL_CLIENT exposes server client-visibility scope; SHERIFF exposes server operational-queue scope; DEPUTY exposes bound-work plus current server-issued field-command capabilities. All posture surfaces are explanatory only and cannot create role, permission, capability, tenant, legal, financial, payment or settlement authority.
  *            2026-09-24 v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE makes the Legal Practice and Legal Finance workspaces visibly authority-aware: operators can see whether presentation narrowing is sourced from the current server permission projection, legacy narrowing hints, or the compatibility role baseline, plus the effective Legal command/evidence lanes inside the canonical role envelope. The posture is explanatory only and cannot grant authorization, mutate Legal Operations truth, create a law-firm operating-model authority, or imply financial execution.
  *            2026-09-24 v11.2.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION consumes the D17 server-owned Legal presentation-permission provenance from AuthContext: legalPermissionsAuthoritative=true makes even an empty permission set an intentional least-authority posture, while absence of server permission provenance preserves the certified D16 role baseline for compatibility. Explicit permission hints still only narrow the canonical role envelope; Python EOS remains final authorization authority.
@@ -138,7 +139,7 @@ import {
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION';
+const DASHBOARD_VERSION = 'v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -301,6 +302,32 @@ function canonicalPresentationRole(value) {
   return normalizeRoleToken(value).replace(/^TENANT_/, '');
 }
 
+function exactPrincipalText(value) {
+  if (
+    typeof value !== 'string'
+    || !value
+    || value !== value.trim()
+  ) {
+    return '';
+  }
+  return value;
+}
+
+function legalAuthenticatedIdentity(user, fallbackLabel = 'Authenticated legal operator') {
+  const firstName = exactPrincipalText(user?.firstName);
+  const lastName = exactPrincipalText(user?.lastName);
+  const personName = [firstName, lastName].filter(Boolean).join(' ');
+  const email = exactPrincipalText(user?.email);
+  const principalId = exactPrincipalText(user?.id);
+
+  return Object.freeze({
+    displayName: personName || email || principalId || fallbackLabel,
+    email,
+    principalId,
+    personName,
+  });
+}
+
 function explicitLegalPermissionHints(user) {
   const values = [
     ...(Array.isArray(user?.permissions) ? user.permissions : []),
@@ -330,7 +357,7 @@ function presentationAllowsPermission({ roleToken, user, permission }) {
 
 function LegalPresentationAuthorityPosture({ roleToken, user }) {
   const role = canonicalPresentationRole(roleToken);
-  const principal = user?.email || user?.displayName || user?.name || user?.id || 'Not projected';
+  const identity = legalAuthenticatedIdentity(user, 'Not projected');
   const explicitHints = explicitLegalPermissionHints(user);
   const authoritative = user?.legalPermissionsAuthoritative === true;
   const source = authoritative
@@ -387,8 +414,15 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
             <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
               Authenticated principal
             </dt>
-            <dd className="mt-1 truncate font-mono text-stone-200" title={principal}>
-              {principal}
+            <dd className="mt-1 min-w-0" title={identity.displayName}>
+              <span className="block truncate font-semibold text-stone-200">
+                {identity.displayName}
+              </span>
+              {identity.email && identity.email !== identity.displayName && (
+                <span className="mt-1 block truncate font-mono text-[10px] text-stone-500">
+                  {identity.email}
+                </span>
+              )}
             </dd>
           </div>
           <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
@@ -424,7 +458,7 @@ function LegalRoleActivityPosture({
   boundary,
 }) {
   const role = canonicalPresentationRole(roleToken);
-  const principal = user?.email || user?.displayName || user?.name || user?.id || 'Not projected';
+  const identity = legalAuthenticatedIdentity(user, 'Not projected');
   const activityList = Array.isArray(activities) && activities.length > 0
     ? activities
     : ['No current governed activity'];
@@ -445,9 +479,14 @@ function LegalRoleActivityPosture({
               <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
                 Authenticated principal
               </p>
-              <p className="mt-1 truncate font-mono text-stone-200" title={principal}>
-                {principal}
+              <p className="mt-1 truncate font-semibold text-stone-200" title={identity.displayName}>
+                {identity.displayName}
               </p>
+              {identity.email && identity.email !== identity.displayName && (
+                <p className="mt-1 truncate font-mono text-[10px] text-stone-500">
+                  {identity.email}
+                </p>
+              )}
             </div>
             <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
               <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
@@ -888,13 +927,13 @@ function LegalClientWorkspace({
       || tenantConfig?.id
       || '',
   };
+  const clientIdentity = legalAuthenticatedIdentity(
+    user,
+    'Authenticated legal client',
+  );
   const operator = {
     ...(user || {}),
-    displayName:
-      user?.displayName
-      || user?.name
-      || user?.email
-      || 'Authenticated legal client',
+    displayName: clientIdentity.displayName,
     role: 'LEGAL_CLIENT',
   };
 
@@ -2078,9 +2117,13 @@ function LegalPracticeWorkspace({
     ...(tenantConfig || {}),
     tenantId: workspace.tenantId || tenantConfig?.tenantId || tenantConfig?.id || '',
   };
+  const practiceIdentity = legalAuthenticatedIdentity(
+    user,
+    'Authenticated legal operator',
+  );
   const operator = {
     ...(user || {}),
-    displayName: user?.displayName || user?.name || user?.email || 'Authenticated legal operator',
+    displayName: practiceIdentity.displayName,
     role: roleToken || 'LEGAL_PRACTICE',
   };
 
@@ -2155,9 +2198,13 @@ function LegalFinanceWorkspace({
     ...(tenantConfig || {}),
     tenantId: tenantConfig?.tenantId || tenantConfig?.id || '',
   };
+  const financeIdentity = legalAuthenticatedIdentity(
+    user,
+    'Authenticated legal finance operator',
+  );
   const operator = {
     ...(user || {}),
-    displayName: user?.displayName || user?.name || user?.email || 'Authenticated legal finance operator',
+    displayName: financeIdentity.displayName,
     role: roleToken || 'LEGAL_FINANCE',
   };
 
@@ -3200,10 +3247,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION
- * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; D18 authority-posture copy explains presentation provenance/effective lanes but creates no role, permission, tenant, operating-model, legal or financial authority; Python EOS owns authorization and legal truth
+ * VERSION: v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION
+ * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; D24C authenticated person names are descriptive presentation from AuthContext and create no identity, membership, role, permission, tenant, operating-model, legal or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
- * FAIL-CLOSED POSTURE: unresolved role, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth, widens role scope, fabricates operating-model authority or cross-role fallback
+ * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
