@@ -1,7 +1,7 @@
 """WILSY OS CLI package boundary.
 
 TITLE: WILSY OS CLI Package Boundary
-VERSION: v1.0.0-D15G-CLI-LAZY-PACKAGE-BOUNDARY
+VERSION: v1.0.1-D15G-CLI-LAZY-PACKAGE-BOUNDARY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Keeps the CLI package importable without eagerly importing legacy
          command surfaces whose optional dependencies may be unavailable, while
@@ -11,6 +11,10 @@ COLLABORATION / OWNERSHIP: Python EOS CLI package boundary only. Individual CLI
                            modules retain ownership of their runtime semantics.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG:
+  v1.0.1-D15G-CLI-LAZY-PACKAGE-BOUNDARY — Declares the lazy compatibility
+    exports only to static type checkers so Pyright can validate __all__ without
+    creating runtime attributes that would bypass module __getattr__. Runtime
+    lazy import behavior and failure semantics are unchanged.
   v1.0.0-D15G-CLI-LAZY-PACKAGE-BOUNDARY — Replaces unconditional package-time
     imports with lazy compatibility resolution so independent CLI submodules can
     be imported and certified without being coupled to unrelated legacy doctor
@@ -28,10 +32,10 @@ FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains the exclusive financial
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 
-VERSION: Final[str] = "v1.0.0-D15G-CLI-LAZY-PACKAGE-BOUNDARY"
+VERSION: Final[str] = "v1.0.1-D15G-CLI-LAZY-PACKAGE-BOUNDARY"
 
 __all__ = [
     "CLICommands",
@@ -39,6 +43,14 @@ __all__ = [
     "CLIDoctor",
     "CLIReport",
 ]
+
+if TYPE_CHECKING:
+    # Static declarations only. These names must remain unbound at runtime so
+    # module __getattr__ retains sole ownership of lazy compatibility loading.
+    CLICommands: Any
+    CLIStatus: Any
+    CLIDoctor: Any
+    CLIReport: Any
 
 _LAZY_EXPORTS: Final[dict[str, tuple[str, str]]] = {
     "CLICommands": ("tools.eos.cli.commands", "CLICommands"),
@@ -82,7 +94,7 @@ def __dir__() -> list[str]:
 
 
 # ARTIFACT: tools/eos/cli/__init__.py
-# VERSION: v1.0.0-D15G-CLI-LAZY-PACKAGE-BOUNDARY
+# VERSION: v1.0.1-D15G-CLI-LAZY-PACKAGE-BOUNDARY
 # AUTHORITY BOUNDARY: import-only lazy CLI package compatibility boundary
 # TENANT POSTURE: none; no tenant read, projection, or mutation
 # FAIL-CLOSED POSTURE: unknown names fail; requested broken legacy exports propagate their own import failure without poisoning unrelated submodules
