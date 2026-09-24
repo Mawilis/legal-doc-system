@@ -1,13 +1,14 @@
 /**
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT
+ * VERSION: v1.4.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT certifies bounded consumption of the server-owned
+ * CHANGELOG: v1.4.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION-CERT certifies that firstName/lastName enter browser auth state only from READY workspace-bootstrap, overwrite forged login/MFA and persisted-browser name candidates, allow explicit null optional names without inference, and reject malformed server name values before session promotion. Person names remain descriptive and create no role, permission, tenant, entitlement, Legal command, billing, payment, execution or settlement authority.
+ *            v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT certifies bounded consumption of the server-owned
  *            workspace.legalPermissions projection: exact permissions and
  *            authoritative empty lists retain provenance, field absence preserves
  *            compatibility posture, and malformed/duplicate/unknown permissions
@@ -46,6 +47,8 @@ import { AUTH_STATES, AuthProvider, useAuth } from '../../src/contexts/authConte
 const authoritativeUser = {
   id: 'WILSYAUTH-browser-user',
   email: 'person@example.com',
+  firstName: 'FORGED LOGIN FIRST',
+  lastName: 'FORGED LOGIN LAST',
   tenantId: 'TENANT-BROWSER',
   permissions: ['legal:read'],
   mfaRegistered: true,
@@ -55,12 +58,16 @@ const workspaceBootstrap = ({
   tenantId = 'TENANT-BROWSER',
   businessRole = 'tenant_auditor',
   legalPermissions,
+  firstName = 'Canonical',
+  lastName = 'Principal',
 } = {}) => ({
   data: {
     status: 'READY',
     user: {
       id: 'WILSYAUTH-browser-user',
       email: 'person@example.com',
+      firstName,
+      lastName,
     },
     workspace: {
       tenantId,
@@ -150,6 +157,13 @@ describe('authoritative authentication state machine', () => {
     expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
     expect(api.defaults.headers.common.Authorization).toBe('Bearer session');
     expect(window.localStorage.getItem('wilsy_refresh_token')).toBeNull();
+    const promotedUser = JSON.parse(
+      window.localStorage.getItem('wilsy_sovereign_user'),
+    );
+    expect(promotedUser.firstName).toBe('Canonical');
+    expect(promotedUser.lastName).toBe('Principal');
+    expect(promotedUser.firstName).not.toBe('FORGED LOGIN FIRST');
+    expect(promotedUser.lastName).not.toBe('FORGED LOGIN LAST');
     expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456' });
   });
 
@@ -188,6 +202,8 @@ describe('authoritative authentication state machine', () => {
     window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
       id: 'WILSYAUTH-browser-user',
       email: 'person@example.com',
+      firstName: 'FORGED STORED FIRST',
+      lastName: 'FORGED STORED LAST',
       tenantId: 'TENANT-BROWSER',
       role: 'forged-browser-role',
       permissions: ['*'],
@@ -226,9 +242,13 @@ describe('authoritative authentication state machine', () => {
     );
     expect(persistedUser).toMatchObject({
       id: 'WILSYAUTH-browser-user',
+      firstName: 'Canonical',
+      lastName: 'Principal',
       tenantId: 'TENANT-BROWSER',
       role: 'tenant_legal_partner',
     });
+    expect(persistedUser.firstName).not.toBe('FORGED STORED FIRST');
+    expect(persistedUser.lastName).not.toBe('FORGED STORED LAST');
     expect(persistedUser.permissions).toEqual([
       'legal_operations:instruction:write',
       'legal_operations:return:write',
@@ -285,6 +305,67 @@ describe('authoritative authentication state machine', () => {
     );
     expect(persistedUser.permissions).toEqual([]);
     expect(persistedUser.legalPermissionsAuthoritative).toBe(false);
+  });
+
+  it('preserves explicit null optional names without inventing identity text', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    }));
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      firstName: null,
+      lastName: null,
+    }));
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    });
+
+    const persistedUser = JSON.parse(
+      window.localStorage.getItem('wilsy_sovereign_user'),
+    );
+    expect(persistedUser.firstName).toBeNull();
+    expect(persistedUser.lastName).toBeNull();
+    expect(JSON.stringify(persistedUser)).not.toContain('person');
+  });
+
+  it.each([
+    {
+      label: 'whitespace-mutated first name',
+      bootstrap: workspaceBootstrap({ firstName: ' Canonical ' }),
+    },
+    {
+      label: 'empty last name',
+      bootstrap: workspaceBootstrap({ lastName: '' }),
+    },
+    {
+      label: 'non-string first name',
+      bootstrap: workspaceBootstrap({ firstName: 42 }),
+    },
+  ])('fails session promotion closed for $label', async ({ bootstrap }) => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    }));
+    api.get.mockResolvedValueOnce(bootstrap);
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE);
+    });
+
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('wilsy_sovereign_user')).toBeNull();
   });
 
   it.each([
@@ -514,9 +595,10 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT
- * AUTHORITY BOUNDARY: deterministic browser projection certificate only; workspace Legal permission provenance is presentation-only and never authorization authority
- * CHANGELOG: v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT — Added exact, empty, absent and malformed Legal
+ * VERSION: v1.4.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION-CERT
+ * AUTHORITY BOUNDARY: deterministic browser projection certificate only; workspace principal names are descriptive identity and Legal permission provenance is presentation-only; neither is authorization authority
+ * CHANGELOG: v1.4.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION-CERT — Added server-only person-name projection, anti-login/persisted-name authority proofs, explicit null-name preservation, and malformed-name fail-closed evidence.
+ *            v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT — Added exact, empty, absent and malformed Legal
  * permission-projection evidence while retaining anti-JWT/browser-authority proofs.
  *            v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT — Added valid restore, principal-mismatch denial,
  * rejected-bearer purge, discovered-tenant continuity, canonical bearer restoration
