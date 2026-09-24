@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT
+ * VERSION: v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT binds the production dashboard to the D15 V2 workspace, proves canonical matter rendering/search/drilldown, linked lifecycle operating-room composition, and post-intake navigation to the refreshed persisted matter without adding browser authority.
+ * CHANGELOG: 2026-09-24 v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT certifies permission-aware narrowing for Legal Practice/Finance presentation: explicit legal permission hints can remove intake, ReturnOfService and finance affordances but cannot widen the canonical role envelope; absent legal permission hints preserve the certified role baseline.
+ *            2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT binds the production dashboard to the D15 V2 workspace, proves canonical matter rendering/search/drilldown, linked lifecycle operating-room composition, and post-intake navigation to the refreshed persisted matter without adding browser authority.
  *            2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
  *            v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; workspace behavior and authority are unchanged.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -489,6 +490,121 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(generateLegalReturnOfService.mock.calls[0][0]).not.toHaveProperty('tenantId');
   });
 
+  it('narrows a Partner to explicit invoice-read presentation without widening browser authority', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{
+          id: 'principal-partner-narrow',
+          permissions: ['legal_operations:invoice:read'],
+        }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finance Evidence' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Service Operations' }));
+    expect(screen.queryByRole('button', { name: 'Generate return' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Finance Evidence' }));
+    const evidenceType = screen.getByLabelText('Finance evidence type');
+    expect(within(evidenceType).getByRole('option', { name: 'Client invoice' })).toBeInTheDocument();
+    expect(within(evidenceType).queryByRole('option', { name: 'Tariff assessment' })).not.toBeInTheDocument();
+    expect(within(evidenceType).queryByRole('option', { name: 'Billing eligibility' })).not.toBeInTheDocument();
+  });
+
+  it('allows explicit instruction-write to retain intake while removing unrelated practice affordances', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_ATTORNEY"
+        user={{
+          id: 'principal-attorney-intake-only',
+          permissions: ['legal_operations:instruction:write'],
+        }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+
+    expect(screen.getByRole('button', { name: 'New Instruction' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finance Evidence' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Service Operations' }));
+    expect(screen.queryByRole('button', { name: 'Generate return' })).not.toBeInTheDocument();
+  });
+
+  it('never lets a Secretary self-elevate with browser permission claims outside the role envelope', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_SECRETARY"
+        user={{
+          id: 'principal-secretary-no-escalation',
+          permissions: [
+            'legal_operations:instruction:write',
+            'legal_operations:billing:read',
+          ],
+        }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finance Evidence' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Service Operations' }));
+    expect(screen.queryByRole('button', { name: 'Generate return' })).not.toBeInTheDocument();
+    expect(registerLegalIntake).not.toHaveBeenCalled();
+    expect(getLegalFinanceEvidence).not.toHaveBeenCalled();
+    expect(generateLegalReturnOfService).not.toHaveBeenCalled();
+  });
+
+  it('narrows LEGAL_FINANCE to invoice-only when explicit legal permissions say so', async () => {
+    getLegalFinanceEvidence.mockResolvedValueOnce({
+      tenantId: 'tenant-law',
+      entityType: 'ClientInvoice',
+      entityIdentity: 'invoice-002',
+      visibility: 'FINANCE_VISIBLE',
+      data: { invoice_id: 'invoice-002', state: 'ISSUED' },
+    });
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_FINANCE"
+        user={{
+          id: 'principal-finance-invoice-only',
+          permissions: ['legal_operations:invoice:read'],
+        }}
+        tenantConfig={{ tenantId: 'tenant-law' }}
+      />,
+    );
+
+    expect(await screen.findByText('Legal Finance Evidence')).toBeInTheDocument();
+
+    const evidenceType = screen.getByLabelText('Finance evidence type');
+    expect(within(evidenceType).getByRole('option', { name: 'Client invoice' })).toBeInTheDocument();
+    expect(within(evidenceType).queryByRole('option', { name: 'Tariff assessment' })).not.toBeInTheDocument();
+    expect(within(evidenceType).queryByRole('option', { name: 'Billing eligibility' })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Finance evidence identity'), {
+      target: { value: 'invoice-002' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify evidence' }));
+
+    await waitFor(() => {
+      expect(getLegalFinanceEvidence).toHaveBeenCalledWith('INVOICE', 'invoice-002');
+    });
+  });
+
   it('gives LEGAL_FINANCE an exact finance console without practice/client/field reads', async () => {
     getLegalFinanceEvidence.mockResolvedValueOnce({
       tenantId: 'tenant-law',
@@ -548,10 +664,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT
- * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only
+ * VERSION: v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT
+ * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; browser legal permission hints may only narrow the canonical role envelope and never prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
- * FAIL-CLOSED POSTURE: role denial, command failure and cross-role drift never fallback or invent success
+ * FAIL-CLOSED POSTURE: role denial, explicit permission narrowing, command failure and cross-role drift never fallback, widen role scope or invent success
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
