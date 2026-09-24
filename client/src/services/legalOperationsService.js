@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION
+ * VERSION: v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -18,7 +18,7 @@
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
+ * CHANGELOG: 2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.\n *            2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
  *            summary counter from the validated canonical rows before exposing
  *            dashboard metrics. Total-only consistency is no longer sufficient;
  *            any state-breakdown drift rejects fail-closed without fallback.
@@ -75,7 +75,7 @@
 import api from './api.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION';
+  'v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY';
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -129,6 +129,10 @@ const LEGAL_WORKSPACE_SCHEMA =
   'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V1';
 const LEGAL_WORKSPACE_VERSION =
   'v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API';
+const LEGAL_WORKSPACE_V2_SCHEMA =
+  'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2';
+const LEGAL_WORKSPACE_V2_VERSION =
+  'v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API';
 const LEGAL_WORKSPACE_VISIBILITY =
   'LEGAL_PRACTICE_WORKSPACE';
 
@@ -138,6 +142,20 @@ const LEGAL_WORKSPACE_RESPONSE_KEYS = Object.freeze([
   'tenant_id',
   'visibility',
   'summary',
+  'instructions',
+  'documents',
+  'attempts',
+  'executions',
+  'returns',
+]);
+
+const LEGAL_WORKSPACE_V2_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'visibility',
+  'summary',
+  'matters',
   'instructions',
   'documents',
   'attempts',
@@ -166,6 +184,13 @@ const LEGAL_WORKSPACE_SUMMARY_KEYS = Object.freeze([
   'executions_completed',
   'executions_not_completed',
   'returns_total',
+]);
+
+const LEGAL_WORKSPACE_V2_SUMMARY_KEYS = Object.freeze([
+  'matters_total',
+  'matters_open',
+  'matters_closed',
+  ...LEGAL_WORKSPACE_SUMMARY_KEYS,
 ]);
 
 const LEGAL_WORKSPACE_ROW_KEYS = Object.freeze({
@@ -216,7 +241,19 @@ const LEGAL_WORKSPACE_ROW_KEYS = Object.freeze({
   ]),
 });
 
+const LEGAL_WORKSPACE_V2_ROW_KEYS = Object.freeze({
+  matters: Object.freeze([
+    'case_matter_id',
+    'matter_reference',
+    'opened_at',
+    'state',
+    'evidence_identity',
+  ]),
+  ...LEGAL_WORKSPACE_ROW_KEYS,
+});
+
 const LEGAL_WORKSPACE_STATES = Object.freeze({
+  matters: Object.freeze(['OPEN', 'CLOSED']),
   instructions: Object.freeze(['REGISTERED', 'ACCEPTED', 'CLOSED', 'CANCELLED']),
   documents: Object.freeze([
     'REGISTERED',
@@ -590,19 +627,39 @@ function assertSortedRows(rows, identityKey, errorCode) {
 
 function assertCanonicalLegalWorkspacePayload(value) {
   const errorCode = 'LEGAL_OPERATIONS_WORKSPACE_RESPONSE_INVALID';
-  assertExactKeys(value, LEGAL_WORKSPACE_RESPONSE_KEYS, errorCode);
+  if (!isPlainObject(value)) throw new Error(errorCode);
+
+  const isV1 = (
+    value.schema === LEGAL_WORKSPACE_SCHEMA
+    && value.version === LEGAL_WORKSPACE_VERSION
+  );
+  const isV2 = (
+    value.schema === LEGAL_WORKSPACE_V2_SCHEMA
+    && value.version === LEGAL_WORKSPACE_V2_VERSION
+  );
+  if (!isV1 && !isV2) throw new Error(errorCode);
+
+  const responseKeys = isV2
+    ? LEGAL_WORKSPACE_V2_RESPONSE_KEYS
+    : LEGAL_WORKSPACE_RESPONSE_KEYS;
+  const summaryKeys = isV2
+    ? LEGAL_WORKSPACE_V2_SUMMARY_KEYS
+    : LEGAL_WORKSPACE_SUMMARY_KEYS;
+  const rowContracts = isV2
+    ? LEGAL_WORKSPACE_V2_ROW_KEYS
+    : LEGAL_WORKSPACE_ROW_KEYS;
+
+  assertExactKeys(value, responseKeys, errorCode);
   if (
-    value.schema !== LEGAL_WORKSPACE_SCHEMA
-    || value.version !== LEGAL_WORKSPACE_VERSION
-    || !isCanonicalText(value.tenant_id)
+    !isCanonicalText(value.tenant_id)
     || value.visibility !== LEGAL_WORKSPACE_VISIBILITY
     || !isPlainObject(value.summary)
   ) {
     throw new Error(errorCode);
   }
 
-  assertExactKeys(value.summary, LEGAL_WORKSPACE_SUMMARY_KEYS, errorCode);
-  for (const key of LEGAL_WORKSPACE_SUMMARY_KEYS) {
+  assertExactKeys(value.summary, summaryKeys, errorCode);
+  for (const key of summaryKeys) {
     if (
       !Number.isInteger(value.summary[key])
       || value.summary[key] < 0
@@ -612,6 +669,7 @@ function assertCanonicalLegalWorkspacePayload(value) {
   }
 
   const identityKeys = {
+    matters: 'case_matter_id',
     instructions: 'instruction_id',
     documents: 'document_id',
     attempts: 'attempt_id',
@@ -620,6 +678,7 @@ function assertCanonicalLegalWorkspacePayload(value) {
   };
 
   const timestampKeys = {
+    matters: 'opened_at',
     instructions: 'registered_at',
     documents: 'registered_at',
     attempts: 'allocated_at',
@@ -628,6 +687,7 @@ function assertCanonicalLegalWorkspacePayload(value) {
   };
 
   const stateKeys = {
+    matters: 'state',
     instructions: 'state',
     documents: 'state',
     attempts: 'state',
@@ -636,7 +696,7 @@ function assertCanonicalLegalWorkspacePayload(value) {
   };
 
   const arrays = {};
-  for (const [name, expectedKeys] of Object.entries(LEGAL_WORKSPACE_ROW_KEYS)) {
+  for (const [name, expectedKeys] of Object.entries(rowContracts)) {
     const rows = value[name];
     if (!Array.isArray(rows)) throw new Error(errorCode);
     assertSortedRows(rows, identityKeys[name], errorCode);
@@ -665,6 +725,11 @@ function assertCanonicalLegalWorkspacePayload(value) {
   );
 
   const expectedSummary = {
+    ...(isV2 ? {
+      matters_total: arrays.matters.length,
+      matters_open: countState(arrays.matters, 'state', 'OPEN'),
+      matters_closed: countState(arrays.matters, 'state', 'CLOSED'),
+    } : {}),
     instructions_total: arrays.instructions.length,
     instructions_registered: countState(arrays.instructions, 'state', 'REGISTERED'),
     instructions_accepted: countState(arrays.instructions, 'state', 'ACCEPTED'),
@@ -695,7 +760,7 @@ function assertCanonicalLegalWorkspacePayload(value) {
     throw new Error('LEGAL_OPERATIONS_WORKSPACE_SUMMARY_MISMATCH');
   }
 
-  return Object.freeze({
+  const adapted = {
     schema: value.schema,
     version: value.version,
     tenantId: value.tenant_id,
@@ -706,7 +771,9 @@ function assertCanonicalLegalWorkspacePayload(value) {
     attempts: arrays.attempts,
     executions: arrays.executions,
     returns: arrays.returns,
-  });
+  };
+  if (isV2) adapted.matters = arrays.matters;
+  return Object.freeze(adapted);
 }
 
 function assertCanonicalFinanceEvidence(value, expectedEntityType) {
@@ -1271,10 +1338,15 @@ export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalReturnCommandResponse,
   LEGAL_WORKSPACE_SCHEMA,
   LEGAL_WORKSPACE_VERSION,
+  LEGAL_WORKSPACE_V2_SCHEMA,
+  LEGAL_WORKSPACE_V2_VERSION,
   LEGAL_WORKSPACE_VISIBILITY,
   LEGAL_WORKSPACE_RESPONSE_KEYS,
+  LEGAL_WORKSPACE_V2_RESPONSE_KEYS,
   LEGAL_WORKSPACE_SUMMARY_KEYS,
+  LEGAL_WORKSPACE_V2_SUMMARY_KEYS,
   LEGAL_WORKSPACE_ROW_KEYS,
+  LEGAL_WORKSPACE_V2_ROW_KEYS,
   LEGAL_WORKSPACE_STATES,
   LEGAL_FINANCE_KINDS,
   DEPUTY_CAPABILITY_RESPONSE_KEYS,
@@ -1288,7 +1360,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION
+ * VERSION: v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
