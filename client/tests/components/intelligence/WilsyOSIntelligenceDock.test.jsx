@@ -1,14 +1,15 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — Sovereign Intelligence Dock Unit Tests (C1E-R1C Legal Advisory Projection)
+ * Wilsy OS — Sovereign Intelligence Dock Unit Tests (Authority-Aware Runtime)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
- * Version:        v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
+ * Version:        v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
  * Authority:      Wilsy OS Core Governance
- * Epitome:        Certifies canonical billing-intelligence evidence projection,
- *                 explicit snapshot requests, payload preservation, and
- *                 fail-quiet optional behavior alongside the Phase 4 operator seam.
- *                 C1E legal-advisory projection is explicit, read-only, and memory-only.
+ * Epitome:        Certifies authority-aware Intelligence Dock routing: generic
+ *                 non-legal Ask uses the canonical shared-api operator transport,
+ *                 legal roles remain on certified C1C legal-services transport,
+ *                 and billing-intelligence evidence is probed only for bounded
+ *                 legal-finance roles without creating financial authority.
  * Classification: Production Test Artifact — Institutional Contract
  *
  * Contributors:
@@ -16,6 +17,10 @@
  *   - AI Engineering – Corrected POST argument count; added third arg matcher.
  *
  * Change Log:
+ *   2026-09-24 v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT — Aligned direct
+ *     certification with finance-only billing evidence probes, C1C legal-role
+ *     routing, canonical /ai/operator shared-api transport, and the canonical
+ *     object-shaped session-history persistence contract.
  *   2026-09-17 v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT — Added WILSY OS brand,
  *     single-runtime, and source-gated tenant-brand certificates while preserving R1C coverage.
  *   2026-09-17 v1.2.0-C1E-R1C-LEGAL-ADVISORY-PROJECTION-CERT — Added C1C/C1E sequencing, governed status,
@@ -25,7 +30,7 @@
  *     and no-fabrication failure certificates.
  *   2026-08-07 v1.0.8-KENNEL-PHASE4 — Fixed POST calls to include third argument.
  *
- * Certification Seal: PRODUCTION_READY_v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
+ * Certification Seal: PRODUCTION_READY_v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -118,10 +123,11 @@ let mockThreads = [
 vi.mock('../../../src/components/intelligence/wilsyAIConversationHistoryEngine.js', () => ({
   loadWilsyAIConversationThreads: mockLoadThreads,
   createWilsyAIConversationThread: mockCreateThread,
-  persistWilsyAIConversationTurn: mockPersistTurn.mockImplementation((threadId, turn) => {
-    const thread = mockThreads.find(t => t.id === threadId);
-    if (thread) thread.messages.push(turn);
-    return [...mockThreads];
+  persistWilsyAIConversationTurn: mockPersistTurn.mockImplementation(({ threadId, message } = {}) => {
+    const thread = mockThreads.find((item) => item.id === threadId);
+    if (!thread) throw new Error('WILSY_AI_SESSION_THREAD_NOT_FOUND');
+    if (message && typeof message === 'object') thread.messages.push(message);
+    return { ...thread, messages: [...thread.messages] };
   }),
   clearWilsyAIConversationThreads: mockClearThreads,
 }));
@@ -244,7 +250,20 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(appSource.match(/<WilsyOSIntelligenceDockRuntime\b/g)).toHaveLength(1);
   });
 
-  it('requests canonical billing evidence with an explicit aware ISO as_of boundary', async () => {
+  it('does not probe billing intelligence for an unresolved or non-finance role', async () => {
+    mockApiGet.mockResolvedValue({ status: 200, data: { status: 'OPERATIONAL' } });
+
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_ATTORNEY', tenantId: 'TEST_TENANT' }} />);
+
+    await waitFor(() => {
+      expect(mockApiGet).toHaveBeenCalledWith('/kernel', expect.objectContaining({}));
+    });
+    expect(
+      mockApiGet.mock.calls.some(([path]) => path === '/billing/intelligence/evidence')
+    ).toBe(false);
+  });
+
+  it('requests canonical billing evidence only for legal-finance authority with an aware ISO as_of boundary', async () => {
     mockApiGet.mockImplementation((path) => {
       if (path === '/billing/intelligence/evidence') {
         return Promise.resolve({ status: 403, data: { detail: 'forbidden' } });
@@ -252,7 +271,7 @@ describe('WilsyOSIntelligenceDock', () => {
       return Promise.resolve({ status: path === '/kernel' ? 200 : 404, data: { status: 'OPERATIONAL' } });
     });
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_FINANCE', tenantId: 'TEST_TENANT' }} />);
 
     await waitFor(() => {
       const billingCall = mockApiGet.mock.calls.find(
@@ -265,7 +284,7 @@ describe('WilsyOSIntelligenceDock', () => {
     });
   });
 
-  it('preserves the canonical billing payload and names operator-context propagation explicitly', async () => {
+  it('keeps legal-finance Ask on C1C legal-services authority even when billing evidence is available', async () => {
     const canonicalEvidence = {
       tenant_id: 'TEST_TENANT',
       as_of: '2026-09-13T12:00:00+00:00',
@@ -285,30 +304,39 @@ describe('WilsyOSIntelligenceDock', () => {
       }
       return Promise.resolve({ status: 200, data: {} });
     });
-    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'ok' } } });
+    mockExecuteLegalServices.mockResolvedValue({
+      status: 200,
+      data: {
+        outcome: 'DIRECT_RESPONSE',
+        response_text: 'Finance-scoped legal response',
+      },
+    });
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_FINANCE', tenantId: 'TEST_TENANT' }} />);
     await waitFor(() => {
       expect(mockApiGet).toHaveBeenCalledWith(
         '/billing/intelligence/evidence',
         expect.objectContaining({ params: expect.objectContaining({ as_of: expect.any(String) }) })
       );
     });
+
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
-    fireEvent.change(textarea, { target: { value: 'Show billing evidence' } });
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Show finance context' },
+    });
     fireEvent.click(screen.getByLabelText('Send'));
 
-    await waitFor(() => expect(mockApiPost).toHaveBeenCalled());
-    const requestBody = mockApiPost.mock.calls[0][1];
-    expect(requestBody.context.canonicalBillingIntelligenceEvidence).toEqual(canonicalEvidence);
-    expect(requestBody.context).not.toHaveProperty('billingIntelligenceEvidence');
+    await waitFor(() => {
+      expect(mockExecuteLegalServices).toHaveBeenCalledTimes(1);
+    });
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.getByText('Finance-scoped legal response')).toBeInTheDocument();
   });
 
   it.each([
     ['unavailable', 'reject'],
     ['forbidden', 'forbidden'],
-  ])('fails quiet without fabrication when billing evidence is %s', async (_label, billingMode) => {
+  ])('fails quiet without fabricating or widening authority when finance evidence is %s', async (_label, billingMode) => {
     mockApiGet.mockImplementation((path) => {
       if (path === '/billing/intelligence/evidence') {
         return billingMode === 'reject'
@@ -318,23 +346,31 @@ describe('WilsyOSIntelligenceDock', () => {
       if (path === '/kernel') return Promise.resolve({ status: 200, data: { status: 'OPERATIONAL' } });
       return Promise.resolve({ status: 200, data: {} });
     });
-    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'ok' } } });
+    mockExecuteLegalServices.mockResolvedValue({
+      status: 200,
+      data: {
+        outcome: 'DIRECT_RESPONSE',
+        response_text: 'Bounded legal response',
+      },
+    });
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_FINANCE', tenantId: 'TEST_TENANT' }} />);
     await waitFor(() => {
       expect(mockApiGet).toHaveBeenCalledWith(
         '/billing/intelligence/evidence',
         expect.anything()
       );
     });
+
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
-    fireEvent.change(textarea, { target: { value: 'No fabricated billing facts' } });
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'No fabricated finance facts' },
+    });
     fireEvent.click(screen.getByLabelText('Send'));
 
-    await waitFor(() => expect(mockApiPost).toHaveBeenCalled());
-    const requestBody = mockApiPost.mock.calls[0][1];
-    expect(requestBody.context).not.toHaveProperty('canonicalBillingIntelligenceEvidence');
+    await waitFor(() => expect(mockExecuteLegalServices).toHaveBeenCalledTimes(1));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.getByText('Bounded legal response')).toBeInTheDocument();
   });
 
   it('switches tabs correctly', async () => {
@@ -364,7 +400,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/api/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Test reply')).toBeInTheDocument();
@@ -383,7 +419,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByLabelText('Send'));
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/api/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Button reply')).toBeInTheDocument();
@@ -454,7 +490,7 @@ describe('WilsyOSIntelligenceDock', () => {
 
     await waitFor(() => {
       expect(mockRecordSuggestionUsage).toHaveBeenCalledWith('sug1');
-      expect(mockApiPost).toHaveBeenCalledWith('/api/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Suggestion reply')).toBeInTheDocument();
@@ -536,7 +572,7 @@ describe('WilsyOSIntelligenceDock', () => {
       expect(screen.getByText(field, { exact: false })).toBeInTheDocument();
     }
     expect(screen.getByText('CURRENT')).toBeInTheDocument();
-    expect(mockApiPost).not.toHaveBeenCalledWith('/api/ai/operator', expect.anything(), expect.anything());
+    expect(mockApiPost).not.toHaveBeenCalledWith('/ai/operator', expect.anything(), expect.anything());
   });
 
   it('renders stale state and only permits read-only refresh or successor viewing', async () => {
@@ -604,16 +640,17 @@ describe('WilsyOSIntelligenceDock', () => {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
- * Direct tests certify the canonical billing-intelligence GET projection,
- * explicit snapshot boundary, unchanged payload forwarding, and fail-quiet behavior.
+ * Direct tests certify finance-only billing-intelligence probing, non-finance
+ * exclusion, canonical generic operator transport, C1C legal-role routing, and
+ * same-session conversation-history interaction without widening authority.
  * Broader client/CI certification remains a separate gate beyond this direct certificate.
  * Host-backed billing-intelligence evidence remains a separate runtime gate.
- * C1E-R1C legal advisory proof remains a read-only client projection; no command
- * or financial authority is introduced by these tests.
+ * C1E legal advisory proof remains a read-only client projection; no command,
+ * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.3.0-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION-CERT
+ * VERSION: v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
