@@ -1,7 +1,7 @@
 """WILSY OS durable tenant branding profile/current-selection registry.
 
 TITLE: Tenant Branding Profile Registry
-VERSION: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
+VERSION: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist immutable D21B3 approved profiles and D21B4A selection history,
          and maintain one explicit tenant-scoped current-selection pointer with
@@ -14,17 +14,20 @@ COLLABORATION / OWNERSHIP: D21B3 owns approved profile evidence; D21B4A owns
                             Runtime projection must separately re-read the current
                             D21B2 entitlement before presenting any branding.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY repairs the current-pointer branding-tier projection
-           so the registry honors the declared TenantBrandingTier | str domain
-           contract without unsafe attribute access. Durable authority,
-           transaction ownership, persistence semantics and fail-closed behavior
-           are unchanged.
-           v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY established strict tenant-scoped immutable profile and
-           selection persistence, explicit current-pointer correlation,
-           exact-current replay, deterministic uniqueness indexes, and
-           compare-and-set advancement under an already active caller-owned Mongo
-           transaction. Historical latest-row inference and browser/asset
-           resolution are prohibited.
+CHANGELOG: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY classifies Mongo errors explicitly labelled
+           TransientTransactionError as whole-transaction retry signals on
+           operational reads/writes. Unlabelled and non-transient persistence
+           failures remain unavailable/fail-closed; registry transaction
+           ownership is unchanged.
+           v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY repaired the current-pointer branding-tier projection so the
+           registry honors the declared TenantBrandingTier | str domain contract
+           without unsafe attribute access.
+           v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY established strict
+           tenant-scoped immutable profile and selection persistence, explicit
+           current-pointer correlation, exact-current replay, deterministic
+           uniqueness indexes, and compare-and-set advancement under an already
+           active caller-owned Mongo transaction. Historical latest-row inference
+           and browser/asset resolution are prohibited.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Persists only D21B3/D21B4A evidence and compact
                              currentness metadata. No asset bytes, raw URLs,
@@ -75,7 +78,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 )
 
 
-VERSION: Final[str] = "v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY"
+VERSION: Final[str] = "v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY"
 PROFILE_RECORD_SCHEMA: Final[str] = "WILSY-TENANT-BRANDING-PROFILE-RECORD/V1"
 SELECTION_RECORD_SCHEMA: Final[str] = (
     "WILSY-TENANT-BRANDING-PROFILE-SELECTION-RECORD/V1"
@@ -242,6 +245,25 @@ def _raise(
     raise error from cause
 
 
+def _raise_mongo_operational_error(error: PyMongoError) -> NoReturn:
+    """Map Mongo transaction-race evidence without owning transaction retries.
+
+    MongoDB/PyMongo marks retryable transaction races with the
+    TransientTransactionError label. The caller must abort and restart the
+    whole transaction from fresh state. Other persistence failures remain
+    unavailable and fail closed.
+    """
+    if error.has_error_label("TransientTransactionError"):
+        _raise(
+            TenantBrandingProfileRegistryRetryRequiredError,
+            cause=error,
+        )
+    _raise(
+        TenantBrandingProfileRegistryPersistenceUnavailableError,
+        cause=error,
+    )
+
+
 def _identity(name: str, value: object) -> str:
     """Validate one bounded tenant/profile/selection identity exactly."""
     if (
@@ -352,10 +374,7 @@ def _rows(
             row = target.find_one(dict(query), session=session)
             return [] if row is None else [cast(Mapping[str, Any], row)]
     except PyMongoError as error:
-        _raise(
-            TenantBrandingProfileRegistryPersistenceUnavailableError,
-            cause=error,
-        )
+        _raise_mongo_operational_error(error)
     _raise(
         TenantBrandingProfileRegistryInputError,
         "D21B4B_COLLECTION_INTERFACE_INVALID",
@@ -1001,10 +1020,7 @@ def persist_profile(
             cause=error,
         )
     except PyMongoError as error:
-        _raise(
-            TenantBrandingProfileRegistryPersistenceUnavailableError,
-            cause=error,
-        )
+        _raise_mongo_operational_error(error)
 
     persisted = get_profile(
         profile.tenant_id,
@@ -1171,10 +1187,7 @@ def persist_selection_and_advance_current(
             cause=error,
         )
     except PyMongoError as error:
-        _raise(
-            TenantBrandingProfileRegistryPersistenceUnavailableError,
-            cause=error,
-        )
+        _raise_mongo_operational_error(error)
 
     next_pointer = _pointer_for(selection)
     try:
@@ -1196,10 +1209,7 @@ def persist_selection_and_advance_current(
             cause=error,
         )
     except PyMongoError as error:
-        _raise(
-            TenantBrandingProfileRegistryPersistenceUnavailableError,
-            cause=error,
-        )
+        _raise_mongo_operational_error(error)
 
     persisted = get_current(
         selection.tenant_id,
@@ -1272,7 +1282,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_branding_profile_registry.py
-# VERSION: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
+# VERSION: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
 # AUTHORITY BOUNDARY: immutable profile/selection persistence and explicit tenant current-pointer CAS only; no entitlement freshness, browser, asset-resolution, IAM or financial authority
 # TENANT POSTURE: every profile, selection, replay, currentness read/write and CAS predicate is tenant-scoped
 # FAIL-CLOSED POSTURE: active transaction required; strict schemas, corruption, divergence, duplicate pointers, stale lineage, races and outages reject
