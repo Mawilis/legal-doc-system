@@ -17,7 +17,7 @@
  *   locally provable length/control/UTF-8-byte violations without spending
  *   recovery authority, and distinguishes safe reset-link versus password
  *   policy HTTP feedback while keeping server authority fail closed.
- *   2026-09-22 v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE — Consumes
+ *   2026-09-22 v1.3.0-R10E14-RECOVERY-LINK-FRAGMENT-HANDOFF — Consumes
  *   tenant/recovery values from the governed URL fragment, seeds the existing
  *   reset lookup fields, immediately scrubs the secret fragment from browser
  *   history/address display, and replaces manual token entry with a bounded
