@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT
+ * VERSION: v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT certifies permission-aware narrowing for Legal Practice/Finance presentation: explicit legal permission hints can remove intake, ReturnOfService and finance affordances but cannot widen the canonical role envelope; absent legal permission hints preserve the certified role baseline.
+ * CHANGELOG: 2026-09-24 v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT certifies D17 server-bound permission provenance in the Legal Command Center: an authoritative empty Legal permission projection removes Partner intake/return/finance affordances while retaining read-only workspace visibility, and authoritative-empty LEGAL_FINANCE performs no finance evidence transport. Absent server provenance still preserves the D16 role baseline.
+ *            2026-09-24 v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT certifies permission-aware narrowing for Legal Practice/Finance presentation: explicit legal permission hints can remove intake, ReturnOfService and finance affordances but cannot widen the canonical role envelope; absent legal permission hints preserve the certified role baseline.
  *            2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT binds the production dashboard to the D15 V2 workspace, proves canonical matter rendering/search/drilldown, linked lifecycle operating-room composition, and post-intake navigation to the refreshed persisted matter without adding browser authority.
  *            2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
  *            v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; workspace behavior and authority are unchanged.
@@ -540,6 +541,61 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.queryByRole('button', { name: 'Generate return' })).not.toBeInTheDocument();
   });
 
+  it('treats a server-authoritative empty Partner permission set as least-authority presentation', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{
+          id: 'principal-partner-authoritative-empty',
+          permissions: [],
+          legalPermissionsAuthoritative: true,
+        }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+
+    expect(screen.getByRole('button', { name: 'Matters' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Instructions' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finance Evidence' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Service Operations' }));
+    expect(screen.queryByRole('button', { name: 'Generate return' })).not.toBeInTheDocument();
+
+    expect(registerLegalIntake).not.toHaveBeenCalled();
+    expect(generateLegalReturnOfService).not.toHaveBeenCalled();
+    expect(getLegalFinanceEvidence).not.toHaveBeenCalled();
+  });
+
+  it('keeps authoritative-empty LEGAL_FINANCE locked without finance evidence transport', async () => {
+    render(
+      <LegalDashboard
+        roleView="LEGAL_FINANCE"
+        user={{
+          id: 'principal-finance-authoritative-empty',
+          permissions: [],
+          legalPermissionsAuthoritative: true,
+        }}
+        tenantConfig={{ tenantId: 'tenant-law' }}
+      />,
+    );
+
+    expect(await screen.findByText('Legal Finance Evidence')).toBeInTheDocument();
+    expect(
+      screen.getByText('Finance evidence is read-only for this permission posture'),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Finance evidence type')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Finance evidence identity')).not.toBeInTheDocument();
+    expect(getLegalFinanceEvidence).not.toHaveBeenCalled();
+    expect(getLegalPracticeWorkspace).not.toHaveBeenCalled();
+    expect(getLegalClientMatters).not.toHaveBeenCalled();
+    expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
+    expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+  });
+
   it('never lets a Secretary self-elevate with browser permission claims outside the role envelope', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
 
@@ -664,10 +720,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT
- * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; browser legal permission hints may only narrow the canonical role envelope and never prove authorization
+ * VERSION: v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT
+ * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D17 server-bound Legal permission provenance and browser hints may only narrow the canonical role envelope and never prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
- * FAIL-CLOSED POSTURE: role denial, explicit permission narrowing, command failure and cross-role drift never fallback, widen role scope or invent success
+ * FAIL-CLOSED POSTURE: role denial, explicit/server-authoritative permission narrowing including an empty grant set, command failure and cross-role drift never fallback, widen role scope or invent success
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
