@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION
+ * VERSION: v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
  *          identity and tenant context. L8-7D10 converges every published Legal
@@ -14,7 +14,7 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION maps LEGAL_PARTNER, LEGAL_ATTORNEY,
+ * CHANGELOG: 2026-09-23 v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT maps LEGAL_PARTNER, LEGAL_ATTORNEY,
  *            LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT and
  *            their TENANT_* business-role aliases to the canonical Legal OS
  *            shard. Existing SHERIFF/DEPUTY mappings remain unchanged. Browser
@@ -45,6 +45,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { Navigate } from 'react-router-dom';
 import { ArrowLeft, Crown, Loader2, ShieldAlert } from 'lucide-react';
 import { useTenants } from '../../contexts/tenantContext.jsx';
+import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import ErrorBoundary from '../ErrorBoundary';
 import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
@@ -242,7 +243,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION';
+const CONTROLLER_VERSION = 'v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -843,14 +844,19 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   } else if (dashboardKey === DASHBOARD_KEYS.COO) {
     dashboardShard = <COODashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.CRM) {
-    dashboardShard = (
-      <CRMDashboard
-        user={user}
-        activeTenant={activeTenant}
-        tenantId={activeTenant?.tenantId || activeTenant?._id || user?.tenantId || 'MASTER'}
-        founderReturnEnabled={canReturnToFounder}
-        onFounderReturn={() => handleManualDashboardSwitch(DASHBOARD_KEYS.FOUNDER)}
-      />
+    const crmTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
+    dashboardShard = crmTenantId ? (
+      <BusinessProvider tenantId={crmTenantId}>
+        <CRMDashboard
+          user={user}
+          activeTenant={activeTenant}
+          tenantId={crmTenantId}
+          founderReturnEnabled={canReturnToFounder}
+          onFounderReturn={() => handleManualDashboardSwitch(DASHBOARD_KEYS.FOUNDER)}
+        />
+      </BusinessProvider>
+    ) : (
+      <div role="alert">CRM tenant context unavailable.</div>
     );
   } else if (dashboardKey === DASHBOARD_KEYS.SALES) {
     dashboardShard = <SalesDashboard user={user} />;
@@ -965,7 +971,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION
+ * VERSION: v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: active tenant projection is preserved; Legal OS role routing cannot widen server tenant scope
  * FAIL-CLOSED POSTURE: unknown roles/dashboards do not manufacture Legal Operations access or cross-role fallback
