@@ -1,14 +1,17 @@
 /**
  * WILSY OS — LEGAL ADMISSION INTERACTION-SHELL DIRECT CERTIFICATE
- * VERSION: v1.6.0-SERVER-CONFIRMED-FOCUS-FEEDBACK-CERT
+ * VERSION: v1.7.0-RECORD-NAVIGATION-SCROLL-RESET-CERT
  * AUTHORITY: Wilsy OS Core Governance; client projection evidence only
  * EPITOME: Certifies the legal gate as a compact, keyboard- and pointer-usable
  *           operating shell without duplicating Python EOS legal authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/auth/LegalAcceptanceGate.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises LegalAcceptanceGate against the
  *                            server-owned legal-acceptance HTTP contract.
- * CERTIFICATION / UPDATE DATE: 2026-09-21
- * CHANGELOG: v1.6.0 certifies server-confirmed focus feedback, explicit
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: v1.7.0 certifies that focus-mode navigation resets the bounded
+ *            document reading surface to top for each newly focused server
+ *            record without posting or changing legal authority.
+ *            v1.6.0 certifies server-confirmed focus feedback, explicit
  *            next-unresolved navigation, refresh-failure lockout, and
  *            server-derived progress after recording.
  *            v1.5.1 certifies center-aligned server-issued document prose.
@@ -54,6 +57,10 @@ const acceptedPlan = { ...requiredPlan, documents: requiredPlan.documents.map((d
 describe('LegalAcceptanceGate institutional interaction shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      value: vi.fn(),
+    });
     api.post.mockResolvedValue({ data: { status: 'RECORDED' } });
   });
   afterEach(() => {
@@ -158,6 +165,25 @@ describe('LegalAcceptanceGate institutional interaction shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /next record/i }));
     fireEvent.click(screen.getByRole('button', { name: /previous record/i }));
     expect(screen.getAllByRole('heading', { name: 'WILSY OS Institutional Charter' }).length).toBeGreaterThan(0);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('resets the bounded reader to the top whenever focus moves to another record', async () => {
+    await renderRequired();
+    fireEvent.click(screen.getByRole('button', { name: /review document/i }));
+
+    const reader = screen.getByLabelText(/document reading surface/i);
+    const scrollTo = reader.scrollTo;
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
+
+    scrollTo.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /next record/i }));
+
+    await waitFor(() => {
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
+    });
+    expect(screen.getAllByRole('heading', { name: 'WILSY OS User Terms' }).length).toBeGreaterThan(0);
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -321,7 +347,7 @@ describe('LegalAcceptanceGate institutional interaction shell', () => {
 });
 
 // ARTIFACT: LegalAcceptanceGate.test.jsx
-// VERSION: v1.6.0-SERVER-CONFIRMED-FOCUS-FEEDBACK-CERT
+// VERSION: v1.7.0-RECORD-NAVIGATION-SCROLL-RESET-CERT
 // AUTHORITY BOUNDARY: deterministic client projection certificate only
 // TENANT POSTURE: server-issued plan is displayed; no local legal truth
 // FAIL-CLOSED POSTURE: unavailable or incomplete status never opens workspace
