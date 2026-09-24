@@ -1,15 +1,16 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT
+VERSION: v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_canonical_access_token_contract.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
-CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
+CERTIFICATION / UPDATE DATE: 2026-09-24
+CHANGELOG: v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
+           v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
            tenant alias, industry, region and sector as descriptive practice
            context while continuing to exclude plan/subscription, tax/contact,
            compliance, verification and financial authority. The projection is
@@ -158,13 +159,46 @@ class _WorkspaceRoleReader:
         raise RoleAssignmentNotFoundError("ROLE_ASSIGNMENT_NOT_FOUND")
 
 
+class _WorkspacePrincipalRegistry:
+    """Exact durable authenticated-person fixture for workspace projection."""
+
+    def __init__(
+        self,
+        *,
+        principal_id: str = PRINCIPAL,
+        tenant_id: str = TENANT,
+        first_name: object = "Canonical",
+        last_name: object = "Principal",
+        error: Exception | None = None,
+    ) -> None:
+        self.principal_id = principal_id
+        self.tenant_id = tenant_id
+        self.first_name = first_name
+        self.last_name = last_name
+        self.error = error
+        self.calls: list[str] = []
+
+    def get_user_by_id(self, user_id: str) -> SimpleNamespace:
+        self.calls.append(user_id)
+        if self.error is not None:
+            raise self.error
+        return SimpleNamespace(
+            id=self.principal_id,
+            tenantId=self.tenant_id,
+            firstName=self.first_name,
+            lastName=self.last_name,
+        )
+
+
 def _override_workspace_dependencies(
     app: FastAPI,
+    monkeypatch: pytest.MonkeyPatch,
     *,
     business_role: str = "tenant_auditor",
     active_roles: tuple[str, ...] = (),
     unavailable: bool = False,
-) -> None:
+    principal_registry: _WorkspacePrincipalRegistry | None = None,
+) -> _WorkspacePrincipalRegistry:
     app.dependency_overrides[
         authentication.get_principal_authority_repository
     ] = lambda: _PrincipalRepository()
@@ -178,6 +212,13 @@ def _override_workspace_dependencies(
         active_roles=active_roles,
         unavailable=unavailable,
     )
+    registry = principal_registry or _WorkspacePrincipalRegistry()
+    monkeypatch.setattr(
+        auth_router,
+        "get_auth_registry",
+        lambda _database=None: registry,
+    )
+    return registry
 
 
 class _CredentialRevisionRegistry:
@@ -451,7 +492,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
 
     app = FastAPI()
     app.include_router(auth_router.router)
-    _override_workspace_dependencies(app)
+    _override_workspace_dependencies(app, monkeypatch)
 
     response = TestClient(app).get(
         "/auth/workspace-bootstrap",
@@ -464,6 +505,8 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
         "user": {
             "id": PRINCIPAL,
             "email": "principal@example.com",
+            "firstName": "Canonical",
+            "lastName": "Principal",
         },
         "workspace": {
             "tenantId": TENANT,
@@ -485,6 +528,8 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
     }
 
     serialized = response.json()
+    assert serialized["user"]["firstName"] == "Canonical"
+    assert serialized["user"]["lastName"] == "Principal"
     assert "roles" not in serialized["user"]
     assert "permissions" not in serialized["user"]
     assert "role" not in serialized["user"]
@@ -554,7 +599,7 @@ def test_workspace_bootstrap_http_denial_is_bounded_403(
 
     app = FastAPI()
     app.include_router(auth_router.router)
-    _override_workspace_dependencies(app)
+    _override_workspace_dependencies(app, monkeypatch)
 
     response = TestClient(app).get(
         "/auth/workspace-bootstrap",
@@ -595,11 +640,13 @@ def test_workspace_bootstrap_http_authority_outage_is_bounded_503(
         "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID",
     )
 
     app = FastAPI()
     app.include_router(auth_router.router)
-    _override_workspace_dependencies(app)
+    _override_workspace_dependencies(app, monkeypatch)
 
     client = TestClient(app)
 
@@ -672,6 +719,7 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
     app.include_router(auth_router.router)
     _override_workspace_dependencies(
         app,
+        monkeypatch,
         business_role="tenant_legal_partner",
         active_roles=("LEGAL_PARTNER",),
     )
@@ -693,6 +741,73 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
     assert "permissions" not in payload["user"]
     assert "roles" not in payload["user"]
     assert "*" not in json.dumps(payload["workspace"]["legalPermissions"])
+
+
+def test_workspace_principal_profile_is_exact_optional_and_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Durable names are descriptive only; mismatch/outage deny and bad text is omitted."""
+
+    projection = SimpleNamespace(
+        principal_id=PRINCIPAL,
+        tenant_id=TENANT,
+    )
+
+    exact = _WorkspacePrincipalRegistry(
+        first_name="Canonical",
+        last_name="Principal",
+    )
+    monkeypatch.setattr(
+        auth_router,
+        "get_auth_registry",
+        lambda _database=None: exact,
+    )
+    assert auth_router._workspace_principal_profile(projection) == (
+        "Canonical",
+        "Principal",
+    )
+    assert exact.calls == [PRINCIPAL]
+
+    malformed = _WorkspacePrincipalRegistry(
+        first_name=" Canonical ",
+        last_name="",
+    )
+    monkeypatch.setattr(
+        auth_router,
+        "get_auth_registry",
+        lambda _database=None: malformed,
+    )
+    assert auth_router._workspace_principal_profile(projection) == (None, None)
+
+    from tools.eos.auth.workspace_bootstrap_projection import (
+        WorkspaceBootstrapProjectionError,
+    )
+
+    mismatched = _WorkspacePrincipalRegistry(tenant_id="TENANT-B")
+    monkeypatch.setattr(
+        auth_router,
+        "get_auth_registry",
+        lambda _database=None: mismatched,
+    )
+    with pytest.raises(
+        WorkspaceBootstrapProjectionError,
+        match="WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID",
+    ):
+        auth_router._workspace_principal_profile(projection)
+
+    unavailable = _WorkspacePrincipalRegistry(
+        error=RuntimeError("synthetic durable user outage"),
+    )
+    monkeypatch.setattr(
+        auth_router,
+        "get_auth_registry",
+        lambda _database=None: unavailable,
+    )
+    with pytest.raises(
+        WorkspaceBootstrapProjectionError,
+        match="WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE",
+    ):
+        auth_router._workspace_principal_profile(projection)
 
 
 def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
@@ -741,6 +856,7 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
     app.include_router(auth_router.router)
     _override_workspace_dependencies(
         app,
+        monkeypatch,
         business_role="tenant_legal_partner",
         active_roles=("LEGAL_PARTNER",),
         unavailable=True,
@@ -759,9 +875,9 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT
-# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission and descriptive canonical tenant practice-profile projection evidence only
+# VERSION: v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT
+# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
-# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission-authority outage, or attempts to infer plan/subscription/operating-model authority deny or remain excluded
+# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model authority deny or remain excluded
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
