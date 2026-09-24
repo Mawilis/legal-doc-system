@@ -1,7 +1,7 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT
+VERSION: v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
@@ -9,7 +9,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
 CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT certifies workspace-level Legal
+CHANGELOG: v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
+           tenant alias, industry, region and sector as descriptive practice
+           context while continuing to exclude plan/subscription, tax/contact,
+           compliance, verification and financial authority. The projection is
+           still sourced only after current workspace authority revalidation.
+           v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT certifies workspace-level Legal
            presentation permissions from the real tenant authorization compositor:
            forged JWT roles/permissions remain excluded, an auditor receives an
            authoritative empty subset, a current LEGAL_PARTNER receives only the
@@ -418,9 +423,19 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             tenant=SimpleNamespace(
                 tenant_id=TENANT,
                 status="ACTIVE",
+                alias="canonical-law",
+                region="ZA",
+                sector="Law",
+                subscription_tier="SOVEREIGN_ENTERPRISE",
+                verified=True,
+                compliance_flags={"certified": True},
                 organization=SimpleNamespace(
                     organization_name="Canonical Tenant",
                     legal_name="Canonical Tenant (Pty) Ltd",
+                    industry="Legal Services",
+                    plan="SOVEREIGN_ENTERPRISE",
+                    tax_id="FORBIDDEN-TAX-ID",
+                    contact_email="forbidden@example.invalid",
                 ),
             ),
         )
@@ -460,6 +475,10 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
                 "tenantId": TENANT,
                 "name": "Canonical Tenant",
                 "legalName": "Canonical Tenant (Pty) Ltd",
+                "alias": "canonical-law",
+                "industry": "Legal Services",
+                "region": "ZA",
+                "sector": "Law",
                 "status": "ACTIVE",
             },
         },
@@ -470,6 +489,22 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
     assert "permissions" not in serialized["user"]
     assert "role" not in serialized["user"]
     assert serialized["workspace"]["legalPermissions"] == []
+    tenant_payload = serialized["workspace"]["tenant"]
+    for forbidden in (
+        "plan",
+        "subscriptionTier",
+        "subscription_tier",
+        "taxId",
+        "tax_id",
+        "contactEmail",
+        "contact_email",
+        "complianceFlags",
+        "compliance_flags",
+        "verified",
+        "operatingModel",
+        "operating_model",
+    ):
+        assert forbidden not in tenant_payload
 
     # The real authentication chain may carry forged JWT projections into the
     # candidate identity, but the endpoint must source workspace authority from
@@ -724,9 +759,9 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.1.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION-CERT
-# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal presentation-permission projection evidence only
+# VERSION: v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT
+# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission and descriptive canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
-# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, and permission-authority outage deny or remain unavailable
+# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission-authority outage, or attempts to infer plan/subscription/operating-model authority deny or remain excluded
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
