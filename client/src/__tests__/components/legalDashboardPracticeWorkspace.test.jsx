@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT disambiguates the Process documents module assertion by targeting the active semantic heading rather than an intentionally repeated summary label.\n *            2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
+ * CHANGELOG: 2026-09-24 v1.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT disambiguates the Process documents module assertion by targeting the active semantic heading rather than an intentionally repeated summary label.
+ *            2026-09-24 v1.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the D14 dashboard certificate to
  *            v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; workspace behavior and authority are unchanged.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only.
