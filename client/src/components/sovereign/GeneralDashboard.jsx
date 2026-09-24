@@ -14,20 +14,6 @@
  * AUTHORITY BOUNDARY: Published Legal roles are resolved by SovereignDashboardController to canonical LegalDashboard.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns payment execution and settlement.
  */
-/**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - GENERAL TENANT COMMAND CENTER                                                                                               ║
- * ║ [TENANT-LEVEL ORCHESTRATION | DOCUMENT INTELLIGENCE | JURISDICTIONAL COMPLIANCE]                                                       ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 16.5.0-SINGULARITY-OMEGA | PRODUCTION READY                                                                                 ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                        ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/GeneralDashboard.jsx                             ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Multi-Tenant Strategy & Final Approval                                                        ║
- * ║ • Gemini (AI Engineering) - Interface Orchestration & Module Mapping                                                                   ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- */
 
 import React, { Suspense, useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/authContext';
