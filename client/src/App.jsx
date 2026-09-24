@@ -1,66 +1,41 @@
 /* eslint-disable */
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * WILSY OS — SOVEREIGN APPLICATION ROOT (KENNEL-ALIGNED)
- * ═══════════════════════════════════════════════════════════════════════════════
- * File:           client/src/App.jsx
- * Version:        v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE
- * Authority:      Wilsy OS Core Governance
- * Epitome:        Updated to use new TenantContext (tenantContext) and useTenants.
- * Classification: Production Artifact – Institutional Contract
- *
- * 👥 COLLABORATION & SOVEREIGN SIGN-OFF:
- *   • Wilson Khanyezi (CEO/Lead Architect) – Mandated zero‑tolerance network
- *     integrity, deterministic routing, and integration of the new sovereign
- *     TenantContext across the entire application. Required strict permission
- *     guard for /tms to enforce founder/superadmin‑only tenant management.
- *   • AI Engineering (Gemini) – ENGINEERED: Replaced legacy tenant context with
- *     new TenantContext; updated all references; ensured Kennel EOS propagation;
- *     added fallback for tenant switching; validated with existing auth flows;
- *     added ProtectedTmsRoute to enforce canManageTenants.
- *   • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001.
- *
- * 🔄 Change Log:
- *   2026-09-22 v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE — Adds the public
- *     /verify-recovery-contact capability-consumer route for explicit
- *     email-control confirmation while keeping verification authority in
- *     Python EOS and protected application routing unchanged.
- *   2026-09-22 v19.2.0-R10E11-PASSWORD-RECOVERY-REQUEST-ROUTE — Adds the public
- *     /forgot-password recovery-request portal as a distinct pre-authentication
- *     route while preserving /reset-password as the capability-consumer route.
- *     No recovery authority or deep-link parsing is introduced in App.
- *   2026-09-17 v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE — Replaces the
- *     legacy covenant/signature gate with the server-owned versioned legal
- *     acceptance projection and preserves /covenant as a compatibility route.
- *   2026-09-22 v19.1.0-R10D9-PASSWORD-RESET-ROUTE — Exposes the certified
- *     unauthenticated PasswordResetPortal at the explicit /reset-password route;
- *     no recovery-link parameter contract or reset business logic is introduced.
- *   2026-09-17 v18.7.0-POST-MFA-BOOTSTRAP-GATE — Hydrates the exact selected
- *     tenant before mounting protected runtime consumers and removes router-driven
- *     tenant switching that caused the post-MFA update-depth loop.
- *   2026-09-17 v18.6.0-AUTH-GATED-TENANT-CONTEXT — Mount TenantProvider only after
- *     authoritative authentication so discovery never triggers a full directory fetch.
- *   2026-08-19 v18.5.0-KENNEL-ALIGNED — Switched to new tenant context (tenantContext) and useTenants hook.
- *   2026-08-07 v18.4.0-PHASE5-TMS-GUARD — Added ProtectedTmsRoute guard; route /tms now checks canManageTenants.
- *   2026-08-06 v18.3.0-PHASE5-TMS-ROUTE — Added /tms route for TMS cockpit.
- *   2026-08-06 v18.2.0-PHASE4-FIX — Corrected import path for TenantContext.
- *   2026-08-06 v18.1.0-PHASE4-INTEGRATION — Integrated new TenantContext.
- *   2026-07-31 v18.0.9-INSTITUTIONAL-SEAL — Added /dashboard route.
- *   2026-07-30 v18.0.8-INSTITUTIONAL-FIX — Added global isDev suppression.
- *   2026-07-30 v18.0.7-SINGULARITY-SOVEREIGN — Baseline.
- *
- * 🔗 Forensic Relationships:
- *   Upstream:   react, react-router-dom, lucide-react, ../contexts/authContext,
- *               ./contexts/tenantContext, ../components/sovereign/SovereignOrchestrator,
- *               ../components/sovereign/DataOrchestrator, ../utils/telemetryHelper.
- *   Downstream: SovereignLogin, PasswordRecoveryRequestPortal, RecoveryContactVerificationPortal, PasswordResetPortal, SovereignMfaPortal, LegalAcceptanceGate, SovereignDashboardController,
- *               Sovereign_TenantManager.
- *   Shared:     wilsy_auth_token, wilsy_sovereign_user, discoveredTenant,
- *               useAuth().login, useTenants().switchTenant, and the
- *               server-owned /api/legal-acceptance status contract.
- *
- * 🏛️ Certification Seal: PRODUCTION_READY_v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
- * ═══════════════════════════════════════════════════════════════════════════════
+ * TITLE: WILSY OS Sovereign Application Root
+ * VERSION: v20.0.0-LEGAL-ADMISSION-RELEASE-ROUTING
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Composes authenticated routing, exact tenant projection, legal
+ *          admission release, and protected workspace presentation without
+ *          promoting browser state into authentication or legal authority.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/App.jsx
+ * COLLABORATION / OWNERSHIP: AuthProvider owns browser auth projection;
+ *                            TenantProvider owns bounded tenant projection;
+ *                            Python EOS owns authentication, workspace and
+ *                            legal-acceptance truth.
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG:
+ *   v20.0.0-LEGAL-ADMISSION-RELEASE-ROUTING — Promotes the legal boundary
+ *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
+ *     server-confirmed COMPLETE state, so the protected runtime mounts in the
+ *     same browser session. Protected-route fallback now preserves an already
+ *     discovered tenant by returning to login rather than forcing discovery,
+ *     while authentication revalidation loading suppresses premature routing.
+ *   v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE — Added the public
+ *     recovery-contact verification route.
+ *   v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE — Established the
+ *     server-owned versioned legal-acceptance boundary.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Client routing consumes only bounded server
+ *                             projections. Authentication tokens, tenant
+ *                             membership, legal evidence and legal release
+ *                             remain server-owned authorities.
+ * TENANT BOUNDARY: A persisted or discovered tenant is routing context only;
+ *                  protected runtime still requires authenticated server
+ *                  workspace bootstrap with an exact tenant match.
+ * AUTHORITY BOUNDARY: Presentation and route composition only. Python EOS owns
+ *                     authentication, membership, business-role, tenant and
+ *                     legal-acceptance decisions.
+ * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
+ *                               execution and settlement authority.
  */
 
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
@@ -132,7 +107,14 @@ const ProtectedTmsRoute = ({ user, children }) => {
  * @epitome "Institutional Finality"
  */
 const SovereignRouter = () => {
-  const { isAuthenticated, user, authStage, loading: authLoading, updateSovereignIdentity } = useAuth();
+  const {
+    isAuthenticated,
+    user,
+    tenant: authTenant,
+    authStage,
+    loading: authLoading,
+    updateSovereignIdentity,
+  } = useAuth();
   // ✅ Use the new useTenants hook instead of useTenantContext
   const {
     activeTenant: currentTenant,
@@ -177,8 +159,11 @@ const SovereignRouter = () => {
     }
   }, [isAuthenticated, currentTenant, user, location.pathname, mesh?.meshHealth, dataStream?.version]);
 
+  const unauthenticatedEntryPath = authTenant?.tenantId ? '/login' : '/discovery';
+
   // 🛡️ Deterministic navigation state-machine.
   const targetPath = useMemo(() => {
+    if (authLoading) return null;
     const isMfaChallenge = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
     if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') return isMfaChallenge ? null : '/login';
     if (
@@ -189,8 +174,10 @@ const SovereignRouter = () => {
     if (location.pathname === '/login' || location.pathname === '/discovery') return isAuthenticated ? '/' : null;
 
     // Protected application routes always require an authenticated identity.
+    // A server-discovered tenant is navigation context only: it may skip
+    // redundant discovery, but it never authenticates the caller.
     if (!isAuthenticated) {
-      return '/discovery';
+      return unauthenticatedEntryPath;
     }
 
     // Authenticated, but user object is still hydrating: wait, never bypass.
@@ -202,7 +189,15 @@ const SovereignRouter = () => {
     // status read and remains reachable at the compatibility /covenant path.
     if (location.pathname === '/covenant') return null;
     return ['/', '/dashboard'].includes(location.pathname) ? null : '/';
-  }, [location.pathname, isAuthenticated, user, currentTenant, authStage]);
+  }, [
+    location.pathname,
+    isAuthenticated,
+    user,
+    currentTenant,
+    authStage,
+    authLoading,
+    unauthenticatedEntryPath,
+  ]);
 
   // Execute the deterministic navigation
   useEffect(() => {
@@ -245,7 +240,7 @@ const SovereignRouter = () => {
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/signature" element={<Navigate to="/covenant" replace />} />
-      <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to="/discovery" replace />} />
+      <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />} />
       {/* Explicit /dashboard route for soft navigation */}
       <Route path="/dashboard" element={
         isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to="/discovery" replace />
@@ -258,7 +253,7 @@ const SovereignRouter = () => {
               userRole={user?.role || user?.userRole || 'viewer'}
             />
           </ErrorBoundary>
-        ) : <Navigate to="/discovery" replace />
+        ) : <Navigate to={unauthenticatedEntryPath} replace />
       } />
       {/* 🆕 /tms route with permission guard – ONLY for founders/superadmins */}
       <Route path="/tms" element={
@@ -266,7 +261,7 @@ const SovereignRouter = () => {
           <ProtectedTmsRoute user={user}>
             <ErrorBoundary><Sovereign_TenantManager /></ErrorBoundary>
           </ProtectedTmsRoute>
-        ) : <Navigate to="/discovery" replace />
+        ) : <Navigate to={unauthenticatedEntryPath} replace />
       } />
       <Route path="/*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -334,10 +329,26 @@ export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition /> }) =>
 
   if (phase === 'LOADING') return <WorkspaceBootstrapSurface />;
   if (phase === 'UNAVAILABLE') return <WorkspaceBootstrapError message={error} />;
+  const releaseWorkspace = () => {
+    // LegalAcceptanceGate invokes this callback only after its refreshed
+    // server status is COMPLETE. Updating phase therefore projects server truth;
+    // it does not manufacture legal acceptance in the browser.
+    setPhase('COMPLETE');
+    navigate('/', { replace: true });
+  };
+
   if (phase === 'REQUIRED') {
     return (
       <Routes>
-        <Route path="/covenant" element={<LegalAcceptanceGate initialPlan={plan} onComplete={() => navigate('/', { replace: true })} />} />
+        <Route
+          path="/covenant"
+          element={(
+            <LegalAcceptanceGate
+              initialPlan={plan}
+              onComplete={releaseWorkspace}
+            />
+          )}
+        />
         <Route path="*" element={<Navigate to="/covenant" replace />} />
       </Routes>
     );
@@ -418,22 +429,11 @@ function App() {
 export default App;
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS APPLICATION ROOT (AUTH-GATED)
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status: CERTIFIED PRODUCTION ARTIFACT
- * Version: v19.3.0-R10E25-RECOVERY-CONTACT-VERIFICATION-ROUTE
- * Cryptographic Hash Integrity: VERIFIED (SHA3-512)
- * Compliance: POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
- * Health Check:
- *   ✅ NAVIGATION GUARD STABLE
- *   ✅ updateSovereignIdentity ROBUST
- *   ✅ TenantContext mounted only after authenticated identity
- *   ✅ Kennel EOS PROPAGATED
- *   ✅ /tms ROUTE PROTECTED – only founders/superadmins can access
- *   ✅ No legacy imports
- *   ✅ /forgot-password PUBLIC RECOVERY REQUEST ROUTE — no recovery authority
- *   ✅ /verify-recovery-contact PUBLIC SINGLE-USE VERIFICATION ROUTE — no session creation
- *   ✅ /reset-password PUBLIC RESET PORTAL ROUTE — capability consumer remains separate
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: client/src/App.jsx
+ * VERSION: v20.0.0-LEGAL-ADMISSION-RELEASE-ROUTING
+ * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
+ * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
+ * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
