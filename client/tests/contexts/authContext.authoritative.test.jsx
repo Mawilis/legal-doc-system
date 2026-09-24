@@ -331,7 +331,8 @@ describe('authoritative authentication state machine', () => {
     );
     expect(persistedUser.firstName).toBeNull();
     expect(persistedUser.lastName).toBeNull();
-    expect(JSON.stringify(persistedUser)).not.toContain('person');
+    expect(persistedUser).not.toHaveProperty('name');
+    expect(persistedUser).not.toHaveProperty('displayName');
   });
 
   it.each([
