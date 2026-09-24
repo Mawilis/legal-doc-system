@@ -1,13 +1,20 @@
 /**
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.1.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT
+ * VERSION: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.0.0-AUTHORITATIVE-MFA-STATE-CERT — Initial focused certificate.
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT certifies that a
+ *            persisted bearer candidate survives browser remount only after
+ *            workspace-bootstrap revalidates current server authority; forged,
+ *            mismatched or rejected candidates fail closed while discovered
+ *            tenant navigation context remains available.
+ *            v1.1.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT certified synchronous
+ *            bearer replacement and logout clearing.
+ *            v1.0.0-AUTHORITATIVE-MFA-STATE-CERT — Initial focused certificate.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Test fixtures contain synthetic identities only.
  * TENANT BOUNDARY: Tenant projection is accepted only from discovery/session data.
@@ -97,6 +104,8 @@ describe('authoritative authentication state machine', () => {
     storage.clear();
     api.get.mockReset();
     api.post.mockReset();
+    delete api.defaults.headers.common.Authorization;
+    delete api.defaults.headers.common['x-tenant-id'];
     global.fetch = vi.fn();
   });
 
@@ -161,21 +170,117 @@ describe('authoritative authentication state machine', () => {
     expect(window.localStorage.getItem('wilsy_sovereign_user')).toBeNull();
   });
 
-  it('does not elevate a restored browser user to authenticated authority without server revalidation', async () => {
+  it('restores a persisted session only after server workspace revalidation', async () => {
     window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    }));
     window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
-      id: 'forged-browser-user',
-      email: 'forged@example.com',
-      tenantId: 'FORGED-TENANT',
-      role: 'OWNER',
+      id: 'WILSYAUTH-browser-user',
+      email: 'person@example.com',
+      tenantId: 'TENANT-BROWSER',
+      role: 'forged-browser-role',
       permissions: ['*'],
       mfaRegistered: true,
+    }));
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      businessRole: 'tenant_legal_partner',
     }));
 
     renderHarness();
 
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
-    expect(screen.getByTestId('stage')).not.toHaveTextContent(AUTH_STATES.AUTHENTICATED);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    });
+
+    expect(api.get).toHaveBeenCalledWith(
+      '/auth/workspace-bootstrap',
+      {
+        headers: {
+          Authorization: 'Bearer stored-token',
+        },
+      },
+    );
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer stored-token');
+    expect(screen.getByTestId('role')).toHaveTextContent('tenant_legal_partner');
+    expect(screen.getByTestId('tenant-id')).toHaveTextContent('TENANT-BROWSER');
+
+    const persistedUser = JSON.parse(
+      window.localStorage.getItem('wilsy_sovereign_user'),
+    );
+    expect(persistedUser).toMatchObject({
+      id: 'WILSYAUTH-browser-user',
+      tenantId: 'TENANT-BROWSER',
+      role: 'tenant_legal_partner',
+    });
+    expect(persistedUser.permissions).toEqual([]);
+  });
+
+  it('purges a mismatched restored identity but retains discovered tenant context', async () => {
+    const discovered = {
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    };
+    window.localStorage.setItem('wilsy_auth_token', 'stored-token');
+    window.localStorage.setItem('token', 'stored-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify(discovered));
+    window.localStorage.setItem('wilsy_active_tenant', JSON.stringify(discovered));
+    window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
+      id: 'forged-browser-user',
+      email: 'forged@example.com',
+      tenantId: 'TENANT-BROWSER',
+      role: 'OWNER',
+      permissions: ['*'],
+      mfaRegistered: true,
+    }));
+    api.get.mockResolvedValueOnce(workspaceBootstrap());
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE);
+    });
+
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('token')).toBeNull();
+    expect(window.localStorage.getItem('wilsy_sovereign_user')).toBeNull();
+    expect(window.localStorage.getItem('wilsy_active_tenant')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('discoveredTenant'))).toEqual(discovered);
+    expect(screen.getByTestId('tenant-id')).toHaveTextContent('TENANT-BROWSER');
+    expect(api.defaults.headers.common.Authorization).toBeUndefined();
+  });
+
+  it('retains discovered tenant navigation context when persisted bearer is rejected', async () => {
+    const discovered = {
+      tenantId: 'TENANT-BROWSER',
+      alias: 'browser',
+      name: 'Browser Tenant',
+    };
+    window.localStorage.setItem('wilsy_auth_token', 'expired-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify(discovered));
+    api.get.mockRejectedValueOnce({
+      response: { status: 401, data: { detail: 'Invalid authentication credentials.' } },
+    });
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE);
+    });
+
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('discoveredTenant'))).toEqual(discovered);
+    expect(screen.getByTestId('tenant-id')).toHaveTextContent('TENANT-BROWSER');
   });
 
   it('updates and clears the canonical bearer synchronously at session boundaries', async () => {
@@ -303,10 +408,11 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.1.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT
+ * VERSION: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection certificate only
- * CHANGELOG: v1.1.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT — Added synchronous
- * canonical bearer replacement and logout-clearing evidence.
+ * CHANGELOG: v1.2.0-SERVER-REVALIDATED-SESSION-RESTORE-CERT — Added valid
+ * restore, principal-mismatch denial, rejected-bearer purge, discovered-tenant
+ * continuity, canonical bearer restoration and server projection evidence.
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant
  * FAIL-CLOSED POSTURE: session exists only after bounded authenticated response
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
