@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE
+ * VERSION: v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE makes the Legal Practice and Legal Finance workspaces visibly authority-aware: operators can see whether presentation narrowing is sourced from the current server permission projection, legacy narrowing hints, or the compatibility role baseline, plus the effective Legal command/evidence lanes inside the canonical role envelope. The posture is explanatory only and cannot grant authorization, mutate Legal Operations truth, create a law-firm operating-model authority, or imply financial execution.
+ * CHANGELOG: 2026-09-24 v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE makes every published Legal persona visibly identity/activity aware. Practice and Finance posture now includes the authenticated principal; LEGAL_CLIENT exposes server client-visibility scope; SHERIFF exposes server operational-queue scope; DEPUTY exposes bound-work plus current server-issued field-command capabilities. All posture surfaces are explanatory only and cannot create role, permission, capability, tenant, legal, financial, payment or settlement authority.
+ *            2026-09-24 v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE makes the Legal Practice and Legal Finance workspaces visibly authority-aware: operators can see whether presentation narrowing is sourced from the current server permission projection, legacy narrowing hints, or the compatibility role baseline, plus the effective Legal command/evidence lanes inside the canonical role envelope. The posture is explanatory only and cannot grant authorization, mutate Legal Operations truth, create a law-firm operating-model authority, or imply financial execution.
  *            2026-09-24 v11.2.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION consumes the D17 server-owned Legal presentation-permission provenance from AuthContext: legalPermissionsAuthoritative=true makes even an empty permission set an intentional least-authority posture, while absence of server permission provenance preserves the certified D16 role baseline for compatibility. Explicit permission hints still only narrow the canonical role envelope; Python EOS remains final authorization authority.
  *            2026-09-24 v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER makes certified Legal Practice/Finance affordances permission-aware without treating browser permissions as authority: the canonical role remains the maximum presentation envelope and explicit legal_operations permission hints may only narrow intake, ReturnOfService and finance-evidence UI. SHERIFF/DEPUTY server-issued capabilities and LEGAL_CLIENT visibility remain unchanged.
  *            2026-09-24 v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM replaces derived matter grouping with the canonical D15 CaseMatter projection, adds matter-reference/ID/linked-work search, first-class matter selection and an operating-room drilldown across existing instruction/document/attempt/execution/return truth, and routes successful intake to the newly persisted matter only after canonical refresh. No client, custody, billing, AI, payment or settlement truth is synthesized.
@@ -135,7 +136,7 @@ import {
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE';
+const DASHBOARD_VERSION = 'v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -327,6 +328,7 @@ function presentationAllowsPermission({ roleToken, user, permission }) {
 
 function LegalPresentationAuthorityPosture({ roleToken, user }) {
   const role = canonicalPresentationRole(roleToken);
+  const principal = user?.email || user?.displayName || user?.name || user?.id || 'Not projected';
   const explicitHints = explicitLegalPermissionHints(user);
   const authoritative = user?.legalPermissionsAuthoritative === true;
   const source = authoritative
@@ -378,7 +380,15 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
             </p>
           </div>
         </div>
-        <dl className="grid min-w-0 gap-3 text-xs sm:grid-cols-2 lg:min-w-[420px]">
+        <dl className="grid min-w-0 gap-3 text-xs sm:grid-cols-3 lg:min-w-[640px]">
+          <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+            <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+              Authenticated principal
+            </dt>
+            <dd className="mt-1 truncate font-mono text-stone-200" title={principal}>
+              {principal}
+            </dd>
+          </div>
           <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
             <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
               Role envelope
@@ -400,6 +410,67 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
       <p className="mt-4 text-[10px] uppercase tracking-[0.12em] text-stone-600">
         Browser role, permission hints, menu state and operating-model presentation never create legal or financial authority.
       </p>
+    </section>
+  );
+}
+
+function LegalRoleActivityPosture({
+  roleToken,
+  user,
+  authoritySource,
+  activities,
+  boundary,
+}) {
+  const role = canonicalPresentationRole(roleToken);
+  const principal = user?.email || user?.displayName || user?.name || user?.id || 'Not projected';
+  const activityList = Array.isArray(activities) && activities.length > 0
+    ? activities
+    : ['No current governed activity'];
+
+  return (
+    <section
+      aria-label="Legal identity and activity posture"
+      className="rounded-2xl border border-amber-900/30 bg-amber-950/10 p-5"
+    >
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 text-amber-400" size={20} />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+            Identity, authority & activity posture
+          </p>
+          <div className="mt-4 grid gap-3 text-xs md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                Authenticated principal
+              </p>
+              <p className="mt-1 truncate font-mono text-stone-200" title={principal}>
+                {principal}
+              </p>
+            </div>
+            <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                Role scope
+              </p>
+              <p className="mt-1 font-mono text-stone-200">{role || 'UNRESOLVED'}</p>
+            </div>
+            <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                Authority source
+              </p>
+              <p className="mt-1 text-stone-200">{authoritySource}</p>
+            </div>
+            <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                Current activities
+              </p>
+              <p className="mt-1 text-stone-200">{activityList.join(' · ')}</p>
+            </div>
+          </div>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.12em] text-stone-600">
+            {boundary}
+          </p>
+        </div>
+      </div>
     </section>
   );
 }
@@ -954,6 +1025,15 @@ function LegalClientWorkspace({
     >
       <div className="space-y-6">
         {errorSurface}
+        {!error && (
+          <LegalRoleActivityPosture
+            roleToken="LEGAL_CLIENT"
+            user={user}
+            authoritySource="Server client visibility projection"
+            activities={['Visible matter read', 'Matter search', 'Canonical refresh']}
+            boundary="Client presentation cannot open internal instructions, documents, service evidence, finance execution or settlement truth."
+          />
+        )}
         {workspaceContent}
         <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
           <span>{DASHBOARD_VERSION}</span>
@@ -2637,6 +2717,18 @@ export default function LegalDashboard({
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
   const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
+  const deputyActivities = useMemo(() => {
+    const kinds = new Set(
+      deputyCapabilities.capabilities.flatMap(
+        (capability) => capability.nextCommandKinds || [],
+      ),
+    );
+    const labels = [];
+    if (kinds.has(FIELD_COMMANDS.BEGIN)) labels.push('Begin attempt');
+    if (kinds.has(FIELD_COMMANDS.COMPLETED)) labels.push('Record completed outcome');
+    if (kinds.has(FIELD_COMMANDS.NOT_COMPLETED)) labels.push('Record not completed');
+    return labels;
+  }, [deputyCapabilities.capabilities]);
 
   if (loading) {
     return (
@@ -2769,6 +2861,26 @@ export default function LegalDashboard({
       </div>
 
       <main className="mx-auto max-w-[1600px] space-y-6 px-5 py-6 lg:px-8">
+        {!error && isSheriffMode && (
+          <LegalRoleActivityPosture
+            roleToken={roleView}
+            user={user}
+            authoritySource="Server operational queue projection"
+            activities={['Office receipt queue', 'Deputy assignment queue', 'Active service attempts']}
+            boundary="Sheriff presentation is queue-scoped and does not create Deputy identity, field-command capability, billing, payment or settlement authority."
+          />
+        )}
+
+        {!error && isDeputyMode && (
+          <LegalRoleActivityPosture
+            roleToken={roleView}
+            user={user}
+            authoritySource="Server bound-work + capability projection"
+            activities={deputyActivities}
+            boundary="Deputy controls exist only for current server-issued next-command capabilities; browser state cannot create sequence lineage, service outcome or financial authority."
+          />
+        )}
+
         {error && (
           <section className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5">
             <div className="flex items-start gap-3">
@@ -3033,7 +3145,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE
+ * VERSION: v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; D18 authority-posture copy explains presentation provenance/effective lanes but creates no role, permission, tenant, operating-model, legal or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth, widens role scope, fabricates operating-model authority or cross-role fallback
