@@ -1,5 +1,5 @@
 /**
- * WILSY OS — AUTHORITATIVE BROWSER AUTHENTICATION CONTEXT
+ * TITLE: WILSY OS Authoritative Browser Authentication Context
  * VERSION: v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
@@ -24,8 +24,9 @@
  *            reconciliation state, removed tenant/user fallbacks, and replaced
  *            reload-based auth transitions with state-driven session hydration.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Browser storage contains only server-issued token
- *                             and bounded user projection; no secret or QR is inferred.
+ * SECURITY / PRIVACY POSTURE: Persisted bearer material is candidate state only
+ *                             and never becomes authority until Python EOS
+ *                             revalidates it; no MFA secret or QR is inferred.
  * TENANT BOUNDARY: Tenant context is accepted only from the authoritative API response.
  * AUTHORITY BOUNDARY: Client projection only; Python EOS remains authentication truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
