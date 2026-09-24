@@ -20,7 +20,7 @@
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG: 2026-09-24 v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM replaces derived matter grouping with the canonical D15 CaseMatter projection, adds matter-reference/ID/linked-work search, first-class matter selection and an operating-room drilldown across existing instruction/document/attempt/execution/return truth, and routes successful intake to the newly persisted matter only after canonical refresh. No client, custody, billing, AI, payment or settlement truth is synthesized.
- *            Partner/attorney/paralegal/secretary users consume the D11 snapshot
+ *            2026-09-23 v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE — Partner/attorney/paralegal/secretary users consume the D11 snapshot
  *            workspace through D13, navigate Command Center, Matters,
  *            Instructions, Documents, Service Operations, Returns and permitted
  *            Finance Evidence, and may register governed initial intake where
@@ -993,7 +993,7 @@ function MatterOperationsPanel({
   return (
     <div className="space-y-6">
       <QueuePanel
-        title={overview ? 'Open matters' : 'Matters'}
+        title={overview ? 'Matter register' : 'Matters'}
         subtitle="First-class canonical CaseMatter truth · select a matter to operate its linked current lifecycle"
         icon={Scale}
         rows={matterRows}
@@ -1333,10 +1333,18 @@ function LegalIntakePanel({ onRefresh, onRegistered, roleToken }) {
         matterReference: draft.matterReference.trim(),
       };
       const result = await registerLegalIntake(draft);
-      await onRefresh();
+      const refreshed = await onRefresh();
+      const refreshedMatters = refreshed?.practiceWorkspace?.matters;
+      const matterIsDiscoverable = Array.isArray(refreshedMatters)
+        && refreshedMatters.some(
+          (matter) => matter.case_matter_id === submittedMatter.caseMatterId,
+        );
+      if (!matterIsDiscoverable) {
+        throw new Error('LEGAL_OPERATIONS_INTAKE_REFRESH_MATTER_NOT_FOUND');
+      }
       setStatus({
         kind: 'success',
-        message: `${result.disposition}: matter, instruction, document and registration custody evidence are canonical.`,
+        message: `${result.disposition}: canonical refresh confirmed ${submittedMatter.matterReference} in the matter workspace.`,
       });
       if (typeof onRegistered === 'function') onRegistered(submittedMatter);
       setDraft(createIntakeDraft());
