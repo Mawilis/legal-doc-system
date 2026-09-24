@@ -2832,7 +2832,7 @@ export default function LegalDashboard({
  * ARTIFACT: LegalDashboard.jsx
  * VERSION: v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; Python EOS owns authority and legal truth
- * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D11 snapshot truth, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
+ * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
