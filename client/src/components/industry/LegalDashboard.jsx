@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER
+ * VERSION: v11.2.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER makes certified Legal Practice/Finance affordances permission-aware without treating browser permissions as authority: the canonical role remains the maximum presentation envelope and explicit legal_operations permission hints may only narrow intake, ReturnOfService and finance-evidence UI. SHERIFF/DEPUTY server-issued capabilities and LEGAL_CLIENT visibility remain unchanged.
+ * CHANGELOG: 2026-09-24 v11.2.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION consumes the D17 server-owned Legal presentation-permission provenance from AuthContext: legalPermissionsAuthoritative=true makes even an empty permission set an intentional least-authority posture, while absence of server permission provenance preserves the certified D16 role baseline for compatibility. Explicit permission hints still only narrow the canonical role envelope; Python EOS remains final authorization authority.
+ *            2026-09-24 v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER makes certified Legal Practice/Finance affordances permission-aware without treating browser permissions as authority: the canonical role remains the maximum presentation envelope and explicit legal_operations permission hints may only narrow intake, ReturnOfService and finance-evidence UI. SHERIFF/DEPUTY server-issued capabilities and LEGAL_CLIENT visibility remain unchanged.
  *            2026-09-24 v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM replaces derived matter grouping with the canonical D15 CaseMatter projection, adds matter-reference/ID/linked-work search, first-class matter selection and an operating-room drilldown across existing instruction/document/attempt/execution/return truth, and routes successful intake to the newly persisted matter only after canonical refresh. No client, custody, billing, AI, payment or settlement truth is synthesized.
  *            2026-09-23 v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE — Partner/attorney/paralegal/secretary users consume the D11 snapshot
  *            workspace through D13, navigate Command Center, Matters,
@@ -133,7 +134,7 @@ import {
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER';
+const DASHBOARD_VERSION = 'v11.2.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -314,7 +315,12 @@ function presentationAllowsPermission({ roleToken, user, permission }) {
   if (!roleEnvelope.includes(permission)) return false;
 
   const explicitHints = explicitLegalPermissionHints(user);
-  if (explicitHints.size === 0) return true;
+  const serverPermissionProjectionIsAuthoritative =
+    user?.legalPermissionsAuthoritative === true;
+
+  if (explicitHints.size === 0 && !serverPermissionProjectionIsAuthoritative) {
+    return true;
+  }
   return explicitHints.has(permission);
 }
 
@@ -2943,10 +2949,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER
- * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; canonical role is the maximum browser presentation envelope, explicit legal permission hints may only narrow it, and Python EOS owns authority and legal truth
+ * VERSION: v11.2.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION
+ * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; canonical role is the maximum browser presentation envelope, D17 server-bound legalPermissions provenance may narrow it including to an authoritative empty set, and Python EOS owns authority and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
- * FAIL-CLOSED POSTURE: unresolved role, explicit legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth, widens role scope or cross-role fallback
+ * FAIL-CLOSED POSTURE: unresolved role, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth, widens role scope or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
