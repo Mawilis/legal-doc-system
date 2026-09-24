@@ -1,7 +1,7 @@
 """Direct unit certificate for the WILSY OS developer legal persona provisioner.
 
 TITLE: WILSY OS Developer Legal Persona Provisioner Direct Certificate
-VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
+VERSION: v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Deterministically certifies the non-production owner-authorized legal
          persona admission graph, exact caller transaction propagation, persona
@@ -14,6 +14,9 @@ COLLABORATION / OWNERSHIP: Test-only certificate for
                            surfaces remain read-only.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG:
+  v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT — Replaces __dict__-dependent result inspection with dataclass
+    field introspection so the certificate correctly validates the production
+    frozen slots dataclass without altering any certified behavior.
   v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT — Establishes direct evidence
     for explicit non-production enablement, exact owner durable authority,
     canonical tenant scope, password policy before persistence, all eight
@@ -40,7 +43,7 @@ from __future__ import annotations
 
 import ast
 from contextlib import contextmanager
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, fields
 from datetime import datetime, timezone
 import inspect
 from pathlib import Path
@@ -65,7 +68,7 @@ from tools.eos.auth.tenant_membership import (
 
 
 EXPECTED_VERSION = "v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER"
-CERTIFICATE_VERSION = "v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT"
+CERTIFICATE_VERSION = "v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT"
 TENANT = "tenant-dev-legal"
 OWNER = "owner-principal"
 VALID_PASSWORD = "synthetic legal persona passphrase"
@@ -730,8 +733,9 @@ def test_error_and_result_surfaces_do_not_expose_password_material(
     harness.credential_conflict = False
     result = _provision(harness, password=secret)
     assert secret not in repr(result)
-    assert "password" not in vars(result)
-    assert "hash" not in vars(result)
+    result_fields = {field.name for field in fields(result)}
+    assert "password" not in result_fields
+    assert "hash" not in result_fields
 
 
 def test_source_excludes_login_mfa_bypass_transport_and_financial_execution() -> None:
@@ -793,7 +797,7 @@ def test_structural_sovereign_contract_is_exact() -> None:
 
 
 # ARTIFACT: tests/unit/test_developer_persona_provisioner.py
-# VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
+# VERSION: v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
 # AUTHORITY BOUNDARY: direct offline evidence for development-only legal persona admission orchestration
 # TENANT POSTURE: exact owner tenant and same-session durable authority composition only
 # FAIL-CLOSED POSTURE: environment, scope, password, owner authority, tenant, conflict, and persistence failures deny
