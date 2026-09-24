@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT
+ * VERSION: v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
  *          identity and tenant context. L8-7D10 converges every published Legal
@@ -14,7 +14,7 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT maps LEGAL_PARTNER, LEGAL_ATTORNEY,
+ * CHANGELOG: 2026-09-23 v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT maps LEGAL_PARTNER, LEGAL_ATTORNEY,
  *            LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT and
  *            their TENANT_* business-role aliases to the canonical Legal OS
  *            shard. Existing SHERIFF/DEPUTY mappings remain unchanged. Browser
@@ -47,6 +47,7 @@ import { ArrowLeft, Crown, Loader2, ShieldAlert } from 'lucide-react';
 import { useTenants } from '../../contexts/tenantContext.jsx';
 import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
+import api from '../../services/api.js';
 import ErrorBoundary from '../ErrorBoundary';
 import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
 
@@ -243,7 +244,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT';
+const CONTROLLER_VERSION = 'v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -522,34 +523,29 @@ export const getExecutiveRoleLabel = (user = {}) => {
 export const probeKernelBridge = async () => {
   const started = performance.now();
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch('/api/kernel', {
-      method: 'GET',
-      credentials: 'include',
-      signal: controller.signal,
-      headers: { Accept: 'application/json' }
+    const response = await api.get('/kernel', {
+      timeout: 8000,
+      skipAuthRedirect: true,
     });
-    clearTimeout(timer);
     const latencyMs = Math.round(performance.now() - started);
-    let payload = null;
-    try {
-      payload = await response.json();
-    } catch {
-      payload = null;
-    }
+    const payload = response?.data && typeof response.data === 'object'
+      ? response.data
+      : null;
     return {
-      status: response.ok ? (payload?.status || 'OPERATIONAL') : `HTTP_${response.status}`,
+      status: String(payload?.status || 'OPERATIONAL').toUpperCase(),
       latencyMs,
       payload,
-      error: response.ok ? null : `HTTP ${response.status}`
+      error: null,
     };
   } catch (err) {
+    const statusCode = err?.response?.status;
     return {
-      status: 'UNREACHABLE',
+      status: statusCode ? `HTTP_${statusCode}` : 'UNREACHABLE',
       latencyMs: Math.round(performance.now() - started),
       payload: null,
-      error: err?.name === 'AbortError' ? 'TIMEOUT' : (err?.message || 'NETWORK')
+      error: statusCode
+        ? `HTTP ${statusCode}`
+        : (err?.code === 'ECONNABORTED' ? 'TIMEOUT' : (err?.message || 'NETWORK')),
     };
   }
 };
@@ -971,7 +967,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT
+ * VERSION: v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: active tenant projection is preserved; Legal OS role routing cannot widen server tenant scope
  * FAIL-CLOSED POSTURE: unknown roles/dashboards do not manufacture Legal Operations access or cross-role fallback
