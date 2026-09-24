@@ -1,0 +1,67 @@
+name: D21B2B Branding Entitlement Registry Certification
+
+on:
+  push:
+    branches:
+      - legal-ops-completion-map
+    paths:
+      - "tools/eos/saas/billing/tenant_branding_entitlement_registry.py"
+      - "tools/eos/saas/domain/tenant_branding_entitlement.py"
+      - "tools/eos/saas/billing/tenant_branding_vas_policy.py"
+      - "tests/unit/test_tenant_branding_entitlement_registry.py"
+      - "tests/integration/test_tenant_branding_entitlement_registry_real_mongo.py"
+      - ".github/workflows/d21b2b-branding-entitlement-registry-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d21b2b-static-direct:
+    name: D21B2B static and direct
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install bounded dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pymongo==4.16.0 pytest==9.1.1
+
+      - name: Compile exact D21B2B surfaces
+        run: |
+          python -m py_compile             tools/eos/saas/billing/tenant_branding_entitlement_registry.py             tests/unit/test_tenant_branding_entitlement_registry.py
+
+      - name: Type-check exact D21B2B surfaces
+        run: |
+          npx --yes pyright@1.1.413             --pythonpath "$(command -v python)"             tools/eos/saas/billing/tenant_branding_entitlement_registry.py             tests/unit/test_tenant_branding_entitlement_registry.py
+
+      - name: Run exact direct certificate
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs tests/unit/test_tenant_branding_entitlement_registry.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then
+            exit "$pytest_status"
+          fi
+          printf '%s\n' "$output" | grep -Eq '16 passed'
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "D21B2B direct certification invalid: skipped tests detected"
+            exit 1
+          fi
