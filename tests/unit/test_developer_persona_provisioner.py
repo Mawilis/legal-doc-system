@@ -1,7 +1,7 @@
 """Direct unit certificate for the WILSY OS developer legal persona provisioner.
 
 TITLE: WILSY OS Developer Legal Persona Provisioner Direct Certificate
-VERSION: v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
+VERSION: v1.0.2-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Deterministically certifies the non-production owner-authorized legal
          persona admission graph, exact caller transaction propagation, persona
@@ -14,6 +14,9 @@ COLLABORATION / OWNERSHIP: Test-only certificate for
                            surfaces remain read-only.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG:
+  v1.0.2-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT — Removes literal placeholder-marker spellings from the
+    certificate itself while preserving structural production checks through
+    composed marker strings. Certified runtime behavior is unchanged.
   v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT — Replaces __dict__-dependent result inspection with dataclass
     field introspection so the certificate correctly validates the production
     frozen slots dataclass without altering any certified behavior.
@@ -68,7 +71,7 @@ from tools.eos.auth.tenant_membership import (
 
 
 EXPECTED_VERSION = "v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER"
-CERTIFICATE_VERSION = "v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT"
+CERTIFICATE_VERSION = "v1.0.2-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT"
 TENANT = "tenant-dev-legal"
 OWNER = "owner-principal"
 VALID_PASSWORD = "synthetic legal persona passphrase"
@@ -791,13 +794,15 @@ def test_structural_sovereign_contract_is_exact() -> None:
     ):
         assert field in source
     assert source.count(EXPECTED_VERSION) == 4
-    assert "TODO" not in source
-    assert "FIXME" not in source
+    forbidden_placeholder = "TO" + "DO"
+    forbidden_fix_marker = "FIX" + "ME"
+    assert forbidden_placeholder not in source
+    assert forbidden_fix_marker not in source
     assert source.rstrip().endswith("# END OF WILSY OS SOVEREIGN ARTIFACT")
 
 
 # ARTIFACT: tests/unit/test_developer_persona_provisioner.py
-# VERSION: v1.0.1-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
+# VERSION: v1.0.2-D15G-DEV-LEGAL-PERSONA-PROVISIONER-CERT
 # AUTHORITY BOUNDARY: direct offline evidence for development-only legal persona admission orchestration
 # TENANT POSTURE: exact owner tenant and same-session durable authority composition only
 # FAIL-CLOSED POSTURE: environment, scope, password, owner authority, tenant, conflict, and persistence failures deny
