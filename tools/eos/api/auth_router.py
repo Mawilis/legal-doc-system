@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION
+VERSION: v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,13 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION: Extends the authenticated workspace tenant projection with the
+  canonical tenant profile's alias, industry, region, and sector as descriptive
+  practice context only. These fields come from the already revalidated
+  TenantEntity/OrganizationProfile, cannot establish membership, role,
+  permission, entitlement, subscription, branding, or operating-model
+  authority, and add no financial execution semantics. Plan, tax/contact,
+  compliance, verification and payment fields remain excluded.
   v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION: Projects only the current authorized subset of four Legal
   Command Center presentation permissions after workspace bootstrap has re-proven
   principal, membership, dedicated tenant business role, canonical tenant, and
@@ -75,7 +82,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION"
+VERSION = "v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -329,6 +336,14 @@ async def workspace_bootstrap(
         if organization is not None
         else None
     )
+    industry = (
+        getattr(organization, "industry", None)
+        if organization is not None
+        else None
+    )
+    alias = getattr(tenant, "alias", None)
+    region = getattr(tenant, "region", None)
+    sector = getattr(tenant, "sector", None)
     tenant_status = getattr(tenant, "status", None)
     tenant_status = getattr(tenant_status, "value", tenant_status)
 
@@ -348,6 +363,10 @@ async def workspace_bootstrap(
                 "tenantId": projection.tenant_id,
                 "name": tenant_name,
                 "legalName": legal_name,
+                "alias": alias,
+                "industry": industry,
+                "region": region,
+                "sector": sector,
                 "status": tenant_status,
             },
         },
@@ -1044,9 +1063,9 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; workspace legalPermissions are read-only outputs of the existing tenant authorization compositor and never independent authority; credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
+# VERSION: v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; workspace legalPermissions are read-only outputs of the existing tenant authorization compositor, D19 tenant practice-profile fields are descriptive projections from canonical tenant truth only, and neither surface is independent authority; credential, contact-verification, recovery, tenant, authorization, entitlement, operating-model, and financial truth remain separate.
 # TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
-# FAIL-CLOSED POSTURE: auth fails closed; workspace permission-authority outages/inconsistency fail closed; recovery initiation is enumeration-safe generic acceptance.
+# FAIL-CLOSED POSTURE: auth fails closed; workspace permission-authority outages/inconsistency fail closed; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
