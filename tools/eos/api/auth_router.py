@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING
+VERSION: v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,14 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-08-29.
 CHANGELOG:
+  v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION: Projects only the current authorized subset of four Legal
+  Command Center presentation permissions after workspace bootstrap has re-proven
+  principal, membership, dedicated tenant business role, canonical tenant, and
+  the existing tenant authorization compositor has independently proven the
+  matching active granting-role assignment. JWT/browser/login permission claims
+  remain excluded; expected denials narrow presentation, authority outages fail
+  503, inconsistent current-state decisions fail closed, and no financial
+  execution authority is projected.
   v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING: Resolves the trusted public
   recovery-link origin only from server-owned deployment configuration, preferring
   WILSY_PUBLIC_APP_ORIGIN and then established WILSY_PUBLIC_APP_URL, CLIENT_URL,
@@ -67,7 +75,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP"
+VERSION = "v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -113,8 +121,19 @@ from ..saas.auth.password_recovery_request_service import (
     PasswordRecoveryRequestServiceError,
 )
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
-from ..auth.authentication import get_current_identity
+from ..auth.authentication import (
+    get_current_identity,
+    get_principal_authority_repository,
+)
 from ..auth.identity import SovereignIdentity
+from ..auth.tenant_access import get_tenant_membership_repository
+from ..auth.tenant_authorization import (
+    TenantAuthorizationReason,
+    authorize_tenant_operation,
+)
+from .tenant_authorization_http import (
+    get_role_assignment_repository as get_tenant_authority_role_repository,
+)
 from ..auth.workspace_bootstrap_projection import (
     WorkspaceBootstrapProjectionError,
     build_workspace_bootstrap_projection,
@@ -154,6 +173,95 @@ def _tenant_id_from_user(user: Any) -> str:
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+_LEGAL_PRESENTATION_PERMISSION_BINDINGS = (
+    ("legal_operations:instruction:write", "legal_instruction_write"),
+    ("legal_operations:return:write", "legal_return_write"),
+    ("legal_operations:billing:read", "legal_billing_read"),
+    ("legal_operations:invoice:read", "legal_invoice_read"),
+)
+_LEGAL_PRESENTATION_EXPECTED_DENIALS = frozenset(
+    {
+        TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE,
+        TenantAuthorizationReason.PERMISSION_NOT_GRANTED,
+        TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE,
+    }
+)
+_LEGAL_PRESENTATION_AUTHORITY_UNAVAILABLE = frozenset(
+    {
+        TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE,
+        TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE,
+        TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE,
+        TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE,
+    }
+)
+
+
+def _workspace_legal_presentation_permissions(
+    *,
+    projection: Any,
+    principal_repository: Any,
+    membership_repository: Any,
+    role_assignment_repository: Any,
+) -> tuple[str, ...]:
+    """Resolve a bounded server-owned permission subset for browser presentation.
+
+    The durable workspace business role is already established by the bootstrap
+    projection. Each returned permission is independently re-evaluated through
+    the canonical tenant authorization compositor, including current principal,
+    membership, business-role, operation/permission binding, and active granting
+    role. Browser/JWT/login permission projections never enter this composition.
+    """
+    resolved: list[str] = []
+    for permission_id, operation in _LEGAL_PRESENTATION_PERMISSION_BINDINGS:
+        decision = authorize_tenant_operation(
+            principal_id=projection.principal_id,
+            tenant_id=projection.tenant_id,
+            permission_id=permission_id,
+            operation=operation,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            business_role_repository=role_assignment_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
+
+        if decision.reason in _LEGAL_PRESENTATION_AUTHORITY_UNAVAILABLE:
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE"
+            )
+
+        if (
+            decision.business_role is not None
+            and decision.business_role != projection.business_role
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_INVALID"
+            )
+
+        if (
+            decision.authorized is True
+            and decision.reason is TenantAuthorizationReason.AUTHORIZED
+        ):
+            resolved.append(permission_id)
+            continue
+
+        if (
+            decision.authorized is True
+            or decision.reason is TenantAuthorizationReason.AUTHORIZED
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_INVALID"
+            )
+
+        if decision.reason in _LEGAL_PRESENTATION_EXPECTED_DENIALS:
+            continue
+
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_INVALID"
+        )
+
+    return tuple(sorted(resolved))
+
+
 @router.get("/verify-token")
 @router.post("/verify-token")
 async def _verify_token(identity: SovereignIdentity = Depends(get_current_identity)) -> dict[str, object]:
@@ -170,6 +278,7 @@ def _workspace_bootstrap_http_error(
         "WORKSPACE_BOOTSTRAP_MEMBERSHIP_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE",
     }
     if code in unavailable:
         return HTTPException(
@@ -185,10 +294,25 @@ def _workspace_bootstrap_http_error(
 @router.get("/workspace-bootstrap")
 async def workspace_bootstrap(
     identity: SovereignIdentity = Depends(get_current_identity),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(
+        get_tenant_authority_role_repository
+    ),
 ) -> dict[str, object]:
     """Return one server-owned workspace projection after current authority checks."""
     try:
         projection = build_workspace_bootstrap_projection(identity=identity)
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        legal_permissions = _workspace_legal_presentation_permissions(
+            projection=projection,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
     except WorkspaceBootstrapProjectionError as error:
         raise _workspace_bootstrap_http_error(error) from error
 
@@ -219,6 +343,7 @@ async def workspace_bootstrap(
             "businessRole": projection.business_role,
             "membershipRevision": projection.membership_revision,
             "businessRoleRevision": projection.business_role_revision,
+            "legalPermissions": list(legal_permissions),
             "tenant": {
                 "tenantId": projection.tenant_id,
                 "name": tenant_name,
@@ -919,10 +1044,9 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only;
-# credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
+# VERSION: v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; workspace legalPermissions are read-only outputs of the existing tenant authorization compositor and never independent authority; credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
 # TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
-# FAIL-CLOSED POSTURE: auth fails closed; recovery initiation is enumeration-safe generic acceptance.
+# FAIL-CLOSED POSTURE: auth fails closed; workspace permission-authority outages/inconsistency fail closed; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
