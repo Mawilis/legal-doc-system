@@ -1,5 +1,5 @@
 /**
- * WILSY OS — LEGAL ADMISSION INTERACTION-SHELL DIRECT CERTIFICATE
+ * TITLE: WILSY OS Legal Admission Interaction-Shell Direct Certificate
  * VERSION: v1.7.0-RECORD-NAVIGATION-SCROLL-RESET-CERT
  * AUTHORITY: Wilsy OS Core Governance; client projection evidence only
  * EPITOME: Certifies the legal gate as a compact, keyboard- and pointer-usable
@@ -20,6 +20,9 @@
  *            and persistent bottom status bar.
  *            v1.3.0 certified the interaction shell.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic server-plan evidence only; the
+ *                             certificate never persists credentials, secrets,
+ *                             acceptance truth, or financial state.
  * AUTHORITY BOUNDARY: Presentation and transport evidence only; Python EOS
  *                     owns legal truth and workspace release.
  * TENANT BOUNDARY: Tenant identity is rendered only from the server plan.
