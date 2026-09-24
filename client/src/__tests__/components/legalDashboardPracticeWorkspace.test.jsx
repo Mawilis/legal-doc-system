@@ -3,8 +3,8 @@
  * VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
- *          workspaces backed by D11/D13 contracts, with functional lifecycle
- *          navigation, governed intake, ReturnOfService generation, exact
+ *          workspaces backed by the D15 V2 first-class matter contract, with
+ *          functional lifecycle navigation, governed intake, ReturnOfService generation, exact
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -398,9 +398,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(submitted).not.toHaveProperty('role');
 
     expect(await screen.findByRole('heading', { name: 'Matters' })).toBeInTheDocument();
-    expect(screen.getByText('CASE-2026-9001')).toBeInTheDocument();
-    expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
-    expect(screen.getByText(submitted.caseMatterId)).toBeInTheDocument();
+    const operatingRoom = screen.getByLabelText('Matter Operating Room');
+    expect(operatingRoom).toBeInTheDocument();
+    expect(within(operatingRoom).getByText('CASE-2026-9001')).toBeInTheDocument();
+    expect(within(operatingRoom).getByText(submitted.caseMatterId)).toBeInTheDocument();
   });
 
   it('does not present intake success when canonical refresh cannot rediscover the new matter', async () => {
