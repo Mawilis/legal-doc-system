@@ -243,7 +243,7 @@ const SovereignRouter = () => {
       <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />} />
       {/* Explicit /dashboard route for soft navigation */}
       <Route path="/dashboard" element={
-        isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to="/discovery" replace />
+        isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />
       } />
       <Route path="/ledger" element={
         isAuthenticated && user ? (
