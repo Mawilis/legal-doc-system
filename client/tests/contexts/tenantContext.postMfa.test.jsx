@@ -1,14 +1,35 @@
 /**
- * TITLE: Post-MFA Tenant Bootstrap Authority Certificate
- * VERSION: v1.0.0-POST-MFA-BOOTSTRAP-CERT
+ * TITLE: Authenticated Workspace Tenant Projection Handoff Certificate
+ * VERSION: v1.1.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF-CERT
  * AUTHORITY: Wilsy OS Core Governance
- * EPITOME: Proves authenticated tenant bootstrap is exact, bounded, idempotent,
- *          and fail-closed without a directory fetch or cross-tenant projection.
+ * EPITOME: Proves TenantProvider consumes only the exact AuthProvider
+ *          server-certified workspace tenant during authenticated bootstrap,
+ *          ignores persisted browser state as authority, performs no redundant
+ *          tenant-profile read, fails closed on mismatch or missing projection,
+ *          and keeps explicit directory refresh separate.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/tenantContext.postMfa.test.jsx
- * COLLABORATION / OWNERSHIP: TenantProvider, AuthProvider, Kennel tenantApi.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.0.0-POST-MFA-BOOTSTRAP-CERT — Initial focused certificate.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * COLLABORATION / OWNERSHIP: TenantProvider, AuthProvider workspace-bootstrap
+ *                            projection, Kennel tenantApi client.
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG:
+ *   v1.1.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF-CERT — Replaces the
+ *     superseded expectation of a second GET /api/tenants/{tenant_id} after
+ *     MFA with the v6.3.0 contract: authenticated initialTenant must exactly
+ *     match authenticatedTenantId, persisted browser state cannot establish
+ *     authenticated scope, and no tenant-profile read occurs during handoff.
+ *   v1.0.0-POST-MFA-BOOTSTRAP-CERT — Initial focused post-MFA tenant bootstrap
+ *     certificate.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Synthetic tenant data only. Browser persistence
+ *                             is explicitly tested as non-authoritative.
+ * TENANT BOUNDARY: Exact authenticated tenant identity is required before an
+ *                  active tenant is exposed; mismatch and missing projection
+ *                  fail closed without tenant-profile or directory reads.
+ * AUTHORITY BOUNDARY: Client projection only. Python EOS remains sovereign for
+ *                     authentication, membership, business role, and canonical
+ *                     tenant workspace truth.
+ * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
+ *                               execution and settlement authority.
  */
 
 import React from 'react';
@@ -25,10 +46,23 @@ vi.mock('../../src/utils/sovereignClient', () => ({ default: sovereignClient }))
 
 import { TenantProvider, useTenants } from '../../src/contexts/tenantContext.jsx';
 
-const authenticatedTenant = { tenantId: 'TENANT-A', alias: 'tenant-a', name: 'Tenant A' };
+const authenticatedTenant = {
+  tenantId: 'TENANT-A',
+  alias: 'tenant-a',
+  name: 'Tenant A',
+  status: 'ACTIVE',
+};
 
 function Harness() {
-  const { activeTenant, bootstrapReady, authorityMismatch, error, switchTenant, refreshTenants } = useTenants();
+  const {
+    activeTenant,
+    bootstrapReady,
+    authorityMismatch,
+    error,
+    switchTenant,
+    refreshTenants,
+  } = useTenants();
+
   return (
     <div>
       <span data-testid="ready">{String(bootstrapReady)}</span>
@@ -46,7 +80,7 @@ const renderProvider = (props = {}) => render(
   <TenantProvider {...props}><Harness /></TenantProvider>,
 );
 
-describe('post-MFA tenant bootstrap authority', () => {
+describe('authenticated workspace tenant projection handoff', () => {
   beforeEach(() => {
     const values = new Map();
     const storage = {
@@ -55,63 +89,119 @@ describe('post-MFA tenant bootstrap authority', () => {
       removeItem: (key) => values.delete(key),
       clear: () => values.clear(),
     };
-    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: storage,
+    });
+
     tenantApi.getTenant.mockReset();
-    tenantApi.getTenant.mockResolvedValue({ data: authenticatedTenant });
     tenantApi.getTenants.mockReset();
     sovereignClient.get.mockClear();
   });
 
-  it('hydrates the authenticated tenant through one exact canonical lookup without downloading the directory', async () => {
-    renderProvider({ initialTenant: authenticatedTenant, authenticatedTenantId: 'TENANT-A' });
+  it('adopts the exact authenticated server projection without a second tenant-profile read', async () => {
+    renderProvider({
+      initialTenant: authenticatedTenant,
+      authenticatedTenantId: 'TENANT-A',
+    });
+
     await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+
     expect(screen.getByTestId('tenant')).toHaveTextContent('TENANT-A');
-    expect(tenantApi.getTenant).toHaveBeenCalledTimes(1);
-    expect(tenantApi.getTenant).toHaveBeenCalledWith('TENANT-A');
+    expect(screen.getByTestId('tenant-name')).toHaveTextContent('Tenant A');
+    expect(screen.getByTestId('mismatch')).toHaveTextContent('false');
+    expect(screen.getByTestId('error')).toHaveTextContent('');
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
   });
 
-  it('re-hydrates a same-id local tenant from canonical server authority', async () => {
-    const staleLocalTenant = { tenantId: 'TENANT-A', alias: 'tenant-a', name: 'Stale Local Tenant' };
-    const canonicalTenant = { tenantId: 'TENANT-A', alias: 'tenant-a', name: 'Canonical Server Tenant' };
-    tenantApi.getTenant.mockResolvedValue({ data: canonicalTenant });
+  it('ignores persisted browser tenant state during authenticated bootstrap', async () => {
+    localStorage.setItem('wilsy_active_tenant', JSON.stringify({
+      tenantId: 'TENANT-B',
+      alias: 'tenant-b',
+      name: 'Persisted Browser Tenant',
+    }));
 
-    renderProvider({ initialTenant: staleLocalTenant, authenticatedTenantId: 'TENANT-A' });
+    renderProvider({
+      initialTenant: authenticatedTenant,
+      authenticatedTenantId: 'TENANT-A',
+    });
 
     await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
-    expect(tenantApi.getTenant).toHaveBeenCalledWith('TENANT-A');
+
     expect(screen.getByTestId('tenant')).toHaveTextContent('TENANT-A');
-    expect(screen.getByTestId('tenant-name')).toHaveTextContent('Canonical Server Tenant');
+    expect(screen.getByTestId('tenant-name')).toHaveTextContent('Tenant A');
+    expect(screen.getByTestId('mismatch')).toHaveTextContent('false');
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
+
+    expect(JSON.parse(localStorage.getItem('wilsy_active_tenant'))).toEqual(
+      authenticatedTenant,
+    );
   });
 
-  it('fails closed when the discovered tenant does not match authenticated authority', async () => {
-    renderProvider({ initialTenant: { tenantId: 'TENANT-B', name: 'Tenant B' }, authenticatedTenantId: 'TENANT-A' });
+  it('fails closed when authenticated projection and authenticated tenant id disagree', async () => {
+    renderProvider({
+      initialTenant: { tenantId: 'TENANT-B', name: 'Tenant B' },
+      authenticatedTenantId: 'TENANT-A',
+    });
+
     await waitFor(() => expect(screen.getByTestId('mismatch')).toHaveTextContent('true'));
+
     expect(screen.getByTestId('tenant')).toHaveTextContent('');
-    expect(screen.getByTestId('error')).toHaveTextContent('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+    expect(screen.getByTestId('error')).toHaveTextContent(
+      'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH',
+    );
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
   });
 
-  it('keeps same-tenant switching idempotent and reserves directory refresh for explicit action', async () => {
-    renderProvider({ initialTenant: authenticatedTenant, authenticatedTenantId: 'TENANT-A' });
-    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
-    fireEvent.click(screen.getByRole('button', { name: 'same' }));
-    expect(tenantApi.getTenant).toHaveBeenCalledTimes(1);
-    expect(tenantApi.getTenant).toHaveBeenCalledWith('TENANT-A');
+  it('fails closed when authenticated scope exists but server projection is absent', async () => {
+    localStorage.setItem('wilsy_active_tenant', JSON.stringify(authenticatedTenant));
+
+    renderProvider({
+      initialTenant: null,
+      authenticatedTenantId: 'TENANT-A',
+    });
+
+    await waitFor(() => expect(screen.getByTestId('mismatch')).toHaveTextContent('true'));
+
+    expect(screen.getByTestId('tenant')).toHaveTextContent('');
+    expect(screen.getByTestId('error')).toHaveTextContent(
+      'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH',
+    );
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
+  });
+
+  it('keeps same-tenant switching idempotent and directory refresh explicit', async () => {
+    renderProvider({
+      initialTenant: authenticatedTenant,
+      authenticatedTenantId: 'TENANT-A',
+    });
+
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'same' }));
+
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
+    expect(tenantApi.getTenants).not.toHaveBeenCalled();
+
     tenantApi.getTenants.mockResolvedValue({ data: [authenticatedTenant] });
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
     await waitFor(() => expect(tenantApi.getTenants).toHaveBeenCalledTimes(1));
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
   });
 });
 
 /**
  * ARTIFACT: client/tests/contexts/tenantContext.postMfa.test.jsx
- * VERSION: v1.0.0-POST-MFA-BOOTSTRAP-CERT
- * AUTHORITY BOUNDARY: browser tenant projection only
- * TENANT POSTURE: exact authenticated tenant; mismatch is fail-closed
- * FAIL-CLOSED POSTURE: no active tenant is exposed on authority mismatch
+ * VERSION: v1.1.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF-CERT
+ * AUTHORITY BOUNDARY: browser tenant projection certificate only; Python EOS workspace-bootstrap remains authoritative
+ * TENANT POSTURE: exact authenticated initialTenant/authenticatedTenantId match required; persisted state cannot establish authenticated scope
+ * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant and performs no compensating privileged tenant-profile read
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
