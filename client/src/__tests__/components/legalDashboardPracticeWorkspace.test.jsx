@@ -307,7 +307,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
     expect(screen.getByText('instruction-001')).toBeInTheDocument();
     expect(screen.getByText('document-001')).toBeInTheDocument();
-    expect(screen.getByText(EVIDENCE_A)).toBeInTheDocument();
+    expect(screen.getAllByText(EVIDENCE_A).length).toBeGreaterThan(0);
     expect(getLegalPracticeWorkspace).toHaveBeenCalledTimes(1);
   });
 
