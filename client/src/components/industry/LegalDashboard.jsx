@@ -102,6 +102,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Bot,
+  Briefcase,
   CheckCircle2,
   ClipboardList,
   Clock3,
