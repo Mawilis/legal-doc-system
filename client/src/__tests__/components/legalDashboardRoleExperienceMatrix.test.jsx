@@ -1,13 +1,15 @@
 /**
  * WILSY OS — LEGAL ROLE EXPERIENCE MATRIX CERTIFICATE
- * VERSION: v1.0.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE-CERT
+ * VERSION: v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Certifies that every published Legal persona renders from authenticated
  *          identity plus server-derived authority/capability projections, exposes
  *          only its current activities, and never falls back to another role's
  *          endpoint family.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CHANGELOG: v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT proves exact authenticated firstName/lastName presentation across Legal practice, finance, client, sheriff and deputy postures; email remains separately visible when distinct, while malformed names and forged legacy displayName/name fields cannot override the bounded fallback. Identity presentation creates no tenant, membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority.
+ *            v1.0.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE-CERT established the multi-role Legal identity/activity and permission-posture matrix.
  * TENANT BOUNDARY: Every fixture is tenant-scoped and synthetic.
  * AUTHORITY BOUNDARY: UI posture is explanatory only; Python EOS owns legal
  *                     authorization and Kennel EOS owns financial execution.
@@ -196,10 +198,18 @@ function installLocalStorageStub() {
   storage.setItem('wilsy.legal-operations.field-device.v1', 'browser-device:matrix');
 }
 
-function authoritativeUser(role, permissions, email) {
+function authoritativeUser(
+  role,
+  permissions,
+  email,
+  firstName = 'Avery',
+  lastName = 'Counsel',
+) {
   return {
     id: `principal-${role.toLowerCase()}`,
     email,
+    firstName,
+    lastName,
     role: `tenant_${role.toLowerCase()}`,
     tenantId: 'tenant-law',
     permissions,
@@ -271,6 +281,7 @@ describe('D20 Legal role experience matrix', () => {
       await screen.findByText('Legal Operations Command Center');
       const posture = screen.getByLabelText('Legal presentation authority posture');
       expect(within(posture).getByText('Server permission projection')).toBeInTheDocument();
+      expect(within(posture).getByText('Avery Counsel')).toBeInTheDocument();
       expect(within(posture).getByText(email)).toBeInTheDocument();
       expect(within(posture).getByText(role)).toBeInTheDocument();
       expect(within(posture).getByText(expectedLanes)).toBeInTheDocument();
@@ -296,6 +307,7 @@ describe('D20 Legal role experience matrix', () => {
     expect(await screen.findByText('Legal Finance Evidence')).toBeInTheDocument();
     const posture = screen.getByLabelText('Legal presentation authority posture');
     expect(within(posture).getByText('Server permission projection')).toBeInTheDocument();
+    expect(within(posture).getByText('Avery Counsel')).toBeInTheDocument();
     expect(within(posture).getByText('finance@example.test')).toBeInTheDocument();
     expect(within(posture).getByText('LEGAL_FINANCE')).toBeInTheDocument();
     expect(within(posture).getByText('Billing evidence · Invoice evidence')).toBeInTheDocument();
@@ -308,13 +320,19 @@ describe('D20 Legal role experience matrix', () => {
     render(
       <LegalDashboard
         roleView="LEGAL_CLIENT"
-        user={{ id: 'principal-client', email: 'client@example.test' }}
+        user={{
+          id: 'principal-client',
+          email: 'client@example.test',
+          firstName: 'Casey',
+          lastName: 'Client',
+        }}
         tenantConfig={{ tenantId: 'tenant-client' }}
       />,
     );
 
     await screen.findByText('Client Matter Workspace');
     const posture = screen.getByLabelText('Legal identity and activity posture');
+    expect(within(posture).getByText('Casey Client')).toBeInTheDocument();
     expect(within(posture).getByText('client@example.test')).toBeInTheDocument();
     expect(within(posture).getByText('LEGAL_CLIENT')).toBeInTheDocument();
     expect(within(posture).getByText('Server client visibility projection')).toBeInTheDocument();
@@ -330,12 +348,18 @@ describe('D20 Legal role experience matrix', () => {
     render(
       <LegalDashboard
         roleView="SHERIFF"
-        user={{ id: 'principal-sheriff', email: 'sheriff@example.test' }}
+        user={{
+          id: 'principal-sheriff',
+          email: 'sheriff@example.test',
+          firstName: 'Sam',
+          lastName: 'Sheriff',
+        }}
         tenantConfig={{ tenantId: 'tenant-sheriff' }}
       />,
     );
 
     const posture = await screen.findByLabelText('Legal identity and activity posture');
+    expect(within(posture).getByText('Sam Sheriff')).toBeInTheDocument();
     expect(within(posture).getByText('sheriff@example.test')).toBeInTheDocument();
     expect(within(posture).getByText('SHERIFF')).toBeInTheDocument();
     expect(within(posture).getByText('Server operational queue projection')).toBeInTheDocument();
@@ -353,12 +377,18 @@ describe('D20 Legal role experience matrix', () => {
     render(
       <LegalDashboard
         roleView="DEPUTY"
-        user={{ id: 'principal-deputy', email: 'deputy@example.test' }}
+        user={{
+          id: 'principal-deputy',
+          email: 'deputy@example.test',
+          firstName: 'Drew',
+          lastName: 'Deputy',
+        }}
         tenantConfig={{ tenantId: 'tenant-deputy' }}
       />,
     );
 
     const posture = await screen.findByLabelText('Legal identity and activity posture');
+    expect(within(posture).getByText('Drew Deputy')).toBeInTheDocument();
     expect(within(posture).getByText('deputy@example.test')).toBeInTheDocument();
     expect(within(posture).getByText('DEPUTY')).toBeInTheDocument();
     expect(within(posture).getByText('Server bound-work + capability projection')).toBeInTheDocument();
@@ -369,6 +399,35 @@ describe('D20 Legal role experience matrix', () => {
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getLegalPracticeWorkspace).not.toHaveBeenCalled();
     expect(getLegalClientMatters).not.toHaveBeenCalled();
+  });
+
+  it('does not normalize malformed names or trust legacy display-name fields', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{
+          ...authoritativeUser(
+            'LEGAL_PARTNER',
+            ALL_LEGAL_PERMISSIONS,
+            'partner@example.test',
+            ' Avery ',
+            '',
+          ),
+          displayName: 'FORGED DISPLAY NAME',
+          name: 'FORGED NAME',
+        }}
+        tenantConfig={{ tenantId: 'tenant-law' }}
+      />,
+    );
+
+    await screen.findByText('Legal Operations Command Center');
+    const posture = screen.getByLabelText('Legal presentation authority posture');
+    expect(within(posture).getByText('partner@example.test')).toBeInTheDocument();
+    expect(within(posture).queryByText('Avery')).not.toBeInTheDocument();
+    expect(within(posture).queryByText('FORGED DISPLAY NAME')).not.toBeInTheDocument();
+    expect(within(posture).queryByText('FORGED NAME')).not.toBeInTheDocument();
   });
 
   it('keeps unresolved Legal scope network-silent', async () => {
@@ -390,10 +449,10 @@ describe('D20 Legal role experience matrix', () => {
 
 /**
  * ARTIFACT: legalDashboardRoleExperienceMatrix.test.jsx
- * VERSION: v1.0.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE-CERT
- * AUTHORITY BOUNDARY: browser presentation evidence only; Python EOS owns authorization
+ * VERSION: v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT
+ * AUTHORITY BOUNDARY: browser presentation evidence only; D24C person-name rendering is descriptive AuthContext projection and Python EOS owns authentication/authorization
  * TENANT POSTURE: synthetic exact tenant scopes only; no cross-tenant fallback
- * FAIL-CLOSED POSTURE: permissions/capabilities narrow controls and unresolved role is network-silent
+ * FAIL-CLOSED POSTURE: malformed/absent person names are never normalized or inferred, forged legacy name fields do not override bounded identity, permissions/capabilities narrow controls, and unresolved role is network-silent
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
