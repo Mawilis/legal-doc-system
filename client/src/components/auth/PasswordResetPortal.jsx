@@ -3,7 +3,7 @@
  * WILSY OS — PASSWORD RESET PORTAL
  * ============================================================================
  * TITLE: Browser password-reset completion surface
- * VERSION: v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE
+ * VERSION: v1.5.0-R10E77-RESET-VIEWPORT-CLOSURE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the unauthenticated recovery completion form and delegates
  *           all reset authority to the certified Python-backed client method.
@@ -12,6 +12,13 @@
  * Python EOS owns recovery, policy, hashing, revision, and revocation truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
+ *   2026-09-24 v1.5.0-R10E77-RESET-VIEWPORT-CLOSURE — Rebalances the
+ *   reset operating room so password requirements occupy the evidence column,
+ *   constrains the auth surface to a dynamic-viewport scroll container despite
+ *   the global body scroll lock, and raises the surface above the global fixed
+ *   sovereign identifier so no footer watermark bleeds through interactive
+ *   reset content. Recovery, policy, secret, tenant, and transport authority
+ *   remain unchanged.
  *   2026-09-24 v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE — Projects the
  *   canonical Python password-policy boundaries before submission, rejects
  *   locally provable length/control/UTF-8-byte violations without spending
@@ -317,6 +324,23 @@ export default function PasswordResetPortal({
                   : 'Use the one-time recovery value issued for this reset. Keep it private.'}
               </p>
             </section>
+
+              <section
+                id="reset-password-requirements"
+                aria-labelledby="reset-password-requirements-title"
+                style={passwordRequirementsStyle}
+              >
+                <h2 id="reset-password-requirements-title" style={passwordRequirementsTitleStyle}>Password requirements</h2>
+                <ul style={passwordRequirementsListStyle}>
+                  <li>Use 15–64 characters.</li>
+                  <li>Keep the password within 72 UTF-8 bytes.</li>
+                  <li>Do not use control characters.</li>
+                  <li>Use a password that passes WILSY&apos;s compromised-password safety check.</li>
+                </ul>
+                <p style={passwordRequirementsNoteStyle}>
+                  Spaces and ordinary Unicode are allowed. Uppercase letters, numbers, and symbols are not mandatory.
+                </p>
+              </section>
           </div>
 
           <div style={resetFormColumnStyle}>
@@ -343,23 +367,6 @@ export default function PasswordResetPortal({
                   <p id="reset-recovery-help" style={helpStyle}>Enter the one-time recovery value. Keep it private; it is used once.</p>
                 </>
               )}
-
-              <section
-                id="reset-password-requirements"
-                aria-labelledby="reset-password-requirements-title"
-                style={passwordRequirementsStyle}
-              >
-                <h2 id="reset-password-requirements-title" style={passwordRequirementsTitleStyle}>Password requirements</h2>
-                <ul style={passwordRequirementsListStyle}>
-                  <li>Use 15–64 characters.</li>
-                  <li>Keep the password within 72 UTF-8 bytes.</li>
-                  <li>Do not use control characters.</li>
-                  <li>Use a password that passes WILSY&apos;s compromised-password safety check.</li>
-                </ul>
-                <p style={passwordRequirementsNoteStyle}>
-                  Spaces and ordinary Unicode are allowed. Uppercase letters, numbers, and symbols are not mandatory.
-                </p>
-              </section>
 
               <label htmlFor="reset-new-password" style={labelStyle}>New password</label>
               <input
@@ -411,15 +418,20 @@ export default function PasswordResetPortal({
 
 const pageStyle = {
   minHeight: '100dvh',
-  height: 'auto',
+  height: '100dvh',
   width: '100%',
   boxSizing: 'border-box',
   display: 'grid',
   justifyItems: 'center',
   alignItems: 'start',
-  padding: 'clamp(24px, 3.2vh, 32px) clamp(18px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))',
+  position: 'relative',
+  zIndex: 1,
+  padding: 'clamp(22px, 2.8vh, 30px) clamp(18px, 3vw, 48px) max(clamp(42px, 6vh, 68px), calc(env(safe-area-inset-bottom) + 24px))',
   overflowX: 'hidden',
   overflowY: 'auto',
+  overscrollBehaviorY: 'contain',
+  WebkitOverflowScrolling: 'touch',
+  scrollbarGutter: 'stable',
   background: 'radial-gradient(circle at 50% 12%, rgba(213,176,79,.06), transparent 34%), #0a0c0d',
   color: '#f7f4ec',
   fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -465,7 +477,7 @@ const copyStyle = {
 };
 
 const workspaceContextStyle = {
-  marginBottom: '22px',
+  marginBottom: 0,
   padding: '14px 16px',
   border: '1px solid rgba(213,176,79,.22)',
   borderRadius: '10px',
@@ -489,7 +501,7 @@ const resetContentGridStyle = {
 const resetEvidenceColumnStyle = {
   display: 'grid',
   alignContent: 'start',
-  gap: '22px',
+  gap: '18px',
   minWidth: 0,
 };
 
@@ -498,7 +510,7 @@ const resetFormColumnStyle = {
 };
 
 const recoveryBriefStyle = {
-  padding: '18px 0 0',
+  padding: '16px 0 0',
   borderTop: '1px solid rgba(255,255,255,.08)',
 };
 
@@ -564,7 +576,7 @@ const helpStyle = {
 
 
 const passwordRequirementsStyle = {
-  margin: '10px 0 4px',
+  margin: 0,
   padding: '12px 14px',
   border: '1px solid rgba(213,176,79,.20)',
   borderRadius: '8px',
@@ -663,7 +675,7 @@ const successPanelStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: Browser password-reset completion surface
- * VERSION: v1.4.0-R10E76-PASSWORD-POLICY-GUIDANCE
+ * VERSION: v1.5.0-R10E77-RESET-VIEWPORT-CLOSURE
  * AUTHORITY BOUNDARY: Client presentation and certified transport invocation
  * TENANT POSTURE: Caller-supplied tenant value is forwarded, never granted
  * FAIL-CLOSED POSTURE: Only server-confirmed HTTP 204 produces success
