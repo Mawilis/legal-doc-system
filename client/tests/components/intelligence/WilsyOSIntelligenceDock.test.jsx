@@ -71,7 +71,7 @@ const {
   ]);
   const mockRecordSuggestionUsage = vi.fn();
   const mockLoadThreads = vi.fn();
-  const mockCreateThread = vi.fn(() => ({ id: 'newThread', title: 'New Sovereign Session' }));
+  const mockCreateThread = vi.fn();
   const mockPersistTurn = vi.fn();
   const mockClearThreads = vi.fn();
   const mockExecuteLegalServices = vi.fn();
@@ -176,6 +176,17 @@ describe('WilsyOSIntelligenceDock', () => {
       { id: 'thread1', title: 'Thread 1', messages: [] },
       { id: 'thread2', title: 'Thread 2', messages: [] },
     ];
+    mockCreateThread.mockReset();
+    mockCreateThread.mockImplementation((payload = {}) => {
+      const thread = {
+        id: 'newThread',
+        title: payload.title || 'New Sovereign Session',
+        workspace: payload.workspace || 'WILSY OS',
+        messages: [],
+      };
+      mockThreads = [thread, ...mockThreads.filter((item) => item.id !== thread.id)];
+      return thread;
+    });
     window.__WILSY_ACTIVE_TENANT__ = { tenantId: 'TEST_TENANT' };
     window.__WILSY_AUTH_USER__ = { displayName: 'Test User' };
   });
