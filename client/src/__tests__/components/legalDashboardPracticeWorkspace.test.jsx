@@ -108,7 +108,7 @@ const practiceWorkspace = ({ withReturn = false, withNewMatter = false } = {}) =
     matters_open: withNewMatter ? 2 : 1,
     matters_closed: 1,
     instructions_total: withNewMatter ? 3 : 2,
-    instructions_registered: 1,
+    instructions_registered: withNewMatter ? 2 : 1,
     instructions_accepted: 1,
     instructions_closed: 0,
     instructions_cancelled: 0,
@@ -397,13 +397,50 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(submitted).not.toHaveProperty('principalId');
     expect(submitted).not.toHaveProperty('role');
 
-    expect(
-      await screen.findByText(/CREATED: matter, instruction, document/i),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Matters' })).toBeInTheDocument();
     expect(screen.getByText('CASE-2026-9001')).toBeInTheDocument();
     expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
     expect(screen.getByText(submitted.caseMatterId)).toBeInTheDocument();
+  });
+
+  it('does not present intake success when canonical refresh cannot rediscover the new matter', async () => {
+    getLegalPracticeWorkspace
+      .mockResolvedValueOnce(practiceWorkspace())
+      .mockResolvedValueOnce(practiceWorkspace());
+    registerLegalIntake.mockResolvedValueOnce({
+      disposition: 'CREATED',
+      tenantId: 'tenant-law',
+    });
+
+    render(<LegalDashboard roleView="LEGAL_PARALEGAL" />);
+    await screen.findByText('Legal Operations Command Center');
+    fireEvent.click(screen.getByRole('button', { name: 'New Instruction' }));
+
+    fireEvent.change(screen.getByLabelText('Matter reference'), {
+      target: { value: 'CASE-2026-NOT-REDISCOVERED' },
+    });
+    fireEvent.change(screen.getByLabelText('Process document type'), {
+      target: { value: 'summons' },
+    });
+    fireEvent.change(screen.getByLabelText('Matter evidence reference'), {
+      target: { value: 'matter-proof-missing' },
+    });
+    fireEvent.change(screen.getByLabelText('Instruction evidence reference'), {
+      target: { value: 'instruction-proof-missing' },
+    });
+    fireEvent.change(
+      screen.getByLabelText('Document registration evidence reference'),
+      { target: { value: 'document-proof-missing' } },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Register instruction' }));
+
+    expect(
+      await screen.findByText('LEGAL_OPERATIONS_INTAKE_REFRESH_MATTER_NOT_FOUND'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New instruction / intake' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Matter Operating Room')).not.toBeInTheDocument();
+    expect(getLegalPracticeWorkspace).toHaveBeenCalledTimes(2);
   });
 
   it('keeps secretary intake read-only while retaining operational visibility', async () => {
