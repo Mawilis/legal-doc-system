@@ -1,7 +1,7 @@
 """WILSY OS password-reset HTTP/ASGI certificate.
 
 TITLE: WILSY OS Password Reset HTTP ASGI Certificate
-VERSION: v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY
+VERSION: v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the mounted FastAPI password-reset completion boundary
          without changing production, contacting MongoDB, using a localhost
@@ -11,8 +11,11 @@ COLLABORATION / OWNERSHIP: Exercises the canonical ``tools.eos.api.server``
                            application and its mounted R10D4 auth router;
                            the reset transaction remains owned by the frozen
                            PasswordResetService.
-CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY narrows the historical R10D byte-freeze to the
+CERTIFICATION / UPDATE DATE: 2026-09-24
+CHANGELOG: v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT certifies policy-dependency failure as bounded 503
+           while preserving user-correctable password-policy rejection as 400,
+           and refreshes the exact reset-service/direct-certificate byte freeze.
+           v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY narrows the historical R10D byte-freeze to the
            reset service and its direct/real-Mongo certificates. The shared auth
            router is intentionally governed by behavioral reset-handler evidence
            because later certified auth routes may extend the same file without
@@ -56,9 +59,9 @@ from tools.eos.saas.auth.password_reset_service import (
 )
 
 
-VERSION = "v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY"
-R10D1_SHA3_512 = "4d36e73fadc923953f7ccfed79c973525ba4b641505d90b35f6b4f6976eac802c15c52d48c34043186283a098d43fe7e1cdd61f2d929466ce169fbc67e395795"
-R10D2_SHA3_512 = "d29be7a2e1a1031d33a168b3544edfaaac9ea14b1041acb4e6d7018cb7c952db429a8bcbde06d1bf1ad46fbb914e1a5374ae8f593e7e5c5efb5377491a23b55d"
+VERSION = "v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT"
+R10D1_SHA3_512 = "024099bc7aca138cb6348f50b6ee5fe209bae1a738315049c6a795ee625bef26ebaf3370ef71b18bce2ef880f37da06fcc3b27d2b8da52bfbbcdace5ff82f066"
+R10D2_SHA3_512 = "a52378fce120ce5490d8cb8db64ec4f85459180ebf143c3fdd398a0826f4d51a47612818574b491535e85d49b899224bd82abcc688be10113231e90e5e2b3b9b"
 R10D3_SHA3_512 = "de89a1382b8734b660bf30ac63ee3dd3aaf60382674bb04656db4a142db109772bc679815a2ddf34f916b77282c3c4550ff5d5ca2a539c1e7a5b29494f89cee7"
 PUBLIC_PATH = "/api/auth/reset-password"
 DOUBLE_API_PATH = "/api/api/auth/reset-password"
@@ -424,7 +427,7 @@ def test_policy_failure_is_bounded_client_error(service_double: RecordingResetSe
 
 @pytest.mark.parametrize(
     "mode",
-    ["RECOVERY_PERSISTENCE_FAILURE", "HASHING_FAILED", "CREDENTIAL_CONFLICT", "PERSISTENCE_FAILURE", "TRANSACTION_FAILURE"],
+    ["RECOVERY_PERSISTENCE_FAILURE", "POLICY_DEPENDENCY_FAILURE", "HASHING_FAILED", "CREDENTIAL_CONFLICT", "PERSISTENCE_FAILURE", "TRANSACTION_FAILURE"],
 )
 def test_internal_service_failures_are_bounded_503(
     service_double: RecordingResetService,
@@ -562,7 +565,7 @@ def test_frozen_r10d_reset_service_and_certificates_remain_exact() -> None:
 
 
 # ARTIFACT: test_password_reset_http.py
-# VERSION: v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY
+# VERSION: v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT
 # AUTHORITY BOUNDARY: mounted ASGI transport evidence only; no production authority
 # TENANT POSTURE: tenant selector forwarding is tested without trusting it as reset authority
 # FAIL-CLOSED POSTURE: malformed, unusable, policy, internal, and unexpected cases never pass
