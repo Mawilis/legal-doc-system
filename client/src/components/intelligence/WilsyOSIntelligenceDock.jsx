@@ -3,7 +3,7 @@
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
+ * Version:        v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Authority-aware operator dock. Kernel posture comes only from
  *                 the canonical /kernel transport. Legal workspace Ask requests
@@ -27,6 +27,9 @@
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
+ *   2026-09-24 v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY — Aligned the sovereign artifact contract with
+ *     canonical /kernel health transport, shared-api /ai/operator generic Ask,
+ *     C1C legal-role routing, and session-only conversation history.
  *   2026-09-17 v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME — Consumed only the
  *     bounded persisted session projection and replaced identity/tenant defaults
  *     with an explicit unresolved posture.
@@ -51,12 +54,12 @@
  *   Upstream:   ../../services/api, authContext/tenantContext (soft),
  *               suggestion + history engines
  *   Downstream: App shell, Boardroom, Founder chrome
- *   Kennel:     GET /api/kernel (health)
+ *   Kennel:     GET /kernel (health via canonical api.js transport)
  *               GET /billing/intelligence/evidence (LEGAL_FINANCE optimization only)
  *               C1C legal-services transport for legal workspace Ask
  *               C1C/C1E legal advisory transport (R1B adapter)
  *
- * Certification Seal: PRODUCTION_READY_v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
+ * Certification Seal: PRODUCTION_READY_v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -471,7 +474,7 @@ export function WilsyOSIntelligenceDock({
 
   /**
    * @function handleSendMessage
-   * @description Operator turn – uses backend POST /api/ai/operator (Phase 4).
+   * @description Authority-aware Ask turn: legal roles use certified C1C legal-services transport; other roles use shared api.post('/ai/operator', ...).
    */
   const handleSendMessage = useCallback(
     async (rawText) => {
@@ -1084,9 +1087,9 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
  * ═══════════════════════════════════════════════════════════════════════════════
- * Phase 4 complete: local engine replaced with backend POST /api/ai/operator.
+ * Generic Ask uses the canonical shared api.js POST /ai/operator transport; legal roles use certified C1C legal-services transport.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
  * Phase 4.1.1 complete: CSS classes for action buttons formally integrated.
  * M14-P7 complete: optional billing-intelligence evidence remains a separate
@@ -1094,10 +1097,10 @@ export default WilsyOSIntelligenceDock;
  * The dock now uses the sovereign Kennel for all intelligence generation.
  * C1E-R1C complete: legal advisories remain server-owned, read-only projections;
  * no legal command, execution, financial authority, or browser persistence exists.
- * Phase 5 next: move conversation history to server (tenant‑scoped).
+ * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME
+ * VERSION: v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
