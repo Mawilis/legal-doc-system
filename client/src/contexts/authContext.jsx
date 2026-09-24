@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION
+ * VERSION: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Accepts an optional workspace.legalPermissions
+ * CHANGELOG: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Accepts firstName/lastName only from the READY workspace-bootstrap user projection after Python EOS has revalidated current principal, tenant membership, dedicated business role and tenant truth. Login/MFA/browser-persisted names remain non-authoritative candidate data and are never promoted. Optional null/absent names remain absent; malformed or whitespace-mutated server name values fail session promotion closed. Names create no role, permission, entitlement, Legal command, billing, payment, execution or settlement authority.
+ *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Accepts an optional workspace.legalPermissions
  *            projection only when it is an exact, duplicate-free subset of the
  *            four D17 Legal Command Center permissions. Server absence preserves
  *            the legacy role-baseline posture; server presence, including an
@@ -31,9 +32,11 @@
  *            reconciliation state, removed tenant/user fallbacks, and replaced
  *            reload-based auth transitions with state-driven session hydration.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Persisted bearer material is candidate state only
- *                             and never becomes authority until Python EOS
- *                             revalidates it; no MFA secret or QR is inferred.
+ * SECURITY / PRIVACY POSTURE: Persisted bearer and user material are candidate state only
+ *                             and never become authority until Python EOS
+ *                             revalidates them; person names are accepted only
+ *                             from READY workspace-bootstrap and no MFA secret,
+ *                             QR, email-derived name or browser identity is inferred.
  * TENANT BOUNDARY: Tenant context is accepted only from the authoritative API response.
  * AUTHORITY BOUNDARY: Client projection only; Python EOS remains authentication truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
@@ -171,12 +174,26 @@ const candidateSessionProjection = (data, fallbackEmail = '') => {
   };
 };
 
+const exactOptionalWorkspaceName = (value) => {
+  if (value === null || value === undefined) return null;
+  if (
+    typeof value !== 'string'
+    || !value
+    || value !== value.trim()
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_PROJECTION_INVALID');
+  }
+  return value;
+};
+
 const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const principal = data?.user;
   const workspace = data?.workspace;
   const tenantProjection = workspace?.tenant;
 
   const principalId = String(principal?.id || '').trim();
+  const firstName = exactOptionalWorkspaceName(principal?.firstName);
+  const lastName = exactOptionalWorkspaceName(principal?.lastName);
   const tenantId = String(workspace?.tenantId || '').trim();
   const tenantProjectionId = String(tenantProjection?.tenantId || '').trim();
   const businessRole = String(workspace?.businessRole || '').trim();
@@ -226,6 +243,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
     user: {
       id: principalId,
       email: principal?.email || fallbackEmail,
+      firstName,
+      lastName,
       tenantId,
       role: businessRole,
       permissions: [...legalPermissions],
@@ -601,12 +620,13 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION
- * AUTHORITY BOUNDARY: browser projection only; workspace legalPermissions are presentation provenance from Python EOS and never browser authorization authority; Python EOS owns authentication and authorization truth
+ * VERSION: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION
+ * AUTHORITY BOUNDARY: browser projection only; workspace firstName/lastName are descriptive authenticated-person projection and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant
- * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses and malformed/duplicate/unknown legalPermissions fail closed; absent legalPermissions retains legacy role-baseline presentation only
+ * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; absent optional names are never inferred and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Preserves the bounded server-owned Legal permission
+ * CHANGELOG: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.
+ *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Preserves the bounded server-owned Legal permission
  * projection plus explicit provenance for presentation narrowing without trusting
  * browser/JWT/login permission claims.
  *            v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Persisted bearer
