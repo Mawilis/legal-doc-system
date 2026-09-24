@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE
+ * VERSION: v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -18,8 +18,8 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE adds LEGAL_PRACTICE and LEGAL_FINANCE modes.
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: 2026-09-24 v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM replaces derived matter grouping with the canonical D15 CaseMatter projection, adds matter-reference/ID/linked-work search, first-class matter selection and an operating-room drilldown across existing instruction/document/attempt/execution/return truth, and routes successful intake to the newly persisted matter only after canonical refresh. No client, custody, billing, AI, payment or settlement truth is synthesized.
  *            Partner/attorney/paralegal/secretary users consume the D11 snapshot
  *            workspace through D13, navigate Command Center, Matters,
  *            Instructions, Documents, Service Operations, Returns and permitted
@@ -132,7 +132,7 @@ import {
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE';
+const DASHBOARD_VERSION = 'v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -164,6 +164,9 @@ const EMPTY_PRACTICE_WORKSPACE = Object.freeze({
   tenantId: '',
   visibility: '',
   summary: Object.freeze({
+    matters_total: 0,
+    matters_open: 0,
+    matters_closed: 0,
     instructions_total: 0,
     instructions_registered: 0,
     instructions_accepted: 0,
@@ -185,6 +188,7 @@ const EMPTY_PRACTICE_WORKSPACE = Object.freeze({
     executions_not_completed: 0,
     returns_total: 0,
   }),
+  matters: Object.freeze([]),
   instructions: Object.freeze([]),
   documents: Object.freeze([]),
   attempts: Object.freeze([]),
@@ -918,75 +922,248 @@ function PracticeLifecycleRow({ item, kind, action = null }) {
   );
 }
 
-function MatterOperationsPanel({ workspace, searchQuery }) {
+function matterLineage(workspace, caseMatterId) {
+  const instructions = workspace.instructions.filter(
+    (item) => item.case_matter_id === caseMatterId,
+  );
+  const documents = workspace.documents.filter(
+    (item) => item.case_matter_id === caseMatterId,
+  );
+  const instructionIds = new Set(instructions.map((item) => item.instruction_id));
+  const documentIds = new Set(documents.map((item) => item.document_id));
+  const attempts = workspace.attempts.filter(
+    (item) => instructionIds.has(item.instruction_id) || documentIds.has(item.document_id),
+  );
+  const attemptIds = new Set(attempts.map((item) => item.attempt_id));
+  const executions = workspace.executions.filter(
+    (item) => attemptIds.has(item.attempt_id)
+      || instructionIds.has(item.instruction_id)
+      || documentIds.has(item.document_id),
+  );
+  const executionIds = new Set(executions.map((item) => item.service_execution_id));
+  const returns = workspace.returns.filter(
+    (item) => executionIds.has(item.service_execution_id)
+      || attemptIds.has(item.attempt_id)
+      || instructionIds.has(item.instruction_id)
+      || documentIds.has(item.document_id),
+  );
+  return { instructions, documents, attempts, executions, returns };
+}
+
+function MatterOperationsPanel({
+  workspace,
+  searchQuery,
+  selectedMatterId,
+  onSelectMatter,
+  overview = false,
+}) {
+  const canonicalMatters = Array.isArray(workspace.matters) ? workspace.matters : [];
   const normalized = searchQuery.trim().toLowerCase();
-  const matters = useMemo(() => {
-    const byMatter = new Map();
-    for (const instruction of workspace.instructions) {
-      const current = byMatter.get(instruction.case_matter_id) || {
-        caseMatterId: instruction.case_matter_id,
-        instructions: 0,
-        documents: new Set(),
-        activeInstructions: 0,
-      };
-      current.instructions += 1;
-      current.documents.add(instruction.document_id);
-      if (['REGISTERED', 'ACCEPTED'].includes(instruction.state)) {
-        current.activeInstructions += 1;
+  const matters = useMemo(
+    () => canonicalMatters.filter((matter) => {
+      if (!normalized) return true;
+      if (
+        matter.case_matter_id.toLowerCase().includes(normalized)
+        || matter.matter_reference.toLowerCase().includes(normalized)
+      ) {
+        return true;
       }
-      byMatter.set(instruction.case_matter_id, current);
-    }
-    for (const document of workspace.documents) {
-      const current = byMatter.get(document.case_matter_id) || {
-        caseMatterId: document.case_matter_id,
-        instructions: 0,
-        documents: new Set(),
-        activeInstructions: 0,
-      };
-      current.documents.add(document.document_id);
-      byMatter.set(document.case_matter_id, current);
-    }
-    return [...byMatter.values()]
-      .map((item) => ({
-        ...item,
-        documents: item.documents.size,
-      }))
-      .filter((item) => !normalized || item.caseMatterId.toLowerCase().includes(normalized))
-      .sort((a, b) => a.caseMatterId.localeCompare(b.caseMatterId));
-  }, [normalized, workspace.documents, workspace.instructions]);
+      const lineage = matterLineage(workspace, matter.case_matter_id);
+      return Object.values(lineage).some((rows) => (
+        rows.some((row) => Object.values(row).some(
+          (value) => typeof value === 'string' && value.toLowerCase().includes(normalized),
+        ))
+      ));
+    }),
+    [canonicalMatters, normalized, workspace],
+  );
+
+  const selectedMatter = canonicalMatters.find(
+    (matter) => matter.case_matter_id === selectedMatterId,
+  ) || null;
+  const selectedLineage = useMemo(
+    () => (selectedMatter
+      ? matterLineage(workspace, selectedMatter.case_matter_id)
+      : null),
+    [selectedMatter, workspace],
+  );
+
+  const matterRows = overview ? matters.slice(0, 5) : matters;
 
   return (
-    <QueuePanel
-      title="Matter operations"
-      subtitle="Derived grouping from canonical instruction/document lineage · not a new CaseMatter state"
-      icon={Scale}
-      rows={matters}
-      emptyMessage={
-        normalized
-          ? 'No current legal work matches this matter search.'
-          : 'No current instruction/document lineage is available for this tenant.'
-      }
-      renderRow={(item) => (
-        <div key={item.caseMatterId} className="grid gap-4 px-5 py-4 md:grid-cols-[1.4fr_1fr_1fr] md:items-center">
-          <div>
-            <p className="text-sm font-black text-white">{item.caseMatterId}</p>
-            <p className="mt-1 text-[11px] text-stone-500">
-              Canonical matter identity referenced by current legal work
-            </p>
+    <div className="space-y-6">
+      <QueuePanel
+        title={overview ? 'Open matters' : 'Matters'}
+        subtitle="First-class canonical CaseMatter truth · select a matter to operate its linked current lifecycle"
+        icon={Scale}
+        rows={matterRows}
+        emptyMessage={
+          normalized
+            ? 'No canonical matter or linked current legal work matches this search.'
+            : 'No canonical CaseMatter is currently available for this tenant.'
+        }
+        renderRow={(matter) => {
+          const lineage = matterLineage(workspace, matter.case_matter_id);
+          const activeInstructions = lineage.instructions.filter(
+            (item) => ['REGISTERED', 'ACCEPTED'].includes(item.state),
+          ).length;
+          return (
+            <div
+              key={matter.case_matter_id}
+              className="grid gap-4 px-5 py-4 lg:grid-cols-[1.35fr_0.8fr_1fr_auto] lg:items-center"
+            >
+              <div>
+                <p className="text-sm font-black text-white">{matter.matter_reference}</p>
+                <p className="mt-1 font-mono text-[10px] text-stone-500">
+                  {matter.case_matter_id}
+                </p>
+                <p className="mt-1 text-[10px] text-stone-600">
+                  Opened {formatTimestamp(matter.opened_at)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                  Matter state
+                </p>
+                <div className="mt-2"><StatePill state={matter.state} /></div>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                  Current linked work
+                </p>
+                <p className="mt-1 text-xs font-semibold text-stone-300">
+                  {lineage.instructions.length} instruction(s) · {lineage.documents.length} document(s)
+                </p>
+                <p className="mt-1 text-[10px] text-stone-600">
+                  {activeInstructions} active instruction(s) · {lineage.attempts.length} attempt(s)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onSelectMatter(matter.case_matter_id)}
+                className="inline-flex min-h-[42px] items-center justify-center rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 text-[11px] font-black text-amber-200 transition hover:bg-amber-500/20"
+              >
+                Open matter
+              </button>
+            </div>
+          );
+        }}
+      />
+
+      {!overview && selectedMatter && selectedLineage && (
+        <section
+          aria-label="Matter Operating Room"
+          className="overflow-hidden rounded-2xl border border-amber-900/35 bg-stone-950/80"
+        >
+          <header className="border-b border-stone-800 bg-amber-500/[0.04] px-5 py-5">
+            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+              <div>
+                <div className="flex items-center gap-2 text-amber-400">
+                  <Scale size={18} />
+                  <span className="text-[9px] font-black uppercase tracking-[0.18em]">
+                    Matter Operating Room
+                  </span>
+                </div>
+                <h2 className="mt-2 text-xl font-black text-white">
+                  {selectedMatter.matter_reference}
+                </h2>
+                <p className="mt-1 font-mono text-[10px] text-stone-500">
+                  {selectedMatter.case_matter_id}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <StatePill state={selectedMatter.state} />
+                <button
+                  type="button"
+                  onClick={() => onSelectMatter(null)}
+                  className="min-h-[40px] rounded-lg border border-stone-800 bg-black/30 px-4 text-[11px] font-black text-stone-300"
+                >
+                  Close matter view
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl border border-stone-800 bg-black/25 p-4">
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Opened</p>
+                <p className="mt-1 text-xs font-semibold text-stone-300">{formatTimestamp(selectedMatter.opened_at)}</p>
+              </div>
+              <div className="rounded-xl border border-stone-800 bg-black/25 p-4">
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Instructions</p>
+                <p className="mt-1 text-lg font-black text-white">{selectedLineage.instructions.length}</p>
+              </div>
+              <div className="rounded-xl border border-stone-800 bg-black/25 p-4">
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Process documents</p>
+                <p className="mt-1 text-lg font-black text-white">{selectedLineage.documents.length}</p>
+              </div>
+              <div className="rounded-xl border border-stone-800 bg-black/25 p-4">
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Service / returns</p>
+                <p className="mt-1 text-xs font-semibold text-stone-300">
+                  {selectedLineage.executions.length} execution(s) · {selectedLineage.returns.length} return(s)
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-stone-800 bg-black/25 p-4">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                Matter evidence locator
+              </p>
+              <p
+                className="mt-1 break-all font-mono text-[10px] text-stone-500"
+                title={selectedMatter.evidence_identity}
+              >
+                {selectedMatter.evidence_identity}
+              </p>
+            </div>
+          </header>
+
+          <div className="space-y-5 p-5">
+            <QueuePanel
+              title="Instructions"
+              subtitle="Current instruction truth linked to this canonical matter"
+              icon={Inbox}
+              rows={selectedLineage.instructions}
+              emptyMessage="No current LegalInstruction is linked to this matter."
+              renderRow={(item) => (
+                <PracticeLifecycleRow key={item.instruction_id} item={item} kind="instruction" />
+              )}
+            />
+            <QueuePanel
+              title="Process documents"
+              subtitle="Current ProcessDocument truth linked to this canonical matter"
+              icon={FileText}
+              rows={selectedLineage.documents}
+              emptyMessage="No current ProcessDocument is linked to this matter."
+              renderRow={(item) => (
+                <PracticeLifecycleRow key={item.document_id} item={item} kind="document" />
+              )}
+            />
+            <div className="grid gap-5 xl:grid-cols-2">
+              <QueuePanel
+                title="Service attempts"
+                subtitle="Attempt truth linked through the matter's instruction/document lineage"
+                icon={Clock3}
+                rows={selectedLineage.attempts}
+                emptyMessage="No current ServiceAttempt is linked to this matter."
+                renderRow={(item) => (
+                  <PracticeLifecycleRow key={item.attempt_id} item={item} kind="attempt" />
+                )}
+              />
+              <QueuePanel
+                title="Returns of Service"
+                subtitle="Generated return evidence linked to this matter · not invoice truth"
+                icon={FileCheck2}
+                rows={selectedLineage.returns}
+                emptyMessage="No ReturnOfService is currently linked to this matter."
+                renderRow={(item) => (
+                  <PracticeLifecycleRow key={item.return_id} item={item} kind="return" />
+                )}
+              />
+            </div>
           </div>
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Workload</p>
-            <p className="mt-1 text-xs font-semibold text-stone-300">
-              {item.instructions} instruction(s) · {item.documents} document(s)
-            </p>
-          </div>
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Active instructions</p>
-            <p className="mt-1 text-lg font-black text-amber-300">{item.activeInstructions}</p>
-          </div>
-        </div>
+        </section>
       )}
-    />
+    </div>
   );
 }
 
@@ -1124,7 +1301,7 @@ function createIntakeDraft() {
   };
 }
 
-function LegalIntakePanel({ onRefresh, roleToken }) {
+function LegalIntakePanel({ onRefresh, onRegistered, roleToken }) {
   const canWrite = INTAKE_WRITE_ROLE_TOKENS.includes(roleToken);
   const [draft, setDraft] = useState(() => createIntakeDraft());
   const [status, setStatus] = useState(null);
@@ -1151,12 +1328,17 @@ function LegalIntakePanel({ onRefresh, roleToken }) {
     event.preventDefault();
     setStatus({ kind: 'pending', message: 'Registering canonical intake…' });
     try {
+      const submittedMatter = {
+        caseMatterId: draft.caseMatterId,
+        matterReference: draft.matterReference.trim(),
+      };
       const result = await registerLegalIntake(draft);
       await onRefresh();
       setStatus({
         kind: 'success',
         message: `${result.disposition}: matter, instruction, document and registration custody evidence are canonical.`,
       });
+      if (typeof onRegistered === 'function') onRegistered(submittedMatter);
       setDraft(createIntakeDraft());
     } catch (caught) {
       setStatus({ kind: 'error', message: commandErrorMessage(caught) });
@@ -1297,6 +1479,7 @@ function LegalPracticeWorkspace({
   const canIntake = INTAKE_WRITE_ROLE_TOKENS.includes(roleToken);
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMatterId, setSelectedMatterId] = useState(null);
   const [returnDrafts, setReturnDrafts] = useState({});
   const [returnStatus, setReturnStatus] = useState({});
 
@@ -1308,6 +1491,7 @@ function LegalPracticeWorkspace({
     );
   }, [searchQuery]);
 
+  const matters = (workspace.matters || []).filter(matches);
   const instructions = workspace.instructions.filter(matches);
   const documents = workspace.documents.filter(matches);
   const attempts = workspace.attempts.filter(matches);
@@ -1324,6 +1508,12 @@ function LegalPracticeWorkspace({
     workspace.summary.attempts_allocated + workspace.summary.attempts_attempted;
 
   const chromeMetrics = [
+    {
+      id: 'matters',
+      label: 'Open matters',
+      value: workspace.summary.matters_open ?? matters.filter((item) => item.state === 'OPEN').length,
+      detail: `${workspace.summary.matters_total ?? matters.length} canonical matters`,
+    },
     {
       id: 'instructions',
       label: 'Active instructions',
@@ -1342,12 +1532,6 @@ function LegalPracticeWorkspace({
       value: activeAttempts,
       detail: `${workspace.summary.executions_total} certified executions`,
     },
-    {
-      id: 'returns',
-      label: 'Returns generated',
-      value: workspace.summary.returns_total,
-      detail: 'Return of Service is separate from invoicing',
-    },
   ];
 
   const navItems = [
@@ -1360,6 +1544,17 @@ function LegalPracticeWorkspace({
     { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark },
     ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
   ];
+
+  const openMatter = (caseMatterId) => {
+    setSelectedMatterId(caseMatterId);
+    setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+  };
+
+  const handleRegisteredMatter = ({ caseMatterId, matterReference }) => {
+    setSearchQuery(matterReference);
+    setSelectedMatterId(caseMatterId);
+    setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+  };
 
   const runReturn = async (execution) => {
     const key = execution.service_execution_id;
@@ -1426,7 +1621,13 @@ function LegalPracticeWorkspace({
           <QueueMetric icon={Clock3} label="Active attempts" value={activeAttempts} description="ALLOCATED or ATTEMPTED service work only." />
           <QueueMetric icon={FileCheck2} label="Returns generated" value={workspace.summary.returns_total} description="Generated ReturnOfService evidence; not invoice truth." />
         </section>
-        <MatterOperationsPanel workspace={workspace} searchQuery={searchQuery} />
+        <MatterOperationsPanel
+          workspace={workspace}
+          searchQuery={searchQuery}
+          selectedMatterId={selectedMatterId}
+          onSelectMatter={openMatter}
+          overview
+        />
         <QueuePanel
           title="Service operations"
           subtitle="Current service attempts requiring operational awareness"
@@ -1438,7 +1639,14 @@ function LegalPracticeWorkspace({
       </div>
     );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.MATTERS) {
-    content = <MatterOperationsPanel workspace={workspace} searchQuery={searchQuery} />;
+    content = (
+      <MatterOperationsPanel
+        workspace={workspace}
+        searchQuery={searchQuery}
+        selectedMatterId={selectedMatterId}
+        onSelectMatter={setSelectedMatterId}
+      />
+    );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS) {
     content = (
       <QueuePanel
@@ -1503,7 +1711,13 @@ function LegalPracticeWorkspace({
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
     content = <LegalFinanceLookup roleToken={roleToken} />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INTAKE) {
-    content = <LegalIntakePanel onRefresh={onRefresh} roleToken={roleToken} />;
+    content = (
+      <LegalIntakePanel
+        onRefresh={onRefresh}
+        onRegistered={handleRegisteredMatter}
+        roleToken={roleToken}
+      />
+    );
   }
 
   const leftRail = (
@@ -1556,8 +1770,16 @@ function LegalPracticeWorkspace({
       ]}
       search={{
         value: searchQuery,
-        placeholder: 'Search current legal operations',
-        onChange: (event) => setSearchQuery(event.target.value),
+        placeholder: 'Search matter reference, ID or linked legal work',
+        onChange: (event) => {
+          const value = event.target.value;
+          setSearchQuery(value);
+          setSelectedMatterId(null);
+          if (value) setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+        },
+        onFocus: () => {
+          if (searchQuery) setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+        },
       }}
       actions={{
         liveSyncLabel: 'Refresh truth',
@@ -2608,7 +2830,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE
+ * VERSION: v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; Python EOS owns authority and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D11 snapshot truth, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth or cross-role fallback
