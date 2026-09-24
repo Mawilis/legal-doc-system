@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE
+ * VERSION: v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
  *          identity and tenant context. L8-7D10 converges every published Legal
@@ -14,7 +14,7 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE maps LEGAL_PARTNER, LEGAL_ATTORNEY,
+ * CHANGELOG: 2026-09-23 v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION maps LEGAL_PARTNER, LEGAL_ATTORNEY,
  *            LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT and
  *            their TENANT_* business-role aliases to the canonical Legal OS
  *            shard. Existing SHERIFF/DEPUTY mappings remain unchanged. Browser
@@ -242,7 +242,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE';
+const CONTROLLER_VERSION = 'v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -644,8 +644,9 @@ const FounderReturnFrame = ({ dashboardLabel, onReturn, children }) => {
  *              Probes Kennel bridge health on mount for institutional telemetry.
  * @param {Object} props
  * @param {Object} props.user - Authenticated user from AuthProvider
+ * @param {Function} [props.onLogout] - AuthProvider-owned logout command.
  */
-const SovereignDashboardController = ({ user: propUser }) => {
+const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const { activeTenant } = useTenants();
   const [manualDashboardKey, setManualDashboardKey] = useState('');
   const [isGlobalCommandSearchOpen, setIsGlobalCommandSearchOpen] = useState(false);
@@ -866,6 +867,7 @@ const SovereignDashboardController = ({ user: propUser }) => {
         user={user}
         tenantConfig={activeTenant}
         roleView={role}
+        onLogout={onLogout}
       />
     );
   } else if (dashboardKey === DASHBOARD_KEYS.GENERAL) {
@@ -963,7 +965,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.3.0-L8-7D10-LEGAL-ROLE-CONVERGENCE
+ * VERSION: v18.4.0-LEGAL-LOGOUT-COMMAND-PROPAGATION
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: active tenant projection is preserved; Legal OS role routing cannot widen server tenant scope
  * FAIL-CLOSED POSTURE: unknown roles/dashboards do not manufacture Legal Operations access or cross-role fallback
