@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.1.0-AUTHENTICATED-LOGOUT-PROPAGATION
+ * VERSION: v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,7 +13,7 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
- *   v20.1.0-AUTHENTICATED-LOGOUT-PROPAGATION — Promotes the legal boundary
+ *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
  *     same browser session. Protected-route fallback now preserves an already
@@ -244,7 +244,7 @@ const SovereignRouter = () => {
       <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} onLogout={logout} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />} />
       {/* Explicit /dashboard route for soft navigation */}
       <Route path="/dashboard" element={
-        isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />
+        isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} onLogout={logout} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />
       } />
       <Route path="/ledger" element={
         isAuthenticated && user ? (
@@ -431,7 +431,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.1.0-AUTHENTICATED-LOGOUT-PROPAGATION
+ * VERSION: v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
