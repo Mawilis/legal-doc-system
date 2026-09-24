@@ -1,7 +1,7 @@
 """WILSY OS durable tenant branding entitlement lifecycle registry.
 
 TITLE: Tenant Branding Entitlement Registry
-VERSION: v1.0.0-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY
+VERSION: v1.0.1-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist immutable D21B2 entitlement revisions and maintain one explicit
          tenant/entitlement current pointer with strict hydration, domain-owned
@@ -15,12 +15,16 @@ COLLABORATION / OWNERSHIP: D21B1 owns branding package/capability policy; D21B2
                             not own entitlement lifecycle truth. Callers own all
                             Mongo session/transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY establishes
-           immutable revision history, explicit tenant/entitlement current
-           pointers, revision-zero creation/replay, domain-derived legal
-           transitions, exact-current idempotent transition replay, CAS
-           advancement, strict pointer-to-history correlation, tenant isolation,
-           deterministic uniqueness and whole-transaction retry signaling.
+CHANGELOG: v1.0.1-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY makes current-pointer enum projection consume
+           D21B2 canonical serialization rather than accessing enum-only
+           attributes through enum-or-string declared fields; runtime semantics
+           and authority boundaries are unchanged.
+           v1.0.0-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY established immutable revision history, explicit
+           tenant/entitlement current pointers, revision-zero creation/replay,
+           domain-derived legal transitions, exact-current idempotent transition
+           replay, CAS advancement, strict pointer-to-history correlation,
+           tenant isolation, deterministic uniqueness and whole-transaction
+           retry signaling.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Persists only D21B2 entitlement/evidence fields and
                              compact currentness metadata. No logo, colour,
@@ -65,7 +69,7 @@ from tools.eos.saas.domain.tenant_branding_entitlement import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY"
+VERSION: Final[str] = "v1.0.1-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY"
 HISTORY_SCHEMA: Final[str] = "WILSY-TENANT-BRANDING-ENTITLEMENT-HISTORY/V1"
 CURRENT_SCHEMA: Final[str] = "WILSY-TENANT-BRANDING-ENTITLEMENT-CURRENT/V1"
 
@@ -480,13 +484,14 @@ def _pointer_for(
     entitlement: TenantBrandingEntitlement,
 ) -> TenantBrandingEntitlementCurrentPointer:
     """Project the only permitted current pointer from one D21B2 snapshot."""
+    payload = entitlement.to_dict()
     return TenantBrandingEntitlementCurrentPointer(
         tenant_id=entitlement.tenant_id,
         entitlement_id=entitlement.entitlement_id,
         lifecycle_revision=entitlement.lifecycle_revision,
         entitlement_fingerprint=entitlement.fingerprint,
-        lifecycle_state=str(entitlement.lifecycle_state.value),
-        branding_tier=str(entitlement.branding_tier.value),
+        lifecycle_state=cast(str, payload["lifecycle_state"]),
+        branding_tier=cast(str, payload["branding_tier"]),
         policy_fingerprint=entitlement.policy_fingerprint,
     )
 
@@ -970,7 +975,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_branding_entitlement_registry.py
-# VERSION: v1.0.0-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY
+# VERSION: v1.0.1-D21B2B-TENANT-BRANDING-ENTITLEMENT-REGISTRY
 # AUTHORITY BOUNDARY: immutable D21B2 revision persistence plus explicit exact-entitlement currentness only; no profile, asset, browser, IAM or financial authority
 # TENANT POSTURE: every history/current read, write, replay and CAS is exact-tenant and exact-entitlement scoped
 # FAIL-CLOSED POSTURE: active caller transaction required; schema drift, corruption, stale revision, divergent replay, races and outages reject
