@@ -1,5 +1,5 @@
 /**
- * WILSY OS — INSTITUTIONAL LEGAL ADMISSION OPERATING SHELL
+ * TITLE: WILSY OS Institutional Legal Admission Operating Shell
  * VERSION: v1.8.0-RECORD-NAVIGATION-SCROLL-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides an operational legal-control workspace with collapsible
@@ -8,7 +8,7 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/LegalAcceptanceGate.jsx
  * COLLABORATION / OWNERSHIP: Python legal_acceptance_router/service owns all
  *                            legal truth; this component owns presentation only.
- * CERTIFICATION / UPDATE DATE: 2026-09-21
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG: v1.8.0 resets the bounded document reading surface to its top
  *            whenever focus moves to a different server record, including
  *            Previous, Next, and Next unresolved navigation. The reset is
