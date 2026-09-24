@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.4.0-SESSION-BOUND-LEGAL-HISTORY]                                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY]                                           ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -12,9 +12,10 @@
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/wilsyAIConversationHistoryEngine.js        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                               ║
- * ║ • Wilson Khanyezi (Founder/CEO) – Mandated history move to server and cryptographic sealing.                                         ║
+ * ║ • Wilson Khanyezi (Founder/CEO) – Mandated sovereign conversation history and cryptographic sealing.                                ║
  * ║ • AI Engineering – Migrated to Web Crypto, made hash functions async, updated all callers.                                          ║
  * ║ • REFINED (2026-08-05) – Removed `crypto-js` CDN, hardened error handling, compliance flags.                                         ║
+ * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COMPLIANCE:                                                                                                                          ║
  * ║   • POPIA §19 (Accountability)                                                                                                      ║
@@ -329,11 +330,11 @@ export async function clearWilsyAIConversationThreads(_options = {}) {
 
 /**
  * @function saveWilsyAIConversationThreads
- * @description Legacy function – kept for compatibility; now a no‑op (all persistence is via async API calls).
- * @param {Array} threads - Ignored.
- * @returns {Array} The provided array (no‑op).
+ * @description Legacy compatibility cache setter; copies supplied threads into same-session memory and performs no network persistence.
+ * @param {Array} threads - Same-session compatibility thread snapshot.
+ * @returns {Array} Snapshot of the same-session compatibility cache.
  * @collaboration Wilsy AI backwards compatibility.
- * @institutional Maintains API surface for legacy code.
+ * @institutional Maintains API compatibility without introducing durable storage.
  */
 export function saveWilsyAIConversationThreads(threads = []) {
   conversationCache = Array.isArray(threads) ? [...threads] : [];
@@ -353,10 +354,10 @@ export function getCachedThreads() {
 
 /**
  * @function syncThreads
- * @description Explicitly refreshes the cache from the backend.
+ * @description Re-reads the same-session conversation cache through the canonical load function.
  * @returns {Promise<Array>} Latest threads.
  * @collaboration Wilsy AI manual refresh.
- * @institutional Forces a re‑load from the server.
+ * @institutional Performs no network request and introduces no durable-history authority.
  */
 export async function syncThreads() {
   return loadWilsyAIConversationThreads();
@@ -377,12 +378,11 @@ export default {
   getCachedThreads,
   syncThreads,
   verifyThreadIntegrity,
-  WILSY_AI_HISTORY_STATUS,
 };
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.4.0-SESSION-BOUND-LEGAL-HISTORY
+ * VERSION: v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY
  * AUTHORITY BOUNDARY: transient browser presentation only; no AI, legal, tenant or durable-history authority
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: no uncertified remote conversation persistence route is called; refresh clears session history
