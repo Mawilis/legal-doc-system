@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM
+ * VERSION: v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM replaces derived matter grouping with the canonical D15 CaseMatter projection, adds matter-reference/ID/linked-work search, first-class matter selection and an operating-room drilldown across existing instruction/document/attempt/execution/return truth, and routes successful intake to the newly persisted matter only after canonical refresh. No client, custody, billing, AI, payment or settlement truth is synthesized.
+ * CHANGELOG: 2026-09-24 v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER makes certified Legal Practice/Finance affordances permission-aware without treating browser permissions as authority: the canonical role remains the maximum presentation envelope and explicit legal_operations permission hints may only narrow intake, ReturnOfService and finance-evidence UI. SHERIFF/DEPUTY server-issued capabilities and LEGAL_CLIENT visibility remain unchanged.
+ *            2026-09-24 v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM replaces derived matter grouping with the canonical D15 CaseMatter projection, adds matter-reference/ID/linked-work search, first-class matter selection and an operating-room drilldown across existing instruction/document/attempt/execution/return truth, and routes successful intake to the newly persisted matter only after canonical refresh. No client, custody, billing, AI, payment or settlement truth is synthesized.
  *            2026-09-23 v10.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE — Partner/attorney/paralegal/secretary users consume the D11 snapshot
  *            workspace through D13, navigate Command Center, Matters,
  *            Instructions, Documents, Service Operations, Returns and permitted
@@ -132,7 +133,7 @@ import {
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 
-const DASHBOARD_VERSION = 'v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM';
+const DASHBOARD_VERSION = 'v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -232,23 +233,40 @@ const PRACTICE_ROLE_TOKENS = Object.freeze([
   'TENANT_LEGAL_SECRETARY',
 ]);
 
-const INTAKE_WRITE_ROLE_TOKENS = Object.freeze([
-  'LEGAL_PARTNER',
-  'TENANT_LEGAL_PARTNER',
-  'LEGAL_ATTORNEY',
-  'TENANT_LEGAL_ATTORNEY',
-  'LEGAL_PARALEGAL',
-  'TENANT_LEGAL_PARALEGAL',
-]);
+const PRESENTATION_PERMISSIONS = Object.freeze({
+  INSTRUCTION_WRITE: 'legal_operations:instruction:write',
+  RETURN_WRITE: 'legal_operations:return:write',
+  BILLING_READ: 'legal_operations:billing:read',
+  INVOICE_READ: 'legal_operations:invoice:read',
+});
 
-const BILLING_READ_ROLE_TOKENS = Object.freeze([
-  'LEGAL_PARTNER',
-  'TENANT_LEGAL_PARTNER',
-  'LEGAL_ATTORNEY',
-  'TENANT_LEGAL_ATTORNEY',
-  'LEGAL_FINANCE',
-  'TENANT_LEGAL_FINANCE',
-]);
+const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
+  LEGAL_PARTNER: Object.freeze([
+    PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
+    PRESENTATION_PERMISSIONS.RETURN_WRITE,
+    PRESENTATION_PERMISSIONS.BILLING_READ,
+    PRESENTATION_PERMISSIONS.INVOICE_READ,
+  ]),
+  LEGAL_ATTORNEY: Object.freeze([
+    PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
+    PRESENTATION_PERMISSIONS.RETURN_WRITE,
+    PRESENTATION_PERMISSIONS.BILLING_READ,
+    PRESENTATION_PERMISSIONS.INVOICE_READ,
+  ]),
+  LEGAL_PARALEGAL: Object.freeze([
+    PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
+    PRESENTATION_PERMISSIONS.RETURN_WRITE,
+    PRESENTATION_PERMISSIONS.INVOICE_READ,
+  ]),
+  LEGAL_SECRETARY: Object.freeze([
+    PRESENTATION_PERMISSIONS.RETURN_WRITE,
+    PRESENTATION_PERMISSIONS.INVOICE_READ,
+  ]),
+  LEGAL_FINANCE: Object.freeze([
+    PRESENTATION_PERMISSIONS.BILLING_READ,
+    PRESENTATION_PERMISSIONS.INVOICE_READ,
+  ]),
+});
 
 const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   COMMAND: 'COMMAND',
@@ -272,6 +290,32 @@ function normalizeRoleToken(value) {
     .trim()
     .replace(/[^A-Za-z0-9]+/g, '_')
     .toUpperCase();
+}
+
+function canonicalPresentationRole(value) {
+  return normalizeRoleToken(value).replace(/^TENANT_/, '');
+}
+
+function explicitLegalPermissionHints(user) {
+  const values = [
+    ...(Array.isArray(user?.permissions) ? user.permissions : []),
+    ...(Array.isArray(user?.enabledPermissions) ? user.enabledPermissions : []),
+  ];
+  return new Set(
+    values
+      .map((permission) => String(permission || '').trim())
+      .filter((permission) => permission.startsWith('legal_operations:')),
+  );
+}
+
+function presentationAllowsPermission({ roleToken, user, permission }) {
+  const role = canonicalPresentationRole(roleToken);
+  const roleEnvelope = ROLE_PRESENTATION_PERMISSION_ENVELOPE[role] || [];
+  if (!roleEnvelope.includes(permission)) return false;
+
+  const explicitHints = explicitLegalPermissionHints(user);
+  if (explicitHints.size === 0) return true;
+  return explicitHints.has(permission);
 }
 
 function resolveRoleMode(value) {
@@ -1167,11 +1211,21 @@ function MatterOperationsPanel({
   );
 }
 
-function LegalFinanceLookup({ roleToken }) {
-  const canReadBilling = BILLING_READ_ROLE_TOKENS.includes(roleToken);
-  const allowedKinds = canReadBilling
-    ? ['TARIFF_ASSESSMENT', 'BILLING_ELIGIBILITY', 'INVOICE']
-    : ['INVOICE'];
+function LegalFinanceLookup({ roleToken, user }) {
+  const canReadBilling = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.BILLING_READ,
+  });
+  const canReadInvoice = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
+  });
+  const allowedKinds = useMemo(() => [
+    ...(canReadBilling ? ['TARIFF_ASSESSMENT', 'BILLING_ELIGIBILITY'] : []),
+    ...(canReadInvoice ? ['INVOICE'] : []),
+  ], [canReadBilling, canReadInvoice]);
   const [kind, setKind] = useState('INVOICE');
   const [identity, setIdentity] = useState('');
   const [result, setResult] = useState(null);
@@ -1179,6 +1233,10 @@ function LegalFinanceLookup({ roleToken }) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    if (allowedKinds.length === 0) {
+      if (kind) setKind('');
+      return;
+    }
     if (!allowedKinds.includes(kind)) setKind(allowedKinds[0]);
   }, [allowedKinds, kind]);
 
@@ -1186,6 +1244,10 @@ function LegalFinanceLookup({ roleToken }) {
     event.preventDefault();
     setLookupError('');
     setResult(null);
+    if (!allowedKinds.includes(kind)) {
+      setLookupError('LEGAL_OPERATIONS_FINANCE_PRESENTATION_PERMISSION_DENIED');
+      return;
+    }
     setPending(true);
     try {
       setResult(await getLegalFinanceEvidence(kind, identity.trim()));
@@ -1195,6 +1257,22 @@ function LegalFinanceLookup({ roleToken }) {
       setPending(false);
     }
   };
+
+  if (allowedKinds.length === 0) {
+    return (
+      <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-6">
+        <div className="flex items-start gap-3">
+          <LockKeyhole className="mt-0.5 text-stone-500" size={20} />
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">Finance evidence is read-only for this permission posture</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-400">
+              Browser permission hints may only narrow presentation. Python EOS remains the authorization authority for legal billing and invoice evidence.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/75">
@@ -1226,7 +1304,7 @@ function LegalFinanceLookup({ roleToken }) {
             >
               {allowedKinds.includes('TARIFF_ASSESSMENT') && <option value="TARIFF_ASSESSMENT">Tariff assessment</option>}
               {allowedKinds.includes('BILLING_ELIGIBILITY') && <option value="BILLING_ELIGIBILITY">Billing eligibility</option>}
-              <option value="INVOICE">Client invoice</option>
+              {canReadInvoice && <option value="INVOICE">Client invoice</option>}
             </select>
           </label>
           <label>
@@ -1301,8 +1379,12 @@ function createIntakeDraft() {
   };
 }
 
-function LegalIntakePanel({ onRefresh, onRegistered, roleToken }) {
-  const canWrite = INTAKE_WRITE_ROLE_TOKENS.includes(roleToken);
+function LegalIntakePanel({ onRefresh, onRegistered, roleToken, user }) {
+  const canWrite = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
+  });
   const [draft, setDraft] = useState(() => createIntakeDraft());
   const [status, setStatus] = useState(null);
 
@@ -1484,7 +1566,27 @@ function LegalPracticeWorkspace({
   workspace,
 }) {
   const roleToken = normalizeRoleToken(roleView);
-  const canIntake = INTAKE_WRITE_ROLE_TOKENS.includes(roleToken);
+  const canIntake = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
+  });
+  const canGenerateReturn = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.RETURN_WRITE,
+  });
+  const canReadBilling = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.BILLING_READ,
+  });
+  const canReadInvoice = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
+  });
+  const canOpenFinance = canReadBilling || canReadInvoice;
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMatterId, setSelectedMatterId] = useState(null);
@@ -1549,7 +1651,7 @@ function LegalPracticeWorkspace({
     { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
     { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
     { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
-    { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark },
+    ...(canOpenFinance ? [{ id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark }] : []),
     ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
   ];
 
@@ -1598,6 +1700,7 @@ function LegalPracticeWorkspace({
   };
 
   const returnAction = (execution) => {
+    if (!canGenerateReturn) return null;
     if (returnedExecutionIds.has(execution.service_execution_id)) {
       return <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Return generated</span>;
     }
@@ -1717,13 +1820,14 @@ function LegalPracticeWorkspace({
       />
     );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
-    content = <LegalFinanceLookup roleToken={roleToken} />;
+    content = <LegalFinanceLookup roleToken={roleToken} user={user} />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INTAKE) {
     content = (
       <LegalIntakePanel
         onRefresh={onRefresh}
         onRegistered={handleRegisteredMatter}
         roleToken={roleToken}
+        user={user}
       />
     );
   }
@@ -1775,6 +1879,7 @@ function LegalPracticeWorkspace({
         'Instruction → Document → Attempt → Service → Return',
         'Current canonical lifecycle truth',
         'Kennel EOS remains financial execution authority',
+        'Permission hints may narrow presentation; Python EOS remains authorization authority',
       ]}
       search={{
         value: searchQuery,
@@ -1866,7 +1971,7 @@ function LegalFinanceWorkspace({
       )}
     >
       <div className="space-y-6">
-        <LegalFinanceLookup roleToken={roleToken} />
+        <LegalFinanceLookup roleToken={roleToken} user={user} />
         <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 text-emerald-400" size={20} />
@@ -2838,10 +2943,10 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v11.0.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM
- * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; Python EOS owns authority and legal truth
+ * VERSION: v11.1.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER
+ * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; canonical role is the maximum browser presentation envelope, explicit legal permission hints may only narrow it, and Python EOS owns authority and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
- * FAIL-CLOSED POSTURE: unresolved role, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth or cross-role fallback
+ * FAIL-CLOSED POSTURE: unresolved role, explicit legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents truth, widens role scope or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
