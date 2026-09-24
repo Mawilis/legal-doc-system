@@ -1,23 +1,44 @@
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SOVEREIGN TENANT CONTEXT (KENNEL INTEGRATED)                                                                               ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ FILE:           client/src/contexts/tenantContext.jsx                                                                                ║
- * ║ VERSION:        v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP                                                                                  ║
- * ║ AUTHORITY:      Wilsy OS Core Governance                                                                                            ║
- * ║ EPITOME:        Production tenant context using Kennel API (tenantApi). Provides tenant CRUD, resolution, and isolation.             ║
- * ║ CLASSIFICATION: Production Artifact                                                                                                 ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG:                                                                                                                        ║
- * ║   2026-09-17 v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP – Hydrates only the authenticated tenant, removes bootstrap directory fetch, and     ║
- * ║   fails closed on discovered/authenticated tenant mismatch; same-tenant switching is idempotent.                                    ║
- * ║   2026-08-19 v6.1.0-KENNEL-ALIGNED – Fixed import path and method calls to match tenantApi (getTenants, getTenant).                 ║
- * ║   2026-08-19 v6.0.0-KENNEL-INTEGRATED – Original version with incorrect path/methods.                                               ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                                        ║
- * ║ KENNEL PORT:   9095 (via Vite proxy)                                                                                                 ║
- * ║ DEPENDENCIES:  tenantApi (from services/api), React hooks                                                                           ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY OS Sovereign Tenant Context
+ * VERSION: v6.3.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Projects the exact server-certified authenticated workspace tenant
+ *          into browser context without demanding a second, independently
+ *          privileged tenant-profile read after MFA.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/tenantContext.jsx
+ * COLLABORATION / OWNERSHIP: Browser projection only. AuthProvider supplies the
+ *                            Python EOS workspace-bootstrap projection; TenantProvider
+ *                            owns bounded client hydration and same-tenant UI state.
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG:
+ *   v6.3.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF — Treats the current
+ *     AuthProvider initialTenant as the only authenticated bootstrap candidate,
+ *     requires its canonical identifier to equal authenticatedTenantId, and
+ *     adopts that already server-revalidated projection without calling
+ *     GET /api/tenants/{tenant_id}. Persisted browser state cannot establish an
+ *     authenticated tenant. This closes the post-MFA LEGAL_PARTNER 403 caused
+ *     by incorrectly requiring tenant:profile:read after workspace-bootstrap
+ *     had already certified principal, membership, business role, and tenant.
+ *   v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP — Hydrated only the authenticated
+ *     tenant, removed bootstrap directory fetch, and failed closed on
+ *     discovered/authenticated tenant mismatch; same-tenant switching remained
+ *     idempotent.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Browser storage and discovered tenant state never
+ *                             become authenticated authority. An authenticated
+ *                             tenant is accepted only from AuthProvider's
+ *                             server-owned workspace-bootstrap projection.
+ * TENANT BOUNDARY: authenticatedTenantId must exactly equal the initialTenant
+ *                  canonical identifier before any authenticated tenant is
+ *                  exposed. Cross-tenant mismatch fails closed without a tenant
+ *                  profile or directory request.
+ * AUTHORITY BOUNDARY: Client projection only. Python EOS owns authentication,
+ *                     ACTIVE principal/membership/business-role truth and
+ *                     canonical tenant resolution. This context grants no
+ *                     tenant-profile permission or authorization role.
+ * FINANCIAL AUTHORITY BOUNDARY: None. Dunning state is read-only projection;
+ *                               Kennel EOS remains exclusive financial execution
+ *                               and settlement authority.
  */
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
@@ -101,71 +122,63 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
     }
   }, [activeTenant, tenantIdentifier]);
 
-  // ─── Hydrate exactly the selected/authenticated tenant (never the directory) ─
+  // ─── Project the server-certified authenticated workspace tenant exactly ───
   useEffect(() => {
     let cancelled = false;
     const expectedId = String(authenticatedTenantId || '').trim();
+
     let persisted = null;
-    try {
-      const saved = localStorage.getItem('wilsy_active_tenant');
-      persisted = saved ? JSON.parse(saved) : null;
-    } catch {
-      persisted = null;
+    if (!expectedId) {
+      try {
+        const saved = localStorage.getItem('wilsy_active_tenant');
+        persisted = saved ? JSON.parse(saved) : null;
+      } catch {
+        persisted = null;
+      }
     }
-    const candidate = initialTenant || persisted;
-    const candidateId = tenantIdentifier(candidate);
 
     const finish = () => {
       if (!cancelled) setBootstrapReady(true);
     };
 
-    if (candidate && expectedId && candidateId !== expectedId) {
-      setActiveTenant(null);
-      setAuthorityMismatch(true);
-      setError("AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH");
-      finish();
-      return () => { cancelled = true; };
-    }
+    if (expectedId) {
+      const authenticatedCandidate = initialTenant;
+      const candidateId = tenantIdentifier(authenticatedCandidate);
 
-    if (candidate && !expectedId) {
-      setActiveTenant((previous) => tenantIdentifier(previous) === candidateId ? previous : candidate);
+      if (!authenticatedCandidate || candidateId !== expectedId) {
+        setActiveTenant(null);
+        setAuthorityMismatch(true);
+        setError('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+        finish();
+        return () => { cancelled = true; };
+      }
+
+      setActiveTenant((previous) => (
+        tenantIdentifier(previous) === candidateId ? previous : authenticatedCandidate
+      ));
+      setTenants((previous) => (
+        previous.some((item) => tenantIdentifier(item) === candidateId)
+          ? previous
+          : [...previous, authenticatedCandidate]
+      ));
+      localStorage.setItem('wilsy_active_tenant', JSON.stringify(authenticatedCandidate));
       setAuthorityMismatch(false);
       setError(null);
+      setLoading(false);
       finish();
       return () => { cancelled = true; };
     }
 
-    if (!expectedId) {
-      finish();
-      return () => { cancelled = true; };
+    const candidate = initialTenant || persisted;
+    const candidateId = tenantIdentifier(candidate);
+    if (candidate) {
+      setActiveTenant((previous) => (
+        tenantIdentifier(previous) === candidateId ? previous : candidate
+      ));
+      setAuthorityMismatch(false);
+      setError(null);
     }
-
-    setLoading(true);
-    tenantApi.getTenant(expectedId)
-      .then((response) => {
-        if (cancelled) return;
-        const resolved = response?.data;
-        const resolvedId = tenantIdentifier(resolved);
-        if (!resolved || resolvedId !== expectedId) {
-          setAuthorityMismatch(true);
-          setError('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
-          return;
-        }
-        setActiveTenant(resolved);
-        setTenants((previous) => previous.some((item) => tenantIdentifier(item) === resolvedId)
-          ? previous : [...previous, resolved]);
-        localStorage.setItem('wilsy_active_tenant', JSON.stringify(resolved));
-        setAuthorityMismatch(false);
-        setError(null);
-      })
-      .catch((requestError) => {
-        if (!cancelled) setError(requestError.response?.data?.message || requestError.message || 'Tenant authority is unavailable.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-        finish();
-      });
-
+    finish();
     return () => { cancelled = true; };
   }, [authenticatedTenantId, initialTenant, tenantIdentifier]);
 
@@ -293,23 +306,11 @@ export const useTenants = () => {
 export default TenantContext;
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — tenantContext v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v6.2.0-POST-MFA-AUTHORITY-BOOTSTRAP
- * Fixes:           Authenticated tenant bootstrap is exact and directory-free; mismatches fail closed.
- *                  Same-tenant switches are idempotent and explicit directory refresh remains available.
- *                  Corrected import path to ../services/api/tenantApi and canonical response extraction.
- * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
- * Health Check:
- *   ✅ All API calls use correct tenantApi methods
- *   ✅ Response extraction handles the nested structure
- *   ✅ Error handling and loading states preserved
- *   ✅ localStorage persistence works
- *   ✅ No placeholders or TODOs
- *   ✅ Full JSDoc and institutional commentary
- *   ✅ Semantic version and change log
- *   ✅ TenantProvider is correctly exported as a named export
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: client/src/contexts/tenantContext.jsx
+ * VERSION: v6.3.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF
+ * AUTHORITY BOUNDARY: browser tenant projection only; Python EOS workspace-bootstrap remains authoritative
+ * TENANT POSTURE: authenticated initialTenant must exactly match authenticatedTenantId; persisted browser state cannot establish authenticated scope
+ * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant and performs no compensating privileged tenant-profile request
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
