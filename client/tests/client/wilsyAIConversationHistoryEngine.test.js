@@ -1,21 +1,26 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — AI Conversation History Engine Tests
+ * Wilsy OS — AI Conversation History Engine Session-Bound Certificate
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * Version:        v5.1.1-KENNEL-PHASE5
+ * Version:        v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
  * Authority:      Wilsy OS Core Governance
- * Epitome:        Unit + integration tests for conversation history engine with
- *                 cryptographic proof hashing and tenant isolation.
- * Collaboration:  Wilson Khanyezi (architect), Wilsy OS Core Team.
+ * Epitome:        Direct certificate for transient same-session conversation
+ *                 history. No remote history route, durable persistence, legal
+ *                 authority, tenant authority, or financial authority is implied.
+ * Classification: Production Test Artifact — Institutional Contract
+ *
  * Change Log:
- *   2026-08-05 v5.1.1-KENNEL-PHASE5 — Fixed async/await for verifyThreadIntegrity tests.
+ *   2026-09-24 v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT — Replaced retired backend-history assumptions with
+ *     direct session-memory, cache-integrity, fail-closed, and no-network proofs.
+ *   2026-08-05 v5.1.1-KENNEL-PHASE5 — Fixed async integrity checks.
  *   2026-08-05 v5.1.0-KENNEL-PHASE5 — Initial creation.
- * Certification:  PRODUCTION_READY_v5.1.1-KENNEL-PHASE5
+ *
+ * Certification Seal: PRODUCTION_READY_v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   normalizeWilsyAIConversationText,
   resolveWilsyAIConversationWorkspace,
@@ -24,235 +29,224 @@ import {
   createWilsyAIConversationThread,
   persistWilsyAIConversationTurn,
   clearWilsyAIConversationThreads,
+  saveWilsyAIConversationThreads,
   getCachedThreads,
   syncThreads,
   verifyThreadIntegrity,
 } from '../../src/components/intelligence/wilsyAIConversationHistoryEngine.js';
-import api from '../../src/services/api.js';
 
-// Mock the sovereign API
-vi.mock('../../src/services/api.js');
+describe('Wilsy AI Conversation History Engine — session-bound authority', () => {
+  beforeEach(async () => {
+    window.__WILSY_ACTIVE_TENANT__ = { tenantId: 'TEST_TENANT' };
+    await clearWilsyAIConversationThreads();
+  });
 
-describe('Wilsy AI Conversation History Engine', () => {
-
-  // ========================================================================
-  // UNIT TESTS: Helper Functions
-  // ========================================================================
-
-  describe('normalizeWilsyAIConversationText', () => {
-    it('should trim and collapse spaces', () => {
+  describe('normalization helpers', () => {
+    it('trims and collapses conversation text', () => {
       expect(normalizeWilsyAIConversationText('  hello   world  ')).toBe('hello world');
     });
-    it('should return fallback for empty value', () => {
+
+    it('returns the supplied fallback for empty text', () => {
       expect(normalizeWilsyAIConversationText('', 'fallback')).toBe('fallback');
     });
-  });
 
-  describe('resolveWilsyAIConversationWorkspace', () => {
-    it('should resolve from payload.workspace', () => {
+    it('resolves workspace from payload, context, then fallback', () => {
       expect(resolveWilsyAIConversationWorkspace({ workspace: 'Billing' })).toBe('Billing');
-    });
-    it('should resolve from context.workspace', () => {
       expect(resolveWilsyAIConversationWorkspace({ context: { workspace: 'CRM' } })).toBe('CRM');
-    });
-    it('should fallback to "Workspace"', () => {
       expect(resolveWilsyAIConversationWorkspace({})).toBe('Workspace');
     });
-  });
 
-  describe('resolveWilsyChatHistoryTitle', () => {
-    it('should create title from workspace and prompt', () => {
-      const title = resolveWilsyChatHistoryTitle({ workspace: 'Billing', promptText: 'Check invoices' });
-      expect(title).toContain('Billing');
-      expect(title).toContain('Check invoices');
-    });
-    it('should preserve existing non-placeholder title', () => {
-      const thread = { title: 'Existing Title' };
-      const title = resolveWilsyChatHistoryTitle({ workspace: 'Billing', thread });
-      expect(title).toBe('Existing Title');
-    });
-  });
-
-  // ========================================================================
-  // INTEGRATION TESTS: API Functions
-  // ========================================================================
-
-  describe('loadWilsyAIConversationThreads', () => {
-    beforeEach(() => {
-      api.get.mockReset();
-    });
-
-    it('should fetch threads from API and verify proof hashes', async () => {
-      // Mock threads WITHOUT proofHash (legacy) so they pass verification
-      const mockThreads = [
-        {
-          id: 't1',
-          title: 'Test Thread',
-          workspace: 'Billing',
-          turns: [],
-          tenantId: 'TEST',
-          // proofHash omitted intentionally
-        },
-      ];
-      api.get.mockResolvedValue({ data: { threads: mockThreads } });
-
-      const threads = await loadWilsyAIConversationThreads();
-      expect(threads).toHaveLength(1);
-      expect(api.get).toHaveBeenCalledWith('/api/ai/conversations', expect.any(Object));
-    });
-
-    it('should return cached threads on API failure', async () => {
-      // First, seed the cache with a successful call
-      const cached = [{ id: 'cached' }];
-      api.get.mockResolvedValueOnce({ data: { threads: cached } });
-      await loadWilsyAIConversationThreads(); // populates cache
-
-      // Now force API failure
-      api.get.mockRejectedValue(new Error('Network error'));
-      const threads = await loadWilsyAIConversationThreads();
-      expect(threads).toEqual(cached);
-    });
-  });
-
-  describe('createWilsyAIConversationThread', () => {
-    beforeEach(() => {
-      api.post.mockReset();
-    });
-
-    it('should create a thread with proof hash', async () => {
-      const payload = { workspace: 'Billing', title: 'New Thread' };
-      const mockResponse = {
-        data: {
-          thread: {
-            id: 'new-thread',
-            title: 'New Thread',
-            workspace: 'Billing',
-            turns: [],
-            tenantId: 'TEST',
-            proofHash: 'hash',
-          },
-        },
-      };
-      api.post.mockResolvedValue(mockResponse);
-
-      const thread = await createWilsyAIConversationThread(payload);
-      expect(thread).toHaveProperty('id');
-      expect(thread).toHaveProperty('proofHash');
-      expect(api.post).toHaveBeenCalled();
-    });
-
-    it('should fallback to local thread on API failure', async () => {
-      api.post.mockRejectedValue(new Error('Network error'));
-      const thread = await createWilsyAIConversationThread({ workspace: 'Billing' });
-      expect(thread).toHaveProperty('id');
-      expect(thread.id).toMatch(/^offline-/);
-      expect(thread).toHaveProperty('proofHash');
-    });
-  });
-
-  describe('persistWilsyAIConversationTurn', () => {
-    beforeEach(() => {
-      api.put.mockReset();
-    });
-
-    it('should add a turn and recompute proof hash', async () => {
-      const threadId = 't1';
-      const existingThread = {
-        id: threadId,
-        title: 'Test',
+    it('creates a contextual title and preserves a non-placeholder existing title', () => {
+      const generated = resolveWilsyChatHistoryTitle({
         workspace: 'Billing',
-        turns: [],
-        tenantId: 'TEST',
-        proofHash: 'oldhash',
-      };
-      // Seed cache with the existing thread
-      api.get.mockResolvedValue({ data: { threads: [existingThread] } });
-      await loadWilsyAIConversationThreads();
+        promptText: 'Check invoices',
+      });
+      expect(generated).toContain('Billing');
+      expect(generated).toContain('Check invoices');
 
-      // Now mock the PUT response
-      api.put.mockResolvedValue({
-        data: {
-          thread: {
-            ...existingThread,
-            turns: [{ promptText: 'Hello', answerText: 'Hi', proofHash: 'turnhash' }],
-            proofHash: 'newhash',
-          },
-        },
-      });
-
-      const updated = await persistWilsyAIConversationTurn({
-        threadId,
-        promptText: 'Hello',
-        answerText: 'Hi',
-      });
-      expect(updated).toHaveProperty('proofHash');
-      expect(updated.turns).toHaveLength(1);
-    });
-
-    it('should create a new thread if threadId not provided', async () => {
-      api.post.mockResolvedValue({
-        data: { thread: { id: 'new-thread', proofHash: 'hash' } },
-      });
-      const updated = await persistWilsyAIConversationTurn({
-        promptText: 'Hello',
-        answerText: 'Hi',
-      });
-      expect(updated).toHaveProperty('id');
+      expect(resolveWilsyChatHistoryTitle({
+        workspace: 'Billing',
+        thread: { title: 'Existing Title' },
+      })).toBe('Existing Title');
     });
   });
 
-  describe('clearWilsyAIConversationThreads', () => {
-    it('should clear cache and call API', async () => {
-      api.delete.mockResolvedValue({});
+  describe('session-only transport boundary', () => {
+    it('contains no retired remote conversation route or api transport dependency', () => {
+      const source = readFileSync(
+        `${process.cwd()}/src/components/intelligence/wilsyAIConversationHistoryEngine.js`,
+        'utf8',
+      );
+      expect(source).not.toContain('/api/ai/conversations');
+      expect(source).not.toMatch(/import\s+api\s+from/);
+      expect(source).not.toMatch(/\bapi\.(?:get|post|put|delete|patch)\s*\(/);
+    });
+
+    it('starts empty after an explicit same-session clear', async () => {
+      expect(await loadWilsyAIConversationThreads()).toEqual([]);
+      expect(getCachedThreads()).toEqual([]);
+    });
+
+    it('loads only the explicitly seeded same-session cache', async () => {
+      const seeded = [{
+        id: 'seed-1',
+        title: 'Seeded',
+        workspace: 'Legal',
+        messages: [],
+        tenantId: 'TEST_TENANT',
+        storagePosture: 'SESSION_ONLY',
+      }];
+      saveWilsyAIConversationThreads(seeded);
+
+      const loaded = await loadWilsyAIConversationThreads();
+      expect(loaded).toEqual(seeded);
+      expect(loaded).not.toBe(seeded);
+    });
+  });
+
+  describe('session thread creation', () => {
+    it('creates a sealed session thread without durable persistence authority', async () => {
+      const thread = await createWilsyAIConversationThread({
+        workspace: 'Legal',
+        title: 'Matter review',
+      });
+
+      expect(thread.id).toMatch(/^session-/);
+      expect(thread.title).toBe('Matter review');
+      expect(thread.workspace).toBe('Legal');
+      expect(thread.tenantId).toBe('TEST_TENANT');
+      expect(thread.storagePosture).toBe('SESSION_ONLY');
+      expect(thread.messages).toEqual([]);
+      expect(thread.proofHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(getCachedThreads()).toHaveLength(1);
+      expect(getCachedThreads()[0].id).toBe(thread.id);
+    });
+
+    it('creates distinct session identities without offline/backend fallback semantics', async () => {
+      const first = await createWilsyAIConversationThread({ title: 'First' });
+      const second = await createWilsyAIConversationThread({ title: 'Second' });
+
+      expect(first.id).toMatch(/^session-/);
+      expect(second.id).toMatch(/^session-/);
+      expect(second.id).not.toBe(first.id);
+      expect(getCachedThreads()).toHaveLength(2);
+    });
+  });
+
+  describe('session turn persistence', () => {
+    it('appends the canonical {threadId, message} shape and reseals the thread', async () => {
+      const thread = await createWilsyAIConversationThread({
+        workspace: 'Legal',
+        title: 'Matter review',
+      });
+      const originalProof = thread.proofHash;
+
+      const updated = await persistWilsyAIConversationTurn({
+        threadId: thread.id,
+        message: {
+          role: 'user',
+          content: '  Check   service address  ',
+          timestamp: '2026-09-24T18:00:00.000Z',
+          meta: { source: 'TEST' },
+        },
+      });
+
+      expect(updated.messages).toHaveLength(1);
+      expect(updated.messages[0]).toEqual({
+        role: 'user',
+        content: 'Check service address',
+        timestamp: '2026-09-24T18:00:00.000Z',
+        meta: { source: 'TEST' },
+      });
+      expect(updated.storagePosture).toBe('SESSION_ONLY');
+      expect(updated.proofHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(updated.proofHash).not.toBe(originalProof);
+      expect(await verifyThreadIntegrity(updated)).toBe(true);
+    });
+
+    it('preserves the legacy (threadId, message) caller shape only as session compatibility', async () => {
+      const thread = await createWilsyAIConversationThread({ title: 'Compatibility' });
+      const updated = await persistWilsyAIConversationTurn(thread.id, {
+        role: 'assistant',
+        content: 'Session-only reply',
+        timestamp: '2026-09-24T18:01:00.000Z',
+      });
+
+      expect(updated.messages).toHaveLength(1);
+      expect(updated.messages[0].role).toBe('assistant');
+      expect(updated.messages[0].content).toBe('Session-only reply');
+      expect(updated.storagePosture).toBe('SESSION_ONLY');
+    });
+
+    it('creates a new session thread when no threadId is supplied', async () => {
+      const updated = await persistWilsyAIConversationTurn({
+        workspace: 'Legal',
+        promptText: 'Hello',
+        answerText: 'Hi',
+      });
+
+      expect(updated.id).toMatch(/^session-/);
+      expect(updated.messages).toHaveLength(2);
+      expect(updated.messages.map((message) => message.role)).toEqual(['user', 'assistant']);
+      expect(updated.storagePosture).toBe('SESSION_ONLY');
+    });
+
+    it('fails closed when a caller names an unknown session thread', async () => {
+      await expect(
+        persistWilsyAIConversationTurn({
+          threadId: 'missing-thread',
+          message: { role: 'user', content: 'Should fail' },
+        }),
+      ).rejects.toThrow('WILSY_AI_SESSION_THREAD_NOT_FOUND');
+    });
+  });
+
+  describe('cache lifecycle and integrity', () => {
+    it('clears only the same-session cache', async () => {
+      await createWilsyAIConversationThread({ title: 'Temporary' });
+      expect(getCachedThreads()).toHaveLength(1);
+
       const result = await clearWilsyAIConversationThreads();
       expect(result).toEqual([]);
       expect(getCachedThreads()).toEqual([]);
-      expect(api.delete).toHaveBeenCalled();
-    });
-  });
-
-  describe('verifyThreadIntegrity', () => {
-    it('should return true for valid proof hash', async () => {
-      const thread = {
-        id: 't1',
-        title: 'Test',
-        workspace: 'Billing',
-        turns: [],
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        tenantId: 'TEST',
-        proofHash: 'somehash',
-      };
-      // This will likely be false because we don't have a valid hash, but test should run.
-      // We just verify it returns a boolean (not a Promise).
-      const result = await verifyThreadIntegrity(thread);
-      expect(typeof result).toBe('boolean');
+      expect(await loadWilsyAIConversationThreads()).toEqual([]);
     });
 
-    it('should return true for threads without proofHash (legacy)', async () => {
-      const thread = { id: 't1', title: 'Legacy' };
-      const result = await verifyThreadIntegrity(thread);
-      expect(result).toBe(true);
+    it('sync re-reads the same-session cache without creating durable history', async () => {
+      const thread = await createWilsyAIConversationThread({ title: 'Sync me' });
+      const synced = await syncThreads();
+
+      expect(synced).toHaveLength(1);
+      expect(synced[0].id).toBe(thread.id);
+      expect(synced[0].storagePosture).toBe('SESSION_ONLY');
     });
-  });
 
-  // ========================================================================
-  // SYNC FUNCTIONS
-  // ========================================================================
+    it('accepts a freshly sealed thread and rejects cryptographic tampering', async () => {
+      const thread = await createWilsyAIConversationThread({ title: 'Integrity' });
+      expect(await verifyThreadIntegrity(thread)).toBe(true);
 
-  describe('syncThreads', () => {
-    it('should call loadWilsyAIConversationThreads', async () => {
-      api.get.mockResolvedValue({ data: { threads: [] } });
-      const threads = await syncThreads();
-      expect(Array.isArray(threads)).toBe(true);
+      const tampered = { ...thread, title: 'Tampered title' };
+      expect(await verifyThreadIntegrity(tampered)).toBe(false);
+    });
+
+    it('keeps compatibility for unsealed legacy session records without elevating authority', async () => {
+      expect(await verifyThreadIntegrity({ id: 'legacy', title: 'Legacy' })).toBe(true);
     });
   });
 });
 
-/*
+/**
  * ═══════════════════════════════════════════════════════════════════════════════
- * HEALTH CHECK – All tests pass.
- * Run: npm --prefix client test OR cd client && npx vitest run
- * Certification: PRODUCTION_READY_v5.1.1-KENNEL-PHASE5
+ * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: client/tests/client/wilsyAIConversationHistoryEngine.test.js
+ * VERSION: v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
+ * AUTHORITY BOUNDARY: test certificate only; transient browser session memory
+ * TENANT POSTURE: tenant identifiers partition presentation context but grant no access
+ * DURABLE HISTORY AUTHORITY: none; no remote history route is assumed or probed
+ * LEGAL AUTHORITY: none
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * FAIL-CLOSED POSTURE: unknown thread identities reject; integrity tampering rejects
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
