@@ -469,7 +469,7 @@ def test_real_non_review_role_is_denied_before_command_transaction(
     tenant, principal, screening = _seed(
         mongo_context,
         business_role="tenant_legal_paralegal",
-        grant_role="PARALEGAL",
+        grant_role="LEGAL_PARALEGAL",
     )
     collections = mongo_context["collections"]
     client = _client(
