@@ -8,6 +8,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
 """
 from __future__ import annotations
 
+from collections.abc import Iterator
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -41,18 +42,26 @@ class Session:
         self.in_transaction = active
 
 
-class Cursor(list[dict[str, Any]]):
+class Cursor:
+    """Minimal Mongo-shaped iterable cursor without shadowing list.sort."""
+
+    def __init__(self, rows: list[dict[str, Any]]) -> None:
+        self._rows = rows
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        return iter(self._rows)
+
     def sort(self, keys: list[tuple[str, int]]) -> "Cursor":
-        rows = list(self)
+        rows = list(self._rows)
         for field, direction in reversed(keys):
             rows.sort(
-                key=lambda row: row.get(field),
+                key=lambda row: str(row.get(field, "")),
                 reverse=direction < 0,
             )
         return Cursor(rows)
 
     def limit(self, value: int) -> "Cursor":
-        return Cursor(self[:value])
+        return Cursor(self._rows[:value])
 
 
 class Result:
