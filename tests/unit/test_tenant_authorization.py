@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
+VERSION: v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,7 +7,15 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
+CHANGELOG: 2026-09-25 v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
+certifies legal_conflict_review_write ->
+legal_operations:conflict_review:write as an exact conjunctive authorization
+binding for tenant_legal_partner/LEGAL_PARTNER and
+tenant_legal_attorney/LEGAL_ATTORNEY only. It proves both authorized pairs,
+paralegal and non-legal business-role denial before final-role lookup, exact
+permission-operation mismatch rejection, missing/revoked granting-role denial,
+and unchanged current-truth/financial/session boundaries.
+2026-09-23 v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
 certifies legal_client_matter_read ->
 legal_operations:client_matter:read as the exact conjunctive authorization
 binding for tenant_legal_client + ACTIVE LEGAL_CLIENT only. It proves exact
@@ -111,7 +119,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT"
+VERSION = "v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -941,6 +949,114 @@ def test_l8_7d4_missing_revoked_and_crossed_client_read_bindings_fail_closed() -
     (
         ("tenant_legal_partner", "LEGAL_PARTNER"),
         ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+    ),
+)
+def test_l8_8i_conflict_review_binding_authorizes_only_partner_attorney_conjunction(
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    """Human conflict review requires exact business/final-role conjunction."""
+    assert (
+        ta._BINDINGS["legal_conflict_review_write"]
+        == "legal_operations:conflict_review:write"
+    )
+    assert list(ta._BINDINGS).count("legal_conflict_review_write") == 1
+
+    result = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_roles"),
+    (
+        ("tenant_legal_paralegal", ("LEGAL_PARALEGAL", "LEGAL_PARTNER")),
+        ("tenant_legal_secretary", ("LEGAL_SECRETARY", "LEGAL_PARTNER")),
+        ("tenant_legal_finance", ("LEGAL_FINANCE", "LEGAL_PARTNER")),
+        ("tenant_legal_client", ("LEGAL_CLIENT", "LEGAL_PARTNER")),
+        ("tenant_sheriff", ("SHERIFF", "LEGAL_PARTNER")),
+        ("tenant_deputy", ("DEPUTY", "LEGAL_PARTNER")),
+        ("tenant_owner", ("ENTERPRISE_ADMIN", "LEGAL_PARTNER")),
+        ("tenant_admin", ("ENTERPRISE_ADMIN", "LEGAL_PARTNER")),
+        ("tenant_auditor", ("AUDITOR", "LEGAL_PARTNER")),
+    ),
+)
+def test_l8_8i_ineligible_business_roles_cannot_cross_into_conflict_review(
+    business_role: str,
+    authorization_roles: tuple[str, ...],
+) -> None:
+    """Even a supplied partner assignment cannot bypass business eligibility."""
+    assignments = _assignments(*authorization_roles)
+    denied = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business(business_role),
+        assignment_repository=assignments,
+    )
+    assert denied.authorized is False
+    assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert denied.business_role == business_role
+    assert denied.authorization_role is None
+    assert assignments.calls == []
+
+
+def test_l8_8i_missing_revoked_and_crossed_conflict_review_bindings_fail_closed() -> None:
+    """Permission, operation and active granting role remain separate conjuncts."""
+    missing = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+    )
+    assert missing.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(
+            revoked_roles=("LEGAL_PARTNER",),
+        ),
+    )
+    assert revoked.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    wrong_permission = _decision(
+        permission_id="legal_operations:instruction:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert (
+        wrong_permission.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+    wrong_operation = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_instruction_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert (
+        wrong_operation.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
         ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
     ),
 )
@@ -1150,7 +1266,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.21.0-L8-7D4-CLIENT-MATTER-READ-BINDING"
+    assert ta.VERSION == "v1.22.0-L8-8I-CONFLICT-REVIEW-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1164,7 +1280,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.21.0-L8-7D4-CLIENT-MATTER-READ-BINDING"
+    assert ta.VERSION == "v1.22.0-L8-8I-CONFLICT-REVIEW-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2041,7 +2157,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
+# VERSION: v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
