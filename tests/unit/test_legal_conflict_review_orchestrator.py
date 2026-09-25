@@ -172,7 +172,7 @@ def test_success_reads_screening_issues_exact_authorization_then_persists(
     def read_screening(*args: object, **kwargs: object) -> LegalConflictScreeningResult:
         events.append("screening")
         assert args[:2] == (TENANT, "screening-1")
-        assert kwargs["session"].in_transaction is True
+        assert getattr(kwargs["session"], "in_transaction", False) is True
         return source
 
     def persist_review(
