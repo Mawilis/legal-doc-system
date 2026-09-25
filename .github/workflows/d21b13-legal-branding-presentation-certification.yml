@@ -1,0 +1,79 @@
+name: D21B13 Legal Authenticated Branding Presentation Certification
+
+on:
+  push:
+    branches:
+      - legal-ops-completion-map
+    paths:
+      - "client/src/components/industry/LegalDashboard.jsx"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/os/WilsyOSDashboardTopRail.jsx"
+      - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
+      - "client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx"
+      - "client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx"
+      - "client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx"
+      - "client/src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx"
+      - ".github/workflows/d21b13-legal-branding-presentation-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d21b13-legal-branding:
+    name: D21B13 Legal branding and regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install exact client dependencies
+        working-directory: client
+        run: npm ci
+      - name: Run exact D21B13 branding certificate
+        working-directory: client
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(npm run test:run -- src/__tests__/components/legalDashboardBrandingPresentation.test.jsx 2>&1)"
+          test_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$test_status" -ne 0 ]; then
+            exit "$test_status"
+          fi
+          printf '%s\n' "$output" | grep -Eq '3 passed'
+          if printf '%s\n' "$output" | grep -Eqi '[1-9][0-9]* skipped|skipped \([1-9]'; then
+            echo "D21B13 certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Run preserved Legal role regression certificates
+        working-directory: client
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(npm run test:run -- \
+            src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx \
+            src/__tests__/components/legalDashboardSheriffMigration.test.jsx \
+            src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx 2>&1)"
+          test_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$test_status" -ne 0 ]; then
+            exit "$test_status"
+          fi
+          if printf '%s\n' "$output" | grep -Eqi '[1-9][0-9]* skipped|skipped \([1-9]'; then
+            echo "D21B13 Legal regression certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Build production client
+        working-directory: client
+        run: npm run build
