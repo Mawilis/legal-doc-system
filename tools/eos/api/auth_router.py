@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION
+VERSION: v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,7 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-09-24.
 CHANGELOG:
+  v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP: Adds authenticated current-branding asset delivery at /auth/workspace-branding/{logo|favicon}. The browser may select only the closed asset kind; tenant, reference, fingerprint and media identity are server-derived from the revalidated workspace and D21B10 current-branding delivery chain. Each bounded attempt owns a fresh read transaction, retries only governed whole-transaction races, and returns exact immutable D21B5B bytes with private/no-store, nosniff and same-origin response headers. Missing current branding/asset returns bounded 404; authority outage/corruption returns 503. No public URL, filesystem path, base64, upload, IAM, legal-command or financial authority is created.
   v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION: Adds the D21B6 current-branding composer to authenticated workspace-bootstrap under a fresh caller-owned Mongo read transaction. Lawful absence is projected explicitly as workspace.branding=null; configured branding is emitted only after current ACTIVE D21B2B entitlement, exact D21B4B current profile/selection, and D21B5B asset correlation. Governed whole-transaction retry is bounded to three fresh sessions; authority outage/corruption fails bounded 503. No raw asset bytes, public URL, browser/JWT/local-storage branding, IAM, legal-command, billing, payment, execution, or settlement authority is created.
   v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION: Re-reads the exact durable AuthRegistry user after workspace-bootstrap has revalidated principal, membership, dedicated business role, and tenant truth, then projects only firstName/lastName as descriptive authenticated-person identity. Missing or tenant/principal-mismatched durable user state fails closed; malformed optional name text is omitted rather than inferred. Names create no membership, role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
   v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION: Extends the authenticated workspace tenant projection with the
@@ -87,7 +88,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION"
+VERSION = "v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -155,6 +156,13 @@ from ..auth.tenant_branding_workspace_projection import (
     TenantBrandingWorkspaceProjectionRetryRequiredError,
     build_tenant_branding_workspace_projection,
 )
+from ..auth.tenant_branding_workspace_asset_delivery import (
+    TenantBrandingWorkspaceAssetDelivery,
+    TenantBrandingWorkspaceAssetDeliveryError,
+    TenantBrandingWorkspaceAssetNotConfiguredError,
+    TenantBrandingWorkspaceAssetRetryRequiredError,
+    resolve_current_tenant_branding_asset,
+)
 from ..saas.billing.tenant_branding_entitlement_registry import (
     CURRENT_COLLECTION as BRANDING_ENTITLEMENT_CURRENT_COLLECTION,
     HISTORY_COLLECTION as BRANDING_ENTITLEMENT_HISTORY_COLLECTION,
@@ -167,6 +175,7 @@ from ..saas.billing.tenant_branding_profile_registry import (
 from ..saas.billing.tenant_branding_asset_registry import (
     COLLECTION as BRANDING_ASSET_COLLECTION,
 )
+from ..saas.domain.tenant_branding_asset import TenantBrandingAssetKind
 
 # ─── Logging Discipline (Mandate §2.6) ──────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -452,6 +461,88 @@ def _workspace_branding_projection(
     ) from last_retry
 
 
+def _workspace_branding_asset_delivery(
+    tenant_id: str,
+    asset_kind: TenantBrandingAssetKind,
+) -> TenantBrandingWorkspaceAssetDelivery:
+    """Return one current branding asset under a bounded caller-owned read transaction."""
+    try:
+        from tools.eos.kernel.db import get_client, get_database
+
+        client = get_client()
+        database = get_database()
+    except Exception as error:
+        raise TenantBrandingWorkspaceAssetDeliveryError(
+            "D21B11_BRANDING_PERSISTENCE_UNAVAILABLE"
+        ) from error
+
+    if client is None or database is None:
+        raise TenantBrandingWorkspaceAssetDeliveryError(
+            "D21B11_BRANDING_PERSISTENCE_UNAVAILABLE"
+        )
+
+    last_retry: BaseException | None = None
+    for attempt in range(3):
+        session: Any = None
+        try:
+            session = client.start_session()
+            session.start_transaction()
+            result = resolve_current_tenant_branding_asset(
+                tenant_id=tenant_id,
+                asset_kind=asset_kind,
+                entitlement_history_collection=database[
+                    BRANDING_ENTITLEMENT_HISTORY_COLLECTION
+                ],
+                entitlement_current_collection=database[
+                    BRANDING_ENTITLEMENT_CURRENT_COLLECTION
+                ],
+                profile_collection=database[BRANDING_PROFILE_COLLECTION],
+                selection_collection=database[BRANDING_SELECTION_COLLECTION],
+                profile_current_collection=database[
+                    BRANDING_PROFILE_CURRENT_COLLECTION
+                ],
+                asset_collection=database[BRANDING_ASSET_COLLECTION],
+                session=session,
+            )
+            marker = getattr(session, "in_transaction", False)
+            active = marker() if callable(marker) else marker
+            if active is True:
+                session.abort_transaction()
+            return result
+        except TenantBrandingWorkspaceAssetRetryRequiredError as error:
+            last_retry = error
+            if attempt < 2:
+                continue
+            raise TenantBrandingWorkspaceAssetDeliveryError(
+                "D21B11_BRANDING_RETRY_EXHAUSTED"
+            ) from error
+        except TenantBrandingWorkspaceAssetNotConfiguredError:
+            raise
+        except TenantBrandingWorkspaceAssetDeliveryError:
+            raise
+        except Exception as error:
+            raise TenantBrandingWorkspaceAssetDeliveryError(
+                "D21B11_BRANDING_RUNTIME_UNAVAILABLE"
+            ) from error
+        finally:
+            if session is not None:
+                try:
+                    marker = getattr(session, "in_transaction", False)
+                    active = marker() if callable(marker) else marker
+                    if active is True:
+                        session.abort_transaction()
+                except Exception:
+                    pass
+                try:
+                    session.end_session()
+                except Exception:
+                    pass
+
+    raise TenantBrandingWorkspaceAssetDeliveryError(
+        "D21B11_BRANDING_RETRY_EXHAUSTED"
+    ) from last_retry
+
+
 @router.get("/workspace-bootstrap")
 async def workspace_bootstrap(
     identity: SovereignIdentity = Depends(get_current_identity),
@@ -541,6 +632,52 @@ async def workspace_bootstrap(
             },
         },
     }
+
+
+@router.get("/workspace-branding/{asset_kind}")
+async def workspace_branding_asset(
+    asset_kind: str,
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> Response:
+    """Return exact current tenant logo/favicon bytes after workspace revalidation."""
+    try:
+        workspace = build_workspace_bootstrap_projection(identity=identity)
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        kind = TenantBrandingAssetKind(asset_kind.upper())
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace branding asset is unavailable.",
+        ) from None
+
+    try:
+        delivered = _workspace_branding_asset_delivery(
+            workspace.tenant_id,
+            kind,
+        )
+    except TenantBrandingWorkspaceAssetNotConfiguredError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace branding asset is unavailable.",
+        ) from error
+    except TenantBrandingWorkspaceAssetDeliveryError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workspace branding asset authority is unavailable.",
+        ) from error
+
+    response = Response(
+        content=delivered.content,
+        media_type=delivered.media_type,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    return response
 
 
 # ─── PASSWORD RECOVERY REQUEST ─────────────────────────────────────────────
@@ -1233,9 +1370,9 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
-# TENANT POSTURE: workspace branding is composed only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
-# FAIL-CLOSED POSTURE: auth fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
+# VERSION: v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
+# TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
+# FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
