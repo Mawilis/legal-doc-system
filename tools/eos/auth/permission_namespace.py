@@ -1,19 +1,17 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.24.0-L8-7D1-CLIENT-MATTER-READ-IAM
+VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
-inbound-collection, merchant-configuration, and provider-policy capabilities
-and the own-tenant WILSY AI usage-capacity and billing-intelligence evidence
-read capabilities plus field-service outcome/return, process-service directory
-provisioning, sheriff-office acceptance/receipt, and explicit Legal Operations
-client-visibility provisioning and explicit client-matter projection read
-vocabulary without granting tenant-wide matter enumeration, typed subject
-identity, possession, cross-tenant authority, or financial execution.
+inbound-collection, merchant-configuration, provider-policy, WILSY AI,
+billing-intelligence, Legal Operations lifecycle/client visibility, and explicit
+human conflict-review capability semantics without granting tenant-wide matter
+enumeration, reviewer identity, legal determination, waiver, engagement,
+representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
-    2026-09-23 v1.24.0-L8-7D1-CLIENT-MATTER-READ-IAM adds the dedicated own-tenant
+    2026-09-23 v1.25.0-L8-8I-CONFLICT-REVIEW-IAM adds the dedicated own-tenant
     legal_operations:client_matter:read permission vocabulary for a future
     explicitly-bound LEGAL_CLIENT matter projection only. The permission is
     membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
@@ -115,7 +113,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.24.0-L8-7D1-CLIENT-MATTER-READ-IAM"
+VERSION = "v1.25.0-L8-8I-CONFLICT-REVIEW-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -394,6 +392,11 @@ _PERMISSIONS: Final = MappingProxyType(
             "read explicitly-bound own legal-client matters",
             tenant=True,
         ),
+        "legal_operations:conflict_review:write": _meta(
+            "legal_operations:conflict_review:write", "TENANT", "TENANT",
+            "record authorized own-tenant human conflict-review determinations",
+            tenant=True,
+        ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
             "read own-tenant process allocations", tenant=True,
@@ -650,9 +653,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.24.0-L8-7D1-CLIENT-MATTER-READ-IAM
+# VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
-# TENANT POSTURE: client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
+# TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
