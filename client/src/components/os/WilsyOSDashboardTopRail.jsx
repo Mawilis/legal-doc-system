@@ -31,7 +31,7 @@ import {
 } from './wilsyDashboardChromeConfig';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.0.0-SLOT-BASED-EXECUTIVE-TOPRAIL';
+const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.1.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION';
 const WILSY_OS_DEFAULT_MARK = new URL('../../assets/logo/wilsy.jpeg', import.meta.url).href;
 
 /**
@@ -79,6 +79,7 @@ const buildWilsyTopRailPayload = ({
   operator = {},
   authUser = {},
   activeTenant = {},
+  authenticatedTenant = {},
   storyMessages = [],
   search = {},
   account = {},
@@ -89,13 +90,11 @@ const buildWilsyTopRailPayload = ({
     operator,
     authUser,
     activeTenant,
+    authenticatedTenant,
     dashboard: { role: operator.role || 'OPERATOR', posture },
     storyMessages
   });
   const tenantIdentity = identity.tenant;
-  tenantIdentity.logo = !tenantIdentity.logo || String(tenantIdentity.logo).startsWith('/src/assets/')
-    ? WILSY_OS_DEFAULT_MARK
-    : tenantIdentity.logo;
   const operatorIdentity = identity.operator;
   const normalizedStory = normalizeWilsyTopRailStory(storyMessages, {
     tenant: tenantIdentity,
@@ -188,6 +187,7 @@ const WilsyOSDashboardTopRail = ({
     operator,
     authUser,
     activeTenant: activeTenantContext,
+    authenticatedTenant: authTenant || {},
     storyMessages,
     search,
     account,
@@ -200,10 +200,18 @@ const WilsyOSDashboardTopRail = ({
       data-wilsy-os-toprail="slot-based"
       data-wilsy-dashboard-key={payload.dashboardKey}
       data-wilsy-toprail-version={WILSY_OS_DASHBOARD_TOP_RAIL_VERSION}
+      data-wilsy-tenant-branding={payload.tenant.branding ? 'authenticated' : 'none'}
       style={style}
     >
       <div className="wilsyOsChromeTitleBlock">
         <span className="wilsyOsChromeEyebrow">
+          <img
+            src={WILSY_OS_DEFAULT_MARK}
+            alt="WILSY OS platform trust mark"
+            width="18"
+            height="18"
+            style={{ borderRadius: 4, objectFit: 'contain' }}
+          />
           <Briefcase size={14} /> {payload.commandLabel}
         </span>
         <h1>{payload.title}</h1>
@@ -213,24 +221,17 @@ const WilsyOSDashboardTopRail = ({
       </div>
 
       <section className="wilsyOsChromeTenantPlate" aria-label="Tenant identity">
-        <div className="wilsyOsChromeTenantMark">
-          {payload.tenant.logo ? (
-            <img
-              src={payload.tenant.logo}
-              alt={`${payload.tenant.displayName} mark`}
-              onError={event => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = WILSY_OS_DEFAULT_MARK;
-              }}
-            />
-          ) : (
-            <span>{payload.tenant.initials}</span>
-          )}
+        <div className="wilsyOsChromeTenantMark" aria-label="Tenant identity initials">
+          <span>{payload.tenant.initials}</span>
         </div>
         <div>
           <small>TENANT IDENTITY</small>
           <strong>{payload.tenant.displayName}</strong>
-          <em>{payload.tenant.status || 'TENANT LEDGER READY'}</em>
+          <em>
+            {payload.tenant.brandingProfileLabel
+              ? `${payload.tenant.brandingProfileLabel} · ${payload.tenant.status || 'TENANT LEDGER READY'}`
+              : payload.tenant.status || 'TENANT LEDGER READY'}
+          </em>
         </div>
       </section>
 
