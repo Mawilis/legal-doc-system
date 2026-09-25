@@ -69,16 +69,13 @@ class FakeAuthorizationRegistry:
         self.calls.append(dict(kwargs))
         if self.error is not None:
             raise self.error
-        screening = screening_value()
         values: dict[str, object] = {
-            "tenant_id": TENANT,
-            "principal_id": PRINCIPAL,
-            "operation": orchestrator.OPERATION,
-            "permission": orchestrator.PERMISSION,
-            "subject_reference": (
-                f"{orchestrator.SUBJECT_PREFIX}:{screening.screening_id}"
-            ),
-            "subject_evidence_fingerprint": screening.fingerprint,
+            "tenant_id": kwargs["tenant_id"],
+            "principal_id": kwargs["principal_id"],
+            "operation": kwargs["operation"],
+            "permission": kwargs["permission"],
+            "subject_reference": kwargs["subject_reference"],
+            "subject_evidence_fingerprint": kwargs["subject_evidence_fingerprint"],
             "authorization_evidence_reference": (
                 "tenant-authorization-decision:decision-1"
             ),
