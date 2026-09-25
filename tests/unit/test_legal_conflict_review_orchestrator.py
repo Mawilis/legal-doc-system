@@ -179,10 +179,10 @@ def test_success_reads_screening_issues_exact_authorization_then_persists(
         review: LegalConflictReviewDetermination,
         _collection: object,
         *,
-        session: object,
+        session: Any,
     ) -> LegalConflictReviewDetermination:
         events.append("review")
-        assert getattr(session, "in_transaction") is True
+        assert session.in_transaction is True
         return review
 
     monkeypatch.setattr(
