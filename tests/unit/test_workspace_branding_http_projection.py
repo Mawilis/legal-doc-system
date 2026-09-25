@@ -1,7 +1,7 @@
 """Direct certificate for D21B7 workspace-branding HTTP projection.
 
 TITLE: Workspace Branding HTTP Projection Direct Certificate
-VERSION: v1.0.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+VERSION: v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove authenticated workspace-bootstrap transports only D21B6 branding
          truth and owns a bounded fresh-session read-transaction/retry boundary.
@@ -10,8 +10,10 @@ COLLABORATION / OWNERSHIP: D21B6 owns current-branding composition; auth_router
                             owns only HTTP/session orchestration and response
                             projection. This certificate grants no branding truth.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
-           establishes exact collection wiring, same-session propagation,
+CHANGELOG: v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT removes a Pyright-only fixture redeclaration by giving the
+           success and failure branding readers distinct local names. Runtime
+           assertions and production semantics are unchanged.
+           v1.0.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT established exact collection wiring, same-session propagation,
            read-only abort/end lifecycle, fresh-session retry and exhaustion,
            explicit null absence, configured transport, and bounded 503 evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -289,12 +291,16 @@ def _http_client(
     )
 
     if branding_error is not None:
-        def branding_reader(_tenant_id: str) -> Any:
+        def raise_branding(_tenant_id: str) -> Any:
             raise branding_error
+
+        branding_reader = raise_branding
     else:
-        def branding_reader(_tenant_id: str) -> dict[str, object] | None:
+        def return_branding(_tenant_id: str) -> dict[str, object] | None:
             assert _tenant_id == TENANT
             return branding
+
+        branding_reader = return_branding
 
     monkeypatch.setattr(
         auth_router,
@@ -379,7 +385,7 @@ def test_workspace_branding_authority_failure_is_bounded_503(
 
 
 # ARTIFACT: test_workspace_branding_http_projection.py
-# VERSION: v1.0.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+# VERSION: v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
 # AUTHORITY BOUNDARY: D21B7 HTTP/session orchestration evidence only; no branding, IAM, legal or financial authority
 # TENANT POSTURE: exact server-revalidated tenant forwarded to D21B6; no browser tenant-brand authority
 # FAIL-CLOSED POSTURE: configured-branding errors and retry exhaustion are never converted to lawful absence
