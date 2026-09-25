@@ -29,9 +29,10 @@ import {
   normalizeWilsyDashboardText,
   resolveWilsyChromeIdentitySources
 } from './wilsyDashboardChromeConfig';
+import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.1.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION';
+const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.2.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION';
 const WILSY_OS_DEFAULT_MARK = new URL('../../assets/logo/wilsy.jpeg', import.meta.url).href;
 
 /**
@@ -194,6 +195,13 @@ const WilsyOSDashboardTopRail = ({
     actions
   });
 
+  const {
+    objectUrl: tenantLogoObjectUrl,
+    status: tenantLogoStatus,
+  } = useAuthenticatedTenantBrandingAsset(
+    payload.tenant.branding?.logo || null,
+  );
+
   return (
     <header
       className={`wilsyOsChromeTopRail wilsyOsDashboardTopRail wilsyOsDashboardTopRail-${payload.dashboardKey} ${className}`.trim()}
@@ -201,6 +209,7 @@ const WilsyOSDashboardTopRail = ({
       data-wilsy-dashboard-key={payload.dashboardKey}
       data-wilsy-toprail-version={WILSY_OS_DASHBOARD_TOP_RAIL_VERSION}
       data-wilsy-tenant-branding={payload.tenant.branding ? 'authenticated' : 'none'}
+      data-wilsy-tenant-logo={tenantLogoStatus.toLowerCase()}
       style={style}
     >
       <div className="wilsyOsChromeTitleBlock">
@@ -221,8 +230,23 @@ const WilsyOSDashboardTopRail = ({
       </div>
 
       <section className="wilsyOsChromeTenantPlate" aria-label="Tenant identity">
-        <div className="wilsyOsChromeTenantMark" aria-label="Tenant identity initials">
-          <span>{payload.tenant.initials}</span>
+        <div className="wilsyOsChromeTenantMark" aria-label="Tenant identity mark">
+          {tenantLogoObjectUrl ? (
+            <>
+              <img
+                src={tenantLogoObjectUrl}
+                alt={`${payload.tenant.displayName} tenant mark`}
+                onError={(event) => {
+                  event.currentTarget.hidden = true;
+                  const fallback = event.currentTarget.nextElementSibling;
+                  if (fallback instanceof HTMLElement) fallback.hidden = false;
+                }}
+              />
+              <span hidden>{payload.tenant.initials}</span>
+            </>
+          ) : (
+            <span>{payload.tenant.initials}</span>
+          )}
         </div>
         <div>
           <small>TENANT IDENTITY</small>
