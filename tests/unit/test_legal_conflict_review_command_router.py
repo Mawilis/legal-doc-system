@@ -1,6 +1,6 @@
 """Direct certificate for L8-8K authenticated conflict-review command API.
 
-VERSION: v1.0.0-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+VERSION: v1.0.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
 AUTHORITY: Wilsy OS Core Governance
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_conflict_review_command_router.py
 AUTHORITY BOUNDARY: HTTP/transaction wiring only; L8-8D/E/G/H/I/J remain
@@ -163,7 +163,6 @@ def test_route_derives_server_scope_time_and_durable_authorization_registry(
         return review_value()
 
     monkeypatch.setattr(command_api, "_transaction", transaction)
-    monkeypatch.setattr(command_api, "_utcnow", lambda: NOW)
     monkeypatch.setattr(
         command_api,
         "TenantAuthorizationDecisionEvidenceRegistry",
@@ -185,7 +184,7 @@ def test_route_derives_server_scope_time_and_durable_authorization_registry(
     assert captured["reviewer_principal_id"] == PRINCIPAL
     assert captured["screening_id"] == "screening-1"
     assert captured["review_id"] == "review-1"
-    assert captured["reviewed_at"] == NOW
+    assert "reviewed_at" not in captured
     assert captured["session"] is session
     assert captured["outcome"] is LegalConflictReviewOutcome.CONFLICT_IDENTIFIED
     assert captured["review_reason_reference"] == "reason:conflict-observed"
@@ -230,7 +229,6 @@ def test_response_never_exposes_authorization_or_party_evidence(
         "_transaction",
         lambda callback: callback(SimpleNamespace(in_transaction=True), Database()),
     )
-    monkeypatch.setattr(command_api, "_utcnow", lambda: NOW)
     monkeypatch.setattr(
         command_api,
         "TenantAuthorizationDecisionEvidenceRegistry",
@@ -394,7 +392,7 @@ def test_route_aborts_and_projects_orchestration_failure(
 
 
 # ARTIFACT: test_legal_conflict_review_command_router.py
-# VERSION: v1.0.0-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+# VERSION: v1.0.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: authenticated transport/transaction certificate only
 # TENANT POSTURE: tenant/reviewer/time/IAM evidence are server-owned
 # FAIL-CLOSED POSTURE: extra authority fields, retry, denial, absence, conflict and outage map boundedly
