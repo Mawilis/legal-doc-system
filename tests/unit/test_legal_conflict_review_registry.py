@@ -1,6 +1,6 @@
 """Direct certificate for L8-8H legal conflict-review registry.
 
-VERSION: v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY-CERT
+VERSION: v1.0.1-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_conflict_review_registry.py
 AUTHORITY BOUNDARY: Immutable review persistence/read evidence only.
@@ -40,12 +40,18 @@ class Session:
         self.in_transaction = active
 
 
-class Cursor(list[dict[str, Any]]):
+class Cursor:
+    def __init__(self, rows: list[dict[str, Any]]) -> None:
+        self.rows = rows
+
+    def __iter__(self):
+        return iter(self.rows)
+
     def sort(self, *_args: Any, **_kwargs: Any) -> "Cursor":
         return self
 
     def limit(self, value: int) -> "Cursor":
-        return Cursor(self[:value])
+        return Cursor(self.rows[:value])
 
 
 class Result:
@@ -457,7 +463,7 @@ def test_unclassified_mongo_read_failure_is_persistence_unavailable() -> None:
 
 
 # ARTIFACT: test_legal_conflict_review_registry.py
-# VERSION: v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY-CERT
+# VERSION: v1.0.1-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY-CERT
 # AUTHORITY BOUNDARY: immutable review persistence/read evidence only
 # TENANT POSTURE: all fake persistence predicates are exact tenant scoped
 # FAIL-CLOSED POSTURE: transaction/corruption/divergence/overflow/race/outage rejects
