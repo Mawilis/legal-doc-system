@@ -8,6 +8,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
 """
 from dataclasses import FrozenInstanceError, replace
 from datetime import datetime, timezone
+from typing import cast
 
 import pytest
 
@@ -271,7 +272,8 @@ def test_result_contains_no_display_name_or_raw_pii_fields() -> None:
         "resolution",
     }
     assert forbidden.isdisjoint(payload)
-    assert forbidden.isdisjoint(payload["matches"][0])
+    matches = cast(list[dict[str, object]], payload["matches"])
+    assert forbidden.isdisjoint(matches[0])
 
 
 def test_tampered_round_trip_fingerprint_rejects() -> None:
