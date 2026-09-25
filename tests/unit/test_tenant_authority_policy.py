@@ -1,12 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.19.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-CERT
+VERSION: v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-25 v1.19.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-CERT
+CHANGELOG: 2026-09-25 v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
+rebinds the exact certificate to runtime v1.23.1 after the authority-loss
+composition repair; approved roles and all behavioral assertions are unchanged.
+2026-09-25 v1.19.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-CERT
 certifies legal_conflict_review_write as an exact own-tenant operation mapped
 only to legal_operations:conflict_review:write and eligible only for
 tenant_legal_partner and tenant_legal_attorney. Every other business role is
@@ -69,7 +72,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY"
+    assert VERSION == "v1.23.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -536,7 +539,7 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.19.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-CERT
+# VERSION: v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny
