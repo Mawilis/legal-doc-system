@@ -74,11 +74,14 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Raw credentials and database documents are never returned;
 verify-token is limited to governed public fields; authentication failure remains
 fail-closed through get_current_identity.
-TENANT BOUNDARY: verify-token does not certify tenant membership; tenant context remains
-the responsibility of a separate downstream authority.
-AUTHORITY BOUNDARY: This router exposes authentication HTTP endpoints only. It does not
-own credential truth, principal lifecycle authority, tenant membership, governed role
-assignment, authorization, or financial execution.
+TENANT BOUNDARY: verify-token does not certify tenant membership. Workspace-bootstrap
+branding uses only the already revalidated projection tenant_id and every D21B6 registry
+read remains exact-tenant scoped; cross-tenant branding is never projected.
+AUTHORITY BOUNDARY: This router owns authentication HTTP transport and bounded workspace
+presentation only. D21B7 composes no branding truth: D21B2B owns entitlement currentness,
+D21B4B owns profile/selection currentness, and D21B5B owns immutable asset evidence. The
+router does not own credential truth, principal lifecycle, membership, governed roles,
+authorization, asset upload, legal commands, or financial execution.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
 
@@ -1232,7 +1235,7 @@ async def logout():
 # ARTIFACT: auth_router.py
 # VERSION: v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
-# TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
+# TENANT POSTURE: workspace branding is composed only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
