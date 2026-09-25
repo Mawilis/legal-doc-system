@@ -1,7 +1,7 @@
 """WILSY OS durable legal conflict-screening registry.
 
 TITLE: Legal Conflict Screening Registry
-VERSION: v1.0.0-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY
+VERSION: v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Persist immutable L8-8D exact-subject screening results with strict
          tenant isolation, replay integrity, review-queue lookup and caller-
@@ -15,7 +15,8 @@ COLLABORATION / OWNERSHIP: L8-8D owns screening semantics; L8-8E owns immutable
                             conflict determination, recusal, waiver or ethical
                             wall evidence.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY establishes exact
+CHANGELOG: v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY narrows the L8-8D status union to LegalConflictScreeningStatus at persistence serialization/correlation boundaries for exact Pyright alignment; stored values and runtime semantics are unchanged.
+           v1.0.0-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY establishes exact
            tenant+screening identity, strict immutable replay, data-minimized
            envelope correlation, tenant+source and tenant+subject histories,
            tenant+status review queue lookup, bounded reads, caller-owned active
@@ -59,7 +60,7 @@ from tools.eos.legal_operations.domain.legal_conflict_screening import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY"
+VERSION: Final[str] = "v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY"
 RECORD_SCHEMA: Final[str] = "WILSY-LEGAL-CONFLICT-SCREENING-RECORD/V1"
 COLLECTION: Final[str] = "legal_conflict_screenings"
 SCREENING_ID_INDEX_NAME: Final[str] = "legal_conflict_tenant_screening_unique"
@@ -265,7 +266,7 @@ def _record(value: LegalConflictScreeningResult) -> dict[str, object]:
         "source_party_fingerprint": value.source_party_fingerprint,
         "subject_identity_fingerprint": value.subject_identity_fingerprint,
         "screened_at": value.screened_at,
-        "status": value.status.value,
+        "status": cast(LegalConflictScreeningStatus, value.status).value,
         "screening_fingerprint": value.fingerprint,
         "evidence_identity": _evidence_identity(value),
         "screening_payload": value.to_dict(),
@@ -316,7 +317,7 @@ def _hydrate(document: Mapping[str, Any]) -> LegalConflictScreeningResult:
         or raw.get("subject_identity_fingerprint")
         != value.subject_identity_fingerprint
         or raw.get("screened_at") != value.screened_at
-        or raw.get("status") != value.status.value
+        or raw.get("status") != cast(LegalConflictScreeningStatus, value.status).value
         or raw.get("screening_fingerprint") != value.fingerprint
         or raw.get("evidence_identity") != _evidence_identity(value)
     ):
@@ -636,7 +637,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_conflict_screening_registry.py
-# VERSION: v1.0.0-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY
+# VERSION: v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY
 # AUTHORITY BOUNDARY: immutable screening persistence/read evidence only; no determination or clearance
 # TENANT POSTURE: every lookup/write/index begins with exact tenant_id
 # FAIL-CLOSED POSTURE: transaction/corruption/divergence/overflow/race/outage rejects
