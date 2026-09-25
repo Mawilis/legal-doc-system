@@ -1,11 +1,11 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY
+ * VERSION: v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
- *          initial-intake registration, ReturnOfService generation and bound
- *          Deputy field commands. Browser input never establishes tenant,
+ *          initial-intake registration, conflict-review issuance, ReturnOfService
+ *          generation and bound Deputy field commands. Browser input never establishes tenant,
  *          principal, role, lifecycle, service, money or settlement authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/legalOperationsService.js
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns access authority; L8-5C owns
@@ -17,8 +17,9 @@
  *                            invoice evidence, intake and ReturnOfService HTTP
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.
+ * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CHANGELOG: 2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
+ *            2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.
  *            2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
  *            summary counter from the validated canonical rows before exposing
  *            dashboard metrics. Total-only consistency is no longer sufficient;
@@ -74,9 +75,29 @@
  */
 
 import api from './api.js';
+import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY';
+  'v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT';
+
+const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
+  'screeningId',
+  'reviewId',
+  'outcome',
+  'reviewReasonReference',
+]);
+const CONFLICT_REVIEW_RESPONSE_KEYS = Object.freeze([
+  'review_id',
+  'screening_id',
+  'outcome',
+  'reviewed_at',
+  'fingerprint',
+]);
+const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
+  'CONFLICT_IDENTIFIED',
+  'NO_CONFLICT_IDENTIFIED',
+  'ESCALATION_REQUIRED',
+]);
 
 const QUEUE_KEYS = Object.freeze([
   'office_receipt',
@@ -870,6 +891,44 @@ function assertCanonicalReturnCommandResponse(value, input) {
   });
 }
 
+function assertConflictReviewInput(value) {
+  const errorCode = 'LEGAL_OPERATIONS_CONFLICT_REVIEW_INPUT_INVALID';
+  assertExactKeys(value, CONFLICT_REVIEW_INPUT_KEYS, errorCode);
+  if (
+    !isCanonicalText(value.screeningId)
+    || !isCanonicalText(value.reviewId)
+    || !CONFLICT_REVIEW_OUTCOMES.includes(value.outcome)
+    || !isCanonicalText(value.reviewReasonReference)
+    || value.reviewReasonReference.length > 512
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({ ...value });
+}
+
+function assertCanonicalConflictReviewResponse(value, input) {
+  const errorCode = 'LEGAL_OPERATIONS_CONFLICT_REVIEW_RESPONSE_INVALID';
+  assertExactKeys(value, ['data'], errorCode);
+  const data = value.data;
+  assertExactKeys(data, CONFLICT_REVIEW_RESPONSE_KEYS, errorCode);
+  if (
+    data.review_id !== input.reviewId
+    || data.screening_id !== input.screeningId
+    || !CONFLICT_REVIEW_OUTCOMES.includes(data.outcome)
+    || !isCanonicalTimestamp(data.reviewed_at)
+    || !SHA3_512_PATTERN.test(data.fingerprint)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({
+    reviewId: data.review_id,
+    screeningId: data.screening_id,
+    outcome: data.outcome,
+    reviewedAt: data.reviewed_at,
+    fingerprint: data.fingerprint,
+  });
+}
+
 
 function assertRegistrationSnapshot(
   value,
@@ -1234,6 +1293,33 @@ export async function registerLegalIntake(value) {
   return assertCanonicalLegalIntakeResponse(response?.data, input);
 }
 
+/**
+ * Issue one authenticated human conflict-review command through the canonical
+ * L8-8K route. The browser owns only the four human-choice fields; tenant,
+ * reviewer identity, screening truth, authorization evidence and chronology
+ * are derived by Python EOS inside the API-owned transaction. sovereignClient
+ * is used because api.js intentionally adds transport timestamps to ordinary
+ * mutation bodies, while this strict server model rejects unknown fields.
+ *
+ * @param {{screeningId: string, reviewId: string, outcome: string, reviewReasonReference: string}} value
+ *   The exact four caller-owned command fields.
+ * @returns {Promise<{reviewId: string, screeningId: string, outcome: string, reviewedAt: string, fingerprint: string}>}
+ *   The bounded server receipt; no authorization evidence is exposed.
+ * @throws {Error} For malformed client input or a malformed server response.
+ * Axios authentication, authorization, 404, 409 and transport failures are
+ * deliberately propagated unchanged so server semantics remain distinguishable.
+ */
+export async function issueLegalConflictReview(value) {
+  const input = assertConflictReviewInput(value);
+  const response = await sovereignClient.post('/legal-operations/conflict-reviews', {
+    screening_id: input.screeningId,
+    review_id: input.reviewId,
+    outcome: input.outcome,
+    review_reason_reference: input.reviewReasonReference,
+  });
+  return assertCanonicalConflictReviewResponse(response?.data, input);
+}
+
 
 export async function getLegalPracticeWorkspace() {
   const response = await api.get('/legal-operations/workspace');
@@ -1331,6 +1417,11 @@ export const __legalOperationsServiceInternals = Object.freeze({
   CLIENT_MATTER_STATES,
   assertLegalIntakeInput,
   assertCanonicalLegalIntakeResponse,
+  assertConflictReviewInput,
+  assertCanonicalConflictReviewResponse,
+  CONFLICT_REVIEW_INPUT_KEYS,
+  CONFLICT_REVIEW_RESPONSE_KEYS,
+  CONFLICT_REVIEW_OUTCOMES,
   LEGAL_INTAKE_INPUT_KEYS,
   LEGAL_INTAKE_RESPONSE_KEYS,
   assertCanonicalLegalWorkspacePayload,
@@ -1361,8 +1452,8 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY
- * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command browser transport validation only
+ * VERSION: v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT
+ * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive

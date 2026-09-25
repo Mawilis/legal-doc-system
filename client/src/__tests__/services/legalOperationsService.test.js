@@ -1,14 +1,15 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT
+ * VERSION: v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
  *          evidence lookup, governed initial intake, ReturnOfService generation
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.
+ * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CHANGELOG: 2026-09-25 v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT binds the authenticated four-field conflict-review adapter to the canonical /api/legal-operations/conflict-reviews path, proves server-owned authority exclusion, bounded receipt validation and unchanged 401/403/404/409/transport failures.
+ *            2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.
  *            2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
  *            every D11 workspace state/outcome summary counter is recomputed
  *            from validated rows; total-preserving breakdown drift rejects.
@@ -36,15 +37,22 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockGet, mockPost } = vi.hoisted(() => ({
+const { mockGet, mockPost, mockConflictReviewPost } = vi.hoisted(() => ({
   mockGet: vi.fn(),
   mockPost: vi.fn(),
+  mockConflictReviewPost: vi.fn(),
 }));
 
 vi.mock('../../services/api.js', () => ({
   default: {
     get: mockGet,
     post: mockPost,
+  },
+}));
+
+vi.mock('../../utils/sovereignClient.js', () => ({
+  default: {
+    post: mockConflictReviewPost,
   },
 }));
 
@@ -58,6 +66,7 @@ import {
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  issueLegalConflictReview,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -473,9 +482,114 @@ const outcomeInput = () => ({
   outcome: 'COMPLETED',
 });
 
+const conflictReviewInput = () => ({
+  screeningId: 'screening-1',
+  reviewId: 'review-1',
+  outcome: 'CONFLICT_IDENTIFIED',
+  reviewReasonReference: 'review-reason:operator-observed',
+});
+
+const conflictReviewResponse = () => ({
+  data: {
+    review_id: 'review-1',
+    screening_id: 'screening-1',
+    outcome: 'CONFLICT_IDENTIFIED',
+    reviewed_at: '2026-09-25T04:00:00.123456+00:00',
+    fingerprint: SHA3_A,
+  },
+});
+
 describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('issues conflict review through the canonical route with exactly four fields', async () => {
+    mockConflictReviewPost.mockResolvedValueOnce({ data: conflictReviewResponse() });
+
+    const result = await issueLegalConflictReview(conflictReviewInput());
+
+    expect(mockConflictReviewPost).toHaveBeenCalledTimes(1);
+    expect(mockConflictReviewPost).toHaveBeenCalledWith(
+      '/legal-operations/conflict-reviews',
+      {
+        screening_id: 'screening-1',
+        review_id: 'review-1',
+        outcome: 'CONFLICT_IDENTIFIED',
+        review_reason_reference: 'review-reason:operator-observed',
+      },
+    );
+    expect(Object.keys(mockConflictReviewPost.mock.calls[0][1]).sort()).toEqual([
+      'outcome',
+      'review_id',
+      'review_reason_reference',
+      'screening_id',
+    ]);
+    expect(result).toEqual({
+      reviewId: 'review-1',
+      screeningId: 'screening-1',
+      outcome: 'CONFLICT_IDENTIFIED',
+      reviewedAt: '2026-09-25T04:00:00.123456+00:00',
+      fingerprint: SHA3_A,
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('rejects browser-owned tenant, reviewer, chronology, screening, and authority fields', async () => {
+    const forbidden = {
+      tenant_id: 'tenant-forged',
+      reviewer_principal_id: 'principal-forged',
+      reviewed_at: '2026-09-25T04:00:00+00:00',
+      screening_fingerprint: SHA3_A,
+      screening_payload: { party: 'forbidden' },
+      authorization_evidence_reference: 'auth-forged',
+      authorization_evidence_fingerprint: SHA3_A,
+      source_evidence_reference: 'source-forged',
+      waiver: true,
+      client_acceptance: true,
+      financial_authority: true,
+    };
+
+    for (const [field, value] of Object.entries(forbidden)) {
+      await expect(issueLegalConflictReview({
+        ...conflictReviewInput(),
+        [field]: value,
+      })).rejects.toThrow('LEGAL_OPERATIONS_CONFLICT_REVIEW_INPUT_INVALID');
+    }
+    expect(mockConflictReviewPost).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed or privileged server receipts without local fallback', async () => {
+    mockConflictReviewPost.mockResolvedValueOnce({
+      data: {
+        ...conflictReviewResponse(),
+        authorization_evidence_reference: 'must-not-cross-boundary',
+      },
+    });
+
+    await expect(issueLegalConflictReview(conflictReviewInput())).rejects.toThrow(
+      'LEGAL_OPERATIONS_CONFLICT_REVIEW_RESPONSE_INVALID',
+    );
+  });
+
+  it.each([
+    [401, 'AUTHENTICATION_REJECTED'],
+    [403, 'LEGAL_CONFLICT_REVIEW_AUTHORIZATION_REQUIRED'],
+    [404, 'LEGAL_OPERATION_NOT_FOUND'],
+    [409, 'LEGAL_CONFLICT_REVIEW_CONFLICT'],
+  ])('preserves server semantic failure %s without overwrite or retry', async (status, code) => {
+    const error = { response: { status, data: { detail: code } } };
+    mockConflictReviewPost.mockRejectedValueOnce(error);
+
+    await expect(issueLegalConflictReview(conflictReviewInput())).rejects.toBe(error);
+  });
+
+  it('preserves transport failure rather than manufacturing success', async () => {
+    const error = new Error('NETWORK_UNAVAILABLE');
+    mockConflictReviewPost.mockRejectedValueOnce(error);
+
+    await expect(issueLegalConflictReview(conflictReviewInput())).rejects.toBe(error);
   });
 
   it('uses the governed queue endpoint and adapts only the certified queues', async () => {
@@ -1114,15 +1228,15 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY',
+      'v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT
- * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command browser adapter certificate only
+ * VERSION: v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT
+ * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
