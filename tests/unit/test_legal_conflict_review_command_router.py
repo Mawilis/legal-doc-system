@@ -88,7 +88,7 @@ def context() -> TenantAuthorizationContext:
 
 
 def command(**overrides: object) -> command_api.ConflictReviewCommand:
-    values: dict[str, object] = {
+    values: dict[str, Any] = {
         "screening_id": "screening-1",
         "review_id": "review-1",
         "outcome": LegalConflictReviewOutcome.CONFLICT_IDENTIFIED,
