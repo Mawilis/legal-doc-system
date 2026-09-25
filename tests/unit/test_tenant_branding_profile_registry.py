@@ -1,7 +1,7 @@
 """Direct certificate for the D21B4B tenant branding profile registry.
 
 TITLE: Tenant Branding Profile Registry Direct Certificate
-VERSION: v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
+VERSION: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove immutable profile/selection persistence, explicit currentness,
          tenant isolation, strict hydration and caller-owned transaction CAS.
@@ -11,12 +11,15 @@ COLLABORATION / OWNERSHIP: Direct in-memory persistence certificate for D21B4B.
                             separate gate; runtime entitlement freshness and
                             browser/asset projection remain outside this scope.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT establishes
-           adversarial evidence for exact indexes, active caller transaction
-           enforcement, immutable profile replay, selection-history replay,
-           initial current pointer creation, revisioned CAS advancement, stale
-           replay rejection, cross-tenant silence, corruption rejection,
-           duplicate-pointer detection and whole-transaction retry signaling.
+CHANGELOG: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT adds an explicit regression assertion that the durable
+           current pointer stores the canonical D21B1 branding-tier value rather
+           than an Enum-qualified string representation.
+           v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT established adversarial evidence for exact indexes, active
+           caller transaction enforcement, immutable profile replay,
+           selection-history replay, initial current pointer creation, revisioned
+           CAS advancement, stale replay rejection, cross-tenant silence,
+           corruption rejection, duplicate-pointer detection and
+           whole-transaction retry signaling.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic profile/evidence data and in-memory
                              collection doubles only; no credentials or assets.
@@ -782,6 +785,9 @@ def test_current_pointer_contains_no_raw_brand_or_financial_material() -> None:
     pointer = registry._pointer_for(selection)
     payload = pointer.to_dict()
 
+    assert pointer.branding_tier == TenantBrandingTier.PROFESSIONAL.value
+    assert payload["branding_tier"] == TenantBrandingTier.PROFESSIONAL.value
+
     forbidden = {
         "logo_asset_reference",
         "logo_asset_fingerprint",
@@ -826,7 +832,7 @@ def test_no_runtime_side_effect_or_transaction_ownership_imports() -> None:
 
 
 # ARTIFACT: test_tenant_branding_profile_registry.py
-# VERSION: v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
+# VERSION: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct registry semantics only; no real-Mongo operational certificate, entitlement freshness, browser, asset resolution, IAM or financial authority
 # TENANT POSTURE: synthetic tenant-scoped profile/selection/current-pointer persistence only
 # FAIL-CLOSED POSTURE: transaction absence, divergence, corruption, duplicate currentness, stale lineage and race signals reject
