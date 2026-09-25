@@ -1,12 +1,13 @@
 /**
  * WILSY OS — D21B13 LEGAL AUTHENTICATED BRANDING PRESENTATION CERTIFICATE
- * VERSION: v1.0.0-D21B13-LEGAL-AUTHENTICATED-BRANDING-PRESENTATION-CERT
+ * VERSION: v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Proves Sheriff/Deputy custom Legal chrome consumes only the D21B8
  *          authenticated branding descriptor through D21B12, ignores forged
  *          tenantConfig branding paths, and falls back to tenant initials.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CHANGELOG: 2026-09-25 v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates Legal Practice fixture transport with the certified conflict-screening read projection; authenticated branding assertions and authority boundaries remain unchanged.
  * TENANT BOUNDARY: Branding descriptor originates only from mocked AuthContext.
  * AUTHORITY BOUNDARY: Presentation evidence only; no IAM/legal/financial truth.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   getDeputyPersonalActiveWork: vi.fn(),
   getDeputyFieldCapabilities: vi.fn(),
   getLegalClientMatters: vi.fn(),
+  getLegalConflictScreenings: vi.fn(),
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
   registerLegalIntake: vi.fn(),
@@ -45,6 +47,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getDeputyPersonalActiveWork: mocks.getDeputyPersonalActiveWork,
   getDeputyFieldCapabilities: mocks.getDeputyFieldCapabilities,
   getLegalClientMatters: mocks.getLegalClientMatters,
+  getLegalConflictScreenings: mocks.getLegalConflictScreenings,
   getLegalFinanceEvidence: mocks.getLegalFinanceEvidence,
   getLegalPracticeWorkspace: mocks.getLegalPracticeWorkspace,
   registerLegalIntake: mocks.registerLegalIntake,
@@ -118,6 +121,14 @@ beforeEach(() => {
   mocks.getLegalClientMatters.mockReset();
   mocks.getLegalFinanceEvidence.mockReset();
   mocks.getLegalPracticeWorkspace.mockReset();
+  mocks.getLegalConflictScreenings.mockReset();
+  mocks.getLegalConflictScreenings.mockResolvedValue({
+    schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+    version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+    tenantId: 'tenant-law',
+    visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+    screenings: [],
+  });
   mocks.registerLegalIntake.mockReset();
   mocks.generateLegalReturnOfService.mockReset();
   mocks.recordDeputyFieldOutcome.mockReset();
@@ -252,7 +263,7 @@ describe('D21B13 Legal authenticated tenant branding presentation', () => {
 });
 
 // ARTIFACT: legalDashboardBrandingPresentation.test.jsx
-// VERSION: v1.0.0-D21B13-LEGAL-AUTHENTICATED-BRANDING-PRESENTATION-CERT
+// VERSION: v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
 // AUTHORITY BOUNDARY: Legal browser branding presentation certificate only
 // TENANT POSTURE: only AuthContext descriptor can reach D21B12
 // FAIL-CLOSED POSTURE: forged/absent branding falls back to initials, never legacy URL

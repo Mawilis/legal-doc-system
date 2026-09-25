@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION
+ * VERSION: v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -18,8 +18,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-25 v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION binds Legal presentation only to the D21B8 authenticated tenant branding projection and D21B12 transient asset lifecycle. Practice, Finance and Client modes inherit the certified shared chrome; Sheriff/Deputy custom chrome may render only the server-derived current logo blob and always falls back to descriptive tenant initials. WILSY Legal OS remains the independent platform trust identity. No tenantConfig logo/path/browser branding, entitlement, IAM, legal-command, billing, payment, execution or settlement authority is created.
+ * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CHANGELOG: 2026-09-25 v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT loads the certified tenant-scoped REVIEW_REQUIRED conflict-screening queue into the existing Legal Practice lifecycle and provides one bounded human Review Conflict interaction. The browser submits only screening_id, stable review_id, outcome and review_reason_reference through issueLegalConflictReview; canonical Python EOS remains responsible for authorization, chronology, evidence and immutable review truth. No clearance, waiver, representation, client acceptance, tenant, IAM, billing, payment, execution or settlement authority is created.
+ *            2026-09-25 v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION binds Legal presentation only to the D21B8 authenticated tenant branding projection and D21B12 transient asset lifecycle. Practice, Finance and Client modes inherit the certified shared chrome; Sheriff/Deputy custom chrome may render only the server-derived current logo blob and always falls back to descriptive tenant initials. WILSY Legal OS remains the independent platform trust identity. No tenantConfig logo/path/browser branding, entitlement, IAM, legal-command, billing, payment, execution or settlement authority is created.
  *            2026-09-25 v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION consumes only the authenticated firstName/lastName projection already admitted by AuthContext, presents the exact human name as primary Legal operator identity across practice, finance, client and role-activity posture, and retains authenticated email as secondary identity when distinct. It never parses email, role labels, tenant data or browser storage into a person name; malformed/absent name text is ignored and existing email/opaque-principal fallback remains descriptive only. No membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority is created.
  *            2026-09-24 v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION presents the authenticated canonical tenant practice profile inside Legal Practice workspaces: legal/name identity plus alias, industry, region and sector when projected by Python EOS workspace-bootstrap. The panel is descriptive only and explicitly cannot establish law-firm operating model, role, permission, plan, subscription, branding, billing, payment, execution or settlement authority.
  *            2026-09-24 v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE makes every published Legal persona visibly identity/activity aware. Practice and Finance posture now includes the authenticated principal; LEGAL_CLIENT exposes server client-visibility scope; SHERIFF exposes server operational-queue scope; DEPUTY exposes bound-work plus current server-issued field-command capabilities. All posture surfaces are explanatory only and cannot create role, permission, capability, tenant, legal, financial, payment or settlement authority.
@@ -100,7 +101,7 @@
  *                          invents truth, or displays command success.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Bot,
@@ -131,9 +132,11 @@ import {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  issueLegalConflictReview,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -142,7 +145,7 @@ import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION';
+const DASHBOARD_VERSION = 'v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -165,6 +168,14 @@ const EMPTY_CLIENT_MATTERS = Object.freeze({
   tenantId: '',
   visibility: '',
   matters: Object.freeze([]),
+});
+
+const EMPTY_CONFLICT_SCREENINGS = Object.freeze({
+  schema: '',
+  version: '',
+  tenantId: '',
+  visibility: '',
+  screenings: Object.freeze([]),
 });
 
 
@@ -599,6 +610,13 @@ function createOpaqueBrowserToken() {
     return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function createConflictReviewId() {
+  if (typeof globalThis.crypto?.randomUUID !== 'function') {
+    throw new Error('LEGAL_CONFLICT_REVIEW_ID_GENERATION_UNAVAILABLE');
+  }
+  return `review-${globalThis.crypto.randomUUID()}`;
 }
 
 function resolveBrowserFieldDeviceId() {
@@ -1471,6 +1489,232 @@ function MatterOperationsPanel({
   );
 }
 
+const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
+  'CONFLICT_IDENTIFIED',
+  'NO_CONFLICT_IDENTIFIED',
+  'ESCALATION_REQUIRED',
+]);
+
+function ConflictReviewQueue({ screenings, onRefresh }) {
+  const [drafts, setDrafts] = useState({});
+  const [reviewStates, setReviewStates] = useState({});
+  const pendingIds = useRef(new Set());
+  const reviewRequired = useMemo(
+    () => (Array.isArray(screenings?.screenings) ? screenings.screenings : [])
+      .filter((screening) => screening.status === 'REVIEW_REQUIRED'),
+    [screenings],
+  );
+
+  const openReview = useCallback((screeningId) => {
+    setDrafts((current) => {
+      if (current[screeningId]) return current;
+      return {
+        ...current,
+        [screeningId]: {
+          reviewId: createConflictReviewId(),
+          outcome: '',
+          reviewReasonReference: '',
+        },
+      };
+    });
+  }, []);
+
+  const updateDraft = useCallback((screeningId, field, value) => {
+    setDrafts((current) => ({
+      ...current,
+      [screeningId]: {
+        ...current[screeningId],
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  const submitReview = useCallback(async (screening) => {
+    const screeningId = screening.screeningId;
+    if (pendingIds.current.has(screeningId)) return;
+
+    const draft = drafts[screeningId];
+    const reason = draft?.reviewReasonReference?.trim() || '';
+    if (!draft?.reviewId || !CONFLICT_REVIEW_OUTCOMES.includes(draft.outcome)) {
+      setReviewStates((current) => ({
+        ...current,
+        [screeningId]: {
+          kind: 'error',
+          message: 'Select one bounded human review outcome before submitting.',
+        },
+      }));
+      return;
+    }
+    if (!reason) {
+      setReviewStates((current) => ({
+        ...current,
+        [screeningId]: {
+          kind: 'error',
+          message: 'A bounded review reason reference is required.',
+        },
+      }));
+      return;
+    }
+
+    const command = {
+      screeningId,
+      reviewId: draft.reviewId,
+      outcome: draft.outcome,
+      reviewReasonReference: reason,
+    };
+    pendingIds.current.add(screeningId);
+    setReviewStates((current) => ({
+      ...current,
+      [screeningId]: { kind: 'pending', message: 'Submitting conflict review…' },
+    }));
+
+    try {
+      const result = await issueLegalConflictReview(command);
+      const refreshed = await onRefresh();
+      if (!refreshed?.conflictScreenings) {
+        throw new Error('LEGAL_OPERATIONS_CONFLICT_REVIEW_REFRESH_FAILED');
+      }
+      setReviewStates((current) => ({
+        ...current,
+        [screeningId]: {
+          kind: 'success',
+          message: `Conflict review recorded as ${result.outcome}. Canonical screening state refreshed.`,
+        },
+      }));
+    } catch (caught) {
+      setReviewStates((current) => ({
+        ...current,
+        [screeningId]: {
+          kind: 'error',
+          message: `Conflict review not confirmed: ${commandErrorMessage(caught)}`,
+        },
+      }));
+    } finally {
+      pendingIds.current.delete(screeningId);
+    }
+  }, [drafts, onRefresh]);
+
+  return (
+    <QueuePanel
+      title="Conflict review queue"
+      subtitle="Canonical REVIEW_REQUIRED screenings · human determination only"
+      icon={ShieldCheck}
+      rows={reviewRequired}
+      emptyMessage="No screenings currently require human review."
+      renderRow={(screening) => {
+        const draft = drafts[screening.screeningId];
+        const state = reviewStates[screening.screeningId];
+        const pending = state?.kind === 'pending';
+        return (
+          <div
+            key={screening.screeningId}
+            data-conflict-screening-id={screening.screeningId}
+            className="px-5 py-4"
+          >
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_0.8fr_auto] lg:items-center">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-white">{screening.sourceCaseMatterId}</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-stone-600">
+                  Source matter reference
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
+                  Screened
+                </p>
+                <p className="mt-1 text-xs font-semibold text-stone-300">
+                  {formatTimestamp(screening.screenedAt)}
+                </p>
+              </div>
+              <StatePill state={screening.status} />
+              <button
+                type="button"
+                aria-expanded={Boolean(draft)}
+                onClick={() => openReview(screening.screeningId)}
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 text-[11px] font-black text-amber-200 transition hover:bg-amber-500/20"
+              >
+                <ShieldCheck size={15} />
+                Review Conflict
+              </button>
+            </div>
+
+            {draft && (
+              <form
+                className="mt-4 grid gap-4 rounded-xl border border-amber-900/30 bg-black/25 p-4 lg:grid-cols-[1fr_1.4fr_auto] lg:items-end"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitReview(screening);
+                }}
+                aria-label={`Conflict review for ${screening.sourceCaseMatterId}`}
+              >
+                <label className="block">
+                  <span className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-500">
+                    Human determination
+                  </span>
+                  <select
+                    aria-label={`Conflict review outcome for ${screening.sourceCaseMatterId}`}
+                    value={draft.outcome}
+                    disabled={pending}
+                    onChange={(event) => updateDraft(
+                      screening.screeningId,
+                      'outcome',
+                      event.target.value,
+                    )}
+                    className="mt-2 min-h-[46px] w-full rounded-xl border border-stone-800 bg-stone-950 px-3 py-2 text-sm text-white outline-none transition focus:border-amber-700/60 disabled:opacity-50"
+                  >
+                    <option value="">Select an outcome</option>
+                    {CONFLICT_REVIEW_OUTCOMES.map((outcome) => (
+                      <option key={outcome} value={outcome}>{outcome}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-500">
+                    Review reason reference
+                  </span>
+                  <input
+                    aria-label={`Conflict review reason for ${screening.sourceCaseMatterId}`}
+                    value={draft.reviewReasonReference}
+                    maxLength={512}
+                    disabled={pending}
+                    onChange={(event) => updateDraft(
+                      screening.screeningId,
+                      'reviewReasonReference',
+                      event.target.value,
+                    )}
+                    placeholder="Existing governed reference only"
+                    className="mt-2 min-h-[46px] w-full rounded-xl border border-stone-800 bg-stone-950 px-3 py-2 text-sm text-white outline-none transition focus:border-amber-700/60 disabled:opacity-50"
+                  />
+                  <span className="mt-1 block text-[10px] leading-4 text-stone-600">
+                    Reference only; do not enter legal advice, party details or clearance language.
+                  </span>
+                </label>
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl border border-emerald-700/40 bg-emerald-500/10 px-4 py-2 text-[11px] font-black text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {pending ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
+                  Submit review
+                </button>
+              </form>
+            )}
+
+            {state && (
+              <p
+                role={state.kind === 'error' ? 'alert' : 'status'}
+                className={`mt-3 text-xs ${state.kind === 'error' ? 'text-red-400' : state.kind === 'success' ? 'text-emerald-400' : 'text-amber-300'}`}
+              >
+                {state.message}
+              </p>
+            )}
+          </div>
+        );
+      }}
+    />
+  );
+}
+
 function LegalFinanceLookup({ roleToken, user }) {
   const canReadBilling = presentationAllowsPermission({
     roleToken,
@@ -1815,6 +2059,7 @@ function LegalIntakePanel({ onRefresh, onRegistered, roleToken, user }) {
 }
 
 function LegalPracticeWorkspace({
+  conflictScreenings,
   error,
   lastUpdated,
   onLogout,
@@ -1998,6 +2243,10 @@ function LegalPracticeWorkspace({
           selectedMatterId={selectedMatterId}
           onSelectMatter={openMatter}
           overview
+        />
+        <ConflictReviewQueue
+          screenings={conflictScreenings}
+          onRefresh={onRefresh}
         />
         <QueuePanel
           title="Service operations"
@@ -2434,6 +2683,9 @@ export default function LegalDashboard({
   const [practiceWorkspace, setPracticeWorkspace] = useState(
     EMPTY_PRACTICE_WORKSPACE,
   );
+  const [conflictScreenings, setConflictScreenings] = useState(
+    EMPTY_CONFLICT_SCREENINGS,
+  );
   const [deputyCapabilities, setDeputyCapabilities] = useState(
     EMPTY_DEPUTY_CAPABILITIES,
   );
@@ -2455,6 +2707,7 @@ export default function LegalDashboard({
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
       setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+      setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setError({
         kind: 'LEGAL_ROLE_SCOPE_REQUIRED',
@@ -2489,6 +2742,7 @@ export default function LegalDashboard({
         });
         setClientMatters(EMPTY_CLIENT_MATTERS);
         setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+        setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
         setLastUpdated(new Date());
         return { deputyWork: work, deputyCapabilities: capabilityPacket };
       }
@@ -2502,13 +2756,18 @@ export default function LegalDashboard({
         setCommandState(null);
         setObservationDrafts({});
         setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+        setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
         setLastUpdated(new Date());
         return { clientMatters: result };
       }
 
       if (roleMode === ROLE_MODES.LEGAL_PRACTICE) {
-        const result = await getLegalPracticeWorkspace();
+        const [result, screeningResult] = await Promise.all([
+          getLegalPracticeWorkspace(),
+          getLegalConflictScreenings(),
+        ]);
         setPracticeWorkspace(result);
+        setConflictScreenings(screeningResult);
         setQueues(EMPTY_QUEUES);
         setDeputyWork(EMPTY_DEPUTY_WORK);
         setClientMatters(EMPTY_CLIENT_MATTERS);
@@ -2516,11 +2775,15 @@ export default function LegalDashboard({
         setCommandState(null);
         setObservationDrafts({});
         setLastUpdated(new Date());
-        return { practiceWorkspace: result };
+        return {
+          practiceWorkspace: result,
+          conflictScreenings: screeningResult,
+        };
       }
 
       if (roleMode === ROLE_MODES.LEGAL_FINANCE) {
         setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+        setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
         setQueues(EMPTY_QUEUES);
         setDeputyWork(EMPTY_DEPUTY_WORK);
         setClientMatters(EMPTY_CLIENT_MATTERS);
@@ -2536,6 +2799,7 @@ export default function LegalDashboard({
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
       setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+      setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       setLastUpdated(new Date());
       return { queues: result };
@@ -2600,6 +2864,7 @@ export default function LegalDashboard({
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
       setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+      setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       return null;
     } finally {
@@ -2896,6 +3161,7 @@ export default function LegalDashboard({
         tenantConfig={tenantConfig}
         user={user}
         workspace={practiceWorkspace}
+        conflictScreenings={conflictScreenings}
       />
     );
   }
@@ -3309,8 +3575,8 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION
- * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService and bound-Deputy command initiation only; D24C authenticated person names are descriptive presentation from AuthContext and create no identity, membership, role, permission, tenant, operating-model, legal or financial authority; Python EOS owns authorization and legal truth
+ * VERSION: v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT
+ * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive

@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT
+ * VERSION: v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT certifies the D18 visible authority-posture surface: server-authoritative projections, compatibility role baselines and legacy narrowing hints are labeled distinctly; effective lanes match the already-certified presentation gates; explanatory posture cannot widen commands or create Legal/financial authority.
+ * CHANGELOG: 2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
+ *            2026-09-24 v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT certifies the D18 visible authority-posture surface: server-authoritative projections, compatibility role baselines and legacy narrowing hints are labeled distinctly; effective lanes match the already-certified presentation gates; explanatory posture cannot widen commands or create Legal/financial authority.
  *            2026-09-24 v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT certifies D17 server-bound permission provenance in the Legal Command Center: an authoritative empty Legal permission projection removes Partner intake/return/finance affordances while retaining read-only workspace visibility, and authoritative-empty LEGAL_FINANCE performs no finance evidence transport. Absent server provenance still preserves the D16 role baseline.
  *            2026-09-24 v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT certifies permission-aware narrowing for Legal Practice/Finance presentation: explicit legal permission hints can remove intake, ReturnOfService and finance affordances but cannot widen the canonical role envelope; absent legal permission hints preserve the certified role baseline.
  *            2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-OPERATING-ROOM-CERT binds the production dashboard to the D15 V2 workspace, proves canonical matter rendering/search/drilldown, linked lifecycle operating-room composition, and post-intake navigation to the refreshed persisted matter without adding browser authority.
@@ -33,9 +34,11 @@ const {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  issueLegalConflictReview,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -44,9 +47,11 @@ const {
   getDeputyFieldCapabilities: vi.fn(),
   getDeputyPersonalActiveWork: vi.fn(),
   getLegalClientMatters: vi.fn(),
+  getLegalConflictScreenings: vi.fn(),
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
+  issueLegalConflictReview: vi.fn(),
   recordDeputyFieldOutcome: vi.fn(),
   registerLegalIntake: vi.fn(),
   transitionDeputyFieldAttempt: vi.fn(),
@@ -58,9 +63,11 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  issueLegalConflictReview,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -245,9 +252,39 @@ const practiceWorkspace = ({ withReturn = false, withNewMatter = false } = {}) =
     : [],
 });
 
+const conflictScreeningQueue = ({ status = 'REVIEW_REQUIRED' } = {}) => ({
+  schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+  version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+  tenantId: 'tenant-law',
+  visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+  screenings: status
+    ? [{
+      screeningId: 'screening-001',
+      sourceCaseMatterId: 'CASE-2026-0001',
+      status,
+      screenedAt: '2026-09-25T08:30:00Z',
+    }]
+    : [],
+});
+
+const conflictReviewReceipt = (outcome = 'ESCALATION_REQUIRED') => ({
+  reviewId: 'review-accepted',
+  screeningId: 'screening-001',
+  outcome,
+  reviewedAt: '2026-09-25T08:31:00Z',
+  fingerprint: EVIDENCE_A,
+});
+
 describe('D15 first-class Legal Matter Operating Room', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getLegalConflictScreenings.mockResolvedValue({
+      schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+      version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+      tenantId: 'tenant-law',
+      visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+      screenings: [],
+    });
   });
 
   it('renders a full law-firm operating workspace instead of a matter list', async () => {
@@ -286,7 +323,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
       expect(screen.getByRole('button', { name: menu })).toBeInTheDocument();
     }
 
-    expect(screen.getByText('CASE-2026-0001')).toBeInTheDocument();
+    expect(screen.getAllByText('CASE-2026-0001').length).toBeGreaterThan(0);
     expect(screen.getByText('matter-001')).toBeInTheDocument();
     expect(screen.getByText('attempt-001')).toBeInTheDocument();
     expect(screen.getAllByText('Active instructions').length).toBeGreaterThan(0);
@@ -767,11 +804,179 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(getLegalClientMatters).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
   });
+
+  it('loads and presents the canonical conflict-review queue without exposing a NO_MATCH action', async () => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    getLegalConflictScreenings.mockResolvedValue(conflictScreeningQueue());
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+
+    const queue = await screen.findByRole('heading', { name: 'Conflict review queue' });
+    const queueSection = queue.closest('section');
+    expect(getLegalConflictScreenings).toHaveBeenCalledTimes(1);
+    expect(within(queueSection).getByText('CASE-2026-0001')).toBeInTheDocument();
+    expect(within(queueSection).getByText('REVIEW_REQUIRED')).toBeInTheDocument();
+    expect(within(queueSection).getByText('Review Conflict')).toBeInTheDocument();
+
+    getLegalConflictScreenings.mockResolvedValue(conflictScreeningQueue({ status: 'NO_MATCH_FOUND' }));
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh truth' }));
+
+    await waitFor(() => {
+      expect(getLegalConflictScreenings).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.queryByRole('button', { name: 'Review Conflict' })).not.toBeInTheDocument();
+    expect(screen.getByText('No screenings currently require human review.')).toBeInTheDocument();
+  });
+
+  it('submits only the four human review fields and refreshes canonical screening state', async () => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    getLegalConflictScreenings
+      .mockResolvedValueOnce(conflictScreeningQueue())
+      .mockResolvedValueOnce(conflictScreeningQueue({ status: null }));
+    issueLegalConflictReview.mockResolvedValueOnce(
+      conflictReviewReceipt('NO_CONFLICT_IDENTIFIED'),
+    );
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    await screen.findByRole('heading', { name: 'Conflict review queue' });
+    fireEvent.click(screen.getByRole('button', { name: 'Review Conflict' }));
+
+    const outcome = screen.getByRole('combobox', {
+      name: 'Conflict review outcome for CASE-2026-0001',
+    });
+    expect(Array.from(outcome.options).map((option) => option.value)).toEqual([
+      '',
+      'CONFLICT_IDENTIFIED',
+      'NO_CONFLICT_IDENTIFIED',
+      'ESCALATION_REQUIRED',
+    ]);
+    fireEvent.change(outcome, { target: { value: 'NO_CONFLICT_IDENTIFIED' } });
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'Conflict review reason for CASE-2026-0001' }),
+      { target: { value: 'review-ref:bounded-human-check' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+
+    await waitFor(() => {
+      expect(issueLegalConflictReview).toHaveBeenCalledTimes(1);
+      expect(getLegalConflictScreenings).toHaveBeenCalledTimes(2);
+    });
+    const submitted = issueLegalConflictReview.mock.calls[0][0];
+    expect(Object.keys(submitted).sort()).toEqual([
+      'outcome',
+      'reviewId',
+      'reviewReasonReference',
+      'screeningId',
+    ].sort());
+    expect(submitted).toEqual({
+      screeningId: 'screening-001',
+      reviewId: expect.stringMatching(/^review-[0-9a-f-]{36}$/),
+      outcome: 'NO_CONFLICT_IDENTIFIED',
+      reviewReasonReference: 'review-ref:bounded-human-check',
+    });
+    for (const forbidden of [
+      'tenantId',
+      'reviewerPrincipalId',
+      'reviewedAt',
+      'fingerprint',
+      'partyId',
+      'authorizationEvidence',
+    ]) {
+      expect(submitted).not.toHaveProperty(forbidden);
+    }
+  });
+
+  it('keeps one review identity and blocks duplicate dispatch while the command is pending', async () => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    getLegalConflictScreenings.mockResolvedValue(conflictScreeningQueue());
+    let resolveReview;
+    issueLegalConflictReview.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveReview = resolve; }),
+    );
+
+    const view = render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    await screen.findByRole('heading', { name: 'Conflict review queue' });
+    fireEvent.click(screen.getByRole('button', { name: 'Review Conflict' }));
+    fireEvent.change(screen.getByRole('combobox', {
+      name: 'Conflict review outcome for CASE-2026-0001',
+    }), { target: { value: 'ESCALATION_REQUIRED' } });
+    fireEvent.change(screen.getByRole('textbox', {
+      name: 'Conflict review reason for CASE-2026-0001',
+    }), { target: { value: 'review-ref:pending-check' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+
+    await waitFor(() => {
+      expect(issueLegalConflictReview).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('button', { name: 'Submit review' })).toBeDisabled();
+    });
+    const firstPayload = issueLegalConflictReview.mock.calls[0][0];
+    expect(screen.getAllByText('CASE-2026-0001').length).toBeGreaterThan(0);
+    expect(getLegalConflictScreenings).toHaveBeenCalledTimes(1);
+
+    view.rerender(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    expect(screen.getByRole('button', { name: 'Submit review' })).toBeDisabled();
+    resolveReview(conflictReviewReceipt('ESCALATION_REQUIRED'));
+    await screen.findByText(/Conflict review recorded as ESCALATION_REQUIRED/);
+    expect(issueLegalConflictReview.mock.calls[0][0].reviewId).toBe(firstPayload.reviewId);
+  });
+
+  it('retains the same command identity after a 409 and presents bounded server failure', async () => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    getLegalConflictScreenings.mockResolvedValue(conflictScreeningQueue());
+    issueLegalConflictReview
+      .mockRejectedValueOnce({ response: { status: 409, data: { detail: 'LEGAL_CONFLICT_REVIEW_CONFLICT' } } })
+      .mockResolvedValueOnce(conflictReviewReceipt('ESCALATION_REQUIRED'));
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    await screen.findByRole('heading', { name: 'Conflict review queue' });
+    fireEvent.click(screen.getByRole('button', { name: 'Review Conflict' }));
+    fireEvent.change(screen.getByRole('combobox', {
+      name: 'Conflict review outcome for CASE-2026-0001',
+    }), { target: { value: 'ESCALATION_REQUIRED' } });
+    fireEvent.change(screen.getByRole('textbox', {
+      name: 'Conflict review reason for CASE-2026-0001',
+    }), { target: { value: 'review-ref:replay-check' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+    await screen.findByText(/LEGAL_CONFLICT_REVIEW_CONFLICT/);
+    const firstPayload = issueLegalConflictReview.mock.calls[0][0];
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+    await waitFor(() => expect(issueLegalConflictReview).toHaveBeenCalledTimes(2));
+    expect(issueLegalConflictReview.mock.calls[1][0]).toEqual(firstPayload);
+  });
+
+  it.each([
+    [403, 'AUTHORIZATION_DENIED'],
+    [404, 'SCREENING_NOT_FOUND'],
+  ])('keeps HTTP %s review failure visible without fabricating success', async (status, detail) => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    getLegalConflictScreenings.mockResolvedValue(conflictScreeningQueue());
+    issueLegalConflictReview.mockRejectedValueOnce({
+      response: { status, data: { detail } },
+    });
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    await screen.findByRole('heading', { name: 'Conflict review queue' });
+    fireEvent.click(screen.getByRole('button', { name: 'Review Conflict' }));
+    fireEvent.change(screen.getByRole('combobox', {
+      name: 'Conflict review outcome for CASE-2026-0001',
+    }), { target: { value: 'CONFLICT_IDENTIFIED' } });
+    fireEvent.change(screen.getByRole('textbox', {
+      name: 'Conflict review reason for CASE-2026-0001',
+    }), { target: { value: 'review-ref:failure-check' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+
+    expect(await screen.findByText(new RegExp(detail))).toBeInTheDocument();
+    expect(screen.queryByText(/Conflict review recorded/)).not.toBeInTheDocument();
+    expect(getLegalConflictScreenings).toHaveBeenCalledTimes(1);
+  });
 });
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT
+ * VERSION: v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT
+ * CHANGELOG: 2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
  * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D18 posture text reports provenance/effective lanes but neither it nor D17/browser permission hints can widen the canonical role envelope or prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
  * FAIL-CLOSED POSTURE: role denial, explicit/server-authoritative permission narrowing including an empty grant set, misleading authority provenance, command failure and cross-role drift never fallback, widen role scope, invent operating-model authority or invent success

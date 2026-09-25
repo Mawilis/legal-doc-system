@@ -1,6 +1,6 @@
 /**
  * WILSY OS — LEGAL ROLE EXPERIENCE MATRIX CERTIFICATE
- * VERSION: v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT
+ * VERSION: v1.2.0-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Certifies that every published Legal persona renders from authenticated
  *          identity plus server-derived authority/capability projections, exposes
@@ -8,7 +8,8 @@
  *          endpoint family.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT proves exact authenticated firstName/lastName presentation across Legal practice, finance, client, sheriff and deputy postures; email remains separately visible when distinct, while malformed names and forged legacy displayName/name fields cannot override the bounded fallback. Identity presentation creates no tenant, membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority.
+ * CHANGELOG: 2026-09-25 v1.2.0-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates Legal Practice fixtures with the certified conflict-screening read projection; role identity/activity and permission posture assertions remain unchanged.
+ *            v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT proves exact authenticated firstName/lastName presentation across Legal practice, finance, client, sheriff and deputy postures; email remains separately visible when distinct, while malformed names and forged legacy displayName/name fields cannot override the bounded fallback. Identity presentation creates no tenant, membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority.
  *            v1.0.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE-CERT established the multi-role Legal identity/activity and permission-posture matrix.
  * TENANT BOUNDARY: Every fixture is tenant-scoped and synthetic.
  * AUTHORITY BOUNDARY: UI posture is explanatory only; Python EOS owns legal
@@ -26,6 +27,7 @@ const {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
@@ -37,6 +39,7 @@ const {
   getDeputyFieldCapabilities: vi.fn(),
   getDeputyPersonalActiveWork: vi.fn(),
   getLegalClientMatters: vi.fn(),
+  getLegalConflictScreenings: vi.fn(),
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
@@ -51,6 +54,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
@@ -227,6 +231,13 @@ function assertNoSpecialistFallback() {
 describe('D20 Legal role experience matrix', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getLegalConflictScreenings.mockResolvedValue({
+      schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+      version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+      tenantId: 'tenant-law',
+      visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+      screenings: [],
+    });
     installLocalStorageStub();
   });
 
@@ -449,7 +460,7 @@ describe('D20 Legal role experience matrix', () => {
 
 /**
  * ARTIFACT: legalDashboardRoleExperienceMatrix.test.jsx
- * VERSION: v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT
+ * VERSION: v1.2.0-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
  * AUTHORITY BOUNDARY: browser presentation evidence only; D24C person-name rendering is descriptive AuthContext projection and Python EOS owns authentication/authorization
  * TENANT POSTURE: synthetic exact tenant scopes only; no cross-tenant fallback
  * FAIL-CLOSED POSTURE: malformed/absent person names are never normalized or inferred, forged legacy name fields do not override bounded identity, permissions/capabilities narrow controls, and unresolved role is network-silent

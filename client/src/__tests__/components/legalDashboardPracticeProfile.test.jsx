@@ -1,13 +1,14 @@
 /**
  * WILSY OS — LEGAL PRACTICE PROFILE PRESENTATION CERTIFICATE
- * VERSION: v1.0.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION-CERT
+ * VERSION: v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Certifies that Legal Practice workspaces consume only the bounded
  *          descriptive tenant profile projected by authenticated Python EOS
  *          workspace-bootstrap and do not manufacture or expose operating-model,
  *          commercial, compliance or financial authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeProfile.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CHANGELOG: 2026-09-25 v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates the presentation fixture to provide the certified conflict-screening read projection required by the Legal Practice dashboard lifecycle; profile assertions and authority boundaries remain unchanged.
  * TENANT BOUNDARY: Synthetic same-tenant fixtures only.
  * AUTHORITY BOUNDARY: Profile presentation is descriptive only; Python EOS owns
  *                     tenant and authorization truth.
@@ -25,6 +26,7 @@ const {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
@@ -36,6 +38,7 @@ const {
   getDeputyFieldCapabilities: vi.fn(),
   getDeputyPersonalActiveWork: vi.fn(),
   getLegalClientMatters: vi.fn(),
+  getLegalConflictScreenings: vi.fn(),
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
@@ -50,6 +53,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
@@ -131,9 +135,16 @@ const workspace = () => ({
 });
 
 describe('D19B canonical Legal practice profile presentation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+beforeEach(() => {
+  vi.clearAllMocks();
+  getLegalConflictScreenings.mockResolvedValue({
+    schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+    version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+    tenantId: 'tenant-law',
+    visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+    screenings: [],
   });
+});
 
   it('renders only the bounded descriptive practice profile from authenticated tenant truth', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(workspace());
@@ -247,7 +258,7 @@ describe('D19B canonical Legal practice profile presentation', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeProfile.test.jsx
- * VERSION: v1.0.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION-CERT
+ * VERSION: v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
  * AUTHORITY BOUNDARY: browser descriptive presentation only
  * TENANT POSTURE: exact authenticated tenant projection only
  * FAIL-CLOSED POSTURE: unsupported profile fields are absent rather than inferred
