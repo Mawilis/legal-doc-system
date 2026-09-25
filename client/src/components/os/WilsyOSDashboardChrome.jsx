@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SHARED DASHBOARD CHROME [V1.4.0-OMEGA-PHASE5]                                                                             ║
+ * ║ WILSY OS – SHARED DASHBOARD CHROME [V1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION]                                                                             ║
  * ║ [EXECUTIVE SHELL | TENANT PLATE | OPERATOR IDENTITY | COLLAPSIBLE RAIL | METRICS STRIP]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.4.0-OMEGA-PHASE5 | PRODUCTION READY                                                                                       ║
+ * ║ VERSION: 1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION | PRODUCTION READY                                                                                       ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -44,7 +44,7 @@ import { useTenants } from '../../contexts/tenantContext';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V1.4.0-OMEGA-PHASE5';
+const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION';
 
 /**
  * @function normalizeWilsyChromeText
@@ -170,6 +170,7 @@ const WilsyOSDashboardChrome = ({
     operator,
     authUser,
     activeTenant: activeTenantContext,
+    authenticatedTenant: authTenant || {},
     dashboard: { dashboardKey, role, posture },
     storyMessages
   });
@@ -187,6 +188,7 @@ const WilsyOSDashboardChrome = ({
       data-wilsy-os-dashboard-chrome="true"
       data-wilsy-dashboard-key={dashboardKey}
       data-wilsy-chrome-version={WILSY_OS_DASHBOARD_CHROME_VERSION}
+      data-wilsy-tenant-branding={identity.tenant.branding ? 'authenticated' : 'none'}
       data-rail-collapsed={railCollapsed ? 'true' : 'false'}
       style={style}
     >
@@ -259,7 +261,11 @@ const WilsyOSDashboardChrome = ({
           <div>
             <small>TENANT IDENTITY</small>
             <strong>{identity.tenant.displayName}</strong>
-            <em>{normalizeWilsyChromeText(identity.tenant.status, 'OPERATING BRAND VERIFIED')}</em>
+            <em>
+              {identity.tenant.brandingProfileLabel
+                ? `${identity.tenant.brandingProfileLabel} · ${normalizeWilsyChromeText(identity.tenant.status, 'OPERATING BRAND VERIFIED')}`
+                : normalizeWilsyChromeText(identity.tenant.status, 'OPERATING BRAND VERIFIED')}
+            </em>
           </div>
         </section>
       </header>
@@ -348,10 +354,10 @@ export default WilsyOSDashboardChrome;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v1.4.0-OMEGA-PHASE5
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         1.4.0-OMEGA-PHASE5
+ * Version:         1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Unified shell for all domain HUDs
