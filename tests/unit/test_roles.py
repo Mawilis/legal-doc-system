@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
+VERSION: v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,6 +8,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-25 v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT
+    certifies legal_operations:conflict_review:write is granted exactly once to
+    LEGAL_PARTNER and LEGAL_ATTORNEY and to no other role. Static grant policy
+    remains non-possessory and does not prove ACTIVE membership, eligible
+    business role, reviewer identity, durable screening evidence, conflict
+    finding, waiver, ethical wall, recusal, engagement, representation,
+    payment, execution or settlement authority.
     2026-09-23 v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
     certifies legal_operations:client_matter:read is granted exactly to
     LEGAL_CLIENT and to no other role. The grant remains static/non-possessory,
@@ -89,9 +96,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT"
+    assert POLICY_VERSION == "v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS"
 
-VERSION = "v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT"
+VERSION = "v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -183,6 +190,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
         "legal_operations:instruction:read", "legal_operations:instruction:write",
         "legal_operations:client_visibility:write",
+        "legal_operations:conflict_review:write",
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
@@ -201,6 +209,17 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:invoice:read",
         "legal_operations:client_matter:read",
     ]
+    conflict_review_permission = "legal_operations:conflict_review:write"
+    expected_conflict_review_roles = ("LEGAL_ATTORNEY", "LEGAL_PARTNER")
+    assert get_roles_granting_permission(conflict_review_permission) == (
+        expected_conflict_review_roles
+    )
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in expected_conflict_review_roles:
+            assert grants.count(conflict_review_permission) == 1
+        else:
+            assert conflict_review_permission not in grants
+
     visibility_permission = "legal_operations:client_visibility:write"
     assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
     assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
@@ -372,6 +391,10 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         (
             "legal_operations:client_matter:read",
             ("LEGAL_CLIENT",),
+        ),
+        (
+            "legal_operations:conflict_review:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARTNER"),
         ),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
@@ -590,9 +613,9 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
+# VERSION: v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: client-matter read is statically granted only to LEGAL_CLIENT; current tenant-scoped possession and ACTIVE visibility remain separate authorities
+# TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
