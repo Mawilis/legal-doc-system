@@ -1,7 +1,7 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT
+VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
 CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
+CHANGELOG: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
+           v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
            v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
            tenant alias, industry, region and sector as descriptive practice
            context while continuing to exclude plan/subscription, tax/contact,
@@ -217,6 +218,11 @@ def _override_workspace_dependencies(
         auth_router,
         "get_auth_registry",
         lambda _database=None: registry,
+    )
+    monkeypatch.setattr(
+        auth_router,
+        "_workspace_branding_projection",
+        lambda _tenant_id: None,
     )
     return registry
 
@@ -514,6 +520,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             "membershipRevision": 7,
             "businessRoleRevision": 11,
             "legalPermissions": [],
+            "branding": None,
             "tenant": {
                 "tenantId": TENANT,
                 "name": "Canonical Tenant",
@@ -534,6 +541,8 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
     assert "permissions" not in serialized["user"]
     assert "role" not in serialized["user"]
     assert serialized["workspace"]["legalPermissions"] == []
+    assert "branding" in serialized["workspace"]
+    assert serialized["workspace"]["branding"] is None
     tenant_payload = serialized["workspace"]["tenant"]
     for forbidden in (
         "plan",
@@ -875,9 +884,9 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT
-# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
+# VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+# AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, D21B7 branding presence/absence transport, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
-# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model authority deny or remain excluded
+# FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile/branding-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model/branding authority deny or remain excluded
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
