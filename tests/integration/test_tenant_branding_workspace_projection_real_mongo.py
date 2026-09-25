@@ -1,7 +1,7 @@
 """Real-Mongo certificate for D21B6 tenant branding workspace projection.
 
 TITLE: Tenant Branding Workspace Projection Real-Mongo Certificate
-VERSION: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT
+VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify the complete D21B2B -> D21B4B -> D21B5B -> D21B6 read chain
          against one disposable Mongo replica-set database under caller-owned
@@ -11,10 +11,13 @@ COLLABORATION / OWNERSHIP: Host-backed D21B6 composition certificate only; all
                             durable source authorities remain owned by their
                             certified registries.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT
-           proves exact committed full-chain composition, safe absent branding,
-           tenant silence, caller transaction enforcement, entitlement suspension
-           revocation of presentation, and durable asset-byte corruption rejection.
+CHANGELOG: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT adds explicit dictionary shape narrowing for optional
+           logo/favicon projection descriptors so the certificate satisfies
+           bounded Pyright without changing any runtime assertion.
+           v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT proved exact committed full-chain composition, safe absent
+           branding, tenant silence, caller transaction enforcement, entitlement
+           suspension revocation of presentation, and durable asset-byte
+           corruption rejection.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic evidence and bounded image
                              bytes only; no credentials or external calls.
@@ -327,8 +330,12 @@ def test_real_full_chain_projects_current_active_branding_without_raw_bytes(
     assert payload["tenantId"] == tenant
     assert payload["entitlementFingerprint"] == active.fingerprint
     assert payload["brandingTier"] == TenantBrandingTier.INSTITUTIONAL.value
-    assert payload["logo"]["kind"] == "LOGO"
-    assert payload["favicon"]["kind"] == "FAVICON"
+    logo_payload = payload["logo"]
+    favicon_payload = payload["favicon"]
+    assert isinstance(logo_payload, dict)
+    assert isinstance(favicon_payload, dict)
+    assert logo_payload["kind"] == "LOGO"
+    assert favicon_payload["kind"] == "FAVICON"
     assert payload["platformTrustMarkRequired"] is True
 
     serialized = json.dumps(payload, sort_keys=True)
@@ -530,7 +537,7 @@ def test_real_asset_byte_corruption_rejects_current_branding_projection(
 
 
 # ARTIFACT: test_tenant_branding_workspace_projection_real_mongo.py
-# VERSION: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT
+# VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: host-backed current branding composition evidence only; no IAM/browser/legal/financial authority
 # TENANT POSTURE: disposable UUID database and exact tenant-scoped six-collection chain
 # FAIL-CLOSED POSTURE: inactive transaction, suspended entitlement and byte corruption cannot become presentation truth
