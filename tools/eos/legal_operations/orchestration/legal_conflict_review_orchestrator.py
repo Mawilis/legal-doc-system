@@ -1,7 +1,7 @@
 """WILSY OS authorized legal conflict-review issuance orchestration.
 
 TITLE: Legal Conflict Review Issuance Orchestrator
-VERSION: v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE
+VERSION: v1.0.1-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Compose one immutable human conflict-review determination only after
          re-reading the exact persisted screening and issuing durable canonical
@@ -16,7 +16,8 @@ COLLABORATION / OWNERSHIP: L8-8E owns persisted screening evidence; L8-8G owns
                             eligibility binding. L8-8J owns only their exact
                             transactional composition.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE establishes exact
+CHANGELOG: v1.0.1-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE derives review chronology exclusively from the durable authorization evidence authorized_at timestamp. Exact review_id retries therefore reuse the original authorization instant and can exactly replay the immutable review instead of diverging on a fresh transport clock. The caller no longer supplies reviewed_at.
+           v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE establishes exact
            persisted-screening admission, server-principal binding, durable
            authorization-evidence issuance/replay over the screening fingerprint,
            deterministic authorization idempotency from review_id, immutable
@@ -79,7 +80,7 @@ from tools.eos.legal_operations.registry.legal_conflict_screening_registry impor
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE"
+VERSION: Final[str] = "v1.0.1-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE"
 PERMISSION: Final[str] = "legal_operations:conflict_review:write"
 OPERATION: Final[str] = "legal_conflict_review_write"
 SUBJECT_PREFIX: Final[str] = "legal-conflict-screening"
@@ -151,7 +152,6 @@ def issue_legal_conflict_review(
     review_id: str,
     outcome: LegalConflictReviewOutcome | str,
     review_reason_reference: str,
-    reviewed_at: datetime,
     screening_collection: Any,
     review_collection: Any,
     authorization_evidence_registry: TenantAuthorizationDecisionEvidenceRegistry,
@@ -257,7 +257,7 @@ def issue_legal_conflict_review(
             ),
             outcome=outcome,
             review_reason_reference=reason_reference,
-            reviewed_at=reviewed_at,
+            reviewed_at=authorization.authorized_at,
             source_evidence_reference=_subject_reference(
                 screening.screening_id
             ),
@@ -305,8 +305,8 @@ __all__ = [
 
 
 # ARTIFACT: legal_conflict_review_orchestrator.py
-# VERSION: v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE
-# AUTHORITY BOUNDARY: authorized immutable human conflict-review issuance only
+# VERSION: v1.0.1-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE
+# AUTHORITY BOUNDARY: authorized immutable human conflict-review issuance only; chronology is durable authorization evidence, never transport time
 # TENANT POSTURE: exact tenant + persisted screening + server-principal + durable IAM evidence
 # FAIL-CLOSED POSTURE: transaction/screening/IAM/review/persistence divergence rejects; retries remain caller-owned
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
