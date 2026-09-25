@@ -1,7 +1,7 @@
 """Direct certificate for D21B6 tenant branding workspace composition.
 
 TITLE: Tenant Branding Workspace Projection Direct Certificate
-VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
+VERSION: v1.0.2-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove safe no-branding absence and exact ACTIVE-entitlement/profile/
          asset composition without raw bytes, URL invention or browser authority.
@@ -10,10 +10,13 @@ COLLABORATION / OWNERSHIP: Direct deterministic certificate for D21B6 only.
                             D21B2B, D21B4B and D21B5B remain separate sovereign
                             authorities with their own direct/real-Mongo evidence.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT repairs the synthetic D21B4B current-pointer fixture to use
-           the registry's canonical normalized selection field rather than
-           reconstructing branding_tier through serialized test data. Production
-           semantics are unchanged.
+CHANGELOG: v1.0.2-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT aligns the synthetic D21B4B pointer with the repaired
+           v1.0.3 registry contract by using the canonical serialized D21B1 tier
+           value. This preserves the certificate's exact cross-domain
+           correlation purpose and changes no production semantics.
+           v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT attempted to align the fixture while D21B4B still emitted an
+           Enum-qualified tier representation; D21B4B v1.0.3 subsequently
+           restored canonical tier-value persistence.
            v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT established adversarial coverage for safe absent branding,
            exact current ACTIVE entitlement correlation, stale/suspended
            rejection, exact logo/favicon resolution, tenant correlation,
@@ -182,7 +185,7 @@ def _bundle(
         branding_entitlement_id=selection.branding_entitlement_id,
         branding_entitlement_revision=selection.branding_entitlement_revision,
         branding_entitlement_fingerprint=selection.branding_entitlement_fingerprint,
-        branding_tier=str(selection.branding_tier),
+        branding_tier=str(selection.to_dict()["branding_tier"]),
     )
     current = TenantBrandingCurrentProfile(
         pointer=pointer,
@@ -568,7 +571,7 @@ def test_invalid_tenant_input_rejects_before_any_authority_read(
 
 
 # ARTIFACT: test_tenant_branding_workspace_projection.py
-# VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
+# VERSION: v1.0.2-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
 # AUTHORITY BOUNDARY: deterministic D21B6 composition evidence only; no persistence, IAM, browser or financial authority
 # TENANT POSTURE: exact synthetic tenant correlation with adversarial cross-tenant rejection
 # FAIL-CLOSED POSTURE: stale/inactive/outage/asset-conflict/retry conditions never become presentation truth
