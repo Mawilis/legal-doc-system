@@ -172,7 +172,7 @@ jobs:
           if [ "$pytest_status" -ne 0 ]; then
             exit "$pytest_status"
           fi
-          printf '%s\n' "$output" | grep -Eq '4 passed'
+          printf '%s\n' "$output" | grep -Eq '5 passed'
           if printf '%s\n' "$output" | grep -qi 'skipped'; then
             echo "L8-8K real-Mongo certification invalid: skipped tests detected"
             exit 1
