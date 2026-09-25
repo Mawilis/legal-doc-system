@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION
+ * VERSION: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Accepts firstName/lastName only from the READY workspace-bootstrap user projection after Python EOS has revalidated current principal, tenant membership, dedicated business role and tenant truth. Login/MFA/browser-persisted names remain non-authoritative candidate data and are never promoted. Optional null/absent names remain absent; malformed or whitespace-mutated server name values fail session promotion closed. Names create no role, permission, entitlement, Legal command, billing, payment, execution or settlement authority.
+ * CHANGELOG: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Accepts tenant branding only from the explicit READY workspace.branding projection produced by D21B7. The field is mandatory: null is authoritative lawful no-branding; configured branding must match the exact D21B6 browser-safe schema, exact tenant, closed tier/media/kind sets, canonical fingerprints/colours, and mandatory WILSY trust mark. Legacy tenant branding aliases are removed before authenticated tenant state is persisted, so discovery/login/MFA/local-storage/JWT branding cannot override Python EOS authority.
+ *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Accepts firstName/lastName only from the READY workspace-bootstrap user projection after Python EOS has revalidated current principal, tenant membership, dedicated business role and tenant truth. Login/MFA/browser-persisted names remain non-authoritative candidate data and are never promoted. Optional null/absent names remain absent; malformed or whitespace-mutated server name values fail session promotion closed. Names create no role, permission, entitlement, Legal command, billing, payment, execution or settlement authority.
  *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Accepts an optional workspace.legalPermissions
  *            projection only when it is an exact, duplicate-free subset of the
  *            four D17 Legal Command Center permissions. Server absence preserves
@@ -32,13 +33,14 @@
  *            reconciliation state, removed tenant/user fallbacks, and replaced
  *            reload-based auth transitions with state-driven session hydration.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Persisted bearer and user material are candidate state only
- *                             and never become authority until Python EOS
- *                             revalidates them; person names are accepted only
- *                             from READY workspace-bootstrap and no MFA secret,
- *                             QR, email-derived name or browser identity is inferred.
- * TENANT BOUNDARY: Tenant context is accepted only from the authoritative API response.
- * AUTHORITY BOUNDARY: Client projection only; Python EOS remains authentication truth.
+ * SECURITY / PRIVACY POSTURE: Persisted bearer, tenant and user material are candidate
+ *                             state only until Python EOS revalidates them. D21B8
+ *                             accepts no raw asset bytes/URLs and removes legacy
+ *                             branding aliases before authenticated persistence.
+ * TENANT BOUNDARY: Authenticated tenant and branding tenant identity must exactly match
+ *                  the READY server workspace tenant; foreign branding fails closed.
+ * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication and
+ *                     D21B2B/D21B4B/D21B5B/D21B6/D21B7 own branding truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
@@ -50,6 +52,59 @@ const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
   'legal_operations:return:write',
   'legal_operations:billing:read',
   'legal_operations:invoice:read',
+]);
+
+const BRANDING_TIER_SET = new Set([
+  'TENANT_BRANDING_STARTER',
+  'TENANT_BRANDING_PROFESSIONAL',
+  'TENANT_BRANDING_INSTITUTIONAL',
+  'TENANT_BRANDING_ENTERPRISE',
+]);
+const BRANDING_MEDIA_TYPE_SET = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/x-icon',
+  'image/vnd.microsoft.icon',
+]);
+const BRANDING_PROJECTION_KEYS = Object.freeze([
+  'tenantId',
+  'profileId',
+  'profileFingerprint',
+  'selectionId',
+  'selectionRevision',
+  'entitlementId',
+  'entitlementRevision',
+  'entitlementFingerprint',
+  'brandingTier',
+  'profileLabel',
+  'primaryColor',
+  'secondaryColor',
+  'accentColor',
+  'emailDisplayName',
+  'platformTrustMarkRequired',
+  'logo',
+  'favicon',
+]);
+const BRANDING_ASSET_KEYS = Object.freeze([
+  'reference',
+  'contentFingerprint',
+  'mediaType',
+  'kind',
+]);
+const LEGACY_BRANDING_KEYS = Object.freeze([
+  'branding',
+  'brandingNexus',
+  'theme',
+  'logo',
+  'logoUrl',
+  'logoPath',
+  'logoBase64',
+  'brandLogo',
+  'brandColor',
+  'primaryColor',
+  'secondaryColor',
+  'accentColor',
 ]);
 
 export const AUTH_STATES = Object.freeze({
@@ -186,6 +241,163 @@ const exactOptionalWorkspaceName = (value) => {
   return value;
 };
 
+const exactBrandingText = (value) => {
+  if (
+    typeof value !== 'string'
+    || !value
+    || value !== value.trim()
+    || [...value].some((character) => character.codePointAt(0) < 32)
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+  return value;
+};
+
+const exactBrandingFingerprint = (value) => {
+  if (typeof value !== 'string' || !/^[0-9a-f]{128}$/.test(value)) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+  return value;
+};
+
+const exactOptionalBrandingColor = (value) => {
+  if (value === null) return null;
+  if (typeof value !== 'string' || !/^#[0-9A-F]{6}$/.test(value)) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+  return value;
+};
+
+const exactObjectKeys = (value, expectedKeys) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+  const keys = Object.keys(value);
+  if (
+    keys.length !== expectedKeys.length
+    || expectedKeys.some(
+      (key) => !Object.prototype.hasOwnProperty.call(value, key),
+    )
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+};
+
+const boundedBrandingAssetProjection = (
+  value,
+  { tenantId, expectedKind },
+) => {
+  if (value === null) return null;
+  exactObjectKeys(value, BRANDING_ASSET_KEYS);
+  const reference = exactBrandingText(value.reference);
+  const contentFingerprint = exactBrandingFingerprint(
+    value.contentFingerprint,
+  );
+  const mediaType = exactBrandingText(value.mediaType);
+  const kind = exactBrandingText(value.kind);
+
+  if (
+    !reference.startsWith(`asset:${tenantId}:`)
+    || !/^asset:[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(reference)
+    || !BRANDING_MEDIA_TYPE_SET.has(mediaType)
+    || kind !== expectedKind
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+
+  return {
+    reference,
+    contentFingerprint,
+    mediaType,
+    kind,
+  };
+};
+
+const boundedWorkspaceBrandingProjection = (workspace, tenantId) => {
+  if (!Object.prototype.hasOwnProperty.call(workspace || {}, 'branding')) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+  const branding = workspace.branding;
+  if (branding === null) return null;
+
+  exactObjectKeys(branding, BRANDING_PROJECTION_KEYS);
+
+  const brandingTenantId = exactBrandingText(branding.tenantId);
+  const profileId = exactBrandingText(branding.profileId);
+  const profileFingerprint = exactBrandingFingerprint(
+    branding.profileFingerprint,
+  );
+  const selectionId = exactBrandingText(branding.selectionId);
+  const selectionRevision = branding.selectionRevision;
+  const entitlementId = exactBrandingText(branding.entitlementId);
+  const entitlementRevision = branding.entitlementRevision;
+  const entitlementFingerprint = exactBrandingFingerprint(
+    branding.entitlementFingerprint,
+  );
+  const brandingTier = exactBrandingText(branding.brandingTier);
+  const profileLabel = exactBrandingText(branding.profileLabel);
+  const primaryColor = exactOptionalBrandingColor(branding.primaryColor);
+  const secondaryColor = exactOptionalBrandingColor(branding.secondaryColor);
+  const accentColor = exactOptionalBrandingColor(branding.accentColor);
+  const emailDisplayName = exactOptionalWorkspaceName(
+    branding.emailDisplayName,
+  );
+
+  if (
+    brandingTenantId !== tenantId
+    || !Number.isInteger(selectionRevision)
+    || selectionRevision < 1
+    || !Number.isInteger(entitlementRevision)
+    || entitlementRevision < 1
+    || !BRANDING_TIER_SET.has(brandingTier)
+    || branding.platformTrustMarkRequired !== true
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_BRANDING_INVALID');
+  }
+
+  return {
+    tenantId: brandingTenantId,
+    profileId,
+    profileFingerprint,
+    selectionId,
+    selectionRevision,
+    entitlementId,
+    entitlementRevision,
+    entitlementFingerprint,
+    brandingTier,
+    profileLabel,
+    primaryColor,
+    secondaryColor,
+    accentColor,
+    emailDisplayName,
+    platformTrustMarkRequired: true,
+    logo: boundedBrandingAssetProjection(
+      branding.logo,
+      { tenantId, expectedKind: 'LOGO' },
+    ),
+    favicon: boundedBrandingAssetProjection(
+      branding.favicon,
+      { tenantId, expectedKind: 'FAVICON' },
+    ),
+  };
+};
+
+const authenticatedTenantProjection = (
+  tenantProjection,
+  tenantId,
+  branding,
+) => {
+  const bounded = {
+    ...tenantProjection,
+    tenantId,
+  };
+  LEGACY_BRANDING_KEYS.forEach((key) => {
+    delete bounded[key];
+  });
+  bounded.branding = branding;
+  return bounded;
+};
+
 const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const principal = data?.user;
   const workspace = data?.workspace;
@@ -199,6 +411,7 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const businessRole = String(workspace?.businessRole || '').trim();
   const membershipRevision = workspace?.membershipRevision;
   const businessRoleRevision = workspace?.businessRoleRevision;
+  const branding = boundedWorkspaceBrandingProjection(workspace, tenantId);
   const hasLegalPermissionProjection = Object.prototype.hasOwnProperty.call(
     workspace || {},
     'legalPermissions',
@@ -253,10 +466,11 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
       businessRoleRevision,
       mfaRegistered: true,
     },
-    tenant: {
-      ...tenantProjection,
+    tenant: authenticatedTenantProjection(
+      tenantProjection,
       tenantId,
-    },
+      branding,
+    ),
   };
 };
 
@@ -620,12 +834,13 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION
- * AUTHORITY BOUNDARY: browser projection only; workspace firstName/lastName are descriptive authenticated-person projection and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization truth
- * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant
- * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; absent optional names are never inferred and absent legalPermissions retains legacy role-baseline presentation only
+ * VERSION: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION
+ * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
+ * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
+ * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.
+ * CHANGELOG: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Carries only exact READY workspace.branding into authenticated tenant state, requires explicit null/configured branding provenance, strictly validates the D21B6 schema, strips legacy branding aliases, and prevents discovery/login/MFA/persisted/JWT branding from becoming authenticated authority.
+ *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.
  *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Preserves the bounded server-owned Legal permission
  * projection plus explicit provenance for presentation narrowing without trusting
  * browser/JWT/login permission claims.
