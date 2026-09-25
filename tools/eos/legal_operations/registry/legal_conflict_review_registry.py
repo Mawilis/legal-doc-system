@@ -1,7 +1,7 @@
 """WILSY OS durable legal conflict-review determination registry.
 
 TITLE: Legal Conflict Review Registry
-VERSION: v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY
+VERSION: v1.0.1-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Persist immutable L8-8G human conflict-review determinations with exact
          tenant isolation, screening-history reads, reviewer/outcome audit
@@ -14,7 +14,8 @@ COLLABORATION / OWNERSHIP: L8-8G owns human review semantics; L8-8H owns
                             waiver, ethical-wall, recusal, engagement and
                             representation domains remain separate.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY establishes exact
+CHANGELOG: v1.0.1-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY stores the envelope reviewed_at as the exact canonical UTC ISO string already emitted by the immutable L8-8G payload. This prevents MongoDB BSON millisecond normalization from truncating authorization-derived microseconds and falsely triggering record-correlation failure after a valid write, while preserving deterministic lexical chronology, immutable fingerprints, strict replay and audit indexes.
+           v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY establishes exact
            tenant+review identity replay, screening history, reviewer history,
            outcome audit lookup, strict envelope correlation, bounded reads,
            majority concern, caller-owned active transactions and governed
@@ -58,7 +59,7 @@ from tools.eos.legal_operations.domain.legal_conflict_review import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY"
+VERSION: Final[str] = "v1.0.1-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY"
 RECORD_SCHEMA: Final[str] = "WILSY-LEGAL-CONFLICT-REVIEW-RECORD/V1"
 COLLECTION: Final[str] = "legal_conflict_reviews"
 REVIEW_ID_INDEX_NAME: Final[str] = "legal_conflict_review_tenant_review_unique"
@@ -269,7 +270,7 @@ def _record(value: LegalConflictReviewDetermination) -> dict[str, object]:
         "screening_status": str(value.screening_status),
         "reviewer_principal_id": value.reviewer_principal_id,
         "outcome": cast(LegalConflictReviewOutcome, value.outcome).value,
-        "reviewed_at": value.reviewed_at,
+        "reviewed_at": cast(str, value.to_dict()["reviewed_at"]),
         "review_fingerprint": value.fingerprint,
         "evidence_identity": _evidence_identity(value),
         "review_payload": value.to_dict(),
@@ -324,7 +325,7 @@ def _hydrate(document: Mapping[str, Any]) -> LegalConflictReviewDetermination:
         or raw.get("reviewer_principal_id") != value.reviewer_principal_id
         or raw.get("outcome")
         != cast(LegalConflictReviewOutcome, value.outcome).value
-        or raw.get("reviewed_at") != value.reviewed_at
+        or raw.get("reviewed_at") != value.to_dict()["reviewed_at"]
         or raw.get("review_fingerprint") != value.fingerprint
         or raw.get("evidence_identity") != _evidence_identity(value)
     ):
@@ -637,9 +638,9 @@ __all__ = [
 
 
 # ARTIFACT: legal_conflict_review_registry.py
-# VERSION: v1.0.0-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY
+# VERSION: v1.0.1-L8-8H-LEGAL-CONFLICT-REVIEW-REGISTRY
 # AUTHORITY BOUNDARY: immutable human-review persistence/read evidence only
 # TENANT POSTURE: every operational lookup/write/index begins with exact tenant_id
-# FAIL-CLOSED POSTURE: transaction/corruption/divergence/overflow/race/outage rejects; no mutable current pointer
+# FAIL-CLOSED POSTURE: transaction/corruption/divergence/overflow/race/outage rejects; canonical string chronology preserves microseconds across BSON; no mutable current pointer
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
