@@ -1,7 +1,7 @@
 """Direct certificate for D21B6 tenant branding workspace composition.
 
 TITLE: Tenant Branding Workspace Projection Direct Certificate
-VERSION: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
+VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove safe no-branding absence and exact ACTIVE-entitlement/profile/
          asset composition without raw bytes, URL invention or browser authority.
@@ -10,11 +10,15 @@ COLLABORATION / OWNERSHIP: Direct deterministic certificate for D21B6 only.
                             D21B2B, D21B4B and D21B5B remain separate sovereign
                             authorities with their own direct/real-Mongo evidence.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT establishes
-           adversarial coverage for safe absent branding, exact current ACTIVE
-           entitlement correlation, stale/suspended rejection, exact logo/favicon
-           resolution, tenant correlation, same-session propagation, registry
-           outage/retry taxonomy and browser-safe output.
+CHANGELOG: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT repairs the synthetic D21B4B current-pointer fixture to use
+           the registry's canonical normalized selection field rather than
+           reconstructing branding_tier through serialized test data. Production
+           semantics are unchanged.
+           v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT established adversarial coverage for safe absent branding,
+           exact current ACTIVE entitlement correlation, stale/suspended
+           rejection, exact logo/favicon resolution, tenant correlation,
+           same-session propagation, registry outage/retry taxonomy and
+           browser-safe output.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic immutable evidence only; no credentials,
                              external calls or persisted customer data.
@@ -178,7 +182,7 @@ def _bundle(
         branding_entitlement_id=selection.branding_entitlement_id,
         branding_entitlement_revision=selection.branding_entitlement_revision,
         branding_entitlement_fingerprint=selection.branding_entitlement_fingerprint,
-        branding_tier=str(selection.to_dict()["branding_tier"]),
+        branding_tier=str(selection.branding_tier),
     )
     current = TenantBrandingCurrentProfile(
         pointer=pointer,
@@ -564,7 +568,7 @@ def test_invalid_tenant_input_rejects_before_any_authority_read(
 
 
 # ARTIFACT: test_tenant_branding_workspace_projection.py
-# VERSION: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
+# VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION-CERT
 # AUTHORITY BOUNDARY: deterministic D21B6 composition evidence only; no persistence, IAM, browser or financial authority
 # TENANT POSTURE: exact synthetic tenant correlation with adversarial cross-tenant rejection
 # FAIL-CLOSED POSTURE: stale/inactive/outage/asset-conflict/retry conditions never become presentation truth
