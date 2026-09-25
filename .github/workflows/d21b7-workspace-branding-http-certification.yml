@@ -7,6 +7,7 @@ on:
     paths:
       - "tools/eos/api/auth_router.py"
       - "tests/unit/test_workspace_branding_http_projection.py"
+      - "tests/unit/test_canonical_access_token_contract.py"
       - ".github/workflows/d21b7-workspace-branding-http-certification.yml"
   workflow_dispatch:
 
@@ -39,7 +40,8 @@ jobs:
         run: |
           .d21b7-venv/bin/python -m py_compile \
             tools/eos/api/auth_router.py \
-            tests/unit/test_workspace_branding_http_projection.py
+            tests/unit/test_workspace_branding_http_projection.py \
+            tests/unit/test_canonical_access_token_contract.py
       - name: Type-check exact D21B7 surfaces
         run: |
           npx --yes pyright@1.1.413 \
@@ -61,5 +63,21 @@ jobs:
           printf '%s\n' "$output" | grep -Eq '6 passed'
           if printf '%s\n' "$output" | grep -qi 'skipped'; then
             echo "D21B7 certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Run canonical authentication workspace compatibility certificate
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(.d21b7-venv/bin/python -m pytest -q -rs tests/unit/test_canonical_access_token_contract.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then
+            exit "$pytest_status"
+          fi
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "Canonical authentication compatibility invalid: skipped tests detected"
             exit 1
           fi
