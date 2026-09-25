@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION
+VERSION: v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,7 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-09-24.
 CHANGELOG:
+  v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION: Adds the D21B6 current-branding composer to authenticated workspace-bootstrap under a fresh caller-owned Mongo read transaction. Lawful absence is projected explicitly as workspace.branding=null; configured branding is emitted only after current ACTIVE D21B2B entitlement, exact D21B4B current profile/selection, and D21B5B asset correlation. Governed whole-transaction retry is bounded to three fresh sessions; authority outage/corruption fails bounded 503. No raw asset bytes, public URL, browser/JWT/local-storage branding, IAM, legal-command, billing, payment, execution, or settlement authority is created.
   v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION: Re-reads the exact durable AuthRegistry user after workspace-bootstrap has revalidated principal, membership, dedicated business role, and tenant truth, then projects only firstName/lastName as descriptive authenticated-person identity. Missing or tenant/principal-mismatched durable user state fails closed; malformed optional name text is omitted rather than inferred. Names create no membership, role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
   v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION: Extends the authenticated workspace tenant projection with the
   canonical tenant profile's alias, industry, region, and sector as descriptive
@@ -83,7 +84,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION"
+VERSION = "v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -145,6 +146,23 @@ from .tenant_authorization_http import (
 from ..auth.workspace_bootstrap_projection import (
     WorkspaceBootstrapProjectionError,
     build_workspace_bootstrap_projection,
+)
+from ..auth.tenant_branding_workspace_projection import (
+    TenantBrandingWorkspaceProjectionError,
+    TenantBrandingWorkspaceProjectionRetryRequiredError,
+    build_tenant_branding_workspace_projection,
+)
+from ..saas.billing.tenant_branding_entitlement_registry import (
+    CURRENT_COLLECTION as BRANDING_ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as BRANDING_ENTITLEMENT_HISTORY_COLLECTION,
+)
+from ..saas.billing.tenant_branding_profile_registry import (
+    CURRENT_COLLECTION as BRANDING_PROFILE_CURRENT_COLLECTION,
+    PROFILE_COLLECTION as BRANDING_PROFILE_COLLECTION,
+    SELECTION_COLLECTION as BRANDING_SELECTION_COLLECTION,
+)
+from ..saas.billing.tenant_branding_asset_registry import (
+    COLLECTION as BRANDING_ASSET_COLLECTION,
 )
 
 # ─── Logging Discipline (Mandate §2.6) ──────────────────────────────────
@@ -345,6 +363,92 @@ def _workspace_principal_profile(
     )
 
 
+def _workspace_branding_projection(
+    tenant_id: str,
+) -> dict[str, object] | None:
+    """Return current browser-safe tenant branding under a bounded read transaction.
+
+    Each attempt owns a fresh Mongo session/transaction and supplies that exact
+    session to D21B6. Successful read-only snapshots are aborted deliberately
+    after composition because this adapter persists no state. Only the explicit
+    D21B6 whole-transaction retry signal may restart the complete read. Lawful
+    absence remains None; all authority, corruption and infrastructure failures
+    remain distinguishable from absence and fail closed.
+    """
+    try:
+        from tools.eos.kernel.db import get_client, get_database
+
+        client = get_client()
+        database = get_database()
+    except Exception as error:
+        raise TenantBrandingWorkspaceProjectionError(
+            "D21B7_BRANDING_PERSISTENCE_UNAVAILABLE"
+        ) from error
+
+    if client is None or database is None:
+        raise TenantBrandingWorkspaceProjectionError(
+            "D21B7_BRANDING_PERSISTENCE_UNAVAILABLE"
+        )
+
+    last_retry: BaseException | None = None
+    for attempt in range(3):
+        session: Any = None
+        try:
+            session = client.start_session()
+            session.start_transaction()
+            branding = build_tenant_branding_workspace_projection(
+                tenant_id=tenant_id,
+                entitlement_history_collection=database[
+                    BRANDING_ENTITLEMENT_HISTORY_COLLECTION
+                ],
+                entitlement_current_collection=database[
+                    BRANDING_ENTITLEMENT_CURRENT_COLLECTION
+                ],
+                profile_collection=database[BRANDING_PROFILE_COLLECTION],
+                selection_collection=database[BRANDING_SELECTION_COLLECTION],
+                profile_current_collection=database[
+                    BRANDING_PROFILE_CURRENT_COLLECTION
+                ],
+                asset_collection=database[BRANDING_ASSET_COLLECTION],
+                session=session,
+            )
+            marker = getattr(session, "in_transaction", False)
+            active = marker() if callable(marker) else marker
+            if active is True:
+                session.abort_transaction()
+            return None if branding is None else branding.to_dict()
+        except TenantBrandingWorkspaceProjectionRetryRequiredError as error:
+            last_retry = error
+            if attempt < 2:
+                continue
+            raise TenantBrandingWorkspaceProjectionError(
+                "D21B7_BRANDING_RETRY_EXHAUSTED"
+            ) from error
+        except TenantBrandingWorkspaceProjectionError:
+            raise
+        except Exception as error:
+            raise TenantBrandingWorkspaceProjectionError(
+                "D21B7_BRANDING_RUNTIME_UNAVAILABLE"
+            ) from error
+        finally:
+            if session is not None:
+                try:
+                    marker = getattr(session, "in_transaction", False)
+                    active = marker() if callable(marker) else marker
+                    if active is True:
+                        session.abort_transaction()
+                except Exception:
+                    pass
+                try:
+                    session.end_session()
+                except Exception:
+                    pass
+
+    raise TenantBrandingWorkspaceProjectionError(
+        "D21B7_BRANDING_RETRY_EXHAUSTED"
+    ) from last_retry
+
+
 @router.get("/workspace-bootstrap")
 async def workspace_bootstrap(
     identity: SovereignIdentity = Depends(get_current_identity),
@@ -374,6 +478,14 @@ async def workspace_bootstrap(
         first_name, last_name = _workspace_principal_profile(projection)
     except WorkspaceBootstrapProjectionError as error:
         raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        branding = _workspace_branding_projection(projection.tenant_id)
+    except TenantBrandingWorkspaceProjectionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workspace branding authority is unavailable.",
+        ) from error
 
     tenant = projection.tenant
     organization = getattr(tenant, "organization", None)
@@ -413,6 +525,7 @@ async def workspace_bootstrap(
             "membershipRevision": projection.membership_revision,
             "businessRoleRevision": projection.business_role_revision,
             "legalPermissions": list(legal_permissions),
+            "branding": branding,
             "tenant": {
                 "tenantId": projection.tenant_id,
                 "name": tenant_name,
@@ -1117,9 +1230,9 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D24A firstName/lastName are descriptive rereads from the exact durable AuthRegistry principal after workspace authority revalidation, workspace legalPermissions remain read-only outputs of the tenant authorization compositor, and D19 tenant practice-profile fields remain descriptive canonical-tenant projections; none creates credential, membership, role, permission, entitlement, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
+# VERSION: v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
-# FAIL-CLOSED POSTURE: auth fails closed; workspace permission or durable-principal-profile outage/inconsistency fails closed; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
+# FAIL-CLOSED POSTURE: auth fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
