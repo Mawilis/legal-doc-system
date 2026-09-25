@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
+VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped Legal Operations commands,
          including authorized human conflict review, into bounded canonical
@@ -13,7 +13,8 @@ COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-25 v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
+CHANGELOG: 2026-09-25 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API removes transport ownership of reviewed_at. L8-8J now derives immutable review chronology from the durable tenant-authorization evidence authorized_at instant, preserving exact review_id replay across HTTP retries.
+           2026-09-25 v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
            adds one partner/attorney-only conflict-review POST command guarded by
            legal_operations:conflict_review:write / legal_conflict_review_write.
            The body carries only screening_id, review_id, one closed human outcome,
@@ -209,7 +210,7 @@ from tools.eos.legal_operations.registry.process_service_field_evidence_registry
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API"
+VERSION: Final[str] = "v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 _DEPUTY_BUSINESS_ROLE: Final[str] = "tenant_deputy"
@@ -1218,7 +1219,6 @@ async def record_legal_conflict_review_command(
             review_id=command.review_id,
             outcome=command.outcome,
             review_reason_reference=command.review_reason_reference,
-            reviewed_at=_utcnow(),
             screening_collection=_collection(
                 db,
                 LEGAL_CONFLICT_SCREENING_COLLECTION,
@@ -1274,7 +1274,7 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
+# VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API
 # AUTHORITY BOUNDARY: authenticated command composition including L8-8K human conflict review; conflict review delegates to L8-8J while P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 and L8-8D/E/G/H/I/J remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent, and ambiguous commands reject; conflict review exposes no caller IAM or clearance authority
