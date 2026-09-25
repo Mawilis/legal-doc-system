@@ -1,6 +1,6 @@
 """Direct certificate for L8-8J authorized conflict-review issuance.
 
-VERSION: v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE-CERT
+VERSION: v1.0.1-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE-CERT
 AUTHORITY: Wilsy OS Core Governance
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_conflict_review_orchestrator.py
 AUTHORITY BOUNDARY: Transactional composition evidence only; underlying IAM,
@@ -80,6 +80,7 @@ class FakeAuthorizationRegistry:
                 "tenant-authorization-decision:decision-1"
             ),
             "authorization_evidence_fingerprint": FP_A,
+            "authorized_at": NOW + timedelta(minutes=5),
         }
         values.update(self.override)
         return SimpleNamespace(**values)
@@ -140,7 +141,6 @@ def invoke(
         review_id="review-1",
         outcome=outcome,
         review_reason_reference="review-reason:1",
-        reviewed_at=NOW + timedelta(minutes=5),
         screening_collection=object(),
         review_collection=object(),
         authorization_evidence_registry=auth,  # type: ignore[arg-type]
@@ -208,6 +208,7 @@ def test_success_reads_screening_issues_exact_authorization_then_persists(
     assert result.screening_fingerprint == source.fingerprint
     assert result.reviewer_principal_id == PRINCIPAL
     assert result.reviewer_authorization_fingerprint == FP_A
+    assert result.reviewed_at == NOW + timedelta(minutes=5)
 
 
 def test_missing_active_transaction_rejects_before_any_authority_read(
@@ -442,7 +443,7 @@ def test_post_write_correlation_must_match_composed_review(
 
 
 # ARTIFACT: test_legal_conflict_review_orchestrator.py
-# VERSION: v1.0.0-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE-CERT
+# VERSION: v1.0.1-L8-8J-LEGAL-CONFLICT-REVIEW-ISSUANCE-CERT
 # AUTHORITY BOUNDARY: authorized review composition evidence only
 # TENANT POSTURE: exact tenant + persisted screening + reviewer principal + durable auth subject
 # FAIL-CLOSED POSTURE: transaction/screening/IAM/domain/persistence divergence rejects; retry taxonomy preserved
