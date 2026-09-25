@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SHARED DASHBOARD CHROME [V1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION]                                                                             ║
+ * ║ WILSY OS – SHARED DASHBOARD CHROME [V1.6.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION]                                                                             ║
  * ║ [EXECUTIVE SHELL | TENANT PLATE | OPERATOR IDENTITY | COLLAPSIBLE RAIL | METRICS STRIP]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION | PRODUCTION READY                                                                                       ║
+ * ║ VERSION: 1.6.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION | PRODUCTION READY                                                                                       ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -42,9 +42,10 @@ import {
 import { useAuth } from '../../contexts/authContext';
 import { useTenants } from '../../contexts/tenantContext';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
+import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION';
+const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V1.6.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION';
 
 /**
  * @function normalizeWilsyChromeText
@@ -175,6 +176,13 @@ const WilsyOSDashboardChrome = ({
     storyMessages
   });
 
+  const {
+    objectUrl: tenantLogoObjectUrl,
+    status: tenantLogoStatus,
+  } = useAuthenticatedTenantBrandingAsset(
+    identity.tenant.branding?.logo || null,
+  );
+
   const liveSyncLabel = normalizeWilsyChromeText(actions.liveSyncLabel, 'LIVE SYNC');
   const primaryActionLabel = normalizeWilsyChromeText(actions.primaryActionLabel, 'NEW COMMAND');
   const searchPlaceholder = normalizeWilsyChromeText(search.placeholder, 'Search Wilsy OS or press ⌘K');
@@ -189,6 +197,7 @@ const WilsyOSDashboardChrome = ({
       data-wilsy-dashboard-key={dashboardKey}
       data-wilsy-chrome-version={WILSY_OS_DASHBOARD_CHROME_VERSION}
       data-wilsy-tenant-branding={identity.tenant.branding ? 'authenticated' : 'none'}
+      data-wilsy-tenant-logo={tenantLogoStatus.toLowerCase()}
       data-rail-collapsed={railCollapsed ? 'true' : 'false'}
       style={style}
     >
@@ -252,8 +261,19 @@ const WilsyOSDashboardChrome = ({
 
         <section className="wilsyOsChromeTenantPlate" aria-label="Tenant identity">
           <div className="wilsyOsChromeTenantMark">
-            {identity.tenant.logo ? (
-              <img src={identity.tenant.logo} alt="" />
+            {tenantLogoObjectUrl ? (
+              <>
+                <img
+                  src={tenantLogoObjectUrl}
+                  alt={`${identity.tenant.displayName} tenant mark`}
+                  onError={(event) => {
+                    event.currentTarget.hidden = true;
+                    const fallback = event.currentTarget.nextElementSibling;
+                    if (fallback instanceof HTMLElement) fallback.hidden = false;
+                  }}
+                />
+                <span hidden>{identity.tenant.initials}</span>
+              </>
             ) : (
               <span>{identity.tenant.initials}</span>
             )}
@@ -354,10 +374,10 @@ export default WilsyOSDashboardChrome;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v1.6.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         1.5.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION
+ * Version:         1.6.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Unified shell for all domain HUDs
