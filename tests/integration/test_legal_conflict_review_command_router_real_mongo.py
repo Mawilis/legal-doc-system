@@ -20,6 +20,8 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+from tools.eos.api.errors import register_error_handlers
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
@@ -71,6 +73,9 @@ from tools.eos.auth.tenant_membership_repository import (
 )
 from tools.eos.legal_operations.domain.legal_conflict_review import (
     LegalConflictReviewOutcome,
+)
+from tools.eos.legal_operations.orchestration.legal_conflict_review_orchestrator import (
+    issue_legal_conflict_review,
 )
 from tools.eos.legal_operations.domain.legal_conflict_screening import (
     LegalConflictMatchKind,
@@ -357,6 +362,7 @@ def _client(
     role_reader = _RoleReader(collections["roles"], collections["business"])
 
     app = FastAPI()
+    register_error_handlers(app)
     app.dependency_overrides[authorization_http.get_current_identity] = (
         lambda: _identity(principal, tenant)
     )
@@ -391,6 +397,61 @@ def _payload(
         "outcome": outcome,
         "review_reason_reference": "review-reason:real-mongo",
     }
+
+
+def test_real_direct_review_composition_resolves_durable_authorization_and_review(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Expose the complete L8-8J host-backed composition before HTTP redaction."""
+    tenant, principal, screening = _seed(mongo_context)
+    collections = mongo_context["collections"]
+    principal_reader = _PrincipalReader(collections["principal"])
+    membership_reader = _MembershipReader(collections["membership"])
+    role_reader = _RoleReader(collections["roles"], collections["business"])
+    authorization_registry = TenantAuthorizationDecisionEvidenceRegistry(
+        collections["authorization"],
+        principal_repository=principal_reader,
+        membership_repository=membership_reader,
+        role_assignment_repository=role_reader,
+        business_role_repository=role_reader,
+    )
+
+    with mongo_context["client"].start_session() as session:
+        session.start_transaction(
+            read_concern=ReadConcern("snapshot"),
+            write_concern=WriteConcern(w="majority", j=True),
+        )
+        value = issue_legal_conflict_review(
+            tenant_id=tenant,
+            reviewer_principal_id=principal,
+            screening_id=screening.screening_id,
+            review_id="review-direct",
+            outcome=LegalConflictReviewOutcome.CONFLICT_IDENTIFIED,
+            review_reason_reference="review-reason:direct-real-mongo",
+            screening_collection=collections["screening"],
+            review_collection=collections["review"],
+            authorization_evidence_registry=authorization_registry,
+            session=session,
+        )
+        assert value.tenant_id == tenant
+        assert value.screening_id == screening.screening_id
+        assert value.reviewer_principal_id == principal
+        assert value.outcome is LegalConflictReviewOutcome.CONFLICT_IDENTIFIED
+        assert value.reviewed_at >= screening.screened_at
+        assert collections["authorization"].count_documents(
+            {"tenant_id": tenant},
+            session=session,
+        ) == 1
+        assert collections["review"].count_documents(
+            {"tenant_id": tenant},
+            session=session,
+        ) == 1
+        session.abort_transaction()
+
+    assert collections["authorization"].count_documents(
+        {"tenant_id": tenant}
+    ) == 0
+    assert collections["review"].count_documents({"tenant_id": tenant}) == 0
 
 
 def test_real_http_success_and_exact_retry_replay_one_review(
@@ -532,6 +593,6 @@ def test_real_divergent_same_review_id_returns_conflict_and_preserves_first(
 # VERSION: v1.0.0-L8-8K-CONFLICT-REVIEW-COMMAND-API-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: host-backed authenticated conflict-review transport evidence only
 # TENANT POSTURE: UUID-isolated database; IAM, screening, auth evidence and review rows are exact tenant scoped
-# FAIL-CLOSED POSTURE: replay is exact; missing/unauthorized/divergent commands cannot create extra evidence
+# FAIL-CLOSED POSTURE: direct composition plus HTTP replay are exact; missing/unauthorized/divergent commands cannot create extra evidence
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
