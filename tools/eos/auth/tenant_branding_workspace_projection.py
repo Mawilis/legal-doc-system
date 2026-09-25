@@ -1,7 +1,7 @@
 """WILSY OS tenant branding workspace projection composer.
 
 TITLE: Tenant Branding Workspace Projection
-VERSION: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION
+VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compose one bounded browser-safe tenant-branding projection only after
          exact durable current-profile correlation, current ACTIVE entitlement
@@ -14,12 +14,16 @@ COLLABORATION / OWNERSHIP: D21B2B owns durable branding-entitlement currentness;
                             artifact owns read-only runtime composition only and
                             creates no new entitlement, selection or asset truth.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION establishes the
-           fail-closed runtime chain current profile -> exact current ACTIVE
-           entitlement -> exact immutable logo/favicon resolution -> bounded
-           browser-safe projection. Absence of a current profile yields no tenant
-           branding; once currentness exists, any stale entitlement, corruption,
-           missing/mismatched asset or persistence failure rejects.
+CHANGELOG: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION preserves explicit whole-transaction retry taxonomy from
+           D21B2B/D21B4B/D21B5B so the caller can abort and restart the complete
+           read transaction rather than misclassifying a transient race/outage as
+           ordinary presentation denial.
+           v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION established the fail-closed runtime chain current profile ->
+           exact current ACTIVE entitlement -> exact immutable logo/favicon
+           resolution -> bounded browser-safe projection. Absence of a current
+           profile yields no tenant branding; once currentness exists, any stale
+           entitlement, corruption, missing/mismatched asset or persistence
+           failure rejects.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Projects only approved presentation metadata and
                              opaque asset descriptors. Raw bytes, URLs, paths,
@@ -48,17 +52,20 @@ from typing import Any, Final, NoReturn
 
 from tools.eos.saas.billing.tenant_branding_asset_registry import (
     TenantBrandingAssetRegistryError,
+    TenantBrandingAssetRegistryRetryRequiredError,
     TenantBrandingResolvedAsset,
     resolve as resolve_branding_asset,
 )
 from tools.eos.saas.billing.tenant_branding_entitlement_registry import (
     TenantBrandingEntitlementRegistryError,
+    TenantBrandingEntitlementRegistryRetryRequiredError,
     get_current as get_current_branding_entitlement,
 )
 from tools.eos.saas.billing.tenant_branding_profile_registry import (
     TenantBrandingCurrentProfile,
     TenantBrandingProfileRegistryCurrentPointerMissingError,
     TenantBrandingProfileRegistryError,
+    TenantBrandingProfileRegistryRetryRequiredError,
     get_current as get_current_branding_profile,
 )
 from tools.eos.saas.domain.tenant_branding_asset import TenantBrandingAssetKind
@@ -68,7 +75,7 @@ from tools.eos.saas.domain.tenant_branding_entitlement import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION"
+VERSION: Final[str] = "v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION"
 
 
 class TenantBrandingWorkspaceProjectionError(RuntimeError):
@@ -80,6 +87,19 @@ class TenantBrandingWorkspaceProjectionError(RuntimeError):
         """Create one bounded composition failure without leaking durable state."""
         self.code = code or self.default_code
         super().__init__(self.code)
+
+
+class TenantBrandingWorkspaceProjectionRetryRequiredError(
+    TenantBrandingWorkspaceProjectionError
+):
+    """Caller must abort and restart the complete branding read transaction."""
+
+    default_code = "D21B6_WHOLE_TRANSACTION_RETRY_REQUIRED"
+
+
+def _raise_retry(cause: BaseException) -> NoReturn:
+    """Preserve governed whole-transaction retry semantics across composition."""
+    raise TenantBrandingWorkspaceProjectionRetryRequiredError() from cause
 
 
 def _raise(
@@ -205,6 +225,8 @@ def _resolve_optional_asset(
             collection=asset_collection,
             session=session,
         )
+    except TenantBrandingAssetRegistryRetryRequiredError as error:
+        _raise_retry(error)
     except TenantBrandingAssetRegistryError as error:
         _raise("D21B6_ASSET_AUTHORITY_UNAVAILABLE", error)
     return _asset_descriptor(
@@ -251,6 +273,8 @@ def build_tenant_branding_workspace_projection(
         )
     except TenantBrandingProfileRegistryCurrentPointerMissingError:
         return None
+    except TenantBrandingProfileRegistryRetryRequiredError as error:
+        _raise_retry(error)
     except TenantBrandingProfileRegistryError as error:
         _raise("D21B6_PROFILE_AUTHORITY_UNAVAILABLE", error)
 
@@ -270,6 +294,8 @@ def build_tenant_branding_workspace_projection(
             entitlement_current_collection,
             session=session,
         )
+    except TenantBrandingEntitlementRegistryRetryRequiredError as error:
+        _raise_retry(error)
     except TenantBrandingEntitlementRegistryError as error:
         _raise("D21B6_ENTITLEMENT_AUTHORITY_UNAVAILABLE", error)
 
@@ -348,12 +374,13 @@ __all__ = [
     "TenantBrandingWorkspaceAsset",
     "TenantBrandingWorkspaceProjection",
     "TenantBrandingWorkspaceProjectionError",
+    "TenantBrandingWorkspaceProjectionRetryRequiredError",
     "build_tenant_branding_workspace_projection",
 ]
 
 
 # ARTIFACT: tenant_branding_workspace_projection.py
-# VERSION: v1.0.0-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION
+# VERSION: v1.0.1-D21B6-TENANT-BRANDING-WORKSPACE-PROJECTION
 # AUTHORITY BOUNDARY: read-only current branding composition only; no auth, IAM, upload, legal-command or financial authority
 # TENANT POSTURE: exact tenant correlation across current profile, selection, entitlement and resolved assets
 # FAIL-CLOSED POSTURE: safe absence only when no current profile exists; all existing-current drift, corruption, staleness, asset mismatch and outages reject
