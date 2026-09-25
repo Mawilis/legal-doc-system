@@ -1,7 +1,7 @@
 """WILSY OS legal conflict screening evidence domain.
 
 TITLE: Legal Conflict Screening Evidence
-VERSION: v1.0.0-L8-8D-LEGAL-CONFLICT-SCREENING
+VERSION: v1.0.1-L8-8D-LEGAL-CONFLICT-SCREENING
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Derive deterministic, data-minimized conflict-screening signals only
          from exact tenant-scoped L8-8A party identity occurrences without
@@ -15,7 +15,8 @@ COLLABORATION / OWNERSHIP: L8-8A owns immutable matter-party facts; L8-8B owns
                             authorized human review, waiver/ethical-wall evidence
                             and durable screening persistence as separate gates.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-L8-8D-LEGAL-CONFLICT-SCREENING establishes exact-subject
+CHANGELOG: v1.0.1-L8-8D-LEGAL-CONFLICT-SCREENING narrows the already-normalized match_kind union to LegalConflictMatchKind at serialization time for exact Pyright alignment; runtime screening semantics and serialized values are unchanged.
+           v1.0.0-L8-8D-LEGAL-CONFLICT-SCREENING establishes exact-subject
            screening over L8-8A party facts. Cross-matter exact identity matches
            become REVIEW_REQUIRED signals, with a distinct opposing-side signal
            when one fact is CLIENT_SIDE and the other ADVERSE_SIDE. An empty
@@ -61,7 +62,7 @@ from tools.eos.legal_operations.domain.legal_matter_party import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-8D-LEGAL-CONFLICT-SCREENING"
+VERSION: Final[str] = "v1.0.1-L8-8D-LEGAL-CONFLICT-SCREENING"
 SCHEMA: Final[str] = "WILSY-LEGAL-CONFLICT-SCREENING/V1"
 _IDENTITY: Final[re.Pattern[str]] = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$"
@@ -236,7 +237,7 @@ class LegalConflictMatchSignal:
             "matched_party_id": self.matched_party_id,
             "matched_case_matter_id": self.matched_case_matter_id,
             "matched_party_fingerprint": self.matched_party_fingerprint,
-            "match_kind": self.match_kind.value,
+            "match_kind": cast(LegalConflictMatchKind, self.match_kind).value,
         }
 
 
@@ -526,7 +527,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_conflict_screening.py
-# VERSION: v1.0.0-L8-8D-LEGAL-CONFLICT-SCREENING
+# VERSION: v1.0.1-L8-8D-LEGAL-CONFLICT-SCREENING
 # AUTHORITY BOUNDARY: exact-subject screening evidence only; no conflict determination or clearance
 # TENANT POSTURE: all source/occurrence facts must share one exact tenant and subject identity
 # FAIL-CLOSED POSTURE: foreign/divergent/duplicate/malformed evidence rejects; no-match never upgrades to clearance
