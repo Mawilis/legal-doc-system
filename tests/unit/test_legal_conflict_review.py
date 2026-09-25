@@ -1,6 +1,6 @@
 """Direct certificate for L8-8G human conflict-review determination.
 
-VERSION: v1.0.0-L8-8G-LEGAL-CONFLICT-REVIEW-DETERMINATION-CERT
+VERSION: v1.0.1-L8-8G-LEGAL-CONFLICT-REVIEW-DETERMINATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_conflict_review.py
 AUTHORITY BOUNDARY: Pure immutable human conflict-review determination evidence.
@@ -20,6 +20,8 @@ from tools.eos.legal_operations.domain.legal_conflict_review import (
     determine_legal_conflict_review,
 )
 from tools.eos.legal_operations.domain.legal_conflict_screening import (
+    LegalConflictMatchKind,
+    LegalConflictMatchSignal,
     LegalConflictScreeningResult,
     LegalConflictScreeningStatus,
 )
@@ -35,6 +37,23 @@ def screening(
     *,
     status: LegalConflictScreeningStatus = LegalConflictScreeningStatus.REVIEW_REQUIRED,
 ) -> LegalConflictScreeningResult:
+    matches = (
+        (
+            LegalConflictMatchSignal(
+                tenant_id="tenant-law",
+                subject_identity_fingerprint=FP_B,
+                source_party_id="party-1",
+                source_case_matter_id="matter-1",
+                source_party_fingerprint=FP_A,
+                matched_party_id="party-2",
+                matched_case_matter_id="matter-2",
+                matched_party_fingerprint=FP_C,
+                match_kind=LegalConflictMatchKind.CROSS_MATTER_EXACT_SUBJECT_MATCH,
+            ),
+        )
+        if status is LegalConflictScreeningStatus.REVIEW_REQUIRED
+        else ()
+    )
     return LegalConflictScreeningResult(
         tenant_id="tenant-law",
         screening_id="screening-1",
@@ -44,7 +63,7 @@ def screening(
         subject_identity_fingerprint=FP_B,
         screened_at=NOW,
         status=status,
-        matches=(),
+        matches=matches,
         source_evidence_reference="screening-source:1",
         source_evidence_fingerprint=FP_C,
     )
@@ -248,7 +267,7 @@ def test_direct_constructor_rejects_pseudo_tenant() -> None:
 
 
 # ARTIFACT: test_legal_conflict_review.py
-# VERSION: v1.0.0-L8-8G-LEGAL-CONFLICT-REVIEW-DETERMINATION-CERT
+# VERSION: v1.0.1-L8-8G-LEGAL-CONFLICT-REVIEW-DETERMINATION-CERT
 # AUTHORITY BOUNDARY: pure human review determination semantics only
 # TENANT POSTURE: tenant/party/matter/subject derive from exact screening
 # FAIL-CLOSED POSTURE: incompatible/stale/malformed/drifted review evidence rejects
