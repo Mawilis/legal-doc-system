@@ -1,7 +1,7 @@
 """WILSY OS durable tenant branding profile/current-selection registry.
 
 TITLE: Tenant Branding Profile Registry
-VERSION: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
+VERSION: v1.0.3-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist immutable D21B3 approved profiles and D21B4A selection history,
          and maintain one explicit tenant-scoped current-selection pointer with
@@ -14,7 +14,12 @@ COLLABORATION / OWNERSHIP: D21B3 owns approved profile evidence; D21B4A owns
                             Runtime projection must separately re-read the current
                             D21B2 entitlement before presenting any branding.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY classifies Mongo errors explicitly labelled
+CHANGELOG: v1.0.3-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY restores canonical D21B1 tier-value persistence in the
+           explicit current pointer by normalizing the declared
+           TenantBrandingTier | str selection field through TenantBrandingTier
+           and persisting its .value. This is Pyright-safe and preserves exact
+           cross-domain serialization semantics required by runtime correlation.
+           v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY classified Mongo errors explicitly labelled
            TransientTransactionError as whole-transaction retry signals on
            operational reads/writes. Unlabelled and non-transient persistence
            failures remain unavailable/fail-closed; registry transaction
@@ -66,6 +71,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
+from tools.eos.saas.billing.tenant_branding_vas_policy import TenantBrandingTier
 from tools.eos.saas.domain.tenant_branding_profile import (
     PROFILE_FIELDS,
     TenantBrandingProfile,
@@ -78,7 +84,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 )
 
 
-VERSION: Final[str] = "v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY"
+VERSION: Final[str] = "v1.0.3-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY"
 PROFILE_RECORD_SCHEMA: Final[str] = "WILSY-TENANT-BRANDING-PROFILE-RECORD/V1"
 SELECTION_RECORD_SCHEMA: Final[str] = (
     "WILSY-TENANT-BRANDING-PROFILE-SELECTION-RECORD/V1"
@@ -668,7 +674,7 @@ def _pointer_for(
     selection: TenantBrandingProfileSelection,
 ) -> TenantBrandingCurrentProfilePointer:
     """Project the only permitted current pointer from one selection fact."""
-    tier_value = str(selection.branding_tier)
+    tier_value = TenantBrandingTier(selection.branding_tier).value
     return TenantBrandingCurrentProfilePointer(
         tenant_id=selection.tenant_id,
         selection_id=selection.selection_id,
@@ -1282,7 +1288,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_branding_profile_registry.py
-# VERSION: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
+# VERSION: v1.0.3-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY
 # AUTHORITY BOUNDARY: immutable profile/selection persistence and explicit tenant current-pointer CAS only; no entitlement freshness, browser, asset-resolution, IAM or financial authority
 # TENANT POSTURE: every profile, selection, replay, currentness read/write and CAS predicate is tenant-scoped
 # FAIL-CLOSED POSTURE: active transaction required; strict schemas, corruption, divergence, duplicate pointers, stale lineage, races and outages reject
