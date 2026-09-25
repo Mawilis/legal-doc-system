@@ -1,7 +1,7 @@
 """WILSY OS legal matter-party admission orchestration.
 
 TITLE: Legal Matter Party Admission Orchestrator
-VERSION: v1.0.0-L8-8C-LEGAL-MATTER-PARTY-ADMISSION
+VERSION: v1.0.1-L8-8C-LEGAL-MATTER-PARTY-ADMISSION
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Admit one immutable legal matter-party fact only after re-reading the
          complete durable P1 CaseMatter history, resolving one deterministic
@@ -15,7 +15,8 @@ COLLABORATION / OWNERSHIP: P1 owns CaseMatter lifecycle semantics; P2 owns
                             fail-closed admission composition. The caller owns
                             Mongo session/transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-L8-8C-LEGAL-MATTER-PARTY-ADMISSION establishes exact durable
+CHANGELOG: v1.0.1-L8-8C-LEGAL-MATTER-PARTY-ADMISSION repairs P2 governed retry classification by accepting the legacy P2 registry's stable RuntimeError message when no .code attribute exists; whole-transaction retry authority is preserved without broadening any other upstream error into retry.
+           v1.0.0-L8-8C-LEGAL-MATTER-PARTY-ADMISSION establishes exact durable
            matter revalidation before party admission. The caller supplies only
            tenant/matter identity plus bounded party/source evidence; current
            matter fingerprint/state are server-derived from complete P2 history.
@@ -77,7 +78,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.0.0-L8-8C-LEGAL-MATTER-PARTY-ADMISSION"
+VERSION: Final[str] = "v1.0.1-L8-8C-LEGAL-MATTER-PARTY-ADMISSION"
 _IDENTITY: Final[re.Pattern[str]] = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$"
 )
@@ -204,6 +205,14 @@ def _raise(
     raise error from cause
 
 
+def _upstream_error_code(error: BaseException) -> str:
+    """Return one stable upstream code from typed-code or legacy message form."""
+    code = getattr(error, "code", None)
+    if isinstance(code, str) and code:
+        return code
+    return str(error).strip()
+
+
 def _active_transaction(session: Any) -> Any:
     """Require one already-active caller transaction before any durable read."""
     if session is None:
@@ -263,7 +272,7 @@ def _current_case_matter(
             session=session,
         )
     except LegalOperationsLifecycleRegistryError as error:
-        if getattr(error, "code", None) == "M2_RETRY_TRANSACTION_REQUIRED":
+        if _upstream_error_code(error) == "M2_RETRY_TRANSACTION_REQUIRED":
             _raise(
                 LegalMatterPartyAdmissionRetryRequiredError,
                 cause=error,
@@ -422,7 +431,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_matter_party_admission.py
-# VERSION: v1.0.0-L8-8C-LEGAL-MATTER-PARTY-ADMISSION
+# VERSION: v1.0.1-L8-8C-LEGAL-MATTER-PARTY-ADMISSION
 # AUTHORITY BOUNDARY: durable-current CaseMatter-to-party admission composition only
 # TENANT POSTURE: exact tenant/type/matter history re-read in caller transaction before persistence
 # FAIL-CLOSED POSTURE: missing/closed/ambiguous/corrupt/foreign/conflicting/raced evidence rejects
