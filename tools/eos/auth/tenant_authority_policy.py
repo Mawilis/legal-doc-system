@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY
+VERSION: v1.23.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,7 +10,13 @@ tenant_legal_client-only client-matter projection read eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-25 v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY adds
+CHANGELOG: 2026-09-25 v1.23.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR
+preserves newly-added conflict-review eligibility while applying later legacy
+Legal Operations eligibility augmentations by composing from the already-
+updated role map rather than the pre-L8-8I snapshot. This repairs an authority-
+loss defect only; approved roles, permission binding and all denial boundaries
+are unchanged.
+2026-09-25 v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY adds
 legal_conflict_review_write as one exact own-tenant human conflict-review
 operation mapped only to legal_operations:conflict_review:write and eligible
 only to tenant_legal_partner and tenant_legal_attorney. Every other business
@@ -106,7 +112,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY"
+VERSION = "v1.23.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -152,7 +158,7 @@ for _role in ("tenant_legal_partner", "tenant_legal_attorney"):
     _review_existing["legal_conflict_review_write"] = ELIGIBLE
     _eligibility_updates[_role] = MappingProxyType(_review_existing)
 for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary"):
-    _existing = dict(ELIGIBILITY[_role])
+    _existing = dict(_eligibility_updates[_role])
     if _role in {"tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal"}:
         _existing["legal_client_visibility_write"] = ELIGIBLE
     if _role == "tenant_sheriff":
@@ -220,7 +226,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY
+# VERSION: v1.23.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
