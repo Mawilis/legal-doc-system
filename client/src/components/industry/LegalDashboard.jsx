@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION
+ * VERSION: v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-25 v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION consumes only the authenticated firstName/lastName projection already admitted by AuthContext, presents the exact human name as primary Legal operator identity across practice, finance, client and role-activity posture, and retains authenticated email as secondary identity when distinct. It never parses email, role labels, tenant data or browser storage into a person name; malformed/absent name text is ignored and existing email/opaque-principal fallback remains descriptive only. No membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority is created.
+ * CHANGELOG: 2026-09-25 v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION binds Legal presentation only to the D21B8 authenticated tenant branding projection and D21B12 transient asset lifecycle. Practice, Finance and Client modes inherit the certified shared chrome; Sheriff/Deputy custom chrome may render only the server-derived current logo blob and always falls back to descriptive tenant initials. WILSY Legal OS remains the independent platform trust identity. No tenantConfig logo/path/browser branding, entitlement, IAM, legal-command, billing, payment, execution or settlement authority is created.
+ *            2026-09-25 v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION consumes only the authenticated firstName/lastName projection already admitted by AuthContext, presents the exact human name as primary Legal operator identity across practice, finance, client and role-activity posture, and retains authenticated email as secondary identity when distinct. It never parses email, role labels, tenant data or browser storage into a person name; malformed/absent name text is ignored and existing email/opaque-principal fallback remains descriptive only. No membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority is created.
  *            2026-09-24 v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION presents the authenticated canonical tenant practice profile inside Legal Practice workspaces: legal/name identity plus alias, industry, region and sector when projected by Python EOS workspace-bootstrap. The panel is descriptive only and explicitly cannot establish law-firm operating model, role, permission, plan, subscription, branding, billing, payment, execution or settlement authority.
  *            2026-09-24 v11.4.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE makes every published Legal persona visibly identity/activity aware. Practice and Finance posture now includes the authenticated principal; LEGAL_CLIENT exposes server client-visibility scope; SHERIFF exposes server operational-queue scope; DEPUTY exposes bound-work plus current server-issued field-command capabilities. All posture surfaces are explanatory only and cannot create role, permission, capability, tenant, legal, financial, payment or settlement authority.
  *            2026-09-24 v11.3.0-L8-7D18-LEGAL-AUTHORITY-POSTURE makes the Legal Practice and Legal Finance workspaces visibly authority-aware: operators can see whether presentation narrowing is sourced from the current server permission projection, legacy narrowing hints, or the compatibility role baseline, plus the effective Legal command/evidence lanes inside the canonical role envelope. The posture is explanatory only and cannot grant authorization, mutate Legal Operations truth, create a law-firm operating-model authority, or imply financial execution.
@@ -138,8 +139,10 @@ import {
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
+import { useAuth } from '../../contexts/authContext.jsx';
+import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION';
+const DASHBOARD_VERSION = 'v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -2423,6 +2426,7 @@ export default function LegalDashboard({
   roleView = 'LEGAL_VIEW',
   user = null,
 }) {
+  const { tenant: authenticatedTenant } = useAuth() || {};
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
@@ -2819,6 +2823,41 @@ export default function LegalDashboard({
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
   const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
+  const customLegalChromeMode =
+    isDeputyMode
+    || isSheriffMode
+    || roleMode === ROLE_MODES.UNRESOLVED;
+  const {
+    objectUrl: legalTenantLogoObjectUrl,
+    status: legalTenantLogoStatus,
+  } = useAuthenticatedTenantBrandingAsset(
+    customLegalChromeMode
+      ? authenticatedTenant?.branding?.logo || null
+      : null,
+  );
+  const legalTenantInitials = useMemo(() => {
+    const source = String(
+      authenticatedTenant?.name
+      || authenticatedTenant?.legalName
+      || authenticatedTenant?.displayName
+      || tenantLabel
+      || '',
+    ).trim();
+    return (
+      source
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((value) => value[0]?.toUpperCase() || '')
+        .join('')
+      || 'LT'
+    );
+  }, [
+    authenticatedTenant?.displayName,
+    authenticatedTenant?.legalName,
+    authenticatedTenant?.name,
+    tenantLabel,
+  ]);
   const deputyActivities = useMemo(() => {
     const kinds = new Set(
       deputyCapabilities.capabilities.flatMap(
@@ -2895,7 +2934,30 @@ export default function LegalDashboard({
           <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
             <div className="flex items-start gap-4">
               <div className="rounded-2xl border border-amber-700/30 bg-amber-500/10 p-3 text-amber-400">
-                <Scale size={27} />
+                <Scale size={27} aria-label="WILSY Legal OS platform mark" />
+              </div>
+              <div
+                className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-700 bg-black text-xs font-black tracking-[0.12em] text-stone-300"
+                data-wilsy-legal-tenant-logo={legalTenantLogoStatus.toLowerCase()}
+                aria-label="Authenticated tenant identity mark"
+              >
+                {legalTenantLogoObjectUrl ? (
+                  <>
+                    <img
+                      src={legalTenantLogoObjectUrl}
+                      alt={`${authenticatedTenant?.name || authenticatedTenant?.legalName || tenantLabel} tenant mark`}
+                      className="h-full w-full object-contain"
+                      onError={(event) => {
+                        event.currentTarget.hidden = true;
+                        const fallback = event.currentTarget.nextElementSibling;
+                        if (fallback instanceof HTMLElement) fallback.hidden = false;
+                      }}
+                    />
+                    <span hidden>{legalTenantInitials}</span>
+                  </>
+                ) : (
+                  <span>{legalTenantInitials}</span>
+                )}
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
