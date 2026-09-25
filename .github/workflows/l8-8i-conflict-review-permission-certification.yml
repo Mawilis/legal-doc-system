@@ -54,7 +54,7 @@ jobs:
           set -e
           printf '%s\n' "$output"
           if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi
-          printf '%s\n' "$output" | grep -Eq '3 passed'
+          printf '%s\n' "$output" | grep -Eq '4 passed'
           if printf '%s\n' "$output" | grep -qi 'skipped'; then
             echo "L8-8I permission certification invalid: skipped tests detected"
             exit 1
