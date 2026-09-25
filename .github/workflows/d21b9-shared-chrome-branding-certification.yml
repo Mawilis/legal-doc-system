@@ -6,6 +6,9 @@ on:
       - legal-ops-completion-map
     paths:
       - "client/src/components/os/wilsyDashboardChromeConfig.js"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/os/WilsyOSDashboardTopRail.jsx"
+      - "client/src/components/os/WilsyOSDashboardChrome.module.css"
       - "client/src/components/os/WilsyOSDashboardChrome.test.jsx"
       - ".github/workflows/d21b9-shared-chrome-branding-certification.yml"
   workflow_dispatch:
