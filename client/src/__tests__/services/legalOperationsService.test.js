@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT
+ * VERSION: v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -8,7 +8,8 @@
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT binds the authenticated four-field conflict-review adapter to the canonical /api/legal-operations/conflict-reviews path, proves server-owned authority exclusion, bounded receipt validation and unchanged 401/403/404/409/transport failures.
+ * CHANGELOG: 2026-09-25 v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT binds the authenticated screening review-queue read adapter to the canonical /api/legal-operations/conflict-screenings path, proves exact data-minimized rows, server-owned tenant/order/status and privileged-field rejection.
+ *            2026-09-25 v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT binds the authenticated four-field conflict-review adapter to the canonical /api/legal-operations/conflict-reviews path, proves server-owned authority exclusion, bounded receipt validation and unchanged 401/403/404/409/transport failures.
  *            2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.
  *            2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
  *            every D11 workspace state/outcome summary counter is recomputed
@@ -63,6 +64,7 @@ import {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
@@ -502,6 +504,80 @@ const conflictReviewResponse = () => ({
 describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('reads the exact authenticated conflict-screening review queue without tenant input', async () => {
+    const screeningPayload = {
+      schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+      version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+      tenant_id: 'tenant-law',
+      visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+      screenings: [
+        {
+          screening_id: 'screening-new',
+          source_case_matter_id: 'matter-new',
+          status: 'REVIEW_REQUIRED',
+          screened_at: '2026-09-25T04:00:00+00:00',
+        },
+      ],
+    };
+    mockGet.mockResolvedValueOnce({ data: screeningPayload });
+
+    const result = await getLegalConflictScreenings();
+
+    expect(mockGet).toHaveBeenCalledWith('/legal-operations/conflict-screenings');
+    expect(result.screenings).toEqual([
+      {
+        screeningId: 'screening-new',
+        sourceCaseMatterId: 'matter-new',
+        status: 'REVIEW_REQUIRED',
+        screenedAt: '2026-09-25T04:00:00+00:00',
+      },
+    ]);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.screenings)).toBe(true);
+    expect(Object.isFrozen(result.screenings[0])).toBe(true);
+  });
+
+  it('rejects screening presentation privilege, tenant, status and order drift', async () => {
+    const validate = __legalOperationsServiceInternals.assertCanonicalConflictScreeningPayload;
+    const base = {
+      schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+      version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+      tenant_id: 'tenant-law',
+      visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+      screenings: [
+        {
+          screening_id: 'screening-new',
+          source_case_matter_id: 'matter-new',
+          status: 'REVIEW_REQUIRED',
+          screened_at: '2026-09-25T04:00:00+00:00',
+        },
+      ],
+    };
+    expect(() => validate({ ...base, authorization_evidence: 'forbidden' }))
+      .toThrow('LEGAL_OPERATIONS_CONFLICT_SCREENING_RESPONSE_INVALID');
+    expect(() => validate({ ...base, screenings: [{ ...base.screenings[0], status: 'NO_MATCH_FOUND' }] }))
+      .toThrow('LEGAL_OPERATIONS_CONFLICT_SCREENING_SCOPE_INVALID');
+    expect(() => validate({ ...base, tenant_id: 'tenant-forged' })).not.toThrow();
+    const unsorted = {
+      ...base,
+      screenings: [
+        base.screenings[0],
+        { ...base.screenings[0], screening_id: 'screening-old', screened_at: '2026-09-26T04:00:00+00:00' },
+      ],
+    };
+    expect(() => validate(unsorted)).toThrow('LEGAL_OPERATIONS_CONFLICT_SCREENING_ORDER_INVALID');
+  });
+
+  it.each([
+    [401, 'AUTHENTICATION_REJECTED'],
+    [403, 'LEGAL_CONFLICT_SCREENING_AUTHORIZATION_REQUIRED'],
+    [503, 'LEGAL_CONFLICT_SCREENING_EVIDENCE_UNAVAILABLE'],
+  ])('preserves screening read failure %s without local fallback', async (status, code) => {
+    const error = { response: { status, data: { detail: code } } };
+    mockGet.mockRejectedValueOnce(error);
+    await expect(getLegalConflictScreenings()).rejects.toBe(error);
   });
 
   it('issues conflict review through the canonical route with exactly four fields', async () => {
@@ -1228,14 +1304,14 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT',
+      'v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT',
     );
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT
+ * VERSION: v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT
  * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success

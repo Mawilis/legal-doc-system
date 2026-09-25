@@ -377,7 +377,7 @@ def test_real_mongo_corrupt_case_matter_rejects_workspace_without_fallback(
 def test_d15b_certificate_surface_is_frozen() -> None:
     """Certificate remains bound to the intended production D15 contract."""
     assert VERSION == "v1.0.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-RM-CERT"
-    assert legal_router.VERSION == "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
+    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")

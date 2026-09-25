@@ -335,7 +335,7 @@ def test_workspace_matter_row_whitelist_exposes_only_first_class_case_truth(
 
 def test_workspace_version_and_authority_surface_are_frozen() -> None:
     """D15 remains read-only and bound to the intended production version."""
-    assert legal_router.VERSION == "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
+    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
     assert VERSION == "v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")

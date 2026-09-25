@@ -1,14 +1,13 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API
+VERSION: v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
-         exposing one snapshot-consistent legal-practice workspace projection for
-         current matter/instruction/document/attempt/execution/return truth. The
-         workspace requires conjunctive instruction, allocation, attempt and
-         return read authority and never creates lifecycle, billing, payment,
-         AI, execution or settlement truth.
+         exposing one snapshot-consistent legal-practice workspace projection and
+         a bounded conflict-screening review queue. Screening presentation remains
+         read-only, tenant-scoped and data-minimized; it never creates lifecycle,
+         review, clearance, billing, payment, AI, execution or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_router.py
 COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             P2 owns immutable persistence/history hydration,
@@ -19,9 +18,11 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             deputy personal active-work membership, L8-6D
                             composes exact P2 locators with P5M state capability,
                             L8-7D5 owns sanitized client matter projection, and
+                            L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: 2026-09-24 v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API adds canonical CaseMatter rows and matter counts to the existing practice workspace so a durably registered matter is directly discoverable after intake. CaseMatter is read from the same exact-tenant snapshot as the existing lifecycle families, exposes only case_matter_id, matter_reference, opened_at, state and opaque evidence_identity, and creates no new lifecycle, IAM, client, billing, payment, AI or settlement authority.
+CERTIFICATION / UPDATE DATE: 2026-09-25
+CHANGELOG: 2026-09-25 v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API adds an authenticated exact-tenant GET /conflict-screenings review queue backed by the canonical immutable screening registry. It exposes only screening_id, source_case_matter_id, REVIEW_REQUIRED status and screened_at in a bounded deterministic projection; no review state, evidence, party identity, clearance, IAM or financial authority is created.
+           2026-09-24 v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API adds canonical CaseMatter rows and matter counts to the existing practice workspace so a durably registered matter is directly discoverable after intake. CaseMatter is read from the same exact-tenant snapshot as the existing lifecycle families, exposes only case_matter_id, matter_reference, opened_at, state and opaque evidence_identity, and creates no new lifecycle, IAM, client, billing, payment, AI or settlement authority.
            2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /workspace for the exact current
            legal-practice roles tenant_legal_partner, tenant_legal_attorney,
            tenant_legal_paralegal and tenant_legal_secretary. Admission requires
@@ -118,7 +119,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, Final, TypeVar
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo.read_concern import ReadConcern
 
 from tools.eos.api.tenant_authorization_http import (
@@ -156,9 +157,15 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
     COLLECTION as LIFECYCLE_COLLECTION,
     LegalOperationsLifecycleRegistry,
 )
+from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
+    COLLECTION as LEGAL_CONFLICT_SCREENING_COLLECTION,
+    MAX_REVIEW_QUEUE,
+    LegalConflictScreeningRegistry,
+    LegalConflictScreeningRegistryError,
+)
 
 
-VERSION: Final[str] = "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
+VERSION: Final[str] = "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -170,7 +177,10 @@ _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
     }
 )
 _WORKSPACE_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2"
+_WORKSPACE_VERSION: Final[str] = "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
 _WORKSPACE_VISIBILITY: Final[str] = "LEGAL_PRACTICE_WORKSPACE"
+_SCREENING_SCHEMA: Final[str] = "WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1"
+_SCREENING_VISIBILITY: Final[str] = "LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE"
 _T = TypeVar("_T")
 
 
@@ -628,7 +638,7 @@ async def get_legal_practice_workspace_projection(
         )
         return {
             "schema": _WORKSPACE_SCHEMA,
-            "version": VERSION,
+            "version": _WORKSPACE_VERSION,
             "tenant_id": context.tenant_id,
             "visibility": _WORKSPACE_VISIBILITY,
             "summary": _workspace_summary(
@@ -653,6 +663,53 @@ async def get_legal_practice_workspace_projection(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_WORKSPACE_EVIDENCE_UNAVAILABLE",
+        ) from error
+
+
+@router.get("/conflict-screenings")
+async def get_legal_conflict_screening_review_queue(
+    context: TenantAuthorizationContext = Depends(_INSTRUCTION_READ),
+    limit: int = Query(default=MAX_REVIEW_QUEUE, ge=1, le=MAX_REVIEW_QUEUE),
+) -> dict[str, object]:
+    """Return the authorized tenant's bounded screening review queue.
+
+    The canonical screening registry owns immutable screening truth and ordering;
+    this route owns only one read-only snapshot transaction and a minimized
+    presentation projection. Tenant identity is taken exclusively from the
+    already-authorized context. ``limit`` bounds presentation and cannot widen
+    the registry's tenant query. Multiple immutable reviews may exist, so this
+    route deliberately projects no reviewed/unreviewed state and exposes only
+    the canonical ``REVIEW_REQUIRED`` eligibility signal.
+    """
+
+    def run(session: Any, database: Any) -> dict[str, object]:
+        values = LegalConflictScreeningRegistry.list_review_required(
+            context.tenant_id,
+            database.get_collection(LEGAL_CONFLICT_SCREENING_COLLECTION),
+            session=session,
+        )
+        return {
+            "schema": _SCREENING_SCHEMA,
+            "version": VERSION,
+            "tenant_id": context.tenant_id,
+            "visibility": _SCREENING_VISIBILITY,
+            "screenings": [
+                {
+                    "screening_id": value.screening_id,
+                    "source_case_matter_id": value.source_case_matter_id,
+                    "status": getattr(value.status, "value", value.status),
+                    "screened_at": value.screened_at.isoformat(),
+                }
+                for value in values[:limit]
+            ],
+        }
+
+    try:
+        return _workspace_projection_transaction(run)
+    except LegalConflictScreeningRegistryError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_CONFLICT_SCREENING_EVIDENCE_UNAVAILABLE",
         ) from error
 
 
@@ -921,15 +978,16 @@ __all__ = [
     "get_deputy_principal_binding_collection",
     "get_lifecycle_collection",
     "get_legal_client_matter_projection_route",
+    "get_legal_conflict_screening_review_queue",
     "get_legal_practice_workspace_projection",
     "router",
 ]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API
-# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus conjunctively-authorized D15 Legal Practice workspace projection including canonical CaseMatter truth only; mutation IAM/commands remain separate
-# TENANT POSTURE: exact authorized internal/sheriff/deputy/client scope plus one exact tenant/principal/published-practice-role D15 snapshot workspace; foreign evidence is bounded
-# FAIL-CLOSED POSTURE: authority/scope mismatch, internal policy gaps, denied client IAM, snapshot failure, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
+# VERSION: v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API
+# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus conjunctively-authorized D15 workspace and bounded conflict-screening review-queue presentation; mutation IAM/commands remain separate
+# TENANT POSTURE: every projection uses exact authenticated tenant context; foreign lifecycle or screening evidence is bounded and never disclosed
+# FAIL-CLOSED POSTURE: authority/scope mismatch, snapshot failure, screening corruption/overflow, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

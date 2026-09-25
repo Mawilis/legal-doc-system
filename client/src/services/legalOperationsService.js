@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT
+ * VERSION: v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -18,7 +18,8 @@
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
+ * CHANGELOG: 2026-09-25 v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
+ *            2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
  *            2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.
  *            2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
  *            summary counter from the validated canonical rows before exposing
@@ -78,7 +79,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT';
+  'v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -157,6 +158,26 @@ const LEGAL_WORKSPACE_V2_VERSION =
   'v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API';
 const LEGAL_WORKSPACE_VISIBILITY =
   'LEGAL_PRACTICE_WORKSPACE';
+
+const CONFLICT_SCREENING_SCHEMA =
+  'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1';
+const CONFLICT_SCREENING_VERSION =
+  'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API';
+const CONFLICT_SCREENING_VISIBILITY =
+  'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE';
+const CONFLICT_SCREENING_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'visibility',
+  'screenings',
+]);
+const CONFLICT_SCREENING_ROW_KEYS = Object.freeze([
+  'screening_id',
+  'source_case_matter_id',
+  'status',
+  'screened_at',
+]);
 
 const LEGAL_WORKSPACE_RESPONSE_KEYS = Object.freeze([
   'schema',
@@ -625,6 +646,64 @@ function assertCanonicalClientMatterPayload(value) {
     tenantId: value.tenant_id,
     visibility: value.visibility,
     matters: Object.freeze(matters),
+  });
+}
+
+
+function assertCanonicalConflictScreeningPayload(value) {
+  const errorCode = 'LEGAL_OPERATIONS_CONFLICT_SCREENING_RESPONSE_INVALID';
+  assertExactKeys(value, CONFLICT_SCREENING_RESPONSE_KEYS, errorCode);
+  if (
+    value.schema !== CONFLICT_SCREENING_SCHEMA
+    || value.version !== CONFLICT_SCREENING_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || value.visibility !== CONFLICT_SCREENING_VISIBILITY
+    || !Array.isArray(value.screenings)
+  ) {
+    throw new Error(errorCode);
+  }
+
+  const seen = new Set();
+  let priorTimestamp = null;
+  let priorId = null;
+  const screenings = value.screenings.map((entry) => {
+    assertExactKeys(entry, CONFLICT_SCREENING_ROW_KEYS, errorCode);
+    if (
+      !isCanonicalText(entry.screening_id)
+      || !isCanonicalText(entry.source_case_matter_id)
+      || entry.status !== 'REVIEW_REQUIRED'
+      || !isCanonicalTimestamp(entry.screened_at)
+      || seen.has(entry.screening_id)
+    ) {
+      throw new Error('LEGAL_OPERATIONS_CONFLICT_SCREENING_SCOPE_INVALID');
+    }
+    const timestamp = Date.parse(entry.screened_at);
+    if (
+      priorTimestamp !== null
+      && (
+        timestamp > priorTimestamp
+        || (timestamp === priorTimestamp && entry.screening_id < priorId)
+      )
+    ) {
+      throw new Error('LEGAL_OPERATIONS_CONFLICT_SCREENING_ORDER_INVALID');
+    }
+    priorTimestamp = timestamp;
+    priorId = entry.screening_id;
+    seen.add(entry.screening_id);
+    return Object.freeze({
+      screeningId: entry.screening_id,
+      sourceCaseMatterId: entry.source_case_matter_id,
+      status: entry.status,
+      screenedAt: entry.screened_at,
+    });
+  });
+
+  return Object.freeze({
+    schema: value.schema,
+    version: value.version,
+    tenantId: value.tenant_id,
+    visibility: value.visibility,
+    screenings: Object.freeze(screenings),
   });
 }
 
@@ -1326,6 +1405,22 @@ export async function getLegalPracticeWorkspace() {
   return assertCanonicalLegalWorkspacePayload(response?.data);
 }
 
+/**
+ * Read the authenticated tenant's bounded conflict-screening review queue.
+ * The server derives tenant scope and canonical REVIEW_REQUIRED eligibility;
+ * this adapter performs no browser-side screening/review join or authority
+ * reconstruction and accepts no tenant selector.
+ *
+ * @returns {Promise<{schema: string, version: string, tenantId: string, visibility: string, screenings: Array}>}
+ *   Frozen presentation rows preserving canonical screening identity.
+ * @throws {Error} For malformed server evidence; transport/auth failures pass
+ *   through unchanged.
+ */
+export async function getLegalConflictScreenings() {
+  const response = await api.get('/legal-operations/conflict-screenings');
+  return assertCanonicalConflictScreeningPayload(response?.data);
+}
+
 export async function getLegalFinanceEvidence(kind, identity) {
   const contract = LEGAL_FINANCE_KINDS[kind];
   if (!contract || !isCanonicalText(identity)) {
@@ -1402,6 +1497,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalDeputyActiveWorkPayload,
   assertCanonicalDeputyFieldCapabilitiesPayload,
   assertCanonicalClientMatterPayload,
+  assertCanonicalConflictScreeningPayload,
   assertFieldObservationInput,
   assertCanonicalFieldCommandResponse,
   toFieldCommandBody,
@@ -1433,6 +1529,11 @@ export const __legalOperationsServiceInternals = Object.freeze({
   LEGAL_WORKSPACE_V2_SCHEMA,
   LEGAL_WORKSPACE_V2_VERSION,
   LEGAL_WORKSPACE_VISIBILITY,
+  CONFLICT_SCREENING_SCHEMA,
+  CONFLICT_SCREENING_VERSION,
+  CONFLICT_SCREENING_VISIBILITY,
+  CONFLICT_SCREENING_RESPONSE_KEYS,
+  CONFLICT_SCREENING_ROW_KEYS,
   LEGAL_WORKSPACE_RESPONSE_KEYS,
   LEGAL_WORKSPACE_V2_RESPONSE_KEYS,
   LEGAL_WORKSPACE_SUMMARY_KEYS,
@@ -1452,7 +1553,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT
+ * VERSION: v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
