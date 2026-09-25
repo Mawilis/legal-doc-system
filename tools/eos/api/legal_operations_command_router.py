@@ -1,18 +1,29 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
+VERSION: v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
-EPITOME: Translate authenticated tenant-scoped intake, acceptance/receipt,
-         directory, deputy-principal identity-binding, and field-service
-         commands into bounded canonical orchestrator composition inside one
-         API-owned Mongo transaction without accepting browser-supplied tenant authority.
+EPITOME: Translate authenticated tenant-scoped Legal Operations commands,
+         including authorized human conflict review, into bounded canonical
+         orchestrator composition inside one API-owned Mongo transaction without
+         accepting browser-supplied tenant, reviewer, IAM, screening, lifecycle,
+         or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_operations_command_router.py
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
 CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
+CHANGELOG: 2026-09-25 v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
+           adds one partner/attorney-only conflict-review POST command guarded by
+           legal_operations:conflict_review:write / legal_conflict_review_write.
+           The body carries only screening_id, review_id, one closed human outcome,
+           and an opaque reason reference. Tenant/reviewer scope, review time,
+           screening evidence and durable authorization provenance are server-owned.
+           The API-owned transaction composes persisted L8-8E screening evidence,
+           canonical durable tenant-authorization decision evidence, L8-8G review
+           semantics and L8-8H immutable persistence through L8-8J. The response is
+           a bounded review receipt and exposes no authorization evidence.
+           2026-09-23 v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
            removes browser ownership of P5M sequence_number and previous-event
            fingerprint for bound-Deputy field commands. The server now recovers
            exact event replay inputs or derives the next immutable sequence from
@@ -66,17 +77,21 @@ CHANGELOG: 2026-09-23 v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
            return command boundaries using evidence locators only.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Request bodies contain bounded intake facts,
-                            acceptance/receipt evidence, directory facts, locators, and observations; tenant
-                            authority comes only from durable authorization and
-                            canonical domain/orchestrator layers own lifecycle,
-                            lineage, fingerprints, and outcome truth.
+                            acceptance/receipt evidence, directory facts, locators,
+                            observations, or closed conflict-review choices. Tenant
+                            and reviewer authority come only from durable server
+                            authorization; conflict-review bodies cannot supply
+                            authorization evidence, screening fingerprints, raw
+                            party PII or privileged narrative.
 TENANT BOUNDARY: X-Tenant-ID from RequireTenantAuthorization is the only
                  request scope; every Mongo query includes that tenant.
 AUTHORITY BOUNDARY: This module composes authenticated command transport and
                     transaction mechanics only. Ordinary commands dispatch one
                     canonical orchestrator; L8-6E/L8-6G deputy field commands
-                    compose only the certified P5M -> P5D/P5E chain in one
-                    transaction with sequence lineage derived server-side.
+                    compose only the certified P5M -> P5D/P5E chain; L8-8K
+                    conflict review delegates exclusively to certified L8-8J.
+                    No route creates conflict clearance, waiver, engagement,
+                    representation, client acceptance or financial authority.
 TRANSACTION BOUNDARY: The API acquires the configured client, starts one
                       session/transaction, invokes one orchestrator, commits
                       only after success, aborts on failure, and ends the session.
@@ -97,9 +112,19 @@ from typing import Any, Callable, Final, TypeVar, cast
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
+from tools.eos.api.tenant_authorization_http import (
+    RequireTenantAuthorization,
+    TenantAuthorizationContext,
+    get_principal_authority_repository,
+    get_role_assignment_repository,
+    get_tenant_membership_repository,
+)
 from tools.eos.auth.principal_authority_repository import (
     COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION,
+)
+from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
+    COLLECTION as TENANT_AUTHORIZATION_EVIDENCE_COLLECTION,
+    TenantAuthorizationDecisionEvidenceRegistry,
 )
 from tools.eos.auth.role_assignment_repository import (
     COLLECTION as ROLE_ASSIGNMENT_COLLECTION,
@@ -111,6 +136,9 @@ from tools.eos.auth.tenant_membership_repository import (
     COLLECTION as TENANT_MEMBERSHIP_COLLECTION,
 )
 from tools.eos.legal_operations.domain.process_service_field_evidence_authority import ProcessServiceFieldEvidenceAuthorityError
+from tools.eos.legal_operations.domain.legal_conflict_review import (
+    LegalConflictReviewOutcome,
+)
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     District,
     Deputy,
@@ -149,12 +177,22 @@ from tools.eos.legal_operations.orchestration.process_service_field_evidence_orc
 from tools.eos.legal_operations.orchestration.process_service_attempt_outcome_orchestrator import transition_process_service_attempt_outcome
 from tools.eos.legal_operations.orchestration.process_service_attempt_transition_orchestrator import transition_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_return_orchestrator import generate_process_service_return
+from tools.eos.legal_operations.orchestration.legal_conflict_review_orchestrator import (
+    LegalConflictReviewOrchestrationError,
+    issue_legal_conflict_review,
+)
 from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
     DeputyPrincipalBindingRegistryError,
 )
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import COLLECTION as LIFECYCLE_COLLECTION, LegalOperationsLifecycleRegistry
+from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
+    COLLECTION as LEGAL_CONFLICT_SCREENING_COLLECTION,
+)
+from tools.eos.legal_operations.registry.legal_conflict_review_registry import (
+    COLLECTION as LEGAL_CONFLICT_REVIEW_COLLECTION,
+)
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
     ALLOCATION_CURRENT_COLLECTION,
     ALLOCATION_RECEIPT_COLLECTION,
@@ -171,7 +209,7 @@ from tools.eos.legal_operations.registry.process_service_field_evidence_registry
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
 
 
-VERSION: Final[str] = "v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE"
+VERSION: Final[str] = "v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 _DEPUTY_BUSINESS_ROLE: Final[str] = "tenant_deputy"
@@ -344,6 +382,20 @@ class ReturnCommand(_CommandModel):
     execution_evidence_identity: str = Field(min_length=1)
     return_id: str = Field(min_length=1)
     generated_at: datetime
+
+
+class ConflictReviewCommand(_CommandModel):
+    """Bounded human review choice over one server-loaded persisted screening.
+
+    Tenant/reviewer identity, review timestamp, screening payload/fingerprint,
+    authorization decision/evidence, party identity and source evidence are
+    deliberately excluded and rejected as extra fields.
+    """
+
+    screening_id: str = Field(min_length=1)
+    review_id: str = Field(min_length=1)
+    outcome: LegalConflictReviewOutcome
+    review_reason_reference: str = Field(min_length=1, max_length=512)
 
 
 class CommandError(RuntimeError):
@@ -632,6 +684,7 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         ProcessServiceFieldEvidenceAuthorityError,
         ProcessServiceFieldEvidenceOrchestratorError,
         ProcessServiceFieldEvidenceRegistryError,
+        LegalConflictReviewOrchestrationError,
     ):
         raise
     except Exception as error:
@@ -645,17 +698,31 @@ def _http_error(error: BaseException) -> HTTPException:
         code = getattr(error, "code", "LEGAL_OPERATIONS_COMMAND_FAILED")
     if not isinstance(code, str):
         code = "LEGAL_OPERATIONS_COMMAND_FAILED"
-    if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED", "P5M_RETRY_TRANSACTION_REQUIRED"}:
+    if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED", "P5M_RETRY_TRANSACTION_REQUIRED", "L8_8J_WHOLE_TRANSACTION_RETRY_REQUIRED"}:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_RETRY_REQUIRED")
     if code == "P5M_REPLAY_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_FIELD_EVIDENCE_CONFLICT")
     if code == "L8_6B_BINDING_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_DEPUTY_BINDING_CONFLICT")
+    if code == "L8_8J_REVIEW_CONFLICT":
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_CONFLICT_REVIEW_CONFLICT")
     if code in {"L8_6B_BINDING_NOT_FOUND", "LEGAL_OPERATIONS_DEPUTY_COMMAND_REQUIRED"}:
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="DEPUTY_IDENTITY_BINDING_REQUIRED")
+    if code == "L8_8J_REVIEWER_AUTHORIZATION_REQUIRED":
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="LEGAL_CONFLICT_REVIEW_AUTHORIZATION_REQUIRED")
     if code.endswith("NOT_FOUND") or code in {"P5B_RECEIPT_NOT_FOUND", "P4_RECEIPT_NOT_FOUND", "P4_CURRENT_POINTER_MISSING"}:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LEGAL_OPERATION_NOT_FOUND")
-    if "TRANSACTION_REQUIRED" in code or "PERSISTENCE_UNAVAILABLE" in code or "PERSISTED_RECORD_INVALID" in code or "COMMAND_FAILED" in code:
+    if (
+        "TRANSACTION_REQUIRED" in code
+        or "PERSISTENCE_UNAVAILABLE" in code
+        or "PERSISTED_RECORD_INVALID" in code
+        or "COMMAND_FAILED" in code
+        or code in {
+            "L8_8J_SCREENING_AUTHORITY_UNAVAILABLE",
+            "L8_8J_AUTHORIZATION_EVIDENCE_UNAVAILABLE",
+            "L8_8J_REVIEW_PERSISTENCE_UNAVAILABLE",
+        }
+    ):
         return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LEGAL_OPERATIONS_UNAVAILABLE")
     return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
 
@@ -671,6 +738,10 @@ _ALLOCATE = _ctx("legal_operations:allocation:write", "legal_allocation_write")
 _ATTEMPT = _ctx("legal_operations:attempt:write", "legal_attempt_write")
 _OUTCOME = _ctx("legal_operations:attempt_outcome:write", "legal_attempt_outcome_write")
 _RETURN = _ctx("legal_operations:return:write", "legal_return_write")
+_CONFLICT_REVIEW = _ctx(
+    "legal_operations:conflict_review:write",
+    "legal_conflict_review_write",
+)
 
 
 @router.post("/intake/registrations")
@@ -1112,6 +1183,70 @@ async def record_bound_deputy_field_outcome_command(
     return {"data": value.to_dict(), "field_evidence": receipt.to_dict()}
 
 
+@router.post("/conflict-reviews")
+async def record_legal_conflict_review_command(
+    command: ConflictReviewCommand,
+    context: TenantAuthorizationContext = Depends(_CONFLICT_REVIEW),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Record one authorized human determination over persisted screening truth.
+
+    HTTP admission requires the exact L8-8I permission/operation pair. Inside
+    the API-owned transaction L8-8J reloads the persisted screening and the
+    canonical durable authorization-evidence registry independently re-proves
+    current principal, membership, business-role and granting-role authority.
+
+    The browser cannot submit tenant, reviewer identity, review timestamp,
+    screening fingerprint/payload, authorization decision/evidence, party PII,
+    waiver, ethical-wall, representation or client-acceptance fields.
+    """
+
+    def run(session: Any, db: Any) -> Any:
+        authorization_registry = TenantAuthorizationDecisionEvidenceRegistry(
+            _collection(db, TENANT_AUTHORIZATION_EVIDENCE_COLLECTION),
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+            business_role_repository=role_assignment_repository,
+        )
+        return issue_legal_conflict_review(
+            tenant_id=context.tenant_id,
+            reviewer_principal_id=context.identity.identity_id,
+            screening_id=command.screening_id,
+            review_id=command.review_id,
+            outcome=command.outcome,
+            review_reason_reference=command.review_reason_reference,
+            reviewed_at=_utcnow(),
+            screening_collection=_collection(
+                db,
+                LEGAL_CONFLICT_SCREENING_COLLECTION,
+            ),
+            review_collection=_collection(
+                db,
+                LEGAL_CONFLICT_REVIEW_COLLECTION,
+            ),
+            authorization_evidence_registry=authorization_registry,
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+
+    return {
+        "data": {
+            "review_id": value.review_id,
+            "screening_id": value.screening_id,
+            "outcome": value.outcome.value,
+            "reviewed_at": value.reviewed_at.isoformat(),
+            "fingerprint": value.fingerprint,
+        }
+    }
+
+
 @router.post("/executions/{execution_id}/return")
 async def generate_return_of_service_command(execution_id: str, command: ReturnCommand, context: TenantAuthorizationContext = Depends(_RETURN)) -> dict[str, Any]:
     """Generate one P5F ReturnOfService from canonical ServiceExecution."""
@@ -1139,9 +1274,9 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE
-# AUTHORITY BOUNDARY: authenticated intake/receipt/directory/deputy-binding/field-service composition; bound-Deputy field commands canonicalize transport observations while P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical
+# VERSION: v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
+# AUTHORITY BOUNDARY: authenticated command composition including L8-8K human conflict review; conflict review delegates to L8-8J while P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 and L8-8D/E/G/H/I/J remain canonical
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
-# FAIL-CLOSED POSTURE: malformed, unauthorized, divergent, and ambiguous commands reject
+# FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent, and ambiguous commands reject; conflict review exposes no caller IAM or clearance authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
 # END OF WILSY OS SOVEREIGN ARTIFACT
