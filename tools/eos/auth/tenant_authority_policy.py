@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY
+VERSION: v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,7 +10,15 @@ tenant_legal_client-only client-matter projection read eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-23 v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY adds legal_client_matter_read as an exact
+CHANGELOG: 2026-09-25 v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY adds
+legal_conflict_review_write as one exact own-tenant human conflict-review
+operation mapped only to legal_operations:conflict_review:write and eligible
+only to tenant_legal_partner and tenant_legal_attorney. Every other business
+role remains denied. Eligibility remains non-authorizing and does not prove
+ACTIVE membership, current authorization-role assignment, durable screening
+evidence, reviewer identity, conflict finding, waiver, ethical wall, recusal,
+engagement, representation, payment, execution or settlement authority.
+2026-09-23 v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY adds legal_client_matter_read as an exact
 own-tenant Legal Operations projection operation eligible only to
 tenant_legal_client. Partner, attorney, paralegal, secretary, finance, sheriff,
 deputy, owner/admin/manager/auditor, system and provider roles remain denied.
@@ -98,7 +106,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY"
+VERSION = "v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -109,6 +117,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "business_role_assign": "tenant:business_role:write",
     "business_role_change": "tenant:business_role:write",
     "business_role_revoke": "tenant:business_role:write",
+    "legal_conflict_review_write": "legal_operations:conflict_review:write",
 })
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"})
 OPERATIONS: FrozenSet[str] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "business_role_read", "business_role_assign", "business_role_change", "business_role_revoke", "platform_billing_provider_policy_create", "platform_billing_provider_policy_revise", "platform_billing_provider_policy_activate", "platform_billing_provider_policy_revoke", "inbound_collection_authorization_create", "tenant_inbound_merchant_configuration_register", "tenant_inbound_merchant_configuration_lifecycle_transition", "tenant_inbound_merchant_configuration_compromise", "tenant_inbound_merchant_configuration_remediate", "tenant_inbound_provider_policy_create", "tenant_inbound_provider_policy_revise", "tenant_inbound_provider_policy_activate", "tenant_inbound_provider_policy_deactivate", "tenant_inbound_provider_policy_emergency_disable", "tenant_inbound_provider_credential_security_eligibility_issue", "tenant_inbound_provider_credential_security_revoke", "tenant_inbound_provider_credential_security_compromise", "tenant_inbound_provider_credential_security_rotate", "wilsy_ai_usage_capacity_read", "wilsy_ai_reasoning_execute", "wilsy_ai_legal_services_execute", "billing_intelligence_evidence_read", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_return_read", "legal_billing_read", "legal_invoice_read", "audit_read", "artifact_read", "platform_billing_release", "plan_read", "plan_create", "plan_update", "plan_archive", "subscription_read", "subscription_audit_read", "subscription_metrics_read", "subscription_create", "subscription_update", "subscription_archive", "subscription_pause", "subscription_resume", "subscription_cancel", "subscription_upgrade", "subscription_downgrade", "subscription_reactivate", "cross_tenant", "financial_execution"})
@@ -133,11 +142,15 @@ ELIGIBILITY = MappingProxyType({
     "tenant_deputy": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_attempt_read": ELIGIBLE, "legal_attempt_write": ELIGIBLE, "legal_return_read": ELIGIBLE}),
     "tenant_legal_client": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_invoice_read": ELIGIBLE}),
 })
-OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_conflict_review_write", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
 _eligibility_updates = dict(ELIGIBILITY)
 _client_existing = dict(ELIGIBILITY["tenant_legal_client"])
 _client_existing["legal_client_matter_read"] = ELIGIBLE
 _eligibility_updates["tenant_legal_client"] = MappingProxyType(_client_existing)
+for _role in ("tenant_legal_partner", "tenant_legal_attorney"):
+    _review_existing = dict(_eligibility_updates[_role])
+    _review_existing["legal_conflict_review_write"] = ELIGIBLE
+    _eligibility_updates[_role] = MappingProxyType(_review_existing)
 for _role in ("tenant_sheriff", "tenant_deputy", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary"):
     _existing = dict(ELIGIBILITY[_role])
     if _role in {"tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal"}:
@@ -207,9 +220,9 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.22.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY
+# VERSION: v1.23.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
-# TENANT POSTURE: own-tenant client-matter and client-visibility eligibility require separate ACTIVE membership, assignment, exact permission binding and visibility scope checks
+# TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
