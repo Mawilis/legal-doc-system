@@ -61,3 +61,107 @@ jobs:
             echo "L8-8H direct certification invalid: skipped tests detected"
             exit 1
           fi
+
+  l8-8h-real-mongo:
+    name: L8-8H real-Mongo
+    runs-on: ubuntu-latest
+    needs: [l8-8h-direct]
+    timeout-minutes: 20
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install bounded dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pytest==9.1.1 pymongo==4.16.0
+      - name: Compile exact L8-8H real-Mongo surfaces
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/registry/legal_conflict_review_registry.py \
+            tests/integration/test_legal_conflict_review_registry_real_mongo.py
+      - name: Type-check exact L8-8H real-Mongo surfaces
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath "$(command -v python)" \
+            tools/eos/legal_operations/registry/legal_conflict_review_registry.py \
+            tests/integration/test_legal_conflict_review_registry_real_mongo.py
+      - name: Start disposable Mongo replica set
+        run: |
+          docker run \
+            --detach \
+            --name wilsy-l8-8h-cert-mongo \
+            --publish 27017:27017 \
+            mongo:7.0.37 \
+            mongod \
+            --replSet wilsyVendorCertRS \
+            --bind_ip_all
+      - name: Initialize Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "localhost:27017"}],
+                          }
+                      })
+                      initiated = True
+                  hello = client.admin.command("hello")
+                  if (
+                      hello.get("setName") == "wilsyVendorCertRS"
+                      and hello.get("isWritablePrimary") is True
+                      and hello.get("logicalSessionTimeoutMinutes") is not None
+                  ):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"L8_8H_CI_MONGO_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Run exact L8-8H real-Mongo certificate with no skips
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs tests/integration/test_legal_conflict_review_registry_real_mongo.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi
+          printf '%s\n' "$output" | grep -Eq '6 passed'
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "L8-8H real-Mongo certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Stop disposable Mongo
+        if: always()
+        run: docker rm -f wilsy-l8-8h-cert-mongo 2>/dev/null || true
