@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
+VERSION: v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,15 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-25 v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
+    certifies legal_operations:conflict_review:write as one exact canonical
+    TENANT permission for future server-authorized human conflict-review
+    determinations. It requires separately proven exact ACTIVE membership,
+    is non-cross-tenant, non-financial and non-self-authorizing, and raises
+    canon cardinality to exactly 62 canonical permissions / 65 total rows.
+    It grants no reviewer identity, conflict finding, waiver, ethical wall,
+    recusal, engagement, representation, payment, execution or settlement
+    authority.
     2026-09-23 v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
     certifies legal_operations:client_matter:read as one exact canonical
     TENANT permission for future explicitly-bound LEGAL_CLIENT matter
@@ -77,9 +86,9 @@ CHANGELOG:
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: No credentials, JWT authority projections,
 persistence, or financial execution are processed.
-TENANT BOUNDARY: Permission metadata never proves membership; subscription,
-plan, WILSY AI capacity-read, and billing-intelligence evidence-read
-permissions require separately proven exact ACTIVE tenant membership.
+TENANT BOUNDARY: Permission metadata never proves membership; conflict-review,
+subscription, plan, WILSY AI capacity-read, and billing-intelligence evidence-
+read permissions require separately proven exact ACTIVE tenant membership.
 AUTHORITY BOUNDARY: Tests policy metadata, not assignment or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
@@ -87,12 +96,12 @@ import json
 
 import pytest
 
-VERSION = "v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT"
+VERSION = "v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.24.0-L8-7D1-CLIENT-MATTER-READ-IAM"
+    assert POLICY_VERSION == "v1.25.0-L8-8I-CONFLICT-REVIEW-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -128,6 +137,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:deputy_queue:read",
         "legal_operations:client_visibility:write",
         "legal_operations:client_matter:read",
+        "legal_operations:conflict_review:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -164,9 +174,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 61
+    ) == 62
 
-    assert len(rows) == 64
+    assert len(rows) == 65
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -275,6 +285,22 @@ def test_permission_canon_properties() -> None:
     assert client_matter_read.financial_execution_capable is False
     assert client_matter_read.authorizes_by_itself is False
     assert client_matter_read.disposition is PermissionDisposition.CANONICAL
+
+    conflict_review = permission_metadata(
+        "legal_operations:conflict_review:write"
+    )
+    assert conflict_review.namespace == "TENANT"
+    assert conflict_review.scope_kind == "TENANT"
+    assert (
+        conflict_review.business_capability
+        == "record authorized own-tenant human conflict-review determinations"
+    )
+    assert conflict_review.tenant_membership_required is True
+    assert conflict_review.system_assignment_required is False
+    assert conflict_review.cross_tenant_capable is False
+    assert conflict_review.financial_execution_capable is False
+    assert conflict_review.authorizes_by_itself is False
+    assert conflict_review.disposition is PermissionDisposition.CANONICAL
 
     command_permissions = {
         "legal_operations:directory:write":
@@ -469,6 +495,12 @@ def test_permission_canon_properties() -> None:
         "LEGAL_OPERATIONS:CLIENT_MATTER:READ",
         " legal_operations:client_matter:read",
         "legal_operations:client_matter:read ",
+        "legal_operations:conflict_review:*",
+        "legal_operations:conflict_review",
+        "LEGAL_OPERATIONS:CONFLICT_REVIEW:WRITE",
+        " legal_operations:conflict_review:write",
+        "legal_operations:conflict_review:write ",
+        "legal_operations:conflict_review:read",
     )
 
     for value in invalid:
@@ -572,9 +604,9 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
+# VERSION: v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
+# TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
