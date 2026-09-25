@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT
+VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -14,6 +14,16 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-23.
 CHANGELOG:
+    2026-09-25 v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS grants
+    legal_operations:conflict_review:write exactly to LEGAL_PARTNER and
+    LEGAL_ATTORNEY for future server-authorized human conflict-review
+    determination composition. LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE,
+    LEGAL_CLIENT, SHERIFF, DEPUTY, ENTERPRISE_ADMIN, AUDITOR, system, service,
+    provider and sovereign roles remain excluded. Static role policy still does
+    not prove current assignment, ACTIVE tenant membership, eligible business
+    role, durable screening evidence, reviewer authorization, conflict finding,
+    waiver, ethical wall, recusal, engagement, representation, payment,
+    execution or settlement authority.
     2026-09-23 v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT grants
     legal_operations:client_matter:read exactly to LEGAL_CLIENT for the future
     explicitly-bound client matter projection. No law-firm, sheriff, deputy,
@@ -113,7 +123,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT"
+VERSION = "v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -162,6 +172,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:client_visibility:write",
+        "legal_operations:conflict_review:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -173,6 +184,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:client_visibility:write",
+        "legal_operations:conflict_review:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -321,9 +333,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT
+# VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; client-matter read is granted only to LEGAL_CLIENT and remains visibility-bound
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
