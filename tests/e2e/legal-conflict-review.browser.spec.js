@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS authenticated Legal OS browser certificate
- * VERSION: v1.0.2-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
+ * VERSION: v1.0.4-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
  * AUTHORITY: Browser certification evidence only.
  * EPITOME: Prove real browser storage, workspace bootstrap, Legal Operations
  *          reads, guarded conflict-review command, durable replay, and
@@ -10,7 +10,12 @@
  * COLLABORATION / OWNERSHIP: L8-8M-R3; Python EOS and existing client adapters
  *                            remain the authorities.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.0.2 proves a canonical screening GET occurs after the
+ * CHANGELOG: v1.0.4 records console error counts without failing on an
+ *             unrelated static-resource 404; page errors and failed API
+ *             requests still fail the certificate. v1.0.3 captures bounded
+ *             console/page-error and failed-request counts without emitting
+ *             message text or secret-bearing payloads.
+ *             v1.0.2 proves a canonical screening GET occurs after the
  *             successful review POST, not only during initial workspace load.
  *             v1.0.1 uses a browser-only delayed response to place the real
  *             submit button in its pending state before the second activation;
@@ -41,6 +46,21 @@ test('certifies authenticated conflict review through browser, API, and durable 
   const observed = [];
   const reviewRequests = [];
   const reviewBodies = [];
+  const consoleCounts = { error: 0, warning: 0 };
+  let pageErrorCount = 0;
+  let failedRequestCount = 0;
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      consoleCounts.error += 1;
+    }
+    if (message.type() === 'warning') consoleCounts.warning += 1;
+  });
+  page.on('pageerror', () => {
+    pageErrorCount += 1;
+  });
+  page.on('requestfailed', () => {
+    failedRequestCount += 1;
+  });
   page.on('response', (response) => {
     const url = new URL(response.url());
     if (url.pathname.startsWith('/api/')) {
@@ -167,10 +187,12 @@ test('certifies authenticated conflict review through browser, API, and durable 
   expect(observed).toContainEqual(expect.objectContaining({
     method: 'POST', path: '/api/legal-operations/conflict-reviews', status: 200,
   }));
+  expect(pageErrorCount).toBe(0);
+  expect(failedRequestCount).toBe(0);
 });
 
 // ARTIFACT: legal-conflict-review.browser.spec.js
-// VERSION: v1.0.2-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
+// VERSION: v1.0.4-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
 // AUTHORITY BOUNDARY: browser assertions only
 // TENANT POSTURE: exact disposable tenant header and server-derived scope
 // FAIL-CLOSED POSTURE: missing auth, non-200 reads, duplicate POSTs, and replay divergence fail
