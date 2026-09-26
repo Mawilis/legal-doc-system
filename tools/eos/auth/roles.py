@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS
+VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -12,8 +12,15 @@ LEGAL_CLIENT projection-read grant without creating tenant-wide matter reads,
 deputy possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-23.
+CERTIFICATION/UPDATE DATE: 2026-09-26.
 CHANGELOG:
+    2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS grants
+    legal_operations:client_acceptance:write exactly to LEGAL_CLIENT for
+    server-composed own-tenant client-acceptance evidence. All law-firm,
+    sheriff/deputy, finance, enterprise, audit, system, service and provider
+    roles remain excluded; static policy never proves assignment, membership,
+    matter scope, engagement, representation, Court, payment, execution or
+    settlement authority.
     2026-09-25 v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS grants
     legal_operations:conflict_review:write exactly to LEGAL_PARTNER and
     LEGAL_ATTORNEY for future server-authorized human conflict-review
@@ -123,7 +130,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS"
+VERSION = "v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -232,6 +239,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_CLIENT": [
         "legal_operations:invoice:read",
         "legal_operations:client_matter:read",
+        "legal_operations:client_acceptance:write",
     ],
     "SERVICE_WORKER": [
         "artifacts:write",
@@ -333,7 +341,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS
+# VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

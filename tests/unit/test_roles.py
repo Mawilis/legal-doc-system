@@ -96,7 +96,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS"
+    assert POLICY_VERSION == "v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS"
 
 VERSION = "v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT"
 
@@ -208,6 +208,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == [
         "legal_operations:invoice:read",
         "legal_operations:client_matter:read",
+        "legal_operations:client_acceptance:write",
     ]
     conflict_review_permission = "legal_operations:conflict_review:write"
     expected_conflict_review_roles = ("LEGAL_ATTORNEY", "LEGAL_PARTNER")

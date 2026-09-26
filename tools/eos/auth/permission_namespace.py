@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-IAM
+VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -9,8 +9,13 @@ enumeration, reviewer identity, legal determination, waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-23.
+CERTIFICATION/UPDATE DATE: 2026-09-26.
 CHANGELOG:
+    2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM adds the dedicated own-tenant
+    legal_operations:client_acceptance:write permission for server-composed
+    client-acceptance evidence. It remains membership-gated, non-cross-tenant,
+    non-financial and non-self-authorizing; it does not prove engagement,
+    representation, Court, payment, execution or settlement authority.
     2026-09-23 v1.25.0-L8-8I-CONFLICT-REVIEW-IAM adds the dedicated own-tenant
     legal_operations:client_matter:read permission vocabulary for a future
     explicitly-bound LEGAL_CLIENT matter projection only. The permission is
@@ -113,7 +118,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.25.0-L8-8I-CONFLICT-REVIEW-IAM"
+VERSION = "v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -392,6 +397,10 @@ _PERMISSIONS: Final = MappingProxyType(
             "read explicitly-bound own legal-client matters",
             tenant=True,
         ),
+        "legal_operations:client_acceptance:write": _meta(
+            "legal_operations:client_acceptance:write", "TENANT", "TENANT",
+            "issue bounded own-tenant client-acceptance evidence", tenant=True,
+        ),
         "legal_operations:conflict_review:write": _meta(
             "legal_operations:conflict_review:write", "TENANT", "TENANT",
             "record authorized own-tenant human conflict-review determinations",
@@ -653,7 +662,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.25.0-L8-8I-CONFLICT-REVIEW-IAM
+# VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
