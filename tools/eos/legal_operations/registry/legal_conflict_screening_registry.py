@@ -1,7 +1,7 @@
 """WILSY OS durable legal conflict-screening registry.
 
 TITLE: Legal Conflict Screening Registry
-VERSION: v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY
+VERSION: v1.0.2-L8-8E-UTC-CODEC-CORRELATION
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Persist immutable L8-8D exact-subject screening results with strict
          tenant isolation, replay integrity, review-queue lookup and caller-
@@ -15,7 +15,8 @@ COLLABORATION / OWNERSHIP: L8-8D owns screening semantics; L8-8E owns immutable
                             conflict determination, recusal, waiver or ethical
                             wall evidence.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY narrows the L8-8D status union to LegalConflictScreeningStatus at persistence serialization/correlation boundaries for exact Pyright alignment; stored values and runtime semantics are unchanged.
+CHANGELOG: v1.0.2-L8-8E-UTC-CODEC-CORRELATION applies an explicit UTC-aware BSON codec to screening reads/writes so immutable timestamp correlation remains valid through the canonical Kernel Mongo client.
+           v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY narrows the L8-8D status union to LegalConflictScreeningStatus at persistence serialization/correlation boundaries for exact Pyright alignment; stored values and runtime semantics are unchanged.
            v1.0.0-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY establishes exact
            tenant+screening identity, strict immutable replay, data-minimized
            envelope correlation, tenant+source and tenant+subject histories,
@@ -43,6 +44,7 @@ FAIL-CLOSED DECLARATION: Missing transaction, malformed/corrupt envelope,
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import timezone
 from typing import Any, Final, NoReturn, cast
 import hashlib
 import json
@@ -51,6 +53,7 @@ from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
+from bson.codec_options import CodecOptions
 
 from tools.eos.legal_operations.domain.legal_conflict_screening import (
     SCREENING_FIELDS,
@@ -60,7 +63,7 @@ from tools.eos.legal_operations.domain.legal_conflict_screening import (
 )
 
 
-VERSION: Final[str] = "v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY"
+VERSION: Final[str] = "v1.0.2-L8-8E-UTC-CODEC-CORRELATION"
 RECORD_SCHEMA: Final[str] = "WILSY-LEGAL-CONFLICT-SCREENING-RECORD/V1"
 COLLECTION: Final[str] = "legal_conflict_screenings"
 SCREENING_ID_INDEX_NAME: Final[str] = "legal_conflict_tenant_screening_unique"
@@ -181,6 +184,7 @@ def _target(collection: Any) -> Any:
         return collection.with_options(
             write_concern=WRITE_CONCERN,
             read_concern=READ_CONCERN,
+            codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.utc),
         )
     except AttributeError:
         return collection
@@ -637,7 +641,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_conflict_screening_registry.py
-# VERSION: v1.0.1-L8-8E-LEGAL-CONFLICT-SCREENING-REGISTRY
+# VERSION: v1.0.2-L8-8E-UTC-CODEC-CORRELATION
 # AUTHORITY BOUNDARY: immutable screening persistence/read evidence only; no determination or clearance
 # TENANT POSTURE: every lookup/write/index begins with exact tenant_id
 # FAIL-CLOSED POSTURE: transaction/corruption/divergence/overflow/race/outage rejects
