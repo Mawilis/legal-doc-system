@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS authenticated Legal OS browser certificate
- * VERSION: v1.0.0-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
+ * VERSION: v1.0.1-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
  * AUTHORITY: Browser certification evidence only.
  * EPITOME: Prove real browser storage, workspace bootstrap, Legal Operations
  *          reads, guarded conflict-review command, durable replay, and
@@ -10,8 +10,11 @@
  * COLLABORATION / OWNERSHIP: L8-8M-R3; Python EOS and existing client adapters
  *                            remain the authorities.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.0.0 establishes one end-to-end authenticated browser proof;
- *             it does not change production application semantics.
+ * CHANGELOG: v1.0.1 uses a browser-only delayed response to place the real
+ *             submit button in its pending state before the second activation;
+ *             the required network proof is exactly one POST and one durable
+ *             review. v1.0.0 establishes one end-to-end authenticated browser
+ *             proof; it does not change production application semantics.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: State-file bearer material is loaded in memory
  *                             only and is never printed or included in traces.
@@ -90,17 +93,31 @@ test('certifies authenticated conflict review through browser, API, and durable 
     new URL(response.url()).pathname === '/api/legal-operations/conflict-reviews'
     && response.request().method() === 'POST'
   ));
-  await Promise.all([
-    firstResponse,
-    submit.click(),
-    submit.evaluate((element) => element.click()),
-  ]);
+  const firstRequest = page.waitForRequest((requestEvent) => (
+    new URL(requestEvent.url()).pathname === '/api/legal-operations/conflict-reviews'
+    && requestEvent.method() === 'POST'
+  ));
+  await page.route('**/api/legal-operations/conflict-reviews', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.fulfill({ response });
+  });
+  const firstClick = submit.click();
+  await firstRequest;
+  await page.waitForTimeout(100);
+  await submit.evaluate((element) => element.click());
+  await firstClick;
+  await firstResponse;
   await expect(row).toContainText('Conflict review recorded as CONFLICT_IDENTIFIED.');
   if (reviewRequests.length < 1) {
     console.error(`BROWSER_CERT_REVIEW_BODIES=${JSON.stringify(reviewBodies)}`);
     console.error(`BROWSER_CERT_REVIEW_STATUSES=${JSON.stringify(reviewRequests.map((item) => item.status()))}`);
   }
-  expect(reviewRequests.length).toBeGreaterThanOrEqual(1);
+  expect(reviewRequests.length).toBe(1);
   expect(reviewRequests.every((item) => item.status() === 200)).toBe(true);
   const command = await postBody;
   expect(command).toEqual({
@@ -140,7 +157,7 @@ test('certifies authenticated conflict review through browser, API, and durable 
 });
 
 // ARTIFACT: legal-conflict-review.browser.spec.js
-// VERSION: v1.0.0-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
+// VERSION: v1.0.1-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
 // AUTHORITY BOUNDARY: browser assertions only
 // TENANT POSTURE: exact disposable tenant header and server-derived scope
 // FAIL-CLOSED POSTURE: missing auth, non-200 reads, duplicate POSTs, and replay divergence fail
