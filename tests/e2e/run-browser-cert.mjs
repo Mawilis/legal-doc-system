@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.0.0-L8-8M-R3-BROWSER-CERT-RUNNER
+ * VERSION: v1.0.1-L8-8M-R3-BROWSER-CERT-RUNNER
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the disposable seed, EOS process, Vite process, Playwright
  *          process, and cleanup without killing unrelated repository services.
@@ -8,7 +8,10 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M-R3 browser infrastructure.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.0.0 establishes isolated local-replica-set orchestration on
+ * CHANGELOG: v1.0.1 selects an explicit BROWSER_CERT_PYTHON, a repository
+ *             virtualenv when present, or the provisioned system Python so
+ *             local and CI runners share the same fixture orchestration.
+ *             v1.0.0 establishes isolated local-replica-set orchestration on
  *             EOS port 9095 and Vite port 5174; it refuses an occupied EOS port.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Random signing secret and database name remain
@@ -20,12 +23,16 @@
 
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const repo = resolve(new URL('../..', import.meta.url).pathname);
-const python = join(repo, '.venv/bin/python');
+const python = process.env.BROWSER_CERT_PYTHON
+  || (existsSync(join(repo, '.venv/bin/python'))
+    ? join(repo, '.venv/bin/python')
+    : 'python');
 const fixture = join(repo, 'tests/e2e/browser_cert_fixture.py');
 const playwright = join(repo, 'node_modules/.bin/playwright');
 const chrome = process.env.WILSY_BROWSER_EXECUTABLE
@@ -140,7 +147,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.0.0-L8-8M-R3-BROWSER-CERT-RUNNER
+// VERSION: v1.0.1-L8-8M-R3-BROWSER-CERT-RUNNER
 // AUTHORITY BOUNDARY: owned test-process lifecycle only
 // TENANT POSTURE: UUID-isolated disposable database
 // FAIL-CLOSED POSTURE: service/process/fixture failures return non-zero
