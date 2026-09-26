@@ -1,0 +1,174 @@
+# WILSY OS Matter Acceptance Instrument Registry Certification Workflow
+# VERSION: v1.0.0-L9A4-P1B2-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT-WORKFLOW
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Run bounded pure-domain, registry and disposable real-Mongo
+#          certificates without touching canonical/shared data.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/l9a4-p1b2-matter-acceptance-instrument-registry-certification.yml
+# TENANT / AUTHORITY BOUNDARY: Synthetic UUID database only; no acceptance,
+# visibility, IAM, engagement, representation, Court or financial authority.
+# CHANGELOG: v1.0.0-L9A4-P1B2-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT-WORKFLOW
+#            adds exact compile, Pyright, pure tests and disposable Mongo tests.
+
+name: L9A4-P1B2 Matter Acceptance Instrument Registry Certification
+
+on:
+  push:
+    branches:
+      - legal-ops-completion-map
+    paths:
+      - "tools/eos/legal_operations/domain/legal_client_matter_acceptance_instrument.py"
+      - "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py"
+      - "tests/unit/test_legal_client_matter_acceptance_instrument.py"
+      - "tests/unit/test_legal_client_matter_acceptance_instrument_registry.py"
+      - "tests/integration/test_legal_client_matter_acceptance_instrument_registry_real_mongo.py"
+      - ".github/workflows/l9a4-p1b2-matter-acceptance-instrument-registry-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  direct:
+    name: L9A4-P1B2 direct and static
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install bounded dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pytest==9.1.1 pymongo==4.16.0
+      - name: Compile exact surfaces
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/domain/legal_client_matter_acceptance_instrument.py \
+            tools/eos/legal_operations/domain/legal_client_acting_capacity.py \
+            tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py \
+            tests/unit/test_legal_client_matter_acceptance_instrument.py \
+            tests/unit/test_legal_client_acting_capacity.py \
+            tests/unit/test_legal_client_matter_acceptance_instrument_registry.py
+      - name: Type-check exact surfaces
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath "$(command -v python)" \
+            tools/eos/legal_operations/domain/legal_client_matter_acceptance_instrument.py \
+            tools/eos/legal_operations/domain/legal_client_acting_capacity.py \
+            tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py \
+            tests/unit/test_legal_client_matter_acceptance_instrument.py \
+            tests/unit/test_legal_client_acting_capacity.py \
+            tests/unit/test_legal_client_matter_acceptance_instrument_registry.py
+      - name: Run pure certificates with no skips
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs \
+            tests/unit/test_legal_client_matter_acceptance_instrument.py \
+            tests/unit/test_legal_client_matter_acceptance_instrument_registry.py \
+            tests/unit/test_legal_client_acting_capacity.py 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "L9A4-P1B2 direct certification invalid: skipped tests detected"
+            exit 1
+          fi
+
+  real-mongo:
+    name: L9A4-P1B2 real-Mongo
+    runs-on: ubuntu-latest
+    needs: [direct]
+    timeout-minutes: 20
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install bounded dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pytest==9.1.1 pymongo==4.16.0
+      - name: Compile and type-check real-Mongo surface
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/domain/legal_client_matter_acceptance_instrument.py \
+            tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py \
+            tests/integration/test_legal_client_matter_acceptance_instrument_registry_real_mongo.py
+          npx --yes pyright@1.1.413 \
+            --pythonpath "$(command -v python)" \
+            tools/eos/legal_operations/domain/legal_client_matter_acceptance_instrument.py \
+            tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py \
+            tests/integration/test_legal_client_matter_acceptance_instrument_registry_real_mongo.py
+      - name: Start disposable Mongo replica set
+        run: |
+          docker run --detach --name wilsy-l9a4-p1b2-instrument-mongo \
+            --publish 27017:27017 mongo:7.0.37 mongod \
+            --replSet wilsyVendorCertRS --bind_ip_all
+      - name: Initialize Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://localhost:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "localhost:27017"}]}})
+                      initiated = True
+                  hello = client.admin.command("hello")
+                  if hello.get("setName") == "wilsyVendorCertRS" and hello.get("isWritablePrimary") and hello.get("logicalSessionTimeoutMinutes") is not None:
+                      break
+              except Exception:
+                  pass
+              if time.monotonic() >= deadline:
+                  raise RuntimeError("L9A4_P1B2_CI_MONGO_UNAVAILABLE")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Run real-Mongo certificate with no skips
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs tests/integration/test_legal_client_matter_acceptance_instrument_registry_real_mongo.py 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "L9A4-P1B2 real-Mongo certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Stop disposable Mongo
+        if: always()
+        run: docker rm -f wilsy-l9a4-p1b2-instrument-mongo 2>/dev/null || true
+
+# ARTIFACT: l9a4-p1b2-matter-acceptance-instrument-registry-certification.yml
+# VERSION: v1.0.0-L9A4-P1B2-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT-WORKFLOW
+# AUTHORITY BOUNDARY: bounded pure-domain, registry and disposable-Mongo certification only
+# TENANT POSTURE: UUID-isolated database; canonical/shared databases are forbidden
+# FAIL-CLOSED POSTURE: compile/type/test failures and skipped required tests fail
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
