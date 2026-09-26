@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS authenticated Legal OS browser certificate
- * VERSION: v1.0.1-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
+ * VERSION: v1.0.2-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
  * AUTHORITY: Browser certification evidence only.
  * EPITOME: Prove real browser storage, workspace bootstrap, Legal Operations
  *          reads, guarded conflict-review command, durable replay, and
@@ -10,7 +10,9 @@
  * COLLABORATION / OWNERSHIP: L8-8M-R3; Python EOS and existing client adapters
  *                            remain the authorities.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.0.1 uses a browser-only delayed response to place the real
+ * CHANGELOG: v1.0.2 proves a canonical screening GET occurs after the
+ *             successful review POST, not only during initial workspace load.
+ *             v1.0.1 uses a browser-only delayed response to place the real
  *             submit button in its pending state before the second activation;
  *             the required network proof is exactly one POST and one durable
  *             review. v1.0.0 establishes one end-to-end authenticated browser
@@ -142,6 +144,17 @@ test('certifies authenticated conflict review through browser, API, and durable 
   const replayBody = await replay.json();
   expect(replayBody).toEqual(firstBody);
 
+  const postIndex = observed.findIndex((entry) => (
+    entry.method === 'POST' && entry.path === '/api/legal-operations/conflict-reviews'
+  ));
+  const postReviewRefreshIndex = observed.findIndex((entry, index) => (
+    index > postIndex
+    && entry.method === 'GET'
+    && entry.path === '/api/legal-operations/conflict-screenings'
+  ));
+  expect(postIndex).toBeGreaterThanOrEqual(0);
+  expect(postReviewRefreshIndex).toBeGreaterThan(postIndex);
+
   const requiredRequests = [
     ['GET', '/api/auth/workspace-bootstrap'],
     ['GET', '/api/legal-acceptance/status'],
@@ -157,7 +170,7 @@ test('certifies authenticated conflict review through browser, API, and durable 
 });
 
 // ARTIFACT: legal-conflict-review.browser.spec.js
-// VERSION: v1.0.1-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
+// VERSION: v1.0.2-L8-8M-R3-AUTHENTICATED-BROWSER-CERT
 // AUTHORITY BOUNDARY: browser assertions only
 // TENANT POSTURE: exact disposable tenant header and server-derived scope
 // FAIL-CLOSED POSTURE: missing auth, non-200 reads, duplicate POSTs, and replay divergence fail
