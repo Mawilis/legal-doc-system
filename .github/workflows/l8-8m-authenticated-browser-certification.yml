@@ -46,7 +46,7 @@ jobs:
 
       - name: Install exact Node lockfiles
         run: |
-          npm ci
+          npm ci --legacy-peer-deps
           npm --prefix client ci
 
       - name: Install Chromium for Playwright
