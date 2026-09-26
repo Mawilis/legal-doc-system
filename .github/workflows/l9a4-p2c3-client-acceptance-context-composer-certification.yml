@@ -47,7 +47,7 @@ jobs:
       - name: Install bounded dependencies
         run: |
           python -m pip install --upgrade pip==25.3
-          python -m pip install pytest==9.1.1 pymongo==4.16.0
+          python -m pip install pytest==9.1.1 pymongo==4.16.0 pydantic==2.13.4
       - name: Compile exact P2C3 surfaces
         run: |
           python -m py_compile \
@@ -100,7 +100,7 @@ jobs:
       - name: Install bounded dependencies
         run: |
           python -m pip install --upgrade pip==25.3
-          python -m pip install pytest==9.1.1 pymongo==4.16.0
+          python -m pip install pytest==9.1.1 pymongo==4.16.0 pydantic==2.13.4
       - name: Compile and type-check real-Mongo surface
         run: |
           python -m py_compile \
