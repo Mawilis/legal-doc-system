@@ -96,7 +96,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS"
+    assert POLICY_VERSION == "v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS"
 
 VERSION = "v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT"
 
@@ -191,6 +191,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:instruction:read", "legal_operations:instruction:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
@@ -395,6 +396,10 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ),
         (
             "legal_operations:conflict_review:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARTNER"),
+        ),
+        (
+            "legal_operations:matter_acceptance_instrument_approval:write",
             ("LEGAL_ATTORNEY", "LEGAL_PARTNER"),
         ),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),

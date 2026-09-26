@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS
+VERSION: v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -14,6 +14,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-26.
 CHANGELOG:
+    2026-09-26 v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS grants
+    matter-acceptance-instrument approval exactly to LEGAL_PARTNER and
+    LEGAL_ATTORNEY. Static grants do not prove assignment, membership, scope,
+    approval currentness, client acceptance, representation or finance.
     2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS grants
     legal_operations:client_acceptance:write exactly to LEGAL_CLIENT for
     server-composed own-tenant client-acceptance evidence. All law-firm,
@@ -130,7 +134,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS"
+VERSION = "v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -180,6 +184,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:instruction:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -192,6 +197,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:instruction:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -341,7 +347,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS
+# VERSION: v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

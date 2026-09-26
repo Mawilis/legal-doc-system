@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM
+VERSION: v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,6 +11,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-26.
 CHANGELOG:
+    2026-09-26 v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM adds the
+    dedicated own-tenant matter-acceptance-instrument approval permission;
+    it remains membership-gated, non-cross-tenant, non-financial and
+    non-self-authorizing.
     2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM adds the dedicated own-tenant
     legal_operations:client_acceptance:write permission for server-composed
     client-acceptance evidence. It remains membership-gated, non-cross-tenant,
@@ -118,7 +122,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM"
+VERSION = "v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -406,6 +410,12 @@ _PERMISSIONS: Final = MappingProxyType(
             "record authorized own-tenant human conflict-review determinations",
             tenant=True,
         ),
+        "legal_operations:matter_acceptance_instrument_approval:write": _meta(
+            "legal_operations:matter_acceptance_instrument_approval:write",
+            "TENANT", "TENANT",
+            "issue authorized own-tenant matter acceptance instrument approvals",
+            tenant=True,
+        ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
             "read own-tenant process allocations", tenant=True,
@@ -662,7 +672,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM
+# VERSION: v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

@@ -101,7 +101,7 @@ VERSION = "v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT"
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM"
+    assert POLICY_VERSION == "v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -138,6 +138,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:client_visibility:write",
         "legal_operations:client_matter:read",
         "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -174,9 +175,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 63
+    ) == 64
 
-    assert len(rows) == 66
+    assert len(rows) == 67
 
     for permission_id in tenant:
         metadata = permission_metadata(
