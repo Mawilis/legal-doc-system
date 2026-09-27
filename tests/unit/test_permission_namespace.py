@@ -650,11 +650,13 @@ def test_credential_security_permissions_are_exact_tenant_permissions() -> None:
 
 
 def test_no_domain_profile_permissions():
-    assert all(permission_metadata(row["permission_id"]).namespace not in {"DOMAIN", "PROFILE"} for row in json.loads(canonical_permissions()))
+    rows = json.loads(canonical_permissions())
+    assert all(
+        permission_metadata(row["permission_id"]).namespace
+        not in {"DOMAIN", "PROFILE"}
+        for row in rows
+    )
 
-
-def test_engagement_permission_is_vocabulary_only() -> None:
-    """The vocabulary entry grants no role or operation authority itself."""
     permission = "legal_operations:matter_engagement_firm_decision:write"
     assert permission_metadata(permission).authorizes_by_itself is False
 
