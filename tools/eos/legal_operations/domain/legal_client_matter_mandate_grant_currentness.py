@@ -1,7 +1,7 @@
 """Immutable currentness evidence for one client-matter mandate grant.
 
 TITLE: WILSY OS Legal Client Matter Mandate Grant Currentness Projection
-VERSION: v1.0.0-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS
+VERSION: v1.0.1-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Bind one already-adjudicated grant-currentness result to the exact
          tenant, grant, matter evidence, evaluation instant, lifecycle
@@ -16,7 +16,12 @@ COLLABORATION / OWNERSHIP: LegalClientMatterMandateGrant and its lifecycle
                             transaction. This module owns projection shape,
                             state invariants, serialization, and integrity.
 CERTIFICATION / UPDATE DATE: 2026-09-27
-CHANGELOG: v1.0.0-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS establishes the
+CHANGELOG: v1.0.1-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS preserves the
+           original bounded state/evidence contract while allowing truthful
+           absent/corrupt identity projections and formation-window outcomes
+           without fabricated matter/party evidence. It remains pure and
+           read-only.
+           v1.0.0-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS establishes the
            bounded state vocabulary, exact identity/evidence binding,
            explicit aware-UTC evaluation, immutable state invariants,
            deterministic SHA3-512 integrity, and strict hydration. It adds no
@@ -59,7 +64,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS"
+VERSION: Final[str] = "v1.0.1-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS"
 SCHEMA: Final[str] = "WILSY-LEGAL-CLIENT-MATTER-MANDATE-GRANT-CURRENTNESS/V1"
 _IDENTITY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
 _HEX: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -259,9 +264,9 @@ class LegalClientMatterMandateGrantCurrentness:
     tenant_id: str
     client_grant_id: str
     client_grant_fingerprint: str | None
-    case_matter_id: str
+    case_matter_id: str | None
     matter_fingerprint: str | None
-    client_party_id: str
+    client_party_id: str | None
     subject_identity_fingerprint: str | None
     evaluation_time: datetime
     state: LegalClientMatterMandateGrantCurrentnessState | str
@@ -284,8 +289,8 @@ class LegalClientMatterMandateGrantCurrentness:
         currentness_id = _identity("currentness_id", self.currentness_id)
         tenant_id = _tenant(self.tenant_id)
         grant_id = _identity("client_grant_id", self.client_grant_id)
-        matter_id = _identity("case_matter_id", self.case_matter_id)
-        party_id = _identity("client_party_id", self.client_party_id)
+        matter_id = None if self.case_matter_id is None else _identity("case_matter_id", self.case_matter_id)
+        party_id = None if self.client_party_id is None else _identity("client_party_id", self.client_party_id)
         evaluation = _timestamp("evaluation_time", self.evaluation_time)
         state = _state(self.state)
         reason = _reason(self.reason)
@@ -315,6 +320,9 @@ class LegalClientMatterMandateGrantCurrentness:
 
         formation_absent = state is LegalClientMatterMandateGrantCurrentnessState.FORMATION_ABSENT
         corrupt = state is LegalClientMatterMandateGrantCurrentnessState.CORRUPT_BLOCKED
+        if not formation_absent and not corrupt and (matter_id is None or party_id is None):
+            _fail("L9B9_P1_IDENTITY_REQUIRED")
+
         if formation_absent:
             if any(value is not None for value in (grant_fp, matter_fp, subject_fp, formation_fp)):
                 _fail("L9B9_P1_FORMATION_ABSENT_EVIDENCE_FORBIDDEN")
@@ -326,18 +334,20 @@ class LegalClientMatterMandateGrantCurrentness:
             assert grant_fp is not None and formation_fp is not None
             if grant_fp != formation_fp:
                 _fail("L9B9_P1_FORMATION_FINGERPRINT_MISMATCH")
-            if matter_state is None or matter_evidence_fp is None:
-                _fail("L9B9_P1_MATTER_EVIDENCE_REQUIRED")
 
         if state is LegalClientMatterMandateGrantCurrentnessState.CURRENT:
             if reason is not LegalClientMatterMandateGrantCurrentnessReason.CURRENT:
                 _fail("L9B9_P1_REASON_STATE_MISMATCH")
+            if matter_state is None or matter_evidence_fp is None:
+                _fail("L9B9_P1_MATTER_EVIDENCE_REQUIRED")
             if matter_state is not CaseMatterState.OPEN or decisive:
                 _fail("L9B9_P1_CURRENT_EVIDENCE_INVALID")
         elif state is LegalClientMatterMandateGrantCurrentnessState.FORMATION_ABSENT:
             if reason is not LegalClientMatterMandateGrantCurrentnessReason.FORMATION_ABSENT:
                 _fail("L9B9_P1_REASON_STATE_MISMATCH")
         elif state is LegalClientMatterMandateGrantCurrentnessState.MATTER_CLOSED:
+            if matter_state is None or matter_evidence_fp is None:
+                _fail("L9B9_P1_MATTER_EVIDENCE_REQUIRED")
             if matter_state is not CaseMatterState.CLOSED or reason is not LegalClientMatterMandateGrantCurrentnessReason.MATTER_CLOSED:
                 _fail("L9B9_P1_MATTER_CLOSED_EVIDENCE_INVALID")
         elif state is LegalClientMatterMandateGrantCurrentnessState.REVOKED:
@@ -452,7 +462,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_client_matter_mandate_grant_currentness.py
-# VERSION: v1.0.0-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS
+# VERSION: v1.0.1-L9B9-P1-CLIENT-MANDATE-GRANT-CURRENTNESS
 # AUTHORITY BOUNDARY: immutable currentness projection evidence only
 # TENANT POSTURE: exact tenant/grant/matter/party binding; no fallback
 # FAIL-CLOSED POSTURE: strict schema, evidence, state, timestamp, and fingerprint validation
