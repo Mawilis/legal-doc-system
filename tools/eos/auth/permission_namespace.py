@@ -1,16 +1,23 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM
+VERSION: v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
 billing-intelligence, Legal Operations lifecycle/client visibility, and explicit
-human conflict-review capability semantics without granting tenant-wide matter
-enumeration, reviewer identity, legal determination, waiver, engagement,
+human conflict-review and Engagement firm-decision capability semantics without
+granting tenant-wide matter enumeration, reviewer identity, legal determination,
+waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-26.
 CHANGELOG:
+    2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM adds the exact
+    own-tenant legal_operations:matter_engagement_firm_decision:write
+    permission vocabulary. It remains membership-gated, non-cross-tenant,
+    non-financial and non-self-authorizing; it does not grant roles, bind an
+    operation, issue a firm decision, form Engagement, authorize
+    Representation/Court, or execute or settle finance.
     2026-09-27 v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM adds the
     dedicated own-tenant legal_operations:matter_mandate_acknowledgment:write
     permission. It is membership-gated, non-cross-tenant, non-financial and
@@ -127,7 +134,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM"
+VERSION = "v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -427,6 +434,12 @@ _PERMISSIONS: Final = MappingProxyType(
             "issue authorized own-tenant firm mandate acknowledgments",
             tenant=True,
         ),
+        "legal_operations:matter_engagement_firm_decision:write": _meta(
+            "legal_operations:matter_engagement_firm_decision:write",
+            "TENANT", "TENANT",
+            "issue authorized own-tenant Engagement firm decisions",
+            tenant=True,
+        ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
             "read own-tenant process allocations", tenant=True,
@@ -683,7 +696,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM
+# VERSION: v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

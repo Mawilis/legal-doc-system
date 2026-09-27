@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT
+VERSION: v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-27 v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT certifies
+    the exact own-tenant Engagement firm-decision permission metadata,
+    fail-closed nearby aliases, and vocabulary-only non-authority posture.
     2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT certifies
     the dedicated own-tenant mandate-acknowledgment permission metadata and
     updates canonical permission cardinality by one.
@@ -96,15 +99,16 @@ AUTHORITY BOUNDARY: Tests policy metadata, not assignment or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
 import json
+from pathlib import Path
 
 import pytest
 
-VERSION = "v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT"
+VERSION = "v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM"
+    assert POLICY_VERSION == "v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -143,6 +147,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -179,9 +184,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 65
+    ) == 66
 
-    assert len(rows) == 68
+    assert len(rows) == 69
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -321,6 +326,21 @@ def test_permission_canon_properties() -> None:
     assert mandate_acknowledgment.financial_execution_capable is False
     assert mandate_acknowledgment.authorizes_by_itself is False
     assert mandate_acknowledgment.disposition is PermissionDisposition.CANONICAL
+
+    engagement_firm_decision = permission_metadata(
+        "legal_operations:matter_engagement_firm_decision:write"
+    )
+    assert engagement_firm_decision.namespace == "TENANT"
+    assert engagement_firm_decision.scope_kind == "TENANT"
+    assert engagement_firm_decision.business_capability == (
+        "issue authorized own-tenant Engagement firm decisions"
+    )
+    assert engagement_firm_decision.tenant_membership_required is True
+    assert engagement_firm_decision.system_assignment_required is False
+    assert engagement_firm_decision.cross_tenant_capable is False
+    assert engagement_firm_decision.financial_execution_capable is False
+    assert engagement_firm_decision.authorizes_by_itself is False
+    assert engagement_firm_decision.disposition is PermissionDisposition.CANONICAL
 
     command_permissions = {
         "legal_operations:directory:write":
@@ -521,6 +541,12 @@ def test_permission_canon_properties() -> None:
         " legal_operations:conflict_review:write",
         "legal_operations:conflict_review:write ",
         "legal_operations:conflict_review:read",
+        "legal_operations:matter_engagement_firm_decision:*",
+        "legal_operations:matter_engagement_firm_decision",
+        "LEGAL_OPERATIONS:MATTER_ENGAGEMENT_FIRM_DECISION:WRITE",
+        " legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_engagement_firm_decision:write ",
+        "legal_operations:matter_engagement_firm_decision:read",
     )
 
     for value in invalid:
@@ -536,6 +562,10 @@ def test_permission_canon_properties() -> None:
         in row["permission_id"]
         for row in rows
     )
+    assert "legal_operations:*" not in {
+        row["permission_id"]
+        for row in rows
+    }
 
     assert canonical_permissions() == canonical_permissions()
     assert isinstance(
@@ -623,8 +653,21 @@ def test_no_domain_profile_permissions():
     assert all(permission_metadata(row["permission_id"]).namespace not in {"DOMAIN", "PROFILE"} for row in json.loads(canonical_permissions()))
 
 
+def test_engagement_permission_is_vocabulary_only() -> None:
+    """The vocabulary entry grants no role or operation authority itself."""
+    permission = "legal_operations:matter_engagement_firm_decision:write"
+    assert permission_metadata(permission).authorizes_by_itself is False
+
+    for path in (
+        "tools/eos/auth/roles.py",
+        "tools/eos/auth/tenant_authority_policy.py",
+        "tools/eos/auth/tenant_authorization.py",
+    ):
+        assert permission not in Path(path).read_text(encoding="utf-8")
+
+
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
+# VERSION: v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
