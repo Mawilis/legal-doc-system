@@ -1,13 +1,17 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT
+VERSION: v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-27.
-CHANGELOG: 2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT
+CERTIFICATION/UPDATE DATE: 2026-09-28.
+CHANGELOG: 2026-09-28 v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT
+certifies the exact Engagement firm-decision operation-permission pair,
+Partner/Attorney success, Paralegal and crossed-permission denial, and
+preservation of the existing conjunctive authorization contract.
+2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT
 updates canonical composition provenance for the dedicated operation while
 preserving all existing authorization bindings.
 2026-09-25 v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
@@ -122,7 +126,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT"
+VERSION = "v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1060,6 +1064,123 @@ def test_l8_8i_missing_revoked_and_crossed_conflict_review_bindings_fail_closed(
     (
         ("tenant_legal_partner", "LEGAL_PARTNER"),
         ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+    ),
+)
+def test_l9c7d_engagement_firm_decision_binding_is_exact_and_conjunctive(
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    """The Engagement binding preserves the generic IAM conjunction."""
+    operation = "legal_matter_engagement_firm_decision_write"
+    permission = "legal_operations:matter_engagement_firm_decision:write"
+    assert ta._BINDINGS[operation] == permission
+    assert list(ta._BINDINGS).count(operation) == 1
+
+    authorized = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+def test_l9c7d_engagement_firm_decision_binding_fails_closed() -> None:
+    """Crossed, incomplete, inactive, and unknown Engagement IAM denies."""
+    operation = "legal_matter_engagement_firm_decision_write"
+    permission = "legal_operations:matter_engagement_firm_decision:write"
+
+    for wrong_permission in (
+        "legal_operations:conflict_review:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:instruction:write",
+    ):
+        crossed = _decision(
+            permission_id=wrong_permission,
+            operation=operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments("LEGAL_PARTNER"),
+        )
+        assert crossed.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    missing_grant = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+    )
+    assert missing_grant.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked_grant = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(revoked_roles=("LEGAL_PARTNER",)),
+    )
+    assert revoked_grant.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    paralegal = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_paralegal"),
+        assignment_repository=_assignments("LEGAL_PARALEGAL", "LEGAL_PARTNER"),
+    )
+    assert paralegal.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    inactive_principal = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+        principal_repository=_principal(status=PrincipalStatus.SUSPENDED),
+    )
+    assert inactive_principal.reason is TenantAuthorizationReason.PRINCIPAL_INACTIVE
+
+    inactive_membership = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+        membership_repository=_membership(status=TenantMembershipStatus.SUSPENDED),
+    )
+    assert inactive_membership.reason is TenantAuthorizationReason.MEMBERSHIP_INACTIVE
+
+    cross_tenant = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+        tenant_id="other-tenant",
+    )
+    assert cross_tenant.reason is TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND
+
+    for unknown_operation in (
+        "legal_matter_engagement_write",
+        "legal_matter_engagement_decision_write",
+        "legal_matter_engagement_firm_decision_approve",
+        "legal_matter_write",
+        "engagement_manage",
+    ):
+        unknown = _decision(
+            permission_id=permission,
+            operation=unknown_operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments("LEGAL_PARTNER"),
+        )
+        assert unknown.reason is TenantAuthorizationReason.INVALID_INPUT
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
         ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
     ),
 )
@@ -1269,7 +1390,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.25.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING"
+    assert ta.VERSION == "v1.26.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1283,7 +1404,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.25.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING"
+    assert ta.VERSION == "v1.26.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2160,7 +2281,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
+# VERSION: v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny

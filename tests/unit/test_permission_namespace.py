@@ -662,7 +662,6 @@ def test_no_domain_profile_permissions():
 
     for path in (
         "tools/eos/auth/tenant_authority_policy.py",
-        "tools/eos/auth/tenant_authorization.py",
     ):
         assert permission not in Path(path).read_text(encoding="utf-8")
 
