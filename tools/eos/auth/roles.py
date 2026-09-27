@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS
+VERSION: v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -8,12 +8,19 @@ merchant-configuration/provider-policy administration plus least-privilege
 field-service outcome/return commands, sheriff-only process-service directory
 provisioning, sheriff-only office-receipt authority, and least-privilege
 law-firm client-matter visibility provisioning plus one least-privilege
-LEGAL_CLIENT projection-read grant without creating tenant-wide matter reads,
-deputy possession, service, or financial authority.
+LEGAL_CLIENT projection-read grant and exact Partner/Attorney Engagement
+firm-decision grant without creating tenant-wide matter reads, deputy
+possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-26.
+CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS grants the exact
+    legal_operations:matter_engagement_firm_decision:write permission to
+    LEGAL_PARTNER and LEGAL_ATTORNEY only. Static grants remain
+    non-possessory and do not establish operation eligibility, operation
+    binding, firm-decision issuance, Engagement formation, Representation,
+    Court, or financial authority.
     2026-09-27 v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS grants the
     dedicated legal_operations:matter_mandate_acknowledgment:write permission
     exactly to LEGAL_PARTNER and LEGAL_ATTORNEY. Static grants remain
@@ -139,7 +146,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS"
+VERSION = "v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -191,6 +198,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -205,6 +213,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -354,7 +363,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS
+# VERSION: v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

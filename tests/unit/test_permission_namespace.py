@@ -661,7 +661,6 @@ def test_no_domain_profile_permissions():
     assert permission_metadata(permission).authorizes_by_itself is False
 
     for path in (
-        "tools/eos/auth/roles.py",
         "tools/eos/auth/tenant_authority_policy.py",
         "tools/eos/auth/tenant_authorization.py",
     ):
