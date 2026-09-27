@@ -10,7 +10,7 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-26.
+CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
     2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM adds the exact
     own-tenant legal_operations:matter_engagement_firm_decision:write
