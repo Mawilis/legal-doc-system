@@ -1,13 +1,16 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
+VERSION: v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-25 v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
+CERTIFICATION/UPDATE DATE: 2026-09-27.
+CHANGELOG: 2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT
+updates canonical composition provenance for the dedicated operation while
+preserving all existing authorization bindings.
+2026-09-25 v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
 certifies legal_conflict_review_write ->
 legal_operations:conflict_review:write as an exact conjunctive authorization
 binding for tenant_legal_partner/LEGAL_PARTNER and
@@ -119,7 +122,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT"
+VERSION = "v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1266,7 +1269,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.24.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-BINDING"
+    assert ta.VERSION == "v1.25.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1280,7 +1283,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.24.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-BINDING"
+    assert ta.VERSION == "v1.25.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
+VERSION: v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -7,8 +7,11 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-23.
+CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT certifies
+    the dedicated own-tenant mandate-acknowledgment permission metadata and
+    updates canonical permission cardinality by one.
     2026-09-25 v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
     certifies legal_operations:conflict_review:write as one exact canonical
     TENANT permission for future server-authorized human conflict-review
@@ -96,12 +99,12 @@ import json
 
 import pytest
 
-VERSION = "v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT"
+VERSION = "v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM"
+    assert POLICY_VERSION == "v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -139,6 +142,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:client_matter:read",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -175,9 +179,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 64
+    ) == 65
 
-    assert len(rows) == 67
+    assert len(rows) == 68
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -302,6 +306,21 @@ def test_permission_canon_properties() -> None:
     assert conflict_review.financial_execution_capable is False
     assert conflict_review.authorizes_by_itself is False
     assert conflict_review.disposition is PermissionDisposition.CANONICAL
+
+    mandate_acknowledgment = permission_metadata(
+        "legal_operations:matter_mandate_acknowledgment:write"
+    )
+    assert mandate_acknowledgment.namespace == "TENANT"
+    assert mandate_acknowledgment.scope_kind == "TENANT"
+    assert mandate_acknowledgment.business_capability == (
+        "issue authorized own-tenant firm mandate acknowledgments"
+    )
+    assert mandate_acknowledgment.tenant_membership_required is True
+    assert mandate_acknowledgment.system_assignment_required is False
+    assert mandate_acknowledgment.cross_tenant_capable is False
+    assert mandate_acknowledgment.financial_execution_capable is False
+    assert mandate_acknowledgment.authorizes_by_itself is False
+    assert mandate_acknowledgment.disposition is PermissionDisposition.CANONICAL
 
     command_permissions = {
         "legal_operations:directory:write":

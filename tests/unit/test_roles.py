@@ -1,13 +1,16 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT
+VERSION: v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-23.
+CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS-CERT certifies
+    direct LEGAL_PARTNER and LEGAL_ATTORNEY grants and explicit exclusion of
+    every other role.
     2026-09-25 v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT
     certifies legal_operations:conflict_review:write is granted exactly once to
     LEGAL_PARTNER and LEGAL_ATTORNEY and to no other role. Static grant policy
@@ -96,9 +99,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS"
+    assert POLICY_VERSION == "v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS"
 
-VERSION = "v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT"
+VERSION = "v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -192,6 +195,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
@@ -221,6 +225,18 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
             assert grants.count(conflict_review_permission) == 1
         else:
             assert conflict_review_permission not in grants
+
+    acknowledgment_permission = (
+        "legal_operations:matter_mandate_acknowledgment:write"
+    )
+    assert get_roles_granting_permission(acknowledgment_permission) == (
+        "LEGAL_ATTORNEY", "LEGAL_PARTNER"
+    )
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in {"LEGAL_ATTORNEY", "LEGAL_PARTNER"}:
+            assert grants.count(acknowledgment_permission) == 1
+        else:
+            assert acknowledgment_permission not in grants
 
     visibility_permission = "legal_operations:client_visibility:write"
     assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]

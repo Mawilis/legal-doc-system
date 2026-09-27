@@ -1,12 +1,15 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
+VERSION: v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-23.
-CHANGELOG: 2026-09-25 v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
+CERTIFICATION/UPDATE DATE: 2026-09-27.
+CHANGELOG: 2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-ELIGIBILITY-CERT
+certifies partner/attorney-only business-role eligibility for the new
+operation and preserves paralegal denial.
+2026-09-25 v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
 rebinds the exact certificate to runtime v1.23.1 after the authority-loss
 composition repair; approved roles and all behavioral assertions are unchanged.
 2026-09-25 v1.19.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-CERT
@@ -72,7 +75,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.25.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-ELIGIBILITY"
+    assert VERSION == "v1.26.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -104,8 +107,8 @@ def test_matrix_boundaries() -> None:
 def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     """Each legal persona has bounded eligibility and no financial execution."""
     expected = {
-        "tenant_legal_partner": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_attorney": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_partner": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_attorney": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_paralegal": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
@@ -153,6 +156,20 @@ def test_conflict_review_write_eligibility_is_partner_attorney_only() -> None:
             tenant_role_operation_eligibility(role, malformed) == DENY
             for role in TENANT_ROLES
         )
+
+
+def test_mandate_acknowledgment_write_eligibility_is_partner_attorney_only() -> None:
+    operation = "legal_matter_mandate_acknowledgment_write"
+    approved = {"tenant_legal_partner", "tenant_legal_attorney"}
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == approved
+    assert permission_for_business_role_operation(operation) == (
+        "legal_operations:matter_mandate_acknowledgment:write"
+    )
 
 
 def test_client_matter_read_eligibility_is_legal_client_only() -> None:
