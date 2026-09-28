@@ -1,14 +1,15 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v6.0.3-L10-P2B-ACCOUNT-CENTER-ASYNC-RENDER-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves the canonical LegalDashboard preserves certified
  *          SHERIFF/DEPUTY/LEGAL_CLIENT behavior while adding role-resolved Legal
  *          Practice and Legal Finance workspaces backed only by certified
  *          workspace, finance, intake and ReturnOfService adapter contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-24 v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT aligns the LEGAL_CLIENT Open matters metric assertion with the shared chrome's semantic metric-label element; production role behavior is unchanged.
+ * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * CHANGELOG: 2026-09-28 v6.0.3-L10-P2B-ACCOUNT-CENTER-ASYNC-RENDER-CERT waits for the client shared-chrome DOM contract before asserting its attributes, preventing CI timing from observing the transient loading branch after the canonical adapter resolves. Production role behavior is unchanged.
+ *            2026-09-24 v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT aligns the LEGAL_CLIENT Open matters metric assertion with the shared chrome's semantic metric-label element; production role behavior is unchanged.
  *            2026-09-24 v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds preserved SHERIFF/DEPUTY/CLIENT
  *            regression behavior to v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION; no role semantics changed.
  *            2026-09-23 v6.0.0-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds the full cockpit regression suite
@@ -381,8 +382,10 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
     expect(getDeputyFieldCapabilities).not.toHaveBeenCalled();
 
+    await waitFor(() => {
+      expect(container.querySelector('[data-wilsy-os-dashboard-chrome="true"]')).not.toBeNull();
+    });
     const chrome = container.querySelector('[data-wilsy-os-dashboard-chrome="true"]');
-    expect(chrome).not.toBeNull();
     expect(chrome).toHaveAttribute('data-wilsy-dashboard-key', 'legal-client');
 
     expect(screen.getByText('Client Matter Workspace')).toBeInTheDocument();
