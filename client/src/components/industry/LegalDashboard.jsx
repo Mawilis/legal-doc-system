@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER
+ * VERSION: v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
+ * CHANGELOG: 2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
+ *            2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.1.0-L10-P2-TRUST-CENTER consolidates descriptive authority posture and practice profile into the shared Legal Chrome Trust Center drawer, preserving server-derived presentation and role boundaries while removing repeated full-width shell cards. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-25 v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT loads the certified tenant-scoped REVIEW_REQUIRED conflict-screening queue into the existing Legal Practice lifecycle and provides one bounded human Review Conflict interaction. The browser submits only screening_id, stable review_id, outcome and review_reason_reference through issueLegalConflictReview; canonical Python EOS remains responsible for authorization, chronology, evidence and immutable review truth. No clearance, waiver, representation, client acceptance, tenant, IAM, billing, payment, execution or settlement authority is created.
  *            2026-09-25 v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION binds Legal presentation only to the D21B8 authenticated tenant branding projection and D21B12 transient asset lifecycle. Practice, Finance and Client modes inherit the certified shared chrome; Sheriff/Deputy custom chrome may render only the server-derived current logo blob and always falls back to descriptive tenant initials. WILSY Legal OS remains the independent platform trust identity. No tenantConfig logo/path/browser branding, entitlement, IAM, legal-command, billing, payment, execution or settlement authority is created.
@@ -145,10 +146,11 @@ import {
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
+import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER';
+const DASHBOARD_VERSION = 'v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -2318,6 +2320,7 @@ function LegalPracticeWorkspace({
   const [selectedMatterId, setSelectedMatterId] = useState(null);
   const [returnDrafts, setReturnDrafts] = useState({});
   const [returnStatus, setReturnStatus] = useState({});
+  const [accountCenterOpen, setAccountCenterOpen] = useState(false);
 
   useEffect(() => {
     const onShortcut = (event) => {
@@ -2681,6 +2684,15 @@ function LegalPracticeWorkspace({
             : PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS,
         ),
       }}
+      account={{
+        isOpen: accountCenterOpen,
+        onOpen: () => setAccountCenterOpen(true),
+        onClose: () => setAccountCenterOpen(false),
+        onSignOut: onLogout,
+        user: user || {},
+        label: 'ACCOUNT',
+        CommandCenterComponent: WilsyAccountCommandCenter,
+      }}
       trustCenter={{
         label: 'Trust & Authority',
         content: !error ? (
@@ -2726,6 +2738,7 @@ function LegalFinanceWorkspace({
     displayName: financeIdentity.displayName,
     role: roleToken || 'LEGAL_FINANCE',
   };
+  const [accountCenterOpen, setAccountCenterOpen] = useState(false);
 
   return (
     <WilsyOSDashboardChrome
@@ -2741,6 +2754,15 @@ function LegalFinanceWorkspace({
         'Invoice ≠ payment execution',
         'Kennel EOS owns settlement',
       ]}
+      account={{
+        isOpen: accountCenterOpen,
+        onOpen: () => setAccountCenterOpen(true),
+        onClose: () => setAccountCenterOpen(false),
+        onSignOut: onLogout,
+        user: user || {},
+        label: 'ACCOUNT',
+        CommandCenterComponent: WilsyAccountCommandCenter,
+      }}
       trustCenter={{
         label: 'Trust & Authority',
         content: (
@@ -2949,7 +2971,11 @@ export default function LegalDashboard({
   roleView = 'LEGAL_VIEW',
   user = null,
 }) {
-  const { tenant: authenticatedTenant } = useAuth() || {};
+  const {
+    tenant: authenticatedTenant,
+    user: authenticatedUser,
+  } = useAuth() || {};
+  const currentUser = user || authenticatedUser || null;
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
@@ -3433,7 +3459,7 @@ export default function LegalDashboard({
         refreshing={refreshing}
         roleView={roleView}
         tenantConfig={tenantConfig}
-        user={user}
+        user={currentUser}
         workspace={practiceWorkspace}
         conflictScreenings={conflictScreenings}
       />
@@ -3446,7 +3472,7 @@ export default function LegalDashboard({
         onLogout={onLogout}
         roleView={roleView}
         tenantConfig={tenantConfig}
-        user={user}
+        user={currentUser}
       />
     );
   }
@@ -3462,7 +3488,7 @@ export default function LegalDashboard({
         onRefresh={() => loadOperationalTruth({ refresh: true })}
         refreshing={refreshing}
         tenantConfig={tenantConfig}
-        user={user}
+        user={currentUser}
       />
     );
   }
@@ -3568,7 +3594,7 @@ export default function LegalDashboard({
         {!error && isSheriffMode && (
           <LegalRoleActivityPosture
             roleToken={roleView}
-            user={user}
+            user={currentUser}
             authoritySource="Server operational queue projection"
             activities={['Office receipt queue', 'Deputy assignment queue', 'Active service attempts']}
             boundary="Sheriff presentation is queue-scoped and does not create Deputy identity, field-command capability, billing, payment or settlement authority."
@@ -3578,7 +3604,7 @@ export default function LegalDashboard({
         {!error && isDeputyMode && (
           <LegalRoleActivityPosture
             roleToken={roleView}
-            user={user}
+            user={currentUser}
             authoritySource="Server bound-work + capability projection"
             activities={deputyActivities}
             boundary="Deputy controls exist only for current server-issued next-command capabilities; browser state cannot create sequence lineage, service outcome or financial authority."

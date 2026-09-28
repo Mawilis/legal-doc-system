@@ -10,6 +10,7 @@ on:
       - "client/src/components/os/WilsyOSDashboardTopRail.jsx"
       - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
       - "client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx"
+      - "client/src/__tests__/components/legalDashboardAccountCenter.test.jsx"
       - "client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx"
       - "client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx"
       - "client/src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx"
@@ -72,6 +73,24 @@ jobs:
           fi
           if printf '%s\n' "$output" | grep -Eqi '[1-9][0-9]* skipped|skipped \([1-9]'; then
             echo "D21B13 Legal regression certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Run Legal Account Command Center wiring certificate
+        working-directory: client
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(npm run test:run -- src/__tests__/components/legalDashboardAccountCenter.test.jsx 2>&1)"
+          test_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$test_status" -ne 0 ]; then
+            exit "$test_status"
+          fi
+          printf '%s\n' "$output" | grep -Eq '2 passed'
+          if printf '%s\n' "$output" | grep -Eqi '[1-9][0-9]* skipped|skipped \([1-9]'; then
+            echo "L10-P2B Account Center certification invalid: skipped tests detected"
             exit 1
           fi
       - name: Build production client
