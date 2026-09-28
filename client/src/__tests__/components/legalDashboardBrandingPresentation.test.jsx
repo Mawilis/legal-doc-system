@@ -1,13 +1,14 @@
 /**
  * WILSY OS — D21B13 LEGAL AUTHENTICATED BRANDING PRESENTATION CERTIFICATE
- * VERSION: v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
+ * VERSION: v1.0.2-L10-P2B-ACCOUNT-CENTER-ISOLATION-CERT
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Proves Sheriff/Deputy custom Legal chrome consumes only the D21B8
  *          authenticated branding descriptor through D21B12, ignores forged
  *          tenantConfig branding paths, and falls back to tenant initials.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates Legal Practice fixture transport with the certified conflict-screening read projection; authenticated branding assertions and authority boundaries remain unchanged.
+ * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * CHANGELOG: 2026-09-28 v1.0.2-L10-P2B-ACCOUNT-CENTER-ISOLATION-CERT isolates the existing Account Command Center from this branding-only presentation certificate so its unrelated asynchronous forensic refresh cannot outlive jsdom teardown. Authenticated branding assertions and authority boundaries remain unchanged.
+ *            2026-09-25 v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates Legal Practice fixture transport with the certified conflict-screening read projection; authenticated branding assertions and authority boundaries remain unchanged.
  * TENANT BOUNDARY: Branding descriptor originates only from mocked AuthContext.
  * AUTHORITY BOUNDARY: Presentation evidence only; no IAM/legal/financial truth.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
@@ -69,6 +70,12 @@ vi.mock('../../contexts/tenantContext', () => ({
 
 vi.mock('../../hooks/useAuthenticatedTenantBrandingAsset.js', () => ({
   useAuthenticatedTenantBrandingAsset: mocks.brandingHook,
+}));
+
+// Account Center wiring is certified separately. Keep its asynchronous forensic
+// bridge outside this branding-only certificate so it cannot race jsdom teardown.
+vi.mock('../../components/account/WilsyAccountCommandCenter.jsx', () => ({
+  default: () => null,
 }));
 
 import LegalDashboard from '../../components/industry/LegalDashboard.jsx';
