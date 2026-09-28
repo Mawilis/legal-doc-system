@@ -79,7 +79,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.27.0-L9C7C-ENGAGEMENT-FIRM-DECISION-ELIGIBILITY"
+    assert VERSION == "v1.28.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -111,8 +111,8 @@ def test_matrix_boundaries() -> None:
 def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     """Each legal persona has bounded eligibility and no financial execution."""
     expected = {
-        "tenant_legal_partner": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_attorney": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_partner": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_attorney": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_paralegal": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
@@ -340,6 +340,16 @@ def test_operational_queue_read_eligibility_is_sheriff_only() -> None:
     assert tenant_role_operation_eligibility("tenant_owner", operation) == DENY
     assert tenant_role_operation_eligibility("tenant_admin", operation) == DENY
     assert tenant_role_operation_eligibility("tenant_legal_client", operation) == DENY
+
+
+def test_representation_firm_decision_write_eligibility_is_partner_attorney_only() -> None:
+    operation = "legal_matter_representation_firm_decision_write"
+    approved = {"tenant_legal_partner", "tenant_legal_attorney"}
+    assert operation in OPERATIONS
+    assert {role for role in TENANT_ROLES if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == approved
+    assert permission_for_business_role_operation(operation) == "legal_operations:matter_representation_firm_decision:write"
+    for role in TENANT_ROLES - approved:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
     assert requires_system_authority(
         operation
     ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED

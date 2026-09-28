@@ -102,7 +102,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS"
+    assert POLICY_VERSION == "v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS"
 
 VERSION = "v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS-CERT"
 
@@ -200,6 +200,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",

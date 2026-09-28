@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS
+VERSION: v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-28 v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS grants
+    legal_operations:matter_representation_firm_decision:write exactly to
+    LEGAL_PARTNER and LEGAL_ATTORNEY. Static grants remain non-possessory and
+    do not prove membership, assignment, currentness, Representation, Court or
+    financial authority.
     2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS grants the exact
     legal_operations:matter_engagement_firm_decision:write permission to
     LEGAL_PARTNER and LEGAL_ATTORNEY only. Static grants remain
@@ -146,7 +151,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS"
+VERSION = "v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -199,6 +204,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -214,6 +220,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:matter_acceptance_instrument_approval:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -363,7 +370,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS
+# VERSION: v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
