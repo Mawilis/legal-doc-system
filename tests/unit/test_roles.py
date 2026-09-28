@@ -102,7 +102,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS"
+    assert POLICY_VERSION == "v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS"
 
 VERSION = "v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS-CERT"
 
@@ -149,6 +149,9 @@ TENANT_PERMISSIONS = {
     "tenant:membership:write",
     "tenant:role_assignment:read",
     "tenant:role_assignment:write",
+    "tenant_branding:read",
+    "tenant_branding:profile:manage",
+    "tenant_branding:asset:manage",
     "subscription:read",
     "subscription:manage",
     "plan:read",
@@ -187,8 +190,8 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "wilsy_ai:reasoning:execute", "wilsy_ai:legal_services:execute"]
-    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "wilsy_ai:reasoning:execute", "wilsy_ai:legal_services:execute"]
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read", "tenant_branding:read"]
 
 
 def test_legal_role_grants_are_explicit_and_least_authority() -> None:

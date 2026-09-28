@@ -79,7 +79,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.28.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-ELIGIBILITY"
+    assert VERSION == "v1.29.0-L10-P2C4-D21B-BRANDING-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 

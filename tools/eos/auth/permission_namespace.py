@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM
+VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -12,6 +12,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-28 v1.31.0-L10-P2C4-D21B-BRANDING-IAM adds dedicated
+    tenant_branding read/profile/asset-management permission metadata. All
+    remain own-tenant, membership-gated, non-cross-tenant, non-financial and
+    non-self-authorizing.
     2026-09-28 v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM adds the
     exact own-tenant legal_operations:matter_representation_firm_decision:write
     permission vocabulary. It remains membership-gated, non-cross-tenant,
@@ -139,7 +143,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM"
+VERSION = "v1.31.0-L10-P2C4-D21B-BRANDING-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -329,6 +333,27 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "manage own-tenant subscription lifecycle truth",
+            tenant=True,
+        ),
+        "tenant_branding:read": _meta(
+            "tenant_branding:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant branding package/profile/status",
+            tenant=True,
+        ),
+        "tenant_branding:profile:manage": _meta(
+            "tenant_branding:profile:manage",
+            "TENANT",
+            "TENANT",
+            "manage governed own-tenant branding profile snapshots",
+            tenant=True,
+        ),
+        "tenant_branding:asset:manage": _meta(
+            "tenant_branding:asset:manage",
+            "TENANT",
+            "TENANT",
+            "manage governed own-tenant branding asset evidence",
             tenant=True,
         ),
         "plan:read": _meta(
@@ -707,7 +732,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM
+# VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

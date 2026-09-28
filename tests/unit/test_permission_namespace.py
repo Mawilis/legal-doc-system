@@ -108,7 +108,7 @@ VERSION = "v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT"
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM"
+    assert POLICY_VERSION == "v1.31.0-L10-P2C4-D21B-BRANDING-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -128,6 +128,9 @@ def test_permission_canon_properties() -> None:
         "tenant:role_assignment:write",
         "subscription:read",
         "subscription:manage",
+        "tenant_branding:read",
+        "tenant_branding:profile:manage",
+        "tenant_branding:asset:manage",
         "plan:read",
         "plan:manage",
         "wilsy_ai:usage_capacity:read",
@@ -185,9 +188,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 67
+    ) == 70
 
-    assert len(rows) == 70
+    assert len(rows) == 73
 
     for permission_id in tenant:
         metadata = permission_metadata(

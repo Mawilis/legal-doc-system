@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS
+VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
+    2026-09-28 v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS adds dedicated
+    tenant_branding read/profile/asset permissions to ENTERPRISE_ADMIN and
+    read-only status visibility to AUDITOR. No subscription:manage reuse or
+    financial authority is introduced.
     2026-09-28 v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS grants
     legal_operations:matter_representation_firm_decision:write exactly to
     LEGAL_PARTNER and LEGAL_ATTORNEY. Static grants remain non-possessory and
@@ -151,7 +155,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS"
+VERSION = "v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -181,6 +185,9 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "platform_billing:release",
         "tenant:business_role:read",
         "tenant:business_role:write",
+        "tenant_branding:read",
+        "tenant_branding:profile:manage",
+        "tenant_branding:asset:manage",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -195,6 +202,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
         "tenant:business_role:read",
+        "tenant_branding:read",
     ],
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
@@ -370,7 +378,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS
+# VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
