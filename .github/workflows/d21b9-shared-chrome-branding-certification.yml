@@ -46,7 +46,7 @@ jobs:
           if [ "$test_status" -ne 0 ]; then
             exit "$test_status"
           fi
-          printf '%s\n' "$output" | grep -Eq '4 passed'
+          printf '%s\n' "$output" | grep -Eq '6 passed'
           if printf '%s\n' "$output" | grep -Eqi '[1-9][0-9]* skipped|skipped \([1-9]'; then
             echo "D21B9 certification invalid: skipped tests detected"
             exit 1
