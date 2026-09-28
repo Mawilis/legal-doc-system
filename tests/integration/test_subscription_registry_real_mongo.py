@@ -468,7 +468,7 @@ def test_real_mongo_version_database_and_index_contract(
     """Prove actual Mongo, isolated database and deterministic indexes."""
     assert (
         REGISTRY_VERSION
-        == "v1.3.2-CANONICAL-PROOF-PROVENANCE"
+        == "v1.3.3-LIFECYCLE-PROOF-STATE"
     )
     assert (
         TEST_VERSION

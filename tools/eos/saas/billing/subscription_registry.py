@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.3.2-CANONICAL-PROOF-PROVENANCE
+    v1.3.3-LIFECYCLE-PROOF-STATE
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -28,6 +28,14 @@ CERTIFICATION / UPDATE DATE:
     2026-09-12
 
 CHANGELOG:
+    v1.3.3-LIFECYCLE-PROOF-STATE:
+        - Computes lifecycle proofs from the post-transition subscription
+          state and resets the merkle root from that proof before persistence.
+        - Prevents valid cancellation, pause, resume, reactivation and update
+          transitions from failing canonical integrity validation.
+        - Retains tenant scope, append-only audit provenance and all financial
+          authority boundaries.
+
     v1.3.2-CANONICAL-PROOF-PROVENANCE:
         - Persists the canonical proof action and metadata in every lifecycle
           AuditEntry so proof validation can replay registry provenance.
@@ -167,7 +175,7 @@ from ..domain.subscription import (
 )
 
 
-VERSION = "v1.3.2-CANONICAL-PROOF-PROVENANCE"
+VERSION = "v1.3.3-LIFECYCLE-PROOF-STATE"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -1099,7 +1107,6 @@ class SubscriptionRegistry:
             # commercial state. Never carry it into a new catalogue snapshot.
             values["proof_hash"] = ""
             values["merkle_root"] = ""
-
             candidate = (
                 SubscriptionEntity.from_dict(
                     values
@@ -1857,6 +1864,8 @@ class SubscriptionRegistry:
                     continue
                 values[key] = value
 
+            values["proof_hash"] = ""
+            values["merkle_root"] = ""
             candidate = (
                 SubscriptionEntity.from_dict(
                     values
@@ -1898,6 +1907,7 @@ class SubscriptionRegistry:
 
             final = candidate.to_dict()
             final["proof_hash"] = proof
+            final["merkle_root"] = ""
             final["audit_trail"] = [
                 *[
                     item.to_dict()
@@ -1982,11 +1992,23 @@ class SubscriptionRegistry:
                 pause_until
             )
 
-            proof = sub.generate_proof(
+            metadata = {"reason": pause_reason}
+
+            values = sub.to_dict()
+            values.update(
+                {
+                    "status": SubscriptionStatus.PAUSED.value,
+                    "paused_at": occurred_at.isoformat(),
+                    "pause_reason": pause_reason,
+                    "pause_until": until.isoformat() if until else None,
+                    "proof_hash": "",
+                    "merkle_root": "",
+                }
+            )
+            candidate = SubscriptionEntity.from_dict(values)
+            proof = candidate.generate_proof(
                 action="pause",
-                metadata={
-                    "reason": pause_reason
-                },
+                metadata=metadata,
             )
 
             audit = AuditEntry(
@@ -1999,36 +2021,17 @@ class SubscriptionRegistry:
                     SubscriptionStatus.PAUSED,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
-                metadata={"reason": pause_reason},
+                metadata=metadata,
                 proof_hash=proof,
             )
 
-            values = sub.to_dict()
-            values.update(
-                {
-                    "status":
-                        SubscriptionStatus.PAUSED.value,
-                    "paused_at":
-                        occurred_at.isoformat(),
-                    "pause_reason":
-                        pause_reason,
-                    "pause_until":
-                        (
-                            until.isoformat()
-                            if until
-                            else None
-                        ),
-                    "proof_hash": proof,
-                    "audit_trail": [
-                        *[
-                            item.to_dict()
-                            for item in
-                            sub.audit_trail
-                        ],
-                        audit.to_dict(),
-                    ],
-                }
-            )
+            values = candidate.to_dict()
+            values["proof_hash"] = proof
+            values["merkle_root"] = ""
+            values["audit_trail"] = [
+                *[item.to_dict() for item in sub.audit_trail],
+                audit.to_dict(),
+            ]
 
             return (
                 SubscriptionEntity.from_dict(
@@ -2072,9 +2075,23 @@ class SubscriptionRegistry:
                 timezone.utc
             )
 
-            proof = sub.generate_proof(
+            proof_metadata = metadata or {}
+
+            values = sub.to_dict()
+            values.update(
+                {
+                    "status": SubscriptionStatus.ACTIVE.value,
+                    "resumed_at": occurred_at.isoformat(),
+                    "pause_reason": None,
+                    "pause_until": None,
+                    "proof_hash": "",
+                    "merkle_root": "",
+                }
+            )
+            candidate = SubscriptionEntity.from_dict(values)
+            proof = candidate.generate_proof(
                 action="resume",
-                metadata=metadata or {},
+                metadata=proof_metadata,
             )
 
             audit = AuditEntry(
@@ -2087,30 +2104,17 @@ class SubscriptionRegistry:
                     SubscriptionStatus.ACTIVE,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
-                metadata=metadata or {},
+                metadata=proof_metadata,
                 proof_hash=proof,
             )
 
-            values = sub.to_dict()
-            values.update(
-                {
-                    "status":
-                        SubscriptionStatus.ACTIVE.value,
-                    "resumed_at":
-                        occurred_at.isoformat(),
-                    "pause_reason": None,
-                    "pause_until": None,
-                    "proof_hash": proof,
-                    "audit_trail": [
-                        *[
-                            item.to_dict()
-                            for item in
-                            sub.audit_trail
-                        ],
-                        audit.to_dict(),
-                    ],
-                }
-            )
+            values = candidate.to_dict()
+            values["proof_hash"] = proof
+            values["merkle_root"] = ""
+            values["audit_trail"] = [
+                *[item.to_dict() for item in sub.audit_trail],
+                audit.to_dict(),
+            ]
 
             return (
                 SubscriptionEntity.from_dict(
@@ -2165,14 +2169,26 @@ class SubscriptionRegistry:
                 else None
             )
 
-            proof = sub.generate_proof(
+            metadata = {
+                "reason": cancel_reason,
+                "at_period_end": cancel_at_period_end,
+            }
+
+            values = sub.to_dict()
+            values.update(
+                {
+                    "status": SubscriptionStatus.CANCELLED.value,
+                    "cancelled_at": occurred_at.isoformat(),
+                    "cancel_reason": cancel_reason,
+                    "cancel_at": cancel_at.isoformat() if cancel_at else None,
+                    "proof_hash": "",
+                    "merkle_root": "",
+                }
+            )
+            candidate = SubscriptionEntity.from_dict(values)
+            proof = candidate.generate_proof(
                 action="cancel",
-                metadata={
-                    "reason":
-                        cancel_reason,
-                    "at_period_end":
-                        cancel_at_period_end,
-                },
+                metadata=metadata,
             )
 
             audit = AuditEntry(
@@ -2185,39 +2201,17 @@ class SubscriptionRegistry:
                     SubscriptionStatus.CANCELLED,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
-                metadata={
-                    "reason": cancel_reason,
-                    "at_period_end": cancel_at_period_end,
-                },
+                metadata=metadata,
                 proof_hash=proof,
             )
 
-            values = sub.to_dict()
-            values.update(
-                {
-                    "status":
-                        SubscriptionStatus.CANCELLED.value,
-                    "cancelled_at":
-                        occurred_at.isoformat(),
-                    "cancel_reason":
-                        cancel_reason,
-                    "cancel_at":
-                        (
-                            cancel_at.isoformat()
-                            if cancel_at
-                            else None
-                        ),
-                    "proof_hash": proof,
-                    "audit_trail": [
-                        *[
-                            item.to_dict()
-                            for item in
-                            sub.audit_trail
-                        ],
-                        audit.to_dict(),
-                    ],
-                }
-            )
+            values = candidate.to_dict()
+            values["proof_hash"] = proof
+            values["merkle_root"] = ""
+            values["audit_trail"] = [
+                *[item.to_dict() for item in sub.audit_trail],
+                audit.to_dict(),
+            ]
 
             return (
                 SubscriptionEntity.from_dict(
@@ -2288,9 +2282,23 @@ class SubscriptionRegistry:
                 timezone.utc
             )
 
-            proof = sub.generate_proof(
+            proof_metadata = metadata or {}
+
+            values = sub.to_dict()
+            values.update(
+                {
+                    "status": SubscriptionStatus.ACTIVE.value,
+                    "reactivated_at": occurred_at.isoformat(),
+                    "cancel_reason": None,
+                    "cancel_at": None,
+                    "proof_hash": "",
+                    "merkle_root": "",
+                }
+            )
+            candidate = SubscriptionEntity.from_dict(values)
+            proof = candidate.generate_proof(
                 action="reactivate",
-                metadata=metadata or {},
+                metadata=proof_metadata,
             )
 
             audit = AuditEntry(
@@ -2304,30 +2312,17 @@ class SubscriptionRegistry:
                     SubscriptionStatus.ACTIVE,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
-                metadata=metadata or {},
+                metadata=proof_metadata,
                 proof_hash=proof,
             )
 
-            values = sub.to_dict()
-            values.update(
-                {
-                    "status":
-                        SubscriptionStatus.ACTIVE.value,
-                    "reactivated_at":
-                        occurred_at.isoformat(),
-                    "cancel_reason": None,
-                    "cancel_at": None,
-                    "proof_hash": proof,
-                    "audit_trail": [
-                        *[
-                            item.to_dict()
-                            for item in
-                            sub.audit_trail
-                        ],
-                        audit.to_dict(),
-                    ],
-                }
-            )
+            values = candidate.to_dict()
+            values["proof_hash"] = proof
+            values["merkle_root"] = ""
+            values["audit_trail"] = [
+                *[item.to_dict() for item in sub.audit_trail],
+                audit.to_dict(),
+            ]
 
             return (
                 SubscriptionEntity.from_dict(
@@ -2762,7 +2757,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.3.2-CANONICAL-PROOF-PROVENANCE
+# VERSION: v1.3.3-LIFECYCLE-PROOF-STATE
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,

@@ -1279,7 +1279,7 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.3.2-CANONICAL-PROOF-PROVENANCE"
+        == "v1.3.3-LIFECYCLE-PROOF-STATE"
     )
     assert (
         VERSION
