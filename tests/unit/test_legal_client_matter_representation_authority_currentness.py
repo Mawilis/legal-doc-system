@@ -1,7 +1,7 @@
 """Direct certificate for L9C11-P21A client-authority currentness.
 
 TITLE: WILSY OS Legal Client Representation Authority Currentness Certificate
-VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-CERT
+VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-CERT
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Certify the pure representative-specific P1-history projection for
          explicit time, strict hydration, duplicate normalization, ambiguity,
@@ -59,6 +59,7 @@ def authority(
     effective_until: datetime | None = None,
     tenant_id: str = TENANT,
     representative_principal_id: str = "principal-l9c11-p21a",
+    representative_role: str = "LEGAL_PRACTITIONER",
     representation_scope_capabilities: tuple[str, ...] = ("ADVISORY",),
 ) -> LegalClientMatterRepresentationAuthority:
     """Build one valid immutable P1 snapshot without persistence or IAM."""
@@ -81,7 +82,7 @@ def authority(
         acting_capacity_id="capacity-l9c11-p21a",
         acting_capacity_fingerprint="f" * 128,
         representative_principal_id=representative_principal_id,
-        representative_role="LEGAL_PRACTITIONER",
+        representative_role=representative_role,
         representation_scope_capabilities=representation_scope_capabilities,
         decision=decision,
         appointing_principal_id="principal-client-l9c11-p21a",
@@ -119,12 +120,14 @@ def project(
 
 def test_version_schema_states_immutability_and_positive_predicate() -> None:
     result = project(())
-    assert VERSION == "v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS"
-    assert SCHEMA == "WILSY-LEGAL-CLIENT-MATTER-REPRESENTATION-AUTHORITY-CURRENTNESS/V1"
+    assert VERSION == "v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS"
+    assert SCHEMA == "WILSY-LEGAL-CLIENT-MATTER-REPRESENTATION-AUTHORITY-CURRENTNESS/V2"
     assert [state.value for state in LegalClientMatterRepresentationAuthorityCurrentnessState] == [
         "NO_AUTHORITY", "APPOINTED", "DECLINED", "REQUIRES_REVIEW", "AMBIGUOUS", "CORRUPT_BLOCKED"
     ]
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.NO_AUTHORITY
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
     assert result.is_currently_appointed is False
     assert result.is_usable is False
     with pytest.raises(FrozenInstanceError):
@@ -152,6 +155,12 @@ def test_single_state_and_only_appointed_is_positive(state: str) -> None:
     assert str(getattr(result.state, "value", result.state)) == state
     assert result.is_currently_appointed is (state == "APPOINTED")
     assert result.is_usable is (state == "APPOINTED")
+    if state == "APPOINTED":
+        assert result.representative_role == "LEGAL_PRACTITIONER"
+        assert result.representation_scope_capabilities == ("ADVISORY",)
+    else:
+        assert result.representative_role is None
+        assert result.representation_scope_capabilities == ()
 
 
 @pytest.mark.parametrize("state", ["APPOINTED", "DECLINED", "REQUIRES_REVIEW"])
@@ -160,6 +169,8 @@ def test_future_rows_are_excluded_without_clock_reads(state: str) -> None:
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.NO_AUTHORITY
     assert result.candidate_authority_ids == ()
     assert result.normalized_authority_count == 1
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 @pytest.mark.parametrize("state", ["APPOINTED", "DECLINED", "REQUIRES_REVIEW"])
@@ -182,6 +193,8 @@ def test_distinct_eligible_rows_are_ambiguous_without_latest_wins(left: str, rig
     assert result.is_currently_appointed is False
     assert result.decisive_authority_id is None
     assert result.eligible_authority_count == 2
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_later_effective_row_does_not_supersede_earlier() -> None:
@@ -206,6 +219,18 @@ def test_scope_and_identity_fingerprint_differences_are_distinct() -> None:
     assert len(set(result.candidate_authority_fingerprints)) == 2
 
 
+def test_positive_projection_binds_role_scope_and_fingerprint_changes() -> None:
+    baseline = project((authority(),))
+    changed_role = project((authority(representative_role="LEGAL_ATTORNEY"),))
+    changed_scope = project((authority(representation_scope_capabilities=("NEGOTIATION", "ADVISORY")),))
+    assert baseline.representative_role == "LEGAL_PRACTITIONER"
+    assert baseline.representation_scope_capabilities == ("ADVISORY",)
+    assert changed_role.representative_role == "LEGAL_ATTORNEY"
+    assert changed_scope.representation_scope_capabilities == ("ADVISORY", "NEGOTIATION")
+    assert changed_role.fingerprint != baseline.fingerprint
+    assert changed_scope.fingerprint != baseline.fingerprint
+
+
 def test_representative_dimension_is_exact_p7_lineage() -> None:
     wrong_representative = authority(
         authority_id="authority-other-representative",
@@ -223,11 +248,15 @@ def test_mixed_valid_and_corrupt_fails_closed() -> None:
     result = project((valid, corrupt))
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
     assert result.is_currently_appointed is False
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_cross_tenant_row_is_corruption_not_absence() -> None:
     result = project((authority(tenant_id="tenant-other"),))
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_explicit_effective_until_is_not_invented_expiry() -> None:
@@ -252,6 +281,8 @@ def test_projection_is_order_independent_and_fingerprint_deterministic() -> None
 
 def test_serialization_hydration_and_strict_schema() -> None:
     result = project((authority(),))
+    assert result.to_dict()["representative_role"] == "LEGAL_PRACTITIONER"
+    assert result.to_dict()["representation_scope_capabilities"] == ["ADVISORY"]
     assert LegalClientMatterRepresentationAuthorityCurrentness.from_dict(result.to_dict()) == result
     invalid = result.to_dict()
     invalid["unexpected"] = True
@@ -270,6 +301,8 @@ def test_corrupt_type_and_strict_hydration_fail_closed() -> None:
     object.__setattr__(malformed, "decision", "NOT_A_DECISION")
     blocked = project((malformed,))
     assert blocked.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
+    assert blocked.representative_role is None
+    assert blocked.representation_scope_capabilities == ()
 
 
 def test_no_lifecycle_or_downstream_authority_is_created() -> None:
@@ -285,7 +318,7 @@ def test_no_lifecycle_or_downstream_authority_is_created() -> None:
 
 
 # ARTIFACT: test_legal_client_matter_representation_authority_currentness.py
-# VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-CERT
+# VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-CERT
 # AUTHORITY BOUNDARY: direct pure-domain P21A certificate only
 # TENANT POSTURE: exact representative-specific lineage
 # FAIL-CLOSED POSTURE: corruption and multiplicity never become appointed

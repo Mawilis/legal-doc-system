@@ -1,7 +1,7 @@
 """Direct certificate for the L9C11-P21A currentness composer.
 
 TITLE: WILSY OS Legal Client Representation Authority Currentness Composer Certificate
-VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER-CERT
+VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER-CERT
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Certify one exact P7 history read, caller-session propagation,
          explicit evaluation-time propagation and unchanged pure P21A
@@ -152,8 +152,10 @@ def test_contract_one_read_exact_lineage_and_same_session(monkeypatch: pytest.Mo
     composer, calls = build_composer(monkeypatch, (authority(),))
     session = RecordingSession()
     result = compose(composer, session)
-    assert VERSION == "v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER"
+    assert VERSION == "v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER"
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.APPOINTED
+    assert result.representative_role == "LEGAL_PRACTITIONER"
+    assert result.representation_scope_capabilities == ("ADVISORY",)
     assert len(calls) == 1
     args, kwargs = calls[0]
     assert args[:6] == (TENANT, MATTER, MATTER_FP, PARTY, SUBJECT, REPRESENTATIVE)
@@ -177,8 +179,15 @@ def test_active_transaction_required_before_read(monkeypatch: pytest.MonkeyPatch
 def test_empty_and_state_passthrough(monkeypatch: pytest.MonkeyPatch, state: str, expected: str) -> None:
     empty, _ = build_composer(monkeypatch, ())
     assert compose(empty, RecordingSession()).state is LegalClientMatterRepresentationAuthorityCurrentnessState.NO_AUTHORITY
+    empty_result = compose(empty, RecordingSession())
+    assert empty_result.representative_role is None
+    assert empty_result.representation_scope_capabilities == ()
     value, _ = build_composer(monkeypatch, (authority(decision=state),))
-    assert compose(value, RecordingSession()).state is getattr(LegalClientMatterRepresentationAuthorityCurrentnessState, expected)
+    result = compose(value, RecordingSession())
+    assert result.state is getattr(LegalClientMatterRepresentationAuthorityCurrentnessState, expected)
+    if state != "APPOINTED":
+        assert result.representative_role is None
+        assert result.representation_scope_capabilities == ()
 
 
 def test_explicit_evaluation_time_and_future_semantics_are_owned_by_domain(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -197,14 +206,22 @@ def test_explicit_evaluation_time_and_future_semantics_are_owned_by_domain(monke
     )
     assert result == direct
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.NO_AUTHORITY
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_ambiguous_and_corrupt_passthrough(monkeypatch: pytest.MonkeyPatch) -> None:
     ambiguous, _ = build_composer(monkeypatch, (authority(), authority(authority_id="authority-conflict", decision="DECLINED")))
-    assert compose(ambiguous, RecordingSession()).state is LegalClientMatterRepresentationAuthorityCurrentnessState.AMBIGUOUS
+    ambiguous_result = compose(ambiguous, RecordingSession())
+    assert ambiguous_result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.AMBIGUOUS
+    assert ambiguous_result.representative_role is None
+    assert ambiguous_result.representation_scope_capabilities == ()
     invalid = cast(Any, object())
     corrupt, _ = build_composer(monkeypatch, (invalid,))
-    assert compose(corrupt, RecordingSession()).state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
+    corrupt_result = compose(corrupt, RecordingSession())
+    assert corrupt_result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
+    assert corrupt_result.representative_role is None
+    assert corrupt_result.representation_scope_capabilities == ()
 
 
 def test_registry_failure_is_bounded_and_no_write_or_transaction_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -253,7 +270,7 @@ def test_registry_contract_is_exactly_the_p7_representative_specific_api() -> No
 
 
 # ARTIFACT: test_legal_client_matter_representation_authority_currentness_composer.py
-# VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER-CERT
+# VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER-CERT
 # AUTHORITY BOUNDARY: one bounded P7 history read plus pure P21A delegation
 # TENANT POSTURE: exact representative-specific lineage propagation
 # FAIL-CLOSED POSTURE: inactive transaction and registry failures reject

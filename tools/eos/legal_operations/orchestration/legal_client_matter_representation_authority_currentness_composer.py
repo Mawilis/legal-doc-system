@@ -1,7 +1,7 @@
 """Read-only composition of client Representation-authority currentness.
 
 TITLE: WILSY OS Legal Client Matter Representation Authority Currentness Composer
-VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER
+VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Perform exactly one exact representative-specific P7 history read in
          a caller-owned transaction and delegate every currentness rule to
@@ -13,7 +13,9 @@ COLLABORATION / OWNERSHIP: P1 owns immutable authority values; P7 owns
                             corruption and ambiguity semantics. This adapter
                             owns only validation, one read and delegation.
 CERTIFICATION / UPDATE DATE: 2026-09-28
-CHANGELOG: v1.0.0-L9C11-P21A establishes explicit evaluated-time propagation,
+CHANGELOG: v1.1.0-L9C11-P21A propagates canonical P1 role and scope through
+           the unchanged one-read delegation seam.
+           v1.0.0-L9C11-P21A establishes explicit evaluated-time propagation,
            exact six-field P7 lineage, active caller-session enforcement,
            one-read composition and fail-closed registry/projection mapping.
            It performs no writes, transaction lifecycle, IAM, firm decision,
@@ -51,7 +53,7 @@ from tools.eos.legal_operations.registry import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER"
+VERSION: Final[str] = "v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER"
 UTC = timezone.utc
 
 
@@ -203,7 +205,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_client_matter_representation_authority_currentness_composer.py
-# VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER
+# VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-COMPOSER
 # AUTHORITY BOUNDARY: one bounded P7 history read plus pure P21A delegation
 # TENANT POSTURE: exact tenant/matter/fingerprint/client/subject/representative propagation
 # FAIL-CLOSED POSTURE: active transaction and registry/projection failures reject

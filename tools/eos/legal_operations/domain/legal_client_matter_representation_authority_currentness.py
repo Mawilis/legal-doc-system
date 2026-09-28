@@ -1,7 +1,7 @@
 """Pure currentness projection for client Representation-authority history.
 
 TITLE: WILSY OS Legal Client Matter Representation Authority Currentness
-VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS
+VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Derive one deterministic, immutable currentness snapshot for the
          exact representative-specific P7 history lineage at an explicit UTC
@@ -13,7 +13,10 @@ COLLABORATION / OWNERSHIP: P1 owns immutable client appointment decisions;
                             module owns only pure currentness mathematics.
                             A later composer owns the read/transaction seam.
 CERTIFICATION / UPDATE DATE: 2026-09-28
-CHANGELOG: v1.0.0-L9C11-P21A establishes explicit
+CHANGELOG: v1.1.0-L9C11-P21A binds the exact positive P1 representative role
+           and representation scope while preserving all prior states,
+           fail-closed semantics and read-only behavior.
+           v1.0.0-L9C11-P21A establishes explicit
            NO_AUTHORITY/APPOINTED/DECLINED/REQUIRES_REVIEW/AMBIGUOUS/
            CORRUPT_BLOCKED states, exact P7 lineage, explicit aware-UTC
            evaluation, future exclusion, exact-duplicate normalization,
@@ -57,8 +60,8 @@ from tools.eos.legal_operations.domain.legal_client_matter_representation_author
 )
 
 
-VERSION: Final[str] = "v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS"
-SCHEMA: Final[str] = "WILSY-LEGAL-CLIENT-MATTER-REPRESENTATION-AUTHORITY-CURRENTNESS/V1"
+VERSION: Final[str] = "v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS"
+SCHEMA: Final[str] = "WILSY-LEGAL-CLIENT-MATTER-REPRESENTATION-AUTHORITY-CURRENTNESS/V2"
 UTC = timezone.utc
 _IDENTITY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
 _HEX: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -75,6 +78,8 @@ _FIELDS: Final[tuple[str, ...]] = (
     "client_party_id",
     "subject_identity_fingerprint",
     "representative_principal_id",
+    "representative_role",
+    "representation_scope_capabilities",
     "evaluated_at",
     "decisive_effective_from",
     "decisive_authority_id",
@@ -273,6 +278,8 @@ class LegalClientMatterRepresentationAuthorityCurrentness:
     client_party_id: str
     subject_identity_fingerprint: str
     representative_principal_id: str
+    representative_role: str | None
+    representation_scope_capabilities: tuple[str, ...] | list[str]
     evaluated_at: datetime
     decisive_effective_from: datetime | None
     decisive_authority_id: str | None
@@ -300,6 +307,17 @@ class LegalClientMatterRepresentationAuthorityCurrentness:
         party = _identity("client_party_id", self.client_party_id)
         subject = _fingerprint("subject_identity_fingerprint", self.subject_identity_fingerprint)
         representative = _identity("representative_principal_id", self.representative_principal_id)
+        role = None if self.representative_role is None else _identity("representative_role", self.representative_role)
+        scope_value = self.representation_scope_capabilities
+        if not isinstance(scope_value, (tuple, list, set, frozenset)):
+            _fail("L9C11_P21A_SCOPE_INVALID")
+        normalized_scope: set[str] = set()
+        for item in scope_value:
+            label = item.value if isinstance(item, StrEnum) else item
+            if not isinstance(label, str) or not label or label != label.strip():
+                _fail("L9C11_P21A_SCOPE_INVALID")
+            normalized_scope.add(label)
+        scope = tuple(sorted(normalized_scope))
         evaluated_at = _timestamp("evaluated_at", self.evaluated_at)
         decisive_time = None if self.decisive_effective_from is None else _timestamp(
             "decisive_effective_from", self.decisive_effective_from
@@ -326,6 +344,11 @@ class LegalClientMatterRepresentationAuthorityCurrentness:
         normalized_count, eligible_count = counts
         if eligible_count > normalized_count or len(candidate_ids) != len(candidate_fps) or len(candidate_ids) != len(candidate_decisions):
             _fail("L9C11_P21A_CANDIDATE_EVIDENCE_INVALID")
+        positive = state is LegalClientMatterRepresentationAuthorityCurrentnessState.APPOINTED
+        if not positive and (role is not None or scope):
+            _fail("L9C11_P21A_NON_POSITIVE_BINDING_FORBIDDEN")
+        if positive and (role is None or not scope):
+            _fail("L9C11_P21A_POSITIVE_BINDING_REQUIRED")
         if state is LegalClientMatterRepresentationAuthorityCurrentnessState.NO_AUTHORITY:
             if candidate_ids or candidate_fps or candidate_decisions or decisive_time is not None or decisive_id is not None or decisive_fp is not None or corruption or eligible_count != 0:
                 _fail("L9C11_P21A_NO_AUTHORITY_EVIDENCE_FORBIDDEN")
@@ -360,6 +383,8 @@ class LegalClientMatterRepresentationAuthorityCurrentness:
             ("client_party_id", party),
             ("subject_identity_fingerprint", subject),
             ("representative_principal_id", representative),
+            ("representative_role", role),
+            ("representation_scope_capabilities", scope),
             ("evaluated_at", evaluated_at),
             ("decisive_effective_from", decisive_time),
             ("decisive_authority_id", decisive_id),
@@ -423,6 +448,7 @@ def _result(
     corruption: tuple[str, ...] = (),
 ) -> LegalClientMatterRepresentationAuthorityCurrentness:
     ordered = tuple(sorted(eligible, key=lambda value: (value.effective_from, value.fingerprint, value.authority_id)))
+    selected = decisive if state is LegalClientMatterRepresentationAuthorityCurrentnessState.APPOINTED else None
     return LegalClientMatterRepresentationAuthorityCurrentness(
         currentness_id=_projection_id(tenant, matter, matter_fingerprint, party, subject, representative, evaluated_at),
         tenant_id=tenant,
@@ -431,6 +457,10 @@ def _result(
         client_party_id=party,
         subject_identity_fingerprint=subject,
         representative_principal_id=representative,
+        representative_role=None if selected is None else selected.representative_role,
+        representation_scope_capabilities=()
+        if selected is None
+        else selected.representation_scope_capabilities,
         evaluated_at=evaluated_at,
         decisive_effective_from=None if decisive is None else decisive.effective_from,
         decisive_authority_id=None if decisive is None else decisive.authority_id,
@@ -625,7 +655,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_client_matter_representation_authority_currentness.py
-# VERSION: v1.0.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS
+# VERSION: v1.1.0-L9C11-P21A-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS
 # AUTHORITY BOUNDARY: pure immutable P1 currentness projection only
 # TENANT POSTURE: exact P7 tenant/matter/fingerprint/client/subject/representative lineage
 # FAIL-CLOSED POSTURE: malformed, cross-lineage and multiplicity evidence cannot become appointed

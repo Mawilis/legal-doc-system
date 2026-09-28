@@ -1,7 +1,7 @@
 """Real-Mongo certificate for L9C11-P21A currentness composition.
 
 TITLE: WILSY OS Legal Client Representation Authority Currentness Real-Mongo Certificate
-VERSION: v1.0.0-L9C11-P21AR-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-REAL-MONGO-CERT
+VERSION: v1.1.0-L9C11-P21AR-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Certify the published P21A pure projection and composer against one
          writable UUID-isolated Mongo replica set without touching canonical
@@ -14,7 +14,9 @@ COLLABORATION / OWNERSHIP: P1 owns immutable authority values; P7 owns
                             currentness and one-read composition. This file
                             owns disposable runtime evidence only.
 CERTIFICATION / UPDATE DATE: 2026-09-28
-CHANGELOG: v1.0.0-L9C11-P21AR certifies sanctioned topology, disposable
+CHANGELOG: v1.1.0-L9C11-P21AR certifies exact positive P1 role and scope
+           propagation while preserving the prior runtime boundary.
+           v1.0.0-L9C11-P21AR certifies sanctioned topology, disposable
            database isolation, caller-owned transaction/session propagation,
            exact representative-specific lineage, all six P21A states,
            duplicate normalization, ambiguity, future exclusion, strict
@@ -203,6 +205,8 @@ def _authority(
     client_party_id: str = PARTY,
     subject_identity_fingerprint: str = SUBJECT_FP,
     representative_principal_id: str = REPRESENTATIVE_A,
+    representative_role: str = "LEGAL_PRACTITIONER",
+    representation_scope_capabilities: tuple[str, ...] = ("ADVISORY",),
 ) -> LegalClientMatterRepresentationAuthority:
     """Construct one valid immutable P1 value through its public domain API."""
     return LegalClientMatterRepresentationAuthority(
@@ -223,8 +227,8 @@ def _authority(
         acting_capacity_id="capacity-l9c11-p21ar",
         acting_capacity_fingerprint="2" * 128,
         representative_principal_id=representative_principal_id,
-        representative_role="LEGAL_PRACTITIONER",
-        representation_scope_capabilities=("ADVISORY",),
+        representative_role=representative_role,
+        representation_scope_capabilities=representation_scope_capabilities,
         decision=decision,
         appointing_principal_id="principal-client-l9c11-p21ar",
         source_evidence_reference=f"source:{authority_id}",
@@ -352,6 +356,8 @@ def test_real_one_history_read_exact_lineage_and_zero_writes(mongo_context: Mong
         session.start_transaction()
         result = _compose(mongo_context, session=session, target_collection=counted)
         assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.APPOINTED
+        assert result.representative_role == value.representative_role
+        assert result.representation_scope_capabilities == value.representation_scope_capabilities
         assert len(counted.find_calls) == 1
         query, kwargs = counted.find_calls[0]
         assert query == {
@@ -385,6 +391,12 @@ def test_real_single_decision_states(
     result = _compose(mongo_context)
     assert result.state.value == expected
     assert result.is_currently_appointed is positive
+    if positive:
+        assert result.representative_role == "LEGAL_PRACTITIONER"
+        assert result.representation_scope_capabilities == ("ADVISORY",)
+    else:
+        assert result.representative_role is None
+        assert result.representation_scope_capabilities == ()
 
 
 def test_real_empty_history_and_future_appointment_are_no_authority(mongo_context: MongoContext) -> None:
@@ -395,6 +407,8 @@ def test_real_empty_history_and_future_appointment_are_no_authority(mongo_contex
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.NO_AUTHORITY
     assert result.normalized_authority_count == 1
     assert result.eligible_authority_count == 0
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_real_exact_replay_is_one_row_and_normalized(mongo_context: MongoContext) -> None:
@@ -417,6 +431,8 @@ def test_real_distinct_appointed_rows_are_ambiguous_without_latest_wins(mongo_co
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.AMBIGUOUS
     assert result.decisive_authority_id is None
     assert result.candidate_authority_ids == ("authority-early", "authority-late")
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 @pytest.mark.parametrize("second_decision", ["DECLINED", "REQUIRES_REVIEW"])
@@ -430,13 +446,18 @@ def test_real_mixed_decisions_are_ambiguous(
     result = _compose(mongo_context)
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.AMBIGUOUS
     assert result.is_currently_appointed is False
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_real_same_effective_distinct_rows_are_ambiguous(mongo_context: MongoContext) -> None:
     """Same-effective distinct immutable rows remain ambiguous."""
     _persist(mongo_context, _authority(authority_id="authority-same-a"))
     _persist(mongo_context, _authority(authority_id="authority-same-b"))
-    assert _compose(mongo_context).state is LegalClientMatterRepresentationAuthorityCurrentnessState.AMBIGUOUS
+    result = _compose(mongo_context)
+    assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.AMBIGUOUS
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 def test_real_representative_specific_isolation(mongo_context: MongoContext) -> None:
@@ -479,6 +500,8 @@ def test_real_duplicate_identity_corruption_returns_corrupt_blocked(mongo_contex
     result = _compose(mongo_context, target_collection=counted)
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
     assert result.is_currently_appointed is False
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
     assert mongo_context.collection.count_documents({}) == 2
     assert counted.write_calls == 0
     _assert_p7_unique_indexes_preserved(mongo_context)
@@ -499,6 +522,8 @@ def test_real_mixed_valid_and_corrupt_identity_fails_closed(mongo_context: Mongo
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
     assert mongo_context.collection.count_documents({}) == 2
     assert counted.write_calls == 0
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
     _assert_p7_unique_indexes_preserved(mongo_context)
 
 
@@ -590,10 +615,12 @@ def test_real_p21a_domain_corruption_projection_is_fail_closed() -> None:
         authorities=(malformed,),  # type: ignore[arg-type]
     )
     assert result.state is LegalClientMatterRepresentationAuthorityCurrentnessState.CORRUPT_BLOCKED
+    assert result.representative_role is None
+    assert result.representation_scope_capabilities == ()
 
 
 # ARTIFACT: test_legal_client_matter_representation_authority_currentness_real_mongo.py
-# VERSION: v1.0.0-L9C11-P21AR-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-REAL-MONGO-CERT
+# VERSION: v1.1.0-L9C11-P21AR-CLIENT-REPRESENTATION-AUTHORITY-CURRENTNESS-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: disposable P21A real-Mongo currentness composition evidence
 # TENANT POSTURE: UUID-isolated database and exact six-field representative-specific lineage
 # FAIL-CLOSED POSTURE: unavailable runtime skips; corruption and isolation fail
