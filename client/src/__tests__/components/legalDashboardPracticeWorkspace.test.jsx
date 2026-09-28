@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT
+ * VERSION: v1.7.0-L10-P2A-ADAPTIVE-TRUST-CENTER-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
+ * CHANGELOG: 2026-09-28 v1.7.0-L10-P2A-ADAPTIVE-TRUST-CENTER-CERT certifies Trust Center closed/sheet/expanded transitions, hover-only trigger feedback, touch and keyboard parity, Escape hierarchy, focus restoration, resilient grids and permission/profile preservation. No browser authority is widened.
+ *            2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
  *            2026-09-24 v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT certifies the D18 visible authority-posture surface: server-authoritative projections, compatibility role baselines and legacy narrowing hints are labeled distinctly; effective lanes match the already-certified presentation gates; explanatory posture cannot widen commands or create Legal/financial authority.
  *            2026-09-24 v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT certifies D17 server-bound permission provenance in the Legal Command Center: an authoritative empty Legal permission projection removes Partner intake/return/finance affordances while retaining read-only workspace visibility, and authoritative-empty LEGAL_FINANCE performs no finance evidence transport. Absent server provenance still preserves the D16 role baseline.
  *            2026-09-24 v1.2.0-L8-7D16-PERMISSION-AWARE-LEGAL-COMMAND-CENTER-CERT certifies permission-aware narrowing for Legal Practice/Finance presentation: explicit legal permission hints can remove intake, ReturnOfService and finance affordances but cannot widen the canonical role envelope; absent legal permission hints preserve the certified role baseline.
@@ -309,6 +310,12 @@ describe('D15 first-class Legal Matter Operating Room', () => {
       container.querySelector('[data-wilsy-dashboard-key="legal-practice"]'),
     ).not.toBeNull();
     expect(screen.getByText('Legal Operations Command Center')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Trust Center' })).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'Trust Center' }));
+    expect(screen.getByRole('button', { name: 'Close Trust Center' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Legal presentation authority posture')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('button', { name: 'Trust Center' })).toHaveAttribute('aria-expanded', 'false');
 
     for (const menu of [
       'Command Center',
@@ -328,6 +335,48 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.getByText('attempt-001')).toBeInTheDocument();
     expect(screen.getAllByText('Active instructions').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Returns generated').length).toBeGreaterThan(0);
+  });
+
+  it('keeps Trust Center adaptive, keyboard-safe and aligned without hover activation', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{ id: 'principal-law', email: 'partner@example.test' }}
+        tenantConfig={{
+          tenantId: 'tenant-law',
+          displayName: 'WILSY Legal Practice',
+          alias: 'Private Company Legal Practice',
+          region: 'Gauteng',
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(getLegalPracticeWorkspace).toHaveBeenCalledTimes(1));
+    const trigger = screen.getByRole('button', { name: 'Trust Center' });
+    fireEvent.mouseEnter(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole('dialog', { name: 'Trust & Authority' })).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByRole('button', { name: 'Expand Trust Center' })).toBeInTheDocument();
+    expect(document.querySelector('.wilsyTrustCenterPostureGrid')).not.toBeNull();
+    expect(document.querySelector('.wilsyTrustCenterProfileGrid')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Trust Center' }));
+    expect(screen.getByRole('button', { name: 'Collapse Trust Center' })).toBeInTheDocument();
+    expect(screen.getByText('Expanded view')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('button', { name: 'Expand Trust Center' })).toBeInTheDocument();
+    expect(screen.getByText('Quick view')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      expect(document.activeElement).toBe(trigger);
+    });
   });
 
   it('searches first-class matters and opens one canonical Matter Operating Room', async () => {
@@ -770,6 +819,9 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(getLegalClientMatters).not.toHaveBeenCalled();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Trust Center' }));
+    expect(screen.getByLabelText('Legal presentation authority posture')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close Trust Center' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Finance evidence identity'), {
       target: { value: 'invoice-001' },

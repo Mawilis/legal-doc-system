@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.0.0-L10-P1-LEGAL-COMMAND-CENTER
+ * VERSION: v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-28 v12.0.0-L10-P1-LEGAL-COMMAND-CENTER rebuilds the Legal Practice presentation as a compact command center with a certified-data attention queue, KPI strip, canonical matter command table, lineage-backed quick view, and keyboard search affordances. Existing role, conflict-review, intake, return, tenant, branding, logout and WILSY AI contracts remain unchanged; no Court projection or synthetic legal truth is introduced.
+ * CHANGELOG: 2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
+ *            2026-09-28 v12.1.0-L10-P2-TRUST-CENTER consolidates descriptive authority posture and practice profile into the shared Legal Chrome Trust Center drawer, preserving server-derived presentation and role boundaries while removing repeated full-width shell cards. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-25 v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT loads the certified tenant-scoped REVIEW_REQUIRED conflict-screening queue into the existing Legal Practice lifecycle and provides one bounded human Review Conflict interaction. The browser submits only screening_id, stable review_id, outcome and review_reason_reference through issueLegalConflictReview; canonical Python EOS remains responsible for authorization, chronology, evidence and immutable review truth. No clearance, waiver, representation, client acceptance, tenant, IAM, billing, payment, execution or settlement authority is created.
  *            2026-09-25 v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION binds Legal presentation only to the D21B8 authenticated tenant branding projection and D21B12 transient asset lifecycle. Practice, Finance and Client modes inherit the certified shared chrome; Sheriff/Deputy custom chrome may render only the server-derived current logo blob and always falls back to descriptive tenant initials. WILSY Legal OS remains the independent platform trust identity. No tenantConfig logo/path/browser branding, entitlement, IAM, legal-command, billing, payment, execution or settlement authority is created.
  *            2026-09-25 v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION consumes only the authenticated firstName/lastName projection already admitted by AuthContext, presents the exact human name as primary Legal operator identity across practice, finance, client and role-activity posture, and retains authenticated email as secondary identity when distinct. It never parses email, role labels, tenant data or browser storage into a person name; malformed/absent name text is ignored and existing email/opaque-principal fallback remains descriptive only. No membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority is created.
@@ -147,7 +148,7 @@ import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.0.0-L10-P1-LEGAL-COMMAND-CENTER';
+const DASHBOARD_VERSION = 'v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -442,8 +443,8 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
             </p>
           </div>
         </div>
-        <dl className="grid min-w-0 gap-3 text-xs sm:grid-cols-3 lg:min-w-[640px]">
-          <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+        <dl className="wilsyTrustCenterPostureGrid grid min-w-0 gap-3 text-xs sm:grid-cols-3">
+          <div className="wilsyTrustCenterPostureCard rounded-xl border border-stone-800 bg-black/30 p-3">
             <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
               Authenticated principal
             </dt>
@@ -458,7 +459,7 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
               )}
             </dd>
           </div>
-          <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+          <div className="wilsyTrustCenterPostureCard rounded-xl border border-stone-800 bg-black/30 p-3">
             <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
               Role envelope
             </dt>
@@ -466,7 +467,7 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
               {role || 'UNRESOLVED'}
             </dd>
           </div>
-          <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+          <div className="wilsyTrustCenterPostureCard rounded-xl border border-stone-800 bg-black/30 p-3">
             <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
               Enabled Legal lanes
             </dt>
@@ -593,11 +594,11 @@ function LegalPracticeProfile({ tenant }) {
           <p className="mt-2 max-w-4xl text-xs leading-5 text-stone-400">
             Descriptive profile fields from the Python EOS authenticated workspace bootstrap. They identify the practice but do not create operating-model, role, permission, plan, subscription, branding, billing or financial authority.
           </p>
-          <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2 xl:grid-cols-5">
+          <dl className="wilsyTrustCenterProfileGrid mt-4 grid gap-3 text-xs sm:grid-cols-2">
             {fields.map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-xl border border-stone-800 bg-black/30 p-3"
+                className="wilsyTrustCenterProfileCard rounded-xl border border-stone-800 bg-black/30 p-3"
               >
                 <dt className="text-[9px] font-black uppercase tracking-wider text-stone-600">
                   {label}
@@ -2680,18 +2681,21 @@ function LegalPracticeWorkspace({
             : PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS,
         ),
       }}
+      trustCenter={{
+        label: 'Trust & Authority',
+        content: !error ? (
+          <div className="wilsyLegalTrustCenterContent space-y-4">
+            <LegalPresentationAuthorityPosture roleToken={roleToken} user={user} />
+            <LegalPracticeProfile tenant={tenantConfig} />
+          </div>
+        ) : null,
+      }}
       metrics={chromeMetrics}
       leftRail={leftRail}
       className="legal-command-center-shell"
     >
       <div className="space-y-6">
         <WorkspaceErrorSurface error={error} />
-        {!error && (
-          <>
-            <LegalPresentationAuthorityPosture roleToken={roleToken} user={user} />
-            <LegalPracticeProfile tenant={tenantConfig} />
-          </>
-        )}
         {content}
         <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
           <span>{DASHBOARD_VERSION}</span>
@@ -2737,6 +2741,14 @@ function LegalFinanceWorkspace({
         'Invoice ≠ payment execution',
         'Kennel EOS owns settlement',
       ]}
+      trustCenter={{
+        label: 'Trust & Authority',
+        content: (
+          <div className="wilsyLegalTrustCenterContent">
+            <LegalPresentationAuthorityPosture roleToken={roleToken} user={user} />
+          </div>
+        ),
+      }}
       metrics={[
         { id: 'lookup', label: 'Access mode', value: 'Exact ID', detail: 'No broad legal-workspace access' },
         { id: 'boundary', label: 'Execution authority', value: 'Kennel EOS', detail: 'Read-only finance evidence' },
@@ -2757,7 +2769,6 @@ function LegalFinanceWorkspace({
       )}
     >
       <div className="space-y-6">
-        <LegalPresentationAuthorityPosture roleToken={roleToken} user={user} />
         <LegalFinanceLookup roleToken={roleToken} user={user} />
         <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
           <div className="flex items-start gap-3">
@@ -3838,7 +3849,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.0.0-L10-P1-LEGAL-COMMAND-CENTER
+ * VERSION: v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
