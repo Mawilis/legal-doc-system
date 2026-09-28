@@ -1,7 +1,7 @@
 """WILSY OS subscription-derived Tenant Branding VAS eligibility evidence.
 
 TITLE: Tenant Branding Commercial Eligibility Domain
-VERSION: v1.0.0-D21C1-TENANT-BRANDING-COMMERCIAL-ELIGIBILITY
+VERSION: v1.0.1-D21C1-CANONICAL-SUBSCRIPTION-INTEGRITY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Project one canonical SubscriptionEntity snapshot into deterministic
          ELIGIBLE or INELIGIBLE Branding VAS evidence for D21B2B. This domain
@@ -18,6 +18,9 @@ CHANGELOG: v1.0.0-D21C1 binds tenant, subscription, plan, catalogue version,
            proof, lifecycle status, evaluated_at and deterministic SHA3-512
            evidence. Only ACTIVE subscriptions are eligible; all other states
            fail closed without inventing financial failure.
+           v1.0.1 repairs validation of registry-persisted proof provenance by
+           replaying the latest canonical AuditEntry action and metadata before
+           merkle verification; no authority boundary changes.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: No secrets or payment-provider fields are read;
                              only canonical subscription evidence is consumed.
@@ -49,11 +52,12 @@ from tools.eos.saas.billing.tenant_branding_vas_catalogue import (
 from tools.eos.saas.domain.subscription import (
     SubscriptionEntity,
     SubscriptionStatus,
+    verify_subscription_integrity,
 )
 from tools.eos.saas.billing.tenant_branding_vas_policy import TenantBrandingTier
 
 
-VERSION: Final[str] = "v1.0.0-D21C1-TENANT-BRANDING-COMMERCIAL-ELIGIBILITY"
+VERSION: Final[str] = "v1.0.1-D21C1-CANONICAL-SUBSCRIPTION-INTEGRITY"
 SCHEMA: Final[str] = "WILSY-TENANT-BRANDING-COMMERCIAL-ELIGIBILITY/V1"
 
 
@@ -258,19 +262,7 @@ def derive_tenant_branding_commercial_eligibility(
     tenant = _text("tenant_id", tenant_id)
     if subscription.tenant_id != tenant:
         raise TenantBrandingCommercialEligibilityError("D21C1_TENANT_MISMATCH")
-    try:
-        expected_proof = subscription.generate_proof()
-        expected_merkle = subscription._compute_merkle_root()
-    except Exception as error:
-        raise TenantBrandingCommercialEligibilityError(
-            "D21C1_SUBSCRIPTION_INTEGRITY_INVALID"
-        ) from error
-    if (
-        not isinstance(subscription.proof_hash, str)
-        or not hmac.compare_digest(subscription.proof_hash.upper(), expected_proof)
-        or not isinstance(subscription.merkle_root, str)
-        or not hmac.compare_digest(subscription.merkle_root.upper(), expected_merkle)
-    ):
+    if not verify_subscription_integrity(subscription):
         raise TenantBrandingCommercialEligibilityError(
             "D21C1_SUBSCRIPTION_INTEGRITY_INVALID"
         )
@@ -316,7 +308,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_branding_commercial_eligibility.py
-# VERSION: v1.0.0-D21C1-TENANT-BRANDING-COMMERCIAL-ELIGIBILITY
+# VERSION: v1.0.1-D21C1-CANONICAL-SUBSCRIPTION-INTEGRITY
 # AUTHORITY BOUNDARY: subscription-derived eligibility evidence only; no D21B activation/profile/browser authority
 # TENANT POSTURE: exact tenant/subscription binding; mismatch rejects
 # FAIL-CLOSED POSTURE: unknown state, identity, provenance or fingerprint drift rejects

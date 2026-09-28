@@ -41,6 +41,8 @@ from tools.eos.saas.billing.tenant_branding_subscription_entitlement_composer im
 )
 import tools.eos.saas.billing.tenant_branding_subscription_entitlement_composer as composer_module
 from tools.eos.saas.domain.subscription import (
+    AuditAction,
+    AuditEntry,
     BillingFrequency,
     PlanTiers,
     SubscriptionEntity,
@@ -87,9 +89,39 @@ def _subscription(**changes: Any) -> SubscriptionEntity:
 def _eligible(subscription: SubscriptionEntity | None = None):
     return derive_tenant_branding_commercial_eligibility(
         tenant_id="tenant-d21c1",
-        subscription=subscription or _subscription(plan_features=(BRANDING_VAS_PROFESSIONAL_ID,)),
+        subscription=subscription or _registry_subscription(plan_features=(BRANDING_VAS_PROFESSIONAL_ID,)),
         evaluated_at=STAMP,
     )
+
+
+def _registry_subscription(**changes: Any) -> SubscriptionEntity:
+    """Build the exact CREATE proof/audit shape persisted by SubscriptionRegistry."""
+    entity = _subscription(**changes)
+    metadata = {
+        "source": "subscription_registry",
+        "plan_id": entity.plan_id,
+        "plan_catalogue_version": entity.plan_catalogue_version,
+    }
+    proof = entity.generate_proof(action="create", metadata=metadata)
+    audit = AuditEntry(
+        action=AuditAction.CREATE,
+        timestamp=STAMP,
+        user="D21C1-TEST",
+        new_status=entity.status,
+        tier=entity.tier,
+        billing_mode=entity.billing_mode,
+        metadata=metadata,
+        proof_hash=proof,
+    )
+    payload = entity.to_dict()
+    payload.update(
+        {
+            "proof_hash": proof,
+            "merkle_root": "",
+            "audit_trail": [audit.to_dict()],
+        }
+    )
+    return SubscriptionEntity.from_dict(payload)
 
 
 class _Session:
@@ -197,13 +229,58 @@ def test_legacy_missing_catalogue_version_is_ineligible() -> None:
 
 
 def test_corrupt_subscription_integrity_fails_closed() -> None:
+    payload = _registry_subscription(
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    ).to_dict()
+    payload["proof_hash"] = "F" * 128
     with pytest.raises(TenantBrandingCommercialEligibilityError, match="INTEGRITY"):
         derive_tenant_branding_commercial_eligibility(
             tenant_id="tenant-d21c1",
-            subscription=_subscription(
-                plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
-                proof_hash="F" * 128,
-            ),
+            subscription=SubscriptionEntity.from_dict(payload),
+            evaluated_at=STAMP,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("plan_id", "WILSYPLAN-TAMPERED"),
+        ("plan_features", [BRANDING_VAS_ENTERPRISE_ID]),
+        ("plan_catalogue_version", 99),
+        ("status", SubscriptionStatus.PAUSED.value),
+        ("tenant_id", "tenant-other"),
+        ("merkle_root", "e" * 128),
+    ],
+)
+def test_registry_proof_rejects_canonical_entity_tampering(field: str, value: Any) -> None:
+    """Canonical registry proof and merkle evidence reject every altered field."""
+    payload = _registry_subscription(plan_features=(BRANDING_VAS_PROFESSIONAL_ID,)).to_dict()
+    payload[field] = value
+    tampered = SubscriptionEntity.from_dict(payload)
+    with pytest.raises(TenantBrandingCommercialEligibilityError, match="INTEGRITY|TENANT_MISMATCH"):
+        derive_tenant_branding_commercial_eligibility(
+            tenant_id="tenant-d21c1",
+            subscription=tampered,
+            evaluated_at=STAMP,
+        )
+
+
+def test_audited_default_proof_is_not_mistaken_for_registry_create_proof() -> None:
+    """An audited CREATE without canonical metadata fails rather than being blessed."""
+    entity = _subscription(plan_features=(BRANDING_VAS_PROFESSIONAL_ID,))
+    payload = entity.to_dict()
+    payload["audit_trail"] = [
+        AuditEntry(
+            action=AuditAction.CREATE,
+            timestamp=STAMP,
+            proof_hash=entity.proof_hash,
+        ).to_dict()
+    ]
+    audited_default = SubscriptionEntity.from_dict(payload)
+    with pytest.raises(TenantBrandingCommercialEligibilityError, match="INTEGRITY"):
+        derive_tenant_branding_commercial_eligibility(
+            tenant_id="tenant-d21c1",
+            subscription=audited_default,
             evaluated_at=STAMP,
         )
 

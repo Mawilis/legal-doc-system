@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM
+    v1.3.2-CANONICAL-PROOF-PROVENANCE
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -28,6 +28,12 @@ CERTIFICATION / UPDATE DATE:
     2026-09-12
 
 CHANGELOG:
+    v1.3.2-CANONICAL-PROOF-PROVENANCE:
+        - Persists the canonical proof action and metadata in every lifecycle
+          AuditEntry so proof validation can replay registry provenance.
+        - Keeps lifecycle persistence, tenant scope and financial boundaries
+          unchanged; no payment or entitlement authority is added.
+
     v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM:
         - Adds a bounded dependency-injected, tenant-scoped read-only entity
           seam for billing intelligence. Caller sessions are propagated and
@@ -161,7 +167,7 @@ from ..domain.subscription import (
 )
 
 
-VERSION = "v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM"
+VERSION = "v1.3.2-CANONICAL-PROOF-PROVENANCE"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -1135,6 +1141,10 @@ class SubscriptionRegistry:
                 tier=candidate.tier,
                 billing_mode=
                     candidate.billing_mode,
+                metadata={
+                    "plan_id": catalogue_plan.plan_id,
+                    "plan_catalogue_version": catalogue_plan.catalogue_version,
+                },
                 proof_hash=proof,
             )
 
@@ -1504,6 +1514,11 @@ class SubscriptionRegistry:
                 tier=entity.tier,
                 billing_mode=
                     entity.billing_mode,
+                metadata={
+                    "source": "subscription_registry",
+                    "plan_id": catalogue_plan.plan_id,
+                    "plan_catalogue_version": catalogue_plan.catalogue_version,
+                },
                 proof_hash=proof,
             )
 
@@ -1873,6 +1888,11 @@ class SubscriptionRegistry:
                 tier=candidate.tier,
                 billing_mode=
                     candidate.billing_mode,
+                metadata={
+                    "fields": sorted(
+                        key for key in payload if key != "user"
+                    ),
+                },
                 proof_hash=proof,
             )
 
@@ -1979,6 +1999,7 @@ class SubscriptionRegistry:
                     SubscriptionStatus.PAUSED,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
+                metadata={"reason": pause_reason},
                 proof_hash=proof,
             )
 
@@ -2066,6 +2087,7 @@ class SubscriptionRegistry:
                     SubscriptionStatus.ACTIVE,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
+                metadata=metadata or {},
                 proof_hash=proof,
             )
 
@@ -2163,6 +2185,10 @@ class SubscriptionRegistry:
                     SubscriptionStatus.CANCELLED,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
+                metadata={
+                    "reason": cancel_reason,
+                    "at_period_end": cancel_at_period_end,
+                },
                 proof_hash=proof,
             )
 
@@ -2278,6 +2304,7 @@ class SubscriptionRegistry:
                     SubscriptionStatus.ACTIVE,
                 tier=sub.tier,
                 billing_mode=sub.billing_mode,
+                metadata=metadata or {},
                 proof_hash=proof,
             )
 
@@ -2735,7 +2762,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM
+# VERSION: v1.3.2-CANONICAL-PROOF-PROVENANCE
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,

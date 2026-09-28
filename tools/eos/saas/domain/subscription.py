@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — Sovereign Subscription Catalogue Snapshot + Calendar Billing Domain
 
 VERSION:
-    v1.2.0-CALENDAR-BILLING-FOUNDATION
+    v1.2.1-CANONICAL-PROOF-PROVENANCE
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -33,6 +33,11 @@ CERTIFICATION / UPDATE DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-09-28 v1.2.1-CANONICAL-PROOF-PROVENANCE
+        - Adds canonical subscription proof-context validation using the
+          persisted latest AuditEntry action and metadata.
+        - Keeps merkle validation bound to tenant, proof hash and seal nonce.
+        - Does not add payment, membership, entitlement or Kennel authority.
     2026-09-03 v1.2.0-CALENDAR-BILLING-FOUNDATION
         - Adds deterministic timezone-aware calendar billing-period primitives.
         - Anchors billing periods to the first local calendar day of the month.
@@ -91,6 +96,7 @@ from __future__ import annotations
 
 from calendar import monthrange
 import hashlib
+import hmac
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -99,7 +105,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "v1.2.0-CALENDAR-BILLING-FOUNDATION"
+VERSION = "v1.2.1-CANONICAL-PROOF-PROVENANCE"
 
 
 # ─── Helper ──────────────────────────────────────────────────────────────────
@@ -982,11 +988,50 @@ class SubscriptionEntity:
         return package
 
 
+def verify_subscription_integrity(
+    subscription: SubscriptionEntity,
+) -> bool:
+    """Verify canonical subscription proof provenance and merkle integrity.
+
+    A directly constructed value with no audit trail uses the domain's
+    deterministic default proof. A persisted Registry value must carry its
+    latest operation and proof metadata in the latest ``AuditEntry``; that
+    provenance is then replayed exactly before the merkle root is checked.
+    This function is pure, tenant-neutral, and grants no entitlement or
+    financial authority.
+    """
+    if type(subscription) is not SubscriptionEntity:
+        return False
+    try:
+        if subscription.audit_trail:
+            latest = subscription.audit_trail[-1]
+            expected_proof = subscription.generate_proof(
+                action=latest.action.value,
+                metadata=dict(latest.metadata),
+            )
+            if not isinstance(latest.proof_hash, str) or not hmac.compare_digest(
+                subscription.proof_hash.upper(), latest.proof_hash.upper()
+            ):
+                return False
+        else:
+            expected_proof = subscription.generate_proof()
+        if not isinstance(subscription.proof_hash, str) or not hmac.compare_digest(
+            subscription.proof_hash.upper(), expected_proof.upper()
+        ):
+            return False
+        expected_merkle = subscription._compute_merkle_root()
+        return isinstance(subscription.merkle_root, str) and hmac.compare_digest(
+            subscription.merkle_root.upper(), expected_merkle.upper()
+        )
+    except (AttributeError, TypeError, ValueError, KeyError):
+        return False
+
+
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/domain/subscription.py
-# VERSION: v1.2.0-CALENDAR-BILLING-FOUNDATION
+# VERSION: v1.2.1-CANONICAL-PROOF-PROVENANCE
 # AUTHORITY BOUNDARY: Immutable subscription value, lifecycle and catalogue-
 # snapshot evidence only; PlanEntity/PlanRegistry remain canonical plan truth.
 # TENANT POSTURE: tenant_id is persisted subscription scope and never establishes
@@ -995,5 +1040,7 @@ class SubscriptionEntity:
 # catalogue feature snapshots, naive calendar datetimes and invalid calendar
 # coordinates are rejected. Unknown legacy provenance remains explicit None.
 # Calendar helpers derive evidence only; they grant no caller proration authority.
+# Canonical proof verification replays persisted audit provenance and grants no
+# entitlement, membership, permission, payment or execution authority.
 # FINANCIAL EXECUTION AUTHORITY: NONE — Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT

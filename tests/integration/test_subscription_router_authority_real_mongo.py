@@ -1279,7 +1279,7 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM"
+        == "v1.3.2-CANONICAL-PROOF-PROVENANCE"
     )
     assert (
         VERSION
