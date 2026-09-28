@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT
+ * VERSION: v12.0.0-L10-P1-LEGAL-COMMAND-CENTER
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -18,8 +18,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT loads the certified tenant-scoped REVIEW_REQUIRED conflict-screening queue into the existing Legal Practice lifecycle and provides one bounded human Review Conflict interaction. The browser submits only screening_id, stable review_id, outcome and review_reason_reference through issueLegalConflictReview; canonical Python EOS remains responsible for authorization, chronology, evidence and immutable review truth. No clearance, waiver, representation, client acceptance, tenant, IAM, billing, payment, execution or settlement authority is created.
+ * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * CHANGELOG: 2026-09-28 v12.0.0-L10-P1-LEGAL-COMMAND-CENTER rebuilds the Legal Practice presentation as a compact command center with a certified-data attention queue, KPI strip, canonical matter command table, lineage-backed quick view, and keyboard search affordances. Existing role, conflict-review, intake, return, tenant, branding, logout and WILSY AI contracts remain unchanged; no Court projection or synthetic legal truth is introduced.
+ *            2026-09-25 v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT loads the certified tenant-scoped REVIEW_REQUIRED conflict-screening queue into the existing Legal Practice lifecycle and provides one bounded human Review Conflict interaction. The browser submits only screening_id, stable review_id, outcome and review_reason_reference through issueLegalConflictReview; canonical Python EOS remains responsible for authorization, chronology, evidence and immutable review truth. No clearance, waiver, representation, client acceptance, tenant, IAM, billing, payment, execution or settlement authority is created.
  *            2026-09-25 v11.7.0-D21B13-AUTHENTICATED-TENANT-BRANDING-PRESENTATION binds Legal presentation only to the D21B8 authenticated tenant branding projection and D21B12 transient asset lifecycle. Practice, Finance and Client modes inherit the certified shared chrome; Sheriff/Deputy custom chrome may render only the server-derived current logo blob and always falls back to descriptive tenant initials. WILSY Legal OS remains the independent platform trust identity. No tenantConfig logo/path/browser branding, entitlement, IAM, legal-command, billing, payment, execution or settlement authority is created.
  *            2026-09-25 v11.6.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION consumes only the authenticated firstName/lastName projection already admitted by AuthContext, presents the exact human name as primary Legal operator identity across practice, finance, client and role-activity posture, and retains authenticated email as secondary identity when distinct. It never parses email, role labels, tenant data or browser storage into a person name; malformed/absent name text is ignored and existing email/opaque-principal fallback remains descriptive only. No membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority is created.
  *            2026-09-24 v11.5.0-L8-7D19B-CANONICAL-PRACTICE-PROFILE-PRESENTATION presents the authenticated canonical tenant practice profile inside Legal Practice workspaces: legal/name identity plus alias, industry, region and sector when projected by Python EOS workspace-bootstrap. The panel is descriptive only and explicitly cannot establish law-firm operating model, role, permission, plan, subscription, branding, billing, payment, execution or settlement authority.
@@ -124,6 +125,7 @@ import {
   ShieldCheck,
   Sparkles,
   UserCheck,
+  X,
 } from 'lucide-react';
 
 import {
@@ -145,7 +147,7 @@ import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT';
+const DASHBOARD_VERSION = 'v12.0.0-L10-P1-LEGAL-COMMAND-CENTER';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -404,16 +406,33 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
   ].filter(Boolean);
 
   return (
-    <section
+    <details
       aria-label="Legal presentation authority posture"
-      className="rounded-2xl border border-amber-900/30 bg-amber-950/10 p-5"
+      className="group rounded-2xl border border-amber-900/30 bg-amber-950/10"
     >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 items-center gap-3">
+          <ShieldCheck className="shrink-0 text-amber-400" size={18} />
+          <span className="min-w-0">
+            <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+              Trust &amp; Authority
+            </span>
+            <span className="mt-0.5 block truncate text-xs font-semibold text-stone-200">
+              {source} · {lanes.length > 0 ? `${lanes.length} enabled presentation lane(s)` : 'Read-only'}
+            </span>
+          </span>
+        </span>
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-stone-500 group-open:text-amber-300">
+          Details
+        </span>
+      </summary>
+      <div className="border-t border-amber-900/20 px-5 pb-5 pt-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-0.5 text-amber-400" size={20} />
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
-              Authority & permission posture
+              Authority &amp; permission posture
             </p>
             <h2 className="mt-1 text-sm font-black text-white">
               {source}
@@ -460,7 +479,8 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
       <p className="mt-4 text-[10px] uppercase tracking-[0.12em] text-stone-600">
         Browser role, permission hints, menu state and operating-model presentation never create legal or financial authority.
       </p>
-    </section>
+      </div>
+    </details>
   );
 }
 
@@ -543,19 +563,33 @@ function LegalPracticeProfile({ tenant }) {
   if (fields.length === 0) return null;
 
   return (
-    <section
+    <details
       aria-label="Canonical Legal practice profile"
-      className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5"
+      className="group rounded-2xl border border-stone-800 bg-stone-950/75"
     >
-      <div className="flex items-start gap-3">
-        <Briefcase className="mt-0.5 text-amber-400" size={20} />
-        <div className="min-w-0 flex-1">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 items-center gap-3">
+          <Briefcase className="shrink-0 text-amber-400" size={18} />
+          <span className="min-w-0">
+            <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+              Canonical practice profile
+            </span>
+            <span className="mt-0.5 block truncate text-xs font-semibold text-stone-200">
+              Authenticated tenant profile
+            </span>
+          </span>
+        </span>
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-stone-500 group-open:text-amber-300">
+          Details
+        </span>
+      </summary>
+      <div className="border-t border-stone-800 px-5 pb-5 pt-4">
+        <div className="flex items-start gap-3">
+          <Briefcase className="mt-0.5 hidden text-amber-400 sm:block" size={20} />
+          <div className="min-w-0 flex-1">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
-            Canonical practice profile
+            Descriptive tenant profile
           </p>
-          <h2 className="mt-1 text-sm font-black text-white">
-            Authenticated tenant profile
-          </h2>
           <p className="mt-2 max-w-4xl text-xs leading-5 text-stone-400">
             Descriptive profile fields from the Python EOS authenticated workspace bootstrap. They identify the practice but do not create operating-model, role, permission, plan, subscription, branding, billing or financial authority.
           </p>
@@ -576,7 +610,8 @@ function LegalPracticeProfile({ tenant }) {
           </dl>
         </div>
       </div>
-    </section>
+      </div>
+    </details>
   );
 }
 
@@ -1272,11 +1307,182 @@ function matterLineage(workspace, caseMatterId) {
   return { instructions, documents, attempts, executions, returns };
 }
 
+function buildPracticeAttentionItems(workspace, conflictScreenings) {
+  const matters = Array.isArray(workspace?.matters) ? workspace.matters : [];
+  const matterById = new Map(matters.map((matter) => [matter.case_matter_id, matter]));
+  const items = [];
+  const reviewRequired = Array.isArray(conflictScreenings?.screenings)
+    ? conflictScreenings.screenings.filter((screening) => screening.status === 'REVIEW_REQUIRED')
+    : [];
+
+  reviewRequired.forEach((screening) => {
+    items.push({
+      id: `conflict:${screening.screeningId}`,
+      kind: 'conflict',
+      title: 'Conflict review required',
+      detail: screening.sourceCaseMatterId,
+      reason: 'Canonical REVIEW_REQUIRED screening',
+      matterId: [...matterById.values()].find(
+        (matter) => matter.matter_reference === screening.sourceCaseMatterId
+          || matter.case_matter_id === screening.sourceCaseMatterId,
+      )?.case_matter_id || null,
+      screeningId: screening.screeningId,
+    });
+  });
+
+  (Array.isArray(workspace?.attempts) ? workspace.attempts : [])
+    .filter((attempt) => ['ALLOCATED', 'ATTEMPTED'].includes(attempt.state))
+    .forEach((attempt) => {
+      const matter = [...matterById.values()].find((candidate) => {
+        const lineage = matterLineage(workspace, candidate.case_matter_id);
+        return lineage.attempts.some((row) => row.attempt_id === attempt.attempt_id);
+      });
+      items.push({
+        id: `attempt:${attempt.attempt_id}`,
+        kind: 'service',
+        title: 'Service attempt active',
+        detail: matter?.matter_reference || 'Current service work',
+        reason: `${attempt.state} service work`,
+        matterId: matter?.case_matter_id || null,
+      });
+    });
+
+  const returnExecutionIds = new Set(
+    (Array.isArray(workspace?.returns) ? workspace.returns : [])
+      .map((item) => item.service_execution_id),
+  );
+  (Array.isArray(workspace?.executions) ? workspace.executions : [])
+    .filter((execution) => !returnExecutionIds.has(execution.service_execution_id))
+    .forEach((execution) => {
+      const matter = [...matterById.values()].find((candidate) => {
+        const lineage = matterLineage(workspace, candidate.case_matter_id);
+        return lineage.executions.some(
+          (row) => row.service_execution_id === execution.service_execution_id,
+        );
+      });
+      items.push({
+        id: `return:${execution.service_execution_id}`,
+        kind: 'return',
+        title: 'Return available from certified execution',
+        detail: matter?.matter_reference || 'Certified execution',
+        reason: 'Completed execution has no linked return row',
+        matterId: matter?.case_matter_id || null,
+      });
+    });
+
+  return items;
+}
+
+function MatterQuickView({ matter, lineage, onClose, onOpenOperatingRoom }) {
+  if (!matter || !lineage) return null;
+  const timeline = [
+    ...lineage.instructions.map((item) => ({ id: item.instruction_id, label: `Instruction ${item.state}`, at: item.registered_at })),
+    ...lineage.documents.map((item) => ({ id: item.document_id, label: `Document ${item.state}`, at: item.registered_at || item.received_at })),
+    ...lineage.attempts.map((item) => ({ id: item.attempt_id, label: `Attempt ${item.state}`, at: item.attempted_at || item.allocated_at })),
+    ...lineage.executions.map((item) => ({ id: item.service_execution_id, label: `Execution ${item.outcome}`, at: item.executed_at })),
+    ...lineage.returns.map((item) => ({ id: item.return_id, label: 'Return GENERATED', at: item.generated_at })),
+  ].filter((item) => item.at).sort((left, right) => Date.parse(left.at) - Date.parse(right.at));
+
+  return (
+    <aside
+      aria-label="Matter quick view"
+      className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-amber-900/40 bg-[#0b0a09] shadow-2xl shadow-black/60"
+    >
+      <header className="flex items-start justify-between gap-4 border-b border-stone-800 px-5 py-5">
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">Matter quick view</p>
+          <h2 className="mt-2 truncate text-lg font-black text-white">{matter.matter_reference}</h2>
+          <p className="mt-1 truncate font-mono text-[10px] text-stone-500">{matter.case_matter_id}</p>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close matter quick view" className="rounded-lg border border-stone-800 p-2 text-stone-400 hover:text-white">
+          <X size={16} />
+        </button>
+      </header>
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+        <div className="flex items-center justify-between rounded-xl border border-stone-800 bg-black/30 p-4">
+          <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">State</span>
+          <StatePill state={matter.state} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            ['Instructions', lineage.instructions.length],
+            ['Documents', lineage.documents.length],
+            ['Attempts', lineage.attempts.length],
+            ['Executions', lineage.executions.length],
+            ['Returns', lineage.returns.length],
+            ['Opened', formatTimestamp(matter.opened_at)],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-xl border border-stone-800 bg-black/30 p-3">
+              <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">{label}</p>
+              <p className="mt-1 text-sm font-black text-stone-200">{value}</p>
+            </div>
+          ))}
+        </div>
+        <section aria-label="Matter lifecycle timeline" className="rounded-xl border border-stone-800 bg-black/20 p-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-500">Certified lifecycle</h3>
+          {timeline.length === 0 ? (
+            <p className="mt-3 text-xs text-stone-500">No linked lifecycle rows are available.</p>
+          ) : (
+            <ol className="mt-3 space-y-3">
+              {timeline.map((event) => (
+                <li key={`${event.id}:${event.at}`} className="flex gap-3 text-xs">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+                  <span><strong className="font-semibold text-stone-200">{event.label}</strong><span className="mt-0.5 block text-[10px] text-stone-500">{formatTimestamp(event.at)}</span></span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+      <footer className="border-t border-stone-800 p-5">
+        <button type="button" onClick={onOpenOperatingRoom} className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-amber-700/40 bg-amber-500/15 px-4 text-xs font-black text-amber-200 hover:bg-amber-500/25">
+          Open Matter Operating Room
+        </button>
+      </footer>
+    </aside>
+  );
+}
+
+function AttentionQueue({ items, onOpenMatter, onReviewConflict, onViewService }) {
+  return (
+    <section aria-label="Attention queue" className="overflow-hidden rounded-2xl border border-amber-900/30 bg-stone-950/75">
+      <header className="flex items-center justify-between gap-4 border-b border-stone-800 px-5 py-4">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">Attention</p>
+          <h2 className="mt-1 text-lg font-black text-white">What needs a decision</h2>
+          <p className="mt-1 text-xs text-stone-500">Only canonical review, service and return opportunities are shown.</p>
+        </div>
+        <span className="rounded-full border border-amber-800/40 bg-amber-500/10 px-3 py-1 text-xs font-black text-amber-200">{items.length}</span>
+      </header>
+      {items.length === 0 ? (
+        <div className="px-5 py-6 text-sm text-stone-400">No current items require action from the certified workspace.</div>
+      ) : (
+        <ul className="divide-y divide-stone-900">
+          {items.map((item) => (
+            <li key={item.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.kind === 'conflict' ? 'bg-amber-400' : item.kind === 'return' ? 'bg-emerald-400' : 'bg-sky-400'}`} aria-hidden="true" />
+                <div className="min-w-0"><p className="text-sm font-semibold text-stone-200">{item.title}</p><p className="mt-1 truncate font-mono text-[10px] text-stone-500">{item.detail}</p><p className="mt-1 text-[11px] text-stone-600">{item.reason}</p></div>
+              </div>
+              {item.kind === 'conflict' ? (
+                <button type="button" onClick={() => onReviewConflict(item.screeningId)} className="inline-flex min-h-[40px] shrink-0 items-center justify-center rounded-lg border border-amber-700/40 bg-amber-500/10 px-3 text-[11px] font-black text-amber-200">Open review</button>
+              ) : (
+                <button type="button" onClick={() => (item.matterId ? onOpenMatter(item.matterId) : onViewService())} className="inline-flex min-h-[40px] shrink-0 items-center justify-center rounded-lg border border-stone-700 bg-black/30 px-3 text-[11px] font-black text-stone-200">Open work</button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function MatterOperationsPanel({
   workspace,
   searchQuery,
   selectedMatterId,
   onSelectMatter,
+  onOpenOperatingRoom,
   overview = false,
 }) {
   const canonicalMatters = Array.isArray(workspace.matters) ? workspace.matters : [];
@@ -1314,17 +1520,21 @@ function MatterOperationsPanel({
 
   return (
     <div className="space-y-6">
-      <QueuePanel
-        title={overview ? 'Matter register' : 'Matters'}
-        subtitle="First-class canonical CaseMatter truth · select a matter to operate its linked current lifecycle"
-        icon={Scale}
-        rows={matterRows}
-        emptyMessage={
-          normalized
-            ? 'No canonical matter or linked current legal work matches this search.'
-            : 'No canonical CaseMatter is currently available for this tenant.'
-        }
-        renderRow={(matter) => {
+      <div aria-label="Matter command table">
+        <div className="hidden grid-cols-[1.35fr_0.8fr_1fr_auto] gap-4 px-5 pb-2 text-[9px] font-black uppercase tracking-[0.16em] text-stone-600 lg:grid">
+          <span>Matter reference / opened</span><span>State</span><span>Linked work</span><span>Open</span>
+        </div>
+        <QueuePanel
+          title={overview ? 'Matter register' : 'Matters'}
+          subtitle="First-class canonical CaseMatter truth · select a matter to operate its linked current lifecycle"
+          icon={Scale}
+          rows={matterRows}
+          emptyMessage={
+            normalized
+              ? 'No canonical matter or linked current legal work matches this search.'
+              : 'No canonical CaseMatter is currently available for this tenant.'
+          }
+          renderRow={(matter) => {
           const lineage = matterLineage(workspace, matter.case_matter_id);
           const activeInstructions = lineage.instructions.filter(
             (item) => ['REGISTERED', 'ACCEPTED'].includes(item.state),
@@ -1369,8 +1579,18 @@ function MatterOperationsPanel({
               </button>
             </div>
           );
-        }}
-      />
+          }}
+        />
+      </div>
+
+      {overview && selectedMatter && selectedLineage && (
+        <MatterQuickView
+          matter={selectedMatter}
+          lineage={selectedLineage}
+          onClose={() => onSelectMatter(null)}
+          onOpenOperatingRoom={onOpenOperatingRoom}
+        />
+      )}
 
       {!overview && selectedMatter && selectedLineage && (
         <section
@@ -2098,6 +2318,23 @@ function LegalPracticeWorkspace({
   const [returnDrafts, setReturnDrafts] = useState({});
   const [returnStatus, setReturnStatus] = useState({});
 
+  useEffect(() => {
+    const onShortcut = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        const search = document.querySelector('[data-legal-command-search]');
+        if (search instanceof HTMLInputElement) search.focus();
+      }
+      if (event.key === 'Escape' && document.activeElement?.matches?.('[data-legal-command-search]')) {
+        setSearchQuery('');
+        setSelectedMatterId(null);
+        document.activeElement.blur();
+      }
+    };
+    window.addEventListener('keydown', onShortcut);
+    return () => window.removeEventListener('keydown', onShortcut);
+  }, []);
+
   const matches = useCallback((row) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
@@ -2115,6 +2352,10 @@ function LegalPracticeWorkspace({
   const returnedExecutionIds = useMemo(
     () => new Set(workspace.returns.map((item) => item.service_execution_id)),
     [workspace.returns],
+  );
+  const attentionItems = useMemo(
+    () => buildPracticeAttentionItems(workspace, conflictScreenings),
+    [conflictScreenings, workspace],
   );
 
   const activeInstructions =
@@ -2163,6 +2404,16 @@ function LegalPracticeWorkspace({
   const openMatter = (caseMatterId) => {
     setSelectedMatterId(caseMatterId);
     setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+  };
+
+  const focusConflictReview = () => {
+    setActiveView(PRACTICE_WORKSPACE_VIEWS.COMMAND);
+    window.requestAnimationFrame(() => {
+      document.querySelector('[aria-label="Conflict review queue"]')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
   };
 
   const handleRegisteredMatter = ({ caseMatterId, matterReference }) => {
@@ -2230,18 +2481,27 @@ function LegalPracticeWorkspace({
   let content = null;
   if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.COMMAND) {
     content = (
-      <div className="space-y-6">
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <QueueMetric icon={Inbox} label="Active instructions" value={activeInstructions} description="REGISTERED or ACCEPTED instruction truth." />
-          <QueueMetric icon={FileText} label="Documents in flow" value={workspace.summary.documents_total} description="Current process-document lifecycle snapshots." />
-          <QueueMetric icon={Clock3} label="Active attempts" value={activeAttempts} description="ALLOCATED or ATTEMPTED service work only." />
-          <QueueMetric icon={FileCheck2} label="Returns generated" value={workspace.summary.returns_total} description="Generated ReturnOfService evidence; not invoice truth." />
+      <div className="space-y-5" data-legal-command-center="true">
+        <section aria-label="Legal operations KPI strip" className="grid grid-cols-2 gap-2 rounded-2xl border border-stone-800 bg-black/20 p-2 sm:grid-cols-4">
+          <QueueMetric icon={Inbox} label="Active instructions" value={activeInstructions} description="REGISTERED or ACCEPTED" />
+          <QueueMetric icon={FileText} label="Process documents" value={workspace.summary.documents_total} description="Current document rows" />
+          <QueueMetric icon={Clock3} label="Active service work" value={activeAttempts} description="ALLOCATED or ATTEMPTED" />
+          <QueueMetric icon={FileCheck2} label="Returns generated" value={workspace.summary.returns_total} description="Generated evidence" />
         </section>
+        <AttentionQueue
+          items={attentionItems}
+          onOpenMatter={openMatter}
+          onReviewConflict={focusConflictReview}
+          onViewService={() => setActiveView(PRACTICE_WORKSPACE_VIEWS.SERVICE)}
+        />
         <MatterOperationsPanel
           workspace={workspace}
           searchQuery={searchQuery}
           selectedMatterId={selectedMatterId}
-          onSelectMatter={openMatter}
+          onSelectMatter={setSelectedMatterId}
+          onOpenOperatingRoom={() => {
+            setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+          }}
           overview
         />
         <ConflictReviewQueue
@@ -2389,14 +2649,12 @@ function LegalPracticeWorkspace({
       tenant={tenant}
       operator={operator}
       storyMessages={[
-        'Instruction → Document → Attempt → Service → Return',
-        'Current canonical lifecycle truth',
-        'Kennel EOS remains financial execution authority',
-        'Permission hints may narrow presentation; Python EOS remains authorization authority',
+        'Canonical matter work · certified attention queue · action-scoped commands',
       ]}
       search={{
         value: searchQuery,
         placeholder: 'Search matter reference, ID or linked legal work',
+        shortcutLabel: '⌘K',
         onChange: (event) => {
           const value = event.target.value;
           setSearchQuery(value);
@@ -2405,6 +2663,10 @@ function LegalPracticeWorkspace({
         },
         onFocus: () => {
           if (searchQuery) setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+        },
+        onEscape: () => {
+          setSearchQuery('');
+          setSelectedMatterId(null);
         },
       }}
       actions={{
@@ -2420,6 +2682,7 @@ function LegalPracticeWorkspace({
       }}
       metrics={chromeMetrics}
       leftRail={leftRail}
+      className="legal-command-center-shell"
     >
       <div className="space-y-6">
         <WorkspaceErrorSurface error={error} />
@@ -3575,7 +3838,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT
+ * VERSION: v12.0.0-L10-P1-LEGAL-COMMAND-CENTER
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT
+ * VERSION: v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -971,12 +971,60 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.queryByText(/Conflict review recorded/)).not.toBeInTheDocument();
     expect(getLegalConflictScreenings).toHaveBeenCalledTimes(1);
   });
+
+  it('renders a compact certified attention queue and a quick-view drawer without new transport', async () => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+
+    await screen.findByRole('heading', { name: 'What needs a decision' });
+    expect(screen.getByText('Service attempt active')).toBeInTheDocument();
+    expect(screen.getByText('Return available from certified execution')).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Open matter' })[0]);
+    expect(screen.getByLabelText('Matter quick view')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Matter Operating Room' })).toBeInTheDocument();
+    expect(getLegalPracticeWorkspace).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Matter Operating Room' }));
+    expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
+  });
+
+  it('keeps the attention queue compact and truthful when certified workspace work is empty', async () => {
+    const empty = practiceWorkspace();
+    empty.matters = [];
+    empty.instructions = [];
+    empty.documents = [];
+    empty.attempts = [];
+    empty.executions = [];
+    empty.returns = [];
+    Object.keys(empty.summary).forEach((key) => { empty.summary[key] = 0; });
+    getLegalPracticeWorkspace.mockResolvedValue(empty);
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    expect(await screen.findByText('No current items require action from the certified workspace.')).toBeInTheDocument();
+    expect(screen.queryByText(/Court preparation/i)).not.toBeInTheDocument();
+  });
+
+  it('supports Ctrl+K search focus and Escape clearing over loaded canonical matter truth', async () => {
+    getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    await screen.findByRole('heading', { name: 'What needs a decision' });
+
+    const search = screen.getByRole('textbox', { name: 'Workspace search' });
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    expect(document.activeElement).toBe(search);
+    fireEvent.change(search, { target: { value: 'CASE-2026-0001' } });
+    expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(search).toHaveValue('');
+  });
 });
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT
- * CHANGELOG: 2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
+ * VERSION: v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT
+ * CHANGELOG: 2026-09-28 v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT adds behavioral proof for the compact canonical attention queue, loaded-workspace matter quick view, Matter Operating Room handoff, zero-state truthfulness and Ctrl+K/Escape search behavior without widening browser authority or transport scope.
  * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D18 posture text reports provenance/effective lanes but neither it nor D17/browser permission hints can widen the canonical role envelope or prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
  * FAIL-CLOSED POSTURE: role denial, explicit/server-authoritative permission narrowing including an empty grant set, misleading authority provenance, command failure and cross-role drift never fallback, widen role scope, invent operating-model authority or invent success
