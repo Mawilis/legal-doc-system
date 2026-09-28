@@ -16,8 +16,10 @@ CERTIFICATION / UPDATE DATE: 2026-09-28
 CHANGELOG: v1.0.0-L9C11-P7 establishes tenant-scoped authority, fingerprint
            and idempotency identities, deterministic exact-lineage history,
            strict hydration, duplicate-race reconciliation and caller-owned
-           transaction semantics. It creates no IAM, currentness, lifecycle,
-           firm-decision, Representation, Court or financial authority.
+           transaction semantics. P7R1 adds only BSON list-to-tuple
+           canonicalization for the two immutable capability arrays. It creates
+           no IAM, currentness, lifecycle, firm-decision, Representation,
+           Court or financial authority.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Only the canonical opaque domain payload and its
                              SHA3-512 fingerprint are persisted. No raw PII,
@@ -71,6 +73,9 @@ HISTORY_INDEX_NAME: Final[str] = (
 MAX_HISTORY_READS: Final[int] = 500
 WRITE_CONCERN: Final[WriteConcern] = WriteConcern(w="majority", j=True)
 READ_CONCERN: Final[ReadConcern] = ReadConcern("majority")
+_BSON_TUPLE_FIELDS: Final[frozenset[str]] = frozenset(
+    {"mandate_capabilities", "representation_scope_capabilities"}
+)
 
 
 class LegalClientMatterRepresentationAuthorityRegistryError(RuntimeError):
@@ -213,8 +218,13 @@ def _bounded_limit(limit: object) -> int:
 
 
 def _canonical(document: Mapping[str, object]) -> dict[str, object]:
+    """Normalize only BSON arrays that represent P1 immutable tuples."""
     raw = dict(document)
     raw.pop("_id", None)
+    for field in _BSON_TUPLE_FIELDS:
+        value = raw.get(field)
+        if isinstance(value, list):
+            raw[field] = tuple(value)
     return raw
 
 

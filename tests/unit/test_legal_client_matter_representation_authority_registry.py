@@ -128,6 +128,17 @@ class Collection:
         return object()
 
 
+class BsonArrayCollection(Collection):
+    """Fake PyMongo BSON round-trip that materializes tuples as arrays."""
+
+    def insert_one(self, document: dict[str, object], *, session: object) -> object:
+        persisted = dict(document)
+        for field in ("mandate_capabilities", "representation_scope_capabilities"):
+            if isinstance(persisted.get(field), tuple):
+                persisted[field] = list(cast(tuple[object, ...], persisted[field]))
+        return super().insert_one(persisted, session=session)
+
+
 class DuplicateRaceCollection(Collection):
     """Fake where a concurrent insert wins between preflight and insert."""
 
@@ -263,6 +274,33 @@ def test_exact_replay_is_hydrated_and_does_not_duplicate() -> None:
     assert first == second == value
     assert type(second) is LegalClientMatterRepresentationAuthority
     assert len(collection.rows) == 1
+
+
+def test_valid_bson_array_round_trip_not_corrupt() -> None:
+    """BSON arrays rehydrate to the exact immutable P1 capability tuples."""
+    collection = BsonArrayCollection()
+    value = authority()
+    first = persist_representation_authority(value, collection, session=Session())
+    assert isinstance(collection.rows[0]["mandate_capabilities"], list)
+    assert isinstance(collection.rows[0]["representation_scope_capabilities"], list)
+    replay = persist_representation_authority(value, collection, session=Session())
+    assert first == replay == value
+    assert len(collection.rows) == 1
+
+
+def test_invalid_bson_capability_shapes_and_values_fail_closed() -> None:
+    """Known array fields still reject scalar and unknown capability content."""
+    value = authority()
+    invalid_value = BsonArrayCollection()
+    persist_representation_authority(value, invalid_value, session=Session())
+    invalid_value.rows[0]["mandate_capabilities"] = ["UNKNOWN_CAPABILITY"]
+    with pytest.raises(LegalClientMatterRepresentationAuthorityRegistryPersistedRecordInvalidError):
+        get_representation_authority(value.tenant_id, value.authority_id, invalid_value, session=Session())
+    invalid_shape = BsonArrayCollection()
+    persist_representation_authority(value, invalid_shape, session=Session())
+    invalid_shape.rows[0]["representation_scope_capabilities"] = "ADVISORY"
+    with pytest.raises(LegalClientMatterRepresentationAuthorityRegistryPersistedRecordInvalidError):
+        get_representation_authority(value.tenant_id, value.authority_id, invalid_shape, session=Session())
 
 
 def test_divergent_idempotency_authority_id_and_fingerprint_fail_closed() -> None:
