@@ -1,9 +1,9 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – DASHBOARD CHROME STYLES [V1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER]                                                                          ║
+ * ║ WILSY OS – DASHBOARD CHROME STYLES [V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT]                                                                  ║
  * ║ [EXECUTIVE SHELL | COLLAPSIBLE RAIL | METRICS STRIP | TENANT PLATE]                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER | PRODUCTION READY                                                                                     ║
+ * ║ VERSION: 2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT | PRODUCTION READY                                                                             ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.module.css                       ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -21,7 +21,8 @@
  * ║   5. Metric strip with responsive grid.                                                                                               ║
  * ║   6. Collapsible left rail with animated toggle.                                                                                      ║
  * ║   7. Scrollable viewport for domain content.                                                                                          ║
- * ║   8. Fully responsive and accessible.                                                                                                 ║
+ * ║   8. Unified hover, focus-visible, active, pressed, disabled and reduced-motion command affordances.                               ║
+ * ║   9. Fully responsive and accessible.                                                                                                 ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -285,6 +286,9 @@
   border: 1px solid transparent;
   white-space: nowrap;
   font-family: inherit;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease,
+    box-shadow 150ms ease, color 150ms ease, filter 150ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 :global(.wilsyOsChromePrimaryButton) {
@@ -300,14 +304,62 @@
 }
 
 :global(.wilsyOsChromePrimaryButton:hover:not(:disabled)),
-:global(.wilsyOsChromeSecondaryButton:hover:not(:disabled)) {
-  filter: brightness(1.06);
+:global(.wilsyOsChromeSecondaryButton:hover:not(:disabled)),
+:global(.wilsyOsChromePrimaryButton:focus-visible),
+:global(.wilsyOsChromeSecondaryButton:focus-visible) {
+  border-color: var(--wilsy-gold);
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+:global(.wilsyOsChromePrimaryButton:hover:not(:disabled)),
+:global(.wilsyOsChromePrimaryButton:focus-visible) {
+  background: linear-gradient(180deg, var(--wilsy-gold-hi), var(--wilsy-gold));
+  color: #111;
+  filter: brightness(1.08);
+}
+
+:global(.wilsyOsChromePrimaryButton:focus-visible),
+:global(.wilsyOsChromeSecondaryButton:focus-visible) {
+  outline: 2px solid var(--wilsy-gold-hi);
+  outline-offset: 2px;
+}
+
+:global(.wilsyOsChromeSecondaryButton[aria-expanded="true"]),
+:global(.wilsyOsChromeSecondaryButton[aria-pressed="true"]),
+:global(.wilsyOsChromeSecondaryButton[data-active="true"]),
+:global(.wilsyOsChromePrimaryButton[aria-expanded="true"]),
+:global(.wilsyOsChromePrimaryButton[aria-pressed="true"]),
+:global(.wilsyOsChromePrimaryButton[data-active="true"]) {
+  border-color: var(--wilsy-gold);
+  background: rgba(212, 175, 55, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: var(--wilsy-text);
+  transform: translateY(0);
+}
+
+:global(.wilsyOsChromePrimaryButton[aria-expanded="true"]),
+:global(.wilsyOsChromePrimaryButton[aria-pressed="true"]),
+:global(.wilsyOsChromePrimaryButton[data-active="true"]) {
+  background: linear-gradient(180deg, var(--wilsy-gold-hi), var(--wilsy-gold));
+  color: #111;
+}
+
+:global(.wilsyOsChromePrimaryButton:active:not(:disabled)),
+:global(.wilsyOsChromeSecondaryButton:active:not(:disabled)) {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24);
 }
 
 :global(.wilsyOsChromePrimaryButton:disabled),
 :global(.wilsyOsChromeSecondaryButton:disabled) {
   opacity: 0.45;
   cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: none;
 }
 
 :global(.wilsyOsChromeTrustCenter) {
@@ -483,21 +535,13 @@
   width: 100%;
 }
 
-:global(.wilsyOsChromeSecondaryButton[aria-controls$="-trust-center"]) {
-  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
-}
-
-:global(.wilsyOsChromeSecondaryButton[aria-controls$="-trust-center"]:hover),
-:global(.wilsyOsChromeSecondaryButton[aria-controls$="-trust-center"]:focus-visible) {
-  border-color: var(--wilsy-gold);
-  background: rgba(212, 175, 55, 0.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  transform: translateY(-1px);
-}
-
 @media (prefers-reduced-motion: reduce) {
   :global(.wilsyOsChromeTrustCenter),
-  :global(.wilsyOsChromeSecondaryButton[aria-controls$="-trust-center"]) {
+  :global(.wilsyOsChromePrimaryButton),
+  :global(.wilsyOsChromeSecondaryButton),
+  :global(.wilsyOsChromeLeftRail button),
+  :global(.wilsyOsChromeRailToggle),
+  :global(.wilsyOsChromeRailPeek) {
     transition: none;
   }
 }
@@ -629,11 +673,15 @@
   text-overflow: ellipsis;
 }
 
-:global(.wilsyOsChromeLeftRail button:hover),
-:global(.wilsyOsChromeLeftRail nav > button:hover) {
+:global(.wilsyOsChromeLeftRail button:not(:disabled):hover),
+:global(.wilsyOsChromeLeftRail nav > button:not(:disabled):hover),
+:global(.wilsyOsChromeLeftRail button:focus-visible),
+:global(.wilsyOsChromeLeftRail nav > button:focus-visible) {
   color: var(--wilsy-text) !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border-color: var(--wilsy-border-soft) !important;
+  outline: 2px solid var(--wilsy-gold-hi);
+  outline-offset: 2px;
 }
 
 :global(.wilsyOsChromeLeftRail button[data-active="true"]),
@@ -641,6 +689,17 @@
   color: #111 !important;
   background: linear-gradient(180deg, var(--wilsy-gold-hi), var(--wilsy-gold)) !important;
   border-color: rgba(255, 238, 160, 0.55) !important;
+}
+
+:global(.wilsyOsChromeLeftRail button:active:not(:disabled)),
+:global(.wilsyOsChromeLeftRail nav > button:active:not(:disabled)) {
+  transform: translateY(1px);
+}
+
+:global(.wilsyOsChromeLeftRail button:disabled),
+:global(.wilsyOsChromeLeftRail nav > button:disabled) {
+  cursor: not-allowed !important;
+  opacity: 0.45;
 }
 
 :global(.wilsyOsChromeViewport) {
@@ -900,10 +959,10 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome.module.css v1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome.module.css v2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER
+ * Version:         2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Top rail with command label, title, and story messages

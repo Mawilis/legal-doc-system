@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SHARED DASHBOARD CHROME [V1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER]                                                                             ║
+ * ║ WILSY OS – SHARED DASHBOARD CHROME [V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT]                                                                     ║
  * ║ [EXECUTIVE SHELL | TENANT PLATE | OPERATOR IDENTITY | COLLAPSIBLE RAIL | METRICS STRIP]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER | PRODUCTION READY                                                                                         ║
+ * ║ VERSION: 2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT | PRODUCTION READY                                                                                 ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -49,7 +49,7 @@ import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig'
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER';
+const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT';
 
 const TRUST_CENTER_STATES = Object.freeze({
   CLOSED: 'closed',
@@ -334,7 +334,13 @@ const WilsyOSDashboardChrome = ({
           </label>
 
           {typeof account.onOpen === 'function' && (
-            <button type="button" className="wilsyOsChromeSecondaryButton" onClick={account.onOpen} title="Account">
+            <button
+              type="button"
+              className="wilsyOsChromeSecondaryButton"
+              onClick={account.onOpen}
+              aria-expanded={Boolean(account.isOpen)}
+              title="Account"
+            >
               <UserCog size={13} /> {accountLabel}
             </button>
           )}
@@ -544,10 +550,10 @@ export default WilsyOSDashboardChrome;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         1.9.0-L10-P2A-ADAPTIVE-TRUST-CENTER
+ * Version:         2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Unified shell for all domain HUDs

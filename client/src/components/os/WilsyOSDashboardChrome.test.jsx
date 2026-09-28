@@ -1,18 +1,30 @@
 /**
  * TITLE: WILSY OS Shared Dashboard Chrome Branding Presentation Certificate
- * VERSION: v2.0.0-D21B9-SHARED-CHROME-BRANDING-CERT
+ * VERSION: v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certify that shared dashboard chrome accepts tenant branding only
  *          from the authenticated D21B8 tenant projection and never promotes
  *          legacy logo/path/browser fields into presentation authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * CHANGELOG: 2026-09-28 v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT certifies one reusable command-pill interaction contract across Account, Trust Center, Refresh, primary actions and actionable rail controls, including semantic active states, keyboard focus, pressed/disabled behavior and reduced-motion parity. No tenant, subscription, entitlement or financial authority is created.
  * AUTHORITY BOUNDARY: Browser presentation only; Python EOS/D21B2B-D21B8 own branding truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
+
+const chromeStyles = readFileSync(
+  resolve(process.cwd(), 'src/components/os/WilsyOSDashboardChrome.module.css'),
+  'utf8',
+);
+const chromeSource = readFileSync(
+  resolve(process.cwd(), 'src/components/os/WilsyOSDashboardChrome.jsx'),
+  'utf8',
+);
 
 const fingerprint = (character) => character.repeat(128);
 
@@ -177,8 +189,27 @@ describe('resolveWilsyChromeIdentitySources D21B9', () => {
   });
 });
 
+describe('L10-P2C1 shared clickable-pill interaction contract', () => {
+  it('uses one semantic hover/focus/active/pressed/disabled contract for shared commands', () => {
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton:hover:not(:disabled)');
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton:focus-visible');
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton[aria-expanded="true"]');
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton[aria-pressed="true"]');
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton[data-active="true"]');
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton:active:not(:disabled)');
+    expect(chromeStyles).toContain('.wilsyOsChromeSecondaryButton:disabled');
+    expect(chromeStyles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(chromeStyles).not.toContain('SecondaryButton[aria-controls$="-trust-center"]');
+  });
+
+  it('binds Account open state to aria-expanded without making passive identity cards clickable', () => {
+    expect(chromeSource).toContain('aria-expanded={Boolean(account.isOpen)}');
+    expect(chromeSource).toContain('className="wilsyOsChromeTenantPlate"');
+  });
+});
+
 // ARTIFACT: WilsyOSDashboardChrome.test.jsx
-// VERSION: v2.0.0-D21B9-SHARED-CHROME-BRANDING-CERT
+// VERSION: v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT
 // AUTHORITY BOUNDARY: browser presentation certificate only; no source authority
 // TENANT POSTURE: branding accepted only from exact authenticated tenant projection
 // FAIL-CLOSED POSTURE: legacy/foreign/browser branding is suppressed
