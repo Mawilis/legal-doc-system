@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Tenant Branding Management Client
- * VERSION: v1.0.0-L10-P2C6-D21B-BRANDING-MANAGEMENT-CLIENT
+ * VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Transport the authenticated tenant-branding management contract to
  *          Python EOS without sending tenant, entitlement, revision, current-
@@ -10,9 +10,9 @@
  *                            Python EOS owns identity, authorization,
  *                            entitlement, profile, selection, and asset truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-29
- * CHANGELOG: v1.0.0-L10-P2C6-D21B-BRANDING-MANAGEMENT-CLIENT adds bounded
- *            read/profile-selection/profile-create calls and stable transport
- *            error mapping; asset upload remains deferred at this gate.
+ * CHANGELOG: v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT adds governed
+ *            multipart asset admission and server-issued asset descriptor
+ *            binding while preserving server-owned tenant and fingerprint truth.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No localStorage branding authority, public URL,
  *                             raw bytes, or caller-supplied tenant selector.
@@ -23,7 +23,7 @@
 
 import api from './api.js';
 
-export const VERSION = 'v1.0.0-L10-P2C6-D21B-BRANDING-MANAGEMENT-CLIENT';
+export const VERSION = 'v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT';
 const BASE = '/tenant-branding';
 
 const ERROR_BY_STATUS = Object.freeze({
@@ -31,6 +31,7 @@ const ERROR_BY_STATUS = Object.freeze({
   403: 'BRANDING_AUTHORIZATION_DENIED',
   404: 'BRANDING_NOT_FOUND',
   409: 'BRANDING_CONFLICT',
+  413: 'BRANDING_CONTENT_TOO_LARGE',
   422: 'BRANDING_INPUT_INVALID',
   503: 'BRANDING_AUTHORITY_UNAVAILABLE',
 });
@@ -79,7 +80,31 @@ export const createTenantBrandingProfile = (fields = {}) => request(api.post(`${
   ...(fields.secondaryColor ? { secondary_color: fields.secondaryColor } : {}),
   ...(fields.accentColor ? { accent_color: fields.accentColor } : {}),
   ...(fields.emailDisplayName ? { email_display_name: fields.emailDisplayName } : {}),
+  ...((fields.logoAssetReference !== undefined || fields.logoAssetFingerprint !== undefined)
+    ? { logo_asset_reference: fields.logoAssetReference, logo_asset_fingerprint: fields.logoAssetFingerprint }
+    : {}),
+  ...((fields.faviconAssetReference !== undefined || fields.faviconAssetFingerprint !== undefined)
+    ? { favicon_asset_reference: fields.faviconAssetReference, favicon_asset_fingerprint: fields.faviconAssetFingerprint }
+    : {}),
 }));
+
+/** @description Uploads one bounded logo/favicon through authenticated multipart transport. */
+export const uploadTenantBrandingAsset = (kind, file) => {
+  const normalizedKind = String(kind || '').toUpperCase();
+  if (!['LOGO', 'FAVICON'].includes(normalizedKind) || typeof Blob === 'undefined' || !(file instanceof Blob)) {
+    return Promise.reject(new TenantBrandingManagementError('Invalid branding asset upload.', {
+      code: 'BRANDING_ASSET_UPLOAD_INPUT_INVALID',
+      status: 422,
+    }));
+  }
+  const form = new FormData();
+  form.append('file', file);
+  return request(api.post(`${BASE}/assets/${normalizedKind.toLowerCase()}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    skipForensicBodyMutation: true,
+    disableSourceBackoff: true,
+  }));
+};
 
 /** @description Advances the server-owned current-profile pointer. */
 export const selectTenantBrandingProfile = (profileId) => request(api.post(`${BASE}/profiles/${encodeURIComponent(profileId)}/select`, {}));
@@ -89,11 +114,12 @@ export default {
   fetchTenantBrandingManagement,
   createTenantBrandingProfile,
   selectTenantBrandingProfile,
+  uploadTenantBrandingAsset,
   TenantBrandingManagementError,
 };
 
 // ARTIFACT: tenantBrandingManagementClient.js
-// VERSION: v1.0.0-L10-P2C6-D21B-BRANDING-MANAGEMENT-CLIENT
+// VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT
 // AUTHORITY BOUNDARY: authenticated tenant-branding transport only
 // TENANT POSTURE: no tenant selector is sent as authority
 // FAIL-CLOSED POSTURE: HTTP failures map to stable bounded client errors

@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Tenant Branding Management Panel
- * VERSION: v1.0.0-L10-P2C6-D21B-BRANDING-COMMAND-CENTER
+ * VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents fresh server-certified tenant-branding entitlement and
  *          profile truth in the shared Account Command Center and invokes only
@@ -10,9 +10,9 @@
  *                            branding truth; D21B12 owns authenticated asset
  *                            delivery; this panel owns presentation state only.
  * CERTIFICATION / UPDATE DATE: 2026-09-29
- * CHANGELOG: v1.0.0-L10-P2C6-D21B-BRANDING-COMMAND-CENTER adds read, bounded
- *            profile-create and selection controls; safe-media upload remains
- *            deferred until its governed multipart dependency is certified.
+ * CHANGELOG: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER adds governed logo/
+ *            favicon upload controls and pending local previews while keeping
+ *            shared-chrome authority unchanged until profile selection refresh.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No tenant selector, durable browser branding,
  *                             raw asset bytes, or local authority is created.
@@ -27,6 +27,7 @@ import {
   createTenantBrandingProfile,
   fetchTenantBrandingManagement,
   selectTenantBrandingProfile,
+  uploadTenantBrandingAsset,
 } from '../../services/tenantBrandingManagementClient.js';
 
 const EMPTY_FORM = Object.freeze({
@@ -35,6 +36,10 @@ const EMPTY_FORM = Object.freeze({
   secondaryColor: '',
   accentColor: '',
   emailDisplayName: '',
+  logoAssetReference: undefined,
+  logoAssetFingerprint: undefined,
+  faviconAssetReference: undefined,
+  faviconAssetFingerprint: undefined,
 });
 const noop = () => {};
 
@@ -57,6 +62,9 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [uploadingKind, setUploadingKind] = useState(null);
+  const [assetError, setAssetError] = useState(null);
+  const [pendingPreview, setPendingPreview] = useState(null);
 
   const refresh = useCallback(async ({ notify = false } = {}) => {
     setState((current) => ({ ...current, loading: true, error: null }));
@@ -80,13 +88,43 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
   }, [onAuthorityRefresh]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => () => {
+    if (pendingPreview?.url && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(pendingPreview.url);
+    }
+  }, [pendingPreview?.url]);
 
   const logo = useAuthenticatedTenantBrandingAsset(state.data?.profile?.logo);
   const canManageProfile = state.data?.capabilities?.canManageProfile === true;
+  const canManageAssets = state.data?.capabilities?.canManageAssets === true;
   const entitlement = state.data?.entitlement;
   const profile = state.data?.profile;
 
   const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
+
+  const upload = async (kind, event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploadingKind(kind);
+    setAssetError(null);
+    setNotice('');
+    try {
+      const descriptor = await uploadTenantBrandingAsset(kind, file);
+      const prefix = kind === 'LOGO' ? 'logo' : 'favicon';
+      setForm((current) => ({
+        ...current,
+        [`${prefix}AssetReference`]: descriptor.reference,
+        [`${prefix}AssetFingerprint`]: descriptor.contentFingerprint,
+      }));
+      setPendingPreview({ kind, name: file.name || 'selected file', url: URL.createObjectURL(file), descriptor });
+      setNotice(`${kind} asset admitted by Python EOS. Create and select a profile to apply it.`);
+    } catch (error) {
+      setAssetError(error?.code || 'BRANDING_ASSET_UPLOAD_FAILED');
+    } finally {
+      setUploadingKind(null);
+    }
+  };
 
   const save = async (event) => {
     event.preventDefault();
@@ -144,6 +182,36 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
 
           {logo.objectUrl && <img src={logo.objectUrl} alt="Current tenant logo" style={{ maxWidth: 180, maxHeight: 72, objectFit: 'contain', borderRadius: 12 }} />}
 
+          {canManageAssets && (
+            <section aria-label="Branding asset upload" style={{ display: 'grid', gap: 10, padding: 14, border: '1px solid rgba(185,234,255,.22)', borderRadius: 16 }}>
+              <strong>Governed brand assets</strong>
+              <small>PNG, JPEG, WEBP or ICO · maximum 2 MB · SVG and executable formats are rejected.</small>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['LOGO', 'FAVICON'].map((kind) => (
+                  <label key={kind} style={{ ...inputStyle, cursor: uploadingKind ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                    Upload {kind.toLowerCase()}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon"
+                      disabled={Boolean(uploadingKind)}
+                      onChange={(event) => void upload(kind, event)}
+                      style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+                    />
+                  </label>
+                ))}
+              </div>
+              {uploadingKind && <p role="status">Uploading {uploadingKind.toLowerCase()}…</p>}
+              {assetError && <p role="alert">Asset upload failed: {assetError}</p>}
+              {pendingPreview && (
+                <div data-testid="tenant-branding-pending-preview">
+                  <small>Pending preview · not shared chrome authority · {pendingPreview.name}</small>
+                  <img src={pendingPreview.url} alt={`Pending ${pendingPreview.kind.toLowerCase()} preview`} style={{ display: 'block', maxWidth: 180, maxHeight: 72, objectFit: 'contain', borderRadius: 12, marginTop: 6 }} />
+                  <small>{pendingPreview.descriptor.mediaType} · {pendingPreview.descriptor.contentLength} bytes</small>
+                </div>
+              )}
+            </section>
+          )}
+
           <form onSubmit={save} style={{ display: 'grid', gap: 10 }}>
             <label style={fieldStyle}>Profile label<input value={form.profileLabel} onChange={update('profileLabel')} disabled={!canManageProfile || saving} required maxLength={120} style={inputStyle} /></label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
@@ -170,7 +238,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
 export default TenantBrandingManagementPanel;
 
 // ARTIFACT: TenantBrandingManagementPanel.jsx
-// VERSION: v1.0.0-L10-P2C6-D21B-BRANDING-COMMAND-CENTER
+// VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER
 // AUTHORITY BOUNDARY: presentation and transport invocation only
 // TENANT POSTURE: server-derived; no selector or local authority
 // FAIL-CLOSED POSTURE: unavailable/denied mutation controls remain disabled
