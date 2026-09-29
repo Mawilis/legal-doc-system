@@ -1,0 +1,485 @@
+{
+  "canonical_indexes": [
+    "tenant_idempotency_unique",
+    "tenant_plan",
+    "tenant_status",
+    "tenant_subscription_unique"
+  ],
+  "canonical_integrity": true,
+  "canonical_plan_id": "WILSYPLAN-B877349B938833072C388A182ED4B497",
+  "canonical_row_count": 1,
+  "canonical_subscription_id": "WILSYSUB-LEGACY-8A823D69D18B419DF4AE658C",
+  "canonical_tenant_id": "WILSYTENANT-4CD2FZ4O",
+  "captured_at": "2026-09-29T12:55:14.964757+00:00",
+  "collection": "subscriptions",
+  "collection_row_count": 2,
+  "database": "wilsy",
+  "documents": [
+    {
+      "__v": {
+        "$numberInt": "0"
+      },
+      "_id": {
+        "$oid": "695fe2a4ebabacb9a4a68511"
+      },
+      "active": true,
+      "period": "yearly",
+      "price": {
+        "$numberInt": "0"
+      },
+      "tenantId": "695fe2a3ebabacb9a4a6850f"
+    },
+    {
+      "_id": {
+        "$oid": "6a781e8dd8c27729e4d46845"
+      },
+      "_registry_create_fingerprint": "sha3-512:543a58ce760651bf8c1504fc3ff5721512e3ce2e40c65e3f5ada8e8b7dcef2fdb36619ec264c956d21a9150468c510e07824336604e667c97c1c6404b5963070",
+      "_registry_create_material": "{\"payload\":{\"billingMode\":\"PLATFORM\",\"idempotencyKey\":\"WILSY-SUB-695FE2A3EBABACB9A4A6850F-B999F358B21E4A57\",\"metadata\":{\"migration\":\"LEGACY_NODE_SUBSCRIPTION_STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED\"},\"planId\":\"WILSYPLAN-B877349B938833072C388A182ED4B497\",\"startDate\":\"2026-08-09T00:00:00+00:00\",\"tenantId\":\"WILSYTENANT-4CD2FZ4O\"},\"schema\":\"WILSY-SUBSCRIPTION-CREATE/V1\",\"tenant_id\":\"WILSYTENANT-4CD2FZ4O\"}",
+      "_registry_revision": {
+        "$numberInt": "1"
+      },
+      "_registry_schema": "WILSY-SUBSCRIPTION-REGISTRY/V1",
+      "amount": {
+        "$numberDouble": "299.0"
+      },
+      "audit_trail": [
+        {
+          "action": "create",
+          "billingMode": "PLATFORM",
+          "metadata": {
+            "legacyEvidenceStatus": "LEGACY_NODE_SUBSCRIPTION_STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED",
+            "legacyNodeMerkleRoot": "b9ba6da96e8cd5836f38494bde514328e03e19c78bad44ed29da2eca9bc206daf0faa0940521146bbbea5644cfe7ba9b6b26123fbffab661262710027a2aeb38",
+            "legacyPlanId": "6a78082d0c6c4942c7b20b16",
+            "legacyProofHash": "8A32A190A8260F48140EF47A18450E7FF5D4F0888FE09C326FF9D450460683087152CB5B32E9929534F3CC3DBD7AAB350768A76A44BF5E6391A9639706B3FC56",
+            "legacySourceId": "6a781e8dd8c27729e4d46845",
+            "legacyTenantId": "695fe2a3ebabacb9a4a6850f"
+          },
+          "newStatus": "active",
+          "previousStatus": null,
+          "proofHash": "22D2DB45265D06BD52F1F6D96E09C81975E769A560EA362148527CBF7E9F3B846327D64A781840C5B43E708E6DD238F2BE9FE13937A77BB89AA95B92FEE8800F",
+          "reason": "Canonical Python EOS migration projection of legacy Node subscription evidence",
+          "tier": "PROFESSIONAL",
+          "timestamp": "2026-08-09T06:30:37.476000+00:00",
+          "user": "SYSTEM"
+        }
+      ],
+      "billing_frequency": "monthly",
+      "billing_mode": "PLATFORM",
+      "billing_ref": null,
+      "cancel_at": null,
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "collection_method": "charge_automatically",
+      "compliance_flags": {
+        "gdpr": false,
+        "iso27001": false,
+        "popia": false,
+        "soc2": false
+      },
+      "credit_balance": {
+        "$numberDouble": "0.0"
+      },
+      "currency": "ZAR",
+      "current_period_end": "2026-09-09T00:00:00+00:00",
+      "current_period_start": "2026-08-09T00:00:00+00:00",
+      "end_date": null,
+      "idempotency_key": "WILSY-SUB-695FE2A3EBABACB9A4A6850F-B999F358B21E4A57",
+      "kennel_shard": "EOS_PRIMARY",
+      "last_invoice_id": null,
+      "last_platform_invoice_id": null,
+      "legacy_audit_trail": [
+        {
+          "_id": "6a781e8dd8c27729e4d46848",
+          "action": "create",
+          "metadata": {
+            "planSynthetic": false
+          },
+          "newStatus": "active",
+          "previousStatus": null,
+          "proofHash": "6C1844914CF2092F772835E5617FBB2AA65ACA672DD4E3B01BE5EC916DDF0F3E22105FE35C2E6CBEE15246939205B8F6B0658D27F409EE4D243E160C635D62CE",
+          "reason": "Subscription created via BillingHUD",
+          "timestamp": "2026-08-09T06:30:37.476000+00:00",
+          "user": "695e423c9d355c0675c6835d"
+        }
+      ],
+      "legacy_evidence_status": "LEGACY_NODE_SUBSCRIPTION_STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED",
+      "legacy_node_merkle_root": "b9ba6da96e8cd5836f38494bde514328e03e19c78bad44ed29da2eca9bc206daf0faa0940521146bbbea5644cfe7ba9b6b26123fbffab661262710027a2aeb38",
+      "legacy_proof_hash": "8A32A190A8260F48140EF47A18450E7FF5D4F0888FE09C326FF9D450460683087152CB5B32E9929534F3CC3DBD7AAB350768A76A44BF5E6391A9639706B3FC56",
+      "merkle_root": "35128A90A93DA1B1ABC491F70AD14B273D0D5231E36EDD09098B4D6B70E8AF210866D5FE2A3B2189380969DF9CF663CA42AB4CA8F3268EAC3DE4AC44D89B5971",
+      "metadata": {
+        "createdBy": "695e423c9d355c0675c6835d",
+        "createdVia": "useSubscriptions.create",
+        "headerTenantAtCreate": "WILSY_SOVEREIGN_ROOT",
+        "planSnapshot": {
+          "currency": "ZAR",
+          "name": "Pro",
+          "price": {
+            "$numberInt": "299"
+          },
+          "synthetic": false
+        },
+        "source": "BILLING_HUD"
+      },
+      "next_billing_at": null,
+      "onboarding_ref": null,
+      "pause_reason": null,
+      "pause_until": null,
+      "paused_at": null,
+      "payment_method_id": null,
+      "plan": "PROFESSIONAL",
+      "plan_catalogue_version": null,
+      "plan_features": [
+        "Unlimited users",
+        "Advanced analytics and reporting",
+        "Priority email support",
+        "API access"
+      ],
+      "plan_id": "WILSYPLAN-B877349B938833072C388A182ED4B497",
+      "plan_name": "Pro",
+      "plan_ref": null,
+      "proof_hash": "22D2DB45265D06BD52F1F6D96E09C81975E769A560EA362148527CBF7E9F3B846327D64A781840C5B43E708E6DD238F2BE9FE13937A77BB89AA95B92FEE8800F",
+      "proration_log": [],
+      "reactivated_at": null,
+      "region": null,
+      "resumed_at": null,
+      "seal_nonce": "15582cf15af65e9529941c71c59bc86e",
+      "sector": null,
+      "start_date": "2026-08-09T00:00:00+00:00",
+      "status": "active",
+      "subscription_id": "WILSYSUB-LEGACY-8A823D69D18B419DF4AE658C",
+      "tags": [],
+      "tax_amount": {
+        "$numberDouble": "0.0"
+      },
+      "tenant_id": "WILSYTENANT-4CD2FZ4O",
+      "tenant_ref": null,
+      "tier": "PROFESSIONAL",
+      "trace_id": null,
+      "trial_end_date": null
+    }
+  ],
+  "indexes": [
+    {
+      "key": {
+        "_id": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "_id_",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "tenantId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenantId_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "kennelShard": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "kennelShard_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "tenantRef": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenantRef_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "billingRef": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "billingRef_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "planRef": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "planRef_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "planId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "planId_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "currentPeriodEnd": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "currentPeriodEnd_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "status": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "status_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "status": {
+          "$numberInt": "1"
+        },
+        "tenantId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenantId_1_status_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "currentPeriodEnd": {
+          "$numberInt": "1"
+        },
+        "status": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "currentPeriodEnd_1_status_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "createdAt": {
+          "$numberInt": "-1"
+        },
+        "tenantId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenantId_1_createdAt_-1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "kennelShard": {
+          "$numberInt": "1"
+        },
+        "tenantId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "kennelShard_1_tenantId_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "tier": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tier_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "onboardingRef": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "onboardingRef_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "nextBillingAt": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "nextBillingAt_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "lastPlatformInvoiceId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "lastPlatformInvoiceId_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "traceId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "traceId_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "planId": {
+          "$numberInt": "1"
+        },
+        "tenantId": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "planId_1_tenantId_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "nextBillingAt": {
+          "$numberInt": "1"
+        },
+        "status": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "nextBillingAt_1_status_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "billingMode": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "billingMode_1",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "subscription_id": {
+          "$numberInt": "1"
+        },
+        "tenant_id": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenant_subscription_unique",
+      "unique": true,
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "idempotency_key": {
+          "$numberInt": "1"
+        },
+        "tenant_id": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenant_idempotency_unique",
+      "unique": true,
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "status": {
+          "$numberInt": "1"
+        },
+        "tenant_id": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenant_status",
+      "v": {
+        "$numberInt": "2"
+      }
+    },
+    {
+      "key": {
+        "plan": {
+          "$numberInt": "1"
+        },
+        "tenant_id": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "tenant_plan",
+      "v": {
+        "$numberInt": "2"
+      }
+    }
+  ],
+  "legacy_evidence_status": "LEGACY_NODE_SUBSCRIPTION_STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED",
+  "legacy_index_removed": "idempotencyKey_1",
+  "legacy_merkle_preserved": true,
+  "legacy_proof_preserved": true,
+  "minimal_mongo_id": "695fe2a4ebabacb9a4a68511",
+  "minimal_neighbor_unchanged": true,
+  "post_documents_sha3_512": "ea9ce7a869164c83777541d5e4ee1e8b62842e33dedac2ae834388f8b479a321465ab5da83595b416d13e65daa06e376300145922ba5ac912ef5ff9f9d74069e",
+  "post_indexes_sha3_512": "b0a8e9775c2c9e87908062aa248287fba9affa7a075a44d755dece4c0f13a289b4d11a84ba31e5fcb2ae953af7d64b8782bc730ce4f0579437b477c381ddb837",
+  "pre_documents_sha3_512": "ea524fc4c8ed3946edfd1d937eae691bb522e5bfd15188bba1aa6bcdaaf0e361e001a5b9e0a9c8f5931addcbd9f6fc5a5604713c040a391b8e33bc52ab1f9780",
+  "pre_indexes_sha3_512": "da8500eadc7436a37f3be48ee275819a9a5898e9d49115914fc6d3fea4b1e4b9cf5bfb2bce45f6d6db26294fbd04c4304928e1c9780514bdf5a5fb5757365335",
+  "registry_revision": 1,
+  "registry_schema": "WILSY-SUBSCRIPTION-REGISTRY/V1",
+  "rich_mongo_id": "6a781e8dd8c27729e4d46845",
+  "schema": "WILSY-SUBSCRIPTION-ATLAS-LEGACY-RECONCILIATION/V1",
+  "status": "PASS"
+}

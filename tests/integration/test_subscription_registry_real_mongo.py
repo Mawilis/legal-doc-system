@@ -2180,3 +2180,934 @@ def test_real_mongo_legacy_period_command_exact_replay_survives_but_change_confl
 # FINANCIAL EXECUTION AUTHORITY:
 #   Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+def test_real_mongo_rich_legacy_subscription_migrates_in_place(
+    mongo_context: _MongoContext,
+) -> None:
+    """Migrate one rich legacy Node subscription into canonical registry truth."""
+    from bson import ObjectId
+    from tools.eos.saas.domain.subscription import (
+        SubscriptionEntity,
+        verify_subscription_integrity,
+    )
+
+    legacy_id = ObjectId()
+    legacy_tenant_id = "695fe2a3ebabacb9a4a6850f"
+    canonical_tenant_id = "WILSYTENANT-4CD2FZ4O"
+    canonical_plan_id = (
+        "WILSYPLAN-B877349B938833072C388A182ED4B497"
+    )
+    legacy_proof = "A" * 128
+    seal_nonce = "15582cf15af65e9529941c71c59bc86e"
+
+    legacy_merkle = hashlib.sha3_512(
+        (
+            f"{legacy_tenant_id}|"
+            f"{legacy_proof}|"
+            f"{seal_nonce}"
+        ).encode("utf-8")
+    ).hexdigest().upper()
+
+    legacy = {
+        "_id": legacy_id,
+        "tenantId": legacy_tenant_id,
+        "plan": "PROFESSIONAL",
+        "planId": "6a78082d0c6c4942c7b20b16",
+        "planName": "Pro",
+        "amount": 299,
+        "currency": "ZAR",
+        "billingFrequency": "monthly",
+        "status": "active",
+        "startDate": datetime.fromisoformat(
+            "2026-08-09T00:00:00+00:00"
+        ),
+        "currentPeriodStart": datetime.fromisoformat(
+            "2026-08-09T00:00:00+00:00"
+        ),
+        "currentPeriodEnd": datetime.fromisoformat(
+            "2026-09-09T00:00:00+00:00"
+        ),
+        "idempotencyKey": (
+            "WILSY-SUB-695FE2A3EBABACB9A4A6850F-B999F358B21E4A57"
+        ),
+        "sealNonce": seal_nonce,
+        "proofHash": legacy_proof,
+        "merkleRoot": legacy_merkle,
+        "auditTrail": [
+            {
+                "action": "create",
+                "timestamp": datetime.fromisoformat(
+                    "2026-08-09T06:30:37.305000+00:00"
+                ),
+                "user": "695e423c9d355c0675c6835d",
+                "reason": "Subscription created via BillingHUD",
+                "previousStatus": None,
+                "newStatus": "active",
+                "metadata": {
+                    "planSynthetic": False,
+                },
+                "proofHash": "B" * 128,
+            }
+        ],
+        "metadata": {
+            "source": "BILLING_HUD",
+            "createdVia": "useSubscriptions.create",
+            "planSnapshot": {
+                "name": "Pro",
+                "price": 299,
+                "currency": "ZAR",
+                "synthetic": False,
+            },
+        },
+        "__v": 1,
+    }
+
+    mongo_context.collection.insert_one(
+        copy.deepcopy(legacy)
+    )
+
+    observed = mongo_context.collection.find_one(
+        {"_id": legacy_id}
+    )
+    assert observed is not None
+
+    migrated = SubscriptionEntity.migrate_legacy_dict(
+        observed,
+        canonical_tenant_id=canonical_tenant_id,
+        canonical_plan_id=canonical_plan_id,
+    )
+
+    create_payload = {
+        "tenantId": canonical_tenant_id,
+        "planId": canonical_plan_id,
+        "startDate": migrated.start_date.isoformat(),
+        "idempotencyKey": migrated.idempotency_key,
+        "billingMode": migrated.billing_mode,
+        "metadata": {
+            "migration": (
+                "LEGACY_NODE_SUBSCRIPTION_"
+                "STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+            )
+        },
+    }
+
+    create_material = registry._create_material(
+        canonical_tenant_id,
+        create_payload,
+    )
+    create_fingerprint = (
+        registry._fingerprint_create_material(
+            create_material
+        )
+    )
+
+    replacement = registry._document_for(
+        migrated,
+        create_material=create_material,
+        create_fingerprint=create_fingerprint,
+        revision=1,
+    )
+    replacement["_id"] = legacy_id
+
+    cas_filter = copy.deepcopy(
+        observed
+    )
+
+    result = mongo_context.collection.replace_one(
+        cas_filter,
+        replacement,
+        upsert=False,
+    )
+
+    assert result.matched_count == 1
+    assert result.modified_count == 1
+
+    persisted = mongo_context.collection.find_one(
+        {"_id": legacy_id}
+    )
+    assert persisted is not None
+    assert persisted["_id"] == legacy_id
+    assert persisted["_registry_revision"] == 1
+    assert (
+        persisted["_registry_schema"]
+        == "WILSY-SUBSCRIPTION-REGISTRY/V1"
+    )
+    assert (
+        persisted["legacy_evidence_status"]
+        == (
+            "LEGACY_NODE_SUBSCRIPTION_"
+            "STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+        )
+    )
+
+    hydrated = registry._hydrate(
+        persisted
+    )
+
+    assert hydrated.tenant_id == canonical_tenant_id
+    assert hydrated.plan_id == canonical_plan_id
+    assert hydrated.subscription_id == migrated.subscription_id
+    assert hydrated.idempotency_key == migrated.idempotency_key
+    assert hydrated.legacy_proof_hash == legacy_proof
+    assert hydrated.legacy_node_merkle_root == legacy_merkle
+    assert verify_subscription_integrity(hydrated) is True
+
+def _legacy_subscription_cert_row(
+    *,
+    legacy_id: Any,
+    legacy_tenant_id: str = "695fe2a3ebabacb9a4a6850f",
+) -> dict[str, Any]:
+    """Build one synthetic rich BillingHUD legacy subscription row."""
+    proof_hash = "A" * 128
+    seal_nonce = "15582cf15af65e9529941c71c59bc86e"
+    merkle_root = hashlib.sha3_512(
+        (
+            f"{legacy_tenant_id}|"
+            f"{proof_hash}|"
+            f"{seal_nonce}"
+        ).encode("utf-8")
+    ).hexdigest().upper()
+
+    return {
+        "_id": legacy_id,
+        "tenantId": legacy_tenant_id,
+        "plan": "PROFESSIONAL",
+        "planId": "6a78082d0c6c4942c7b20b16",
+        "planName": "Pro",
+        "amount": 299,
+        "currency": "ZAR",
+        "billingFrequency": "monthly",
+        "status": "active",
+        "startDate": datetime.fromisoformat(
+            "2026-08-09T00:00:00+00:00"
+        ),
+        "currentPeriodStart": datetime.fromisoformat(
+            "2026-08-09T00:00:00+00:00"
+        ),
+        "currentPeriodEnd": datetime.fromisoformat(
+            "2026-09-09T00:00:00+00:00"
+        ),
+        "idempotencyKey": (
+            "WILSY-SUB-"
+            + str(legacy_id).upper()
+        ),
+        "sealNonce": seal_nonce,
+        "proofHash": proof_hash,
+        "merkleRoot": merkle_root,
+        "auditTrail": [
+            {
+                "action": "create",
+                "timestamp": datetime.fromisoformat(
+                    "2026-08-09T06:30:37.305000+00:00"
+                ),
+                "user": "SUBSCRIPTION-MIGRATION-CERT",
+                "reason": "Subscription created via BillingHUD",
+                "previousStatus": None,
+                "newStatus": "active",
+                "metadata": {
+                    "planSynthetic": False,
+                },
+                "proofHash": "B" * 128,
+            }
+        ],
+        "metadata": {
+            "source": "BILLING_HUD",
+            "createdVia": "useSubscriptions.create",
+            "planSnapshot": {
+                "name": "Pro",
+                "price": 299,
+                "currency": "ZAR",
+                "synthetic": False,
+            },
+        },
+        "__v": 1,
+    }
+
+
+def _canonical_legacy_replacement(
+    observed: dict[str, Any],
+) -> dict[str, Any]:
+    """Build canonical registry truth from one observed rich legacy row."""
+    from tools.eos.saas.domain.subscription import SubscriptionEntity
+
+    canonical_tenant_id = "WILSYTENANT-4CD2FZ4O"
+    canonical_plan_id = (
+        "WILSYPLAN-B877349B938833072C388A182ED4B497"
+    )
+
+    entity = SubscriptionEntity.migrate_legacy_dict(
+        observed,
+        canonical_tenant_id=canonical_tenant_id,
+        canonical_plan_id=canonical_plan_id,
+    )
+
+    payload = {
+        "tenantId": canonical_tenant_id,
+        "planId": canonical_plan_id,
+        "startDate": entity.start_date.isoformat(),
+        "idempotencyKey": entity.idempotency_key,
+        "billingMode": entity.billing_mode,
+        "metadata": {
+            "migration": entity.legacy_evidence_status,
+        },
+    }
+
+    create_material = registry._create_material(
+        canonical_tenant_id,
+        payload,
+    )
+
+    replacement = registry._document_for(
+        entity,
+        create_material=create_material,
+        create_fingerprint=(
+            registry._fingerprint_create_material(
+                create_material
+            )
+        ),
+        revision=1,
+    )
+    replacement["_id"] = observed["_id"]
+    return replacement
+
+
+@pytest.mark.parametrize(
+    ("field_name", "invalid_value"),
+    [
+        ("proofHash", "malformed"),
+        ("merkleRoot", "1234"),
+    ],
+)
+def test_real_mongo_legacy_malformed_crypto_rejects_without_write(
+    mongo_context: _MongoContext,
+    field_name: str,
+    invalid_value: str,
+) -> None:
+    """Malformed historical cryptographic evidence never mutates persisted truth."""
+    from bson import ObjectId
+    from tools.eos.saas.domain.subscription import SubscriptionEntity
+
+    row = _legacy_subscription_cert_row(
+        legacy_id=ObjectId(),
+    )
+    row[field_name] = invalid_value
+
+    mongo_context.collection.insert_one(
+        copy.deepcopy(row)
+    )
+
+    before = copy.deepcopy(
+        mongo_context.collection.find_one(
+            {"_id": row["_id"]}
+        )
+    )
+    assert before is not None
+
+    with pytest.raises(
+        ValueError,
+        match="legacy subscription evidence incomplete",
+    ):
+        SubscriptionEntity.migrate_legacy_dict(
+            before,
+            canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+            canonical_plan_id=(
+                "WILSYPLAN-B877349B938833072C388A182ED4B497"
+            ),
+        )
+
+    after = mongo_context.collection.find_one(
+        {"_id": row["_id"]}
+    )
+    assert after == before
+
+
+def test_real_mongo_incomplete_legacy_row_remains_untouched(
+    mongo_context: _MongoContext,
+) -> None:
+    """Incomplete zero-price legacy evidence is preserved, never fabricated."""
+    from bson import ObjectId
+    from tools.eos.saas.domain.subscription import SubscriptionEntity
+
+    row = {
+        "_id": ObjectId(),
+        "tenantId": "695fe2a3ebabacb9a4a6850f",
+        "price": 0,
+        "period": "yearly",
+        "active": True,
+        "__v": 0,
+    }
+
+    mongo_context.collection.insert_one(
+        copy.deepcopy(row)
+    )
+
+    before = copy.deepcopy(
+        mongo_context.collection.find_one(
+            {"_id": row["_id"]}
+        )
+    )
+    assert before is not None
+
+    with pytest.raises(
+        ValueError,
+        match="legacy subscription evidence incomplete",
+    ):
+        SubscriptionEntity.migrate_legacy_dict(
+            before,
+            canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+            canonical_plan_id="WILSYPLAN-DO-NOT-INVENT",
+        )
+
+    after = mongo_context.collection.find_one(
+        {"_id": row["_id"]}
+    )
+    assert after == before
+
+
+def test_real_mongo_legacy_migration_cas_rejects_stale_generation(
+    mongo_context: _MongoContext,
+) -> None:
+    """Observed-generation CAS prevents overwriting concurrent legacy change."""
+    from bson import ObjectId
+
+    row = _legacy_subscription_cert_row(
+        legacy_id=ObjectId(),
+    )
+    mongo_context.collection.insert_one(
+        copy.deepcopy(row)
+    )
+
+    observed = mongo_context.collection.find_one(
+        {"_id": row["_id"]}
+    )
+    assert observed is not None
+
+    replacement = _canonical_legacy_replacement(
+        observed
+    )
+
+    concurrent = mongo_context.collection.update_one(
+        {"_id": row["_id"]},
+        {
+            "$set": {
+                "metadata.concurrentMutation": True,
+            }
+        },
+    )
+    assert concurrent.modified_count == 1
+
+    result = mongo_context.collection.replace_one(
+        copy.deepcopy(observed),
+        replacement,
+        upsert=False,
+    )
+
+    assert result.matched_count == 0
+    assert result.modified_count == 0
+
+    persisted = mongo_context.collection.find_one(
+        {"_id": row["_id"]}
+    )
+    assert persisted is not None
+    assert (
+        persisted["metadata"]["concurrentMutation"]
+        is True
+    )
+    assert "_registry_schema" not in persisted
+
+
+def test_real_mongo_legacy_migration_preserves_neighbor(
+    mongo_context: _MongoContext,
+) -> None:
+    """Pre-index migration changes one rich row and preserves its neighbor.
+
+    Legacy reconciliation intentionally precedes canonical unique-index
+    installation because multiple historical rows may lack canonical
+    ``tenant_id`` and ``subscription_id`` coordinates.
+    """
+    from bson import ObjectId
+
+    database = mongo_context.client[
+        mongo_context.database_name
+    ]
+    migration_collection = database.get_collection(
+        "subscriptions_legacy_migration_cert",
+        write_concern=WriteConcern(
+            w="majority",
+            j=True,
+        ),
+        read_concern=ReadConcern(
+            "majority"
+        ),
+    )
+
+    migration_collection.drop()
+
+    try:
+        target = _legacy_subscription_cert_row(
+            legacy_id=ObjectId(),
+        )
+        neighbor = {
+            "_id": ObjectId(),
+            "tenantId": "695fe2a3ebabacb9a4a6850f",
+            "price": 0,
+            "period": "yearly",
+            "active": True,
+            "__v": 0,
+        }
+
+        migration_collection.insert_many(
+            [
+                copy.deepcopy(target),
+                copy.deepcopy(neighbor),
+            ]
+        )
+
+        observed = migration_collection.find_one(
+            {"_id": target["_id"]}
+        )
+        assert observed is not None
+
+        neighbor_before = copy.deepcopy(
+            migration_collection.find_one(
+                {"_id": neighbor["_id"]}
+            )
+        )
+        assert neighbor_before is not None
+
+        replacement = _canonical_legacy_replacement(
+            observed
+        )
+
+        result = migration_collection.replace_one(
+            copy.deepcopy(observed),
+            replacement,
+            upsert=False,
+        )
+
+        assert result.matched_count == 1
+        assert result.modified_count == 1
+
+        neighbor_after = migration_collection.find_one(
+            {"_id": neighbor["_id"]}
+        )
+        assert neighbor_after == neighbor_before
+
+        migrated = migration_collection.find_one(
+            {"_id": target["_id"]}
+        )
+        assert migrated is not None
+        assert (
+            migrated["_registry_schema"]
+            == "WILSY-SUBSCRIPTION-REGISTRY/V1"
+        )
+
+        indexes = migration_collection.index_information()
+        assert set(indexes) == {"_id_"}
+
+    finally:
+        migration_collection.drop()
+
+
+def test_real_mongo_legacy_reconcile_then_install_canonical_indexes(
+    mongo_context: _MongoContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Certify the exact production ordering before any Atlas mutation.
+
+    Two legacy rows coexist before canonical indexes. Only the rich row is
+    migrated by observed-generation CAS. The incomplete neighbor remains
+    untouched. Canonical indexes are then installed through the production
+    registry implementation, and the migrated row strictly hydrates.
+    """
+    from bson import ObjectId
+    from tools.eos.saas.domain.subscription import (
+        verify_subscription_integrity,
+    )
+
+    database = mongo_context.client[
+        mongo_context.database_name
+    ]
+    collection = database.get_collection(
+        "subscriptions_reconcile_index_cert",
+        write_concern=WriteConcern(
+            w="majority",
+            j=True,
+        ),
+        read_concern=ReadConcern(
+            "majority"
+        ),
+    )
+
+    collection.drop()
+
+    rich = _legacy_subscription_cert_row(
+        legacy_id=ObjectId(),
+    )
+    rich["merkleRoot"] = rich["merkleRoot"].lower()
+
+    minimal = {
+        "_id": ObjectId(),
+        "tenantId": "695fe2a3ebabacb9a4a6850f",
+        "price": 0,
+        "period": "yearly",
+        "active": True,
+        "__v": 0,
+    }
+
+    try:
+        collection.insert_many(
+            [
+                copy.deepcopy(rich),
+                copy.deepcopy(minimal),
+            ]
+        )
+
+        assert set(
+            collection.index_information()
+        ) == {"_id_"}
+
+        observed_rich = collection.find_one(
+            {"_id": rich["_id"]}
+        )
+        assert observed_rich is not None
+
+        minimal_before = copy.deepcopy(
+            collection.find_one(
+                {"_id": minimal["_id"]}
+            )
+        )
+        assert minimal_before is not None
+
+        replacement = _canonical_legacy_replacement(
+            observed_rich
+        )
+
+        result = collection.replace_one(
+            copy.deepcopy(observed_rich),
+            replacement,
+            upsert=False,
+        )
+
+        assert result.matched_count == 1
+        assert result.modified_count == 1
+
+        minimal_after_migration = collection.find_one(
+            {"_id": minimal["_id"]}
+        )
+        assert minimal_after_migration == minimal_before
+
+        monkeypatch.setattr(
+            registry,
+            "subscriptions_collection",
+            collection,
+        )
+
+        registry._ensure_indexes()
+
+        indexes = {
+            entry["name"]: entry
+            for entry in collection.list_indexes()
+        }
+
+        assert (
+            indexes["tenant_subscription_unique"]["key"]
+            == {
+                "tenant_id": 1,
+                "subscription_id": 1,
+            }
+        )
+        assert (
+            indexes["tenant_subscription_unique"]["unique"]
+            is True
+        )
+
+        assert (
+            indexes["tenant_idempotency_unique"]["key"]
+            == {
+                "tenant_id": 1,
+                "idempotency_key": 1,
+            }
+        )
+        assert (
+            indexes["tenant_idempotency_unique"]["unique"]
+            is True
+        )
+
+        assert (
+            indexes["tenant_status"]["key"]
+            == {
+                "tenant_id": 1,
+                "status": 1,
+            }
+        )
+        assert (
+            indexes["tenant_plan"]["key"]
+            == {
+                "tenant_id": 1,
+                "plan": 1,
+            }
+        )
+
+        persisted_rich = collection.find_one(
+            {"_id": rich["_id"]}
+        )
+        assert persisted_rich is not None
+
+        hydrated = registry._hydrate(
+            persisted_rich
+        )
+
+        assert (
+            hydrated.tenant_id
+            == "WILSYTENANT-4CD2FZ4O"
+        )
+        assert (
+            hydrated.plan_id
+            == "WILSYPLAN-B877349B938833072C388A182ED4B497"
+        )
+        assert (
+            hydrated.legacy_evidence_status
+            == (
+                "LEGACY_NODE_SUBSCRIPTION_"
+                "STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+            )
+        )
+        assert (
+            hydrated.legacy_proof_hash
+            == rich["proofHash"]
+        )
+        assert (
+            hydrated.legacy_node_merkle_root
+            == rich["merkleRoot"]
+        )
+        assert verify_subscription_integrity(
+            hydrated
+        ) is True
+
+        minimal_after_indexes = collection.find_one(
+            {"_id": minimal["_id"]}
+        )
+        assert minimal_after_indexes == minimal_before
+
+        assert collection.count_documents({}) == 2
+        assert (
+            collection.count_documents(
+                {
+                    "_registry_schema":
+                    "WILSY-SUBSCRIPTION-REGISTRY/V1"
+                }
+            )
+            == 1
+        )
+        assert (
+            collection.count_documents(
+                {
+                    "tenant_id": {
+                        "$exists": False
+                    }
+                }
+            )
+            == 1
+        )
+
+    finally:
+        collection.drop()
+
+
+def test_real_mongo_legacy_idempotency_index_reconciliation_precedes_migration(
+    mongo_context: _MongoContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Certify legacy unique-index removal before canonical reconciliation.
+
+    The historical Node index ``idempotencyKey_1`` is unique and non-sparse.
+    A canonical replacement removes camelCase ``idempotencyKey`` and therefore
+    collides with an incomplete legacy neighbor that also lacks that field.
+    The safe sequence is:
+      1. prove direct replacement fails atomically;
+      2. drop only the obsolete legacy index;
+      3. migrate the rich row by full observed-generation CAS;
+      4. preserve the incomplete neighbor;
+      5. install canonical registry indexes;
+      6. strict-hydrate canonical truth.
+    """
+    from bson import ObjectId
+    from pymongo.errors import DuplicateKeyError
+    from tools.eos.saas.domain.subscription import (
+        verify_subscription_integrity,
+    )
+
+    database = mongo_context.client[
+        mongo_context.database_name
+    ]
+    collection = database.get_collection(
+        "subscriptions_legacy_index_reconcile_cert",
+        write_concern=WriteConcern(
+            w="majority",
+            j=True,
+        ),
+        read_concern=ReadConcern(
+            "majority"
+        ),
+    )
+
+    collection.drop()
+
+    rich = _legacy_subscription_cert_row(
+        legacy_id=ObjectId(),
+    )
+    rich["merkleRoot"] = rich["merkleRoot"].lower()
+
+    minimal = {
+        "_id": ObjectId(),
+        "tenantId": "695fe2a3ebabacb9a4a6850f",
+        "price": 0,
+        "period": "yearly",
+        "active": True,
+        "__v": 0,
+    }
+
+    try:
+        collection.insert_many(
+            [
+                copy.deepcopy(rich),
+                copy.deepcopy(minimal),
+            ]
+        )
+
+        collection.create_index(
+            [("idempotencyKey", 1)],
+            unique=True,
+            name="idempotencyKey_1",
+        )
+
+        observed_rich = collection.find_one(
+            {"_id": rich["_id"]}
+        )
+        assert observed_rich is not None
+
+        minimal_before = copy.deepcopy(
+            collection.find_one(
+                {"_id": minimal["_id"]}
+            )
+        )
+        assert minimal_before is not None
+
+        replacement = _canonical_legacy_replacement(
+            observed_rich
+        )
+
+        with pytest.raises(
+            DuplicateKeyError,
+        ):
+            collection.replace_one(
+                copy.deepcopy(observed_rich),
+                replacement,
+                upsert=False,
+            )
+
+        # Failed write must be atomic.
+        rich_after_failed_write = collection.find_one(
+            {"_id": rich["_id"]}
+        )
+        assert rich_after_failed_write == observed_rich
+
+        minimal_after_failed_write = collection.find_one(
+            {"_id": minimal["_id"]}
+        )
+        assert minimal_after_failed_write == minimal_before
+
+        index_names_before_drop = {
+            entry["name"]
+            for entry in collection.list_indexes()
+        }
+        assert "idempotencyKey_1" in index_names_before_drop
+
+        # Remove only the obsolete legacy camelCase uniqueness constraint.
+        collection.drop_index(
+            "idempotencyKey_1"
+        )
+
+        index_names_after_drop = {
+            entry["name"]
+            for entry in collection.list_indexes()
+        }
+        assert "idempotencyKey_1" not in index_names_after_drop
+        assert "_id_" in index_names_after_drop
+
+        # Re-observe after index reconciliation and use that exact generation.
+        fresh_observed_rich = collection.find_one(
+            {"_id": rich["_id"]}
+        )
+        assert fresh_observed_rich is not None
+        assert fresh_observed_rich == observed_rich
+
+        fresh_replacement = _canonical_legacy_replacement(
+            fresh_observed_rich
+        )
+
+        result = collection.replace_one(
+            copy.deepcopy(fresh_observed_rich),
+            fresh_replacement,
+            upsert=False,
+        )
+
+        assert result.matched_count == 1
+        assert result.modified_count == 1
+
+        minimal_after_migration = collection.find_one(
+            {"_id": minimal["_id"]}
+        )
+        assert minimal_after_migration == minimal_before
+
+        monkeypatch.setattr(
+            registry,
+            "subscriptions_collection",
+            collection,
+        )
+
+        registry._ensure_indexes()
+
+        canonical_indexes = {
+            entry["name"]: entry
+            for entry in collection.list_indexes()
+        }
+
+        assert "idempotencyKey_1" not in canonical_indexes
+        assert "tenant_subscription_unique" in canonical_indexes
+        assert "tenant_idempotency_unique" in canonical_indexes
+        assert "tenant_status" in canonical_indexes
+        assert "tenant_plan" in canonical_indexes
+
+        persisted_rich = collection.find_one(
+            {"_id": rich["_id"]}
+        )
+        assert persisted_rich is not None
+
+        hydrated = registry._hydrate(
+            persisted_rich
+        )
+
+        assert verify_subscription_integrity(
+            hydrated
+        ) is True
+
+        assert (
+            hydrated.legacy_proof_hash
+            == rich["proofHash"]
+        )
+        assert (
+            hydrated.legacy_node_merkle_root
+            == rich["merkleRoot"]
+        )
+
+        minimal_after_indexes = collection.find_one(
+            {"_id": minimal["_id"]}
+        )
+        assert minimal_after_indexes == minimal_before
+
+        assert collection.count_documents({}) == 2
+
+    finally:
+        collection.drop()
