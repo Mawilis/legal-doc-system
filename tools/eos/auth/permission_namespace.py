@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM
+VERSION: v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -12,7 +12,14 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
-    2026-09-28 v1.31.0-L10-P2C4-D21B-BRANDING-IAM adds dedicated
+    2026-09-29 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds the dedicated
+    legal_operations:evidence:write own-tenant permission vocabulary for
+    authenticated Legal evidence-content ingest. The permission is tenant-
+    membership gated, non-cross-tenant, non-financial and non-self-authorizing.
+    It does not itself grant role possession, matter/document scope,
+    ProcessDocument/custody mutation, Court/Court Online filing, AI authority,
+    billing, payment, execution or settlement truth.
+    2026-09-28 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds dedicated
     tenant_branding read/profile/asset-management permission metadata. All
     remain own-tenant, membership-gated, non-cross-tenant, non-financial and
     non-self-authorizing.
@@ -143,7 +150,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.31.0-L10-P2C4-D21B-BRANDING-IAM"
+VERSION = "v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM"
 
 
 class PermissionDisposition(StrEnum):
@@ -416,6 +423,13 @@ _PERMISSIONS: Final = MappingProxyType(
         "legal_operations:instruction:write": _meta(
             "legal_operations:instruction:write", "TENANT", "TENANT",
             "operate own-tenant legal instructions", tenant=True,
+        ),
+        "legal_operations:evidence:write": _meta(
+            "legal_operations:evidence:write",
+            "TENANT",
+            "TENANT",
+            "ingest own-tenant legal evidence content",
+            tenant=True,
         ),
         "legal_operations:directory:write": _meta(
             "legal_operations:directory:write", "TENANT", "TENANT",
@@ -732,7 +746,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM
+# VERSION: v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

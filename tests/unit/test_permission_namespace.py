@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT
+VERSION: v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,7 +9,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
-    2026-09-27 v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT certifies
+    2026-09-29 v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT certifies the dedicated
+    legal_operations:evidence:write canonical TENANT permission, exact
+    membership-gated/non-cross-tenant/non-financial/non-self-authorizing
+    metadata, malformed alias rejection, and canonical permission cardinality
+    increase from 70 to 71 without creating role possession, matter scope,
+    ProcessDocument/custody, Court/Court Online, AI or financial authority.
+    2026-09-27 v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT certifies
     the exact own-tenant Engagement firm-decision permission metadata,
     fail-closed nearby aliases, and vocabulary-only non-authority posture.
     2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT certifies
@@ -103,12 +109,12 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT"
+VERSION = "v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.31.0-L10-P2C4-D21B-BRANDING-IAM"
+    assert POLICY_VERSION == "v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM"
 
 
 def test_permission_canon_properties() -> None:
@@ -141,6 +147,7 @@ def test_permission_canon_properties() -> None:
         "wilsy_ai:legal_advisory:read",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:evidence:write",
         "legal_operations:directory:write",
         "legal_operations:receipt:write",
         "legal_operations:queue:read",
@@ -188,9 +195,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 70
+    ) == 71
 
-    assert len(rows) == 73
+    assert len(rows) == 74
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -202,6 +209,27 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    legal_evidence_write = permission_metadata(
+        "legal_operations:evidence:write"
+    )
+    assert legal_evidence_write.permission_id == (
+        "legal_operations:evidence:write"
+    )
+    assert legal_evidence_write.namespace == "TENANT"
+    assert legal_evidence_write.scope_kind == "TENANT"
+    assert legal_evidence_write.business_capability == (
+        "ingest own-tenant legal evidence content"
+    )
+    assert legal_evidence_write.tenant_membership_required is True
+    assert legal_evidence_write.system_assignment_required is False
+    assert legal_evidence_write.cross_tenant_capable is False
+    assert legal_evidence_write.financial_execution_capable is False
+    assert legal_evidence_write.authorizes_by_itself is False
+    assert (
+        legal_evidence_write.disposition
+        is PermissionDisposition.CANONICAL
+    )
 
     gateway = permission_metadata("wilsy_ai:legal_tool:read")
     assert gateway.namespace == "TENANT"
@@ -520,6 +548,12 @@ def test_permission_canon_properties() -> None:
         "billing_intelligence:evidence:read ",
         "billing_intelligence:evidence:READ",
         "billing_intelligence:evidence",
+        "legal_operations:evidence:*",
+        "legal_operations:evidence",
+        "legal_operations:evidence:read",
+        "LEGAL_OPERATIONS:EVIDENCE:WRITE",
+        " legal_operations:evidence:write",
+        "legal_operations:evidence:write ",
         "legal_operations:directory:*",
         "legal_operations:directory:write ",
         " legal_operations:directory:write",
@@ -671,7 +705,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM-CERT
+# VERSION: v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
