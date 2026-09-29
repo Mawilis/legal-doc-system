@@ -562,7 +562,12 @@ def test_real_route_set_and_canonical_mount_are_exact(api_context: tuple[MongoCo
                 path = f"{prefix}{nested_path}"
                 if path.startswith("/api/tenant-branding"):
                     paths.add(path)
-    assert paths == {"/api/tenant-branding", "/api/tenant-branding/profiles", "/api/tenant-branding/profiles/{profile_id}/select"}
+    assert paths == {
+        "/api/tenant-branding",
+        "/api/tenant-branding/profiles",
+        "/api/tenant-branding/profiles/{profile_id}/select",
+        "/api/tenant-branding/assets/{kind}",
+    }
     assert client.get("/api/tenant-branding").status_code == 200
 
 

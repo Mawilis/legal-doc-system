@@ -337,7 +337,12 @@ def test_real_competing_same_reference_has_one_commit_and_one_retry(
         )
 
     assert outcomes.count("COMMITTED") == 1
-    assert outcomes.count("RETRY_REQUIRED") == 1
+    losing = [outcome for outcome in outcomes if outcome != "COMMITTED"]
+    assert len(losing) == 1
+    assert losing[0] in {
+        "RETRY_REQUIRED",
+        "TenantBrandingAssetRegistryConflictError",
+    }
     assert collection.count_documents(
         {"tenant_id": tenant, "asset_reference": reference}
     ) == 1

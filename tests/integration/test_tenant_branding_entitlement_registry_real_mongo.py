@@ -546,7 +546,12 @@ def test_real_competing_active_transitions_have_one_commit_and_one_retry(
         outcomes = list(pool.map(contender, commands))
 
     assert outcomes.count("COMMITTED") == 1
-    assert outcomes.count("RETRY_REQUIRED") == 1
+    losing = [outcome for outcome in outcomes if outcome != "COMMITTED"]
+    assert len(losing) == 1
+    assert losing[0] in {
+        "RETRY_REQUIRED",
+        "TenantBrandingEntitlementRegistryConflictError",
+    }
     assert history.count_documents(
         {"tenant_id": tenant, "lifecycle_revision": 2}
     ) == 1

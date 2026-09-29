@@ -1,0 +1,158 @@
+{
+  "active": true,
+  "billing_frequency": "monthly",
+  "branding_entitlement_created": false,
+  "catalogue_version": 1,
+  "currency": "ZAR",
+  "features": [
+    "wilsy.vas.tenant_branding.enterprise.v1"
+  ],
+  "iam_authority_created": false,
+  "idempotency_key": "WILSY-FOUNDER-ENTERPRISE-WILSYTENANT-4CD2FZ4O-V1",
+  "kennel_authority_created": false,
+  "name": "Founder Enterprise",
+  "payment_authority_created": false,
+  "persisted_plan": {
+    "_id": {
+      "$oid": "6abbbc50aaee34cea20419ee"
+    },
+    "_registry_revision": {
+      "$numberInt": "1"
+    },
+    "active": true,
+    "audit_trail": [
+      {
+        "action": "create",
+        "catalogueVersion": {
+          "$numberInt": "1"
+        },
+        "integrityStatus": "CURRENT_V2_CHAIN_CONSISTENT",
+        "metadata": {
+          "source": "registry"
+        },
+        "planId": "WILSYPLAN-37B8164F",
+        "previousProofHash": "",
+        "proofHash": "4EBFFC6350FE807B5FA153F7344457AEDF079B03750AE848DF63AEFC45507C1E79E8AB1255BD80C6D35A1C90C2078D3CD1AD8AF1B05D9E6C2C2E58649D17140D",
+        "proofVersion": {
+          "$numberInt": "2"
+        },
+        "reason": "Plan created",
+        "stateProofHash": "F89E9637FA0C94C7EAF22351C72A210261DB2075057E2B8E32B11E365F59C8FDC502BD0E51BBC1CABD7A62527DCEB2D66D564E96E06B16445BF1FC1FFE21F735",
+        "timestamp": "2026-09-29T13:25:36.290262+00:00",
+        "user": "SYSTEM"
+      }
+    ],
+    "billing_frequency": "monthly",
+    "catalogue_version": {
+      "$numberInt": "1"
+    },
+    "created_at": "2026-09-29T13:25:36.289425+00:00",
+    "currency": "ZAR",
+    "description": "Tenant-scoped WILSY founder enterprise catalogue plan.",
+    "features": [
+      "wilsy.vas.tenant_branding.enterprise.v1"
+    ],
+    "idempotency_key": "WILSY-FOUNDER-ENTERPRISE-WILSYTENANT-4CD2FZ4O-V1",
+    "integrity_root": "4D6B288378C1DD0BFA01A1DE075E0EE985DE2DD40B8CD16E52EB6EE44B6046D4BB8A897AB4F223E68F7AED0B630CEA8417CDFB1FA4E0485A5CB9BF3180A5122A",
+    "integrity_root_semantics": "SHA3_512_FLAT_ENVELOPE_DIGEST_NOT_MERKLE_TREE",
+    "kennel_shard": "EOS_PRIMARY",
+    "legacy_audit_trail": [],
+    "legacy_envelope_digest": "",
+    "legacy_evidence_status": "",
+    "legacy_proof_hash": "",
+    "merkle_root": "4D6B288378C1DD0BFA01A1DE075E0EE985DE2DD40B8CD16E52EB6EE44B6046D4BB8A897AB4F223E68F7AED0B630CEA8417CDFB1FA4E0485A5CB9BF3180A5122A",
+    "metadata": {
+      "classification": "FOUNDER_ENTERPRISE",
+      "scope": "TENANT_ONLY",
+      "tenant": "WILSYTENANT-4CD2FZ4O"
+    },
+    "name": "Founder Enterprise",
+    "plan_id": "WILSYPLAN-37B8164F",
+    "plan_type": "FOUNDER_ENTERPRISE",
+    "price": {
+      "$numberDouble": "0.0"
+    },
+    "proof_hash": "F89E9637FA0C94C7EAF22351C72A210261DB2075057E2B8E32B11E365F59C8FDC502BD0E51BBC1CABD7A62527DCEB2D66D564E96E06B16445BF1FC1FFE21F735",
+    "proof_version": {
+      "$numberInt": "2"
+    },
+    "seal_nonce": "9387a11683764e7c81c15432f1af65c8",
+    "state_history": [
+      {
+        "catalogueVersion": {
+          "$numberInt": "1"
+        },
+        "proofHash": "F89E9637FA0C94C7EAF22351C72A210261DB2075057E2B8E32B11E365F59C8FDC502BD0E51BBC1CABD7A62527DCEB2D66D564E96E06B16445BF1FC1FFE21F735",
+        "state": {
+          "active": true,
+          "billing_frequency": "monthly",
+          "catalogue_version": {
+            "$numberInt": "1"
+          },
+          "currency": "ZAR",
+          "description": "Tenant-scoped WILSY founder enterprise catalogue plan.",
+          "features": [
+            "wilsy.vas.tenant_branding.enterprise.v1"
+          ],
+          "idempotency_key": "WILSY-FOUNDER-ENTERPRISE-WILSYTENANT-4CD2FZ4O-V1",
+          "kennel_shard": "EOS_PRIMARY",
+          "legacy_audit_trail": [],
+          "legacy_envelope_digest": "",
+          "legacy_evidence_status": "",
+          "legacy_proof_hash": "",
+          "metadata": {
+            "classification": "FOUNDER_ENTERPRISE",
+            "scope": "TENANT_ONLY",
+            "tenant": "WILSYTENANT-4CD2FZ4O"
+          },
+          "name": "Founder Enterprise",
+          "plan_id": "WILSYPLAN-37B8164F",
+          "plan_type": "FOUNDER_ENTERPRISE",
+          "price": {
+            "$numberDouble": "0.0"
+          },
+          "proof_version": {
+            "$numberInt": "2"
+          },
+          "tags": [
+            "founder-enterprise",
+            "tenant-scoped"
+          ],
+          "tenant_id": "WILSYTENANT-4CD2FZ4O",
+          "trial_days": {
+            "$numberInt": "0"
+          }
+        }
+      }
+    ],
+    "state_proof_lineage": [
+      {
+        "catalogueVersion": {
+          "$numberInt": "1"
+        },
+        "proofHash": "F89E9637FA0C94C7EAF22351C72A210261DB2075057E2B8E32B11E365F59C8FDC502BD0E51BBC1CABD7A62527DCEB2D66D564E96E06B16445BF1FC1FFE21F735"
+      }
+    ],
+    "tags": [
+      "founder-enterprise",
+      "tenant-scoped"
+    ],
+    "tenant_id": "WILSYTENANT-4CD2FZ4O",
+    "trial_days": {
+      "$numberInt": "0"
+    },
+    "updated_at": "2026-09-29T13:25:36.290300+00:00"
+  },
+  "plan_id": "WILSYPLAN-37B8164F",
+  "plan_type": "FOUNDER_ENTERPRISE",
+  "post_plan_count": 5,
+  "pre_existing_plans_sha3_512": "3571dfe7c75fc14940306829db96d41956ce29fca0a9d2b60cc77ddc61377e764a241dd64b59dccb3e52b20b2cd249fc0ceb20b0bfd06db6ef91f6d2f2910a67",
+  "pre_existing_plans_unchanged": true,
+  "pre_plan_count": 4,
+  "price": 0.0,
+  "registry_revision": 1,
+  "schema": "WILSY-FOUNDER-ENTERPRISE-ATLAS-PLAN-CREATION/V1",
+  "status": "PASS",
+  "subscription_created": false,
+  "tenant_id": "WILSYTENANT-4CD2FZ4O"
+}

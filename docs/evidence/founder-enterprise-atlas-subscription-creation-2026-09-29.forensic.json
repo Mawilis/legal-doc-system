@@ -1,0 +1,131 @@
+{
+  "active_branding_eligible_count": 1,
+  "amount": 0.0,
+  "billing_frequency": "monthly",
+  "branding_entitlement_created": false,
+  "caller_commercial_truth_supplied": false,
+  "currency": "ZAR",
+  "current_period_end": "2026-10-01T00:00:00+02:00",
+  "current_period_start": "2026-09-01T00:00:00+02:00",
+  "iam_authority_created": false,
+  "idempotency_key": "WILSY-FOUNDER-ENTERPRISE-SUBSCRIPTION-WILSYTENANT-4CD2FZ4O-V1",
+  "idempotent_replay": true,
+  "kennel_authority_created": false,
+  "payment_execution_performed": false,
+  "persisted_subscription": {
+    "_id": {
+      "$oid": "6abbbf613c3bc4b863528577"
+    },
+    "_registry_create_fingerprint": "sha3-512:177e9ac9648de3ee9861bea9341ad7af1b07906230feb50c5a58afc09d54c64c6d2d949a7fd3d73550bfaa3e179a4f93e63b517b02fe89d83af93820930bae81",
+    "_registry_create_material": "{\"payload\":{\"billingMode\":\"PLATFORM\",\"idempotencyKey\":\"WILSY-FOUNDER-ENTERPRISE-SUBSCRIPTION-WILSYTENANT-4CD2FZ4O-V1\",\"metadata\":{\"classification\":\"FOUNDER_ENTERPRISE\",\"source\":\"founder-subscription-production-gate\"},\"onboardingRef\":\"ONBOARD-WILSYTENANT-4CD2FZ4O-FOUNDER-ENTERPRISE\",\"planId\":\"WILSYPLAN-37B8164F\",\"region\":\"ZA\",\"sector\":\"LEGAL\",\"startDate\":\"2026-09-29T00:00:00+02:00\",\"tenantId\":\"WILSYTENANT-4CD2FZ4O\"},\"schema\":\"WILSY-SUBSCRIPTION-CREATE/V1\",\"tenant_id\":\"WILSYTENANT-4CD2FZ4O\"}",
+    "_registry_revision": {
+      "$numberInt": "1"
+    },
+    "_registry_schema": "WILSY-SUBSCRIPTION-REGISTRY/V1",
+    "amount": {
+      "$numberDouble": "0.0"
+    },
+    "audit_trail": [
+      {
+        "action": "create",
+        "billingMode": "PLATFORM",
+        "metadata": {
+          "plan_catalogue_version": {
+            "$numberInt": "1"
+          },
+          "plan_id": "WILSYPLAN-37B8164F",
+          "source": "subscription_registry"
+        },
+        "newStatus": "active",
+        "previousStatus": null,
+        "proofHash": "88683293CC5998EA689FA83ABAB2C2452E7ADFE31FEC2A15397BFDFF3DB16C44E214E7703002DB1FB0A4846FB033BF0FC9DBF12ABB97BDFFCAA1845FBA836E0A",
+        "reason": "Subscription created",
+        "tier": "FOUNDER_ENTERPRISE",
+        "timestamp": "2026-09-29T13:38:41.814013+00:00",
+        "user": "SYSTEM"
+      }
+    ],
+    "billing_frequency": "monthly",
+    "billing_mode": "PLATFORM",
+    "billing_ref": null,
+    "cancel_at": null,
+    "cancel_reason": null,
+    "cancelled_at": null,
+    "collection_method": "charge_automatically",
+    "compliance_flags": {},
+    "credit_balance": {
+      "$numberDouble": "0.0"
+    },
+    "currency": "ZAR",
+    "current_period_end": "2026-10-01T00:00:00+02:00",
+    "current_period_start": "2026-09-01T00:00:00+02:00",
+    "end_date": null,
+    "idempotency_key": "WILSY-FOUNDER-ENTERPRISE-SUBSCRIPTION-WILSYTENANT-4CD2FZ4O-V1",
+    "kennel_shard": "EOS_PRIMARY",
+    "last_invoice_id": null,
+    "last_platform_invoice_id": null,
+    "legacy_audit_trail": [],
+    "legacy_evidence_status": "",
+    "legacy_node_merkle_root": "",
+    "legacy_proof_hash": "",
+    "merkle_root": "B5FC2BC1079030CCC1824FFFC19F51E966AB1BBD1B6CFC7865F1B532F9840F85455261ECBBD2FA1D12EF60676E182C83F3639AB474E297F734A02926F3DE9964",
+    "metadata": {
+      "classification": "FOUNDER_ENTERPRISE",
+      "source": "founder-subscription-production-gate"
+    },
+    "next_billing_at": null,
+    "onboarding_ref": "ONBOARD-WILSYTENANT-4CD2FZ4O-FOUNDER-ENTERPRISE",
+    "pause_reason": null,
+    "pause_until": null,
+    "paused_at": null,
+    "payment_method_id": null,
+    "plan": "FOUNDER_ENTERPRISE",
+    "plan_catalogue_version": {
+      "$numberInt": "1"
+    },
+    "plan_features": [
+      "wilsy.vas.tenant_branding.enterprise.v1"
+    ],
+    "plan_id": "WILSYPLAN-37B8164F",
+    "plan_name": "Founder Enterprise",
+    "plan_ref": null,
+    "proof_hash": "88683293CC5998EA689FA83ABAB2C2452E7ADFE31FEC2A15397BFDFF3DB16C44E214E7703002DB1FB0A4846FB033BF0FC9DBF12ABB97BDFFCAA1845FBA836E0A",
+    "proration_log": [],
+    "reactivated_at": null,
+    "region": "ZA",
+    "resumed_at": null,
+    "seal_nonce": "3cd89be46f124637a6e542f91315af8a",
+    "sector": "LEGAL",
+    "start_date": "2026-09-29T00:00:00+02:00",
+    "status": "active",
+    "subscription_id": "WILSYSUB-93455E4E",
+    "tags": [],
+    "tax_amount": {
+      "$numberDouble": "0.0"
+    },
+    "tenant_id": "WILSYTENANT-4CD2FZ4O",
+    "tenant_ref": null,
+    "tier": "FOUNDER_ENTERPRISE",
+    "trace_id": null,
+    "trial_end_date": null
+  },
+  "plan_catalogue_version": 1,
+  "plan_features": [
+    "wilsy.vas.tenant_branding.enterprise.v1"
+  ],
+  "plan_id": "WILSYPLAN-37B8164F",
+  "plan_name": "Founder Enterprise",
+  "plan_type": "FOUNDER_ENTERPRISE",
+  "post_subscription_count": 3,
+  "post_subscriptions_sha3_512": "7b4863d111932716342ccd220fd66dff8b551aa9973e66e47a891e774d66da43a1b5d8746ec2a7304252a268f80ee69745fed22cb8f0d8ea7d5fb5e872ccb319",
+  "pre_existing_subscriptions_unchanged": true,
+  "pre_subscription_count": 2,
+  "pre_subscriptions_sha3_512": "ea9ce7a869164c83777541d5e4ee1e8b62842e33dedac2ae834388f8b479a321465ab5da83595b416d13e65daa06e376300145922ba5ac912ef5ff9f9d74069e",
+  "registry_revision": 1,
+  "schema": "WILSY-FOUNDER-ENTERPRISE-ATLAS-SUBSCRIPTION-CREATION/V1",
+  "start_date": "2026-09-29T00:00:00+02:00",
+  "status": "PASS",
+  "subscription_id": "WILSYSUB-93455E4E",
+  "subscription_status": "active",
+  "tenant_id": "WILSYTENANT-4CD2FZ4O"
+}

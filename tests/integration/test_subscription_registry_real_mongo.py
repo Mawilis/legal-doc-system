@@ -3111,3 +3111,159 @@ def test_real_mongo_legacy_idempotency_index_reconciliation_precedes_migration(
 
     finally:
         collection.drop()
+
+
+
+def test_real_mongo_founder_enterprise_subscription_derives_catalogue_truth_from_plan_registry(
+    mongo_context: _MongoContext,
+) -> None:
+    """Certify Founder subscription truth is derived from PlanRegistry only."""
+    from tools.eos.saas.domain.plan import PlanTiers
+    from tools.eos.saas.domain.subscription import (
+        BillingFrequency,
+        SubscriptionStatus,
+    )
+
+    tenant_id = "WILSYTENANT-4CD2FZ4O"
+    plan_id = "WILSYPLAN-F0F0F0F0"
+    branding_feature = (
+        "wilsy.vas.tenant_branding.enterprise.v1"
+    )
+    plan_idempotency = (
+        "FOUNDER-PLAN-SUBSCRIPTION-CERT-V1"
+    )
+    subscription_idempotency = (
+        "FOUNDER-SUBSCRIPTION-CERT-V1"
+    )
+
+    plan_result = PlanRegistry.create(
+        {
+            "name": "Founder Enterprise",
+            "description": (
+                "Tenant-scoped Founder subscription certificate plan."
+            ),
+            "price": 0,
+            "currency": "ZAR",
+            "billingFrequency": "monthly",
+            "planType": "FOUNDER_ENTERPRISE",
+            "idempotencyKey": plan_idempotency,
+            "tenantId": tenant_id,
+            "plan_id": plan_id,
+            "active": True,
+            "trialDays": 0,
+            "features": [
+                branding_feature,
+            ],
+            "metadata": {
+                "certificate": True,
+                "catalogueAuthority": "PlanRegistry",
+            },
+            "tags": [
+                "founder-enterprise",
+                "subscription-catalogue-cert",
+            ],
+            "user": "SUBSCRIPTION-CATALOGUE-CERT",
+        }
+    )
+
+    assert plan_result["success"] is True
+
+    catalogue_plan = plan_result["plan"]
+
+    assert catalogue_plan.plan_type is PlanTiers.FOUNDER_ENTERPRISE
+    assert catalogue_plan.price == 0.0
+    assert catalogue_plan.catalogue_version == 1
+    assert catalogue_plan.features == (
+        branding_feature,
+    )
+    assert catalogue_plan.tenant_id == tenant_id
+
+    command = _command(
+        tenant_id,
+        subscription_idempotency,
+        plan_id=plan_id,
+    )
+
+    # Commercial truth is deliberately absent from the caller command.
+    assert "amount" not in command
+    assert "currency" not in command
+    assert "billingFrequency" not in command
+    assert "planFeatures" not in command
+    assert "plan_features" not in command
+    assert "planCatalogueVersion" not in command
+    assert "plan_catalogue_version" not in command
+    assert "planType" not in command
+
+    created = SubscriptionRegistry.create(
+        command,
+        tenant_id_header=tenant_id,
+    )
+
+    assert created["success"] is True
+    assert created["replayed"] is False
+
+    subscription = created["subscription"]
+
+    assert subscription.tenant_id == tenant_id
+    assert subscription.plan_id == plan_id
+    assert subscription.plan.value == "FOUNDER_ENTERPRISE"
+    assert subscription.plan_name == "Founder Enterprise"
+    assert subscription.amount == 0.0
+    assert subscription.currency == "ZAR"
+    assert subscription.billing_frequency is BillingFrequency.MONTHLY
+    assert subscription.plan_catalogue_version == 1
+    assert subscription.plan_features == (
+        branding_feature,
+    )
+    assert subscription.status is SubscriptionStatus.ACTIVE
+
+    persisted = mongo_context.collection.find_one(
+        {
+            "tenant_id": tenant_id,
+            "subscription_id": subscription.subscription_id,
+        }
+    )
+
+    assert persisted is not None
+    assert persisted["plan_id"] == plan_id
+    assert persisted["amount"] == 0.0
+    assert persisted["currency"] == "ZAR"
+    assert persisted["plan_catalogue_version"] == 1
+    assert persisted["plan_features"] == [
+        branding_feature,
+    ]
+    assert persisted["_registry_revision"] == 1
+
+    replay = SubscriptionRegistry.create(
+        command,
+        tenant_id_header=tenant_id,
+    )
+
+    assert replay["success"] is True
+    assert replay["replayed"] is True
+    assert (
+        replay["subscription"].subscription_id
+        == subscription.subscription_id
+    )
+
+    # A caller may not redirect canonical commercial truth.
+    redirected = dict(
+        command,
+        amount=999.0,
+    )
+
+    rejected = SubscriptionRegistry.create(
+        redirected,
+        tenant_id_header=tenant_id,
+    )
+
+    assert rejected == {
+        "success": False,
+        "error": "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN",
+    }
+
+    assert mongo_context.collection.count_documents(
+        {
+            "tenant_id": tenant_id,
+        }
+    ) == 1
