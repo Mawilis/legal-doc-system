@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS
+VERSION: v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,7 +15,15 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
-    2026-09-28 v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS adds dedicated
+    2026-09-29 v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT grants
+    legal_operations:evidence:write exactly to LEGAL_PARTNER for the bounded
+    authenticated Legal evidence-ingest path. No Attorney, Paralegal,
+    Secretary, Finance, Sheriff, Deputy, Legal Client, enterprise, audit,
+    service, provider or sovereign role receives the grant. Static grant
+    policy remains non-possessory and does not prove ACTIVE membership,
+    business-role eligibility, matter/document scope, ProcessDocument/custody,
+    Court/Court Online filing, AI authority or financial execution.
+    2026-09-28 v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT adds dedicated
     tenant_branding read/profile/asset permissions to ENTERPRISE_ADMIN and
     read-only status visibility to AUDITOR. No subscription:manage reuse or
     financial authority is introduced.
@@ -155,7 +163,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS"
+VERSION = "v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -207,6 +215,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:evidence:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
@@ -378,7 +387,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS
+# VERSION: v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

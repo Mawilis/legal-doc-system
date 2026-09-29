@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS-CERT
+VERSION: v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -8,7 +8,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-27.
 CHANGELOG:
-    2026-09-27 v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS-CERT certifies
+    2026-09-29 v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT certifies
+    legal_operations:evidence:write is granted exactly once to LEGAL_PARTNER
+    and to no Attorney, Paralegal, Secretary, Finance, Sheriff, Deputy,
+    Legal Client, enterprise, audit, service, provider or sovereign role.
+    The static grant remains non-possessory, non-cross-tenant and non-financial.
+    2026-09-27 v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT certifies
     the exact Partner/Attorney Engagement firm-decision grant, explicit
     paralegal and unrelated-role exclusion, and unchanged role policy shape.
     2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS-CERT certifies
@@ -102,9 +107,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.31.0-L10-P2C4-D21B-BRANDING-IAM-GRANTS"
+    assert POLICY_VERSION == "v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT"
 
-VERSION = "v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS-CERT"
+VERSION = "v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -198,6 +203,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     """Legal personas receive only the certified legal-operation capabilities."""
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
         "legal_operations:instruction:read", "legal_operations:instruction:write",
+        "legal_operations:evidence:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
@@ -422,6 +428,10 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("legal_operations:receipt:write", ("SHERIFF",)),
         ("legal_operations:queue:read", ("SHERIFF",)),
         ("legal_operations:deputy_queue:read", ("DEPUTY",)),
+        (
+            "legal_operations:evidence:write",
+            ("LEGAL_PARTNER",),
+        ),
         (
             "legal_operations:client_visibility:write",
             ("LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_PARTNER"),
@@ -658,8 +668,56 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
         assert not credential_permissions.intersection(ROLE_PERMISSIONS_MAP[role])
 
 
+
+def test_legal_evidence_write_is_granted_only_to_partner() -> None:
+    """L10A3B evidence-ingest grant is exact and cannot leak across personas."""
+    permission = "legal_operations:evidence:write"
+
+    assert get_roles_granting_permission(permission) == (
+        "LEGAL_PARTNER",
+    )
+    assert (
+        ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].count(permission)
+        == 1
+    )
+
+    denied = {
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_SECRETARY",
+        "LEGAL_FINANCE",
+        "SHERIFF",
+        "DEPUTY",
+        "LEGAL_CLIENT",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+        "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN",
+        "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN",
+        "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+    }
+
+    for role in denied:
+        assert permission not in ROLE_PERMISSIONS_MAP[role]
+
+    for malformed in (
+        "legal_operations:evidence",
+        "legal_operations:evidence:*",
+        "legal_operations:evidence:read",
+        "legal_operations:evidence:write ",
+        " legal_operations:evidence:write",
+        "LEGAL_OPERATIONS:EVIDENCE:WRITE",
+    ):
+        assert get_roles_granting_permission(malformed) == ()
+
+
 # ARTIFACT: test_roles.py
-# VERSION: v1.0.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS-CERT
+# VERSION: v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
