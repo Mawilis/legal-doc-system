@@ -87,7 +87,7 @@ class BrandingAuthorization:
             role_assignment_repository=role_assignment_repository,
         )
         if decision.authorized and decision.reason is TenantAuthorizationReason.AUTHORIZED:
-            return identity
+            return True if self.allow_denied else identity
         unavailable = {
             TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE,
             TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE,

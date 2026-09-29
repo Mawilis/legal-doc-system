@@ -27,6 +27,12 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from tools.eos.auth.identity import SovereignIdentity
+from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.tenant_authorization import (
+    TenantAuthorizationDecision,
+    TenantAuthorizationReason,
+)
 from starlette.requests import Request
 
 from tools.eos.api import tenant_branding_router as router
@@ -112,6 +118,131 @@ def test_routes_are_authenticated_and_bounded() -> None:
     assert paths == {"/tenant-branding", "/tenant-branding/profiles", "/tenant-branding/profiles/{profile_id}/select"}
     assert router._READ_PERMISSION == "tenant_branding:read"
     assert router._PROFILE_PERMISSION == "tenant_branding:profile:manage"
+
+
+def _authorized_identity() -> SovereignIdentity:
+    return SovereignIdentity(
+        identity_id="principal-http",
+        tenant_id="tenant-http",
+        username="operator",
+        email="operator@example.test",
+        auth_method="test",
+        status=PrincipalStatus.ACTIVE,
+    )
+
+
+def test_mutation_authorization_returns_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    identity = _authorized_identity()
+    monkeypatch.setattr(
+        router,
+        "authorize_tenant_operation",
+        lambda **_: TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+        ),
+    )
+    result = asyncio.run(
+        router.BrandingAuthorization("tenant_branding:profile:manage", "manage")(
+            identity=identity,
+            principal_repository=object(),
+            membership_repository=object(),
+            business_role_repository=object(),
+            role_assignment_repository=object(),
+        )
+    )
+    assert result is identity
+
+
+def test_capability_authorization_returns_boolean_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        router,
+        "authorize_tenant_operation",
+        lambda **_: TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+        ),
+    )
+    result = asyncio.run(
+        router.BrandingAuthorization("tenant_branding:profile:manage", "manage", allow_denied=True)(
+            identity=_authorized_identity(),
+            principal_repository=object(),
+            membership_repository=object(),
+            business_role_repository=object(),
+            role_assignment_repository=object(),
+        )
+    )
+    assert result is True
+
+
+def test_capability_authorization_returns_boolean_false_when_denied(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        router,
+        "authorize_tenant_operation",
+        lambda **_: TenantAuthorizationDecision(
+            False,
+            TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE,
+        ),
+    )
+    result = asyncio.run(
+        router.BrandingAuthorization("tenant_branding:profile:manage", "manage", allow_denied=True)(
+            identity=_authorized_identity(),
+            principal_repository=object(),
+            membership_repository=object(),
+            business_role_repository=object(),
+            role_assignment_repository=object(),
+        )
+    )
+    assert result is False
+
+
+def test_capability_authority_unavailable_remains_503(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        router,
+        "authorize_tenant_operation",
+        lambda **_: TenantAuthorizationDecision(
+            False,
+            TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE,
+        ),
+    )
+    with pytest.raises(Exception) as exc_info:
+        asyncio.run(
+            router.BrandingAuthorization("tenant_branding:profile:manage", "manage", allow_denied=True)(
+                identity=_authorized_identity(),
+                principal_repository=object(),
+                membership_repository=object(),
+                business_role_repository=object(),
+                role_assignment_repository=object(),
+            )
+        )
+    assert getattr(exc_info.value, "status_code", None) == 503
+
+
+def test_projection_capability_values_are_booleans_and_never_identity() -> None:
+    entitlement = SimpleNamespace(
+        entitlement_id="ent-http",
+        branding_tier="PRO",
+        lifecycle_state="ACTIVE",
+        lifecycle_revision=1,
+        fingerprint="a" * 128,
+    )
+    projection = router._profile_projection(
+        None,
+        entitlement,
+        can_manage_profile=True,
+        can_manage_assets=False,
+    )
+    capabilities = projection["capabilities"]
+    assert capabilities == {
+        "canRead": True,
+        "canManageProfile": True,
+        "canManageAsset": False,
+        "canManageAssets": False,
+        "trustMarkRequired": True,
+    }
+    assert all(isinstance(value, bool) for value in capabilities.values())
+    serialized = json.dumps(capabilities)
+    for forbidden in ("identity_id", "email", "tenant_id", "roles", "permissions"):
+        assert forbidden not in serialized
 
 
 # ARTIFACT: test_tenant_branding_management_http.py
