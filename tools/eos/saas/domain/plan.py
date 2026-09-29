@@ -6,7 +6,7 @@ TITLE:
     WILSY OS Sovereign Plan Domain Commercial Contract
 
 VERSION:
-    v1.1.10-REAL-MONGO-OWNERSHIP-GOVERNANCE
+    v1.2.0-LEGACY-NODE-EVIDENCE-COMPATIBILITY
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -43,6 +43,12 @@ SECURITY / PRIVACY:
     policy, lifecycle posture, commercial metadata and catalogue version.
 
 CHANGELOG:
+    2026-09-29 v1.2.0-LEGACY-NODE-EVIDENCE-COMPATIBILITY
+        - Reconstructs the historical Node Plan proof/root contract without
+          treating either digest as current-v2 authority.
+        - Preserves historically consistent Node proof/root material in a
+          dedicated legacy provenance field and regenerates current evidence.
+        - Keeps ordinary legacy migration fail-closed for inconsistent claims.
     2026-09-03 v1.1.10-REAL-MONGO-OWNERSHIP-GOVERNANCE
         - Governance-only alignment after direct PlanRegistry Real-Mongo
           certification; no PlanEntity commercial runtime semantics change.
@@ -140,7 +146,7 @@ import re
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 from types import MappingProxyType
@@ -221,6 +227,10 @@ _LEGACY_EVIDENCE_STATUS = (
 
 _LEGACY_UNSEALED_STATUS = (
     "LEGACY_UNVERSIONED_CONTENT_UNVERIFIED"
+)
+
+_LEGACY_NODE_EVIDENCE_STATUS = (
+    "LEGACY_NODE_V1_EVIDENCE_CONSISTENT_CONTENT_UNVERIFIED"
 )
 
 _INTEGRITY_ROOT_SEMANTICS = (
@@ -564,7 +574,7 @@ def _deep_thaw(
         value,
         Mapping,
     ):
-        return {
+        material = {
             str(key): _deep_thaw(
                 value[key]
             )
@@ -573,6 +583,8 @@ def _deep_thaw(
                 key=lambda item: str(item),
             )
         }
+
+        return material
 
     if isinstance(
         value,
@@ -949,6 +961,19 @@ def generate_plan_proof(
         ),
     }
 
+    legacy_node_root = str(
+        plan_data.get(
+            "legacy_node_merkle_root",
+            "",
+        )
+        or ""
+    ).strip().upper()
+
+    if legacy_node_root:
+        payload[
+            "legacyNodeMerkleRoot"
+        ] = legacy_node_root
+
     encoded = json.dumps(
         payload,
         sort_keys=True,
@@ -984,6 +1009,117 @@ def _legacy_envelope_digest(
             "utf-8"
         )
     ).hexdigest().upper()
+
+
+def _node_timestamp_iso(
+    value: datetime,
+) -> str:
+    """Serialize a historical JavaScript Date with millisecond precision."""
+    normalized = parse_datetime(value).astimezone(timezone.utc)
+    milliseconds = normalized.microsecond // 1000
+    return (
+        normalized.strftime("%Y-%m-%dT%H:%M:%S.")
+        + f"{milliseconds:03d}Z"
+    )
+
+
+def _node_number(
+    value: Any,
+) -> Any:
+    """Match JSON.stringify's integer representation for integral numbers."""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def _historical_node_proof(
+    data: Mapping[str, Any],
+    *,
+    mongo_id: Any,
+    timestamp: datetime,
+) -> tuple[str, str]:
+    """Reconstruct the recovered Node Plan save proof and flat root exactly."""
+    tenant_id = (
+        data.get("tenantId")
+        or data.get("tenant_id")
+        or None
+    )
+    payload = {
+        "action": "save",
+        "planId": str(mongo_id),
+        "name": data.get("name") or "",
+        "planType": data.get("planType") or data.get("plan_type") or "PROFESSIONAL",
+        "price": _node_number(data.get("price") or 0),
+        "currency": data.get("currency") or "ZAR",
+        "billingFrequency": data.get("billingFrequency") or data.get("billing_frequency") or "monthly",
+        "trialDays": _node_number(data.get("trialDays") or data.get("trial_days") or 0),
+        "active": data.get("active") if data.get("active") is not None else True,
+        "tenantId": tenant_id,
+        "kennelShard": data.get("kennelShard") or data.get("kennel_shard") or "EOS_PRIMARY",
+        "idempotencyKey": data.get("idempotencyKey") or data.get("idempotency_key") or "",
+        "timestamp": _node_timestamp_iso(timestamp),
+        "metadata": {"autoSeal": True},
+    }
+    encoded = json.dumps(
+        {key: payload[key] for key in sorted(payload)},
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    proof_hash = hashlib.sha3_512(encoded).hexdigest().upper()
+    root_material = f"{tenant_id or 'GLOBAL'}|{proof_hash}"
+    root = hashlib.sha3_512(root_material.encode("utf-8")).hexdigest()
+    return proof_hash, root
+
+
+def _validate_historical_node_evidence(
+    data: Mapping[str, Any],
+) -> None:
+    """Validate legacy Node evidence using exact persisted timestamp boundaries."""
+    proof_hash = str(
+        data.get("proofHash", data.get("proof_hash", "")) or ""
+    ).strip().upper()
+    root = str(
+        data.get("merkleRoot", data.get("merkle_root", "")) or ""
+    ).strip().upper()
+    raw_id = data.get("_id", data.get("planId", data.get("plan_id")))
+    created_raw = data.get("createdAt", data.get("created_at"))
+    updated_raw = data.get("updatedAt", data.get("updated_at"))
+    if not (
+        _SHA3_512_RE.fullmatch(proof_hash)
+        and _SHA3_512_RE.fullmatch(root)
+        and raw_id is not None
+        and created_raw is not None
+        and updated_raw is not None
+    ):
+        raise ValueError("historical Node evidence is incomplete")
+
+    created_at = parse_datetime(created_raw)
+    updated_at = parse_datetime(updated_raw)
+    if created_at != updated_at:
+        raise ValueError("historical Node timestamps are not creation-consistent")
+
+    # Mongoose's built-in timestamp pre-save middleware writes createdAt and
+    # updatedAt before PlanSchema's pre-save hook. The recovered hook then
+    # captures Date.now() in either the same millisecond or the immediately
+    # following millisecond. These are the two exact lifecycle outcomes, not a
+    # fuzzy acceptance window.
+    timestamp_candidates = (
+        created_at,
+        created_at + timedelta(milliseconds=1),
+    )
+    for candidate in timestamp_candidates:
+        expected_proof, expected_root = _historical_node_proof(
+            data,
+            mongo_id=raw_id,
+            timestamp=candidate,
+        )
+        if expected_proof == proof_hash:
+            if expected_root.upper() != root:
+                raise ValueError("historical Node merkle root is inconsistent")
+            return
+
+    raise ValueError("historical Node proof is inconsistent")
 
 def generate_audit_event_proof(
     *,
@@ -1241,6 +1377,12 @@ _STATE_HISTORY_STATE_KEYS = frozenset(
     }
 )
 
+_OPTIONAL_STATE_HISTORY_STATE_KEYS = frozenset(
+    {
+        "legacy_node_merkle_root",
+    }
+)
+
 
 def _canonical_state_history(
     value: Any,
@@ -1447,6 +1589,7 @@ def _canonical_state_history(
         extra_state_keys = (
             set(state)
             - _STATE_HISTORY_STATE_KEYS
+            - _OPTIONAL_STATE_HISTORY_STATE_KEYS
         )
 
         if missing_state_keys:
@@ -1463,6 +1606,18 @@ def _canonical_state_history(
                 + ", ".join(
                     sorted(extra_state_keys)
                 )
+            )
+
+        node_root_present = (
+            "legacy_node_merkle_root" in state
+        )
+        node_status = (
+            state["legacy_evidence_status"]
+            == _LEGACY_NODE_EVIDENCE_STATUS
+        )
+        if node_status != node_root_present:
+            raise ValueError(
+                "Node legacy provenance state is incomplete"
             )
 
         state_version = (
@@ -1741,7 +1896,7 @@ class AuditEntry:
     def to_dict(
         self,
     ) -> Dict[str, Any]:
-        return {
+        payload = {
             "action": self.action.value,
             "timestamp": self.timestamp.isoformat(),
             "user": self.user,
@@ -1757,6 +1912,8 @@ class AuditEntry:
             "previousProofHash": self.previous_proof_hash,
             "integrityStatus": self.integrity_status,
         }
+
+        return payload
 
     @classmethod
     def from_dict(
@@ -2039,6 +2196,7 @@ class PlanEntity:
     proof_version: int = _CURRENT_PROOF_VERSION
     legacy_proof_hash: str = ""
     legacy_envelope_digest: str = ""
+    legacy_node_merkle_root: str = ""
     legacy_evidence_status: str = ""
     legacy_audit_trail: Tuple[
         Mapping[str, Any],
@@ -2338,6 +2496,10 @@ class PlanEntity:
             self.legacy_envelope_digest
         ).strip().upper()
 
+        legacy_node_merkle_root = str(
+            self.legacy_node_merkle_root
+        ).strip().upper()
+
         legacy_status = str(
             self.legacy_evidence_status
         ).strip()
@@ -2374,10 +2536,34 @@ class PlanEntity:
                     "legacy envelope evidence is inconsistent"
                 )
 
+            if legacy_node_merkle_root:
+                raise ValueError(
+                    "Python legacy envelope cannot carry Node root evidence"
+                )
+
+        elif legacy_status == _LEGACY_NODE_EVIDENCE_STATUS:
+            if not (
+                _SHA3_512_RE.fullmatch(
+                    legacy_proof_hash
+                )
+                and _SHA3_512_RE.fullmatch(
+                    legacy_node_merkle_root
+                )
+            ):
+                raise ValueError(
+                    "Node legacy provenance requires complete SHA3-512 evidence"
+                )
+
+            if legacy_envelope_digest:
+                raise ValueError(
+                    "Node legacy provenance cannot carry Python envelope evidence"
+                )
+
         elif legacy_status == _LEGACY_UNSEALED_STATUS:
             if (
                 legacy_proof_hash
                 or legacy_envelope_digest
+                or legacy_node_merkle_root
             ):
                 raise ValueError(
                     "unsealed legacy status cannot carry sealed legacy evidence"
@@ -2391,6 +2577,7 @@ class PlanEntity:
         elif (
             legacy_proof_hash
             or legacy_envelope_digest
+            or legacy_node_merkle_root
             or legacy_audit
         ):
             raise ValueError(
@@ -2407,6 +2594,12 @@ class PlanEntity:
             self,
             "legacy_envelope_digest",
             legacy_envelope_digest,
+        )
+
+        object.__setattr__(
+            self,
+            "legacy_node_merkle_root",
+            legacy_node_merkle_root,
         )
 
         object.__setattr__(
@@ -2695,7 +2888,7 @@ class PlanEntity:
     def _current_state_material(
         self,
     ) -> Dict[str, Any]:
-        return {
+        material = {
             "proof_version":
                 self.proof_version,
             "plan_id":
@@ -2750,6 +2943,13 @@ class PlanEntity:
                 in self.legacy_audit_trail
             ],
         }
+
+        if self.legacy_node_merkle_root:
+            material[
+                "legacy_node_merkle_root"
+            ] = self.legacy_node_merkle_root
+
+        return material
 
     def _compute_state_history_digest(
         self,
@@ -2850,7 +3050,7 @@ class PlanEntity:
     def to_dict(
         self,
     ) -> Dict[str, Any]:
-        return {
+        payload = {
             "plan_id": self.plan_id,
             "name": self.name,
             "description": self.description,
@@ -2930,6 +3130,13 @@ class PlanEntity:
             "integrity_root_semantics":
                 _INTEGRITY_ROOT_SEMANTICS,
         }
+
+        if self.legacy_node_merkle_root:
+            payload[
+                "legacy_node_merkle_root"
+            ] = self.legacy_node_merkle_root
+
+        return payload
 
     @classmethod
     def from_dict(
@@ -3199,6 +3406,33 @@ class PlanEntity:
                 "legacy envelope aliases disagree"
             )
 
+        legacy_node_snake_present = (
+            "legacy_node_merkle_root" in data
+        )
+        legacy_node_camel_present = (
+            "legacyNodeMerkleRoot" in data
+        )
+        legacy_node_snake = data.get(
+            "legacy_node_merkle_root"
+        )
+        legacy_node_camel = data.get(
+            "legacyNodeMerkleRoot"
+        )
+        if (
+            legacy_node_snake_present
+            and legacy_node_camel_present
+            and str(legacy_node_snake or "").strip().upper()
+            != str(legacy_node_camel or "").strip().upper()
+        ):
+            raise ValueError(
+                "legacy Node root aliases disagree"
+            )
+        legacy_node_root_raw = (
+            legacy_node_snake
+            if legacy_node_snake_present
+            else legacy_node_camel
+        ) or ""
+
         audit_entries = tuple(
             AuditEntry.from_dict(
                 entry
@@ -3296,6 +3530,9 @@ class PlanEntity:
                 legacy_envelope_raw
                 or legacy_merkle_alias
                 or ""
+            ),
+            legacy_node_merkle_root=str(
+                legacy_node_root_raw
             ),
             legacy_evidence_status=str(
                 data.get(
@@ -3415,6 +3652,8 @@ class PlanEntity:
             "legacyEvidenceStatus",
             "legacy_envelope_digest",
             "legacyEnvelopeDigest",
+            "legacy_node_merkle_root",
+            "legacyNodeMerkleRoot",
         }
 
         present = (
@@ -3516,6 +3755,7 @@ class PlanEntity:
         )
         legacy_proof_hash = ""
         legacy_envelope_digest = ""
+        legacy_node_merkle_root = ""
 
         if (
             incoming_proof
@@ -3542,28 +3782,27 @@ class PlanEntity:
                     "legacy sealed evidence must use SHA3-512 hex"
                 )
 
-            expected_envelope = (
-                _legacy_envelope_digest(
-                    tenant_id,
-                    incoming_proof,
-                    seal_nonce,
-                )
+            expected_envelope = _legacy_envelope_digest(
+                tenant_id,
+                incoming_proof,
+                seal_nonce,
             )
 
-            if incoming_envelope != expected_envelope:
-                raise ValueError(
-                    "legacy envelope evidence is inconsistent"
-                )
+            if incoming_envelope == expected_envelope:
+                legacy_status = _LEGACY_EVIDENCE_STATUS
+                legacy_proof_hash = incoming_proof
+                legacy_envelope_digest = incoming_envelope
+            else:
+                try:
+                    _validate_historical_node_evidence(data)
+                except (TypeError, ValueError) as node_error:
+                    raise ValueError(
+                        "legacy envelope or Node evidence is inconsistent"
+                    ) from node_error
 
-            legacy_status = (
-                _LEGACY_EVIDENCE_STATUS
-            )
-            legacy_proof_hash = (
-                incoming_proof
-            )
-            legacy_envelope_digest = (
-                incoming_envelope
-            )
+                legacy_status = _LEGACY_NODE_EVIDENCE_STATUS
+                legacy_proof_hash = incoming_proof
+                legacy_node_merkle_root = incoming_envelope
 
         legacy_audit = data.get(
             "audit_trail",
@@ -3752,6 +3991,8 @@ class PlanEntity:
                 legacy_proof_hash,
             legacy_envelope_digest=
                 legacy_envelope_digest,
+            legacy_node_merkle_root=
+                legacy_node_merkle_root,
             legacy_evidence_status=
                 legacy_status,
             legacy_audit_trail=
@@ -4023,7 +4264,7 @@ class PlanEntity:
 INSTITUTIONAL CERTIFICATION SEAL — WILSY OS PLAN DOMAIN COMMERCIAL CONTRACT
 ════════════════════════════════════════════════════════════════════════════════
 Status:              PRODUCTION CONTRACT — DIRECT CERTIFICATION REQUIRED
-Version:             v1.1.10-REAL-MONGO-OWNERSHIP-GOVERNANCE
+Version:             v1.2.0-LEGACY-NODE-EVIDENCE-COMPATIBILITY
 Authority:           Wilsy OS Core Governance
 Canonical path:      /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/plan.py
 Commercial truth:    Python EOS
@@ -4032,7 +4273,7 @@ Financial execution: NONE — Kennel EOS remains exclusive
 Tenant authority:    NONE — tenant_id is scope evidence only
 Proof posture:       Deterministic SHA3-512 commercial-state evidence
 Public API:          PlanEntity / enums / parse_datetime / generate_plan_proof
-Pending work:        Plan HTTP authority certification
+Pending work:        Canonical legacy catalogue dry run and apply
 Certification date:  2026-09-03
 ════════════════════════════════════════════════════════════════════════════════
 WILSY OS — ALL OR NOTHING.

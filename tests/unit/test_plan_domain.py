@@ -5,7 +5,7 @@ TITLE:
     Plan Domain Commercial Contract Direct Certificate
 
 VERSION:
-    v1.0.12-PLAN-DOMAIN-CERT
+    v1.1.0-PLAN-DOMAIN-NODE-EVIDENCE-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -35,6 +35,9 @@ SECURITY / PRIVACY:
     Invalid commercial state and inconsistent persisted evidence fail closed.
 
 CHANGELOG:
+    2026-09-29 v1.1.0-PLAN-DOMAIN-NODE-EVIDENCE-CERT
+        - Certifies exact historical Node proof/root compatibility migration.
+        - Certifies fresh current-v2 evidence and dedicated legacy provenance.
     2026-09-03 v1.0.12-PLAN-DOMAIN-CERT
         - Re-certifies all PlanEntity runtime/commercial invariants after the
           governance-only durable PlanRegistry ownership alignment.
@@ -114,9 +117,10 @@ WILSY OS — ALL OR NOTHING.
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from hashlib import sha3_512
+import json
 from typing import Any, cast
 
 import pytest
@@ -908,6 +912,188 @@ def test_invalid_legacy_merkle_fails_closed() -> None:
     ):
         PlanEntity.migrate_legacy_dict(
             payload
+        )
+
+
+def _node_legacy_payload(
+    *,
+    plan_type: str = "PROFESSIONAL",
+    timestamp: datetime | None = None,
+) -> dict[str, Any]:
+    created = timestamp or datetime(
+        2026,
+        1,
+        5,
+        12,
+        0,
+        0,
+        123000,
+        tzinfo=timezone.utc,
+    )
+    payload: dict[str, Any] = {
+        "_id": "507f1f77bcf86cd799439011",
+        "name": "Node Historical Plan",
+        "description": "Historical Node catalogue row",
+        "price": 499,
+        "currency": "ZAR",
+        "billingFrequency": "monthly",
+        "trialDays": 14,
+        "planType": plan_type,
+        "features": ["FEATURE_A", "FEATURE_B"],
+        "active": True,
+        "tenantId": "TENANT-NODE",
+        "kennelShard": "EOS_PRIMARY",
+        "idempotencyKey": "NODE-LEGACY-001",
+        "sealNonce": "node-seal-nonce",
+        "createdAt": created,
+        "updatedAt": created,
+        "metadata": {"tier": "historical"},
+        "tags": ["legacy"],
+    }
+    node_timestamp = created.strftime("%Y-%m-%dT%H:%M:%S.") + (
+        f"{created.microsecond // 1000:03d}Z"
+    )
+    proof_payload = {
+        "action": "save",
+        "planId": payload["_id"],
+        "name": payload["name"],
+        "planType": payload["planType"],
+        "price": payload["price"],
+        "currency": payload["currency"],
+        "billingFrequency": payload["billingFrequency"],
+        "trialDays": payload["trialDays"],
+        "active": payload["active"],
+        "tenantId": payload["tenantId"],
+        "kennelShard": payload["kennelShard"],
+        "idempotencyKey": payload["idempotencyKey"],
+        "timestamp": node_timestamp,
+        "metadata": {"autoSeal": True},
+    }
+    encoded = json.dumps(
+        {key: proof_payload[key] for key in sorted(proof_payload)},
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    proof = sha3_512(encoded).hexdigest().upper()
+    root = sha3_512(
+        f"{payload['tenantId']}|{proof}".encode("utf-8")
+    ).hexdigest()
+    payload["proofHash"] = proof
+    payload["merkleRoot"] = root
+    return payload
+
+
+@pytest.mark.parametrize(
+    "plan_type",
+    ("PROFESSIONAL", "ENTERPRISE", "FREE"),
+)
+def test_historically_valid_node_plan_migrates(
+    plan_type: str,
+) -> None:
+    migrated = PlanEntity.migrate_legacy_dict(
+        _node_legacy_payload(plan_type=plan_type)
+    )
+
+    assert migrated.plan_type.value == plan_type
+    assert migrated.legacy_evidence_status == (
+        "LEGACY_NODE_V1_EVIDENCE_CONSISTENT_CONTENT_UNVERIFIED"
+    )
+    assert migrated.proof_version == 2
+    assert migrated.catalogue_version == 1
+    assert migrated.legacy_proof_hash == _node_legacy_payload(
+        plan_type=plan_type
+    )["proofHash"]
+    assert migrated.legacy_node_merkle_root == _node_legacy_payload(
+        plan_type=plan_type
+    )["merkleRoot"].upper()
+
+
+def test_node_proof_root_and_seal_nonce_contract() -> None:
+    payload = _node_legacy_payload()
+    migrated = PlanEntity.migrate_legacy_dict(payload)
+    changed_nonce = dict(payload, sealNonce="different-node-seal")
+    changed = PlanEntity.migrate_legacy_dict(changed_nonce)
+
+    assert migrated.legacy_proof_hash == payload["proofHash"]
+    assert migrated.legacy_node_merkle_root == payload["merkleRoot"].upper()
+    assert changed.legacy_proof_hash == migrated.legacy_proof_hash
+    assert changed.legacy_node_merkle_root == migrated.legacy_node_merkle_root
+    assert migrated.proof_hash != migrated.legacy_proof_hash
+    assert migrated.integrity_root != migrated.legacy_node_merkle_root
+
+
+def test_node_root_binds_tenant_and_proof_binds_price_and_plan_type() -> None:
+    payload = _node_legacy_payload()
+
+    tenant_changed = dict(payload, tenantId="TENANT-OTHER")
+    price_changed = dict(payload, price=500)
+    type_changed = dict(payload, planType="ENTERPRISE")
+
+    with pytest.raises(ValueError, match="Node evidence"):
+        PlanEntity.migrate_legacy_dict(tenant_changed)
+    with pytest.raises(ValueError, match="Node evidence"):
+        PlanEntity.migrate_legacy_dict(price_changed)
+    with pytest.raises(ValueError, match="Node evidence"):
+        PlanEntity.migrate_legacy_dict(type_changed)
+
+
+def test_node_timestamp_and_malformed_evidence_fail_closed() -> None:
+    payload = _node_legacy_payload()
+    changed_time = dict(
+        payload,
+        createdAt=payload["createdAt"] + timedelta(seconds=1),
+        updatedAt=payload["updatedAt"] + timedelta(seconds=1),
+    )
+
+    with pytest.raises(ValueError, match="Node evidence"):
+        PlanEntity.migrate_legacy_dict(changed_time)
+    with pytest.raises(ValueError, match="legacy"):
+        PlanEntity.migrate_legacy_dict(dict(payload, proofHash="bad"))
+    with pytest.raises(ValueError, match="legacy"):
+        PlanEntity.migrate_legacy_dict(dict(payload, merkleRoot="bad"))
+
+
+def test_node_provenance_round_trip_update_and_audit_are_immutable() -> None:
+    migrated = PlanEntity.migrate_legacy_dict(
+        _node_legacy_payload()
+    )
+    persisted = migrated.to_dict()
+    hydrated = PlanEntity.from_dict(persisted)
+
+    assert hydrated == migrated
+    assert hydrated.state_history[0]["state"][
+        "legacy_node_merkle_root"
+    ] == migrated.legacy_node_merkle_root
+    assert hydrated.state_history[0]["state"][
+        "legacy_evidence_status"
+    ] == migrated.legacy_evidence_status
+    with pytest.raises(ValueError, match="protected or unknown"):
+        migrated.update({
+            "legacy_node_merkle_root": "F" * 128,
+        })
+    audited = migrated.add_audit_entry(
+        AuditAction.UPDATE,
+        user="NODE-CERT",
+        reason="evidence preserved",
+    )
+    assert audited.legacy_proof_hash == migrated.legacy_proof_hash
+    assert audited.legacy_node_merkle_root == migrated.legacy_node_merkle_root
+    assert len(audited.state_history) == len(migrated.state_history)
+
+
+def test_node_proof_root_mismatch_and_current_markers_reject() -> None:
+    payload = _node_legacy_payload()
+    with pytest.raises(ValueError, match="Node evidence"):
+        PlanEntity.migrate_legacy_dict(
+            dict(payload, merkleRoot="0" * 128)
+        )
+    with pytest.raises(ValueError, match="Node evidence"):
+        PlanEntity.migrate_legacy_dict(
+            dict(payload, proofHash="0" * 128)
+        )
+    with pytest.raises(ValueError, match="current-schema markers"):
+        PlanEntity.migrate_legacy_dict(
+            dict(payload, integrity_root="0" * 128)
         )
 
 @pytest.mark.parametrize(
@@ -1974,7 +2160,7 @@ Artifact:
     tests/unit/test_plan_domain.py
 
 Version:
-    v1.0.12-PLAN-DOMAIN-CERT
+    v1.1.0-PLAN-DOMAIN-NODE-EVIDENCE-CERT
 
 Scope:
     PlanEntity commercial value contract only.
@@ -1995,7 +2181,7 @@ Certification date:
     2026-09-03
 
 Pending work:
-    None within this bounded certificate.
+    Disposable real-Mongo legacy evidence migration certificate.
 
 WILSY OS — ALL OR NOTHING.
 """
