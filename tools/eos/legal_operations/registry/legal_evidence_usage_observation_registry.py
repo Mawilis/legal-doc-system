@@ -44,6 +44,7 @@ FAIL-CLOSED DECLARATION:
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
@@ -56,6 +57,9 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.legal_operations.domain.legal_evidence_usage_observation import (
     LegalEvidenceUsageObservation,
     LegalEvidenceUsageObservationError,
+)
+from tools.eos.legal_operations.domain.legal_evidence_usage_window import (
+    LegalEvidenceUsageWindow,
 )
 
 
@@ -172,6 +176,38 @@ def _target(collection: Any) -> Any:
             "L10A2Q_P3B_COLLECTION_REQUIRED"
         )
     return collection
+
+
+def _p3c_as_of(value: object) -> datetime:
+    if (
+        not isinstance(value, datetime)
+        or value.tzinfo is None
+        or value.utcoffset() is None
+    ):
+        raise LegalEvidenceUsageObservationRegistryError(
+            "L10A2Q_P3C_B_AS_OF_INVALID"
+        )
+    return value.astimezone(timezone.utc)
+
+
+def _p3c_source_set_fingerprint(
+    observations: tuple[LegalEvidenceUsageObservation, ...],
+) -> str:
+    payload = [
+        {
+            "usage_observation_id": item.usage_observation_id,
+            "fingerprint": item.fingerprint,
+        }
+        for item in observations
+    ]
+    raw = json.dumps(
+        payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha3_512(raw).hexdigest()
 
 
 def _command_fingerprint(
@@ -381,6 +417,108 @@ class LegalEvidenceUsageObservationRegistry:
             _raise_mongo(error)
 
         return observation
+
+    def get_complete_window_for_p4(
+        self,
+        *,
+        tenant_id: str,
+        document_id: str,
+        as_of: datetime,
+        session: Any,
+    ) -> LegalEvidenceUsageWindow:
+        """Return one exhaustive tenant/document P3C usage snapshot.
+
+        Every persisted row for the requested tenant is strictly hydrated
+        before temporal accounting. This deliberately avoids Mongo timestamp
+        predicates that could hide malformed persisted evidence and falsely
+        prove a complete usage window.
+        """
+        tx = _active_transaction(session)
+        tenant = _text("tenant_id", tenant_id)
+        document = _text("document_id", document_id)
+        as_of_utc = _p3c_as_of(as_of)
+
+        try:
+            rows = self._collection.find(
+                {
+                    "tenant_id": tenant,
+                },
+                session=tx,
+            )
+            hydrated = tuple(
+                _hydrate(row)
+                for row in rows
+            )
+        except PyMongoError as error:
+            _raise_mongo(error)
+
+        for observation in hydrated:
+            if observation.tenant_id != tenant:
+                raise LegalEvidenceUsageObservationRegistryError(
+                    "L10A2Q_P3B_CORRUPT_OBSERVATION"
+                )
+
+        ordered = tuple(
+            sorted(
+                hydrated,
+                key=lambda item: (
+                    item.occurred_at,
+                    item.usage_observation_id,
+                ),
+            )
+        )
+
+        bounded = tuple(
+            item
+            for item in ordered
+            if item.occurred_at <= as_of_utc
+        )
+
+        month_start = as_of_utc.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+
+        monthly = tuple(
+            item
+            for item in bounded
+            if month_start <= item.occurred_at <= as_of_utc
+        )
+
+        document_observations = tuple(
+            item
+            for item in bounded
+            if item.document_id == document
+        )
+
+        return LegalEvidenceUsageWindow(
+            tenant_id=tenant,
+            document_id=document,
+            as_of=as_of_utc,
+            monthly_window_start=month_start,
+            monthly_window_end=as_of_utc,
+            tenant_observation_count=len(bounded),
+            monthly_observation_count=len(monthly),
+            document_observation_count=len(document_observations),
+            tenant_storage_bytes_added=sum(
+                item.storage_bytes_added
+                for item in bounded
+            ),
+            monthly_ingress_bytes_added=sum(
+                item.monthly_ingress_bytes
+                for item in monthly
+            ),
+            document_versions_added=sum(
+                item.document_versions_added
+                for item in document_observations
+            ),
+            source_observation_set_fingerprint=(
+                _p3c_source_set_fingerprint(bounded)
+            ),
+        )
 
     def get(
         self,
