@@ -97,7 +97,11 @@ def _active(tier: str = "TENANT_BRANDING_PROFESSIONAL") -> TenantBrandingEntitle
         tenant_id=TENANT,
         entitlement_id="entitlement-d21c2",
         branding_tier=tier,
-        source_evidence_reference="source:d21c2",
+        source_evidence_reference=(
+            "subscription-branding-eligibility:"
+            f"{TENANT}/WILSYSUB-D21C1/WILSYPLAN-D21C1/4/"
+            f"{BRANDING_VAS_PROFESSIONAL_ID}"
+        ),
         source_evidence_fingerprint="a" * 128,
     )
     return pending.transition(
@@ -113,6 +117,54 @@ def _service(subscription: Any) -> TenantBrandingEntitlementReconciliationServic
     Reader.items = (subscription,) if subscription is not None else ()
     Reader.calls = []
     Entitlements.current = _active()
+    Entitlements.calls = []
+    Entitlements.fail_transition = None
+    return TenantBrandingEntitlementReconciliationService(
+        subscription_collection=object(),
+        history_collection=object(),
+        current_collection=object(),
+        subscription_registry=Reader,
+        entitlement_registry=Entitlements,
+    )
+
+
+def _source_reference(subscription: Any) -> str:
+    """Mirror the immutable D21C1 source coordinate for a fixture entity."""
+    feature = subscription.plan_features[0]
+    return (
+        "subscription-branding-eligibility:"
+        f"{subscription.tenant_id}/{subscription.subscription_id}/"
+        f"{subscription.plan_id}/{subscription.plan_catalogue_version}/{feature}"
+    )
+
+
+def _active_for(subscription: Any) -> TenantBrandingEntitlement:
+    """Build an ACTIVE lineage bound to one canonical source subscription."""
+    pending = create_tenant_branding_entitlement(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        branding_tier="TENANT_BRANDING_PROFESSIONAL",
+        source_evidence_reference=_source_reference(subscription),
+        source_evidence_fingerprint="a" * 128,
+    )
+    return pending.transition(
+        TenantBrandingEntitlementState.ACTIVE,
+        expected_revision=0,
+        evidence_reference="activation:d21c2",
+        evidence_fingerprint="b" * 128,
+        occurred_at=STAMP,
+    )
+
+
+def _service_for(
+    subscriptions: tuple[Any, ...],
+    *,
+    current: TenantBrandingEntitlement | None = None,
+) -> TenantBrandingEntitlementReconciliationService:
+    """Inject an ordered or reversed canonical subscription snapshot."""
+    Reader.items = subscriptions
+    Reader.calls = []
+    Entitlements.current = current or _active_for(subscriptions[0])
     Entitlements.calls = []
     Entitlements.fail_transition = None
     return TenantBrandingEntitlementReconciliationService(
@@ -167,7 +219,7 @@ def test_trial_existing_active_fails_closed() -> None:
 
 @pytest.mark.parametrize("feature", ["unknown.branding.v99", "crm.core"])
 def test_missing_or_unknown_branding_subscription_fails_closed(feature: str) -> None:
-    with pytest.raises(TenantBrandingEntitlementReconciliationError, match="NO_EXACT"):
+    with pytest.raises(TenantBrandingEntitlementReconciliationError, match="SOURCE_SUBSCRIPTION_NOT_RESOLVED"):
         _service(_subscription(feature=feature)).reconcile(
             tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
         )
@@ -306,10 +358,263 @@ def test_reconciliation_does_not_create_new_lineage_on_tier_change() -> None:
 
 
 def test_tier_replacement_revokes_even_when_new_subscription_is_paused() -> None:
-    result = _service(_subscription(status=SubscriptionStatus.PAUSED, feature=BRANDING_VAS_ENTERPRISE_ID)).reconcile(
-        tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
+    with pytest.raises(TenantBrandingEntitlementReconciliationError, match="SOURCE_SUBSCRIPTION_NOT_RESOLVED"):
+        _service(_subscription(status=SubscriptionStatus.PAUSED, feature=BRANDING_VAS_ENTERPRISE_ID)).reconcile(
+            tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
+        )
+
+
+def test_closed_source_plus_enterprise_replacement_revokes_old_lineage() -> None:
+    old = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-old",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    replacement = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="enterprise-new",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_ENTERPRISE_ID,),
+    )
+    result = _service_for((old, replacement), current=_active_for(old)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
     )
     assert result.target_state is TenantBrandingEntitlementState.REVOKED
+    assert str(result.entitlement.branding_tier) == "TenantBrandingTier.PROFESSIONAL"
+
+
+def test_expired_source_plus_enterprise_replacement_revokes_old_lineage() -> None:
+    old = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-expired",
+        status=SubscriptionStatus.EXPIRED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    replacement = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="enterprise-new",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_ENTERPRISE_ID,),
+    )
+    result = _service_for((replacement, old), current=_active_for(old)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.target_state is TenantBrandingEntitlementState.REVOKED
+
+
+def test_cancelled_source_plus_same_tier_new_subscription_revokes_old_lineage() -> None:
+    old = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-old",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    replacement = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-new",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    result = _service_for((old, replacement), current=_active_for(old)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.target_state is TenantBrandingEntitlementState.REVOKED
+
+
+def test_closed_historical_subscriptions_do_not_ambiguous_exact_current_source() -> None:
+    current = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-current",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    historical = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-history",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    result = _service_for((historical, current), current=_active_for(current)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.outcome is TenantBrandingEntitlementReconciliationOutcome.CURRENT
+
+
+def test_multiple_closed_historical_subscriptions_do_not_ambiguous_current_source() -> None:
+    current = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-current",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    history = tuple(
+        _registry_subscription(
+            tenant_id=TENANT,
+            subscription_id=f"professional-history-{index}",
+            status=SubscriptionStatus.EXPIRED,
+            plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+        )
+        for index in range(2)
+    )
+    result = _service_for((*history, current), current=_active_for(current)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.outcome is TenantBrandingEntitlementReconciliationOutcome.CURRENT
+
+
+def test_paused_source_with_unrelated_cancelled_history_suspends() -> None:
+    source = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-paused",
+        status=SubscriptionStatus.PAUSED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    unrelated = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-cancelled",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    result = _service_for((unrelated, source), current=_active_for(source)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.target_state is TenantBrandingEntitlementState.SUSPENDED
+
+
+def test_cancelled_source_with_unrelated_expired_history_revokes() -> None:
+    source = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-cancelled",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    unrelated = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-expired",
+        status=SubscriptionStatus.EXPIRED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    result = _service_for((unrelated, source), current=_active_for(source)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.target_state is TenantBrandingEntitlementState.REVOKED
+
+
+def test_source_reference_missing_with_zero_eligible_fails_closed() -> None:
+    source = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-cancelled",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    current = _active()
+    object.__setattr__(current, "source_evidence_reference", None)
+    with pytest.raises(TenantBrandingEntitlementReconciliationError, match="SOURCE_SUBSCRIPTION_NOT_RESOLVED"):
+        _service_for((source,), current=current).reconcile(
+            tenant_id=TENANT,
+            entitlement_id="entitlement-d21c2",
+            evaluated_at=STAMP,
+            occurred_at=STAMP,
+            session=Session(),
+        )
+
+
+def test_source_mismatch_cannot_select_by_tier_and_revokes() -> None:
+    old = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-old",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    replacement = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-new",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    result = _service_for((replacement, old), current=_active_for(old)).reconcile(
+        tenant_id=TENANT,
+        entitlement_id="entitlement-d21c2",
+        evaluated_at=STAMP,
+        occurred_at=STAMP,
+        session=Session(),
+    )
+    assert result.target_state is TenantBrandingEntitlementState.REVOKED
+
+
+def test_replacement_evidence_is_deterministic_and_binds_new_source() -> None:
+    old = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-old",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    replacement = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="enterprise-new",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_ENTERPRISE_ID,),
+    )
+    first = _service_for((old, replacement), current=_active_for(old)).reconcile(
+        tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
+    )
+    second = _service_for((replacement, old), current=_active_for(old)).reconcile(
+        tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
+    )
+    assert first.transition_evidence_fingerprint == second.transition_evidence_fingerprint
+    assert first.eligibility.subscription_id == replacement.subscription_id
+
+
+def test_subscription_iteration_order_is_independent() -> None:
+    old = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="professional-old",
+        status=SubscriptionStatus.CANCELLED,
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+    )
+    replacement = _registry_subscription(
+        tenant_id=TENANT,
+        subscription_id="enterprise-new",
+        status=SubscriptionStatus.ACTIVE,
+        plan_features=(BRANDING_VAS_ENTERPRISE_ID,),
+    )
+    forward = _service_for((old, replacement), current=_active_for(old)).reconcile(
+        tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
+    )
+    reverse = _service_for((replacement, old), current=_active_for(old)).reconcile(
+        tenant_id=TENANT, entitlement_id="entitlement-d21c2", evaluated_at=STAMP, occurred_at=STAMP, session=Session()
+    )
+    assert forward.target_state is reverse.target_state is TenantBrandingEntitlementState.REVOKED
+    assert forward.transition_evidence_fingerprint == reverse.transition_evidence_fingerprint
 
 
 # ARTIFACT: test_tenant_branding_entitlement_reconciliation.py

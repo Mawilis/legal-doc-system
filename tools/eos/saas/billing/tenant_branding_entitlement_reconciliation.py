@@ -18,6 +18,9 @@ CHANGELOG: v1.0.0-D21C2 freezes PAUSED/PAST_DUE as temporary suspension,
            evidence. Tier replacement terminates the old identity and requires
            a new entitlement lineage; no payment, profile, asset, IAM,
            browser, or Kennel authority is introduced.
+           v1.0.1 binds currentness to the immutable D21C1 source reference,
+           ignoring closed historical Branding VAS subscriptions while keeping
+           true current ambiguity fail-closed.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Only canonical subscription proof and D21C1
                              evidence are consumed; payment secrets and
@@ -58,7 +61,7 @@ from tools.eos.saas.domain.tenant_branding_entitlement import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-D21C2-TENANT-BRANDING-ENTITLEMENT-RECONCILIATION"
+VERSION: Final[str] = "v1.0.1-D21C2-TENANT-BRANDING-ENTITLEMENT-RECONCILIATION"
 
 
 class TenantBrandingEntitlementReconciliationError(RuntimeError):
@@ -275,13 +278,41 @@ class TenantBrandingEntitlementReconciliationService:
                 "D21C2_MULTIPLE_ELIGIBLE_BRANDING_SUBSCRIPTIONS"
             )
 
-        matching = tuple(item for item in projections if item.branding_tier is not None)
-        if len(matching) > 1:
+        source_bound = tuple(
+            item
+            for item in projections
+            if item.branding_tier is not None
+            and self._commercial_source_reference(item)
+            == current.source_evidence_reference
+        )
+        if len(source_bound) > 1:
             raise TenantBrandingEntitlementReconciliationError(
-                "D21C2_AMBIGUOUS_BRANDING_SUBSCRIPTION"
+                "D21C2_MULTIPLE_SOURCE_BOUND_SUBSCRIPTIONS"
             )
-        if eligible and eligible[0].branding_tier is current.branding_tier:
+
+        if len(eligible) == 1:
             eligibility = eligible[0]
+            exact_source = (
+                self._commercial_source_reference(eligibility)
+                == current.source_evidence_reference
+            )
+            if exact_source and eligibility.branding_tier is not current.branding_tier:
+                raise TenantBrandingEntitlementReconciliationError(
+                    "D21C2_SOURCE_TIER_MISMATCH"
+                )
+        else:
+            if len(source_bound) != 1:
+                raise TenantBrandingEntitlementReconciliationError(
+                    "D21C2_SOURCE_SUBSCRIPTION_NOT_RESOLVED"
+                )
+            eligibility = source_bound[0]
+            exact_source = True
+            if eligibility.branding_tier is not current.branding_tier:
+                raise TenantBrandingEntitlementReconciliationError(
+                    "D21C2_SOURCE_TIER_MISMATCH"
+                )
+
+        if exact_source and eligibility.state is TenantBrandingCommercialEligibilityState.ELIGIBLE:
             evidence_source = (
                 self._prior_active(current)
                 if current.lifecycle_state
@@ -301,19 +332,15 @@ class TenantBrandingEntitlementReconciliationService:
                 current, eligibility, None, evidence
             )
 
-        if len(matching) != 1:
-            raise TenantBrandingEntitlementReconciliationError(
-                "D21C2_NO_EXACT_BRANDING_SUBSCRIPTION"
-            )
-        eligibility = matching[0]
         status = eligibility.subscription_status
         if status is SubscriptionStatus.TRIAL:
             raise TenantBrandingEntitlementReconciliationError(
                 "D21C2_TRIAL_EXISTING_ACTIVE_FAIL_CLOSED"
             )
-        if eligibility.branding_tier is not current.branding_tier:
+        if not exact_source:
             # A tier replacement always closes the old identity. A fresh
-            # entitlement lineage must be composed for the new tier.
+            # entitlement lineage must be composed for the new source, even
+            # when the replacement tier happens to be the same.
             target = TenantBrandingEntitlementState.REVOKED
         elif status in {SubscriptionStatus.PAUSED, SubscriptionStatus.PAST_DUE}:
             target = TenantBrandingEntitlementState.SUSPENDED
@@ -397,6 +424,18 @@ class TenantBrandingEntitlementReconciliationService:
         )
 
     @staticmethod
+    def _commercial_source_reference(
+        eligibility: TenantBrandingCommercialEligibility,
+    ) -> str:
+        """Reproduce the immutable D21C1 source coordinate exactly."""
+        return (
+            "subscription-branding-eligibility:"
+            f"{eligibility.tenant_id}/{eligibility.subscription_id}/"
+            f"{eligibility.plan_id}/{eligibility.plan_catalogue_version}/"
+            f"{eligibility.branding_vas_id}"
+        )
+
+    @staticmethod
     def _prior_active(entitlement: TenantBrandingEntitlement) -> TenantBrandingEntitlement:
         """Reconstruct the immutable ACTIVE predecessor for replay evidence."""
         if entitlement.lifecycle_revision < 1:
@@ -459,7 +498,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_branding_entitlement_reconciliation.py
-# VERSION: v1.0.0-D21C2-TENANT-BRANDING-ENTITLEMENT-RECONCILIATION
+# VERSION: v1.0.1-D21C2-TENANT-BRANDING-ENTITLEMENT-RECONCILIATION
 # AUTHORITY BOUNDARY: derived currentness transition only; no profile, IAM or financial authority
 # TENANT POSTURE: exact tenant and caller-owned session on every read/write
 # FAIL-CLOSED POSTURE: ambiguity, corruption, stale state and divergent replay reject
