@@ -1,7 +1,7 @@
 """WILSY OS provider-neutral Legal Evidence binary-storage port.
 
 TITLE: Legal Evidence Binary Storage Port
-VERSION: v1.2.0-L10A2R-A2-LEGAL-EVIDENCE-BINARY-STORAGE-PORT
+VERSION: v1.3.1-L10A2R-A4-R1-LEGAL-EVIDENCE-BINARY-STORAGE-PORT
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Define the fail-closed provider-neutral contract by which bounded
          streamed Legal Evidence bytes may be written, verified, completed,
@@ -15,11 +15,19 @@ COLLABORATION / OWNERSHIP: L10A1 owns immutable Legal Evidence content identity.
                             owns only the provider-neutral binary-storage seam.
                             Future certified adapters own provider execution.
 CERTIFICATION / UPDATE DATE: 2026-09-29
-CHANGELOG: v1.2.0-L10A2R-A2 cryptographically binds each provider write
-           session and completed object observation to the exact tenant-scoped
-           WILSY write intent so identical binary content cannot cause
-           cross-intent, cross-document or cross-tenant provider evidence to be
-           accepted.
+CHANGELOG: v1.3.1-L10A2R-A4-R1 collapses all provider session/object
+           cross-scope rejection to one opaque SCOPE_MISMATCH code so negative
+           authorization outcomes cannot reveal whether another tenant,
+           document, ingestion session or provider object exists.
+           v1.3.0-L10A2R-A4 required the exact sealed tenant-scoped write intent
+           on every provider operation: begin, write_chunk, complete, inspect
+           and abort. Adapters therefore can and must reject cross-tenant or
+           cross-document session/evidence substitution before any provider
+           call.
+           v1.2.0-L10A2R-A2 cryptographically bound each provider write session
+           and completed object observation to the exact tenant-scoped WILSY
+           write intent so identical binary content cannot cause cross-intent,
+           cross-document or cross-tenant provider evidence to be accepted.
            v1.1.0-L10A2R-A1 removed the pre-stream canonical-content
            fingerprint/reference dependency so WILSY derives exact SHA3-512
            identity only from bytes actually observed during streaming. A
@@ -68,7 +76,7 @@ import re
 from typing import Final, Protocol, runtime_checkable
 
 
-VERSION: Final[str] = "v1.2.0-L10A2R-A2-LEGAL-EVIDENCE-BINARY-STORAGE-PORT"
+VERSION: Final[str] = "v1.3.1-L10A2R-A4-R1-LEGAL-EVIDENCE-BINARY-STORAGE-PORT"
 SCHEMA: Final[str] = "WILSY-LEGAL-EVIDENCE-BINARY-STORAGE/V1"
 
 # Transport chunk ceiling only. This is deliberately not the commercial
@@ -472,6 +480,62 @@ class StreamingSHA3512:
         return self._length, self._hasher.hexdigest()
 
 
+def validate_write_session_for_intent(
+    *,
+    intent: LegalEvidenceBinaryWriteIntent,
+    session: LegalEvidenceBinaryWriteSession,
+) -> None:
+    """Require one provider session to belong to the exact sealed write intent.
+
+    Adapters call this before every provider mutation. A session from another
+    tenant, matter, document or ingestion attempt fails identically without
+    revealing which coordinate differed.
+    """
+    if type(intent) is not LegalEvidenceBinaryWriteIntent:
+        raise LegalEvidenceBinaryStoragePortError(
+            "L10A2R_A_WRITE_INTENT_REQUIRED"
+        )
+    if type(session) is not LegalEvidenceBinaryWriteSession:
+        raise LegalEvidenceBinaryStoragePortError(
+            "L10A2R_A_WRITE_SESSION_REQUIRED"
+        )
+    if not hmac.compare_digest(
+        session.write_intent_fingerprint,
+        intent.fingerprint,
+    ):
+        raise LegalEvidenceBinaryStoragePortError(
+            "L10A2R_A_SCOPE_MISMATCH"
+        )
+
+
+def validate_object_evidence_for_intent(
+    *,
+    intent: LegalEvidenceBinaryWriteIntent,
+    evidence: LegalEvidenceBinaryObjectEvidence,
+) -> None:
+    """Require provider object evidence to belong to the exact write intent.
+
+    The bounded error is intentionally identical for tenant, matter, document,
+    ingestion, session and provider-object divergence. A negative scope result
+    therefore does not disclose another tenant's resource existence or kind.
+    """
+    if type(intent) is not LegalEvidenceBinaryWriteIntent:
+        raise LegalEvidenceBinaryStoragePortError(
+            "L10A2R_A_WRITE_INTENT_REQUIRED"
+        )
+    if type(evidence) is not LegalEvidenceBinaryObjectEvidence:
+        raise LegalEvidenceBinaryStoragePortError(
+            "L10A2R_A_OBJECT_EVIDENCE_REQUIRED"
+        )
+    if not hmac.compare_digest(
+        evidence.write_intent_fingerprint,
+        intent.fingerprint,
+    ):
+        raise LegalEvidenceBinaryStoragePortError(
+            "L10A2R_A_SCOPE_MISMATCH"
+        )
+
+
 def validate_completed_binary_object(
     *,
     intent: LegalEvidenceBinaryWriteIntent,
@@ -556,37 +620,41 @@ class LegalEvidenceBinaryStoragePort(Protocol):
 
     def write_chunk(
         self,
+        intent: LegalEvidenceBinaryWriteIntent,
         session: LegalEvidenceBinaryWriteSession,
         *,
         sequence: int,
         chunk: bytes,
     ) -> LegalEvidenceBinaryChunkEvidence:
-        """Write one ordered bounded chunk and return opaque provider evidence."""
+        """Write only for the exact tenant-scoped intent/session binding."""
         ...
 
     def complete(
         self,
+        intent: LegalEvidenceBinaryWriteIntent,
         session: LegalEvidenceBinaryWriteSession,
         *,
         chunks: tuple[LegalEvidenceBinaryChunkEvidence, ...],
         content_length: int,
         content_fingerprint: str,
     ) -> LegalEvidenceBinaryObjectEvidence:
-        """Complete the provider write and return immutable object evidence."""
+        """Complete only the exact tenant-scoped intent/session binding."""
         ...
 
     def inspect(
         self,
+        intent: LegalEvidenceBinaryWriteIntent,
         evidence: LegalEvidenceBinaryObjectEvidence,
     ) -> LegalEvidenceBinaryObjectEvidence:
-        """Re-read provider object evidence without downloading whole content."""
+        """Inspect only object evidence bound to the exact tenant intent."""
         ...
 
     def abort(
         self,
+        intent: LegalEvidenceBinaryWriteIntent,
         session: LegalEvidenceBinaryWriteSession,
     ) -> None:
-        """Abort one incomplete provider write without claiming object deletion."""
+        """Abort only the exact tenant-scoped intent/session binding."""
         ...
 
 
@@ -602,12 +670,14 @@ __all__ = [
     "LegalEvidenceBinaryWriteSession",
     "StreamingSHA3512",
     "validate_completed_binary_object",
+    "validate_object_evidence_for_intent",
+    "validate_write_session_for_intent",
 ]
 
 # ARTIFACT: legal_evidence_binary_storage_port.py
-# VERSION: v1.2.0-L10A2R-A2-LEGAL-EVIDENCE-BINARY-STORAGE-PORT
+# VERSION: v1.3.1-L10A2R-A4-R1-LEGAL-EVIDENCE-BINARY-STORAGE-PORT
 # AUTHORITY BOUNDARY: provider-neutral Legal Evidence binary transport/storage evidence only
 # TENANT POSTURE: exact tenant/matter/document/ingestion coordinates; canonical content identity follows verified streaming
-# FAIL-CLOSED POSTURE: scope/write-intent/chunk/sequence/length/SHA3/provider-evidence divergence rejects
+# FAIL-CLOSED POSTURE: every provider operation requires exact tenant-scoped intent; scope/write-intent/chunk/sequence/length/SHA3/provider-evidence divergence rejects
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

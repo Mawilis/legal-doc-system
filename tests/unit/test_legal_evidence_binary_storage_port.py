@@ -1,6 +1,6 @@
 """Direct certificate for the Legal Evidence binary-storage port.
 
-VERSION: v1.0.0-L10A2R-A3-LEGAL-EVIDENCE-BINARY-STORAGE-PORT-CERT
+VERSION: v1.2.0-L10A2R-A4-R1-LEGAL-EVIDENCE-BINARY-STORAGE-PORT-CERT
 AUTHORITY: Wilsy OS Core Governance
 CERTIFICATION / UPDATE DATE: 2026-09-29
 """
@@ -22,6 +22,8 @@ from tools.eos.legal_operations.service.legal_evidence_binary_storage_port impor
     LegalEvidenceBinaryWriteSession,
     StreamingSHA3512,
     validate_completed_binary_object,
+    validate_object_evidence_for_intent,
+    validate_write_session_for_intent,
 )
 
 
@@ -413,6 +415,73 @@ def test_values_are_frozen() -> None:
         value.tenant_id = "tenant-b"  # type: ignore[misc]
 
 
+def test_every_provider_operation_scope_guard_rejects_cross_tenant_session() -> None:
+    tenant_a = intent(tenant_id="tenant-a", ingestion_reference="ingest-a")
+    tenant_b = intent(tenant_id="tenant-b", ingestion_reference="ingest-b")
+
+    session_b = LegalEvidenceBinaryWriteSession(
+        provider_name="synthetic",
+        write_session_reference="session-b",
+        storage_reference="object-b",
+        write_intent_fingerprint=tenant_b.fingerprint,
+    )
+
+    with pytest.raises(
+        LegalEvidenceBinaryStoragePortError,
+        match="^L10A2R_A_SCOPE_MISMATCH$",
+    ):
+        validate_write_session_for_intent(
+            intent=tenant_a,
+            session=session_b,
+        )
+
+
+def test_object_inspection_scope_guard_rejects_cross_tenant_evidence_without_disclosure() -> None:
+    raw = b"same-content"
+    tenant_a = intent(tenant_id="tenant-a", ingestion_reference="ingest-a")
+    tenant_b = intent(tenant_id="tenant-b", ingestion_reference="ingest-b")
+    evidence_b = completed_for(tenant_b, raw=raw)
+
+    with pytest.raises(
+        LegalEvidenceBinaryStoragePortError,
+        match="^L10A2R_A_SCOPE_MISMATCH$",
+    ) as captured:
+        validate_object_evidence_for_intent(
+            intent=tenant_a,
+            evidence=evidence_b,
+        )
+
+    message = str(captured.value)
+    assert message == "L10A2R_A_SCOPE_MISMATCH"
+    assert "tenant-a" not in message
+    assert "tenant-b" not in message
+    assert "object" not in message.lower()
+    assert "document" not in message.lower()
+    assert "session" not in message.lower()
+    assert "storage" not in message.lower()
+
+
+def test_same_tenant_wrong_document_session_is_also_rejected() -> None:
+    document_a = intent(document_id="document-a")
+    document_b = intent(document_id="document-b")
+
+    session_b = LegalEvidenceBinaryWriteSession(
+        provider_name="synthetic",
+        write_session_reference="session-b",
+        storage_reference="object-b",
+        write_intent_fingerprint=document_b.fingerprint,
+    )
+
+    with pytest.raises(
+        LegalEvidenceBinaryStoragePortError,
+        match="^L10A2R_A_SCOPE_MISMATCH$",
+    ):
+        validate_write_session_for_intent(
+            intent=document_a,
+            session=session_b,
+        )
+
+
 def test_protocol_shape_requires_all_provider_operations() -> None:
     class CompleteAdapter:
         def begin(self, value: LegalEvidenceBinaryWriteIntent):
@@ -420,6 +489,7 @@ def test_protocol_shape_requires_all_provider_operations() -> None:
 
         def write_chunk(
             self,
+            value: LegalEvidenceBinaryWriteIntent,
             session: LegalEvidenceBinaryWriteSession,
             *,
             sequence: int,
@@ -429,6 +499,7 @@ def test_protocol_shape_requires_all_provider_operations() -> None:
 
         def complete(
             self,
+            value: LegalEvidenceBinaryWriteIntent,
             session: LegalEvidenceBinaryWriteSession,
             *,
             chunks: tuple[LegalEvidenceBinaryChunkEvidence, ...],
@@ -437,10 +508,18 @@ def test_protocol_shape_requires_all_provider_operations() -> None:
         ):
             raise NotImplementedError
 
-        def inspect(self, evidence: LegalEvidenceBinaryObjectEvidence):
+        def inspect(
+            self,
+            value: LegalEvidenceBinaryWriteIntent,
+            evidence: LegalEvidenceBinaryObjectEvidence,
+        ):
             raise NotImplementedError
 
-        def abort(self, session: LegalEvidenceBinaryWriteSession):
+        def abort(
+            self,
+            value: LegalEvidenceBinaryWriteIntent,
+            session: LegalEvidenceBinaryWriteSession,
+        ):
             raise NotImplementedError
 
     class IncompleteAdapter:
@@ -476,7 +555,7 @@ def test_schema_and_contract_exclude_provider_and_business_authority() -> None:
 
 
 # ARTIFACT: test_legal_evidence_binary_storage_port.py
-# VERSION: v1.0.0-L10A2R-A3-LEGAL-EVIDENCE-BINARY-STORAGE-PORT-CERT
+# VERSION: v1.2.0-L10A2R-A4-R1-LEGAL-EVIDENCE-BINARY-STORAGE-PORT-CERT
 # AUTHORITY BOUNDARY: direct provider-neutral binary-storage contract evidence only
 # TENANT POSTURE: exact tenant/matter/document/ingestion intent and stream correlation
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
