@@ -1,6 +1,6 @@
 /**
  * TITLE: Tenant Branding Management Panel Direct Certificate
- * VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER-CERT
+ * VERSION: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves shared Account Center branding presentation is server-owned,
  *          refreshable, read-only when capability is absent, mutation-safe, and
@@ -59,18 +59,30 @@ describe('tenant branding management panel', () => {
     await waitFor(() => expect(screen.getByTestId('tenant-branding-pending-preview')).toBeInTheDocument());
     expect(uploadAsset).toHaveBeenCalledWith('LOGO', file);
     expect(refreshAuthority).not.toHaveBeenCalled();
-    expect(screen.getByText(/Pending preview · not shared chrome authority/i)).toBeInTheDocument();
+    expect(screen.getByText(/Logo admitted — approve and activate a profile to publish it\./i)).toBeInTheDocument();
   });
 
   it('refreshes after profile approval and does not submit tenant authority', async () => {
     fetchManagement.mockResolvedValue({ entitlement: { brandingTier: 'PRO', lifecycleState: 'ACTIVE' }, profile: null, capabilities: { canManageProfile: true, canManageAssets: false } });
-    createProfile.mockResolvedValue({ profileId: 'p1' });
+    createProfile.mockResolvedValue({ profileId: 'p1', selected: false });
     render(<TenantBrandingManagementPanel />);
     await waitFor(() => expect(screen.getByText('Approve profile')).toBeInTheDocument());
     fireEvent.change(screen.getByLabelText('Profile label'), { target: { value: 'Legal' } });
     fireEvent.click(screen.getByRole('button', { name: 'Approve profile' }));
     await waitFor(() => expect(createProfile).toHaveBeenCalledWith(expect.objectContaining({ profileLabel: 'Legal' })));
     expect(createProfile.mock.calls[0][0]).not.toHaveProperty('tenantId');
+    expect(screen.getByText(/Profile approved — make current to publish branding\./i)).toBeInTheDocument();
+  });
+
+  it('announces activation only after current selection and authoritative refresh request', async () => {
+    fetchManagement.mockResolvedValue({ entitlement: { brandingTier: 'PRO', lifecycleState: 'ACTIVE' }, profile: { profileId: 'p1', profileLabel: 'Legal' }, capabilities: { canManageProfile: true, canManageAssets: false } });
+    selectProfile.mockResolvedValue({ selectionId: 's1' });
+    const refreshAuthority = vi.fn();
+    render(<TenantBrandingManagementPanel onAuthorityRefresh={refreshAuthority} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Make current' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Make current' }));
+    await waitFor(() => expect(screen.getByText(/Branding activated — refreshing authoritative workspace\./i)).toBeInTheDocument());
+    expect(refreshAuthority).toHaveBeenCalledTimes(1);
   });
 
   it('surfaces bounded transport errors', async () => {
@@ -81,5 +93,5 @@ describe('tenant branding management panel', () => {
 });
 
 // ARTIFACT: tenantBrandingManagementPanel.test.jsx
-// VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER-CERT
+// VERSION: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION-CERT
 // END OF WILSY OS SOVEREIGN ARTIFACT

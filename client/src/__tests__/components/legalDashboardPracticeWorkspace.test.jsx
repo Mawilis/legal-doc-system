@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.7.0-L10-P2A-ADAPTIVE-TRUST-CENTER-CERT
+ * VERSION: v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -8,7 +8,8 @@
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-28 v1.7.0-L10-P2A-ADAPTIVE-TRUST-CENTER-CERT certifies Trust Center closed/sheet/expanded transitions, hover-only trigger feedback, touch and keyboard parity, Escape hierarchy, focus restoration, resilient grids and permission/profile preservation. No browser authority is widened.
+ * CHANGELOG: 2026-09-29 v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT proves canonical zero-state runway, permission-scoped intake, compact nonzero signals and absence of the zero KPI strip while preserving attention and operating-room behavior.
+ *            2026-09-28 v1.7.0-L10-P2A-ADAPTIVE-TRUST-CENTER-CERT certifies Trust Center closed/sheet/expanded transitions, hover-only trigger feedback, touch and keyboard parity, Escape hierarchy, focus restoration, resilient grids and permission/profile preservation. No browser authority is widened.
  *            2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
  *            2026-09-24 v1.4.0-L8-7D18-LEGAL-AUTHORITY-POSTURE-CERT certifies the D18 visible authority-posture surface: server-authoritative projections, compatibility role baselines and legacy narrowing hints are labeled distinctly; effective lanes match the already-certified presentation gates; explanatory posture cannot widen commands or create Legal/financial authority.
  *            2026-09-24 v1.3.0-L8-7D17-SERVER-BOUND-LEGAL-PERMISSION-PRESENTATION-CERT certifies D17 server-bound permission provenance in the Legal Command Center: an authoritative empty Legal permission projection removes Partner intake/return/finance affordances while retaining read-only workspace visibility, and authoritative-empty LEGAL_FINANCE performs no finance evidence transport. Absent server provenance still preserves the D16 role baseline.
@@ -333,8 +334,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.getAllByText('CASE-2026-0001').length).toBeGreaterThan(0);
     expect(screen.getByText('matter-001')).toBeInTheDocument();
     expect(screen.getByText('attempt-001')).toBeInTheDocument();
+    expect(screen.getByTestId('legal-practice-signal-ribbon')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Legal operations KPI strip')).not.toBeInTheDocument();
     expect(screen.getAllByText('Active instructions').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Returns generated').length).toBeGreaterThan(0);
+    expect(screen.getByText('Open matters')).toBeInTheDocument();
   });
 
   it('keeps Trust Center adaptive, keyboard-safe and aligned without hover activation', async () => {
@@ -1055,7 +1058,32 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
     render(<LegalDashboard roleView="LEGAL_PARTNER" />);
     expect(await screen.findByText('No current items require action from the certified workspace.')).toBeInTheDocument();
+    expect(screen.getByTestId('legal-practice-operating-runway')).toBeInTheDocument();
+    expect(screen.getByText('Ready for the next legal instruction')).toBeInTheDocument();
+    expect(screen.getByText('No current Legal Operations work is projected for this tenant.')).toBeInTheDocument();
+    expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'New instruction' })).toBeInTheDocument();
+    expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'Matter register' })).toBeInTheDocument();
+    expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Legal operations KPI strip')).not.toBeInTheDocument();
     expect(screen.queryByText(/Court preparation/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps the zero-state runway truthful and removes New Instruction for read-only practice roles', async () => {
+    const empty = practiceWorkspace();
+    empty.matters = [];
+    empty.instructions = [];
+    empty.documents = [];
+    empty.attempts = [];
+    empty.executions = [];
+    empty.returns = [];
+    Object.keys(empty.summary).forEach((key) => { empty.summary[key] = 0; });
+    getLegalPracticeWorkspace.mockResolvedValue(empty);
+
+    render(<LegalDashboard roleView="LEGAL_SECRETARY" />);
+    const runway = await screen.findByTestId('legal-practice-operating-runway');
+    expect(screen.queryByRole('button', { name: 'New instruction' })).not.toBeInTheDocument();
+    expect(within(runway).getByRole('button', { name: 'Matter register' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Legal operations KPI strip')).not.toBeInTheDocument();
   });
 
   it('supports Ctrl+K search focus and Escape clearing over loaded canonical matter truth', async () => {
@@ -1075,8 +1103,9 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT
- * CHANGELOG: 2026-09-28 v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT adds behavioral proof for the compact canonical attention queue, loaded-workspace matter quick view, Matter Operating Room handoff, zero-state truthfulness and Ctrl+K/Escape search behavior without widening browser authority or transport scope.
+ * VERSION: v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT
+ * CHANGELOG: 2026-09-29 v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT proves canonical zero-state runway, permission-scoped intake, compact nonzero signals and absence of the zero KPI strip while preserving attention and operating-room behavior.
+ *            2026-09-28 v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT adds behavioral proof for the compact canonical attention queue, loaded-workspace matter quick view, Matter Operating Room handoff, zero-state truthfulness and Ctrl+K/Escape search behavior without widening browser authority or transport scope.
  * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D18 posture text reports provenance/effective lanes but neither it nor D17/browser permission hints can widen the canonical role envelope or prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope
  * FAIL-CLOSED POSTURE: role denial, explicit/server-authoritative permission narrowing including an empty grant set, misleading authority provenance, command failure and cross-role drift never fallback, widen role scope, invent operating-model authority or invent success

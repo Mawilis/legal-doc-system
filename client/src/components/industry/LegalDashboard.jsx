@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION
+ * VERSION: v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
+ * CHANGELOG: 2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
+ *            2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.1.0-L10-P2-TRUST-CENTER consolidates descriptive authority posture and practice profile into the shared Legal Chrome Trust Center drawer, preserving server-derived presentation and role boundaries while removing repeated full-width shell cards. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-25 v11.8.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT loads the certified tenant-scoped REVIEW_REQUIRED conflict-screening queue into the existing Legal Practice lifecycle and provides one bounded human Review Conflict interaction. The browser submits only screening_id, stable review_id, outcome and review_reason_reference through issueLegalConflictReview; canonical Python EOS remains responsible for authorization, chronology, evidence and immutable review truth. No clearance, waiver, representation, client acceptance, tenant, IAM, billing, payment, execution or settlement authority is created.
@@ -150,7 +151,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION';
+const DASHBOARD_VERSION = 'v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -781,6 +782,69 @@ function QueueMetric({ icon: Icon, label, value, description }) {
       </div>
       <p className="mt-3 text-xs leading-5 text-stone-500">{description}</p>
     </div>
+  );
+}
+
+function LegalPracticeOperatingRunway({ canIntake, onNewInstruction, onOpenMatters, onRefresh }) {
+  return (
+    <section
+      aria-label="Operating Runway"
+      data-testid="legal-practice-operating-runway"
+      className="rounded-2xl border border-amber-800/35 bg-gradient-to-br from-amber-950/35 via-stone-950/85 to-black/60 p-6 shadow-xl shadow-black/20"
+    >
+      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-400">Operating Runway</p>
+      <h2 className="mt-2 text-2xl font-black tracking-tight text-white">Ready for the next legal instruction</h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">No current Legal Operations work is projected for this tenant.</p>
+      <div className="mt-5 flex flex-wrap gap-2">
+        {canIntake && (
+          <button
+            type="button"
+            onClick={onNewInstruction}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/15 px-4 text-xs font-black uppercase tracking-wider text-amber-200 hover:bg-amber-500/25"
+          >
+            <FilePlus2 size={15} /> New instruction
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onOpenMatters}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-stone-700 bg-black/30 px-4 text-xs font-black uppercase tracking-wider text-stone-200 hover:bg-stone-900"
+        >
+          <Scale size={15} /> Matter register
+        </button>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-stone-700 bg-black/30 px-4 text-xs font-black uppercase tracking-wider text-stone-200 hover:bg-stone-900"
+        >
+          <RefreshCw size={15} /> Refresh truth
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function LegalPracticeSignalRibbon({ signals }) {
+  const visibleSignals = signals.filter((signal) => Number(signal.value) > 0);
+  if (visibleSignals.length === 0) return null;
+  return (
+    <section
+      aria-label="Legal operational signals"
+      data-testid="legal-practice-signal-ribbon"
+      className="flex flex-wrap overflow-hidden rounded-2xl border border-stone-800 bg-black/25"
+    >
+      {visibleSignals.map((signal) => (
+        <article
+          key={signal.id}
+          data-signal-id={signal.id}
+          className="min-w-[145px] flex-1 border-stone-800 px-4 py-3 sm:border-r last:border-r-0"
+        >
+          <p className="text-[9px] font-black uppercase tracking-[0.18em] text-stone-500">{signal.label}</p>
+          <p className="mt-1 text-xl font-black text-white">{signal.value}</p>
+          <p className="mt-1 text-[10px] text-stone-600">{signal.description}</p>
+        </article>
+      ))}
+    </section>
   );
 }
 
@@ -2367,32 +2431,33 @@ function LegalPracticeWorkspace({
   const activeAttempts =
     workspace.summary.attempts_allocated + workspace.summary.attempts_attempted;
 
-  const chromeMetrics = [
+  const coreSignals = [
     {
       id: 'matters',
       label: 'Open matters',
       value: workspace.summary.matters_open ?? matters.filter((item) => item.state === 'OPEN').length,
-      detail: `${workspace.summary.matters_total ?? matters.length} canonical matters`,
+      description: 'Canonical matter work',
     },
     {
       id: 'instructions',
       label: 'Active instructions',
       value: activeInstructions,
-      detail: `${workspace.summary.instructions_total} total current instructions`,
+      description: 'REGISTERED or ACCEPTED',
     },
     {
       id: 'documents',
       label: 'Process documents',
       value: workspace.summary.documents_total,
-      detail: `${workspace.summary.documents_received} received · ${workspace.summary.documents_allocated} allocated`,
+      description: 'Current document rows',
     },
     {
       id: 'service',
       label: 'Active service work',
       value: activeAttempts,
-      detail: `${workspace.summary.executions_total} certified executions`,
+      description: 'ALLOCATED or ATTEMPTED',
     },
   ];
+  const hasOperationalActivity = coreSignals.some((signal) => Number(signal.value) > 0);
 
   const navItems = [
     { id: PRACTICE_WORKSPACE_VIEWS.COMMAND, label: 'Command Center', icon: ClipboardList },
@@ -2486,28 +2551,46 @@ function LegalPracticeWorkspace({
   if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.COMMAND) {
     content = (
       <div className="space-y-5" data-legal-command-center="true">
-        <section aria-label="Legal operations KPI strip" className="grid grid-cols-2 gap-2 rounded-2xl border border-stone-800 bg-black/20 p-2 sm:grid-cols-4">
-          <QueueMetric icon={Inbox} label="Active instructions" value={activeInstructions} description="REGISTERED or ACCEPTED" />
-          <QueueMetric icon={FileText} label="Process documents" value={workspace.summary.documents_total} description="Current document rows" />
-          <QueueMetric icon={Clock3} label="Active service work" value={activeAttempts} description="ALLOCATED or ATTEMPTED" />
-          <QueueMetric icon={FileCheck2} label="Returns generated" value={workspace.summary.returns_total} description="Generated evidence" />
-        </section>
         <AttentionQueue
           items={attentionItems}
           onOpenMatter={openMatter}
           onReviewConflict={focusConflictReview}
           onViewService={() => setActiveView(PRACTICE_WORKSPACE_VIEWS.SERVICE)}
         />
-        <MatterOperationsPanel
-          workspace={workspace}
-          searchQuery={searchQuery}
-          selectedMatterId={selectedMatterId}
-          onSelectMatter={setSelectedMatterId}
-          onOpenOperatingRoom={() => {
-            setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
-          }}
-          overview
-        />
+        {hasOperationalActivity ? (
+          <>
+            <MatterOperationsPanel
+              workspace={workspace}
+              searchQuery={searchQuery}
+              selectedMatterId={selectedMatterId}
+              onSelectMatter={setSelectedMatterId}
+              onOpenOperatingRoom={() => {
+                setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+              }}
+              overview
+            />
+            <LegalPracticeSignalRibbon signals={coreSignals} />
+          </>
+        ) : (
+          <>
+            <LegalPracticeOperatingRunway
+              canIntake={canIntake}
+              onNewInstruction={() => setActiveView(PRACTICE_WORKSPACE_VIEWS.INTAKE)}
+              onOpenMatters={() => setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS)}
+              onRefresh={onRefresh}
+            />
+            <MatterOperationsPanel
+              workspace={workspace}
+              searchQuery={searchQuery}
+              selectedMatterId={selectedMatterId}
+              onSelectMatter={setSelectedMatterId}
+              onOpenOperatingRoom={() => {
+                setActiveView(PRACTICE_WORKSPACE_VIEWS.MATTERS);
+              }}
+              overview
+            />
+          </>
+        )}
         <ConflictReviewQueue
           screenings={conflictScreenings}
           onRefresh={onRefresh}
@@ -2702,7 +2785,7 @@ function LegalPracticeWorkspace({
           </div>
         ) : null,
       }}
-      metrics={chromeMetrics}
+      metrics={[]}
       leftRail={leftRail}
       className="legal-command-center-shell"
     >
@@ -3875,7 +3958,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER
+ * VERSION: v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

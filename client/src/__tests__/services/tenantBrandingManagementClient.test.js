@@ -1,6 +1,6 @@
 /**
  * TITLE: Tenant Branding Management Client Direct Certificate
- * VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT-CERT
+ * VERSION: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves the Account Center branding transport sends only allowed
  *          presentation values and maps server failures without creating tenant
@@ -8,8 +8,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/tenantBrandingManagementClient.test.js
  * COLLABORATION / OWNERSHIP: Direct client transport certificate.
  * CERTIFICATION / UPDATE DATE: 2026-09-29
- * CHANGELOG: v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT-CERT proves
- *            multipart upload carries only the browser file and closed kind.
+ * CHANGELOG: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION-CERT proves multipart upload
+ *            and exact admitted profile asset descriptor transport carry no
+ *            browser tenant or authority fields.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,6 +40,22 @@ describe('tenant branding management client', () => {
     await createTenantBrandingProfile({ profileLabel: 'Legal', primaryColor: '#111', tenantId: 'must-not-send', entitlementId: 'must-not-send' });
     expect(post.mock.calls[0][0]).toBe('/tenant-branding/profiles');
     expect(post.mock.calls[0][1]).toEqual({ profile_label: 'Legal', primary_color: '#111' });
+  });
+
+  it('sends the exact admitted asset descriptor pair without adding browser authority', async () => {
+    post.mockResolvedValue({ data: { data: { profileId: 'p1' } } });
+    await createTenantBrandingProfile({
+      profileLabel: 'Legal',
+      logoAssetReference: 'asset:tenant-a:logo:opaque',
+      logoAssetFingerprint: 'a'.repeat(128),
+      tenantId: 'must-not-send',
+    });
+    expect(post.mock.calls[0][1]).toEqual({
+      profile_label: 'Legal',
+      logo_asset_reference: 'asset:tenant-a:logo:opaque',
+      logo_asset_fingerprint: 'a'.repeat(128),
+    });
+    expect(post.mock.calls[0][1]).not.toHaveProperty('tenant_id');
   });
 
   it('encodes profile identity for selection', async () => {
@@ -81,5 +98,5 @@ describe('tenant branding management client', () => {
 });
 
 // ARTIFACT: tenantBrandingManagementClient.test.js
-// VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-MANAGEMENT-CLIENT-CERT
+// VERSION: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION-CERT
 // END OF WILSY OS SOVEREIGN ARTIFACT

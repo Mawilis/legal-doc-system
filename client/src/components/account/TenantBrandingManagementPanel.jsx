@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Tenant Branding Management Panel
- * VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER
+ * VERSION: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents fresh server-certified tenant-branding entitlement and
  *          profile truth in the shared Account Command Center and invokes only
@@ -10,9 +10,11 @@
  *                            branding truth; D21B12 owns authenticated asset
  *                            delivery; this panel owns presentation state only.
  * CERTIFICATION / UPDATE DATE: 2026-09-29
- * CHANGELOG: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER adds governed logo/
- *            favicon upload controls and pending local previews while keeping
- *            shared-chrome authority unchanged until profile selection refresh.
+ * CHANGELOG: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION makes admitted, approved and
+ *            activated branding states explicit without promoting pending
+ *            previews or management responses into shared-chrome authority.
+ *            v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER added governed logo/
+ *            favicon upload controls and pending local previews.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No tenant selector, durable browser branding,
  *                             raw asset bytes, or local authority is created.
@@ -118,7 +120,9 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
         [`${prefix}AssetFingerprint`]: descriptor.contentFingerprint,
       }));
       setPendingPreview({ kind, name: file.name || 'selected file', url: URL.createObjectURL(file), descriptor });
-      setNotice(`${kind} asset admitted by Python EOS. Create and select a profile to apply it.`);
+      setNotice(kind === 'LOGO'
+        ? 'Logo admitted — approve and activate a profile to publish it.'
+        : 'Favicon admitted — approve and activate a profile to publish it.');
     } catch (error) {
       setAssetError(error?.code || 'BRANDING_ASSET_UPLOAD_FAILED');
     } finally {
@@ -131,9 +135,14 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
     setSaving(true);
     setNotice('');
     try {
-      await createTenantBrandingProfile(form);
-      await refresh({ notify: true });
-      setNotice('Profile approval committed by Python EOS.');
+      const result = await createTenantBrandingProfile(form);
+      await refresh({ notify: result?.selected === true });
+      if (result?.selected === true) {
+        setPendingPreview(null);
+        setNotice('Branding activated — refreshing authoritative workspace.');
+      } else {
+        setNotice('Profile approved — make current to publish branding.');
+      }
     } catch (error) {
       setNotice(error?.code || 'BRANDING_PROFILE_SAVE_FAILED');
     } finally {
@@ -148,7 +157,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
     try {
       await selectTenantBrandingProfile(profile.profileId);
       await refresh({ notify: true });
-      setNotice('Current profile pointer advanced by Python EOS.');
+      setNotice('Branding activated — refreshing authoritative workspace.');
     } catch (error) {
       setNotice(error?.code || 'BRANDING_PROFILE_SELECT_FAILED');
     } finally {
@@ -238,7 +247,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
 export default TenantBrandingManagementPanel;
 
 // ARTIFACT: TenantBrandingManagementPanel.jsx
-// VERSION: v1.1.0-L10-P2C7-D21B-BRANDING-COMMAND-CENTER
+// VERSION: v1.2.0-L10-P2C7V-BRANDING-PROGRESSION
 // AUTHORITY BOUNDARY: presentation and transport invocation only
 // TENANT POSTURE: server-derived; no selector or local authority
 // FAIL-CLOSED POSTURE: unavailable/denied mutation controls remain disabled
