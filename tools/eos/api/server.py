@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP
+VERSION: v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities and explicitly bootstrap the
          durable L8-6B deputy-principal binding uniqueness indexes after
@@ -14,6 +14,9 @@ CHANGELOG: 2026-09-23 v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP bootstraps th
 L8-6B deputy-principal binding registry indexes after successful database
 connection so one-to-one tenant/principal and tenant/deputy uniqueness exists
 before any binding command; startup creates no binding or authorization truth.
+v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT composes the governed tenant-
+branding HTTP authority in the canonical EOS application so activation and
+workspace projection requests cannot fall through to the Node BFF.
 v1.15.0-C1C-R1B-GOVERNED-LEGAL-ORCHESTRATION composes the durable
 C1C root registry and fail-closed canonical evidence/accounting seam.
 v1.17.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE mounts the authenticated,
@@ -82,6 +85,7 @@ from .wilsy_ai_reasoning_router import router as wilsy_ai_reasoning_router
 from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_router
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
+from .tenant_branding_router import router as tenant_branding_router
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.auth.authentication import get_principal_authority_repository
@@ -106,7 +110,7 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     DeputyPrincipalBindingRegistry,
 )
 
-VERSION = "v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP"
+VERSION = "v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT"
 
 logger = logging.getLogger("WilsyOS.API.Server")
 
@@ -392,6 +396,7 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_legal_services_router, prefix="/api")
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
         app.include_router(legal_acceptance_router, prefix="/api")
+        app.include_router(tenant_branding_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
@@ -408,7 +413,7 @@ class WilsyAPIServer:
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
-            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance).",
+            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance, tenant branding).",
             self.title,
             self.version,
         )
@@ -422,7 +427,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP
+# VERSION: v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

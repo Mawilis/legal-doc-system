@@ -1,19 +1,20 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.0-L8-6A-EOS-LEGAL-OPERATIONS-OWNER]                                                            ║
+ * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER]                                                            ║
  * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.4.0-L8-6A-EOS-LEGAL-OPERATIONS-OWNER | PRODUCTION READY                                                                               ║
+ * ║ VERSION: 2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER | PRODUCTION READY                                                                               ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME:                                                                                                                             ║
  * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095 while preserving   ║
  * ║ the Node BFF catch-all for Node-owned /api traffic.                                                                                  ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v2.4.0):
+ * ║ 🔧 CHANGE LOG (v2.4.1):
  * ║   1. Routes Python-EOS-owned /api/legal-operations directly to port 9095 so L8-6A sheriff queue reads cannot fall through Node.      ║
  * ║   2. Preserves the /api prefix because the Legal Operations router is mounted under /api.                                             ║
+ * ║   3. Routes Python-EOS-owned /api/tenant-branding directly to port 9095 so governed branding activation cannot fall through Node.     ║
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.9):
  * ║   1. Routes Python-EOS-owned /api/legal-acceptance directly to port 9095 so authenticated legal gating cannot fall through Node.
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.8):                                                                                                               ║
@@ -118,6 +119,13 @@ export default defineConfig({
       },
       // Kernel is an EOS service and is explicitly mounted at /api/kernel.
       '/api/kernel': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Python EOS owns governed tenant-branding activation and workspace projection.
+      // Preserve /api because the branding router is mounted under /api.
+      '/api/tenant-branding': {
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
@@ -236,7 +244,7 @@ export default defineConfig({
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.4.0-L8-6A-EOS-LEGAL-OPERATIONS-OWNER
+ * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER
  * ═══════════════════════════════════════════════════════════════════════════════════
  * Status: CERTIFIED PRODUCTION ARTIFACT
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
@@ -246,6 +254,7 @@ export default defineConfig({
  *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
  *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
  *   /api/kernel → http://localhost:9095/api/kernel
+ *   /api/tenant-branding → http://localhost:9095/api/tenant-branding
  *   /api/legal-operations → http://localhost:9095/api/legal-operations
  *   /api/legal-acceptance → http://localhost:9095/api/legal-acceptance
  *   /api/tenants, /api/employees → http://localhost:9095
