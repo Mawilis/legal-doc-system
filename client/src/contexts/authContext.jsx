@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION
+ * VERSION: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Accepts tenant branding only from the explicit READY workspace.branding projection produced by D21B7. The field is mandatory: null is authoritative lawful no-branding; configured branding must match the exact D21B6 browser-safe schema, exact tenant, closed tier/media/kind sets, canonical fingerprints/colours, and mandatory WILSY trust mark. Legacy tenant branding aliases are removed before authenticated tenant state is persisted, so discovery/login/MFA/local-storage/JWT branding cannot override Python EOS authority.
+ * CHANGELOG: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Exposes a
+ *            server-revalidated workspace refresh seam for branding-management
+ *            mutations; management responses never become AuthContext authority.
+ *            v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Accepts tenant branding only from the explicit READY workspace.branding projection produced by D21B7. The field is mandatory: null is authoritative lawful no-branding; configured branding must match the exact D21B6 browser-safe schema, exact tenant, closed tier/media/kind sets, canonical fingerprints/colours, and mandatory WILSY trust mark. Legacy tenant branding aliases are removed before authenticated tenant state is persisted, so discovery/login/MFA/local-storage/JWT branding cannot override Python EOS authority.
  *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Accepts firstName/lastName only from the READY workspace-bootstrap user projection after Python EOS has revalidated current principal, tenant membership, dedicated business role and tenant truth. Login/MFA/browser-persisted names remain non-authoritative candidate data and are never promoted. Optional null/absent names remain absent; malformed or whitespace-mutated server name values fail session promotion closed. Names create no role, permission, entitlement, Legal command, billing, payment, execution or settlement authority.
  *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Accepts an optional workspace.legalPermissions
  *            projection only when it is an exact, duplicate-free subset of the
@@ -682,6 +685,39 @@ export const AuthProvider = ({ children }) => {
     };
   }, [tenant]);
 
+  const refreshWorkspace = useCallback(async () => {
+    if (!token) throw new Error('AUTHENTICATED_WORKSPACE_REFRESH_REQUIRES_SESSION');
+    const response = await api.get('/auth/workspace-bootstrap', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const authoritative = boundedWorkspaceProjection(
+      response?.data || {},
+      user?.email || '',
+    );
+    const currentTenantId = String(tenant?.tenantId || '').trim();
+    if (currentTenantId && currentTenantId !== authoritative.user.tenantId) {
+      throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+    }
+    setUser(authoritative.user);
+    setTenant(authoritative.tenant);
+    localStorage.setItem('wilsy_sovereign_user', JSON.stringify(authoritative.user));
+    localStorage.setItem('wilsy_active_tenant', JSON.stringify(authoritative.tenant));
+    return authoritative;
+  }, [tenant, token, user?.email]);
+
+  useEffect(() => {
+    const handleBrandingAuthorityRefresh = () => {
+      void refreshWorkspace().catch((refreshError) => {
+        setError(refreshError?.message || 'AUTHENTICATED_WORKSPACE_REFRESH_FAILED');
+      });
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('wilsy-branding-authority-refresh-request', handleBrandingAuthorityRefresh);
+      return () => window.removeEventListener('wilsy-branding-authority-refresh-request', handleBrandingAuthorityRefresh);
+    }
+    return undefined;
+  }, [refreshWorkspace]);
+
   const login = useCallback(async (email, password) => {
     setLoading(true);
     setError(null);
@@ -817,9 +853,10 @@ export const AuthProvider = ({ children }) => {
     verify3FA: (code) => verifyOTP(pendingEmail, code),
     logout,
     updateSovereignIdentity,
+    refreshWorkspace,
     setAuthStage,
     publicAuthPaths,
-  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity]);
+  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
@@ -834,12 +871,13 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION
+ * VERSION: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Carries only exact READY workspace.branding into authenticated tenant state, requires explicit null/configured branding provenance, strictly validates the D21B6 schema, strips legacy branding aliases, and prevents discovery/login/MFA/persisted/JWT branding from becoming authenticated authority.
+ * CHANGELOG: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Refreshes exact READY workspace authority after a certified branding mutation request; management response fields never become AuthContext authority.
+ *            v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Carries only exact READY workspace.branding into authenticated tenant state, requires explicit null/configured branding provenance, strictly validates the D21B6 schema, strips legacy branding aliases, and prevents discovery/login/MFA/persisted/JWT branding from becoming authenticated authority.
  *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.
  *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Preserves the bounded server-owned Legal permission
  * projection plus explicit provenance for presentation narrowing without trusting

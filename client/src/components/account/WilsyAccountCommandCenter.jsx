@@ -5748,6 +5748,7 @@ export function WilsyAccountCommandCenter({
               }
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('wilsy-branding-authority-refresh', { detail: branding }));
+                window.dispatchEvent(new CustomEvent('wilsy-branding-authority-refresh-request'));
               }
             }}
           />

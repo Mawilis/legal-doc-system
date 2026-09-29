@@ -58,7 +58,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async ({ notify = false } = {}) => {
     setState((current) => ({ ...current, loading: true, error: null }));
     try {
       const data = await fetchTenantBrandingManagement();
@@ -71,7 +71,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
         accentColor: current.accentColor || data?.profile?.accentColor || '',
         emailDisplayName: current.emailDisplayName || data?.profile?.emailDisplayName || '',
       }));
-      onAuthorityRefresh(data);
+      if (notify) onAuthorityRefresh(data);
       return data;
     } catch (error) {
       setState({ loading: false, error, data: null });
@@ -94,7 +94,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
     setNotice('');
     try {
       await createTenantBrandingProfile(form);
-      await refresh();
+      await refresh({ notify: true });
       setNotice('Profile approval committed by Python EOS.');
     } catch (error) {
       setNotice(error?.code || 'BRANDING_PROFILE_SAVE_FAILED');
@@ -109,7 +109,7 @@ export function TenantBrandingManagementPanel({ onAuthorityRefresh = noop }) {
     setNotice('');
     try {
       await selectTenantBrandingProfile(profile.profileId);
-      await refresh();
+      await refresh({ notify: true });
       setNotice('Current profile pointer advanced by Python EOS.');
     } catch (error) {
       setNotice(error?.code || 'BRANDING_PROFILE_SELECT_FAILED');

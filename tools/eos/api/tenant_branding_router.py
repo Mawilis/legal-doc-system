@@ -202,7 +202,9 @@ def _profile_projection(
         },
         "selection": None if current is None else {"selectionId": current.pointer.selection_id, "selectionRevision": current.pointer.selection_revision},
         "capabilities": {
+            "canRead": True,
             "canManageProfile": entitlement is not None if can_manage_profile is None else can_manage_profile,
+            "canManageAsset": entitlement is not None if can_manage_assets is None else can_manage_assets,
             "canManageAssets": entitlement is not None if can_manage_assets is None else can_manage_assets,
             "trustMarkRequired": True,
         },
