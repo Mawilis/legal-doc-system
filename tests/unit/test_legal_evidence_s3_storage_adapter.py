@@ -602,12 +602,226 @@ def test_configuration_never_accepts_credentials() -> None:
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
 
+
+def test_c4d2r2_exact_head_without_intent_metadata_emits_absent() -> None:
+    client = FakeS3Client()
+
+    key = (
+        _c4d2_tenant_prefix()
+        + "m/opaque-matter/"
+        "d/opaque-document/"
+        "i/opaque-ingestion/content"
+    )
+
+    client.list_object_versions_response = {
+        "Versions": [
+            {
+                "Key": key,
+                "VersionId": "version-legacy",
+                "ETag": '"etag-legacy"',
+                "Size": 77,
+                "LastModified": C4D2_AT,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    client.head_response = {
+        "VersionId": "version-legacy",
+        "ETag": '"etag-legacy"',
+        "ContentLength": 77,
+        "Metadata": {},
+    }
+
+    result = adapter(
+        client
+    ).list_completed_object_versions(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+    )
+
+    assert len(result) == 1
+    assert (
+        result[0].write_intent_metadata_state
+        is LegalEvidenceCompletedObjectIntentMetadataState.ABSENT
+    )
+    assert result[0].write_intent_fingerprint is None
+
+
+@pytest.mark.parametrize(
+    "fingerprint",
+    [
+        "",
+        "a" * 127,
+        "a" * 129,
+        "A" * 128,
+        "g" * 128,
+    ],
+)
+def test_c4d2r2_malformed_provider_intent_metadata_fails_closed(
+    fingerprint: str,
+) -> None:
+    client = FakeS3Client()
+
+    key = (
+        _c4d2_tenant_prefix()
+        + "m/opaque-matter/"
+        "d/opaque-document/"
+        "i/opaque-ingestion/content"
+    )
+
+    client.list_object_versions_response = {
+        "Versions": [
+            {
+                "Key": key,
+                "VersionId": "version-bad",
+                "ETag": '"etag-bad"',
+                "Size": 88,
+                "LastModified": C4D2_AT,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    client.head_response = {
+        "VersionId": "version-bad",
+        "ETag": '"etag-bad"',
+        "ContentLength": 88,
+        "Metadata": {
+            "wilsy-intent-sha3-512": fingerprint,
+        },
+    }
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D2R2_PROVIDER_METADATA_INVALID$",
+    ):
+        adapter(
+            client
+        ).list_completed_object_versions(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("VersionId", "wrong-version"),
+        ("ETag", '"wrong-etag"'),
+        ("ContentLength", 90),
+        ("Metadata", None),
+    ],
+)
+def test_c4d2r2_head_identity_or_shape_mismatch_fails_closed(
+    field: str,
+    value: object,
+) -> None:
+    client = FakeS3Client()
+
+    key = (
+        _c4d2_tenant_prefix()
+        + "m/opaque-matter/"
+        "d/opaque-document/"
+        "i/opaque-ingestion/content"
+    )
+
+    client.list_object_versions_response = {
+        "Versions": [
+            {
+                "Key": key,
+                "VersionId": "version-head",
+                "ETag": '"etag-head"',
+                "Size": 89,
+                "LastModified": C4D2_AT,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    client.head_response = {
+        "VersionId": "version-head",
+        "ETag": '"etag-head"',
+        "ContentLength": 89,
+        "Metadata": {},
+    }
+    client.head_response[field] = value
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D2R2_HEAD_RESPONSE_MISMATCH$",
+    ):
+        adapter(
+            client
+        ).list_completed_object_versions(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+        )
+
+
+def test_c4d2r2_head_provider_failure_is_bounded_and_fails_closed() -> None:
+    client = FakeS3Client()
+
+    key = (
+        _c4d2_tenant_prefix()
+        + "m/opaque-matter/"
+        "d/opaque-document/"
+        "i/opaque-ingestion/content"
+    )
+
+    client.list_object_versions_response = {
+        "Versions": [
+            {
+                "Key": key,
+                "VersionId": "version-failure",
+                "ETag": '"etag-failure"',
+                "Size": 55,
+                "LastModified": C4D2_AT,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    client.raise_on = "head_object"
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D2R2_HEAD_OBJECT_FAILED$",
+    ) as captured:
+        adapter(
+            client
+        ).list_completed_object_versions(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+        )
+
+    assert "sensitive-provider-message" not in str(
+        captured.value
+    )
+
+
+def test_c4d2r2_empty_completed_listing_performs_no_head_calls() -> None:
+    client = FakeS3Client()
+
+    result = adapter(
+        client
+    ).list_completed_object_versions(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+    )
+
+    assert result == ()
+    assert [name for name, _ in client.calls] == [
+        "list_object_versions",
+    ]
+
 # --- L10A2R-C4D2 S3 provider cleanup discovery certificate ---
 
 from datetime import datetime, timezone
 import hashlib
 
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceCompletedObjectIntentMetadataState,
     LegalEvidenceProviderCleanupDiscoveryPort,
     LegalEvidenceProviderDiscoveryScope,
 )
@@ -716,18 +930,20 @@ def test_c4d2_incomplete_session_discovery_uses_tenant_opaque_prefix_only() -> N
     )
 
 
-def test_c4d2_completed_object_discovery_uses_object_versions_read_only() -> None:
+def test_c4d2_completed_object_discovery_recovers_exact_version_intent_metadata() -> None:
     client = FakeS3Client()
+
+    key = (
+        _c4d2_tenant_prefix()
+        + "m/opaque-matter/"
+        "d/opaque-document/"
+        "i/opaque-ingestion/content"
+    )
 
     client.list_object_versions_response = {
         "Versions": [
             {
-                "Key": (
-                    _c4d2_tenant_prefix()
-                    + "m/opaque-matter/"
-                    "d/opaque-document/"
-                    "i/opaque-ingestion/content"
-                ),
+                "Key": key,
                 "VersionId": "version-c4d2",
                 "ETag": '"etag-c4d2"',
                 "Size": 123,
@@ -738,32 +954,53 @@ def test_c4d2_completed_object_discovery_uses_object_versions_read_only() -> Non
         "IsTruncated": False,
     }
 
-    adapter = LegalEvidenceS3StorageAdapter(
+    fingerprint = "a" * 128
+
+    client.head_response = {
+        "VersionId": "version-c4d2",
+        "ETag": '"etag-c4d2"',
+        "ContentLength": 123,
+        "Metadata": {
+            "wilsy-intent-sha3-512": fingerprint,
+        },
+    }
+
+    storage = LegalEvidenceS3StorageAdapter(
         LegalEvidenceS3Configuration(
             bucket="wilsy-c4d2-cert"
         ),
         client=cast(BaseClient, client),
     )
 
-    result = adapter.list_completed_object_versions(
+    result = storage.list_completed_object_versions(
         _c4d2_scope(),
         observed_at=C4D2_AT,
     )
 
     assert len(result) == 1
-    assert result[0].tenant_id == "tenant-c4d2"
-    assert result[0].provider_name == "aws_s3"
-    assert result[0].object_version_reference == "version-c4d2"
-    assert result[0].content_length == 123
+    observation = result[0]
 
-    calls = [
-        call
-        for call in client.calls
-        if call[0] == "list_object_versions"
+    assert observation.tenant_id == "tenant-c4d2"
+    assert observation.provider_name == "aws_s3"
+    assert observation.object_version_reference == "version-c4d2"
+    assert observation.content_length == 123
+    assert (
+        observation.write_intent_metadata_state
+        is LegalEvidenceCompletedObjectIntentMetadataState.PRESENT
+    )
+    assert observation.write_intent_fingerprint == fingerprint
+
+    assert [name for name, _ in client.calls] == [
+        "list_object_versions",
+        "head_object",
     ]
 
-    assert len(calls) == 1
-    assert "Prefix" in calls[0][1]
+    _, head_kwargs = client.calls[1]
+    assert head_kwargs == {
+        "Bucket": "wilsy-c4d2-cert",
+        "Key": key,
+        "VersionId": "version-c4d2",
+    }
 
 
 def test_c4d2_discovery_surface_performs_no_abort_or_delete() -> None:

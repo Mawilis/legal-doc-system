@@ -1,7 +1,7 @@
 """WILSY OS AWS S3 adapter for streamed Legal Evidence binaries.
 
 TITLE: Legal Evidence S3 Storage Adapter
-VERSION: v1.2.0-L10A2R-C4D2-LEGAL-EVIDENCE-S3-DISCOVERY
+VERSION: v1.3.0-L10A2R-C4D2R2-S3-INTENT-METADATA-RECOVERY
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Implement the certified provider-neutral Legal Evidence binary-storage
          port using AWS S3 multipart operations while preserving exact
@@ -15,7 +15,12 @@ COLLABORATION / OWNERSHIP: L10A2R-A4-R1 owns provider-neutral storage semantics
                             commercial capacity. Retention/legal-hold authority,
                             HTTP, IAM and Mongo reconciliation remain elsewhere.
 CERTIFICATION / UPDATE DATE: 2026-09-30
-CHANGELOG: v1.2.0-L10A2R-C4D2 adds read-only tenant-scoped S3 discovery
+CHANGELOG: v1.3.0-L10A2R-C4D2R2 performs exact-version S3 HEAD
+           recovery for every completed object version and emits explicit
+           ABSENT/PRESENT canonical WILSY intent-metadata evidence. Provider
+           failure, object-version mismatch, length/integrity mismatch and
+           malformed metadata fail closed.
+           v1.2.0-L10A2R-C4D2 adds read-only tenant-scoped S3 discovery
            for incomplete multipart uploads and completed object versions.
            Discovery validates exact tenant scope, uses opaque tenant prefixes,
            rejects truncated provider enumeration and grants no orphan,
@@ -78,6 +83,7 @@ from tools.eos.legal_operations.service.legal_evidence_binary_storage_port impor
     validate_write_session_for_intent,
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceCompletedObjectIntentMetadataState,
     LegalEvidenceCompletedObjectObservation,
     LegalEvidenceIncompleteWriteSessionObservation,
     LegalEvidenceProviderCleanupDiscoveryError,
@@ -85,7 +91,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION: Final[str] = "v1.2.0-L10A2R-C4D2-LEGAL-EVIDENCE-S3-DISCOVERY"
+VERSION: Final[str] = "v1.3.0-L10A2R-C4D2R2-S3-INTENT-METADATA-RECOVERY"
 PROVIDER_NAME: Final[str] = "aws_s3"
 DEFAULT_REGION: Final[str] = "af-south-1"
 MAX_S3_PARTS: Final[int] = 10_000
@@ -740,6 +746,71 @@ class LegalEvidenceS3StorageAdapter:
                 )
 
             try:
+                head = self._client.head_object(
+                    Bucket=self._config.bucket,
+                    Key=key,
+                    VersionId=version_id,
+                )
+            except (
+                BotoCoreError,
+                ClientError,
+            ) as error:
+                _fail(
+                    "L10A2R_C4D2R2_HEAD_OBJECT_FAILED",
+                    error,
+                )
+
+            if not isinstance(
+                head,
+                Mapping,
+            ):
+                _fail(
+                    "L10A2R_C4D2R2_HEAD_RESPONSE_INVALID"
+                )
+
+            head_version = head.get(
+                "VersionId"
+            )
+            head_etag = head.get(
+                "ETag"
+            )
+            head_length = head.get(
+                "ContentLength"
+            )
+            metadata = head.get(
+                "Metadata"
+            )
+
+            if (
+                not isinstance(head_version, str)
+                or head_version != version_id
+                or not isinstance(head_etag, str)
+                or head_etag != etag
+                or isinstance(head_length, bool)
+                or not isinstance(head_length, int)
+                or head_length != size
+                or not isinstance(metadata, Mapping)
+            ):
+                _fail(
+                    "L10A2R_C4D2R2_HEAD_RESPONSE_MISMATCH"
+                )
+
+            raw_intent_fingerprint = metadata.get(
+                "wilsy-intent-sha3-512"
+            )
+
+            if raw_intent_fingerprint is None:
+                metadata_state = (
+                    LegalEvidenceCompletedObjectIntentMetadataState.ABSENT
+                )
+                intent_fingerprint = None
+            else:
+                metadata_state = (
+                    LegalEvidenceCompletedObjectIntentMetadataState.PRESENT
+                )
+                intent_fingerprint = raw_intent_fingerprint
+
+            try:
                 observation = (
                     LegalEvidenceCompletedObjectObservation(
                         tenant_id=scope.tenant_id,
@@ -750,11 +821,13 @@ class LegalEvidenceS3StorageAdapter:
                         content_length=size,
                         last_modified_at=modified,
                         observed_at=observed,
+                        write_intent_metadata_state=metadata_state,
+                        write_intent_fingerprint=intent_fingerprint,
                     )
                 )
             except LegalEvidenceProviderCleanupDiscoveryError as error:
                 _fail(
-                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID",
+                    "L10A2R_C4D2R2_PROVIDER_METADATA_INVALID",
                     error,
                 )
 
@@ -812,9 +885,10 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_evidence_s3_storage_adapter.py
-# VERSION: v1.2.0-L10A2R-C4D2-LEGAL-EVIDENCE-S3-DISCOVERY
+# VERSION: v1.3.0-L10A2R-C4D2R2-S3-INTENT-METADATA-RECOVERY
 # AUTHORITY BOUNDARY: AWS S3 capability execution only; WILSY retains canonical Legal Evidence truth
 # TENANT POSTURE: provider keys contain only opaque coordinate digests; every provider operation locally tenant/intake scope-guarded
 # FAIL-CLOSED POSTURE: scope/config/sequence/provider-response/provider-metadata divergence rejects before success
+# CLEANUP METADATA POSTURE: exact object-version HEAD yields ABSENT or PRESENT evidence only
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
