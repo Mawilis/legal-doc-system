@@ -1,11 +1,12 @@
 """Direct certificate for C4D3B read-only cleanup classification orchestration.
 
-VERSION: v1.0.0-L10A2R-C4D3B-PROVIDER-CLEANUP-CLASSIFICATION-SERVICE-CERT
+VERSION: v1.1.0-L10A2R-C4D5D3-PROVIDER-WRITE-INTENT-CORRELATION-SERVICE-CERT
 CERTIFICATION / UPDATE DATE: 2026-09-30
 """
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 from unittest.mock import MagicMock
@@ -27,6 +28,14 @@ from tools.eos.legal_operations.domain.legal_evidence_object_metadata import (
 from tools.eos.legal_operations.domain.legal_evidence_provider_cleanup_classification import (
     LegalEvidenceProviderCleanupClassification,
 )
+from tools.eos.legal_operations.domain.legal_evidence_provider_write_intent_correlation import (
+    LegalEvidenceProviderWriteIntentCorrelationState,
+)
+from tools.eos.legal_operations.registry.legal_evidence_binary_write_intent_registry import (
+    LegalEvidenceBinaryWriteIntentNotFoundError,
+    LegalEvidenceBinaryWriteIntentRecord,
+    LegalEvidenceBinaryWriteIntentRegistryError,
+)
 from tools.eos.legal_operations.registry.legal_evidence_object_metadata_registry import (
     LegalEvidenceObjectMetadataRegistryError,
     LegalEvidenceObjectMetadataRegistryNotFoundError,
@@ -41,6 +50,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_classifi
     LegalEvidenceProviderCleanupClassificationTransactionRequiredError,
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceCompletedObjectIntentMetadataState,
     LegalEvidenceCompletedObjectObservation,
     LegalEvidenceIncompleteWriteSessionObservation,
     LegalEvidenceProviderDiscoveryScope,
@@ -547,8 +557,390 @@ def test_public_surface_excludes_mutation_reconciliation_and_later_authority() -
     )
 
 
+def _correlation_service(
+    *,
+    completed: tuple[LegalEvidenceCompletedObjectObservation, ...],
+    write_intent_registry=None,
+):
+    discovery = MagicMock()
+    metadata_registry = MagicMock()
+    uncertainty_registry = MagicMock()
+
+    discovery.list_completed_object_versions.return_value = (
+        completed
+    )
+
+    registry = (
+        write_intent_registry
+        if write_intent_registry is not None
+        else MagicMock()
+    )
+
+    service = LegalEvidenceProviderCleanupClassificationService(
+        discovery=discovery,
+        metadata_registry=metadata_registry,
+        uncertainty_registry=uncertainty_registry,
+        write_intent_registry=registry,
+    )
+
+    return service, discovery, registry
+
+
+def _with_intent_metadata(
+    observation: LegalEvidenceCompletedObjectObservation,
+    state: LegalEvidenceCompletedObjectIntentMetadataState,
+    fingerprint: str | None,
+) -> LegalEvidenceCompletedObjectObservation:
+    return replace(
+        observation,
+        write_intent_metadata_state=state,
+        write_intent_fingerprint=fingerprint,
+    )
+
+
+def test_c4d5d3_correlation_requires_active_transaction_before_discovery() -> None:
+    service, discovery, registry = _correlation_service(
+        completed=(),
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupClassificationTransactionRequiredError,
+        match="L10A2R_C4D3B_TRANSACTION_REQUIRED",
+    ):
+        service.correlate_tenant_completed_write_intents(
+            scope=_scope(),
+            observed_at=AT,
+            session=Session(False),
+        )
+
+    discovery.list_completed_object_versions.assert_not_called()
+    registry.get_by_fingerprint.assert_not_called()
+
+
+def test_c4d5d3_missing_registry_dependency_fails_before_discovery() -> None:
+    service, discovery, _, _ = _service(
+        completed=(),
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupClassificationServiceError,
+        match="L10A2R_C4D5D3_WRITE_INTENT_REGISTRY_REQUIRED",
+    ):
+        service.correlate_tenant_completed_write_intents(
+            scope=_scope(),
+            observed_at=AT,
+            session=Session(),
+        )
+
+    discovery.list_completed_object_versions.assert_not_called()
+
+
+def test_c4d5d3_not_observed_and_absent_perform_zero_registry_reads() -> None:
+    not_observed = _with_intent_metadata(
+        _completed(
+            storage_reference="legal-evidence/c4d5d3/not-observed",
+            object_version_reference="version-not-observed",
+        ),
+        LegalEvidenceCompletedObjectIntentMetadataState.NOT_OBSERVED,
+        None,
+    )
+    absent = _with_intent_metadata(
+        _completed(
+            storage_reference="legal-evidence/c4d5d3/absent",
+            object_version_reference="version-absent",
+        ),
+        LegalEvidenceCompletedObjectIntentMetadataState.ABSENT,
+        None,
+    )
+
+    service, _, registry = _correlation_service(
+        completed=(
+            not_observed,
+            absent,
+        ),
+    )
+
+    result = service.correlate_tenant_completed_write_intents(
+        scope=_scope(),
+        observed_at=AT + timedelta(minutes=1),
+        session=Session(),
+    )
+
+    assert {
+        item.correlation_state
+        for item in result
+    } == {
+        LegalEvidenceProviderWriteIntentCorrelationState
+        .METADATA_NOT_OBSERVED,
+        LegalEvidenceProviderWriteIntentCorrelationState
+        .METADATA_ABSENT,
+    }
+
+    registry.get_by_fingerprint.assert_not_called()
+
+    assert all(
+        item.orphan_proven is False
+        and item.provider_delete_authorized is False
+        for item in result
+    )
+
+
+def test_c4d5d3_present_exact_registry_match_uses_durable_record() -> None:
+    intent = _intent()
+    observation = _with_intent_metadata(
+        _completed(),
+        LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+        intent.fingerprint,
+    )
+
+    record = LegalEvidenceBinaryWriteIntentRecord(
+        intent=intent,
+        registered_at=AT,
+    )
+
+    registry = MagicMock()
+    registry.get_by_fingerprint.return_value = record
+
+    service, _, registry = _correlation_service(
+        completed=(
+            observation,
+        ),
+        write_intent_registry=registry,
+    )
+
+    session = Session()
+
+    result = service.correlate_tenant_completed_write_intents(
+        scope=_scope(),
+        observed_at=AT + timedelta(minutes=1),
+        session=session,
+    )
+
+    registry.get_by_fingerprint.assert_called_once_with(
+        tenant_id="tenant-c4d3b",
+        write_intent_fingerprint=intent.fingerprint,
+        session=session,
+    )
+
+    assert len(result) == 1
+    assert result[0].correlation_state is (
+        LegalEvidenceProviderWriteIntentCorrelationState
+        .PRESENT_REGISTRY_MATCH
+    )
+    assert (
+        result[0].registered_intent_fingerprint
+        == intent.fingerprint
+    )
+    assert (
+        result[0].registration_record_fingerprint
+        == record.record_fingerprint
+    )
+    assert result[0].registered_at == record.registered_at
+    assert result[0].orphan_proven is False
+    assert result[0].provider_delete_authorized is False
+
+
+def test_c4d5d3_present_registry_not_found_is_explicit_non_orphan_evidence() -> None:
+    intent = _intent()
+    observation = _with_intent_metadata(
+        _completed(),
+        LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+        intent.fingerprint,
+    )
+
+    registry = MagicMock()
+    registry.get_by_fingerprint.side_effect = (
+        LegalEvidenceBinaryWriteIntentNotFoundError(
+            "L10A2R_C4D5C_WRITE_INTENT_NOT_FOUND"
+        )
+    )
+
+    service, _, registry = _correlation_service(
+        completed=(
+            observation,
+        ),
+        write_intent_registry=registry,
+    )
+
+    result = service.correlate_tenant_completed_write_intents(
+        scope=_scope(),
+        observed_at=AT + timedelta(minutes=1),
+        session=Session(),
+    )
+
+    registry.get_by_fingerprint.assert_called_once()
+
+    assert result[0].correlation_state is (
+        LegalEvidenceProviderWriteIntentCorrelationState
+        .PRESENT_REGISTRY_NOT_FOUND
+    )
+    assert result[0].orphan_proven is False
+    assert result[0].provider_delete_authorized is False
+
+
+def test_c4d5d3_non_not_found_registry_error_propagates() -> None:
+    intent = _intent()
+    observation = _with_intent_metadata(
+        _completed(),
+        LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+        intent.fingerprint,
+    )
+
+    registry = MagicMock()
+    error = LegalEvidenceBinaryWriteIntentRegistryError(
+        "L10A2R_C4D5C_READ_FAILED"
+    )
+    registry.get_by_fingerprint.side_effect = error
+
+    service, _, _ = _correlation_service(
+        completed=(
+            observation,
+        ),
+        write_intent_registry=registry,
+    )
+
+    with pytest.raises(
+        LegalEvidenceBinaryWriteIntentRegistryError,
+        match="L10A2R_C4D5C_READ_FAILED",
+    ):
+        service.correlate_tenant_completed_write_intents(
+            scope=_scope(),
+            observed_at=AT + timedelta(minutes=1),
+            session=Session(),
+        )
+
+
+def test_c4d5d3_malformed_registry_result_fails_closed() -> None:
+    intent = _intent()
+    observation = _with_intent_metadata(
+        _completed(),
+        LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+        intent.fingerprint,
+    )
+
+    registry = MagicMock()
+    registry.get_by_fingerprint.return_value = object()
+
+    service, _, _ = _correlation_service(
+        completed=(
+            observation,
+        ),
+        write_intent_registry=registry,
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupClassificationServiceError,
+        match="L10A2R_C4D5D3_WRITE_INTENT_RECORD_INVALID",
+    ):
+        service.correlate_tenant_completed_write_intents(
+            scope=_scope(),
+            observed_at=AT + timedelta(minutes=1),
+            session=Session(),
+        )
+
+
+def test_c4d5d3_cross_tenant_completed_observation_fails_closed() -> None:
+    service, _, registry = _correlation_service(
+        completed=(
+            _completed(
+                tenant_id="tenant-other",
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupClassificationServiceError,
+        match="L10A2R_C4D5D3_DISCOVERY_SCOPE_MISMATCH",
+    ):
+        service.correlate_tenant_completed_write_intents(
+            scope=_scope(),
+            observed_at=AT + timedelta(minutes=1),
+            session=Session(),
+        )
+
+    registry.get_by_fingerprint.assert_not_called()
+
+
+def test_c4d5d3_correlation_result_order_is_deterministic() -> None:
+    intent = _intent()
+
+    first = _with_intent_metadata(
+        _completed(
+            storage_reference="legal-evidence/c4d5d3/z",
+            object_version_reference="version-z",
+        ),
+        LegalEvidenceCompletedObjectIntentMetadataState.ABSENT,
+        None,
+    )
+    second = _with_intent_metadata(
+        _completed(
+            storage_reference="legal-evidence/c4d5d3/a",
+            object_version_reference="version-a",
+        ),
+        LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+        intent.fingerprint,
+    )
+
+    registry = MagicMock()
+    registry.get_by_fingerprint.side_effect = (
+        LegalEvidenceBinaryWriteIntentNotFoundError(
+            "L10A2R_C4D5C_WRITE_INTENT_NOT_FOUND"
+        )
+    )
+
+    service, _, _ = _correlation_service(
+        completed=(
+            first,
+            second,
+        ),
+        write_intent_registry=registry,
+    )
+
+    result = service.correlate_tenant_completed_write_intents(
+        scope=_scope(),
+        observed_at=AT + timedelta(minutes=1),
+        session=Session(),
+    )
+
+    assert [
+        item.storage_reference
+        for item in result
+    ] == [
+        "legal-evidence/c4d5d3/a",
+        "legal-evidence/c4d5d3/z",
+    ]
+
+
+def test_c4d5d3_existing_classification_contract_remains_unresolved() -> None:
+    intent = _intent()
+    observation = _with_intent_metadata(
+        _completed(),
+        LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+        intent.fingerprint,
+    )
+
+    service, _, _, _ = _service(
+        completed=(
+            observation,
+        ),
+    )
+
+    result = service.classify_tenant_observations(
+        scope=_scope(),
+        observed_at=AT + timedelta(minutes=1),
+        session=Session(),
+    )
+
+    assert result[0].classification is (
+        LegalEvidenceProviderCleanupClassification
+        .PROVIDER_OBJECT_UNRESOLVED
+    )
+    assert result[0].orphan_proven is False
+    assert result[0].provider_delete_authorized is False
+
+
 # ARTIFACT: test_legal_evidence_provider_cleanup_classification_service.py
-# VERSION: v1.0.0-L10A2R-C4D3B-PROVIDER-CLEANUP-CLASSIFICATION-SERVICE-CERT
+# VERSION: v1.1.0-L10A2R-C4D5D3-PROVIDER-WRITE-INTENT-CORRELATION-SERVICE-CERT
 # AUTHORITY BOUNDARY: read-only provider cleanup classification orchestration
 # C4C POSTURE: no reconciliation and no write-intent reconstruction
 # ORPHAN POSTURE: no orphan proof
