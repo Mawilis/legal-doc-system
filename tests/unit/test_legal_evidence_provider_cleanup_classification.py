@@ -35,6 +35,7 @@ from tools.eos.legal_operations.service.legal_evidence_commit_reconciliation_ser
     LegalEvidenceCommitReconciliationResult,
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceCompletedObjectIntentMetadataState,
     LegalEvidenceCompletedObjectObservation,
     LegalEvidenceIncompleteWriteSessionObservation,
 )
@@ -226,11 +227,40 @@ def test_matching_uncertainty_is_unresolved() -> None:
     assert result.provider_delete_authorized is False
 
 
-def test_no_canonical_evidence_is_cleanup_candidate_only() -> None:
-    result = classify_legal_evidence_provider_observation(_observation())
+@pytest.mark.parametrize(
+    ("state", "fingerprint"),
+    [
+        (
+            LegalEvidenceCompletedObjectIntentMetadataState.NOT_OBSERVED,
+            None,
+        ),
+        (
+            LegalEvidenceCompletedObjectIntentMetadataState.ABSENT,
+            None,
+        ),
+        (
+            LegalEvidenceCompletedObjectIntentMetadataState.PRESENT,
+            "a" * 128,
+        ),
+    ],
+)
+def test_no_stronger_canonical_evidence_is_always_unresolved(
+    state: LegalEvidenceCompletedObjectIntentMetadataState,
+    fingerprint: str | None,
+) -> None:
+    observation = replace(
+        _observation(),
+        write_intent_metadata_state=state,
+        write_intent_fingerprint=fingerprint,
+    )
+
+    result = classify_legal_evidence_provider_observation(
+        observation
+    )
 
     assert result.classification is (
-        LegalEvidenceProviderCleanupClassification.CLEANUP_CANDIDATE
+        LegalEvidenceProviderCleanupClassification
+        .PROVIDER_OBJECT_UNRESOLVED
     )
     assert result.orphan_proven is False
     assert result.provider_delete_authorized is False

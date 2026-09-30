@@ -1,7 +1,7 @@
 """WILSY OS Legal Evidence provider cleanup classification domain.
 
 TITLE: Legal Evidence Provider Cleanup Classification
-VERSION: v1.0.0-L10A2R-C4D3A-PROVIDER-CLEANUP-CLASSIFICATION
+VERSION: v1.1.0-L10A2R-C4D5D1-PROVIDER-CLEANUP-CLASSIFICATION
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 
 PURPOSE:
@@ -24,9 +24,16 @@ EPITOME:
     -> PROVIDER_OBJECT_UNRESOLVED
 
     COMPLETED OBJECT + NO SUPPLIED CANONICAL OWNERSHIP/UNCERTAINTY EVIDENCE
-    -> CLEANUP_CANDIDATE
+    -> PROVIDER_OBJECT_UNRESOLVED
 
-    CLEANUP_CANDIDATE
+    PROVIDER OBJECT WITH ABSENT / NOT_OBSERVED / PRESENT INTENT METADATA
+    + NO STRONGER CANONICAL COMMIT EVIDENCE
+    -> PROVIDER_OBJECT_UNRESOLVED
+
+    CLEANUP_CANDIDATE remains reserved for a future separately-certified
+    positive orphan-proof authority and is not emitted by this classifier.
+
+    PROVIDER_OBJECT_UNRESOLVED
     != ORPHAN PROVEN
     != DELETE AUTHORIZED
 
@@ -38,8 +45,11 @@ AUTHORITY BOUNDARY:
 COLLABORATION / OWNERSHIP:
     C4D1/C4D2 own provider observation. C2 owns canonical object metadata.
     C4A/C4B own immutable commit uncertainty. C4C owns commit reconciliation.
-    Later separately-certified retention, legal-hold and deletion governance
-    remains outside this artifact.
+    C4D5C owns durable original write-intent registration. C4D5D1 hardens
+    absence-of-evidence handling only; it does not perform registry IO or
+    infer orphan status from provider metadata state or registry absence.
+    Later separately-certified correlation, orphan-proof, retention,
+    legal-hold and deletion governance remains outside this artifact.
 
 SECURITY / PRIVACY POSTURE:
     Exact tenant and provider-object identity binding only. No raw object bytes,
@@ -48,7 +58,9 @@ SECURITY / PRIVACY POSTURE:
 FAIL-CLOSED DECLARATION:
     Wrong types, ambiguous evidence combinations, scope divergence, provider
     divergence, object-version divergence, integrity divergence, content-length
-    divergence and later-authority claims reject.
+    divergence and later-authority claims reject. Absence of canonical commit,
+    uncertainty or reconciliation evidence never upgrades a completed provider
+    object into cleanup candidacy; it remains unresolved.
 
 CERTIFICATION / UPDATE DATE: 2026-09-30
 """
@@ -80,7 +92,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 
 
 VERSION: Final[str] = (
-    "v1.0.0-L10A2R-C4D3A-PROVIDER-CLEANUP-CLASSIFICATION"
+    "v1.1.0-L10A2R-C4D5D1-PROVIDER-CLEANUP-CLASSIFICATION"
 )
 
 _SHA3_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -394,7 +406,10 @@ def classify_legal_evidence_provider_observation(
 
     return _completed_result(
         observation,
-        LegalEvidenceProviderCleanupClassification.CLEANUP_CANDIDATE,
+        (
+            LegalEvidenceProviderCleanupClassification
+            .PROVIDER_OBJECT_UNRESOLVED
+        ),
     )
 
 
@@ -408,11 +423,11 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_cleanup_classification.py
-# VERSION: v1.0.0-L10A2R-C4D3A-PROVIDER-CLEANUP-CLASSIFICATION
+# VERSION: v1.1.0-L10A2R-C4D5D1-PROVIDER-CLEANUP-CLASSIFICATION
 # AUTHORITY BOUNDARY: immutable provider-observation classification only
 # TENANT POSTURE: exact tenant/provider-object evidence binding
 # SESSION POSTURE: incomplete observation is not abort authorization
-# ORPHAN POSTURE: cleanup candidate and unresolved object are not orphan proof
+# ORPHAN POSTURE: absence of stronger evidence stays unresolved; cleanup candidate is not emitted
 # DELETION POSTURE: no provider deletion authority
 # RETENTION POSTURE: no retention/legal-hold authority
 # AVAILABILITY POSTURE: no availability authority

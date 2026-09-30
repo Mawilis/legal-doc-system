@@ -339,7 +339,7 @@ def test_completed_object_with_matching_uncertainty_is_unresolved() -> None:
     assert result[0].provider_delete_authorized is False
 
 
-def test_completed_object_without_canonical_evidence_is_candidate_only() -> None:
+def test_completed_object_without_canonical_evidence_is_unresolved() -> None:
     service, _, _, _ = _service(
         completed=(
             _completed(),
@@ -354,7 +354,7 @@ def test_completed_object_without_canonical_evidence_is_candidate_only() -> None
 
     assert result[0].classification is (
         LegalEvidenceProviderCleanupClassification
-        .CLEANUP_CANDIDATE
+        .PROVIDER_OBJECT_UNRESOLVED
     )
     assert result[0].orphan_proven is False
     assert result[0].provider_delete_authorized is False
