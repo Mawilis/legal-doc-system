@@ -1,7 +1,7 @@
 """WILSY OS metadata-only Legal Evidence object registry.
 
 TITLE: Legal Evidence Object Metadata Registry
-VERSION: v1.0.0-L10A2R-C2-LEGAL-EVIDENCE-OBJECT-METADATA-REGISTRY
+VERSION: v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 
 PURPOSE:
@@ -68,7 +68,7 @@ from tools.eos.legal_operations.domain.legal_evidence_object_metadata import (
 
 
 VERSION: Final[str] = (
-    "v1.0.0-L10A2R-C2-LEGAL-EVIDENCE-OBJECT-METADATA-REGISTRY"
+    "v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP"
 )
 
 COLLECTION: Final[str] = "legal_evidence_object_metadata"
@@ -81,6 +81,9 @@ DOCUMENT_INDEX_NAME: Final[str] = (
 )
 CONTENT_FINGERPRINT_INDEX_NAME: Final[str] = (
     "legal_evidence_object_metadata_tenant_content_fingerprint"
+)
+PROVIDER_OBJECT_INDEX_NAME: Final[str] = (
+    "legal_evidence_object_metadata_tenant_provider_object"
 )
 
 MAX_DOCUMENT_METADATA: Final[int] = 500
@@ -462,6 +465,29 @@ def ensure_indexes(
             name=CONTENT_FINGERPRINT_INDEX_NAME,
         )
 
+        target.create_index(
+            [
+                (
+                    "tenant_id",
+                    ASCENDING,
+                ),
+                (
+                    "provider_name",
+                    ASCENDING,
+                ),
+                (
+                    "storage_reference",
+                    ASCENDING,
+                ),
+                (
+                    "object_version_reference",
+                    ASCENDING,
+                ),
+            ],
+            unique=False,
+            name=PROVIDER_OBJECT_INDEX_NAME,
+        )
+
     except PyMongoError as error:
         _raise_mongo(error)
     except AttributeError as error:
@@ -646,6 +672,101 @@ class LegalEvidenceObjectMetadataRegistry:
 
         return value
 
+    def get_provider_object(
+        self,
+        *,
+        tenant_id: str,
+        provider_name: str,
+        storage_reference: str,
+        object_version_reference: str,
+        session: Any,
+    ) -> LegalEvidenceObjectMetadata:
+        """Return one exact tenant/provider-object canonical metadata row."""
+        tx = _active_transaction(
+            session
+        )
+        tenant = _text(
+            "tenant_id",
+            tenant_id,
+        )
+        provider = _text(
+            "provider_name",
+            provider_name,
+        )
+        storage = _text(
+            "storage_reference",
+            storage_reference,
+        )
+        version = _text(
+            "object_version_reference",
+            object_version_reference,
+        )
+
+        try:
+            cursor = self._collection.find(
+                {
+                    "tenant_id": tenant,
+                    "provider_name": provider,
+                    "storage_reference": storage,
+                    "object_version_reference": version,
+                },
+                session=tx,
+            )
+
+            if hasattr(
+                cursor,
+                "limit",
+            ):
+                cursor = cursor.limit(
+                    2
+                )
+
+            rows = tuple(
+                cast(
+                    Mapping[str, Any],
+                    row,
+                )
+                for row in cursor
+            )
+
+        except PyMongoError as error:
+            _raise_mongo(error)
+        except AttributeError as error:
+            _raise(
+                LegalEvidenceObjectMetadataRegistryInputError,
+                "L10A2R_C2_COLLECTION_INTERFACE_INVALID",
+                error,
+            )
+
+        if not rows:
+            _raise(
+                LegalEvidenceObjectMetadataRegistryNotFoundError,
+                "L10A2R_C2_PROVIDER_OBJECT_NOT_FOUND",
+            )
+
+        if len(rows) != 1:
+            _raise(
+                LegalEvidenceObjectMetadataRegistryError,
+                "L10A2R_C2_PROVIDER_OBJECT_AMBIGUOUS",
+            )
+
+        value = _hydrate(
+            rows[0]
+        )
+
+        if (
+            value.tenant_id != tenant
+            or value.provider_name != provider
+            or value.storage_reference != storage
+            or value.object_version_reference != version
+        ):
+            _raise(
+                LegalEvidenceObjectMetadataRegistryError,
+                "L10A2R_C2_CORRUPT_METADATA",
+            )
+
+        return value
+
     def list_document_metadata(
         self,
         *,
@@ -747,6 +868,7 @@ __all__ = [
     "CONTENT_FINGERPRINT_INDEX_NAME",
     "DOCUMENT_INDEX_NAME",
     "MAX_DOCUMENT_METADATA",
+    "PROVIDER_OBJECT_INDEX_NAME",
     "READ_CONCERN",
     "REFERENCE_INDEX_NAME",
     "VERSION",
@@ -764,11 +886,12 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_object_metadata_registry.py
-# VERSION: v1.0.0-L10A2R-C2-LEGAL-EVIDENCE-OBJECT-METADATA-REGISTRY
+# VERSION: v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP
 # AUTHORITY BOUNDARY: immutable metadata-only Mongo durability
 # CONTROL-PLANE POSTURE: no raw binary body persisted or returned
 # OBJECT-PLANE POSTURE: no provider execution exists in registry
 # TENANT POSTURE: exact tenant-scoped reads and immutable replay identity
+# PROVIDER LOOKUP POSTURE: exact read-only provider-object lookup; ambiguity fails closed
 # TRANSACTION POSTURE: caller owns one active transaction
 # TTL POSTURE: no TTL index
 # AVAILABILITY POSTURE: persistence does not authorize availability

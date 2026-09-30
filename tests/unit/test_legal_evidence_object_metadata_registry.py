@@ -1,7 +1,7 @@
 """Direct certificate for metadata-only Legal Evidence object persistence.
 
 TITLE: Legal Evidence Object Metadata Registry Certificate
-VERSION: v1.0.0-L10A2R-C2-LEGAL-EVIDENCE-OBJECT-METADATA-REGISTRY-CERT
+VERSION: v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP-CERT
 AUTHORITY: WILSY OS Core Governance
 
 PURPOSE:
@@ -54,6 +54,7 @@ from tools.eos.legal_operations.registry.legal_evidence_object_metadata_registry
     COLLECTION,
     CONTENT_FINGERPRINT_INDEX_NAME,
     DOCUMENT_INDEX_NAME,
+    PROVIDER_OBJECT_INDEX_NAME,
     REFERENCE_INDEX_NAME,
     LegalEvidenceObjectMetadataRegistry,
     LegalEvidenceObjectMetadataRegistryConflictError,
@@ -213,7 +214,7 @@ def test_indexes_are_exact_and_have_no_ttl() -> None:
 
     registry.ensure_indexes()
 
-    assert len(collection.indexes) == 3
+    assert len(collection.indexes) == 4
 
     by_name = {
         kwargs["name"]: (keys, kwargs)
@@ -224,6 +225,7 @@ def test_indexes_are_exact_and_have_no_ttl() -> None:
         REFERENCE_INDEX_NAME,
         DOCUMENT_INDEX_NAME,
         CONTENT_FINGERPRINT_INDEX_NAME,
+        PROVIDER_OBJECT_INDEX_NAME,
     }
 
     reference_keys, reference_kwargs = by_name[
@@ -254,6 +256,17 @@ def test_indexes_are_exact_and_have_no_ttl() -> None:
         ("content_fingerprint", 1),
     ]
     assert fingerprint_kwargs["unique"] is False
+
+    provider_keys, provider_kwargs = by_name[
+        PROVIDER_OBJECT_INDEX_NAME
+    ]
+    assert provider_keys == [
+        ("tenant_id", 1),
+        ("provider_name", 1),
+        ("storage_reference", 1),
+        ("object_version_reference", 1),
+    ]
+    assert provider_kwargs["unique"] is False
 
     for _, kwargs in collection.indexes:
         assert "expireAfterSeconds" not in kwargs
@@ -391,6 +404,89 @@ def test_exact_tenant_scoped_get_and_cross_tenant_not_found() -> None:
         )
 
 
+def test_exact_provider_object_lookup_and_cross_tenant_absence() -> None:
+    collection = Collection()
+    registry = LegalEvidenceObjectMetadataRegistry(
+        collection
+    )
+    value = _value()
+
+    registry.create_or_replay(
+        value,
+        session=Session(),
+    )
+
+    observed = registry.get_provider_object(
+        tenant_id=value.tenant_id,
+        provider_name=value.provider_name,
+        storage_reference=value.storage_reference,
+        object_version_reference=value.object_version_reference,
+        session=Session(),
+    )
+
+    assert observed == value
+
+    with pytest.raises(
+        LegalEvidenceObjectMetadataRegistryNotFoundError,
+        match="L10A2R_C2_PROVIDER_OBJECT_NOT_FOUND",
+    ):
+        registry.get_provider_object(
+            tenant_id="tenant-neighbor",
+            provider_name=value.provider_name,
+            storage_reference=value.storage_reference,
+            object_version_reference=value.object_version_reference,
+            session=Session(),
+        )
+
+
+def test_provider_object_lookup_rejects_ambiguous_rows() -> None:
+    collection = Collection()
+    value = _value()
+
+    first = value.to_dict()
+    first["registered_at"] = (
+        value.registered_at.isoformat()
+    )
+
+    second_payload = value.to_dict()
+    second_payload["content_reference"] = (
+        value.content_reference + "-second"
+    )
+    second_payload["fingerprint"] = ""
+
+    second_value = LegalEvidenceObjectMetadata(
+        **second_payload,  # type: ignore[arg-type]
+    )
+
+    second = second_value.to_dict()
+    second["registered_at"] = (
+        second_value.registered_at.isoformat()
+    )
+
+    collection.rows.extend(
+        [
+            first,
+            second,
+        ]
+    )
+
+    registry = LegalEvidenceObjectMetadataRegistry(
+        collection
+    )
+
+    with pytest.raises(
+        LegalEvidenceObjectMetadataRegistryError,
+        match="L10A2R_C2_PROVIDER_OBJECT_AMBIGUOUS",
+    ):
+        registry.get_provider_object(
+            tenant_id=value.tenant_id,
+            provider_name=value.provider_name,
+            storage_reference=value.storage_reference,
+            object_version_reference=value.object_version_reference,
+            session=Session(),
+        )
+
+
 def test_document_list_is_exact_scope_and_deterministic() -> None:
     collection = Collection()
     registry = LegalEvidenceObjectMetadataRegistry(collection)
@@ -513,7 +609,7 @@ def test_public_surface_has_no_raw_byte_provider_or_later_authority() -> None:
 
 
 # ARTIFACT: test_legal_evidence_object_metadata_registry.py
-# VERSION: v1.0.0-L10A2R-C2-LEGAL-EVIDENCE-OBJECT-METADATA-REGISTRY-CERT
+# VERSION: v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP-CERT
 # AUTHORITY BOUNDARY: immutable metadata-only Mongo durability
 # CONTROL-PLANE POSTURE: no raw binary body persisted or returned
 # OBJECT-PLANE POSTURE: no provider execution exists in registry

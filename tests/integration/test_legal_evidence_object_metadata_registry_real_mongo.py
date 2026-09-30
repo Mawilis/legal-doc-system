@@ -1,7 +1,7 @@
 """Real-Mongo certificate for metadata-only Legal Evidence object persistence.
 
 TITLE: Legal Evidence Object Metadata Registry Real-Mongo Certificate
-VERSION: v1.0.0-L10A2R-C2-REAL-MONGO-CERT
+VERSION: v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP-REAL-MONGO-CERT
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 
 PURPOSE:
@@ -319,6 +319,7 @@ def test_real_topology_and_exact_indexes_have_no_ttl(
         registry.REFERENCE_INDEX_NAME,
         registry.DOCUMENT_INDEX_NAME,
         registry.CONTENT_FINGERPRINT_INDEX_NAME,
+        registry.PROVIDER_OBJECT_INDEX_NAME,
     }
 
     assert dict(
@@ -355,6 +356,26 @@ def test_real_topology_and_exact_indexes_have_no_ttl(
         "tenant_id": 1,
         "content_fingerprint": 1,
     }
+
+    assert dict(
+        indexes[
+            registry.PROVIDER_OBJECT_INDEX_NAME
+        ]["key"]
+    ) == {
+        "tenant_id": 1,
+        "provider_name": 1,
+        "storage_reference": 1,
+        "object_version_reference": 1,
+    }
+    assert (
+        indexes[
+            registry.PROVIDER_OBJECT_INDEX_NAME
+        ].get(
+            "unique",
+            False,
+        )
+        is False
+    )
 
     assert all(
         "expireAfterSeconds" not in item
@@ -459,6 +480,17 @@ def test_real_commit_replay_get_list_and_bson_are_metadata_only(
                     session=session,
                 )
             )
+            provider_loaded = (
+                mongo_context.registry.get_provider_object(
+                    tenant_id=tenant,
+                    provider_name=value.provider_name,
+                    storage_reference=value.storage_reference,
+                    object_version_reference=(
+                        value.object_version_reference
+                    ),
+                    session=session,
+                )
+            )
             session.commit_transaction()
         except BaseException:
             if session.in_transaction:
@@ -469,6 +501,58 @@ def test_real_commit_replay_get_list_and_bson_are_metadata_only(
     assert listed == (
         value,
     )
+    assert provider_loaded == value
+
+
+def test_real_cross_tenant_provider_object_lookup_is_opaque(
+    mongo_context: MongoContext,
+) -> None:
+    tenant = (
+        "tenant-c2-real-provider-"
+        + uuid.uuid4().hex
+    )
+
+    value = _value(
+        tenant_id=tenant,
+        ingestion_reference="ingestion-c2-real-provider",
+        storage_reference="legal-evidence/v1/c2-real-provider",
+        object_version_reference="version-c2-real-provider",
+    )
+
+    _commit(
+        mongo_context,
+        value,
+    )
+
+    with mongo_context.client.start_session() as session:
+        session.start_transaction(
+            read_concern=ReadConcern("snapshot"),
+            write_concern=WriteConcern(
+                w="majority",
+                j=True,
+            ),
+        )
+
+        try:
+            with pytest.raises(
+                registry.LegalEvidenceObjectMetadataRegistryNotFoundError,
+                match="L10A2R_C2_PROVIDER_OBJECT_NOT_FOUND",
+            ):
+                mongo_context.registry.get_provider_object(
+                    tenant_id=(
+                        "tenant-neighbor-"
+                        + uuid.uuid4().hex
+                    ),
+                    provider_name=value.provider_name,
+                    storage_reference=value.storage_reference,
+                    object_version_reference=(
+                        value.object_version_reference
+                    ),
+                    session=session,
+                )
+        finally:
+            if session.in_transaction:
+                session.abort_transaction()
 
 
 def test_real_cross_tenant_absence_and_divergent_replay_fail_closed(
@@ -666,7 +750,7 @@ def test_real_persisted_corruption_rejects_without_healing(
 
 
 # ARTIFACT: test_legal_evidence_object_metadata_registry_real_mongo.py
-# VERSION: v1.0.0-L10A2R-C2-REAL-MONGO-CERT
+# VERSION: v1.1.0-L10A2R-C2R1-PROVIDER-OBJECT-LOOKUP-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: physical metadata-only Mongo durability certificate
 # DATABASE POSTURE: disposable UUID database on loopback wilsyVendorCertRS only
 # CONTROL-PLANE POSTURE: valid C2 writes persist no raw binary body
