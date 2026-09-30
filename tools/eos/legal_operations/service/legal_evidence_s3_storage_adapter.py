@@ -1,7 +1,7 @@
 """WILSY OS AWS S3 adapter for streamed Legal Evidence binaries.
 
 TITLE: Legal Evidence S3 Storage Adapter
-VERSION: v1.1.0-L10A2R-B2-R1-LEGAL-EVIDENCE-S3-STORAGE-ADAPTER
+VERSION: v1.2.0-L10A2R-C4D2-LEGAL-EVIDENCE-S3-DISCOVERY
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Implement the certified provider-neutral Legal Evidence binary-storage
          port using AWS S3 multipart operations while preserving exact
@@ -14,8 +14,13 @@ COLLABORATION / OWNERSHIP: L10A2R-A4-R1 owns provider-neutral storage semantics
                             Legal Evidence content identity. L10A2Q owns
                             commercial capacity. Retention/legal-hold authority,
                             HTTP, IAM and Mongo reconciliation remain elsewhere.
-CERTIFICATION / UPDATE DATE: 2026-09-29
-CHANGELOG: v1.1.0-L10A2R-B2-R1 makes provider object coordinates opaque by
+CERTIFICATION / UPDATE DATE: 2026-09-30
+CHANGELOG: v1.2.0-L10A2R-C4D2 adds read-only tenant-scoped S3 discovery
+           for incomplete multipart uploads and completed object versions.
+           Discovery validates exact tenant scope, uses opaque tenant prefixes,
+           rejects truncated provider enumeration and grants no orphan,
+           abort, deletion, retention or availability authority.
+           v1.1.0-L10A2R-B2-R1 makes provider object coordinates opaque by
            hashing tenant/matter/document/ingestion identities before they leave
            WILSY, models fail() as NoReturn for exact type narrowing, and rejects
            multipart part-size or total-byte divergence before S3 completion.
@@ -52,6 +57,7 @@ FAIL-CLOSED DECLARATION: Invalid configuration, malformed provider responses,
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import re
@@ -71,9 +77,15 @@ from tools.eos.legal_operations.service.legal_evidence_binary_storage_port impor
     validate_object_evidence_for_intent,
     validate_write_session_for_intent,
 )
+from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceCompletedObjectObservation,
+    LegalEvidenceIncompleteWriteSessionObservation,
+    LegalEvidenceProviderCleanupDiscoveryError,
+    LegalEvidenceProviderDiscoveryScope,
+)
 
 
-VERSION: Final[str] = "v1.1.0-L10A2R-B2-R1-LEGAL-EVIDENCE-S3-STORAGE-ADAPTER"
+VERSION: Final[str] = "v1.2.0-L10A2R-C4D2-LEGAL-EVIDENCE-S3-DISCOVERY"
 PROVIDER_NAME: Final[str] = "aws_s3"
 DEFAULT_REGION: Final[str] = "af-south-1"
 MAX_S3_PARTS: Final[int] = 10_000
@@ -135,6 +147,49 @@ def _component_digest(name: str, value: str) -> str:
     if not value or _KEY_COMPONENT.fullmatch(value) is None:
         _fail(f"L10A2R_B2_{name.upper()}_INVALID")
     return hashlib.sha3_256(value.encode("utf-8")).hexdigest()
+
+
+def _tenant_discovery_prefix(
+    scope: LegalEvidenceProviderDiscoveryScope,
+) -> str:
+    """Return the exact opaque S3 tenant prefix after sealed-scope validation."""
+    if type(scope) is not LegalEvidenceProviderDiscoveryScope:
+        _fail("L10A2R_C4D2_DISCOVERY_SCOPE_REQUIRED")
+
+    expected_scope_fingerprint = hashlib.sha3_512(
+        scope.tenant_id.encode("utf-8")
+    ).hexdigest()
+
+    if not hmac.compare_digest(
+        scope.tenant_scope_fingerprint,
+        expected_scope_fingerprint,
+    ):
+        _fail("L10A2R_C4D2_DISCOVERY_SCOPE_MISMATCH")
+
+    tenant = _component_digest(
+        "tenant_id",
+        scope.tenant_id,
+    )
+
+    return f"legal-evidence/v1/t/{tenant}/"
+
+
+def _observation_time(
+    name: str,
+    value: object,
+) -> datetime:
+    if (
+        not isinstance(value, datetime)
+        or value.tzinfo is None
+        or value.utcoffset() is None
+    ):
+        _fail(
+            f"L10A2R_C4D2_{name.upper()}_INVALID"
+        )
+
+    return value.astimezone(
+        timezone.utc
+    )
 
 
 def _storage_key(intent: LegalEvidenceBinaryWriteIntent) -> str:
@@ -443,6 +498,281 @@ class LegalEvidenceS3StorageAdapter:
             content_fingerprint=evidence.content_fingerprint,
         )
 
+    def list_incomplete_write_sessions(
+        self,
+        scope: LegalEvidenceProviderDiscoveryScope,
+        *,
+        observed_at: datetime,
+    ) -> tuple[
+        LegalEvidenceIncompleteWriteSessionObservation,
+        ...,
+    ]:
+        """Observe incomplete multipart sessions under one exact tenant prefix."""
+        prefix = _tenant_discovery_prefix(
+            scope
+        )
+        observed = _observation_time(
+            "observed_at",
+            observed_at,
+        )
+
+        try:
+            response = (
+                self._client.list_multipart_uploads(
+                    Bucket=self._config.bucket,
+                    Prefix=prefix,
+                )
+            )
+        except (
+            BotoCoreError,
+            ClientError,
+        ) as error:
+            _fail(
+                "L10A2R_C4D2_LIST_MULTIPART_UPLOADS_FAILED",
+                error,
+            )
+
+        if not isinstance(
+            response,
+            Mapping,
+        ):
+            _fail(
+                "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+            )
+
+        if response.get(
+            "IsTruncated"
+        ) is True:
+            _fail(
+                "L10A2R_C4D2_DISCOVERY_TRUNCATED"
+            )
+
+        uploads = response.get(
+            "Uploads",
+            [],
+        )
+
+        if not isinstance(
+            uploads,
+            list,
+        ):
+            _fail(
+                "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+            )
+
+        observations: list[
+            LegalEvidenceIncompleteWriteSessionObservation
+        ] = []
+
+        for row in uploads:
+            if not isinstance(
+                row,
+                Mapping,
+            ):
+                _fail(
+                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+                )
+
+            key = row.get(
+                "Key"
+            )
+            upload_id = row.get(
+                "UploadId"
+            )
+            initiated = row.get(
+                "Initiated"
+            )
+
+            if (
+                not isinstance(key, str)
+                or not key.startswith(prefix)
+                or not isinstance(upload_id, str)
+                or not upload_id
+                or not isinstance(
+                    initiated,
+                    datetime,
+                )
+            ):
+                _fail(
+                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+                )
+
+            try:
+                observation = (
+                    LegalEvidenceIncompleteWriteSessionObservation(
+                        tenant_id=scope.tenant_id,
+                        provider_name=PROVIDER_NAME,
+                        storage_reference=key,
+                        write_session_reference=upload_id,
+                        initiated_at=initiated,
+                        observed_at=observed,
+                    )
+                )
+            except LegalEvidenceProviderCleanupDiscoveryError as error:
+                _fail(
+                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID",
+                    error,
+                )
+
+            observations.append(
+                observation
+            )
+
+        return tuple(
+            sorted(
+                observations,
+                key=lambda item: (
+                    item.initiated_at,
+                    item.storage_reference,
+                    item.write_session_reference,
+                ),
+            )
+        )
+
+    def list_completed_object_versions(
+        self,
+        scope: LegalEvidenceProviderDiscoveryScope,
+        *,
+        observed_at: datetime,
+    ) -> tuple[
+        LegalEvidenceCompletedObjectObservation,
+        ...,
+    ]:
+        """Observe completed S3 object versions under one exact tenant prefix."""
+        prefix = _tenant_discovery_prefix(
+            scope
+        )
+        observed = _observation_time(
+            "observed_at",
+            observed_at,
+        )
+
+        try:
+            response = (
+                self._client.list_object_versions(
+                    Bucket=self._config.bucket,
+                    Prefix=prefix,
+                )
+            )
+        except (
+            BotoCoreError,
+            ClientError,
+        ) as error:
+            _fail(
+                "L10A2R_C4D2_LIST_OBJECT_VERSIONS_FAILED",
+                error,
+            )
+
+        if not isinstance(
+            response,
+            Mapping,
+        ):
+            _fail(
+                "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+            )
+
+        if response.get(
+            "IsTruncated"
+        ) is True:
+            _fail(
+                "L10A2R_C4D2_DISCOVERY_TRUNCATED"
+            )
+
+        versions = response.get(
+            "Versions",
+            [],
+        )
+
+        if not isinstance(
+            versions,
+            list,
+        ):
+            _fail(
+                "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+            )
+
+        observations: list[
+            LegalEvidenceCompletedObjectObservation
+        ] = []
+
+        for row in versions:
+            if not isinstance(
+                row,
+                Mapping,
+            ):
+                _fail(
+                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+                )
+
+            key = row.get(
+                "Key"
+            )
+            version_id = row.get(
+                "VersionId"
+            )
+            etag = row.get(
+                "ETag"
+            )
+            size = row.get(
+                "Size"
+            )
+            modified = row.get(
+                "LastModified"
+            )
+
+            if (
+                not isinstance(key, str)
+                or not key.startswith(prefix)
+                or not isinstance(version_id, str)
+                or not version_id
+                or not isinstance(etag, str)
+                or not etag
+                or isinstance(size, bool)
+                or not isinstance(size, int)
+                or size <= 0
+                or not isinstance(
+                    modified,
+                    datetime,
+                )
+            ):
+                _fail(
+                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID"
+                )
+
+            try:
+                observation = (
+                    LegalEvidenceCompletedObjectObservation(
+                        tenant_id=scope.tenant_id,
+                        provider_name=PROVIDER_NAME,
+                        storage_reference=key,
+                        object_version_reference=version_id,
+                        provider_integrity_reference=etag,
+                        content_length=size,
+                        last_modified_at=modified,
+                        observed_at=observed,
+                    )
+                )
+            except LegalEvidenceProviderCleanupDiscoveryError as error:
+                _fail(
+                    "L10A2R_C4D2_PROVIDER_RESPONSE_INVALID",
+                    error,
+                )
+
+            observations.append(
+                observation
+            )
+
+        return tuple(
+            sorted(
+                observations,
+                key=lambda item: (
+                    item.last_modified_at,
+                    item.storage_reference,
+                    item.object_version_reference,
+                ),
+            )
+        )
+
     def abort(
         self,
         intent: LegalEvidenceBinaryWriteIntent,
@@ -482,7 +812,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_evidence_s3_storage_adapter.py
-# VERSION: v1.1.0-L10A2R-B2-R1-LEGAL-EVIDENCE-S3-STORAGE-ADAPTER
+# VERSION: v1.2.0-L10A2R-C4D2-LEGAL-EVIDENCE-S3-DISCOVERY
 # AUTHORITY BOUNDARY: AWS S3 capability execution only; WILSY retains canonical Legal Evidence truth
 # TENANT POSTURE: provider keys contain only opaque coordinate digests; every provider operation locally tenant/intake scope-guarded
 # FAIL-CLOSED POSTURE: scope/config/sequence/provider-response/provider-metadata divergence rejects before success

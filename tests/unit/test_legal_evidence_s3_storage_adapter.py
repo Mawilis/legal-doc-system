@@ -42,6 +42,14 @@ class FakeS3Client:
             "ETag": "object-etag",
         }
         self.head_response: dict[str, Any] | None = None
+        self.list_multipart_uploads_response: dict[str, Any] = {
+            "Uploads": [],
+            "IsTruncated": False,
+        }
+        self.list_object_versions_response: dict[str, Any] = {
+            "Versions": [],
+            "IsTruncated": False,
+        }
         self.raise_on: str | None = None
 
     def _record(self, name: str, kwargs: dict[str, Any]) -> None:
@@ -74,6 +82,24 @@ class FakeS3Client:
         if self.head_response is None:
             raise AssertionError("head_response must be configured")
         return dict(self.head_response)
+
+    def list_multipart_uploads(self, **kwargs: Any) -> dict[str, Any]:
+        self._record(
+            "list_multipart_uploads",
+            kwargs,
+        )
+        return dict(
+            self.list_multipart_uploads_response
+        )
+
+    def list_object_versions(self, **kwargs: Any) -> dict[str, Any]:
+        self._record(
+            "list_object_versions",
+            kwargs,
+        )
+        return dict(
+            self.list_object_versions_response
+        )
 
     def abort_multipart_upload(self, **kwargs: Any) -> dict[str, Any]:
         self._record("abort_multipart_upload", kwargs)
@@ -575,3 +601,237 @@ def test_configuration_never_accepts_credentials() -> None:
 # OPERATIONAL POSTURE: fake-client certificate only; real AWS not yet certified
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+# --- L10A2R-C4D2 S3 provider cleanup discovery certificate ---
+
+from datetime import datetime, timezone
+import hashlib
+
+from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceProviderCleanupDiscoveryPort,
+    LegalEvidenceProviderDiscoveryScope,
+)
+
+
+C4D2_AT = datetime(
+    2026,
+    9,
+    30,
+    15,
+    45,
+    0,
+    123456,
+    tzinfo=timezone.utc,
+)
+
+
+def _c4d2_scope() -> LegalEvidenceProviderDiscoveryScope:
+    return LegalEvidenceProviderDiscoveryScope(
+        tenant_id="tenant-c4d2",
+        tenant_scope_fingerprint=hashlib.sha3_512(
+            b"tenant-c4d2"
+        ).hexdigest(),
+    )
+
+
+def _c4d2_tenant_prefix() -> str:
+    tenant_digest = hashlib.sha3_256(
+        b"tenant-c4d2"
+    ).hexdigest()
+
+    return (
+        "legal-evidence/v1/t/"
+        f"{tenant_digest}/"
+    )
+
+
+def test_c4d2_adapter_implements_cleanup_discovery_port() -> None:
+    client = FakeS3Client()
+    adapter = LegalEvidenceS3StorageAdapter(
+        LegalEvidenceS3Configuration(
+            bucket="wilsy-c4d2-cert"
+        ),
+        client=cast(BaseClient, client),
+    )
+
+    assert isinstance(
+        adapter,
+        LegalEvidenceProviderCleanupDiscoveryPort,
+    )
+
+
+def test_c4d2_incomplete_session_discovery_uses_tenant_opaque_prefix_only() -> None:
+    client = FakeS3Client()
+
+    client.list_multipart_uploads_response = {
+        "Uploads": [
+            {
+                "Key": (
+                    _c4d2_tenant_prefix()
+                    + "m/opaque-matter/"
+                    "d/opaque-document/"
+                    "i/opaque-ingestion/content"
+                ),
+                "UploadId": "upload-c4d2",
+                "Initiated": C4D2_AT,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    adapter = LegalEvidenceS3StorageAdapter(
+        LegalEvidenceS3Configuration(
+            bucket="wilsy-c4d2-cert"
+        ),
+        client=cast(BaseClient, client),
+    )
+
+    result = adapter.list_incomplete_write_sessions(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+    )
+
+    assert len(result) == 1
+    assert result[0].tenant_id == "tenant-c4d2"
+    assert result[0].provider_name == "aws_s3"
+    assert result[0].write_session_reference == "upload-c4d2"
+    assert result[0].observed_at == C4D2_AT
+
+    calls = [
+        call
+        for call in client.calls
+        if call[0] == "list_multipart_uploads"
+    ]
+    assert len(calls) == 1
+
+    kwargs = calls[0][1]
+    assert kwargs["Bucket"] == "wilsy-c4d2-cert"
+    assert "Prefix" in kwargs
+
+    prefix = kwargs["Prefix"]
+
+    assert "tenant-c4d2" not in prefix
+    assert prefix.startswith(
+        "legal-evidence/v1/t/"
+    )
+
+
+def test_c4d2_completed_object_discovery_uses_object_versions_read_only() -> None:
+    client = FakeS3Client()
+
+    client.list_object_versions_response = {
+        "Versions": [
+            {
+                "Key": (
+                    _c4d2_tenant_prefix()
+                    + "m/opaque-matter/"
+                    "d/opaque-document/"
+                    "i/opaque-ingestion/content"
+                ),
+                "VersionId": "version-c4d2",
+                "ETag": '"etag-c4d2"',
+                "Size": 123,
+                "LastModified": C4D2_AT,
+                "IsLatest": True,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    adapter = LegalEvidenceS3StorageAdapter(
+        LegalEvidenceS3Configuration(
+            bucket="wilsy-c4d2-cert"
+        ),
+        client=cast(BaseClient, client),
+    )
+
+    result = adapter.list_completed_object_versions(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+    )
+
+    assert len(result) == 1
+    assert result[0].tenant_id == "tenant-c4d2"
+    assert result[0].provider_name == "aws_s3"
+    assert result[0].object_version_reference == "version-c4d2"
+    assert result[0].content_length == 123
+
+    calls = [
+        call
+        for call in client.calls
+        if call[0] == "list_object_versions"
+    ]
+
+    assert len(calls) == 1
+    assert "Prefix" in calls[0][1]
+
+
+def test_c4d2_discovery_surface_performs_no_abort_or_delete() -> None:
+    client = FakeS3Client()
+
+    client.list_multipart_uploads_response = {
+        "Uploads": [],
+        "IsTruncated": False,
+    }
+    client.list_object_versions_response = {
+        "Versions": [],
+        "IsTruncated": False,
+    }
+
+    adapter = LegalEvidenceS3StorageAdapter(
+        LegalEvidenceS3Configuration(
+            bucket="wilsy-c4d2-cert"
+        ),
+        client=cast(BaseClient, client),
+    )
+
+    scope = _c4d2_scope()
+
+    assert (
+        adapter.list_incomplete_write_sessions(
+            scope,
+            observed_at=C4D2_AT,
+        )
+        == ()
+    )
+
+    assert (
+        adapter.list_completed_object_versions(
+            scope,
+            observed_at=C4D2_AT,
+        )
+        == ()
+    )
+
+    names = {
+        name
+        for name, _ in client.calls
+    }
+
+    assert "abort_multipart_upload" not in names
+    assert "delete_object" not in names
+    assert "delete_objects" not in names
+
+
+def test_c4d2_provider_pagination_is_required_not_silently_truncated() -> None:
+    client = FakeS3Client()
+
+    client.list_multipart_uploads_response = {
+        "Uploads": [],
+        "IsTruncated": True,
+    }
+
+    adapter = LegalEvidenceS3StorageAdapter(
+        LegalEvidenceS3Configuration(
+            bucket="wilsy-c4d2-cert"
+        ),
+        client=cast(BaseClient, client),
+    )
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+    ):
+        adapter.list_incomplete_write_sessions(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+        )
