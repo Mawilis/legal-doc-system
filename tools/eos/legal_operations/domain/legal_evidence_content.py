@@ -243,7 +243,6 @@ class LegalEvidenceContent:
             isinstance(self.content_length, bool)
             or not isinstance(self.content_length, int)
             or self.content_length < 1
-            or self.content_length > MAX_CONTENT_BYTES
         ):
             raise LegalEvidenceContentError("L10A1_CONTENT_LENGTH_INVALID")
 
@@ -359,6 +358,84 @@ class LegalEvidenceContent:
         return item
 
 
+def register_observed_legal_evidence_content(
+    *,
+    tenant_id: str,
+    case_matter_id: str,
+    document_id: str,
+    media_type: str,
+    original_filename: str,
+    observed_content_length: int,
+    observed_content_fingerprint: str,
+    source_evidence_reference: str,
+    source_evidence_fingerprint: str,
+    registered_at: datetime,
+) -> LegalEvidenceContent:
+    """Create canonical metadata from already-observed stream evidence.
+
+    ``observed_content_length`` and ``observed_content_fingerprint`` must come
+    from a separately certified streaming/integrity boundary. This pure domain
+    validates and binds those observations but does not itself prove that bytes
+    were streamed, persisted, admitted by capacity policy, or accepted by any
+    provider.
+
+    Unlike the legacy whole-byte registration path, this function does not
+    impose ``MAX_CONTENT_BYTES`` because commercial/admission ceilings belong to
+    upstream certified capacity and write-intent authority. It therefore
+    requires no whole-object byte materialization.
+    """
+    canonical_tenant = _tenant(
+        tenant_id
+    )
+    canonical_matter = _identity(
+        "case_matter_id",
+        case_matter_id,
+    )
+    canonical_document = _identity(
+        "document_id",
+        document_id,
+    )
+
+    if (
+        isinstance(
+            observed_content_length,
+            bool,
+        )
+        or not isinstance(
+            observed_content_length,
+            int,
+        )
+        or observed_content_length < 1
+    ):
+        raise LegalEvidenceContentError(
+            "L10A1_CONTENT_LENGTH_INVALID"
+        )
+
+    digest = _fingerprint(
+        "content_fingerprint",
+        observed_content_fingerprint,
+    )
+
+    return LegalEvidenceContent(
+        tenant_id=canonical_tenant,
+        case_matter_id=canonical_matter,
+        document_id=canonical_document,
+        content_reference=_content_reference(
+            tenant_id=canonical_tenant,
+            case_matter_id=canonical_matter,
+            document_id=canonical_document,
+            digest=digest,
+        ),
+        media_type=media_type,
+        original_filename=original_filename,
+        content_length=observed_content_length,
+        content_fingerprint=digest,
+        source_evidence_reference=source_evidence_reference,
+        source_evidence_fingerprint=source_evidence_fingerprint,
+        registered_at=registered_at,
+    )
+
+
 def register_legal_evidence_content(
     *,
     tenant_id: str,
@@ -412,6 +489,7 @@ __all__ = [
     "VERSION",
     "content_fingerprint",
     "register_legal_evidence_content",
+    "register_observed_legal_evidence_content",
 ]
 
 # ARTIFACT: legal_evidence_content.py
