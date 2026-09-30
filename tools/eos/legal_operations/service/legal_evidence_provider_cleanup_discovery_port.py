@@ -1,57 +1,63 @@
 """WILSY OS provider-neutral Legal Evidence cleanup discovery contract.
 
 TITLE: Legal Evidence Provider Cleanup Discovery Port
-VERSION: v1.0.0-L10A2R-C4D1-PROVIDER-CLEANUP-DISCOVERY-PORT
+VERSION: v1.1.0-L10A2R-C4D2R1-PROVIDER-CLEANUP-DISCOVERY-PORT
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
-
-PURPOSE:
-    Define the provider-neutral evidence contract required to discover
-    incomplete provider write sessions and completed provider object versions
-    under exact tenant scope before any orphan classification or cleanup action.
-
-EPITOME:
-    EXACT TENANT DISCOVERY SCOPE
-    -> PROVIDER DISCOVERY OBSERVATIONS
-    -> IMMUTABLE EVIDENCE
-
-    DISCOVERED SESSION
-    != ABORT AUTHORIZED
-
-    DISCOVERED OBJECT
-    != ORPHAN PROVEN
-    != DELETE AUTHORIZED
-
-    PROVIDER OBSERVATION
-    != CANONICAL LEGAL EVIDENCE TRUTH
-
-TENANT:
-    Discovery is explicitly tenant-scoped. The tenant scope carries a sealed
-    SHA3-512 fingerprint that later provider adapters may use to derive or
-    validate opaque provider prefixes without exposing raw business identity.
-
-AUTHORITY BOUNDARY:
-    Discovery evidence only. No provider mutation, abort execution, deletion,
-    retention/legal-hold decision, availability, IAM, billing, payment or
-    settlement authority.
-
-FAIL CLOSED:
-    Pseudo/global tenant identities, malformed SHA3-512 values, malformed
-    provider/session/object references, invalid timestamps, non-positive object
-    lengths and temporal inversions reject.
-
+EPITOME: Observe exact tenant-scoped incomplete provider sessions and completed
+         provider object versions, including explicit provider metadata
+         observation state, without manufacturing canonical or cleanup authority.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_evidence_provider_cleanup_discovery_port.py
+COLLABORATION / OWNERSHIP:
+    C4D1 owns provider-neutral cleanup discovery semantics. C4D2 owns provider
+    adapter implementation. C4D2R1 extends only completed-object observation
+    evidence so later orchestration can correlate provider metadata with C4D5C
+    durable original write intents. C4D3 classification, orphan proof and
+    deletion remain separate authorities.
 CERTIFICATION / UPDATE DATE: 2026-09-30
+CHANGELOG:
+    v1.1.0-L10A2R-C4D2R1 adds explicit NOT_OBSERVED / ABSENT / PRESENT
+    write-intent metadata observation state and an optional canonical SHA3-512
+    provider metadata fingerprint. Existing constructors default to
+    NOT_OBSERVED; absence is never inferred merely because metadata was not read.
+COMPLIANCE:
+    Provider observation evidence only. No observation establishes canonical
+    ownership, orphan status, retention satisfaction, legal-hold clearance or
+    deletion authority.
+SECURITY / PRIVACY POSTURE:
+    Provider-neutral immutable observations; no credentials or file bytes.
+    PRESENT fingerprints must be exact lowercase SHA3-512. Malformed or
+    internally inconsistent metadata evidence rejects fail closed.
+TENANT BOUNDARY:
+    Every discovery scope and observation is exact tenant scoped. Pseudo/global
+    tenant identities reject.
+AUTHORITY BOUNDARY:
+    Observation only. NOT_OBSERVED means metadata was not examined; ABSENT means
+    an adapter examined the exact provider object version and found no canonical
+    WILSY intent fingerprint key; PRESENT means it observed one valid SHA3-512.
+    None of these states prove or disprove orphan status.
+FINANCIAL AUTHORITY BOUNDARY:
+    None. Kennel EOS remains exclusive financial execution authority.
+FAIL-CLOSED POSTURE:
+    Invalid identities, timestamps, lengths, enum state, malformed fingerprints
+    and inconsistent state/fingerprint combinations reject.
+LEGACY / COVERAGE POSTURE:
+    Objects predating provider metadata coverage remain observable. Missing
+    metadata is evidence of absence at the provider version only, never proof
+    that no legitimate historical WILSY intent existed.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from enum import Enum
 import re
 from typing import Final, Protocol, runtime_checkable
 
 
 VERSION: Final[str] = (
-    "v1.0.0-L10A2R-C4D1-PROVIDER-CLEANUP-DISCOVERY-PORT"
+    "v1.1.0-L10A2R-C4D2R1-PROVIDER-CLEANUP-DISCOVERY-PORT"
 )
 
 _IDENTITY_RE: Final[re.Pattern[str]] = re.compile(
@@ -292,6 +298,17 @@ class LegalEvidenceIncompleteWriteSessionObservation:
         )
 
 
+class LegalEvidenceCompletedObjectIntentMetadataState(
+    str,
+    Enum,
+):
+    """Provider metadata evidence state for one exact completed object version."""
+
+    NOT_OBSERVED = "NOT_OBSERVED"
+    ABSENT = "ABSENT"
+    PRESENT = "PRESENT"
+
+
 @dataclass(
     frozen=True,
     slots=True,
@@ -307,6 +324,10 @@ class LegalEvidenceCompletedObjectObservation:
     content_length: int
     last_modified_at: datetime
     observed_at: datetime
+    write_intent_metadata_state: (
+        LegalEvidenceCompletedObjectIntentMetadataState
+    ) = LegalEvidenceCompletedObjectIntentMetadataState.NOT_OBSERVED
+    write_intent_fingerprint: str | None = None
 
     def __post_init__(
         self,
@@ -359,6 +380,41 @@ class LegalEvidenceCompletedObjectObservation:
             raise LegalEvidenceProviderCleanupDiscoveryError(
                 "L10A2R_C4D1_OBJECT_OBSERVATION_TIME_INVALID"
             )
+
+        state = self.write_intent_metadata_state
+        fingerprint = self.write_intent_fingerprint
+
+        if type(state) is not LegalEvidenceCompletedObjectIntentMetadataState:
+            raise LegalEvidenceProviderCleanupDiscoveryError(
+                "L10A2R_C4D2R1_INTENT_METADATA_STATE_INVALID"
+            )
+
+        if (
+            state
+            is LegalEvidenceCompletedObjectIntentMetadataState.PRESENT
+        ):
+            if (
+                not isinstance(fingerprint, str)
+                or _SHA3_RE.fullmatch(fingerprint) is None
+            ):
+                raise LegalEvidenceProviderCleanupDiscoveryError(
+                    "L10A2R_C4D2R1_INTENT_FINGERPRINT_INVALID"
+                )
+        elif fingerprint is not None:
+            raise LegalEvidenceProviderCleanupDiscoveryError(
+                "L10A2R_C4D2R1_INTENT_METADATA_STATE_MISMATCH"
+            )
+
+        object.__setattr__(
+            self,
+            "write_intent_metadata_state",
+            state,
+        )
+        object.__setattr__(
+            self,
+            "write_intent_fingerprint",
+            fingerprint,
+        )
 
         object.__setattr__(
             self,
@@ -430,6 +486,7 @@ class LegalEvidenceProviderCleanupDiscoveryPort(
 
 __all__ = [
     "VERSION",
+    "LegalEvidenceCompletedObjectIntentMetadataState",
     "LegalEvidenceCompletedObjectObservation",
     "LegalEvidenceIncompleteWriteSessionObservation",
     "LegalEvidenceProviderCleanupDiscoveryError",
@@ -439,14 +496,16 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_cleanup_discovery_port.py
-# VERSION: v1.0.0-L10A2R-C4D1-PROVIDER-CLEANUP-DISCOVERY-PORT
+# VERSION: v1.1.0-L10A2R-C4D2R1-PROVIDER-CLEANUP-DISCOVERY-PORT
 # AUTHORITY BOUNDARY: provider cleanup discovery evidence only
 # TENANT POSTURE: exact tenant-scoped discovery
 # SESSION POSTURE: discovered session is not abort authorization
-# OBJECT POSTURE: discovered object is not orphan proof
+# OBJECT POSTURE: discovered object/metadata is not orphan proof
+# INTENT METADATA POSTURE: NOT_OBSERVED / ABSENT / PRESENT evidence only
 # DELETION POSTURE: no deletion authority
 # RETENTION POSTURE: no retention/legal-hold authority
 # AVAILABILITY POSTURE: no availability authority
 # PROVIDER MUTATION POSTURE: protocol exposes observation only
+# FAIL-CLOSED POSTURE: malformed or inconsistent metadata evidence rejects
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
