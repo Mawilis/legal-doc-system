@@ -1,9 +1,12 @@
 """Direct certificate for trusted Legal Evidence provider coverage verification.
 
-VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
+VERSION: v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.2.0-L10A2R-C4D6C-B certifies the exact sealed
+CHANGELOG: v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT permanently certifies post-issuance
+           verification fingerprint, payload, count and sealed-membership
+           tampering as fail-closed at the authoritative service boundary.
+           v1.2.0-L10A2R-C4D6C-B certifies the exact sealed
            completed-observation membership-fingerprint accessor,
            same-service anti-fabrication binding, outsider rejection,
            cross-service rejection and boolean compatibility.
@@ -799,8 +802,151 @@ def test_public_service_surface_excludes_delete_abort_and_disownership() -> None
     )
 
 
+
+
+def test_post_issuance_verification_fingerprint_tampering_fails_closed() -> None:
+    """The issuing capability alone cannot authorize a mutated verification."""
+    completed = _completed(
+        reference="post-issuance-fingerprint-version"
+    )
+
+    service = _service(
+        _Provider(
+            completed=[
+                _page(
+                    kind=(
+                        LegalEvidenceProviderEnumerationKind
+                        .COMPLETED_OBJECT_VERSIONS
+                    ),
+                    observations=(completed,),
+                    continuation=None,
+                )
+            ]
+        )
+    )
+
+    verified = service.verify_coverage(
+        scope=_scope(),
+        provider_name="aws_s3",
+        observed_at=AT,
+    )
+
+    assert service.accepts_verification(
+        verified
+    )
+
+    original = verified.fingerprint
+
+    object.__setattr__(
+        verified,
+        "fingerprint",
+        (
+            "f" * 128
+            if original != "f" * 128
+            else "e" * 128
+        ),
+    )
+
+    assert not service.accepts_verification(
+        verified
+    )
+
+    assert (
+        service.completed_observation_membership_fingerprint(
+            verified=verified,
+            observation=completed,
+        )
+        is None
+    )
+
+    assert not service.contains_completed_observation(
+        verified=verified,
+        observation=completed,
+    )
+
+
+def test_post_issuance_verification_payload_count_and_membership_tampering_fail_closed() -> None:
+    """Every aggregate-verification input remains integrity-bound after issuance."""
+    completed = _completed(
+        reference="post-issuance-payload-version"
+    )
+
+    def issued():
+        service = _service(
+            _Provider(
+                completed=[
+                    _page(
+                        kind=(
+                            LegalEvidenceProviderEnumerationKind
+                            .COMPLETED_OBJECT_VERSIONS
+                        ),
+                        observations=(completed,),
+                        continuation=None,
+                    )
+                ]
+            )
+        )
+
+        verified = service.verify_coverage(
+            scope=_scope(),
+            provider_name="aws_s3",
+            observed_at=AT,
+        )
+
+        assert service.accepts_verification(
+            verified
+        )
+
+        return service, verified
+
+    service, verified = issued()
+
+    object.__setattr__(
+        verified,
+        "provider_name",
+        "tampered_provider",
+    )
+
+    assert not service.accepts_verification(
+        verified
+    )
+
+    service, verified = issued()
+
+    object.__setattr__(
+        verified,
+        "completed_page_count",
+        verified.completed_page_count + 1,
+    )
+
+    assert not service.accepts_verification(
+        verified
+    )
+
+    service, verified = issued()
+
+    object.__setattr__(
+        verified,
+        "completed_observation_fingerprints",
+        (
+            "f" * 128,
+        ),
+    )
+
+    assert not service.accepts_verification(
+        verified
+    )
+
+    assert (
+        service.completed_observation_membership_fingerprint(
+            verified=verified,
+            observation=completed,
+        )
+        is None
+    )
+
 # ARTIFACT: test_legal_evidence_provider_coverage_verification_service.py
-# VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
+# VERSION: v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
 # AUTHORITY BOUNDARY: trusted traversal / private verification issuance only
 # START POSTURE: callers cannot supply continuation origin
 # COVERAGE POSTURE: terminal traversal of both C4D6B kinds only

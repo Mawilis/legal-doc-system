@@ -1,7 +1,7 @@
 """WILSY OS — trusted exhaustive Legal Evidence provider coverage verification.
 
 TITLE: Legal Evidence Provider Coverage Verification Service
-VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+VERSION: v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Traverse the separately certified provider coverage page seam from its
          service-owned origin to both terminal pages and issue one immutable,
@@ -15,7 +15,12 @@ COLLABORATION / OWNERSHIP: C4D6B owns non-authorizing page evidence. C4D6C-A
                             legal hold, abort and deletion authority remain
                             explicitly outside this artifact.
 CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION exposes the exact sealed completed-object
+CHANGELOG: v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION hardens exact-service verification acceptance
+           by recomputing the canonical aggregate fingerprint from the
+           current sealed payload and checking count/tuple consistency.
+           Post-issuance mutation therefore fails closed before any
+           membership evidence can be consumed downstream.
+           v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION exposes the exact sealed completed-object
            membership fingerprint through the exact issuing coverage service.
            This remains coverage-membership evidence only and adds no
            ownership, disownership, orphan, retention, legal-hold, abort,
@@ -72,7 +77,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumera
 )
 
 VERSION: Final[str] = (
-    "v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
+    "v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
 )
 
 _SHA3_512_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -570,13 +575,170 @@ class LegalEvidenceProviderCoverageVerificationService:
         self,
         verified: object,
     ) -> bool:
-        """Return true only for this exact service instance's issued value."""
+        """Accept only an intact value issued by this exact service instance.
+
+        The private capability proves issuance origin only. Before downstream
+        consumption, the current payload is revalidated against the canonical
+        aggregate fingerprint and count/tuple relationships. Post-construction
+        mutation therefore fails closed.
+        """
+        if (
+            type(verified)
+            is not LegalEvidenceProviderCoverageVerification
+        ):
+            return False
+
+        if (
+            verified._issuer_capability
+            is not self._verification_capability
+        ):
+            return False
+
+        try:
+            if (
+                not isinstance(
+                    verified.tenant_id,
+                    str,
+                )
+                or not verified.tenant_id
+                or not isinstance(
+                    verified.tenant_scope_fingerprint,
+                    str,
+                )
+                or _SHA3_512_RE.fullmatch(
+                    verified.tenant_scope_fingerprint
+                )
+                is None
+                or not isinstance(
+                    verified.provider_name,
+                    str,
+                )
+                or not verified.provider_name
+                or not isinstance(
+                    verified.observed_at,
+                    datetime,
+                )
+                or verified.observed_at.tzinfo
+                is None
+                or verified.observed_at.utcoffset()
+                is None
+            ):
+                return False
+
+            counts = (
+                verified.incomplete_page_count,
+                verified.completed_page_count,
+                verified.incomplete_observation_count,
+                verified.completed_observation_count,
+            )
+
+            if any(
+                not isinstance(
+                    count,
+                    int,
+                )
+                or isinstance(
+                    count,
+                    bool,
+                )
+                or count < 0
+                for count in counts
+            ):
+                return False
+
+            if (
+                type(
+                    verified.incomplete_page_fingerprints
+                )
+                is not tuple
+                or type(
+                    verified.completed_page_fingerprints
+                )
+                is not tuple
+                or type(
+                    verified.completed_observation_fingerprints
+                )
+                is not tuple
+            ):
+                return False
+
+            fingerprint_groups = (
+                verified.incomplete_page_fingerprints,
+                verified.completed_page_fingerprints,
+                verified.completed_observation_fingerprints,
+            )
+
+            if any(
+                not isinstance(
+                    fingerprint,
+                    str,
+                )
+                or _SHA3_512_RE.fullmatch(
+                    fingerprint
+                )
+                is None
+                for group
+                in fingerprint_groups
+                for fingerprint
+                in group
+            ):
+                return False
+
+            if (
+                verified.incomplete_page_count
+                != len(
+                    verified.incomplete_page_fingerprints
+                )
+                or verified.completed_page_count
+                != len(
+                    verified.completed_page_fingerprints
+                )
+                or verified.completed_observation_count
+                != len(
+                    verified.completed_observation_fingerprints
+                )
+            ):
+                return False
+
+            expected = _verification_fingerprint(
+                tenant_id=verified.tenant_id,
+                tenant_scope_fingerprint=(
+                    verified.tenant_scope_fingerprint
+                ),
+                provider_name=verified.provider_name,
+                observed_at=verified.observed_at,
+                incomplete_page_fingerprints=(
+                    verified.incomplete_page_fingerprints
+                ),
+                completed_page_fingerprints=(
+                    verified.completed_page_fingerprints
+                ),
+                completed_observation_fingerprints=(
+                    verified.completed_observation_fingerprints
+                ),
+                incomplete_observation_count=(
+                    verified.incomplete_observation_count
+                ),
+                completed_observation_count=(
+                    verified.completed_observation_count
+                ),
+            )
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+        ):
+            return False
 
         return (
-            type(verified)
-            is LegalEvidenceProviderCoverageVerification
-            and verified._issuer_capability
-            is self._verification_capability
+            isinstance(
+                verified.fingerprint,
+                str,
+            )
+            and hmac.compare_digest(
+                verified.fingerprint,
+                expected,
+            )
         )
 
 
@@ -589,7 +751,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_coverage_verification_service.py
-# VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+# VERSION: v1.3.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
 # AUTHORITY BOUNDARY: trusted exhaustive provider-page traversal evidence only
 # START POSTURE: traversal always begins internally at page_reference=None
 # TENANT POSTURE: every page must preserve exact tenant scope fingerprint
