@@ -422,7 +422,7 @@ def test_projection_excludes_transport_and_secret_fields() -> None:
 
 def test_l8_5_read_contract_remains_bound_under_l8_7d6_router_release() -> None:
     """L8-5 internal read semantics remain sealed under additive D6."""
-    assert legal_router.VERSION == "v1.6.0-L8-7D6-CLIENT-MATTER-READ-API"
+    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
 
 
 # ARTIFACT: test_legal_operations_http.py
