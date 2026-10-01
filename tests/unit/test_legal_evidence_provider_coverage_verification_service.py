@@ -1,9 +1,13 @@
 """Direct certificate for trusted Legal Evidence provider coverage verification.
 
-VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
+VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.0.0-L10A2R-C4D6C-B certifies service-owned origin traversal,
+CHANGELOG: v1.2.0-L10A2R-C4D6C-B certifies the exact sealed
+           completed-observation membership-fingerprint accessor,
+           same-service anti-fabrication binding, outsider rejection,
+           cross-service rejection and boolean compatibility.
+           v1.0.0-L10A2R-C4D6C-B certifies service-owned origin traversal,
            exact scope/kind/time binding, cycle rejection, deterministic
            verification evidence and private-capability issuance.
 """
@@ -12,7 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import inspect
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -552,6 +556,76 @@ def test_completed_observation_membership_is_exact_and_private() -> None:
     )
 
 
+def test_completed_observation_membership_fingerprint_returns_exact_sealed_digest() -> None:
+    completed = _completed(
+        reference="sealed-membership-version"
+    )
+
+    service = _service(
+        _Provider(
+            completed=[
+                _page(
+                    kind=(
+                        LegalEvidenceProviderEnumerationKind
+                        .COMPLETED_OBJECT_VERSIONS
+                    ),
+                    observations=(completed,),
+                    continuation=None,
+                )
+            ]
+        )
+    )
+
+    verified = service.verify_coverage(
+        scope=_scope(),
+        provider_name="aws_s3",
+        observed_at=AT,
+    )
+
+    digest = service.completed_observation_membership_fingerprint(
+        verified=verified,
+        observation=completed,
+    )
+
+    assert digest is not None
+    assert len(digest) == 128
+    assert digest == digest.lower()
+    assert all(
+        character in "0123456789abcdef"
+        for character in digest
+    )
+    assert digest in verified.completed_observation_fingerprints
+
+    outsider = _completed(
+        reference="sealed-membership-outsider"
+    )
+
+    assert service.completed_observation_membership_fingerprint(
+        verified=verified,
+        observation=outsider,
+    ) is None
+
+    wrong_runtime_type = cast(
+        LegalEvidenceCompletedObjectObservation,
+        object(),
+    )
+
+    assert service.completed_observation_membership_fingerprint(
+        verified=verified,
+        observation=wrong_runtime_type,
+    ) is None
+
+    assert service.contains_completed_observation(
+        verified=verified,
+        observation=completed,
+    )
+
+    assert not service.contains_completed_observation(
+        verified=verified,
+        observation=outsider,
+    )
+
+
 def test_completed_observation_membership_rejects_cross_service_verification() -> None:
     completed = _completed(
         reference="cross-service-version"
@@ -586,6 +660,11 @@ def test_completed_observation_membership_rejects_cross_service_verification() -
         verified=verified,
         observation=completed,
     )
+
+    assert service_b.completed_observation_membership_fingerprint(
+        verified=verified,
+        observation=completed,
+    ) is None
 
 
 def test_completed_observation_membership_participates_in_verification_fingerprint() -> None:
@@ -721,11 +800,11 @@ def test_public_service_surface_excludes_delete_abort_and_disownership() -> None
 
 
 # ARTIFACT: test_legal_evidence_provider_coverage_verification_service.py
-# VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
+# VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
 # AUTHORITY BOUNDARY: trusted traversal / private verification issuance only
 # START POSTURE: callers cannot supply continuation origin
 # COVERAGE POSTURE: terminal traversal of both C4D6B kinds only
-# ANTI-FABRICATION POSTURE: public construction and cross-service reuse fail closed
+# ANTI-FABRICATION POSTURE: public construction, outsider membership and cross-service reuse fail closed
 # OWNERSHIP POSTURE: no ownership or durable disownership authority
 # ORPHAN POSTURE: no orphan proof
 # RETENTION / HOLD POSTURE: no retention or legal-hold authority

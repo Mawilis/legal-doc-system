@@ -1,7 +1,7 @@
 """WILSY OS — trusted exhaustive Legal Evidence provider coverage verification.
 
 TITLE: Legal Evidence Provider Coverage Verification Service
-VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Traverse the separately certified provider coverage page seam from its
          service-owned origin to both terminal pages and issue one immutable,
@@ -15,7 +15,12 @@ COLLABORATION / OWNERSHIP: C4D6B owns non-authorizing page evidence. C4D6C-A
                             legal hold, abort and deletion authority remain
                             explicitly outside this artifact.
 CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION introduces
+CHANGELOG: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION exposes the exact sealed completed-object
+           membership fingerprint through the exact issuing coverage service.
+           This remains coverage-membership evidence only and adds no
+           ownership, disownership, orphan, retention, legal-hold, abort,
+           deletion, provider-mutation, persistence or financial authority.
+           v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION introduces
            service-owned traversal from page_reference=None, exact page-scope
            validation, certified C4D6B fingerprint revalidation,
            continuation-cycle rejection, deterministic SHA3-512 aggregate evidence, completed-observation membership
@@ -67,7 +72,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumera
 )
 
 VERSION: Final[str] = (
-    "v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
+    "v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
 )
 
 _SHA3_512_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -482,20 +487,45 @@ class LegalEvidenceProviderCoverageVerificationService:
 
         return verified
 
-    def contains_completed_observation(
+    def completed_observation_membership_fingerprint(
         self,
         *,
         verified: object,
         observation: LegalEvidenceCompletedObjectObservation,
-    ) -> bool:
-        """Return true only for a completed observation sealed into this verification."""
+    ) -> str | None:
+        """Return the exact sealed digest for one completed-object observation.
+
+        Authority:
+            Coverage-membership evidence only. This method does not prove
+            ownership, disownership or orphan status and grants no retention,
+            legal-hold, abort, deletion or provider-mutation authority.
+
+        Tenant / provider scope:
+            The verification must have been issued by this exact service
+            instance. The observation is revalidated through the canonical
+            C4D6C-B membership-fingerprint implementation.
+
+        Mutation / transaction / idempotency:
+            Pure read-only in-memory comparison. No provider IO, persistence,
+            registry access, transaction lifecycle, clock access or replay
+            authority exists here.
+
+        Fail-closed behavior:
+            Fabricated or cross-service verification, wrong observation type,
+            invalid observation state, or absence from the sealed membership
+            tuple returns None.
+
+        Financial boundary:
+            No billing, payment, execution or settlement authority. Kennel EOS
+            remains the exclusive financial execution authority.
+        """
         if not self.accepts_verification(
             verified
         ):
-            return False
+            return None
 
         if type(observation) is not LegalEvidenceCompletedObjectObservation:
-            return False
+            return None
 
         try:
             digest = _completed_observation_membership_fingerprint(
@@ -504,19 +534,36 @@ class LegalEvidenceProviderCoverageVerificationService:
         except (
             LegalEvidenceProviderCoverageVerificationError,
         ):
-            return False
+            return None
 
         assert type(verified) is LegalEvidenceProviderCoverageVerification
 
-        return hmac.compare_digest(
-            digest,
-            digest,
-        ) and any(
-            hmac.compare_digest(
+        for member in verified.completed_observation_fingerprints:
+            if hmac.compare_digest(
                 digest,
                 member,
+            ):
+                return member
+
+        return None
+
+    def contains_completed_observation(
+        self,
+        *,
+        verified: object,
+        observation: LegalEvidenceCompletedObjectObservation,
+    ) -> bool:
+        """Return whether this service sealed the completed observation.
+
+        This compatibility predicate delegates to the exact sealed-digest seam
+        and creates no additional authority, persistence or provider mutation.
+        """
+        return (
+            self.completed_observation_membership_fingerprint(
+                verified=verified,
+                observation=observation,
             )
-            for member in verified.completed_observation_fingerprints
+            is not None
         )
 
     def accepts_verification(
@@ -542,7 +589,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_coverage_verification_service.py
-# VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+# VERSION: v1.2.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
 # AUTHORITY BOUNDARY: trusted exhaustive provider-page traversal evidence only
 # START POSTURE: traversal always begins internally at page_reference=None
 # TENANT POSTURE: every page must preserve exact tenant scope fingerprint
