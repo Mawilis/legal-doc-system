@@ -1,8 +1,11 @@
 """Direct certificate for the Legal Evidence S3 storage adapter.
 
-VERSION: v1.0.0-L10A2R-B3-LEGAL-EVIDENCE-S3-STORAGE-ADAPTER-CERT
+VERSION: v1.1.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER-CERT
 AUTHORITY: Wilsy OS Core Governance
-CERTIFICATION / UPDATE DATE: 2026-09-29
+CERTIFICATION / UPDATE DATE: 2026-10-01
+CHANGELOG: v1.1.0-L10A2R-C4D6C-A certifies the S3 C4D6B page adapter,
+           exact continuation marker-pair transport, tamper rejection,
+           exact-version HEAD recovery and preserved C4D2 semantics.
 """
 from __future__ import annotations
 
@@ -26,7 +29,13 @@ from tools.eos.legal_operations.service.legal_evidence_s3_storage_adapter import
     LegalEvidenceS3Configuration,
     LegalEvidenceS3StorageAdapter,
     LegalEvidenceS3StorageAdapterError,
+    _decode_c4d6c_page_reference,
+    _encode_c4d6c_page_reference,
     _storage_key,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumeration_port import (
+    LegalEvidenceProviderCoverageEnumerationPort,
+    LegalEvidenceProviderEnumerationKind,
 )
 
 
@@ -594,13 +603,6 @@ def test_configuration_never_accepts_credentials() -> None:
     }
 
 
-# ARTIFACT: test_legal_evidence_s3_storage_adapter.py
-# VERSION: v1.0.0-L10A2R-B3-LEGAL-EVIDENCE-S3-STORAGE-ADAPTER-CERT
-# AUTHORITY BOUNDARY: direct fake-provider S3 adapter evidence only
-# TENANT POSTURE: cross-tenant/document/session/evidence substitution must make zero provider calls
-# OPERATIONAL POSTURE: fake-client certificate only; real AWS not yet certified
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 def test_c4d2r2_exact_head_without_intent_metadata_emits_absent() -> None:
@@ -1072,3 +1074,358 @@ def test_c4d2_provider_pagination_is_required_not_silently_truncated() -> None:
             _c4d2_scope(),
             observed_at=C4D2_AT,
         )
+
+
+def test_c4d6ca_adapter_implements_coverage_enumeration_port() -> None:
+    assert isinstance(
+        adapter(FakeS3Client()),
+        LegalEvidenceProviderCoverageEnumerationPort,
+    )
+
+
+def test_c4d6ca_multipart_first_page_emits_exact_opaque_marker_pair() -> None:
+    client = FakeS3Client()
+    client.list_multipart_uploads_response = {
+        "Uploads": [],
+        "IsTruncated": True,
+        "NextKeyMarker": "next-key",
+        "NextUploadIdMarker": "next-upload",
+    }
+
+    page = adapter(
+        client
+    ).list_incomplete_write_session_page(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+        page_reference=None,
+    )
+
+    assert page.next_page_reference is not None
+
+    assert _decode_c4d6c_page_reference(
+        enumeration_kind=(
+            LegalEvidenceProviderEnumerationKind
+            .INCOMPLETE_WRITE_SESSIONS
+        ),
+        page_reference=page.next_page_reference,
+    ) == (
+        "next-key",
+        "next-upload",
+    )
+
+    assert client.calls == [
+        (
+            "list_multipart_uploads",
+            {
+                "Bucket": "wilsy-legal-evidence-test",
+                "Prefix": _c4d2_tenant_prefix(),
+            },
+        )
+    ]
+
+
+def test_c4d6ca_multipart_second_page_replays_both_markers() -> None:
+    client = FakeS3Client()
+    client.list_multipart_uploads_response = {
+        "Uploads": [],
+        "IsTruncated": False,
+    }
+
+    reference = _encode_c4d6c_page_reference(
+        enumeration_kind=(
+            LegalEvidenceProviderEnumerationKind
+            .INCOMPLETE_WRITE_SESSIONS
+        ),
+        key_marker="key-marker",
+        secondary_marker_name="upload_id_marker",
+        secondary_marker="upload-marker",
+    )
+
+    page = adapter(
+        client
+    ).list_incomplete_write_session_page(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+        page_reference=reference,
+    )
+
+    assert page.next_page_reference is None
+
+    assert client.calls == [
+        (
+            "list_multipart_uploads",
+            {
+                "Bucket": "wilsy-legal-evidence-test",
+                "Prefix": _c4d2_tenant_prefix(),
+                "KeyMarker": "key-marker",
+                "UploadIdMarker": "upload-marker",
+            },
+        )
+    ]
+
+
+def test_c4d6ca_object_version_page_replays_exact_marker_pair_and_heads_version() -> None:
+    client = FakeS3Client()
+    key = (
+        _c4d2_tenant_prefix()
+        + "m/opaque-matter/"
+        + "d/opaque-document/"
+        + "i/opaque-ingestion/content"
+    )
+
+    client.list_object_versions_response = {
+        "Versions": [
+            {
+                "Key": key,
+                "VersionId": "version-c4d6ca",
+                "ETag": '"etag-c4d6ca"',
+                "Size": 51,
+                "LastModified": C4D2_AT,
+            }
+        ],
+        "IsTruncated": False,
+    }
+
+    client.head_response = {
+        "VersionId": "version-c4d6ca",
+        "ETag": '"etag-c4d6ca"',
+        "ContentLength": 51,
+        "Metadata": {},
+    }
+
+    reference = _encode_c4d6c_page_reference(
+        enumeration_kind=(
+            LegalEvidenceProviderEnumerationKind
+            .COMPLETED_OBJECT_VERSIONS
+        ),
+        key_marker="version-key-marker",
+        secondary_marker_name="version_id_marker",
+        secondary_marker="version-marker",
+    )
+
+    page = adapter(
+        client
+    ).list_completed_object_version_page(
+        _c4d2_scope(),
+        observed_at=C4D2_AT,
+        page_reference=reference,
+    )
+
+    assert page.next_page_reference is None
+    assert len(page.observations) == 1
+
+    assert client.calls[0] == (
+        "list_object_versions",
+        {
+            "Bucket": "wilsy-legal-evidence-test",
+            "Prefix": _c4d2_tenant_prefix(),
+            "KeyMarker": "version-key-marker",
+            "VersionIdMarker": "version-marker",
+        },
+    )
+
+    assert client.calls[1] == (
+        "head_object",
+        {
+            "Bucket": "wilsy-legal-evidence-test",
+            "Key": key,
+            "VersionId": "version-c4d6ca",
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    "response",
+    (
+        {
+            "Uploads": [],
+            "IsTruncated": True,
+            "NextKeyMarker": "key",
+        },
+        {
+            "Uploads": [],
+            "IsTruncated": True,
+            "NextUploadIdMarker": "upload",
+        },
+    ),
+)
+def test_c4d6ca_truncated_multipart_requires_complete_marker_pair(
+    response: dict[str, Any],
+) -> None:
+    client = FakeS3Client()
+    client.list_multipart_uploads_response = response
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="L10A2R_C4D6C_A_CONTINUATION_PAIR_REQUIRED",
+    ):
+        adapter(
+            client
+        ).list_incomplete_write_session_page(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+            page_reference=None,
+        )
+
+
+@pytest.mark.parametrize(
+    "response",
+    (
+        {
+            "Versions": [],
+            "IsTruncated": True,
+            "NextKeyMarker": "key",
+        },
+        {
+            "Versions": [],
+            "IsTruncated": True,
+            "NextVersionIdMarker": "version",
+        },
+    ),
+)
+def test_c4d6ca_truncated_versions_requires_complete_marker_pair(
+    response: dict[str, Any],
+) -> None:
+    client = FakeS3Client()
+    client.list_object_versions_response = response
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="L10A2R_C4D6C_A_CONTINUATION_PAIR_REQUIRED",
+    ):
+        adapter(
+            client
+        ).list_completed_object_version_page(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+            page_reference=None,
+        )
+
+
+def test_c4d6ca_nontruncated_response_rejects_continuation_markers() -> None:
+    client = FakeS3Client()
+    client.list_multipart_uploads_response = {
+        "Uploads": [],
+        "IsTruncated": False,
+        "NextKeyMarker": "unexpected",
+        "NextUploadIdMarker": "unexpected-upload",
+    }
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="L10A2R_C4D6C_A_UNEXPECTED_CONTINUATION",
+    ):
+        adapter(
+            client
+        ).list_incomplete_write_session_page(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+            page_reference=None,
+        )
+
+
+def test_c4d6ca_tampered_page_reference_fails_before_provider_call() -> None:
+    client = FakeS3Client()
+
+    reference = _encode_c4d6c_page_reference(
+        enumeration_kind=(
+            LegalEvidenceProviderEnumerationKind
+            .INCOMPLETE_WRITE_SESSIONS
+        ),
+        key_marker="key",
+        secondary_marker_name="upload_id_marker",
+        secondary_marker="upload",
+    )
+
+    encoded, digest = reference.split(
+        ".",
+        1,
+    )
+
+    tampered_digest = (
+        ("0" if digest[0] != "0" else "1")
+        + digest[1:]
+    )
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match=(
+            "L10A2R_C4D6C_A_PAGE_REFERENCE_"
+            "FINGERPRINT_MISMATCH"
+        ),
+    ):
+        adapter(
+            client
+        ).list_incomplete_write_session_page(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+            page_reference=(
+                encoded
+                + "."
+                + tampered_digest
+            ),
+        )
+
+    assert client.calls == []
+
+
+def test_c4d6ca_cross_kind_page_reference_fails_before_provider_call() -> None:
+    client = FakeS3Client()
+
+    reference = _encode_c4d6c_page_reference(
+        enumeration_kind=(
+            LegalEvidenceProviderEnumerationKind
+            .INCOMPLETE_WRITE_SESSIONS
+        ),
+        key_marker="key",
+        secondary_marker_name="upload_id_marker",
+        secondary_marker="upload",
+    )
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+    ):
+        adapter(
+            client
+        ).list_completed_object_version_page(
+            _c4d2_scope(),
+            observed_at=C4D2_AT,
+            page_reference=reference,
+        )
+
+    assert client.calls == []
+
+
+def test_c4d6ca_page_surface_grants_no_complete_or_orphan_authority() -> None:
+    public = {
+        name
+        for name in dir(
+            LegalEvidenceS3StorageAdapter
+        )
+        if not name.startswith("_")
+    }
+
+    forbidden = {
+        "complete_coverage",
+        "coverage_complete",
+        "orphan",
+        "delete",
+        "delete_object",
+        "delete_objects",
+    }
+
+    assert forbidden.isdisjoint(
+        public
+    )
+
+# ARTIFACT: test_legal_evidence_s3_storage_adapter.py
+# VERSION: v1.1.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER-CERT
+# AUTHORITY BOUNDARY: direct fake-provider S3 storage and C4D6C-A page-enumeration evidence only
+# TENANT POSTURE: exact tenant scope remains sealed before provider enumeration
+# COVERAGE POSTURE: one page is evidence of one page only; no exhaustive-coverage attestation
+# CONTINUATION POSTURE: exact provider marker pairs only; malformed or tampered references fail closed
+# OPERATIONAL POSTURE: fake-client certificate only; real AWS remains deferred
+# ORPHAN POSTURE: no orphan or disownership inference
+# DELETION POSTURE: no deletion authorization or execution authority
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
