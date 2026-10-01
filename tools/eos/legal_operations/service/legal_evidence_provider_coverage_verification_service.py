@@ -1,7 +1,7 @@
 """WILSY OS — trusted exhaustive Legal Evidence provider coverage verification.
 
 TITLE: Legal Evidence Provider Coverage Verification Service
-VERSION: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Traverse the separately certified provider coverage page seam from its
          service-owned origin to both terminal pages and issue one immutable,
@@ -15,11 +15,11 @@ COLLABORATION / OWNERSHIP: C4D6B owns non-authorizing page evidence. C4D6C-A
                             legal hold, abort and deletion authority remain
                             explicitly outside this artifact.
 CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION introduces
+CHANGELOG: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION introduces
            service-owned traversal from page_reference=None, exact page-scope
            validation, certified C4D6B fingerprint revalidation,
-           continuation-cycle rejection, deterministic SHA3-512 aggregate
-           evidence and private-capability verification issuance.
+           continuation-cycle rejection, deterministic SHA3-512 aggregate evidence, completed-observation membership
+           sealing and private-capability verification issuance.
 
 AUTHORITY BOUNDARY
 ------------------
@@ -54,9 +54,10 @@ import hashlib
 import hmac
 import json
 import re
-from typing import Final
+from typing import Final, cast
 
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceCompletedObjectObservation,
     LegalEvidenceProviderDiscoveryScope,
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumeration_port import (
@@ -66,7 +67,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumera
 )
 
 VERSION: Final[str] = (
-    "v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
+    "v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
 )
 
 _SHA3_512_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -96,6 +97,41 @@ def _sha(name: str, value: str) -> str:
     return value
 
 
+def _completed_observation_membership_fingerprint(
+    observation: LegalEvidenceCompletedObjectObservation,
+) -> str:
+    """Return a deterministic digest for one validated completed-object observation."""
+    if type(observation) is not LegalEvidenceCompletedObjectObservation:
+        _fail("L10A2R_C4D6C_B_COMPLETED_OBSERVATION_REQUIRED")
+
+    observation.__post_init__()
+
+    payload = {
+        "content_length": observation.content_length,
+        "last_modified_at": observation.last_modified_at.isoformat(),
+        "object_version_reference": observation.object_version_reference,
+        "observed_at": observation.observed_at.isoformat(),
+        "provider_integrity_reference": observation.provider_integrity_reference,
+        "provider_name": observation.provider_name,
+        "storage_reference": observation.storage_reference,
+        "tenant_id": observation.tenant_id,
+        "write_intent_fingerprint": observation.write_intent_fingerprint,
+        "write_intent_metadata_state": (
+            observation.write_intent_metadata_state.value
+        ),
+    }
+
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
 def _verification_fingerprint(
     *,
     tenant_id: str,
@@ -104,11 +140,13 @@ def _verification_fingerprint(
     observed_at: datetime,
     incomplete_page_fingerprints: tuple[str, ...],
     completed_page_fingerprints: tuple[str, ...],
+    completed_observation_fingerprints: tuple[str, ...],
     incomplete_observation_count: int,
     completed_observation_count: int,
 ) -> str:
     payload = {
         "completed_observation_count": completed_observation_count,
+        "completed_observation_fingerprints": completed_observation_fingerprints,
         "completed_page_fingerprints": completed_page_fingerprints,
         "incomplete_observation_count": incomplete_observation_count,
         "incomplete_page_fingerprints": incomplete_page_fingerprints,
@@ -152,6 +190,7 @@ class LegalEvidenceProviderCoverageVerification:
     completed_observation_count: int
     incomplete_page_fingerprints: tuple[str, ...]
     completed_page_fingerprints: tuple[str, ...]
+    completed_observation_fingerprints: tuple[str, ...]
     fingerprint: str
     _issuer_capability: object
 
@@ -228,10 +267,11 @@ class LegalEvidenceProviderCoverageVerificationService:
         provider_name: str,
         kind: LegalEvidenceProviderEnumerationKind,
         observed_at: datetime,
-    ) -> tuple[tuple[str, ...], int]:
+    ) -> tuple[tuple[str, ...], int, tuple[str, ...]]:
         page_reference: str | None = None
         seen_references: set[str] = set()
         page_fingerprints: list[str] = []
+        completed_observation_fingerprints: list[str] = []
         observation_count = 0
 
         while True:
@@ -259,6 +299,24 @@ class LegalEvidenceProviderCoverageVerificationService:
             page_fingerprints.append(page.fingerprint)
             observation_count += len(page.observations)
 
+            if (
+                kind
+                is LegalEvidenceProviderEnumerationKind.COMPLETED_OBJECT_VERSIONS
+            ):
+                for observation in page.observations:
+                    if type(observation) is not LegalEvidenceCompletedObjectObservation:
+                        _fail(
+                            "L10A2R_C4D6C_B_COMPLETED_OBSERVATION_REQUIRED"
+                        )
+                    completed_observation_fingerprints.append(
+                        _completed_observation_membership_fingerprint(
+                            cast(
+                                LegalEvidenceCompletedObjectObservation,
+                                observation,
+                            )
+                        )
+                    )
+
             next_reference = page.next_page_reference
 
             if next_reference is None:
@@ -279,6 +337,7 @@ class LegalEvidenceProviderCoverageVerificationService:
         return (
             tuple(page_fingerprints),
             observation_count,
+            tuple(completed_observation_fingerprints),
         )
 
     def verify_coverage(
@@ -304,7 +363,11 @@ class LegalEvidenceProviderCoverageVerificationService:
             observed_at,
         )
 
-        incomplete_fingerprints, incomplete_count = self._traverse(
+        (
+            incomplete_fingerprints,
+            incomplete_count,
+            incomplete_observation_fingerprints,
+        ) = self._traverse(
             scope=scope,
             provider_name=provider_name,
             kind=(
@@ -314,7 +377,11 @@ class LegalEvidenceProviderCoverageVerificationService:
             observed_at=observed,
         )
 
-        completed_fingerprints, completed_count = self._traverse(
+        (
+            completed_fingerprints,
+            completed_count,
+            completed_observation_fingerprints,
+        ) = self._traverse(
             scope=scope,
             provider_name=provider_name,
             kind=(
@@ -324,6 +391,11 @@ class LegalEvidenceProviderCoverageVerificationService:
             observed_at=observed,
         )
 
+        if incomplete_observation_fingerprints:
+            _fail(
+                "L10A2R_C4D6C_B_INCOMPLETE_OBSERVATION_MEMBERSHIP_INVALID"
+            )
+
         digest = _verification_fingerprint(
             tenant_id=scope.tenant_id,
             tenant_scope_fingerprint=scope.tenant_scope_fingerprint,
@@ -331,6 +403,9 @@ class LegalEvidenceProviderCoverageVerificationService:
             observed_at=observed,
             incomplete_page_fingerprints=incomplete_fingerprints,
             completed_page_fingerprints=completed_fingerprints,
+            completed_observation_fingerprints=(
+                completed_observation_fingerprints
+            ),
             incomplete_observation_count=incomplete_count,
             completed_observation_count=completed_count,
         )
@@ -391,6 +466,11 @@ class LegalEvidenceProviderCoverageVerificationService:
         )
         object.__setattr__(
             verified,
+            "completed_observation_fingerprints",
+            completed_observation_fingerprints,
+        )
+        object.__setattr__(
+            verified,
             "fingerprint",
             digest,
         )
@@ -401,6 +481,43 @@ class LegalEvidenceProviderCoverageVerificationService:
         )
 
         return verified
+
+    def contains_completed_observation(
+        self,
+        *,
+        verified: object,
+        observation: LegalEvidenceCompletedObjectObservation,
+    ) -> bool:
+        """Return true only for a completed observation sealed into this verification."""
+        if not self.accepts_verification(
+            verified
+        ):
+            return False
+
+        if type(observation) is not LegalEvidenceCompletedObjectObservation:
+            return False
+
+        try:
+            digest = _completed_observation_membership_fingerprint(
+                observation
+            )
+        except (
+            LegalEvidenceProviderCoverageVerificationError,
+        ):
+            return False
+
+        assert type(verified) is LegalEvidenceProviderCoverageVerification
+
+        return hmac.compare_digest(
+            digest,
+            digest,
+        ) and any(
+            hmac.compare_digest(
+                digest,
+                member,
+            )
+            for member in verified.completed_observation_fingerprints
+        )
 
     def accepts_verification(
         self,
@@ -425,7 +542,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_coverage_verification_service.py
-# VERSION: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+# VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
 # AUTHORITY BOUNDARY: trusted exhaustive provider-page traversal evidence only
 # START POSTURE: traversal always begins internally at page_reference=None
 # TENANT POSTURE: every page must preserve exact tenant scope fingerprint

@@ -1,6 +1,6 @@
 """Direct certificate for trusted Legal Evidence provider coverage verification.
 
-VERSION: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
+VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 CERTIFICATION / UPDATE DATE: 2026-10-01
 CHANGELOG: v1.0.0-L10A2R-C4D6C-B certifies service-owned origin traversal,
@@ -507,6 +507,140 @@ def test_verification_is_bound_to_exact_issuing_service() -> None:
     )
 
 
+def test_completed_observation_membership_is_exact_and_private() -> None:
+    completed = _completed(
+        reference="member-version"
+    )
+
+    service = _service(
+        _Provider(
+            completed=[
+                _page(
+                    kind=(
+                        LegalEvidenceProviderEnumerationKind
+                        .COMPLETED_OBJECT_VERSIONS
+                    ),
+                    observations=(completed,),
+                    continuation=None,
+                )
+            ]
+        )
+    )
+
+    verified = service.verify_coverage(
+        scope=_scope(),
+        provider_name="aws_s3",
+        observed_at=AT,
+    )
+
+    assert service.contains_completed_observation(
+        verified=verified,
+        observation=completed,
+    )
+
+    assert len(
+        verified.completed_observation_fingerprints
+    ) == 1
+
+    outsider = _completed(
+        reference="outsider-version"
+    )
+
+    assert not service.contains_completed_observation(
+        verified=verified,
+        observation=outsider,
+    )
+
+
+def test_completed_observation_membership_rejects_cross_service_verification() -> None:
+    completed = _completed(
+        reference="cross-service-version"
+    )
+
+    service_a = _service(
+        _Provider(
+            completed=[
+                _page(
+                    kind=(
+                        LegalEvidenceProviderEnumerationKind
+                        .COMPLETED_OBJECT_VERSIONS
+                    ),
+                    observations=(completed,),
+                    continuation=None,
+                )
+            ]
+        )
+    )
+
+    service_b = _service(
+        _Provider()
+    )
+
+    verified = service_a.verify_coverage(
+        scope=_scope(),
+        provider_name="aws_s3",
+        observed_at=AT,
+    )
+
+    assert not service_b.contains_completed_observation(
+        verified=verified,
+        observation=completed,
+    )
+
+
+def test_completed_observation_membership_participates_in_verification_fingerprint() -> None:
+    first = _completed(
+        reference="membership-a"
+    )
+    second = _completed(
+        reference="membership-b"
+    )
+
+    verified_a = _service(
+        _Provider(
+            completed=[
+                _page(
+                    kind=(
+                        LegalEvidenceProviderEnumerationKind
+                        .COMPLETED_OBJECT_VERSIONS
+                    ),
+                    observations=(first,),
+                    continuation=None,
+                )
+            ]
+        )
+    ).verify_coverage(
+        scope=_scope(),
+        provider_name="aws_s3",
+        observed_at=AT,
+    )
+
+    verified_b = _service(
+        _Provider(
+            completed=[
+                _page(
+                    kind=(
+                        LegalEvidenceProviderEnumerationKind
+                        .COMPLETED_OBJECT_VERSIONS
+                    ),
+                    observations=(second,),
+                    continuation=None,
+                )
+            ]
+        )
+    ).verify_coverage(
+        scope=_scope(),
+        provider_name="aws_s3",
+        observed_at=AT,
+    )
+
+    assert (
+        verified_a.completed_observation_fingerprints
+        != verified_b.completed_observation_fingerprints
+    )
+    assert verified_a.fingerprint != verified_b.fingerprint
+
+
 def test_verification_fingerprint_is_deterministic() -> None:
     first = _service(
         _Provider()
@@ -587,7 +721,7 @@ def test_public_service_surface_excludes_delete_abort_and_disownership() -> None
 
 
 # ARTIFACT: test_legal_evidence_provider_coverage_verification_service.py
-# VERSION: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
+# VERSION: v1.1.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION-CERT
 # AUTHORITY BOUNDARY: trusted traversal / private verification issuance only
 # START POSTURE: callers cannot supply continuation origin
 # COVERAGE POSTURE: terminal traversal of both C4D6B kinds only
