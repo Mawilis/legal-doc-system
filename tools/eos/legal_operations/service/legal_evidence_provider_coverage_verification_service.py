@@ -1,0 +1,441 @@
+"""WILSY OS — trusted exhaustive Legal Evidence provider coverage verification.
+
+TITLE: Legal Evidence Provider Coverage Verification Service
+VERSION: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
+EPITOME: Traverse the separately certified provider coverage page seam from its
+         service-owned origin to both terminal pages and issue one immutable,
+         anti-fabrication coverage verification bound to the exact observation.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_evidence_provider_coverage_verification_service.py
+COLLABORATION / OWNERSHIP: C4D6B owns non-authorizing page evidence. C4D6C-A
+                            owns provider-specific page execution and opaque
+                            continuation transport. C4D6C-B owns only trusted
+                            exhaustive traversal and in-memory verification.
+                            Ownership, disownership, orphan proof, retention,
+                            legal hold, abort and deletion authority remain
+                            explicitly outside this artifact.
+CERTIFICATION / UPDATE DATE: 2026-10-01
+CHANGELOG: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION introduces
+           service-owned traversal from page_reference=None, exact page-scope
+           validation, certified C4D6B fingerprint revalidation,
+           continuation-cycle rejection, deterministic SHA3-512 aggregate
+           evidence and private-capability verification issuance.
+
+AUTHORITY BOUNDARY
+------------------
+This service proves only that the exact injected C4D6B provider seam was
+traversed from its origin to terminal continuation for both certified
+enumeration kinds at one exact timestamp.
+
+It does NOT prove:
+- canonical ownership;
+- durable disownership;
+- orphan status;
+- retention expiry;
+- legal-hold release;
+- abort authorization;
+- deletion authorization;
+- provider deletion execution;
+- financial authority.
+
+The caller cannot supply a starting continuation reference. Continuations are
+accepted only when emitted by the immediately traversed provider page. Provider
+or page failures propagate/fail closed. No persistence or provider mutation is
+owned here.
+
+Financial execution authority remains exclusively with Kennel EOS.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import hashlib
+import hmac
+import json
+import re
+from typing import Final
+
+from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
+    LegalEvidenceProviderDiscoveryScope,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumeration_port import (
+    LegalEvidenceProviderCoverageEnumerationPort,
+    LegalEvidenceProviderEnumerationKind,
+    LegalEvidenceProviderEnumerationPage,
+)
+
+VERSION: Final[str] = (
+    "v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION"
+)
+
+_SHA3_512_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
+
+
+class LegalEvidenceProviderCoverageVerificationError(RuntimeError):
+    """Raised when trusted coverage traversal cannot be certified."""
+
+
+def _fail(code: str) -> None:
+    raise LegalEvidenceProviderCoverageVerificationError(code)
+
+
+def _utc(name: str, value: datetime) -> datetime:
+    if (
+        not isinstance(value, datetime)
+        or value.tzinfo is None
+        or value.utcoffset() is None
+    ):
+        _fail(f"L10A2R_C4D6C_B_{name.upper()}_INVALID")
+    return value.astimezone(timezone.utc)
+
+
+def _sha(name: str, value: str) -> str:
+    if not isinstance(value, str) or _SHA3_512_RE.fullmatch(value) is None:
+        _fail(f"L10A2R_C4D6C_B_{name.upper()}_INVALID")
+    return value
+
+
+def _verification_fingerprint(
+    *,
+    tenant_id: str,
+    tenant_scope_fingerprint: str,
+    provider_name: str,
+    observed_at: datetime,
+    incomplete_page_fingerprints: tuple[str, ...],
+    completed_page_fingerprints: tuple[str, ...],
+    incomplete_observation_count: int,
+    completed_observation_count: int,
+) -> str:
+    payload = {
+        "completed_observation_count": completed_observation_count,
+        "completed_page_fingerprints": completed_page_fingerprints,
+        "incomplete_observation_count": incomplete_observation_count,
+        "incomplete_page_fingerprints": incomplete_page_fingerprints,
+        "observed_at": observed_at.isoformat(),
+        "provider_name": provider_name,
+        "tenant_id": tenant_id,
+        "tenant_scope_fingerprint": tenant_scope_fingerprint,
+        "verification_version": VERSION,
+    }
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
+@dataclass(
+    frozen=True,
+    slots=True,
+    init=False,
+)
+class LegalEvidenceProviderCoverageVerification:
+    """Service-issued proof of exact terminal traversal only.
+
+    Public construction is forbidden. This value proves exhaustive traversal of
+    both certified C4D6B enumeration kinds only for one service instance, tenant
+    scope, provider and observed_at. It contains no ownership, disownership,
+    orphan, retention, hold, abort or deletion authority.
+    """
+
+    tenant_id: str
+    tenant_scope_fingerprint: str
+    provider_name: str
+    observed_at: datetime
+    incomplete_page_count: int
+    completed_page_count: int
+    incomplete_observation_count: int
+    completed_observation_count: int
+    incomplete_page_fingerprints: tuple[str, ...]
+    completed_page_fingerprints: tuple[str, ...]
+    fingerprint: str
+    _issuer_capability: object
+
+    def __init__(
+        self,
+        *args: object,
+        **kwargs: object,
+    ) -> None:
+        _fail(
+            "L10A2R_C4D6C_B_COVERAGE_VERIFICATION_FACTORY_REQUIRED"
+        )
+
+
+class LegalEvidenceProviderCoverageVerificationService:
+    """Trusted traversal owner for C4D6B provider page evidence only."""
+
+    __slots__ = (
+        "_provider",
+        "_verification_capability",
+    )
+
+    def __init__(
+        self,
+        *,
+        provider: LegalEvidenceProviderCoverageEnumerationPort,
+    ) -> None:
+        if provider is None:
+            _fail("L10A2R_C4D6C_B_PROVIDER_REQUIRED")
+
+        if not isinstance(
+            provider,
+            LegalEvidenceProviderCoverageEnumerationPort,
+        ):
+            _fail("L10A2R_C4D6C_B_PROVIDER_INVALID")
+
+        self._provider = provider
+        self._verification_capability = object()
+
+    @staticmethod
+    def _validate_page(
+        *,
+        page: LegalEvidenceProviderEnumerationPage,
+        scope: LegalEvidenceProviderDiscoveryScope,
+        provider_name: str,
+        kind: LegalEvidenceProviderEnumerationKind,
+        observed_at: datetime,
+    ) -> None:
+        if type(page) is not LegalEvidenceProviderEnumerationPage:
+            _fail("L10A2R_C4D6C_B_PAGE_REQUIRED")
+
+        # Re-run the certified C4D6B value contract before consuming any page
+        # field as trusted coverage evidence. This independently revalidates
+        # canonical scope/observation semantics and the page fingerprint
+        # against the page's current payload, so post-construction mutation
+        # cannot be promoted into C4D6C-B verification authority.
+        page.__post_init__()
+
+        if (
+            page.tenant_id != scope.tenant_id
+            or page.tenant_scope_fingerprint
+            != scope.tenant_scope_fingerprint
+            or page.provider_name != provider_name
+            or page.enumeration_kind is not kind
+            or page.observed_at != observed_at
+        ):
+            _fail("L10A2R_C4D6C_B_PAGE_SCOPE_MISMATCH")
+
+        _sha("page_fingerprint", page.fingerprint)
+
+    def _traverse(
+        self,
+        *,
+        scope: LegalEvidenceProviderDiscoveryScope,
+        provider_name: str,
+        kind: LegalEvidenceProviderEnumerationKind,
+        observed_at: datetime,
+    ) -> tuple[tuple[str, ...], int]:
+        page_reference: str | None = None
+        seen_references: set[str] = set()
+        page_fingerprints: list[str] = []
+        observation_count = 0
+
+        while True:
+            if kind is LegalEvidenceProviderEnumerationKind.INCOMPLETE_WRITE_SESSIONS:
+                page = self._provider.list_incomplete_write_session_page(
+                    scope,
+                    observed_at=observed_at,
+                    page_reference=page_reference,
+                )
+            else:
+                page = self._provider.list_completed_object_version_page(
+                    scope,
+                    observed_at=observed_at,
+                    page_reference=page_reference,
+                )
+
+            self._validate_page(
+                page=page,
+                scope=scope,
+                provider_name=provider_name,
+                kind=kind,
+                observed_at=observed_at,
+            )
+
+            page_fingerprints.append(page.fingerprint)
+            observation_count += len(page.observations)
+
+            next_reference = page.next_page_reference
+
+            if next_reference is None:
+                break
+
+            if (
+                not isinstance(next_reference, str)
+                or not next_reference
+            ):
+                _fail("L10A2R_C4D6C_B_CONTINUATION_INVALID")
+
+            if next_reference in seen_references:
+                _fail("L10A2R_C4D6C_B_CONTINUATION_CYCLE")
+
+            seen_references.add(next_reference)
+            page_reference = next_reference
+
+        return (
+            tuple(page_fingerprints),
+            observation_count,
+        )
+
+    def verify_coverage(
+        self,
+        *,
+        scope: LegalEvidenceProviderDiscoveryScope,
+        provider_name: str,
+        observed_at: datetime,
+    ) -> LegalEvidenceProviderCoverageVerification:
+        """Traverse both page kinds from service-owned origin to terminal pages."""
+
+        if type(scope) is not LegalEvidenceProviderDiscoveryScope:
+            _fail("L10A2R_C4D6C_B_SCOPE_REQUIRED")
+
+        if (
+            not isinstance(provider_name, str)
+            or not provider_name
+        ):
+            _fail("L10A2R_C4D6C_B_PROVIDER_NAME_INVALID")
+
+        observed = _utc(
+            "observed_at",
+            observed_at,
+        )
+
+        incomplete_fingerprints, incomplete_count = self._traverse(
+            scope=scope,
+            provider_name=provider_name,
+            kind=(
+                LegalEvidenceProviderEnumerationKind
+                .INCOMPLETE_WRITE_SESSIONS
+            ),
+            observed_at=observed,
+        )
+
+        completed_fingerprints, completed_count = self._traverse(
+            scope=scope,
+            provider_name=provider_name,
+            kind=(
+                LegalEvidenceProviderEnumerationKind
+                .COMPLETED_OBJECT_VERSIONS
+            ),
+            observed_at=observed,
+        )
+
+        digest = _verification_fingerprint(
+            tenant_id=scope.tenant_id,
+            tenant_scope_fingerprint=scope.tenant_scope_fingerprint,
+            provider_name=provider_name,
+            observed_at=observed,
+            incomplete_page_fingerprints=incomplete_fingerprints,
+            completed_page_fingerprints=completed_fingerprints,
+            incomplete_observation_count=incomplete_count,
+            completed_observation_count=completed_count,
+        )
+
+        verified = object.__new__(
+            LegalEvidenceProviderCoverageVerification
+        )
+
+        object.__setattr__(
+            verified,
+            "tenant_id",
+            scope.tenant_id,
+        )
+        object.__setattr__(
+            verified,
+            "tenant_scope_fingerprint",
+            scope.tenant_scope_fingerprint,
+        )
+        object.__setattr__(
+            verified,
+            "provider_name",
+            provider_name,
+        )
+        object.__setattr__(
+            verified,
+            "observed_at",
+            observed,
+        )
+        object.__setattr__(
+            verified,
+            "incomplete_page_count",
+            len(incomplete_fingerprints),
+        )
+        object.__setattr__(
+            verified,
+            "completed_page_count",
+            len(completed_fingerprints),
+        )
+        object.__setattr__(
+            verified,
+            "incomplete_observation_count",
+            incomplete_count,
+        )
+        object.__setattr__(
+            verified,
+            "completed_observation_count",
+            completed_count,
+        )
+        object.__setattr__(
+            verified,
+            "incomplete_page_fingerprints",
+            incomplete_fingerprints,
+        )
+        object.__setattr__(
+            verified,
+            "completed_page_fingerprints",
+            completed_fingerprints,
+        )
+        object.__setattr__(
+            verified,
+            "fingerprint",
+            digest,
+        )
+        object.__setattr__(
+            verified,
+            "_issuer_capability",
+            self._verification_capability,
+        )
+
+        return verified
+
+    def accepts_verification(
+        self,
+        verified: object,
+    ) -> bool:
+        """Return true only for this exact service instance's issued value."""
+
+        return (
+            type(verified)
+            is LegalEvidenceProviderCoverageVerification
+            and verified._issuer_capability
+            is self._verification_capability
+        )
+
+
+__all__ = [
+    "VERSION",
+    "LegalEvidenceProviderCoverageVerification",
+    "LegalEvidenceProviderCoverageVerificationError",
+    "LegalEvidenceProviderCoverageVerificationService",
+]
+
+
+# ARTIFACT: legal_evidence_provider_coverage_verification_service.py
+# VERSION: v1.0.0-L10A2R-C4D6C-B-TRUSTED-COVERAGE-VERIFICATION
+# AUTHORITY BOUNDARY: trusted exhaustive provider-page traversal evidence only
+# START POSTURE: traversal always begins internally at page_reference=None
+# TENANT POSTURE: every page must preserve exact tenant scope fingerprint
+# TIME POSTURE: one exact observed_at is preserved across both traversals
+# CONTINUATION POSTURE: emitted references only; repeated continuation fails closed
+# COVERAGE POSTURE: terminal traversal proves coverage observation only
+# OWNERSHIP POSTURE: no ownership or durable disownership authority
+# ORPHAN POSTURE: no orphan proof or inference
+# RETENTION / HOLD POSTURE: no retention or legal-hold authority
+# DELETION POSTURE: no abort, delete authorization or provider deletion authority
+# PERSISTENCE POSTURE: no durable state is created
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
