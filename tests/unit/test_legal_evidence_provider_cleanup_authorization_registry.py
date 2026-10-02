@@ -1,6 +1,6 @@
 """Direct certificate for cleanup-authorization durable registry.
 
-VERSION: v1.0.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY-CERT
+VERSION: v1.1.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY-CERT
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 PURPOSE:
     Certify the immutable C4D6E-A2 registry contract independently of Mongo.
@@ -34,6 +34,7 @@ from tools.eos.legal_operations.registry.legal_evidence_provider_cleanup_authori
     VERSION,
     LegalEvidenceProviderCleanupAuthorizationRegistry,
     LegalEvidenceProviderCleanupAuthorizationRegistryIntegrityError,
+    LegalEvidenceProviderCleanupAuthorizationRegistryRetryRequiredError,
     LegalEvidenceProviderCleanupAuthorizationRegistryTransactionError,
 )
 
@@ -131,7 +132,7 @@ def _registry():
 
 def test_constants_and_exact_indexes_have_no_ttl() -> None:
     assert VERSION == (
-        "v1.0.0-L10A2R-C4D6E-A2-"
+        "v1.0.1-L10A2R-C4D6E-A2-"
         "PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY"
     )
     assert COLLECTION == (
@@ -412,24 +413,97 @@ def test_authority_injection_persisted_row_rejects() -> None:
         )
 
 
-def test_duplicate_key_race_requires_exact_replay() -> None:
-    registry, collection, session = _registry()
+def test_duplicate_key_requires_abort_and_fresh_transaction_replay() -> None:
     authorization = _authorization()
 
-    collection.rows.append(
+    durable = _Collection()
+    durable.rows.append(
         deepcopy(
             authorization.to_document()
         )
     )
-    collection.raise_duplicate_once = True
 
-    replay = registry.create_or_replay(
+    class _HideIdentityReads:
+        def __init__(
+            self,
+            collection: _Collection,
+        ) -> None:
+            self._collection = collection
+            self.find_count = 0
+            self.insert_count = 0
+
+        def find_one(
+            self,
+            query: dict[str, object],
+            *,
+            session: object,
+        ) -> None:
+            assert getattr(
+                session,
+                "in_transaction",
+                False,
+            ) is True
+            self.find_count += 1
+            return None
+
+        def insert_one(
+            self,
+            document: dict[str, object],
+            *,
+            session: object,
+        ) -> _InsertResult:
+            assert getattr(
+                session,
+                "in_transaction",
+                False,
+            ) is True
+            self.insert_count += 1
+            raise _DuplicateKeyError("duplicate")
+
+    stale_collection = _HideIdentityReads(
+        durable
+    )
+    stale_registry = (
+        LegalEvidenceProviderCleanupAuthorizationRegistry(
+            stale_collection
+        )
+    )
+    stale_session = _Session(True)
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupAuthorizationRegistryRetryRequiredError,
+        match=(
+            "L10A2R_C4D6E_A2_"
+            "WHOLE_TRANSACTION_RETRY_REQUIRED"
+        ),
+    ):
+        stale_registry.create_or_replay(
+            authorization,
+            session=stale_session,
+        )
+
+    # The three identity reads occur before insert. No read may happen
+    # after DuplicateKeyError inside that failed transaction.
+    assert stale_collection.find_count == 3
+    assert stale_collection.insert_count == 1
+
+    # Caller aborts the failed transaction before a fresh retry.
+    stale_session.in_transaction = False
+
+    fresh_registry = (
+        LegalEvidenceProviderCleanupAuthorizationRegistry(
+            durable
+        )
+    )
+    fresh_session = _Session(True)
+
+    replay = fresh_registry.create_or_replay(
         authorization,
-        session=session,
+        session=fresh_session,
     )
 
     assert replay == authorization
-    assert len(collection.rows) == 1
+    assert len(durable.rows) == 1
 
 
 def test_no_provider_execution_methods() -> None:
@@ -443,7 +517,7 @@ def test_no_provider_execution_methods() -> None:
 
 
 # ARTIFACT: test_legal_evidence_provider_cleanup_authorization_registry.py
-# VERSION: v1.0.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY-CERT
+# VERSION: v1.1.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct durable-registry certificate only
 # TENANT POSTURE: exact tenant-scoped identities and absence
 # TRANSACTION POSTURE: caller-owned active transaction required
