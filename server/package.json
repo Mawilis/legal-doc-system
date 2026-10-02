@@ -39,7 +39,7 @@
     "@tensorflow/tfjs-backend-webgl": "4.22.0",
     "agenda": "^5.0.0",
     "async-mutex": "0.5.0",
-    "axios": "^1.7.4",
+    "axios": "^1.20.0",
     "axios-retry": "4.5.0",
     "bcrypt": "6.0.0",
     "bcryptjs": "3.0.3",
@@ -58,7 +58,7 @@
     "docxtemplater": "3.68.3",
     "dotenv": "16.6.1",
     "exceljs": "4.4.0",
-    "express": "^4.22.2",
+    "express": "^4.22.3",
     "express-async-handler": "1.2.0",
     "express-fileupload": "1.5.2",
     "express-mongo-sanitize": "2.2.0",
@@ -89,17 +89,17 @@
     "mammoth": "1.12.0",
     "merkle-tree-stream": "4.0.0",
     "merkletreejs": "0.6.0",
-    "moment": "2.30.1",
+    "moment": "2.31.0",
     "moment-timezone": "0.6.1",
     "mongoose-sequence": "6.0.1",
-    "morgan": "1.11.0",
+    "morgan": "1.12.1",
     "msgpack-lite": "0.1.26",
-    "multer": "2.3.0",
+    "multer": "2.4.0",
     "node-cache": "5.1.2",
     "node-cron": "4.6.0",
     "node-forge": "1.4.0",
     "node-rsa": "2.0.0",
-    "nodemailer": "9.1.1",
+    "nodemailer": "10.0.13",
     "opossum": "9.0.0",
     "otplib": "13.4.0",
     "pdf-lib": "1.17.1",
@@ -185,16 +185,16 @@
   "private": true,
   "overrides": {
     "gl": "npm:empty-npm-package@1.0.0",
-    "axios": "^1.7.4",
+    "axios": "^1.20.0",
     "@remix-run/router": "^1.19.0",
     "gpu.js": "^2.15.2",
     "compromise": "^14.14.0",
     "sharp": "0.35.4",
     "minimatch@3.1.5": {
-      "brace-expansion": "1.1.18"
+      "brace-expansion": "1.1.21"
     },
     "minimatch@5.1.9": {
-      "brace-expansion": "2.1.4"
+      "brace-expansion": "2.1.7"
     },
     "exceljs": {
       "uuid": "11.1.1"
