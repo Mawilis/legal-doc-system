@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM
+VERSION: v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -10,8 +10,16 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-27.
+CERTIFICATION/UPDATE DATE: 2026-10-02.
 CHANGELOG:
+    2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
+    adds the dedicated own-tenant legal_operations:evidence_cleanup:authorize
+    permission vocabulary for a later separately certified Legal Evidence
+    cleanup actor/command authorization gate. The permission remains tenant-
+    membership gated, non-cross-tenant, non-financial and non-self-authorizing.
+    It does not establish cleanup eligibility, bind an A2 cleanup authorization,
+    create a cleanup command, mutate a provider, delete an object, prove
+    provider execution, release retention/legal hold, or assert settlement.
     2026-09-29 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds the dedicated
     legal_operations:evidence:write own-tenant permission vocabulary for
     authenticated Legal evidence-content ingest. The permission is tenant-
@@ -150,7 +158,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM"
+VERSION = "v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -429,6 +437,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "ingest own-tenant legal evidence content",
+            tenant=True,
+        ),
+        "legal_operations:evidence_cleanup:authorize": _meta(
+            "legal_operations:evidence_cleanup:authorize",
+            "TENANT",
+            "TENANT",
+            "authorize own-tenant Legal Evidence cleanup command admission",
             tenant=True,
         ),
         "legal_operations:directory:write": _meta(
@@ -746,7 +761,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM
+# VERSION: v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
