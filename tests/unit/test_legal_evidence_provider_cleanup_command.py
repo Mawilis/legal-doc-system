@@ -1,7 +1,7 @@
 """Direct certificate for Legal Evidence provider cleanup command domain.
 
 TITLE: Legal Evidence Provider Cleanup Command Direct Certificate
-VERSION: v1.0.0-L10A2R-C4D6E-A3-P2-CLEANUP-COMMAND-DOMAIN-CERT
+VERSION: v1.1.0-L10A2R-C4D6E-A3-P3-P1-CLEANUP-COMMAND-DURABLE-HYDRATION-CERT
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 EPITOME: Certify exact immutable binding of A2 cleanup authorization to
          successful actor authorization evidence without provider execution.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Legal Operations / Legal Evidence
 CERTIFICATION / UPDATE DATE: 2026-10-02
 CHANGELOG:
+    v1.1.0 certifies strict durable serialization/hydration, exact-schema
+    round-trip integrity, SHA3-512 corruption rejection, canonical persisted
+    timestamps and preservation of the no-provider-execution boundary.
     v1.0.0 establishes direct pure-domain certification for deterministic
     command issuance, exact A2/IAM correlation, tenant/object scope,
     chronology, tamper resistance and execution-authority absence.
@@ -22,6 +25,8 @@ FINANCIAL AUTHORITY BOUNDARY:
 """
 
 from __future__ import annotations
+
+from copy import deepcopy
 
 from dataclasses import FrozenInstanceError, fields, replace
 from datetime import datetime, timedelta, timezone
@@ -182,8 +187,8 @@ def _issue(
 
 def test_shape_version_schema_and_factory_only_contract() -> None:
     assert VERSION == (
-        "v1.0.0-L10A2R-C4D6E-A3-P2-"
-        "CLEANUP-COMMAND-DOMAIN"
+        "v1.1.0-L10A2R-C4D6E-A3-P3-P1-"
+        "CLEANUP-COMMAND-DURABLE-HYDRATION"
     )
     assert SCHEMA == (
         "wilsy.legal_evidence.provider_cleanup_command.v1"
@@ -461,6 +466,134 @@ def test_replace_tamper_rejects_source_binding() -> None:
         )
 
 
+def test_exact_document_round_trip_preserves_integrity() -> None:
+    command = _issue()
+    document = command.to_document()
+
+    assert set(document) == {
+        "schema",
+        "command_version",
+        "command_id",
+        "tenant_id",
+        "principal_id",
+        "provider_name",
+        "storage_reference",
+        "object_version_reference",
+        "cleanup_authorization_id",
+        "cleanup_authorization_fingerprint",
+        "tenant_authorization_decision_id",
+        "tenant_authorization_evidence_fingerprint",
+        "issued_at",
+        "reason_reference",
+        "fingerprint",
+    }
+    assert document["command_version"] == VERSION
+    assert document["fingerprint"] == command.fingerprint
+
+    hydrated = LegalEvidenceProviderCleanupCommand.from_dict(
+        deepcopy(document)
+    )
+
+    assert hydrated == command
+    assert hydrated.fingerprint == command.fingerprint
+    assert hydrated.to_document() == document
+
+
+def test_persisted_document_shape_corruption_rejects() -> None:
+    extra = _issue().to_document()
+    extra["unexpected_field"] = "forbidden"
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="DOCUMENT_FIELDS_INVALID",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(extra)
+
+    missing = _issue().to_document()
+    missing.pop("reason_reference")
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="DOCUMENT_FIELDS_INVALID",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(missing)
+
+
+def test_persisted_document_fingerprint_corruption_rejects() -> None:
+    fingerprint = _issue().to_document()
+    fingerprint["fingerprint"] = "0" * 128
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="FINGERPRINT_MISMATCH",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(
+            fingerprint
+        )
+
+    payload = _issue().to_document()
+    payload["reason_reference"] = "tampered"
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="FINGERPRINT_MISMATCH",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(
+            payload
+        )
+
+
+def test_persisted_schema_and_version_drift_reject() -> None:
+    schema = _issue().to_document()
+    schema["schema"] = "wilsy.invalid.cleanup.command.v1"
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="SCHEMA_INVALID",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(schema)
+
+    version = _issue().to_document()
+    version["command_version"] = "v0.0.0-invalid"
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="VERSION_INVALID",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(version)
+
+
+def test_noncanonical_persisted_timestamp_rejects() -> None:
+    document = _issue().to_document()
+    document["issued_at"] = (
+        str(document["issued_at"])
+        .replace("+00:00", "Z")
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupCommandError,
+        match="DOCUMENT_TIMESTAMP_INVALID",
+    ):
+        LegalEvidenceProviderCleanupCommand.from_dict(
+            document
+        )
+
+
+def test_hydration_grants_no_provider_delete_authority() -> None:
+    hydrated = LegalEvidenceProviderCleanupCommand.from_dict(
+        _issue().to_document()
+    )
+
+    for attribute in (
+        "delete",
+        "delete_object",
+        "delete_objects",
+        "execute",
+        "provider_delete_authorized",
+    ):
+        assert not hasattr(hydrated, attribute)
+
+
 def test_command_has_no_provider_persistence_or_execution_surface() -> None:
     command = _issue()
     source = inspect.getsource(
@@ -520,7 +653,7 @@ def test_subject_reference_is_deterministic_and_exact() -> None:
 
 
 # ARTIFACT: test_legal_evidence_provider_cleanup_command.py
-# VERSION: v1.0.0-L10A2R-C4D6E-A3-P2-CLEANUP-COMMAND-DOMAIN-CERT
+# VERSION: v1.1.0-L10A2R-C4D6E-A3-P3-P1-CLEANUP-COMMAND-DURABLE-HYDRATION-CERT
 # AUTHORITY BOUNDARY: direct pure-domain certificate only
 # TENANT POSTURE: exact A2 cleanup authorization + exact actor evidence correlation
 # PROVIDER MUTATION POSTURE: none
