@@ -1,49 +1,53 @@
-"""WILSY OS Legal Evidence provider-cleanup authorization domain.
+"""WILSY OS — Legal Evidence Provider Cleanup Authorization.
 
 TITLE: Legal Evidence Provider Cleanup Authorization
-VERSION: v1.0.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION
+VERSION: v1.1.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
-EPITOME: Derive one immutable provider-object cleanup-authorization fact only
-         from an exact positive orphan proof and an exact preservation
-         composition demonstrating no active preservation block.
-
-ABSOLUTE CANONICAL PATH:
-    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_evidence_provider_cleanup_authorization.py
-
-COLLABORATION / OWNERSHIP:
-    C4D6D-B owns positive provider-object orphan proof.
-    C4D4C owns preservation composition over retention and legal-hold truth.
-    C4D6E-A1 owns only the immutable correlation fact that those exact sources
-    permit a later separately-authorized cleanup workflow to proceed.
-
+EPITOME: Derive and strictly hydrate one immutable provider-object cleanup-authorization fact only.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/legal_evidence_provider_cleanup_authorization.py
+COLLABORATION / OWNERSHIP: Legal Operations / Legal Evidence
+CERTIFICATION / UPDATE DATE: 2026-10-02
+CHANGELOG:
+    v1.1.0 adds strict exact-schema persisted-document hydration and canonical
+    document serialization, preserves factory-only issuance, and closes the
+    sovereign header/end-seal structural contract.
+    v1.0.0 introduced pure immutable cleanup-authorization evidence derived
+    from exact orphan-proof and preservation evidence.
+COMPLIANCE:
+    Fail-closed tenant/object correlation; deterministic canonical evidence;
+    SHA3-512 integrity; no inferred provider execution or settlement truth.
+SECURITY / PRIVACY POSTURE:
+    Opaque tenant/provider/object references and evidence fingerprints only.
+    Persisted hydration rejects malformed fields, non-canonical timestamps,
+    schema/version drift and fingerprint corruption.
+TENANT BOUNDARY:
+    Exact tenant + provider + storage reference + object-version correlation.
 AUTHORITY BOUNDARY:
-    Immutable cleanup-authorization evidence only. This module performs no
-    provider mutation, object deletion, multipart abort, persistence, IAM
-    decision, HTTP/API routing, reconciliation, billing, payment, execution or
-    settlement.
+    This artifact creates cleanup-authorization evidence only. It does not
+    mutate providers, delete objects, perform IAM authorization, persist rows,
+    execute billing/payment activity or assert execution/settlement truth.
+FINANCIAL AUTHORITY BOUNDARY:
+    No financial execution authority. Kennel EOS remains exclusive financial
+    execution authority.
 
 SEMANTIC CONTRACT:
-    positive orphan proof
-    + exact same tenant/provider/storage/object-version preservation composition
-    + retention elapsed
-    + legal-hold currentness non-blocking
-    + NO_PRESERVATION_BLOCK_DEMONSTRATED
-    -> immutable cleanup-authorization evidence
-
-    cleanup authorization evidence
-    != provider deletion execution
-    != proof that deletion occurred
+    ORPHAN PROOF
+    + NO PRESERVATION BLOCK DEMONSTRATED
+    + EXACT OBJECT SCOPE
+    != PROVIDER DELETE EXECUTION.
 
 FAIL-CLOSED DECLARATION:
-    Wrong source types, cross-scope evidence, active preservation requirements,
-    ambiguous/corrupt legal-hold blocking, non-elapsed retention, malformed
-    identities/fingerprints, temporal inversion and source-binding drift reject.
+    Direct construction, malformed persisted documents, unexpected persisted
+    fields, non-canonical timestamps, schema/version drift, source-scope drift,
+    later-authority injection and fingerprint mismatch reject.
 """
 
 from __future__ import annotations
 
+import hmac
+
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import re
@@ -61,7 +65,7 @@ from tools.eos.legal_operations.orchestration.legal_evidence_preservation_compos
 
 
 VERSION: Final[str] = (
-    "v1.0.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION"
+    "v1.1.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION"
 )
 SCHEMA: Final[str] = "wilsy.legal_evidence.provider_cleanup_authorization.v1"
 
@@ -195,6 +199,60 @@ def _payload(
     }
 
 
+_DOCUMENT_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "schema",
+        "authorization_version",
+        "authorization_id",
+        "tenant_id",
+        "provider_name",
+        "storage_reference",
+        "object_version_reference",
+        "orphan_proof_fingerprint",
+        "disownership_fingerprint",
+        "preservation_fingerprint",
+        "preservation_assessed_at",
+        "authorized_at",
+        "reason_reference",
+        "fingerprint",
+    }
+)
+
+
+def _document_str(
+    name: str,
+    value: object,
+) -> str:
+    """Require one exact persisted string field."""
+    if not isinstance(value, str):
+        _fail("DOCUMENT_INVALID")
+    return cast(str, value)
+
+
+def _document_datetime(
+    name: str,
+    value: object,
+) -> datetime:
+    """Hydrate one canonical UTC ISO-8601 persisted timestamp."""
+    raw = _document_str(name, value)
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError as error:
+        raise LegalEvidenceProviderCleanupAuthorizationError(
+            "L10A2R_C4D6E_A1_DOCUMENT_INVALID"
+        ) from error
+
+    if (
+        parsed.tzinfo is None
+        or parsed.utcoffset() is None
+        or parsed.utcoffset() != timedelta(0)
+        or parsed.isoformat() != raw
+    ):
+        _fail("DOCUMENT_TIMESTAMP_INVALID")
+
+    return _utc(name, parsed)
+
+
 @dataclass(frozen=True, slots=True)
 class LegalEvidenceProviderCleanupAuthorization:
     """Immutable authorization evidence for one exact provider object version."""
@@ -325,6 +383,171 @@ class LegalEvidenceProviderCleanupAuthorization:
     def fingerprint(self) -> str:
         """Return lowercase SHA3-512 over the complete canonical fact."""
         return _digest(self.to_dict())
+
+    def to_document(self) -> dict[str, object]:
+        """Return the exact durable document including integrity fingerprint.
+
+        Serialization creates no persistence authority and performs no write.
+        The resulting document is suitable only for a separately certified
+        registry or equivalent durable boundary.
+        """
+        document = self.to_dict()
+        document["fingerprint"] = self.fingerprint
+        return document
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: dict[str, object],
+    ) -> "LegalEvidenceProviderCleanupAuthorization":
+        """Strictly hydrate exact persisted evidence and verify integrity.
+
+        Hydration validates supplied persisted bytes only. It does not
+        rediscover orphan status, reevaluate preservation, grant IAM authority,
+        persist data or execute provider deletion.
+        """
+        if not isinstance(value, dict):
+            _fail("DOCUMENT_INVALID")
+
+        if set(value) != _DOCUMENT_FIELDS:
+            _fail("DOCUMENT_FIELDS_INVALID")
+
+        schema = _document_str(
+            "schema",
+            value["schema"],
+        )
+        authorization_version = _document_str(
+            "authorization_version",
+            value["authorization_version"],
+        )
+
+        if schema != SCHEMA:
+            _fail("SCHEMA_INVALID")
+        if authorization_version != VERSION:
+            _fail("VERSION_INVALID")
+
+        authorization_id = _text(
+            "authorization_id",
+            _document_str(
+                "authorization_id",
+                value["authorization_id"],
+            ),
+        )
+        tenant_id = _text(
+            "tenant_id",
+            _document_str(
+                "tenant_id",
+                value["tenant_id"],
+            ),
+        )
+        if tenant_id.lower() in {"global", "*", "all"}:
+            _fail("TENANT_INVALID")
+
+        provider_name = _text(
+            "provider_name",
+            _document_str(
+                "provider_name",
+                value["provider_name"],
+            ),
+        )
+        storage_reference = _text(
+            "storage_reference",
+            _document_str(
+                "storage_reference",
+                value["storage_reference"],
+            ),
+        )
+        object_version_reference = _text(
+            "object_version_reference",
+            _document_str(
+                "object_version_reference",
+                value["object_version_reference"],
+            ),
+        )
+        orphan_proof_fingerprint = _sha3(
+            "orphan_proof_fingerprint",
+            _document_str(
+                "orphan_proof_fingerprint",
+                value["orphan_proof_fingerprint"],
+            ),
+        )
+        disownership_fingerprint = _sha3(
+            "disownership_fingerprint",
+            _document_str(
+                "disownership_fingerprint",
+                value["disownership_fingerprint"],
+            ),
+        )
+        preservation_fingerprint = _sha3(
+            "preservation_fingerprint",
+            _document_str(
+                "preservation_fingerprint",
+                value["preservation_fingerprint"],
+            ),
+        )
+        preservation_assessed_at = _document_datetime(
+            "preservation_assessed_at",
+            value["preservation_assessed_at"],
+        )
+        authorized_at = _document_datetime(
+            "authorized_at",
+            value["authorized_at"],
+        )
+        reason_reference = _text(
+            "reason_reference",
+            _document_str(
+                "reason_reference",
+                value["reason_reference"],
+            ),
+        )
+        persisted_fingerprint = _sha3(
+            "fingerprint",
+            _document_str(
+                "fingerprint",
+                value["fingerprint"],
+            ),
+        )
+
+        payload = _payload(
+            authorization_id=authorization_id,
+            tenant_id=tenant_id,
+            provider_name=provider_name,
+            storage_reference=storage_reference,
+            object_version_reference=object_version_reference,
+            orphan_proof_fingerprint=orphan_proof_fingerprint,
+            disownership_fingerprint=disownership_fingerprint,
+            preservation_fingerprint=preservation_fingerprint,
+            preservation_assessed_at=preservation_assessed_at,
+            authorized_at=authorized_at,
+            reason_reference=reason_reference,
+        )
+
+        hydrated = cls(
+            authorization_id=authorization_id,
+            tenant_id=tenant_id,
+            provider_name=provider_name,
+            storage_reference=storage_reference,
+            object_version_reference=object_version_reference,
+            orphan_proof_fingerprint=orphan_proof_fingerprint,
+            disownership_fingerprint=disownership_fingerprint,
+            preservation_fingerprint=preservation_fingerprint,
+            preservation_assessed_at=preservation_assessed_at,
+            authorized_at=authorized_at,
+            reason_reference=reason_reference,
+            schema=schema,
+            authorization_version=authorization_version,
+            _construction_proof=_ConstructionProof(
+                digest=_digest(payload)
+            ),
+        )
+
+        if not hmac.compare_digest(
+            persisted_fingerprint,
+            hydrated.fingerprint,
+        ):
+            _fail("FINGERPRINT_MISMATCH")
+
+        return hydrated
 
 
 def authorize_legal_evidence_provider_cleanup(
@@ -470,6 +693,7 @@ def authorize_legal_evidence_provider_cleanup(
 
 
 __all__ = [
+    "SCHEMA",
     "VERSION",
     "LegalEvidenceProviderCleanupAuthorization",
     "LegalEvidenceProviderCleanupAuthorizationError",
@@ -478,14 +702,15 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_cleanup_authorization.py
-# VERSION: v1.0.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION
+# VERSION: v1.1.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION
 # AUTHORITY BOUNDARY: immutable provider cleanup-authorization evidence only
 # TENANT POSTURE: exact tenant/provider/storage/object-version correlation
 # PRESERVATION POSTURE: explicit no-block composition required
 # ORPHAN POSTURE: exact positive C4D6D-B orphan proof required
 # IAM POSTURE: none; later separately certified gate owns actor authorization
-# PERSISTENCE POSTURE: none
+# PERSISTENCE POSTURE: strict hydration/serialization only; no registry write
 # PROVIDER MUTATION POSTURE: none
 # DELETION EXECUTION POSTURE: none
+# FAIL-CLOSED POSTURE: malformed/corrupt persisted evidence rejects
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
