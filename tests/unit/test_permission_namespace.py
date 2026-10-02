@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT
+VERSION: v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -7,8 +7,15 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-27.
+CERTIFICATION/UPDATE DATE: 2026-10-02.
 CHANGELOG:
+    2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
+    certifies legal_operations:evidence_cleanup:authorize as one exact
+    canonical own-tenant TENANT permission for later cleanup actor/command
+    admission. It remains membership-gated, non-cross-tenant, non-financial
+    and non-self-authorizing; no provider-delete or cleanup-execution
+    permission is introduced. Canonical permission cardinality increases
+    exactly from 71 to 72 and total permission rows from 74 to 75.
     2026-09-29 v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT certifies the dedicated
     legal_operations:evidence:write canonical TENANT permission, exact
     membership-gated/non-cross-tenant/non-financial/non-self-authorizing
@@ -109,12 +116,12 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT"
+VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM"
+    assert POLICY_VERSION == "v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -148,6 +155,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:evidence:write",
+        "legal_operations:evidence_cleanup:authorize",
         "legal_operations:directory:write",
         "legal_operations:receipt:write",
         "legal_operations:queue:read",
@@ -195,9 +203,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 71
+    ) == 72
 
-    assert len(rows) == 74
+    assert len(rows) == 75
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -209,6 +217,27 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    cleanup_authority = permission_metadata(
+        "legal_operations:evidence_cleanup:authorize"
+    )
+    assert cleanup_authority.permission_id == (
+        "legal_operations:evidence_cleanup:authorize"
+    )
+    assert cleanup_authority.namespace == "TENANT"
+    assert cleanup_authority.scope_kind == "TENANT"
+    assert cleanup_authority.business_capability == (
+        "authorize own-tenant Legal Evidence cleanup command admission"
+    )
+    assert cleanup_authority.tenant_membership_required is True
+    assert cleanup_authority.system_assignment_required is False
+    assert cleanup_authority.cross_tenant_capable is False
+    assert cleanup_authority.financial_execution_capable is False
+    assert cleanup_authority.authorizes_by_itself is False
+    assert (
+        cleanup_authority.disposition
+        is PermissionDisposition.CANONICAL
+    )
 
     legal_evidence_write = permission_metadata(
         "legal_operations:evidence:write"
@@ -554,6 +583,13 @@ def test_permission_canon_properties() -> None:
         "LEGAL_OPERATIONS:EVIDENCE:WRITE",
         " legal_operations:evidence:write",
         "legal_operations:evidence:write ",
+        "legal_operations:evidence_cleanup",
+        "legal_operations:evidence_cleanup:*",
+        "legal_operations:evidence_cleanup:delete",
+        "legal_operations:evidence_cleanup:execute",
+        "LEGAL_OPERATIONS:EVIDENCE_CLEANUP:AUTHORIZE",
+        " legal_operations:evidence_cleanup:authorize",
+        "legal_operations:evidence_cleanup:authorize ",
         "legal_operations:directory:*",
         "legal_operations:directory:write ",
         " legal_operations:directory:write",
@@ -705,7 +741,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT
+# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
