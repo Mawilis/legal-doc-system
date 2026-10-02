@@ -31,13 +31,18 @@
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
+import { timingSafeEqual } from 'node:crypto';
 import cryptoCore from '../utils/cryptoCore.js';
 import logger from '../utils/logger.js';
 import mongoose from 'mongoose';
 import Invoice from '../models/Invoice.js';
 import Statement from '../models/Statement.js';
 import { getCurrentTenantId } from '../middleware/tenantContext.js';
-import { buildInvoiceSignaturePayload, getVerificationPublicKey, verifyDocument } from '../utils/pkiSigner.js';
+import {
+  buildInvoiceSignaturePayload,
+  getVerificationPublicKey,
+  verifyDocument,
+} from '../utils/pkiSigner.js';
 
 // ─── Safe Imports for Optional Services ────────────────────────────────────
 let auditLogger = null;
@@ -60,12 +65,14 @@ try {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const QR_SECRET = process.env.QR_SIGNING_SECRET || process.env.QR_SECRET || 'WILSY_QR_SOVEREIGN_SECRET_2024';
+const QR_SECRET = process.env.QR_SIGNING_SECRET || process.env.QR_SECRET || '';
 const QR_EXPIRY_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const PUBLIC_KEY = getVerificationPublicKey();
 
-if (!process.env.QR_SIGNING_SECRET && !process.env.QR_SECRET) {
-  logger.warn('[QR-CONTROLLER] QR_SIGNING_SECRET not set – using default. This is insecure for production.');
+if (!QR_SECRET) {
+  logger.warn(
+    '[QR-CONTROLLER] QR_SIGNING_SECRET is not configured – signed QR operations will fail closed.'
+  );
 }
 if (!PUBLIC_KEY) {
   logger.warn('[QR-CONTROLLER] WILSY_PUBLIC_KEY_PEM not set – PKI verification will be disabled.');
@@ -81,9 +88,15 @@ function resolveTenantAndModels(req, documentTenantId = null) {
 
   const userRole = req.user?.role?.toUpperCase() || '';
   const sovereignRoles = ['FOUNDER', 'OMEGA', 'SUPERADMIN', 'MASTER', 'SUPER_ADMIN'];
-  const sovereignTenants = ['MASTER', 'GLOBAL_ROOT', 'wilsy-sovereign-root', 'WILSY_SOVEREIGN_ROOT'];
+  const sovereignTenants = [
+    'MASTER',
+    'GLOBAL_ROOT',
+    'wilsy-sovereign-root',
+    'WILSY_SOVEREIGN_ROOT',
+  ];
 
-  const isSovereignByRole = sovereignRoles.some(role => userRole.includes(role)) || sovereignRoles.includes(userRole);
+  const isSovereignByRole =
+    sovereignRoles.some((role) => userRole.includes(role)) || sovereignRoles.includes(userRole);
   const isSovereignByTenant = sovereignTenants.includes(requestTenant);
   const isSovereign = isSovereignByRole || isSovereignByTenant;
 
@@ -95,15 +108,35 @@ function resolveTenantAndModels(req, documentTenantId = null) {
     invoiceModel: Invoice,
     statementModel: Statement,
     tenantId: requestTenant,
-    isSovereign
+    isSovereign,
   };
 }
 
 // ─── Helper Functions ──────────────────────────────────────────────────
+function requireQrSigningSecret(secret = QR_SECRET) {
+  if (typeof secret !== 'string' || secret.trim().length < 32) {
+    throw new Error('QR_SIGNING_SECRET must be configured and contain at least 32 characters');
+  }
+  return secret.trim();
+}
+
 function verifySignature(payload, signature, secret = QR_SECRET) {
   try {
-    const expected = cryptoCore.hash(`${payload}|${secret}`, 'sha3-512');
-    return cryptoCore.constantTimeCompare(expected, signature);
+    const signingSecret = requireQrSigningSecret(secret);
+    const expected = cryptoCore.hashData(`${payload}|${signingSecret}`);
+    const provided = String(signature || '').toUpperCase();
+
+    if (!/^[A-F0-9]{128}$/.test(provided)) {
+      return false;
+    }
+
+    const expectedBuffer = Buffer.from(expected, 'hex');
+    const providedBuffer = Buffer.from(provided, 'hex');
+
+    return (
+      expectedBuffer.length === providedBuffer.length &&
+      timingSafeEqual(expectedBuffer, providedBuffer)
+    );
   } catch (err) {
     logger.error('[QR-CONTROLLER] Signature verification error:', err);
     return false;
@@ -111,12 +144,8 @@ function verifySignature(payload, signature, secret = QR_SECRET) {
 }
 
 function signPayload(payload, secret = QR_SECRET) {
-  try {
-    return cryptoCore.hash(`${payload}|${secret}`, 'sha3-512');
-  } catch (err) {
-    logger.error('[QR-CONTROLLER] signPayload error:', err);
-    return 'FALLBACK_SIGNATURE_' + Date.now();
-  }
+  const signingSecret = requireQrSigningSecret(secret);
+  return cryptoCore.hashData(`${payload}|${signingSecret}`);
 }
 
 function decodeQrPayload(encoded, secret = QR_SECRET) {
@@ -146,20 +175,26 @@ function decodeQrPayload(encoded, secret = QR_SECRET) {
 
 async function lookupDocumentByTrace(invoiceModel, statementModel, traceId, tenantId, isSovereign) {
   try {
-    const invoice = await invoiceModel.findOne({
-      traceId: { $regex: new RegExp(`^${traceId}$`, 'i') },
-    })
-      .select('invoiceNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash auditHash version traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt')
+    const invoice = await invoiceModel
+      .findOne({
+        traceId: { $regex: new RegExp(`^${traceId}$`, 'i') },
+      })
+      .select(
+        'invoiceNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash auditHash version traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt'
+      )
       .lean();
 
     if (invoice) {
       return { document: invoice, type: 'INVOICE' };
     }
 
-    const statement = await statementModel.findOne({
-      traceId: { $regex: new RegExp(`^${traceId}$`, 'i') },
-    })
-      .select('statementNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt')
+    const statement = await statementModel
+      .findOne({
+        traceId: { $regex: new RegExp(`^${traceId}$`, 'i') },
+      })
+      .select(
+        'statementNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt'
+      )
       .lean();
 
     if (statement) {
@@ -184,11 +219,22 @@ function buildCanonicalPayload(doc) {
   delete clone.updatedAt;
   const sortedKeys = Object.keys(clone).sort();
   const sortedObj = {};
-  sortedKeys.forEach(k => { sortedObj[k] = clone[k]; });
+  sortedKeys.forEach((k) => {
+    sortedObj[k] = clone[k];
+  });
   return JSON.stringify(sortedObj);
 }
 
-function formatDocumentResponse(document, type, tenantId, isSovereign, anomalies = [], seal = null, merkleRoot = null, pkiVerified = false) {
+function formatDocumentResponse(
+  document,
+  type,
+  tenantId,
+  isSovereign,
+  anomalies = [],
+  seal = null,
+  merkleRoot = null,
+  pkiVerified = false
+) {
   const isInvoice = type === 'INVOICE';
   const idField = isInvoice ? 'invoiceNumber' : 'statementNumber';
 
@@ -210,7 +256,7 @@ function formatDocumentResponse(document, type, tenantId, isSovereign, anomalies
       signNonce: document.signNonce || null,
       qrVerified: document.qrVerified || false,
       qrVerifiedAt: document.qrVerifiedAt || null,
-      lineItems: (document.lineItems || []).map(item => ({
+      lineItems: (document.lineItems || []).map((item) => ({
         description: item.description || 'Service',
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -232,7 +278,8 @@ function formatDocumentResponse(document, type, tenantId, isSovereign, anomalies
 
 // ─── Shared Verification Logic ────────────────────────────────────────
 async function performVerification(req, traceId, persist = false) {
-  const correlationId = req.headers['x-correlation-id'] || `QR-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+  const correlationId =
+    req.headers['x-correlation-id'] || `QR-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const startTime = Date.now();
 
   let invoiceModel, statementModel, tenantId, isSovereign;
@@ -240,17 +287,33 @@ async function performVerification(req, traceId, persist = false) {
     ({ invoiceModel, statementModel, tenantId, isSovereign } = resolveTenantAndModels(req));
   } catch (err) {
     if (err.message === 'TENANT_ISOLATION_VIOLATION') {
-      throw { status: 403, error: 'TENANT_ISOLATION_VIOLATION', message: 'This document does not belong to your tenant.', correlationId };
+      throw {
+        status: 403,
+        error: 'TENANT_ISOLATION_VIOLATION',
+        message: 'This document does not belong to your tenant.',
+        correlationId,
+      };
     }
     throw err;
   }
 
   let document, type;
   try {
-    ({ document, type } = await lookupDocumentByTrace(invoiceModel, statementModel, traceId, tenantId, isSovereign));
+    ({ document, type } = await lookupDocumentByTrace(
+      invoiceModel,
+      statementModel,
+      traceId,
+      tenantId,
+      isSovereign
+    ));
   } catch (err) {
     logger.error(`[QR-CONTROLLER] Lookup error for ${traceId}:`, err);
-    throw { status: 503, error: 'DATABASE_QUERY_ERROR', message: 'An error occurred while searching for the document.', correlationId };
+    throw {
+      status: 503,
+      error: 'DATABASE_QUERY_ERROR',
+      message: 'An error occurred while searching for the document.',
+      correlationId,
+    };
   }
 
   if (!document) {
@@ -267,14 +330,21 @@ async function performVerification(req, traceId, persist = false) {
         correlationId,
       });
     } catch (_) {}
-    throw { status: 404, error: 'DOCUMENT_NOT_FOUND', message: 'No invoice or statement found for the given trace ID.', correlationId };
+    throw {
+      status: 404,
+      error: 'DOCUMENT_NOT_FOUND',
+      message: 'No invoice or statement found for the given trace ID.',
+      correlationId,
+    };
   }
 
   // Tenant isolation double‑check
   if (!isSovereign) {
     const docTenant = document.recipientTenantId || document.tenantId;
     if (docTenant && docTenant !== tenantId) {
-      logger.warn(`[QR-VERIFY] Tenant isolation violation: tenant=${tenantId}, docTenant=${docTenant}`);
+      logger.warn(
+        `[QR-VERIFY] Tenant isolation violation: tenant=${tenantId}, docTenant=${docTenant}`
+      );
       try {
         await auditLogger.log({
           action: 'QR_VERIFY_TRACE_FAILED',
@@ -287,7 +357,12 @@ async function performVerification(req, traceId, persist = false) {
           correlationId,
         });
       } catch (_) {}
-      throw { status: 403, error: 'TENANT_ISOLATION_VIOLATION', message: 'This document does not belong to your tenant.', correlationId };
+      throw {
+        status: 403,
+        error: 'TENANT_ISOLATION_VIOLATION',
+        message: 'This document does not belong to your tenant.',
+        correlationId,
+      };
     }
   }
 
@@ -318,7 +393,9 @@ async function performVerification(req, traceId, persist = false) {
         tenantId,
         type
       );
-      logger.info(`[QR-VERIFY] PKI verification ${pkiVerified ? 'passed' : 'failed'} for ${traceId}`);
+      logger.info(
+        `[QR-VERIFY] PKI verification ${pkiVerified ? 'passed' : 'failed'} for ${traceId}`
+      );
     } catch (err) {
       logger.error(`[QR-CONTROLLER] PKI verification error for ${traceId}:`, err);
       pkiVerified = false;
@@ -338,7 +415,7 @@ async function performVerification(req, traceId, persist = false) {
     const proofData = `${document.traceId}|${Date.now()}|${JSON.stringify(anomalies)}|${pkiVerified}`;
     proofSeal = signPayload(proofData, QR_SECRET);
     if (proofSeal) {
-      merkleRoot = cryptoCore.hash(`${document.traceId}|${proofSeal}`, 'sha3-512');
+      merkleRoot = cryptoCore.hashData(`${document.traceId}|${proofSeal}`, 'sha3-512');
     }
   } catch (err) {
     logger.error(`[QR-CONTROLLER] Proof generation failed for ${traceId}:`, err);
@@ -356,7 +433,9 @@ async function performVerification(req, traceId, persist = false) {
         // Update the document object with new values
         document.qrVerified = true;
         document.qrVerifiedAt = docToUpdate.qrVerifiedAt;
-        logger.info(`[QR-VERIFY] Persisted verification for ${type} ${document[type === 'INVOICE' ? 'invoiceNumber' : 'statementNumber']}`);
+        logger.info(
+          `[QR-VERIFY] Persisted verification for ${type} ${document[type === 'INVOICE' ? 'invoiceNumber' : 'statementNumber']}`
+        );
       }
     } catch (err) {
       logger.error(`[QR-VERIFY] Failed to persist verification for ${traceId}:`, err);
@@ -364,7 +443,9 @@ async function performVerification(req, traceId, persist = false) {
   }
 
   const duration = Date.now() - startTime;
-  logger.info(`[QR-VERIFY] ${type} ${document[type === 'INVOICE' ? 'invoiceNumber' : 'statementNumber']} verified in ${duration}ms (PKI: ${pkiVerified})`);
+  logger.info(
+    `[QR-VERIFY] ${type} ${document[type === 'INVOICE' ? 'invoiceNumber' : 'statementNumber']} verified in ${duration}ms (PKI: ${pkiVerified})`
+  );
 
   // Audit success
   try {
@@ -390,7 +471,16 @@ async function performVerification(req, traceId, persist = false) {
     });
   } catch (_) {}
 
-  const response = formatDocumentResponse(document, type, tenantId, isSovereign, anomalies, proofSeal, merkleRoot, pkiVerified);
+  const response = formatDocumentResponse(
+    document,
+    type,
+    tenantId,
+    isSovereign,
+    anomalies,
+    proofSeal,
+    merkleRoot,
+    pkiVerified
+  );
   return { response, status: 200 };
 }
 
@@ -430,7 +520,8 @@ export async function verifyByTrace(req, res) {
 export async function verifySignedPayload(req, res) {
   const startTime = Date.now();
   const encoded = req.params.payload || req.query.payload;
-  const correlationId = req.headers['x-correlation-id'] || `QR-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+  const correlationId =
+    req.headers['x-correlation-id'] || `QR-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   if (!encoded) {
     return res.status(400).json({
@@ -452,11 +543,21 @@ export async function verifySignedPayload(req, res) {
       });
     }
 
-    const { documentId, tenantId: payloadTenant, amount, traceId, sealHash, documentType } = payload;
+    const {
+      documentId,
+      tenantId: payloadTenant,
+      amount,
+      traceId,
+      sealHash,
+      documentType,
+    } = payload;
 
     let invoiceModel, statementModel, tenantId, isSovereign;
     try {
-      ({ invoiceModel, statementModel, tenantId, isSovereign } = resolveTenantAndModels(req, payloadTenant));
+      ({ invoiceModel, statementModel, tenantId, isSovereign } = resolveTenantAndModels(
+        req,
+        payloadTenant
+      ));
     } catch (err) {
       if (err.message === 'TENANT_ISOLATION_VIOLATION') {
         return res.status(403).json({
@@ -474,30 +575,40 @@ export async function verifySignedPayload(req, res) {
     let type = null;
     try {
       if (documentType === 'STATEMENT') {
-        document = await statementModel.findOne({
-          $or: [{ statementNumber: documentId }, { traceId }],
-        })
-          .select('statementNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt')
+        document = await statementModel
+          .findOne({
+            $or: [{ statementNumber: documentId }, { traceId }],
+          })
+          .select(
+            'statementNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt'
+          )
           .lean();
         type = 'STATEMENT';
       } else if (documentType === 'INVOICE') {
-        document = await invoiceModel.findOne({
-          $or: [{ invoiceNumber: documentId }, { traceId }],
-        })
-          .select('invoiceNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash auditHash version traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt')
+        document = await invoiceModel
+          .findOne({
+            $or: [{ invoiceNumber: documentId }, { traceId }],
+          })
+          .select(
+            'invoiceNumber recipientTenantId tenantId totalAmount outstandingAmount status issueDate dueDate currency sealHash auditHash version traceId lineItems pkiSignature anomalyScore signNonce qrVerified qrVerifiedAt'
+          )
           .lean();
         type = 'INVOICE';
       } else {
-        const invoiceDoc = await invoiceModel.findOne({
-          $or: [{ invoiceNumber: documentId }, { traceId }],
-        }).lean();
+        const invoiceDoc = await invoiceModel
+          .findOne({
+            $or: [{ invoiceNumber: documentId }, { traceId }],
+          })
+          .lean();
         if (invoiceDoc) {
           document = invoiceDoc;
           type = 'INVOICE';
         } else {
-          const statementDoc = await statementModel.findOne({
-            $or: [{ statementNumber: documentId }, { traceId }],
-          }).lean();
+          const statementDoc = await statementModel
+            .findOne({
+              $or: [{ statementNumber: documentId }, { traceId }],
+            })
+            .lean();
           if (statementDoc) {
             document = statementDoc;
             type = 'STATEMENT';
@@ -567,7 +678,7 @@ export async function verifySignedPayload(req, res) {
       const proofData = `${document.traceId}|${Date.now()}|${JSON.stringify(anomalies)}|${pkiVerified}`;
       proofSeal = signPayload(proofData, QR_SECRET);
       if (proofSeal) {
-        merkleRoot = cryptoCore.hash(`${document.traceId}|${proofSeal}`, 'sha3-512');
+        merkleRoot = cryptoCore.hashData(`${document.traceId}|${proofSeal}`, 'sha3-512');
       }
     } catch (err) {
       logger.error(`[QR-CONTROLLER] Proof generation failed for payload:`, err);
@@ -575,7 +686,16 @@ export async function verifySignedPayload(req, res) {
 
     let response;
     try {
-      response = formatDocumentResponse(document, type, tenantId, isSovereign, anomalies, proofSeal, merkleRoot, pkiVerified);
+      response = formatDocumentResponse(
+        document,
+        type,
+        tenantId,
+        isSovereign,
+        anomalies,
+        proofSeal,
+        merkleRoot,
+        pkiVerified
+      );
     } catch (err) {
       logger.error(`[QR-CONTROLLER] Response formatting failed for payload:`, err);
       return res.status(500).json({
@@ -587,7 +707,9 @@ export async function verifySignedPayload(req, res) {
     }
 
     const duration = Date.now() - startTime;
-    logger.info(`[QR-VERIFY] Signed payload verified for ${type} ${document[type === 'INVOICE' ? 'invoiceNumber' : 'statementNumber']} in ${duration}ms (PKI: ${pkiVerified})`);
+    logger.info(
+      `[QR-VERIFY] Signed payload verified for ${type} ${document[type === 'INVOICE' ? 'invoiceNumber' : 'statementNumber']} in ${duration}ms (PKI: ${pkiVerified})`
+    );
 
     try {
       await auditLogger.log({
@@ -661,9 +783,9 @@ export async function verifyAndPersist(req, res) {
 
 export function generateQrPayload(document, secret = QR_SECRET, documentType = null) {
   try {
-    const type = documentType ||
-      (document.invoiceNumber ? 'INVOICE' :
-        document.statementNumber ? 'STATEMENT' : 'DOCUMENT');
+    const type =
+      documentType ||
+      (document.invoiceNumber ? 'INVOICE' : document.statementNumber ? 'STATEMENT' : 'DOCUMENT');
 
     const traceId = document.traceId || `TRACE-${Date.now()}`;
 
@@ -675,7 +797,9 @@ export function generateQrPayload(document, secret = QR_SECRET, documentType = n
       traceId: traceId,
       sealHash: document.sealHash || '',
       documentType: type,
-      expiresAt: document.dueDate ? new Date(document.dueDate).getTime() : Date.now() + (QR_EXPIRY_SECONDS * 1000),
+      expiresAt: document.dueDate
+        ? new Date(document.dueDate).getTime()
+        : Date.now() + QR_EXPIRY_SECONDS * 1000,
       issuedAt: Date.now(),
     };
     const payloadJson = JSON.stringify(payload);
