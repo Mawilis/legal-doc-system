@@ -1,13 +1,19 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT
+VERSION: v1.2.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-27.
+CERTIFICATION/UPDATE DATE: 2026-10-02.
 CHANGELOG:
+    2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT-CERT
+    certifies legal_operations:evidence_cleanup:authorize is granted exactly
+    once to LEGAL_PARTNER and to no other role. Static role policy remains
+    non-possessory and creates no ACTIVE assignment, tenant membership,
+    cleanup eligibility, A2 authorization binding, provider mutation,
+    provider deletion, cleanup execution, payment execution or settlement truth.
     2026-09-29 v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT certifies
     legal_operations:evidence:write is granted exactly once to LEGAL_PARTNER
     and to no Attorney, Paralegal, Secretary, Finance, Sheriff, Deputy,
@@ -107,9 +113,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT"
+    assert POLICY_VERSION == "v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT"
 
-VERSION = "v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT"
+VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -204,6 +210,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
         "legal_operations:instruction:read", "legal_operations:instruction:write",
         "legal_operations:evidence:write",
+        "legal_operations:evidence_cleanup:authorize",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
@@ -669,6 +676,37 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
 
 
 
+def test_legal_evidence_cleanup_authority_is_granted_only_to_partner() -> None:
+    permission = "legal_operations:evidence_cleanup:authorize"
+
+    assert (
+        ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].count(permission)
+        == 1
+    )
+
+    assert get_roles_granting_permission(permission) == (
+        "LEGAL_PARTNER",
+    )
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role == "LEGAL_PARTNER":
+            continue
+        assert permission not in grants
+
+    forbidden = (
+        "legal_operations:evidence_cleanup:delete",
+        "legal_operations:evidence_cleanup:execute",
+        "legal_operations:evidence_cleanup:*",
+        "legal_operations:evidence_cleanup",
+        "LEGAL_OPERATIONS:EVIDENCE_CLEANUP:AUTHORIZE",
+        " legal_operations:evidence_cleanup:authorize",
+        "legal_operations:evidence_cleanup:authorize ",
+    )
+
+    for value in forbidden:
+        assert get_roles_granting_permission(value) == ()
+
+
 def test_legal_evidence_write_is_granted_only_to_partner() -> None:
     """L10A3B evidence-ingest grant is exact and cannot leak across personas."""
     permission = "legal_operations:evidence:write"
@@ -717,7 +755,7 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT
+# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
