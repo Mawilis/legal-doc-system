@@ -1,12 +1,20 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.1.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY-CERT
+VERSION: v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-29.
-CHANGELOG: 2026-09-29 v1.1.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY-CERT
+CERTIFICATION/UPDATE DATE: 2026-10-02.
+CHANGELOG:
+2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
+certifies legal_evidence_cleanup_authorize as one exact own-tenant operation
+bound only to legal_operations:evidence_cleanup:authorize and ELIGIBLE only
+for tenant_legal_partner. Every other tenant business role remains DENY.
+Eligibility remains policy-only and creates no ACTIVE membership, assignment,
+authorization, A2 cleanup binding, provider mutation, provider deletion,
+cleanup execution, payment execution or settlement truth.
+ 2026-09-29 v1.1.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY-CERT
 certifies legal_evidence_write is present in the closed operation vocabulary,
 maps exactly to legal_operations:evidence:write, is ELIGIBLE only for
 tenant_legal_partner, and remains DENY for every other tenant business role.
@@ -84,7 +92,7 @@ from tools.eos.auth.tenant_authority_policy import *
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.30.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY"
+    assert VERSION == "v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -116,7 +124,7 @@ def test_matrix_boundaries() -> None:
 def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     """Each legal persona has bounded eligibility and no financial execution."""
     expected = {
-        "tenant_legal_partner": {"legal_evidence_write", "legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_partner": {"legal_evidence_cleanup_authorize", "legal_evidence_write", "legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_attorney": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_paralegal": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
@@ -611,6 +619,72 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
 
+def test_legal_evidence_cleanup_authority_eligibility_is_partner_only() -> None:
+    """Cleanup command admission eligibility is Partner-only and non-authorizing."""
+    operation = "legal_evidence_cleanup_authorize"
+    permission = "legal_operations:evidence_cleanup:authorize"
+
+    assert operation in OPERATIONS
+
+    assert permission_for_business_role_operation(
+        operation
+    ) == permission
+
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(
+            role,
+            operation,
+        ) == ELIGIBLE
+    } == {"tenant_legal_partner"}
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        operation,
+    ) == ELIGIBLE
+
+    for role in TENANT_ROLES - {"tenant_legal_partner"}:
+        assert tenant_role_operation_eligibility(
+            role,
+            operation,
+        ) == DENY
+
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+
+    malformed = (
+        "legal_evidence_cleanup",
+        "legal_evidence_cleanup_execute",
+        "legal_evidence_cleanup_delete",
+        "legal_evidence_cleanup_authorize ",
+        " legal_evidence_cleanup_authorize",
+        "LEGAL_EVIDENCE_CLEANUP_AUTHORIZE",
+    )
+
+    for value in malformed:
+        assert value not in OPERATIONS
+        assert permission_for_business_role_operation(
+            value
+        ) is None
+        for role in TENANT_ROLES:
+            assert tenant_role_operation_eligibility(
+                role,
+                value,
+            ) == DENY
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        "financial_execution",
+    ) == DENY
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        "cross_tenant",
+    ) == DENY
+
+
 def test_legal_evidence_write_eligibility_is_partner_only() -> None:
     """L10A3C evidence ingest eligibility is exact and policy-only."""
     operation = "legal_evidence_write"
@@ -676,7 +750,7 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.1.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY-CERT
+# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny
