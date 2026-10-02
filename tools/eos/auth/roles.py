@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT
+VERSION: v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,8 +13,17 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-27.
+CERTIFICATION/UPDATE DATE: 2026-10-02.
 CHANGELOG:
+    2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
+    grants legal_operations:evidence_cleanup:authorize exactly to LEGAL_PARTNER
+    as static policy vocabulary for the later separately certified Legal
+    Evidence cleanup actor/command authorization gate. No Attorney, Paralegal,
+    Secretary, Finance, Sheriff, Deputy, Legal Client, enterprise, audit,
+    service, provider or sovereign role receives the grant. Static role policy
+    does not prove ACTIVE assignment, ACTIVE tenant membership, business-role
+    eligibility, A2 cleanup-authorization binding, provider mutation, object
+    deletion, cleanup execution, payment execution or settlement truth.
     2026-09-29 v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT grants
     legal_operations:evidence:write exactly to LEGAL_PARTNER for the bounded
     authenticated Legal evidence-ingest path. No Attorney, Paralegal,
@@ -163,7 +172,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT"
+VERSION = "v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -216,6 +225,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:evidence:write",
+        "legal_operations:evidence_cleanup:authorize",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
@@ -387,7 +397,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT
+# VERSION: v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
