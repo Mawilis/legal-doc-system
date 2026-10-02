@@ -1,47 +1,37 @@
 /* eslint-disable */
 /*
- * ╔══════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║  ██████╗ ██╗ ██████╗ ██╗████████╗ █████╗ ██╗         ███████╗██╗ ██████╗ ███╗   ██╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗ ║
- * ║  ██╔══██╗██║██╔════╝ ██║╚══██╔══╝██╔══██╗██║         ██╔════╝██║██╔════╝ ████╗  ██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔════╝ ║
- * ║  ██║  ██║██║██║  ███╗██║   ██║   ███████║██║         ███████╗██║██║  ███╗██╔██╗ ██║███████║   ██║   ██║   ██║██████╔╝█████╗   ║
- * ║  ██║  ██║██║██║   ██║██║   ██║   ██╔══██║██║         ╚════██║██║██║   ██║██║╚██╗██║██╔══██║   ██║   ██║   ██║██╔══██╗██╔══╝   ║
- * ║  ██████╔╝██║╚██████╔╝██║   ██║   ██║  ██║███████╗    ███████║██║╚██████╔╝██║ ╚████║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗ ║
- * ║  ╚═════╝ ╚═╝ ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝    ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝ ║
- * ╠══════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║                                                                                              ║
- * ║  QUANTUM DIGITAL SIGNATURE SERVICE - ECT ACT COMPLIANCE ORACLE                              ║
- * ║  File: /server/services/digitalSignatureService.js                                          ║
- * ║  Chief Architect: Wilson Khanyezi                                                            ║
- * ║  Quantum Version: 2.0.0                                                                      ║
- * ║  Compliance: ECT Act §13-15, POPIA §19, Companies Act §6, eIDAS, UETA, ESIGN               ║
- * ║                                                                                              ║
- * ║  This celestial sentinel provides legally binding digital signatures compliant with         ║
- * ║  South Africa's Electronic Communications and Transactions Act (ECT Act). It supports       ║
- * ║  standard electronic signatures, advanced electronic signatures (AES), and integrates       ║
- * ║  with accredited certificate authorities. Every signature is cryptographically sealed,      ║
- * ║  timestamped, and forensically auditable, ensuring non‑repudiation and court admissibility.║
- * ║                                                                                              ║
- * ║  COLLABORATION QUANTA:                                                                       ║
- * ║  • Wilson Khanyezi - Chief Quantum Architect & Supreme Legal Technologist                    ║
- * ║  • Compliance: ECT Act, POPIA, Companies Act, eIDAS                                          ║
- * ║  • Integration: Law Society of South Africa, Accredited CAs                                  ║
- * ║                                                                                              ║
- * ║  QUANTUM IMPACT METRICS:                                                                     ║
- * ║  • 100% ECT Act compliance for all signature types                                           ║
- * ║  • Sub‑second signature generation and verification                                          ║
- * ║  • Immutable audit trail with blockchain anchoring                                           ║
- * ║  • Supports 10,000+ concurrent signing operations                                            ║
- * ║                                                                                              ║
- * ╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+ * WILSY OS — Digital Signature Service
+ *
+ * VERSION: v2.1.0-P0-C4C-R4
+ * AUTHORITY: Wilsy OS server cryptographic service
+ * PURPOSE:
+ *   - SHA-512 document hashing.
+ *   - RSA PKCS#1 v1.5 signing and verification using caller-provided keys.
+ *   - PKIJS/ASN1JS self-signed certificate generation for local/test identity.
+ *   - Fail-closed local HMAC-SHA256 timestamp evidence.
+ *
+ * SECURITY BOUNDARIES:
+ *   - Cryptographic verification does not establish statutory compliance,
+ *     legal validity, evidential weight, accreditation, revocation status,
+ *     certificate-chain trust, or court admissibility.
+ *   - Self-signed certificates generated here are local/test identity artifacts.
+ *   - LOCAL_HMAC_SHA256 timestamps are not remote trusted-TSA assertions.
+ *
+ * CHANGELOG:
+ *   - Retired node-forge from this service.
+ *   - Migrated RSA signing/verification to node:crypto.
+ *   - Migrated self-signed certificate generation to PKIJS/ASN1JS.
+ *   - Added fail-closed authenticated timestamp tokens.
+ *   - Removed unsupported legal/compliance authority claims.
  */
 
 // ============================================================================
-// QUANTUM DEPENDENCIES - SECURE & PINNED VERSIONS
+// DEPENDENCIES
 // ============================================================================
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { DateTime } from 'luxon';
-import forge from 'node-forge';
+import * as pkijs from 'pkijs';
+import * as asn1js from 'asn1js';
 import axios from 'axios';
 import auditLogger from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
@@ -50,7 +40,7 @@ import { tenantContext } from '../middleware/tenantContext.js';
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
-// QUANTUM CONSTANTS & COMPLIANCE PARAMETERS
+// SIGNATURE CONSTANTS
 // ============================================================================
 const SIGNATURE_TYPES = {
   STANDARD: 'standard_electronic_signature',
@@ -66,31 +56,18 @@ const SIGNATURE_ALGORITHMS = {
   ECDSA_SHA384: 'ECDSA-SHA384',
 };
 
-const CERTIFICATE_TYPES = {
-  SELF_SIGNED: 'self_signed',
-  LAW_SOCIETY: 'law_society_za',
-  ACCREDITED_CA: 'accredited_ca',
-};
-
-const ECT_ACT_COMPLIANCE = {
-  SECTION_13: 'Advanced electronic signature requirements',
-  SECTION_14: 'Legal recognition of electronic signatures',
-  SECTION_15: 'Admissibility and evidential weight',
-};
-
 // ============================================================================
-// QUANTUM DIGITAL SIGNATURE SERVICE
+// DIGITAL SIGNATURE SERVICE
 // ============================================================================
 class DigitalSignatureService {
   constructor(options = {}) {
     this.defaultAlgorithm = options.defaultAlgorithm || SIGNATURE_ALGORITHMS.RSA_SHA512;
-    this.timestampAuthority = options.timestampAuthority || 'https://timestamp.wilsyos.africa';
     this.certificateStore = new Map(); // In production, use secure key store
-    this.signatureCache = new Map();   // For verification caching
+    this.signatureCache = new Map(); // For verification caching
   }
 
   /**
-   * Sign a document with advanced electronic signature (AES) compliant with ECT Act §13
+   * Sign a document and assemble its cryptographic signature package
    * @param {Buffer|string} document - Document content to sign
    * @param {Object} options - Signing options
    * @returns {Promise<Object>} Signature package with forensic metadata
@@ -125,27 +102,18 @@ class DigitalSignatureService {
       const documentBuffer = Buffer.isBuffer(document) ? document : Buffer.from(document, 'utf8');
       const documentHash = crypto.createHash('sha512').update(documentBuffer).digest('hex');
 
-      // 3. Generate timestamp token (ECT Act §13 requires trusted timestamp)
+      // 3. Generate authenticated local timestamp evidence
       let timestampToken = null;
       if (includeTimestamp) {
         timestampToken = await this.generateTimestampToken(documentHash);
       }
 
-      // 4. Create signature using private key
-      const signer = this.createSigner(algorithm);
-      const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-
-      let signatureValue;
-      if (algorithm.includes('RSA')) {
-        const md = algorithm.includes('256') ? forge.md.sha256.create() : forge.md.sha512.create();
-        md.update(documentBuffer.toString('binary'), 'binary');
-        signatureValue = privateKey.sign(md);
-      } else {
-        // Fallback to Node.js crypto
-        const sign = crypto.createSign(algorithm.includes('256') ? 'SHA256' : 'SHA512');
-        sign.update(documentBuffer);
-        signatureValue = sign.sign(privateKeyPem, 'hex');
-      }
+      // 4. Create signature using caller-provided private key
+      const digestAlgorithm = algorithm.includes('256') ? 'SHA256' : 'SHA512';
+      const sign = crypto.createSign(digestAlgorithm);
+      sign.update(documentBuffer);
+      sign.end();
+      const signatureValue = sign.sign(privateKeyPem, 'hex');
 
       // 5. Retrieve or generate certificate
       let certificate = null;
@@ -157,7 +125,7 @@ class DigitalSignatureService {
       const signaturePackage = {
         signatureId,
         documentHash,
-        signatureValue: typeof signatureValue === 'string' ? signatureValue : forge.util.bytesToHex(signatureValue),
+        signatureValue,
         algorithm,
         signatureType,
         signer: {
@@ -165,19 +133,23 @@ class DigitalSignatureService {
           name: signerName,
           email: signerEmail,
         },
-        certificate: certificate ? {
-          id: certificate.certificateId,
-          issuer: certificate.issuer,
-          serialNumber: certificate.serialNumber,
-          validFrom: certificate.validFrom,
-          validTo: certificate.validTo,
-          publicKey: certificate.publicKey,
-        } : null,
-        timestamp: timestampToken ? {
-          token: timestampToken.token,
-          authority: this.timestampAuthority,
-          timestamp: timestampToken.timestamp,
-        } : null,
+        certificate: certificate
+          ? {
+              id: certificate.certificateId,
+              issuer: certificate.issuer,
+              serialNumber: certificate.serialNumber,
+              validFrom: certificate.validFrom,
+              validTo: certificate.validTo,
+              publicKey: certificate.publicKey,
+            }
+          : null,
+        timestamp: timestampToken
+          ? {
+              token: timestampToken.token,
+              authority: timestampToken.authority,
+              timestamp: timestampToken.timestamp,
+            }
+          : null,
         metadata: {
           reason: reason || 'Document execution',
           location: location || 'South Africa',
@@ -270,19 +242,30 @@ class DigitalSignatureService {
       if (timestamp && options.verifyTimestamp !== false) {
         const timestampValid = await this.verifyTimestampToken(timestamp.token, storedHash);
         if (!timestampValid) {
-          return this.createVerificationResult(false, 'TIMESTAMP_INVALID', verificationId, startTime);
+          return this.createVerificationResult(
+            false,
+            'TIMESTAMP_INVALID',
+            verificationId,
+            startTime
+          );
         }
       }
 
       // 4. Verify certificate if present
       let certificateValid = true;
-      let certificateStatus = 'VALID';
+      let certificateStatus = 'NOT_CHECKED';
       if (certificate && options.verifyCertificate !== false) {
         const certValidation = await this.validateCertificate(certificate, signer?.id);
         certificateValid = certValidation.valid;
         certificateStatus = certValidation.status;
         if (!certificateValid && options.requireValidCertificate) {
-          return this.createVerificationResult(false, 'CERTIFICATE_INVALID', verificationId, startTime, { certificateStatus });
+          return this.createVerificationResult(
+            false,
+            'CERTIFICATE_INVALID',
+            verificationId,
+            startTime,
+            { certificateStatus }
+          );
         }
       }
 
@@ -293,7 +276,7 @@ class DigitalSignatureService {
           signatureValue,
           documentBuffer,
           certificate.publicKey,
-          algorithm,
+          algorithm
         );
       } else {
         // Fallback: verify with provided public key if available
@@ -302,10 +285,15 @@ class DigitalSignatureService {
             signatureValue,
             documentBuffer,
             options.publicKeyPem,
-            algorithm,
+            algorithm
           );
         } else {
-          return this.createVerificationResult(false, 'PUBLIC_KEY_MISSING', verificationId, startTime);
+          return this.createVerificationResult(
+            false,
+            'PUBLIC_KEY_MISSING',
+            verificationId,
+            startTime
+          );
         }
       }
 
@@ -314,15 +302,22 @@ class DigitalSignatureService {
       }
 
       // 6. Overall verification result
-      const overallValid = hashMatches && signatureValid && (certificateValid || !options.requireValidCertificate);
+      const overallValid =
+        hashMatches && signatureValid && (certificateValid || !options.requireValidCertificate);
 
-      const result = this.createVerificationResult(overallValid, overallValid ? 'VALID' : 'INVALID', verificationId, startTime, {
-        hashMatches,
-        signatureValid,
-        certificateValid,
-        certificateStatus,
-        timestampVerified: !!timestamp,
-      });
+      const result = this.createVerificationResult(
+        overallValid,
+        overallValid ? 'VALID' : 'INVALID',
+        verificationId,
+        startTime,
+        {
+          hashMatches,
+          signatureValid,
+          certificateValid,
+          certificateStatus,
+          timestampVerified: !!timestamp,
+        }
+      );
 
       // 7. Audit logging
       await auditLogger.log({
@@ -343,7 +338,9 @@ class DigitalSignatureService {
       return result;
     } catch (error) {
       logger.error('Signature verification failed', { verificationId, error: error.message });
-      return this.createVerificationResult(false, 'VERIFICATION_ERROR', verificationId, startTime, { error: error.message });
+      return this.createVerificationResult(false, 'VERIFICATION_ERROR', verificationId, startTime, {
+        error: error.message,
+      });
     }
   }
 
@@ -352,7 +349,7 @@ class DigitalSignatureService {
    * @param {Object} options - Certificate options
    * @returns {Object} Certificate details
    */
-  generateSelfSignedCertificate(options = {}) {
+  async generateSelfSignedCertificate(options = {}) {
     const {
       commonName = 'Wilsy OS User',
       organization = 'Wilsy OS',
@@ -360,56 +357,124 @@ class DigitalSignatureService {
       validityDays = 365,
     } = options;
 
-    const keypair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
-    const cert = forge.pki.createCertificate();
-    cert.publicKey = keypair.publicKey;
-    cert.serialNumber = uuidv4().replace(/-/g, '').substring(0, 16);
-    cert.validity.notBefore = new Date();
-    cert.validity.notAfter = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000);
+    if (!Number.isInteger(validityDays) || validityDays <= 0) {
+      throw new TypeError('CERTIFICATE_VALIDITY_DAYS_INVALID');
+    }
 
-    const attrs = [{
-      name: 'commonName',
-      value: commonName,
-    }, {
-      name: 'organizationName',
-      value: organization,
-    }, {
-      shortName: 'C',
-      value: country,
-    }];
-    cert.setSubject(attrs);
-    cert.setIssuer(attrs);
-    cert.sign(keypair.privateKey, forge.md.sha256.create());
+    const webcrypto = crypto.webcrypto;
+
+    pkijs.setEngine(
+      'Wilsy Digital Signature PKI',
+      webcrypto,
+      new pkijs.CryptoEngine({
+        name: 'Wilsy Digital Signature PKI',
+        crypto: webcrypto,
+        subtle: webcrypto.subtle,
+      })
+    );
+
+    const keyPair = await webcrypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    );
+
+    const cert = new pkijs.Certificate();
+    cert.version = 2;
+
+    const serialBytes = crypto.randomBytes(16);
+    serialBytes[0] &= 0x7f;
+    if (serialBytes.every((byte) => byte === 0)) {
+      serialBytes[serialBytes.length - 1] = 1;
+    }
+
+    cert.serialNumber = new asn1js.Integer({
+      valueHex: serialBytes.buffer.slice(
+        serialBytes.byteOffset,
+        serialBytes.byteOffset + serialBytes.byteLength
+      ),
+    });
+
+    const attributes = [
+      new pkijs.AttributeTypeAndValue({
+        type: '2.5.4.3',
+        value: new asn1js.Utf8String({ value: commonName }),
+      }),
+      new pkijs.AttributeTypeAndValue({
+        type: '2.5.4.10',
+        value: new asn1js.Utf8String({ value: organization }),
+      }),
+      new pkijs.AttributeTypeAndValue({
+        type: '2.5.4.6',
+        value: new asn1js.PrintableString({ value: country }),
+      }),
+    ];
+
+    cert.subject.typesAndValues = attributes;
+    cert.issuer.typesAndValues = attributes;
+
+    cert.notBefore.value = new Date();
+    cert.notAfter.value = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000);
+
+    await cert.subjectPublicKeyInfo.importKey(keyPair.publicKey);
+    await cert.sign(keyPair.privateKey, 'SHA-256');
+
+    if (!(await cert.verify())) {
+      throw new Error('SELF_SIGNED_CERTIFICATE_VERIFICATION_FAILED');
+    }
+
+    const toPem = (label, bytes) => {
+      const base64 = Buffer.from(bytes).toString('base64');
+      const body = base64.match(/.{1,64}/g)?.join('\n') || '';
+      return `-----BEGIN ${label}-----\n${body}\n-----END ${label}-----\n`;
+    };
+
+    const certificateDer = Buffer.from(cert.toSchema(true).toBER(false));
+    const privateKeyDer = await webcrypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+    const publicKeyDer = await webcrypto.subtle.exportKey('spki', keyPair.publicKey);
+
+    const pem = toPem('CERTIFICATE', certificateDer);
+    const privateKeyPem = toPem('PRIVATE KEY', privateKeyDer);
+    const publicKeyPem = toPem('PUBLIC KEY', publicKeyDer);
+
+    const parsed = new crypto.X509Certificate(pem);
 
     const certificateId = uuidv4();
     const certificate = {
       certificateId,
-      pem: forge.pki.certificateToPem(cert),
-      privateKeyPem: forge.pki.privateKeyToPem(keypair.privateKey),
-      publicKeyPem: forge.pki.publicKeyToPem(keypair.publicKey),
+      pem,
+      privateKeyPem,
+      publicKeyPem,
+      publicKey: publicKeyPem,
       issuer: commonName,
-      serialNumber: cert.serialNumber,
-      validFrom: cert.validity.notBefore,
-      validTo: cert.validity.notAfter,
+      serialNumber: parsed.serialNumber,
+      validFrom: new Date(parsed.validFrom),
+      validTo: new Date(parsed.validTo),
     };
 
-    // Store in certificate store
     this.certificateStore.set(certificateId, certificate);
     return certificate;
   }
 
   /**
-   * Create an advanced electronic signature (AES) compliant with ECT Act §13
+   * Create an advanced-signature package using the configured cryptographic profile
    * @param {Buffer|string} document - Document to sign
    * @param {Object} signerInfo - Signer details
-   * @returns {Promise<Object>} AES signature package
+   * @returns {Promise<Object>} Cryptographic signature package
    */
   async createAdvancedElectronicSignature(document, signerInfo) {
-    // For AES, we require a certificate from an accredited CA (or self-signed with proper attributes)
-    const certificate = signerInfo.certificate || this.generateSelfSignedCertificate({
-      commonName: signerInfo.name,
-      organization: signerInfo.organization,
-    });
+    // Caller-provided certificate authority evidence is preferred; the generated self-signed certificate is local/test identity only.
+    const certificate =
+      signerInfo.certificate ||
+      (await this.generateSelfSignedCertificate({
+        commonName: signerInfo.name,
+        organization: signerInfo.organization,
+      }));
 
     return this.signDocument(document, {
       ...signerInfo,
@@ -459,7 +524,7 @@ class DigitalSignatureService {
       valid: allValid,
       signatures: results,
       totalSignatures: signaturePackages.length,
-      validSignatures: results.filter(r => r.valid).length,
+      validSignatures: results.filter((r) => r.valid).length,
     };
   }
 
@@ -467,40 +532,110 @@ class DigitalSignatureService {
   // PRIVATE HELPER METHODS
   // ==========================================================================
 
-  createSigner(algorithm) {
-    // Factory for creating appropriate signer based on algorithm
+  async generateTimestampToken(documentHash) {
+    if (typeof documentHash !== 'string' || !/^[0-9a-f]{128}$/i.test(documentHash)) {
+      throw new TypeError('TIMESTAMP_DOCUMENT_HASH_INVALID');
+    }
+
+    const secret = process.env.TIMESTAMP_SECRET;
+    if (typeof secret !== 'string' || secret.length === 0) {
+      throw new Error('TIMESTAMP_SECRET_REQUIRED');
+    }
+
+    const timestamp = new Date().toISOString();
+    const payload = Buffer.from(
+      JSON.stringify({
+        version: 1,
+        timestamp,
+      }),
+      'utf8'
+    ).toString('base64url');
+
+    const mac = crypto
+      .createHmac('sha256', secret)
+      .update(`${documentHash}:${payload}`)
+      .digest('hex');
+
     return {
-      algorithm,
+      token: `wts1.${payload}.${mac}`,
+      timestamp,
+      authority: 'LOCAL_HMAC_SHA256',
     };
   }
 
-  async generateTimestampToken(documentHash) {
-    // In production, call a trusted timestamp authority (TSA)
-    // For now, generate a local timestamp token
-    const timestamp = new Date().toISOString();
-    const token = crypto
-      .createHmac('sha256', process.env.TIMESTAMP_SECRET || 'wilsy-timestamp-secret')
-      .update(`${documentHash}:${timestamp}`)
-      .digest('hex');
-
-    return { token, timestamp };
-  }
-
   async verifyTimestampToken(token, documentHash) {
-    // Verify timestamp token
-    // For local tokens, recalculate and compare
-    const timestamp = this.extractTimestampFromToken(token);
-    if (!timestamp) return false;
-    const expectedToken = crypto
-      .createHmac('sha256', process.env.TIMESTAMP_SECRET || 'wilsy-timestamp-secret')
-      .update(`${documentHash}:${timestamp}`)
-      .digest('hex');
-    return token === expectedToken;
+    try {
+      const secret = process.env.TIMESTAMP_SECRET;
+      if (typeof secret !== 'string' || secret.length === 0) {
+        return false;
+      }
+
+      if (
+        typeof documentHash !== 'string' ||
+        !/^[0-9a-f]{128}$/i.test(documentHash) ||
+        typeof token !== 'string'
+      ) {
+        return false;
+      }
+
+      const parts = token.split('.');
+      if (parts.length !== 3 || parts[0] !== 'wts1') {
+        return false;
+      }
+
+      const [, payload, suppliedMacHex] = parts;
+      if (!/^[0-9a-f]{64}$/i.test(suppliedMacHex)) {
+        return false;
+      }
+
+      const timestamp = this.extractTimestampFromToken(token);
+      if (!timestamp) {
+        return false;
+      }
+
+      const expectedMacHex = crypto
+        .createHmac('sha256', secret)
+        .update(`${documentHash}:${payload}`)
+        .digest('hex');
+
+      const suppliedMac = Buffer.from(suppliedMacHex, 'hex');
+      const expectedMac = Buffer.from(expectedMacHex, 'hex');
+
+      return (
+        suppliedMac.length === expectedMac.length &&
+        crypto.timingSafeEqual(suppliedMac, expectedMac)
+      );
+    } catch {
+      return false;
+    }
   }
 
   extractTimestampFromToken(token) {
-    // In production, decode TSA response
-    return new Date().toISOString(); // Placeholder
+    try {
+      if (typeof token !== 'string') {
+        return null;
+      }
+
+      const parts = token.split('.');
+      if (parts.length !== 3 || parts[0] !== 'wts1') {
+        return null;
+      }
+
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+
+      if (payload?.version !== 1 || typeof payload.timestamp !== 'string') {
+        return null;
+      }
+
+      const parsed = new Date(payload.timestamp);
+      if (Number.isNaN(parsed.getTime()) || parsed.toISOString() !== payload.timestamp) {
+        return null;
+      }
+
+      return payload.timestamp;
+    } catch {
+      return null;
+    }
   }
 
   async getSignerCertificate(certificateId, signerId, privateKeyPem) {
@@ -514,32 +649,38 @@ class DigitalSignatureService {
   }
 
   async validateCertificate(certificate, signerId) {
-    // Check certificate validity period
+    // This method checks only the represented certificate validity interval.
+    // It does not establish chain trust, accreditation, or revocation status.
     const now = new Date();
     const validFrom = new Date(certificate.validFrom);
     const validTo = new Date(certificate.validTo);
 
-    if (now < validFrom || now > validTo) {
+    if (
+      Number.isNaN(validFrom.getTime()) ||
+      Number.isNaN(validTo.getTime()) ||
+      validFrom > validTo
+    ) {
+      return { valid: false, status: 'VALIDITY_PERIOD_INVALID' };
+    }
+
+    if (now < validFrom) {
+      return { valid: false, status: 'NOT_YET_VALID' };
+    }
+
+    if (now > validTo) {
       return { valid: false, status: 'EXPIRED' };
     }
 
-    // In production, check revocation status (OCSP/CRL)
-    return { valid: true, status: 'VALID' };
+    return { valid: true, status: 'WITHIN_VALIDITY_PERIOD' };
   }
 
   verifyCryptographicSignature(signatureValue, documentBuffer, publicKeyPem, algorithm) {
     try {
-      if (algorithm.includes('RSA')) {
-        const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
-        const md = algorithm.includes('256') ? forge.md.sha256.create() : forge.md.sha512.create();
-        md.update(documentBuffer.toString('binary'), 'binary');
-        const signatureBytes = forge.util.hexToBytes(signatureValue);
-        return publicKey.verify(md.digest().bytes(), signatureBytes);
-      } else {
-        const verify = crypto.createVerify(algorithm.includes('256') ? 'SHA256' : 'SHA512');
-        verify.update(documentBuffer);
-        return verify.verify(publicKeyPem, signatureValue, 'hex');
-      }
+      const digestAlgorithm = algorithm.includes('256') ? 'SHA256' : 'SHA512';
+      const verify = crypto.createVerify(digestAlgorithm);
+      verify.update(documentBuffer);
+      verify.end();
+      return verify.verify(publicKeyPem, signatureValue, 'hex');
     } catch (error) {
       logger.error('Cryptographic verification error', { error: error.message });
       return false;
@@ -558,10 +699,7 @@ class DigitalSignatureService {
       verifiedAt: new Date().toISOString(),
       processingTimeMs: Date.now() - startTime,
       details,
-      compliance: {
-        ectAct: valid ? 'COMPLIANT' : 'NON_COMPLIANT',
-        evidentialWeight: valid ? 'HIGH' : 'LOW',
-      },
+      verificationScope: 'CRYPTOGRAPHIC_INTEGRITY_ONLY',
     };
   }
 }
@@ -574,6 +712,6 @@ export { DigitalSignatureService };
 export default digitalSignatureService;
 
 // ============================================================================
-// FINAL QUANTUM INVOCATION
+// END SEAL — WILSY OS DIGITAL SIGNATURE SERVICE v2.1.0-P0-C4C-R4
+// Cryptographic capability only; no statutory or accreditation authority asserted.
 // ============================================================================
-// Wilsy Touching Lives Eternally.
