@@ -1,6 +1,6 @@
 """Direct certificate for Legal Evidence provider cleanup authorization.
 
-VERSION: v1.0.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION-CERT
+VERSION: v1.1.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION-CERT
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 PURPOSE:
     Certify the pure C4D6E-A1 cleanup-authorization domain against the exact
@@ -13,6 +13,7 @@ AUTHORITY BOUNDARY:
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import FrozenInstanceError, fields, replace
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
@@ -291,7 +292,7 @@ def _authorize(
 
 def test_shape_is_frozen_slots_factory_only_and_exact() -> None:
     assert VERSION == (
-        "v1.0.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION"
+        "v1.1.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION"
     )
 
     assert [
@@ -500,8 +501,168 @@ def test_source_later_authority_remains_false() -> None:
     assert not hasattr(value, "execute")
 
 
+
+def test_exact_document_round_trip_preserves_integrity() -> None:
+    value = _authorize()
+
+    document = value.to_document()
+
+    assert set(document) == {
+        "schema",
+        "authorization_version",
+        "authorization_id",
+        "tenant_id",
+        "provider_name",
+        "storage_reference",
+        "object_version_reference",
+        "orphan_proof_fingerprint",
+        "disownership_fingerprint",
+        "preservation_fingerprint",
+        "preservation_assessed_at",
+        "authorized_at",
+        "reason_reference",
+        "fingerprint",
+    }
+
+    assert document["authorization_version"] == VERSION
+    assert document["fingerprint"] == value.fingerprint
+
+    hydrated = (
+        LegalEvidenceProviderCleanupAuthorization
+        .from_dict(
+            deepcopy(document)
+        )
+    )
+
+    assert hydrated == value
+    assert hydrated.fingerprint == value.fingerprint
+    assert hydrated.to_document() == document
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        (
+            lambda document: document.update(
+                {"unexpected_field": "forbidden"}
+            ),
+            "L10A2R_C4D6E_A1_DOCUMENT_FIELDS_INVALID",
+        ),
+        (
+            lambda document: document.pop(
+                "reason_reference"
+            ),
+            "L10A2R_C4D6E_A1_DOCUMENT_FIELDS_INVALID",
+        ),
+        (
+            lambda document: document.update(
+                {"fingerprint": "0" * 128}
+            ),
+            "L10A2R_C4D6E_A1_FINGERPRINT_MISMATCH",
+        ),
+        (
+            lambda document: document.update(
+                {"reason_reference": "tampered-reason"}
+            ),
+            "L10A2R_C4D6E_A1_FINGERPRINT_MISMATCH",
+        ),
+        (
+            lambda document: document.update(
+                {"schema": "wilsy.invalid.cleanup.v1"}
+            ),
+            "L10A2R_C4D6E_A1_SCHEMA_INVALID",
+        ),
+        (
+            lambda document: document.update(
+                {"authorization_version": "v0.0.0-invalid"}
+            ),
+            "L10A2R_C4D6E_A1_VERSION_INVALID",
+        ),
+        (
+            lambda document: document.update(
+                {"provider_delete_authorized": True}
+            ),
+            "L10A2R_C4D6E_A1_DOCUMENT_FIELDS_INVALID",
+        ),
+    ],
+)
+def test_persisted_document_corruption_rejects(
+    mutation: Any,
+    expected: str,
+) -> None:
+    document = _authorize().to_document()
+    mutation(document)
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupAuthorizationError,
+        match=expected,
+    ):
+        LegalEvidenceProviderCleanupAuthorization.from_dict(
+            document
+        )
+
+
+def test_noncanonical_persisted_timestamp_rejects() -> None:
+    document = _authorize().to_document()
+
+    document["authorized_at"] = (
+        str(document["authorized_at"])
+        .replace("+00:00", "Z")
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupAuthorizationError,
+        match=(
+            "L10A2R_C4D6E_A1_"
+            "DOCUMENT_TIMESTAMP_INVALID"
+        ),
+    ):
+        LegalEvidenceProviderCleanupAuthorization.from_dict(
+            document
+        )
+
+
+def test_non_string_persisted_field_rejects() -> None:
+    document = _authorize().to_document()
+    document["reason_reference"] = 123
+
+    with pytest.raises(
+        LegalEvidenceProviderCleanupAuthorizationError,
+        match="L10A2R_C4D6E_A1_DOCUMENT_INVALID",
+    ):
+        LegalEvidenceProviderCleanupAuthorization.from_dict(
+            document
+        )
+
+
+def test_hydration_grants_no_later_authority() -> None:
+    hydrated = (
+        LegalEvidenceProviderCleanupAuthorization
+        .from_dict(
+            _authorize().to_document()
+        )
+    )
+
+    assert not hasattr(
+        hydrated,
+        "provider_delete_authorized",
+    )
+    assert not hasattr(
+        hydrated,
+        "delete",
+    )
+    assert not hasattr(
+        hydrated,
+        "delete_object",
+    )
+    assert not hasattr(
+        hydrated,
+        "execute",
+    )
+
+
 # ARTIFACT: test_legal_evidence_provider_cleanup_authorization.py
-# VERSION: v1.0.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION-CERT
+# VERSION: v1.1.0-L10A2R-C4D6E-A1-PROVIDER-CLEANUP-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: direct pure-domain certificate only
 # PROVIDER MUTATION POSTURE: none
 # DELETION EXECUTION POSTURE: none
