@@ -1,12 +1,21 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.1.0-L10A3D-LEGAL-EVIDENCE-BINDING-CERT
+VERSION: v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-01.
+CERTIFICATION/UPDATE DATE: 2026-10-02.
+CHANGELOG:
+2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
+refreshes generic tenant-authorization certification against production
+v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING.
+The new Legal Evidence cleanup actor binding remains conjunctive across ACTIVE
+principal, ACTIVE membership, eligible tenant business role, exact canonical
+operation/permission pairing and ACTIVE granting role. This certificate does
+not bind A2 cleanup authorization, mutate providers, delete objects, release
+preservation constraints, prove cleanup execution, or create financial truth.
 CHANGELOG: 2026-10-01 v1.1.0-L10A3D-LEGAL-EVIDENCE-BINDING-CERT
 refreshes exactly two canonical tenant_authorization.VERSION assertions to the certified v1.29.0-L10A3D-LEGAL-EVIDENCE-BINDING production release introduced for the exact legal_evidence_write -> legal_operations:evidence:write binding. Existing authorization behavior, prior evidence bindings, WILSY AI gateway semantics, tenant scope, fail-closed behavior, and financial execution prohibition remain unchanged.
 CHANGELOG: 2026-09-28 v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT
@@ -128,7 +137,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT"
+VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1392,7 +1401,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.29.0-L10A3D-LEGAL-EVIDENCE-BINDING"
+    assert ta.VERSION == "v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1406,7 +1415,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.29.0-L10A3D-LEGAL-EVIDENCE-BINDING"
+    assert ta.VERSION == "v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2283,7 +2292,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.1.0-L10A3D-LEGAL-EVIDENCE-BINDING-CERT
+# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
