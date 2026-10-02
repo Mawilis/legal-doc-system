@@ -1,14 +1,17 @@
 """WILSY OS — Legal Evidence Provider Cleanup Authorization Registry.
 
 TITLE: Legal Evidence Provider Cleanup Authorization Registry
-VERSION: v1.0.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY
+VERSION: v1.0.1-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 EPITOME: Durably preserve one immutable cleanup-authorization fact per exact provider object version.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/registry/legal_evidence_provider_cleanup_authorization_registry.py
 COLLABORATION / OWNERSHIP: Legal Operations / Legal Evidence
 CERTIFICATION / UPDATE DATE: 2026-10-02
 CHANGELOG:
-    v1.0.0 introduces caller-transaction-owned Mongo-style persistence for the
+    v1.0.1 makes duplicate-key races fail closed with an explicit whole-
+    transaction retry requirement; replay reconciliation is never attempted
+    inside the failed Mongo transaction.
+    v1.0.0 introduced caller-transaction-owned Mongo-style persistence for the
     certified C4D6E-A1 cleanup-authorization evidence contract, with strict
     hydration, exact replay, tenant isolation and immutable unique identities.
 COMPLIANCE:
@@ -57,7 +60,7 @@ from tools.eos.legal_operations.domain.legal_evidence_provider_cleanup_authoriza
 
 
 VERSION: Final[str] = (
-    "v1.0.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY"
+    "v1.0.1-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY"
 )
 
 COLLECTION: Final[str] = "legal_evidence_provider_cleanup_authorizations"
@@ -93,6 +96,13 @@ class LegalEvidenceProviderCleanupAuthorizationRegistryPersistenceError(
     LegalEvidenceProviderCleanupAuthorizationRegistryError
 ):
     """Mongo-style persistence or collection interaction failed."""
+
+
+
+class LegalEvidenceProviderCleanupAuthorizationRegistryRetryRequiredError(
+    LegalEvidenceProviderCleanupAuthorizationRegistryIntegrityError
+):
+    """A failed Mongo transaction must be aborted and retried from fresh state."""
 
 
 def _active_transaction(
@@ -363,19 +373,9 @@ class LegalEvidenceProviderCleanupAuthorizationRegistry:
                     "L10A2R_C4D6E_A2_INSERT_FAILED"
                 ) from error
 
-            existing = self._existing(
-                requested,
-                session=tx,
-            )
-            replay = self._resolve_replay(
-                requested,
-                existing,
-            )
-            if replay is None:
-                raise LegalEvidenceProviderCleanupAuthorizationRegistryIntegrityError(
-                    "L10A2R_C4D6E_A2_DUPLICATE_WITHOUT_REPLAY"
-                ) from error
-            return replay
+            raise LegalEvidenceProviderCleanupAuthorizationRegistryRetryRequiredError(
+                "L10A2R_C4D6E_A2_WHOLE_TRANSACTION_RETRY_REQUIRED"
+            ) from error
 
         return requested
 
@@ -511,16 +511,18 @@ __all__ = [
     "LegalEvidenceProviderCleanupAuthorizationRegistryError",
     "LegalEvidenceProviderCleanupAuthorizationRegistryIntegrityError",
     "LegalEvidenceProviderCleanupAuthorizationRegistryPersistenceError",
+    "LegalEvidenceProviderCleanupAuthorizationRegistryRetryRequiredError",
     "LegalEvidenceProviderCleanupAuthorizationRegistryTransactionError",
 ]
 
 
 # ARTIFACT: legal_evidence_provider_cleanup_authorization_registry.py
-# VERSION: v1.0.0-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY
+# VERSION: v1.0.1-L10A2R-C4D6E-A2-PROVIDER-CLEANUP-AUTHORIZATION-REGISTRY
 # AUTHORITY BOUNDARY: durable immutable cleanup-authorization evidence only
 # TENANT POSTURE: all durable identities and lookups are exact tenant scoped
 # TRANSACTION POSTURE: caller owns one already-active transaction
 # IDEMPOTENCY POSTURE: exact immutable evidence may replay; divergence rejects
+# RETRY POSTURE: duplicate-key transaction failure requires abort + fresh retry
 # TTL POSTURE: no TTL deletion index
 # PROVIDER MUTATION POSTURE: none
 # DELETION EXECUTION POSTURE: none
