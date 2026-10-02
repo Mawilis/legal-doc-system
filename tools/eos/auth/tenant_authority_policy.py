@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.30.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY
+VERSION: v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,16 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-29.
-CHANGELOG: 2026-09-29 v1.30.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY
+CERTIFICATION/UPDATE DATE: 2026-10-02.
+CHANGELOG:
+2026-10-02 v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY
+adds legal_evidence_cleanup_authorize as one exact own-tenant business
+operation bound to legal_operations:evidence_cleanup:authorize and eligible
+only to tenant_legal_partner. Eligibility remains policy-only and does not
+establish ACTIVE membership, ACTIVE role assignment, A2 cleanup-authorization
+binding, provider mutation, object deletion, cleanup execution, payment
+execution or settlement truth.
+ 2026-09-29 v1.30.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY
 adds legal_evidence_write as one exact own-tenant business operation bound to
 legal_operations:evidence:write and eligible only to tenant_legal_partner.
 Eligibility remains policy-only and non-authorizing; every other tenant
@@ -150,7 +158,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
 
-VERSION = "v1.30.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY"
+VERSION = "v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -162,6 +170,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "business_role_change": "tenant:business_role:write",
     "business_role_revoke": "tenant:business_role:write",
     "legal_evidence_write": "legal_operations:evidence:write",
+    "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
     "legal_conflict_review_write": "legal_operations:conflict_review:write",
     "legal_client_acceptance_write": "legal_operations:client_acceptance:write",
     "legal_matter_acceptance_instrument_approval_write": "legal_operations:matter_acceptance_instrument_approval:write",
@@ -251,6 +260,23 @@ _partner_evidence["legal_evidence_write"] = ELIGIBLE
 _evidence_updates["tenant_legal_partner"] = MappingProxyType(_partner_evidence)
 ELIGIBILITY = MappingProxyType(_evidence_updates)
 
+# L10A2R-C4D6E-A3-P1C adds the separately authorized cleanup-command
+# admission operation. ELIGIBLE remains only a business-role policy fact.
+OPERATIONS: FrozenSet[str] = frozenset(
+    (*OPERATIONS, "legal_evidence_cleanup_authorize")
+)
+_cleanup_authority_updates = dict(ELIGIBILITY)
+_partner_cleanup_authority = dict(
+    _cleanup_authority_updates["tenant_legal_partner"]
+)
+_partner_cleanup_authority[
+    "legal_evidence_cleanup_authorize"
+] = ELIGIBLE
+_cleanup_authority_updates["tenant_legal_partner"] = MappingProxyType(
+    _partner_cleanup_authority
+)
+ELIGIBILITY = MappingProxyType(_cleanup_authority_updates)
+
 PROFILE_READABLE_FIELDS: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name", "tax_id", "contact_email", "plan", "status", "verified", "checksum", "proof_hash", "compliance_flags", "created_at", "updated_at"})
 PROFILE_MUTABLE_FIELDS_V1: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name"})
 LIFECYCLE_FIELDS: Final[FrozenSet[str]] = frozenset({"status"})
@@ -298,7 +324,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.30.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY
+# VERSION: v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
