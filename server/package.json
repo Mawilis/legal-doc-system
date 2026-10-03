@@ -162,7 +162,7 @@
     "glob": "13.0.6",
     "ioredis-mock": "8.13.1",
     "jest": "30.5.2",
-    "mocha": "11.8.0",
+    "mocha": "12.0.3",
     "mocha-junit-reporter": "^2.2.1",
     "mongodb-memory-server": "9.4.1",
     "mongoose": "9.10.4",
