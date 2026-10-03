@@ -4,8 +4,8 @@
   "type": "module",
   "description": "Tests for Document Generation Engine",
   "scripts": {
-    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=unit --coverage",
-    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=integration --runInBand",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns=unit --coverage",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns=integration --runInBand",
     "test:all": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
