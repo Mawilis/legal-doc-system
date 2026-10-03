@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.4.0-R1D-B0F-B4-R1]                                                               ║
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.4.1-P0-C4E1A]                                                                    ║
  * ║ TITLE: Selective legal-acceptance browser-to-Python BFF transport                                                                  ║
  * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
@@ -12,16 +12,17 @@
  * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v5.4.0-R1D-B0F-B4-R1 | PRODUCTION READY                                                                                   ║
+ * ║ VERSION: v5.4.1-P0-C4E1A | PRODUCTION READY                                                                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.4.0-R1D-B0F-B4-R1):                                                                                                ║
+ * ║ 🔧 CHANGE LOG (v5.4.1-P0-C4E1A):                                                                                                     ║
+ * ║   2026-10-03 – Redacted raw upstream connection exceptions from the public proxy-unavailable response.                             ║
  * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
  * ║   2026-09-17 – Added only the certified C1C legal-services and C1E advisory selective proxies.                                      ║
  * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
  * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.4.0-R1D-B0F-B4-R1                                                                        ║
+ * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.4.1-P0-C4E1A                                                                             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -44,7 +45,7 @@ const KENNEL_TARGET = (
   'http://127.0.0.1:9095'
 ).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const VERSION = 'v5.4.0-R1D-B0F-B4-R1';
+const VERSION = 'v5.4.1-P0-C4E1A';
 const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
@@ -136,7 +137,7 @@ function buildKennelProxy({ mountPrefix, targetPrefix, timeoutMs }) {
           res.status(503).json({
             success: false,
             error: 'Kennel service unavailable',
-            message: err.message,
+            message: 'The upstream transport is temporarily unavailable.',
             timestamp: new Date().toISOString(),
           });
         }
@@ -472,12 +473,14 @@ export default createApp;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v5.4.0-R1D-B0F-B4-R1
+ * Version:         v5.4.1-P0-C4E1A
  * Fix:             Correct middleware order – proxies before body parsers.
  *                  Added selective legal-acceptance and C1C/C1E browser-to-Python transport only.
+ *                  Redacted raw upstream connection exceptions from public 503 responses.
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
  * Authority boundary: transport only; Python EOS remains sovereign for C1C/C1E.
  * Tenant posture: institutional headers are forwarded, never invented.
  * Financial execution authority: Kennel EOS exclusively.
  * ═══════════════════════════════════════════════════════════════════════════════
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
