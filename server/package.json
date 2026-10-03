@@ -202,6 +202,9 @@
     },
     "tar": "7.5.22",
     "fast-uri": "4.2.1",
-    "adm-zip": "0.6.1"
+    "adm-zip": "0.6.1",
+    "geoip-lite": {
+      "ip-address": "10.7.3"
+    }
   }
 }
