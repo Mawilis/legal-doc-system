@@ -1,28 +1,29 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.4.1-P0-C4E1A]                                                                    ║
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.5.0-P0-C4E4]                                                                    ║
  * ║ TITLE: Selective legal-acceptance browser-to-Python BFF transport                                                                  ║
  * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
  * ║ AUTHORITY BOUNDARY: No C1C/C1E/legal/financial authority is interpreted or created                                                ║
  * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution                                                      ║
  * ║ EPITOME: Production BFF with CORRECT middleware order – proxies run BEFORE body parsers.                                            ║
- * ║          Uses http-proxy-middleware for all Kennel routes, including billing.                                                       ║
+ * ║          Uses direct httpxy transport for all Kennel routes, including billing.                                                       ║
  * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v5.4.1-P0-C4E1A | PRODUCTION READY                                                                                        ║
+ * ║ VERSION: v5.5.0-P0-C4E4 | PRODUCTION READY                                                                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.4.1-P0-C4E1A):                                                                                                     ║
+ * ║ 🔧 CHANGE LOG (v5.5.0-P0-C4E4):                                                                                                     ║
+ * ║   2026-10-03 – Replaced http-proxy-middleware runtime transport with direct httpxy while preserving the certified proxy contract.     ║
  * ║   2026-10-03 – Redacted raw upstream connection exceptions from the public proxy-unavailable response.                             ║
  * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
  * ║   2026-09-17 – Added only the certified C1C legal-services and C1E advisory selective proxies.                                      ║
  * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
  * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.4.1-P0-C4E1A                                                                             ║
+ * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.5.0-P0-C4E4                                                                             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -34,7 +35,7 @@ import fileUpload from 'express-fileupload';
 import { createServer } from 'node:http';
 import mongoose from 'mongoose';
 import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyServer } from 'httpxy';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
@@ -45,7 +46,7 @@ const KENNEL_TARGET = (
   'http://127.0.0.1:9095'
 ).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const VERSION = 'v5.4.1-P0-C4E1A';
+const VERSION = 'v5.5.0-P0-C4E4';
 const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
@@ -105,45 +106,72 @@ function forwardInstitutionalHeaders(proxyReq, req) {
 
 /**
  * Build a proxy middleware for a given mount prefix.
- * Uses http-proxy-middleware – handles raw streams correctly when placed before body parsers.
+ * Uses direct httpxy streaming transport before body parsers so raw request bytes remain authoritative.
  */
 function buildKennelProxy({ mountPrefix, targetPrefix, timeoutMs }) {
   const timeout = timeoutMs || DEFAULT_PROXY_TIMEOUT_MS;
-  return createProxyMiddleware({
+
+  const proxy = createProxyServer({
     target: KENNEL_TARGET,
     changeOrigin: true,
-    logLevel: PROXY_LOG_LEVEL,
     proxyTimeout: timeout,
     timeout,
-    connectTimeout: 5000,
-    pathRewrite: (path) => {
-      const rewritten = rewriteMountedPath(path, targetPrefix);
-      if (process.env.WILSY_PROXY_DEBUG === '1') {
-        console.log(`[PROXY-REWRITE] mount=${mountPrefix} path=${path} → ${rewritten}`);
-      }
-      return rewritten;
-    },
-    on: {
-      proxyReq: (proxyReq, req) => {
-        forwardInstitutionalHeaders(proxyReq, req);
-        // No need to restream – the stream is still raw because proxy runs before body parsers.
-        if (process.env.WILSY_PROXY_DEBUG === '1') {
-          console.log(`[PROXY] ${req.method} ${req.originalUrl || req.url} → ${KENNEL_TARGET}`);
-        }
-      },
-      error: (err, req, res) => {
-        console.error('[PROXY] Kennel unreachable:', err.message);
-        if (!res.headersSent) {
-          res.status(503).json({
-            success: false,
-            error: 'Kennel service unavailable',
-            message: 'The upstream transport is temporarily unavailable.',
-            timestamp: new Date().toISOString(),
-          });
-        }
-      },
-    },
   });
+
+  proxy.on('proxyReq', (proxyReq, req) => {
+    forwardInstitutionalHeaders(proxyReq, req);
+
+    if (process.env.WILSY_PROXY_DEBUG === '1') {
+      console.log(`[PROXY] ${req.method} ${req.originalUrl || req.url} → ${KENNEL_TARGET}`);
+    }
+  });
+
+  proxy.on('error', (err, req, res) => {
+    console.error('[PROXY] Kennel unreachable:', err.message);
+
+    if (res && !res.headersSent && !res.destroyed) {
+      res.statusCode = 503;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.end(
+        JSON.stringify({
+          success: false,
+          error: 'Kennel service unavailable',
+          message: 'The upstream transport is temporarily unavailable.',
+          timestamp: new Date().toISOString(),
+        })
+      );
+    }
+  });
+
+  return (req, res) => {
+    const rewritten = rewriteMountedPath(req.url || '/', targetPrefix);
+
+    if (process.env.WILSY_PROXY_DEBUG === '1') {
+      console.log(`[PROXY-REWRITE] mount=${mountPrefix} path=${req.url || '/'} → ${rewritten}`);
+    }
+
+    // Express has already removed the mount prefix. httpxy consumes req.url
+    // directly, so provide the same certified path that pathRewrite supplied
+    // to the former transport engine. The request stream itself is untouched.
+    req.url = rewritten;
+
+    try {
+      proxy.web(req, res);
+    } catch (err) {
+      console.error('[PROXY] Kennel synchronous proxy failure:', err.message);
+
+      if (!res.headersSent && !res.destroyed) {
+        res.status(503).json({
+          success: false,
+          error: 'Kennel service unavailable',
+          message: 'The upstream transport is temporarily unavailable.',
+          timestamp: new Date().toISOString(),
+        });
+      } else if (!res.destroyed) {
+        res.destroy(err);
+      }
+    }
+  };
 }
 
 /**
@@ -422,7 +450,7 @@ async function main() {
 ║  Health:    http://localhost:${actualPort}/health
 ║  Proxy:     ${KENNEL_TARGET}
 ║  Map:       /api/auth|tenants|business/tenants|employees|kernel|plans|subscriptions
-║             /api/billing → /billing (http-proxy-middleware, ${BILLING_PROXY_TIMEOUT_MS}ms timeout)
+║             /api/billing → /billing (httpxy, ${BILLING_PROXY_TIMEOUT_MS}ms timeout)
 ║  Fix:       Proxy middleware order fixed – proxies run BEFORE body parsers.
 ║  ──────────────────────────────────────────────────────────────────────────────── ║
 ║  🏛️  Governance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15  ║
@@ -473,7 +501,7 @@ export default createApp;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v5.4.1-P0-C4E1A
+ * Version:         v5.5.0-P0-C4E4
  * Fix:             Correct middleware order – proxies before body parsers.
  *                  Added selective legal-acceptance and C1C/C1E browser-to-Python transport only.
  *                  Redacted raw upstream connection exceptions from public 503 responses.
