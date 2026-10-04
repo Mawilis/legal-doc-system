@@ -25,7 +25,7 @@
  * ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-import crypto from 'crypto';
+import { sha3_512 } from 'js-sha3';
 import axios from 'axios';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 
@@ -102,7 +102,7 @@ class PlanApiClient {
    */
   _generateSeal(payload) {
     try {
-      return crypto.createHash('sha3-512').update(JSON.stringify(payload)).digest('hex');
+      return sha3_512(JSON.stringify(payload));
     } catch (_) {
       return '';
     }

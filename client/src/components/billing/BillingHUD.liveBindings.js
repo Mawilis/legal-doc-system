@@ -30,7 +30,7 @@
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-import crypto from 'crypto';
+import { sha3_512 } from 'js-sha3';
 import sovereignClient from '../../utils/sovereignClient';
 import { useRealtimeMetrics } from './BillingHUD.metrics';
 import { useAuth } from '../../contexts/authContext';
@@ -72,20 +72,12 @@ export const BILLING_HUD_LIVE_PATHS = Object.freeze({
  * @epitome "Every action leaves an immutable fingerprint."
  */
 function sealPayload(payload) {
-  try {
-    const data = JSON.stringify(payload, Object.keys(payload).sort());
-    return crypto.createHash('sha3-512').update(data).digest('hex').toUpperCase();
-  } catch (_) {
-    // Fallback for browser environments
-    const encoder = new TextEncoder();
-    const data = encoder.encode(JSON.stringify(payload, Object.keys(payload).sort()));
-    return crypto.subtle.digest('SHA-512', data)
-      .then(hash => Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase())
-      .catch(() => {
-        // Final fallback – not cryptographically secure but prevents breakage
-        return `FALLBACK-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      });
-  }
+  const data = JSON.stringify(
+    payload,
+    Object.keys(payload).sort(),
+  );
+
+  return sha3_512(data).toUpperCase();
 }
 
 // ─── MAIN HOOK ─────────────────────────────────────────────────────────────
