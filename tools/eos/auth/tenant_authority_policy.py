@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY
+VERSION: v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,14 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+2026-10-04 v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY
+admits the frozen 101-role HR catalogue into canonical tenant
+business-role vocabulary and adds hr_employee_relation_write.
+Exactly five formal Employee Relations business roles are ELIGIBLE;
+the other 96 HR roles remain DENY. Existing non-HR eligibility is
+unchanged and eligibility remains non-authorizing.
 2026-10-02 v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY
 adds legal_evidence_cleanup_authorize as one exact own-tenant business
 operation bound to legal_operations:evidence_cleanup:authorize and eligible
@@ -157,8 +163,9 @@ from __future__ import annotations
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Final, FrozenSet
+from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY"
+VERSION = "v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -171,6 +178,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "business_role_revoke": "tenant:business_role:write",
     "legal_evidence_write": "legal_operations:evidence:write",
     "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
+    "hr_employee_relation_write": "hr:employee_relation:write",
     "legal_conflict_review_write": "legal_operations:conflict_review:write",
     "legal_client_acceptance_write": "legal_operations:client_acceptance:write",
     "legal_matter_acceptance_instrument_approval_write": "legal_operations:matter_acceptance_instrument_approval:write",
@@ -180,7 +188,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "tenant_branding_profile_manage": "tenant_branding:profile:manage",
     "tenant_branding_asset_manage": "tenant_branding:asset:manage",
 })
-TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"})
+TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
 OPERATIONS: FrozenSet[str] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "business_role_read", "business_role_assign", "business_role_change", "business_role_revoke", "platform_billing_provider_policy_create", "platform_billing_provider_policy_revise", "platform_billing_provider_policy_activate", "platform_billing_provider_policy_revoke", "inbound_collection_authorization_create", "tenant_inbound_merchant_configuration_register", "tenant_inbound_merchant_configuration_lifecycle_transition", "tenant_inbound_merchant_configuration_compromise", "tenant_inbound_merchant_configuration_remediate", "tenant_inbound_provider_policy_create", "tenant_inbound_provider_policy_revise", "tenant_inbound_provider_policy_activate", "tenant_inbound_provider_policy_deactivate", "tenant_inbound_provider_policy_emergency_disable", "tenant_inbound_provider_credential_security_eligibility_issue", "tenant_inbound_provider_credential_security_revoke", "tenant_inbound_provider_credential_security_compromise", "tenant_inbound_provider_credential_security_rotate", "wilsy_ai_usage_capacity_read", "wilsy_ai_reasoning_execute", "wilsy_ai_legal_services_execute", "billing_intelligence_evidence_read", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_return_read", "legal_billing_read", "legal_invoice_read", "audit_read", "artifact_read", "platform_billing_release", "plan_read", "plan_create", "plan_update", "plan_archive", "subscription_read", "subscription_audit_read", "subscription_metrics_read", "subscription_create", "subscription_update", "subscription_archive", "subscription_pause", "subscription_resume", "subscription_cancel", "subscription_upgrade", "subscription_downgrade", "subscription_reactivate", "cross_tenant", "financial_execution"})
 ELIGIBILITY = MappingProxyType({
     "tenant_owner": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "profile_read": ELIGIBLE, "profile_update": ELIGIBLE, "lifecycle_archive": ELIGIBLE, "membership_read": ELIGIBLE, "membership_invite": ELIGIBLE, "membership_deactivate": ELIGIBLE, "role_assignment_read": ELIGIBLE, "business_role_read": ELIGIBLE, "business_role_assign": ELIGIBLE, "business_role_change": ELIGIBLE, "business_role_revoke": ELIGIBLE, "audit_read": ELIGIBLE, "platform_billing_release": ELIGIBLE, "plan_read": ELIGIBLE, "plan_create": ELIGIBLE, "plan_update": ELIGIBLE, "plan_archive": ELIGIBLE, "subscription_read": ELIGIBLE, "subscription_audit_read": ELIGIBLE, "subscription_metrics_read": ELIGIBLE, "subscription_create": ELIGIBLE, "subscription_update": ELIGIBLE, "subscription_archive": ELIGIBLE, "subscription_pause": ELIGIBLE, "subscription_resume": ELIGIBLE, "subscription_cancel": ELIGIBLE, "subscription_upgrade": ELIGIBLE, "subscription_downgrade": ELIGIBLE, "subscription_reactivate": ELIGIBLE, "wilsy_ai_usage_capacity_read": ELIGIBLE, "billing_intelligence_evidence_read": ELIGIBLE}),
@@ -277,6 +285,41 @@ _cleanup_authority_updates["tenant_legal_partner"] = MappingProxyType(
 )
 ELIGIBILITY = MappingProxyType(_cleanup_authority_updates)
 
+
+# P0-C12E4B3B: all 101 frozen HR roles enter the canonical
+# tenant-business-role vocabulary. Exactly five are eligible
+# for formal EmployeeRelation write; every other HR role denies.
+OPERATIONS: FrozenSet[str] = frozenset(
+    (*OPERATIONS, "hr_employee_relation_write")
+)
+
+_hr_relation_eligibility_updates = dict(ELIGIBILITY)
+
+for _hr_business_role in (
+    "tenant_hr_director",
+    "tenant_hr_manager",
+    "tenant_employee_relations_director",
+    "tenant_employee_relations_manager",
+    "tenant_employee_relations_specialist",
+):
+    _hr_role_eligibility = {
+        operation: DENY
+        for operation in OPERATIONS
+    }
+    _hr_role_eligibility[
+        "hr_employee_relation_write"
+    ] = ELIGIBLE
+
+    _hr_relation_eligibility_updates[
+        _hr_business_role
+    ] = MappingProxyType(
+        _hr_role_eligibility
+    )
+
+ELIGIBILITY = MappingProxyType(
+    _hr_relation_eligibility_updates
+)
+
 PROFILE_READABLE_FIELDS: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name", "tax_id", "contact_email", "plan", "status", "verified", "checksum", "proof_hash", "compliance_flags", "created_at", "updated_at"})
 PROFILE_MUTABLE_FIELDS_V1: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name"})
 LIFECYCLE_FIELDS: Final[FrozenSet[str]] = frozenset({"status"})
@@ -324,7 +367,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY
+# VERSION: v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

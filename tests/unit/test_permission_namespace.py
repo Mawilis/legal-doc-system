@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -7,8 +7,13 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
+    certifies hr:employee_relation:write as the 73rd canonical
+    permission and 76th total row with exact TENANT scope,
+    membership gating, no cross-tenant capability, no financial
+    execution and no self-authorization.
     2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
     certifies legal_operations:evidence_cleanup:authorize as one exact
     canonical own-tenant TENANT permission for later cleanup actor/command
@@ -121,7 +126,7 @@ VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSIO
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION"
+    assert POLICY_VERSION == "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -176,6 +181,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:return:write",
         "legal_operations:billing:read",
         "legal_operations:invoice:read",
+        "hr:employee_relation:write",
         "platform_billing:release",
         "inbound_collection:authorization:create",
         "inbound_merchant_configuration:register",
@@ -203,9 +209,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 72
+    ) == 73
 
-    assert len(rows) == 75
+    assert len(rows) == 76
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -741,7 +747,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

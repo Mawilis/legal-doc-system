@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
+VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,8 +13,14 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
+    adds HR_DIRECTOR, HR_MANAGER, EMPLOYEE_RELATIONS_DIRECTOR,
+    EMPLOYEE_RELATIONS_MANAGER and EMPLOYEE_RELATIONS_SPECIALIST as
+    five single-purpose static roles granting only
+    hr:employee_relation:write. Static policy proves no possession,
+    membership, HTTP, payroll or financial execution authority.
     2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
     grants legal_operations:evidence_cleanup:authorize exactly to LEGAL_PARTNER
     as static policy vocabulary for the later separately certified Legal
@@ -172,7 +178,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT"
+VERSION = "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -334,6 +340,22 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
 }
 
 
+# P0-C12E4B3B EmployeeRelation formal-write authorization roles.
+# Static grants do not establish possession, membership,
+# business-role eligibility, HTTP authority, payroll execution,
+# payment execution, or settlement authority.
+for _hr_role_name in (
+    "HR_DIRECTOR",
+    "HR_MANAGER",
+    "EMPLOYEE_RELATIONS_DIRECTOR",
+    "EMPLOYEE_RELATIONS_MANAGER",
+    "EMPLOYEE_RELATIONS_SPECIALIST",
+):
+    ROLE_PERMISSIONS_MAP[_hr_role_name] = [
+        "hr:employee_relation:write"
+    ]
+
+
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:return:write")
 for _role_name in ("SHERIFF", "DEPUTY"):
@@ -397,7 +419,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
+# VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

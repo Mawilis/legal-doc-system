@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING
+VERSION: v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -9,8 +9,14 @@ provisioning binding, and the explicit LEGAL_CLIENT matter-projection read
 binding; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+2026-10-04 v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
+binds hr_employee_relation_write exactly to
+hr:employee_relation:write. Authorization remains conjunctive across
+ACTIVE principal, ACTIVE membership, eligible HR business role,
+exact permission-operation pairing and ACTIVE granting role. No
+HTTP, payroll, payment or settlement authority is added.
 2026-10-02 v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING
 binds legal_evidence_cleanup_authorize exactly to
 legal_operations:evidence_cleanup:authorize. Authorization remains conjunctive
@@ -151,7 +157,7 @@ from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operati
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING"
+VERSION = "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -174,6 +180,11 @@ _BINDINGS = MappingProxyType({**_BINDINGS, "legal_matter_representation_firm_dec
 _BINDINGS = MappingProxyType({**_BINDINGS, "tenant_branding_read": "tenant_branding:read", "tenant_branding_profile_manage": "tenant_branding:profile:manage", "tenant_branding_asset_manage": "tenant_branding:asset:manage"})
 _BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_write": "legal_operations:evidence:write"})
 _BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize"})
+
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "hr_employee_relation_write": "hr:employee_relation:write",
+})
 
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
@@ -216,7 +227,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING
+# VERSION: v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required; conflict review is partner/attorney-only and client matter access still requires ACTIVE visibility
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny

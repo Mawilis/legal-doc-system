@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
+VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -10,8 +10,14 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
+    adds hr:employee_relation:write as one exact canonical own-tenant
+    TENANT permission for EmployeeRelation evidence composition. It
+    remains membership-gated, non-cross-tenant, non-financial and
+    non-self-authorizing and grants no HTTP, payroll, payment or
+    settlement authority.
     2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
     adds the dedicated own-tenant legal_operations:evidence_cleanup:authorize
     permission vocabulary for a later separately certified Legal Evidence
@@ -158,7 +164,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION"
+VERSION = "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -422,6 +428,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "read own-tenant canonical billing-intelligence evidence",
+            tenant=True,
+        ),
+        "hr:employee_relation:write": _meta(
+            "hr:employee_relation:write",
+            "TENANT",
+            "TENANT",
+            "record own-tenant employee relations evidence",
             tenant=True,
         ),
         "legal_operations:instruction:read": _meta(
@@ -761,7 +774,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
+# VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

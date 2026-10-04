@@ -1,12 +1,17 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY-CERT
+certifies tenant business-role vocabulary expansion from 18 to 119
+using the frozen 101-role HR catalogue. Exactly five Employee
+Relations roles are eligible and 96 other HR roles remain denied;
+existing Legal/general eligibility remains unchanged.
 2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
 certifies legal_evidence_cleanup_authorize as one exact own-tenant operation
 bound only to legal_operations:evidence_cleanup:authorize and ELIGIBLE only
@@ -89,15 +94,18 @@ FINANCIAL AUTHORITY BOUNDARY: Capacity-read and billing-intelligence
 evidence-read eligibility are non-financial; Kennel EOS remains exclusive.
 """
 from tools.eos.auth.tenant_authority_policy import *
+from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.31.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY"
+    assert VERSION == "v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
 def test_matrix_boundaries() -> None:
-    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}
+    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"} | ALL_HR_BUSINESS_ROLES
+    assert len(ALL_HR_BUSINESS_ROLES) == 101
+    assert len(TENANT_ROLES) == 119
     assert all(tenant_role_operation_eligibility(role, "financial_execution") == DENY for role in TENANT_ROLES)
     assert all(tenant_role_operation_eligibility(role, "cross_tenant") == DENY for role in TENANT_ROLES)
     assert tenant_role_operation_eligibility("tenant_manager", "profile_update") == DENY
@@ -750,7 +758,7 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny

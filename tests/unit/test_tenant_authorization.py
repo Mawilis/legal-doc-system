@@ -1,13 +1,19 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-02.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
+refreshes the tenant-authorization certificate against production
+v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
+and preserves all existing Legal, WILSY AI, tenant, provider and
+financial fail-closed behavior while certifying the new bounded HR
+EmployeeRelation operation through its separate direct certificate.
 2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
 refreshes generic tenant-authorization certification against production
 v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING.
@@ -137,7 +143,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT"
+VERSION = "v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1401,7 +1407,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING"
+    assert ta.VERSION == "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1415,7 +1421,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING"
+    assert ta.VERSION == "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2292,7 +2298,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
