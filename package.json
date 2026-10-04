@@ -75,6 +75,10 @@
   },
   "overrides": {
     "axios": "^1.7.4",
-    "@remix-run/router": "^1.19.0"
+    "@remix-run/router": "^1.19.0",
+    "chokidar": "4.0.3",
+    "js-yaml": "4.3.2",
+    "proxy-agent": "8.0.2",
+    "basic-ftp": "6.2.1"
   }
 }
