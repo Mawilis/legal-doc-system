@@ -1,13 +1,85 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.11.0-C1E-R1
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-13.
-CHANGELOG: 2026-09-17 v1.11.0-C1E-R1 certifies exact legal-advisory operation
+CERTIFICATION/UPDATE DATE: 2026-10-04.
+CHANGELOG:
+2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
+refreshes the tenant-authorization certificate against production
+v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
+and preserves all existing Legal, WILSY AI, tenant, provider and
+financial fail-closed behavior while certifying the new bounded HR
+EmployeeRelation operation through its separate direct certificate.
+2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING-CERT
+refreshes generic tenant-authorization certification against production
+v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING.
+The new Legal Evidence cleanup actor binding remains conjunctive across ACTIVE
+principal, ACTIVE membership, eligible tenant business role, exact canonical
+operation/permission pairing and ACTIVE granting role. This certificate does
+not bind A2 cleanup authorization, mutate providers, delete objects, release
+preservation constraints, prove cleanup execution, or create financial truth.
+CHANGELOG: 2026-10-01 v1.1.0-L10A3D-LEGAL-EVIDENCE-BINDING-CERT
+refreshes exactly two canonical tenant_authorization.VERSION assertions to the certified v1.29.0-L10A3D-LEGAL-EVIDENCE-BINDING production release introduced for the exact legal_evidence_write -> legal_operations:evidence:write binding. Existing authorization behavior, prior evidence bindings, WILSY AI gateway semantics, tenant scope, fail-closed behavior, and financial execution prohibition remain unchanged.
+CHANGELOG: 2026-09-28 v1.0.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING-CERT
+certifies the exact Engagement firm-decision operation-permission pair,
+Partner/Attorney success, Paralegal and crossed-permission denial, and
+preservation of the existing conjunctive authorization contract.
+2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING-CERT
+updates canonical composition provenance for the dedicated operation while
+preserving all existing authorization bindings.
+2026-09-25 v1.18.0-L8-8I-CONFLICT-REVIEW-BINDING-CERT
+certifies legal_conflict_review_write ->
+legal_operations:conflict_review:write as an exact conjunctive authorization
+binding for tenant_legal_partner/LEGAL_PARTNER and
+tenant_legal_attorney/LEGAL_ATTORNEY only. It proves both authorized pairs,
+paralegal and non-legal business-role denial before final-role lookup, exact
+permission-operation mismatch rejection, missing/revoked granting-role denial,
+and unchanged current-truth/financial/session boundaries.
+2026-09-23 v1.17.0-L8-7D4-CLIENT-MATTER-READ-BINDING-CERT
+certifies legal_client_matter_read ->
+legal_operations:client_matter:read as the exact conjunctive authorization
+binding for tenant_legal_client + ACTIVE LEGAL_CLIENT only. It proves exact
+success, law-firm/sheriff/deputy/finance denial, crossed permission/operation
+denial, missing/revoked LEGAL_CLIENT denial, and unchanged financial-execution
+prohibition. ACTIVE client-to-matter visibility remains a later independent
+projection gate.
+2026-09-23 v1.16.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING-CERT
+certifies legal_client_visibility_write ->
+legal_operations:client_visibility:write as the exact conjunctive authorization
+binding for approved law-firm provisioning roles. It proves partner/attorney/
+paralegal success, client/secretary/finance/sheriff/deputy denial, crossed
+permission/operation denial, missing/revoked final-role denial, and unchanged
+financial-execution prohibition.
+2026-09-23 v1.15.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING-CERT
+certifies legal_deputy_queue_read -> legal_operations:deputy_queue:read as an
+exact deputy-only conjunctive authorization binding with sheriff denial,
+crossed business/authorization-role rejection, permission-operation mismatch
+rejection, and unchanged financial-execution prohibition.
+2026-09-23 v1.14.1-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+repairs the certificate runtime VERSION to the current L8-6A release; test
+semantics, IAM authority, and sheriff-only queue-read behavior are unchanged.
+2026-09-23 v1.14.0-L8-6A-SHERIFF-QUEUE-READ-BINDING-CERT
+certifies legal_queue_read -> legal_operations:queue:read as an exact
+sheriff-only conjunctive authorization binding, with deputy denial, crossed-pair
+rejection, and unchanged financial-execution prohibition.
+2026-09-23 v1.13.1-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+repairs the remaining stale WILSY AI Legal Tool runtime-version assertion to
+the current v1.17.0 L8-3 receipt-binding production release; authorization,
+grant, scope, and fail-closed semantics are unchanged.
+2026-09-23 v1.13.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING-CERT
+certifies legal_receipt_write -> legal_operations:receipt:write as an exact
+sheriff-only conjunctive authorization binding with deputy/legal-client denial.
+2026-09-23 v1.12.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-BINDING-CERT
+refreshes the remaining legacy WILSY AI Legal Tool version assertion to the
+current v1.16.0 authorization release without altering authorization behavior.
+2026-09-23 v1.12.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-BINDING-CERT
+certifies the exact legal_directory_write -> legal_operations:directory:write
+binding, sheriff-only conjunctive authorization, and deputy/client denial.
+2026-09-17 v1.11.0-C1E-R1 certifies exact legal-advisory operation
 bindings and current tenant authorization forwarding.
 2026-09-15 v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-BINDING-CERT adds direct
 PrincipalReader.resolve identity/session protocol and transaction-ownership
@@ -71,7 +143,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.10.0-C1E-R1-TENANT-AUTHORIZATION-CERT"
+VERSION = "v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -696,10 +768,646 @@ def test_permission_operation_binding_remains_exact() -> None:
     assert assignments.calls == []
 
 
+def test_l8_1_directory_binding_is_exact_and_sheriff_only() -> None:
+    """Directory provisioning requires the exact permission, operation, and roles."""
+
+    assert ta._BINDINGS["legal_directory_write"] == (
+        "legal_operations:directory:write"
+    )
+    assert list(ta._BINDINGS).count("legal_directory_write") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:directory:write",
+        operation="legal_directory_write",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_sheriff",
+        "SHERIFF",
+    )
+
+    assert _decision(
+        permission_id="legal_operations:directory:write",
+        operation="legal_directory_write",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    assert _decision(
+        permission_id="legal_operations:directory:write",
+        operation="legal_directory_write",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    assert _decision(
+        permission_id="legal_operations:directory:write",
+        operation="legal_allocation_write",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    assert _decision(
+        permission_id="legal_operations:allocation:write",
+        operation="legal_directory_write",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
+def test_l8_3_receipt_binding_is_exact_and_sheriff_only() -> None:
+    """Acceptance/receipt requires the exact permission, operation, and sheriff role."""
+
+    assert ta._BINDINGS["legal_receipt_write"] == (
+        "legal_operations:receipt:write"
+    )
+    assert list(ta._BINDINGS).count("legal_receipt_write") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:receipt:write",
+        operation="legal_receipt_write",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_sheriff",
+        "SHERIFF",
+    )
+
+    for business_role in (
+        "tenant_deputy",
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+        "tenant_legal_client",
+    ):
+        denied = _decision(
+            permission_id="legal_operations:receipt:write",
+            operation="legal_receipt_write",
+            business_repository=_business(business_role),
+            assignment_repository=_assignments("SHERIFF"),
+        )
+        assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    assert _decision(
+        permission_id="legal_operations:receipt:write",
+        operation="legal_allocation_write",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    assert _decision(
+        permission_id="legal_operations:allocation:write",
+        operation="legal_receipt_write",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
+def test_l8_7d4_client_matter_read_binding_authorizes_exact_legal_client_conjunction() -> None:
+    """Explicit client-matter read requires tenant_legal_client plus ACTIVE LEGAL_CLIENT."""
+    assert (
+        ta._BINDINGS["legal_client_matter_read"]
+        == "legal_operations:client_matter:read"
+    )
+    assert list(ta._BINDINGS).count("legal_client_matter_read") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_CLIENT"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_legal_client",
+        "LEGAL_CLIENT",
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_roles"),
+    (
+        ("tenant_legal_partner", ("LEGAL_PARTNER", "LEGAL_CLIENT")),
+        ("tenant_legal_attorney", ("LEGAL_ATTORNEY", "LEGAL_CLIENT")),
+        ("tenant_legal_paralegal", ("LEGAL_PARALEGAL", "LEGAL_CLIENT")),
+        ("tenant_legal_secretary", ("LEGAL_SECRETARY", "LEGAL_CLIENT")),
+        ("tenant_legal_finance", ("LEGAL_FINANCE", "LEGAL_CLIENT")),
+        ("tenant_sheriff", ("SHERIFF", "LEGAL_CLIENT")),
+        ("tenant_deputy", ("DEPUTY", "LEGAL_CLIENT")),
+        ("tenant_owner", ("ENTERPRISE_ADMIN", "LEGAL_CLIENT")),
+        ("tenant_admin", ("ENTERPRISE_ADMIN", "LEGAL_CLIENT")),
+    ),
+)
+def test_l8_7d4_non_client_business_roles_cannot_cross_into_client_projection(
+    business_role: str,
+    authorization_roles: tuple[str, ...],
+) -> None:
+    """Even a supplied LEGAL_CLIENT assignment cannot bypass business-role eligibility."""
+    assignments = _assignments(*authorization_roles)
+    denied = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business(business_role),
+        assignment_repository=assignments,
+    )
+    assert denied.authorized is False
+    assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert denied.business_role == business_role
+    assert denied.authorization_role is None
+    assert assignments.calls == []
+
+
+def test_l8_7d4_missing_revoked_and_crossed_client_read_bindings_fail_closed() -> None:
+    """Final role possession and exact permission-operation pairing remain mandatory."""
+    missing = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments(),
+    )
+    assert missing.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments(
+            revoked_roles=("LEGAL_CLIENT",),
+        ),
+    )
+    assert revoked.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    wrong_permission = _decision(
+        permission_id="legal_operations:invoice:read",
+        operation="legal_client_matter_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_CLIENT"),
+    )
+    assert (
+        wrong_permission.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+    wrong_operation = _decision(
+        permission_id="legal_operations:client_matter:read",
+        operation="legal_invoice_read",
+        business_repository=_business("tenant_legal_client"),
+        assignment_repository=_assignments("LEGAL_CLIENT"),
+    )
+    assert (
+        wrong_operation.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+    ),
+)
+def test_l8_8i_conflict_review_binding_authorizes_only_partner_attorney_conjunction(
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    """Human conflict review requires exact business/final-role conjunction."""
+    assert (
+        ta._BINDINGS["legal_conflict_review_write"]
+        == "legal_operations:conflict_review:write"
+    )
+    assert list(ta._BINDINGS).count("legal_conflict_review_write") == 1
+
+    result = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_roles"),
+    (
+        ("tenant_legal_paralegal", ("LEGAL_PARALEGAL", "LEGAL_PARTNER")),
+        ("tenant_legal_secretary", ("LEGAL_SECRETARY", "LEGAL_PARTNER")),
+        ("tenant_legal_finance", ("LEGAL_FINANCE", "LEGAL_PARTNER")),
+        ("tenant_legal_client", ("LEGAL_CLIENT", "LEGAL_PARTNER")),
+        ("tenant_sheriff", ("SHERIFF", "LEGAL_PARTNER")),
+        ("tenant_deputy", ("DEPUTY", "LEGAL_PARTNER")),
+        ("tenant_owner", ("ENTERPRISE_ADMIN", "LEGAL_PARTNER")),
+        ("tenant_admin", ("ENTERPRISE_ADMIN", "LEGAL_PARTNER")),
+        ("tenant_auditor", ("AUDITOR", "LEGAL_PARTNER")),
+    ),
+)
+def test_l8_8i_ineligible_business_roles_cannot_cross_into_conflict_review(
+    business_role: str,
+    authorization_roles: tuple[str, ...],
+) -> None:
+    """Even a supplied partner assignment cannot bypass business eligibility."""
+    assignments = _assignments(*authorization_roles)
+    denied = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business(business_role),
+        assignment_repository=assignments,
+    )
+    assert denied.authorized is False
+    assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert denied.business_role == business_role
+    assert denied.authorization_role is None
+    assert assignments.calls == []
+
+
+def test_l8_8i_missing_revoked_and_crossed_conflict_review_bindings_fail_closed() -> None:
+    """Permission, operation and active granting role remain separate conjuncts."""
+    missing = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+    )
+    assert missing.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(
+            revoked_roles=("LEGAL_PARTNER",),
+        ),
+    )
+    assert revoked.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    wrong_permission = _decision(
+        permission_id="legal_operations:instruction:write",
+        operation="legal_conflict_review_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert (
+        wrong_permission.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+    wrong_operation = _decision(
+        permission_id="legal_operations:conflict_review:write",
+        operation="legal_instruction_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert (
+        wrong_operation.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+    ),
+)
+def test_l9c7d_engagement_firm_decision_binding_is_exact_and_conjunctive(
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    """The Engagement binding preserves the generic IAM conjunction."""
+    operation = "legal_matter_engagement_firm_decision_write"
+    permission = "legal_operations:matter_engagement_firm_decision:write"
+    assert ta._BINDINGS[operation] == permission
+    assert list(ta._BINDINGS).count(operation) == 1
+
+    authorized = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+def test_l9c7d_engagement_firm_decision_binding_fails_closed() -> None:
+    """Crossed, incomplete, inactive, and unknown Engagement IAM denies."""
+    operation = "legal_matter_engagement_firm_decision_write"
+    permission = "legal_operations:matter_engagement_firm_decision:write"
+
+    for wrong_permission in (
+        "legal_operations:conflict_review:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:instruction:write",
+    ):
+        crossed = _decision(
+            permission_id=wrong_permission,
+            operation=operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments("LEGAL_PARTNER"),
+        )
+        assert crossed.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    missing_grant = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+    )
+    assert missing_grant.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked_grant = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(revoked_roles=("LEGAL_PARTNER",)),
+    )
+    assert revoked_grant.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    paralegal = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_paralegal"),
+        assignment_repository=_assignments("LEGAL_PARALEGAL", "LEGAL_PARTNER"),
+    )
+    assert paralegal.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    inactive_principal = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+        principal_repository=_principal(status=PrincipalStatus.SUSPENDED),
+    )
+    assert inactive_principal.reason is TenantAuthorizationReason.PRINCIPAL_INACTIVE
+
+    inactive_membership = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+        membership_repository=_membership(status=TenantMembershipStatus.SUSPENDED),
+    )
+    assert inactive_membership.reason is TenantAuthorizationReason.MEMBERSHIP_INACTIVE
+
+    cross_tenant = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+        tenant_id="other-tenant",
+    )
+    assert cross_tenant.reason is TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND
+
+    for unknown_operation in (
+        "legal_matter_engagement_write",
+        "legal_matter_engagement_decision_write",
+        "legal_matter_engagement_firm_decision_approve",
+        "legal_matter_write",
+        "engagement_manage",
+    ):
+        unknown = _decision(
+            permission_id=permission,
+            operation=unknown_operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments("LEGAL_PARTNER"),
+        )
+        assert unknown.reason is TenantAuthorizationReason.INVALID_INPUT
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+        ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
+    ),
+)
+def test_l8_7c3b_client_visibility_write_binding_authorizes_only_full_law_firm_conjunction(
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    """Exact law-firm business/final-role conjunction authorizes provisioning."""
+    assert (
+        ta._BINDINGS["legal_client_visibility_write"]
+        == "legal_operations:client_visibility:write"
+    )
+    assert list(ta._BINDINGS).count("legal_client_visibility_write") == 1
+
+    result = _decision(
+        permission_id="legal_operations:client_visibility:write",
+        operation="legal_client_visibility_write",
+        business_repository=_business(business_role),
+        assignment_repository=_assignments(authorization_role),
+    )
+    assert result == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        business_role,
+        authorization_role,
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_roles"),
+    (
+        ("tenant_legal_client", ("LEGAL_CLIENT", "LEGAL_PARTNER")),
+        ("tenant_legal_secretary", ("LEGAL_SECRETARY", "LEGAL_PARTNER")),
+        ("tenant_legal_finance", ("LEGAL_FINANCE", "LEGAL_PARTNER")),
+        ("tenant_sheriff", ("SHERIFF", "LEGAL_PARTNER")),
+        ("tenant_deputy", ("DEPUTY", "LEGAL_PARTNER")),
+        ("tenant_owner", ("ENTERPRISE_ADMIN", "LEGAL_PARTNER")),
+        ("tenant_admin", ("ENTERPRISE_ADMIN", "LEGAL_PARTNER")),
+    ),
+)
+def test_l8_7c3b_ineligible_business_roles_deny_before_grant_lookup(
+    business_role: str,
+    authorization_roles: tuple[str, ...],
+) -> None:
+    """Static final-role grants cannot bypass business-role eligibility."""
+    assignments = _assignments(*authorization_roles)
+    result = _decision(
+        permission_id="legal_operations:client_visibility:write",
+        operation="legal_client_visibility_write",
+        business_repository=_business(business_role),
+        assignment_repository=assignments,
+    )
+    assert result.authorized is False
+    assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert result.business_role == business_role
+    assert result.authorization_role is None
+    assert assignments.calls == []
+
+
+def test_l8_7c3b_missing_revoked_and_crossed_bindings_fail_closed() -> None:
+    """Permission, operation and active granting role remain separate conjuncts."""
+    missing = _decision(
+        permission_id="legal_operations:client_visibility:write",
+        operation="legal_client_visibility_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+    )
+    assert missing.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    revoked = _decision(
+        permission_id="legal_operations:client_visibility:write",
+        operation="legal_client_visibility_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(
+            revoked_roles=("LEGAL_PARTNER",),
+        ),
+    )
+    assert revoked.reason is TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE
+
+    wrong_permission = _decision(
+        permission_id="legal_operations:instruction:write",
+        operation="legal_client_visibility_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert (
+        wrong_permission.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+    wrong_operation = _decision(
+        permission_id="legal_operations:client_visibility:write",
+        operation="legal_instruction_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert (
+        wrong_operation.reason
+        is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+
+def test_l8_6c_deputy_personal_queue_binding_is_exact_and_deputy_only() -> None:
+    """Personal work reads require the exact deputy IAM conjunction."""
+
+    assert (
+        ta._BINDINGS["legal_deputy_queue_read"]
+        == "legal_operations:deputy_queue:read"
+    )
+    assert list(ta._BINDINGS).count("legal_deputy_queue_read") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("DEPUTY"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_deputy",
+        "DEPUTY",
+    )
+
+    sheriff = _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF", "DEPUTY"),
+    )
+    assert sheriff.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    crossed_deputy = _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("SHERIFF"),
+    )
+    assert crossed_deputy.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+    assert _decision(
+        permission_id="legal_operations:queue:read",
+        operation="legal_deputy_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("DEPUTY"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    assert _decision(
+        permission_id="legal_operations:deputy_queue:read",
+        operation="legal_queue_read",
+        business_repository=_business("tenant_deputy"),
+        assignment_repository=_assignments("DEPUTY"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
+def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
+    """Operational queue reads require the exact sheriff IAM conjunction."""
+
+    assert ta._BINDINGS["legal_queue_read"] == "legal_operations:queue:read"
+    assert list(ta._BINDINGS).count("legal_queue_read") == 1
+
+    authorized = _decision(
+        permission_id="legal_operations:queue:read",
+        operation="legal_queue_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_sheriff",
+        "SHERIFF",
+    )
+
+    for business_role, grant_role in (
+        ("tenant_deputy", "DEPUTY"),
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+        ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
+        ("tenant_legal_secretary", "LEGAL_SECRETARY"),
+        ("tenant_legal_finance", "LEGAL_FINANCE"),
+        ("tenant_legal_client", "LEGAL_CLIENT"),
+    ):
+        denied = _decision(
+            permission_id="legal_operations:queue:read",
+            operation="legal_queue_read",
+            business_repository=_business(business_role),
+            assignment_repository=_assignments(grant_role, "SHERIFF"),
+        )
+        assert denied.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    assert _decision(
+        permission_id="legal_operations:queue:read",
+        operation="legal_attempt_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    assert _decision(
+        permission_id="legal_operations:attempt:read",
+        operation="legal_queue_read",
+        business_repository=_business("tenant_sheriff"),
+        assignment_repository=_assignments("SHERIFF"),
+    ).reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.15.0-C1E-R1"
+    assert ta.VERSION == "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -713,7 +1421,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.15.0-C1E-R1"
+    assert ta.VERSION == "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -1590,9 +2298,9 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.11.0-C1E-R1
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
-# TENANT POSTURE: exact active principal, membership, eligible business role, and scoped final assignment are conjunctively required
+# TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

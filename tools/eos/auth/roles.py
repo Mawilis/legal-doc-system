@@ -1,15 +1,114 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.18.0-C1E-R1
+VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
 usage-capacity and billing-intelligence evidence access, and dedicated inbound
 merchant-configuration/provider-policy administration plus least-privilege
-field-service outcome/return commands without creating current possession authority.
+field-service outcome/return commands, sheriff-only process-service directory
+provisioning, sheriff-only office-receipt authority, and least-privilege
+law-firm client-matter visibility provisioning plus one least-privilege
+LEGAL_CLIENT projection-read grant and exact Partner/Attorney Engagement
+firm-decision grant without creating tenant-wide matter reads, deputy
+possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-17.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
+    adds HR_DIRECTOR, HR_MANAGER, EMPLOYEE_RELATIONS_DIRECTOR,
+    EMPLOYEE_RELATIONS_MANAGER and EMPLOYEE_RELATIONS_SPECIALIST as
+    five single-purpose static roles granting only
+    hr:employee_relation:write. Static policy proves no possession,
+    membership, HTTP, payroll or financial execution authority.
+    2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT
+    grants legal_operations:evidence_cleanup:authorize exactly to LEGAL_PARTNER
+    as static policy vocabulary for the later separately certified Legal
+    Evidence cleanup actor/command authorization gate. No Attorney, Paralegal,
+    Secretary, Finance, Sheriff, Deputy, Legal Client, enterprise, audit,
+    service, provider or sovereign role receives the grant. Static role policy
+    does not prove ACTIVE assignment, ACTIVE tenant membership, business-role
+    eligibility, A2 cleanup-authorization binding, provider mutation, object
+    deletion, cleanup execution, payment execution or settlement truth.
+    2026-09-29 v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT grants
+    legal_operations:evidence:write exactly to LEGAL_PARTNER for the bounded
+    authenticated Legal evidence-ingest path. No Attorney, Paralegal,
+    Secretary, Finance, Sheriff, Deputy, Legal Client, enterprise, audit,
+    service, provider or sovereign role receives the grant. Static grant
+    policy remains non-possessory and does not prove ACTIVE membership,
+    business-role eligibility, matter/document scope, ProcessDocument/custody,
+    Court/Court Online filing, AI authority or financial execution.
+    2026-09-28 v1.32.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT adds dedicated
+    tenant_branding read/profile/asset permissions to ENTERPRISE_ADMIN and
+    read-only status visibility to AUDITOR. No subscription:manage reuse or
+    financial authority is introduced.
+    2026-09-28 v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-GRANTS grants
+    legal_operations:matter_representation_firm_decision:write exactly to
+    LEGAL_PARTNER and LEGAL_ATTORNEY. Static grants remain non-possessory and
+    do not prove membership, assignment, currentness, Representation, Court or
+    financial authority.
+    2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-GRANTS grants the exact
+    legal_operations:matter_engagement_firm_decision:write permission to
+    LEGAL_PARTNER and LEGAL_ATTORNEY only. Static grants remain
+    non-possessory and do not establish operation eligibility, operation
+    binding, firm-decision issuance, Engagement formation, Representation,
+    Court, or financial authority.
+    2026-09-27 v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS grants the
+    dedicated legal_operations:matter_mandate_acknowledgment:write permission
+    exactly to LEGAL_PARTNER and LEGAL_ATTORNEY. Static grants remain
+    non-possessory and do not prove membership, assignment, mandate scope,
+    engagement, representation or financial authority.
+    2026-09-26 v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-GRANTS grants
+    matter-acceptance-instrument approval exactly to LEGAL_PARTNER and
+    LEGAL_ATTORNEY. Static grants do not prove assignment, membership, scope,
+    approval currentness, client acceptance, representation or finance.
+    2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-GRANTS grants
+    legal_operations:client_acceptance:write exactly to LEGAL_CLIENT for
+    server-composed own-tenant client-acceptance evidence. All law-firm,
+    sheriff/deputy, finance, enterprise, audit, system, service and provider
+    roles remain excluded; static policy never proves assignment, membership,
+    matter scope, engagement, representation, Court, payment, execution or
+    settlement authority.
+    2026-09-25 v1.25.0-L8-8I-CONFLICT-REVIEW-GRANTS grants
+    legal_operations:conflict_review:write exactly to LEGAL_PARTNER and
+    LEGAL_ATTORNEY for future server-authorized human conflict-review
+    determination composition. LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE,
+    LEGAL_CLIENT, SHERIFF, DEPUTY, ENTERPRISE_ADMIN, AUDITOR, system, service,
+    provider and sovereign roles remain excluded. Static role policy still does
+    not prove current assignment, ACTIVE tenant membership, eligible business
+    role, durable screening evidence, reviewer authorization, conflict finding,
+    waiver, ethical wall, recusal, engagement, representation, payment,
+    execution or settlement authority.
+    2026-09-23 v1.24.0-L8-7D2-CLIENT-MATTER-READ-GRANT grants
+    legal_operations:client_matter:read exactly to LEGAL_CLIENT for the future
+    explicitly-bound client matter projection. No law-firm, sheriff, deputy,
+    finance, enterprise, audit, system, service, or provider role receives the
+    grant. Static policy still does not prove current assignment, ACTIVE
+    membership, ACTIVE visibility binding, matter scope, HTTP access, service,
+    billing, payment, execution, or settlement authority.
+    2026-09-23 v1.23.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS grants
+    legal_operations:client_visibility:write only to LEGAL_PARTNER,
+    LEGAL_ATTORNEY, and LEGAL_PARALEGAL for future L8-7 grant/revoke
+    provisioning. LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT, SHERIFF,
+    DEPUTY, ENTERPRISE_ADMIN, AUDITOR, system, service and provider roles remain
+    excluded. Static grant policy does not prove current assignment, membership,
+    target-client eligibility, CaseMatter visibility, client read, service,
+    billing, payment, execution or settlement authority.
+    2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS grants
+    legal_operations:deputy_queue:read only to DEPUTY for binding-scoped
+    personal active-work projection. SHERIFF retains the distinct tenant-wide
+    legal_operations:queue:read permission and receives no deputy-personal
+    impersonation capability.
+    2026-09-23 v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS grants
+    legal_operations:queue:read only to SHERIFF for own-tenant certified
+    operational-queue projection; DEPUTY and every other role remain excluded.
+    2026-09-23 v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS grants
+    legal_operations:receipt:write only to SHERIFF; legal-practice, deputy,
+    client, enterprise, service, and system roles remain excluded.
+    2026-09-23 v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS grants
+    legal_operations:directory:write only to the SHERIFF authorization role;
+    partner, attorney, paralegal, secretary, finance, deputy, client, general
+    enterprise, service, and system roles remain excluded.
     2026-09-17 v1.18.0-C1E-R1 grants legal-advisory generate/read only to
     the seven approved tenant legal roles.
     2026-09-17 v1.17.0-C1C-R1 grants the dedicated legal-services execution
@@ -79,7 +178,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.18.0-C1E-R1"
+VERSION = "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -109,6 +208,9 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "platform_billing:release",
         "tenant:business_role:read",
         "tenant:business_role:write",
+        "tenant_branding:read",
+        "tenant_branding:profile:manage",
+        "tenant_branding:asset:manage",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -123,10 +225,19 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
         "tenant:business_role:read",
+        "tenant_branding:read",
     ],
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:evidence:write",
+        "legal_operations:evidence_cleanup:authorize",
+        "legal_operations:client_visibility:write",
+        "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -137,6 +248,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_ATTORNEY": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:client_visibility:write",
+        "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -147,6 +264,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_PARALEGAL": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:client_visibility:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -165,6 +283,9 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:invoice:read",
     ],
     "SHERIFF": [
+        "legal_operations:directory:write",
+        "legal_operations:receipt:write",
+        "legal_operations:queue:read",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -172,12 +293,15 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:return:read",
     ],
     "DEPUTY": [
+        "legal_operations:deputy_queue:read",
         "legal_operations:attempt:read",
         "legal_operations:attempt:write",
         "legal_operations:return:read",
     ],
     "LEGAL_CLIENT": [
         "legal_operations:invoice:read",
+        "legal_operations:client_matter:read",
+        "legal_operations:client_acceptance:write",
     ],
     "SERVICE_WORKER": [
         "artifacts:write",
@@ -214,6 +338,22 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     ],
 
 }
+
+
+# P0-C12E4B3B EmployeeRelation formal-write authorization roles.
+# Static grants do not establish possession, membership,
+# business-role eligibility, HTTP authority, payroll execution,
+# payment execution, or settlement authority.
+for _hr_role_name in (
+    "HR_DIRECTOR",
+    "HR_MANAGER",
+    "EMPLOYEE_RELATIONS_DIRECTOR",
+    "EMPLOYEE_RELATIONS_MANAGER",
+    "EMPLOYEE_RELATIONS_SPECIALIST",
+):
+    ROLE_PERMISSIONS_MAP[_hr_role_name] = [
+        "hr:employee_relation:write"
+    ]
 
 
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
@@ -279,9 +419,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.18.0-C1E-R1
+# VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; WILSY AI capacity and billing-intelligence evidence reads remain own-tenant scoped
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

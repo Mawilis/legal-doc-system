@@ -1,13 +1,72 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.13.0-C1E-R1
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-13.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS-CERT
+    refreshes canonical role-policy provenance against production
+    v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS and
+    preserves all previously certified role grants while the new
+    direct HR IAM certificate proves the exact five HR static roles.
+    No Legal, enterprise, audit, payroll or financial execution
+    authority is broadened.
+    2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1B-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-GRANT-CERT
+    certifies legal_operations:evidence_cleanup:authorize is granted exactly
+    once to LEGAL_PARTNER and to no other role. Static role policy remains
+    non-possessory and creates no ACTIVE assignment, tenant membership,
+    cleanup eligibility, A2 authorization binding, provider mutation,
+    provider deletion, cleanup execution, payment execution or settlement truth.
+    2026-09-29 v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT certifies
+    legal_operations:evidence:write is granted exactly once to LEGAL_PARTNER
+    and to no Attorney, Paralegal, Secretary, Finance, Sheriff, Deputy,
+    Legal Client, enterprise, audit, service, provider or sovereign role.
+    The static grant remains non-possessory, non-cross-tenant and non-financial.
+    2026-09-27 v1.1.0-L10A3B-LEGAL-EVIDENCE-PARTNER-GRANT-CERT certifies
+    the exact Partner/Attorney Engagement firm-decision grant, explicit
+    paralegal and unrelated-role exclusion, and unchanged role policy shape.
+    2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-GRANTS-CERT certifies
+    direct LEGAL_PARTNER and LEGAL_ATTORNEY grants and explicit exclusion of
+    every other role.
+    2026-09-25 v1.20.0-L8-8I-CONFLICT-REVIEW-GRANTS-CERT
+    certifies legal_operations:conflict_review:write is granted exactly once to
+    LEGAL_PARTNER and LEGAL_ATTORNEY and to no other role. Static grant policy
+    remains non-possessory and does not prove ACTIVE membership, eligible
+    business role, reviewer identity, durable screening evidence, conflict
+    finding, waiver, ethical wall, recusal, engagement, representation,
+    payment, execution or settlement authority.
+    2026-09-23 v1.19.0-L8-7D2-CLIENT-MATTER-READ-GRANT-CERT
+    certifies legal_operations:client_matter:read is granted exactly to
+    LEGAL_CLIENT and to no other role. The grant remains static/non-possessory,
+    requires later tenant_legal_client current authorization plus an ACTIVE
+    visibility binding, and does not expose tenant-wide matters, sheriff/deputy
+    queues, internal instructions, service evidence, billing execution, payment,
+    execution or settlement authority.
+    2026-09-23 v1.18.0-L8-7C2-CLIENT-VISIBILITY-WRITE-GRANTS-CERT
+    certifies legal_operations:client_visibility:write is granted exactly to
+    LEGAL_PARTNER, LEGAL_ATTORNEY, and LEGAL_PARALEGAL, with explicit denial
+    for LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT, SHERIFF, DEPUTY,
+    ENTERPRISE_ADMIN, AUDITOR, SOVEREIGN_ARCHITECT, SERVICE_WORKER and all
+    provider-policy roles. Static grants remain non-possessory and non-
+    self-authorizing.
+    2026-09-23 v1.17.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-GRANTS-CERT
+    certifies legal_operations:deputy_queue:read is granted only to DEPUTY and
+    is absent from SHERIFF and every other authorization role, preserving the
+    distinction between personal bound work and tenant-wide sheriff queues.
+    2026-09-23 v1.16.0-L8-6A-SHERIFF-QUEUE-READ-IAM-GRANTS-CERT
+    certifies legal_operations:queue:read is granted only to SHERIFF and is
+    absent from DEPUTY and every other authorization role.
+    2026-09-23 v1.15.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-GRANTS-CERT
+    certifies that legal_operations:receipt:write is granted only to SHERIFF
+    and remains absent from all other authorization roles.
+    2026-09-23 v1.14.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-GRANTS-CERT
+    certifies that legal_operations:directory:write is granted only to SHERIFF
+    and remains absent from partner, attorney, paralegal, secretary, finance,
+    deputy, client, general enterprise, system, and service roles.
     2026-09-17 v1.13.0-C1E-R1 certifies the seven-role legal-advisory
     generate/read grant set and explicit exclusion of all other roles.
     2026-09-15 v1.11.0-L7B-WILSY-AI-LEGAL-TOOL-GRANTS-CERT certifies the
@@ -61,9 +120,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.18.0-C1E-R1"
+    assert POLICY_VERSION == "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS"
 
-VERSION = "v1.12.0-C1E-R1-ROLE-GRANTS-CERT"
+VERSION = "v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -108,6 +167,9 @@ TENANT_PERMISSIONS = {
     "tenant:membership:write",
     "tenant:role_assignment:read",
     "tenant:role_assignment:write",
+    "tenant_branding:read",
+    "tenant_branding:profile:manage",
+    "tenant_branding:asset:manage",
     "subscription:read",
     "subscription:manage",
     "plan:read",
@@ -115,6 +177,12 @@ TENANT_PERMISSIONS = {
     "billing_intelligence:evidence:read",
     "legal_operations:instruction:read",
     "legal_operations:instruction:write",
+    "legal_operations:directory:write",
+    "legal_operations:receipt:write",
+    "legal_operations:queue:read",
+    "legal_operations:deputy_queue:read",
+    "legal_operations:client_visibility:write",
+    "legal_operations:client_matter:read",
     "legal_operations:allocation:read",
     "legal_operations:allocation:write",
     "legal_operations:attempt:read",
@@ -140,14 +208,22 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "wilsy_ai:reasoning:execute", "wilsy_ai:legal_services:execute"]
-    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "wilsy_ai:reasoning:execute", "wilsy_ai:legal_services:execute"]
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read", "tenant_branding:read"]
 
 
 def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     """Legal personas receive only the certified legal-operation capabilities."""
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
         "legal_operations:instruction:read", "legal_operations:instruction:write",
+        "legal_operations:evidence:write",
+        "legal_operations:evidence_cleanup:authorize",
+        "legal_operations:client_visibility:write",
+        "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
@@ -162,10 +238,96 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "wilsy_ai:legal_services:execute",
         "wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read",
     ]
-    assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == ["legal_operations:invoice:read"]
+    assert ROLE_PERMISSIONS_MAP["LEGAL_CLIENT"] == [
+        "legal_operations:invoice:read",
+        "legal_operations:client_matter:read",
+        "legal_operations:client_acceptance:write",
+    ]
+    conflict_review_permission = "legal_operations:conflict_review:write"
+    expected_conflict_review_roles = ("LEGAL_ATTORNEY", "LEGAL_PARTNER")
+    assert get_roles_granting_permission(conflict_review_permission) == (
+        expected_conflict_review_roles
+    )
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in expected_conflict_review_roles:
+            assert grants.count(conflict_review_permission) == 1
+        else:
+            assert conflict_review_permission not in grants
+
+    acknowledgment_permission = (
+        "legal_operations:matter_mandate_acknowledgment:write"
+    )
+    assert get_roles_granting_permission(acknowledgment_permission) == (
+        "LEGAL_ATTORNEY", "LEGAL_PARTNER"
+    )
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in {"LEGAL_ATTORNEY", "LEGAL_PARTNER"}:
+            assert grants.count(acknowledgment_permission) == 1
+        else:
+            assert acknowledgment_permission not in grants
+
+    engagement_firm_decision_permission = (
+        "legal_operations:matter_engagement_firm_decision:write"
+    )
+    assert get_roles_granting_permission(
+        engagement_firm_decision_permission
+    ) == ("LEGAL_ATTORNEY", "LEGAL_PARTNER")
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in {"LEGAL_ATTORNEY", "LEGAL_PARTNER"}:
+            assert grants.count(engagement_firm_decision_permission) == 1
+        else:
+            assert engagement_firm_decision_permission not in grants
+
+    visibility_permission = "legal_operations:client_visibility:write"
+    assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
+    assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
+    assert visibility_permission in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
+    for role in (
+        "LEGAL_SECRETARY",
+        "LEGAL_FINANCE",
+        "LEGAL_CLIENT",
+        "SHERIFF",
+        "DEPUTY",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+        "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN",
+        "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN",
+        "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+    ):
+        assert visibility_permission not in ROLE_PERMISSIONS_MAP[role]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_ATTORNEY"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_PARALEGAL"]
     assert "legal_operations:return:write" in ROLE_PERMISSIONS_MAP["LEGAL_SECRETARY"]
+    assert "legal_operations:directory:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:receipt:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:queue:read" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:deputy_queue:read" not in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:deputy_queue:read" in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    assert "legal_operations:directory:write" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    assert "legal_operations:receipt:write" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    assert "legal_operations:queue:read" not in ROLE_PERMISSIONS_MAP["DEPUTY"]
+    for role in (
+        "LEGAL_PARTNER",
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_SECRETARY",
+        "LEGAL_FINANCE",
+        "LEGAL_CLIENT",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+    ):
+        assert "legal_operations:directory:write" not in ROLE_PERMISSIONS_MAP[role]
+        assert "legal_operations:receipt:write" not in ROLE_PERMISSIONS_MAP[role]
+        assert "legal_operations:queue:read" not in ROLE_PERMISSIONS_MAP[role]
+        assert "legal_operations:deputy_queue:read" not in ROLE_PERMISSIONS_MAP[role]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
     assert "legal_operations:attempt_outcome:write" in ROLE_PERMISSIONS_MAP["DEPUTY"]
     assert all("financial_execution" not in grants for grants in ROLE_PERMISSIONS_MAP.values())
@@ -186,6 +348,31 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     for role in ("ENTERPRISE_ADMIN", "AUDITOR", "LEGAL_CLIENT", "SOVEREIGN_ARCHITECT", "SERVICE_WORKER"):
         assert "wilsy_ai:legal_advisory:generate" not in ROLE_PERMISSIONS_MAP[role]
 
+
+
+def test_client_visibility_write_is_granted_only_to_approved_law_firm_roles() -> None:
+    """L8-7C2 grant set is exact and cannot leak to client or operational roles."""
+    permission = "legal_operations:client_visibility:write"
+    expected = ("LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_PARTNER")
+    assert get_roles_granting_permission(permission) == expected
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role in expected:
+            assert grants.count(permission) == 1
+        else:
+            assert permission not in grants
+
+
+def test_client_matter_read_is_granted_only_to_legal_client() -> None:
+    """L8-7D2 projection-read grant is exact and cannot leak to internal roles."""
+    permission = "legal_operations:client_matter:read"
+    assert get_roles_granting_permission(permission) == ("LEGAL_CLIENT",)
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role == "LEGAL_CLIENT":
+            assert grants.count(permission) == 1
+        else:
+            assert permission not in grants
 
 
 def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> None:
@@ -251,6 +438,34 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
         ("wilsy_ai:usage_capacity:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("billing_intelligence:evidence:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("legal_operations:directory:write", ("SHERIFF",)),
+        ("legal_operations:receipt:write", ("SHERIFF",)),
+        ("legal_operations:queue:read", ("SHERIFF",)),
+        ("legal_operations:deputy_queue:read", ("DEPUTY",)),
+        (
+            "legal_operations:evidence:write",
+            ("LEGAL_PARTNER",),
+        ),
+        (
+            "legal_operations:client_visibility:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_PARTNER"),
+        ),
+        (
+            "legal_operations:client_matter:read",
+            ("LEGAL_CLIENT",),
+        ),
+        (
+            "legal_operations:conflict_review:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARTNER"),
+        ),
+        (
+            "legal_operations:matter_acceptance_instrument_approval:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARTNER"),
+        ),
+        (
+            "legal_operations:matter_engagement_firm_decision:write",
+            ("LEGAL_ATTORNEY", "LEGAL_PARTNER"),
+        ),
         ("platform_billing:release", ("ENTERPRISE_ADMIN",)),
         ("inbound_collection:authorization:create", ("INBOUND_COLLECTION_AUTHORIZATION_ADMIN",)),
         ("inbound_merchant_configuration:register", ("INBOUND_MERCHANT_CONFIGURATION_ADMIN",)),
@@ -319,6 +534,16 @@ def test_tenant_permission_reverse_lookup_is_exact(
         "billing_intelligence:evidence:read ",
         "billing_intelligence:evidence:READ",
         "billing_intelligence:evidence",
+        "legal_operations:client_visibility:*",
+        "legal_operations:client_visibility",
+        "LEGAL_OPERATIONS:CLIENT_VISIBILITY:WRITE",
+        " legal_operations:client_visibility:write",
+        "legal_operations:client_visibility:write ",
+        "legal_operations:client_matter:*",
+        "legal_operations:client_matter",
+        "LEGAL_OPERATIONS:CLIENT_MATTER:READ",
+        " legal_operations:client_matter:read",
+        "legal_operations:client_matter:read ",
     ),
 )
 def test_forbidden_unknown_partial_and_wildcard_like_permissions_never_grant(
@@ -457,10 +682,89 @@ def test_credential_security_grants_are_exactly_security_admin_only() -> None:
         assert not credential_permissions.intersection(ROLE_PERMISSIONS_MAP[role])
 
 
+
+def test_legal_evidence_cleanup_authority_is_granted_only_to_partner() -> None:
+    permission = "legal_operations:evidence_cleanup:authorize"
+
+    assert (
+        ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].count(permission)
+        == 1
+    )
+
+    assert get_roles_granting_permission(permission) == (
+        "LEGAL_PARTNER",
+    )
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        if role == "LEGAL_PARTNER":
+            continue
+        assert permission not in grants
+
+    forbidden = (
+        "legal_operations:evidence_cleanup:delete",
+        "legal_operations:evidence_cleanup:execute",
+        "legal_operations:evidence_cleanup:*",
+        "legal_operations:evidence_cleanup",
+        "LEGAL_OPERATIONS:EVIDENCE_CLEANUP:AUTHORIZE",
+        " legal_operations:evidence_cleanup:authorize",
+        "legal_operations:evidence_cleanup:authorize ",
+    )
+
+    for value in forbidden:
+        assert get_roles_granting_permission(value) == ()
+
+
+def test_legal_evidence_write_is_granted_only_to_partner() -> None:
+    """L10A3B evidence-ingest grant is exact and cannot leak across personas."""
+    permission = "legal_operations:evidence:write"
+
+    assert get_roles_granting_permission(permission) == (
+        "LEGAL_PARTNER",
+    )
+    assert (
+        ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].count(permission)
+        == 1
+    )
+
+    denied = {
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_SECRETARY",
+        "LEGAL_FINANCE",
+        "SHERIFF",
+        "DEPUTY",
+        "LEGAL_CLIENT",
+        "ENTERPRISE_ADMIN",
+        "AUDITOR",
+        "SOVEREIGN_ARCHITECT",
+        "SERVICE_WORKER",
+        "PLATFORM_BILLING_PROVIDER_POLICY_ADMIN",
+        "ACCOUNTS_PAYABLE_PROVIDER_POLICY_ADMIN",
+        "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
+        "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
+        "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ADMIN",
+        "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
+    }
+
+    for role in denied:
+        assert permission not in ROLE_PERMISSIONS_MAP[role]
+
+    for malformed in (
+        "legal_operations:evidence",
+        "legal_operations:evidence:*",
+        "legal_operations:evidence:read",
+        "legal_operations:evidence:write ",
+        " legal_operations:evidence:write",
+        "LEGAL_OPERATIONS:EVIDENCE:WRITE",
+    ):
+        assert get_roles_granting_permission(malformed) == ()
+
+
 # ARTIFACT: test_roles.py
-# VERSION: v1.13.0-C1E-R1
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: tenant/subscription/plan/WILSY AI capacity and billing-intelligence evidence reads remain policy; current tenant-scoped possession requires governed RoleAssignmentAuthority
+# TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
