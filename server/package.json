@@ -208,6 +208,9 @@
     },
     "nodemon": {
       "chokidar": "4.0.3"
+    },
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "3.15.2"
     }
   }
 }
