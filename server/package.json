@@ -205,6 +205,9 @@
     "adm-zip": "0.6.1",
     "geoip-lite": {
       "ip-address": "10.7.3"
+    },
+    "nodemon": {
+      "chokidar": "4.0.3"
     }
   }
 }
