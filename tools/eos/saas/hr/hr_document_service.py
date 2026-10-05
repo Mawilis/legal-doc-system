@@ -1,7 +1,7 @@
 """WILSY OS HR Document Orchestration Service.
 
 TITLE: HR Document Orchestration Service
-VERSION: v1.0.0-P0-C12F6F-HR-DOCUMENT-ORCHESTRATION-SERVICE
+VERSION: v1.1.0-P0-C12F6F-R4B-STREAMING-CHUNK-SOURCE
 AUTHORITY: Wilsy OS Core Governance / Python EOS
 
 PURPOSE:
@@ -46,6 +46,10 @@ ABSOLUTE CANONICAL PATH:
 CERTIFICATION / UPDATE DATE: 2026-10-05
 
 CHANGELOG:
+2026-10-05 v1.1.0-P0-C12F6F-R4B-STREAMING-CHUNK-SOURCE
+accepts a single-pass iterable of bounded bytes chunks without replay or
+whole-upload tuple materialization; provider and transaction authority remain
+unchanged.
 2026-10-05 v1.0.0-P0-C12F6F-HR-DOCUMENT-ORCHESTRATION-SERVICE
 establishes bounded two-plane HR document ingestion orchestration.
 
@@ -58,6 +62,7 @@ success.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import StrEnum
@@ -97,8 +102,8 @@ from tools.eos.saas.hr.hr_document_storage import (
 
 
 VERSION: Final[str] = (
-    "v1.0.0-P0-C12F6F-"
-    "HR-DOCUMENT-ORCHESTRATION-SERVICE"
+    "v1.1.0-P0-C12F6F-R4B-"
+    "STREAMING-CHUNK-SOURCE"
 )
 
 DEFAULT_MAX_TRANSACTION_ATTEMPTS: Final[int] = 3
@@ -370,7 +375,7 @@ def _employee_binding(
 def _provider_write_once(
     *,
     intent: HrDocumentBinaryWriteIntent,
-    chunks: tuple[bytes, ...],
+    chunks: Iterable[bytes],
     storage: HrDocumentBinaryStoragePort | Any,
 ) -> HrDocumentBinaryObjectEvidence:
     if storage is None:
@@ -379,16 +384,45 @@ def _provider_write_once(
             "P0_C12F6F_STORAGE_REQUIRED",
         )
 
-    if (
-        not isinstance(
-            chunks,
-            tuple,
-        )
-        or not chunks
-    ):
+    if chunks is None:
         _raise(
             HrDocumentServiceInputError,
             "P0_C12F6F_CHUNKS_REQUIRED",
+        )
+
+    try:
+        chunk_iterator = iter(
+            chunks
+        )
+
+    except TypeError as error:
+        _raise(
+            HrDocumentServiceInputError,
+            "P0_C12F6F_CHUNKS_REQUIRED",
+            error,
+        )
+
+    try:
+        first_chunk = next(
+            chunk_iterator
+        )
+
+    except StopIteration:
+        _raise(
+            HrDocumentServiceInputError,
+            "P0_C12F6F_CHUNKS_REQUIRED",
+        )
+
+    if (
+        not isinstance(
+            first_chunk,
+            bytes,
+        )
+        or not first_chunk
+    ):
+        _raise(
+            HrDocumentServiceInputError,
+            "P0_C12F6F_CHUNK_BYTES_REQUIRED",
         )
 
     provider_session: Any = None
@@ -408,8 +442,12 @@ def _provider_write_once(
 
         chunk_evidence = []
 
+        def _single_pass_chunks() -> Iterable[bytes]:
+            yield first_chunk
+            yield from chunk_iterator
+
         for sequence, chunk in enumerate(
-            chunks
+            _single_pass_chunks()
         ):
             if (
                 not isinstance(
@@ -421,6 +459,18 @@ def _provider_write_once(
                 _raise(
                     HrDocumentServiceInputError,
                     "P0_C12F6F_CHUNK_BYTES_REQUIRED",
+                )
+
+            if (
+                stream.content_length
+                + len(
+                    chunk
+                )
+                > intent.admitted_max_content_length
+            ):
+                _raise(
+                    HrDocumentServiceInputError,
+                    "P0_C12F6F_ADMITTED_CONTENT_LENGTH_EXCEEDED",
                 )
 
             stream.update(
@@ -499,6 +549,19 @@ def _provider_write_once(
         return inspected
 
     except HrDocumentServiceError:
+        if (
+            provider_session is not None
+            and provider_completed is False
+        ):
+            try:
+                storage.abort(
+                    intent,
+                    provider_session,
+                )
+
+            except Exception:
+                pass
+
         raise
 
     except (
@@ -830,7 +893,7 @@ def _persist_uncertainty(
 def orchestrate_hr_document_ingestion(
     *,
     intent: HrDocumentBinaryWriteIntent,
-    chunks: tuple[bytes, ...],
+    chunks: Iterable[bytes],
     document_class: HrDocumentClass,
     created_at: datetime,
     created_by_principal_id: str,
@@ -997,7 +1060,7 @@ __all__ = [
 
 
 # ARTIFACT: tools/eos/saas/hr/hr_document_service.py
-# VERSION: v1.0.0-P0-C12F6F-HR-DOCUMENT-ORCHESTRATION-SERVICE
+# VERSION: v1.1.0-P0-C12F6F-R4B-STREAMING-CHUNK-SOURCE
 # TRANSACTION OWNER: F6F
 # PROVIDER WRITE: exactly once outside Mongo transactions
 # PRIMARY MONGO TX: bounded fresh whole-transaction retry
