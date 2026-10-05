@@ -1,0 +1,92 @@
+# ==============================================================================
+# WILSY OS — DEDICATED PYTHON EOS PRODUCTION IMAGE
+#
+# TITLE: Dedicated Python EOS Production Runtime Image
+# VERSION: v1.0.0-P0-C12F7C-E1-R9-R5
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Minimal, non-root, fail-closed production image for the canonical
+#          Python EOS FastAPI authority on port 9095.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/docker/Dockerfile.eos
+# COLLABORATION / OWNERSHIP:
+#   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
+#   Node remains a transport/BFF consumer and is not embedded into this image.
+# CERTIFICATION OR UPDATE DATE: 2026-10-05
+# CHANGELOG:
+#   v1.0.0-P0-C12F7C-E1-R9-R5
+#     - Establish dedicated Python 3.12 production image.
+#     - Bind canonical tools.eos.api.server:app through Uvicorn on port 9095.
+#     - Run as a fixed non-root runtime principal.
+#     - Use repository-pinned Python runtime requirements.
+#     - Provide bounded root-health container probe.
+# COMPLIANCE:
+#   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE:
+#   No secrets, AWS static credentials, tenant data, deployment credentials, or
+#   provider coordinates are baked into the image. Runtime authority arrives only
+#   through the deployment environment / workload identity.
+# TENANT BOUNDARY:
+#   Container construction creates no tenant truth and confers no cross-tenant
+#   authority. Tenant enforcement remains owned by canonical Python EOS services.
+# AUTHORITY BOUNDARY:
+#   This artifact starts Python EOS only. It does not create AWS infrastructure,
+#   grant IAM authority, or repurpose the predictive/Node production workload.
+# FINANCIAL AUTHORITY BOUNDARY:
+#   Kennel EOS remains the exclusive financial execution authority. This image
+#   creates no payment, settlement, paid-state, destination, or banking truth.
+# ==============================================================================
+
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    WILSY_ENV=production
+
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+
+RUN python -m pip install --no-cache-dir --requirement /app/requirements.txt \
+    && groupadd --system --gid 10001 wilsy \
+    && useradd \
+        --system \
+        --uid 10001 \
+        --gid 10001 \
+        --home-dir /nonexistent \
+        --shell /usr/sbin/nologin \
+        wilsy
+
+COPY --chown=10001:10001 tools /app/tools
+
+USER 10001:10001
+
+EXPOSE 9095
+
+HEALTHCHECK \
+    --interval=30s \
+    --timeout=5s \
+    --start-period=20s \
+    --retries=3 \
+    CMD ["python", "-c", "import urllib.request; response=urllib.request.urlopen('http://127.0.0.1:9095/', timeout=3); raise SystemExit(0 if response.status == 200 else 1)"]
+
+CMD ["python", "-m", "uvicorn", "tools.eos.api.server:app", "--host", "0.0.0.0", "--port", "9095"]
+
+# ==============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+#
+# ARTIFACT: infra/docker/Dockerfile.eos
+# VERSION: v1.0.0-P0-C12F7C-E1-R9-R5
+# AUTHORITY BOUNDARY:
+#   Dedicated container runtime for canonical Python EOS only; no IAM or
+#   infrastructure provisioning authority is conferred by this artifact.
+# TENANT POSTURE:
+#   Tenant isolation remains fail-closed inside canonical Python EOS authority.
+# FAIL-CLOSED POSTURE:
+#   Missing runtime configuration, provider authority, database authority, or
+#   downstream capability must fail through the application contract rather than
+#   being fabricated or silently downgraded.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================

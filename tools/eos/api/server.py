@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT
+VERSION: v1.20.0-P0-C12F7C-HR-DOCUMENT-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities and explicitly bootstrap the
          durable L8-6B deputy-principal binding uniqueness indexes after
@@ -9,8 +9,9 @@ EPITOME: Mount sovereign Python API authorities and explicitly bootstrap the
          Legal Operations/IAM/financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: 2026-09-23 v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP bootstraps the
+CERTIFICATION / UPDATE DATE: 2026-10-05
+CHANGELOG: 2026-10-05 v1.20.0-P0-C12F7C-HR-DOCUMENT-ROUTER-MOUNT composes the governed HR document router at /api/hr/documents; preserves Python EOS business authority, F6F ingestion ownership, persisted-sensitivity read authorization, tenant isolation, reconciliation-required 202 semantics, and no delete or financial execution authority.
+2026-09-23 v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP bootstraps the
 L8-6B deputy-principal binding registry indexes after successful database
 connection so one-to-one tenant/principal and tenant/deputy uniqueness exists
 before any binding command; startup creates no binding or authorization truth.
@@ -109,9 +110,9 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
 )
+from .hr_document_router import router as hr_document_router
 
-VERSION = "v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT"
-
+VERSION = "v1.20.0-P0-C12F7C-HR-DOCUMENT-ROUTER-MOUNT"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -410,6 +411,7 @@ class WilsyAPIServer:
 
         # Provider evidence ingress is mounted once at its canonical route.
         app.include_router(payshap_webhook_router)
+        app.include_router(hr_document_router)
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
@@ -427,7 +429,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.19.0-L10-P2C7B-TENANT-BRANDING-ROUTER-MOUNT
+# VERSION: v1.20.0-P0-C12F7C-HR-DOCUMENT-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

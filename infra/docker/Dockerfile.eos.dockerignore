@@ -1,0 +1,55 @@
+# ==============================================================================
+# WILSY OS — DEDICATED PYTHON EOS DOCKER BUILD CONTEXT POLICY
+#
+# TITLE: Dedicated Python EOS Docker Build Context Policy
+# VERSION: v1.0.0-P0-C12F7C-E1-R9-R6A
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Fail-closed build-context allowlist for Dockerfile.eos.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/docker/Dockerfile.eos.dockerignore
+# COLLABORATION / OWNERSHIP:
+#   Applies only to builds using Dockerfile.eos; legacy Node and predictive image
+#   build contexts are intentionally untouched.
+# CERTIFICATION OR UPDATE DATE: 2026-10-05
+# CHANGELOG:
+#   v1.0.0-P0-C12F7C-E1-R9-R6A
+#     - Establish deny-by-default EOS Docker build context.
+#     - Permit only Dockerfile.eos, this policy, requirements.txt, and tools/.
+#     - Exclude Git metadata, environment files, credentials, client/server trees,
+#       tests, caches, build output, logs, evidence, and unrelated artifacts.
+# COMPLIANCE:
+#   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE:
+#   Prevents unrelated repository content and local credential/configuration
+#   material from entering the dedicated EOS Docker build context.
+# TENANT BOUNDARY:
+#   No tenant data is admitted intentionally into the image build context.
+# AUTHORITY BOUNDARY:
+#   Build-context policy only; grants no runtime, IAM, AWS, database, or provider
+#   authority.
+# FINANCIAL AUTHORITY BOUNDARY:
+#   Kennel EOS remains the exclusive financial execution authority.
+# ==============================================================================
+
+**
+
+!infra/docker/Dockerfile.eos
+!infra/docker/Dockerfile.eos.dockerignore
+!requirements.txt
+!tools/
+!tools/**
+
+# ==============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+#
+# ARTIFACT: infra/docker/Dockerfile.eos.dockerignore
+# VERSION: v1.0.0-P0-C12F7C-E1-R9-R6A
+# AUTHORITY BOUNDARY:
+#   Dedicated Docker build-context filtering only.
+# TENANT POSTURE:
+#   Fail-closed deny-by-default context admission.
+# FAIL-CLOSED POSTURE:
+#   Files are excluded unless explicitly required by the EOS image contract.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================
