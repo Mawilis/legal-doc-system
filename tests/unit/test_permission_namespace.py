@@ -126,7 +126,7 @@ VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSIO
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION"
+    assert POLICY_VERSION == "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS"
 
 
 def test_permission_canon_properties() -> None:
@@ -209,9 +209,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 73
+    ) == 87
 
-    assert len(rows) == 76
+    assert len(rows) == 90
 
     for permission_id in tenant:
         metadata = permission_metadata(

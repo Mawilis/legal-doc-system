@@ -178,7 +178,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS"
+VERSION = "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -356,6 +356,49 @@ for _hr_role_name in (
     ]
 
 
+# P0-C12F7B sensitivity-specific single-purpose HR document grants.
+_HR_DOCUMENT_AUTH_ROLE_PERMISSIONS = {
+    "HR_DOCUMENT_STANDARD_EMPLOYMENT_WRITE":
+        "hr:document:standard_employment:write",
+    "HR_DOCUMENT_STANDARD_EMPLOYMENT_READ":
+        "hr:document:standard_employment:read",
+    "HR_DOCUMENT_EMPLOYEE_RELATIONS_RESTRICTED_WRITE":
+        "hr:document:employee_relations_restricted:write",
+    "HR_DOCUMENT_EMPLOYEE_RELATIONS_RESTRICTED_READ":
+        "hr:document:employee_relations_restricted:read",
+    "HR_DOCUMENT_PERFORMANCE_RESTRICTED_WRITE":
+        "hr:document:performance_restricted:write",
+    "HR_DOCUMENT_PERFORMANCE_RESTRICTED_READ":
+        "hr:document:performance_restricted:read",
+    "HR_DOCUMENT_HIGHLY_SENSITIVE_HEALTH_WRITE":
+        "hr:document:highly_sensitive_health:write",
+    "HR_DOCUMENT_HIGHLY_SENSITIVE_HEALTH_READ":
+        "hr:document:highly_sensitive_health:read",
+    "HR_DOCUMENT_HIGHLY_SENSITIVE_IDENTITY_WRITE":
+        "hr:document:highly_sensitive_identity:write",
+    "HR_DOCUMENT_HIGHLY_SENSITIVE_IDENTITY_READ":
+        "hr:document:highly_sensitive_identity:read",
+    "HR_DOCUMENT_SEPARATION_RESTRICTED_WRITE":
+        "hr:document:separation_restricted:write",
+    "HR_DOCUMENT_SEPARATION_RESTRICTED_READ":
+        "hr:document:separation_restricted:read",
+    "HR_DOCUMENT_GENERAL_WRITE":
+        "hr:document:general:write",
+    "HR_DOCUMENT_GENERAL_READ":
+        "hr:document:general:read",
+}
+
+for (
+    _hr_document_auth_role,
+    _hr_document_permission,
+) in _HR_DOCUMENT_AUTH_ROLE_PERMISSIONS.items():
+    ROLE_PERMISSIONS_MAP[
+        _hr_document_auth_role
+    ] = [
+        _hr_document_permission
+    ]
+
+
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:return:write")
 for _role_name in ("SHERIFF", "DEPUTY"):
@@ -419,7 +462,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
+# VERSION: v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

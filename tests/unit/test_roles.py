@@ -120,7 +120,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS"
+    assert POLICY_VERSION == "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-GRANTS"
 
 VERSION = "v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS-CERT"
 

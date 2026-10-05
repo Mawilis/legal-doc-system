@@ -1407,7 +1407,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
+    assert ta.VERSION == "v1.32.0-P0-C12F7B-HR-DOCUMENT-IAM-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1421,7 +1421,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
+    assert ta.VERSION == "v1.32.0-P0-C12F7B-HR-DOCUMENT-IAM-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
