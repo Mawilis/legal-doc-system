@@ -165,7 +165,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY"
+VERSION = "v1.33.0-P0-C12F7B-HR-DOCUMENT-IAM-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -179,6 +179,20 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_evidence_write": "legal_operations:evidence:write",
     "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
     "hr_employee_relation_write": "hr:employee_relation:write",
+    "hr_document_standard_employment_write": "hr:document:standard_employment:write",
+    "hr_document_standard_employment_read": "hr:document:standard_employment:read",
+    "hr_document_employee_relations_restricted_write": "hr:document:employee_relations_restricted:write",
+    "hr_document_employee_relations_restricted_read": "hr:document:employee_relations_restricted:read",
+    "hr_document_performance_restricted_write": "hr:document:performance_restricted:write",
+    "hr_document_performance_restricted_read": "hr:document:performance_restricted:read",
+    "hr_document_highly_sensitive_health_write": "hr:document:highly_sensitive_health:write",
+    "hr_document_highly_sensitive_health_read": "hr:document:highly_sensitive_health:read",
+    "hr_document_highly_sensitive_identity_write": "hr:document:highly_sensitive_identity:write",
+    "hr_document_highly_sensitive_identity_read": "hr:document:highly_sensitive_identity:read",
+    "hr_document_separation_restricted_write": "hr:document:separation_restricted:write",
+    "hr_document_separation_restricted_read": "hr:document:separation_restricted:read",
+    "hr_document_general_write": "hr:document:general:write",
+    "hr_document_general_read": "hr:document:general:read",
     "legal_conflict_review_write": "legal_operations:conflict_review:write",
     "legal_client_acceptance_write": "legal_operations:client_acceptance:write",
     "legal_matter_acceptance_instrument_approval_write": "legal_operations:matter_acceptance_instrument_approval:write",
@@ -320,6 +334,164 @@ ELIGIBILITY = MappingProxyType(
     _hr_relation_eligibility_updates
 )
 
+
+# P0-C12F7B sensitivity-specific HR document eligibility.
+_HR_DOCUMENT_OPERATION_ROLES: Final = MappingProxyType({
+    "hr_document_standard_employment_write": frozenset({
+        "tenant_hr_administrator",
+        "tenant_hr_director",
+        "tenant_hr_manager",
+        "tenant_onboarding_coordinator",
+        "tenant_onboarding_manager",
+        "tenant_personnel_administrator",
+    }),
+    "hr_document_standard_employment_read": frozenset({
+        "tenant_hr_administrator",
+        "tenant_hr_business_partner",
+        "tenant_hr_data_steward",
+        "tenant_hr_director",
+        "tenant_hr_generalist",
+        "tenant_hr_manager",
+        "tenant_hr_specialist",
+        "tenant_offboarding_administrator",
+        "tenant_onboarding_coordinator",
+        "tenant_onboarding_manager",
+        "tenant_personnel_administrator",
+    }),
+    "hr_document_employee_relations_restricted_write": frozenset({
+        "tenant_employee_relations_director",
+        "tenant_employee_relations_manager",
+        "tenant_employee_relations_specialist",
+        "tenant_hr_director",
+        "tenant_hr_manager",
+    }),
+    "hr_document_employee_relations_restricted_read": frozenset({
+        "tenant_disciplinary_case_manager",
+        "tenant_disciplinary_outcome_approver",
+        "tenant_employee_relations_director",
+        "tenant_employee_relations_manager",
+        "tenant_employee_relations_specialist",
+        "tenant_grievance_manager",
+        "tenant_hr_director",
+        "tenant_hr_investigator",
+        "tenant_hr_manager",
+        "tenant_labour_relations_manager",
+        "tenant_labour_relations_specialist",
+    }),
+    "hr_document_performance_restricted_write": frozenset({
+        "tenant_hr_director",
+        "tenant_hr_manager",
+        "tenant_performance_director",
+        "tenant_performance_manager",
+        "tenant_performance_specialist",
+    }),
+    "hr_document_performance_restricted_read": frozenset({
+        "tenant_hr_business_partner",
+        "tenant_hr_director",
+        "tenant_hr_manager",
+        "tenant_performance_director",
+        "tenant_performance_manager",
+        "tenant_performance_specialist",
+    }),
+    "hr_document_highly_sensitive_health_write": frozenset({
+        "tenant_health_safety_director",
+        "tenant_health_safety_manager",
+        "tenant_health_safety_officer",
+        "tenant_occupational_health_administrator",
+    }),
+    "hr_document_highly_sensitive_health_read": frozenset({
+        "tenant_health_safety_director",
+        "tenant_health_safety_manager",
+        "tenant_health_safety_officer",
+        "tenant_occupational_health_administrator",
+        "tenant_people_privacy_officer",
+    }),
+    "hr_document_highly_sensitive_identity_write": frozenset({
+        "tenant_global_mobility_manager",
+        "tenant_global_mobility_specialist",
+        "tenant_immigration_administrator",
+        "tenant_onboarding_coordinator",
+        "tenant_onboarding_manager",
+    }),
+    "hr_document_highly_sensitive_identity_read": frozenset({
+        "tenant_global_mobility_manager",
+        "tenant_global_mobility_specialist",
+        "tenant_immigration_administrator",
+        "tenant_onboarding_coordinator",
+        "tenant_onboarding_manager",
+        "tenant_people_privacy_officer",
+    }),
+    "hr_document_separation_restricted_write": frozenset({
+        "tenant_employee_relations_director",
+        "tenant_employee_relations_manager",
+        "tenant_employee_relations_specialist",
+        "tenant_hr_director",
+        "tenant_hr_manager",
+        "tenant_offboarding_administrator",
+    }),
+    "hr_document_separation_restricted_read": frozenset({
+        "tenant_employee_relations_director",
+        "tenant_employee_relations_manager",
+        "tenant_employee_relations_specialist",
+        "tenant_hr_business_partner",
+        "tenant_hr_director",
+        "tenant_hr_generalist",
+        "tenant_hr_manager",
+        "tenant_offboarding_administrator",
+    }),
+    "hr_document_general_write": frozenset({
+        "tenant_hr_administrator",
+        "tenant_hr_director",
+        "tenant_hr_manager",
+        "tenant_personnel_administrator",
+    }),
+    "hr_document_general_read": frozenset({
+        "tenant_hr_administrator",
+        "tenant_hr_analyst",
+        "tenant_hr_business_partner",
+        "tenant_hr_director",
+        "tenant_hr_generalist",
+        "tenant_hr_manager",
+        "tenant_hr_specialist",
+        "tenant_personnel_administrator",
+    }),
+})
+
+OPERATIONS: FrozenSet[str] = frozenset(
+    (*OPERATIONS, *_HR_DOCUMENT_OPERATION_ROLES.keys())
+)
+
+_hr_document_eligibility_updates = dict(
+    ELIGIBILITY
+)
+
+for (
+    _hr_document_operation,
+    _hr_document_roles,
+) in _HR_DOCUMENT_OPERATION_ROLES.items():
+    for _hr_document_business_role in _hr_document_roles:
+        _current = dict(
+            _hr_document_eligibility_updates.get(
+                _hr_document_business_role,
+                {},
+            )
+        )
+
+        _current[
+            _hr_document_operation
+        ] = ELIGIBLE
+
+        _hr_document_eligibility_updates[
+            _hr_document_business_role
+        ] = MappingProxyType(
+            _current
+        )
+
+ELIGIBILITY = MappingProxyType(
+    _hr_document_eligibility_updates
+)
+
+
 PROFILE_READABLE_FIELDS: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name", "tax_id", "contact_email", "plan", "status", "verified", "checksum", "proof_hash", "compliance_flags", "created_at", "updated_at"})
 PROFILE_MUTABLE_FIELDS_V1: Final[FrozenSet[str]] = frozenset({"name", "alias", "industry", "region", "sector", "legal_name"})
 LIFECYCLE_FIELDS: Final[FrozenSet[str]] = frozenset({"status"})
@@ -367,7 +539,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY
+# VERSION: v1.33.0-P0-C12F7B-HR-DOCUMENT-IAM-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

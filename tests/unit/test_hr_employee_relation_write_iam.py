@@ -256,9 +256,9 @@ def test_permission_registry_expands_exactly_one_canonical_row() -> None:
             if row["disposition"]
             == "CANONICAL"
         ]
-    ) == 73
+    ) == 87
 
-    assert len(rows) == 76
+    assert len(rows) == 90
 
     assert sum(
         row["permission_id"]

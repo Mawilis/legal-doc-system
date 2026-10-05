@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
+VERSION: v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -164,7 +164,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION"
+VERSION = "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS"
 
 
 class PermissionDisposition(StrEnum):
@@ -435,6 +435,90 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "record own-tenant employee relations evidence",
+            tenant=True,
+        ),
+        "hr:document:standard_employment:write": _meta(
+            "hr:document:standard_employment:write",
+            "TENANT", "TENANT",
+            "write own-tenant standard employment HR documents",
+            tenant=True,
+        ),
+        "hr:document:standard_employment:read": _meta(
+            "hr:document:standard_employment:read",
+            "TENANT", "TENANT",
+            "read own-tenant standard employment HR documents",
+            tenant=True,
+        ),
+        "hr:document:employee_relations_restricted:write": _meta(
+            "hr:document:employee_relations_restricted:write",
+            "TENANT", "TENANT",
+            "write own-tenant employee-relations restricted HR documents",
+            tenant=True,
+        ),
+        "hr:document:employee_relations_restricted:read": _meta(
+            "hr:document:employee_relations_restricted:read",
+            "TENANT", "TENANT",
+            "read own-tenant employee-relations restricted HR documents",
+            tenant=True,
+        ),
+        "hr:document:performance_restricted:write": _meta(
+            "hr:document:performance_restricted:write",
+            "TENANT", "TENANT",
+            "write own-tenant performance restricted HR documents",
+            tenant=True,
+        ),
+        "hr:document:performance_restricted:read": _meta(
+            "hr:document:performance_restricted:read",
+            "TENANT", "TENANT",
+            "read own-tenant performance restricted HR documents",
+            tenant=True,
+        ),
+        "hr:document:highly_sensitive_health:write": _meta(
+            "hr:document:highly_sensitive_health:write",
+            "TENANT", "TENANT",
+            "write own-tenant highly sensitive health HR documents",
+            tenant=True,
+        ),
+        "hr:document:highly_sensitive_health:read": _meta(
+            "hr:document:highly_sensitive_health:read",
+            "TENANT", "TENANT",
+            "read own-tenant highly sensitive health HR documents",
+            tenant=True,
+        ),
+        "hr:document:highly_sensitive_identity:write": _meta(
+            "hr:document:highly_sensitive_identity:write",
+            "TENANT", "TENANT",
+            "write own-tenant highly sensitive identity HR documents",
+            tenant=True,
+        ),
+        "hr:document:highly_sensitive_identity:read": _meta(
+            "hr:document:highly_sensitive_identity:read",
+            "TENANT", "TENANT",
+            "read own-tenant highly sensitive identity HR documents",
+            tenant=True,
+        ),
+        "hr:document:separation_restricted:write": _meta(
+            "hr:document:separation_restricted:write",
+            "TENANT", "TENANT",
+            "write own-tenant separation restricted HR documents",
+            tenant=True,
+        ),
+        "hr:document:separation_restricted:read": _meta(
+            "hr:document:separation_restricted:read",
+            "TENANT", "TENANT",
+            "read own-tenant separation restricted HR documents",
+            tenant=True,
+        ),
+        "hr:document:general:write": _meta(
+            "hr:document:general:write",
+            "TENANT", "TENANT",
+            "write own-tenant general HR documents",
+            tenant=True,
+        ),
+        "hr:document:general:read": _meta(
+            "hr:document:general:read",
+            "TENANT", "TENANT",
+            "read own-tenant general HR documents",
             tenant=True,
         ),
         "legal_operations:instruction:read": _meta(
@@ -774,7 +858,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
+# VERSION: v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

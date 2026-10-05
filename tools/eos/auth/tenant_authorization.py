@@ -157,7 +157,7 @@ from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operati
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING"
+VERSION = "v1.32.0-P0-C12F7B-HR-DOCUMENT-IAM-BINDING"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -184,6 +184,39 @@ _BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_cleanup_authorize": "
 _BINDINGS = MappingProxyType({
     **_BINDINGS,
     "hr_employee_relation_write": "hr:employee_relation:write",
+})
+
+
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "hr_document_standard_employment_write":
+        "hr:document:standard_employment:write",
+    "hr_document_standard_employment_read":
+        "hr:document:standard_employment:read",
+    "hr_document_employee_relations_restricted_write":
+        "hr:document:employee_relations_restricted:write",
+    "hr_document_employee_relations_restricted_read":
+        "hr:document:employee_relations_restricted:read",
+    "hr_document_performance_restricted_write":
+        "hr:document:performance_restricted:write",
+    "hr_document_performance_restricted_read":
+        "hr:document:performance_restricted:read",
+    "hr_document_highly_sensitive_health_write":
+        "hr:document:highly_sensitive_health:write",
+    "hr_document_highly_sensitive_health_read":
+        "hr:document:highly_sensitive_health:read",
+    "hr_document_highly_sensitive_identity_write":
+        "hr:document:highly_sensitive_identity:write",
+    "hr_document_highly_sensitive_identity_read":
+        "hr:document:highly_sensitive_identity:read",
+    "hr_document_separation_restricted_write":
+        "hr:document:separation_restricted:write",
+    "hr_document_separation_restricted_read":
+        "hr:document:separation_restricted:read",
+    "hr_document_general_write":
+        "hr:document:general:write",
+    "hr_document_general_read":
+        "hr:document:general:read",
 })
 
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
@@ -227,7 +260,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
+# VERSION: v1.32.0-P0-C12F7B-HR-DOCUMENT-IAM-BINDING
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required; conflict review is partner/attorney-only and client matter access still requires ACTIVE visibility
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
