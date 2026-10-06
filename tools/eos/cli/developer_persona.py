@@ -2,7 +2,7 @@
 """Interactive development-only operator for WILSY OS legal personas.
 
 TITLE: WILSY OS Developer Legal Persona Operator
-VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR
+VERSION: v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Local interactive operator that authenticates one existing tenant owner
          with canonical password plus durable TOTP, then delegates exactly one
@@ -13,8 +13,12 @@ COLLABORATION / OWNERSHIP: Python EOS development tooling owns interactive input
                            and local database lifecycle only; AuthRegistry owns
                            password/TOTP verification and the developer persona
                            provisioner owns admission transaction semantics.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+CERTIFICATION / UPDATE DATE: 2026-10-06
 CHANGELOG:
+  v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR — Bounds successful CLI stdout
+    to the constant CREATED acknowledgement so provisioning identity, tenant,
+    role, credential-revision, and MFA-enrollment metadata are never rendered
+    through the command-line presentation seam.
   v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR — Establishes an explicitly
     non-production, feature-flagged local operator for creating one certified
     Legal OS development persona. Owner email and all passwords/TOTP values are
@@ -70,7 +74,7 @@ from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.saas.auth.password_blocklist import PwnedPasswordBlocklistChecker
 
 
-VERSION: Final[str] = "v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR"
+VERSION: Final[str] = "v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR"
 _ENABLE_ENV: Final[str] = "WILSY_DEVELOPER_PERSONA_PROVISIONING"
 _ALLOWED_ENVIRONMENTS: Final[frozenset[str]] = frozenset(
     {"development", "dev", "local", "test", "testing"}
@@ -372,7 +376,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except Exception:
         print(DeveloperPersonaOperatorCode.UNEXPECTED_FAILURE.value, file=sys.stderr)
         return 3
-    print(json.dumps(result, sort_keys=True))
+    print(json.dumps({"status": "CREATED"}, sort_keys=True))
     return 0
 
 
@@ -391,7 +395,7 @@ __all__ = [
 
 
 # ARTIFACT: tools/eos/cli/developer_persona.py
-# VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR
+# VERSION: v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR
 # AUTHORITY BOUNDARY: local development operator; canonical auth and provisioner remain authoritative
 # TENANT POSTURE: explicit tenant selector must match authenticated owner before target input; provisioner revalidates durable owner scope
 # FAIL-CLOSED POSTURE: production, disabled flag, invalid input, auth/MFA/tenant/principal failures, blocklist uncertainty, and provisioning failure deny
