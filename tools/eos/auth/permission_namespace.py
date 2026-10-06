@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS
+VERSION: v1.36.0-CRM-P9C1-LEAD-PERMISSIONS
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -12,6 +12,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-06 v1.36.0-CRM-P9C1-LEAD-PERMISSIONS adds the exact
+    own-tenant crm:lead:create and crm:lead:read canonical permission
+    vocabulary for the separately governed CRM Lead command authority.
+    Both permissions remain tenant-membership gated, non-cross-tenant,
+    non-financial and non-self-authorizing. They grant no role possession,
+    business-role eligibility, subscription entitlement, quota, AI,
+    transport, persistence mutation or financial execution authority.
     2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
     adds hr:employee_relation:write as one exact canonical own-tenant
     TENANT permission for EmployeeRelation evidence composition. It
@@ -164,7 +171,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS"
+VERSION = "v1.36.0-CRM-P9C1-LEAD-PERMISSIONS"
 
 
 class PermissionDisposition(StrEnum):
@@ -354,6 +361,20 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "manage own-tenant subscription lifecycle truth",
+            tenant=True,
+        ),
+        "crm:lead:create": _meta(
+            "crm:lead:create",
+            "TENANT",
+            "TENANT",
+            "create CRM leads",
+            tenant=True,
+        ),
+        "crm:lead:read": _meta(
+            "crm:lead:read",
+            "TENANT",
+            "TENANT",
+            "read CRM leads",
             tenant=True,
         ),
         "tenant_branding:read": _meta(
@@ -858,7 +879,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS
+# VERSION: v1.36.0-CRM-P9C1-LEAD-PERMISSIONS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

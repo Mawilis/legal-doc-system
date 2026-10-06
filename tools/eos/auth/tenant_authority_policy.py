@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY
+VERSION: v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -12,6 +12,15 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-06 v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY
+    introduces crm_lead_create and crm_lead_read as exact closed
+    own-tenant operation vocabulary. Create is ELIGIBLE only for
+    tenant_owner, tenant_admin and tenant_manager; read is ELIGIBLE
+    for those roles plus tenant_auditor. Each operation maps exactly
+    to its canonical crm:lead permission. Specialized Legal, HR,
+    provider, finance and other tenant roles remain DENY. Eligibility
+    alone proves no permission possession, assignment, subscription
+    entitlement, quota, command execution or financial authority.
 2026-10-04 v1.32.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY
 admits the frozen 101-role HR catalogue into canonical tenant
 business-role vocabulary and adds hr_employee_relation_write.
@@ -165,7 +174,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.33.0-P0-C12F7B-HR-DOCUMENT-IAM-ELIGIBILITY"
+VERSION = "v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -176,6 +185,8 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "business_role_assign": "tenant:business_role:write",
     "business_role_change": "tenant:business_role:write",
     "business_role_revoke": "tenant:business_role:write",
+    "crm_lead_create": "crm:lead:create",
+    "crm_lead_read": "crm:lead:read",
     "legal_evidence_write": "legal_operations:evidence:write",
     "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
     "hr_employee_relation_write": "hr:employee_relation:write",
@@ -502,6 +513,44 @@ SECURITY_SENSITIVE_FIELDS: Final[FrozenSet[str]] = frozenset({"tax_id", "contact
 SYSTEM_MANAGED_FIELDS: Final[FrozenSet[str]] = frozenset({"created_at", "updated_at"})
 FUTURE_PERMISSION_CANDIDATES: Final[FrozenSet[str]] = frozenset({"tenant:profile:read", "tenant:profile:write", "tenant:lifecycle:archive", "tenant:membership:read", "tenant:membership:write", "tenant:role_assignment:read", "tenant:role_assignment:write"})
 
+
+# CRM P9C3 — canonical Lead operation/business-role policy.
+#
+# This policy expresses eligibility only. It does not prove permission
+# possession, ACTIVE assignment, subscription entitlement, quota,
+# command execution, persistence mutation, AI authority, or finance.
+OPERATIONS: FrozenSet[str] = frozenset(
+    (*OPERATIONS, "crm_lead_create", "crm_lead_read")
+)
+
+_crm_eligibility_updates = dict(ELIGIBILITY)
+
+for _crm_role in (
+    "tenant_owner",
+    "tenant_admin",
+    "tenant_manager",
+):
+    _crm_role_policy = dict(
+        _crm_eligibility_updates[_crm_role]
+    )
+    _crm_role_policy["crm_lead_create"] = ELIGIBLE
+    _crm_role_policy["crm_lead_read"] = ELIGIBLE
+    _crm_eligibility_updates[_crm_role] = MappingProxyType(
+        _crm_role_policy
+    )
+
+_crm_auditor_policy = dict(
+    _crm_eligibility_updates["tenant_auditor"]
+)
+_crm_auditor_policy["crm_lead_read"] = ELIGIBLE
+_crm_auditor_policy["crm_lead_create"] = DENY
+_crm_eligibility_updates["tenant_auditor"] = MappingProxyType(
+    _crm_auditor_policy
+)
+
+ELIGIBILITY = MappingProxyType(_crm_eligibility_updates)
+
+
 def normalize_tenant_business_role(role: object) -> str | None:
     """Return an exact canonical tenant role, otherwise fail closed."""
     return role if isinstance(role, str) and role in TENANT_ROLES else None
@@ -539,7 +588,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.33.0-P0-C12F7B-HR-DOCUMENT-IAM-ELIGIBILITY
+# VERSION: v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
+VERSION: v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-06 v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS grants
+    crm:lead:create exactly to ENTERPRISE_ADMIN and crm:lead:read exactly
+    to ENTERPRISE_ADMIN and AUDITOR. Static grants remain non-possessory:
+    they do not prove ACTIVE tenant membership, ACTIVE assignment,
+    business-role eligibility, subscription entitlement, quota, AI,
+    transport, persistence mutation or financial execution authority.
     2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS
     adds HR_DIRECTOR, HR_MANAGER, EMPLOYEE_RELATIONS_DIRECTOR,
     EMPLOYEE_RELATIONS_MANAGER and EMPLOYEE_RELATIONS_SPECIALIST as
@@ -178,7 +184,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-GRANTS"
+VERSION = "v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -211,6 +217,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
+        "crm:lead:create",
+        "crm:lead:read",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -226,6 +234,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "billing_intelligence:evidence:read",
         "tenant:business_role:read",
         "tenant_branding:read",
+        "crm:lead:read",
     ],
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
@@ -462,7 +471,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-GRANTS
+# VERSION: v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
