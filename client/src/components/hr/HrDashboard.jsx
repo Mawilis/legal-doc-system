@@ -12,6 +12,7 @@
  * ║ • AI Engineering (Codex) - REBUILT: Connected HR to a live backend ledger, added workforce KPIs, hiring/payroll/performance/absence ║
  * ║   workflows, source feedback, mutation forms, exports and telemetry without fake placeholder records.                                ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  * AUTHORITY BOUNDARY: HR work-log, employee-relations, payroll-record, candidate full-update, artifact client transport, and payslip operations fail closed until executable backend contracts are certified.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -2437,10 +2438,25 @@ const HrDashboard = () => {
       payroll: () => hrService.getPayrollSummary(tenantId, params),
       benefits: () => hrService.getBenefits(tenantId, params),
       performance: () => hrService.getPerformanceReviews(tenantId, params),
-      activity: () => hrService.getEmployeeWorkLogs(tenantId, params),
-      relations: () => hrService.getEmployeeRelations(tenantId, params),
+      activity: () => Promise.resolve({
+        ...EMPTY_DATASET,
+        limit: params.limit,
+        offset: params.offset,
+        authorityUnavailable: 'HR_WORK_LOG_AUTHORITY_NOT_CERTIFIED'
+      }),
+      relations: () => Promise.resolve({
+        ...EMPTY_DATASET,
+        limit: params.limit,
+        offset: params.offset,
+        authorityUnavailable: 'HR_EMPLOYEE_RELATION_ROUTE_NOT_CERTIFIED'
+      }),
       timeoff: () => hrService.getTimeOffRequests(tenantId, params),
-      artifacts: () => hrService.getHrArtifacts(tenantId, params)
+      artifacts: () => Promise.resolve({
+        ...EMPTY_DATASET,
+        limit: params.limit,
+        offset: params.offset,
+        authorityUnavailable: 'HR_ARTIFACT_CLIENT_CONTRACT_NOT_CERTIFIED'
+      })
     };
     try {
       const payload = await readers[tabName]();
@@ -2747,8 +2763,10 @@ const HrDashboard = () => {
       }
       if (type === 'candidate') {
         const payload = normalizeMutationPayload(type, formState);
-        if (editingItem) await hrService.updateCandidate(editingItem.id, payload, tenantId);
-        else await hrService.createCandidate(payload, tenantId);
+        if (editingItem) {
+          throw new Error('HR_CANDIDATE_FULL_UPDATE_AUTHORITY_NOT_CERTIFIED');
+        }
+        await hrService.createCandidate(payload, tenantId);
       }
       if (type === 'jobOpening') {
         const payload = normalizeMutationPayload(type, formState);
@@ -2756,9 +2774,7 @@ const HrDashboard = () => {
         else await hrService.createJobOpening(payload, tenantId);
       }
       if (type === 'payroll') {
-        const payload = normalizeMutationPayload(type, formState);
-        if (editingItem) await hrService.updatePayrollRecord(editingItem.id, payload, tenantId);
-        else await hrService.createPayrollRecord(payload, tenantId);
+        throw new Error('HR_PAYROLL_RECORD_MUTATION_AUTHORITY_NOT_CERTIFIED');
       }
       if (type === 'benefit') {
         const payload = normalizeMutationPayload(type, formState);
@@ -2771,14 +2787,10 @@ const HrDashboard = () => {
         else await hrService.createPerformanceReview(payload, tenantId);
       }
       if (type === 'employeeWorkLog') {
-        const payload = normalizeMutationPayload(type, formState);
-        if (editingItem) await hrService.updateEmployeeWorkLog(editingItem.id, payload, tenantId);
-        else await hrService.createEmployeeWorkLog(payload, tenantId);
+        throw new Error('HR_WORK_LOG_MUTATION_AUTHORITY_NOT_CERTIFIED');
       }
       if (type === 'employeeRelations') {
-        const payload = normalizeMutationPayload(type, formState);
-        if (editingItem) await hrService.updateEmployeeRelation(editingItem.id, payload, tenantId);
-        else await hrService.createEmployeeRelation(payload, tenantId);
+        throw new Error('HR_EMPLOYEE_RELATION_ROUTE_NOT_CERTIFIED');
       }
       if (type === 'timeOff') {
         const payload = normalizeMutationPayload(type, formState);
@@ -2803,90 +2815,21 @@ const HrDashboard = () => {
    * @collaboration HR contracts must become tangible output, not command receipts with no business value.
    */
   const generateArtifact = async () => {
-    try {
-      const missing = validateArtifactForm(artifactForm);
-      if (missing.length) {
-        pushFeedback({
-          tone: 'risk',
-          title: 'Artifact controls required',
-          detail: `Complete: ${missing.slice(0, 4).join(', ')}${missing.length > 4 ? '...' : ''}`
-        });
-        return;
-      }
-      setIsRefreshing(true);
-      const employeeName = composeEmployeeName(artifactForm);
-      const response = await hrService.generateHrArtifact(tenantId, {
-        artifactType: artifactForm.artifactType,
-        payload: {
-          ...artifactForm,
-          employeeName,
-          addressPosture: artifactAddressPosture,
-          remunerationMath: artifactRemunerationMath,
-          tenantName: activeTenant?.name || activeTenant?.companyName || activeTenant?.legalName || 'Wilsy OS Tenant'
-        }
-      });
-      if (isEmployeeRelationsArtifact(artifactForm.artifactType)) {
-        await hrService.createEmployeeRelation({
-          employeeId: artifactForm.employeeId || '',
-          employeeName,
-          relationsActionType: artifactForm.relationsActionType || artifactForm.artifactType,
-          incidentDate: artifactForm.incidentDate || null,
-          incidentSummary: artifactForm.incidentSummary || '',
-          policyBreach: artifactForm.policyBreach || '',
-          correctiveAction: artifactForm.correctiveAction || '',
-          employeeResponse: artifactForm.employeeResponse || '',
-          hearingDate: artifactForm.hearingDate || artifactForm.reviewDate || null,
-          outcome: artifactForm.outcome || '',
-          status: 'ISSUED',
-          proofHash: response.artifact?.proofHash || '',
-          artifactType: artifactForm.artifactType,
-          artifactTitle: response.artifact?.title || activeArtifactTemplate.title,
-          metadata: {
-            artifactId: response.artifact?.id,
-            artifactProofHash: response.artifact?.proofHash,
-            generatedFrom: 'HR_ARTIFACT_GENERATOR'
-          }
-        }, tenantId);
-      }
-      downloadHtmlArtifact(response.artifact);
-      setShowArtifactModal(false);
-      await Promise.all([fetchSnapshot(), fetchTabData('artifacts', pageStates.artifacts, searchTerm)]);
-      pushFeedback({ tone: 'ready', title: 'HR artifact generated', detail: `${response.artifact?.title || 'Artifact'} opened for review and print.` });
-      setActiveTab('artifacts');
-    } catch (error) {
-      pushFeedback({ tone: 'risk', title: 'Artifact failed', detail: error?.response?.data?.message || error?.message || 'HR artifact generation failed.' });
-    } finally {
-      setIsRefreshing(false);
-    }
+    pushFeedback({
+      tone: 'risk',
+      title: 'Artifact authority unavailable',
+      detail: 'HR artifact generation is disabled until the dashboard payload and response contract is certified against the authoritative HR document API.'
+    });
   };
 
-  /**
-   * @function generatePayslip
-   * @description Opens a printable payslip generated from a payroll ledger row.
-   * @param {Object} row - Payroll row.
-   * @returns {Promise<void>}
-   * @collaboration Payroll rows need one-click payslips with statutory deductions and proof.
-   */
-  const generatePayslip = async (row = {}) => {
-    try {
-      setIsRefreshing(true);
-      const response = await hrService.generatePayslip(row.id, tenantId);
-      downloadHtmlArtifact(response.artifact);
-      pushFeedback({ tone: 'ready', title: 'Payslip generated', detail: `${response.artifact?.title || 'Payslip'} opened for review.` });
-    } catch (error) {
-      pushFeedback({ tone: 'risk', title: 'Payslip failed', detail: error?.response?.data?.message || error?.message || 'Could not generate payslip.' });
-    } finally {
-      setIsRefreshing(false);
-    }
+  const generatePayslip = async () => {
+    pushFeedback({
+      tone: 'risk',
+      title: 'Payslip authority unavailable',
+      detail: 'Payslip generation is disabled until an executable payroll payslip route is certified.'
+    });
   };
 
-  /**
-   * @function deleteRecord
-   * @description Deletes an HR record after explicit confirmation.
-   * @param {Object} item - HR record.
-   * @returns {Promise<void>}
-   * @collaboration Delete commands remain deliberate because people records are institutional memory.
-   */
   const deleteRecord = async (item) => {
     if (!window.confirm('Delete this HR ledger record?')) return;
     try {
@@ -2896,8 +2839,12 @@ const HrDashboard = () => {
       if (activeTab === 'jobOpenings') await hrService.deleteJobOpening(item.id, tenantId);
       if (activeTab === 'benefits') await hrService.deleteBenefit(item.id, tenantId);
       if (activeTab === 'performance') await hrService.deletePerformanceReview(item.id, tenantId);
-      if (activeTab === 'activity') await hrService.deleteEmployeeWorkLog(item.id, tenantId);
-      if (activeTab === 'relations') await hrService.deleteEmployeeRelation(item.id, tenantId);
+      if (activeTab === 'activity') {
+        throw new Error('HR_WORK_LOG_DELETE_AUTHORITY_NOT_CERTIFIED');
+      }
+      if (activeTab === 'relations') {
+        throw new Error('HR_EMPLOYEE_RELATION_DELETE_ROUTE_NOT_CERTIFIED');
+      }
       if (activeTab === 'timeoff') await hrService.deleteTimeOffRequest(item.id, tenantId);
       await Promise.all([fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)]);
       pushFeedback({ tone: 'ready', title: 'HR record deleted', detail: 'Ledger row removed.' });
