@@ -1,9 +1,9 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – DASHBOARD CHROME STYLES [V1.5.0-OMEGA-PHASE5]                                                                             ║
+ * ║ WILSY OS – DASHBOARD CHROME STYLES [V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT]                                                                  ║
  * ║ [EXECUTIVE SHELL | COLLAPSIBLE RAIL | METRICS STRIP | TENANT PLATE]                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.5.0-OMEGA-PHASE5 | PRODUCTION READY                                                                                       ║
+ * ║ VERSION: 2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT | PRODUCTION READY                                                                             ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.module.css                       ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -21,7 +21,8 @@
  * ║   5. Metric strip with responsive grid.                                                                                               ║
  * ║   6. Collapsible left rail with animated toggle.                                                                                      ║
  * ║   7. Scrollable viewport for domain content.                                                                                          ║
- * ║   8. Fully responsive and accessible.                                                                                                 ║
+ * ║   8. Unified hover, focus-visible, active, pressed, disabled and reduced-motion command affordances.                               ║
+ * ║   9. Fully responsive and accessible.                                                                                                 ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -258,6 +259,16 @@
   font-size: 0.82rem;
 }
 
+:global(.wilsyOsChromeSearchBox kbd) {
+  flex-shrink: 0;
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  color: var(--wilsy-dim);
+  font-size: 0.58rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
 :global(.wilsyOsChromePrimaryButton),
 :global(.wilsyOsChromeSecondaryButton) {
   display: inline-flex;
@@ -275,6 +286,9 @@
   border: 1px solid transparent;
   white-space: nowrap;
   font-family: inherit;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease,
+    box-shadow 150ms ease, color 150ms ease, filter 150ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 :global(.wilsyOsChromePrimaryButton) {
@@ -290,14 +304,246 @@
 }
 
 :global(.wilsyOsChromePrimaryButton:hover:not(:disabled)),
-:global(.wilsyOsChromeSecondaryButton:hover:not(:disabled)) {
-  filter: brightness(1.06);
+:global(.wilsyOsChromeSecondaryButton:hover:not(:disabled)),
+:global(.wilsyOsChromePrimaryButton:focus-visible),
+:global(.wilsyOsChromeSecondaryButton:focus-visible) {
+  border-color: var(--wilsy-gold);
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+:global(.wilsyOsChromePrimaryButton:hover:not(:disabled)),
+:global(.wilsyOsChromePrimaryButton:focus-visible) {
+  background: linear-gradient(180deg, var(--wilsy-gold-hi), var(--wilsy-gold));
+  color: #111;
+  filter: brightness(1.08);
+}
+
+:global(.wilsyOsChromePrimaryButton:focus-visible),
+:global(.wilsyOsChromeSecondaryButton:focus-visible) {
+  outline: 2px solid var(--wilsy-gold-hi);
+  outline-offset: 2px;
+}
+
+:global(.wilsyOsChromeSecondaryButton[aria-expanded="true"]),
+:global(.wilsyOsChromeSecondaryButton[aria-pressed="true"]),
+:global(.wilsyOsChromeSecondaryButton[data-active="true"]),
+:global(.wilsyOsChromePrimaryButton[aria-expanded="true"]),
+:global(.wilsyOsChromePrimaryButton[aria-pressed="true"]),
+:global(.wilsyOsChromePrimaryButton[data-active="true"]) {
+  border-color: var(--wilsy-gold);
+  background: rgba(212, 175, 55, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: var(--wilsy-text);
+  transform: translateY(0);
+}
+
+:global(.wilsyOsChromePrimaryButton[aria-expanded="true"]),
+:global(.wilsyOsChromePrimaryButton[aria-pressed="true"]),
+:global(.wilsyOsChromePrimaryButton[data-active="true"]) {
+  background: linear-gradient(180deg, var(--wilsy-gold-hi), var(--wilsy-gold));
+  color: #111;
+}
+
+:global(.wilsyOsChromePrimaryButton:active:not(:disabled)),
+:global(.wilsyOsChromeSecondaryButton:active:not(:disabled)) {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24);
 }
 
 :global(.wilsyOsChromePrimaryButton:disabled),
 :global(.wilsyOsChromeSecondaryButton:disabled) {
   opacity: 0.45;
   cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+:global(.wilsyOsChromeTrustCenter) {
+  position: fixed;
+  z-index: 40;
+  top: 16px;
+  right: 16px;
+  width: min(900px, calc(100vw - 32px));
+  height: min(760px, calc(100dvh - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wilsy-border);
+  border-radius: 16px;
+  background: rgba(8, 8, 8, 0.98);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58);
+  transform: translateX(calc(100% + 24px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 180ms ease, opacity 180ms ease, width 180ms ease, height 180ms ease, inset 180ms ease, border-radius 180ms ease;
+}
+
+:global(.wilsyOsChromeTrustCenter[data-open="true"]) {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+:global(.wilsyOsChromeTrustCenter[data-state="expanded"]) {
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  border-radius: 18px;
+  transform: translateX(0);
+}
+
+:global(.wilsyOsChromeTrustCenterHeader) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--wilsy-border-soft);
+}
+
+:global(.wilsyOsChromeTrustCenterHeader > div:first-child) {
+  min-width: 0;
+}
+
+:global(.wilsyOsChromeTrustCenterEyebrow) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wilsy-gold);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+:global(.wilsyOsChromeTrustCenterHeader h2) {
+  margin: 6px 0 0;
+  color: var(--wilsy-text);
+  font-size: 1rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+:global(.wilsyOsChromeTrustCenterActions) {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+:global(.wilsyOsChromeTrustCenterAction) {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid var(--wilsy-border-soft);
+  border-radius: 8px;
+  color: var(--wilsy-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+:global(.wilsyOsChromeTrustCenterAction:hover),
+:global(.wilsyOsChromeTrustCenterAction:focus-visible) {
+  color: var(--wilsy-text);
+  border-color: var(--wilsy-border);
+  background: rgba(212, 175, 55, 0.1);
+}
+
+:global(.wilsyOsChromeTrustCenterBody) {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+}
+
+:global(.wilsyOsChromeTrustCenterBody > *) {
+  margin: 0 !important;
+}
+
+:global(.wilsyOsChromeTrustCenterMode) {
+  margin: 0 0 12px !important;
+  color: var(--wilsy-dim);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+:global(.wilsyLegalTrustCenterContent) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 16px;
+  overflow-wrap: anywhere;
+}
+
+:global(.wilsyLegalTrustCenterContent details),
+:global(.wilsyLegalTrustCenterContent summary),
+:global(.wilsyLegalTrustCenterContent dl),
+:global(.wilsyLegalTrustCenterContent dt),
+:global(.wilsyLegalTrustCenterContent dd) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:global(.wilsyLegalTrustCenterContent summary) {
+  min-height: 58px;
+}
+
+:global(.wilsyTrustCenterPostureGrid) {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  min-width: 0 !important;
+  width: 100%;
+}
+
+:global(.wilsyTrustCenterPostureCard),
+:global(.wilsyTrustCenterProfileCard) {
+  min-width: 0;
+  min-height: 108px;
+  padding: 14px !important;
+  overflow-wrap: anywhere;
+}
+
+:global(.wilsyTrustCenterPostureCard dd),
+:global(.wilsyTrustCenterProfileCard dd) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+:global(.wilsyTrustCenterProfileGrid) {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  min-width: 0 !important;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.wilsyOsChromeTrustCenter),
+  :global(.wilsyOsChromePrimaryButton),
+  :global(.wilsyOsChromeSecondaryButton),
+  :global(.wilsyOsChromeLeftRail button),
+  :global(.wilsyOsChromeRailToggle),
+  :global(.wilsyOsChromeRailPeek) {
+    transition: none;
+  }
 }
 
 :global(.wilsyOsChromeSpin) {
@@ -427,11 +673,15 @@
   text-overflow: ellipsis;
 }
 
-:global(.wilsyOsChromeLeftRail button:hover),
-:global(.wilsyOsChromeLeftRail nav > button:hover) {
+:global(.wilsyOsChromeLeftRail button:not(:disabled):hover),
+:global(.wilsyOsChromeLeftRail nav > button:not(:disabled):hover),
+:global(.wilsyOsChromeLeftRail button:focus-visible),
+:global(.wilsyOsChromeLeftRail nav > button:focus-visible) {
   color: var(--wilsy-text) !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border-color: var(--wilsy-border-soft) !important;
+  outline: 2px solid var(--wilsy-gold-hi);
+  outline-offset: 2px;
 }
 
 :global(.wilsyOsChromeLeftRail button[data-active="true"]),
@@ -439,6 +689,17 @@
   color: #111 !important;
   background: linear-gradient(180deg, var(--wilsy-gold-hi), var(--wilsy-gold)) !important;
   border-color: rgba(255, 238, 160, 0.55) !important;
+}
+
+:global(.wilsyOsChromeLeftRail button:active:not(:disabled)),
+:global(.wilsyOsChromeLeftRail nav > button:active:not(:disabled)) {
+  transform: translateY(1px);
+}
+
+:global(.wilsyOsChromeLeftRail button:disabled),
+:global(.wilsyOsChromeLeftRail nav > button:disabled) {
+  cursor: not-allowed !important;
+  opacity: 0.45;
 }
 
 :global(.wilsyOsChromeViewport) {
@@ -462,6 +723,53 @@
 /* Billing: same locked shell */
 :global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="billing"]) {
   --wilsy-rail-width: 220px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"]) {
+  gap: 8px;
+  padding: 10px 12px;
+  --wilsy-rail-width: 196px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeTopRail) {
+  gap: 10px 14px;
+  padding: 10px 14px;
+  border-radius: 13px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeTitleBlock h1) {
+  margin: 4px 0 3px;
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeStoryRail) {
+  font-size: 0.7rem;
+  max-width: 30rem;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeTenantPlate) {
+  min-width: 170px;
+  padding: 7px 9px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeTenantMark) {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeMetricStrip) {
+  gap: 6px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeMetricStrip article) {
+  padding: 8px 10px;
+  border-radius: 9px;
+}
+
+:global(.wilsyOsDashboardChrome[data-wilsy-dashboard-key="legal-practice"] .wilsyOsChromeMetricStrip strong) {
+  margin-top: 3px;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 900px) {
@@ -552,12 +860,109 @@
   background: rgba(212, 175, 55, 0.1);
 }
 
+/* ── Adaptive Trust Center and narrow-shell safeguards ──────────────────── */
+@media (max-width: 900px) {
+  :global(.wilsyOsChromeTopRail) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :global(.wilsyOsChromeTitleBlock),
+  :global(.wilsyOsChromeToolbar),
+  :global(.wilsyOsChromeTenantPlate) {
+    grid-column: 1;
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  :global(.wilsyOsChromeToolbar) {
+    justify-content: flex-start;
+  }
+
+  :global(.wilsyOsChromeSearchBox) {
+    max-width: none;
+  }
+
+  :global(.wilsyTrustCenterPostureGrid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  :global(.wilsyOsDashboardChrome) {
+    padding: 8px;
+  }
+
+  :global(.wilsyOsChromeTrustCenter) {
+    top: 10px;
+    right: 10px;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: 14px;
+  }
+
+  :global(.wilsyOsChromeTrustCenter[data-state="expanded"]) {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  :global(.wilsyTrustCenterPostureGrid),
+  :global(.wilsyTrustCenterProfileGrid) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  :global(.wilsyOsChromeTrustCenterHeader),
+  :global(.wilsyOsChromeTrustCenterBody) {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  :global(.wilsyOsChromeToolbar) {
+    gap: 6px;
+  }
+
+  :global(.wilsyOsChromeToolbar > *) {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  :global(.wilsyOsChromeWorkspaceFrame) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "viewport";
+  }
+
+  :global(.wilsyOsChromeLeftRail) {
+    display: none;
+  }
+
+  :global(.wilsyOsChromeToolbar) {
+    align-items: stretch;
+  }
+
+  :global(.wilsyOsChromeToolbar .wilsyOsChromeSearchBox),
+  :global(.wilsyOsChromeToolbar .wilsyOsChromeSecondaryButton),
+  :global(.wilsyOsChromeToolbar .wilsyOsChromePrimaryButton) {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome.module.css v1.5.0-OMEGA-PHASE5
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome.module.css v2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         1.5.0-OMEGA-PHASE5
+ * Version:         2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Top rail with command label, title, and story messages

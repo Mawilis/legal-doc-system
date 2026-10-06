@@ -2,7 +2,7 @@
 /**
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK
+ * VERSION: V74.5.0-L10-P2C7-MULTIPART-PRESERVATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -12,7 +12,10 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK — Adds public-path interlocks for password-recovery request
+ * CHANGELOG: V74.5.0-L10-P2C7-MULTIPART-PRESERVATION — Preserves multipart
+ *            upload bodies from JSON forensic-body mutation while retaining
+ *            transport headers and request sealing.
+ *            V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK — Adds public-path interlocks for password-recovery request
  *            and recovery-contact verification completion so strict Python
  *            request bodies are not mutated with forensic timestamp metadata.
  *            V74.3.0-R10E23-RECOVERY-CONTACT-VERIFICATION-API — Added authenticated recovery-contact verification and
@@ -419,16 +422,19 @@ api.interceptors.request.use(
       const preservesCanonicalRequestBody = /^\/legal-acceptance\/accept$/i.test(
         config.url
       );
+      const isMultipartBody = typeof FormData !== 'undefined'
+        && config.data instanceof FormData;
 
       if (
         !preservesCanonicalRequestBody
+        && !isMultipartBody
         && config.data
         && typeof config.data === 'object'
       ) {
         config.data.timestamp = timestamp;
       }
 
-      const sortedPayload = sortKeys(config.data || {});
+      const sortedPayload = isMultipartBody ? {} : sortKeys(config.data || {});
       const payloadStr = ['GET', 'DELETE', 'HEAD', 'OPTIONS'].includes(config.method?.toUpperCase()) ? '{}' : JSON.stringify(sortedPayload);
 
       const message = `${traceId}|${timestamp}|${payloadStr}|${nonce}`;
@@ -713,7 +719,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK
+ * VERSION: V74.5.0-L10-P2C7-MULTIPART-PRESERVATION
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata

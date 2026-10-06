@@ -1,16 +1,41 @@
 """Durable, provider-neutral Legal Operations lifecycle evidence registry.
 
 TITLE: Wilsy OS Legal Operations Lifecycle Evidence Registry
-VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
+VERSION: v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Persist and strictly hydrate immutable P1 Legal Operations evidence
-         without deriving lifecycle, service, billing, or financial truth.
+EPITOME: Persist, enumerate exact entity, tenant/entity-class, and document-
+         custody history, and strictly hydrate immutable P1 Legal Operations
+         evidence without deriving lifecycle, queue, search, billing, or
+         financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py
 COLLABORATION / OWNERSHIP: P2 persistence owner; the P1 domain remains the
                             exclusive lifecycle/evidence authority. Callers own
                             Mongo sessions and transaction boundaries.
-CERTIFICATION / UPDATE DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY translates
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR
+           adds one read-only exact snapshot-evidence locator primitive for
+           L8-6D field-command composition. The method binds canonical tenant,
+           entity type, entity identity and P1 fingerprint, strictly hydrates
+           the one durable row, rejects absence/ambiguity/corruption, forwards
+           caller-owned sessions unchanged, and returns only the validated
+           SHA3-512 evidence_identity. It exposes no raw P2 envelope and owns
+           no current-state, IAM, command, service, return or financial truth.
+           2026-09-23 v1.3.0-L8-5-LEGAL-OPERATIONS-TENANT-ENTITY-ENUMERATION
+           adds deterministic exact-tenant/entity-class snapshot enumeration
+           for L8-5 read-model composition. It reuses the existing tenant/type/
+           identity history index, strictly hydrates every row, preserves
+           caller sessions, sorts immutable snapshots deterministically, and
+           deliberately performs no current-state, queue, or search inference.
+           2026-09-23 v1.2.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY adds the
+           tenant/document-scoped DocumentCustodyEvent history query and its
+           dedicated non-unique Mongo index so L8-3+ orchestration consumes
+           hydrated P1 custody evidence without depending on P2 record schema.
+           2026-09-23 v1.1.0-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY added exact
+           tenant/type/entity immutable-history retrieval, propagates the
+           caller session through the indexed history query, hydrates every
+           returned snapshot, and deliberately leaves current-state selection
+           to the separate deterministic L8-0 projection authority.
+           2026-09-14 v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY translated
            labeled transient transaction write conflicts into the governed
            whole-transaction retry signal while preserving caller ownership.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -60,7 +85,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION: Final[str] = "v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY"
+VERSION: Final[str] = "v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR"
 COLLECTION: Final[str] = "legal_operations_lifecycle_evidence"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -447,7 +472,14 @@ def _canonical_record(document: Mapping[str, Any]) -> dict[str, Any]:
 
 
 class LegalOperationsLifecycleRegistry:
-    """Persist and strictly hydrate immutable P1 lifecycle evidence."""
+    """Persist, enumerate, and strictly hydrate immutable P1 lifecycle evidence.
+
+    The registry owns no lifecycle transition, current-state selection,
+    authorization, transaction, billing, invoice, payment, execution, or
+    settlement authority. Every public persistence/read method preserves exact
+    tenant scope and propagates caller-owned sessions without starting,
+    committing, aborting, or retrying a transaction.
+    """
 
     @staticmethod
     def ensure_indexes(collection: Any) -> None:
@@ -457,6 +489,15 @@ class LegalOperationsLifecycleRegistry:
                 [("tenant_id", 1), ("entity_type", 1), ("entity_identity", 1)],
                 unique=False,
                 name="legal_operations_tenant_entity_history",
+            )
+            collection.create_index(
+                [
+                    ("tenant_id", 1),
+                    ("entity_type", 1),
+                    ("p1_payload.document_id", 1),
+                ],
+                unique=False,
+                name="legal_operations_tenant_document_custody_history",
             )
             collection.create_index([("tenant_id", 1), ("evidence_identity", 1)], unique=True, name="legal_operations_tenant_evidence_unique")
         except PyMongoError as error:
@@ -532,6 +573,231 @@ class LegalOperationsLifecycleRegistry:
         return _hydrate_record(persisted)
 
     @staticmethod
+    def get_entity_history(
+        tenant_id: str,
+        entity_type: str,
+        entity_identity: str,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> tuple[P1Value, ...]:
+        """Read complete immutable history for one exact tenant/type/entity scope.
+
+        This method performs no current-state selection and no mutation. It
+        propagates the caller-owned session into one indexed history query,
+        strictly hydrates every returned record, rejects any scope divergence
+        or corruption, and returns an empty tuple when no record exists for
+        the exact tenant/type/entity predicate. Consumers that need "current"
+        truth must compose the separate deterministic current-projection
+        authority over this complete history. The method has no billing,
+        invoice, payment, financial-execution, or settlement authority.
+        """
+        tenant = _tenant(tenant_id)
+        if not isinstance(entity_type, str) or entity_type not in _ENTITY_TYPES:
+            _fail("M2_ENTITY_TYPE_UNSUPPORTED")
+        if not isinstance(entity_identity, str) or _IDENTITY.fullmatch(entity_identity) is None:
+            _fail("M2_ENTITY_ID_INVALID")
+        query = {
+            "tenant_id": tenant,
+            "entity_type": entity_type,
+            "entity_identity": entity_identity,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+
+        history: list[P1Value] = []
+        for document in documents:
+            if not isinstance(document, Mapping):
+                _fail("M2_RECORD_SCHEMA_INVALID")
+            value = _hydrate_record(cast(Mapping[str, Any], document))
+            if value.tenant_id != tenant:
+                _fail("M2_TENANT_MISMATCH")
+            if type(value).__name__ != entity_type or _entity_identity(value) != entity_identity:
+                _fail("M2_ENTITY_HISTORY_SCOPE_MISMATCH")
+            history.append(value)
+        return tuple(history)
+
+    @staticmethod
+    def get_tenant_entity_snapshots(
+        tenant_id: str,
+        entity_type: str,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> tuple[P1Value, ...]:
+        """Read all immutable snapshots for one exact tenant/entity class.
+
+        This is a persistence/hydration primitive for L8-5 read-model
+        composition. The query binds only the validated tenant and one
+        canonical P1 entity type, forwards the caller-owned session unchanged,
+        strictly hydrates every durable row, rejects any tenant/type scope
+        divergence, and returns a deterministic tuple ordered by canonical
+        entity identity then snapshot fingerprint.
+
+        The method does not group histories, choose current state, derive
+        operational queues, perform text search, authorize access, mutate
+        lifecycle truth, or infer billing, payment, execution, or settlement.
+        Exact foreign-tenant evidence is therefore never queried or disclosed.
+        """
+        tenant = _tenant(tenant_id)
+        if not isinstance(entity_type, str) or entity_type not in _ENTITY_TYPES:
+            _fail("M2_ENTITY_TYPE_UNSUPPORTED")
+        query = {
+            "tenant_id": tenant,
+            "entity_type": entity_type,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+
+        snapshots: list[P1Value] = []
+        for document in documents:
+            if not isinstance(document, Mapping):
+                _fail("M2_RECORD_SCHEMA_INVALID")
+            value = _hydrate_record(cast(Mapping[str, Any], document))
+            if value.tenant_id != tenant:
+                _fail("M2_TENANT_MISMATCH")
+            if type(value).__name__ != entity_type:
+                _fail("M2_ENTITY_HISTORY_SCOPE_MISMATCH")
+            snapshots.append(value)
+
+        snapshots.sort(
+            key=lambda value: (
+                _entity_identity(value),
+                value.fingerprint,
+            )
+        )
+        return tuple(snapshots)
+
+    @staticmethod
+    def get_document_custody_history(
+        tenant_id: str,
+        document_id: str,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> tuple[DocumentCustodyEvent, ...]:
+        """Read complete custody history for one exact tenant/document scope.
+
+        P2 owns the durable record shape and indexed query. Every matching row
+        is strictly hydrated back into a canonical P1 DocumentCustodyEvent,
+        tenant/document scope is rechecked after hydration, and the caller-owned
+        session is forwarded unchanged. This method deliberately does not sort,
+        validate sequence/chronology, choose a current holder, infer receipt,
+        allocation, service, billing, payment, execution, or settlement truth.
+        Consumers must compose P1 custody-chain validation over the returned
+        immutable facts. Exact foreign-tenant evidence is represented as absence.
+        """
+        tenant = _tenant(tenant_id)
+        if not isinstance(document_id, str) or _IDENTITY.fullmatch(document_id) is None:
+            _fail("M2_ENTITY_ID_INVALID")
+        query = {
+            "tenant_id": tenant,
+            "entity_type": "DocumentCustodyEvent",
+            "p1_payload.document_id": document_id,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+
+        history: list[DocumentCustodyEvent] = []
+        for document in documents:
+            if not isinstance(document, Mapping):
+                _fail("M2_RECORD_SCHEMA_INVALID")
+            value = _hydrate_record(cast(Mapping[str, Any], document))
+            if type(value) is not DocumentCustodyEvent:
+                _fail("M2_ENTITY_HISTORY_SCOPE_MISMATCH")
+            event = cast(DocumentCustodyEvent, value)
+            if event.tenant_id != tenant or event.document_id != document_id:
+                _fail("M2_ENTITY_HISTORY_SCOPE_MISMATCH")
+            history.append(event)
+        return tuple(history)
+
+    @staticmethod
+    def get_snapshot_evidence_identity(
+        value: P1Value,
+        collection: Any,
+        *,
+        session: Any = None,
+    ) -> str:
+        """Return the exact persisted evidence locator for one canonical snapshot.
+
+        The caller supplies a complete canonical P1 value, not a transport or
+        database record. This read binds the value's exact tenant, entity type,
+        entity identity and P1 fingerprint, forwards the caller-owned session,
+        strictly hydrates the single durable row, and returns only its validated
+        SHA3-512 evidence_identity.
+
+        The method performs no current-state selection, lifecycle transition,
+        authorization, command mutation, service/outcome inference, return
+        generation, billing, payment, financial execution or settlement. It
+        never exposes Mongo _id, source_payload, source_fingerprint, or the raw
+        persisted P2 envelope. Absence, duplicate exact-fingerprint records,
+        scope divergence, record corruption, or persistence failure reject
+        fail-closed.
+        """
+        if not isinstance(
+            value,
+            (
+                LegalInstruction,
+                CaseMatter,
+                ProcessDocument,
+                District,
+                SheriffOffice,
+                Deputy,
+                DocumentCustodyEvent,
+                ServiceAttempt,
+                ServiceExecution,
+                ReturnOfService,
+            ),
+        ):
+            _fail("M2_P1_VALUE_REQUIRED")
+        tenant = _tenant(value.tenant_id)
+        entity_type = type(value).__name__
+        entity_identity = _entity_identity(value)
+        p1_fingerprint = _require_sha3(
+            value.fingerprint,
+            "M2_P1_FINGERPRINT_INVALID",
+        )
+        query = {
+            "tenant_id": tenant,
+            "entity_type": entity_type,
+            "entity_identity": entity_identity,
+            "p1_fingerprint": p1_fingerprint,
+        }
+        try:
+            documents = list(collection.find(query, session=session))
+        except PyMongoError as error:
+            _fail("M2_PERSISTENCE_UNAVAILABLE", error)
+        if not documents:
+            _fail("M2_EVIDENCE_NOT_FOUND")
+        if len(documents) != 1:
+            _fail("M2_SNAPSHOT_LOCATOR_AMBIGUOUS")
+        document = documents[0]
+        if not isinstance(document, Mapping):
+            _fail("M2_RECORD_SCHEMA_INVALID")
+        hydrated = _hydrate_record(cast(Mapping[str, Any], document))
+        if (
+            type(hydrated) is not type(value)
+            or hydrated.tenant_id != tenant
+            or _entity_identity(hydrated) != entity_identity
+            or hydrated.fingerprint != p1_fingerprint
+            or hydrated.to_dict() != value.to_dict()
+        ):
+            _fail("M2_SNAPSHOT_LOCATOR_SCOPE_MISMATCH")
+        evidence_identity = cast(Mapping[str, Any], document).get(
+            "evidence_identity"
+        )
+        return _require_sha3(
+            evidence_identity,
+            "M2_EVIDENCE_IDENTITY_INVALID",
+        )
+
+    @staticmethod
     def get(tenant_id: str, evidence_identity: str, collection: Any, *, session: Any = None) -> P1Value:
         """Read one immutable snapshot by exact tenant-scoped evidence identity."""
         tenant = _tenant(tenant_id)
@@ -557,8 +823,8 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_lifecycle_registry.py
-# VERSION: v1.0.1-LEGAL-OPERATIONS-LIFECYCLE-REGISTRY
-# AUTHORITY BOUNDARY: durable P1 evidence persistence and strict hydration only.
+# VERSION: v1.4.0-L8-6D-LEGAL-OPERATIONS-SNAPSHOT-EVIDENCE-LOCATOR
+# AUTHORITY BOUNDARY: durable P1 evidence persistence, exact entity/tenant-entity/custody enumeration, strict hydration, and opaque exact-snapshot evidence locator reads only.
 # TENANT POSTURE: every record and lookup is explicitly tenant-scoped.
 # FAIL-CLOSED POSTURE: corruption, divergence, unsupported types, and outages reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
