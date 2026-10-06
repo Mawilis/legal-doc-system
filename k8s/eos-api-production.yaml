@@ -1,0 +1,188 @@
+# ==============================================================================
+# WILSY OS — DEDICATED PYTHON EOS KUBERNETES PRODUCTION WORKLOAD
+#
+# TITLE: Dedicated Python EOS Production Kubernetes Runtime
+# VERSION: v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Run the certified sovereign Python EOS API as a dedicated,
+#          digest-pinned, non-root Kubernetes workload on port 9095.
+# ABSOLUTE CANONICAL PATH:
+#   /Users/wilsonkhanyezi/legal-doc-system/k8s/eos-api-production.yaml
+# COLLABORATION / OWNERSHIP:
+#   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
+#   Kubernetes owns workload scheduling only.
+# CERTIFICATION / UPDATE DATE: 2026-10-06
+# CHANGELOG:
+#   v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
+#     - Establish the first dedicated Python EOS Kubernetes workload.
+#     - Bind the certified immutable EOS image digest from main head
+#       e421ca73b0b6164cdae95337f2a000d703e97dfa.
+#     - Preserve runtime-owned MongoDB, HR upload-policy, S3, and workload-
+#       identity configuration without embedding secrets or static AWS keys.
+#     - Expose EOS internally through ClusterIP only; no public ingress or
+#       cloud-specific workload identity is fabricated by this artifact.
+# COMPLIANCE:
+#   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE:
+#   Non-root, privilege escalation disabled, capabilities dropped, read-only
+#   root filesystem, digest-pinned image, and no credential material embedded.
+# TENANT BOUNDARY:
+#   Deployment creates no tenant truth. Canonical Python EOS retains tenant
+#   admission, authorization, isolation, and persisted-sensitivity authority.
+# AUTHORITY BOUNDARY:
+#   Kubernetes scheduling and internal service discovery only. This manifest
+#   does not grant AWS, IAM, S3 administration, MongoDB administration, legal,
+#   billing, HR business, provider, payment, settlement, or financial authority.
+# FINANCIAL AUTHORITY BOUNDARY:
+#   Kennel EOS remains the exclusive financial execution authority.
+# FAIL-CLOSED DECLARATION:
+#   Missing required Kubernetes ConfigMap/Secret bindings prevent the workload
+#   from receiving production runtime authority; values are never fabricated.
+# ==============================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: wilsy-eos-api
+  labels:
+    app.kubernetes.io/name: wilsy-eos-api
+    app.kubernetes.io/component: sovereign-api
+    app.kubernetes.io/part-of: wilsy-os
+automountServiceAccountToken: true
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wilsy-eos-api
+  labels:
+    app.kubernetes.io/name: wilsy-eos-api
+    app.kubernetes.io/component: sovereign-api
+    app.kubernetes.io/part-of: wilsy-os
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wilsy-eos-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wilsy-eos-api
+        app.kubernetes.io/component: sovereign-api
+        app.kubernetes.io/part-of: wilsy-os
+    spec:
+      serviceAccountName: wilsy-eos-api
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: eos-api
+          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:4dee14ebe505539a9774ec6eabab301cfea179007b4547eeb0e5b6c5b00c1615
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9095
+              protocol: TCP
+          env:
+            - name: WILSY_ENV
+              value: production
+            - name: WILSY_HR_DOCUMENT_S3_BUCKET
+              value: wilsy-hr-documents-af-south-1-4a5acd714dc2
+            - name: WILSY_HR_DOCUMENT_S3_REGION
+              value: af-south-1
+            - name: WILSY_HR_DOCUMENT_MAX_UPLOAD_BYTES
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: hr-document-max-upload-bytes
+            - name: WILSY_HR_DOCUMENT_S3_KMS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: hr-document-s3-kms-key-id
+                  optional: true
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: mongodb-uri
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wilsy-eos-api
+  labels:
+    app.kubernetes.io/name: wilsy-eos-api
+    app.kubernetes.io/component: sovereign-api
+    app.kubernetes.io/part-of: wilsy-os
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: wilsy-eos-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9095
+      targetPort: http
+
+# ==============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+#
+# ARTIFACT: k8s/eos-api-production.yaml
+# VERSION: v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
+# IMAGE AUTHORITY:
+#   Immutable EOS digest only; no mutable latest tag is admitted.
+# WORKLOAD IDENTITY:
+#   Dedicated Kubernetes ServiceAccount exists, but no AWS role annotation is
+#   authored until the concrete cluster/provider identity mechanism is proven.
+# RUNTIME CONFIGURATION:
+#   Required upload policy is ConfigMap-owned; MongoDB is Secret-owned; optional
+#   KMS configuration remains absent unless deployment authority supplies it.
+# NETWORK EXPOSURE:
+#   ClusterIP only. Public ingress/load-balancer authority is not fabricated.
+# FAIL-CLOSED POSTURE:
+#   Missing production configuration or secret bindings must prevent valid
+#   runtime authority rather than silently substituting repository defaults.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================

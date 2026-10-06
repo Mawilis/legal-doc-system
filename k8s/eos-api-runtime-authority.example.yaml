@@ -1,0 +1,77 @@
+# ==============================================================================
+# WILSY OS — EOS RUNTIME AUTHORITY CONTRACT EXAMPLE
+#
+# TITLE: Python EOS Production Runtime Authority Contract
+# VERSION: v1.0.0-P0-C12F7C-EOS-RUNTIME-AUTHORITY
+# AUTHORITY: Wilsy OS Core Governance
+# PURPOSE:
+#   Declare the exact Kubernetes configuration objects required by the certified
+#   EOS deployment without embedding production secrets or fabricating values.
+#
+# IMPORTANT:
+#   This file is an example contract only.
+#   It MUST NOT contain production MONGODB_URI credentials.
+#   It MUST NOT invent a production upload ceiling.
+#   It MUST NOT grant AWS workload identity authority.
+# ==============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wilsy-eos-runtime
+data:
+  # REQUIRED.
+  #
+  # Deployment owner must replace this placeholder with a bounded positive
+  # integer chosen as production policy. Test fixture values are not authority.
+  hr-document-max-upload-bytes: "REQUIRED_PRODUCTION_POLICY_VALUE"
+
+  # OPTIONAL.
+  #
+  # Leave empty unless a specific production KMS key has been independently
+  # certified. The HR S3 adapter defaults to S3-managed AES256 when omitted.
+  hr-document-s3-kms-key-id: ""
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wilsy-eos-runtime-secrets
+type: Opaque
+stringData:
+  # REQUIRED.
+  #
+  # Deployment owner must inject the canonical production MONGODB_URI here
+  # through the deployment secret mechanism. Do not commit the real URI.
+  mongodb-uri: "REQUIRED_PRODUCTION_SECRET"
+
+# ==============================================================================
+# EXTERNAL AUTHORITIES NOT REPRESENTED HERE
+#
+# 1. AWS workload identity
+#    - Dedicated Kubernetes ServiceAccount already exists in eos-api-production.
+#    - Bind an AWS runtime role only after the concrete cluster/provider identity
+#      mechanism is proven.
+#    - Required S3 object actions are exactly:
+#        s3:PutObject
+#        s3:GetObject
+#        s3:AbortMultipartUpload
+#    - No ListBucket, bucket administration, or IAM administration authority.
+#
+# 2. Production MongoDB
+#    - MONGODB_URI is deployment authority.
+#    - TEST_MONGODB_URI, local MongoDB, and synthetic CI URIs are forbidden.
+#
+# 3. HR upload policy
+#    - Must be a positive decimal integer.
+#    - Must be chosen by production deployment authority.
+#    - Repository test values are not production policy.
+#
+# 4. KMS
+#    - Optional only.
+#    - Do not add KMS IAM actions unless a certified KMS key is configured.
+#
+# ARTIFACT: k8s/eos-api-runtime-authority.example.yaml
+# VERSION: v1.0.0-P0-C12F7C-EOS-RUNTIME-AUTHORITY
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================
