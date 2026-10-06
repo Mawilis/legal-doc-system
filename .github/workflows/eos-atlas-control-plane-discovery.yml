@@ -1,0 +1,212 @@
+# ==============================================================================
+# WILSY OS — MONGODB ATLAS CONTROL-PLANE DISCOVERY WORKFLOW
+#
+# TITLE: Read-Only MongoDB Atlas Production Control-Plane Discovery
+# VERSION: v1.0.0-P0-C12F7C-EOS-ATLAS-DISCOVERY
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Resolve production Atlas project and cluster metadata without
+#          disclosing GitHub secret values, MongoDB connection strings, or
+#          performing Atlas mutation.
+# ABSOLUTE CANONICAL PATH:
+#   /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-atlas-control-plane-discovery.yml
+# COLLABORATION / OWNERSHIP:
+#   GitHub Actions supplies secure execution capability only.
+#   MongoDB Atlas owns provider control-plane state.
+#   Python EOS remains sovereign for runtime business and authority truth.
+# CERTIFICATION / UPDATE DATE: 2026-10-06
+# CHANGELOG:
+#   v1.0.0-P0-C12F7C-EOS-ATLAS-DISCOVERY
+#     - Establish manual, read-only Atlas metadata discovery.
+#     - Consume existing Atlas API credentials only from GitHub Actions secrets.
+#     - Never print Atlas credential values or the secret project-id value.
+#     - Whitelist project/cluster metadata and discard raw provider responses.
+#     - Perform no project, cluster, database-user, network, or runtime mutation.
+# COMPLIANCE:
+#   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE:
+#   contents:read only; no checkout or repository write capability is required.
+#   Atlas credentials remain masked and are written only to an ephemeral
+#   permission-0600 netrc file on the GitHub-hosted runner.
+# TENANT BOUNDARY:
+#   No tenant data is read or mutated.
+# AUTHORITY BOUNDARY:
+#   Atlas metadata discovery only. This workflow cannot provision or modify
+#   Atlas resources and cannot establish EOS runtime MongoDB authority.
+# FINANCIAL AUTHORITY BOUNDARY:
+#   None. Kennel EOS remains the exclusive financial execution authority.
+# ==============================================================================
+
+name: WILSY EOS Atlas Control-Plane Discovery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-atlas-control-plane-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover-atlas-control-plane:
+    name: Read-only Atlas metadata discovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      ATLAS_PROJECT_ID: ${{ secrets.MONGODB_ATLAS_PROJECT_ID }}
+      ATLAS_PUBLIC_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+      ATLAS_PRIVATE_KEY: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+
+    steps:
+      - name: Validate secure Atlas authority inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "${ATLAS_PROJECT_ID:-}"
+          test -n "${ATLAS_PUBLIC_KEY:-}"
+          test -n "${ATLAS_PRIVATE_KEY:-}"
+
+          printf '%s\n' "::add-mask::${ATLAS_PROJECT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_PUBLIC_KEY}"
+          printf '%s\n' "::add-mask::${ATLAS_PRIVATE_KEY}"
+
+          printf 'ATLAS_PROJECT_ID_PRESENT=YES\n'
+          printf 'ATLAS_PUBLIC_KEY_PRESENT=YES\n'
+          printf 'ATLAS_PRIVATE_KEY_PRESENT=YES\n'
+          printf 'ATLAS_SECRET_VALUE_PRINTED=NO\n'
+
+      - name: Discover Atlas project and cluster metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          printf '%s\n' "::add-mask::${ATLAS_PROJECT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_PUBLIC_KEY}"
+          printf '%s\n' "::add-mask::${ATLAS_PRIVATE_KEY}"
+
+          work_dir="$(mktemp -d)"
+          auth_file="${work_dir}/atlas.netrc"
+          project_file="${work_dir}/project.json"
+          cluster_file="${work_dir}/clusters.json"
+
+          cleanup() {
+            rm -rf "${work_dir}"
+          }
+
+          trap cleanup EXIT
+
+          umask 077
+
+          {
+            printf 'machine cloud.mongodb.com\n'
+            printf 'login %s\n' "${ATLAS_PUBLIC_KEY}"
+            printf 'password %s\n' "${ATLAS_PRIVATE_KEY}"
+          } > "${auth_file}"
+
+          chmod 600 "${auth_file}"
+
+          atlas_accept='application/vnd.atlas.2023-01-01+json'
+
+          curl \
+            --digest \
+            --netrc-file "${auth_file}" \
+            --silent \
+            --show-error \
+            --fail \
+            --header "Accept: ${atlas_accept}" \
+            --output "${project_file}" \
+            "https://cloud.mongodb.com/api/atlas/v2/groups/${ATLAS_PROJECT_ID}"
+
+          curl \
+            --digest \
+            --netrc-file "${auth_file}" \
+            --silent \
+            --show-error \
+            --fail \
+            --header "Accept: ${atlas_accept}" \
+            --output "${cluster_file}" \
+            "https://cloud.mongodb.com/api/atlas/v2/groups/${ATLAS_PROJECT_ID}/clusters"
+
+          response_project_id="$(
+            jq -r '.id // empty' "${project_file}"
+          )"
+
+          test -n "${response_project_id}"
+          test "${response_project_id}" = "${ATLAS_PROJECT_ID}"
+
+          printf 'ATLAS_AUTHENTICATION=PASS\n'
+          printf 'ATLAS_PROJECT_ID_MATCH=YES\n'
+
+          jq -r '
+            [
+              "ATLAS_PROJECT_NAME=" + (.name // ""),
+              "ATLAS_PROJECT_METADATA_READ=PASS"
+            ][]
+          ' "${project_file}"
+
+          cluster_count="$(
+            jq '
+              if (.results | type) == "array"
+              then (.results | length)
+              else 0
+              end
+            ' "${cluster_file}"
+          )"
+
+          printf 'ATLAS_CLUSTER_COUNT=%s\n' "${cluster_count}"
+
+          jq -r '
+            (.results // [])[]
+            |
+            [
+              "ATLAS_CLUSTER",
+              "NAME=" + (.name // ""),
+              "STATE=" + (.stateName // ""),
+              "TYPE=" + (.clusterType // ""),
+              "PROVIDER=" + (.providerSettings.providerName // ""),
+              "REGION=" + (.providerSettings.regionName // "")
+            ]
+            | join("|")
+          ' "${cluster_file}"
+
+          printf 'ATLAS_CLUSTER_METADATA_READ=PASS\n'
+          printf 'ATLAS_CONNECTION_STRING_PRINTED=NO\n'
+          printf 'ATLAS_SECRET_VALUE_PRINTED=NO\n'
+          printf 'ATLAS_MUTATION_PERFORMED=NO\n'
+
+      - name: Assert read-only discovery boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          printf 'ATLAS_PROJECT_MUTATION_AUTHORIZED=NO\n'
+          printf 'ATLAS_CLUSTER_MUTATION_AUTHORIZED=NO\n'
+          printf 'ATLAS_DATABASE_USER_MUTATION_AUTHORIZED=NO\n'
+          printf 'ATLAS_NETWORK_MUTATION_AUTHORIZED=NO\n'
+          printf 'MONGODB_URI_GENERATION_AUTHORIZED=NO\n'
+          printf 'GITHUB_REPOSITORY_WRITE_AUTHORITY=NO\n'
+          printf 'ATLAS_DISCOVERY_BOUNDARY=PASS\n'
+
+# ==============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+#
+# ARTIFACT: .github/workflows/eos-atlas-control-plane-discovery.yml
+# VERSION: v1.0.0-P0-C12F7C-EOS-ATLAS-DISCOVERY
+# AUTHORITY BOUNDARY:
+#   Read-only Atlas project and cluster metadata discovery only.
+# SECRET POSTURE:
+#   Existing GitHub Actions secrets remain within the runner and are never
+#   emitted as workflow evidence.
+# OUTPUT POSTURE:
+#   Raw Atlas responses and connection-string fields are never printed or
+#   uploaded; only explicitly whitelisted non-secret metadata is emitted.
+# MUTATION POSTURE:
+#   No Atlas, GitHub repository, tenant, runtime, MongoDB, AWS, payment, or
+#   financial mutation is authorized.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================
