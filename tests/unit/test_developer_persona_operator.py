@@ -1,7 +1,7 @@
 """Direct unit certificate for the WILSY OS developer persona operator.
 
 TITLE: WILSY OS Developer Legal Persona Operator Direct Certificate
-VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT
+VERSION: v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Deterministically certifies the local development-only operator's
          non-production gate, secret-input posture, owner password+TOTP
@@ -12,8 +12,12 @@ COLLABORATION / OWNERSHIP: Test-only certificate for
                            tools/eos/cli/developer_persona.py; production auth,
                            provisioner, Kernel DB, and financial surfaces remain
                            read-only.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+CERTIFICATION / UPDATE DATE: 2026-10-06
 CHANGELOG:
+  v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT — Adds a deterministic red
+    certificate proving CLI success output must expose only the constant CREATED
+    acknowledgement and must not render provisioning identity, tenant, role,
+    credential-revision, or MFA-enrollment metadata.
   v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT — Establishes direct evidence
     for explicit non-production enablement, non-secret CLI arguments, hidden
     password/TOTP collection, canonical owner authentication, MFA requirement,
@@ -53,8 +57,8 @@ from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_status import PrincipalStatus
 
 
-EXPECTED_VERSION = "v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR"
-CERT_VERSION = "v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT"
+EXPECTED_VERSION = "v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR"
+CERT_VERSION = "v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT"
 TENANT = "TENANT-D15G-OPERATOR"
 OWNER_ID = "OWNER-D15G-OPERATOR"
 OWNER_EMAIL = "owner@example.invalid"
@@ -451,6 +455,42 @@ def test_provisioner_failure_is_bounded_and_database_is_disconnected(
     assert harness.disconnect_calls == 1
 
 
+def test_main_success_emits_only_constant_created_acknowledgement(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """CLI stdout cannot disclose provisioning identity or authority metadata."""
+
+    sensitive_result = {
+        "status": "CREATED",
+        "principal_id": "PRIVATE-PRINCIPAL-ID",
+        "tenant_id": "PRIVATE-TENANT-ID",
+        "persona": "LEGAL_PARTNER",
+        "business_role": "tenant_legal_partner",
+        "authorization_role": "LEGAL_PARTNER",
+        "credential_revision": 7,
+        "mfa_enrollment_required": True,
+    }
+
+    def succeeded(_argv: Any = None) -> dict[str, object]:
+        return sensitive_result
+
+    monkeypatch.setattr(mod, "run", succeeded)
+
+    assert mod.main([]) == 0
+
+    output = capsys.readouterr()
+
+    assert output.err == ""
+    assert output.out.strip() == '{"status": "CREATED"}'
+
+    for sensitive_value in sensitive_result.values():
+        if sensitive_value == "CREATED":
+            continue
+        assert str(sensitive_value) not in output.out
+
+
+
 def test_main_emits_only_stable_bounded_errors(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -568,7 +608,7 @@ def test_structural_sovereign_contract_is_exact() -> None:
 
 
 # ARTIFACT: tests/unit/test_developer_persona_operator.py
-# VERSION: v1.0.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT
+# VERSION: v1.1.0-D15G-DEV-LEGAL-PERSONA-OPERATOR-CERT
 # AUTHORITY BOUNDARY: direct offline evidence for the local development operator only
 # TENANT POSTURE: exact authenticated-owner tenant binding before target persona input
 # FAIL-CLOSED POSTURE: environment, DB, password, MFA, tenant, principal, confirmation, and provisioning failures deny
