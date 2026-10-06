@@ -1,12 +1,68 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.12.0-C1E-R1
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-17.
-CHANGELOG: 2026-09-17 v1.12.0-C1E-R1 certifies exact seven-role legal-advisory
+CERTIFICATION/UPDATE DATE: 2026-10-04.
+CHANGELOG:
+2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY-CERT
+certifies tenant business-role vocabulary expansion from 18 to 119
+using the frozen 101-role HR catalogue. Exactly five Employee
+Relations roles are eligible and 96 other HR roles remain denied;
+existing Legal/general eligibility remains unchanged.
+2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1C-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PARTNER-ELIGIBILITY-CERT
+certifies legal_evidence_cleanup_authorize as one exact own-tenant operation
+bound only to legal_operations:evidence_cleanup:authorize and ELIGIBLE only
+for tenant_legal_partner. Every other tenant business role remains DENY.
+Eligibility remains policy-only and creates no ACTIVE membership, assignment,
+authorization, A2 cleanup binding, provider mutation, provider deletion,
+cleanup execution, payment execution or settlement truth.
+ 2026-09-29 v1.1.0-L10A3C-LEGAL-EVIDENCE-PARTNER-ELIGIBILITY-CERT
+certifies legal_evidence_write is present in the closed operation vocabulary,
+maps exactly to legal_operations:evidence:write, is ELIGIBLE only for
+tenant_legal_partner, and remains DENY for every other tenant business role.
+Policy remains non-authorizing, non-cross-tenant and non-financial.
+2026-09-28 v1.0.0-L9C7C-ENGAGEMENT-FIRM-DECISION-ELIGIBILITY-CERT
+certifies exact Partner/Attorney-only eligibility for the firm-decision
+operation, explicit Paralegal denial, unknown-operation denial, and absence
+of permission binding or execution authority.
+2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-ELIGIBILITY-CERT
+certifies partner/attorney-only business-role eligibility for the new
+operation and preserves paralegal denial.
+2026-09-25 v1.19.1-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-REPAIR-CERT
+rebinds the exact certificate to runtime v1.23.1 after the authority-loss
+composition repair; approved roles and all behavioral assertions are unchanged.
+2026-09-25 v1.19.0-L8-8I-CONFLICT-REVIEW-ELIGIBILITY-CERT
+certifies legal_conflict_review_write as an exact own-tenant operation mapped
+only to legal_operations:conflict_review:write and eligible only for
+tenant_legal_partner and tenant_legal_attorney. Every other business role is
+denied; policy remains non-authorizing and non-financial.
+2026-09-23 v1.18.0-L8-7D3-CLIENT-MATTER-READ-ELIGIBILITY-CERT
+certifies legal_client_matter_read as an exact own-tenant projection operation
+eligible only for tenant_legal_client. Every law-firm, finance, sheriff,
+deputy, general tenant and specialized provider role remains denied; policy is
+non-authorizing and ACTIVE matter visibility remains a separate required truth.
+2026-09-23 v1.17.0-L8-7C3A-CLIENT-VISIBILITY-WRITE-ELIGIBILITY-CERT
+certifies legal_client_visibility_write as an exact own-tenant provisioning
+operation eligible only for tenant_legal_partner, tenant_legal_attorney, and
+tenant_legal_paralegal. Client, secretary, finance, sheriff, deputy, general
+tenant and specialized provider roles remain denied; policy stays non-
+authorizing and non-financial.
+2026-09-23 v1.16.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-ELIGIBILITY-CERT
+certifies legal_deputy_queue_read eligibility only for tenant_deputy, with
+tenant_sheriff and every other business role denied and policy-only semantics.
+2026-09-23 v1.15.0-L8-6A-SHERIFF-QUEUE-READ-IAM-ELIGIBILITY-CERT
+certifies legal_queue_read eligibility only for tenant_sheriff, including
+explicit tenant_deputy denial and policy-only/non-authorizing semantics.
+2026-09-23 v1.14.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-ELIGIBILITY-CERT
+certifies legal_receipt_write eligibility only for tenant_sheriff and explicit
+denial for every other tenant business role.
+2026-09-23 v1.13.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-ELIGIBILITY-CERT
+certifies legal_directory_write eligibility only for tenant_sheriff and explicit
+denial for every other tenant business role; policy remains non-authorizing.
+2026-09-17 v1.12.0-C1E-R1 certifies exact seven-role legal-advisory
 eligibility for generate/read operations.
 2026-09-15 v1.9.0-L7B-WILSY-AI-LEGAL-TOOL-ELIGIBILITY-CERT certifies
 the bounded WILSY AI Legal Tool Gateway eligibility for seven legal personas,
@@ -38,15 +94,18 @@ FINANCIAL AUTHORITY BOUNDARY: Capacity-read and billing-intelligence
 evidence-read eligibility are non-financial; Kennel EOS remains exclusive.
 """
 from tools.eos.auth.tenant_authority_policy import *
+from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.16.0-C1E-R1"
+    assert VERSION == "v1.33.0-P0-C12F7B-HR-DOCUMENT-IAM-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
 def test_matrix_boundaries() -> None:
-    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}
+    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"} | ALL_HR_BUSINESS_ROLES
+    assert len(ALL_HR_BUSINESS_ROLES) == 101
+    assert len(TENANT_ROLES) == 119
     assert all(tenant_role_operation_eligibility(role, "financial_execution") == DENY for role in TENANT_ROLES)
     assert all(tenant_role_operation_eligibility(role, "cross_tenant") == DENY for role in TENANT_ROLES)
     assert tenant_role_operation_eligibility("tenant_manager", "profile_update") == DENY
@@ -73,14 +132,14 @@ def test_matrix_boundaries() -> None:
 def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     """Each legal persona has bounded eligibility and no financial execution."""
     expected = {
-        "tenant_legal_partner": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_attorney": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_paralegal": {"legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_partner": {"legal_evidence_cleanup_authorize", "legal_evidence_write", "legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_attorney": {"legal_conflict_review_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_paralegal": {"legal_client_visibility_write", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_secretary": {"legal_instruction_read", "legal_allocation_read", "legal_attempt_read", "legal_return_read", "legal_return_write", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_finance": {"legal_billing_read", "legal_invoice_read", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_sheriff": {"legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_deputy": {"legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
-        "tenant_legal_client": {"legal_invoice_read"},
+        "tenant_sheriff": {"legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_deputy": {"legal_deputy_queue_read", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
+        "tenant_legal_client": {"legal_invoice_read", "legal_client_matter_read", "legal_client_acceptance_write"},
     }
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
@@ -88,6 +147,281 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         assert tenant_role_operation_eligibility(role, "financial_execution") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_client", "legal_instruction_read") == DENY
     assert tenant_role_operation_eligibility("tenant_deputy", "legal_instruction_read") == DENY
+
+
+def test_conflict_review_write_eligibility_is_partner_attorney_only() -> None:
+    """L8-8I human conflict-review eligibility is exact and non-authorizing."""
+    operation = "legal_conflict_review_write"
+    approved = {"tenant_legal_partner", "tenant_legal_attorney"}
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == approved
+    for role in TENANT_ROLES - approved:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert permission_for_business_role_operation(operation) == (
+        "legal_operations:conflict_review:write"
+    )
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    for malformed in (
+        "legal_conflict_review",
+        "legal_conflict_review_write ",
+        " legal_conflict_review_write",
+        "LEGAL_CONFLICT_REVIEW_WRITE",
+        "legal_conflict_review_*",
+        None,
+        123,
+    ):
+        assert permission_for_business_role_operation(malformed) is None
+        assert all(
+            tenant_role_operation_eligibility(role, malformed) == DENY
+            for role in TENANT_ROLES
+        )
+
+
+def test_mandate_acknowledgment_write_eligibility_is_partner_attorney_only() -> None:
+    operation = "legal_matter_mandate_acknowledgment_write"
+    approved = {"tenant_legal_partner", "tenant_legal_attorney"}
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == approved
+    assert permission_for_business_role_operation(operation) == (
+        "legal_operations:matter_mandate_acknowledgment:write"
+    )
+
+
+def test_engagement_firm_decision_write_eligibility_is_partner_attorney_only() -> None:
+    """L9C7C firm-decision eligibility is exact and non-authorizing."""
+    operation = "legal_matter_engagement_firm_decision_write"
+    approved = {"tenant_legal_partner", "tenant_legal_attorney"}
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == approved
+    for role in TENANT_ROLES - approved:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_paralegal", operation
+    ) == DENY
+    assert permission_for_business_role_operation(operation) is None
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    for malformed in (
+        "legal_matter_engagement_firm_decision",
+        "legal_matter_engagement_firm_decision_write ",
+        " legal_matter_engagement_firm_decision_write",
+        "LEGAL_MATTER_ENGAGEMENT_FIRM_DECISION_WRITE",
+        "legal_matter_engagement_firm_decision_*",
+        "legal_matter_write",
+        "engagement_manage",
+        None,
+        123,
+    ):
+        assert all(
+            tenant_role_operation_eligibility(role, malformed) == DENY
+            for role in TENANT_ROLES
+        )
+
+
+def test_client_matter_read_eligibility_is_legal_client_only() -> None:
+    """L8-7D3 client matter projection eligibility is exact and non-authorizing."""
+    operation = "legal_client_matter_read"
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_legal_client"}
+    for role in TENANT_ROLES - {"tenant_legal_client"}:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_client",
+        operation,
+    ) == ELIGIBLE
+    for role in (
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+        "tenant_legal_finance",
+        "tenant_sheriff",
+        "tenant_deputy",
+        "tenant_owner",
+        "tenant_admin",
+        "tenant_manager",
+        "tenant_auditor",
+    ):
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+    for malformed in (
+        "legal_client_matter",
+        "legal_client_matter_read ",
+        " legal_client_matter_read",
+        "LEGAL_CLIENT_MATTER_READ",
+        "legal_client_matter_*",
+        None,
+        123,
+    ):
+        assert all(
+            tenant_role_operation_eligibility(role, malformed) == DENY
+            for role in TENANT_ROLES
+        )
+
+
+def test_client_visibility_write_eligibility_is_exact_law_firm_only() -> None:
+    """L8-7C3A client-visibility provisioning eligibility is exact and non-authorizing."""
+    operation = "legal_client_visibility_write"
+    approved = {
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+    }
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == approved
+    for role in TENANT_ROLES - approved:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_client",
+        operation,
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_sheriff",
+        operation,
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_deputy",
+        operation,
+    ) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+    for malformed in (
+        "legal_client_visibility",
+        "legal_client_visibility_write ",
+        " legal_client_visibility_write",
+        "LEGAL_CLIENT_VISIBILITY_WRITE",
+        "legal_client_visibility_*",
+        None,
+        123,
+    ):
+        assert all(
+            tenant_role_operation_eligibility(role, malformed) == DENY
+            for role in TENANT_ROLES
+        )
+
+
+def test_deputy_personal_queue_read_eligibility_is_deputy_only() -> None:
+    """Binding-scoped personal work is deputy-only policy, not sheriff queue IAM."""
+    operation = "legal_deputy_queue_read"
+    assert operation in OPERATIONS
+    assert tenant_role_operation_eligibility("tenant_deputy", operation) == ELIGIBLE
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_deputy"}
+    for role in TENANT_ROLES - {"tenant_deputy"}:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_sheriff", operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+
+
+def test_operational_queue_read_eligibility_is_sheriff_only() -> None:
+    """Certified tenant-wide operational queues are sheriff-only policy."""
+    operation = "legal_queue_read"
+    assert operation in OPERATIONS
+    assert tenant_role_operation_eligibility("tenant_sheriff", operation) == ELIGIBLE
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_sheriff"}
+    assert tenant_role_operation_eligibility("tenant_deputy", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_partner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_owner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_admin", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_client", operation) == DENY
+
+
+def test_representation_firm_decision_write_eligibility_is_partner_attorney_only() -> None:
+    operation = "legal_matter_representation_firm_decision_write"
+    approved = {"tenant_legal_partner", "tenant_legal_attorney"}
+    assert operation in OPERATIONS
+    assert {role for role in TENANT_ROLES if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == approved
+    assert permission_for_business_role_operation(operation) == "legal_operations:matter_representation_firm_decision:write"
+    for role in TENANT_ROLES - approved:
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+
+
+def test_directory_provisioning_eligibility_is_sheriff_only() -> None:
+    """Directory provisioning eligibility is exact, own-tenant policy only."""
+    operation = "legal_directory_write"
+    assert operation in OPERATIONS
+    assert tenant_role_operation_eligibility("tenant_sheriff", operation) == ELIGIBLE
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_sheriff"}
+    assert tenant_role_operation_eligibility("tenant_deputy", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_partner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_owner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_admin", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_client", operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+
+def test_acceptance_receipt_eligibility_is_sheriff_only() -> None:
+    """Office receipt is sheriff-only and distinct from allocation/service."""
+    operation = "legal_receipt_write"
+    assert operation in OPERATIONS
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_sheriff"}
+    for role in (
+        "tenant_deputy",
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+        "tenant_legal_finance",
+        "tenant_legal_client",
+        "tenant_owner",
+        "tenant_admin",
+    ):
+        assert tenant_role_operation_eligibility(role, operation) == DENY
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+    assert permission_for_business_role_operation(operation) is None
+
 
 def test_platform_billing_release_is_tenant_owner_only() -> None:
     assert "platform_billing_release" in OPERATIONS
@@ -292,12 +626,141 @@ def test_policy_facts_cannot_be_mutated() -> None:
     assert tenant_role_operation_eligibility("tenant_owner", "role_grant") == DENY
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
 
+
+def test_legal_evidence_cleanup_authority_eligibility_is_partner_only() -> None:
+    """Cleanup command admission eligibility is Partner-only and non-authorizing."""
+    operation = "legal_evidence_cleanup_authorize"
+    permission = "legal_operations:evidence_cleanup:authorize"
+
+    assert operation in OPERATIONS
+
+    assert permission_for_business_role_operation(
+        operation
+    ) == permission
+
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(
+            role,
+            operation,
+        ) == ELIGIBLE
+    } == {"tenant_legal_partner"}
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        operation,
+    ) == ELIGIBLE
+
+    for role in TENANT_ROLES - {"tenant_legal_partner"}:
+        assert tenant_role_operation_eligibility(
+            role,
+            operation,
+        ) == DENY
+
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+
+    malformed = (
+        "legal_evidence_cleanup",
+        "legal_evidence_cleanup_execute",
+        "legal_evidence_cleanup_delete",
+        "legal_evidence_cleanup_authorize ",
+        " legal_evidence_cleanup_authorize",
+        "LEGAL_EVIDENCE_CLEANUP_AUTHORIZE",
+    )
+
+    for value in malformed:
+        assert value not in OPERATIONS
+        assert permission_for_business_role_operation(
+            value
+        ) is None
+        for role in TENANT_ROLES:
+            assert tenant_role_operation_eligibility(
+                role,
+                value,
+            ) == DENY
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        "financial_execution",
+    ) == DENY
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        "cross_tenant",
+    ) == DENY
+
+
+def test_legal_evidence_write_eligibility_is_partner_only() -> None:
+    """L10A3C evidence ingest eligibility is exact and policy-only."""
+    operation = "legal_evidence_write"
+    permission = "legal_operations:evidence:write"
+
+    assert operation in OPERATIONS
+
+    assert {
+        role
+        for role in TENANT_ROLES
+        if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+    } == {"tenant_legal_partner"}
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        operation,
+    ) == ELIGIBLE
+
+    for role in TENANT_ROLES - {"tenant_legal_partner"}:
+        assert tenant_role_operation_eligibility(
+            role,
+            operation,
+        ) == DENY
+
+    assert permission_for_business_role_operation(
+        operation
+    ) == permission
+
+    assert requires_system_authority(
+        operation
+    ) is SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+
+    for malformed in (
+        "legal_evidence",
+        "legal_evidence_write ",
+        " legal_evidence_write",
+        "LEGAL_EVIDENCE_WRITE",
+        "legal_evidence_*",
+        "legal_evidence_read",
+        None,
+        123,
+    ):
+        assert permission_for_business_role_operation(
+            malformed
+        ) is None
+        assert all(
+            tenant_role_operation_eligibility(
+                role,
+                malformed,
+            )
+            == DENY
+            for role in TENANT_ROLES
+        )
+
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        "financial_execution",
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_legal_partner",
+        "cross_tenant",
+    ) == DENY
+
+
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.12.0-C1E-R1
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
-# TENANT POSTURE: WILSY AI capacity-read and billing-intelligence evidence-read eligibility remain policy-only; no membership or tenant authority is granted
+# TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
-# CHANGELOG: 2026-09-17 v1.11.0-C1C-R1B refreshes stale dedicated
-# legal-services eligibility expectations without weakening policy authority.
 # END OF WILSY OS SOVEREIGN ARTIFACT

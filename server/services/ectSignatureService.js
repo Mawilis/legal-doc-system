@@ -1,117 +1,54 @@
-/* eslint-disable */
-/*
-
- * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-
- * ║  ███████╗ ██████╗████████╗      ███████╗██╗ ██████╗ ███╗   ██╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗    ███████╗███████╗██████╗  ║
-
- * ║  ██╔════╝██╔════╝╚══██╔══╝      ██╔════╝██║██╔════╝ ████╗  ██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔════╝    ██╔════╝██╔════╝██╔══██╗ ║
-
- * ║  █████╗  ██║        ██║         █████╗  ██║██║  ███╗██╔██╗ ██║███████║   ██║   ██║   ██║██████╔╝█████╗      ███████╗█████╗  ██████╔╝ ║
-
- * ║  ██╔══╝  ██║        ██║         ██╔══╝  ██║██║   ██║██║╚██╗██║██╔══██║   ██║   ██║   ██║██╔══██╗██╔══╝      ╚════██║██╔══╝  ██╔══██╗ ║
-
- * ║  ███████╗╚██████╗   ██║         ██║     ██║╚██████╔╝██║ ╚████║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ███████║███████╗██║  ██║ ║
-
- * ║  ╚══════╝ ╚═════╝   ╚═╝         ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚══════╝╚══════╝╚═╝  ╚═╝ ║
-
- * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-
- * ║                                                                                                                              ║
-
- * ║  QUANTUM NEXUS: ECT SIGNATURE SERVICE - ELECTRONIC COMMUNICATIONS & TRANSACTIONS ACT 25 OF 2002 COMPLIANCE ENGINE           ║
-
- * ║  This celestial quantum engine orchestrates divine compliance with South Africa's Electronic Communications and              ║
-
- * ║  Transactions Act 25 of 2002, transmuting legal document signatures into quantum-secured, legally binding electronic         ║
-
- * ║  signatures. As the unbreachable cryptographic sanctum of Wilsy OS, it ensures every digital signature possesses            ║
-
- * ║  the fourfold essence: authentication, integrity, non-repudiation, and evidential weight—elevating digital                  ║
-
- * ║  transactions to incontestable legal validity. Through quantum-resistant cryptography and blockchain-anchored                ║
-
- * ║  timestamping, it forges signatures that withstand eternity, propelling South African legal practice into the               ║
-
- * ║  digital jurisprudential renaissance while establishing Wilsy OS as the supreme authority for ECT Act compliance.           ║
-
- * ║                                                                                                                              ║
-
- * ║  COLLABORATION QUANTA:                                                                                                       ║
-
- * ║  • Wilson Khanyezi - Chief Quantum Architect & Supreme Legal Technologist                                                    ║
-
- * ║  • South African Law Reform Commission - ECT Act Regulatory Framework                                                       ║
-
- * ║  • Electronic Communications and Transactions Act 25 of 2002 - Statutory Authority                                          ║
-
- * ║  • South African Accreditation Authority (SAAA) - Advanced Electronic Signature Standards                                   ║
-
- * ║  • International Standards Organization (ISO) - ISO/IEC 27001:2022 & 27002:2022 Compliance                                  ║
-
- * ║  • PKI Consortium - Public Key Infrastructure Standards                                                                     ║
-
- * ║  • Blockchain Quantum Alliance - Immutable Timestamping Protocols                                                           ║
-
- * ║                                                                                                                              ║
-
- * ║  QUANTUM IMPACT METRICS:                                                                                                     ║
-
- * ║  • 100% compliance with ECT Act Sections 12-14, 20-23 (Advanced Electronic Signatures)                                      ║
-
- * ║  • 99.99% cryptographic security with quantum-resistant algorithms                                                          ║
-
- * ║  • 95% reduction in manual signature verification processes                                                                 ║
-
- * ║  • R1.2M average annual savings in paper, printing, and courier costs per firm                                             ║
-
- * ║  • 1000x acceleration in document execution workflows                                                                       ║
-
- * ║  • 0% legal challenges to signature validity through blockchain-anchored proof                                             ║
-
- * ║  • Enables Wilsy OS to capture 100% of digital signature market in SA legal sector                                          ║
-
- * ║                                                                                                                              ║
-
- * ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-
- */
-
 /**
- * 🏛️ WILSY OS - ECT SIGNATURE SERVICE v1.0.0 (ES MODULE)
- * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/ectSignatureService.js
- * @version 1.0.0
- * @lastModified 2026-04-07
- * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
- * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
- * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ * TITLE: WILSY OS — ECT Signature Service
+ * VERSION: v1.1.0
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Fail-closed electronic-signature orchestration and standards-bounded
+ *          timestamp-request construction for the Wilsy OS ECT signature surface.
+ * ABSOLUTE CANONICAL PATH:
+ * /Users/wilsonkhanyezi/legal-doc-system/server/services/ectSignatureService.js
+ * COLLABORATION / OWNERSHIP: Wilsy OS Legal Operations / Security Engineering
+ * CERTIFICATION / UPDATE DATE: 2026-10-02
  *
- * @description
- * ECT Act 25 of 2002 compliant advanced electronic signature service.
- * Provides cryptographic signing, trusted timestamping, blockchain anchoring,
- * and legal admissibility verification for South African legal documents.
+ * CHANGELOG:
+ * - v1.1.0 (2026-10-02):
+ *   - replaces the node-forge RFC 3161 request builder with deterministic native DER;
+ *   - removes the undeclared asn1.js import and this file's node-forge dependency;
+ *   - encodes SHA-256 MessageImprint using OID 2.16.840.1.101.3.4.2.1;
+ *   - returns raw DER bytes for application/timestamp-query transport;
+ *   - rejects malformed or non-SHA-256 digest input before network transport;
+ *   - normalizes this artifact to the sovereign header and end-seal contract.
+ * - v1.0.0 (2026-04-07): legacy ECT signature service baseline.
  *
- * @collaboration
- * - Any change requires signoff from two sovereign architects.
- * - Private keys must be stored in HSM for production.
- * - Timestamping authority must be RFC 3161 compliant.
- * - See CONFLUENCE://WilsyOS/ECTSignatureService for runbooks.
+ * COMPLIANCE:
+ * - Constructs the RFC 3161 TimeStampReq transport structure used by this service.
+ * - Does not itself prove ECT Act compliance, accreditation, legal admissibility,
+ *   timestamp-authority trust, or successful timestamp issuance.
  *
- * @team_signoff:
- * • Wilson Khanyezi – Supreme Architect: 2026-04-07
- * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
- * • Johan Botha – Compliance: 2026-04-07
+ * SECURITY / PRIVACY POSTURE:
+ * - Required ECT environment configuration remains fail-closed.
+ * - Timestamp request construction accepts only a 32-byte SHA-256 digest encoded
+ *   as exactly 64 hexadecimal characters.
+ * - No private-key, tenant, settlement, or provider-success truth is invented.
+ *
+ * TENANT BOUNDARY:
+ * - This module does not establish tenant identity or persistence authority.
+ * - Callers remain responsible for authenticated tenant context and authorization.
+ *
+ * AUTHORITY BOUNDARY:
+ * - This module constructs and verifies electronic-signature evidence surfaces.
+ * - A generated request is not proof that a timestamp authority accepted or issued
+ *   a timestamp and is not independent proof of legal validity.
+ *
+ * FINANCIAL AUTHORITY BOUNDARY:
+ * - This module has no payment, settlement, release, banking, or financial
+ *   execution authority. Kennel EOS remains the exclusive financial execution
+ *   authority.
  */
-
-//  ===============================================================================================
-//  QUANTUM DEPENDENCIES - SECURE & PINNED VERSIONS
-//  ===============================================================================================
 
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
-import asn1 from 'asn1.js';
 import axios from 'axios';
 import BN from 'bn.js';
 import { p256 } from '@noble/curves/nist.js';
@@ -120,7 +57,6 @@ import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import moment from 'moment';
 import NodeCache from 'node-cache';
-import forge from 'node-forge';
 import NodeRSA from 'node-rsa';
 import * as pkijs from 'pkijs';
 import { v4 as uuidv4 } from 'uuid';
@@ -363,36 +299,63 @@ class QuantumTimestampingService {
     }
   }
 
+  /**
+   * Construct a DER-encoded RFC 3161 TimeStampReq for one SHA-256 digest.
+   *
+   * Authority boundary:
+   * - constructs transport bytes only;
+   * - does not assert TSA acceptance, issuance, trust, accreditation, or legal validity.
+   *
+   * @param {string} dataHash exactly 64 hexadecimal characters representing SHA-256.
+   * @returns {Buffer} DER-encoded TimeStampReq suitable for application/timestamp-query.
+   * @throws {TypeError} when dataHash is not a canonical SHA-256 hexadecimal digest.
+   */
   static _createTimestampRequest(dataHash) {
-    return forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
-      forge.asn1.create(
-        forge.asn1.Class.UNIVERSAL,
-        forge.asn1.Type.INTEGER,
-        false,
-        forge.util.hexToBytes('01')
-      ),
-      forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
-        forge.asn1.create(
-          forge.asn1.Class.UNIVERSAL,
-          forge.asn1.Type.OID,
-          false,
-          forge.util.hexToBytes('0609608648016503040201')
-        ),
-        forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, ''),
-      ]),
-      forge.asn1.create(
-        forge.asn1.Class.UNIVERSAL,
-        forge.asn1.Type.OCTETSTRING,
-        false,
-        forge.util.hexToBytes(dataHash)
-      ),
-      forge.asn1.create(
-        forge.asn1.Class.UNIVERSAL,
-        forge.asn1.Type.INTEGER,
-        false,
-        forge.util.hexToBytes('00')
-      ),
-    ]);
+    if (typeof dataHash !== 'string' || !/^[0-9a-fA-F]{64}$/.test(dataHash)) {
+      throw new TypeError(
+        'RFC3161_TIMESTAMP_HASH_INVALID: expected 64 hexadecimal SHA-256 characters'
+      );
+    }
+
+    const encodeLength = (length) => {
+      if (!Number.isSafeInteger(length) || length < 0) {
+        throw new TypeError('DER_LENGTH_INVALID');
+      }
+      if (length < 0x80) {
+        return Buffer.from([length]);
+      }
+
+      const octets = [];
+      let remaining = length;
+      while (remaining > 0) {
+        octets.unshift(remaining & 0xff);
+        remaining = Math.floor(remaining / 256);
+      }
+      return Buffer.from([0x80 | octets.length, ...octets]);
+    };
+
+    const encodeTlv = (tag, value) => {
+      if (!Buffer.isBuffer(value)) {
+        throw new TypeError('DER_VALUE_INVALID');
+      }
+      return Buffer.concat([Buffer.from([tag]), encodeLength(value.length), value]);
+    };
+
+    const encodeSequence = (...children) => encodeTlv(0x30, Buffer.concat(children));
+
+    const version = encodeTlv(0x02, Buffer.from([0x01]));
+
+    // SHA-256 algorithm identifier:
+    // id-sha256 OBJECT IDENTIFIER ::= {2 16 840 1 101 3 4 2 1}
+    const sha256Oid = encodeTlv(0x06, Buffer.from('608648016503040201', 'hex'));
+    const nullParameters = encodeTlv(0x05, Buffer.alloc(0));
+    const algorithmIdentifier = encodeSequence(sha256Oid, nullParameters);
+
+    const hashedMessage = encodeTlv(0x04, Buffer.from(dataHash, 'hex'));
+    const messageImprint = encodeSequence(algorithmIdentifier, hashedMessage);
+
+    // RFC 3161 optional reqPolicy, nonce, certReq and extensions are omitted.
+    return encodeSequence(version, messageImprint);
   }
 
   static async _anchorToBlockchain(dataHash) {
@@ -1605,3 +1568,20 @@ if (process.env.NODE_ENV !== 'test') {
     console.log('ECT Signature Service interrupted');
   });
 }
+
+// =============================================================================
+// WILSY OS SOVEREIGN ARTIFACT SEAL
+// =============================================================================
+// ARTIFACT: ECT Signature Service
+// VERSION: v1.1.0
+// AUTHORITY BOUNDARY:
+//   Electronic-signature orchestration and standards-bounded evidence handling;
+//   no independent legal-validity, TSA-success, payment, or settlement authority.
+// TENANT POSTURE:
+//   No tenant identity is invented; authenticated tenant context remains a caller
+//   responsibility at the institutional boundary.
+// FAIL-CLOSED POSTURE:
+//   Required ECT configuration and malformed RFC 3161 digest inputs are rejected.
+// FINANCIAL EXECUTION AUTHORITY:
+//   None. Kennel EOS exclusively owns financial execution authority.
+// END OF WILSY OS SOVEREIGN ARTIFACT

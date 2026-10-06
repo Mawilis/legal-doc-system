@@ -1,14 +1,108 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.15.0-C1E-R1
+VERSION: v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
-evidence read bindings and authenticated field-service command bindings; it does not
-mutate or transport.
+evidence read bindings, authenticated field-service command bindings, sheriff
+Legal Operations controls, the dedicated law-firm client-visibility
+provisioning binding, and the explicit LEGAL_CLIENT matter-projection read
+binding; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-17.
-CHANGELOG: 2026-09-17 v1.15.0-C1E-R1 binds the dedicated legal-advisory
+CERTIFICATION/UPDATE DATE: 2026-10-04.
+CHANGELOG:
+2026-10-04 v1.31.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING
+binds hr_employee_relation_write exactly to
+hr:employee_relation:write. Authorization remains conjunctive across
+ACTIVE principal, ACTIVE membership, eligible HR business role,
+exact permission-operation pairing and ACTIVE granting role. No
+HTTP, payroll, payment or settlement authority is added.
+2026-10-02 v1.30.0-L10A2R-C4D6E-A3-P1D-LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING
+binds legal_evidence_cleanup_authorize exactly to
+legal_operations:evidence_cleanup:authorize. Authorization remains conjunctive
+across ACTIVE principal, ACTIVE tenant membership, tenant_legal_partner
+business-role eligibility, exact canonical permission/operation binding and an
+ACTIVE LEGAL_PARTNER assignment. This binding creates actor command-admission
+authority only. It does not bind A2 cleanup authorization by itself, mutate a
+provider, delete an object, release retention/legal hold, prove cleanup
+execution, payment execution or settlement truth.
+ 2026-10-01 v1.29.0-L10A3D-LEGAL-EVIDENCE-BINDING binds legal_evidence_write exactly to legal_operations:evidence:write for the already-certified Partner-only Legal Evidence capability. Authorization remains conjunctive across ACTIVE principal, ACTIVE membership, tenant_legal_partner eligibility, exact operation-permission pairing, and ACTIVE LEGAL_PARTNER grant. This binding creates no disownership fact, orphan proof, retention conclusion, legal-hold release, cleanup eligibility, provider mutation, deletion authority, payment, execution or settlement authority.
+CHANGELOG: 2026-09-28 v1.28.0-L10-P2C4-D21B-BRANDING-BINDING binds the dedicated
+tenant_branding read/profile/asset operations to exact own-tenant permissions.
+Authorization remains conjunctive across active principal, membership,
+business-role eligibility, permission metadata and active granting role; no
+profile, asset, browser or financial authority is created.
+2026-09-28 v1.27.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-BINDING binds
+legal_matter_representation_firm_decision_write exactly to
+legal_operations:matter_representation_firm_decision:write. Authorization
+remains conjunctive across ACTIVE principal, membership, eligible legal role,
+exact permission and active granting role; no Representation, Court,
+professional or financial authority is created.
+2026-09-28 v1.26.0-L9C7D-ENGAGEMENT-FIRM-DECISION-BINDING binds
+legal_matter_engagement_firm_decision_write exactly to
+legal_operations:matter_engagement_firm_decision:write. Existing conjunctive
+principal, membership, business-role, permission, and active granting-role
+checks remain unchanged; no Engagement issuance, evidence issuance, registry,
+Representation, Court, or financial authority is created.
+2026-09-27 v1.25.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-BINDING binds
+legal_matter_mandate_acknowledgment_write exactly to
+legal_operations:matter_mandate_acknowledgment:write. Authorization remains
+conjunctive across ACTIVE principal, ACTIVE membership, eligible legal
+business role, exact permission metadata and active granting role. This
+binding does not issue acknowledgments or create mandate, engagement,
+representation, Court, payment, execution or settlement authority.
+2026-09-26 v1.24.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-BINDING binds
+legal_matter_acceptance_instrument_approval_write exactly to
+legal_operations:matter_acceptance_instrument_approval:write.
+2026-09-26 v1.23.0-L9A3-CLIENT-ACCEPTANCE-BINDING binds
+legal_client_acceptance_write exactly to legal_operations:client_acceptance:write.
+Authorization remains conjunctive across ACTIVE principal, ACTIVE membership,
+tenant_legal_client business eligibility, exact operation-permission pairing,
+and an ACTIVE LEGAL_CLIENT final-role assignment. This binding does not prove
+client identity, matter/party scope, engagement, representation, Court,
+payment, execution or settlement authority.
+2026-09-25 v1.22.0-L8-8I-CONFLICT-REVIEW-BINDING binds
+legal_conflict_review_write exactly to legal_operations:conflict_review:write.
+Authorization remains conjunctive across ACTIVE principal, ACTIVE membership,
+tenant_legal_partner/tenant_legal_attorney business eligibility, the exact
+operation-permission pair, and one ACTIVE LEGAL_PARTNER/LEGAL_ATTORNEY granting
+role. This binding does not itself prove durable screening/review evidence,
+reviewer legal judgment, waiver, ethical wall, recusal, engagement,
+representation, payment, execution or settlement authority.
+2026-09-23 v1.21.0-L8-7D4-CLIENT-MATTER-READ-BINDING binds
+legal_client_matter_read exactly to legal_operations:client_matter:read.
+Authorization remains conjunctive across ACTIVE principal, ACTIVE membership,
+the tenant_legal_client business role, exact operation-permission pairing, and
+an ACTIVE LEGAL_CLIENT final-role assignment. This binding does not itself
+prove an ACTIVE client-to-matter visibility relation, expose tenant-wide
+matters, or grant sheriff/deputy/internal instruction, service/return evidence,
+billing execution, payment, execution, or settlement authority.
+2026-09-23 v1.20.0-L8-7C3B-CLIENT-VISIBILITY-WRITE-BINDING binds
+legal_client_visibility_write exactly to
+legal_operations:client_visibility:write. Authorization remains conjunctive
+across ACTIVE principal, ACTIVE membership, one approved law-firm business
+role, exact operation-permission binding, and an ACTIVE granting
+LEGAL_PARTNER/LEGAL_ATTORNEY/LEGAL_PARALEGAL role assignment. This binding
+grants no client read, target-client eligibility, CaseMatter visibility,
+service, billing, payment, execution, or settlement authority.
+2026-09-23 v1.19.0-L8-6C-DEPUTY-PERSONAL-QUEUE-BINDING binds
+legal_deputy_queue_read exactly to legal_operations:deputy_queue:read; current
+authorization remains conjunctive across ACTIVE principal, ACTIVE membership,
+tenant_deputy business eligibility, and ACTIVE DEPUTY role assignment. This
+binding grants no sheriff tenant-wide queue, deputy identity binding, lifecycle
+mutation, service, return, billing, AI, execution, or settlement authority.
+2026-09-23 v1.18.0-L8-6A-SHERIFF-QUEUE-READ-BINDING binds
+legal_queue_read exactly to legal_operations:queue:read; authorization remains
+conjunctive across principal, membership, business role, and granting role,
+with no deputy identity inference or financial authority.
+2026-09-23 v1.17.0-L8-3-LEGAL-OPERATIONS-RECEIPT-BINDING binds
+legal_receipt_write exactly to legal_operations:receipt:write; authorization
+remains conjunctive across principal, membership, business role, and granting
+role.
+2026-09-23 v1.16.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-BINDING binds
+legal_directory_write exactly to legal_operations:directory:write; authorization
+remains conjunctive across principal, membership, business role, and granting role.
+2026-09-17 v1.15.0-C1E-R1 binds the dedicated legal-advisory
 generate/read operations to their own tenant permissions without broader authority.
 2026-09-17 v1.14.0-C1C-R1 binds the dedicated legal-services
 operation to its own tenant permission without broader authority.
@@ -63,7 +157,7 @@ from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operati
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.15.0-C1E-R1"
+VERSION = "v1.32.0-P0-C12F7B-HR-DOCUMENT-IAM-BINDING"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -78,8 +172,52 @@ class MembershipReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, *, session: Any = None) -> object: ...
 class AssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
-_BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","plan_read":"plan:read","plan_create":"plan:manage","plan_update":"plan:manage","plan_archive":"plan:manage","subscription_read":"subscription:read","subscription_audit_read":"subscription:read","subscription_metrics_read":"subscription:read","subscription_create":"subscription:manage","subscription_update":"subscription:manage","subscription_archive":"subscription:manage","subscription_pause":"subscription:manage","subscription_resume":"subscription:manage","subscription_cancel":"subscription:manage","subscription_upgrade":"subscription:manage","subscription_downgrade":"subscription:manage","subscription_reactivate":"subscription:manage","platform_billing_release":"platform_billing:release","platform_billing_provider_policy_create":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revise":"platform_billing:provider_policy:admin","platform_billing_provider_policy_activate":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revoke":"platform_billing:provider_policy:admin","inbound_collection_authorization_create":"inbound_collection:authorization:create","tenant_inbound_merchant_configuration_register":"inbound_merchant_configuration:register","tenant_inbound_merchant_configuration_lifecycle_transition":"inbound_merchant_configuration:lifecycle","tenant_inbound_merchant_configuration_compromise":"inbound_merchant_configuration:security","tenant_inbound_merchant_configuration_remediate":"inbound_merchant_configuration:remediate","tenant_inbound_provider_policy_create":"inbound_provider_policy:author","tenant_inbound_provider_policy_revise":"inbound_provider_policy:author","tenant_inbound_provider_policy_activate":"inbound_provider_policy:activate","tenant_inbound_provider_policy_deactivate":"inbound_provider_policy:deactivate","tenant_inbound_provider_policy_emergency_disable":"inbound_provider_policy:emergency_disable","tenant_inbound_provider_credential_security_eligibility_issue":"inbound_provider_credential_security:eligibility_issue","tenant_inbound_provider_credential_security_revoke":"inbound_provider_credential_security:revoke","tenant_inbound_provider_credential_security_compromise":"inbound_provider_credential_security:compromise","tenant_inbound_provider_credential_security_rotate":"inbound_provider_credential_security:rotate","wilsy_ai_usage_capacity_read":"wilsy_ai:usage_capacity:read","billing_intelligence_evidence_read":"billing_intelligence:evidence:read","legal_instruction_read":"legal_operations:instruction:read","legal_instruction_write":"legal_operations:instruction:write","legal_allocation_read":"legal_operations:allocation:read","legal_allocation_write":"legal_operations:allocation:write","legal_attempt_read":"legal_operations:attempt:read","legal_attempt_write":"legal_operations:attempt:write","legal_attempt_outcome_write":"legal_operations:attempt_outcome:write","legal_return_read":"legal_operations:return:read","legal_return_write":"legal_operations:return:write","legal_billing_read":"legal_operations:billing:read","legal_invoice_read":"legal_operations:invoice:read"})
+_BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","plan_read":"plan:read","plan_create":"plan:manage","plan_update":"plan:manage","plan_archive":"plan:manage","subscription_read":"subscription:read","subscription_audit_read":"subscription:read","subscription_metrics_read":"subscription:read","subscription_create":"subscription:manage","subscription_update":"subscription:manage","subscription_archive":"subscription:manage","subscription_pause":"subscription:manage","subscription_resume":"subscription:manage","subscription_cancel":"subscription:manage","subscription_upgrade":"subscription:manage","subscription_downgrade":"subscription:manage","subscription_reactivate":"subscription:manage","platform_billing_release":"platform_billing:release","platform_billing_provider_policy_create":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revise":"platform_billing:provider_policy:admin","platform_billing_provider_policy_activate":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revoke":"platform_billing:provider_policy:admin","inbound_collection_authorization_create":"inbound_collection:authorization:create","tenant_inbound_merchant_configuration_register":"inbound_merchant_configuration:register","tenant_inbound_merchant_configuration_lifecycle_transition":"inbound_merchant_configuration:lifecycle","tenant_inbound_merchant_configuration_compromise":"inbound_merchant_configuration:security","tenant_inbound_merchant_configuration_remediate":"inbound_merchant_configuration:remediate","tenant_inbound_provider_policy_create":"inbound_provider_policy:author","tenant_inbound_provider_policy_revise":"inbound_provider_policy:author","tenant_inbound_provider_policy_activate":"inbound_provider_policy:activate","tenant_inbound_provider_policy_deactivate":"inbound_provider_policy:deactivate","tenant_inbound_provider_policy_emergency_disable":"inbound_provider_policy:emergency_disable","tenant_inbound_provider_credential_security_eligibility_issue":"inbound_provider_credential_security:eligibility_issue","tenant_inbound_provider_credential_security_revoke":"inbound_provider_credential_security:revoke","tenant_inbound_provider_credential_security_compromise":"inbound_provider_credential_security:compromise","tenant_inbound_provider_credential_security_rotate":"inbound_provider_credential_security:rotate","wilsy_ai_usage_capacity_read":"wilsy_ai:usage_capacity:read","billing_intelligence_evidence_read":"billing_intelligence:evidence:read","legal_instruction_read":"legal_operations:instruction:read","legal_instruction_write":"legal_operations:instruction:write","legal_directory_write":"legal_operations:directory:write","legal_receipt_write":"legal_operations:receipt:write","legal_queue_read":"legal_operations:queue:read","legal_deputy_queue_read":"legal_operations:deputy_queue:read","legal_client_visibility_write":"legal_operations:client_visibility:write","legal_client_matter_read":"legal_operations:client_matter:read","legal_conflict_review_write":"legal_operations:conflict_review:write","legal_client_acceptance_write":"legal_operations:client_acceptance:write","legal_matter_acceptance_instrument_approval_write":"legal_operations:matter_acceptance_instrument_approval:write","legal_allocation_read":"legal_operations:allocation:read","legal_allocation_write":"legal_operations:allocation:write","legal_attempt_read":"legal_operations:attempt:read","legal_attempt_write":"legal_operations:attempt:write","legal_attempt_outcome_write":"legal_operations:attempt_outcome:write","legal_return_read":"legal_operations:return:read","legal_return_write":"legal_operations:return:write","legal_billing_read":"legal_operations:billing:read","legal_invoice_read":"legal_operations:invoice:read"})
 _BINDINGS = MappingProxyType({**_BINDINGS, "wilsy_ai_legal_tool_read": "wilsy_ai:legal_tool:read", "wilsy_ai_reasoning_execute": "wilsy_ai:reasoning:execute", "wilsy_ai_legal_services_execute": "wilsy_ai:legal_services:execute", "wilsy_ai_legal_advisory_generate": "wilsy_ai:legal_advisory:generate", "wilsy_ai_legal_advisory_read": "wilsy_ai:legal_advisory:read"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "legal_matter_mandate_acknowledgment_write": "legal_operations:matter_mandate_acknowledgment:write"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "legal_matter_engagement_firm_decision_write": "legal_operations:matter_engagement_firm_decision:write"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "legal_matter_representation_firm_decision_write": "legal_operations:matter_representation_firm_decision:write"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "tenant_branding_read": "tenant_branding:read", "tenant_branding_profile_manage": "tenant_branding:profile:manage", "tenant_branding_asset_manage": "tenant_branding:asset:manage"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_write": "legal_operations:evidence:write"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize"})
+
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "hr_employee_relation_write": "hr:employee_relation:write",
+})
+
+
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "hr_document_standard_employment_write":
+        "hr:document:standard_employment:write",
+    "hr_document_standard_employment_read":
+        "hr:document:standard_employment:read",
+    "hr_document_employee_relations_restricted_write":
+        "hr:document:employee_relations_restricted:write",
+    "hr_document_employee_relations_restricted_read":
+        "hr:document:employee_relations_restricted:read",
+    "hr_document_performance_restricted_write":
+        "hr:document:performance_restricted:write",
+    "hr_document_performance_restricted_read":
+        "hr:document:performance_restricted:read",
+    "hr_document_highly_sensitive_health_write":
+        "hr:document:highly_sensitive_health:write",
+    "hr_document_highly_sensitive_health_read":
+        "hr:document:highly_sensitive_health:read",
+    "hr_document_highly_sensitive_identity_write":
+        "hr:document:highly_sensitive_identity:write",
+    "hr_document_highly_sensitive_identity_read":
+        "hr:document:highly_sensitive_identity:read",
+    "hr_document_separation_restricted_write":
+        "hr:document:separation_restricted:write",
+    "hr_document_separation_restricted_read":
+        "hr:document:separation_restricted:read",
+    "hr_document_general_write":
+        "hr:document:general:write",
+    "hr_document_general_read":
+        "hr:document:general:read",
+})
 
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
@@ -122,9 +260,9 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.15.0-C1E-R1
+# VERSION: v1.32.0-P0-C12F7B-HR-DOCUMENT-IAM-BINDING
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
-# TENANT POSTURE: exact active principal, membership, role and own-tenant target required; WILSY AI capacity and billing-intelligence evidence reads remain conjunctive
+# TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required; conflict review is partner/attorney-only and client matter access still requires ACTIVE visibility
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,15 +1,27 @@
 """Wilsy OS canonical authentication registry.
 
 TITLE: WILSY OS Authentication Registry
-VERSION: v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING
+VERSION: v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns password, JWT, OTP, session, and refresh-token business semantics
          while consuming the caller-established canonical Kernel database.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/auth/auth_registry.py
 COLLABORATION / OWNERSHIP: Auth router delegates here; tools.eos.kernel.db owns
                            the sole Mongo lifecycle and connection recovery.
-CERTIFICATION / UPDATE DATE: 2026-09-22
+CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG:
+  v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION — Extends the D15G developer-persona transaction seam so canonical
+    tenant validation for register_user participates in the exact caller-owned
+    ClientSession before the credential insert. No-session behavior remains
+    unchanged; AuthRegistry still starts, commits, aborts, and retries no
+    transaction and gains no membership, role, authorization, or financial
+    authority.
+  v1.10.0-D15G-DEV-TRANSACTIONAL-USER-REGISTRATION — Extends canonical user registration with an optional caller-owned
+    Mongo ClientSession so higher-level admission/provisioning orchestration can
+    compose the credential row atomically with independently governed principal,
+    membership, business-role, and authorization-role authorities. The registry
+    still owns no transaction, performs no role grant, creates no final session,
+    and preserves the existing no-session registration behavior exactly.
   v1.4.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE — Added one authoritative
     TenantRegistry resolver before user hydration, user creation, JWT issuance,
     session persistence, and refresh-token validation; removed tenant fallback
@@ -78,7 +90,7 @@ from tools.eos.auth.principal_authority_repository import (
 )
 from tools.eos.auth.principal_status import PrincipalStatus
 
-VERSION = "v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING"
+VERSION = "v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION"
 
 # Configuration
 JWT_EXPIRY_HOURS = 24
@@ -137,15 +149,34 @@ class AuthRegistry:
         tenant_reference: object,
         *,
         allow_alias: bool = False,
+        session: Any = None,
     ) -> Any:
-        """Require one ACTIVE canonical tenant before auth material is issued."""
+        """Require one ACTIVE canonical tenant while preserving caller session scope.
+
+        When session is absent, the established resolver call remains unchanged.
+        When supplied, the exact caller-owned session is forwarded to the
+        canonical TenantRegistry resolver so transactional callers observe tenant
+        truth and credential persistence through one Mongo transaction view.
+        This helper never starts, commits, aborts, or retries a transaction and
+        grants no membership, role, permission, or financial authority.
+        """
         if not isinstance(tenant_reference, str) or not tenant_reference.strip():
             raise AuthRegistryTenantError("AUTH_TENANT_CANONICAL_INVALID")
         resolver = getattr(self.tenant_registry, "resolve_canonical_tenant", None)
         if not callable(resolver):
             resolver = TenantRegistry.resolve_canonical_tenant
         try:
-            tenant = resolver(tenant_reference.strip(), allow_alias=allow_alias)
+            if session is None:
+                tenant = resolver(
+                    tenant_reference.strip(),
+                    allow_alias=allow_alias,
+                )
+            else:
+                tenant = resolver(
+                    tenant_reference.strip(),
+                    allow_alias=allow_alias,
+                    session=session,
+                )
         except Exception as exc:
             raise AuthRegistryTenantError(
                 "AUTH_TENANT_CANONICAL_INVALID"
@@ -611,9 +642,41 @@ class AuthRegistry:
         self.generate_refresh_token(user.id, canonical_tenant_id, session=session)
         return created_session
 
-    def register_user(self, email: str, password: str, firstName: str, lastName: str, role: str, tenantId: str) -> User:
-        """Create a user only for one canonical tenant (alias input is resolved once)."""
-        canonical = self._require_canonical_tenant(tenantId, allow_alias=True)
+    def register_user(
+        self,
+        email: str,
+        password: str,
+        firstName: str,
+        lastName: str,
+        role: str,
+        tenantId: str,
+        *,
+        session: Any = None,
+    ) -> User:
+        """Create one canonical-tenant credential row under caller transaction ownership.
+
+        Registration validates the supplied tenant reference through the canonical
+        TenantRegistry, creates a fresh WILSYAUTH identity, hashes the password
+        through this registry's bcrypt authority, and persists only the existing
+        authentication user schema with credential revision zero.
+
+        The optional session is forwarded unchanged to the single users-collection
+        insert through _call_collection. This method never starts, commits, aborts,
+        or retries a transaction; it never creates PrincipalAuthority,
+        TenantMembership, TenantBusinessRole, RoleAssignment, JWT, session,
+        refresh-token, MFA, authorization, or financial authority. Callers that
+        compose those independent authorities remain responsible for the surrounding
+        transaction and fail-closed rollback semantics.
+
+        The no-session call path is behaviorally identical to the established
+        registration contract. Duplicate persistence conflicts remain bounded to
+        the existing ValueError("Email already exists") outcome.
+        """
+        canonical = self._require_canonical_tenant(
+            tenantId,
+            allow_alias=True,
+            session=session,
+        )
         canonical_tenant_id = canonical.tenant_id
         user_id = f"WILSYAUTH-{uuid.uuid4()}"
         hashed = self.hash_password(password)
@@ -629,7 +692,6 @@ class AuthRegistry:
             mfaRegistered=False,
             hasSignedCovenant=False
         )
-        # Insert into MongoDB
         doc = {
             "user_id": user.id,
             "email": user.email,
@@ -646,9 +708,14 @@ class AuthRegistry:
             "updatedAt": user.updatedAt
         }
         try:
-            self._collection("users").insert_one(doc)
-        except DuplicateKeyError:
-            raise ValueError("Email already exists")
+            self._call_collection(
+                self._collection("users"),
+                "insert_one",
+                doc,
+                session=session,
+            )
+        except DuplicateKeyError as error:
+            raise ValueError("Email already exists") from error
         return user
 
     def get_user_by_email(self, email: str) -> Optional[User]:
@@ -877,8 +944,8 @@ __all__ = ["AuthRegistry", "AuthRegistryTenantError", "get_auth_registry"]
 
 """
 ARTIFACT: tools/eos/saas/auth/auth_registry.py
-VERSION: v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING
-AUTHORITY BOUNDARY: authentication business semantics; TenantRegistry owns canonical tenant validation
+VERSION: v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION
+AUTHORITY BOUNDARY: authentication business semantics; TenantRegistry owns canonical tenant validation; registration and its tenant validation may participate in but never own a caller transaction
 TENANT POSTURE: users, JWTs, sessions, credential reads/CAS, and refresh validation require one ACTIVE canonical tenant_id; revocations are tenant_id + user_id scoped
 FAIL-CLOSED POSTURE: unavailable, missing, duplicate, inactive, or pseudo tenant references, malformed credential revisions, corrupt-present refresh tenant fields, and missing/inactive durable principal authority issue no final auth material
 FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive

@@ -1,0 +1,138 @@
+# ==============================================================================
+# WILSY OS — DEDICATED PYTHON EOS IMAGE PUBLICATION WORKFLOW
+#
+# TITLE: Dedicated Python EOS Multi-Architecture Image Publication
+# VERSION: v1.0.0-P0-C12F7C-E1-R9-R7-R2D
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Publishes the certified Python EOS runtime as an immutable GHCR artifact.
+# ABSOLUTE CANONICAL PATH:
+#   /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-image-publication.yml
+# COLLABORATION / OWNERSHIP:
+#   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
+#   This workflow owns image publication only and does not deploy Kubernetes,
+#   provision AWS infrastructure, grant runtime IAM authority, or repurpose
+#   predictive/Node workloads.
+# CERTIFICATION OR UPDATE DATE: 2026-10-05
+# CHANGELOG:
+#   v1.0.0-P0-C12F7C-E1-R9-R7-R2D
+#     - Establish dedicated GHCR publication for infra/docker/Dockerfile.eos.
+#     - Publish linux/amd64 and linux/arm64 variants.
+#     - Emit immutable image digest for downstream deployment authority.
+#     - Generate provenance and SBOM attestations.
+#     - Prevent publication from pull-request execution.
+# COMPLIANCE:
+#   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE:
+#   Uses repository-scoped GITHUB_TOKEN package authority only.
+#   No static AWS access keys, tenant secrets, Mongo credentials, HR provider
+#   coordinates, or Kubernetes credentials are admitted.
+# TENANT BOUNDARY:
+#   Image publication creates no tenant state and grants no tenant authority.
+# AUTHORITY BOUNDARY:
+#   Artifact publication only. Runtime authority remains deployment-owned.
+# FINANCIAL AUTHORITY BOUNDARY:
+#   Kennel EOS remains the exclusive financial execution authority.
+# ==============================================================================
+
+name: WILSY EOS Image Publication
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/eos-api
+
+jobs:
+  build-and-publish:
+    name: Build and publish Python EOS image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+      image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract immutable image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and publish EOS image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/Dockerfile.eos
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=eos-api
+          cache-to: type=gha,mode=max,scope=eos-api
+          provenance: true
+          sbom: true
+
+      - name: Publish immutable deployment reference
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${{ steps.build.outputs.digest }}"
+          printf 'EOS_IMAGE=%s@%s\n' \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" \
+            "${{ steps.build.outputs.digest }}"
+          printf 'EOS_IMAGE_DIGEST=%s\n' \
+            "${{ steps.build.outputs.digest }}"
+
+# ==============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+#
+# ARTIFACT: .github/workflows/eos-image-publication.yml
+# VERSION: v1.0.0-P0-C12F7C-E1-R9-R7-R2D
+# AUTHORITY BOUNDARY:
+#   GHCR image publication only; no Kubernetes, AWS infrastructure, runtime IAM,
+#   MongoDB, S3 provider, payment, or settlement authority is conferred.
+# TENANT POSTURE:
+#   No tenant data or tenant authority is created by this workflow.
+# FAIL-CLOSED POSTURE:
+#   Pull requests build without publication; deployment must consume immutable
+#   digest evidence emitted only by a successful non-PR publication.
+# FINANCIAL EXECUTION AUTHORITY:
+#   Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================

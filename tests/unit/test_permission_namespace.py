@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.14.0-C1E-R1
+VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -7,8 +7,74 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-13.
+CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
+    certifies hr:employee_relation:write as the 73rd canonical
+    permission and 76th total row with exact TENANT scope,
+    membership gating, no cross-tenant capability, no financial
+    execution and no self-authorization.
+    2026-10-02 v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT
+    certifies legal_operations:evidence_cleanup:authorize as one exact
+    canonical own-tenant TENANT permission for later cleanup actor/command
+    admission. It remains membership-gated, non-cross-tenant, non-financial
+    and non-self-authorizing; no provider-delete or cleanup-execution
+    permission is introduced. Canonical permission cardinality increases
+    exactly from 71 to 72 and total permission rows from 74 to 75.
+    2026-09-29 v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT certifies the dedicated
+    legal_operations:evidence:write canonical TENANT permission, exact
+    membership-gated/non-cross-tenant/non-financial/non-self-authorizing
+    metadata, malformed alias rejection, and canonical permission cardinality
+    increase from 70 to 71 without creating role possession, matter scope,
+    ProcessDocument/custody, Court/Court Online, AI or financial authority.
+    2026-09-27 v1.1.0-L10A3A-LEGAL-EVIDENCE-IAM-CERT certifies
+    the exact own-tenant Engagement firm-decision permission metadata,
+    fail-closed nearby aliases, and vocabulary-only non-authority posture.
+    2026-09-27 v1.0.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM-CERT certifies
+    the dedicated own-tenant mandate-acknowledgment permission metadata and
+    updates canonical permission cardinality by one.
+    2026-09-25 v1.21.0-L8-8I-CONFLICT-REVIEW-IAM-CERT
+    certifies legal_operations:conflict_review:write as one exact canonical
+    TENANT permission for future server-authorized human conflict-review
+    determinations. It requires separately proven exact ACTIVE membership,
+    is non-cross-tenant, non-financial and non-self-authorizing, and raises
+    canon cardinality to exactly 62 canonical permissions / 65 total rows.
+    It grants no reviewer identity, conflict finding, waiver, ethical wall,
+    recusal, engagement, representation, payment, execution or settlement
+    authority.
+    2026-09-23 v1.20.0-L8-7D1-CLIENT-MATTER-READ-IAM-CERT
+    certifies legal_operations:client_matter:read as one exact canonical
+    TENANT permission for future explicitly-bound LEGAL_CLIENT matter
+    projection only. It is membership-gated, non-cross-tenant, non-financial
+    and non-self-authorizing, and raises canon cardinality to exactly 61
+    canonical permissions / 64 total rows.
+    2026-09-23 v1.19.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM-CERT
+    certifies legal_operations:client_visibility:write as one exact canonical
+    TENANT permission for bounded future client-to-matter grant/revoke
+    provisioning only. It requires separately proven membership, is non-cross-
+    tenant, non-financial and non-self-authorizing, and raises canon cardinality
+    to exactly 60 canonical permissions / 63 total rows.
+    2026-09-23 v1.18.1-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
+    corrects the direct-certificate cardinality after the already-certified
+    legal_operations:deputy_queue:read addition: the permission canon now
+    contains exactly 59 canonical permissions and 62 total rows. Production
+    permission semantics and authorization behavior are unchanged.
+    2026-09-23 v1.18.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM-CERT
+    certifies legal_operations:deputy_queue:read as one exact canonical TENANT
+    permission for binding-scoped personal active-work projection only, with
+    membership required, no cross-tenant capability, no financial execution,
+    and no self-authorizing behavior.
+    2026-09-23 v1.17.0-L8-6A-SHERIFF-QUEUE-READ-IAM-CERT
+    certifies legal_operations:queue:read as one exact canonical TENANT
+    permission with non-cross-tenant, non-financial, non-self-authorizing
+    metadata and no deputy-personalization authority.
+    2026-09-23 v1.16.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM-CERT
+    certifies legal_operations:receipt:write as one exact canonical TENANT
+    permission with non-cross-tenant, non-financial, non-self-authorizing
+    metadata and malformed-alias rejection.
+    2026-09-23 v1.15.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM-CERT certifies
+    the dedicated own-tenant legal_operations:directory:write permission,
+    exact non-financial/non-self-authorizing metadata, and fail-closed aliases.
     2026-09-17 v1.14.0-C1E-R1 certifies the dedicated legal-advisory
     generate/read permissions and exact tenant-only metadata.
     2026-09-15 v1.12.0-L7B-WILSY-AI-LEGAL-TOOL-PERMISSION-CERT certifies
@@ -44,22 +110,23 @@ CHANGELOG:
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: No credentials, JWT authority projections,
 persistence, or financial execution are processed.
-TENANT BOUNDARY: Permission metadata never proves membership; subscription,
-plan, WILSY AI capacity-read, and billing-intelligence evidence-read
-permissions require separately proven exact ACTIVE tenant membership.
+TENANT BOUNDARY: Permission metadata never proves membership; conflict-review,
+subscription, plan, WILSY AI capacity-read, and billing-intelligence evidence-
+read permissions require separately proven exact ACTIVE tenant membership.
 AUTHORITY BOUNDARY: Tests policy metadata, not assignment or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
 import json
+from pathlib import Path
 
 import pytest
 
-VERSION = "v1.13.0-C1E-R1-PERMISSION-CERT"
+VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.18.0-C1E-R1"
+    assert POLICY_VERSION == "v1.35.0-P0-C12F7B-HR-DOCUMENT-IAM-PERMISSIONS"
 
 
 def test_permission_canon_properties() -> None:
@@ -79,6 +146,9 @@ def test_permission_canon_properties() -> None:
         "tenant:role_assignment:write",
         "subscription:read",
         "subscription:manage",
+        "tenant_branding:read",
+        "tenant_branding:profile:manage",
+        "tenant_branding:asset:manage",
         "plan:read",
         "plan:manage",
         "wilsy_ai:usage_capacity:read",
@@ -89,6 +159,19 @@ def test_permission_canon_properties() -> None:
         "wilsy_ai:legal_advisory:read",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:evidence:write",
+        "legal_operations:evidence_cleanup:authorize",
+        "legal_operations:directory:write",
+        "legal_operations:receipt:write",
+        "legal_operations:queue:read",
+        "legal_operations:deputy_queue:read",
+        "legal_operations:client_visibility:write",
+        "legal_operations:client_matter:read",
+        "legal_operations:conflict_review:write",
+        "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_mandate_acknowledgment:write",
+        "legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_representation_firm_decision:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
         "legal_operations:attempt:read",
@@ -98,6 +181,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:return:write",
         "legal_operations:billing:read",
         "legal_operations:invoice:read",
+        "hr:employee_relation:write",
         "platform_billing:release",
         "inbound_collection:authorization:create",
         "inbound_merchant_configuration:register",
@@ -125,9 +209,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 55
+    ) == 87
 
-    assert len(rows) == 58
+    assert len(rows) == 90
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -139,6 +223,48 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    cleanup_authority = permission_metadata(
+        "legal_operations:evidence_cleanup:authorize"
+    )
+    assert cleanup_authority.permission_id == (
+        "legal_operations:evidence_cleanup:authorize"
+    )
+    assert cleanup_authority.namespace == "TENANT"
+    assert cleanup_authority.scope_kind == "TENANT"
+    assert cleanup_authority.business_capability == (
+        "authorize own-tenant Legal Evidence cleanup command admission"
+    )
+    assert cleanup_authority.tenant_membership_required is True
+    assert cleanup_authority.system_assignment_required is False
+    assert cleanup_authority.cross_tenant_capable is False
+    assert cleanup_authority.financial_execution_capable is False
+    assert cleanup_authority.authorizes_by_itself is False
+    assert (
+        cleanup_authority.disposition
+        is PermissionDisposition.CANONICAL
+    )
+
+    legal_evidence_write = permission_metadata(
+        "legal_operations:evidence:write"
+    )
+    assert legal_evidence_write.permission_id == (
+        "legal_operations:evidence:write"
+    )
+    assert legal_evidence_write.namespace == "TENANT"
+    assert legal_evidence_write.scope_kind == "TENANT"
+    assert legal_evidence_write.business_capability == (
+        "ingest own-tenant legal evidence content"
+    )
+    assert legal_evidence_write.tenant_membership_required is True
+    assert legal_evidence_write.system_assignment_required is False
+    assert legal_evidence_write.cross_tenant_capable is False
+    assert legal_evidence_write.financial_execution_capable is False
+    assert legal_evidence_write.authorizes_by_itself is False
+    assert (
+        legal_evidence_write.disposition
+        is PermissionDisposition.CANONICAL
+    )
 
     gateway = permission_metadata("wilsy_ai:legal_tool:read")
     assert gateway.namespace == "TENANT"
@@ -182,7 +308,112 @@ def test_permission_canon_properties() -> None:
     assert billing_intelligence.authorizes_by_itself is False
     assert billing_intelligence.disposition is PermissionDisposition.CANONICAL
 
+    queue_read = permission_metadata("legal_operations:queue:read")
+    assert queue_read.namespace == "TENANT"
+    assert queue_read.scope_kind == "TENANT"
+    assert queue_read.business_capability == "read own-tenant certified sheriff operational queues"
+    assert queue_read.tenant_membership_required is True
+    assert queue_read.cross_tenant_capable is False
+    assert queue_read.financial_execution_capable is False
+    assert queue_read.authorizes_by_itself is False
+    assert queue_read.disposition is PermissionDisposition.CANONICAL
+
+    deputy_queue_read = permission_metadata("legal_operations:deputy_queue:read")
+    assert deputy_queue_read.namespace == "TENANT"
+    assert deputy_queue_read.scope_kind == "TENANT"
+    assert (
+        deputy_queue_read.business_capability
+        == "read binding-scoped own active service-attempt work"
+    )
+    assert deputy_queue_read.tenant_membership_required is True
+    assert deputy_queue_read.cross_tenant_capable is False
+    assert deputy_queue_read.financial_execution_capable is False
+    assert deputy_queue_read.authorizes_by_itself is False
+    assert deputy_queue_read.disposition is PermissionDisposition.CANONICAL
+
+    client_visibility_write = permission_metadata(
+        "legal_operations:client_visibility:write"
+    )
+    assert client_visibility_write.namespace == "TENANT"
+    assert client_visibility_write.scope_kind == "TENANT"
+    assert (
+        client_visibility_write.business_capability
+        == "provision explicit own-tenant legal-client matter visibility"
+    )
+    assert client_visibility_write.tenant_membership_required is True
+    assert client_visibility_write.system_assignment_required is False
+    assert client_visibility_write.cross_tenant_capable is False
+    assert client_visibility_write.financial_execution_capable is False
+    assert client_visibility_write.authorizes_by_itself is False
+    assert client_visibility_write.disposition is PermissionDisposition.CANONICAL
+
+    client_matter_read = permission_metadata(
+        "legal_operations:client_matter:read"
+    )
+    assert client_matter_read.namespace == "TENANT"
+    assert client_matter_read.scope_kind == "TENANT"
+    assert (
+        client_matter_read.business_capability
+        == "read explicitly-bound own legal-client matters"
+    )
+    assert client_matter_read.tenant_membership_required is True
+    assert client_matter_read.system_assignment_required is False
+    assert client_matter_read.cross_tenant_capable is False
+    assert client_matter_read.financial_execution_capable is False
+    assert client_matter_read.authorizes_by_itself is False
+    assert client_matter_read.disposition is PermissionDisposition.CANONICAL
+
+    conflict_review = permission_metadata(
+        "legal_operations:conflict_review:write"
+    )
+    assert conflict_review.namespace == "TENANT"
+    assert conflict_review.scope_kind == "TENANT"
+    assert (
+        conflict_review.business_capability
+        == "record authorized own-tenant human conflict-review determinations"
+    )
+    assert conflict_review.tenant_membership_required is True
+    assert conflict_review.system_assignment_required is False
+    assert conflict_review.cross_tenant_capable is False
+    assert conflict_review.financial_execution_capable is False
+    assert conflict_review.authorizes_by_itself is False
+    assert conflict_review.disposition is PermissionDisposition.CANONICAL
+
+    mandate_acknowledgment = permission_metadata(
+        "legal_operations:matter_mandate_acknowledgment:write"
+    )
+    assert mandate_acknowledgment.namespace == "TENANT"
+    assert mandate_acknowledgment.scope_kind == "TENANT"
+    assert mandate_acknowledgment.business_capability == (
+        "issue authorized own-tenant firm mandate acknowledgments"
+    )
+    assert mandate_acknowledgment.tenant_membership_required is True
+    assert mandate_acknowledgment.system_assignment_required is False
+    assert mandate_acknowledgment.cross_tenant_capable is False
+    assert mandate_acknowledgment.financial_execution_capable is False
+    assert mandate_acknowledgment.authorizes_by_itself is False
+    assert mandate_acknowledgment.disposition is PermissionDisposition.CANONICAL
+
+    engagement_firm_decision = permission_metadata(
+        "legal_operations:matter_engagement_firm_decision:write"
+    )
+    assert engagement_firm_decision.namespace == "TENANT"
+    assert engagement_firm_decision.scope_kind == "TENANT"
+    assert engagement_firm_decision.business_capability == (
+        "issue authorized own-tenant Engagement firm decisions"
+    )
+    assert engagement_firm_decision.tenant_membership_required is True
+    assert engagement_firm_decision.system_assignment_required is False
+    assert engagement_firm_decision.cross_tenant_capable is False
+    assert engagement_firm_decision.financial_execution_capable is False
+    assert engagement_firm_decision.authorizes_by_itself is False
+    assert engagement_firm_decision.disposition is PermissionDisposition.CANONICAL
+
     command_permissions = {
+        "legal_operations:directory:write":
+            "provision own-tenant process-service directory identities",
+        "legal_operations:receipt:write":
+            "accept own-tenant instructions and record sheriff-office receipt",
         "legal_operations:attempt_outcome:write":
             "record own-tenant terminal service-attempt outcomes",
         "legal_operations:return:write":
@@ -352,6 +583,50 @@ def test_permission_canon_properties() -> None:
         "billing_intelligence:evidence:read ",
         "billing_intelligence:evidence:READ",
         "billing_intelligence:evidence",
+        "legal_operations:evidence:*",
+        "legal_operations:evidence",
+        "legal_operations:evidence:read",
+        "LEGAL_OPERATIONS:EVIDENCE:WRITE",
+        " legal_operations:evidence:write",
+        "legal_operations:evidence:write ",
+        "legal_operations:evidence_cleanup",
+        "legal_operations:evidence_cleanup:*",
+        "legal_operations:evidence_cleanup:delete",
+        "legal_operations:evidence_cleanup:execute",
+        "LEGAL_OPERATIONS:EVIDENCE_CLEANUP:AUTHORIZE",
+        " legal_operations:evidence_cleanup:authorize",
+        "legal_operations:evidence_cleanup:authorize ",
+        "legal_operations:directory:*",
+        "legal_operations:directory:write ",
+        " legal_operations:directory:write",
+        "LEGAL_OPERATIONS:DIRECTORY:WRITE",
+        "legal_operations:receipt:*",
+        "legal_operations:receipt",
+        "LEGAL_OPERATIONS:RECEIPT:WRITE",
+        " legal_operations:receipt:write",
+        "legal_operations:receipt:write ",
+        "legal_operations:client_visibility:*",
+        "legal_operations:client_visibility",
+        "LEGAL_OPERATIONS:CLIENT_VISIBILITY:WRITE",
+        " legal_operations:client_visibility:write",
+        "legal_operations:client_visibility:write ",
+        "legal_operations:client_matter:*",
+        "legal_operations:client_matter",
+        "LEGAL_OPERATIONS:CLIENT_MATTER:READ",
+        " legal_operations:client_matter:read",
+        "legal_operations:client_matter:read ",
+        "legal_operations:conflict_review:*",
+        "legal_operations:conflict_review",
+        "LEGAL_OPERATIONS:CONFLICT_REVIEW:WRITE",
+        " legal_operations:conflict_review:write",
+        "legal_operations:conflict_review:write ",
+        "legal_operations:conflict_review:read",
+        "legal_operations:matter_engagement_firm_decision:*",
+        "legal_operations:matter_engagement_firm_decision",
+        "LEGAL_OPERATIONS:MATTER_ENGAGEMENT_FIRM_DECISION:WRITE",
+        " legal_operations:matter_engagement_firm_decision:write",
+        "legal_operations:matter_engagement_firm_decision:write ",
+        "legal_operations:matter_engagement_firm_decision:read",
     )
 
     for value in invalid:
@@ -367,6 +642,10 @@ def test_permission_canon_properties() -> None:
         in row["permission_id"]
         for row in rows
     )
+    assert "legal_operations:*" not in {
+        row["permission_id"]
+        for row in rows
+    }
 
     assert canonical_permissions() == canonical_permissions()
     assert isinstance(
@@ -451,13 +730,26 @@ def test_credential_security_permissions_are_exact_tenant_permissions() -> None:
 
 
 def test_no_domain_profile_permissions():
-    assert all(permission_metadata(row["permission_id"]).namespace not in {"DOMAIN", "PROFILE"} for row in json.loads(canonical_permissions()))
+    rows = json.loads(canonical_permissions())
+    assert all(
+        permission_metadata(row["permission_id"]).namespace
+        not in {"DOMAIN", "PROFILE"}
+        for row in rows
+    )
+
+    permission = "legal_operations:matter_engagement_firm_decision:write"
+    assert permission_metadata(permission).authorizes_by_itself is False
+
+    for path in (
+        "tools/eos/auth/tenant_authority_policy.py",
+    ):
+        assert permission not in Path(path).read_text(encoding="utf-8")
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.14.0-C1E-R1
+# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: subscription, plan, WILSY AI capacity, and billing-intelligence evidence reads remain policy; exact ACTIVE membership remains separately governed
+# TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
