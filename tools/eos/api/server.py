@@ -79,6 +79,7 @@ from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
+from .hr_document_router import router as hr_document_router
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
@@ -392,6 +393,7 @@ class WilsyAPIServer:
 
         # Provider evidence ingress is mounted once at its canonical route.
         app.include_router(payshap_webhook_router)
+        app.include_router(hr_document_router)
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
