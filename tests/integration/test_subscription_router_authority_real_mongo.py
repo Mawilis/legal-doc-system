@@ -74,13 +74,14 @@ import tools.eos.saas.billing.plan_registry as plan_registry_module
 import tools.eos.saas.billing.subscription_registry as registry_module
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.api.subscription_router import subscription_router
+import tools.eos.auth.authentication as authentication_module
 from tools.eos.auth.authentication import (
     get_principal_authority_repository,
 )
 from tools.eos.auth.authorization import (
     get_role_assignment_repository,
 )
-from tools.eos.auth.jwt_provider import create_access_token
+from tools.eos.auth.jwt_provider import TokenPurpose, create_access_token
 from tools.eos.auth.permission_namespace import (
     PermissionDisposition,
     permission_metadata,
@@ -153,6 +154,46 @@ class PrincipalFacade:
             )
         except PrincipalAuthorityRepositoryError:
             raise
+
+
+class CredentialRevisionFacade:
+    """Expose only revision-zero credential truth for persisted test principals."""
+
+    def __init__(
+        self,
+        principals: Collection[dict[str, Any]],
+    ) -> None:
+        self.principals = principals
+
+    def get_credential_revision(
+        self,
+        tenant_id: str,
+        principal_id: str,
+        *,
+        session: Any = None,
+    ) -> int:
+        """Return revision zero without creating membership or role authority."""
+        if (
+            not isinstance(tenant_id, str)
+            or not tenant_id.strip()
+            or tenant_id != tenant_id.strip()
+        ):
+            raise RuntimeError(
+                "AUTH_CERT_TENANT_CONTEXT_INVALID"
+            )
+
+        principal = PrincipalAuthorityRepository.get(
+            principal_id,
+            self.principals,
+            session=session,
+        )
+
+        if principal.principal_id != principal_id:
+            raise RuntimeError(
+                "AUTH_CERT_PRINCIPAL_SCOPE_INVALID"
+            )
+
+        return 0
 
 
 class MembershipFacade:
@@ -486,6 +527,15 @@ def context() -> Iterator[Context]:
         roles
     )
 
+    original_auth_registry_factory = (
+        authentication_module.AuthRegistry
+    )
+    authentication_module.AuthRegistry = (
+        lambda: CredentialRevisionFacade(
+            principals
+        )
+    )
+
     value = Context(
         client=mongo,
         database_name=database_name,
@@ -500,6 +550,9 @@ def context() -> Iterator[Context]:
     try:
         yield value
     finally:
+        authentication_module.AuthRegistry = (
+            original_auth_registry_factory
+        )
         registry_module.subscriptions_collection = (
             original_collection
         )
@@ -566,6 +619,7 @@ def _seed(
 
 def _token(
     principal_id: str,
+    tenant_id: str,
     *,
     projected: bool = False,
 ) -> str:
@@ -575,7 +629,7 @@ def _token(
             "identity_id":
                 principal_id,
             "tenant_id":
-                "jwt-projected-tenant",
+                tenant_id,
             "roles":
                 ["ENTERPRISE_ADMIN"]
                 if projected
@@ -589,6 +643,8 @@ def _token(
                 else [],
         },
         expires_in_seconds=3600,
+        token_purpose=TokenPurpose.ACCESS,
+        credential_revision=0,
     )
 
 
@@ -601,7 +657,7 @@ def _headers(
     """Return transport context only."""
     return {
         "Authorization":
-            f"Bearer {_token(principal_id, projected=projected)}",
+            f"Bearer {_token(principal_id, tenant_id, projected=projected)}",
         "X-Tenant-ID":
             tenant_id,
     }
@@ -1279,7 +1335,7 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.3.1-M12-P6-BILLING-INTELLIGENCE-READ-SEAM"
+        == "v1.3.3-LIFECYCLE-PROOF-STATE"
     )
     assert (
         VERSION

@@ -475,13 +475,12 @@ function InvoiceDetailModal(props) {
       }
       const responseData = response.data || {};
       const kennelData = responseData.kennel?.data || responseData.kennel || {};
-      const payment = responseData.payment || responseData.data?.payment || kennelData.payment;
-      const updated = responseData.invoice || responseData.data?.invoice || kennelData.invoice || {
-        ...invoice,
-        status: Number(invoice.outstandingAmount ?? invoice.balanceDue ?? invoice.totalAmount ?? invoice.amount ?? 0) - amount <= 0 ? 'PAID' : 'PARTIALLY_PAID',
-        outstandingAmount: Math.max(0, Number(invoice.outstandingAmount ?? invoice.balanceDue ?? invoice.totalAmount ?? invoice.amount ?? 0) - amount),
-        payments: payment ? [...(invoice.payments || invoice.paymentHistory || []), payment] : (invoice.payments || invoice.paymentHistory || []),
-      };
+      const updated = responseData.invoice || responseData.data?.invoice || kennelData.invoice;
+
+      if (!updated) {
+        throw new Error('BILLING_SERVER_INVOICE_TRUTH_REQUIRED');
+      }
+
       if (updated?.status) setStatus(String(updated.status).toUpperCase());
       onUpdateInvoice?.(updated);
       if (addLog) addLog('PARTIAL_PAYMENT', `Invoice ${id} · ${formatMoney(amount)}`);
