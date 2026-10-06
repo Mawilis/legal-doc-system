@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SHARED DASHBOARD CHROME [V1.4.0-OMEGA-PHASE5]                                                                             ║
+ * ║ WILSY OS – SHARED DASHBOARD CHROME [V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT]                                                                     ║
  * ║ [EXECUTIVE SHELL | TENANT PLATE | OPERATOR IDENTITY | COLLAPSIBLE RAIL | METRICS STRIP]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.4.0-OMEGA-PHASE5 | PRODUCTION READY                                                                                       ║
+ * ║ VERSION: 2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT | PRODUCTION READY                                                                                 ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -28,23 +28,34 @@
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  Maximize2,
+  Minimize2,
   PanelLeft,
   Plus,
   RefreshCw,
   Search,
-  UserCog
+  UserCog,
+  ShieldCheck,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
 import { useTenants } from '../../contexts/tenantContext';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
+import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V1.4.0-OMEGA-PHASE5';
+const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT';
+
+const TRUST_CENTER_STATES = Object.freeze({
+  CLOSED: 'closed',
+  SHEET: 'sheet',
+  EXPANDED: 'expanded',
+});
 
 /**
  * @function normalizeWilsyChromeText
@@ -110,6 +121,9 @@ const buildWilsyChromeIdentity = (params = {}) => resolveWilsyChromeIdentitySour
  * @param {React.ReactNode} props.leftRail - Left rail content (module navigation).
  * @param {React.ReactNode} props.children - Main viewport content.
  * @param {React.ReactNode} props.rightRail - Right rail content (optional).
+ * @param {Object} props.trustCenter - Optional shared Trust Center drawer configuration.
+ * @param {React.ReactNode} props.trustCenter.content - Authenticated descriptive trust/profile content.
+ * @param {string} props.trustCenter.label - Accessible drawer label.
  * @param {string} props.className - Additional CSS classes.
  * @param {Object} props.style - Additional inline styles.
  * @param {boolean} props.railCollapsed - Controlled collapsed state for left rail.
@@ -134,13 +148,19 @@ const WilsyOSDashboardChrome = ({
   leftRail = null,
   children = null,
   rightRail = null,
+  trustCenter = null,
   className = '',
   style = {},
   railCollapsed: railCollapsedProp = undefined,
   onRailToggle = null
 }) => {
   const [railCollapsedInternal, setRailCollapsedInternal] = useState(false);
+  const [trustCenterState, setTrustCenterState] = useState(TRUST_CENTER_STATES.CLOSED);
+  const trustCenterTriggerRef = useRef(null);
+  const trustCenterCloseRef = useRef(null);
+  const trustCenterRef = useRef(null);
   const railCollapsed = typeof railCollapsedProp === 'boolean' ? railCollapsedProp : railCollapsedInternal;
+  const trustCenterOpen = trustCenterState !== TRUST_CENTER_STATES.CLOSED;
   const toggleRail = () => {
     const next = !railCollapsed;
     if (typeof onRailToggle === 'function') onRailToggle(next);
@@ -170,9 +190,17 @@ const WilsyOSDashboardChrome = ({
     operator,
     authUser,
     activeTenant: activeTenantContext,
+    authenticatedTenant: authTenant || {},
     dashboard: { dashboardKey, role, posture },
     storyMessages
   });
+
+  const {
+    objectUrl: tenantLogoObjectUrl,
+    status: tenantLogoStatus,
+  } = useAuthenticatedTenantBrandingAsset(
+    identity.tenant.branding?.logo || null,
+  );
 
   const liveSyncLabel = normalizeWilsyChromeText(actions.liveSyncLabel, 'LIVE SYNC');
   const primaryActionLabel = normalizeWilsyChromeText(actions.primaryActionLabel, 'NEW COMMAND');
@@ -180,6 +208,82 @@ const WilsyOSDashboardChrome = ({
   const accountLabel = normalizeWilsyChromeText(account.label, 'ACCOUNT');
   const accountUser = account.user || identity.operator || authUser || operator || {};
   const AccountCenter = account.CommandCenterComponent || null;
+  const internalSearchRef = useRef(null);
+  const searchRef = search.inputRef || internalSearchRef;
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchRef.current?.focus();
+        search.onShortcut?.(event);
+      }
+      if (event.key === 'Escape' && document.activeElement === searchRef.current) {
+        search.onEscape?.(event);
+        searchRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [search.onEscape, search.onShortcut, searchRef]);
+
+  useEffect(() => {
+    if (!trustCenterOpen) return undefined;
+    const focusableSelector = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        if (trustCenterState === TRUST_CENTER_STATES.EXPANDED) {
+          setTrustCenterState(TRUST_CENTER_STATES.SHEET);
+          window.requestAnimationFrame(() => trustCenterCloseRef.current?.focus());
+        } else {
+          setTrustCenterState(TRUST_CENTER_STATES.CLOSED);
+          window.requestAnimationFrame(() => trustCenterTriggerRef.current?.focus());
+        }
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(trustCenterRef.current?.querySelectorAll(focusableSelector) || []);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [trustCenterOpen, trustCenterState]);
+
+  useEffect(() => {
+    if (!trustCenterOpen) return undefined;
+    window.requestAnimationFrame(() => trustCenterCloseRef.current?.focus());
+    return undefined;
+  }, [trustCenterOpen, trustCenterState]);
+
+  useEffect(() => {
+    if (!trustCenter?.content && trustCenterOpen) {
+      setTrustCenterState(TRUST_CENTER_STATES.CLOSED);
+    }
+  }, [trustCenter?.content, trustCenterOpen]);
+
+  const closeTrustCenter = () => {
+    setTrustCenterState(TRUST_CENTER_STATES.CLOSED);
+    window.requestAnimationFrame(() => trustCenterTriggerRef.current?.focus());
+  };
 
   return (
     <div
@@ -187,6 +291,8 @@ const WilsyOSDashboardChrome = ({
       data-wilsy-os-dashboard-chrome="true"
       data-wilsy-dashboard-key={dashboardKey}
       data-wilsy-chrome-version={WILSY_OS_DASHBOARD_CHROME_VERSION}
+      data-wilsy-tenant-branding={identity.tenant.branding ? 'authenticated' : 'none'}
+      data-wilsy-tenant-logo={tenantLogoStatus.toLowerCase()}
       data-rail-collapsed={railCollapsed ? 'true' : 'false'}
       style={style}
     >
@@ -215,19 +321,43 @@ const WilsyOSDashboardChrome = ({
           <label className="wilsyOsChromeSearchBox">
             <Search size={13} />
             <input
+              ref={searchRef}
               value={search.value || ''}
               onChange={search.onChange}
               placeholder={searchPlaceholder}
               onFocus={search.onFocus}
+              onKeyDown={search.onKeyDown}
+              data-legal-command-search={dashboardKey === 'legal-practice' ? 'true' : undefined}
               aria-label="Workspace search"
             />
+            {search.shortcutLabel ? <kbd>{search.shortcutLabel}</kbd> : null}
           </label>
 
           {typeof account.onOpen === 'function' && (
-            <button type="button" className="wilsyOsChromeSecondaryButton" onClick={account.onOpen} title="Account">
+            <button
+              type="button"
+              className="wilsyOsChromeSecondaryButton"
+              onClick={account.onOpen}
+              aria-expanded={Boolean(account.isOpen)}
+              title="Account"
+            >
               <UserCog size={13} /> {accountLabel}
             </button>
           )}
+
+          {trustCenter?.content ? (
+            <button
+              ref={trustCenterTriggerRef}
+              type="button"
+              className="wilsyOsChromeSecondaryButton"
+              onClick={() => setTrustCenterState(TRUST_CENTER_STATES.SHEET)}
+              aria-expanded={trustCenterOpen}
+              aria-controls={`${dashboardKey}-trust-center`}
+              title="Trust and authority"
+            >
+              <ShieldCheck size={13} /> Trust Center
+            </button>
+          ) : null}
 
           <button
             type="button"
@@ -250,8 +380,19 @@ const WilsyOSDashboardChrome = ({
 
         <section className="wilsyOsChromeTenantPlate" aria-label="Tenant identity">
           <div className="wilsyOsChromeTenantMark">
-            {identity.tenant.logo ? (
-              <img src={identity.tenant.logo} alt="" />
+            {tenantLogoObjectUrl ? (
+              <>
+                <img
+                  src={tenantLogoObjectUrl}
+                  alt={`${identity.tenant.displayName} tenant mark`}
+                  onError={(event) => {
+                    event.currentTarget.hidden = true;
+                    const fallback = event.currentTarget.nextElementSibling;
+                    if (fallback instanceof HTMLElement) fallback.hidden = false;
+                  }}
+                />
+                <span hidden>{identity.tenant.initials}</span>
+              </>
             ) : (
               <span>{identity.tenant.initials}</span>
             )}
@@ -259,7 +400,11 @@ const WilsyOSDashboardChrome = ({
           <div>
             <small>TENANT IDENTITY</small>
             <strong>{identity.tenant.displayName}</strong>
-            <em>{normalizeWilsyChromeText(identity.tenant.status, 'OPERATING BRAND VERIFIED')}</em>
+            <em>
+              {identity.tenant.brandingProfileLabel
+                ? `${identity.tenant.brandingProfileLabel} · ${normalizeWilsyChromeText(identity.tenant.status, 'OPERATING BRAND VERIFIED')}`
+                : normalizeWilsyChromeText(identity.tenant.status, 'OPERATING BRAND VERIFIED')}
+            </em>
           </div>
         </section>
       </header>
@@ -317,6 +462,62 @@ const WilsyOSDashboardChrome = ({
         ) : null}
       </section>
 
+      {trustCenter?.content ? (
+        <aside
+          id={`${dashboardKey}-trust-center`}
+          ref={trustCenterRef}
+          className="wilsyOsChromeTrustCenter"
+          data-open={trustCenterOpen ? 'true' : 'false'}
+          data-state={trustCenterState}
+          role="dialog"
+          aria-label={trustCenter.label || 'Trust and authority'}
+          aria-modal="true"
+          aria-labelledby={`${dashboardKey}-trust-center-title`}
+          aria-hidden={!trustCenterOpen}
+          inert={!trustCenterOpen ? '' : undefined}
+        >
+          <header className="wilsyOsChromeTrustCenterHeader">
+            <div>
+              <span className="wilsyOsChromeTrustCenterEyebrow">
+                <ShieldCheck size={13} /> Sovereign posture
+              </span>
+              <h2 id={`${dashboardKey}-trust-center-title`}>{trustCenter.label || 'Trust and authority'}</h2>
+            </div>
+            <div className="wilsyOsChromeTrustCenterActions">
+              <button
+                type="button"
+                className="wilsyOsChromeTrustCenterAction"
+                onClick={() => setTrustCenterState(
+                  trustCenterState === TRUST_CENTER_STATES.EXPANDED
+                    ? TRUST_CENTER_STATES.SHEET
+                    : TRUST_CENTER_STATES.EXPANDED,
+                )}
+                aria-label={trustCenterState === TRUST_CENTER_STATES.EXPANDED ? 'Collapse Trust Center' : 'Expand Trust Center'}
+                title={trustCenterState === TRUST_CENTER_STATES.EXPANDED ? 'Collapse Trust Center' : 'Expand Trust Center'}
+              >
+                {trustCenterState === TRUST_CENTER_STATES.EXPANDED ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              </button>
+              <button
+                ref={trustCenterCloseRef}
+                type="button"
+                className="wilsyOsChromeTrustCenterAction wilsyOsChromeTrustCenterClose"
+                onClick={closeTrustCenter}
+                aria-label="Close Trust Center"
+                title="Close Trust Center"
+              >
+                <X size={17} />
+              </button>
+            </div>
+          </header>
+          <div className="wilsyOsChromeTrustCenterBody">
+            <p className="wilsyOsChromeTrustCenterMode" aria-live="polite">
+              {trustCenterState === TRUST_CENTER_STATES.EXPANDED ? 'Expanded view' : 'Quick view'}
+            </p>
+            {trustCenter.content}
+          </div>
+        </aside>
+      ) : null}
+
       {AccountCenter ? (
         <AccountCenter
           isOpen={Boolean(account.isOpen)}
@@ -339,6 +540,7 @@ const WilsyOSDashboardChrome = ({
 
 export {
   WILSY_OS_DASHBOARD_CHROME_VERSION,
+  TRUST_CENTER_STATES,
   buildWilsyChromeIdentity,
   compactWilsyChromeSignal,
   normalizeWilsyChromeText
@@ -348,10 +550,10 @@ export default WilsyOSDashboardChrome;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v1.4.0-OMEGA-PHASE5
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         1.4.0-OMEGA-PHASE5
+ * Version:         2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Unified shell for all domain HUDs

@@ -2,7 +2,7 @@
 /**
  * WILSY OS — ACCOUNT COMMAND CENTER
  * TITLE: WILSY OS Account Command Center
- * VERSION: v3.1.0-R10F1-RECOVERY-SECURITY-WIRING
+ * VERSION: v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents authenticated account, tenant, security, operating-skin,
  *          compliance, and forensic command projections without creating
@@ -13,7 +13,10 @@
  *                            verification truth; backend forensic services own
  *                            evidence; Kennel EOS alone owns financial execution.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v3.1.0-R10F1-RECOVERY-SECURITY-WIRING mounts the authenticated recovery-email
+ * CHANGELOG: v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER mounts the authenticated
+ *            tenant-branding management panel in the shared Account Command
+ *            Center and preserves server-derived authority capabilities.
+ *            v3.1.0-R10F1-RECOVERY-SECURITY-WIRING mounts the authenticated recovery-email
  *            verification control in desktop and mobile Security panels,
  *            displays only an explicitly present authenticated-user email,
  *            and never promotes Account Center fallback/support-email display
@@ -83,6 +86,7 @@ import {
 } from './wilsyAccountThemeTokens.js';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import RecoveryContactSecurityControl from './RecoveryContactSecurityControl.jsx';
+import TenantBrandingManagementPanel from './TenantBrandingManagementPanel.jsx';
 
 export const WILSY_ACCOUNT_CHROME_RESET_VERSION = 'R18AD1F-ACCOUNT-IMPORT-NEWLINE-REPAIR';
 export const WILSY_ACCOUNT_COMMAND_AUTHORITY_COCKPIT_VERSION = 'R18AD1F-ACCOUNT-IMPORT-NEWLINE-REPAIR';
@@ -109,7 +113,7 @@ const STORAGE_KEYS = Object.freeze({
   layout: 'wilsy:account-command-center:layout'
 });
 
-const PANEL_KEYS = Object.freeze(['preferences', 'profile', 'security', 'compliance']);
+const PANEL_KEYS = Object.freeze(['preferences', 'profile', 'branding', 'security', 'compliance']);
 
 const WILSY_ACCOUNT_BUSINESS_UI_REFINEMENT_STYLES = `
   .wac-business-window-action {
@@ -5686,8 +5690,8 @@ export function WilsyAccountCommandCenter({
 
       <nav className="wac-tabs">
         {PANEL_KEYS.map(panel => {
-          const Icon = panel === 'preferences' ? Sparkles : panel === 'profile' ? UserRound : panel === 'security' ? Shield : Globe2;
-          const label = panel === 'profile' ? 'My Account' : panel.charAt(0).toUpperCase() + panel.slice(1);
+          const Icon = panel === 'preferences' ? Sparkles : panel === 'profile' ? UserRound : panel === 'branding' ? Globe2 : panel === 'security' ? Shield : Globe2;
+          const label = panel === 'profile' ? 'My Account' : panel === 'branding' ? 'Branding' : panel.charAt(0).toUpperCase() + panel.slice(1);
 
           return (
             <button key={panel} type="button" className="wac-tab" data-active={activePanel === panel} onClick={() => setActivePanel(panel)}>
@@ -5734,6 +5738,20 @@ export function WilsyAccountCommandCenter({
               <article className="wac-profile-card"><small>Authority</small><strong>{identity.authority}</strong></article>
             </div>
           </section>
+        )}
+
+        {activePanel === 'branding' && (
+          <TenantBrandingManagementPanel
+            onAuthorityRefresh={(branding) => {
+              if (typeof tenantRuntime.setTenantBranding === 'function') {
+                tenantRuntime.setTenantBranding(branding);
+              }
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('wilsy-branding-authority-refresh', { detail: branding }));
+                window.dispatchEvent(new CustomEvent('wilsy-branding-authority-refresh-request'));
+              }
+            }}
+          />
         )}
 
         {activePanel === 'security' && (
@@ -6337,7 +6355,7 @@ if (typeof window !== 'undefined') {
 /**
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: client/src/components/account/WilsyAccountCommandCenter.jsx
- * VERSION: v3.1.0-R10F1-RECOVERY-SECURITY-WIRING
+ * VERSION: v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER
  * AUTHORITY BOUNDARY: authenticated account/security presentation and bounded
  *                     recovery-verification transport invocation only
  * TENANT POSTURE: browser tenant/email display cannot establish recovery contact;
