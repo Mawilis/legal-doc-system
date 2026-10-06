@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — Sovereign Subscription Catalogue Snapshot + Calendar Billing Domain
 
 VERSION:
-    v1.2.0-CALENDAR-BILLING-FOUNDATION
+    v1.3.0-LEGACY-SUBSCRIPTION-MIGRATION
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -30,9 +30,28 @@ OWNERSHIP / COLLABORATION:
     Subscription HTTP authorization remains outside this domain.
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-03
+    2026-09-29
 
 CHANGELOG:
+    2026-09-29 v1.3.0-LEGACY-SUBSCRIPTION-MIGRATION
+        - Adds an explicit fail-closed migration boundary for sufficiently
+          evidenced legacy Node/BillingHUD subscription records.
+        - Preserves historical Node proof, merkle and audit material as legacy
+          provenance without promoting it to canonical Python proof authority.
+        - Preserves SHA3-512-shaped historical Node proof and merkle evidence
+          without claiming an independently reproducible relationship between them.
+        - Regenerates deterministic canonical Python subscription evidence.
+        - Rejects incomplete legacy rows rather than fabricating plan,
+          lifecycle, temporal or idempotency truth.
+        - Leaves ordinary current-schema hydration separate and unchanged.
+        - Adds no payment, entitlement, membership or Kennel authority.
+
+    2026-09-28 v1.2.1-CANONICAL-PROOF-PROVENANCE
+        - Adds canonical subscription proof-context validation using the
+          persisted latest AuditEntry action and metadata.
+        - Keeps merkle validation bound to tenant, proof hash and seal nonce.
+        - Does not add payment, membership, entitlement or Kennel authority.
+
     2026-09-03 v1.2.0-CALENDAR-BILLING-FOUNDATION
         - Adds deterministic timezone-aware calendar billing-period primitives.
         - Anchors billing periods to the first local calendar day of the month.
@@ -91,6 +110,7 @@ from __future__ import annotations
 
 from calendar import monthrange
 import hashlib
+import hmac
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -99,7 +119,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "v1.2.0-CALENDAR-BILLING-FOUNDATION"
+VERSION = "v1.3.0-LEGACY-SUBSCRIPTION-MIGRATION"
 
 
 # ─── Helper ──────────────────────────────────────────────────────────────────
@@ -162,6 +182,137 @@ def parse_datetime(val: Any) -> Optional[datetime]:
         except ValueError:
             return None
     return None
+
+
+def _legacy_subscription_json_value(value: Any) -> Any:
+    """Canonicalize observed legacy evidence without manufacturing truth.
+
+    PyMongo returns BSON UTC datetimes as naive ``datetime`` objects unless
+    timezone-aware decoding is explicitly enabled. Such already-decoded BSON
+    values are normalized to UTC. This rule does not apply to textual
+    timestamps.
+    """
+    if isinstance(value, datetime):
+        if value.utcoffset() is None:
+            value = value.replace(
+                tzinfo=timezone.utc
+            )
+        return value.isoformat()
+
+    if isinstance(value, dict):
+        return {
+            str(key): _legacy_subscription_json_value(item)
+            for key, item in sorted(
+                value.items(),
+                key=lambda pair: str(pair[0]),
+            )
+        }
+
+    if isinstance(value, (list, tuple)):
+        return [
+            _legacy_subscription_json_value(item)
+            for item in value
+        ]
+
+    if value is None or isinstance(
+        value,
+        (str, int, float, bool),
+    ):
+        return value
+
+    return str(value)
+
+
+def _legacy_subscription_seed(
+    data: Dict[str, Any],
+    *,
+    canonical_tenant_id: str,
+    canonical_plan_id: str,
+) -> str:
+    """Bind fallback identity to complete observed legacy commercial evidence."""
+    payload = {
+        "canonical_tenant_id": canonical_tenant_id,
+        "canonical_plan_id": canonical_plan_id,
+        "legacy": _legacy_subscription_json_value(
+            {
+                key: value
+                for key, value in data.items()
+                if key != "__v"
+            }
+        ),
+    }
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha3_512(encoded).hexdigest().upper()
+
+
+def _legacy_subscription_datetime(
+    data: Dict[str, Any],
+    field_name: str,
+) -> datetime:
+    """Require one historical datetime, preserving MongoDB UTC semantics.
+
+    PyMongo decodes BSON UTC datetimes as naive ``datetime`` values by default.
+    Only an already-decoded ``datetime`` receives that UTC normalization.
+    Naive textual timestamps remain invalid and are never silently assigned a
+    timezone.
+    """
+    raw = data.get(field_name)
+    value = parse_datetime(raw)
+
+    if value is None:
+        raise ValueError(
+            "legacy subscription evidence incomplete: "
+            f"{field_name}"
+        )
+
+    if (
+        isinstance(raw, datetime)
+        and value.utcoffset() is None
+    ):
+        return value.replace(
+            tzinfo=timezone.utc
+        )
+
+    return _require_aware_datetime(
+        value,
+        field_name=field_name,
+    )
+
+
+def _legacy_subscription_sha3(
+    value: Any,
+    *,
+    field_name: str,
+) -> str:
+    """Require one SHA3-512-shaped historical evidence value."""
+    if not isinstance(value, str):
+        raise ValueError(
+            "legacy subscription evidence incomplete: "
+            f"{field_name}"
+        )
+
+    candidate = value.strip()
+
+    if len(candidate) != 128:
+        raise ValueError(
+            "legacy subscription evidence incomplete: "
+            f"{field_name}"
+        )
+
+    try:
+        int(candidate, 16)
+    except ValueError as error:
+        raise ValueError(
+            "legacy subscription evidence incomplete: "
+            f"{field_name}"
+        ) from error
+
+    return candidate
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -683,6 +834,12 @@ class SubscriptionEntity:
     })
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
+    legacy_proof_hash: str = ""
+    legacy_node_merkle_root: str = ""
+    legacy_evidence_status: str = ""
+    legacy_audit_trail: Tuple[Dict[str, Any], ...] = field(
+        default_factory=tuple
+    )
 
     def __post_init__(self) -> None:
         """Canonicalize immutable catalogue snapshot and subscription evidence."""
@@ -701,6 +858,31 @@ class SubscriptionEntity:
                 self.plan_catalogue_version
             ),
         )
+
+        legacy_present = bool(
+            self.legacy_proof_hash
+            or self.legacy_node_merkle_root
+            or self.legacy_evidence_status
+            or self.legacy_audit_trail
+        )
+
+        if legacy_present:
+            if self.legacy_evidence_status != (
+                "LEGACY_NODE_SUBSCRIPTION_"
+                "STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+            ):
+                raise ValueError(
+                    "legacy subscription evidence status is invalid"
+                )
+
+            _legacy_subscription_sha3(
+                self.legacy_proof_hash,
+                field_name="legacy_proof_hash",
+            )
+            _legacy_subscription_sha3(
+                self.legacy_node_merkle_root,
+                field_name="legacy_node_merkle_root",
+            )
 
         if not self.proof_hash:
             object.__setattr__(
@@ -790,6 +972,13 @@ class SubscriptionEntity:
             "compliance_flags": self.compliance_flags,
             "metadata": self.metadata,
             "tags": self.tags,
+            "legacy_proof_hash": self.legacy_proof_hash,
+            "legacy_node_merkle_root": self.legacy_node_merkle_root,
+            "legacy_evidence_status": self.legacy_evidence_status,
+            "legacy_audit_trail": [
+                dict(entry)
+                for entry in self.legacy_audit_trail
+            ],
         }
         return result
 
@@ -885,7 +1074,266 @@ class SubscriptionEntity:
             compliance_flags=data.get("compliance_flags", {}),
             metadata=data.get("metadata", {}),
             tags=data.get("tags", []),
+            legacy_proof_hash=data.get(
+                "legacy_proof_hash",
+                "",
+            ),
+            legacy_node_merkle_root=data.get(
+                "legacy_node_merkle_root",
+                "",
+            ),
+            legacy_evidence_status=data.get(
+                "legacy_evidence_status",
+                "",
+            ),
+            legacy_audit_trail=tuple(
+                dict(entry)
+                for entry in data.get(
+                    "legacy_audit_trail",
+                    (),
+                )
+            ),
         )
+
+    @classmethod
+    def migrate_legacy_dict(
+        cls,
+        data: Dict[str, Any],
+        *,
+        canonical_tenant_id: str,
+        canonical_plan_id: str,
+    ) -> "SubscriptionEntity":
+        """Project one sufficiently evidenced legacy Node row into current truth.
+
+        Missing commercial, lifecycle, temporal, idempotency or proof evidence
+        is rejected. Historical Node proof content remains explicitly
+        unverified; only its persisted merkle relationship is authenticated.
+        """
+        if not isinstance(data, dict):
+            raise TypeError(
+                "legacy subscription data must be a dictionary"
+            )
+
+        if {
+            "_registry_schema",
+            "_registry_revision",
+            "tenant_id",
+            "subscription_id",
+            "idempotency_key",
+            "proof_hash",
+            "merkle_root",
+            "legacy_evidence_status",
+        }.intersection(data):
+            raise ValueError(
+                "legacy migration accepts only unversioned records"
+            )
+
+        required = (
+            "tenantId",
+            "plan",
+            "planId",
+            "amount",
+            "currency",
+            "billingFrequency",
+            "status",
+            "startDate",
+            "currentPeriodStart",
+            "currentPeriodEnd",
+            "idempotencyKey",
+            "sealNonce",
+            "proofHash",
+            "merkleRoot",
+        )
+        missing = [
+            key
+            for key in required
+            if data.get(key) is None
+            or (
+                isinstance(data.get(key), str)
+                and not data[key].strip()
+            )
+        ]
+        if missing:
+            raise ValueError(
+                "legacy subscription evidence incomplete: "
+                + ", ".join(missing)
+            )
+
+        tenant_id = canonical_tenant_id.strip()
+        plan_id = canonical_plan_id.strip()
+        if not tenant_id:
+            raise ValueError("canonical_tenant_id is required")
+        if not plan_id:
+            raise ValueError("canonical_plan_id is required")
+
+        legacy_tenant_id = str(data["tenantId"]).strip()
+        legacy_plan_id = str(data["planId"]).strip()
+        legacy_proof = _legacy_subscription_sha3(
+            data["proofHash"],
+            field_name="proofHash",
+        )
+        legacy_merkle = _legacy_subscription_sha3(
+            data["merkleRoot"],
+            field_name="merkleRoot",
+        )
+        seal_nonce = str(data["sealNonce"]).strip()
+
+        try:
+            plan = PlanTiers(str(data["plan"]).upper())
+            frequency = BillingFrequency(
+                str(data["billingFrequency"]).lower()
+            )
+            status = SubscriptionStatus(
+                str(data["status"]).lower()
+            )
+            amount = float(data["amount"])
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "legacy subscription evidence incomplete: "
+                "commercial coordinate"
+            ) from error
+
+        if isinstance(data["amount"], bool):
+            raise ValueError(
+                "legacy subscription evidence incomplete: amount"
+            )
+
+        start_date = _legacy_subscription_datetime(
+            data,
+            "startDate",
+        )
+        period_start = _legacy_subscription_datetime(
+            data,
+            "currentPeriodStart",
+        )
+        period_end = _legacy_subscription_datetime(
+            data,
+            "currentPeriodEnd",
+        )
+        if period_end <= period_start:
+            raise ValueError(
+                "legacy subscription evidence incomplete: period ordering"
+            )
+
+        raw_audit = data.get("auditTrail") or ()
+        if not isinstance(raw_audit, (list, tuple)) or not all(
+            isinstance(entry, dict)
+            for entry in raw_audit
+        ):
+            raise ValueError(
+                "legacy subscription evidence incomplete: auditTrail"
+            )
+
+        legacy_audit = tuple(
+            _legacy_subscription_json_value(entry)
+            for entry in raw_audit
+        )
+
+        legacy_status = (
+            "LEGACY_NODE_SUBSCRIPTION_"
+            "STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+        )
+        seed = _legacy_subscription_seed(
+            data,
+            canonical_tenant_id=tenant_id,
+            canonical_plan_id=plan_id,
+        )
+        migration_metadata = {
+            "legacyEvidenceStatus": legacy_status,
+            "legacySourceId": str(data.get("_id", "")),
+            "legacyTenantId": legacy_tenant_id,
+            "legacyPlanId": legacy_plan_id,
+            "legacyProofHash": legacy_proof,
+            "legacyNodeMerkleRoot": legacy_merkle,
+        }
+
+        provisional = cls(
+            tenant_id=tenant_id,
+            plan_id=plan_id,
+            plan=plan,
+            amount=amount,
+            currency=str(data["currency"]).strip().upper(),
+            billing_frequency=frequency,
+            start_date=start_date,
+            current_period_start=period_start,
+            current_period_end=period_end,
+            idempotency_key=str(data["idempotencyKey"]).strip(),
+            subscription_id="WILSYSUB-LEGACY-" + seed[:24],
+            kennel_shard=str(
+                data.get("kennelShard") or "EOS_PRIMARY"
+            ).strip(),
+            plan_name=(
+                str(data["planName"]).strip()
+                if data.get("planName") is not None
+                else None
+            ),
+            plan_features=_canonical_plan_features(
+                data.get("planFeatures") or ()
+            ),
+            plan_catalogue_version=None,
+            status=status,
+            seal_nonce=seal_nonce,
+            tier=(
+                PlanTiers(str(data["tier"]).upper())
+                if data.get("tier")
+                else plan
+            ),
+            billing_mode=str(
+                data.get("billingMode") or "PLATFORM"
+            ).strip(),
+            metadata=dict(data.get("metadata") or {}),
+            tags=list(data.get("tags") or []),
+            legacy_proof_hash=legacy_proof,
+            legacy_node_merkle_root=legacy_merkle,
+            legacy_evidence_status=legacy_status,
+            legacy_audit_trail=legacy_audit,
+        )
+
+        canonical_proof = provisional.generate_proof(
+            action=AuditAction.CREATE.value,
+            metadata=migration_metadata,
+        )
+        canonical_merkle = hashlib.sha3_512(
+            (
+                f"{tenant_id}|"
+                f"{canonical_proof}|"
+                f"{seal_nonce}"
+            ).encode("utf-8")
+        ).hexdigest().upper()
+
+        audit_timestamp = start_date
+        if raw_audit:
+            audit_timestamp = _legacy_subscription_datetime(
+                raw_audit[-1],
+                "timestamp",
+            )
+
+        return cls(
+            **{
+                **provisional.__dict__,
+                "proof_hash": canonical_proof,
+                "merkle_root": canonical_merkle,
+                "audit_trail": [
+                    AuditEntry(
+                        action=AuditAction.CREATE,
+                        timestamp=audit_timestamp,
+                        user="SYSTEM",
+                        reason=(
+                            "Canonical Python EOS migration projection "
+                            "of legacy Node subscription evidence"
+                        ),
+                        previous_status=None,
+                        new_status=status,
+                        tier=provisional.tier,
+                        billing_mode=provisional.billing_mode,
+                        metadata=migration_metadata,
+                        proof_hash=canonical_proof,
+                    )
+                ],
+            }
+        )
+
+
 
     def to_platform_invoice_seed(self) -> Dict[str, Any]:
         """Generate seed for PlatformInvoice (mirrors Node toPlatformInvoiceSeed)."""
@@ -982,11 +1430,50 @@ class SubscriptionEntity:
         return package
 
 
+def verify_subscription_integrity(
+    subscription: SubscriptionEntity,
+) -> bool:
+    """Verify canonical subscription proof provenance and merkle integrity.
+
+    A directly constructed value with no audit trail uses the domain's
+    deterministic default proof. A persisted Registry value must carry its
+    latest operation and proof metadata in the latest ``AuditEntry``; that
+    provenance is then replayed exactly before the merkle root is checked.
+    This function is pure, tenant-neutral, and grants no entitlement or
+    financial authority.
+    """
+    if type(subscription) is not SubscriptionEntity:
+        return False
+    try:
+        if subscription.audit_trail:
+            latest = subscription.audit_trail[-1]
+            expected_proof = subscription.generate_proof(
+                action=latest.action.value,
+                metadata=dict(latest.metadata),
+            )
+            if not isinstance(latest.proof_hash, str) or not hmac.compare_digest(
+                subscription.proof_hash.upper(), latest.proof_hash.upper()
+            ):
+                return False
+        else:
+            expected_proof = subscription.generate_proof()
+        if not isinstance(subscription.proof_hash, str) or not hmac.compare_digest(
+            subscription.proof_hash.upper(), expected_proof.upper()
+        ):
+            return False
+        expected_merkle = subscription._compute_merkle_root()
+        return isinstance(subscription.merkle_root, str) and hmac.compare_digest(
+            subscription.merkle_root.upper(), expected_merkle.upper()
+        )
+    except (AttributeError, TypeError, ValueError, KeyError):
+        return False
+
+
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/domain/subscription.py
-# VERSION: v1.2.0-CALENDAR-BILLING-FOUNDATION
+# VERSION: v1.3.0-LEGACY-SUBSCRIPTION-MIGRATION
 # AUTHORITY BOUNDARY: Immutable subscription value, lifecycle and catalogue-
 # snapshot evidence only; PlanEntity/PlanRegistry remain canonical plan truth.
 # TENANT POSTURE: tenant_id is persisted subscription scope and never establishes
@@ -995,5 +1482,7 @@ class SubscriptionEntity:
 # catalogue feature snapshots, naive calendar datetimes and invalid calendar
 # coordinates are rejected. Unknown legacy provenance remains explicit None.
 # Calendar helpers derive evidence only; they grant no caller proration authority.
+# Canonical proof verification replays persisted audit provenance and grants no
+# entitlement, membership, permission, payment or execution authority.
 # FINANCIAL EXECUTION AUTHORITY: NONE — Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT

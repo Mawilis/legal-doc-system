@@ -4,7 +4,7 @@ TITLE:
     WILSY OS Subscription Catalogue Provenance + Calendar Billing Domain Certificate
 
 VERSION:
-    v1.1.1-SUBSCRIPTION-CALENDAR-BILLING-CERT
+    v1.2.0-SUBSCRIPTION-LEGACY-MIGRATION-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -26,9 +26,18 @@ OWNERSHIP / COLLABORATION:
     PlanEntity / PlanRegistry remain canonical commercial catalogue authorities.
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-03
+    2026-09-29
 
 CHANGELOG:
+    2026-09-29 v1.2.0-SUBSCRIPTION-LEGACY-MIGRATION-CERT
+        - Certifies explicit rich legacy Node/BillingHUD migration.
+        - Certifies deterministic canonical subscription identity and proof.
+        - Certifies persisted legacy Node proof/merkle syntax and preservation
+          without claiming independently reproducible cryptographic authenticity.
+        - Certifies incomplete minimal legacy rows fail closed.
+        - Certifies current canonical rows cannot re-enter legacy migration.
+        - Re-runs all prior catalogue provenance and calendar billing assertions.
+
     2026-09-03 v1.1.1-SUBSCRIPTION-CALENDAR-BILLING-CERT
         - Closes adversarial P2 coverage gaps for first-day, last-day and
           period-end proration boundary semantics.
@@ -86,14 +95,15 @@ from tools.eos.saas.domain.subscription import (
     VERSION,
     calendar_period_bounds,
     calendar_proration_coordinate,
+    verify_subscription_integrity,
 )
 
 
 TEST_VERSION = (
-    "v1.1.1-SUBSCRIPTION-CALENDAR-BILLING-CERT"
+    "v1.2.0-SUBSCRIPTION-LEGACY-MIGRATION-CERT"
 )
 
-DOMAIN_VERSION = "v1.2.0-CALENDAR-BILLING-FOUNDATION"
+DOMAIN_VERSION = "v1.3.0-LEGACY-SUBSCRIPTION-MIGRATION"
 
 STAMP = datetime(
     2026,
@@ -146,11 +156,222 @@ def _subscription(
     )
 
 
+
+def _legacy_billinghud_subscription() -> dict[str, Any]:
+    """Historically rich Node/BillingHUD subscription evidence fixture."""
+    tenant_id = "695fe2a3ebabacb9a4a6850f"
+    proof_hash = "A" * 128
+    seal_nonce = "15582cf15af65e9529941c71c59bc86e"
+
+    import hashlib
+
+    merkle_root = hashlib.sha3_512(
+        f"{tenant_id}|{proof_hash}|{seal_nonce}".encode("utf-8")
+    ).hexdigest().upper()
+
+    return {
+        "_id": "6a781e8dd8c27729e4d46845",
+        "tenantId": tenant_id,
+        "plan": "PROFESSIONAL",
+        "planId": "6a78082d0c6c4942c7b20b16",
+        "planName": "Pro",
+        "amount": 299,
+        "currency": "ZAR",
+        "billingFrequency": "monthly",
+        "status": "active",
+        "startDate": datetime(
+            2026, 8, 9, 0, 0, tzinfo=timezone.utc
+        ),
+        "currentPeriodStart": datetime(
+            2026, 8, 9, 0, 0, tzinfo=timezone.utc
+        ),
+        "currentPeriodEnd": datetime(
+            2026, 9, 9, 0, 0, tzinfo=timezone.utc
+        ),
+        "idempotencyKey": (
+            "WILSY-SUB-695FE2A3EBABACB9A4A6850F-B999F358B21E4A57"
+        ),
+        "sealNonce": seal_nonce,
+        "proofHash": proof_hash,
+        "merkleRoot": merkle_root,
+        "auditTrail": [
+            {
+                "action": "create",
+                "timestamp": datetime(
+                    2026, 8, 9, 6, 30, 37, 305000,
+                    tzinfo=timezone.utc,
+                ),
+                "user": "695e423c9d355c0675c6835d",
+                "reason": "Subscription created via BillingHUD",
+                "previousStatus": None,
+                "newStatus": "active",
+                "metadata": {"planSynthetic": False},
+                "proofHash": "B" * 128,
+            }
+        ],
+        "metadata": {
+            "source": "BILLING_HUD",
+            "createdVia": "useSubscriptions.create",
+            "planSnapshot": {
+                "name": "Pro",
+                "price": 299,
+                "currency": "ZAR",
+                "synthetic": False,
+            },
+            "createdBy": "695e423c9d355c0675c6835d",
+            "headerTenantAtCreate": "WILSY_SOVEREIGN_ROOT",
+        },
+        "__v": 1,
+    }
+
+
+def test_rich_billinghud_legacy_subscription_migrates_explicitly() -> None:
+    raw = _legacy_billinghud_subscription()
+    raw["merkleRoot"] = raw["merkleRoot"].lower()
+
+    migrated = SubscriptionEntity.migrate_legacy_dict(
+        raw,
+        canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+        canonical_plan_id="WILSYPLAN-B877349B938833072C388A182ED4B497",
+    )
+
+    assert migrated.tenant_id == "WILSYTENANT-4CD2FZ4O"
+    assert migrated.plan_id == "WILSYPLAN-B877349B938833072C388A182ED4B497"
+    assert migrated.plan is PlanTiers.PROFESSIONAL
+    assert migrated.amount == 299.0
+    assert migrated.currency == "ZAR"
+    assert migrated.billing_frequency is BillingFrequency.MONTHLY
+    assert migrated.plan_catalogue_version is None
+    assert migrated.idempotency_key == raw["idempotencyKey"]
+    assert migrated.legacy_proof_hash == raw["proofHash"]
+    assert migrated.legacy_node_merkle_root == raw["merkleRoot"]
+    assert migrated.legacy_evidence_status == (
+        "LEGACY_NODE_SUBSCRIPTION_STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+    )
+    assert migrated.proof_hash != raw["proofHash"]
+    assert migrated.merkle_root != raw["merkleRoot"]
+    assert verify_subscription_integrity(migrated) is True
+
+
+def test_legacy_bson_utc_datetimes_normalize_without_inventing_text_timezone() -> None:
+    raw = _legacy_billinghud_subscription()
+
+    for field_name in (
+        "startDate",
+        "currentPeriodStart",
+        "currentPeriodEnd",
+    ):
+        raw[field_name] = raw[field_name].replace(
+            tzinfo=None
+        )
+
+    raw["auditTrail"][0]["timestamp"] = (
+        raw["auditTrail"][0]["timestamp"]
+        .replace(tzinfo=None)
+    )
+
+    migrated = SubscriptionEntity.migrate_legacy_dict(
+        raw,
+        canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+        canonical_plan_id="WILSYPLAN-B877349B938833072C388A182ED4B497",
+    )
+
+    assert migrated.start_date.utcoffset() == timedelta(0)
+    assert migrated.current_period_start.utcoffset() == timedelta(0)
+    assert migrated.current_period_end.utcoffset() == timedelta(0)
+    assert migrated.audit_trail[-1].timestamp.utcoffset() == timedelta(0)
+
+    raw["startDate"] = "2026-08-09T00:00:00"
+
+    with pytest.raises(
+        ValueError,
+        match="startDate must be timezone-aware",
+    ):
+        SubscriptionEntity.migrate_legacy_dict(
+            raw,
+            canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+            canonical_plan_id="WILSYPLAN-B877349B938833072C388A182ED4B497",
+        )
+
+
+def test_legacy_subscription_identity_is_deterministic() -> None:
+    raw = _legacy_billinghud_subscription()
+
+    first = SubscriptionEntity.migrate_legacy_dict(
+        raw,
+        canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+        canonical_plan_id="WILSYPLAN-B877349B938833072C388A182ED4B497",
+    )
+    second = SubscriptionEntity.migrate_legacy_dict(
+        raw,
+        canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+        canonical_plan_id="WILSYPLAN-B877349B938833072C388A182ED4B497",
+    )
+
+    assert first.subscription_id == second.subscription_id
+    assert first.proof_hash == second.proof_hash
+    assert first.merkle_root == second.merkle_root
+
+
+@pytest.mark.parametrize(
+    ("field_name", "invalid_value"),
+    [
+        ("proofHash", "not-a-sha3-512"),
+        ("merkleRoot", "1234"),
+    ],
+)
+def test_legacy_subscription_malformed_crypto_evidence_fails_closed(
+    field_name: str,
+    invalid_value: str,
+) -> None:
+    raw = _legacy_billinghud_subscription()
+    raw[field_name] = invalid_value
+
+    with pytest.raises(
+        ValueError,
+        match="legacy subscription evidence incomplete",
+    ):
+        SubscriptionEntity.migrate_legacy_dict(
+            raw,
+            canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+            canonical_plan_id="WILSYPLAN-B877349B938833072C388A182ED4B497",
+        )
+
+
+def test_minimal_legacy_subscription_is_not_fabricated_into_current_truth() -> None:
+    raw = {
+        "_id": "695fe2a4ebabacb9a4a68511",
+        "tenantId": "695fe2a3ebabacb9a4a6850f",
+        "price": 0,
+        "period": "yearly",
+        "active": True,
+        "__v": 0,
+    }
+
+    with pytest.raises(ValueError, match="legacy subscription evidence incomplete"):
+        SubscriptionEntity.migrate_legacy_dict(
+            raw,
+            canonical_tenant_id="WILSYTENANT-4CD2FZ4O",
+            canonical_plan_id="WILSYPLAN-DO-NOT-INVENT",
+        )
+
+
+def test_current_subscription_cannot_reenter_legacy_migration() -> None:
+    current = _subscription().to_dict()
+
+    with pytest.raises(ValueError, match="legacy migration accepts only"):
+        SubscriptionEntity.migrate_legacy_dict(
+            current,
+            canonical_tenant_id="TENANT-C3",
+            canonical_plan_id="WILSYPLAN-ENTERPRISE",
+        )
+
+
 def test_versions_are_exact() -> None:
     assert VERSION == DOMAIN_VERSION
     assert (
         TEST_VERSION
-        == "v1.1.1-SUBSCRIPTION-CALENDAR-BILLING-CERT"
+        == "v1.2.0-SUBSCRIPTION-LEGACY-MIGRATION-CERT"
     )
 
 
