@@ -193,6 +193,12 @@ _BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_cleanup_authorize": "
 _BINDINGS = MappingProxyType({
     "crm_lead_create": "crm:lead:create",
     "crm_lead_read": "crm:lead:read",
+    "crm_email_template_create": "crm:email_template:create",
+    "crm_email_template_read": "crm:email_template:read",
+    "crm_email_template_revise": "crm:email_template:revise",
+    "crm_email_template_archive": "crm:email_template:archive",
+    "crm_email_template_copy": "crm:email_template:copy",
+    "crm_email_template_share": "crm:email_template:share",
     **_BINDINGS,
     "hr_employee_relation_write": "hr:employee_relation:write",
 })

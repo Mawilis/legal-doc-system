@@ -1,6 +1,6 @@
 """
 TITLE: WILSY OS CRM Core Entitlement Domain Direct Certificate
-VERSION: v1.0.0-CRM-P9D-R4-CORE-ENTITLEMENT-DOMAIN-CERT
+VERSION: v1.0.1-CRM-P9D-R4-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE-CERT
 AUTHORITY: Direct certificate for immutable tenant-scoped crm.core entitlement evidence.
 EPITOME:
     Freezes the pure CRM entitlement value contract before production
@@ -35,6 +35,7 @@ AUTHORITY BOUNDARY:
     expose HTTP routes, grant AI authority or execute financially.
 
 CHANGELOG:
+    - 2026-10-07 v1.0.1-CRM-P9D-R4-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE-CERT: converges the direct certificate with the canonical SubscriptionEntity uppercase SHA3-512 proof representation; lowercase, mixed-case, malformed-length and non-hex subscription proofs remain fail-closed. Entitlement-local fingerprints and lifecycle evidence digest semantics are unchanged.
     2026-10-06 v1.0.0 establishes the test-first CRM Core entitlement
     contract from the certified crm.core Plan/Subscription commercial
     provenance and the revisioned immutable entitlement pattern.
@@ -59,7 +60,7 @@ from tools.eos.crm.domain.crm_core_entitlement import (
 )
 
 
-EXPECTED_VERSION = "v1.0.0-CRM-CORE-ENTITLEMENT"
+EXPECTED_VERSION = "v1.0.1-CRM-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE"
 EXPECTED_SCHEMA = "WILSY-CRM-CORE-ENTITLEMENT/V1"
 EXPECTED_FEATURE = "crm.core"
 
@@ -68,7 +69,7 @@ SUBSCRIPTION = "WILSYSUB-CRMCORE01"
 PLAN = "WILSYPLAN-CRMCORE01"
 ENTITLEMENT = "WILSYCRM-ENT-CORE-0001"
 
-SUBSCRIPTION_PROOF = "a" * 128
+SUBSCRIPTION_PROOF = "A" * 128
 ACTIVATION_EVIDENCE = "b" * 128
 SUSPENSION_EVIDENCE = "c" * 128
 REVOCATION_EVIDENCE = "d" * 128
@@ -221,13 +222,14 @@ def test_catalogue_provenance_requires_positive_integer_version(
     "digest",
     (
         "",
-        "a" * 127,
-        "a" * 129,
-        "A" * 128,
-        "g" * 128,
+        "A" * 127,
+        "A" * 129,
+        "a" * 128,
+        ("A" * 64) + ("a" * 64),
+        "G" * 128,
     ),
 )
-def test_subscription_proof_requires_lowercase_sha3_512_shape(
+def test_subscription_proof_requires_canonical_uppercase_sha3_512_shape(
     digest: str,
 ) -> None:
     with pytest.raises(CrmCoreEntitlementError):
@@ -423,7 +425,7 @@ def test_fingerprint_binds_commercial_source_coordinates() -> None:
         _pending(subscription_id="WILSYSUB-OTHER"),
         _pending(plan_id="WILSYPLAN-OTHER"),
         _pending(plan_catalogue_version=8),
-        _pending(subscription_proof_hash="f" * 128),
+        _pending(subscription_proof_hash="F" * 128),
     )
 
     assert all(
@@ -472,7 +474,7 @@ def test_fingerprint_is_sha3_512_deterministic_shape() -> None:
 
 
 # ARTIFACT: test_crm_core_entitlement_domain.py
-# VERSION: v1.0.0-CRM-P9D-R4-CORE-ENTITLEMENT-DOMAIN-CERT
+# VERSION: v1.0.1-CRM-P9D-R4-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE-CERT
 # AUTHORITY BOUNDARY: direct entitlement-domain certificate only
 # TENANT POSTURE: entitlement evidence is exact-tenant and fail-closed
 # COMMERCIAL POSTURE: crm.core source evidence required; tier is not authority

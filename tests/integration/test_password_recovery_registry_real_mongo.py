@@ -61,7 +61,7 @@ from tools.eos.saas.auth.password_recovery_registry import (
 
 URI_ENV = "R10B4_PASSWORD_RECOVERY_MONGO_URI"
 CERTIFICATION_DATABASE_PREFIX = "wilsy_r10b4_prc_"
-REPLICA_SET = "wilsyR10B4RS"
+REPLICA_SET = "wilsyVendorCertRS"
 BASE_TIME = datetime(2026, 9, 22, 12, 0, 0, 123456, tzinfo=timezone.utc)
 EXPIRY_TIME = BASE_TIME + timedelta(hours=1)
 

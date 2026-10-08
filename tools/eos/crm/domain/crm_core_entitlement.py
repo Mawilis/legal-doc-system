@@ -1,7 +1,7 @@
 """WILSY OS CRM Core entitlement domain.
 
 TITLE: CRM Core Entitlement Domain
-VERSION: v1.0.0-CRM-CORE-ENTITLEMENT
+VERSION: v1.0.1-CRM-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME:
     Own immutable, tenant-scoped entitlement evidence for the exact
@@ -17,6 +17,7 @@ COLLABORATION / OWNERSHIP:
 CERTIFICATION / UPDATE DATE:
     2026-10-06
 CHANGELOG:
+    - 2026-10-07 v1.0.1-CRM-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE: converges crm.core commercial source evidence with the canonical SubscriptionEntity uppercase SHA3-512 proof contract through a field-specific fail-closed validator. Shared lowercase entitlement fingerprints and lifecycle evidence digests remain unchanged. No normalization, subscription mutation, permission grant, send authority, AI authority, or financial execution authority is introduced.
     v1.0.0 establishes strict immutable entitlement evidence, exact crm.core
     feature binding, revisioned lifecycle transitions, chronology validation,
     strict hydration, and deterministic SHA3-512 identity.
@@ -51,7 +52,7 @@ from typing import Any, Final, cast
 
 
 CRM_CORE_ENTITLEMENT_VERSION: Final[str] = (
-    "v1.0.0-CRM-CORE-ENTITLEMENT"
+    "v1.0.1-CRM-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE"
 )
 CRM_CORE_ENTITLEMENT_SCHEMA: Final[str] = (
     "WILSY-CRM-CORE-ENTITLEMENT/V1"
@@ -86,6 +87,10 @@ CRM_CORE_ENTITLEMENT_FIELDS: Final[tuple[str, ...]] = _FIELDS
 
 _HEX_DIGITS: Final[frozenset[str]] = frozenset(
     "0123456789abcdef"
+)
+
+_SUBSCRIPTION_PROOF_HEX_DIGITS: Final[frozenset[str]] = frozenset(
+    "0123456789ABCDEF"
 )
 _FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset(
     {
@@ -161,6 +166,32 @@ def _digest(
     ):
         raise CrmCoreEntitlementError(
             f"CRM_CORE_ENTITLEMENT_{name.upper()}_INVALID"
+        )
+
+    return value
+
+
+def _subscription_proof_digest(
+    value: object,
+) -> str:
+    """Validate exact canonical SubscriptionEntity SHA3-512 proof bytes.
+
+    Canonical SubscriptionEntity commercial proof material is uppercase
+    hexadecimal SHA3-512. This validator preserves the exact representation
+    and performs no case normalization. Lowercase, mixed-case, malformed
+    length, and non-hex source evidence fail closed.
+    """
+    if (
+        not isinstance(value, str)
+        or len(value) != 128
+        or not value
+        or any(
+            character not in _SUBSCRIPTION_PROOF_HEX_DIGITS
+            for character in value
+        )
+    ):
+        raise CrmCoreEntitlementError(
+            "CRM_CORE_ENTITLEMENT_SUBSCRIPTION_PROOF_HASH_INVALID"
         )
 
     return value
@@ -319,8 +350,7 @@ class CrmCoreEntitlement:
         catalogue_version = _catalogue_version(
             self.plan_catalogue_version
         )
-        subscription_proof = _digest(
-            "subscription_proof_hash",
+        subscription_proof = _subscription_proof_digest(
             self.subscription_proof_hash,
         )
         revision = _revision(
@@ -765,7 +795,7 @@ __all__ = [
 ]
 
 # ARTIFACT: crm_core_entitlement.py
-# VERSION: v1.0.0-CRM-CORE-ENTITLEMENT
+# VERSION: v1.0.1-CRM-CORE-ENTITLEMENT-SUBSCRIPTION-PROOF-CONVERGENCE
 # AUTHORITY BOUNDARY: immutable exact-tenant crm.core entitlement evidence only
 # COMMERCIAL POSTURE: subscription/plan/proof provenance is evidence, not execution
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive

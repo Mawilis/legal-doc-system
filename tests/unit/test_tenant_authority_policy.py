@@ -98,7 +98,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.33.0-P0-C12F7B-HR-DOCUMENT-IAM-ELIGIBILITY"
+    assert VERSION == "v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 

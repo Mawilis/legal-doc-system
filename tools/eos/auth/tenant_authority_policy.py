@@ -187,6 +187,12 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "business_role_revoke": "tenant:business_role:write",
     "crm_lead_create": "crm:lead:create",
     "crm_lead_read": "crm:lead:read",
+    "crm_email_template_create": "crm:email_template:create",
+    "crm_email_template_read": "crm:email_template:read",
+    "crm_email_template_revise": "crm:email_template:revise",
+    "crm_email_template_archive": "crm:email_template:archive",
+    "crm_email_template_copy": "crm:email_template:copy",
+    "crm_email_template_share": "crm:email_template:share",
     "legal_evidence_write": "legal_operations:evidence:write",
     "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
     "hr_employee_relation_write": "hr:employee_relation:write",
@@ -549,6 +555,55 @@ _crm_eligibility_updates["tenant_auditor"] = MappingProxyType(
 )
 
 ELIGIBILITY = MappingProxyType(_crm_eligibility_updates)
+
+
+# CRM Email Template — bounded tenant-operation eligibility only.
+# These facts do not grant permissions, record access, entitlement,
+# mailbox use, sending, consent, sequence execution, AI, or finance.
+_EMAIL_TEMPLATE_OPERATIONS = (
+    "crm_email_template_create",
+    "crm_email_template_read",
+    "crm_email_template_revise",
+    "crm_email_template_archive",
+    "crm_email_template_copy",
+    "crm_email_template_share",
+)
+
+OPERATIONS = frozenset((*OPERATIONS, *_EMAIL_TEMPLATE_OPERATIONS))
+
+_email_template_eligibility_updates = dict(ELIGIBILITY)
+
+for _template_business_role in (
+    "tenant_owner",
+    "tenant_admin",
+    "tenant_manager",
+):
+    _template_role_policy = dict(
+        _email_template_eligibility_updates[_template_business_role]
+    )
+    for _template_operation in _EMAIL_TEMPLATE_OPERATIONS:
+        _template_role_policy[_template_operation] = ELIGIBLE
+    _email_template_eligibility_updates[
+        _template_business_role
+    ] = MappingProxyType(_template_role_policy)
+
+_template_auditor_policy = dict(
+    _email_template_eligibility_updates["tenant_auditor"]
+)
+for _template_operation in _EMAIL_TEMPLATE_OPERATIONS:
+    _template_auditor_policy[_template_operation] = (
+        ELIGIBLE
+        if _template_operation == "crm_email_template_read"
+        else DENY
+    )
+_email_template_eligibility_updates[
+    "tenant_auditor"
+] = MappingProxyType(_template_auditor_policy)
+
+ELIGIBILITY = MappingProxyType(
+    _email_template_eligibility_updates
+)
+
 
 
 def normalize_tenant_business_role(role: object) -> str | None:

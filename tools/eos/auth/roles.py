@@ -219,6 +219,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant_branding:asset:manage",
         "crm:lead:create",
         "crm:lead:read",
+        "crm:email_template:create",
+        "crm:email_template:read",
+        "crm:email_template:revise",
+        "crm:email_template:archive",
+        "crm:email_template:copy",
+        "crm:email_template:share",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -235,6 +241,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant:business_role:read",
         "tenant_branding:read",
         "crm:lead:read",
+        "crm:email_template:read",
     ],
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
