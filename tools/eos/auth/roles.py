@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS
+VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT
+    grants tenant_product_entitlement:issue exactly once to ENTERPRISE_ADMIN.
+    AUDITOR and every other authorization role remain without the grant.
     2026-10-06 v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS grants
     crm:lead:create exactly to ENTERPRISE_ADMIN and crm:lead:read exactly
     to ENTERPRISE_ADMIN and AUDITOR. Static grants remain non-possessory:
@@ -184,7 +187,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS"
+VERSION = "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -423,6 +426,9 @@ for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_
     ROLE_PERMISSIONS_MAP[_role_name].append("wilsy_ai:legal_tool:read")
 for _role_name in ("ENTERPRISE_ADMIN",):
     ROLE_PERMISSIONS_MAP[_role_name].append("wilsy_ai:reasoning:execute")
+ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].append(
+    "tenant_product_entitlement:issue"
+)
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "LEGAL_FINANCE", "SHERIFF", "DEPUTY", "ENTERPRISE_ADMIN"):
     ROLE_PERMISSIONS_MAP[_role_name].append("wilsy_ai:legal_services:execute")
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "LEGAL_FINANCE", "SHERIFF", "DEPUTY"):
@@ -478,7 +484,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.36.0-CRM-P9C2-LEAD-ROLE-GRANTS
+# VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

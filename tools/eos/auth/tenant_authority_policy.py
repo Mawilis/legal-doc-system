@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY
+VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -12,6 +12,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY
+    adds tenant_product_entitlement_issue as a closed operation bound exactly
+    to tenant_product_entitlement:issue and eligible only to tenant_owner,
+    tenant_admin and tenant_manager. Eligibility remains non-authorizing.
     2026-10-06 v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY
     introduces crm_lead_create and crm_lead_read as exact closed
     own-tenant operation vocabulary. Create is ELIGIBLE only for
@@ -174,7 +178,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY"
+VERSION = "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -185,6 +189,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "business_role_assign": "tenant:business_role:write",
     "business_role_change": "tenant:business_role:write",
     "business_role_revoke": "tenant:business_role:write",
+    "tenant_product_entitlement_issue": "tenant_product_entitlement:issue",
     "crm_lead_create": "crm:lead:create",
     "crm_lead_read": "crm:lead:read",
     "crm_email_template_create": "crm:email_template:create",
@@ -605,6 +610,24 @@ ELIGIBILITY = MappingProxyType(
 )
 
 
+# D22B3-P17 — bounded product-entitlement issuance eligibility only.
+OPERATIONS = frozenset((*OPERATIONS, "tenant_product_entitlement_issue"))
+_entitlement_issue_eligibility = dict(ELIGIBILITY)
+for _entitlement_issue_role in (
+    "tenant_owner",
+    "tenant_admin",
+    "tenant_manager",
+):
+    _entitlement_issue_role_policy = dict(
+        _entitlement_issue_eligibility[_entitlement_issue_role]
+    )
+    _entitlement_issue_role_policy["tenant_product_entitlement_issue"] = ELIGIBLE
+    _entitlement_issue_eligibility[_entitlement_issue_role] = MappingProxyType(
+        _entitlement_issue_role_policy
+    )
+ELIGIBILITY = MappingProxyType(_entitlement_issue_eligibility)
+
+
 
 def normalize_tenant_business_role(role: object) -> str | None:
     """Return an exact canonical tenant role, otherwise fail closed."""
@@ -643,7 +666,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.36.0-CRM-P9C3-LEAD-BUSINESS-ROLE-POLICY
+# VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
