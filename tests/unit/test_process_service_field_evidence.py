@@ -1,18 +1,54 @@
 """Direct adversarial certificate for P5 mobile/offline field evidence.
 
-TITLE: Process-Service Offline Field Evidence Certificate
-VERSION: v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-CERT
-AUTHORITY: Wilsy OS Core Governance
-EPITOME: Prove immutable observation ordering, provenance, replay, and tenant
-         boundaries without elevating mobile evidence to legal-service truth.
+TITLE: WILSY OS Process-Service Field Evidence and Command Capability Certificate
+VERSION: v1.3.1-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT-REPAIR
+AUTHORITY: Direct certification of P5M evidence and L8-6D read projection.
+EPITOME: Preserve offline evidence ordering/provenance/replay certification,
+         prove exact tenant/event command+receipt recovery and validated sequence
+         head resolution for retry-safe server composition,
+         and prove the field-command capability descriptor maps only canonical
+         active ServiceAttempt states to existing command kinds, binds one
+         opaque P2 evidence locator, and never becomes IAM, service, return,
+         billing, AI, payment, execution, or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_process_service_field_evidence.py
-CERTIFICATION DATE: 2026-09-14
-CHANGELOG: 2026-09-14 v1.0.0 establishes direct P5 mobile evidence coverage.
-TENANT BOUNDARY: All canonical context derives from exact P2 ServiceAttempt.
-AUTHORITY BOUNDARY: Evidence acceptance only; no attempt/service/return state.
-FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution/settlement.
-FAIL-CLOSED DECLARATION: Invalid identity, ordering, provenance, replay, and
-                         tenant scope reject deterministically.
+COLLABORATION / OWNERSHIP: Direct certificate for P5M authority/registry/
+                            orchestrator/projection surfaces; P1 owns attempt
+                            lifecycle, P2 owns snapshot identity, and callers
+                            own authorization and transactions.
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.3.1-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT-REPAIR
+           repairs certificate-only Pyright narrowing for nested durable payload
+           corruption setup; production registry behavior and runtime assertions
+           are unchanged.
+           2026-09-23 v1.3.0-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT
+           certifies exact event command+receipt recovery, empty/head resolution,
+           caller-session forwarding, contiguous 1..N sequence validation, and
+           fail-closed rejection of durable sequence-history corruption.
+           2026-09-23 v1.2.0-L8-6E-P5M-EVENT-REPLAY-LOOKUP-CERT
+           certifies exact tenant/event receipt lookup, caller-session forwarding,
+           foreign-tenant absence, and strict persisted-evidence hydration for the
+           L8-6E replay-safe P5M composition primitive.
+           2026-09-23 v1.1.1-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+           repairs the sovereign module-header terminator so the certificate
+           imports as valid Python; test assertions, runtime coverage, authority
+           boundaries, and production behavior remain unchanged.
+           2026-09-23 v1.1.0-L8-6D-FIELD-COMMAND-CAPABILITY-CERT
+           adds exact ALLOCATED and ATTEMPTED command-capability mapping,
+           immutable descriptor validation, terminal-state rejection, malformed
+           locator rejection, and non-authority/non-financial shape proof.
+           2026-09-14 v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-CERT established direct P5 mobile evidence coverage.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers and hashes only; no
+                             customer, credential, geolocation, secret, payment,
+                             provider, or external data.
+TENANT BOUNDARY: Canonical context derives from exact P1/P2 ServiceAttempt
+                 evidence; cross-tenant projection inputs reject.
+AUTHORITY BOUNDARY: Evidence acceptance and derived state capability only;
+                    capability never substitutes for current IAM authorization.
+FINANCIAL AUTHORITY BOUNDARY: No financial semantics; Kennel EOS exclusively
+                              owns financial execution and settlement.
+FAIL-CLOSED DECLARATION: Invalid identity, ordering, provenance, replay, tenant,
+                         state-command mapping, or locator rejects deterministically.
 """
 from __future__ import annotations
 
@@ -29,7 +65,15 @@ from tools.eos.legal_operations.domain.process_service_field_evidence_authority 
     create_offline_field_evidence_command,
 )
 from tools.eos.legal_operations.orchestration.process_service_field_evidence_orchestrator import sync_offline_field_evidence
-from tools.eos.legal_operations.domain.process_service_field_evidence_projection import project_for_deputy, project_for_law_firm
+from tools.eos.legal_operations.domain.process_service_field_evidence_projection import (
+    FieldCommandCapabilityEntry,
+    FieldCommandKind,
+    ProcessServiceFieldEvidenceProjectionError,
+    VERSION as PROJECTION_VERSION,
+    project_field_command_capability,
+    project_for_deputy,
+    project_for_law_firm,
+)
 from tools.eos.legal_operations.registry import legal_operations_lifecycle_registry as p2
 from tools.eos.legal_operations.registry.process_service_allocation_registry import ProcessServiceAllocationCurrent, ProcessServiceAllocationReceipt, _record_for as allocation_record_for
 from tools.eos.legal_operations.registry.process_service_field_evidence_registry import (
@@ -63,8 +107,9 @@ class Collection:
         self.rows.append(dict(row))
 
 
-def attempt() -> ServiceAttempt:
-    allocated = ServiceAttempt(
+def allocated_attempt() -> ServiceAttempt:
+    """Build one canonical active ALLOCATED attempt."""
+    return ServiceAttempt(
         tenant_id="tenant-a",
         attempt_id="attempt-1",
         instruction_id="instruction-1",
@@ -73,7 +118,11 @@ def attempt() -> ServiceAttempt:
         allocated_at=BASE,
         allocation_evidence_reference="allocation",
     )
-    return allocated.transition_to(
+
+
+def attempt() -> ServiceAttempt:
+    """Build one canonical active ATTEMPTED attempt."""
+    return allocated_attempt().transition_to(
         ServiceAttemptState.ATTEMPTED,
         evidence_reference="attempt-proof",
         evidence_fingerprint=HASH,
@@ -175,6 +224,151 @@ def test_registry_ordering_replay_and_divergence() -> None:
     assert gap_error.value.code == "P5M_SEQUENCE_GAP"
 
 
+def test_registry_resolve_by_event_is_exact_tenant_scoped_and_strict() -> None:
+    """Recover one immutable receipt by tenant/event without widening authority."""
+    collection = Collection()
+    source = command()
+    receipt = _issue_sync_receipt(
+        command=source,
+        receipt_id="receipt-event-lookup",
+        accepted_at=BASE + timedelta(minutes=5),
+    )
+    ProcessServiceFieldEvidenceRegistry.persist(
+        source,
+        receipt,
+        collection,
+        session=Session(),
+    )
+
+    session = Session()
+    resolved = ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+        "tenant-a",
+        "event-1",
+        collection,
+        session=session,
+    )
+    assert resolved.to_dict() == receipt.to_dict()
+    assert resolved.fingerprint == receipt.fingerprint
+    assert collection.calls[-1] == ("find_one", session)
+
+    with pytest.raises(ProcessServiceFieldEvidenceRegistryError) as foreign:
+        ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+            "tenant-b",
+            "event-1",
+            collection,
+            session=session,
+        )
+    assert foreign.value.code == "P5M_EVIDENCE_NOT_FOUND"
+
+    corrupted = dict(collection.rows[0])
+    corrupted["receipt_fingerprint"] = "f" * 128
+    collection.rows[0] = corrupted
+    with pytest.raises(ProcessServiceFieldEvidenceRegistryError) as invalid:
+        ProcessServiceFieldEvidenceRegistry.resolve_by_event(
+            "tenant-a",
+            "event-1",
+            collection,
+            session=session,
+        )
+    assert invalid.value.code == "P5M_RECEIPT_FINGERPRINT_MISMATCH"
+
+
+def test_registry_recovers_exact_event_command_and_contiguous_sequence_head() -> None:
+    """Recover replay inputs and one strict tenant/attempt/device journal head."""
+    collection = Collection()
+    session = Session()
+
+    assert ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+        "tenant-a",
+        "attempt-1",
+        "device-1",
+        collection,
+        session=session,
+    ) is None
+    assert collection.calls[-1] == ("find", session)
+
+    first_command = command()
+    first_receipt = _issue_sync_receipt(
+        command=first_command,
+        receipt_id="receipt-head-1",
+        accepted_at=BASE + timedelta(minutes=5),
+    )
+    ProcessServiceFieldEvidenceRegistry.persist(
+        first_command,
+        first_receipt,
+        collection,
+        session=session,
+    )
+    second_command = command(
+        sequence=2,
+        previous=first_command.evidence_fingerprint,
+        event="event-2",
+    )
+    second_receipt = _issue_sync_receipt(
+        command=second_command,
+        receipt_id="receipt-head-2",
+        accepted_at=BASE + timedelta(minutes=6),
+    )
+    ProcessServiceFieldEvidenceRegistry.persist(
+        second_command,
+        second_receipt,
+        collection,
+        session=session,
+    )
+
+    replay_command, replay_receipt = (
+        ProcessServiceFieldEvidenceRegistry.resolve_command_receipt_by_event(
+            "tenant-a",
+            "event-1",
+            collection,
+            session=session,
+        )
+    )
+    assert replay_command.to_dict() == first_command.to_dict()
+    assert replay_command.fingerprint == first_command.fingerprint
+    assert replay_receipt.to_dict() == first_receipt.to_dict()
+
+    head = ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+        "tenant-a",
+        "attempt-1",
+        "device-1",
+        collection,
+        session=session,
+    )
+    assert head is not None
+    assert head.to_dict() == second_receipt.to_dict()
+    assert head.sequence_number == 2
+    assert head.evidence_fingerprint == second_command.evidence_fingerprint
+
+    corrupted = dict(collection.rows[1])
+    corrupted["sequence_number"] = 3
+    command_payload = corrupted["command_payload"]
+    receipt_payload = corrupted["receipt_payload"]
+    assert isinstance(command_payload, dict)
+    assert isinstance(receipt_payload, dict)
+    corrupted_command = dict(command_payload)
+    corrupted_receipt = dict(receipt_payload)
+    corrupted_command["sequence_number"] = 3
+    corrupted_receipt["sequence_number"] = 3
+    corrupted["command_payload"] = corrupted_command
+    corrupted["receipt_payload"] = corrupted_receipt
+    collection.rows[1] = corrupted
+    with pytest.raises(ProcessServiceFieldEvidenceRegistryError) as invalid:
+        ProcessServiceFieldEvidenceRegistry.resolve_latest_for_attempt_device(
+            "tenant-a",
+            "attempt-1",
+            "device-1",
+            collection,
+            session=session,
+        )
+    assert invalid.value.code in {
+        "P5M_COMMAND_FINGERPRINT_MISMATCH",
+        "P5M_RECEIPT_FINGERPRINT_MISMATCH",
+        "P5M_SEQUENCE_HISTORY_INVALID",
+        "P5M_RECORD_BINDING_MISMATCH",
+    }
+
+
 def test_orchestrator_uses_canonical_attempt_and_forwards_session(monkeypatch: pytest.MonkeyPatch) -> None:
     source = attempt()
     monkeypatch.setattr(p2.LegalOperationsLifecycleRegistry, "get", staticmethod(lambda *args, **kwargs: source))
@@ -211,6 +405,109 @@ def test_receipt_direct_construction_rejected_and_no_service_surfaces() -> None:
     assert not hasattr(__import__("tools.eos.legal_operations.domain.process_service_field_evidence_authority", fromlist=["x"]), "ReturnOfService")
 
 
+def test_field_command_capability_maps_only_exact_active_state_commands() -> None:
+    """State capability is deterministic and carries only the opaque P2 locator."""
+    allocated = project_field_command_capability(
+        attempt=allocated_attempt(),
+        current_evidence_identity="d" * 128,
+    )
+    assert allocated.current_state is ServiceAttemptState.ALLOCATED
+    assert allocated.next_command_kinds == (
+        FieldCommandKind.TRANSITION_TO_ATTEMPTED,
+    )
+    assert allocated.to_dict() == {
+        "tenant_id": "tenant-a",
+        "attempt_id": "attempt-1",
+        "instruction_id": "instruction-1",
+        "document_id": "document-1",
+        "deputy_id": "deputy-1",
+        "current_state": "ALLOCATED",
+        "current_evidence_identity": "d" * 128,
+        "next_command_kinds": ["TRANSITION_TO_ATTEMPTED"],
+    }
+
+    attempted = project_field_command_capability(
+        attempt=attempt(),
+        current_evidence_identity="e" * 128,
+    )
+    assert attempted.current_state is ServiceAttemptState.ATTEMPTED
+    assert attempted.next_command_kinds == (
+        FieldCommandKind.RECORD_COMPLETED_OUTCOME,
+        FieldCommandKind.RECORD_NOT_COMPLETED_OUTCOME,
+    )
+
+
+def test_field_command_capability_rejects_terminal_locator_and_manual_mismatch() -> None:
+    """Terminal states, malformed locators and fabricated command tuples reject."""
+    terminal = attempt().transition_to(
+        ServiceAttemptState.COMPLETED,
+        evidence_reference="completed",
+        evidence_fingerprint=HASH,
+        occurred_at=BASE + timedelta(minutes=2),
+    )
+    with pytest.raises(
+        ProcessServiceFieldEvidenceProjectionError,
+        match="P5M_FIELD_COMMAND_STATE_UNSUPPORTED",
+    ):
+        project_field_command_capability(
+            attempt=terminal,
+            current_evidence_identity="f" * 128,
+        )
+
+    with pytest.raises(
+        ProcessServiceFieldEvidenceProjectionError,
+        match="P5M_PROJECTION_EVIDENCE_IDENTITY_INVALID",
+    ):
+        project_field_command_capability(
+            attempt=attempt(),
+            current_evidence_identity="not-a-sha3",
+        )
+
+    with pytest.raises(
+        ProcessServiceFieldEvidenceProjectionError,
+        match="P5M_PROJECTION_COMMAND_STATE_MISMATCH",
+    ):
+        FieldCommandCapabilityEntry(
+            tenant_id="tenant-a",
+            attempt_id="attempt-1",
+            instruction_id="instruction-1",
+            document_id="document-1",
+            deputy_id="deputy-1",
+            current_state=ServiceAttemptState.ALLOCATED,
+            current_evidence_identity="a" * 128,
+            next_command_kinds=(
+                FieldCommandKind.RECORD_COMPLETED_OUTCOME,
+            ),
+        )
+
+
+def test_field_command_capability_contains_no_iam_service_or_financial_authority() -> None:
+    value = project_field_command_capability(
+        attempt=attempt(),
+        current_evidence_identity="a" * 128,
+    )
+    serialized = str(value.to_dict()).casefold()
+    for forbidden in (
+        "authorized",
+        "permission",
+        "role",
+        "service_completed",
+        "return_generated",
+        "invoice",
+        "payment",
+        "settlement",
+        "revenue",
+        "ai_score",
+        "client_name",
+        "gps",
+        "distance",
+    ):
+        assert forbidden not in serialized
+    assert PROJECTION_VERSION == (
+        "v1.1.0-L8-6D-FIELD-COMMAND-CAPABILITY-PROJECTION"
+    )
+
+
 def test_projections_are_scoped_derived_views() -> None:
     source = attempt()
     first = command(source)
@@ -226,8 +523,9 @@ def test_projections_are_scoped_derived_views() -> None:
 
 
 # ARTIFACT: test_process_service_field_evidence.py
-# VERSION: v1.0.0-PROCESS-SERVICE-OFFLINE-FIELD-EVIDENCE-CERT
-# AUTHORITY BOUNDARY: direct evidence acceptance certificate only.
-# FAIL-CLOSED POSTURE: no evidence truth is inferred from device observations.
+# VERSION: v1.3.1-L8-6F-P5M-SEQUENCE-HEAD-LOOKUP-CERT-REPAIR
+# AUTHORITY BOUNDARY: direct P5M evidence acceptance plus L8-6D state-capability projection certificate only.
+# TENANT POSTURE: exact synthetic P1/P2/P5M tenant scope; cross-tenant projection inputs reject.
+# FAIL-CLOSED POSTURE: no evidence, command authorization, service or financial truth is inferred from projection state.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT

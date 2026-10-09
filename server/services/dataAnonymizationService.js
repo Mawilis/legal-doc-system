@@ -61,14 +61,8 @@ import { createLogger, format, transports } from 'winston';
 
 dotenv.config();
 
-const {
-  createHash,
-  createHmac,
-  randomBytes,
-  createCipheriv,
-  createDecipheriv,
-  generateKeyPair,
-} = crypto;
+const { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv, generateKeyPair } =
+  crypto;
 
 // Env Addition: Add these to your .env file:
 // POST_QUANTUM_CRYPTO_ENABLED=true
@@ -463,7 +457,7 @@ class DataAnonymizationService {
             process.env.NODE_ENV === 'production'
               ? {
                   require: true,
-                  rejectUnauthorized: false,
+                  rejectUnauthorized: true,
                 }
               : false,
           statement_timeout: 30000,

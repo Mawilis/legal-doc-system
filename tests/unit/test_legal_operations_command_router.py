@@ -1,22 +1,74 @@
-"""Direct certificate for the L7B Legal Operations field-service command API.
-
+"""
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API-CERT
-AUTHORITY: Transport/transaction composition only; P1/P4/P5 remain canonical.
-EPITOME: Proves authenticated-command input boundaries, one-orchestrator
-         dispatch, caller-owned transactions, path binding, and fail-closed
-         exclusion of caller-manufactured legal or financial truth.
+VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+AUTHORITY: Transport/transaction composition only; P1/P4/P5 and L8-8J remain canonical.
+EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service and bounded
+         human conflict-review command input boundaries, bound-Deputy field evidence
+         composition, transaction ownership, path binding, tenant derivation, and
+         fail-closed exclusion of browser-manufactured tenant, lifecycle, clearance,
+         authorization, or financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_operations_command_router.py
-COLLABORATION / OWNERSHIP: L7B certificate; domain and orchestrator contracts
-                            are read-only authorities under test.
-CERTIFICATION DATE: 2026-09-15
-CHANGELOG: v1.0.0 establishes deterministic command-boundary and transaction
+COLLABORATION / OWNERSHIP: L8-3/L8-6/L8-8K command certificate; canonical intake,
+                            acceptance/receipt, directory, lifecycle, persistence, field-service,
+                            conflict-review domain/orchestration/registry and authorization remain
+                            read-only authorities under test.
+CERTIFICATION DATE: 2026-10-01
+CHANGELOG: 2026-10-01 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+           aligns the direct command-router certificate with the already-certified
+           L8-8K bounded human conflict-review command route, while preserving
+           server-owned authorization, transaction, evidence and financial boundaries.
+           2026-09-23 v1.6.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-CERT
+           certifies that deputy browser models reject P5M sequence lineage,
+           new events derive sequence/fingerprint chaining from the server journal
+           head, exact event replays reuse the original immutable command/receipt,
+           and P5M -> P5D/P5E composition remains transaction-bounded.
+           2026-09-23 v1.5.1-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT-REPAIR
+           repairs certificate-only static narrowing for the required binding result
+           and rebinds the exact production VERSION assertion to v1.5.0; production
+           behavior, field-command authority, runtime coverage, and fixtures are unchanged.
+           2026-09-23 v1.5.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-CERT certifies bound-Deputy ownership enforcement,
+           server-derived observation provenance/receipt/execution identifiers,
+           atomic P5M->P5D/P5E dispatch, replay receipt reuse, forbidden browser
+           authority fields, and sheriff compatibility on legacy command routes.
+           2026-09-23 v1.4.1-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the historical command
+           regression certificate to production v1.4.1 after sovereign
+           authority-declaration alignment; command behavior is unchanged.
+           2026-09-23 v1.4.0-L8-6B-ROUTER-COMPAT-LEGAL-OPERATIONS-COMMAND-API-CERT rebinds the existing
+           intake/receipt/directory/P4/P5 command regression certificate to the
+           additive L8-6B router release and exact new deputy-principal-binding
+           route; all prior command assertions remain unchanged.
+           v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API-CERT adds
+           direct proof for the sheriff-only acceptance/office-receipt route,
+           body tenant exclusion, exact one-L8-3 dispatch, API transaction
+           commit/abort, structured L8-3 failure projection, and the canonical
+           P2 custody-history allocation read dependency.
+           v1.2.1-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT binds the
+           direct command certificate to production v1.2.1, preserving the
+           exact intake/directory/field-service runtime contract while the
+           transport uses the current non-deprecated HTTP 422 status alias.
+           v1.2.0-L8-2-LEGAL-OPERATIONS-INTAKE-COMMAND-API-CERT added
+           direct proof for the authenticated intake registration route:
+           server-derived tenant scope, forbidden tenant_id in the body, exact
+           one-L8-2 dispatch, API-owned commit/abort behavior, and structured
+           L8-2 failure projection without inventing acceptance or receipt.
+           v1.1.1-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT added
+           direct proof that structured L8-1 missing-parent failures survive
+           the transaction boundary, abort exactly once, and project as 404.
+           v1.1.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-COMMAND-API-CERT added
+           District/SheriffOffice/Deputy route, body-authority, exact tenant,
+           L8-1 dispatch, and transaction evidence while retaining the L7B
+           field-service command regression contract.
+           v1.0.0 established deterministic command-boundary and transaction
            ownership evidence for allocation, attempt, outcome, and return.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
                  command bodies cannot establish tenant scope.
-AUTHORITY BOUNDARY: Exactly one canonical orchestrator is invoked per command;
-                    transport never constructs lifecycle truth.
+AUTHORITY BOUNDARY: Ordinary commands dispatch one canonical orchestrator;
+                    L8-6E/L8-6G field commands certify only the bounded P5M ->
+                    P5D/P5E chain with server-owned sequence lineage; L8-8K
+                    conflict review delegates exclusively to certified L8-8J and
+                    transport never constructs lifecycle, clearance, waiver,
+                    representation, authorization, or financial truth.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution authority; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Extra authority fields, path divergence, invalid state,
@@ -103,7 +155,50 @@ def context() -> TenantAuthorizationContext:
         auth_method="TEST",
         status=PrincipalStatus.ACTIVE,
     )
-    decision = TenantAuthorizationDecision(True, TenantAuthorizationReason.AUTHORIZED, "tenant_sheriff", "SHERIFF")
+    decision = TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_sheriff",
+        "SHERIFF",
+    )
+    return TenantAuthorizationContext(identity, TENANT, decision)
+
+
+def deputy_context() -> TenantAuthorizationContext:
+    """Return an authorized tenant_deputy context for personal field commands."""
+    identity = SovereignIdentity(
+        identity_id="principal-deputy-l8-6e",
+        tenant_id=TENANT,
+        username="deputy",
+        email="deputy@example.test",
+        auth_method="TEST",
+        status=PrincipalStatus.ACTIVE,
+    )
+    decision = TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_deputy",
+        "DEPUTY",
+    )
+    return TenantAuthorizationContext(identity, TENANT, decision)
+
+
+def intake_context() -> TenantAuthorizationContext:
+    """Return an authorized legal-partner context for intake command composition."""
+    identity = SovereignIdentity(
+        identity_id="principal-l8-2",
+        tenant_id=TENANT,
+        username="legal-partner",
+        email="partner@example.test",
+        auth_method="TEST",
+        status=PrincipalStatus.ACTIVE,
+    )
+    decision = TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_legal_partner",
+        "LEGAL_PARTNER",
+    )
     return TenantAuthorizationContext(identity, TENANT, decision)
 
 
@@ -138,16 +233,469 @@ def attempt(state: ServiceAttemptState = ServiceAttemptState.ALLOCATED) -> Servi
 def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> None:
     paths = {route.path for route in command_api.router.routes}  # type: ignore[reportAttributeAccessIssue]
     assert paths == {
+        "/legal-operations/intake/registrations",
+        "/legal-operations/intake/acceptance-receipts",
+        "/legal-operations/directory/districts",
+        "/legal-operations/directory/sheriff-offices",
+        "/legal-operations/directory/deputies",
+        "/legal-operations/directory/deputy-principal-bindings",
         "/legal-operations/allocations",
         "/legal-operations/attempts",
         "/legal-operations/attempts/{attempt_id}/transition",
         "/legal-operations/attempts/{attempt_id}/outcome",
+        "/legal-operations/deputy/attempts/{attempt_id}/transition",
+        "/legal-operations/deputy/attempts/{attempt_id}/outcome",
+        "/legal-operations/conflict-reviews",
         "/legal-operations/executions/{execution_id}/return",
     }
     with pytest.raises(ValidationError):
         command_api.AttemptCommand(**{"attempt_authority_id": "authority", "state": "COMPLETED"})
     with pytest.raises(ValidationError):
         command_api.ReturnCommand(**{"execution_evidence_identity": HEX, "return_id": "return", "generated_at": BASE, "tenant_id": TENANT})
+    with pytest.raises(ValidationError):
+        command_api.DistrictProvisioningCommand.model_validate(
+            {
+                "district_id": "district-1",
+                "name": "District",
+                "jurisdiction_code": "ZA-GP",
+                "evidence_reference": "source",
+                "tenant_id": TENANT,
+            }
+        )
+    with pytest.raises(ValidationError):
+        command_api.IntakeRegistrationCommand.model_validate(
+            {
+                "case_matter_id": "matter-1",
+                "matter_reference": "CASE-1",
+                "case_opened_at": BASE,
+                "matter_evidence_reference": "matter-source",
+                "instruction_id": "instruction-1",
+                "instruction_registered_at": BASE + timedelta(minutes=1),
+                "instruction_evidence_reference": "instruction-source",
+                "document_id": "document-1",
+                "document_type": "summons",
+                "document_registered_at": BASE + timedelta(minutes=2),
+                "document_registration_evidence_reference": "document-source",
+                "registration_custody_event_id": "custody-1",
+                "tenant_id": TENANT,
+            }
+        )
+    with pytest.raises(ValidationError):
+        command_api.AcceptanceReceiptCommand.model_validate(
+            {
+                "instruction_id": "instruction-1",
+                "document_id": "document-1",
+                "sheriff_office_id": "office-1",
+                "accepted_at": BASE + timedelta(minutes=10),
+                "acceptance_evidence_reference": "acceptance-source",
+                "received_at": BASE + timedelta(minutes=15),
+                "receipt_evidence_reference": "receipt-source",
+                "receipt_custody_event_id": "custody-received-1",
+                "tenant_id": TENANT,
+            }
+        )
+
+    base_field = {
+        "current_evidence_identity": HEX,
+        "device_id": "device-1",
+        "event_id": "event-1",
+        "occurred_at": BASE + timedelta(minutes=1),
+        "observation_reference": "photo:field-1",
+    }
+    for forbidden in (
+        {"tenant_id": TENANT},
+        {"principal_id": "principal"},
+        {"deputy_id": "deputy"},
+        {"evidence_fingerprint": HEX},
+        {"sequence_number": 1},
+        {"previous_event_fingerprint": HEX},
+        {"receipt_id": "receipt"},
+        {"accepted_at": BASE + timedelta(minutes=2)},
+        {"service_execution_id": "execution"},
+        {"executed_at": BASE + timedelta(minutes=2)},
+    ):
+        with pytest.raises(ValidationError):
+            command_api.DeputyFieldTransitionCommand.model_validate(
+                {**base_field, **forbidden}
+            )
+
+
+def test_intake_command_uses_authorized_tenant_one_l8_2_orchestrator_and_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Intake body cannot establish tenant scope and dispatches exactly once."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    seen: list[tuple[str, object, str, str, str]] = []
+
+    def fake_intake(**kwargs: Any) -> Any:
+        seen.append(
+            (
+                kwargs["tenant_id"],
+                kwargs["session"],
+                kwargs["case_matter_id"],
+                kwargs["instruction_id"],
+                kwargs["document_id"],
+            )
+        )
+        assert kwargs["session"].in_transaction is True
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "case_matter": {"case_matter_id": kwargs["case_matter_id"]},
+                "instruction": {"instruction_id": kwargs["instruction_id"]},
+                "document": {"document_id": kwargs["document_id"]},
+                "custody_event": {
+                    "custody_event_id": kwargs["registration_custody_event_id"]
+                },
+            }
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "register_process_service_intake",
+        fake_intake,
+    )
+    command = command_api.IntakeRegistrationCommand(
+        case_matter_id="matter-l8-2",
+        matter_reference="CASE-L8-2",
+        case_opened_at=BASE,
+        matter_evidence_reference="matter-source",
+        instruction_id="instruction-l8-2",
+        instruction_registered_at=BASE + timedelta(minutes=1),
+        instruction_evidence_reference="instruction-source",
+        document_id="document-l8-2",
+        document_type="summons",
+        document_registered_at=BASE + timedelta(minutes=2),
+        document_registration_evidence_reference="document-source",
+        registration_custody_event_id="custody-l8-2",
+    )
+
+    result = asyncio.run(
+        command_api.register_process_service_intake_command(
+            command,
+            intake_context(),
+        )
+    )
+
+    assert result["disposition"] == "CREATED"
+    assert seen == [
+        (
+            TENANT,
+            client.session,
+            "matter-l8-2",
+            "instruction-l8-2",
+            "document-l8-2",
+        )
+    ]
+    assert client.session.events == ["start", "commit", "end"]
+
+
+def test_intake_structured_failure_aborts_and_maps_to_422(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L8-2 registration failures survive transaction abort and stay bounded."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    def fail(**_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceIntakeRegistrationError(
+            "L8_2_PARTIAL_REGISTRATION"
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "register_process_service_intake",
+        fail,
+    )
+    command = command_api.IntakeRegistrationCommand(
+        case_matter_id="matter-l8-2",
+        matter_reference="CASE-L8-2",
+        case_opened_at=BASE,
+        matter_evidence_reference="matter-source",
+        instruction_id="instruction-l8-2",
+        instruction_registered_at=BASE + timedelta(minutes=1),
+        instruction_evidence_reference="instruction-source",
+        document_id="document-l8-2",
+        document_type="summons",
+        document_registered_at=BASE + timedelta(minutes=2),
+        document_registration_evidence_reference="document-source",
+        registration_custody_event_id="custody-l8-2",
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.register_process_service_intake_command(
+                command,
+                intake_context(),
+            )
+        )
+
+    assert error.value.status_code == 422
+    assert error.value.detail == "LEGAL_OPERATIONS_COMMAND_INVALID"
+    assert client.session.events == ["start", "abort", "end"]
+
+
+def test_acceptance_receipt_command_uses_sheriff_tenant_one_l8_3_and_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Receipt command derives tenant from sheriff context and dispatches L8-3 once."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    seen: list[tuple[str, object, str, str, str]] = []
+
+    def fake_receipt(**kwargs: Any) -> Any:
+        seen.append(
+            (
+                kwargs["tenant_id"],
+                kwargs["session"],
+                kwargs["instruction_id"],
+                kwargs["document_id"],
+                kwargs["sheriff_office_id"],
+            )
+        )
+        assert kwargs["session"].in_transaction is True
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "accepted_instruction": {"state": "ACCEPTED"},
+                "received_document": {"state": "RECEIVED"},
+                "receipt_custody_event": {"event_type": "RECEIVED_IN_OFFICE"},
+            }
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "accept_instruction_and_receive_document",
+        fake_receipt,
+    )
+    command = command_api.AcceptanceReceiptCommand(
+        instruction_id="instruction-l8-3",
+        document_id="document-l8-3",
+        sheriff_office_id="office-l8-3",
+        accepted_at=BASE + timedelta(minutes=10),
+        acceptance_evidence_reference="acceptance-source",
+        received_at=BASE + timedelta(minutes=15),
+        receipt_evidence_reference="receipt-source",
+        receipt_custody_event_id="custody-received-l8-3",
+    )
+
+    result = asyncio.run(
+        command_api.accept_and_receive_process_service_command(
+            command,
+            context(),
+        )
+    )
+
+    assert result["disposition"] == "CREATED"
+    assert seen == [
+        (
+            TENANT,
+            client.session,
+            "instruction-l8-3",
+            "document-l8-3",
+            "office-l8-3",
+        )
+    ]
+    assert client.session.events == ["start", "commit", "end"]
+
+
+def test_acceptance_receipt_structured_failure_aborts_and_maps_to_422(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Structured L8-3 divergence aborts and remains a bounded invalid command."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    def fail(**_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceAcceptanceReceiptError(
+            "L8_3_PARTIAL_ACCEPTANCE_RECEIPT"
+        )
+
+    monkeypatch.setattr(
+        command_api,
+        "accept_instruction_and_receive_document",
+        fail,
+    )
+    command = command_api.AcceptanceReceiptCommand(
+        instruction_id="instruction-l8-3",
+        document_id="document-l8-3",
+        sheriff_office_id="office-l8-3",
+        accepted_at=BASE + timedelta(minutes=10),
+        acceptance_evidence_reference="acceptance-source",
+        received_at=BASE + timedelta(minutes=15),
+        receipt_evidence_reference="receipt-source",
+        receipt_custody_event_id="custody-received-l8-3",
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.accept_and_receive_process_service_command(
+                command,
+                context(),
+            )
+        )
+
+    assert error.value.status_code == 422
+    assert error.value.detail == "LEGAL_OPERATIONS_COMMAND_INVALID"
+    assert client.session.events == ["start", "abort", "end"]
+
+
+def test_allocation_prior_custody_uses_canonical_p2_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Transport never queries P2 durable custody record shape directly."""
+
+    marker = object()
+    seen: list[tuple[str, str, object, object]] = []
+
+    def fake_history(
+        tenant: str,
+        document_id: str,
+        collection: Any,
+        *,
+        session: object = None,
+    ) -> tuple[Any, ...]:
+        seen.append((tenant, document_id, collection, session))
+        return ()
+
+    monkeypatch.setattr(
+        command_api.LegalOperationsLifecycleRegistry,
+        "get_document_custody_history",
+        staticmethod(fake_history),
+    )
+    collection = object()
+    session = object()
+    assert command_api._prior_custody(
+        collection,
+        TENANT,
+        "document-l8-3",
+        session,
+    ) == ()
+    assert seen == [(TENANT, "document-l8-3", collection, session)]
+
+
+def test_directory_commands_use_authorized_tenant_one_l8_1_orchestrator_and_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Directory bodies never supply tenant authority and each command commits once."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    seen: list[tuple[str, str, object]] = []
+
+    def fake_district(**kwargs: Any) -> Any:
+        seen.append(("district", kwargs["tenant_id"], kwargs["session"]))
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "value": {"district_id": kwargs["district_id"]},
+            }
+        )
+
+    def fake_office(**kwargs: Any) -> Any:
+        seen.append(("office", kwargs["tenant_id"], kwargs["session"]))
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "value": {"sheriff_office_id": kwargs["sheriff_office_id"]},
+            }
+        )
+
+    def fake_deputy(**kwargs: Any) -> Any:
+        seen.append(("deputy", kwargs["tenant_id"], kwargs["session"]))
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "disposition": "CREATED",
+                "value": {"deputy_id": kwargs["deputy_id"]},
+            }
+        )
+
+    monkeypatch.setattr(command_api, "provision_district", fake_district)
+    monkeypatch.setattr(command_api, "provision_sheriff_office", fake_office)
+    monkeypatch.setattr(command_api, "provision_deputy", fake_deputy)
+
+    district = command_api.DistrictProvisioningCommand(
+        district_id="district-l8-1",
+        name="Central District",
+        jurisdiction_code="ZA-GP-1",
+        evidence_reference="district-source",
+    )
+    district_result = asyncio.run(
+        command_api.provision_district_command(district, context())
+    )
+    assert district_result["value"]["district_id"] == "district-l8-1"
+    assert client.session.events == ["start", "commit", "end"]
+
+    client.session.events.clear()
+    office = command_api.SheriffOfficeProvisioningCommand(
+        sheriff_office_id="office-l8-1",
+        district_id="district-l8-1",
+        name="Central Office",
+        evidence_reference="office-source",
+    )
+    office_result = asyncio.run(
+        command_api.provision_sheriff_office_command(office, context())
+    )
+    assert office_result["value"]["sheriff_office_id"] == "office-l8-1"
+    assert client.session.events == ["start", "commit", "end"]
+
+    client.session.events.clear()
+    deputy = command_api.DeputyProvisioningCommand(
+        deputy_id="deputy-l8-1",
+        sheriff_office_id="office-l8-1",
+        display_name="Deputy One",
+        badge_reference="badge-1",
+        evidence_reference="deputy-source",
+    )
+    deputy_result = asyncio.run(
+        command_api.provision_deputy_command(deputy, context())
+    )
+    assert deputy_result["value"]["deputy_id"] == "deputy-l8-1"
+    assert client.session.events == ["start", "commit", "end"]
+
+    assert seen == [
+        ("district", TENANT, client.session),
+        ("office", TENANT, client.session),
+        ("deputy", TENANT, client.session),
+    ]
+
+
+def test_directory_parent_absence_survives_transaction_and_maps_to_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Structured L8-1 absence aborts and remains bounded HTTP not-found."""
+
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    def fail(**_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceDirectoryProvisioningError(
+            "L8_1_DISTRICT_NOT_FOUND"
+        )
+
+    monkeypatch.setattr(command_api, "provision_sheriff_office", fail)
+    command = command_api.SheriffOfficeProvisioningCommand(
+        sheriff_office_id="office-l8-1",
+        district_id="district-missing",
+        name="Central Office",
+        evidence_reference="office-source",
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.provision_sheriff_office_command(
+                command,
+                context(),
+            )
+        )
+
+    assert error.value.status_code == 404
+    assert error.value.detail == "LEGAL_OPERATION_NOT_FOUND"
+    assert client.session.events == ["start", "abort", "end"]
 
 
 def test_attempt_create_uses_one_orchestrator_and_commits(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -180,6 +728,298 @@ def test_orchestrator_failure_aborts_without_success(monkeypatch: pytest.MonkeyP
         asyncio.run(command_api.create_process_service_attempt(command_api.AttemptCommand(attempt_authority_id="authority-l7b"), context()))
     assert error.value.status_code == 503
     assert client.session.events == ["start", "abort", "end"]
+
+
+def test_bound_deputy_scope_enforces_binding_and_preserves_sheriff_legacy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deputy attempts must match immutable binding; sheriff legacy commands stay compatible."""
+    database = Database()
+    session = Session()
+    session.in_transaction = True
+    seen: list[tuple[str, str, object, object]] = []
+
+    def resolve(
+        tenant_id: str,
+        principal_id: str,
+        collection: object,
+        *,
+        session: object = None,
+    ) -> object:
+        seen.append((tenant_id, principal_id, collection, session))
+        return SimpleNamespace(deputy_id="deputy-l7b")
+
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(resolve),
+    )
+    current = attempt()
+    binding = command_api._enforce_deputy_attempt_scope(
+        deputy_context(),
+        current,
+        database,
+        session,
+        required=True,
+    )
+    assert binding is not None
+    assert binding.deputy_id == current.deputy_id
+    assert seen[0][0:2] == (TENANT, "principal-deputy-l8-6e")
+    assert seen[0][3] is session
+
+    assert command_api._enforce_deputy_attempt_scope(
+        context(),
+        current,
+        database,
+        session,
+        required=False,
+    ) is None
+
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(lambda *_args, **_kwargs: SimpleNamespace(deputy_id="other-deputy")),
+    )
+    with pytest.raises(command_api.CommandError, match="LEGAL_OPERATION_NOT_FOUND"):
+        command_api._enforce_deputy_attempt_scope(
+            deputy_context(),
+            current,
+            database,
+            session,
+            required=True,
+        )
+
+
+def test_bound_deputy_field_sync_derives_sequence_and_reuses_exact_replay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Server owns P5M lineage for new events and exact immutable replay."""
+    database = Database()
+    session = Session()
+    session.in_transaction = True
+    fixed_now = BASE + timedelta(minutes=9)
+    current = attempt()
+    command = command_api.DeputyFieldTransitionCommand(
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-5",
+        occurred_at=BASE + timedelta(minutes=1),
+        observation_reference="photo:field-5",
+    )
+    captured: list[dict[str, Any]] = []
+    monkeypatch.setattr(command_api, "_utcnow", lambda: fixed_now)
+
+    def missing(*_args: Any, **_kwargs: Any) -> Any:
+        raise command_api.ProcessServiceFieldEvidenceRegistryError(
+            "P5M_EVIDENCE_NOT_FOUND"
+        )
+
+    monkeypatch.setattr(
+        command_api.ProcessServiceFieldEvidenceRegistry,
+        "resolve_command_receipt_by_event",
+        staticmethod(missing),
+    )
+    journal_head = SimpleNamespace(
+        sequence_number=4,
+        evidence_fingerprint="c" * 128,
+    )
+    monkeypatch.setattr(
+        command_api.ProcessServiceFieldEvidenceRegistry,
+        "resolve_latest_for_attempt_device",
+        staticmethod(lambda *_args, **_kwargs: journal_head),
+    )
+
+    def fake_sync(**kwargs: Any) -> Any:
+        captured.append(kwargs)
+        return SimpleNamespace(
+            receipt_id=kwargs["receipt_id"],
+            accepted_at=kwargs["accepted_at"],
+            evidence_reference=kwargs["evidence_reference"],
+            evidence_fingerprint=kwargs["evidence_fingerprint"],
+            evidence_identity="e" * 128,
+            to_dict=lambda: {"event_id": kwargs["event_id"]},
+        )
+
+    monkeypatch.setattr(command_api, "sync_offline_field_evidence", fake_sync)
+    first = command_api._sync_bound_deputy_field_evidence(
+        context=deputy_context(),
+        current=current,
+        command=command,
+        command_kind="TRANSITION_TO_ATTEMPTED",
+        outcome=None,
+        database=database,
+        session=session,
+    )
+    expected_reference, expected_fingerprint = command_api._field_observation_provenance(
+        context=deputy_context(),
+        current=current,
+        command_kind="TRANSITION_TO_ATTEMPTED",
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-5",
+        sequence_number=5,
+        occurred_at=BASE + timedelta(minutes=1),
+        observation_reference="photo:field-5",
+        previous_event_fingerprint="c" * 128,
+        outcome=None,
+    )
+    assert captured[0]["sequence_number"] == 5
+    assert captured[0]["previous_event_fingerprint"] == "c" * 128
+    assert captured[0]["evidence_reference"] == expected_reference
+    assert captured[0]["evidence_fingerprint"] == expected_fingerprint
+    assert captured[0]["accepted_at"] == fixed_now
+    assert captured[0]["receipt_id"] == command_api._field_receipt_id(
+        TENANT,
+        "event-5",
+    )
+    assert captured[0]["session"] is session
+
+    prior_time = BASE + timedelta(minutes=8)
+    replay_command = SimpleNamespace(
+        attempt_id=current.attempt_id,
+        device_id="device-1",
+        occurred_at=command.occurred_at,
+        evidence_reference=command.observation_reference,
+        sequence_number=5,
+        previous_event_fingerprint="c" * 128,
+        evidence_fingerprint=expected_fingerprint,
+    )
+    replay_receipt = SimpleNamespace(
+        receipt_id="prior-receipt",
+        accepted_at=prior_time,
+    )
+    monkeypatch.setattr(
+        command_api.ProcessServiceFieldEvidenceRegistry,
+        "resolve_command_receipt_by_event",
+        staticmethod(lambda *_args, **_kwargs: (replay_command, replay_receipt)),
+    )
+    second = command_api._sync_bound_deputy_field_evidence(
+        context=deputy_context(),
+        current=current,
+        command=command,
+        command_kind="TRANSITION_TO_ATTEMPTED",
+        outcome=None,
+        database=database,
+        session=session,
+    )
+    assert first.evidence_fingerprint == second.evidence_fingerprint
+    assert captured[1]["sequence_number"] == 5
+    assert captured[1]["previous_event_fingerprint"] == "c" * 128
+    assert captured[1]["receipt_id"] == "prior-receipt"
+    assert captured[1]["accepted_at"] == prior_time
+
+def test_bound_deputy_field_transition_composes_p5m_then_p5d(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One API transaction binds deputy, journals P5M, then persists P5D."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    monkeypatch.setattr(command_api, "_source", lambda *_args, **_kwargs: attempt())
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(lambda *_args, **_kwargs: SimpleNamespace(deputy_id="deputy-l7b")),
+    )
+    receipt = SimpleNamespace(
+        evidence_reference="photo:field-1",
+        evidence_fingerprint="d" * 128,
+        evidence_identity="e" * 128,
+        to_dict=lambda: {"event_id": "event-1", "evidence_fingerprint": "d" * 128},
+    )
+    seen: list[tuple[str, object]] = []
+
+    def fake_sync(**kwargs: Any) -> Any:
+        seen.append(("p5m", kwargs["session"]))
+        return receipt
+
+    def fake_transition(**kwargs: Any) -> ServiceAttempt:
+        assert kwargs["evidence_reference"] == receipt.evidence_reference
+        assert kwargs["evidence_fingerprint"] == receipt.evidence_fingerprint
+        assert kwargs["session"] is client.session
+        seen.append(("p5d", kwargs["session"]))
+        return attempt(ServiceAttemptState.ATTEMPTED)
+
+    monkeypatch.setattr(command_api, "_sync_bound_deputy_field_evidence", fake_sync)
+    monkeypatch.setattr(command_api, "transition_process_service_attempt", fake_transition)
+    command = command_api.DeputyFieldTransitionCommand(
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-1",
+        occurred_at=BASE + timedelta(minutes=1),
+        observation_reference="photo:field-1",
+    )
+    result = asyncio.run(
+        command_api.transition_bound_deputy_field_attempt_command(
+            "attempt-l7b",
+            command,
+            deputy_context(),
+        )
+    )
+    assert result["data"]["state"] == "ATTEMPTED"
+    assert result["field_evidence"]["event_id"] == "event-1"
+    assert seen == [("p5m", client.session), ("p5d", client.session)]
+    assert client.session.events == ["start", "commit", "end"]
+
+
+def test_bound_deputy_field_outcome_derives_execution_and_composes_p5e(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Terminal bridge owns execution locator/time and never accepts them from browser."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    current = attempt(ServiceAttemptState.ATTEMPTED)
+    monkeypatch.setattr(command_api, "_source", lambda *_args, **_kwargs: current)
+    monkeypatch.setattr(
+        command_api.DeputyPrincipalBindingRegistry,
+        "resolve_by_principal",
+        staticmethod(lambda *_args, **_kwargs: SimpleNamespace(deputy_id="deputy-l7b")),
+    )
+    receipt = SimpleNamespace(
+        evidence_reference="photo:terminal",
+        evidence_fingerprint="f" * 128,
+        evidence_identity="9" * 128,
+        to_dict=lambda: {"event_id": "event-terminal", "evidence_identity": "9" * 128},
+    )
+    monkeypatch.setattr(
+        command_api,
+        "_sync_bound_deputy_field_evidence",
+        lambda **_kwargs: receipt,
+    )
+    captured: dict[str, Any] = {}
+
+    def fake_outcome(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return SimpleNamespace(to_dict=lambda: {"outcome": "COMPLETED"})
+
+    monkeypatch.setattr(command_api, "transition_process_service_attempt_outcome", fake_outcome)
+    command = command_api.DeputyFieldOutcomeCommand(
+        current_evidence_identity=HEX,
+        device_id="device-1",
+        event_id="event-terminal",
+        occurred_at=BASE + timedelta(minutes=2),
+        observation_reference="photo:terminal",
+        outcome=ServiceAttemptState.COMPLETED,
+    )
+    result = asyncio.run(
+        command_api.record_bound_deputy_field_outcome_command(
+            "attempt-l7b",
+            command,
+            deputy_context(),
+        )
+    )
+    expected_id = command_api._field_service_execution_id(
+        tenant_id=TENANT,
+        attempt_id="attempt-l7b",
+        evidence_identity=receipt.evidence_identity,
+        outcome=ServiceAttemptState.COMPLETED,
+    )
+    assert captured["service_execution_id"] == expected_id
+    assert len(expected_id) == 128
+    assert captured["executed_at"] == command.occurred_at
+    assert captured["evidence_fingerprint"] == receipt.evidence_fingerprint
+    assert captured["session"] is client.session
+    assert result["field_evidence"]["event_id"] == "event-terminal"
+    assert client.session.events == ["start", "commit", "end"]
 
 
 def test_transition_path_mismatch_aborts_before_orchestrator(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -322,11 +1162,12 @@ def test_allocation_dispatches_only_p4a_and_never_accepts_caller_state(monkeypat
 def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
     names = set(vars(command_api))
     assert not any(token in names for token in {"Invoice", "Payment", "Settlement", "MongoClient", "mongo_client", "_client"})
+    assert command_api.VERSION == "v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API"
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.0.0-L7B-LEGAL-OPERATIONS-COMMAND-API-CERT
-# AUTHORITY BOUNDARY: direct command composition certificate only
+# VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+# AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service plus bounded human conflict-review command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively

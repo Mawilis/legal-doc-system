@@ -1,0 +1,70 @@
+{
+  "current_collection": "tenant_branding_entitlement_current",
+  "current_existed_before": false,
+  "current_indexes": [
+    {
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_",
+      "v": 2
+    },
+    {
+      "key": {
+        "entitlement_id": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_entitlement_current_tenant_identity_unique",
+      "unique": true,
+      "v": 2
+    }
+  ],
+  "current_indexes_sha3_512": "cd2554e5d0dca6394e41d63925418afd45e9e3d53de0263a40881951445555fedef64b1f71bccb362d77940d9f3773ef25c39d74aad35447baa84b45dd79a428",
+  "current_rows_after": 0,
+  "current_rows_before": 0,
+  "database": "wilsy",
+  "entitlement_created": false,
+  "history_collection": "tenant_branding_entitlement_history",
+  "history_existed_before": false,
+  "history_indexes": [
+    {
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_",
+      "v": 2
+    },
+    {
+      "key": {
+        "entitlement_fingerprint": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_entitlement_tenant_fingerprint_unique",
+      "unique": true,
+      "v": 2
+    },
+    {
+      "key": {
+        "entitlement_id": 1,
+        "lifecycle_revision": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_entitlement_tenant_identity_revision_unique",
+      "unique": true,
+      "v": 2
+    }
+  ],
+  "history_indexes_sha3_512": "aa06e21359b75ba4f3a743c648a59c1767920f3b281a00ad382ca1746da617918df4a04ad88b1311c92515f8a8b1fa582099dad0b951efbdf3e1c4915b0e99f8",
+  "history_rows_after": 0,
+  "history_rows_before": 0,
+  "iam_authority_created": false,
+  "kennel_authority_created": false,
+  "legacy_tenant_branding_mutated": false,
+  "payment_execution_performed": false,
+  "plan_mutated": false,
+  "schema": "WILSY-D21B-ATLAS-INDEX-INSTALLATION/V1",
+  "status": "PASS",
+  "subscription_mutated": false,
+  "tenant_current_rows_after": 0,
+  "tenant_history_rows_after": 0
+}

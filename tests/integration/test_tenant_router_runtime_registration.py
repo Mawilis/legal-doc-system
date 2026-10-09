@@ -419,7 +419,7 @@ def test_tenant_router_is_still_included_exactly_once() -> None:
 def test_legal_operations_router_is_registered_exactly_once() -> None:
     """The dedicated legal read router is mounted once without tenant widening."""
     assert _included_router_count(legal_operations_router) == 1
-    assert len(legal_operations_router.routes) == 4
+    assert len(legal_operations_router.routes) == 10
     assert _router_method_path_counter() == EXPECTED_TENANT_ROUTES
 
 

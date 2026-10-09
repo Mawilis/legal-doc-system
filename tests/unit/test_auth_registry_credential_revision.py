@@ -1,16 +1,29 @@
 """Wilsy OS credential-revision direct certificate.
 
 TITLE: WILSY OS AuthRegistry Credential Revision Direct Certificate
-VERSION: v1.1.0-R10C2F6A-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION
+VERSION: v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Independently certifies the F1 AuthRegistry credential-revision
-         persistence primitives with deterministic, offline recording fakes.
+EPITOME: Independently certifies the AuthRegistry credential-revision
+         persistence primitives plus caller-owned transactional registration
+         and canonical-tenant resolution seams with deterministic offline fakes.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_auth_registry_credential_revision.py
 COLLABORATION / OWNERSHIP: Test-only evidence; production AuthRegistry,
                            JWT, recovery, Node, and database lifecycles remain
                            read-only and caller-owned.
-CERTIFICATION / UPDATE DATE: 2026-09-22
+CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG:
+  v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT —
+    Advances the production-version oracle to v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION, proves that
+    register_user forwards the exact caller ClientSession into canonical
+    tenant resolution before credential persistence, and proves the no-session
+    path preserves the legacy resolver call shape without injecting a session.
+    Transaction lifecycle and adjacent authorities remain caller-owned.
+  v1.2.0-D15G-DEV-TRANSACTIONAL-REGISTRATION-CERT —
+    Advances the production-version oracle to v1.10.0-D15G-DEV-TRANSACTIONAL-USER-REGISTRATION, freezes the
+    register_user public session seam, proves exact caller-session propagation
+    to the single credential insert, proves no-session compatibility, and
+    proves the registry still owns no transaction lifecycle or adjacent
+    authority creation.
   v1.1.0-R10C2F6A-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION —
     Advances the exact production-version oracle from the F1/v1.8 authority
     to the F6/v1.9 candidate while preserving every F2 credential-revision
@@ -26,9 +39,11 @@ SECURITY / PRIVACY POSTURE: Synthetic values only; bearer and hash sentinels
                             are never used as test identifiers or diagnostics.
 TENANT BOUNDARY: Every mutation assertion requires the exact durable tenant
                  and principal predicate; cross-tenant deletion is rejected.
-AUTHORITY BOUNDARY: AuthRegistry credential persistence seams only. JWT
-                    revision cutover, reset orchestration, recovery
-                    consumption, and Node interlock remain outside this file.
+AUTHORITY BOUNDARY: AuthRegistry credential persistence, registration, and
+                    canonical-tenant transaction-participation seams only.
+                    Principal, membership, business-role, authorization-role,
+                    JWT, reset/recovery, Node, and transaction ownership remain
+                    outside this file.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusively financial.
 """
 
@@ -162,8 +177,12 @@ class _RecordingDatabase:
 
 class _TenantRegistry:
     @staticmethod
-    def resolve_canonical_tenant(value: object, allow_alias: bool = False) -> SimpleNamespace:
-        del allow_alias
+    def resolve_canonical_tenant(
+        value: object,
+        allow_alias: bool = False,
+        session: Any = None,
+    ) -> SimpleNamespace:
+        del allow_alias, session
         if value not in {"TENANT-ONE", "TENANT-TWO"}:
             raise ValueError("synthetic tenant is not canonical")
         return SimpleNamespace(tenant_id=value)
@@ -215,7 +234,11 @@ def _user_calls(collection: _RecordingCollection, operation: str) -> list[dict[s
 
 
 def test_public_api_signatures_and_certificate_version() -> None:
-    assert auth_registry_module.VERSION == "v1.9.0-R10C2F6-ACCESS-PREAUTH-ISSUER-BINDING"
+    assert auth_registry_module.VERSION == "v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION"
+    assert list(inspect.signature(AuthRegistry.register_user).parameters) == [
+        "self", "email", "password", "firstName", "lastName", "role", "tenantId", "session"
+    ]
+    assert inspect.signature(AuthRegistry.register_user).parameters["session"].default is None
     assert list(inspect.signature(AuthRegistry.get_credential_revision).parameters) == [
         "self", "tenant_id", "user_id", "session"
     ]
@@ -234,12 +257,91 @@ def test_register_user_persists_explicit_revision_zero(
     harness: tuple[AuthRegistry, _RecordingDatabase], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     registry, database = harness
+    tenant_calls: list[tuple[object, bool]] = []
+
+    def legacy_resolver(
+        value: object,
+        allow_alias: bool = False,
+    ) -> SimpleNamespace:
+        tenant_calls.append((value, allow_alias))
+        return SimpleNamespace(tenant_id=value)
+
+    monkeypatch.setattr(
+        registry.tenant_registry,
+        "resolve_canonical_tenant",
+        legacy_resolver,
+    )
     monkeypatch.setattr(registry, "hash_password", lambda _password: "bcrypt-registration-synthetic")
     user = registry.register_user("new@example.com", "approved-password", "New", "User", "USER", "TENANT-ONE")
     inserted = _users(database).documents[-1]
+    calls = _user_calls(_users(database), "insert_one")
     assert user.id == inserted["user_id"]
     assert inserted["credential_revision"] == 0
     assert inserted["passwordHash"] == "bcrypt-registration-synthetic"
+    assert calls[-1]["kwargs"] == {}
+    assert tenant_calls == [("TENANT-ONE", True)]
+
+
+def test_register_user_forwards_exact_caller_session_without_owning_transaction(
+    harness: tuple[AuthRegistry, _RecordingDatabase], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    registry, database = harness
+    session = _RecordingSession()
+    tenant_calls: list[dict[str, Any]] = []
+
+    def transactional_resolver(
+        value: object,
+        allow_alias: bool = False,
+        session: Any = None,
+    ) -> SimpleNamespace:
+        tenant_calls.append(
+            {
+                "value": value,
+                "allow_alias": allow_alias,
+                "session": session,
+            }
+        )
+        return SimpleNamespace(tenant_id=value)
+
+    monkeypatch.setattr(
+        registry.tenant_registry,
+        "resolve_canonical_tenant",
+        transactional_resolver,
+    )
+    monkeypatch.setattr(registry, "hash_password", lambda _password: "bcrypt-transactional-registration-synthetic")
+
+    user = registry.register_user(
+        "persona@example.com",
+        "approved-password",
+        "Persona",
+        "Principal",
+        "USER",
+        "TENANT-ONE",
+        session=session,
+    )
+
+    inserts = _user_calls(_users(database), "insert_one")
+    assert len(inserts) == 1
+    assert inserts[0]["kwargs"] == {"session": session}
+    assert inserts[0]["document"]["user_id"] == user.id
+    assert inserts[0]["document"]["tenantId"] == "TENANT-ONE"
+    assert inserts[0]["document"]["credential_revision"] == 0
+    assert inserts[0]["document"]["passwordHash"] == "bcrypt-transactional-registration-synthetic"
+    assert tenant_calls == [
+        {
+            "value": "TENANT-ONE",
+            "allow_alias": True,
+            "session": session,
+        }
+    ]
+    assert session.start_calls == 0
+    assert session.commit_calls == 0
+    assert session.abort_calls == 0
+    assert session.retry_calls == 0
+    assert _sessions(database).calls == []
+    assert _refresh(database).calls == []
+    assert database.collections["principal_authorities"].calls == []
+    assert database.collections["otp_secrets"].calls == []
 
 
 def test_missing_revision_hydrates_zero_without_write_on_read(
@@ -598,9 +700,9 @@ def test_certificate_is_offline_and_does_not_construct_clients() -> None:
 
 
 # ARTIFACT: tests/unit/test_auth_registry_credential_revision.py
-# VERSION: v1.1.0-R10C2F6A-AUTH-REGISTRY-CREDENTIAL-REVISION-CERT-RECONCILIATION
-# AUTHORITY BOUNDARY: direct offline evidence for AuthRegistry F1 primitives
-# TENANT POSTURE: exact tenant + principal predicates are required
-# FAIL-CLOSED POSTURE: malformed state, races, count anomalies, and readback drift fail
+# VERSION: v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT
+# AUTHORITY BOUNDARY: direct offline evidence for AuthRegistry credential, tenant-resolution, and caller-transaction registration seams
+# TENANT POSTURE: canonical tenant resolution and credential persistence preserve exact caller transaction scope
+# FAIL-CLOSED POSTURE: malformed state, races, count anomalies, readback drift, and transaction-boundary violations fail
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

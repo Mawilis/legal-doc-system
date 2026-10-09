@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING
+VERSION: v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -7,8 +7,26 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION/UPDATE DATE: 2026-08-29.
+CERTIFICATION/UPDATE DATE: 2026-09-24.
 CHANGELOG:
+  v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP: Adds authenticated current-branding asset delivery at /auth/workspace-branding/{logo|favicon}. The browser may select only the closed asset kind; tenant, reference, fingerprint and media identity are server-derived from the revalidated workspace and D21B10 current-branding delivery chain. Each bounded attempt owns a fresh read transaction, retries only governed whole-transaction races, and returns exact immutable D21B5B bytes with private/no-store, nosniff and same-origin response headers. Missing current branding/asset returns bounded 404; authority outage/corruption returns 503. No public URL, filesystem path, base64, upload, IAM, legal-command or financial authority is created.
+  v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION: Adds the D21B6 current-branding composer to authenticated workspace-bootstrap under a fresh caller-owned Mongo read transaction. Lawful absence is projected explicitly as workspace.branding=null; configured branding is emitted only after current ACTIVE D21B2B entitlement, exact D21B4B current profile/selection, and D21B5B asset correlation. Governed whole-transaction retry is bounded to three fresh sessions; authority outage/corruption fails bounded 503. No raw asset bytes, public URL, browser/JWT/local-storage branding, IAM, legal-command, billing, payment, execution, or settlement authority is created.
+  v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION: Re-reads the exact durable AuthRegistry user after workspace-bootstrap has revalidated principal, membership, dedicated business role, and tenant truth, then projects only firstName/lastName as descriptive authenticated-person identity. Missing or tenant/principal-mismatched durable user state fails closed; malformed optional name text is omitted rather than inferred. Names create no membership, role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
+  v1.10.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION: Extends the authenticated workspace tenant projection with the
+  canonical tenant profile's alias, industry, region, and sector as descriptive
+  practice context only. These fields come from the already revalidated
+  TenantEntity/OrganizationProfile, cannot establish membership, role,
+  permission, entitlement, subscription, branding, or operating-model
+  authority, and add no financial execution semantics. Plan, tax/contact,
+  compliance, verification and payment fields remain excluded.
+  v1.9.0-D17-LEGAL-PRESENTATION-PERMISSION-PROJECTION: Projects only the current authorized subset of four Legal
+  Command Center presentation permissions after workspace bootstrap has re-proven
+  principal, membership, dedicated tenant business role, canonical tenant, and
+  the existing tenant authorization compositor has independently proven the
+  matching active granting-role assignment. JWT/browser/login permission claims
+  remain excluded; expected denials narrow presentation, authority outages fail
+  503, inconsistent current-state decisions fail closed, and no financial
+  execution authority is projected.
   v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING: Resolves the trusted public
   recovery-link origin only from server-owned deployment configuration, preferring
   WILSY_PUBLIC_APP_ORIGIN and then established WILSY_PUBLIC_APP_URL, CLIENT_URL,
@@ -57,17 +75,20 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Raw credentials and database documents are never returned;
 verify-token is limited to governed public fields; authentication failure remains
 fail-closed through get_current_identity.
-TENANT BOUNDARY: verify-token does not certify tenant membership; tenant context remains
-the responsibility of a separate downstream authority.
-AUTHORITY BOUNDARY: This router exposes authentication HTTP endpoints only. It does not
-own credential truth, principal lifecycle authority, tenant membership, governed role
-assignment, authorization, or financial execution.
+TENANT BOUNDARY: verify-token does not certify tenant membership. Workspace-bootstrap
+branding uses only the already revalidated projection tenant_id and every D21B6 registry
+read remains exact-tenant scoped; cross-tenant branding is never projected.
+AUTHORITY BOUNDARY: This router owns authentication HTTP transport and bounded workspace
+presentation only. D21B7 composes no branding truth: D21B2B owns entitlement currentness,
+D21B4B owns profile/selection currentness, and D21B5B owns immutable asset evidence. The
+router does not own credential truth, principal lifecycle, membership, governed roles,
+authorization, asset upload, legal commands, or financial execution.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
 
 from __future__ import annotations
 
-VERSION = "v1.7.0-R10E22-RECOVERY-CONTACT-VERIFICATION-HTTP"
+VERSION = "v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -113,12 +134,48 @@ from ..saas.auth.password_recovery_request_service import (
     PasswordRecoveryRequestServiceError,
 )
 from ..saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
-from ..auth.authentication import get_current_identity
+from ..auth.authentication import (
+    get_current_identity,
+    get_principal_authority_repository,
+)
 from ..auth.identity import SovereignIdentity
+from ..auth.tenant_access import get_tenant_membership_repository
+from ..auth.tenant_authorization import (
+    TenantAuthorizationReason,
+    authorize_tenant_operation,
+)
+from .tenant_authorization_http import (
+    get_role_assignment_repository as get_tenant_authority_role_repository,
+)
 from ..auth.workspace_bootstrap_projection import (
     WorkspaceBootstrapProjectionError,
     build_workspace_bootstrap_projection,
 )
+from ..auth.tenant_branding_workspace_projection import (
+    TenantBrandingWorkspaceProjectionError,
+    TenantBrandingWorkspaceProjectionRetryRequiredError,
+    build_tenant_branding_workspace_projection,
+)
+from ..auth.tenant_branding_workspace_asset_delivery import (
+    TenantBrandingWorkspaceAssetDelivery,
+    TenantBrandingWorkspaceAssetDeliveryError,
+    TenantBrandingWorkspaceAssetNotConfiguredError,
+    TenantBrandingWorkspaceAssetRetryRequiredError,
+    resolve_current_tenant_branding_asset,
+)
+from ..saas.billing.tenant_branding_entitlement_registry import (
+    CURRENT_COLLECTION as BRANDING_ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as BRANDING_ENTITLEMENT_HISTORY_COLLECTION,
+)
+from ..saas.billing.tenant_branding_profile_registry import (
+    CURRENT_COLLECTION as BRANDING_PROFILE_CURRENT_COLLECTION,
+    PROFILE_COLLECTION as BRANDING_PROFILE_COLLECTION,
+    SELECTION_COLLECTION as BRANDING_SELECTION_COLLECTION,
+)
+from ..saas.billing.tenant_branding_asset_registry import (
+    COLLECTION as BRANDING_ASSET_COLLECTION,
+)
+from ..saas.domain.tenant_branding_asset import TenantBrandingAssetKind
 
 # ─── Logging Discipline (Mandate §2.6) ──────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -154,6 +211,95 @@ def _tenant_id_from_user(user: Any) -> str:
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+_LEGAL_PRESENTATION_PERMISSION_BINDINGS = (
+    ("legal_operations:instruction:write", "legal_instruction_write"),
+    ("legal_operations:return:write", "legal_return_write"),
+    ("legal_operations:billing:read", "legal_billing_read"),
+    ("legal_operations:invoice:read", "legal_invoice_read"),
+)
+_LEGAL_PRESENTATION_EXPECTED_DENIALS = frozenset(
+    {
+        TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE,
+        TenantAuthorizationReason.PERMISSION_NOT_GRANTED,
+        TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE,
+    }
+)
+_LEGAL_PRESENTATION_AUTHORITY_UNAVAILABLE = frozenset(
+    {
+        TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE,
+        TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE,
+        TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE,
+        TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE,
+    }
+)
+
+
+def _workspace_legal_presentation_permissions(
+    *,
+    projection: Any,
+    principal_repository: Any,
+    membership_repository: Any,
+    role_assignment_repository: Any,
+) -> tuple[str, ...]:
+    """Resolve a bounded server-owned permission subset for browser presentation.
+
+    The durable workspace business role is already established by the bootstrap
+    projection. Each returned permission is independently re-evaluated through
+    the canonical tenant authorization compositor, including current principal,
+    membership, business-role, operation/permission binding, and active granting
+    role. Browser/JWT/login permission projections never enter this composition.
+    """
+    resolved: list[str] = []
+    for permission_id, operation in _LEGAL_PRESENTATION_PERMISSION_BINDINGS:
+        decision = authorize_tenant_operation(
+            principal_id=projection.principal_id,
+            tenant_id=projection.tenant_id,
+            permission_id=permission_id,
+            operation=operation,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            business_role_repository=role_assignment_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
+
+        if decision.reason in _LEGAL_PRESENTATION_AUTHORITY_UNAVAILABLE:
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE"
+            )
+
+        if (
+            decision.business_role is not None
+            and decision.business_role != projection.business_role
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_INVALID"
+            )
+
+        if (
+            decision.authorized is True
+            and decision.reason is TenantAuthorizationReason.AUTHORIZED
+        ):
+            resolved.append(permission_id)
+            continue
+
+        if (
+            decision.authorized is True
+            or decision.reason is TenantAuthorizationReason.AUTHORIZED
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_INVALID"
+            )
+
+        if decision.reason in _LEGAL_PRESENTATION_EXPECTED_DENIALS:
+            continue
+
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_INVALID"
+        )
+
+    return tuple(sorted(resolved))
+
+
 @router.get("/verify-token")
 @router.post("/verify-token")
 async def _verify_token(identity: SovereignIdentity = Depends(get_current_identity)) -> dict[str, object]:
@@ -170,6 +316,9 @@ def _workspace_bootstrap_http_error(
         "WORKSPACE_BOOTSTRAP_MEMBERSHIP_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID",
     }
     if code in unavailable:
         return HTTPException(
@@ -182,15 +331,255 @@ def _workspace_bootstrap_http_error(
     )
 
 
+def _workspace_principal_profile(
+    projection: Any,
+) -> tuple[str | None, str | None]:
+    """Return descriptive names from the exact durable authenticated user.
+
+    The workspace projection has already re-proven principal, tenant membership,
+    dedicated business role, and canonical tenant truth. This reread binds the
+    descriptive person profile to that exact principal and tenant; it never
+    establishes or modifies authorization. Missing, mismatched, or unavailable
+    durable identity fails closed. Malformed optional name text is omitted rather
+    than normalized, guessed from email, or replaced from browser/login state.
+    """
+    try:
+        registry = get_auth_registry(None)
+        user = registry.get_user_by_id(projection.principal_id)
+    except Exception as error:
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE"
+        ) from error
+
+    if (
+        user is None
+        or getattr(user, "id", None) != projection.principal_id
+        or getattr(user, "tenantId", None) != projection.tenant_id
+    ):
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID"
+        )
+
+    def exact_optional_name(value: object) -> str | None:
+        if (
+            not isinstance(value, str)
+            or not value
+            or value != value.strip()
+        ):
+            return None
+        return value
+
+    return (
+        exact_optional_name(getattr(user, "firstName", None)),
+        exact_optional_name(getattr(user, "lastName", None)),
+    )
+
+
+def _workspace_branding_projection(
+    tenant_id: str,
+) -> dict[str, object] | None:
+    """Return current browser-safe tenant branding under a bounded read transaction.
+
+    Each attempt owns a fresh Mongo session/transaction and supplies that exact
+    session to D21B6. Successful read-only snapshots are aborted deliberately
+    after composition because this adapter persists no state. Only the explicit
+    D21B6 whole-transaction retry signal may restart the complete read. Lawful
+    absence remains None; all authority, corruption and infrastructure failures
+    remain distinguishable from absence and fail closed.
+    """
+    try:
+        from tools.eos.kernel.db import get_client, get_database
+
+        client = get_client()
+        database = get_database()
+    except Exception as error:
+        raise TenantBrandingWorkspaceProjectionError(
+            "D21B7_BRANDING_PERSISTENCE_UNAVAILABLE"
+        ) from error
+
+    if client is None or database is None:
+        raise TenantBrandingWorkspaceProjectionError(
+            "D21B7_BRANDING_PERSISTENCE_UNAVAILABLE"
+        )
+
+    last_retry: BaseException | None = None
+    for attempt in range(3):
+        session: Any = None
+        try:
+            session = client.start_session()
+            session.start_transaction()
+            branding = build_tenant_branding_workspace_projection(
+                tenant_id=tenant_id,
+                entitlement_history_collection=database[
+                    BRANDING_ENTITLEMENT_HISTORY_COLLECTION
+                ],
+                entitlement_current_collection=database[
+                    BRANDING_ENTITLEMENT_CURRENT_COLLECTION
+                ],
+                profile_collection=database[BRANDING_PROFILE_COLLECTION],
+                selection_collection=database[BRANDING_SELECTION_COLLECTION],
+                profile_current_collection=database[
+                    BRANDING_PROFILE_CURRENT_COLLECTION
+                ],
+                asset_collection=database[BRANDING_ASSET_COLLECTION],
+                session=session,
+            )
+            marker = getattr(session, "in_transaction", False)
+            active = marker() if callable(marker) else marker
+            if active is True:
+                session.abort_transaction()
+            return None if branding is None else branding.to_dict()
+        except TenantBrandingWorkspaceProjectionRetryRequiredError as error:
+            last_retry = error
+            if attempt < 2:
+                continue
+            raise TenantBrandingWorkspaceProjectionError(
+                "D21B7_BRANDING_RETRY_EXHAUSTED"
+            ) from error
+        except TenantBrandingWorkspaceProjectionError:
+            raise
+        except Exception as error:
+            raise TenantBrandingWorkspaceProjectionError(
+                "D21B7_BRANDING_RUNTIME_UNAVAILABLE"
+            ) from error
+        finally:
+            if session is not None:
+                try:
+                    marker = getattr(session, "in_transaction", False)
+                    active = marker() if callable(marker) else marker
+                    if active is True:
+                        session.abort_transaction()
+                except Exception:
+                    pass
+                try:
+                    session.end_session()
+                except Exception:
+                    pass
+
+    raise TenantBrandingWorkspaceProjectionError(
+        "D21B7_BRANDING_RETRY_EXHAUSTED"
+    ) from last_retry
+
+
+def _workspace_branding_asset_delivery(
+    tenant_id: str,
+    asset_kind: TenantBrandingAssetKind,
+) -> TenantBrandingWorkspaceAssetDelivery:
+    """Return one current branding asset under a bounded caller-owned read transaction."""
+    try:
+        from tools.eos.kernel.db import get_client, get_database
+
+        client = get_client()
+        database = get_database()
+    except Exception as error:
+        raise TenantBrandingWorkspaceAssetDeliveryError(
+            "D21B11_BRANDING_PERSISTENCE_UNAVAILABLE"
+        ) from error
+
+    if client is None or database is None:
+        raise TenantBrandingWorkspaceAssetDeliveryError(
+            "D21B11_BRANDING_PERSISTENCE_UNAVAILABLE"
+        )
+
+    last_retry: BaseException | None = None
+    for attempt in range(3):
+        session: Any = None
+        try:
+            session = client.start_session()
+            session.start_transaction()
+            result = resolve_current_tenant_branding_asset(
+                tenant_id=tenant_id,
+                asset_kind=asset_kind,
+                entitlement_history_collection=database[
+                    BRANDING_ENTITLEMENT_HISTORY_COLLECTION
+                ],
+                entitlement_current_collection=database[
+                    BRANDING_ENTITLEMENT_CURRENT_COLLECTION
+                ],
+                profile_collection=database[BRANDING_PROFILE_COLLECTION],
+                selection_collection=database[BRANDING_SELECTION_COLLECTION],
+                profile_current_collection=database[
+                    BRANDING_PROFILE_CURRENT_COLLECTION
+                ],
+                asset_collection=database[BRANDING_ASSET_COLLECTION],
+                session=session,
+            )
+            marker = getattr(session, "in_transaction", False)
+            active = marker() if callable(marker) else marker
+            if active is True:
+                session.abort_transaction()
+            return result
+        except TenantBrandingWorkspaceAssetRetryRequiredError as error:
+            last_retry = error
+            if attempt < 2:
+                continue
+            raise TenantBrandingWorkspaceAssetDeliveryError(
+                "D21B11_BRANDING_RETRY_EXHAUSTED"
+            ) from error
+        except TenantBrandingWorkspaceAssetNotConfiguredError:
+            raise
+        except TenantBrandingWorkspaceAssetDeliveryError:
+            raise
+        except Exception as error:
+            raise TenantBrandingWorkspaceAssetDeliveryError(
+                "D21B11_BRANDING_RUNTIME_UNAVAILABLE"
+            ) from error
+        finally:
+            if session is not None:
+                try:
+                    marker = getattr(session, "in_transaction", False)
+                    active = marker() if callable(marker) else marker
+                    if active is True:
+                        session.abort_transaction()
+                except Exception:
+                    pass
+                try:
+                    session.end_session()
+                except Exception:
+                    pass
+
+    raise TenantBrandingWorkspaceAssetDeliveryError(
+        "D21B11_BRANDING_RETRY_EXHAUSTED"
+    ) from last_retry
+
+
 @router.get("/workspace-bootstrap")
 async def workspace_bootstrap(
     identity: SovereignIdentity = Depends(get_current_identity),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(
+        get_tenant_authority_role_repository
+    ),
 ) -> dict[str, object]:
     """Return one server-owned workspace projection after current authority checks."""
     try:
         projection = build_workspace_bootstrap_projection(identity=identity)
     except WorkspaceBootstrapProjectionError as error:
         raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        legal_permissions = _workspace_legal_presentation_permissions(
+            projection=projection,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        first_name, last_name = _workspace_principal_profile(projection)
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        branding = _workspace_branding_projection(projection.tenant_id)
+    except TenantBrandingWorkspaceProjectionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workspace branding authority is unavailable.",
+        ) from error
 
     tenant = projection.tenant
     organization = getattr(tenant, "organization", None)
@@ -205,6 +594,14 @@ async def workspace_bootstrap(
         if organization is not None
         else None
     )
+    industry = (
+        getattr(organization, "industry", None)
+        if organization is not None
+        else None
+    )
+    alias = getattr(tenant, "alias", None)
+    region = getattr(tenant, "region", None)
+    sector = getattr(tenant, "sector", None)
     tenant_status = getattr(tenant, "status", None)
     tenant_status = getattr(tenant_status, "value", tenant_status)
 
@@ -213,20 +610,74 @@ async def workspace_bootstrap(
         "user": {
             "id": projection.principal_id,
             "email": projection.email,
+            "firstName": first_name,
+            "lastName": last_name,
         },
         "workspace": {
             "tenantId": projection.tenant_id,
             "businessRole": projection.business_role,
             "membershipRevision": projection.membership_revision,
             "businessRoleRevision": projection.business_role_revision,
+            "legalPermissions": list(legal_permissions),
+            "branding": branding,
             "tenant": {
                 "tenantId": projection.tenant_id,
                 "name": tenant_name,
                 "legalName": legal_name,
+                "alias": alias,
+                "industry": industry,
+                "region": region,
+                "sector": sector,
                 "status": tenant_status,
             },
         },
     }
+
+
+@router.get("/workspace-branding/{asset_kind}")
+async def workspace_branding_asset(
+    asset_kind: str,
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> Response:
+    """Return exact current tenant logo/favicon bytes after workspace revalidation."""
+    try:
+        workspace = build_workspace_bootstrap_projection(identity=identity)
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        kind = TenantBrandingAssetKind(asset_kind.upper())
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace branding asset is unavailable.",
+        ) from None
+
+    try:
+        delivered = _workspace_branding_asset_delivery(
+            workspace.tenant_id,
+            kind,
+        )
+    except TenantBrandingWorkspaceAssetNotConfiguredError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace branding asset is unavailable.",
+        ) from error
+    except TenantBrandingWorkspaceAssetDeliveryError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workspace branding asset authority is unavailable.",
+        ) from error
+
+    response = Response(
+        content=delivered.content,
+        media_type=delivered.media_type,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    return response
 
 
 # ─── PASSWORD RECOVERY REQUEST ─────────────────────────────────────────────
@@ -919,10 +1370,9 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.8.0-R10E72-PRODUCTION-RECOVERY-ORIGIN-BINDING
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only;
-# credential, contact-verification, recovery, tenant, authorization, and financial truth remain separate.
-# TENANT POSTURE: recovery request uses tenant only as a lookup scope; no caller tenant authority.
-# FAIL-CLOSED POSTURE: auth fails closed; recovery initiation is enumeration-safe generic acceptance.
+# VERSION: v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
+# TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
+# FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT

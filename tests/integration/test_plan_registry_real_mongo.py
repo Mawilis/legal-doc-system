@@ -2532,3 +2532,105 @@ Certification date:
 
 WILSY OS — ALL OR NOTHING.
 """
+
+
+
+def test_real_mongo_founder_enterprise_plan_is_tenant_scoped_zero_price_branding_catalogue_truth(
+    mongo_context: _MongoContext,
+) -> None:
+    """Certify bounded Founder catalogue truth without granting entitlement."""
+    from tools.eos.saas.domain.plan import PlanFrequency
+    tenant_id = "WILSYTENANT-4CD2FZ4O"
+    plan_id = "WILSYPLAN-F0F0F0F0"
+    branding_feature = (
+        "wilsy.vas.tenant_branding.enterprise.v1"
+    )
+
+    payload = _payload(
+        name="Founder Enterprise",
+        price=0,
+        plan_type="FOUNDER_ENTERPRISE",
+        idempotency_key=(
+            "WILSY-FOUNDER-ENTERPRISE-PLAN-CERT-V1"
+        ),
+        tenant_id=tenant_id,
+        plan_id=plan_id,
+        active=True,
+    )
+    payload["features"] = [
+        branding_feature,
+    ]
+    payload["metadata"] = {
+        "classification": "FOUNDER_ENTERPRISE",
+        "scope": "TENANT_ONLY",
+        "certificate": True,
+    }
+    payload["tags"] = [
+        "founder-enterprise",
+        "tenant-scoped",
+    ]
+
+    created = PlanRegistry.create(
+        payload
+    )
+
+    assert created["success"] is True
+
+    plan = created["plan"]
+
+    assert plan.plan_id == plan_id
+    assert plan.tenant_id == tenant_id
+    assert plan.name == "Founder Enterprise"
+    assert plan.plan_type is PlanTiers.FOUNDER_ENTERPRISE
+    assert plan.price == 0.0
+    assert plan.currency == "ZAR"
+    assert plan.billing_frequency is PlanFrequency.MONTHLY
+    assert plan.active is True
+    assert plan.catalogue_version == 1
+    assert plan.features == (
+        branding_feature,
+    )
+
+    persisted = PlanRegistry.get(
+        plan_id,
+        tenant_id=tenant_id,
+        exact_tenant=True,
+    )
+
+    assert persisted is not None
+    assert persisted == plan
+
+    assert (
+        PlanRegistry.get(
+            plan_id,
+            tenant_id="TENANT-OTHER",
+            exact_tenant=True,
+        )
+        is None
+    )
+
+    assert mongo_context.collection.count_documents(
+        {
+            "plan_id": plan_id,
+            "tenant_id": tenant_id,
+        }
+    ) == 1
+
+    stored = mongo_context.collection.find_one(
+        {
+            "plan_id": plan_id,
+            "tenant_id": tenant_id,
+        }
+    )
+
+    assert stored is not None
+    assert stored["_registry_revision"] == 1
+    assert stored["price"] == 0.0
+    assert stored["catalogue_version"] == 1
+    assert stored["features"] == [
+        branding_feature,
+    ]
+
+    # Catalogue creation establishes no subscription or entitlement authority.
+    assert "subscription_id" not in stored
+    assert "entitlement_id" not in stored

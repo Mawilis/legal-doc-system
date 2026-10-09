@@ -1,0 +1,123 @@
+{
+  "asset_indexes": [
+    {
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_",
+      "v": 2
+    },
+    {
+      "key": {
+        "content_fingerprint": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_asset_tenant_content",
+      "v": 2
+    },
+    {
+      "key": {
+        "asset_reference": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_asset_tenant_reference_unique",
+      "unique": true,
+      "v": 2
+    }
+  ],
+  "asset_indexes_sha3_512": "9c6f312c60e619950bf6d04208dc7199393156f879de82f8efac485eb36d9f880001af1e301a8844991914673026700f978e330c192c9814898ae7d020438f23",
+  "asset_rows_created": 0,
+  "collections": {
+    "asset": "tenant_branding_assets",
+    "current": "tenant_branding_profile_current",
+    "profile": "tenant_branding_profiles",
+    "selection": "tenant_branding_profile_selections"
+  },
+  "current_indexes": [
+    {
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_",
+      "v": 2
+    },
+    {
+      "key": {
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_current_tenant_unique",
+      "unique": true,
+      "v": 2
+    }
+  ],
+  "current_indexes_sha3_512": "e5ec8bcfb9e7cda550274edcf6a9bc1d58b985af0956602fdb5aa3a76ba18d8a043eade2add5bdb2facd9ebcf1062ae371004f9981f5a511643aaf438af8438a",
+  "current_rows_created": 0,
+  "database": "wilsy",
+  "entitlement_mutated": false,
+  "iam_authority_created": false,
+  "kennel_authority_created": false,
+  "payment_execution_performed": false,
+  "plan_mutated": false,
+  "profile_indexes": [
+    {
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_",
+      "v": 2
+    },
+    {
+      "key": {
+        "profile_fingerprint": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_profile_tenant_fingerprint_unique",
+      "unique": true,
+      "v": 2
+    },
+    {
+      "key": {
+        "profile_id": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_profile_tenant_profile_unique",
+      "unique": true,
+      "v": 2
+    }
+  ],
+  "profile_indexes_sha3_512": "25471248ace98b733e6f7ffc6161879b5816dfb17c777cbb33f3722c93f9a54a8dba9e93b6622c45c57420e0484320b4c7392f2b438b4e1c002298b4c8fa2d4a",
+  "profile_rows_created": 0,
+  "schema": "WILSY-BRANDING-ASSET-PROFILE-ATLAS-INDEX-INSTALLATION/V1",
+  "selection_indexes": [
+    {
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_",
+      "v": 2
+    },
+    {
+      "key": {
+        "selection_revision": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_selection_tenant_revision_unique",
+      "unique": true,
+      "v": 2
+    },
+    {
+      "key": {
+        "selection_id": 1,
+        "tenant_id": 1
+      },
+      "name": "tenant_branding_selection_tenant_selection_unique",
+      "unique": true,
+      "v": 2
+    }
+  ],
+  "selection_indexes_sha3_512": "b6ad628d630bd366a81d8526ecd4acdb5a2f804656ad4c3ff78a847d77520baab0d9b1ce6824e86a2b4cb213217704f33fa58e802d37418e39a94560659ad1a5",
+  "selection_rows_created": 0,
+  "status": "PASS",
+  "subscription_mutated": false,
+  "tenant_id": "WILSYTENANT-4CD2FZ4O"
+}

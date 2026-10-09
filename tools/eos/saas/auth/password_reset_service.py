@@ -1,7 +1,7 @@
 """WILSY OS password-reset transaction orchestration.
 
 TITLE: WILSY OS Password Reset Transaction Service
-VERSION: v1.0.0-R10D1-PASSWORD-RESET-TRANSACTION-ORCHESTRATION
+VERSION: v1.1.0-R10E76-PASSWORD-POLICY-DEPENDENCY-CLASSIFICATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Composes the certified recovery-capability, password-policy,
          credential-revision, session-revocation, and tenant-bearing
@@ -11,8 +11,11 @@ COLLABORATION / OWNERSHIP: A future HTTP/API adapter supplies the recovery
                            token and proposed password. This service owns the
                            composite reset transaction; child registries own
                            only their caller-session persistence operations.
-CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10D1 establishes pre-transaction policy and bcrypt work,
+CERTIFICATION / UPDATE DATE: 2026-09-24
+CHANGELOG: v1.1.0-R10E76-PASSWORD-POLICY-DEPENDENCY-CLASSIFICATION distinguishes user-correctable password-policy
+           rejection from fail-closed compromised-password dependency failure
+           before hashing or transaction startup; no reset authority is broadened.
+           v1.0.0-R10D1 establishes pre-transaction policy and bcrypt work,
            tenant-scoped capability revalidation, atomic credential revision
            CAS, session and refresh revocation, single-use capability consume,
            and PyMongo with_transaction commit/retry ownership.
@@ -53,6 +56,7 @@ from typing import Any, Final, Protocol
 
 from .password_policy import (
     PasswordBlocklistChecker,
+    PasswordPolicyCode,
     PasswordPolicyViolation,
     validate_password,
 )
@@ -88,6 +92,7 @@ class PasswordResetCode(StrEnum):
     RECOVERY_REPLAYED = "PASSWORD_RESET_RECOVERY_REPLAYED"
     RECOVERY_PERSISTENCE_FAILURE = "PASSWORD_RESET_RECOVERY_PERSISTENCE_FAILURE"
     POLICY_REJECTED = "PASSWORD_RESET_POLICY_REJECTED"
+    POLICY_DEPENDENCY_FAILURE = "PASSWORD_RESET_POLICY_DEPENDENCY_FAILURE"
     HASHING_FAILED = "PASSWORD_RESET_HASHING_FAILED"
     CREDENTIAL_CONFLICT = "PASSWORD_RESET_CREDENTIAL_CONFLICT"
     PERSISTENCE_FAILURE = "PASSWORD_RESET_PERSISTENCE_FAILURE"
@@ -351,7 +356,14 @@ class PasswordResetService:
                 checker=self._blocklist_checker,
                 context_terms=context_terms,
             )
-        except PasswordPolicyViolation:
+        except PasswordPolicyViolation as error:
+            if error.code in {
+                PasswordPolicyCode.BLOCKLIST_UNAVAILABLE,
+                PasswordPolicyCode.BLOCKLIST_FAILURE,
+            }:
+                raise PasswordResetServiceError(
+                    PasswordResetCode.POLICY_DEPENDENCY_FAILURE
+                ) from None
             raise PasswordResetServiceError(PasswordResetCode.POLICY_REJECTED) from None
 
         try:
@@ -441,7 +453,7 @@ __all__ = [
 
 
 # ARTIFACT: password_reset_service.py
-# VERSION: v1.0.0-R10D1-PASSWORD-RESET-TRANSACTION-ORCHESTRATION
+# VERSION: v1.1.0-R10E76-PASSWORD-POLICY-DEPENDENCY-CLASSIFICATION
 # AUTHORITY BOUNDARY: composite password-reset orchestration only; child registries retain their bounded authorities
 # TENANT POSTURE: durable recovery capability supplies exact tenant/principal; selector is never trusted authority
 # FAIL-CLOSED POSTURE: policy, capability, CAS, revocation, consume, and transaction failures never return success

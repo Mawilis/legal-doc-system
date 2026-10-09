@@ -1,0 +1,68 @@
+name: D21B11 Authenticated Branding Asset HTTP Certification
+
+on:
+  push:
+    branches:
+      - legal-ops-completion-map
+    paths:
+      - "tools/eos/api/auth_router.py"
+      - "tools/eos/auth/tenant_branding_workspace_asset_delivery.py"
+      - "tests/unit/test_workspace_branding_asset_http.py"
+      - ".github/workflows/d21b11-branding-asset-http-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d21b11-http:
+    name: D21B11 asset HTTP direct and static
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Create bounded Python environment
+        run: |
+          python -m venv .d21b11-venv
+          .d21b11-venv/bin/python -m pip install --upgrade pip==25.3
+          .d21b11-venv/bin/python -m pip install -r requirements.txt
+          .d21b11-venv/bin/python -m pip install pytest==9.1.1 pyotp==2.9.0
+      - name: Compile exact D21B11 surfaces
+        run: |
+          .d21b11-venv/bin/python -m py_compile \
+            tools/eos/api/auth_router.py \
+            tools/eos/auth/tenant_branding_workspace_asset_delivery.py \
+            tests/unit/test_workspace_branding_asset_http.py
+      - name: Type-check exact D21B11 surfaces
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath .d21b11-venv/bin/python \
+            tools/eos/api/auth_router.py \
+            tools/eos/auth/tenant_branding_workspace_asset_delivery.py \
+            tests/unit/test_workspace_branding_asset_http.py
+      - name: Run exact D21B11 HTTP certificate with no skips
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(.d21b11-venv/bin/python -m pytest -q -rs tests/unit/test_workspace_branding_asset_http.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then
+            exit "$pytest_status"
+          fi
+          printf '%s\n' "$output" | grep -Eq '10 passed'
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "D21B11 certification invalid: skipped tests detected"
+            exit 1
+          fi

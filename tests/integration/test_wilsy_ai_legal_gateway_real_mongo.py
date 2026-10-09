@@ -1,7 +1,7 @@
 """WILSY AI Legal Tool Gateway official real-Mongo certificate.
 
 TITLE: WILSY AI Legal Tool Gateway Runtime Certificate
-VERSION: v1.3.0-L7B-WILSY-AI-LEGAL-TOOL-REAL-MONGO-CERT
+VERSION: v1.3.1-L7B-WILSY-AI-LEGAL-TOOL-REAL-MONGO-CERT
 AUTHORITY: Host-backed evidence that the production gateway composes its
            canonical IAM, entitlement, capacity, legal-read and invocation
            evidence authorities.
@@ -11,11 +11,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: The gateway router composes L7A/L7C reads, P4/P6B/
                             P6C commercial capacity and the L7B evidence
                             registry; Kennel EOS remains financial authority.
-CERTIFICATION / UPDATE DATE: 2026-09-15
-CHANGELOG: v1.3.0 reconciles positive visibility with all seven canonical
-           registry tools and proves capacity binds entitlement identity.
-           identities, preserving the canonical tenant business role while
-           seeding the uppercase granting role required by the permission map.
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: v1.3.1 aligns real-Mongo IAM seeding with the canonical dedicated
+           tenant_business_roles store used by tenant_authorization_http v1.1.0,
+           preserving separate business-role eligibility and uppercase granting
+           role authority while keeping the production gateway unchanged.
+           v1.3.0 reconciled positive visibility with all seven canonical
+           registry tools and proved capacity binds entitlement identity.
            v1.1.0 replaces direct synthetic registry writes with production
            router HTTP composition, real canonical auth/entitlement/lifecycle
            seed data, exact replay, tenant isolation and corruption evidence.
@@ -55,6 +57,11 @@ from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepo
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.intelligence.domain.legal_ai_gateway import (
@@ -148,9 +155,11 @@ def _seed_auth(
     principal_collection = database["principal_authorities"]
     membership_collection = database["tenant_memberships"]
     role_collection = database["role_assignments"]
+    business_role_collection = database["tenant_business_roles"]
     PrincipalAuthorityRepository.ensure_indexes(principal_collection)
     TenantMembershipRepository.ensure_indexes(membership_collection)
     RoleAssignmentRepository.ensure_indexes(role_collection)
+    TenantBusinessRoleRepository.ensure_indexes(business_role_collection)
     principal_id = f"principal-{tenant_id}"
     with database.client.start_session() as session:
         session.start_transaction()
@@ -166,15 +175,17 @@ def _seed_auth(
             membership_collection,
             session=session,
         )
-        RoleAssignmentRepository.insert(
-            RoleAssignmentAuthority(
+        TenantBusinessRoleRepository.insert(
+            TenantBusinessRoleAuthority(
                 principal_id,
                 tenant_id,
                 business_role_id,
-                RoleAssignmentStatus.ACTIVE,
+                TenantBusinessRoleStatus.ACTIVE,
                 0,
+                BASE_TIME,
+                None,
             ),
-            role_collection,
+            business_role_collection,
             session=session,
         )
         RoleAssignmentRepository.insert(
@@ -341,8 +352,11 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         authorization_role_id="LEGAL_FINANCE",
     )
     assert "tenant_legal_attorney" != "LEGAL_ATTORNEY"
-    assert database["role_assignments"].find_one(
-        {"tenant_id": TENANT_A, "role_id": "tenant_legal_attorney"}
+    assert database["tenant_business_roles"].find_one(
+        {
+            "tenant_id": TENANT_A,
+            "business_role": "tenant_legal_attorney",
+        }
     ) is not None
     assert database["role_assignments"].find_one(
         {"tenant_id": TENANT_A, "role_id": "LEGAL_ATTORNEY"}
@@ -601,7 +615,7 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
 
 
 # ARTIFACT: test_wilsy_ai_legal_gateway_real_mongo.py
-# VERSION: v1.3.0-L7B-WILSY-AI-LEGAL-TOOL-REAL-MONGO-CERT
+# VERSION: v1.3.1-L7B-WILSY-AI-LEGAL-TOOL-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: production gateway host-composition evidence only
 # TENANT POSTURE: UUID-isolated exact-tenant auth, entitlement and projection reads
 # FAIL-CLOSED POSTURE: only hello preflight availability may skip; later failures fail

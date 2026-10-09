@@ -1,17 +1,18 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN ORCHESTRATOR [V55.4.0-AUTHENTICATED-BUSINESS-GATE]                                                               ║
+ * ║ WILSY OS - SOVEREIGN ORCHESTRATOR [V55.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT]                                                               ║
  * ║ [NEURAL PRE-FETCH ENGINE | FEDERATED DATA SYNC | FORENSIC TELEMETRY BUS | AUTONOMOUS HEALING | BUSINESS CONTEXT FUSION]               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 55.4.0-AUTHENTICATED-BUSINESS-GATE | PRODUCTION HARDENED | EPITOME RELEASE                                                    ║
+ * ║ VERSION: 55.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT | PRODUCTION HARDENED | EPITOME RELEASE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignOrchestrator.jsx                        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated total system unification. The mesh must be self-healing, predictive, and forensic.    ║
  * ║ • AI Engineering (DeepSeek & Gemini) – FORTIFIED: Added Auth-Gatekeeper to obliterate 401 cascades on mount. AbortController enabled.  ║
  * ║ • AI Engineering (DeepSeek) – FIXED: Injected BusinessProvider wrapper to eliminate 'useBusiness' errors in dashboards. [2026-08-01]   ║
- * ║ • AI Engineering (Codex) – AUTH-GATED: BusinessProvider now mounts only after authoritative authentication. [2026-09-17]             ║
+ * ║ • AI Engineering (Codex) – DOMAIN-SCOPED: BusinessProvider removed from the global authenticated tree; CRM owns it explicitly. [2026-09-24] ║
+ * ║ • AI Engineering (Codex) – AUTH-GATED: BusinessProvider mounted only after authoritative authentication. [2026-09-17]                ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  *
  * @fileoverview Sovereign Orchestrator – the Central Nervous System of WILSY OS.
@@ -39,11 +40,9 @@ import React, { createContext, useContext, useEffect, useRef, useCallback, useSt
 import api from '../../services/api';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 
-// ─── BusinessContext Integration ──────────────────────────────────────────────
-// This provider ensures that CRM, HR, and Sales dashboards have access to the
-// unified BusinessContext. Without this, `useBusiness()` throws an error.
-import { BusinessProvider } from '../../contexts/BusinessContext';
-import { useTenants } from '../../contexts/tenantContext';
+// BusinessContext is intentionally not mounted globally. Dashboard shards that
+// consume it own the provider so unrelated Legal OS sessions do not trigger CRM,
+// HR, telemetry, or sales transport.
 import { useAuth } from '../../contexts/authContext.jsx';
 
 /**
@@ -101,12 +100,7 @@ export const SovereignOrchestrator = ({ children }) => {
   const [activeShards, setActiveShards] = useState(0);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
 
-  // ─── Tenant context for BusinessProvider ────────────────────────────────────
-  const tenantContext = useTenants() || {};
   const { isAuthenticated, user } = useAuth();
-  const activeTenantId = isAuthenticated
-    ? (tenantContext.activeTenant?.tenantId || user?.tenantId || '')
-    : '';
 
   /**
    * @function predictivePrefetch
@@ -300,16 +294,9 @@ export const SovereignOrchestrator = ({ children }) => {
     lastSyncTimestamp
   }), [triggerGlobalSync, predictivePrefetch, registerShard, unregisterShard, meshHealth, activeShards, lastSyncTimestamp]);
 
-  // ─── Wrap children with BusinessProvider to provide unified context ────────
-  const applicationTree = isAuthenticated ? (
-    <BusinessProvider tenantId={activeTenantId}>
-      {children}
-    </BusinessProvider>
-  ) : children;
-
   return (
     <SovereignContext.Provider value={contextValue}>
-      {applicationTree}
+      {children}
     </SovereignContext.Provider>
   );
 };
@@ -338,9 +325,9 @@ export default SovereignOrchestrator;
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: SovereignOrchestrator
- * VERSION: v55.4.0-AUTHENTICATED-BUSINESS-GATE
+ * VERSION: v55.5.0-DOMAIN-SCOPED-BUSINESS-CONTEXT
  * AUTHORITY BOUNDARY: Mesh coordination only; authentication remains AuthProvider authority.
- * TENANT POSTURE: BusinessProvider receives tenant identity only after authenticated state.
+ * TENANT POSTURE: Domain-specific business transport is not mounted by the global mesh; consuming dashboard shards own their tenant-scoped provider.
  * FAIL-CLOSED POSTURE: Unauthenticated trees do not mount BusinessProvider or protected fetches.
  * FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
  * END OF WILSY OS SOVEREIGN ARTIFACT

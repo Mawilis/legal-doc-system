@@ -1,11 +1,31 @@
-"""L7D backend boundary certificate.
+"""Backend boundary certificate for fail-closed WILSY OS API hardening.
 
-VERSION: v1.0.0-L7D-BACKEND-HARDENING-CERT
+TITLE: WILSY OS L7D Backend Hardening Certificate
+VERSION: v1.0.1-L7D-BACKEND-HARDENING-CERT
 AUTHORITY: Security-boundary evidence only; P1-P6F remain untouched.
-TENANT BOUNDARY: No test fixture grants tenant authority.
-FAIL-CLOSED POSTURE: Production defaults deny wildcard credentialed CORS,
-                       debug/docs exposure, and sensitive response caching.
+EPITOME: Certify production-safe defaults, bounded identifiers, tenant-scoped
+         foreign absence, sensitive response protections, and malformed-command
+         rejection across the composed backend surface.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_l7d_backend_hardening.py
+COLLABORATION / OWNERSHIP: Backend security certificate only; canonical
+                            domain, persistence, authorization, billing, and
+                            Kennel authorities remain outside this test.
+CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-09-23 v1.0.1-L7D-BACKEND-HARDENING-CERT updates the synthetic
+           empty lifecycle collection to support the certified P2 exact-history
+           read contract while preserving 404 foreign/hostile absence behavior.
+           2026-09-15 v1.0.0-L7D-BACKEND-HARDENING-CERT established the
+           backend fail-closed boundary certificate.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Synthetic in-memory fixtures only; no provider,
+                             credential, secret, or customer data access.
+TENANT BOUNDARY: No test fixture grants tenant authority; lifecycle doubles
+                 expose only exact tenant-scoped empty reads.
+AUTHORITY BOUNDARY: Certificate only; no lifecycle, persistence mutation,
+                    billing, invoice, payment, execution, or settlement authority.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution/settlement.
+FAIL-CLOSED DECLARATION: Hostile inputs, foreign identifiers, unsafe production
+                         defaults, and internal failures must remain bounded.
 """
 
 from __future__ import annotations
@@ -86,12 +106,24 @@ def test_api_server_production_docs_gate(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 class _TenantScopedEmptyCollection:
+    """Synthetic exact-scope empty collection for read-boundary certificates."""
+
     def __init__(self) -> None:
         self.queries: list[dict[str, object]] = []
 
-    def find_one(self, query: dict[str, object]) -> None:
-        self.queries.append(query)
+    def find_one(self, query: dict[str, object], **_kwargs: object) -> None:
+        """Record one exact single-record predicate and return bounded absence."""
+        self.queries.append(dict(query))
         return None
+
+    def find(
+        self,
+        query: dict[str, object],
+        **_kwargs: object,
+    ) -> tuple[dict[str, object], ...]:
+        """Record one exact history predicate and return bounded empty history."""
+        self.queries.append(dict(query))
+        return ()
 
 
 def _tenant_context(tenant_id: str = "tenant-a") -> SimpleNamespace:
@@ -169,7 +201,7 @@ def test_hostile_identifiers_are_bounded(identifier: str) -> None:
 
 
 # ARTIFACT: test_l7d_backend_hardening.py
-# VERSION: v1.0.0-L7D-BACKEND-HARDENING-CERT
+# VERSION: v1.0.1-L7D-BACKEND-HARDENING-CERT
 # AUTHORITY BOUNDARY: security certificate evidence only.
 # TENANT POSTURE: no tenant authority is created.
 # FAIL-CLOSED POSTURE: hostile defaults and internal errors are rejected.

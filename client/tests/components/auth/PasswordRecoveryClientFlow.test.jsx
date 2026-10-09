@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PASSWORD RECOVERY CLIENT FLOW CERTIFICATE
- * VERSION: v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT
+ * VERSION: v1.1.0-R10E76-PASSWORD-POLICY-GUIDANCE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the browser projection from recovery request through
  *          verification-link confirmation and reset-link completion, including
@@ -9,8 +9,11 @@
  * COLLABORATION / OWNERSHIP: Exercises PasswordRecoveryRequestPortal,
  *                            RecoveryContactVerificationPortal, and
  *                            PasswordResetPortal with mocked transport only.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Replaces an over-broad anti-enumeration negative regex
+ * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CHANGELOG: v1.1.0-R10E76-PASSWORD-POLICY-GUIDANCE-CERT — Certifies visible canonical password requirements,
+ *            local rejection of provable policy violations before transport,
+ *            and distinct bounded recovery-link versus password-policy feedback.
+ *            v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Replaces an over-broad anti-enumeration negative regex
  *            with positive privacy-copy evidence plus bounded forbidden
  *            disclosure phrases; production recovery behavior is unchanged.
  *            v1.0.1-R10E59-PASSWORD-RECOVERY-CLIENT-FLOW-CERT — Disambiguates repeated recovery-link guidance and waits
@@ -218,6 +221,107 @@ describe('R10E56 password recovery client flow certificate', () => {
     replaceSpy.mockRestore();
   });
 
+  it('shows the complete reset password requirements before submission', () => {
+    render(
+      <MemoryRouter initialEntries={[
+        '/reset-password#tenant=TENANT-R10E56&recovery=reset-secret-r10e59',
+      ]}>
+        <PasswordResetPortal />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: /password requirements/i })).toBeInTheDocument();
+    expect(screen.getByText(/use 15–64 characters/i)).toBeInTheDocument();
+    expect(screen.getByText(/72 UTF-8 bytes/i)).toBeInTheDocument();
+    expect(screen.getByText(/do not use control characters/i)).toBeInTheDocument();
+    expect(screen.getByText(/compromised-password safety check/i)).toBeInTheDocument();
+    expect(screen.getByText(/uppercase letters, numbers, and symbols are not mandatory/i)).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/^new password$/i);
+    expect(input).toHaveAttribute('minlength', '15');
+    expect(input).toHaveAttribute('maxlength', '64');
+  });
+
+  it('blocks a too-short password locally without spending recovery transport', async () => {
+    render(
+      <MemoryRouter initialEntries={[
+        '/reset-password#tenant=TENANT-R10E56&recovery=reset-secret-r10e59',
+      ]}>
+        <PasswordResetPortal />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText(/^new password$/i), {
+      target: { value: 'short password' },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm new password/i), {
+      target: { value: 'short password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^reset password$/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Use at least 15 characters');
+    expect(resetPassword).not.toHaveBeenCalled();
+  });
+
+  it('renders bounded invalid-link feedback from the reset authority', async () => {
+    resetPassword.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { detail: 'Password reset request is invalid or expired.' },
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={[
+        '/reset-password#tenant=TENANT-R10E56&recovery=reset-secret-r10e59',
+      ]}>
+        <PasswordResetPortal />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText(/^new password$/i), {
+      target: { value: 'synthetic unique reset password' },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm new password/i), {
+      target: { value: 'synthetic unique reset password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^reset password$/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This recovery link is invalid, expired, or already used',
+    );
+  });
+
+  it('renders bounded password-policy feedback without exposing server internals', async () => {
+    resetPassword.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { detail: 'The new password does not meet password requirements.' },
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={[
+        '/reset-password#tenant=TENANT-R10E56&recovery=reset-secret-r10e59',
+      ]}>
+        <PasswordResetPortal />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText(/^new password$/i), {
+      target: { value: 'synthetic unique reset password' },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm new password/i), {
+      target: { value: 'synthetic unique reset password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^reset password$/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'WILSY could not accept this password under the security policy',
+    );
+    expect(screen.queryByText(/hibp|sha-1|token digest|credential revision/i)).not.toBeInTheDocument();
+  });
+
   it('keeps password confirmation local and blocks mismatches before transport', async () => {
     render(
       <MemoryRouter initialEntries={[
@@ -242,7 +346,7 @@ describe('R10E56 password recovery client flow certificate', () => {
 
 /**
  * ARTIFACT: PasswordRecoveryClientFlow.test.jsx
- * VERSION: v1.0.2-R10E63-PASSWORD-RECOVERY-CLIENT-FLOW-CERT
+ * VERSION: v1.1.0-R10E76-PASSWORD-POLICY-GUIDANCE-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection and mocked transport evidence only
  * TENANT POSTURE: workspace/fragment tenant values remain lookup selectors only
  * FAIL-CLOSED POSTURE: missing/mismatched capability inputs cannot create verified contact or reset

@@ -407,8 +407,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 │   │   │   └── operating
 │   │   │       ├── KnowledgeOperatingBar.jsx
 │   │   │       └── KnowledgeOperatingBar.module.css
-│   │   ├── legal
-│   │   │   └── LegalDashboard.jsx
 │   │   ├── longevity_sciences
 │   │   │   └── LongevityDashboard.jsx
 │   │   ├── marketing
@@ -642,7 +640,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 │   │   ├── financeService.js
 │   │   ├── hrService.js
 │   │   ├── itService.js
-│   │   ├── legalService.js
 │   │   ├── longevityService.js
 │   │   ├── marketingService.js
 │   │   ├── pdfService.js
@@ -923,7 +920,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 | `./src/components/it/ITDashboard.jsx` | ITDashboard.jsx | Production Ready |
 | `./src/components/knowledge/WilsyKnowledgeBaseVault.jsx` | WilsyKnowledgeBaseVault.jsx | Production Ready |
 | `./src/components/knowledge/operating/KnowledgeOperatingBar.jsx` | KnowledgeOperatingBar.jsx | Production Ready |
-| `./src/components/legal/LegalDashboard.jsx` | LegalDashboard.jsx | Production Ready |
 | `./src/components/longevity_sciences/LongevityDashboard.jsx` | LongevityDashboard.jsx | Production Ready |
 | `./src/components/marketing/MarketingDashboard.jsx` | MarketingDashboard.jsx | Production Ready |
 | `./src/components/operating-console/ExecutiveOperatingConsole.jsx` | ExecutiveOperatingConsole.jsx | Production Ready |
@@ -1087,7 +1083,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 | `./src/services/financeService.js` | financeService.js | Production Ready |
 | `./src/services/hrService.js` | hrService.js | Production Ready |
 | `./src/services/itService.js` | itService.js | Production Ready |
-| `./src/services/legalService.js` | legalService.js | Production Ready |
 | `./src/services/longevityService.js` | longevityService.js | Production Ready |
 | `./src/services/marketingService.js` | marketingService.js | Production Ready |
 | `./src/services/pdfService.js` | pdfService.js | Production Ready |

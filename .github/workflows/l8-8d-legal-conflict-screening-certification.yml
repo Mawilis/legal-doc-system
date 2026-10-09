@@ -1,0 +1,62 @@
+name: L8-8D Legal Conflict Screening Certification
+
+on:
+  push:
+    branches:
+      - legal-ops-completion-map
+    paths:
+      - "tools/eos/legal_operations/domain/legal_conflict_screening.py"
+      - "tools/eos/legal_operations/domain/legal_matter_party.py"
+      - "tests/unit/test_legal_conflict_screening.py"
+      - ".github/workflows/l8-8d-legal-conflict-screening-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  l8-8d-domain:
+    name: L8-8D direct and static
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install bounded dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pytest==9.1.1 pymongo==4.16.0
+      - name: Compile exact L8-8D surfaces
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/domain/legal_conflict_screening.py \
+            tests/unit/test_legal_conflict_screening.py
+      - name: Type-check exact L8-8D surfaces
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath "$(command -v python)" \
+            tools/eos/legal_operations/domain/legal_conflict_screening.py \
+            tests/unit/test_legal_conflict_screening.py
+      - name: Run exact L8-8D direct certificate with no skips
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs tests/unit/test_legal_conflict_screening.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi
+          printf '%s\n' "$output" | grep -Eq '18 passed'
+          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+            echo "L8-8D certification invalid: skipped tests detected"
+            exit 1
+          fi

@@ -1,0 +1,53 @@
+name: D21B8 AuthContext Tenant Branding Projection Certification
+
+on:
+  push:
+    branches:
+      - legal-ops-completion-map
+    paths:
+      - "client/src/contexts/authContext.jsx"
+      - "client/tests/contexts/authContext.authoritative.test.jsx"
+      - ".github/workflows/d21b8-authcontext-branding-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d21b8-authcontext:
+    name: D21B8 AuthContext focused and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install exact client dependencies
+        working-directory: client
+        run: npm ci
+      - name: Run exact D21B8 authoritative AuthContext certificate
+        working-directory: client
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(npm run test:run -- tests/contexts/authContext.authoritative.test.jsx 2>&1)"
+          test_status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$test_status" -ne 0 ]; then
+            exit "$test_status"
+          fi
+          printf '%s\n' "$output" | grep -Eq '31 passed'
+          if printf '%s\n' "$output" | grep -Eqi '[1-9][0-9]* skipped|skipped \([1-9]'; then
+            echo "D21B8 certification invalid: skipped tests detected"
+            exit 1
+          fi
+      - name: Build production client
+        working-directory: client
+        run: npm run build
