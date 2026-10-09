@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.36.0-CRM-P9C1-LEAD-PERMISSIONS
+VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -12,6 +12,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+    2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
+    adds tenant_product_entitlement:issue as one exact own-tenant,
+    membership-required and non-financial permission for bounded product
+    entitlement evidence issuance from canonical commercial truth. It grants
+    no subscription, plan, IAM assignment, route or financial authority.
     2026-10-06 v1.36.0-CRM-P9C1-LEAD-PERMISSIONS adds the exact
     own-tenant crm:lead:create and crm:lead:read canonical permission
     vocabulary for the separately governed CRM Lead command authority.
@@ -171,7 +176,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.36.0-CRM-P9C1-LEAD-PERMISSIONS"
+VERSION = "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -361,6 +366,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "manage own-tenant subscription lifecycle truth",
+            tenant=True,
+        ),
+        "tenant_product_entitlement:issue": _meta(
+            "tenant_product_entitlement:issue",
+            "TENANT",
+            "TENANT",
+            "issue bounded own-tenant product entitlement evidence from canonical commercial truth",
             tenant=True,
         ),
         "crm:lead:create": _meta(
@@ -921,7 +933,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.36.0-CRM-P9C1-LEAD-PERMISSIONS
+# VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

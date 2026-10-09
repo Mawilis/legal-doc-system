@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
+VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-04.
 CHANGELOG:
+2026-10-09 v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT
+updates the closed permission count and canonical version for the exact
+tenant_product_entitlement:issue authority substrate.
     2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
     certifies hr:employee_relation:write as the 73rd canonical
     permission and 76th total row with exact TENANT scope,
@@ -121,12 +124,12 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.2.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION-CERT"
+VERSION = "v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.36.0-CRM-P9C1-LEAD-PERMISSIONS"
+    assert POLICY_VERSION == "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -146,6 +149,7 @@ def test_permission_canon_properties() -> None:
         "tenant:role_assignment:write",
         "subscription:read",
         "subscription:manage",
+        "tenant_product_entitlement:issue",
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
@@ -209,9 +213,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 95
+    ) == 96
 
-    assert len(rows) == 98
+    assert len(rows) == 99
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -747,7 +751,7 @@ def test_no_domain_profile_permissions():
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION-CERT
+# VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
