@@ -201,9 +201,10 @@ def _hash_candidate(candidate: str) -> tuple[str, str]:
         # HIBP range API protocol requires SHA-1 solely to derive the lookup
         # prefix/suffix; this digest is never used for password storage,
         # authentication, key derivation, or integrity protection.
+        # codeql[py/weak-sensitive-data-hashing]
         digest = hashlib.sha1(
             candidate.encode("utf-8"), usedforsecurity=False
-        ).hexdigest().upper()  # lgtm[py/weak-sensitive-data-hashing]
+        ).hexdigest().upper()
     except (UnicodeEncodeError, ValueError):
         raise PasswordBlocklistProviderError(PasswordBlocklistProviderCode.INVALID_INPUT) from None
     if len(digest) != SHA1_HEX_CHARACTERS:
