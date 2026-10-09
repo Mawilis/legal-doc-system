@@ -1335,7 +1335,7 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.3.3-LIFECYCLE-PROOF-STATE"
+        == "v1.4.0-CALLER-TRANSACTION-INJECTION"
     )
     assert (
         VERSION
