@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription Router Authority Real-Mongo Certification.
-VERSION: v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
+VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT
 AUTHORITY: Actual-Mongo HTTP certification of subscription identity, tenant
 membership, permission and persistence composition.
 EPITOME: Executes the real FastAPI subscription router with current JWT
@@ -8,8 +8,14 @@ actual Mongo subscription persistence. Proves raw tenant context, JWT
 projections and cross-tenant requests cannot bypass durable authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_subscription_router_authority_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-03.
+CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
+    v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT certifies that create,
+    resume and reactivate retain current HTTP authority and envelopes while
+    delegating atomic subscription/Legal-entitlement composition to D22B3.
+    It proves non-Legal success, Legal atomicity, bounded service failures,
+    foreign-tenant denial and continued direct registry ownership elsewhere.
+
     v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT aligns the current
     SubscriptionRegistry production-version assertion with the bounded v1.3.1
     billing-intelligence read seam while preserving all v1.3.0 calendar-billing
@@ -70,7 +76,9 @@ from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
 import tools.eos.api.subscription_router as router_module
+import tools.eos.kernel.db as kernel_db
 import tools.eos.saas.billing.plan_registry as plan_registry_module
+import tools.eos.saas.billing.subscription_active_entitlement_composition_service as service_module
 import tools.eos.saas.billing.subscription_registry as registry_module
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.api.subscription_router import subscription_router
@@ -118,10 +126,22 @@ from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
 )
+from tools.eos.saas.domain.subscription import SubscriptionStatus
+from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
+    COLLECTION as AUTHORIZATION_COLLECTION,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_issuance_orchestrator import (
+    TenantProductEntitlementIssuanceOrchestratorError,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    CURRENT_COLLECTION as ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as ENTITLEMENT_HISTORY_COLLECTION,
+    ensure_indexes as ensure_entitlement_indexes,
+)
 
 
 VERSION = (
-    "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
+    "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT"
 )
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
@@ -398,7 +418,7 @@ def _payload(
     )
 
 @pytest.fixture()
-def context() -> Iterator[Context]:
+def context(monkeypatch: pytest.MonkeyPatch) -> Iterator[Context]:
     """Create actual authority and subscription persistence in isolated Mongo."""
     if not URI:
         pytest.fail(
@@ -435,6 +455,11 @@ def context() -> Iterator[Context]:
         )
 
     database = mongo[database_name]
+
+    monkeypatch.setattr(kernel_db, "get_client", lambda: mongo)
+    monkeypatch.setattr(kernel_db, "get_database", lambda: database)
+    monkeypatch.setattr(service_module, "get_client", lambda: mongo)
+    monkeypatch.setattr(service_module, "get_database", lambda: database)
 
     principals = database[
         "principal_authorities"
@@ -499,6 +524,11 @@ def context() -> Iterator[Context]:
     )
 
     PlanRegistry._ensure_indexes()
+    service_module._authorization_registry(database).ensure_indexes()
+    ensure_entitlement_indexes(
+        database[ENTITLEMENT_HISTORY_COLLECTION],
+        database[ENTITLEMENT_CURRENT_COLLECTION],
+    )
 
     app = FastAPI()
     register_error_handlers(
@@ -615,6 +645,25 @@ def _seed(
             ),
             context.roles,
         )
+
+
+def _seed_business_role(
+    context: Context,
+    *,
+    principal_id: str,
+    tenant_id: str,
+) -> None:
+    """Add the exact tenant_owner eligibility required by positive issuance."""
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority(
+            principal_id,
+            tenant_id,
+            "tenant_owner",
+            RoleAssignmentStatus.ACTIVE,
+            0,
+        ),
+        context.roles,
+    )
 
 
 def _token(
@@ -912,6 +961,8 @@ def test_enterprise_admin_create_persists_real_authorized_tenant(
     )
 
     assert response.status_code == 201
+    assert response.json()["execution_id"] == "SUB-CREATE"
+    assert response.json()["message"] == "Subscription created successfully."
 
     persisted = (
         context.subscriptions
@@ -970,7 +1021,7 @@ def test_payload_cannot_redirect_authorized_tenant(
         ),
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 422
     assert (
         context.subscriptions
         .count_documents({})
@@ -1331,7 +1382,7 @@ def test_registry_network_failure_after_valid_authority_is_bounded_503(
 def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     assert (
         router_module.VERSION
-        == "v1.2.0-CATALOGUE-PROVENANCE"
+        == "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION"
     )
     assert (
         registry_module.VERSION
@@ -1339,7 +1390,7 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         VERSION
-        == "v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT"
+        == "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT"
     )
 
 
@@ -1402,6 +1453,10 @@ def test_http_create_persists_planregistry_derived_snapshot(
         persisted["billing_frequency"]
         == plan.billing_frequency.value
     )
+    assert context.database_name
+    database = context.client[context.database_name]
+    assert database[ENTITLEMENT_CURRENT_COLLECTION].count_documents({}) == 0
+    assert database[AUTHORIZATION_COLLECTION].count_documents({}) == 0
 
 
 @pytest.mark.parametrize(
@@ -1446,7 +1501,7 @@ def test_http_create_rejects_caller_commercial_redirection(
 
     assert response.status_code == 422
     assert (
-        "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN"
+        "SUBSCRIPTION_OPERATION_REJECTED"
         in response.text
     )
     assert (
@@ -1487,9 +1542,9 @@ def test_http_neighbor_and_inactive_plans_fail_closed(
         ),
     )
 
-    assert neighbor.status_code == 404
+    assert neighbor.status_code == 422
     assert (
-        "SUBSCRIPTION_PLAN_NOT_AVAILABLE"
+        "SUBSCRIPTION_OPERATION_REJECTED"
         in neighbor.text
     )
 
@@ -1512,9 +1567,9 @@ def test_http_neighbor_and_inactive_plans_fail_closed(
         ),
     )
 
-    assert inactive.status_code == 404
+    assert inactive.status_code == 422
     assert (
-        "SUBSCRIPTION_PLAN_NOT_AVAILABLE"
+        "SUBSCRIPTION_OPERATION_REJECTED"
         in inactive.text
     )
 
@@ -1809,7 +1864,7 @@ def test_http_create_derives_calendar_period_and_denies_period_redirection(
         assert denied.status_code == 422
 
         assert (
-            "SUBSCRIPTION_COMMERCIAL_REDIRECTION_FORBIDDEN"
+            "SUBSCRIPTION_OPERATION_REJECTED"
             in denied.text
         )
 
@@ -1981,10 +2036,10 @@ def test_http_naive_start_date_fails_closed_without_subscription_persistence(
             ),
         )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     assert (
-        "SUBSCRIPTION_CREATE_FAILED"
+        "SUBSCRIPTION_OPERATION_REJECTED"
         in response.text
     )
 
@@ -1999,12 +2054,248 @@ def test_http_naive_start_date_fails_closed_without_subscription_persistence(
     )
 
 
+def test_d22b4_route_surface_and_non_migrated_registry_paths_are_exact() -> None:
+    """Only create, resume and reactivate delegate to the sealed service."""
+    routes = {
+        (str(getattr(route, "path", "")), method)
+        for route in router_module.subscription_router.routes
+        for method in getattr(route, "methods", set())
+    }
+    assert ("/api/subscriptions", "POST") in routes
+    assert ("/api/subscriptions/{subscription_id}/resume", "POST") in routes
+    assert ("/api/subscriptions/{subscription_id}/reactivate", "POST") in routes
+    source = inspect.getsource(router_module)
+    for call in (
+        "SubscriptionActiveEntitlementCompositionService.create(",
+        "SubscriptionActiveEntitlementCompositionService.resume(",
+        "SubscriptionActiveEntitlementCompositionService.reactivate(",
+    ):
+        assert source.count(call) == 1
+    for call in (
+        "SubscriptionRegistry.cancel(",
+        "SubscriptionRegistry.upgrade(",
+        "SubscriptionRegistry.downgrade(",
+        "SubscriptionRegistry.pause(",
+        "SubscriptionRegistry.update(",
+        "SubscriptionRegistry.archive(",
+    ):
+        assert source.count(call) == 1
+    assert "SubscriptionRegistry.create(" not in source
+    assert "SubscriptionRegistry.resume(" not in source
+    assert "SubscriptionRegistry.reactivate(" not in source
+    for token in (
+        "start_session(", "start_transaction(", "commit_transaction(",
+        "abort_transaction(", "with_transaction(", "TenantProductId",
+        "product_id",
+    ):
+        assert token not in source
+
+
+def test_migrated_routes_retain_exact_manage_authority_dependency() -> None:
+    """Create, resume and reactivate still depend on current subscription manage."""
+    for route in (
+        router_module.create_subscription,
+        router_module.resume_subscription,
+        router_module.reactivate_subscription,
+    ):
+        dependency = inspect.signature(route).parameters["identity"].default
+        assert getattr(dependency, "dependency", None) is router_module.SUBSCRIPTION_MANAGE_AUTHORITY
+
+
+@pytest.mark.parametrize("field", ["planId", "startDate", "idempotencyKey"])
+def test_http_create_missing_required_field_remains_exact_422(
+    context: Context,
+    field: str,
+) -> None:
+    """Transport validation precedes the sealed service with the frozen envelope."""
+    principal, tenant = f"principal-{uuid.uuid4().hex}", f"tenant-{uuid.uuid4().hex}"
+    _seed(context, principal_id=principal, tenant_id=tenant)
+    payload = _payload(tenant, f"missing-{field}-{uuid.uuid4().hex}")
+    del payload[field]
+    response = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(principal, tenant),
+        json=payload,
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == {"error": "MISSING_FIELD", "field": field}
+    assert context.subscriptions.count_documents({"tenant_id": tenant}) == 0
+
+
+def test_http_legal_create_atomically_persists_entitlement_and_envelope(
+    context: Context,
+) -> None:
+    """Authorized Legal create commits subscription, authorization and entitlement."""
+    principal, tenant = f"principal-{uuid.uuid4().hex}", f"tenant-{uuid.uuid4().hex}"
+    _seed(context, principal_id=principal, tenant_id=tenant)
+    _seed_business_role(context, principal_id=principal, tenant_id=tenant)
+    plan = _seed_plan(
+        plan="PROFESSIONAL",
+        amount=601.0,
+        tenant_id=tenant,
+        features=("legal.core",),
+    )
+    response = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(principal, tenant),
+        json=_command(tenant, f"legal-create-{uuid.uuid4().hex}", plan_id=plan.plan_id),
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["execution_id"] == "SUB-CREATE"
+    assert body["message"] == "Subscription created successfully."
+    database = context.client[context.database_name]
+    assert context.subscriptions.count_documents({"tenant_id": tenant}) == 1
+    assert database[AUTHORIZATION_COLLECTION].count_documents({"tenant_id": tenant}) == 1
+    assert database[ENTITLEMENT_CURRENT_COLLECTION].count_documents({"tenant_id": tenant}) == 1
+    assert database[ENTITLEMENT_HISTORY_COLLECTION].count_documents({"tenant_id": tenant}) == 2
+
+
+@pytest.mark.parametrize(
+    ("initial_status", "operation", "execution_id", "message"),
+    [
+        (SubscriptionStatus.PAUSED, "resume", "SUB-RESUME", "Subscription resumed successfully."),
+        (SubscriptionStatus.CANCELLED, "reactivate", "SUB-REACTIVATE", "Subscription reactivated successfully."),
+    ],
+)
+def test_http_legal_activation_paths_compose_entitlement(
+    context: Context,
+    initial_status: SubscriptionStatus,
+    operation: str,
+    execution_id: str,
+    message: str,
+) -> None:
+    """Resume and reactivate keep routes/envelopes and atomically issue Legal truth."""
+    principal, tenant = f"principal-{uuid.uuid4().hex}", f"tenant-{uuid.uuid4().hex}"
+    _seed(context, principal_id=principal, tenant_id=tenant)
+    _seed_business_role(context, principal_id=principal, tenant_id=tenant)
+    plan = _seed_plan(
+        plan="PROFESSIONAL",
+        amount=602.0 if operation == "resume" else 603.0,
+        tenant_id=tenant,
+        features=("legal.core",),
+    )
+    payload = _command(
+        tenant, f"legal-{operation}-{uuid.uuid4().hex}", plan_id=plan.plan_id
+    )
+    payload["status"] = initial_status.value
+    created = SubscriptionRegistry.create(payload, tenant_id_header=tenant)
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+    response = _client(context).post(
+        f"/api/subscriptions/{subscription_id}/{operation}",
+        headers=_headers(principal, tenant),
+        json={"metadata": {"certificate": True}},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["execution_id"] == execution_id and body["message"] == message
+    assert body["data"]["subscription"]["status"] == SubscriptionStatus.ACTIVE.value
+    database = context.client[context.database_name]
+    assert database[ENTITLEMENT_CURRENT_COLLECTION].count_documents({"tenant_id": tenant}) == 1
+
+
+def test_downstream_issuance_failure_aborts_commercial_create(
+    context: Context,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A sealed issuance failure yields bounded 503 and zero subscription write."""
+    principal, tenant = f"principal-{uuid.uuid4().hex}", f"tenant-{uuid.uuid4().hex}"
+    _seed(context, principal_id=principal, tenant_id=tenant)
+    _seed_business_role(context, principal_id=principal, tenant_id=tenant)
+    plan = _seed_plan(
+        plan="PROFESSIONAL", amount=604.0, tenant_id=tenant, features=("legal.core",)
+    )
+    calls = 0
+
+    def fail_issuance(**_kwargs: object) -> None:
+        nonlocal calls
+        calls += 1
+        raise TenantProductEntitlementIssuanceOrchestratorError("synthetic")
+
+    monkeypatch.setattr(service_module, "issue_tenant_product_entitlement", fail_issuance)
+    response = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(principal, tenant),
+        json=_command(tenant, f"issuance-fail-{uuid.uuid4().hex}", plan_id=plan.plan_id),
+    )
+    assert response.status_code == 503
+    assert "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE" in response.text
+    assert calls == 1
+    assert context.subscriptions.count_documents({"tenant_id": tenant}) == 0
+
+
+@pytest.mark.parametrize("operation", ["resume", "reactivate"])
+def test_foreign_tenant_cannot_activate_subscription(
+    context: Context,
+    operation: str,
+) -> None:
+    """Identity tenant scope makes another tenant's subscription appear absent."""
+    owner, foreign = f"principal-{uuid.uuid4().hex}", f"principal-{uuid.uuid4().hex}"
+    tenant_a, tenant_b = f"tenant-{uuid.uuid4().hex}", f"tenant-{uuid.uuid4().hex}"
+    _seed(context, principal_id=owner, tenant_id=tenant_a)
+    _seed(context, principal_id=foreign, tenant_id=tenant_b)
+    initial = SubscriptionStatus.PAUSED if operation == "resume" else SubscriptionStatus.CANCELLED
+    payload = _payload(tenant_a, f"foreign-{operation}-{uuid.uuid4().hex}")
+    payload["status"] = initial.value
+    created = SubscriptionRegistry.create(payload, tenant_id_header=tenant_a)
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+    response = _client(context).post(
+        f"/api/subscriptions/{subscription_id}/{operation}",
+        headers=_headers(foreign, tenant_b),
+        json={"metadata": {}},
+    )
+    assert response.status_code == 422
+    durable = SubscriptionRegistry.get(subscription_id, tenant_id_header=tenant_a)
+    assert durable is not None and durable.status is initial
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [
+        service_module.SubscriptionActiveEntitlementCompositionDependencyError,
+        service_module.SubscriptionActiveEntitlementCompositionIssuanceError,
+        service_module.SubscriptionActiveEntitlementCompositionRetryExhaustedError,
+        service_module.SubscriptionActiveEntitlementCompositionUnknownCommitError,
+    ],
+)
+def test_service_availability_failures_map_to_503_without_router_replay(
+    context: Context,
+    monkeypatch: pytest.MonkeyPatch,
+    error_type: type[Exception],
+) -> None:
+    """Dependency, issuance, retry and uncertain commit are called once and bounded."""
+    principal, tenant = f"principal-{uuid.uuid4().hex}", f"tenant-{uuid.uuid4().hex}"
+    _seed(context, principal_id=principal, tenant_id=tenant)
+    calls = 0
+
+    def fail(_payload: dict[str, Any], _identity: Any) -> None:
+        nonlocal calls
+        calls += 1
+        raise error_type()
+
+    monkeypatch.setattr(
+        router_module.SubscriptionActiveEntitlementCompositionService,
+        "create",
+        fail,
+    )
+    response = _client(context).post(
+        "/api/subscriptions",
+        headers=_headers(principal, tenant),
+        json=_payload(tenant, f"service-error-{uuid.uuid4().hex}"),
+    )
+    assert response.status_code == 503
+    assert "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE" in response.text
+    assert calls == 1
+
+
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_router_authority_real_mongo.py
-# VERSION: v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT
-# AUTHORITY BOUNDARY: real HTTP composition of principal, membership, permission, canonical PlanRegistry catalogue provenance and real subscription persistence only
+# VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT
+# AUTHORITY BOUNDARY: real HTTP composition of current authority with sealed subscription/Legal-entitlement service and unchanged non-migrated registry paths
 # TENANT POSTURE: raw tenant context must survive ACTIVE persisted membership and current role-assignment permission authority
 # FAIL-CLOSED POSTURE: missing identity, wrong tenant, inactive membership, absent/revoked role, projected JWT grants and persistence outage never become subscription access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively

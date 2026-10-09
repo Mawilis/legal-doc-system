@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription HTTP Authority Router.
-VERSION: v1.2.0-CATALOGUE-PROVENANCE
+VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION
 AUTHORITY: FastAPI composition of current Python identity, tenant membership,
 permission and SubscriptionRegistry authorities.
 EPITOME: Retires direct X-Tenant-ID-to-registry forwarding. Every subscription
@@ -8,8 +8,14 @@ tenant membership and current ACTIVE role assignment granting the required
 canonical subscription permission.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/subscription_router.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-03.
+CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
+    v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION replaces only create, resume
+    and reactivate direct registry calls with the sealed D22B3 active-
+    subscription/Legal-entitlement composition service. Existing routes,
+    authority dependencies, envelopes and non-migrated registry paths remain
+    unchanged; transaction and product selection stay outside the router.
+
     v1.2.0-CATALOGUE-PROVENANCE removes caller-authored Plan commercial truth
     from subscription creation and plan-change HTTP contracts. Clients select
     planId/newPlanId only; SubscriptionRegistry derives canonical PlanRegistry
@@ -67,12 +73,22 @@ from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
     SubscriptionRegistryError,
 )
+from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
+    SubscriptionActiveEntitlementCompositionDependencyError,
+    SubscriptionActiveEntitlementCompositionInputError,
+    SubscriptionActiveEntitlementCompositionIssuanceError,
+    SubscriptionActiveEntitlementCompositionLifecycleError,
+    SubscriptionActiveEntitlementCompositionRetryExhaustedError,
+    SubscriptionActiveEntitlementCompositionService,
+    SubscriptionActiveEntitlementCompositionServiceError,
+    SubscriptionActiveEntitlementCompositionUnknownCommitError,
+)
 from tools.eos.saas.domain.subscription import SubscriptionStatus
 
 from .responses import format_response
 
 
-VERSION = "v1.2.0-CATALOGUE-PROVENANCE"
+VERSION = "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION"
 
 SUBSCRIPTION_READ_PERMISSION = "subscription:read"
 SUBSCRIPTION_MANAGE_PERMISSION = "subscription:manage"
@@ -131,6 +147,58 @@ def _raise_registry_failure(
             "error":
                 "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE"
         },
+    ) from error
+
+
+def _raise_composition_failure(
+    error: SubscriptionActiveEntitlementCompositionServiceError,
+) -> NoReturn:
+    """Map sealed composition failures without replay or diagnostic leakage."""
+    logger.error(
+        "[SUBSCRIPTION_COMPOSITION_FAILURE] %s",
+        type(error).__name__,
+    )
+
+    current: BaseException | None = error.__cause__
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, SubscriptionRegistryError):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={"error": "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE"},
+            ) from error
+        current = current.__cause__ or current.__context__
+
+    if isinstance(
+        error,
+        (
+            SubscriptionActiveEntitlementCompositionInputError,
+            SubscriptionActiveEntitlementCompositionLifecycleError,
+        ),
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={"error": "SUBSCRIPTION_OPERATION_REJECTED"},
+        ) from error
+
+    if isinstance(
+        error,
+        (
+            SubscriptionActiveEntitlementCompositionDependencyError,
+            SubscriptionActiveEntitlementCompositionIssuanceError,
+            SubscriptionActiveEntitlementCompositionRetryExhaustedError,
+            SubscriptionActiveEntitlementCompositionUnknownCommitError,
+        ),
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"error": "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE"},
+        ) from error
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={"error": "SUBSCRIPTION_PERSISTENCE_UNAVAILABLE"},
     ) from error
 
 
@@ -401,23 +469,16 @@ async def create_subscription(
             )
 
     try:
-        result = SubscriptionRegistry.create(
+        result = SubscriptionActiveEntitlementCompositionService.create(
             payload,
-            tenant_id_header=tenant_id,
+            identity,
         )
-    except SubscriptionRegistryError as error:
-        _raise_registry_failure(error)
+    except SubscriptionActiveEntitlementCompositionServiceError as error:
+        _raise_composition_failure(error)
     except Exception as error:
         _raise_unexpected("CREATE", error)
 
-    if not result.get("success"):
-        _raise_result_failure(
-            result,
-            default_error=
-                "SUBSCRIPTION_CREATE_FAILED",
-        )
-
-    subscription = result["subscription"]
+    subscription = result.subscription
 
     return _response(
         request,
@@ -579,33 +640,27 @@ async def resume_subscription(
     ),
 ) -> Any:
     """Resume subscription only after current manage authorization."""
-    tenant_id = _authorized_tenant_id(identity)
+    _authorized_tenant_id(identity)
 
     try:
-        result = SubscriptionRegistry.resume(
+        result = SubscriptionActiveEntitlementCompositionService.resume(
             subscription_id,
-            tenant_id_header=tenant_id,
-            metadata=payload.get(
+            payload.get(
                 "metadata",
                 {},
             ),
+            identity,
         )
-    except SubscriptionRegistryError as error:
-        _raise_registry_failure(error)
+    except SubscriptionActiveEntitlementCompositionServiceError as error:
+        _raise_composition_failure(error)
     except Exception as error:
         _raise_unexpected("RESUME", error)
-
-    if not result.get("success"):
-        _raise_result_failure(
-            result,
-            default_error="RESUME_FAILED",
-        )
 
     return _response(
         request,
         data={
             "subscription":
-                result["subscription"].to_dict()
+                result.subscription.to_dict()
         },
         message="Subscription resumed successfully.",
         execution_id="SUB-RESUME",
@@ -748,36 +803,30 @@ async def reactivate_subscription(
     ),
 ) -> Any:
     """Reactivate cancelled subscription after current manage authority."""
-    tenant_id = _authorized_tenant_id(identity)
+    _authorized_tenant_id(identity)
 
     try:
-        result = SubscriptionRegistry.reactivate(
+        result = SubscriptionActiveEntitlementCompositionService.reactivate(
             subscription_id,
-            tenant_id_header=tenant_id,
-            metadata=payload.get(
+            payload.get(
                 "metadata",
                 {},
             ),
+            identity,
         )
-    except SubscriptionRegistryError as error:
-        _raise_registry_failure(error)
+    except SubscriptionActiveEntitlementCompositionServiceError as error:
+        _raise_composition_failure(error)
     except Exception as error:
         _raise_unexpected(
             "REACTIVATE",
             error,
         )
 
-    if not result.get("success"):
-        _raise_result_failure(
-            result,
-            default_error="REACTIVATE_FAILED",
-        )
-
     return _response(
         request,
         data={
             "subscription":
-                result["subscription"].to_dict()
+                result.subscription.to_dict()
         },
         message="Subscription reactivated successfully.",
         execution_id="SUB-REACTIVATE",
@@ -871,9 +920,9 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/api/subscription_router.py
-# VERSION: v1.2.0-CATALOGUE-PROVENANCE
+# VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION
 # AUTHORITY BOUNDARY: HTTP composition only; identity, membership, role assignment, permission policy and persistence retain canonical ownership
-# TENANT POSTURE: only membership-admitted SovereignIdentity.tenant_id reaches SubscriptionRegistry; raw X-Tenant-ID is never registry authority
+# TENANT POSTURE: only membership-admitted SovereignIdentity reaches the composition service or remaining registry paths; raw X-Tenant-ID is never persistence authority
 # FAIL-CLOSED POSTURE: missing or invalid identity, membership, role, permission or persistence authority never becomes subscription access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
