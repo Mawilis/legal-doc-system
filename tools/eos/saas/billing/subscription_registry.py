@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.3.3-LIFECYCLE-PROOF-STATE
+    v1.4.0-CALLER-TRANSACTION-INJECTION
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -25,9 +25,19 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy OS Core Engineering
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-12
+    2026-10-09
 
 CHANGELOG:
+    v1.4.0-CALLER-TRANSACTION-INJECTION:
+        - Adds optional collection and session injection to create, resume,
+          reactivate and their bounded persistence helpers.
+        - Propagates the exact caller session through idempotency reads, insert,
+          duplicate replay, lifecycle reads and optimistic-CAS replacement.
+        - Keeps session creation, transaction lifecycle, retry and unknown-
+          commit handling exclusively caller-owned.
+        - Preserves tenant, lifecycle, catalogue, proof, audit, idempotency,
+          pricing and financial-authority semantics.
+
     v1.3.3-LIFECYCLE-PROOF-STATE:
         - Computes lifecycle proofs from the post-transition subscription
           state and resets the merkle root from that proof before persistence.
@@ -130,6 +140,11 @@ AUTHORITY BOUNDARY:
     membership, grant permissions, resolve WILSY AI entitlement, meter AI
     usage, run intelligence, or own HTTP authorization.
 
+TRANSACTION BOUNDARY:
+    Optional caller-provided sessions are propagated to Mongo operations. This
+    registry never starts, commits, aborts or retries caller transactions and
+    never handles UnknownTransactionCommitResult.
+
 FINANCIAL AUTHORITY BOUNDARY:
     Subscription state and billing configuration are commercial truth only.
     APPROVED != RELEASE AUTHORIZED != EXECUTED != SETTLED.
@@ -175,7 +190,7 @@ from ..domain.subscription import (
 )
 
 
-VERSION = "v1.3.3-LIFECYCLE-PROOF-STATE"
+VERSION = "v1.4.0-CALLER-TRANSACTION-INJECTION"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -585,12 +600,14 @@ def _collection() -> Collection[dict[str, Any]]:
     return subscriptions_collection
 
 
-def _ensure_indexes() -> None:
+def _ensure_indexes(
+    collection: Any = None,
+) -> None:
     """Ensure deterministic tenant-scoped subscription persistence indexes."""
-    collection = _collection()
+    source = collection if collection is not None else _collection()
 
     try:
-        collection.create_index(
+        source.create_index(
             [
                 ("tenant_id", 1),
                 ("subscription_id", 1),
@@ -598,7 +615,7 @@ def _ensure_indexes() -> None:
             unique=True,
             name="tenant_subscription_unique",
         )
-        collection.create_index(
+        source.create_index(
             [
                 ("tenant_id", 1),
                 ("idempotency_key", 1),
@@ -606,14 +623,14 @@ def _ensure_indexes() -> None:
             unique=True,
             name="tenant_idempotency_unique",
         )
-        collection.create_index(
+        source.create_index(
             [
                 ("tenant_id", 1),
                 ("status", 1),
             ],
             name="tenant_status",
         )
-        collection.create_index(
+        source.create_index(
             [
                 ("tenant_id", 1),
                 ("plan", 1),
@@ -784,14 +801,19 @@ def _hydrate(
 def _find_document(
     subscription_id: str,
     tenant_id: str,
+    *,
+    collection: Any = None,
+    session: Any = None,
 ) -> dict[str, Any] | None:
     """Read one tenant-bound subscription without cross-tenant disclosure."""
+    source = collection if collection is not None else _collection()
     try:
-        return _collection().find_one(
+        return source.find_one(
             {
                 "tenant_id": tenant_id,
                 "subscription_id": subscription_id,
-            }
+            },
+            session=session,
         )
     except PyMongoError as error:
         raise SubscriptionRegistryError(
@@ -802,8 +824,12 @@ def _find_document(
 def _replace_document(
     previous: dict[str, Any],
     entity: SubscriptionEntity,
+    *,
+    collection: Any = None,
+    session: Any = None,
 ) -> SubscriptionEntity:
     """Persist one optimistic tenant-bound lifecycle mutation."""
+    source = collection if collection is not None else _collection()
     revision = previous.get(
         "_registry_revision"
     )
@@ -831,7 +857,7 @@ def _replace_document(
     )
 
     try:
-        result = _collection().replace_one(
+        result = source.replace_one(
             {
                 "tenant_id": entity.tenant_id,
                 "subscription_id":
@@ -839,6 +865,7 @@ def _replace_document(
                 "_registry_revision": revision,
             },
             replacement,
+            session=session,
         )
     except PyMongoError as error:
         raise SubscriptionRegistryError(
@@ -933,6 +960,9 @@ class SubscriptionRegistry:
             [SubscriptionEntity],
             SubscriptionEntity,
         ],
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
         tenant_id = _authorized_tenant(
             tenant_id_header
@@ -945,6 +975,8 @@ class SubscriptionRegistry:
         previous = _find_document(
             subscription_id,
             tenant_id,
+            collection=collection,
+            session=session,
         )
 
         if previous is None:
@@ -966,6 +998,8 @@ class SubscriptionRegistry:
         persisted = _replace_document(
             previous,
             replacement,
+            collection=collection,
+            session=session,
         )
 
         return {
@@ -1184,6 +1218,9 @@ class SubscriptionRegistry:
         cls,
         payload: dict[str, Any],
         tenant_id_header: str | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
         """Create subscription truth only from an authorized PlanRegistry entry."""
         tenant_id = _authorized_tenant(
@@ -1262,15 +1299,18 @@ class SubscriptionRegistry:
             )
         )
 
-        _ensure_indexes()
+        source = collection if collection is not None else _collection()
+
+        _ensure_indexes(source)
 
         try:
-            existing = _collection().find_one(
+            existing = source.find_one(
                 {
                     "tenant_id": tenant_id,
                     "idempotency_key":
                         idempotency_key,
-                }
+                },
+                session=session,
             )
         except PyMongoError as error:
             raise SubscriptionRegistryError(
@@ -1552,8 +1592,9 @@ class SubscriptionRegistry:
             )
 
             try:
-                _collection().insert_one(
-                    document
+                source.insert_one(
+                    document,
+                    session=session,
                 )
 
             except DuplicateKeyError as error:
@@ -1583,13 +1624,14 @@ class SubscriptionRegistry:
 
                 try:
                     replay = (
-                        _collection().find_one(
+                        source.find_one(
                             {
                                 "tenant_id":
                                     tenant_id,
                                 "idempotency_key":
                                     idempotency_key,
-                            }
+                            },
+                            session=session,
                         )
                     )
                 except PyMongoError as lookup_error:
@@ -2051,6 +2093,9 @@ class SubscriptionRegistry:
         subscription_id: str,
         tenant_id_header: str | None = None,
         metadata: dict[str, Any] | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
         """Persist PAUSED -> ACTIVE inside one authorized tenant.
 
@@ -2126,6 +2171,8 @@ class SubscriptionRegistry:
             subscription_id,
             tenant_id_header,
             updater,
+            collection=collection,
+            session=session,
         )
 
     @classmethod
@@ -2261,6 +2308,9 @@ class SubscriptionRegistry:
         subscription_id: str,
         tenant_id_header: str | None = None,
         metadata: dict[str, Any] | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
         """Persist CANCELLED -> ACTIVE without inferring financial state.
 
@@ -2334,6 +2384,8 @@ class SubscriptionRegistry:
             subscription_id,
             tenant_id_header,
             updater,
+            collection=collection,
+            session=session,
         )
 
     @classmethod
@@ -2757,7 +2809,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.3.3-LIFECYCLE-PROOF-STATE
+# VERSION: v1.4.0-CALLER-TRANSACTION-INJECTION
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,
