@@ -16,7 +16,7 @@
 #   v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
 #     - Establish the first dedicated Python EOS Kubernetes workload.
 #     - Bind the certified immutable EOS image digest from main head
-#       e421ca73b0b6164cdae95337f2a000d703e97dfa.
+#       150bbe9d5a72b6997e4a17b861cc8c4cbf73241e.
 #     - Preserve runtime-owned MongoDB, HR upload-policy, S3, and workload-
 #       identity configuration without embedding secrets or static AWS keys.
 #     - Expose EOS internally through ClusterIP only; no public ingress or
@@ -86,7 +86,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: eos-api
-          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:4dee14ebe505539a9774ec6eabab301cfea179007b4547eeb0e5b6c5b00c1615
+          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:bee92d39ed1fc1a676fe3cebd132fb31c309e4125b04e24416d12787aef5b180
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
