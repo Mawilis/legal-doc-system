@@ -15,9 +15,6 @@ jiter==0.17.0
 openai==3.14.1
 pydantic==2.13.4
 pydantic_core==2.46.4
-python-multipart==0.0.31
-PyOTP==2.10.0
-PyJWT==2.15.0
 pymongo==4.16.0
 python-dotenv==1.2.3
 starlette==1.6.0
@@ -26,7 +23,10 @@ truststore==0.10.4
 typing-inspection==0.4.4
 typing_extensions==4.16.0
 uvicorn==0.52.4
+PyJWT==2.15.0
+PyOTP==2.10.0
+awscrt==0.36.0
 boto3==1.43.104
 botocore==1.43.104
-awscrt==0.36.0
+python-multipart==0.0.31
 s3transfer==0.19.2

@@ -1,53 +1,22 @@
 """WILSY OS HR Document HTTP Boundary.
 
 TITLE: HR Document HTTP Router
-VERSION: v1.0.1-P0-C12F7C-HR-DOCUMENT-HTTP-SOVEREIGN-SEAL
+VERSION: v1.0.0-P0-C12F7C-HR-DOCUMENT-HTTP
 AUTHORITY: Python EOS HTTP admission and projection only.
-EPITOME: Compose the already-certified HR document domain, persistence,
-         provider adapters, F6F ingestion orchestration, and F7B tenant
-         authorization into four exact fail-closed HTTP operations without
-         creating duplicate business, provider, billing, or financial truth.
-ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr_document_router.py
-COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-06
-CHANGELOG: 2026-10-06 v1.0.1-P0-C12F7C-HR-DOCUMENT-HTTP-SOVEREIGN-SEAL completes the sovereign artifact contract
-           by adding institutional route documentation, explicit tenant,
-           security, authority and financial boundaries, and a complete
-           sovereign end seal; runtime routes and certified behavior remain
-           unchanged.
-           2026-10-05 v1.0.0-P0-C12F7C-HR-DOCUMENT-HTTP introduced the canonical four-route HR
-           document HTTP boundary with bounded raw-stream upload composition,
-           persisted-sensitivity authorization, exact tenant/employee/version
-           reads, and reconciliation-required 202 semantics.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001-aligned.
-SECURITY / PRIVACY POSTURE: Authenticated, tenant-scoped, fail-closed HTTP
-                            composition; authority-bearing sensitivity and
-                            provider coordinates are never accepted from caller
-                            input; document bytes are not logged here.
-TENANT BOUNDARY: Every operation requires exact authenticated tenant scope and
-                 preserves employee/document/version isolation without
-                 cross-tenant existence disclosure.
-AUTHORITY BOUNDARY: HTTP admission and projection only. Canonical HR document
-                    domain, registry, F6F ingestion, persisted sensitivity and
-                    F7B authorization remain their respective authorities.
-FINANCIAL AUTHORITY BOUNDARY: This module creates no billing, payment,
-                              settled-state, paid, or financial-execution truth.
-                              Kennel EOS remains exclusive financial execution
-                              authority.
 
 PURPOSE:
-Expose exactly four canonical tenant-scoped HR document operations while
-composing the already-certified F3 domain, F4 registry, F5 read/write provider
-adapters, F6F ingestion orchestration, and F7B tenant authorization.
+Expose four canonical tenant-scoped HR document operations while composing the
+already-certified F3 domain, F4 registry, F5 read/write provider adapters, F6F
+ingestion orchestration and F7B tenant authorization.
 
 UPLOAD:
-The request body is consumed with Request.stream() and passed through a bounded
-queue to one synchronous F6F worker. The complete upload is never materialized
-as one body buffer.
+The request body is consumed with Request.stream() and passed through a
+bounded queue to one synchronous F6F worker. The complete upload is never
+materialized as one body buffer.
 
 READ:
 Persisted HrDocument metadata determines sensitivity, provider coordinates,
-expected length, and expected SHA3-512. Caller input never supplies those
+expected length and expected SHA3-512. Caller input never supplies those
 authority-bearing persisted coordinates.
 
 LIST / HISTORY:
@@ -55,10 +24,10 @@ Each persisted row is evaluated against its own sensitivity-specific read
 operation. A denied row is omitted without disclosure. Unavailable authority
 fails the request closed.
 
-FAIL-CLOSED POSTURE:
-Missing/invalid server upload policy, missing provider configuration,
-authorization unavailability, persistence unavailability, provider failure,
-declared-length mismatch, and integrity failure are never promoted to success.
+ABSOLUTE CANONICAL PATH:
+/Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr_document_router.py
+
+CERTIFICATION / UPDATE DATE: 2026-10-05
 """
 
 from __future__ import annotations
@@ -152,7 +121,10 @@ from tools.eos.saas.hr.hr_document_storage import (
 )
 
 
-VERSION: Final[str] = "v1.0.1-P0-C12F7C-HR-DOCUMENT-HTTP-SOVEREIGN-SEAL"
+VERSION: Final[str] = (
+    "v1.0.0-P0-C12F7C-"
+    "HR-DOCUMENT-HTTP"
+)
 
 ROUTER_PREFIX: Final[str] = (
     "/api/hr/documents"
@@ -1047,18 +1019,6 @@ async def upload_hr_document(
         alias="X-Tenant-ID",
     ),
 ) -> Response:
-    """Admit one tenant-scoped HR document upload through the canonical F6F boundary.
-
-        Authority is derived from the authenticated identity, exact tenant scope,
-        document class, canonical sensitivity mapping, and F7B authorization policy.
-        Caller input cannot supply permission, role, persisted sensitivity, provider
-        coordinates, or commercial authority.
-
-        The request body remains bounded streaming input to one canonical ingestion
-        worker. This boundary creates no provider object removal, payment, settled-state, or
-        financial-execution authority and fails closed when required runtime,
-        authorization, persistence, or provider capability is unavailable.
-        """
     if (
         not isinstance(
             tenant_id,
@@ -1230,16 +1190,6 @@ async def list_hr_documents(
 ) -> list[
     dict[str, object]
 ]:
-    """Project HR documents authorized for one exact tenant and employee scope.
-
-        Persisted document sensitivity is authoritative for each row. Every row is
-        independently evaluated through canonical tenant authorization; denied rows
-        are omitted without disclosure and unavailable authority fails the complete
-        request closed.
-
-        This read projection creates no document, provider, billing, payment,
-        settled-state, or financial-execution truth.
-        """
     if (
         not isinstance(
             tenant_id,
@@ -1285,15 +1235,6 @@ async def list_hr_document_versions(
 ) -> list[
     dict[str, object]
 ]:
-    """Project authorized versions for one exact tenant, employee, and document.
-
-        Persisted version/document metadata supplies sensitivity and scope. Each
-        persisted row is independently authorized; denied rows are omitted without
-        disclosure and unavailable authorization fails the complete request closed.
-
-        This history projection is read-only and creates no provider mutation,
-        payment, settled-state, or financial-execution authority.
-        """
     if (
         not isinstance(
             tenant_id,
@@ -1338,17 +1279,6 @@ async def download_hr_document(
         alias="X-Tenant-ID",
     ),
 ) -> Response:
-    """Return one authorized persisted HR document version after integrity checks.
-
-        Tenant, employee, and version identity are matched exactly before provider
-        access. Persisted document metadata supplies sensitivity, provider
-        coordinates, expected length, and SHA3-512 integrity authority; callers
-        cannot provide or override those values.
-
-        Provider or integrity failure is represented fail-closed. This boundary has
-        no provider object removal, billing, payment, settled-state, or financial-execution
-        authority.
-        """
     if (
         not isinstance(
             tenant_id,
@@ -1410,15 +1340,11 @@ __all__ = [
 
 
 # ARTIFACT: tools/eos/api/hr_document_router.py
-# VERSION: v1.0.1-P0-C12F7C-HR-DOCUMENT-HTTP-SOVEREIGN-SEAL
+# VERSION: v1.0.0-P0-C12F7C-HR-DOCUMENT-HTTP
 # ROUTES: exactly four canonical HR document operations
-# UPLOAD: bounded raw-stream ingress to one canonical F6F worker
-# WRITE AUTHORITY: canonical document class -> sensitivity -> F7B authorization
-# READ AUTHORITY: persisted document sensitivity -> F7B authorization
-# PROVIDER COORDINATES: server configuration and persisted metadata only
-# PROVIDER MUTATION SURFACE: canonical F6F write orchestration only
-# AUTHORITY BOUNDARY: HTTP admission/projection only; domain, persistence, F6F and F7B authorities remain separate.
-# TENANT POSTURE: exact authenticated tenant/employee/document/version scope; cross-tenant existence is not disclosed.
-# FAIL-CLOSED POSTURE: unavailable authority, persistence, provider configuration, provider I/O, length mismatch, or integrity failure cannot become success.
-# FINANCIAL EXECUTION AUTHORITY: NONE in this artifact; Kennel EOS remains exclusive financial execution authority.
+# UPLOAD: bounded raw-stream ingress to one F6F worker
+# WRITE AUTHORITY: canonical class -> persisted sensitivity policy
+# READ AUTHORITY: persisted sensitivity only
+# PROVIDER COORDINATES: server/persisted metadata only
+# PROVIDER MUTATION SURFACE: write orchestration only
 # END OF WILSY OS SOVEREIGN ARTIFACT
