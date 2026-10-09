@@ -69,8 +69,8 @@ def _runtime_uri() -> str:
     parsed = urlparse(value)
     if parsed.scheme != "mongodb" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
         raise RuntimeError("R10G15 requires a loopback mongodb URI")
-    if parsed.path.strip("/") in {"wilsy", "wilsy/"} or "mongodb.net" in value.lower():
-        raise RuntimeError("R10G15 rejects canonical or hosted Mongo")
+    if parsed.path.strip("/") == "wilsy":
+        raise RuntimeError("R10G15 rejects canonical Mongo")
     return value
 
 
