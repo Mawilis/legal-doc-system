@@ -560,7 +560,7 @@ def test_real_mongo_foreign_scope_denies_before_lifecycle_access(
 
 def test_live_router_and_iam_bindings_match_l8_6a_release() -> None:
     """Host certificate remains bound to the exact L8-6A API/IAM vocabulary."""
-    assert legal_router.VERSION == "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
+    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
     assert legal_router._QUEUE_READ.permission_id == "legal_operations:queue:read"
     assert legal_router._QUEUE_READ.operation == "legal_queue_read"
     assert VERSION == "v1.0.2-L8-6D-ROUTER-COMPAT-SHERIFF-QUEUE-LIVE-IAM-RM-CERT"
