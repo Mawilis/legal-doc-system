@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API
+VERSION: v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -20,8 +20,9 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-7D5 owns sanitized client matter projection, and
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: 2026-09-25 v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API adds an authenticated exact-tenant GET /conflict-screenings review queue backed by the canonical immutable screening registry. It exposes only screening_id, source_case_matter_id, REVIEW_REQUIRED status and screened_at in a bounded deterministic projection; no review state, evidence, party identity, clearance, IAM or financial authority is created.
+CERTIFICATION / UPDATE DATE: 2026-10-10
+CHANGELOG: 2026-10-10 v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION adds the canonical D22B5 Legal Operations product-availability read as the first durable operation inside the existing workspace snapshot transaction. Unavailability denies with one non-disclosing 403; product-authority failure denies with a distinct 503; the four D15 authorities, workspace evidence reads and response contract remain unchanged.
+           2026-09-25 v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API adds an authenticated exact-tenant GET /conflict-screenings review queue backed by the canonical immutable screening registry. It exposes only screening_id, source_case_matter_id, REVIEW_REQUIRED status and screened_at in a bounded deterministic projection; no review state, evidence, party identity, clearance, IAM or financial authority is created.
            2026-09-24 v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API adds canonical CaseMatter rows and matter counts to the existing practice workspace so a durably registered matter is directly discoverable after intake. CaseMatter is read from the same exact-tenant snapshot as the existing lifecycle families, exposes only case_matter_id, matter_reference, opened_at, state and opaque evidence_identity, and creates no new lifecycle, IAM, client, billing, payment, AI or settlement authority.
            2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /workspace for the exact current
            legal-practice roles tenant_legal_partner, tenant_legal_attorney,
@@ -88,12 +89,14 @@ TENANT BOUNDARY: Entity reads bind the exact authorized tenant/type/identity;
                  personal work and field capabilities additionally bind the
                  authenticated principal to one canonical Deputy identity.
                  D15 workspace admission requires four current read authorities
-                 for one exact tenant/principal/published practice role, and all
+                 for one exact tenant/principal/published practice role plus an
+                 exact current ACTIVE Legal Operations product entitlement; all
                  workspace rows remain that tenant's current canonical evidence.
                  Foreign evidence is never admitted or disclosed.
 AUTHORITY BOUNDARY: Read projection only. D15 workspace visibility is a
-                    composition of existing instruction/allocation/attempt/
-                    return read authority and grants no mutation authority.
+                    conjunction of existing instruction/allocation/attempt/
+                    return read authority and D22B5 tenant product availability;
+                    neither availability nor visibility grants mutation authority.
                     Queue/capability visibility grants no receipt, allocation,
                     attempt mutation, service, return, billing, invoice, payment,
                     execution, settlement, or deputy impersonation. State
@@ -105,9 +108,12 @@ TRANSACTION BOUNDARY: Existing exact internal/sheriff/deputy reads retain
                       read-only collection semantics. The D6 client-matter route
                       and D15 legal-practice workspace each own one read-only
                       Mongo snapshot transaction for their multi-read projection;
-                      both commit on success and abort on failure. Command
-                      transactions remain separate.
-FAIL-CLOSED DECLARATION: Missing or mismatched practice authority, malformed
+                      D22B5 product availability and all lifecycle reads share
+                      the workspace transaction and exact session; both commit
+                      on success and abort on failure. Command transactions
+                      remain separate.
+FAIL-CLOSED DECLARATION: Missing or mismatched practice authority, unavailable
+                         Legal product, product-authority failure, malformed
                          identity, internal client-policy violations, snapshot/
                          session failure, D5 IAM/visibility/bound-matter failure,
                          absent exact history/locator, P2 corruption/outage,
@@ -163,9 +169,17 @@ from tools.eos.legal_operations.registry.legal_conflict_screening_registry impor
     LegalConflictScreeningRegistry,
     LegalConflictScreeningRegistryError,
 )
+from tools.eos.saas.entitlement.legal_product_availability_projection import (
+    LegalProductAvailabilityProjectionError,
+    resolve_legal_product_availability,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    CURRENT_COLLECTION as TENANT_PRODUCT_ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION,
+)
 
 
-VERSION: Final[str] = "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
+VERSION: Final[str] = "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -585,7 +599,8 @@ async def get_legal_practice_workspace_projection(
 
     Admission is conjunctive: all four existing instruction, allocation,
     attempt, and return read authorities must be current for the same exact
-    authenticated principal, tenant, and published legal-practice business role.
+    authenticated principal, tenant, and published legal-practice business role,
+    and the tenant's canonical D22B5 Legal Operations product must be available.
     The response enumerates current canonical CaseMatter and P1 lifecycle projections and
     opaque current-snapshot evidence locators. It does not expose history,
     evidence references/fingerprints, client identity, billing, invoice,
@@ -599,6 +614,28 @@ async def get_legal_practice_workspace_projection(
     )
 
     def run(session: Any, database: Any) -> dict[str, object]:
+        try:
+            product_availability = resolve_legal_product_availability(
+                context.tenant_id,
+                database.get_collection(
+                    TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION
+                ),
+                database.get_collection(
+                    TENANT_PRODUCT_ENTITLEMENT_CURRENT_COLLECTION
+                ),
+                session=session,
+            )
+        except LegalProductAvailabilityProjectionError as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="LEGAL_OPERATIONS_PRODUCT_AUTHORITY_UNAVAILABLE",
+            ) from error
+        if product_availability.available is not True:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="LEGAL_OPERATIONS_PRODUCT_UNAVAILABLE",
+            )
+
         collection = database.get_collection(LIFECYCLE_COLLECTION)
         matters = _workspace_rows(
             tenant_id=context.tenant_id,
@@ -985,9 +1022,9 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API
-# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus conjunctively-authorized D15 workspace and bounded conflict-screening review-queue presentation; mutation IAM/commands remain separate
+# VERSION: v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION
+# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus D15 IAM-and-product-conjunctive workspace and bounded conflict-screening presentation; mutation IAM/commands remain separate
 # TENANT POSTURE: every projection uses exact authenticated tenant context; foreign lifecycle or screening evidence is bounded and never disclosed
-# FAIL-CLOSED POSTURE: authority/scope mismatch, snapshot failure, screening corruption/overflow, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
+# FAIL-CLOSED POSTURE: authority/scope mismatch, unavailable product, product-authority failure, snapshot failure, screening corruption/overflow, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

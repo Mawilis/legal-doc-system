@@ -1,15 +1,15 @@
 """D15 direct HTTP certificate for the Legal Practice workspace.
 
 TITLE: WILSY OS First-Class Legal Matter Workspace HTTP Certificate
-VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT
+VERSION: v1.2.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-HTTP-CERT
 AUTHORITY: Direct HTTP certificate for the D15 read-only practice projection.
-EPITOME: Prove conjunctive same-principal/tenant/role admission, exact current
+EPITOME: Prove conjunctive same-principal/tenant/role/product admission, exact current
          CaseMatter/lifecycle field whitelists, deterministic summary counts, opaque
          evidence locators, bounded role denial and no financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_practice_workspace_http.py
 COLLABORATION / OWNERSHIP: Certificate for tools/eos/api/legal_operations_router.py
-                            v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+                            v1.10.0-D22B5-R21 product conjunction.
+CERTIFICATION / UPDATE DATE: 2026-10-10
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identities only.
 TENANT BOUNDARY: Every successful workspace context is exact tenant/principal/
@@ -17,7 +17,8 @@ TENANT BOUNDARY: Every successful workspace context is exact tenant/principal/
 AUTHORITY BOUNDARY: Read projection certificate only; no lifecycle mutation,
                     service execution, return, invoice, payment or settlement.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
-CHANGELOG: 2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT adds direct canonical CaseMatter projection, field-whitelist, matter-count and version binding coverage while preserving D11 role/scope/read-only guarantees.
+CHANGELOG: 2026-10-10 v1.2.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-HTTP-CERT adds ACTIVE success, non-disclosing unavailable denial, distinct product-authority failure, exact collection/session propagation and runtime ordering proof while preserving the four D15 dependencies, context helper and response contract.
+           2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT adds direct canonical CaseMatter projection, field-whitelist, matter-count and version binding coverage while preserving D11 role/scope/read-only guarantees.
 FAIL-CLOSED DECLARATION: Scope mismatch, unsupported role and malformed
                          projection reject without fallback or inferred truth.
 """
@@ -40,7 +41,7 @@ from tools.eos.auth.tenant_authorization import (
 )
 
 
-VERSION = "v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT"
+VERSION = "v1.2.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-HTTP-CERT"
 TENANT = "tenant-law"
 PRINCIPAL = "principal-law"
 EVIDENCE = "a" * 128
@@ -60,10 +61,18 @@ class _Value:
 class _Database:
     """Minimal database surface used by the D11 callback."""
 
+    def __init__(self) -> None:
+        self.collections: dict[str, object] = {}
+
     def get_collection(self, name: str) -> object:
         """Return one opaque collection marker."""
-        assert name == legal_router.LIFECYCLE_COLLECTION
-        return object()
+        if name not in {
+            legal_router.LIFECYCLE_COLLECTION,
+            legal_router.TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION,
+            legal_router.TENANT_PRODUCT_ENTITLEMENT_CURRENT_COLLECTION,
+        }:
+            raise AssertionError(f"unexpected collection: {name}")
+        return self.collections.setdefault(name, object())
 
 
 def _context(
@@ -156,6 +165,26 @@ def _install_projection_seams(monkeypatch: pytest.MonkeyPatch) -> None:
         assert kwargs["session"] == "snapshot-session"
         return (SimpleNamespace(current=_Value(payloads[entity_type])),)
 
+    database = _Database()
+
+    def available(
+        tenant_id: str,
+        history_collection: object,
+        current_collection: object,
+        *,
+        session: object,
+    ) -> object:
+        assert tenant_id == TENANT
+        assert history_collection is database.collections[
+            legal_router.TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION
+        ]
+        assert current_collection is database.collections[
+            legal_router.TENANT_PRODUCT_ENTITLEMENT_CURRENT_COLLECTION
+        ]
+        assert session == "snapshot-session"
+        return SimpleNamespace(available=True)
+
+    monkeypatch.setattr(legal_router, "resolve_legal_product_availability", available)
     monkeypatch.setattr(legal_router, "list_entity_read_models", fake_list)
     monkeypatch.setattr(
         legal_router.LegalOperationsLifecycleRegistry,
@@ -165,7 +194,7 @@ def _install_projection_seams(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         legal_router,
         "_workspace_projection_transaction",
-        lambda callback: callback("snapshot-session", _Database()),
+        lambda callback: callback("snapshot-session", database),
     )
 
 
@@ -234,6 +263,9 @@ def test_workspace_http_projects_current_lifecycle_and_summary(
     assert payload["instructions"][0]["evidence_identity"] == EVIDENCE
     assert payload["executions"][0]["outcome"] == "COMPLETED"
     assert payload["returns"][0]["state"] == "GENERATED"
+    assert "product" not in payload
+    assert "available" not in payload
+    assert "lifecycle_state" not in payload
 
     serialized = str(payload).lower()
     for forbidden in (
@@ -245,6 +277,90 @@ def test_workspace_http_projects_current_lifecycle_and_summary(
         "ai_score",
     ):
         assert forbidden not in serialized
+
+
+@pytest.mark.parametrize("upstream_state", ["ABSENT", "PENDING", "SUSPENDED", "REVOKED"])
+def test_product_unavailable_is_one_non_disclosing_403_before_workspace_reads(
+    monkeypatch: pytest.MonkeyPatch,
+    upstream_state: str,
+) -> None:
+    """Every unavailable upstream state collapses before lifecycle access."""
+    _install_projection_seams(monkeypatch)
+    reads = 0
+
+    def unavailable(*_args: object, **_kwargs: object) -> object:
+        return SimpleNamespace(available=False, test_state=upstream_state)
+
+    def forbidden_read(**_kwargs: object) -> tuple[object, ...]:
+        nonlocal reads
+        reads += 1
+        raise AssertionError("workspace evidence read after product denial")
+
+    monkeypatch.setattr(legal_router, "resolve_legal_product_availability", unavailable)
+    monkeypatch.setattr(legal_router, "list_entity_read_models", forbidden_read)
+    response = TestClient(_app(_context())).get("/legal-operations/workspace")
+    assert response.status_code == 403
+    assert response.json() == {"detail": "LEGAL_OPERATIONS_PRODUCT_UNAVAILABLE"}
+    assert upstream_state not in response.text
+    assert reads == 0
+
+
+def test_product_authority_failure_is_distinct_503_before_workspace_reads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Projection corruption/outage is not absence and precedes lifecycle access."""
+    _install_projection_seams(monkeypatch)
+    reads = 0
+
+    def fail(*_args: object, **_kwargs: object) -> object:
+        raise legal_router.LegalProductAvailabilityProjectionError(
+            "D22B5_TEST_AUTHORITY_FAILURE",
+            "synthetic authority failure",
+        )
+
+    def forbidden_read(**_kwargs: object) -> tuple[object, ...]:
+        nonlocal reads
+        reads += 1
+        raise AssertionError("workspace evidence read after product failure")
+
+    monkeypatch.setattr(legal_router, "resolve_legal_product_availability", fail)
+    monkeypatch.setattr(legal_router, "list_entity_read_models", forbidden_read)
+    response = TestClient(_app(_context())).get("/legal-operations/workspace")
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "LEGAL_OPERATIONS_PRODUCT_AUTHORITY_UNAVAILABLE"
+    }
+    assert reads == 0
+
+
+def test_four_d15_authorization_dependencies_remain_independent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FastAPI still executes all four existing dependency authorities once."""
+    _install_projection_seams(monkeypatch)
+    context = _context()
+    calls: list[str] = []
+    app = FastAPI()
+
+    def override(label: str) -> Any:
+        def dependency_override() -> TenantAuthorizationContext:
+            calls.append(label)
+            return context
+
+        return dependency_override
+
+    dependencies = (
+        ("instruction", legal_router._INSTRUCTION_READ),
+        ("allocation", legal_router._ALLOCATION_READ),
+        ("attempt", legal_router._ATTEMPT_READ),
+        ("return", legal_router._RETURN_READ),
+    )
+    for label, dependency in dependencies:
+        app.dependency_overrides[dependency] = override(label)
+    app.include_router(legal_router.router)
+    response = TestClient(app).get("/legal-operations/workspace")
+    assert response.status_code == 200
+    assert calls == ["instruction", "allocation", "attempt", "return"]
 
 
 @pytest.mark.parametrize(
@@ -335,17 +451,17 @@ def test_workspace_matter_row_whitelist_exposes_only_first_class_case_truth(
 
 def test_workspace_version_and_authority_surface_are_frozen() -> None:
     """D15 remains read-only and bound to the intended production version."""
-    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
-    assert VERSION == "v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT"
+    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+    assert VERSION == "v1.2.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-HTTP-CERT"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")
 
 
 # ARTIFACT: test_legal_operations_practice_workspace_http.py
-# VERSION: v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT
-# AUTHORITY BOUNDARY: D15 read-only first-class matter practice workspace HTTP certificate
+# VERSION: v1.2.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-HTTP-CERT
+# AUTHORITY BOUNDARY: D15 plus D22B5 conjunctive read-only practice workspace HTTP certificate
 # TENANT POSTURE: same exact tenant/principal/published-practice-role required
-# FAIL-CLOSED POSTURE: scope/role/projection drift rejects without fallback
+# FAIL-CLOSED POSTURE: scope/role/product/projection drift rejects without fallback or lifecycle disclosure
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
