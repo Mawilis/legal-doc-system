@@ -1,6 +1,6 @@
 """WILSY OS AI Legal Tool Gateway contract.
 
-VERSION: v1.1.0-L7B-WILSY-AI-LEGAL-TOOL-GATEWAY
+VERSION: v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION
 AUTHORITY: Read-only composition of existing IAM, entitlement, capacity and legal evidence.
 EPITOME: Defines exactly seven tenant-scoped legal read tools and immutable,
          bounded invocation evidence without becoming a legal or financial authority.
@@ -10,7 +10,11 @@ AUTHORITY BOUNDARY: Gateway access and evidence composition; no lifecycle mutati
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution and settlement.
 FAIL-CLOSED DECLARATION: Unknown tools, mismatched context, inactive entitlement,
                          missing capability/permission/capacity, malformed input or evidence reject.
-CHANGELOG: v1.1.0 binds capacity to the canonical entitlement fingerprint while
+CHANGELOG: v1.2.0-D57C-R1 consumes the D57B reasoning entitlement and its
+           canonical VAS capability independently from per-tool Legal IAM,
+           removes caller entitlement identity from invocation input, and
+           exposes one pure shared runtime commercial-admission assertion.
+           v1.1.0 binds capacity to the canonical entitlement fingerprint while
            preserving independent policy-fingerprint evidence and all gates.
 """
 from __future__ import annotations
@@ -25,10 +29,13 @@ import re
 from typing import Any, Final, cast
 
 from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
+from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import CANONICAL_CAPABILITY_GRANTS
+from tools.eos.saas.billing.wilsy_ai_commercial_policy import get_wilsy_ai_commercial_policy
+from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import MODULE_ID as REASONING_MODULE_ID
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlement, WilsyAIEntitlementState
 from tools.eos.saas.billing.wilsy_ai_usage_capacity import WilsyAIUsageCapacity
 
-VERSION: Final[str] = "v1.1.0-L7B-WILSY-AI-LEGAL-TOOL-GATEWAY"
+VERSION: Final[str] = "v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION"
 SCHEMA: Final[str] = "WILSY-AI-LEGAL-TOOL-GATEWAY/V1"
 GATEWAY_PERMISSION: Final[str] = "wilsy_ai:legal_tool:read"
 _HEX = re.compile(r"^[0-9a-f]{128}$")
@@ -39,6 +46,7 @@ CAPABILITIES: Final[tuple[str, ...]] = (
     "legal.read.return", "legal.read.tariff_assessment",
     "legal.read.billing_eligibility", "legal.read.invoice",
 )
+AI_VAS_CAPABILITY: Final[str] = CANONICAL_CAPABILITY_GRANTS[0]
 TOOL_IDENTITIES: Final[tuple[str, ...]] = (
     "legal.instruction.read.v1", "legal.attempt.read.v1", "legal.execution.read.v1",
     "legal.return.read.v1", "legal.tariff_assessment.read.v1",
@@ -180,6 +188,35 @@ _EVIDENCE_FIELDS: Final[tuple[str, ...]] = tuple(LegalAIToolInvocationEvidence._
 )
 
 
+def require_legal_ai_commercial_admission(*, tenant_id: str, entitlement: WilsyAIEntitlement, capacity: WilsyAIUsageCapacity) -> None:
+    """Require canonical D57B entitlement and current tier-derived capacity.
+
+    This pure assertion creates no entitlement, capacity, IAM, subscription or
+    financial truth. The entitlement proves only WILSY AI VAS ownership; Legal
+    permission remains an independent condition of ``authorize_legal_ai_tool``.
+    """
+    tenant = _text(tenant_id, "L7B_TENANT_REQUIRED")
+    if not isinstance(entitlement, WilsyAIEntitlement) or not isinstance(capacity, WilsyAIUsageCapacity):
+        raise LegalAIToolGatewayError("L7B_COMMERCIAL_EVIDENCE_INVALID")
+    policy = get_wilsy_ai_commercial_policy(entitlement.tier)
+    if (
+        tenant.lower() in _TENANT_FORBIDDEN
+        or entitlement.tenant_id != tenant
+        or capacity.tenant_id != tenant
+        or entitlement.module_id != REASONING_MODULE_ID
+        or entitlement.lifecycle_state is not WilsyAIEntitlementState.ACTIVE
+        or entitlement.policy_fingerprint != policy.policy_fingerprint
+        or AI_VAS_CAPABILITY not in entitlement.capability_grants
+        or capacity.entitlement_id != entitlement.entitlement_id
+        or capacity.module_id != entitlement.module_id
+        or capacity.entitlement_revision != entitlement.lifecycle_revision
+        or not hmac.compare_digest(capacity.entitlement_fingerprint, entitlement.fingerprint)
+    ):
+        raise LegalAIToolGatewayError("L7B_ENTITLEMENT_DENIED")
+    if capacity.daily_remaining_request_units <= 0 or capacity.monthly_remaining_automation_actions <= 0 or capacity.daily_exhausted or capacity.monthly_exhausted:
+        raise LegalAIToolGatewayError("L7B_CAPACITY_EXHAUSTED")
+
+
 def authorize_legal_ai_tool(*, gateway_context: TenantAuthorizationContext, underlying_context: TenantAuthorizationContext, entitlement: WilsyAIEntitlement, capacity: WilsyAIUsageCapacity, tool_identity: str, input_payload: Mapping[str, object], occurred_at: datetime, result_classification: str = "READ", result_reference: str = "") -> LegalAIToolInvocationEvidence:
     """Apply gateway, IAM, entitlement, capability, capacity and input gates."""
     if not isinstance(gateway_context, TenantAuthorizationContext) or not isinstance(underlying_context, TenantAuthorizationContext):
@@ -187,15 +224,12 @@ def authorize_legal_ai_tool(*, gateway_context: TenantAuthorizationContext, unde
     contract = TOOL_CONTRACTS.get(tool_identity)
     if contract is None: raise LegalAIToolGatewayError("L7B_TOOL_UNKNOWN")
     tenant = _text(gateway_context.tenant_id, "L7B_TENANT_REQUIRED")
-    if tenant.lower() in _TENANT_FORBIDDEN or underlying_context.tenant_id != tenant or entitlement.tenant_id != tenant or capacity.tenant_id != tenant:
+    if tenant.lower() in _TENANT_FORBIDDEN or underlying_context.tenant_id != tenant:
         raise LegalAIToolGatewayError("L7B_TENANT_MISMATCH")
     if not gateway_context.decision.authorized or gateway_context.decision.reason.value != "AUTHORIZED" or not underlying_context.decision.authorized or underlying_context.decision.reason.value != "AUTHORIZED":
         raise LegalAIToolGatewayError("L7B_PERMISSION_DENIED")
-    if str(getattr(entitlement.lifecycle_state, "value", entitlement.lifecycle_state)) != WilsyAIEntitlementState.ACTIVE.value or entitlement.fingerprint != capacity.entitlement_fingerprint or contract.capability not in entitlement.capability_grants:
-        raise LegalAIToolGatewayError("L7B_ENTITLEMENT_DENIED")
-    if capacity.daily_remaining_request_units <= 0 or capacity.monthly_remaining_automation_actions <= 0 or capacity.daily_exhausted or capacity.monthly_exhausted:
-        raise LegalAIToolGatewayError("L7B_CAPACITY_EXHAUSTED")
-    if not isinstance(input_payload, Mapping) or set(input_payload) != {"resource_identity", "entitlement_id", "correlation_id"} or any(not isinstance(value, str) or not value.strip() for value in input_payload.values()) or _IDENTITY.fullmatch(str(input_payload["resource_identity"])) is None or input_payload["entitlement_id"] != entitlement.entitlement_id:
+    require_legal_ai_commercial_admission(tenant_id=tenant, entitlement=entitlement, capacity=capacity)
+    if not isinstance(input_payload, Mapping) or set(input_payload) != {"resource_identity", "correlation_id"} or any(not isinstance(value, str) or not value.strip() for value in input_payload.values()) or _IDENTITY.fullmatch(str(input_payload["resource_identity"])) is None:
         raise LegalAIToolGatewayError("L7B_INPUT_INVALID")
     raw = json.dumps(dict(input_payload), sort_keys=True, separators=(",", ":")).encode()
     input_fp = hashlib.sha3_512(raw).hexdigest()
@@ -214,9 +248,9 @@ def authorize_legal_ai_tool(*, gateway_context: TenantAuthorizationContext, unde
     )
 
 
-__all__ = ["VERSION", "SCHEMA", "GATEWAY_PERMISSION", "CAPABILITIES", "TOOL_IDENTITIES", "TOOL_CONTRACTS", "LegalAIToolGatewayError", "LegalAIToolContract", "LegalAIToolInvocationEvidence", "authorize_legal_ai_tool"]
+__all__ = ["VERSION", "SCHEMA", "GATEWAY_PERMISSION", "AI_VAS_CAPABILITY", "CAPABILITIES", "TOOL_IDENTITIES", "TOOL_CONTRACTS", "LegalAIToolGatewayError", "LegalAIToolContract", "LegalAIToolInvocationEvidence", "require_legal_ai_commercial_admission", "authorize_legal_ai_tool"]
 # ARTIFACT: legal_ai_gateway.py
-# VERSION: v1.1.0-L7B-WILSY-AI-LEGAL-TOOL-GATEWAY
+# VERSION: v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION
 # AUTHORITY BOUNDARY: allowlisted read composition and bounded evidence only
 # TENANT POSTURE: exact active own-tenant IAM/entitlement/capacity gates
 # FAIL-CLOSED POSTURE: malformed, missing, divergent or exhausted inputs reject

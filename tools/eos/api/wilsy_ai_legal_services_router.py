@@ -22,15 +22,40 @@ FAIL-CLOSED DECLARATION: Missing orchestrator, key, auth, parser or policy denie
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import re
 from typing import Any
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 
-from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
-from tools.eos.intelligence.wilsy_ai_tool_orchestrator import WilsyAIToolOrchestrator, C1COrchestrationError
+from tools.eos.api.tenant_authorization_http import (
+    RequireTenantAuthorization,
+    TenantAuthorizationContext,
+)
+from tools.eos.intelligence.domain.legal_ai_gateway import (
+    LegalAIToolGatewayError,
+    require_legal_ai_commercial_admission,
+)
+from tools.eos.intelligence.wilsy_ai_tool_orchestrator import (
+    C1COrchestrationError,
+    WilsyAIToolOrchestrator,
+)
+from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import (
+    MODULE_ID as REASONING_MODULE_ID,
+)
+from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
+    COLLECTION as ENTITLEMENT_COLLECTION,
+    WilsyAIEntitlementRegistry,
+)
+from tools.eos.saas.billing.wilsy_ai_usage_capacity_orchestrator import (
+    WilsyAIUsageCapacityOrchestrator,
+)
+from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
+    COLLECTION as OBSERVATION_COLLECTION,
+)
 
-VERSION = "v1.1.0-C1C-R1A"
+VERSION = "v1.2.0-D57C-R1-LEGAL-SERVICES-COMMERCIAL-ADMISSION"
 # C1C owns a dedicated capability so legal-services execution cannot inherit
 # the narrower C1B reasoning permission by accident.
 LEGAL_SERVICES_PERMISSION = "wilsy_ai:legal_services:execute"
@@ -47,6 +72,34 @@ class WilsyAILegalServicesRequest(BaseModel):
 router = APIRouter(prefix="/wilsy-ai", tags=["WILSY AI Legal Services"])
 
 
+def _begin_transaction() -> tuple[Any, Any]:
+    """Begin one caller-owned admission transaction or fail closed."""
+    from tools.eos.kernel.db import get_client
+
+    client = get_client()
+    if client is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="C1C_COMMERCIAL_ADMISSION_UNAVAILABLE",
+        )
+    session = client.start_session()
+    session.start_transaction()
+    return client, session
+
+
+def _commercial_collections() -> tuple[Any, Any]:
+    """Resolve canonical AI entitlement/usage collections without new authority."""
+    from tools.eos.kernel.db import get_database
+
+    database = get_database()
+    if database is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="C1C_COMMERCIAL_ADMISSION_UNAVAILABLE",
+        )
+    return database[ENTITLEMENT_COLLECTION], database[OBSERVATION_COLLECTION]
+
+
 def _key(value: str | None) -> str:
     if not isinstance(value, str) or _KEY.fullmatch(value) is None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="C1C_IDEMPOTENCY_KEY_REQUIRED")
@@ -54,28 +107,104 @@ def _key(value: str | None) -> str:
 
 
 @router.post("/legal-services", response_model=dict[str, object])
-def execute_legal_services(request: Request, body: WilsyAILegalServicesRequest, context: TenantAuthorizationContext = Depends(_AUTH), idempotency_key: str | None = Header(default=None, alias="Idempotency-Key")) -> dict[str, object]:
-    """Execute one bounded C1C request with no authority-bearing response fields."""
+def execute_legal_services(
+    request: Request,
+    body: WilsyAILegalServicesRequest,
+    context: TenantAuthorizationContext = Depends(_AUTH),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+) -> dict[str, object]:
+    """Require commercial admission before any legal-services provider execution."""
     key = _key(idempotency_key)
-    orchestrator = getattr(request.app.state, "wilsy_ai_legal_services_orchestrator", None)
+    orchestrator = getattr(
+        request.app.state,
+        "wilsy_ai_legal_services_orchestrator",
+        None,
+    )
     if not isinstance(orchestrator, WilsyAIToolOrchestrator):
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="C1C_ORCHESTRATOR_UNAVAILABLE")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="C1C_ORCHESTRATOR_UNAVAILABLE",
+        )
+
+    _client, session = _begin_transaction()
     try:
-        result = orchestrator.run(tenant_id=context.tenant_id, principal_id=context.identity.identity_id, idempotency_key=key, prompt=body.prompt, context=context, collections=getattr(request.app.state, "wilsy_ai_legal_tool_collections", {}))
+        entitlement_collection, observation_collection = _commercial_collections()
+        entitlement = WilsyAIEntitlementRegistry(
+            entitlement_collection
+        ).get_by_module(
+            tenant_id=context.tenant_id,
+            module_id=REASONING_MODULE_ID,
+            session=session,
+        )
+        capacity = WilsyAIUsageCapacityOrchestrator.from_collections(
+            entitlement_collection=entitlement_collection,
+            observation_collection=observation_collection,
+        ).derive_capacity(
+            tenant_id=context.tenant_id,
+            entitlement_id=entitlement.entitlement_id,
+            as_of=datetime.now(timezone.utc),
+            session=session,
+        )
+        require_legal_ai_commercial_admission(
+            tenant_id=context.tenant_id,
+            entitlement=entitlement,
+            capacity=capacity,
+        )
+
+        result = orchestrator.run(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            idempotency_key=key,
+            prompt=body.prompt,
+            context=context,
+            collections=getattr(
+                request.app.state,
+                "wilsy_ai_legal_tool_collections",
+                {},
+            ),
+        )
+        session.commit_transaction()
         return result.to_dict()
+    except HTTPException:
+        session.abort_transaction()
+        raise
+    except LegalAIToolGatewayError as error:
+        session.abort_transaction()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="C1C_LEGAL_SERVICE_DENIED",
+        ) from error
     except C1COrchestrationError as error:
+        session.abort_transaction()
         code = getattr(error, "code", "C1C_UNAVAILABLE")
         if "DENIED" in code or "UNKNOWN" in code:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="C1C_LEGAL_SERVICE_DENIED") from error
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="C1C_LEGAL_SERVICE_DENIED",
+            ) from error
         if "REPLAY" in code:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="C1C_REPLAY_CONFLICT") from error
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="C1C_LEGAL_SERVICE_UNAVAILABLE") from error
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="C1C_REPLAY_CONFLICT",
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="C1C_LEGAL_SERVICE_UNAVAILABLE",
+        ) from error
+    except Exception as error:
+        session.abort_transaction()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="C1C_LEGAL_SERVICE_UNAVAILABLE",
+        ) from error
+    finally:
+        session.end_session()
 
 
 __all__ = ["VERSION", "LEGAL_SERVICES_PERMISSION", "WilsyAILegalServicesRequest", "execute_legal_services", "router"]
 
 # ARTIFACT: wilsy_ai_legal_services_router.py
-# VERSION: v1.1.0-C1C-R1A
+# VERSION: v1.2.0-D57C-R1-LEGAL-SERVICES-COMMERCIAL-ADMISSION
 # AUTHORITY BOUNDARY: authenticated bounded legal-read transport
 # TENANT POSTURE: dependency-owned exact tenant and principal
 # FAIL-CLOSED POSTURE: prompt-only body and required idempotency key
