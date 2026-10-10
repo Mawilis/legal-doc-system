@@ -254,7 +254,7 @@ def test_exact_client_authorization_dependency_is_bound() -> None:
         "legal_operations:client_matter:read"
     )
     assert legal_router._CLIENT_MATTER_READ.operation == "legal_client_matter_read"
-    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
+    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
     assert D5_VERSION == "v1.0.0-L8-7D5-CLIENT-MATTER-PROJECTION"
 
 

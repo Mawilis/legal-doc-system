@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.0.0-L8-8M-R3-BROWSER-CERT-FIXTURE
+VERSION: v1.0.1-D22B5-LEGAL-PRODUCT-AUTHORITY-BROWSER-CERT-FIXTURE
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed the existing EOS repositories with one authenticated legal
          operator and one REVIEW_REQUIRED conflict screening so Playwright can
@@ -10,7 +10,9 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_fixture.py
 COLLABORATION / OWNERSHIP: L8-8M-R3 browser certificate; no production authority.
 CERTIFICATION / UPDATE DATE: 2026-09-26
-CHANGELOG: v1.0.0 establishes UUID-isolated local-replica-set seeding and
+CHANGELOG: v1.0.1 adds the canonical ACTIVE D22B5 LEGAL_OPERATIONS product
+           entitlement required by the production workspace admission gate.
+           v1.0.0 establishes UUID-isolated local-replica-set seeding and
            explicit cleanup. It never targets the configured production URI.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic identities and credentials only; no
@@ -80,6 +82,15 @@ from tools.eos.legal_operations.registry.legal_conflict_screening_registry impor
     LegalConflictScreeningRegistry,
 )
 from tools.eos.saas.auth.auth_registry import AuthRegistry
+from tools.eos.saas.domain.tenant_product_entitlement import (
+    TenantProductEntitlementState,
+    create_tenant_product_entitlement,
+)
+from tools.eos.saas.entitlement import tenant_product_entitlement_registry as entitlement_registry
+from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
+    derive_tenant_product_entitlement_id,
+)
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
@@ -217,6 +228,8 @@ def seed(state_path: Path) -> None:
             "acceptance": database["legal_acceptance_evidence"],
             "screening": database["legal_conflict_screenings"],
             "review": database["legal_conflict_reviews"],
+            "entitlement_history": database["tenant_product_entitlement_history"],
+            "entitlement_current": database["tenant_product_entitlement_current"],
         }
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
@@ -226,6 +239,10 @@ def seed(state_path: Path) -> None:
         LegalAcceptanceRegistry.ensure_indexes(collections["acceptance"])
         LegalConflictScreeningRegistry.ensure_indexes(collections["screening"])
         LegalConflictReviewRegistry.ensure_indexes(collections["review"])
+        entitlement_registry.ensure_indexes(
+            collections["entitlement_history"],
+            collections["entitlement_current"],
+        )
 
         with client.start_session() as session:
             session.start_transaction(
@@ -269,6 +286,35 @@ def seed(state_path: Path) -> None:
                     0,
                 ),
                 collections["roles"],
+                session=session,
+            )
+            entitlement_id = derive_tenant_product_entitlement_id(
+                tenant_id,
+                TenantProductId.LEGAL_OPERATIONS,
+            )
+            entitlement = create_tenant_product_entitlement(
+                tenant_id=tenant_id,
+                entitlement_id=entitlement_id,
+                product_id=TenantProductId.LEGAL_OPERATIONS,
+                source_evidence_reference=f"browser-cert-product:{tenant_id}",
+                source_evidence_fingerprint="d" * 128,
+            )
+            entitlement_registry.create_or_replay(
+                entitlement,
+                collections["entitlement_history"],
+                collections["entitlement_current"],
+                session=session,
+            )
+            entitlement_registry.transition(
+                tenant_id=tenant_id,
+                entitlement_id=entitlement.entitlement_id,
+                target_state=TenantProductEntitlementState.ACTIVE,
+                expected_revision=0,
+                evidence_reference=f"browser-cert-product-activation:{tenant_id}",
+                evidence_fingerprint="e" * 128,
+                occurred_at=now,
+                history_collection=collections["entitlement_history"],
+                current_collection=collections["entitlement_current"],
                 session=session,
             )
             for document in _approved_documents(now):
@@ -396,7 +442,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.0.0-L8-8M-R3-BROWSER-CERT-FIXTURE
+# VERSION: v1.0.1-D22B5-LEGAL-PRODUCT-AUTHORITY-BROWSER-CERT-FIXTURE
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: one generated tenant/principal pair; no production data
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop

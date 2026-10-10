@@ -194,6 +194,7 @@ _WORKSPACE_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2"
 _WORKSPACE_VERSION: Final[str] = "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
 _WORKSPACE_VISIBILITY: Final[str] = "LEGAL_PRACTICE_WORKSPACE"
 _SCREENING_SCHEMA: Final[str] = "WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1"
+_SCREENING_VERSION: Final[str] = "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
 _SCREENING_VISIBILITY: Final[str] = "LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE"
 _T = TypeVar("_T")
 
@@ -727,7 +728,7 @@ async def get_legal_conflict_screening_review_queue(
         )
         return {
             "schema": _SCREENING_SCHEMA,
-            "version": VERSION,
+            "version": _SCREENING_VERSION,
             "tenant_id": context.tenant_id,
             "visibility": _SCREENING_VISIBILITY,
             "screenings": [

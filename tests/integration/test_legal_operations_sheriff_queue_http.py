@@ -283,7 +283,7 @@ def test_unexpected_queue_failure_is_bounded_persistence_unavailable(
 
 def test_router_binding_is_exact_l8_6a_release() -> None:
     """Certificate remains bound to the intended sheriff queue API release."""
-    assert legal_router.VERSION == "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
+    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
     assert legal_router._QUEUE_READ.permission_id == "legal_operations:queue:read"
     assert legal_router._QUEUE_READ.operation == "legal_queue_read"
 

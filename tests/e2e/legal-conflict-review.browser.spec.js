@@ -47,16 +47,20 @@ test('certifies authenticated conflict review through browser, API, and durable 
   const reviewRequests = [];
   const reviewBodies = [];
   const consoleCounts = { error: 0, warning: 0 };
+  const consoleErrors = [];
+  const pageErrors = [];
   let pageErrorCount = 0;
   let failedRequestCount = 0;
   page.on('console', (message) => {
     if (message.type() === 'error') {
       consoleCounts.error += 1;
+      consoleErrors.push(message.text());
     }
     if (message.type() === 'warning') consoleCounts.warning += 1;
   });
-  page.on('pageerror', () => {
+  page.on('pageerror', (error) => {
     pageErrorCount += 1;
+    pageErrors.push(String(error?.stack || error?.message || error));
   });
   page.on('requestfailed', () => {
     failedRequestCount += 1;
@@ -89,6 +93,16 @@ test('certifies authenticated conflict review through browser, API, and durable 
   try {
     await expect(page.getByText('Conflict review queue', { exact: true })).toBeVisible();
   } catch (error) {
+    const bodyText = await page.locator('body').innerText().catch(() => '<BODY_UNAVAILABLE>');
+    const buttons = await page.getByRole('button').allTextContents().catch(() => []);
+    const headings = await page.getByRole('heading').allTextContents().catch(() => []);
+    console.error(`BROWSER_CERT_URL=${page.url()}`);
+    console.error(`BROWSER_CERT_TITLE=${await page.title().catch(() => '<TITLE_UNAVAILABLE>')}`);
+    console.error(`BROWSER_CERT_HEADINGS=${JSON.stringify(headings)}`);
+    console.error(`BROWSER_CERT_BUTTONS=${JSON.stringify(buttons)}`);
+    console.error(`BROWSER_CERT_BODY=${JSON.stringify(bodyText.slice(0, 8000))}`);
+    console.error(`BROWSER_CERT_CONSOLE_ERRORS=${JSON.stringify(consoleErrors)}`);
+    console.error(`BROWSER_CERT_PAGE_ERRORS=${JSON.stringify(pageErrors)}`);
     console.error(`BROWSER_CERT_OBSERVED=${JSON.stringify(observed)}`);
     throw error;
   }
