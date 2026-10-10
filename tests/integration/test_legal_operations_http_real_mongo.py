@@ -73,6 +73,8 @@ from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     LegalInstruction,
     LegalInstructionState,
+    ServiceAttempt,
+    ServiceAttemptState,
 )
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION,
@@ -544,8 +546,281 @@ def test_real_mongo_unknown_resource_and_projection_boundary_remain_bounded(mong
         for forbidden in ("_id", "p1_payload", "source_payload")
     )
     assert not any(token in key.casefold() for key in payload for token in ("payment", "settlement", "invoice", "billing_execution"))
-    assert legal_router.VERSION == "v1.6.0-L8-7D6-CLIENT-MATTER-READ-API"
+    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
 
+
+# ---------------------------------------------------------------------------
+# D6 — real-Mongo live-IAM ServiceAttempt HTTP read certificate
+# ---------------------------------------------------------------------------
+
+
+def _attempt(
+    tenant_id: str,
+    attempt_id: str = "attempt-1",
+) -> tuple[ServiceAttempt, ServiceAttempt]:
+    """Build canonical allocated -> attempted immutable attempt snapshots."""
+    allocated = ServiceAttempt(
+        tenant_id=tenant_id,
+        attempt_id=attempt_id,
+        instruction_id="instruction-1",
+        document_id="document-1",
+        deputy_id="deputy-1",
+        allocated_at=NOW,
+        allocation_evidence_reference="allocation-evidence",
+    )
+    attempted = allocated.transition_to(
+        ServiceAttemptState.ATTEMPTED,
+        evidence_reference="attempt-evidence",
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    return allocated, attempted
+
+
+def _prepare_attempt(
+    collections: dict[str, Any],
+    *,
+    business_role: str = "tenant_legal_partner",
+) -> tuple[str, ServiceAttempt, ServiceAttempt, list[str]]:
+    """Persist live IAM plus canonical ServiceAttempt current/history truth."""
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    _persist_iam(
+        collections,
+        tenant,
+        business_role=business_role,
+    )
+    allocated, attempted = _attempt(tenant)
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            allocated,
+            collections["lifecycle"],
+        )
+        == allocated
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            attempted,
+            collections["lifecycle"],
+        )
+        == attempted
+    )
+    calls: list[str] = []
+    return tenant, allocated, attempted, calls
+
+
+def _attempt_request(
+    collections: dict[str, Any],
+    tenant: str,
+    calls: list[str],
+    attempt_id: str = "attempt-1",
+) -> Any:
+    """Issue the real attempt route with only authentication identity injected."""
+    with TestClient(_app(collections, tenant, calls)) as client:
+        return client.get(
+            f"/api/legal-operations/attempts/{attempt_id}",
+            headers={"X-Tenant-ID": tenant},
+        )
+
+
+def test_real_mongo_attempt_live_iam_precedes_lifecycle_and_projects_history(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Durable IAM authorizes exact ServiceAttempt current/history truth."""
+    tenant, allocated, attempted, calls = _prepare_attempt(
+        mongo_context
+    )
+
+    response = _attempt_request(
+        mongo_context,
+        tenant,
+        calls,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == tenant
+    assert body["entity_type"] == "ServiceAttempt"
+    assert body["entity_identity"] == attempted.attempt_id
+    assert body["visibility"] == "AUDIT_VISIBLE"
+    assert body["data"] == attempted.to_dict()
+    assert body["history"] == [
+        allocated.to_dict(),
+        attempted.to_dict(),
+    ]
+
+    for authority_read in (
+        "principal",
+        "membership",
+        "business_role",
+        "authorization_role",
+    ):
+        assert authority_read in calls
+
+    assert "lifecycle" in calls
+    assert max(
+        calls.index("principal"),
+        calls.index("membership"),
+        calls.index("business_role"),
+        calls.index("authorization_role"),
+    ) < calls.index("lifecycle")
+
+    for snapshot in (body["data"], *body["history"]):
+        assert "_id" not in snapshot
+        assert not any(
+            token in key.casefold()
+            for key in snapshot
+            for token in (
+                "invoice",
+                "payment",
+                "settlement",
+                "billing_execution",
+            )
+        )
+
+
+def test_real_mongo_attempt_revoked_grant_denies_before_lifecycle(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Revoked durable authorization cannot reach attempt lifecycle truth."""
+    from tools.eos.auth.role_assignment import (
+        RoleAssignmentAuthority,
+        RoleAssignmentStatus,
+    )
+    from tools.eos.auth.role_assignment_repository import (
+        RoleAssignmentRepository,
+    )
+
+    tenant, _, _, calls = _prepare_attempt(mongo_context)
+
+    RoleAssignmentRepository.compare_and_swap(
+        RoleAssignmentAuthority(
+            "principal-1",
+            tenant,
+            "LEGAL_PARTNER",
+            RoleAssignmentStatus.REVOKED,
+            1,
+        ),
+        0,
+        mongo_context["roles"],
+    )
+
+    response = _attempt_request(
+        mongo_context,
+        tenant,
+        calls,
+    )
+
+    assert response.status_code == 403
+    assert "lifecycle" not in calls
+
+
+def test_real_mongo_attempt_foreign_truth_is_bounded_absence(
+    mongo_context: dict[str, Any],
+) -> None:
+    """A foreign attempt with the same identity cannot disclose its existence."""
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    foreign_tenant = f"tenant-{uuid.uuid4().hex}"
+
+    _persist_iam(mongo_context, tenant)
+
+    foreign_allocated, foreign_attempted = _attempt(
+        foreign_tenant
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            foreign_allocated,
+            mongo_context["lifecycle"],
+        )
+        == foreign_allocated
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            foreign_attempted,
+            mongo_context["lifecycle"],
+        )
+        == foreign_attempted
+    )
+
+    calls: list[str] = []
+    response = _attempt_request(
+        mongo_context,
+        tenant,
+        calls,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "LEGAL_OPERATION_NOT_FOUND"
+    assert "stack_trace" not in response.text
+
+
+def test_real_mongo_attempt_missing_resource_is_bounded(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Authorized absent attempt truth returns only the canonical bounded 404."""
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    _persist_iam(mongo_context, tenant)
+    calls: list[str] = []
+
+    response = _attempt_request(
+        mongo_context,
+        tenant,
+        calls,
+        "missing-attempt",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "LEGAL_OPERATION_NOT_FOUND"
+    assert "stack_trace" not in response.text
+
+
+def test_real_mongo_attempt_forked_history_fails_closed(
+    mongo_context: dict[str, Any],
+) -> None:
+    """Divergent attempt history cannot be converted into arbitrary current truth."""
+    tenant = f"tenant-{uuid.uuid4().hex}"
+    _persist_iam(mongo_context, tenant)
+
+    allocated, attempted = _attempt(tenant)
+
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            allocated,
+            mongo_context["lifecycle"],
+        )
+        == allocated
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            attempted,
+            mongo_context["lifecycle"],
+        )
+        == attempted
+    )
+
+    cancelled = allocated.transition_to(
+        ServiceAttemptState.CANCELLED,
+        evidence_reference="cancelled-evidence",
+        occurred_at=NOW + timedelta(minutes=2),
+    )
+    assert (
+        LegalOperationsLifecycleRegistry.create(
+            cancelled,
+            mongo_context["lifecycle"],
+        )
+        == cancelled
+    )
+
+    calls: list[str] = []
+    response = _attempt_request(
+        mongo_context,
+        tenant,
+        calls,
+    )
+
+    assert response.status_code == 503
+    assert (
+        response.json()["detail"]
+        == "LEGAL_OPERATIONS_EVIDENCE_UNAVAILABLE"
+    )
 
 # ARTIFACT: test_legal_operations_http_real_mongo.py
 # VERSION: v1.3.5-L8-7D6-ROUTER-COMPAT-LIVE-IAM-CURRENT-HISTORY-RM-CERT

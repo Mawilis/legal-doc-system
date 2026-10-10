@@ -81,6 +81,8 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     LegalInstruction,
     LegalInstructionState,
+    ServiceAttempt,
+    ServiceAttemptState,
 )
 from tools.eos.legal_operations.domain.legal_operations_read_model import (
     LegalOperationsEntityReadModel,
@@ -422,8 +424,297 @@ def test_projection_excludes_transport_and_secret_fields() -> None:
 
 def test_l8_5_read_contract_remains_bound_under_l8_7d6_router_release() -> None:
     """L8-5 internal read semantics remain sealed under additive D6."""
-    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
+    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
 
+
+# ---------------------------------------------------------------------------
+# D6 — direct ServiceAttempt current/history HTTP read certificate
+# ---------------------------------------------------------------------------
+
+_ATTEMPT_ID = "attempt-001"
+
+
+def _attempt() -> ServiceAttempt:
+    """Build one canonical allocated ServiceAttempt for the D6 read boundary."""
+    return ServiceAttempt(
+        tenant_id=_TENANT,
+        attempt_id=_ATTEMPT_ID,
+        instruction_id="instruction-001",
+        document_id="document-001",
+        deputy_id="deputy-001",
+        allocated_at=_NOW,
+        allocation_evidence_reference="allocation-evidence",
+    )
+
+
+def _attempt_model(
+    history: tuple[ServiceAttempt, ...],
+    *,
+    current: ServiceAttempt | None = None,
+    tenant_id: str = _TENANT,
+) -> LegalOperationsEntityReadModel:
+    """Build the already-certified generic read model for ServiceAttempt."""
+    assert history
+    return LegalOperationsEntityReadModel(
+        tenant_id=tenant_id,
+        entity_type="ServiceAttempt",
+        entity_identity=_ATTEMPT_ID,
+        current=current or history[-1],
+        history=history,
+    )
+
+
+def _attempt_app(
+    *,
+    context: TenantAuthorizationContext | None = None,
+) -> FastAPI:
+    """Mount the production route while overriding infrastructure only."""
+    app = FastAPI()
+    register_error_handlers(app, debug=False)
+    if context is not None:
+        app.dependency_overrides[legal_router._ATTEMPT_READ] = lambda: context
+    app.dependency_overrides[legal_router.get_lifecycle_collection] = lambda: object()
+    app.include_router(legal_router.router, prefix="/api")
+    return app
+
+
+def test_attempt_read_missing_authentication_is_denied() -> None:
+    """The attempt route remains behind canonical authentication."""
+    with TestClient(_attempt_app()) as client:
+        response = client.get(
+            f"/api/legal-operations/attempts/{_ATTEMPT_ID}"
+        )
+    assert response.status_code == 401
+
+
+def test_attempt_read_authorization_denial_precedes_read_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A denied attempt-read dependency prevents any lifecycle projection."""
+    from fastapi import HTTPException
+
+    calls: list[str] = []
+
+    def forbidden() -> None:
+        raise HTTPException(
+            status_code=403,
+            detail="TENANT_AUTHORIZATION_DENIED",
+        )
+
+    def forbidden_read(*args: object, **kwargs: object) -> object:
+        calls.append("read_model")
+        raise AssertionError("read model must not run after denied authority")
+
+    app = FastAPI()
+    register_error_handlers(app, debug=False)
+    app.dependency_overrides[legal_router._ATTEMPT_READ] = forbidden
+    app.dependency_overrides[legal_router.get_lifecycle_collection] = lambda: object()
+    app.include_router(legal_router.router, prefix="/api")
+
+    monkeypatch.setattr(
+        legal_router,
+        "get_entity_read_model",
+        forbidden_read,
+    )
+
+    with TestClient(app) as client:
+        response = client.get(
+            f"/api/legal-operations/attempts/{_ATTEMPT_ID}"
+        )
+
+    assert response.status_code == 403
+    assert calls == []
+
+
+def test_attempt_read_exposes_exact_current_plus_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Authorized attempt reads expose deterministic canonical history only."""
+    allocated = _attempt()
+    attempted = allocated.transition_to(
+        ServiceAttemptState.ATTEMPTED,
+        evidence_reference="attempt-evidence",
+        occurred_at=_NOW + timedelta(minutes=1),
+    )
+    model = _attempt_model((allocated, attempted), current=attempted)
+    calls: list[tuple[str, str, str]] = []
+
+    def resolve(
+        *,
+        tenant_id: str,
+        entity_type: str,
+        entity_identity: str,
+        lifecycle_collection: object,
+        session: object = None,
+    ) -> LegalOperationsEntityReadModel:
+        del lifecycle_collection, session
+        calls.append((tenant_id, entity_type, entity_identity))
+        return model
+
+    monkeypatch.setattr(
+        legal_router,
+        "get_entity_read_model",
+        resolve,
+    )
+
+    with TestClient(_attempt_app(context=_context())) as client:
+        response = client.get(
+            f"/api/legal-operations/attempts/{_ATTEMPT_ID}"
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == _TENANT
+    assert body["entity_type"] == "ServiceAttempt"
+    assert body["entity_identity"] == _ATTEMPT_ID
+    assert body["visibility"] == "AUDIT_VISIBLE"
+    assert body["data"] == attempted.to_dict()
+    assert body["history"] == [
+        allocated.to_dict(),
+        attempted.to_dict(),
+    ]
+    assert calls == [
+        (_TENANT, "ServiceAttempt", _ATTEMPT_ID)
+    ]
+
+    for snapshot in (body["data"], *body["history"]):
+        assert "_id" not in snapshot
+        assert "credentials" not in snapshot
+        assert "secret" not in snapshot
+        assert "token" not in snapshot
+        assert "password" not in snapshot
+        assert not any(
+            token in key.casefold()
+            for key in snapshot
+            for token in (
+                "invoice",
+                "payment",
+                "settlement",
+                "billing_execution",
+            )
+        )
+
+
+def test_attempt_read_foreign_tenant_is_bounded_absence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Foreign-tenant attempt existence cannot be disclosed."""
+    calls: list[tuple[str, str, str]] = []
+
+    def resolve(
+        *,
+        tenant_id: str,
+        entity_type: str,
+        entity_identity: str,
+        lifecycle_collection: object,
+        session: object = None,
+    ) -> LegalOperationsEntityReadModel:
+        del lifecycle_collection, session
+        calls.append((tenant_id, entity_type, entity_identity))
+        raise LegalOperationsReadModelError(
+            "L8_5_ENTITY_NOT_FOUND"
+        )
+
+    monkeypatch.setattr(
+        legal_router,
+        "get_entity_read_model",
+        resolve,
+    )
+
+    foreign = "tenant-foreign"
+    with TestClient(
+        _attempt_app(context=_context(foreign))
+    ) as client:
+        response = client.get(
+            f"/api/legal-operations/attempts/{_ATTEMPT_ID}"
+        )
+
+    assert response.status_code == 404
+    assert "stack_trace" not in response.text
+    assert calls == [
+        (foreign, "ServiceAttempt", _ATTEMPT_ID)
+    ]
+
+
+def test_attempt_read_unknown_resource_is_bounded_absence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unknown attempt identity remains the generic bounded 404."""
+    def resolve(**kwargs: object) -> LegalOperationsEntityReadModel:
+        del kwargs
+        raise LegalOperationsReadModelError(
+            "L8_5_ENTITY_NOT_FOUND"
+        )
+
+    monkeypatch.setattr(
+        legal_router,
+        "get_entity_read_model",
+        resolve,
+    )
+
+    with TestClient(_attempt_app(context=_context())) as client:
+        response = client.get(
+            "/api/legal-operations/attempts/missing-attempt"
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "LEGAL_OPERATION_NOT_FOUND"
+    assert "stack_trace" not in response.text
+
+
+def test_attempt_read_divergent_history_is_bounded_evidence_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Corrupt or divergent attempt truth fails closed as evidence unavailable."""
+    def resolve(**kwargs: object) -> LegalOperationsEntityReadModel:
+        del kwargs
+        raise LegalOperationsReadModelError(
+            "L8_5_CURRENT_PROJECTION_INVALID"
+        )
+
+    monkeypatch.setattr(
+        legal_router,
+        "get_entity_read_model",
+        resolve,
+    )
+
+    with TestClient(_attempt_app(context=_context())) as client:
+        response = client.get(
+            f"/api/legal-operations/attempts/{_ATTEMPT_ID}"
+        )
+
+    assert response.status_code == 503
+    assert (
+        response.json()["detail"]
+        == "LEGAL_OPERATIONS_EVIDENCE_UNAVAILABLE"
+    )
+
+
+def test_attempt_read_unexpected_persistence_failure_is_bounded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unexpected persistence failures do not leak implementation details."""
+    def resolve(**kwargs: object) -> LegalOperationsEntityReadModel:
+        del kwargs
+        raise RuntimeError("synthetic persistence failure")
+
+    monkeypatch.setattr(
+        legal_router,
+        "get_entity_read_model",
+        resolve,
+    )
+
+    with TestClient(_attempt_app(context=_context())) as client:
+        response = client.get(
+            f"/api/legal-operations/attempts/{_ATTEMPT_ID}"
+        )
+
+    assert response.status_code == 503
+    assert (
+        response.json()["detail"]
+        == "LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE"
+    )
+    assert "synthetic persistence failure" not in response.text
 
 # ARTIFACT: test_legal_operations_http.py
 # VERSION: v1.2.5-L8-7D6-ROUTER-COMPAT-CURRENT-HISTORY-READ-API-CERT
