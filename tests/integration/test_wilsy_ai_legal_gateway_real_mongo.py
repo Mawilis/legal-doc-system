@@ -114,7 +114,7 @@ EXPECTED_SET_NAME = "wilsyVendorCertRS"
 TENANT_A = "tenant-b4-real-a"
 TENANT_B = "tenant-b4-real-b"
 TENANT_C = "tenant-b4-real-c"
-MODULE_ID = "WILSY_AI_LEGAL_TOOL_GATEWAY"
+MODULE_ID = "WILSY_AI_REASONING"
 BASE_TIME = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
 READINESS_FP = "a" * 128
 ACTIVATION_FP = "b" * 128
@@ -211,12 +211,12 @@ def _seed_entitlement(database: Any, tenant_id: str) -> WilsyAIEntitlement:
         tenant_id=tenant_id,
         entitlement_id=f"entitlement-{tenant_id}",
         module_id=MODULE_ID,
-        module_name="WILSY AI Legal Tools",
+        module_name="WILSY AI Reasoning",
         tier=WilsyAITier.STARTER,
         policy_fingerprint=policy.policy_fingerprint,
         lifecycle_state=WilsyAIEntitlementState.PENDING_SOURCE,
         source_requirements=("records",),
-        capability_grants=CAPABILITIES,
+        capability_grants=("wilsy_ai.reasoning.execute.v1",),
         source_readiness_evidence_reference=f"ready-{tenant_id}",
         source_readiness_evidence_fingerprint=READINESS_FP,
     )
@@ -464,7 +464,6 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
     invoke_path = f"{path}/legal.instruction.read.v1/invoke"
     request = {
         "resource_identity": instruction.instruction_id,
-        "entitlement_id": entitlement_a.entitlement_id,
         "correlation_id": "correlation-b4-real",
     }
 
@@ -494,7 +493,6 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
             headers={"X-Tenant-ID": TENANT_C},
             json={
                 "resource_identity": instruction.instruction_id,
-                "entitlement_id": entitlement_c.entitlement_id,
                 "correlation_id": "correlation-b4-denied-underlying",
             },
         )
@@ -530,7 +528,6 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         current_identity = _identity(TENANT_B)
         foreign_request = {
             "resource_identity": instruction.instruction_id,
-            "entitlement_id": entitlement_b.entitlement_id,
             "correlation_id": "correlation-b4-foreign",
         }
         foreign = http.post(

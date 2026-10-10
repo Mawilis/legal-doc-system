@@ -49,6 +49,14 @@ from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
 from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    COLLECTION as BUSINESS_ROLE_COLLECTION,
+    TenantBusinessRoleRepository,
+)
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.intelligence.domain.ai_model_execution import ModelExecutionOutcome, ModelProviderResult
@@ -160,6 +168,27 @@ class _Provider:
         return ModelProviderResult(self.provider_id, self.model_id, response_text="grounded synthesis")
 
 
+class TenantBusinessRoleRepositoryProxy:
+    """Bind the canonical business-role repository to this isolated collection."""
+
+    def __init__(self, collection: _Collection) -> None:
+        self.collection = collection
+
+    def resolve(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        *,
+        session: object = None,
+    ) -> TenantBusinessRoleAuthority:
+        return TenantBusinessRoleRepository.resolve(
+            principal_id,
+            tenant_id,
+            self.collection.raw,
+            session=getattr(session, "raw", session),
+        )
+
+
 class _Harness:
     """Isolated database, real registries, session instrumentation and accounting."""
     def __init__(self, client: MongoClient, database: object) -> None:
@@ -170,7 +199,14 @@ class _Harness:
         self.unknown_commit = False
         self.evidence_session_id = 0
         self.usage_session_id = 0
-        names = (LIFECYCLE_COLLECTION, ENTITLEMENT_COLLECTION, OBSERVATION_COLLECTION, INVOCATION_COLLECTION, ROOT_COLLECTION)
+        names = (
+            LIFECYCLE_COLLECTION,
+            ENTITLEMENT_COLLECTION,
+            OBSERVATION_COLLECTION,
+            INVOCATION_COLLECTION,
+            ROOT_COLLECTION,
+            BUSINESS_ROLE_COLLECTION,
+        )
         self.collections = {name: _Collection(database.get_collection(name, write_concern=WriteConcern(w="majority", j=True), read_concern=ReadConcern("majority"))) for name in names}
         LegalOperationsLifecycleRegistry.ensure_indexes(self.collections[LIFECYCLE_COLLECTION].raw)
         ensure_entitlement_indexes(self.collections[ENTITLEMENT_COLLECTION].raw)
@@ -180,6 +216,9 @@ class _Harness:
         PrincipalAuthorityRepository.ensure_indexes(database["principal_authorities"])
         TenantMembershipRepository.ensure_indexes(database["tenant_memberships"])
         RoleAssignmentRepository.ensure_indexes(database["role_assignments"])
+        TenantBusinessRoleRepository.ensure_indexes(
+            self.collections[BUSINESS_ROLE_COLLECTION].raw
+        )
     def session_factory(self) -> _Session:
         self.session_count += 1
         labels = ("root-start", "root-transition", "tool-accounting", "root-transition", "root-transition", "reconciliation")
@@ -188,15 +227,34 @@ class _Harness:
     def seed(self, tenant: str, principal: str, *, role: str = "tenant_legal_partner", grant: str = "LEGAL_PARTNER", include_instruction: bool = True) -> None:
         PrincipalAuthorityRepository.create(PrincipalAuthority(principal, PrincipalStatus.ACTIVE, 0), self.database["principal_authorities"])
         TenantMembershipRepository.insert(TenantMembershipAuthority(principal, tenant, TenantMembershipStatus.ACTIVE, 0), self.database["tenant_memberships"])
-        # The published authorization composition resolves the business role
-        # from the canonical role-assignment repository; no duplicate business
-        # role collection is introduced by this certificate.
-        RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal, tenant, role, RoleAssignmentStatus.ACTIVE, 0), self.database["role_assignments"])
-        RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal, tenant, grant, RoleAssignmentStatus.ACTIVE, 0), self.database["role_assignments"])
+        # Business-role eligibility and authorization grants are independent
+        # durable authorities and therefore use their canonical split stores.
+        TenantBusinessRoleRepository.insert(
+            TenantBusinessRoleAuthority(
+                principal_id=principal,
+                tenant_id=tenant,
+                business_role=role,
+                status=TenantBusinessRoleStatus.ACTIVE,
+                revision=0,
+                effective_at=NOW,
+                revoked_at=None,
+            ),
+            self.collections[BUSINESS_ROLE_COLLECTION].raw,
+        )
+        RoleAssignmentRepository.insert(
+            RoleAssignmentAuthority(
+                principal,
+                tenant,
+                grant,
+                RoleAssignmentStatus.ACTIVE,
+                0,
+            ),
+            self.database["role_assignments"],
+        )
         if include_instruction:
             LegalOperationsLifecycleRegistry.create(LegalInstruction(tenant, RESOURCE, "matter-c1c", "document-c1c", NOW, "registration-c1c"), self.collections[LIFECYCLE_COLLECTION].raw)
         policy = get_wilsy_ai_commercial_policy(WilsyAITier.STARTER)
-        entitlement = WilsyAIEntitlement(tenant, f"ent-{tenant}", "WILSY_AI_LEGAL_TOOL_GATEWAY", "C1C Legal Services", WilsyAITier.STARTER, policy.policy_fingerprint, WilsyAIEntitlementState.ACTIVE, ("source",), ("legal.read.instruction",), "ready-c1c", "a" * 128, NOW, "activated-c1c", "b" * 128)
+        entitlement = WilsyAIEntitlement(tenant, f"ent-{tenant}", "WILSY_AI_REASONING", "WILSY AI Reasoning", WilsyAITier.STARTER, policy.policy_fingerprint, WilsyAIEntitlementState.ACTIVE, ("source",), ("wilsy_ai.reasoning.execute.v1",), "ready-c1c", "a" * 128, NOW, "activated-c1c", "b" * 128)
         session = self.client.start_session()
         try:
             session.start_transaction()
@@ -208,11 +266,27 @@ class _Harness:
         session = kwargs["session"]
         context = kwargs["context"]
         tenant, principal, tool, resource, invocation = (kwargs[key] for key in ("tenant_id", "principal_id", "tool_identity", "resource_identity", "invocation_id"))
-        entitlement = WilsyAIEntitlementRegistry(self.collections[ENTITLEMENT_COLLECTION]).get_by_module(tenant_id=tenant, module_id="WILSY_AI_LEGAL_TOOL_GATEWAY", session=session)
+        entitlement = WilsyAIEntitlementRegistry(self.collections[ENTITLEMENT_COLLECTION]).get_by_module(tenant_id=tenant, module_id="WILSY_AI_REASONING", session=session)
         capacity = WilsyAIUsageCapacityOrchestrator.from_collections(entitlement_collection=self.collections[ENTITLEMENT_COLLECTION], observation_collection=self.collections[OBSERVATION_COLLECTION]).derive_capacity(tenant_id=tenant, entitlement_id=entitlement.entitlement_id, as_of=NOW, session=session)
         contract = TOOL_CONTRACTS[tool]
-        underlying = _canonical_underlying_context(context, contract, session, _Reader(_Collection(self.database["principal_authorities"])), _Reader(_Collection(self.database["tenant_memberships"])), _Reader(_Collection(self.database["role_assignments"])))
-        authorized = authorize_legal_ai_tool(gateway_context=context, underlying_context=underlying, entitlement=entitlement, capacity=capacity, tool_identity=tool, input_payload={"resource_identity": resource, "entitlement_id": entitlement.entitlement_id, "correlation_id": kwargs["correlation_id"]}, occurred_at=NOW, result_reference=f"LegalInstruction:{resource}")
+        import tools.eos.api.tenant_authorization_http as authorization_http
+
+        underlying = _canonical_underlying_context(
+            context,
+            contract,
+            session,
+            _Reader(_Collection(self.database["principal_authorities"])),
+            _Reader(_Collection(self.database["tenant_memberships"])),
+            authorization_http._TenantAuthorityRoleReader(
+                authorization_repository=_Reader(
+                    _Collection(self.database["role_assignments"])
+                ),
+                business_repository=TenantBusinessRoleRepositoryProxy(
+                    self.collections[BUSINESS_ROLE_COLLECTION]
+                ),
+            ),
+        )
+        authorized = authorize_legal_ai_tool(gateway_context=context, underlying_context=underlying, entitlement=entitlement, capacity=capacity, tool_identity=tool, input_payload={"resource_identity": resource, "correlation_id": kwargs["correlation_id"]}, occurred_at=NOW, result_reference=f"LegalInstruction:{resource}")
         evidence = LegalAIToolInvocationEvidence(invocation, authorized.tenant_id, authorized.principal_id, authorized.tool_identity, authorized.tool_version, authorized.gateway_permission, authorized.underlying_permission, authorized.capability, authorized.business_role, authorized.entitlement_id, authorized.entitlement_revision, authorized.entitlement_fingerprint, authorized.tier, authorized.policy_fingerprint, authorized.capacity_evidence_reference, authorized.capacity_evidence_fingerprint, authorized.correlation_id, authorized.input_fingerprint, authorized.result_classification, authorized.result_reference, kwargs["result_fingerprint"], authorized.occurred_at)
         self.events.append("TOOL_EVIDENCE_WRITE")
         self.evidence_session_id = id(session.raw)
@@ -253,7 +327,15 @@ def _app(harness: _Harness, provider: _Provider, tenant: str, principal: str) ->
     binding = ServerOwnedModelProviderBinding.from_injected(provider=provider, provider_id=provider.provider_id, model_id=provider.model_id)
     executable_provider = binding.resolve()
     app.state.wilsy_ai_legal_services_orchestrator = WilsyAIToolOrchestrator(tool_registry=registry, model_provider=executable_provider.provider, egress_policy=type("Allow", (), {"allow": lambda *_args, **_kwargs: True})(), root_registry=AIToolOrchestrationRegistry(harness.collections[ROOT_COLLECTION]), root_session_factory=harness.session_factory, tool_accounting_writer=harness.accounting, production=True)
-    app.state.wilsy_ai_legal_tool_collections = {"lifecycle": harness.collections[LIFECYCLE_COLLECTION], "tariff": harness.collections[LIFECYCLE_COLLECTION], "eligibility": harness.collections[LIFECYCLE_COLLECTION], "invoice": harness.collections[LIFECYCLE_COLLECTION], "issuance": harness.collections[LIFECYCLE_COLLECTION]}
+    app.state.wilsy_ai_legal_tool_collections = {
+        "lifecycle": harness.collections[LIFECYCLE_COLLECTION],
+        "tariff": harness.collections[LIFECYCLE_COLLECTION],
+        "eligibility": harness.collections[LIFECYCLE_COLLECTION],
+        "invoice": harness.collections[LIFECYCLE_COLLECTION],
+        "issuance": harness.collections[LIFECYCLE_COLLECTION],
+        "entitlement": harness.collections[ENTITLEMENT_COLLECTION],
+        "observation": harness.collections[OBSERVATION_COLLECTION],
+    }
     identity = SovereignIdentity(identity_id=principal, tenant_id=tenant, username="c1c", email="c1c@example.test", auth_method="CERTIFICATE", status=PrincipalStatus.ACTIVE, permissions=["wilsy_ai:reasoning:execute"])
     import tools.eos.auth.authentication as authentication
     import tools.eos.auth.authorization as authorization
@@ -263,7 +345,21 @@ def _app(harness: _Harness, provider: _Provider, tenant: str, principal: str) ->
     app.dependency_overrides[authorization_http.get_current_identity] = lambda: identity
     app.dependency_overrides[authentication.get_principal_authority_repository] = lambda: _Reader(_Collection(harness.database["principal_authorities"]))
     app.dependency_overrides[tenant_access.get_tenant_membership_repository] = lambda: _Reader(_Collection(harness.database["tenant_memberships"]))
-    app.dependency_overrides[authorization.get_role_assignment_repository] = lambda: _Reader(_Collection(harness.database["role_assignments"]))
+    app.dependency_overrides[
+        authorization_http.get_role_assignment_repository
+    ] = lambda: authorization_http._TenantAuthorityRoleReader(
+        authorization_repository=_Reader(
+            _Collection(harness.database["role_assignments"])
+        ),
+        business_repository=TenantBusinessRoleRepositoryProxy(
+            harness.collections[BUSINESS_ROLE_COLLECTION]
+        ),
+    )
+    import tools.eos.kernel.db as kernel_db
+
+    kernel_db.get_database = lambda: harness.database
+    kernel_db.get_client = lambda: harness.client
+
     app.include_router(legal_services_router.router, prefix="/api")
     return app
 

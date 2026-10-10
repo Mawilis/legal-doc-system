@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from dataclasses import replace
-from types import SimpleNamespace
 import asyncio
 from typing import Any, cast
 
@@ -31,8 +30,25 @@ from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP, get_roles_granting_permis
 from tools.eos.auth.tenant_authority_policy import tenant_role_operation_eligibility, ELIGIBLE
 from tools.eos.auth.tenant_authorization import TenantAuthorizationDecision, TenantAuthorizationReason
 from tools.eos.intelligence.domain.legal_ai_gateway import (
-    CAPABILITIES, GATEWAY_PERMISSION, TOOL_CONTRACTS, TOOL_IDENTITIES,
-    LegalAIToolContract, LegalAIToolGatewayError, authorize_legal_ai_tool,
+    AI_VAS_CAPABILITY, CAPABILITIES, GATEWAY_PERMISSION, TOOL_CONTRACTS,
+    TOOL_IDENTITIES, LegalAIToolContract, LegalAIToolGatewayError,
+    authorize_legal_ai_tool,
+)
+from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import (
+    CANONICAL_CAPABILITY_GRANTS,
+    derive_subscription_wilsy_ai_entitlement_id,
+)
+from tools.eos.saas.billing.wilsy_ai_commercial_policy import (
+    WilsyAITier,
+    get_wilsy_ai_commercial_policy,
+)
+from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import (
+    MODULE_ID as REASONING_MODULE_ID,
+)
+from tools.eos.saas.billing.wilsy_ai_usage_capacity import WilsyAIUsageCapacity
+from tools.eos.saas.domain.wilsy_ai_entitlement import (
+    WilsyAIEntitlement,
+    WilsyAIEntitlementState,
 )
 from tools.eos.intelligence.domain import legal_ai_read_adapter as read_adapter_module
 from tools.eos.intelligence.domain.legal_ai_read_adapter import LegalAIReadAdapter
@@ -45,9 +61,62 @@ def _context(tenant: str = "tenant-a", allowed: bool = True) -> TenantAuthorizat
     return TenantAuthorizationContext(identity=identity, tenant_id=tenant, decision=decision)
 
 
-def _facts(tenant: str = "tenant-a", remaining: int = 10) -> tuple[Any, Any]:
-    entitlement = SimpleNamespace(tenant_id=tenant, entitlement_id="ent-1", lifecycle_state="ACTIVE", policy_fingerprint="a" * 128, capability_grants=("legal.read.instruction",), lifecycle_revision=1, fingerprint="e" * 128, tier=SimpleNamespace(value="WILSY_AI_STARTER"))
-    capacity = SimpleNamespace(tenant_id=tenant, entitlement_fingerprint=entitlement.fingerprint, daily_remaining_request_units=remaining, monthly_remaining_automation_actions=remaining, daily_exhausted=remaining <= 0, monthly_exhausted=remaining <= 0, fingerprint="c" * 128)
+def _facts(
+    tenant: str = "tenant-a",
+    remaining: int = 10,
+) -> tuple[WilsyAIEntitlement, WilsyAIUsageCapacity]:
+    now = datetime(2026, 10, 10, 8, 0, tzinfo=timezone.utc)
+    daily_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    daily_end = daily_start.replace(day=daily_start.day) + __import__("datetime").timedelta(days=1)
+    monthly_start = daily_start.replace(day=1)
+    if monthly_start.month == 12:
+        monthly_end = monthly_start.replace(
+            year=monthly_start.year + 1,
+            month=1,
+        )
+    else:
+        monthly_end = monthly_start.replace(month=monthly_start.month + 1)
+
+    policy = get_wilsy_ai_commercial_policy(WilsyAITier.STARTER)
+    entitlement = WilsyAIEntitlement(
+        tenant_id=tenant,
+        entitlement_id=derive_subscription_wilsy_ai_entitlement_id(tenant),
+        module_id=REASONING_MODULE_ID,
+        module_name="WILSY AI Reasoning",
+        tier=WilsyAITier.STARTER,
+        policy_fingerprint=policy.policy_fingerprint,
+        lifecycle_state=WilsyAIEntitlementState.ACTIVE,
+        source_requirements=("explicit_authoritative_provisioning",),
+        capability_grants=CANONICAL_CAPABILITY_GRANTS,
+        source_readiness_evidence_reference="ready-unit",
+        source_readiness_evidence_fingerprint="a" * 128,
+        activated_at=now,
+        activation_evidence_reference="activated-unit",
+        activation_evidence_fingerprint="b" * 128,
+        lifecycle_revision=1,
+    )
+    capacity = WilsyAIUsageCapacity(
+        tenant_id=tenant,
+        entitlement_id=entitlement.entitlement_id,
+        module_id=entitlement.module_id,
+        entitlement_revision=entitlement.lifecycle_revision,
+        entitlement_fingerprint=entitlement.fingerprint,
+        as_of=now,
+        daily_window_start=daily_start,
+        daily_window_end=daily_end,
+        monthly_window_start=monthly_start,
+        monthly_window_end=monthly_end,
+        daily_request_limit=10,
+        monthly_automation_limit=10,
+        daily_consumed_request_units=10 - remaining,
+        monthly_consumed_automation_actions=10 - remaining,
+        daily_remaining_request_units=remaining,
+        monthly_remaining_automation_actions=remaining,
+        daily_exhausted=remaining <= 0,
+        monthly_exhausted=remaining <= 0,
+        observation_fingerprints=(),
+        usage_window_fingerprint="c" * 128,
+    )
     return entitlement, capacity
 
 
@@ -58,7 +127,7 @@ def test_entitlement_fingerprint_is_canonical_capacity_identity() -> None:
     evidence = authorize_legal_ai_tool(
         gateway_context=_context(), underlying_context=_context(), entitlement=entitlement,
         capacity=capacity, tool_identity=TOOL_IDENTITIES[0],
-        input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "fp-ok"},
+        input_payload={"resource_identity": "r", "correlation_id": "fp-ok"},
         occurred_at=datetime.now(timezone.utc),
     )
     assert evidence.entitlement_fingerprint == entitlement.fingerprint
@@ -67,20 +136,20 @@ def test_entitlement_fingerprint_is_canonical_capacity_identity() -> None:
 
 def test_entitlement_fingerprint_mismatch_and_policy_substitution_fail_closed() -> None:
     entitlement, capacity = _facts()
-    capacity.entitlement_fingerprint = "f" * 128
+    capacity = replace(capacity, entitlement_fingerprint="f" * 128, fingerprint="")
     with pytest.raises(LegalAIToolGatewayError, match="L7B_ENTITLEMENT_DENIED"):
         authorize_legal_ai_tool(
             gateway_context=_context(), underlying_context=_context(), entitlement=entitlement,
             capacity=capacity, tool_identity=TOOL_IDENTITIES[0],
-            input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "fp-bad"},
+            input_payload={"resource_identity": "r", "correlation_id": "fp-bad"},
             occurred_at=datetime.now(timezone.utc),
         )
-    capacity.entitlement_fingerprint = entitlement.policy_fingerprint
+    capacity = replace(capacity, entitlement_fingerprint=entitlement.policy_fingerprint, fingerprint="")
     with pytest.raises(LegalAIToolGatewayError, match="L7B_ENTITLEMENT_DENIED"):
         authorize_legal_ai_tool(
             gateway_context=_context(), underlying_context=_context(), entitlement=entitlement,
             capacity=capacity, tool_identity=TOOL_IDENTITIES[0],
-            input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "fp-policy"},
+            input_payload={"resource_identity": "r", "correlation_id": "fp-policy"},
             occurred_at=datetime.now(timezone.utc),
         )
 
@@ -99,7 +168,21 @@ def test_contract_rejects_unknown_identity() -> None:
 
 def test_request_forbids_tenant_and_extra_fields() -> None:
     with pytest.raises(ValidationError):
-        LegalToolInvokeRequest.model_validate({"resource_identity":"x", "entitlement_id":"e", "correlation_id":"c", "tenant_id":"tenant-a"})
+        LegalToolInvokeRequest.model_validate(
+            {
+                "resource_identity": "x",
+                "entitlement_id": "e",
+                "correlation_id": "c",
+            }
+        )
+    with pytest.raises(ValidationError):
+        LegalToolInvokeRequest.model_validate(
+            {
+                "resource_identity": "x",
+                "correlation_id": "c",
+                "tenant_id": "tenant-a",
+            }
+        )
 
 
 def test_gateway_permission_is_dedicated() -> None:
@@ -120,43 +203,43 @@ def test_role_least_privilege_is_preserved_for_gateway_tools() -> None:
 def test_unknown_tool_fails_closed() -> None:
     entitlement, capacity = _facts()
     with pytest.raises(LegalAIToolGatewayError, match="L7B_TOOL_UNKNOWN"):
-        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity="legal.command.v1", input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
+        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity="legal.command.v1", input_payload={"resource_identity": "r", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
 
 
 def test_denied_gateway_fails_closed() -> None:
     entitlement, capacity = _facts()
     with pytest.raises(LegalAIToolGatewayError, match="L7B_PERMISSION_DENIED"):
-        authorize_legal_ai_tool(gateway_context=_context(allowed=False), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
+        authorize_legal_ai_tool(gateway_context=_context(allowed=False), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
 
 
 def test_foreign_tenant_fails_closed() -> None:
     entitlement, capacity = _facts("tenant-b")
-    with pytest.raises(LegalAIToolGatewayError, match="L7B_TENANT_MISMATCH"):
-        authorize_legal_ai_tool(gateway_context=_context("tenant-a"), underlying_context=_context("tenant-a"), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
+    with pytest.raises(LegalAIToolGatewayError, match="L7B_ENTITLEMENT_DENIED"):
+        authorize_legal_ai_tool(gateway_context=_context("tenant-a"), underlying_context=_context("tenant-a"), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
 
 
 def test_exhausted_capacity_fails_closed() -> None:
     entitlement, capacity = _facts(remaining=0)
     with pytest.raises(LegalAIToolGatewayError, match="L7B_CAPACITY_EXHAUSTED"):
-        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
+        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
 
 
 def test_missing_capability_fails_closed() -> None:
     entitlement, capacity = _facts()
-    cast(Any, entitlement).capability_grants = ("legal.read.invoice",)
+    entitlement = replace(entitlement, capability_grants=("legal.read.invoice",), fingerprint="")
     with pytest.raises(LegalAIToolGatewayError, match="L7B_ENTITLEMENT_DENIED"):
-        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
+        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
 
 
 def test_input_tenant_override_and_extra_fields_reject() -> None:
     entitlement, capacity = _facts()
     with pytest.raises(LegalAIToolGatewayError, match="L7B_INPUT_INVALID"):
-        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c", "tenant_id": "tenant-a"}, occurred_at=datetime.now(timezone.utc))
+        authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "correlation_id": "c", "tenant_id": "tenant-a"}, occurred_at=datetime.now(timezone.utc))
 
 
 def test_evidence_is_bounded_and_deterministic() -> None:
     entitlement, capacity = _facts()
-    evidence = authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "entitlement_id": "ent-1", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
+    evidence = authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "r", "correlation_id": "c"}, occurred_at=datetime.now(timezone.utc))
     payload = evidence.to_dict()
     assert "prompt" not in payload and "chain_of_thought" not in payload and "secret" not in payload
     assert evidence.fingerprint == evidence.__class__.from_dict(payload).fingerprint
@@ -201,7 +284,6 @@ def test_read_adapter_delegates_all_allowlisted_projections(monkeypatch: pytest.
 def test_invoke_composes_entitlement_capacity_iam_read_and_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
     """The API composition path commits only after canonical read and evidence persistence."""
     entitlement, capacity = _facts(remaining=10)
-    cast(Any, entitlement).capability_grants = CAPABILITIES
     commits: list[str] = []
 
     class Session:
@@ -239,7 +321,7 @@ def test_invoke_composes_entitlement_capacity_iam_read_and_evidence(monkeypatch:
     async def exercise() -> list[dict[str, object]]:
         values: list[dict[str, object]] = []
         for identity in TOOL_IDENTITIES:
-            values.append(await router_module.invoke_legal_tool(identity, LegalToolInvokeRequest(resource_identity="resource-1", entitlement_id="ent-1", correlation_id=f"corr-{identity}"), context=context, principal_repository=object(), membership_repository=object(), role_assignment_repository=object()))
+            values.append(await router_module.invoke_legal_tool(identity, LegalToolInvokeRequest(resource_identity="resource-1", correlation_id=f"corr-{identity}"), context=context, principal_repository=object(), membership_repository=object(), role_assignment_repository=object()))
         return values
 
     import tools.eos.api.wilsy_ai_legal_gateway_router as router_module
@@ -252,7 +334,6 @@ def test_invoke_composes_entitlement_capacity_iam_read_and_evidence(monkeypatch:
 
 def test_list_composes_only_currently_usable_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     entitlement, capacity = _facts(remaining=10)
-    cast(Any, entitlement).capability_grants = CAPABILITIES
 
     class Session:
         def start_transaction(self) -> None: pass
@@ -287,7 +368,7 @@ def test_list_composes_only_currently_usable_tools(monkeypatch: pytest.MonkeyPat
 
 def test_invocation_registry_persists_exact_replay_and_rejects_divergence() -> None:
     entitlement, capacity = _facts()
-    evidence = authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "resource-1", "entitlement_id": "ent-1", "correlation_id": "corr-1"}, occurred_at=datetime.now(timezone.utc), result_reference="LegalInstruction:resource-1")
+    evidence = authorize_legal_ai_tool(gateway_context=_context(), underlying_context=_context(), entitlement=entitlement, capacity=capacity, tool_identity=TOOL_IDENTITIES[0], input_payload={"resource_identity": "resource-1", "correlation_id": "corr-1"}, occurred_at=datetime.now(timezone.utc), result_reference="LegalInstruction:resource-1")
 
     class Collection:
         def __init__(self) -> None:
@@ -328,7 +409,7 @@ def test_invocation_registry_hydrates_mongo_transport_id_and_preserves_session()
     evidence = authorize_legal_ai_tool(
         gateway_context=_context(), underlying_context=_context(), entitlement=entitlement,
         capacity=capacity, tool_identity=TOOL_IDENTITIES[0],
-        input_payload={"resource_identity": "resource-1", "entitlement_id": "ent-1", "correlation_id": "mongo-get"},
+        input_payload={"resource_identity": "resource-1", "correlation_id": "mongo-get"},
         occurred_at=datetime.now(timezone.utc), result_reference="LegalInstruction:resource-1",
     )
 
@@ -354,7 +435,7 @@ def test_invocation_registry_rejects_unknown_mongo_row_fields() -> None:
     evidence = authorize_legal_ai_tool(
         gateway_context=_context(), underlying_context=_context(), entitlement=entitlement,
         capacity=capacity, tool_identity=TOOL_IDENTITIES[0],
-        input_payload={"resource_identity": "resource-1", "entitlement_id": "ent-1", "correlation_id": "unknown-field"},
+        input_payload={"resource_identity": "resource-1", "correlation_id": "unknown-field"},
         occurred_at=datetime.now(timezone.utc), result_reference="LegalInstruction:resource-1",
     )
 
@@ -372,7 +453,7 @@ def test_invocation_registry_rejects_tampered_fingerprint_with_mongo_id() -> Non
     evidence = authorize_legal_ai_tool(
         gateway_context=_context(), underlying_context=_context(), entitlement=entitlement,
         capacity=capacity, tool_identity=TOOL_IDENTITIES[0],
-        input_payload={"resource_identity": "resource-1", "entitlement_id": "ent-1", "correlation_id": "tampered"},
+        input_payload={"resource_identity": "resource-1", "correlation_id": "tampered"},
         occurred_at=datetime.now(timezone.utc), result_reference="LegalInstruction:resource-1",
     )
 

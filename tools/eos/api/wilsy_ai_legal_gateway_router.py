@@ -76,6 +76,9 @@ from tools.eos.intelligence.domain.legal_ai_gateway import (
     LegalAIToolGatewayError,
     authorize_legal_ai_tool,
 )
+from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import (
+    MODULE_ID as REASONING_MODULE_ID,
+)
 from tools.eos.intelligence.domain.legal_ai_read_adapter import LegalAIReadAdapter
 from tools.eos.intelligence.registry.legal_ai_tool_invocation_registry import (
     COLLECTION as INVOCATION_COLLECTION,
@@ -102,8 +105,8 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.2.0-L8-0-WILSY-AI-SPLIT-IAM-WIRING"
-MODULE_ID: Final[str] = "WILSY_AI_LEGAL_TOOL_GATEWAY"
+VERSION: Final[str] = "v1.3.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION"
+MODULE_ID: Final[str] = REASONING_MODULE_ID
 _GATEWAY_READ = RequireTenantAuthorization(
     GATEWAY_PERMISSION,
     "wilsy_ai_legal_tool_read",
@@ -113,16 +116,15 @@ _GATEWAY_READ = RequireTenantAuthorization(
 class LegalToolInvokeRequest(BaseModel):
     """Strict invocation envelope with no tenant or provider authority.
 
-    The request carries only the selected canonical resource identity, the
-    entitlement identity expected for the already-authorized tenant, and one
-    correlation identity. Extra fields, including tenant/provider overrides,
-    fail Pydantic validation before gateway composition.
+    The request carries only the selected canonical resource identity and one
+    correlation identity. Entitlement, tenant, tier, capacity, provider and
+    commercial authority are server-owned. Extra fields fail Pydantic
+    validation before gateway composition.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     resource_identity: str
-    entitlement_id: str
     correlation_id: str
 
 
@@ -311,7 +313,6 @@ async def list_legal_tools(
                     tool_identity=contract.identity,
                     input_payload={
                         "resource_identity": "list",
-                        "entitlement_id": entitlement.entitlement_id,
                         "correlation_id": "list",
                     },
                     occurred_at=datetime.now(timezone.utc),
@@ -378,12 +379,6 @@ async def invoke_legal_tool(
             module_id=MODULE_ID,
             session=session,
         )
-        if entitlement.entitlement_id != request.entitlement_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="WILSY_AI_LEGAL_TOOL_DENIED",
-            )
-
         capacity = WilsyAIUsageCapacityOrchestrator.from_collections(
             entitlement_collection=collections["entitlement"],
             observation_collection=collections["observation"],
@@ -460,7 +455,7 @@ __all__ = [
 
 
 # ARTIFACT: wilsy_ai_legal_gateway_router.py
-# VERSION: v1.2.0-L8-0-WILSY-AI-SPLIT-IAM-WIRING
+# VERSION: v1.3.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION
 # AUTHORITY BOUNDARY: authenticated allowlisted read composition and bounded invocation evidence only
 # TENANT POSTURE: exact tenant with canonical principal, membership, split business-role and granting-role truth
 # FAIL-CLOSED POSTURE: unsupported tools, IAM divergence, entitlement/capacity failure, projection failure, and evidence conflicts deny
