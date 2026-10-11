@@ -1,16 +1,21 @@
 """Wilsy OS Legal Matter Deadline HTTP router.
 
 TITLE: Wilsy OS Legal Matter Deadline HTTP Router
-VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER
+VERSION: v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
 AUTHORITY: Wilsy OS Core Governance / FastAPI transport composition only.
 EPITOME: Expose authenticated tenant-scoped deadline create/read transport over
-         the certified D3A service without duplicating domain or persistence truth.
+         the certified D3A service and emit bounded post-authorization operational
+         telemetry without duplicating legal, persistence, IAM, or evidence truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_matter_deadline_router.py
 COLLABORATION / OWNERSHIP: D1 owns deadline semantics; D2 owns persistence;
-                            D3A owns matter/deadline orchestration; this router
-                            owns only HTTP, transaction, and bounded projection.
+                            D3A owns matter/deadline orchestration; D3B owns HTTP;
+                            D5 adds bounded transport observability only.
 CERTIFICATION / UPDATE DATE: 2026-10-11
-CHANGELOG: 2026-10-11 v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER
+CHANGELOG: 2026-10-11 v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
+           adds pseudonymized success/failure/count telemetry for authorized
+           deadline create/list/detail handlers after canonical transaction
+           outcomes, excluding evidence contents and authority-bearing input.
+           2026-10-11 v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER
            establishes exact read/write authorization dependencies, strict POST
            input, API-owned Mongo transaction composition, D3A-only delegation,
            bounded tenant/matter/deadline absence, and secret-safe responses.
@@ -29,11 +34,14 @@ TRANSACTION BOUNDARY: The API owns one session/transaction per request, passes
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Invalid input, denied authority, absence, conflict,
                          corruption, persistence failure, and unexpected errors
-                         return bounded non-success responses.
+                         return bounded non-success responses; telemetry failure
+                         never changes legal/transaction outcomes.
 """
 from __future__ import annotations
 
 from datetime import datetime
+import hashlib
+import logging
 from typing import Any, Callable, Final, TypeVar
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -63,9 +71,56 @@ from tools.eos.legal_operations.service.legal_matter_deadline_service import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER"
+VERSION: Final[str] = "v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY"
+logger = logging.getLogger("WilsyOS.API.LegalMatterDeadlineRouter")
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Deadlines"])
 _T = TypeVar("_T")
+
+
+def _telemetry_ref(value: str) -> str:
+    """Return a deterministic SHA3-512 pseudonymous locator for telemetry only."""
+    return hashlib.sha3_512(value.encode("utf-8")).hexdigest()
+
+
+def _observe(
+    *,
+    operation: str,
+    outcome: str,
+    tenant_id: str,
+    case_matter_id: str,
+    deadline_id: str | None = None,
+    count: int | None = None,
+    http_status: int = 200,
+    error_code: str | None = None,
+) -> None:
+    """Emit bounded operational telemetry without exposing legal evidence content.
+
+    Telemetry is non-authoritative and intentionally excludes source references,
+    evidence fingerprints, titles, timestamps, principal identity, role, and
+    financial/AI fields. Logging failure cannot alter the request outcome.
+    """
+    payload: dict[str, Any] = {
+        "event": "LEGAL_MATTER_DEADLINE_HTTP",
+        "operation": operation,
+        "outcome": outcome,
+        "tenant_ref": _telemetry_ref(tenant_id),
+        "matter_ref": _telemetry_ref(case_matter_id),
+        "http_status": http_status,
+    }
+    if deadline_id is not None:
+        payload["deadline_ref"] = _telemetry_ref(deadline_id)
+    if count is not None:
+        payload["count"] = count
+    if error_code is not None:
+        payload["error_code"] = error_code
+    try:
+        logger.log(
+            logging.INFO if outcome == "SUCCESS" else logging.WARNING,
+            "LEGAL_MATTER_DEADLINE_HTTP",
+            extra={"wilsy_observation": payload},
+        )
+    except Exception:
+        return
 
 
 class LegalMatterDeadlineCommand(BaseModel):
@@ -212,9 +267,27 @@ async def create_legal_matter_deadline(
         )
 
     try:
-        return {"data": _project(_transaction(run))}
+        value = _transaction(run)
+        _observe(
+            operation="CREATE",
+            outcome="SUCCESS",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            deadline_id=value.deadline_id,
+        )
+        return {"data": _project(value)}
     except (DeadlineHttpError, LegalMatterDeadlineServiceError) as error:
-        raise _http_error(error) from error
+        http_error = _http_error(error)
+        _observe(
+            operation="CREATE",
+            outcome="ERROR",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            deadline_id=command.deadline_id,
+            http_status=http_error.status_code,
+            error_code=getattr(error, "code", "DEADLINE_HTTP_UNAVAILABLE"),
+        )
+        raise http_error from error
 
 
 @router.get("/matters/{case_matter_id}/deadlines")
@@ -233,9 +306,26 @@ async def list_matter_deadlines(
         )
 
     try:
-        return {"data": [_project(value) for value in _transaction(run)]}
+        values = _transaction(run)
+        _observe(
+            operation="LIST",
+            outcome="SUCCESS",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            count=len(values),
+        )
+        return {"data": [_project(value) for value in values]}
     except (DeadlineHttpError, LegalMatterDeadlineServiceError) as error:
-        raise _http_error(error) from error
+        http_error = _http_error(error)
+        _observe(
+            operation="LIST",
+            outcome="ERROR",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            http_status=http_error.status_code,
+            error_code=getattr(error, "code", "DEADLINE_HTTP_UNAVAILABLE"),
+        )
+        raise http_error from error
 
 
 @router.get("/matters/{case_matter_id}/deadlines/{deadline_id}")
@@ -257,21 +347,48 @@ async def get_matter_deadline(
     try:
         value = _transaction(run)
         if value.case_matter_id != case_matter_id:
+            _observe(
+                operation="DETAIL",
+                outcome="ERROR",
+                tenant_id=context.tenant_id,
+                case_matter_id=case_matter_id,
+                deadline_id=deadline_id,
+                http_status=status.HTTP_404_NOT_FOUND,
+                error_code="DEADLINE_NOT_AVAILABLE",
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="LEGAL_MATTER_DEADLINE_NOT_AVAILABLE",
             )
+        _observe(
+            operation="DETAIL",
+            outcome="SUCCESS",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            deadline_id=deadline_id,
+        )
         return {"data": _project(value)}
     except HTTPException:
         raise
     except (DeadlineHttpError, LegalMatterDeadlineServiceError) as error:
-        raise _http_error(error) from error
+        http_error = _http_error(error)
+        _observe(
+            operation="DETAIL",
+            outcome="ERROR",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            deadline_id=deadline_id,
+            http_status=http_error.status_code,
+            error_code=getattr(error, "code", "DEADLINE_HTTP_UNAVAILABLE"),
+        )
+        raise http_error from error
 
 
 __all__ = [
     "VERSION",
     "DeadlineHttpError",
     "LegalMatterDeadlineCommand",
+    "_telemetry_ref",
     "create_legal_matter_deadline",
     "get_matter_deadline",
     "list_matter_deadlines",
@@ -279,8 +396,8 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_matter_deadline_router.py
-# VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER
-# AUTHORITY BOUNDARY: authenticated HTTP/transaction composition only; D1/D2/D3A remain canonical
+# VERSION: v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
+# AUTHORITY BOUNDARY: authenticated HTTP/transaction composition plus non-authoritative bounded telemetry only; D1/D2/D3A remain canonical
 # TENANT POSTURE: exact durable tenant authorization and exact tenant/matter/deadline service scope
 # FAIL-CLOSED POSTURE: invalid, denied, absent, conflicting, corrupt, unavailable, and unexpected requests never fabricate success
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
