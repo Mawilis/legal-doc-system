@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  createLegalMatterDeadline,
   getLegalMatterDeadlines,
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
@@ -32,6 +33,7 @@ const {
   registerLegalIntake,
   transitionDeputyFieldAttempt,
 } = vi.hoisted(() => ({
+  createLegalMatterDeadline: vi.fn(),
   getLegalMatterDeadlines: vi.fn(),
   generateLegalReturnOfService: vi.fn(),
   getDeputyFieldCapabilities: vi.fn(),
@@ -48,6 +50,7 @@ const {
 }));
 
 vi.mock('../../services/legalMatterDeadlineService.js', () => ({
+  createLegalMatterDeadline,
   getLegalMatterDeadlines,
 }));
 
