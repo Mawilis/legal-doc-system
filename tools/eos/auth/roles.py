@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS
+VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-11 v1.39.0 grants dedicated acceptance-instrument provisioning
+    exactly to LEGAL_PARTNER and LEGAL_ATTORNEY; approval remains separate.
     2026-10-11 v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS grants exact
     matter-deadline read/write permissions to LEGAL_PARTNER, LEGAL_ATTORNEY,
     and LEGAL_PARALEGAL, and read only to LEGAL_SECRETARY. Finance, Sheriff,
@@ -193,7 +195,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS"
+VERSION = "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -262,6 +264,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_acceptance_instrument:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:matter_representation_firm_decision:write",
@@ -280,6 +283,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_acceptance_instrument:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:matter_representation_firm_decision:write",
@@ -497,7 +501,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS
+# VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY
+VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -12,6 +12,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-11 v1.39.0 adds legal_matter_acceptance_instrument_write eligibility
+    exactly for tenant_legal_partner and tenant_legal_attorney.
     2026-10-11 v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY
     recognizes exact own-tenant legal_matter_deadline_read and
     legal_matter_deadline_write operations. Read eligibility is limited to
@@ -184,7 +186,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY"
+VERSION = "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -223,6 +225,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "hr_document_general_read": "hr:document:general:read",
     "legal_conflict_review_write": "legal_operations:conflict_review:write",
     "legal_client_acceptance_write": "legal_operations:client_acceptance:write",
+    "legal_matter_acceptance_instrument_write": "legal_operations:matter_acceptance_instrument:write",
     "legal_matter_acceptance_instrument_approval_write": "legal_operations:matter_acceptance_instrument_approval:write",
     "legal_matter_mandate_acknowledgment_write": "legal_operations:matter_mandate_acknowledgment:write",
     "legal_matter_representation_firm_decision_write": "legal_operations:matter_representation_firm_decision:write",
@@ -253,7 +256,7 @@ ELIGIBILITY = MappingProxyType({
     "tenant_deputy": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_attempt_read": ELIGIBLE, "legal_attempt_write": ELIGIBLE, "legal_return_read": ELIGIBLE}),
     "tenant_legal_client": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_invoice_read": ELIGIBLE}),
 })
-OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_conflict_review_write", "legal_client_acceptance_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_conflict_review_write", "legal_client_acceptance_write", "legal_matter_acceptance_instrument_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
 OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "tenant_branding_read", "tenant_branding_profile_manage", "tenant_branding_asset_manage"))
 _eligibility_updates = dict(ELIGIBILITY)
 _client_existing = dict(ELIGIBILITY["tenant_legal_client"])
@@ -264,6 +267,7 @@ for _role in ("tenant_legal_partner", "tenant_legal_attorney"):
     _review_existing = dict(_eligibility_updates[_role])
     _review_existing["legal_conflict_review_write"] = ELIGIBLE
     _review_existing["legal_matter_acceptance_instrument_approval_write"] = ELIGIBLE
+    _review_existing["legal_matter_acceptance_instrument_write"] = ELIGIBLE
     _review_existing["legal_matter_mandate_acknowledgment_write"] = ELIGIBLE
     _review_existing["legal_matter_engagement_firm_decision_write"] = ELIGIBLE
     _review_existing["legal_matter_representation_firm_decision_write"] = ELIGIBLE
@@ -703,7 +707,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY
+# VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

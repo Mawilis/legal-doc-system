@@ -128,7 +128,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS"
+    assert POLICY_VERSION == "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS"
 
 VERSION = "v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT"
 
@@ -232,6 +232,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_acceptance_instrument:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:matter_representation_firm_decision:write",

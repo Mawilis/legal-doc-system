@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS
+VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-11 v1.39.0 adds the dedicated own-tenant
+    legal_operations:matter_acceptance_instrument:write provisioning vocabulary.
+    It is distinct from approval and grants no lifecycle, acceptance or finance.
     2026-10-11 v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS adds the exact
     own-tenant legal_operations:matter_deadline:read and
     legal_operations:matter_deadline:write permission vocabulary. Both remain
@@ -183,7 +186,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS"
+VERSION = "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -674,6 +677,12 @@ _PERMISSIONS: Final = MappingProxyType(
             "issue authorized own-tenant matter acceptance instrument approvals",
             tenant=True,
         ),
+        "legal_operations:matter_acceptance_instrument:write": _meta(
+            "legal_operations:matter_acceptance_instrument:write",
+            "TENANT", "TENANT",
+            "provision own-tenant matter acceptance instrument content",
+            tenant=True,
+        ),
         "legal_operations:matter_mandate_acknowledgment:write": _meta(
             "legal_operations:matter_mandate_acknowledgment:write",
             "TENANT", "TENANT",
@@ -948,7 +957,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS
+# VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

@@ -1,7 +1,7 @@
 """Authenticated HTTP boundary for canonical Legal Client Acceptance.
 
 TITLE: WILSY OS Legal Client Acceptance HTTP Router
-VERSION: v1.0.0-LEGAL-CLIENT-ACCEPTANCE-HTTP-PARITY
+VERSION: v1.1.0-LEGAL-CLIENT-ACCEPTANCE-PROVISIONING-CONTENT-HTTP
 AUTHORITY: Existing Wilsy OS Legal Operations client-acceptance authorities only.
 EPITOME: Projects certified server-composed acceptance-context creation and
          immutable client-acceptance issuance without creating new authority.
@@ -18,9 +18,10 @@ FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Callable, Final, Mapping, TypeVar
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.client_session import ClientSession
 
@@ -45,6 +46,17 @@ from tools.eos.legal_operations.orchestration.legal_client_acceptance_orchestrat
     LegalClientAcceptanceOrchestrationRetryRequiredError,
     issue_legal_client_acceptance,
 )
+from tools.eos.legal_operations.orchestration.legal_client_matter_acceptance_instrument_provisioning_orchestrator import (
+    LegalClientMatterAcceptanceInstrumentProvisioningError,
+    LegalClientMatterAcceptanceInstrumentProvisioningRetryRequiredError,
+    provision_legal_client_matter_acceptance_instrument,
+)
+from tools.eos.legal_operations.service.legal_client_acceptance_content_service import (
+    LegalClientAcceptanceContentDeliveryError,
+    deliver_legal_client_acceptance_context_content,
+)
+from tools.eos.legal_operations.service.legal_client_matter_acceptance_instrument_content_reader import LegalClientMatterAcceptanceInstrumentContentReader
+from tools.eos.legal_operations.registry.legal_client_matter_acceptance_instrument_content_registry import COLLECTION as INSTRUMENT_CONTENT_COLLECTION
 from tools.eos.legal_operations.registry.legal_client_acceptance_context_registry import (
     COLLECTION as ACCEPTANCE_CONTEXT_COLLECTION,
 )
@@ -74,7 +86,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.0.0-LEGAL-CLIENT-ACCEPTANCE-HTTP-PARITY"
+VERSION: Final[str] = "v1.1.0-LEGAL-CLIENT-ACCEPTANCE-PROVISIONING-CONTENT-HTTP"
 
 router = APIRouter(
     prefix="/legal-operations/client",
@@ -84,6 +96,14 @@ router = APIRouter(
 _WRITE = RequireTenantAuthorization(
     "legal_operations:client_acceptance:write",
     "legal_client_acceptance_write",
+)
+_PROVISION = RequireTenantAuthorization(
+    "legal_operations:matter_acceptance_instrument:write",
+    "legal_matter_acceptance_instrument_write",
+)
+_READ = RequireTenantAuthorization(
+    "legal_operations:client_matter:read",
+    "legal_client_matter_read",
 )
 
 _T = TypeVar("_T")
@@ -105,6 +125,24 @@ class AcceptanceCommand(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     confirmed: bool
+
+
+class AcceptanceInstrumentProvisioningCommand(BaseModel):
+    """Bounded authoring intent; server owns scope, locator and lifecycle."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    instrument_id: str = Field(min_length=1, max_length=160)
+    version: str = Field(min_length=1, max_length=160)
+    instrument_kind: str = Field(min_length=1, max_length=160)
+    title: str = Field(min_length=1, max_length=200)
+    review_scope: str = Field(min_length=1, max_length=1000)
+    content: str = Field(min_length=1, max_length=2_000_000)
+    media_type: str = Field(min_length=1, max_length=128)
+    effective_from: datetime
+    approval_evidence_reference: str = Field(min_length=1, max_length=512)
+    approval_evidence_fingerprint: str = Field(pattern=r"^[0-9a-f]{128}$")
+    supersedes_version_id: str | None = Field(default=None, min_length=1, max_length=160)
 
 
 def _db_handles() -> tuple[Any, Any]:
@@ -291,6 +329,115 @@ def _authorization_registry(
 
 
 @router.post(
+    "/matters/{case_matter_id}/acceptance-instruments",
+    status_code=status.HTTP_201_CREATED,
+)
+async def provision_client_acceptance_instrument(
+    case_matter_id: str,
+    command: AcceptanceInstrumentProvisioningCommand,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PROVISION),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Provision exact bytes, immutable instrument and initial ACTIVE fact."""
+    if not isinstance(idempotency_key, str) or not idempotency_key.strip() or len(idempotency_key) > 256:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="LEGAL_CLIENT_ACCEPTANCE_INSTRUMENT_IDEMPOTENCY_REQUIRED")
+    try:
+        raw_content = command.content.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="LEGAL_CLIENT_ACCEPTANCE_INSTRUMENT_CONTENT_INVALID") from error
+
+    def run(session: Any, database: Any) -> Any:
+        return provision_legal_client_matter_acceptance_instrument(
+            identity=context.identity,
+            case_matter_id=case_matter_id,
+            instrument_id=command.instrument_id,
+            version=command.version,
+            instrument_kind=command.instrument_kind,
+            title=command.title,
+            review_scope=command.review_scope,
+            content=raw_content,
+            media_type=command.media_type,
+            effective_from=command.effective_from,
+            approval_evidence_reference=command.approval_evidence_reference,
+            approval_evidence_fingerprint=command.approval_evidence_fingerprint,
+            supersedes_version_id=command.supersedes_version_id,
+            idempotency_key=idempotency_key,
+            matter_lifecycle_collection=_collection(database, MATTER_LIFECYCLE_COLLECTION),
+            content_collection=_collection(database, INSTRUMENT_CONTENT_COLLECTION),
+            instrument_collection=_collection(database, INSTRUMENT_COLLECTION),
+            instrument_lifecycle_collection=_collection(database, INSTRUMENT_LIFECYCLE_COLLECTION),
+            authorization_evidence_registry=_authorization_registry(
+                database,
+                principal_repository=principal_repository,
+                membership_repository=membership_repository,
+                role_assignment_repository=role_assignment_repository,
+            ),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except (LegalClientMatterAcceptanceInstrumentProvisioningError, LegalClientMatterAcceptanceInstrumentProvisioningRetryRequiredError) as error:
+        raise _http_error(error) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LEGAL_CLIENT_ACCEPTANCE_INSTRUMENT_PROVISIONING_UNAVAILABLE") from error
+    return {"data": {"content": value.content.to_dict(), "instrument": value.instrument.to_dict(), "lifecycle": value.lifecycle.to_dict()}}
+
+
+@router.get("/acceptance-contexts/{acceptance_context_id}/content")
+async def read_client_acceptance_content(
+    acceptance_context_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> Response:
+    """Return current integrity-verified review content for one client context."""
+    def run(session: Any, database: Any) -> Any:
+        return deliver_legal_client_acceptance_context_content(
+            identity=context.identity,
+            acceptance_context_id=acceptance_context_id,
+            context_collection=_collection(database, ACCEPTANCE_CONTEXT_COLLECTION),
+            matter_lifecycle_collection=_collection(database, MATTER_LIFECYCLE_COLLECTION),
+            visibility_collection=_collection(database, VISIBILITY_COLLECTION),
+            party_collection=_collection(database, PARTY_COLLECTION),
+            capacity_collection=_collection(database, CAPACITY_COLLECTION),
+            instrument_collection=_collection(database, INSTRUMENT_COLLECTION),
+            instrument_lifecycle_collection=_collection(database, INSTRUMENT_LIFECYCLE_COLLECTION),
+            approval_collection=_collection(database, APPROVAL_COLLECTION),
+            content_reader=LegalClientMatterAcceptanceInstrumentContentReader(_collection(database, INSTRUMENT_CONTENT_COLLECTION)),
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            business_role_repository=role_assignment_repository,
+            role_assignment_repository=role_assignment_repository,
+            session=session,
+        )
+    try:
+        value = _transaction(run)
+    except LegalClientAcceptanceContentDeliveryError as error:
+        raise _http_error(error) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LEGAL_CLIENT_ACCEPTANCE_CONTENT_UNAVAILABLE") from error
+    return Response(
+        content=value.content.encode("utf-8"),
+        media_type=value.media_type,
+        headers={
+            "X-Wilsy-Acceptance-Context-ID": value.acceptance_context_id,
+            "X-Wilsy-Instrument-ID": value.instrument_id,
+            "X-Wilsy-Instrument-Version": value.instrument_version,
+            "X-Wilsy-Content-Fingerprint": value.content_fingerprint,
+        },
+    )
+
+
+@router.post(
     "/matters/{case_matter_id}/acceptance-contexts",
     status_code=status.HTTP_201_CREATED,
 )
@@ -440,12 +587,13 @@ async def create_client_acceptance(
 __all__ = [
     "AcceptanceCommand",
     "AcceptanceContextCommand",
+    "AcceptanceInstrumentProvisioningCommand",
     "VERSION",
     "router",
 ]
 
 # ARTIFACT: legal_client_acceptance_router.py
-# VERSION: v1.0.0-LEGAL-CLIENT-ACCEPTANCE-HTTP-PARITY
+# VERSION: v1.1.0-LEGAL-CLIENT-ACCEPTANCE-PROVISIONING-CONTENT-HTTP
 # AUTHORITY BOUNDARY: authenticated transport only over certified client-acceptance truth
 # TENANT POSTURE: authenticated TenantAuthorizationContext only; no caller tenant authority
 # FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent and unavailable truth rejects

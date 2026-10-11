@@ -143,7 +143,7 @@ VERSION = "v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT"
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS"
+    assert POLICY_VERSION == "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -189,6 +189,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:client_matter:read",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
+        "legal_operations:matter_acceptance_instrument:write",
         "legal_operations:matter_mandate_acknowledgment:write",
         "legal_operations:matter_engagement_firm_decision:write",
         "legal_operations:matter_representation_firm_decision:write",
@@ -229,9 +230,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 98
+    ) == 99
 
-    assert len(rows) == 101
+    assert len(rows) == 102
 
     for permission_id in tenant:
         metadata = permission_metadata(

@@ -61,12 +61,17 @@ def _effective_routes() -> list[tuple[str, tuple[str, ...]]]:
 
 
 def test_api_server_mounts_client_acceptance_router_exactly_once() -> None:
-    """Certify the exact two effective Client Acceptance routes."""
+    """Certify the exact three effective Client Acceptance context routes."""
 
     assert legal_client_acceptance_router.prefix == "/legal-operations/client"
 
     assert _effective_routes() == sorted(
         [
+            (
+                "/api/legal-operations/client/"
+                "acceptance-contexts/{acceptance_context_id}/content",
+                ("GET",),
+            ),
             (
                 "/api/legal-operations/client/"
                 "matters/{case_matter_id}/acceptance-contexts",
@@ -132,8 +137,8 @@ def test_api_server_mount_does_not_widen_router_contract() -> None:
 
     routes = _effective_routes()
 
-    assert len(routes) == 2
-    assert all(methods == ("POST",) for _, methods in routes)
+    assert len(routes) == 3
+    assert {methods for _, methods in routes} == {("GET",), ("POST",)}
     assert all(
         path.startswith("/api/legal-operations/client/")
         for path, _ in routes
