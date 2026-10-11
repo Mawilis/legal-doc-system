@@ -216,6 +216,8 @@ _LEGAL_PRESENTATION_PERMISSION_BINDINGS = (
     ("legal_operations:return:write", "legal_return_write"),
     ("legal_operations:billing:read", "legal_billing_read"),
     ("legal_operations:invoice:read", "legal_invoice_read"),
+    ("legal_operations:matter_deadline:read", "legal_matter_deadline_read"),
+    ("legal_operations:matter_deadline:write", "legal_matter_deadline_write"),
 )
 _LEGAL_PRESENTATION_EXPECTED_DENIALS = frozenset(
     {

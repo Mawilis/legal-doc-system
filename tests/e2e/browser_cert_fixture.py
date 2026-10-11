@@ -1,16 +1,22 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.0.1-D22B5-LEGAL-PRODUCT-AUTHORITY-BROWSER-CERT-FIXTURE
+VERSION: v1.1.1-D6B-DEADLINE-AUTHENTICATED-BROWSER-CERT-FIXTURE
 AUTHORITY: Test-owned disposable Mongo fixture only.
-EPITOME: Seed the existing EOS repositories with one authenticated legal
-         operator and one REVIEW_REQUIRED conflict screening so Playwright can
-         certify the real browser, HTTP, authorization, and persistence path.
+EPITOME: Seed existing EOS repositories with disposable authenticated Legal
+         operators across the certified deadline role envelope, one canonical
+         matter, and one REVIEW_REQUIRED conflict screening so Playwright can
+         certify real browser, HTTP, IAM, and persistence paths.
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_fixture.py
 COLLABORATION / OWNERSHIP: L8-8M-R3 browser certificate; no production authority.
 CERTIFICATION / UPDATE DATE: 2026-09-26
-CHANGELOG: v1.0.1 adds the canonical ACTIVE D22B5 LEGAL_OPERATIONS product
+CHANGELOG: v1.1.1 bounds disposable multi-role passwords below bcrypt's 72-byte
+           limit without changing authenticated-session or IAM semantics.
+           v1.1.0 adds Partner, Attorney, Paralegal, Secretary and Legal Finance
+           authenticated sessions plus one canonical matter for the D6B deadline
+           browser certificate; no WILSY AI entitlement or deadline is seeded.
+           v1.0.1 adds the canonical ACTIVE D22B5 LEGAL_OPERATIONS product
            entitlement required by the production workspace admission gate.
            v1.0.0 establishes UUID-isolated local-replica-set seeding and
            explicit cleanup. It never targets the configured production URI.
@@ -69,6 +75,7 @@ from tools.eos.legal_operations.domain.legal_conflict_screening import (
     LegalConflictScreeningResult,
     LegalConflictScreeningStatus,
 )
+from tools.eos.legal_operations.domain.legal_operations_lifecycle import CaseMatter
 from tools.eos.legal_operations.registry.legal_acceptance_registry import (
     LegalAcceptanceRegistry,
 )
@@ -80,6 +87,12 @@ from tools.eos.legal_operations.registry.legal_conflict_review_registry import (
 )
 from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
     LegalConflictScreeningRegistry,
+)
+from tools.eos.legal_operations.registry.legal_matter_deadline_registry import (
+    LegalMatterDeadlineRegistry,
+)
+from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
+    LegalOperationsLifecycleRegistry,
 )
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.saas.domain.tenant_product_entitlement import (
@@ -95,7 +108,7 @@ from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.0.0-L8-8M-R3-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.1.0-D6B-DEADLINE-BROWSER-CERT-STATE"
 
 
 def _uri() -> str:
@@ -184,7 +197,13 @@ def seed(state_path: Path) -> None:
 
         suffix = uuid4().hex
         tenant_id = f"browser-tenant-{suffix}"
-        email = f"browser-{suffix}@example.com"
+        actor_specs = (
+            ("partner", "LEGAL_PARTNER", "tenant_legal_partner", "Partner"),
+            ("attorney", "LEGAL_ATTORNEY", "tenant_legal_attorney", "Attorney"),
+            ("paralegal", "LEGAL_PARALEGAL", "tenant_legal_paralegal", "Paralegal"),
+            ("secretary", "LEGAL_SECRETARY", "tenant_legal_secretary", "Secretary"),
+            ("finance", "LEGAL_FINANCE", "tenant_legal_finance", "Finance"),
+        )
         # BSON stores datetimes at millisecond precision; freeze fixture time
         # to that exact boundary so immutable screening correlation survives
         # the durable write/readback certificate.
@@ -203,21 +222,27 @@ def seed(state_path: Path) -> None:
             }
         )
         registry = AuthRegistry()
-        user = registry.register_user(
-            email=email,
-            password=f"SyntheticBrowserPassword-{suffix}-2026!",
-            firstName="Synthetic",
-            lastName="Reviewer",
-            role="LEGAL_PARTNER",
-            tenantId=tenant_id,
-        )
-        # AuthRegistry's canonical principal identity is the durable user.id;
-        # all IAM rows must bind to that exact value for authenticated reads.
-        principal_id = user.id
-        database["users"].update_one(
-            {"user_id": user.id},
-            {"$set": {"mfaRegistered": True}},
-        )
+        actors: dict[str, dict[str, str]] = {}
+        for key, grant_role, business_role, last_name in actor_specs:
+            email = f"browser-{key}-{suffix}@example.com"
+            user = registry.register_user(
+                email=email,
+                password=f"Bcert-{key}-{suffix[:12]}!",
+                firstName="Synthetic",
+                lastName=last_name,
+                role=grant_role,
+                tenantId=tenant_id,
+            )
+            database["users"].update_one(
+                {"user_id": user.id},
+                {"$set": {"mfaRegistered": True}},
+            )
+            actors[key] = {
+                "principal_id": user.id,
+                "email": email,
+                "grant_role": grant_role,
+                "business_role": business_role,
+            }
 
         collections = {
             "principal": database["principal_authorities"],
@@ -228,6 +253,8 @@ def seed(state_path: Path) -> None:
             "acceptance": database["legal_acceptance_evidence"],
             "screening": database["legal_conflict_screenings"],
             "review": database["legal_conflict_reviews"],
+            "lifecycle": database["legal_operations_lifecycle_evidence"],
+            "deadline": database["legal_matter_deadlines"],
             "entitlement_history": database["tenant_product_entitlement_history"],
             "entitlement_current": database["tenant_product_entitlement_current"],
         }
@@ -239,6 +266,8 @@ def seed(state_path: Path) -> None:
         LegalAcceptanceRegistry.ensure_indexes(collections["acceptance"])
         LegalConflictScreeningRegistry.ensure_indexes(collections["screening"])
         LegalConflictReviewRegistry.ensure_indexes(collections["review"])
+        LegalOperationsLifecycleRegistry.ensure_indexes(collections["lifecycle"])
+        LegalMatterDeadlineRegistry.ensure_indexes(collections["deadline"])
         entitlement_registry.ensure_indexes(
             collections["entitlement_history"],
             collections["entitlement_current"],
@@ -249,45 +278,47 @@ def seed(state_path: Path) -> None:
                 read_concern=ReadConcern("snapshot"),
                 write_concern=WriteConcern(w="majority", j=True),
             )
-            PrincipalAuthorityRepository.create(
-                PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0),
-                collections["principal"],
-                session=session,
-            )
-            TenantMembershipRepository.insert(
-                TenantMembershipAuthority(
-                    principal_id,
-                    tenant_id,
-                    TenantMembershipStatus.ACTIVE,
-                    0,
-                ),
-                collections["membership"],
-                session=session,
-            )
-            TenantBusinessRoleRepository.insert(
-                TenantBusinessRoleAuthority(
-                    principal_id,
-                    tenant_id,
-                    "tenant_legal_partner",
-                    TenantBusinessRoleStatus.ACTIVE,
-                    0,
-                    now,
-                    None,
-                ),
-                collections["business"],
-                session=session,
-            )
-            RoleAssignmentRepository.insert(
-                RoleAssignmentAuthority(
-                    principal_id,
-                    tenant_id,
-                    "LEGAL_PARTNER",
-                    RoleAssignmentStatus.ACTIVE,
-                    0,
-                ),
-                collections["roles"],
-                session=session,
-            )
+            for actor in actors.values():
+                principal_id = actor["principal_id"]
+                PrincipalAuthorityRepository.create(
+                    PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0),
+                    collections["principal"],
+                    session=session,
+                )
+                TenantMembershipRepository.insert(
+                    TenantMembershipAuthority(
+                        principal_id,
+                        tenant_id,
+                        TenantMembershipStatus.ACTIVE,
+                        0,
+                    ),
+                    collections["membership"],
+                    session=session,
+                )
+                TenantBusinessRoleRepository.insert(
+                    TenantBusinessRoleAuthority(
+                        principal_id,
+                        tenant_id,
+                        actor["business_role"],
+                        TenantBusinessRoleStatus.ACTIVE,
+                        0,
+                        now,
+                        None,
+                    ),
+                    collections["business"],
+                    session=session,
+                )
+                RoleAssignmentRepository.insert(
+                    RoleAssignmentAuthority(
+                        principal_id,
+                        tenant_id,
+                        actor["grant_role"],
+                        RoleAssignmentStatus.ACTIVE,
+                        0,
+                    ),
+                    collections["roles"],
+                    session=session,
+                )
             entitlement_id = derive_tenant_product_entitlement_id(
                 tenant_id,
                 TenantProductId.LEGAL_OPERATIONS,
@@ -317,50 +348,66 @@ def seed(state_path: Path) -> None:
                 current_collection=collections["entitlement_current"],
                 session=session,
             )
-            for document in _approved_documents(now):
+            documents = _approved_documents(now)
+            for document in documents:
                 LegalDocumentRegistry.register(
                     document,
                     collections["documents"],
                     session=session,
                 )
-                acceptance_method = (
-                    AcceptanceMethod.ACKNOWLEDGEMENT
-                    if document.agreement_type is LegalAgreementType.INSTITUTIONAL_CHARTER
-                    else AcceptanceMethod.ACCEPTANCE
-                )
-                fingerprint = LegalAcceptanceEvidence.fingerprint_payload(
+            for actor in actors.values():
+                principal_id = actor["principal_id"]
+                for document in documents:
+                    acceptance_method = (
+                        AcceptanceMethod.ACKNOWLEDGEMENT
+                        if document.agreement_type is LegalAgreementType.INSTITUTIONAL_CHARTER
+                        else AcceptanceMethod.ACCEPTANCE
+                    )
+                    fingerprint = LegalAcceptanceEvidence.fingerprint_payload(
+                        tenant_id=tenant_id,
+                        principal_id=principal_id,
+                        agreement_type=document.agreement_type,
+                        document_id=document.document_id,
+                        document_version=document.version,
+                        document_sha3_512=document.sha3_512,
+                        acceptance_method=acceptance_method,
+                        locale="en-ZA",
+                    )
+                    evidence = LegalAcceptanceEvidence(
+                        acceptance_id=f"BROWSER-ACCEPT-{uuid4().hex}",
+                        tenant_id=tenant_id,
+                        principal_id=principal_id,
+                        agreement_type=document.agreement_type,
+                        document_id=document.document_id,
+                        document_version=document.version,
+                        document_sha3_512=document.sha3_512,
+                        accepted_at=now,
+                        acceptance_method=acceptance_method,
+                        actor_role_at_acceptance=actor["business_role"],
+                        session_id=f"browser-cert:{principal_id}",
+                        locale="en-ZA",
+                        authority_representation="authenticated_user_acknowledgement_only",
+                        evidence_fingerprint=fingerprint,
+                        idempotency_key=f"browser-cert:{principal_id}:{document.document_id}",
+                    )
+                    LegalAcceptanceRegistry.create_or_replay(
+                        evidence,
+                        collections["acceptance"],
+                        idempotency_key=evidence.idempotency_key,
+                        session=session,
+                    )
+            matter_id = f"browser-matter-{suffix}"
+            LegalOperationsLifecycleRegistry.create(
+                CaseMatter(
                     tenant_id=tenant_id,
-                    principal_id=principal_id,
-                    agreement_type=document.agreement_type,
-                    document_id=document.document_id,
-                    document_version=document.version,
-                    document_sha3_512=document.sha3_512,
-                    acceptance_method=acceptance_method,
-                    locale="en-ZA",
-                )
-                evidence = LegalAcceptanceEvidence(
-                    acceptance_id=f"BROWSER-ACCEPT-{uuid4().hex}",
-                    tenant_id=tenant_id,
-                    principal_id=principal_id,
-                    agreement_type=document.agreement_type,
-                    document_id=document.document_id,
-                    document_version=document.version,
-                    document_sha3_512=document.sha3_512,
-                    accepted_at=now,
-                    acceptance_method=acceptance_method,
-                    actor_role_at_acceptance="tenant_legal_partner",
-                    session_id=f"browser-cert:{principal_id}",
-                    locale="en-ZA",
-                    authority_representation="authenticated_user_acknowledgement_only",
-                    evidence_fingerprint=fingerprint,
-                    idempotency_key=f"browser-cert:{document.document_id}",
-                )
-                LegalAcceptanceRegistry.create_or_replay(
-                    evidence,
-                    collections["acceptance"],
-                    idempotency_key=evidence.idempotency_key,
-                    session=session,
-                )
+                    case_matter_id=matter_id,
+                    matter_reference=f"BROWSER-MATTER-{suffix[:12]}",
+                    opened_at=now,
+                    evidence_reference=f"browser-cert-matter:{matter_id}",
+                ),
+                collections["lifecycle"],
+                session=session,
+            )
             screening = _screening(tenant_id, suffix, now)
             LegalConflictScreeningRegistry.persist_screening(
                 screening,
@@ -369,19 +416,23 @@ def seed(state_path: Path) -> None:
             )
             session.commit_transaction()
 
-        user = registry.get_user_by_id(user.id)
-        if user is None:
-            raise RuntimeError("BROWSER_CERT_USER_READBACK_FAILED")
-        session = registry.create_session(user)
+        for actor in actors.values():
+            user = registry.get_user_by_id(actor["principal_id"])
+            if user is None:
+                raise RuntimeError("BROWSER_CERT_USER_READBACK_FAILED")
+            actor["access_token"] = registry.create_session(user).token
+        partner = actors["partner"]
         state_path.write_text(
             json.dumps(
                 {
                     "state_version": STATE_VERSION,
                     "database_name": database.name,
                     "tenant_id": tenant_id,
-                    "principal_id": principal_id,
-                    "email": email,
-                    "access_token": session.token,
+                    "principal_id": partner["principal_id"],
+                    "email": partner["email"],
+                    "access_token": partner["access_token"],
+                    "actors": actors,
+                    "matter_id": matter_id,
                     "screening_id": screening.screening_id,
                     "source_case_matter_id": screening.source_case_matter_id,
                 },
@@ -442,7 +493,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.0.1-D22B5-LEGAL-PRODUCT-AUTHORITY-BROWSER-CERT-FIXTURE
+# VERSION: v1.1.1-D6B-DEADLINE-AUTHENTICATED-BROWSER-CERT-FIXTURE
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: one generated tenant/principal pair; no production data
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop

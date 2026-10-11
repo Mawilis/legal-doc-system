@@ -745,6 +745,8 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
         "legal_operations:billing:read",
         "legal_operations:instruction:write",
         "legal_operations:invoice:read",
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
         "legal_operations:return:write",
     ]
     assert "permissions" not in payload["user"]

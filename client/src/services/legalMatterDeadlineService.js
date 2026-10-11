@@ -1,15 +1,22 @@
 /**
  * WILSY OS — LEGAL MATTER DEADLINE CLIENT ADAPTER
- * VERSION: v1.0.0-D4A-MATTER-DEADLINE-CLIENT
+ * VERSION: v1.1.1-D6B-MATTER-DEADLINE-BROWSER-AUTHORITY-REPAIR
  * AUTHORITY: Browser transport validation and presentation adaptation only.
- * EPITOME: Strict authenticated adapter for the certified D3B1 Legal Matter
- *          Deadline list/detail/create routes without browser-owned authority.
+ * EPITOME: Strict authenticated adapter for certified Legal Matter Deadline
+ *          list/detail/create routes and the D6 read-only intelligence projection
+ *          without browser-owned tenant, temporal, legal, AI, or financial authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/legalMatterDeadlineService.js
  * COLLABORATION / OWNERSHIP: Python EOS D1/D2/D3A/D3B1 own deadline semantics,
  *                            persistence, orchestration, IAM and HTTP authority.
  *                            This adapter owns only strict client transport shape.
  * CERTIFICATION / UPDATE DATE: 2026-10-11
- * CHANGELOG: 2026-10-11 v1.0.0-D4A-MATTER-DEADLINE-CLIENT establishes exact
+ * CHANGELOG: 2026-10-11 v1.1.1-D6B-MATTER-DEADLINE-BROWSER-AUTHORITY-REPAIR
+ *            removes browser-submitted ACTIVE lifecycle status; the D3B server
+ *            command default remains the sole initial-status transport authority.
+ *            2026-10-11 v1.1.0-D6B-MATTER-DEADLINE-INTELLIGENCE-CLIENT adds
+ *            exact D6 schema/count/order/fingerprint validation and an explicit
+ *            observation-time Core Legal read independent of WILSY AI VAS.
+ *            2026-10-11 v1.0.0-D4A-MATTER-DEADLINE-CLIENT establishes exact
  *            matter-scoped list/detail reads and strict ACTIVE deadline create.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Tenant, principal, role, permission, lifecycle,
@@ -28,7 +35,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_MATTER_DEADLINE_CLIENT_VERSION =
-  'v1.0.0-D4A-MATTER-DEADLINE-CLIENT';
+  'v1.1.1-D6B-MATTER-DEADLINE-BROWSER-AUTHORITY-REPAIR';
 
 const SHA3_512_PATTERN = /^[0-9a-f]{128}$/;
 const RESPONSE_KEYS = Object.freeze([
@@ -79,6 +86,35 @@ const CREATE_INPUT_KEYS = Object.freeze([
   'createdAt',
   'supersedesDeadlineId',
 ]);
+const INTELLIGENCE_SCHEMA = 'WILSY-LEGAL-MATTER-DEADLINE-INTELLIGENCE/V1';
+const INTELLIGENCE_VERSION =
+  'v1.0.0-LEGAL-OPS-COMPLETION-D6-DEADLINE-INTELLIGENCE';
+const INTELLIGENCE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'case_matter_id',
+  'observed_at',
+  'items',
+  'active_count',
+  'upcoming_count',
+  'due_count',
+  'overdue_count',
+  'inactive_count',
+  'fingerprint',
+]);
+const INTELLIGENCE_ITEM_KEYS = Object.freeze([
+  'deadline_id',
+  'case_matter_id',
+  'deadline_kind',
+  'due_at',
+  'source_type',
+  'jurisdiction_reference',
+  'status',
+  'temporal_posture',
+  'deadline_fingerprint',
+]);
+const TEMPORAL_POSTURES = Object.freeze(['UPCOMING', 'DUE', 'OVERDUE', 'INACTIVE']);
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -197,6 +233,85 @@ function assertCreateInput(value) {
   return Object.freeze({ ...value });
 }
 
+function assertIntelligenceEnvelope(value, expectedMatterId, expectedObservedAt) {
+  const code = 'LEGAL_OPERATIONS_DEADLINE_INTELLIGENCE_RESPONSE_INVALID';
+  assertExactKeys(value, ['data'], code);
+  const data = value.data;
+  assertExactKeys(data, INTELLIGENCE_KEYS, code);
+  if (
+    data.schema !== INTELLIGENCE_SCHEMA
+    || data.version !== INTELLIGENCE_VERSION
+    || !isCanonicalText(data.tenant_id)
+    || data.case_matter_id !== expectedMatterId
+    || !isCanonicalTimestamp(data.observed_at)
+    || Date.parse(data.observed_at) !== Date.parse(expectedObservedAt)
+    || !SHA3_512_PATTERN.test(data.fingerprint)
+    || !Array.isArray(data.items)
+  ) {
+    throw new Error(code);
+  }
+  const countKeys = [
+    'active_count', 'upcoming_count', 'due_count', 'overdue_count', 'inactive_count',
+  ];
+  if (countKeys.some((key) => !Number.isSafeInteger(data[key]) || data[key] < 0)) {
+    throw new Error(code);
+  }
+  if (
+    data.active_count !== data.upcoming_count + data.due_count + data.overdue_count
+    || data.items.length !== data.active_count + data.inactive_count
+  ) {
+    throw new Error(code);
+  }
+
+  const seen = new Set();
+  let previousOrderKey = '';
+  const items = data.items.map((item) => {
+    assertExactKeys(item, INTELLIGENCE_ITEM_KEYS, code);
+    if (
+      !isCanonicalText(item.deadline_id)
+      || item.case_matter_id !== expectedMatterId
+      || !DEADLINE_KINDS.includes(item.deadline_kind)
+      || !isCanonicalTimestamp(item.due_at)
+      || !SOURCE_TYPES.includes(item.source_type)
+      || !isCanonicalText(item.jurisdiction_reference)
+      || !STATUSES.includes(item.status)
+      || !TEMPORAL_POSTURES.includes(item.temporal_posture)
+      || !SHA3_512_PATTERN.test(item.deadline_fingerprint)
+      || seen.has(item.deadline_id)
+    ) {
+      throw new Error(code);
+    }
+    const orderKey = `${new Date(item.due_at).toISOString()}\u0000${item.deadline_id}`;
+    if (previousOrderKey && orderKey < previousOrderKey) throw new Error(code);
+    previousOrderKey = orderKey;
+    seen.add(item.deadline_id);
+    return Object.freeze({
+      deadlineId: item.deadline_id,
+      caseMatterId: item.case_matter_id,
+      deadlineKind: item.deadline_kind,
+      dueAt: item.due_at,
+      sourceType: item.source_type,
+      jurisdictionReference: item.jurisdiction_reference,
+      status: item.status,
+      temporalPosture: item.temporal_posture,
+      deadlineFingerprint: item.deadline_fingerprint,
+    });
+  });
+  return Object.freeze({
+    schema: data.schema,
+    version: data.version,
+    caseMatterId: data.case_matter_id,
+    observedAt: data.observed_at,
+    items: Object.freeze(items),
+    activeCount: data.active_count,
+    upcomingCount: data.upcoming_count,
+    dueCount: data.due_count,
+    overdueCount: data.overdue_count,
+    inactiveCount: data.inactive_count,
+    fingerprint: data.fingerprint,
+  });
+}
+
 /**
  * Read the exact server-authorized deadline list for one matter.
  * @param {string} caseMatterId Explicit matter path locator, not tenant authority.
@@ -226,6 +341,23 @@ export async function getLegalMatterDeadline(caseMatterId, deadlineId) {
 }
 
 /**
+ * Read the exact server-observed D6 deadline intelligence projection.
+ * @param {string} caseMatterId Explicit matter locator, never tenant authority.
+ * @param {string} observedAt Explicit timezone-aware observation instant.
+ * @returns {Promise<object>} Frozen bounded observation; never legal advice.
+ */
+export async function getLegalMatterDeadlineIntelligence(caseMatterId, observedAt) {
+  if (!isCanonicalText(caseMatterId) || !isCanonicalTimestamp(observedAt)) {
+    throw new Error('LEGAL_OPERATIONS_DEADLINE_INTELLIGENCE_INPUT_INVALID');
+  }
+  const response = await api.get(
+    `/legal-operations/matters/${encodeURIComponent(caseMatterId)}/deadline-intelligence`,
+    { params: { observed_at: observedAt } },
+  );
+  return assertIntelligenceEnvelope(response?.data, caseMatterId, observedAt);
+}
+
+/**
  * Create or exactly replay one evidenced ACTIVE deadline.
  * The client cannot supply tenant/principal/role/status/overdue/AI/financial truth.
  */
@@ -244,7 +376,6 @@ export async function createLegalMatterDeadline(value) {
       jurisdiction_reference: input.jurisdictionReference,
       created_at: input.createdAt,
       supersedes_deadline_id: input.supersedesDeadlineId,
-      status: 'ACTIVE',
     },
   );
   return assertDetailEnvelope(
@@ -259,16 +390,20 @@ export const __legalMatterDeadlineServiceInternals = Object.freeze({
   assertListEnvelope,
   assertDetailEnvelope,
   assertCreateInput,
+  assertIntelligenceEnvelope,
   RESPONSE_KEYS,
   DEADLINE_KINDS,
   SOURCE_TYPES,
   STATUSES,
   CREATE_INPUT_KEYS,
+  INTELLIGENCE_KEYS,
+  INTELLIGENCE_ITEM_KEYS,
+  TEMPORAL_POSTURES,
 });
 
 /**
  * ARTIFACT: legalMatterDeadlineService.js
- * VERSION: v1.0.0-D4A-MATTER-DEADLINE-CLIENT
+ * VERSION: v1.1.1-D6B-MATTER-DEADLINE-BROWSER-AUTHORITY-REPAIR
  * AUTHORITY BOUNDARY: strict deadline browser transport validation only
  * TENANT POSTURE: server-derived tenant scope only; browser supplies matter/deadline locators
  * FAIL-CLOSED POSTURE: malformed input/response, path drift, duplicate identity and privilege widening reject

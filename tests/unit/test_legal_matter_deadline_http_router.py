@@ -1,14 +1,19 @@
 """Direct certificate for the D3B1 legal matter deadline HTTP router.
 
 TITLE: Wilsy OS Legal Matter Deadline HTTP Router Certificate
-VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER-CERT
+VERSION: v1.1.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP-CERT
 AUTHORITY: Direct ASGI certificate for transport, authorization seams, and D3A delegation.
 EPITOME: Proves exact route topology, strict request shape, transaction/session
-         propagation, bounded projections, and service-error translation.
+         propagation, bounded projections, D6 intelligence composition, and
+         service/projection error translation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_matter_deadline_http_router.py
 COLLABORATION / OWNERSHIP: Certificate owns synthetic transport fixtures only.
 CERTIFICATION / UPDATE DATE: 2026-10-11
-CHANGELOG: 2026-10-11 v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER-CERT
+CHANGELOG: 2026-10-11 v1.1.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP-CERT
+           certifies the independent Core Legal deadline-intelligence GET,
+           explicit observation time, exact tenant/matter/session propagation,
+           bounded D6 response and fail-closed projection behavior.
+           2026-10-11 v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER-CERT
            establishes isolated FastAPI evidence for the unmounted D3B1 router.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque values only; no real customer data.
@@ -171,6 +176,7 @@ def test_router_topology_and_authorization_bindings_are_exact() -> None:
     assert routes == {
         ("/legal-operations/matters/{case_matter_id}/deadlines", ("GET",)),
         ("/legal-operations/matters/{case_matter_id}/deadlines", ("POST",)),
+        ("/legal-operations/matters/{case_matter_id}/deadline-intelligence", ("GET",)),
         ("/legal-operations/matters/{case_matter_id}/deadlines/{deadline_id}", ("GET",)),
     }
 
@@ -323,6 +329,71 @@ def test_detail_delegates_exact_tenant_deadline_and_rechecks_matter(
     assert bounded.json() == {"detail": "LEGAL_MATTER_DEADLINE_NOT_AVAILABLE"}
 
 
+def test_intelligence_delegates_exact_scope_and_returns_bounded_d6_projection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, session = _client(monkeypatch)
+    calls: list[tuple[str, str, object]] = []
+
+    def list_values(**kwargs: Any) -> tuple[LegalMatterDeadline, ...]:
+        calls.append((kwargs["tenant_id"], kwargs["case_matter_id"], kwargs["session"]))
+        assert session.in_transaction is True
+        return (_deadline(),)
+
+    monkeypatch.setattr(deadline_api, "list_legal_matter_deadlines", list_values)
+    response = client.get(
+        f"/api/legal-operations/matters/{MATTER}/deadline-intelligence",
+        params={"observed_at": NOW.isoformat()},
+    )
+    assert response.status_code == 200, response.text
+    assert calls == [(TENANT, MATTER, session)]
+    assert session.events == ["enter", "start", "commit", "exit"]
+    data = response.json()["data"]
+    assert data["tenant_id"] == TENANT
+    assert data["case_matter_id"] == MATTER
+    assert data["observed_at"] == "2026-10-11T10:00:00.000000Z"
+    assert data["active_count"] == 1
+    assert data["upcoming_count"] == 1
+    assert data["due_count"] == 0
+    assert data["overdue_count"] == 0
+    assert data["inactive_count"] == 0
+    assert len(data["fingerprint"]) == 128
+    assert data["items"][0]["deadline_id"] == DEADLINE
+    assert "title" not in data["items"][0]
+    assert "source_reference" not in data["items"][0]
+    assert "source_evidence_fingerprint" not in data["items"][0]
+
+
+def test_intelligence_requires_explicit_aware_time_and_fails_closed_on_scope_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, session = _client(monkeypatch)
+    missing = client.get(
+        f"/api/legal-operations/matters/{MATTER}/deadline-intelligence"
+    )
+    assert missing.status_code == 422
+
+    naive = client.get(
+        f"/api/legal-operations/matters/{MATTER}/deadline-intelligence",
+        params={"observed_at": "2026-10-11T10:00:00"},
+    )
+    assert naive.status_code == 503
+    assert naive.json() == {"detail": "LEGAL_MATTER_DEADLINE_UNAVAILABLE"}
+
+    monkeypatch.setattr(
+        deadline_api,
+        "list_legal_matter_deadlines",
+        lambda **_kwargs: (_deadline(matter="matter-other"),),
+    )
+    drift = client.get(
+        f"/api/legal-operations/matters/{MATTER}/deadline-intelligence",
+        params={"observed_at": NOW.isoformat()},
+    )
+    assert drift.status_code == 503
+    assert drift.json() == {"detail": "LEGAL_MATTER_DEADLINE_UNAVAILABLE"}
+    assert "abort" in session.events
+
+
 def test_wrong_method_rejects_and_projection_excludes_sensitive_internal_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -360,9 +431,9 @@ def test_router_source_has_no_direct_collection_write_or_financial_ai_surface() 
 
 
 # ARTIFACT: test_legal_matter_deadline_http_router.py
-# VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D3B1-DEADLINE-HTTP-ROUTER-CERT
-# AUTHORITY BOUNDARY: isolated HTTP transport certificate only; D1/D2/D3A and durable IAM remain canonical
-# TENANT POSTURE: synthetic exact tenant context only; no cross-tenant fallback
-# FAIL-CLOSED POSTURE: extra authority, wrong matter, conflict, absence, outage, and unexpected errors reject
+# VERSION: v1.1.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP-CERT
+# AUTHORITY BOUNDARY: direct ASGI certificate only; no legal, persistence, AI, recommendation, or financial authority
+# TENANT POSTURE: synthetic exact-tenant authorization and matter correlation only
+# FAIL-CLOSED POSTURE: malformed time, scope drift, unavailable persistence, and authority extras never fabricate success
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

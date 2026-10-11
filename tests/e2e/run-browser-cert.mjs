@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.0.1-L8-8M-R3-BROWSER-CERT-RUNNER
+ * VERSION: v1.1.2-D6B-ISOLATED-EOS-BROWSER-CERT-RUNNER
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the disposable seed, EOS process, Vite process, Playwright
  *          process, and cleanup without killing unrelated repository services.
@@ -8,7 +8,15 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M-R3 browser infrastructure.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.0.1 selects an explicit BROWSER_CERT_PYTHON, a repository
+ * CHANGELOG: v1.1.2 writes an owned temporary copy of the sanctioned Vite
+ *             entry config inside client so its __dirname contract remains
+ *             intact, then deletes that copy during unconditional cleanup.
+ *             v1.1.1 exposes Vite lifecycle diagnostics while retaining secret
+ *             state and EOS fixture output suppression.
+ *             v1.1.0 uses a disposable alternate EOS port and temporary Vite
+ *             proxy configuration so an operator-owned port 9095 service is
+ *             preserved rather than terminated, reused, or reconfigured.
+ *             v1.0.1 selects an explicit BROWSER_CERT_PYTHON, a repository
  *             virtualenv when present, or the provisioned system Python so
  *             local and CI runners share the same fixture orchestration.
  *             v1.0.0 establishes isolated local-replica-set orchestration on
@@ -22,7 +30,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -41,6 +49,11 @@ const chrome = process.env.WILSY_BROWSER_EXECUTABLE
     : '');
 const runDirectory = await mkdtemp(join(tmpdir(), 'wilsy-l8-8m-r3-'));
 const statePath = join(runDirectory, 'state.json');
+const viteConfigPath = join(repo, 'client', `.wilsy-browser-cert-vite-${process.pid}.config.js`);
+const eosPort = Number.parseInt(process.env.BROWSER_CERT_EOS_PORT || '19095', 10);
+if (!Number.isSafeInteger(eosPort) || eosPort < 1024 || eosPort > 65535) {
+  throw new Error('BROWSER_CERT_EOS_PORT_INVALID');
+}
 const databaseName = `wilsy_l8_8m_r3_${Date.now().toString(36)}`;
 const mongoUri = process.env.BROWSER_CERT_MONGO_URI
   || `mongodb://127.0.0.1:27027/${databaseName}?replicaSet=wilsyVendorCertRS`;
@@ -106,17 +119,27 @@ const stopOwned = async () => {
 let failed = false;
 try {
   try {
-    const existing = await fetch('http://127.0.0.1:9095/api/kernel');
+    const existing = await fetch(`http://127.0.0.1:${eosPort}/api/kernel`);
     if (existing.ok || existing.status > 0) {
-      throw new Error('BROWSER_CERT_EOS_PORT_9095_OCCUPIED');
+      throw new Error(`BROWSER_CERT_EOS_PORT_OCCUPIED:${eosPort}`);
     }
   } catch (error) {
-    if (error instanceof Error && error.message === 'BROWSER_CERT_EOS_PORT_9095_OCCUPIED') throw error;
+    if (error instanceof Error && error.message.startsWith('BROWSER_CERT_EOS_PORT_OCCUPIED:')) throw error;
   }
+  const baseViteConfigPath = join(repo, 'client', 'vite.config.js');
+  const baseViteConfig = await readFile(baseViteConfigPath, 'utf-8');
+  await writeFile(
+    viteConfigPath,
+    baseViteConfig.replaceAll('http://localhost:9095', `http://127.0.0.1:${eosPort}`),
+    { encoding: 'utf-8', mode: 0o600 },
+  );
   await runAndWait(python, [fixture, 'seed', '--state', statePath]);
-  spawnOwned(python, ['-m', 'uvicorn', 'tools.eos.api.server:app', '--host', '127.0.0.1', '--port', '9095']);
-  await waitFor('http://127.0.0.1:9095/api/kernel');
-  spawnOwned('npm', ['run', 'dev', '--', '--host', '127.0.0.1', '--port', '5174'], { cwd: join(repo, 'client') });
+  spawnOwned(python, ['-m', 'uvicorn', 'tools.eos.api.server:app', '--host', '127.0.0.1', '--port', String(eosPort)]);
+  await waitFor(`http://127.0.0.1:${eosPort}/api/kernel`);
+  spawnOwned('npm', ['run', 'dev', '--', '--config', viteConfigPath, '--host', '127.0.0.1', '--port', '5174'], {
+    cwd: join(repo, 'client'),
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
   await waitFor('http://127.0.0.1:5174/');
   const playwrightEnvironment = {
     ...environment,
@@ -142,12 +165,13 @@ try {
     console.error('BROWSER_CERT_CLEANUP_FAILED');
   }
   await rm(runDirectory, { recursive: true, force: true });
+  await rm(viteConfigPath, { force: true });
 }
 
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.0.1-L8-8M-R3-BROWSER-CERT-RUNNER
+// VERSION: v1.1.2-D6B-ISOLATED-EOS-BROWSER-CERT-RUNNER
 // AUTHORITY BOUNDARY: owned test-process lifecycle only
 // TENANT POSTURE: UUID-isolated disposable database
 // FAIL-CLOSED POSTURE: service/process/fixture failures return non-zero

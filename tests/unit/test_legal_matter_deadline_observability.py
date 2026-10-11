@@ -1,7 +1,7 @@
 """D5 operational observability certificate for Legal Matter Deadline HTTP.
 
 TITLE: Wilsy OS Legal Matter Deadline Operational Observability Certificate
-VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY-CERT
+VERSION: v1.0.1-LEGAL-OPS-COMPLETION-D6B-DEADLINE-OBSERVABILITY-REGRESSION
 AUTHORITY: Direct telemetry certificate only; no legal or persistence authority.
 EPITOME: Prove pseudonymized bounded success/failure telemetry around the already
          certified D3B1 deadline HTTP surface without exposing evidence content
@@ -9,6 +9,9 @@ EPITOME: Prove pseudonymized bounded success/failure telemetry around the alread
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_matter_deadline_observability.py
 COLLABORATION / OWNERSHIP: D3B1 owns HTTP semantics; D5 certifies telemetry only.
 CERTIFICATION / UPDATE DATE: 2026-10-11
+CHANGELOG: 2026-10-11 v1.0.1-LEGAL-OPS-COMPLETION-D6B-DEADLINE-OBSERVABILITY-REGRESSION
+           reconciles the certified D6B router version while retaining the D5
+           pseudonymization, quiet-failure, and no-authority assertions intact.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic identifiers only; raw tenant/matter/deadline
                              and legal evidence content must not enter telemetry.
@@ -305,7 +308,7 @@ def test_logging_failure_never_changes_canonical_success(
 
 def test_observability_version_and_source_boundaries_are_sealed() -> None:
     assert deadline_api.VERSION == (
-        "v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY"
+        "v1.2.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP"
     )
     source = open(deadline_api.__file__, encoding="utf-8").read()
     assert "source_reference" not in source.split("def _observe(", 1)[1].split(
@@ -320,7 +323,7 @@ def test_observability_version_and_source_boundaries_are_sealed() -> None:
 
 
 # ARTIFACT: test_legal_matter_deadline_observability.py
-# VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY-CERT
+# VERSION: v1.0.1-LEGAL-OPS-COMPLETION-D6B-DEADLINE-OBSERVABILITY-REGRESSION
 # AUTHORITY BOUNDARY: operational telemetry certificate only
 # TENANT POSTURE: raw tenant/matter/deadline identifiers excluded from telemetry
 # FAIL-CLOSED POSTURE: telemetry cannot alter legal or transaction outcomes

@@ -1,17 +1,23 @@
 """Wilsy OS Legal Matter Deadline HTTP router.
 
 TITLE: Wilsy OS Legal Matter Deadline HTTP Router
-VERSION: v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
+VERSION: v1.2.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP
 AUTHORITY: Wilsy OS Core Governance / FastAPI transport composition only.
-EPITOME: Expose authenticated tenant-scoped deadline create/read transport over
-         the certified D3A service and emit bounded post-authorization operational
-         telemetry without duplicating legal, persistence, IAM, or evidence truth.
+EPITOME: Expose authenticated tenant-scoped deadline create/read transport and
+         the certified D6 deterministic intelligence projection over D3A reads,
+         with bounded post-authorization operational telemetry and no duplicate
+         legal, persistence, IAM, evidence, AI, or recommendation truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/legal_matter_deadline_router.py
 COLLABORATION / OWNERSHIP: D1 owns deadline semantics; D2 owns persistence;
                             D3A owns matter/deadline orchestration; D3B owns HTTP;
-                            D5 adds bounded transport observability only.
+                            D5 owns bounded transport observability; D6 owns the
+                            pure projection; D6B owns HTTP composition only.
 CERTIFICATION / UPDATE DATE: 2026-10-11
-CHANGELOG: 2026-10-11 v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
+CHANGELOG: 2026-10-11 v1.2.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP
+           adds one Core Legal read endpoint that obtains exact tenant/matter
+           deadline facts through D3A and projects them through D6 at a required
+           caller-visible observation instant, independently of WILSY AI VAS.
+           2026-10-11 v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
            adds pseudonymized success/failure/count telemetry for authorized
            deadline create/list/detail handlers after canonical transaction
            outcomes, excluding evidence contents and authority-bearing input.
@@ -25,8 +31,9 @@ SECURITY / PRIVACY POSTURE: Caller-supplied identity, role, permission, tenant
                              settlement fields are rejected as extras.
 TENANT BOUNDARY: X-Tenant-ID is accepted only through durable
                  RequireTenantAuthorization and is forwarded unchanged to D3A.
-AUTHORITY BOUNDARY: Transport only; no deadline calculation, lifecycle
-                    invention, matter truth, persistence truth, AI, filing,
+AUTHORITY BOUNDARY: Transport and deterministic observation composition only;
+                    no deadline calculation, lifecycle invention, matter truth,
+                    persistence truth, advice, recommendation, AI, filing,
                     service, court, representation, billing, or payment authority.
 TRANSACTION BOUNDARY: The API owns one session/transaction per request, passes
                       the exact active session to D3A, commits only on success,
@@ -51,6 +58,11 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
+from tools.eos.intelligence.domain.legal_matter_deadline_intelligence import (
+    LegalMatterDeadlineIntelligenceError,
+    LegalMatterDeadlineIntelligenceProjection,
+    project_legal_matter_deadline_intelligence,
+)
 from tools.eos.legal_operations.domain.legal_matter_deadline import (
     LegalMatterDeadline,
     LegalMatterDeadlineKind,
@@ -71,7 +83,7 @@ from tools.eos.legal_operations.service.legal_matter_deadline_service import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY"
+VERSION: Final[str] = "v1.2.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP"
 logger = logging.getLogger("WilsyOS.API.LegalMatterDeadlineRouter")
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Deadlines"])
 _T = TypeVar("_T")
@@ -183,7 +195,11 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
                 if bool(getattr(session, "in_transaction", False)):
                     session.abort_transaction()
                 raise
-    except (DeadlineHttpError, LegalMatterDeadlineServiceError):
+    except (
+        DeadlineHttpError,
+        LegalMatterDeadlineServiceError,
+        LegalMatterDeadlineIntelligenceError,
+    ):
         raise
     except Exception as error:
         raise DeadlineHttpError("DEADLINE_HTTP_UNAVAILABLE", error) from error
@@ -328,6 +344,63 @@ async def list_matter_deadlines(
         raise http_error from error
 
 
+@router.get("/matters/{case_matter_id}/deadline-intelligence")
+async def get_matter_deadline_intelligence(
+    case_matter_id: str,
+    observed_at: datetime,
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Observe one exact authorized matter's deadlines through certified D6.
+
+    The explicit aware ``observed_at`` value makes temporal posture reproducible.
+    This Core Legal projection is independent of WILSY AI subscription,
+    entitlement, capacity, model, advisory, and command authority.
+    """
+
+    def run(
+        session: Any,
+        database: Any,
+    ) -> LegalMatterDeadlineIntelligenceProjection:
+        deadlines = list_legal_matter_deadlines(
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            deadline_collection=_collection(database, DEADLINE_COLLECTION),
+            session=session,
+        )
+        return project_legal_matter_deadline_intelligence(
+            deadlines,
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            observed_at=observed_at,
+        )
+
+    try:
+        projection = _transaction(run)
+        _observe(
+            operation="INTELLIGENCE",
+            outcome="SUCCESS",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            count=len(projection.items),
+        )
+        return {"data": projection.to_dict()}
+    except (
+        DeadlineHttpError,
+        LegalMatterDeadlineServiceError,
+        LegalMatterDeadlineIntelligenceError,
+    ) as error:
+        http_error = _http_error(error)
+        _observe(
+            operation="INTELLIGENCE",
+            outcome="ERROR",
+            tenant_id=context.tenant_id,
+            case_matter_id=case_matter_id,
+            http_status=http_error.status_code,
+            error_code=getattr(error, "code", "DEADLINE_HTTP_UNAVAILABLE"),
+        )
+        raise http_error from error
+
+
 @router.get("/matters/{case_matter_id}/deadlines/{deadline_id}")
 async def get_matter_deadline(
     case_matter_id: str,
@@ -390,14 +463,15 @@ __all__ = [
     "LegalMatterDeadlineCommand",
     "_telemetry_ref",
     "create_legal_matter_deadline",
+    "get_matter_deadline_intelligence",
     "get_matter_deadline",
     "list_matter_deadlines",
     "router",
 ]
 
 # ARTIFACT: legal_matter_deadline_router.py
-# VERSION: v1.1.0-LEGAL-OPS-COMPLETION-D5-DEADLINE-OBSERVABILITY
-# AUTHORITY BOUNDARY: authenticated HTTP/transaction composition plus non-authoritative bounded telemetry only; D1/D2/D3A remain canonical
+# VERSION: v1.2.0-LEGAL-OPS-COMPLETION-D6B-DEADLINE-INTELLIGENCE-HTTP
+# AUTHORITY BOUNDARY: authenticated HTTP/transaction composition, certified D6 observation, and bounded telemetry only; D1/D2/D3A/D6 remain canonical
 # TENANT POSTURE: exact durable tenant authorization and exact tenant/matter/deadline service scope
 # FAIL-CLOSED POSTURE: invalid, denied, absent, conflicting, corrupt, unavailable, and unexpected requests never fabricate success
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
