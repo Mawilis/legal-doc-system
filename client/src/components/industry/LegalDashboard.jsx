@@ -6,7 +6,8 @@
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
  *          a snapshot-backed operating workspace for instructions, process
  *          documents, service attempts, certified executions, returns, exact
- *          finance evidence and governed initial intake; specialist and client
+ *          finance evidence, certified matter deadlines and governed initial
+ *          intake; specialist and client
  *          roles retain least-authority views.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns authority; P1/P2 own lifecycle/
@@ -18,9 +19,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * CERTIFICATION / UPDATE DATE: 2026-10-11
  * CHANGELOG: 2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
- *            2026-09-29 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
+ *            2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
  *            2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.1.0-L10-P2-TRUST-CENTER consolidates descriptive authority posture and practice profile into the shared Legal Chrome Trust Center drawer, preserving server-derived presentation and role boundaries while removing repeated full-width shell cards. No Legal authority, Court, finance, or storage truth is introduced.
