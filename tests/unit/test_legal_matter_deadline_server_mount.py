@@ -29,16 +29,18 @@ VERSION = "v1.0.0-LEGAL-OPS-COMPLETION-D3B2A-DEADLINE-SERVER-MOUNT-CERT"
 
 
 def _effective_routes() -> list[tuple[str, tuple[str, ...]]]:
-    """Flatten FastAPI included routers using the canonical traversal helper."""
+    """Flatten included routers using FastAPI's effective route context."""
     result: list[tuple[str, tuple[str, ...]]] = []
-    for route, _context in _iter_routes_with_context(server_api.app.routes):
+    for route, context in _iter_routes_with_context(server_api.app.routes):
         if not isinstance(route, APIRoute):
             continue
-        if not route.path.startswith("/api/legal-operations/matters/"):
+        path = context.path if context is not None else route.path
+        methods = context.methods if context is not None else (route.methods or set())
+        if not path.startswith("/api/legal-operations/matters/"):
             continue
-        if "/deadlines" not in route.path:
+        if "/deadlines" not in path:
             continue
-        result.append((route.path, tuple(sorted(route.methods or set()))))
+        result.append((path, tuple(sorted(methods))))
     return sorted(result)
 
 
