@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT
+VERSION: v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+2026-10-11 v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT removes the
+stale pre-AUTH3 assertion that canonical deadline permissions remain absent
+from the separate durable role layer. It directly preserves namespace-only
+ownership, no ROLE_PERMISSIONS_MAP mutation, exact vocabulary, distinctness,
+and fail-closed unknown/wildcard semantics.
 2026-10-11 v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT removes the
 stale AUTH1 phase-local assumption that deadline permissions must remain absent
 from the separate authorization-binding layer. The enduring namespace contract
@@ -133,7 +138,7 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT"
+VERSION = "v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -798,17 +803,15 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
     namespace = Path(
         "tools/eos/auth/permission_namespace.py"
     ).read_text(encoding="utf-8")
-    grants = Path(
-        "tools/eos/auth/roles.py"
-    ).read_text(encoding="utf-8")
     permissions = (
         "legal_operations:matter_deadline:read",
         "legal_operations:matter_deadline:write",
     )
     assert permissions[0] != permissions[1]
+    assert "ROLE_PERMISSIONS_MAP" not in namespace
+    assert "tools.eos.auth.roles" not in namespace
     for permission in permissions:
         assert permission in namespace
-        assert permission not in grants
         metadata = permission_metadata(permission)
         assert metadata is not None
         assert metadata.authorizes_by_itself is False
@@ -822,7 +825,7 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT
+# VERSION: v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
