@@ -19,6 +19,8 @@ FAIL-CLOSED DECLARATION: Missing, duplicate, widened, or malformed routes fail c
 """
 from __future__ import annotations
 
+from fastapi.routing import APIRoute, _iter_routes_with_context
+
 import tools.eos.api.server as server_api
 from tools.eos.api.legal_matter_deadline_router import router as deadline_router
 
@@ -27,24 +29,16 @@ VERSION = "v1.0.0-LEGAL-OPS-COMPLETION-D3B2A-DEADLINE-SERVER-MOUNT-CERT"
 
 
 def _effective_routes() -> list[tuple[str, tuple[str, ...]]]:
-    """Return only effective APIRoutes for the deadline route family."""
+    """Flatten FastAPI included routers using the canonical traversal helper."""
     result: list[tuple[str, tuple[str, ...]]] = []
-    for route in server_api.app.routes:
-        path = getattr(route, "path", None)
-        methods = getattr(route, "methods", None)
-        if not isinstance(path, str):
+    for route, _context in _iter_routes_with_context(server_api.app.routes):
+        if not isinstance(route, APIRoute):
             continue
-        if not path.startswith("/api/legal-operations/matters/"):
+        if not route.path.startswith("/api/legal-operations/matters/"):
             continue
-        if "/deadlines" not in path:
+        if "/deadlines" not in route.path:
             continue
-        if methods is None:
-            continue
-        try:
-            normalized_methods = tuple(sorted(str(method) for method in methods))
-        except TypeError:
-            continue
-        result.append((path, normalized_methods))
+        result.append((route.path, tuple(sorted(route.methods or set()))))
     return sorted(result)
 
 
