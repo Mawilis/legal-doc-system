@@ -2740,6 +2740,11 @@ function LegalPracticeWorkspace({
     user,
     permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
   });
+  const canWriteDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+  });
   const canOpenFinance = canReadBilling || canReadInvoice;
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
   const [searchQuery, setSearchQuery] = useState('');
