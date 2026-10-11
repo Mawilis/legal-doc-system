@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.5.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSION-CERT
+VERSION: v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+2026-10-11 v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT removes the
+stale AUTH1 phase-local assumption that deadline permissions must remain absent
+from the separate authorization-binding layer. The enduring namespace contract
+still proves exact distinct vocabulary, fail-closed unknown/wildcard values,
+and absence of role grants; production permission semantics are unchanged.
 2026-10-11 v1.5.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSION-CERT certifies the
 exact distinct matter-deadline read/write vocabulary, canonical metadata,
 fail-closed aliases, unchanged neighboring permissions, and absence of any
@@ -128,7 +133,7 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.5.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSION-CERT"
+VERSION = "v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -788,24 +793,36 @@ def test_no_domain_profile_permissions():
         assert permission not in Path(path).read_text(encoding="utf-8")
 
 
-def test_deadline_permissions_create_no_operation_binding_or_role_grant() -> None:
-    """AUTH1 remains vocabulary-only and cannot manufacture authority."""
-    bindings = Path(
-        "tools/eos/auth/tenant_authorization.py"
+def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
+    """AUTH1 owns exact vocabulary while bindings and grants remain separate."""
+    namespace = Path(
+        "tools/eos/auth/permission_namespace.py"
     ).read_text(encoding="utf-8")
     grants = Path(
         "tools/eos/auth/roles.py"
     ).read_text(encoding="utf-8")
-    for permission in (
+    permissions = (
         "legal_operations:matter_deadline:read",
         "legal_operations:matter_deadline:write",
-    ):
-        assert permission not in bindings
+    )
+    assert permissions[0] != permissions[1]
+    for permission in permissions:
+        assert permission in namespace
         assert permission not in grants
+        metadata = permission_metadata(permission)
+        assert metadata is not None
+        assert metadata.authorizes_by_itself is False
+    for invalid in (
+        "legal_operations:matter_deadline:*",
+        "legal_operations:matter_deadline",
+        "legal_operations:matter_deadline:delete",
+    ):
+        with pytest.raises(ValueError):
+            permission_metadata(invalid)
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.5.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSION-CERT
+# VERSION: v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
