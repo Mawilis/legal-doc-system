@@ -12,7 +12,7 @@ FILE:
     tests/integration/test_tenant_router_runtime_registration.py
 
 VERSION:
-    v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT
+    v1.5.0-D3B2B-MATTER-DEADLINE-API-SERVER-LOCK-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -33,14 +33,18 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-09-20
+    2026-10-11
 
 CHANGELOG:
+    v1.5.0-D3B2B-MATTER-DEADLINE-API-SERVER-LOCK-CERT
+        - Advances the canonical api_server version lock for the additive
+          Legal Matter Deadline router mount while preserving the exact tenant
+          router surface, authorization semantics, and general application composition.
     v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT
         - Advances only the canonical API-server version lock after the
           production legal-acceptance mount while preserving the certified
           tenant-router surface and authority semantics unchanged.
-    v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT
+    v1.5.0-D3B2B-MATTER-DEADLINE-API-SERVER-LOCK-CERT
         - Certifies the dedicated Legal Operations read router is mounted once
           while the existing tenant-router five-route surface remains exact.
     v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT
@@ -140,9 +144,9 @@ from tools.eos.saas.tenancy.tenant_registry import (
 )
 
 
-VERSION = "v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT"
+VERSION = "v1.5.0-D3B2B-MATTER-DEADLINE-API-SERVER-LOCK-CERT"
 EXPECTED_API_SERVER_VERSION = (
-    "v1.7.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE"
+    "v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT"
 )
 EXPECTED_TENANT_ROUTER_VERSION = (
     "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
@@ -399,7 +403,7 @@ def _entity(
 
 def test_versions_lock_c2_into_unchanged_canonical_app() -> None:
     """C2 advances governance versions while preserving app composition."""
-    assert VERSION == "v1.4.0-R1D-PRODUCTION-LEGAL-ACCEPTANCE-APP-LOCK-CERT"
+    assert VERSION == "v1.5.0-D3B2B-MATTER-DEADLINE-API-SERVER-LOCK-CERT"
     assert API_SERVER_VERSION == EXPECTED_API_SERVER_VERSION
     assert TENANT_ROUTER_VERSION == EXPECTED_TENANT_ROUTER_VERSION
 
@@ -1032,7 +1036,7 @@ def test_authorized_delete_preserves_soft_archive_http_contract(
 # WILSY OS SOVEREIGN CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: test_tenant_router_runtime_registration.py
-# VERSION: v1.2.0-TENANT-ROUTER-PROFILE-UPDATE-WIRING-CERT
+# VERSION: v1.5.0-D3B2B-MATTER-DEADLINE-API-SERVER-LOCK-CERT
 # AUTHORITY BOUNDARY: canonical-ASGI C2 wiring evidence only; durable authentication, membership, role, permission, authorization, and persistence ownership remain production authorities
 # TENANT POSTURE: GET/PUT/DELETE require exact current-truth authorization and X-Tenant-ID/path congruence before persistence; collection GET and POST stay contained
 # FAIL-CLOSED POSTURE: protected PUT fields never reach registry; strict update_profile alone is invoked; PUT maps 200/403/404/422/503 deterministically while GET/archive B2B semantics remain preserved

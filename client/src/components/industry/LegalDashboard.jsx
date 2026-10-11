@@ -1,12 +1,13 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY
+ * VERSION: v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
  *          a snapshot-backed operating workspace for instructions, process
  *          documents, service attempts, certified executions, returns, exact
- *          finance evidence and governed initial intake; specialist and client
+ *          finance evidence, certified matter deadlines and governed initial
+ *          intake; specialist and client
  *          roles retain least-authority views.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/industry/LegalDashboard.jsx
  * COLLABORATION / OWNERSHIP: Python EOS IAM owns authority; P1/P2 own lifecycle/
@@ -18,8 +19,10 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
+ * CERTIFICATION / UPDATE DATE: 2026-10-11
+ * CHANGELOG: 2026-10-11 v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
+ *            2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
+ *            2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
  *            2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.1.0-L10-P2-TRUST-CENTER consolidates descriptive authority posture and practice profile into the shared Legal Chrome Trust Center drawer, preserving server-derived presentation and role boundaries while removing repeated full-width shell cards. No Legal authority, Court, finance, or storage truth is introduced.
@@ -146,12 +149,16 @@ import {
   registerLegalIntake,
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
+import {
+  createLegalMatterDeadline,
+  getLegalMatterDeadlines,
+} from '../../services/legalMatterDeadlineService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY';
+const DASHBOARD_VERSION = 'v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -264,6 +271,8 @@ const PRESENTATION_PERMISSIONS = Object.freeze({
   RETURN_WRITE: 'legal_operations:return:write',
   BILLING_READ: 'legal_operations:billing:read',
   INVOICE_READ: 'legal_operations:invoice:read',
+  DEADLINE_READ: 'legal_operations:matter_deadline:read',
+  DEADLINE_WRITE: 'legal_operations:matter_deadline:write',
 });
 
 const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
@@ -272,21 +281,28 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.BILLING_READ,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
   ]),
   LEGAL_ATTORNEY: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.BILLING_READ,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
   ]),
   LEGAL_PARALEGAL: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
   ]),
   LEGAL_SECRETARY: Object.freeze([
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
   ]),
   LEGAL_FINANCE: Object.freeze([
     PRESENTATION_PERMISSIONS.BILLING_READ,
@@ -301,6 +317,7 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   DOCUMENTS: 'DOCUMENTS',
   SERVICE: 'SERVICE',
   RETURNS: 'RETURNS',
+  DEADLINES: 'DEADLINES',
   FINANCE: 'FINANCE',
   INTAKE: 'INTAKE',
 });
@@ -407,6 +424,16 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
       user,
       permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
     }) ? 'Invoice evidence' : null,
+    presentationAllowsPermission({
+      roleToken,
+      user,
+      permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
+    }) ? 'Matter deadlines' : null,
+    presentationAllowsPermission({
+      roleToken,
+      user,
+      permission: PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+    }) ? 'Deadline creation' : null,
   ].filter(Boolean);
 
   return (
@@ -2013,6 +2040,16 @@ function LegalFinanceLookup({ roleToken, user }) {
     user,
     permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
   });
+  const canReadDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
+  });
+  const canWriteDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+  });
   const allowedKinds = useMemo(() => [
     ...(canReadBilling ? ['TARIFF_ASSESSMENT', 'BILLING_ELIGIBILITY'] : []),
     ...(canReadInvoice ? ['INVOICE'] : []),
@@ -2345,6 +2382,326 @@ function LegalIntakePanel({ onRefresh, onRegistered, roleToken, user }) {
   );
 }
 
+
+function DeadlineQueueRow({ item, matterReference }) {
+  return (
+    <div className="grid gap-4 px-5 py-4 lg:grid-cols-[1.2fr_1fr_1fr_auto] lg:items-center">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-black text-white">{item.title}</p>
+        <p className="mt-1 truncate text-[11px] text-stone-500">
+          {matterReference || item.caseMatterId} · {item.deadlineKind}
+        </p>
+      </div>
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Recorded due at</p>
+        <p className="mt-1 text-xs font-semibold text-stone-300">{formatTimestamp(item.dueAt)}</p>
+      </div>
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Source / jurisdiction</p>
+        <p className="mt-1 text-xs font-semibold text-stone-300">{item.sourceType}</p>
+        <p className="mt-1 truncate text-[10px] text-stone-600">{item.jurisdictionReference}</p>
+      </div>
+      <StatePill state={item.status} />
+    </div>
+  );
+}
+
+function createDeadlineDraft(workspace) {
+  const firstMatter = Array.isArray(workspace?.matters) ? workspace.matters[0] : null;
+  return {
+    caseMatterId: firstMatter?.case_matter_id || '',
+    deadlineKind: 'FILING',
+    title: '',
+    dueAt: '',
+    sourceType: 'COURT_ORDER',
+    sourceReference: '',
+    sourceEvidenceFingerprint: '',
+    jurisdictionReference: '',
+    supersedesDeadlineId: '',
+  };
+}
+
+function LegalDeadlineWorkQueue({ canWrite, workspace }) {
+  const [deadlines, setDeadlines] = useState([]);
+  const [status, setStatus] = useState({ kind: 'loading', message: '' });
+  const [draft, setDraft] = useState(() => createDeadlineDraft(workspace));
+  const [commandStatus, setCommandStatus] = useState(null);
+
+  const load = useCallback(async () => {
+    const matters = Array.isArray(workspace?.matters) ? workspace.matters : [];
+    setStatus({ kind: 'loading', message: '' });
+    try {
+      const packets = await Promise.all(
+        matters.map((matter) => getLegalMatterDeadlines(matter.case_matter_id)),
+      );
+      const rows = packets.flat();
+      setDeadlines(rows);
+      setStatus({ kind: 'ready', message: '' });
+      return rows;
+    } catch (caught) {
+      setDeadlines([]);
+      setStatus({
+        kind: 'error',
+        message: commandErrorMessage(caught),
+      });
+      return null;
+    }
+  }, [workspace]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const matterReferences = useMemo(
+    () => new Map(
+      (workspace?.matters || []).map((matter) => [
+        matter.case_matter_id,
+        matter.matter_reference,
+      ]),
+    ),
+    [workspace],
+  );
+
+  const updateDraft = (field, value) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const submitDeadline = async (event) => {
+    event.preventDefault();
+    if (!canWrite) {
+      setCommandStatus({
+        kind: 'error',
+        message: 'Current presentation scope does not include deadline creation.',
+      });
+      return;
+    }
+
+    setCommandStatus({ kind: 'pending', message: 'Recording evidenced deadline…' });
+    try {
+      const result = await createLegalMatterDeadline({
+        caseMatterId: draft.caseMatterId,
+        deadlineId: `deadline-${createOpaqueBrowserToken()}`,
+        deadlineKind: draft.deadlineKind,
+        title: draft.title.trim(),
+        dueAt: canonicalObservedAt(draft.dueAt),
+        sourceType: draft.sourceType,
+        sourceReference: draft.sourceReference.trim(),
+        sourceEvidenceFingerprint: draft.sourceEvidenceFingerprint.trim(),
+        jurisdictionReference: draft.jurisdictionReference.trim(),
+        createdAt: new Date().toISOString(),
+        supersedesDeadlineId: draft.supersedesDeadlineId.trim() || null,
+      });
+      const refreshed = await load();
+      if (refreshed === null) {
+        throw new Error('LEGAL_OPERATIONS_DEADLINE_CANONICAL_REFRESH_FAILED');
+      }
+      setDraft(createDeadlineDraft(workspace));
+      setCommandStatus({
+        kind: 'success',
+        message: `Deadline ${result.deadlineId} recorded and canonical refresh confirmed.`,
+      });
+    } catch (caught) {
+      setCommandStatus({
+        kind: 'error',
+        message: commandErrorMessage(caught),
+      });
+    }
+  };
+
+  if (status.kind === 'loading') {
+    return (
+      <section aria-label="Matter deadline work queue" className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
+        <div className="flex items-center gap-3 text-sm text-stone-300">
+          <Loader2 className="animate-spin text-amber-400" size={18} />
+          Loading certified matter deadlines…
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {canWrite && (
+        <section aria-label="Create matter deadline" className="overflow-hidden rounded-2xl border border-amber-900/30 bg-stone-950/75">
+          <header className="border-b border-stone-800 px-5 py-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">Governed command</p>
+            <h2 className="mt-1 text-lg font-black text-white">Record evidenced deadline</h2>
+            <p className="mt-1 text-xs text-stone-500">
+              Records supplied deadline evidence only · no browser rule calculation, overdue inference or lifecycle transition.
+            </p>
+          </header>
+          <form onSubmit={submitDeadline} className="grid gap-4 p-5 lg:grid-cols-2">
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Matter</span>
+              <select
+                aria-label="Deadline matter"
+                required
+                value={draft.caseMatterId}
+                onChange={(event) => updateDraft('caseMatterId', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              >
+                {(workspace?.matters || []).map((matter) => (
+                  <option key={matter.case_matter_id} value={matter.case_matter_id}>
+                    {matter.matter_reference}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Deadline kind</span>
+              <select
+                aria-label="Deadline kind"
+                value={draft.deadlineKind}
+                onChange={(event) => updateDraft('deadlineKind', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              >
+                {['FILING', 'HEARING', 'RESPONSE', 'SERVICE', 'CONTRACTUAL', 'INTERNAL_WORKFLOW', 'OTHER_EVIDENCED_DEADLINE'].map((value) => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
+              </select>
+            </label>
+            <label className="lg:col-span-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Title</span>
+              <input
+                aria-label="Deadline title"
+                required
+                value={draft.title}
+                onChange={(event) => updateDraft('title', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              />
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Due at</span>
+              <input
+                aria-label="Deadline due at"
+                type="datetime-local"
+                required
+                value={draft.dueAt}
+                onChange={(event) => updateDraft('dueAt', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              />
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Source type</span>
+              <select
+                aria-label="Deadline source type"
+                value={draft.sourceType}
+                onChange={(event) => updateDraft('sourceType', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              >
+                {['COURT_ORDER', 'RULE_OR_STATUTE', 'CONTRACTUAL', 'CLIENT_INSTRUCTION', 'INTERNAL_WORKFLOW', 'OTHER_EVIDENCED_SOURCE'].map((value) => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Source reference</span>
+              <input
+                aria-label="Deadline source reference"
+                required
+                value={draft.sourceReference}
+                onChange={(event) => updateDraft('sourceReference', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              />
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Source evidence SHA3-512</span>
+              <input
+                aria-label="Deadline source evidence fingerprint"
+                required
+                pattern="[0-9a-f]{128}"
+                value={draft.sourceEvidenceFingerprint}
+                onChange={(event) => updateDraft('sourceEvidenceFingerprint', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 font-mono text-xs text-white"
+              />
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Jurisdiction reference</span>
+              <input
+                aria-label="Deadline jurisdiction reference"
+                required
+                value={draft.jurisdictionReference}
+                onChange={(event) => updateDraft('jurisdictionReference', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              />
+            </label>
+            <label>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Supersedes deadline ID (optional)</span>
+              <input
+                aria-label="Supersedes deadline ID"
+                value={draft.supersedesDeadlineId}
+                onChange={(event) => updateDraft('supersedesDeadlineId', event.target.value)}
+                className="mt-2 min-h-[48px] w-full rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+              />
+            </label>
+            {commandStatus && (
+              <div
+                role={commandStatus.kind === 'error' ? 'alert' : 'status'}
+                className={`lg:col-span-2 rounded-xl border p-4 text-xs ${
+                  commandStatus.kind === 'error'
+                    ? 'border-red-900/40 bg-red-950/15 text-red-300'
+                    : commandStatus.kind === 'success'
+                      ? 'border-emerald-900/40 bg-emerald-950/15 text-emerald-300'
+                      : 'border-amber-900/40 bg-amber-950/15 text-amber-300'
+                }`}
+              >
+                {commandStatus.message}
+              </div>
+            )}
+            <div className="lg:col-span-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={
+                  commandStatus?.kind === 'pending'
+                  || !draft.caseMatterId
+                  || !draft.title.trim()
+                  || !draft.dueAt
+                  || !draft.sourceReference.trim()
+                  || !/^[0-9a-f]{128}$/.test(draft.sourceEvidenceFingerprint.trim())
+                  || !draft.jurisdictionReference.trim()
+                }
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/15 px-5 text-sm font-black text-amber-200 disabled:opacity-40 sm:w-auto"
+              >
+                {commandStatus?.kind === 'pending' ? <Loader2 className="animate-spin" size={16} /> : <FilePlus2 size={16} />}
+                Record deadline
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+      {status.kind === 'error' && (
+        <section className="rounded-2xl border border-red-900/40 bg-red-950/15 p-4 text-xs text-red-300">
+          Deadline evidence is unavailable. {status.message}
+        </section>
+      )}
+      <QueuePanel
+        title="Matter deadlines"
+        subtitle="Recorded deadline facts only · no browser legal-period or overdue calculation"
+        icon={Clock3}
+        rows={deadlines}
+        emptyMessage="No certified deadlines are recorded for the current matter workspace."
+        renderRow={(item) => (
+          <DeadlineQueueRow
+            key={item.deadlineId}
+            item={item}
+            matterReference={matterReferences.get(item.caseMatterId)}
+          />
+        )}
+      />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={load}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-stone-800 bg-stone-950 px-3 text-[11px] font-black text-stone-300 hover:text-white"
+        >
+          <RefreshCw size={14} />
+          Refresh deadlines
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function LegalPracticeWorkspace({
   conflictScreenings,
   error,
@@ -2377,6 +2734,16 @@ function LegalPracticeWorkspace({
     roleToken,
     user,
     permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
+  });
+  const canReadDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
+  });
+  const canWriteDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
   });
   const canOpenFinance = canReadBilling || canReadInvoice;
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
@@ -2466,6 +2833,7 @@ function LegalPracticeWorkspace({
     { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
     { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
     { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
+    ...(canReadDeadline ? [{ id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3 }] : []),
     ...(canOpenFinance ? [{ id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark }] : []),
     ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
   ];
@@ -2673,6 +3041,13 @@ function LegalPracticeWorkspace({
         rows={returns}
         emptyMessage="No ReturnOfService evidence matches this view."
         renderRow={(item) => <PracticeLifecycleRow key={item.return_id} item={item} kind="return" />}
+      />
+    );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.DEADLINES) {
+    content = (
+      <LegalDeadlineWorkQueue
+        canWrite={canWriteDeadline}
+        workspace={workspace}
       />
     );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
@@ -3958,7 +4333,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY
+ * VERSION: v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

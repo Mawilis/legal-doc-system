@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY
+VERSION: v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,14 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-11 v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY
+    recognizes exact own-tenant legal_matter_deadline_read and
+    legal_matter_deadline_write operations. Read eligibility is limited to
+    Partner, Attorney, Paralegal, and Legal Secretary; write eligibility is
+    limited to Partner, Attorney, and Paralegal. No permission binding,
+    authorization grant, cross-tenant, financial, or Kennel authority is added.
     2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY
     adds tenant_product_entitlement_issue as a closed operation bound exactly
     to tenant_product_entitlement:issue and eligible only to tenant_owner,
@@ -178,7 +184,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY"
+VERSION = "v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -628,6 +634,37 @@ for _entitlement_issue_role in (
 ELIGIBILITY = MappingProxyType(_entitlement_issue_eligibility)
 
 
+# D3B-AUTH2A — exact own-tenant matter-deadline operation recognition and
+# business-role eligibility only. Permission possession and operation binding
+# remain separate AUTH2 concerns; eligibility cannot authorize a request.
+_MATTER_DEADLINE_OPERATIONS: Final = (
+    "legal_matter_deadline_read",
+    "legal_matter_deadline_write",
+)
+OPERATIONS = frozenset((*OPERATIONS, *_MATTER_DEADLINE_OPERATIONS))
+
+_matter_deadline_eligibility = dict(ELIGIBILITY)
+for _matter_deadline_role in (
+    "tenant_legal_partner",
+    "tenant_legal_attorney",
+    "tenant_legal_paralegal",
+    "tenant_legal_secretary",
+):
+    _matter_deadline_role_policy = dict(
+        _matter_deadline_eligibility[_matter_deadline_role]
+    )
+    _matter_deadline_role_policy["legal_matter_deadline_read"] = ELIGIBLE
+    _matter_deadline_role_policy["legal_matter_deadline_write"] = (
+        DENY
+        if _matter_deadline_role == "tenant_legal_secretary"
+        else ELIGIBLE
+    )
+    _matter_deadline_eligibility[_matter_deadline_role] = MappingProxyType(
+        _matter_deadline_role_policy
+    )
+ELIGIBILITY = MappingProxyType(_matter_deadline_eligibility)
+
+
 
 def normalize_tenant_business_role(role: object) -> str | None:
     """Return an exact canonical tenant role, otherwise fail closed."""
@@ -666,7 +703,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-POLICY
+# VERSION: v1.38.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-POLICY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

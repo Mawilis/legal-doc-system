@@ -1,13 +1,18 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ROLE-GRANTS-CERT
+VERSION: v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+2026-10-11 v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT certifies
+Partner/Attorney/Paralegal read-write and Secretary read-only deadline grants,
+deny-by-absence for Finance/Sheriff/Deputy/Legal Client and all unrelated
+roles, exact reverse lookup, wildcard rejection, and unchanged neighboring
+Legal, client, financial, and Kennel boundaries.
 2026-10-09 v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ROLE-GRANTS-CERT
 updates the closed ENTERPRISE_ADMIN matrix with the sole issuance grant.
     2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-GRANTS-CERT
@@ -110,6 +115,7 @@ capacity-read grant is financial; Kennel EOS remains exclusive.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
@@ -122,9 +128,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT"
+    assert POLICY_VERSION == "v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS"
 
-VERSION = "v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ROLE-GRANTS-CERT"
+VERSION = "v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -179,6 +185,8 @@ TENANT_PERMISSIONS = {
     "billing_intelligence:evidence:read",
     "legal_operations:instruction:read",
     "legal_operations:instruction:write",
+    "legal_operations:matter_deadline:read",
+    "legal_operations:matter_deadline:write",
     "legal_operations:directory:write",
     "legal_operations:receipt:write",
     "legal_operations:queue:read",
@@ -218,6 +226,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     """Legal personas receive only the certified legal-operation capabilities."""
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
         "legal_operations:instruction:read", "legal_operations:instruction:write",
+        "legal_operations:matter_deadline:read", "legal_operations:matter_deadline:write",
         "legal_operations:evidence:write",
         "legal_operations:evidence_cleanup:authorize",
         "legal_operations:client_visibility:write",
@@ -349,6 +358,73 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         assert "wilsy_ai:legal_advisory:read" in ROLE_PERMISSIONS_MAP[role]
     for role in ("ENTERPRISE_ADMIN", "AUDITOR", "LEGAL_CLIENT", "SOVEREIGN_ARCHITECT", "SERVICE_WORKER"):
         assert "wilsy_ai:legal_advisory:generate" not in ROLE_PERMISSIONS_MAP[role]
+
+
+def test_matter_deadline_grants_match_the_frozen_role_matrix() -> None:
+    """AUTH3 grants only exact durable deadline possession policy."""
+    read_permission = "legal_operations:matter_deadline:read"
+    write_permission = "legal_operations:matter_deadline:write"
+    read_roles = {
+        "LEGAL_PARTNER",
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_SECRETARY",
+    }
+    write_roles = {
+        "LEGAL_PARTNER",
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+    }
+
+    assert read_permission != write_permission
+    assert get_roles_granting_permission(read_permission) == tuple(sorted(read_roles))
+    assert get_roles_granting_permission(write_permission) == tuple(sorted(write_roles))
+
+    for role, grants in ROLE_PERMISSIONS_MAP.items():
+        assert grants.count(read_permission) == (1 if role in read_roles else 0)
+        assert grants.count(write_permission) == (1 if role in write_roles else 0)
+
+    for denied_role in (
+        "LEGAL_FINANCE",
+        "SHERIFF",
+        "DEPUTY",
+        "LEGAL_CLIENT",
+    ):
+        assert read_permission not in ROLE_PERMISSIONS_MAP[denied_role]
+        assert write_permission not in ROLE_PERMISSIONS_MAP[denied_role]
+
+    for malformed in (
+        "legal_operations:matter_deadline:*",
+        "legal_operations:matter_deadline",
+        "legal_operations:matter_deadline:delete",
+        "LEGAL_OPERATIONS:MATTER_DEADLINE:READ",
+        " legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write ",
+    ):
+        assert get_roles_granting_permission(malformed) == ()
+
+    assert get_permissions_for_roles(["UNKNOWN_ROLE"]) == []
+    assert "legal_operations:instruction:read" in ROLE_PERMISSIONS_MAP[
+        "LEGAL_SECRETARY"
+    ]
+    assert "legal_operations:attempt:write" in ROLE_PERMISSIONS_MAP["SHERIFF"]
+    assert "legal_operations:billing:read" in ROLE_PERMISSIONS_MAP[
+        "LEGAL_FINANCE"
+    ]
+    assert "legal_operations:client_matter:read" in ROLE_PERMISSIONS_MAP[
+        "LEGAL_CLIENT"
+    ]
+    assert all(
+        "financial_execution" not in permission
+        and not permission.startswith("kernel:execute")
+        for grants in ROLE_PERMISSIONS_MAP.values()
+        for permission in grants
+    )
+
+    source = Path("tools/eos/auth/roles.py").read_text(encoding="utf-8")
+    assert "legal_matter_deadline_read" not in source
+    assert "legal_matter_deadline_write" not in source
+    assert "tenant_role_operation_eligibility" not in source
 
 
 
@@ -764,7 +840,7 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ROLE-GRANTS-CERT
+# VERSION: v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants

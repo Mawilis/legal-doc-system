@@ -3,14 +3,16 @@
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
+ * Version:        v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Authority-aware operator dock. Kernel posture comes only from
  *                 the canonical /kernel transport. Legal workspace Ask requests
  *                 use certified C1C legal-services transport rather than the
  *                 unmounted legacy /api/ai/operator route. Billing-intelligence
  *                 evidence is probed only for the bounded legal-finance role.
- *                 Conversation history is explicitly session-memory only until a
+ *                 Core Legal deadline posture is read directly from certified D6B,
+ *                 independently of paid WILSY AI advisory capability. Conversation
+ *                 history is explicitly session-memory only until a
  *                 Python-EOS durable history authority is separately certified.
  * Classification: Production Artifact — Institutional Contract
  * Tenant Boundary: C1E payloads are server-scoped and rendered without client
@@ -27,6 +29,9 @@
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
+ *   2026-10-11 v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION — Added an
+ *     explicit-matter, explicit-time Core Legal deadline observation tab backed
+ *     by D6B, with no AI, recommendation, reminder, mutation, or finance authority.
  *   2026-09-24 v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY — Aligned the sovereign artifact contract with
  *     canonical /kernel health transport, shared-api /ai/operator generic Ask,
  *     C1C legal-role routing, and session-only conversation history.
@@ -86,6 +91,7 @@ import {
   generateWilsyAILegalNextActions,
   readWilsyAILegalNextAction,
 } from '../../services/wilsyAIAdvisoryApi.js';
+import { getLegalMatterDeadlineIntelligence } from '../../services/legalMatterDeadlineService.js';
 import {
   buildWilsyDynamicSuggestions,
   recordWilsyAISuggestionUsage,
@@ -310,6 +316,10 @@ export function WilsyOSIntelligenceDock({
   const [legalError, setLegalError] = useState('');
   const [legalServiceResponse, setLegalServiceResponse] = useState(null);
   const [legalAdvisory, setLegalAdvisory] = useState(null);
+  const [deadlineMatterId, setDeadlineMatterId] = useState('');
+  const [deadlineIntelligence, setDeadlineIntelligence] = useState(null);
+  const [deadlineLoading, setDeadlineLoading] = useState(false);
+  const [deadlineError, setDeadlineError] = useState('');
   const messagesEndRef = useRef(null);
 
   /**
@@ -719,6 +729,40 @@ export function WilsyOSIntelligenceDock({
     setLegalAdvisory(null);
   }, []);
 
+  /**
+   * @function handleObserveDeadlines
+   * @description Reads a certified D6 Core Legal observation for one explicit matter.
+   * @institutional The browser supplies only a locator and observation instant;
+   * server IAM and D6 own scope and temporal posture. No advice is generated.
+   */
+  const handleObserveDeadlines = useCallback(async () => {
+    const exactMatterId = deadlineMatterId.trim();
+    if (!exactMatterId || deadlineLoading) return;
+    setDeadlineLoading(true);
+    setDeadlineError('');
+    setDeadlineIntelligence(null);
+    try {
+      const projection = await getLegalMatterDeadlineIntelligence(
+        exactMatterId,
+        new Date().toISOString(),
+      );
+      setDeadlineIntelligence(projection);
+    } catch (error) {
+      const status = error?.response?.status ?? error?.status;
+      if (status === 403) {
+        setDeadlineError('Current tenant authority does not permit deadline intelligence access.');
+      } else if (status === 404) {
+        setDeadlineError('No authorized deadline source is available for this matter.');
+      } else if (status === 422) {
+        setDeadlineError('Matter or observation input was rejected.');
+      } else {
+        setDeadlineError('Deadline observation is unavailable; no posture was inferred.');
+      }
+    } finally {
+      setDeadlineLoading(false);
+    }
+  }, [deadlineMatterId, deadlineLoading]);
+
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -803,6 +847,16 @@ export function WilsyOSIntelligenceDock({
               <FileCheck2 size={15} />
               <span>Legal Advisory</span>
             </button>
+            {isLegalDockRole(authUser?.role) && (
+              <button
+                type="button"
+                className={`${styles.navTabButton} ${activeTab === 'deadlineIntelligence' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('deadlineIntelligence')}
+              >
+                <FileCheck2 size={15} />
+                <span>Deadlines</span>
+              </button>
+            )}
             <button
               type="button"
               className={`${styles.navTabButton} ${activeTab === 'history' ? styles.activeTab : ''}`}
@@ -1035,6 +1089,79 @@ export function WilsyOSIntelligenceDock({
               </div>
             )}
 
+            {activeTab === 'deadlineIntelligence' && isLegalDockRole(authUser?.role) && (
+              <div className={styles.legalAdvisoryTab}>
+                <div className={styles.legalAdvisoryHeader}>
+                  <div>
+                    <span className={styles.legalAdvisoryEyebrow}>Core Legal observation</span>
+                    <h4>Matter deadline posture</h4>
+                  </div>
+                  <ShieldCheck size={22} aria-hidden="true" />
+                </div>
+                <p className={styles.legalAdvisoryNotice}>
+                  Observed canonical deadline posture · Not legal advice or a recommendation
+                </p>
+                <div className={styles.legalAdvisoryPrompt}>
+                  <label htmlFor="deadline-intelligence-matter">Matter identifier</label>
+                  <input
+                    id="deadline-intelligence-matter"
+                    aria-label="Matter identifier for deadline observation"
+                    value={deadlineMatterId}
+                    onChange={(event) => setDeadlineMatterId(event.target.value)}
+                    placeholder="Enter the exact matter identifier"
+                    disabled={deadlineLoading}
+                  />
+                  <button
+                    type="button"
+                    className={styles.legalAdvisoryGenerate}
+                    onClick={handleObserveDeadlines}
+                    disabled={deadlineLoading || !deadlineMatterId.trim()}
+                  >
+                    <FileCheck2 size={16} />
+                    {deadlineLoading ? 'Observing canonical deadlines…' : 'Observe deadline posture'}
+                  </button>
+                </div>
+                {deadlineError && (
+                  <div className={styles.legalAdvisoryError} role="alert" aria-live="assertive">
+                    {deadlineError}
+                  </div>
+                )}
+                {deadlineIntelligence && (
+                  <section className={styles.legalAdvisoryCard} aria-label="Matter deadline observation">
+                    <div className={styles.legalAdvisoryCardHeader}>
+                      <div>
+                        <span className={styles.legalAdvisoryEyebrow}>Observed at</span>
+                        <h5>{formatAdvisoryValue(deadlineIntelligence.observedAt)}</h5>
+                      </div>
+                      <span className={styles.legalAdvisoryStatus}>READ ONLY</span>
+                    </div>
+                    <p className={styles.legalAdvisoryNoAuthority}>
+                      No legal-period calculation · No court-rule inference · No reminder or execution authority
+                    </p>
+                    <div className={styles.legalAdvisoryGrid}>
+                      <div className={styles.legalAdvisoryField}><small>Upcoming</small><strong>{deadlineIntelligence.upcomingCount}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Due</small><strong>{deadlineIntelligence.dueCount}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Overdue</small><strong>{deadlineIntelligence.overdueCount}</strong></div>
+                      <div className={styles.legalAdvisoryField}><small>Inactive</small><strong>{deadlineIntelligence.inactiveCount}</strong></div>
+                    </div>
+                    {deadlineIntelligence.items.length === 0 ? (
+                      <p>No canonical deadline facts were returned for this authorized matter.</p>
+                    ) : (
+                      <ul className={styles.legalAdvisorySourceList}>
+                        {deadlineIntelligence.items.map((item) => (
+                          <li key={item.deadlineId}>
+                            <strong>{item.temporalPosture}</strong>
+                            {' · '}{item.deadlineKind}{' · due '}{item.dueAt}
+                            {' · '}{item.jurisdictionReference}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                )}
+              </div>
+            )}
+
             {activeTab === 'history' && (
               <div className={styles.historyTabContent}>
                 <div className={styles.historyHeaderRow}>
@@ -1087,7 +1214,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
  * ═══════════════════════════════════════════════════════════════════════════════
  * Generic Ask uses the canonical shared api.js POST /ai/operator transport; legal roles use certified C1C legal-services transport.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
@@ -1097,10 +1224,12 @@ export default WilsyOSIntelligenceDock;
  * The dock now uses the sovereign Kennel for all intelligence generation.
  * C1E-R1C complete: legal advisories remain server-owned, read-only projections;
  * no legal command, execution, financial authority, or browser persistence exists.
+ * D6B complete: Core Legal deadline posture is an independent read-only D6
+ * projection and does not require or enlarge WILSY AI entitlement or authority.
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
+ * VERSION: v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate

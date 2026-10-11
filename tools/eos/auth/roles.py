@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT
+VERSION: v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,8 +13,14 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-11 v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS grants exact
+    matter-deadline read/write permissions to LEGAL_PARTNER, LEGAL_ATTORNEY,
+    and LEGAL_PARALEGAL, and read only to LEGAL_SECRETARY. Finance, Sheriff,
+    Deputy, Legal Client, and every unrelated role remain deny-by-absence.
+    Static grants create no assignment, membership, cross-tenant, financial,
+    AI, HTTP, or Kennel execution authority.
     2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT
     grants tenant_product_entitlement:issue exactly once to ENTERPRISE_ADMIN.
     AUDITOR and every other authorization role remain without the grant.
@@ -187,7 +193,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT"
+VERSION = "v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -249,6 +255,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
         "legal_operations:evidence:write",
         "legal_operations:evidence_cleanup:authorize",
         "legal_operations:client_visibility:write",
@@ -267,6 +275,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_ATTORNEY": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
@@ -283,6 +293,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     "LEGAL_PARALEGAL": [
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
         "legal_operations:client_visibility:write",
         "legal_operations:allocation:read",
         "legal_operations:allocation:write",
@@ -292,6 +304,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     ],
     "LEGAL_SECRETARY": [
         "legal_operations:instruction:read",
+        "legal_operations:matter_deadline:read",
         "legal_operations:allocation:read",
         "legal_operations:attempt:read",
         "legal_operations:return:read",
@@ -484,7 +497,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-GRANT
+# VERSION: v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

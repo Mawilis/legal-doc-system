@@ -1,17 +1,24 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
+VERSION: v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
-billing-intelligence, Legal Operations lifecycle/client visibility, and explicit
+billing-intelligence, Legal Operations lifecycle/client visibility, matter
+deadline read/write vocabulary, and explicit
 human conflict-review and Engagement firm-decision capability semantics without
 granting tenant-wide matter enumeration, reviewer identity, legal determination,
 waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-11 v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS adds the exact
+    own-tenant legal_operations:matter_deadline:read and
+    legal_operations:matter_deadline:write permission vocabulary. Both remain
+    membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
+    this vocabulary-only release creates no operation binding, role grant,
+    deadline mutation, HTTP route, legal-rule inference or financial authority.
     2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
     adds tenant_product_entitlement:issue as one exact own-tenant,
     membership-required and non-financial permission for bounded product
@@ -176,7 +183,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION"
+VERSION = "v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS"
 
 
 class PermissionDisposition(StrEnum):
@@ -604,6 +611,14 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:instruction:write", "TENANT", "TENANT",
             "operate own-tenant legal instructions", tenant=True,
         ),
+        "legal_operations:matter_deadline:read": _meta(
+            "legal_operations:matter_deadline:read", "TENANT", "TENANT",
+            "read own-tenant legal matter deadlines", tenant=True,
+        ),
+        "legal_operations:matter_deadline:write": _meta(
+            "legal_operations:matter_deadline:write", "TENANT", "TENANT",
+            "record own-tenant legal matter deadlines", tenant=True,
+        ),
         "legal_operations:evidence:write": _meta(
             "legal_operations:evidence:write",
             "TENANT",
@@ -933,7 +948,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
+# VERSION: v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

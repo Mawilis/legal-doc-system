@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT
+VERSION: v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -7,8 +7,22 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+2026-10-11 v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT removes the
+stale pre-AUTH3 assertion that canonical deadline permissions remain absent
+from the separate durable role layer. It directly preserves namespace-only
+ownership, no ROLE_PERMISSIONS_MAP mutation, exact vocabulary, distinctness,
+and fail-closed unknown/wildcard semantics.
+2026-10-11 v1.5.1-D3B-AUTH2-R1-MATTER-DEADLINE-PERMISSION-CERT removes the
+stale AUTH1 phase-local assumption that deadline permissions must remain absent
+from the separate authorization-binding layer. The enduring namespace contract
+still proves exact distinct vocabulary, fail-closed unknown/wildcard values,
+and absence of role grants; production permission semantics are unchanged.
+2026-10-11 v1.5.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSION-CERT certifies the
+exact distinct matter-deadline read/write vocabulary, canonical metadata,
+fail-closed aliases, unchanged neighboring permissions, and absence of any
+operation binding or role grant.
 2026-10-09 v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT
 updates the closed permission count and canonical version for the exact
 tenant_product_entitlement:issue authority substrate.
@@ -124,12 +138,12 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT"
+VERSION = "v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION"
+    assert POLICY_VERSION == "v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS"
 
 
 def test_permission_canon_properties() -> None:
@@ -163,6 +177,8 @@ def test_permission_canon_properties() -> None:
         "wilsy_ai:legal_advisory:read",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
         "legal_operations:evidence:write",
         "legal_operations:evidence_cleanup:authorize",
         "legal_operations:directory:write",
@@ -213,9 +229,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 96
+    ) == 98
 
-    assert len(rows) == 99
+    assert len(rows) == 101
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -227,6 +243,29 @@ def test_permission_canon_properties() -> None:
         assert metadata.cross_tenant_capable is False
         assert metadata.financial_execution_capable is False
         assert metadata.authorizes_by_itself is False
+
+    deadline_read = permission_metadata(
+        "legal_operations:matter_deadline:read"
+    )
+    deadline_write = permission_metadata(
+        "legal_operations:matter_deadline:write"
+    )
+    assert deadline_read.permission_id != deadline_write.permission_id
+    assert deadline_read.business_capability == (
+        "read own-tenant legal matter deadlines"
+    )
+    assert deadline_write.business_capability == (
+        "record own-tenant legal matter deadlines"
+    )
+    for metadata in (deadline_read, deadline_write):
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.system_assignment_required is False
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert metadata.disposition is PermissionDisposition.CANONICAL
 
     cleanup_authority = permission_metadata(
         "legal_operations:evidence_cleanup:authorize"
@@ -593,6 +632,15 @@ def test_permission_canon_properties() -> None:
         "LEGAL_OPERATIONS:EVIDENCE:WRITE",
         " legal_operations:evidence:write",
         "legal_operations:evidence:write ",
+        "legal_operations:matter_deadline",
+        "legal_operations:matter_deadline:*",
+        "legal_operations:matter_deadline:all",
+        "legal_operations:matter_deadline:delete",
+        "LEGAL_OPERATIONS:MATTER_DEADLINE:READ",
+        " legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:read ",
+        " legal_operations:matter_deadline:write",
+        "legal_operations:matter_deadline:write ",
         "legal_operations:evidence_cleanup",
         "legal_operations:evidence_cleanup:*",
         "legal_operations:evidence_cleanup:delete",
@@ -750,8 +798,34 @@ def test_no_domain_profile_permissions():
         assert permission not in Path(path).read_text(encoding="utf-8")
 
 
+def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
+    """AUTH1 owns exact vocabulary while bindings and grants remain separate."""
+    namespace = Path(
+        "tools/eos/auth/permission_namespace.py"
+    ).read_text(encoding="utf-8")
+    permissions = (
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
+    )
+    assert permissions[0] != permissions[1]
+    assert "ROLE_PERMISSIONS_MAP" not in namespace
+    assert "tools.eos.auth.roles" not in namespace
+    for permission in permissions:
+        assert permission in namespace
+        metadata = permission_metadata(permission)
+        assert metadata is not None
+        assert metadata.authorizes_by_itself is False
+    for invalid in (
+        "legal_operations:matter_deadline:*",
+        "legal_operations:matter_deadline",
+        "legal_operations:matter_deadline:delete",
+    ):
+        with pytest.raises(ValueError):
+            permission_metadata(invalid)
+
+
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-PERMISSION-CERT
+# VERSION: v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

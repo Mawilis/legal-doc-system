@@ -1,13 +1,22 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-AUTHORIZATION-CERT
+VERSION: v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+2026-10-11 v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT replaces
+pre-AUTH3 simulated permission possession with the final durable role grants.
+It certifies real Partner, Attorney, Paralegal read/write authorization and
+Secretary read-only authorization while preserving every denial boundary.
+2026-10-11 v1.5.0-D3B-AUTH2-MATTER-DEADLINE-OPERATION-BINDING-CERT
+certifies the two exact deadline operation-permission pairs, crossed and
+malformed fail-closed behavior, current membership and tenant scope, AUTH2A
+eligibility enforcement, and the absence of durable role grants or financial,
+AI, cross-tenant, HTTP, and Kennel authority.
 2026-10-09 v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-AUTHORIZATION-CERT
 refreshes exact production provenance for the new conjunctive issuance binding.
 2026-10-04 v1.3.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-AUTHORIZATION-BINDING-CERT
@@ -145,7 +154,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-AUTHORIZATION-CERT"
+VERSION = "v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1409,7 +1418,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.34.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-BINDING"
+    assert ta.VERSION == "v1.35.0-D3B-AUTH2-MATTER-DEADLINE-OPERATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1423,7 +1432,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.34.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-BINDING"
+    assert ta.VERSION == "v1.35.0-D3B-AUTH2-MATTER-DEADLINE-OPERATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2282,6 +2291,235 @@ def test_c1e_advisory_operation_crossing_fails_closed() -> None:
 # 51 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
 # 52-54 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
 
+def test_matter_deadline_bindings_are_exact_and_fail_closed() -> None:
+    """AUTH2 binds only the two canonical deadline operation-permission pairs."""
+    read_operation = "legal_matter_deadline_read"
+    write_operation = "legal_matter_deadline_write"
+    read_permission = "legal_operations:matter_deadline:read"
+    write_permission = "legal_operations:matter_deadline:write"
+
+    assert read_operation != write_operation
+    assert read_permission != write_permission
+    assert ta._BINDINGS[read_operation] == read_permission
+    assert ta._BINDINGS[write_operation] == write_permission
+    assert list(ta._BINDINGS).count(read_operation) == 1
+    assert list(ta._BINDINGS).count(write_operation) == 1
+
+    for permission_id, operation in (
+        (read_permission, write_operation),
+        (write_permission, read_operation),
+    ):
+        result = _decision(
+            permission_id=permission_id,
+            operation=operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments(),
+        )
+        assert result.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    for operation in (
+        "legal_matter_deadline",
+        "legal_matter_deadline_*",
+        "legal_matter_deadline_read*",
+        "legal_matter_deadline_read ",
+        "LEGAL_MATTER_DEADLINE_READ",
+    ):
+        result = _decision(
+            permission_id=read_permission,
+            operation=operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments(),
+        )
+        assert result.reason is TenantAuthorizationReason.INVALID_INPUT
+
+    for permission_id in (
+        "legal_operations:matter_deadline",
+        "legal_operations:matter_deadline:*",
+        "legal_operations:matter_deadline:delete",
+    ):
+        result = _decision(
+            permission_id=permission_id,
+            operation=read_operation,
+            business_repository=_business("tenant_legal_partner"),
+            assignment_repository=_assignments(),
+        )
+        assert result.reason is TenantAuthorizationReason.PERMISSION_UNKNOWN
+
+    assert ta._BINDINGS["legal_instruction_read"] == (
+        "legal_operations:instruction:read"
+    )
+    assert ta._BINDINGS["legal_conflict_review_write"] == (
+        "legal_operations:conflict_review:write"
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "authorization_role"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+        ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
+    ),
+)
+def test_matter_deadline_eligible_roles_reach_exact_binding_with_possession(
+    business_role: str,
+    authorization_role: str,
+) -> None:
+    """Final AUTH3 possession completes exact deadline authorization."""
+    read_permission = "legal_operations:matter_deadline:read"
+    write_permission = "legal_operations:matter_deadline:write"
+    assert ta.get_roles_granting_permission(read_permission) == (
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_PARTNER",
+        "LEGAL_SECRETARY",
+    )
+    assert ta.get_roles_granting_permission(write_permission) == (
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARALEGAL",
+        "LEGAL_PARTNER",
+    )
+
+    for permission_id, operation in (
+        (read_permission, "legal_matter_deadline_read"),
+        (write_permission, "legal_matter_deadline_write"),
+    ):
+        result = _decision(
+            permission_id=permission_id,
+            operation=operation,
+            business_repository=_business(business_role),
+            assignment_repository=_assignments(authorization_role),
+        )
+        assert result == TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+            business_role,
+            authorization_role,
+        )
+
+
+def test_matter_deadline_secretary_read_authorizes_but_write_denies() -> None:
+    """Secretary durable possession is read-only and remains eligibility-bound."""
+    read = _decision(
+        permission_id="legal_operations:matter_deadline:read",
+        operation="legal_matter_deadline_read",
+        business_repository=_business("tenant_legal_secretary"),
+        assignment_repository=_assignments("LEGAL_SECRETARY"),
+    )
+    assert read == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_legal_secretary",
+        "LEGAL_SECRETARY",
+    )
+
+    write = _decision(
+        permission_id="legal_operations:matter_deadline:write",
+        operation="legal_matter_deadline_write",
+        business_repository=_business("tenant_legal_secretary"),
+        assignment_repository=_assignments("LEGAL_SECRETARY"),
+    )
+    assert write.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+
+@pytest.mark.parametrize(
+    "business_role",
+    (
+        "tenant_legal_secretary",
+        "tenant_legal_finance",
+        "tenant_sheriff",
+        "tenant_deputy",
+        "tenant_legal_client",
+    ),
+)
+def test_matter_deadline_write_rejects_ineligible_roles_before_possession(
+    monkeypatch: pytest.MonkeyPatch,
+    business_role: str,
+) -> None:
+    """Excess or future possession cannot bypass AUTH2A write eligibility."""
+    permission = "legal_operations:matter_deadline:write"
+    monkeypatch.setattr(
+        ta,
+        "get_roles_granting_permission",
+        lambda permission_id: ("LEGAL_PARTNER",)
+        if permission_id == permission
+        else (),
+    )
+    assignments = _assignments("LEGAL_PARTNER")
+    result = _decision(
+        permission_id=permission,
+        operation="legal_matter_deadline_write",
+        business_repository=_business(business_role),
+        assignment_repository=assignments,
+    )
+    assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert assignments.calls == []
+
+
+@pytest.mark.parametrize(
+    "business_role",
+    (
+        "tenant_legal_finance",
+        "tenant_sheriff",
+        "tenant_deputy",
+        "tenant_legal_client",
+    ),
+)
+def test_matter_deadline_read_rejects_non_law_firm_roles(
+    business_role: str,
+) -> None:
+    result = _decision(
+        permission_id="legal_operations:matter_deadline:read",
+        operation="legal_matter_deadline_read",
+        business_repository=_business(business_role),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+
+def test_matter_deadline_binding_preserves_membership_tenant_and_finance_walls() -> None:
+    """Deadline binding cannot bypass current membership or financial walls."""
+    permission = "legal_operations:matter_deadline:read"
+    inactive = _decision(
+        permission_id=permission,
+        operation="legal_matter_deadline_read",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+        membership_repository=_membership(status=TenantMembershipStatus.SUSPENDED),
+    )
+    assert inactive.reason is TenantAuthorizationReason.MEMBERSHIP_INACTIVE
+
+    crossed = _decision(
+        permission_id=permission,
+        operation="legal_matter_deadline_read",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+        tenant_id="other-tenant",
+    )
+    assert crossed.reason is TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND
+
+    for permission_id in (
+        "legal_operations:matter_deadline:read",
+        "legal_operations:matter_deadline:write",
+    ):
+        metadata = permission_metadata(permission_id)
+        assert metadata is not None
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+
+    financial = _decision(
+        permission_id=permission,
+        operation="financial_execution",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments(),
+    )
+    assert financial.reason is TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED
+
+
 # Caller-owned session propagation contract.
 def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     session = object()
@@ -2300,7 +2538,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.4.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-AUTHORIZATION-CERT
+# VERSION: v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
