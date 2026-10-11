@@ -158,7 +158,7 @@ def _client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
 def _observations(caplog: pytest.LogCaptureFixture) -> list[dict[str, Any]]:
     return [
-        record.wilsy_observation
+        getattr(record, "wilsy_observation")
         for record in caplog.records
         if hasattr(record, "wilsy_observation")
     ]
