@@ -209,7 +209,9 @@ describe('D4B Legal matter deadline work queue', () => {
     expect(getLegalMatterDeadlines).toHaveBeenNthCalledWith(1, 'matter-001');
     expect(getLegalMatterDeadlines).toHaveBeenNthCalledWith(2, 'matter-002');
 
-    const queue = screen.getByLabelText('Matter deadline work queue').parentElement;
+    const queueHeading = screen.getByRole('heading', { name: 'Matter deadlines' });
+    const queue = queueHeading.closest('section');
+    expect(queue).not.toBeNull();
     expect(within(queue).getByText('File answering affidavit')).toBeInTheDocument();
     expect(within(queue).getByText('Deliver closing bundle')).toBeInTheDocument();
     expect(within(queue).getByText('CASE-2026-0001 · FILING')).toBeInTheDocument();
