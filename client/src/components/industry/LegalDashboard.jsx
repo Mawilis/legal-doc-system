@@ -2503,6 +2503,11 @@ function LegalPracticeWorkspace({
     user,
     permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
   });
+  const canReadDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
+  });
   const canOpenFinance = canReadBilling || canReadInvoice;
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
   const [searchQuery, setSearchQuery] = useState('');
