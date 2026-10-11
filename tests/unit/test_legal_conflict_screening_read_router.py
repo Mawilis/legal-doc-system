@@ -1,7 +1,7 @@
 """Direct ASGI certificate for the L8-8N screening review-queue projection.
 
 TITLE: WILSY OS Legal Conflict Screening Read Router Certificate
-VERSION: v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT
+VERSION: v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT
 AUTHORITY: Direct authenticated read-projection certificate only.
 EPITOME: Prove exact tenant scope, canonical screening identity, bounded
          deterministic review-queue presentation and complete authority-field
@@ -13,6 +13,9 @@ COLLABORATION / OWNERSHIP: Certificate for tools/eos/api/legal_operations_router
 CERTIFICATION / UPDATE DATE: 2026-09-25
 CHANGELOG: 2026-09-25 v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT
            establishes the authenticated bounded screening queue certificate.
+           2026-10-11 v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT
+           freezes the route-specific response version without coupling this
+           certificate to the aggregate legal-operations module version.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only; no raw party PII,
                              fingerprints, authorization evidence or Mongo data.
@@ -48,7 +51,7 @@ from tools.eos.legal_operations.domain.legal_conflict_screening import (
 
 
 TENANT = "tenant-law"
-VERSION = "v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT"
+VERSION = "v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT"
 SCREENED_AT = datetime(2026, 9, 25, 4, 0, tzinfo=timezone.utc)
 
 
@@ -165,7 +168,7 @@ def test_authenticated_tenant_gets_exact_bounded_projection_and_no_authority_fie
     body = response.json()
     assert set(body) == {"schema", "version", "tenant_id", "visibility", "screenings"}
     assert body["schema"] == "WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1"
-    assert body["version"] == legal_router.VERSION
+    assert body["version"] == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
     assert body["tenant_id"] == TENANT
     assert body["visibility"] == "LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE"
     assert body["screenings"] == [
@@ -233,7 +236,12 @@ def test_authentication_failure_is_denied_before_registry_read() -> None:
 
 def test_read_certificate_surface_is_frozen() -> None:
     """The route is the new read version and exposes no mutation primitives."""
-    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
+    route = next(
+        route
+        for route in legal_router.router.routes
+        if route.path == "/legal-operations/conflict-screenings"
+    )
+    assert route.methods == {"GET"}
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")
@@ -241,7 +249,7 @@ def test_read_certificate_surface_is_frozen() -> None:
 
 """
 ARTIFACT: test_legal_conflict_screening_read_router.py
-VERSION: v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT
+VERSION: v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-CERT
 AUTHORITY BOUNDARY: authenticated screening read projection certificate only
 TENANT POSTURE: exact server-authorized tenant; caller tenant query is ignored
 FAIL-CLOSED POSTURE: auth, bounds, persistence and projection drift deny

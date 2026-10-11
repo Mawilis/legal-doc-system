@@ -1,7 +1,7 @@
 """R8K-P3A real-Mongo certificate authoring artifact.
 
 TITLE: WILSY OS Legal Corpus Operator Command Real-Mongo Certificate
-VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-REAL-MONGO-CERT
+VERSION: v1.2.1-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the genuine Mongo session, transaction, atomic commit,
          rollback, immutable replay, index, hydration, and durable readback
@@ -11,10 +11,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: R8K owns command lifecycle; R8H owns composition;
                            registries own immutable persistence; this artifact
                            owns only isolated real-Mongo evidence.
-CERTIFICATION / UPDATE DATE: 2026-09-18
+CERTIFICATION / UPDATE DATE: 2026-10-11
 CHANGELOG: v1.2.0 certifies genuine transaction admission and exact durable
-           readback for all five reviewed 1.1.0-DRAFT successors while
+           readback for the then-five reviewed 1.1.0-DRAFT successors while
            retaining historical six-family and replay coverage.
+           v1.2.1 derives reviewed-successor cardinality and identities from
+           the canonical catalogue, including Institutional Charter.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Deterministic TEST-only Ed25519 material is held
                             in memory; no production private key, secret file,
@@ -86,7 +88,7 @@ from tools.eos.legal_operations.registry.legal_document_registry import (
 )
 
 
-VERSION = "v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-REAL-MONGO-CERT"
+VERSION = "v1.2.1-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-REAL-MONGO-CERT"
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 TEST_KEY_ID = "prdca-key:r8k-p3a-test"
@@ -416,7 +418,7 @@ def test_real_reviewed_successor_admission_capability(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """Certify genuine transaction admission and readback for all five successors."""
+    """Certify genuine transaction admission and readback for every successor."""
     client, database = isolated_mongo_database
     private_key, _ = _install_test_authority(monkeypatch)
     _wire_kernel(monkeypatch, client, database)
@@ -439,8 +441,20 @@ def test_real_reviewed_successor_admission_capability(
         assert persisted_document.to_document() == document.to_document()
         assert persisted_evidence.to_document() == expected_evidence.to_document()
         assert persisted_evidence.verify_against(document) is None
-    assert database[command.DOCUMENT_COLLECTION].count_documents({}) == 5
-    assert database[command.AUTHORITY_COLLECTION].count_documents({}) == 5
+    expected = production_legal_corpus.PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS
+    expected_ids = {document.document_id for document in expected}
+    assert database[command.DOCUMENT_COLLECTION].count_documents({}) == len(expected)
+    assert database[command.AUTHORITY_COLLECTION].count_documents({}) == len(expected)
+    assert {
+        row["document_id"]
+        for row in database[command.DOCUMENT_COLLECTION].find({}, {"document_id": 1})
+    } == expected_ids
+    assert {
+        row["source_document_id"]
+        for row in database[command.AUTHORITY_COLLECTION].find(
+            {}, {"source_document_id": 1}
+        )
+    } == expected_ids
 
 
 def test_real_transaction_rollback_removes_document_staged_before_second_write(
@@ -513,7 +527,7 @@ def test_real_registry_hydration_and_durable_readback_are_exact(
 
 
 # ARTIFACT: test_legal_corpus_operator_command_real_mongo.py
-# VERSION: v1.2.0-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-REAL-MONGO-CERT
+# VERSION: v1.2.1-R9B-P7-A3-R2-REVIEWED-SUCCESSOR-OPERATOR-COMMAND-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: isolated real-Mongo transaction and durability evidence only
 # TENANT POSTURE: UUID-isolated certification databases; no live tenant writes
 # FAIL-CLOSED POSTURE: remote/unavailable Mongo and non-atomic outcomes fail

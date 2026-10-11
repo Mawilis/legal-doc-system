@@ -1,19 +1,21 @@
 """L7C host-backed certificate for billing read projections.
 
 TITLE: Legal Operations Billing Read Real-Mongo Certificate
-VERSION: v1.1.0-L7C-LIVE-IAM-BILLING-READ-RM-CERT
+VERSION: v1.1.1-L7C-LIVE-IAM-BILLING-READ-RM-CERT
 AUTHORITY: Host certificate for authenticated GET projections only.
 EPITOME: Persists the canonical P6A/P6B/P6D/P6F chain through existing
          authorities, then proves actual FastAPI reads are tenant-scoped and
          side-effect free.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_billing_read_real_mongo.py
 COLLABORATION / OWNERSHIP: Certificate owns isolated host fixture and observations.
-CERTIFICATION / UPDATE DATE: 2026-09-15
+CERTIFICATION / UPDATE DATE: 2026-10-11
 CHANGELOG: v1.1.0 certifies actual FastAPI GET transport through live
            RequireTenantAuthorization, durable IAM truth, the permitted
            payment_terms_days projection, zero read side effects, and
            corruption/partial-state rejection. v1.0.0 established the
            canonical P6 projection path.
+           v1.1.1 binds the fixture to the current split-store HTTP role
+           authority provider while preserving live fail-closed authorization.
 TENANT BOUNDARY: Every source and HTTP read is bound to the authorized tenant.
 AUTHORITY BOUNDARY: P1-P6F and IAM remain canonical; this certificate creates no authority.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution and settlement.
@@ -52,7 +54,7 @@ from tests.integration.test_process_service_client_invoice_issuance_real_mongo i
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
 REPLICA_SET = "wilsyVendorCertRS"
-VERSION = "v1.1.0-L7C-LIVE-IAM-BILLING-READ-RM-CERT"
+VERSION = "v1.1.1-L7C-LIVE-IAM-BILLING-READ-RM-CERT"
 
 
 class _PrincipalReader:
@@ -138,7 +140,6 @@ def _app(database: Any, tenant: str, principal_id: str) -> FastAPI:
     register_error_handlers(app, debug=False)
     import tools.eos.api.tenant_authorization_http as authorization_http
     import tools.eos.auth.authentication as authentication
-    import tools.eos.auth.authorization as authorization
     import tools.eos.auth.tenant_access as tenant_access
 
     collections = {
@@ -150,7 +151,7 @@ def _app(database: Any, tenant: str, principal_id: str) -> FastAPI:
     app.dependency_overrides[authorization_http.get_current_identity] = lambda: _identity_projection(principal_id, tenant)
     app.dependency_overrides[authentication.get_principal_authority_repository] = lambda: _PrincipalReader(collections["principal"])
     app.dependency_overrides[tenant_access.get_tenant_membership_repository] = lambda: _MembershipReader(collections["membership"])
-    app.dependency_overrides[authorization.get_role_assignment_repository] = lambda: _RoleReader(collections["roles"], collections["business"])
+    app.dependency_overrides[authorization_http.get_role_assignment_repository] = lambda: _RoleReader(collections["roles"], collections["business"])
     assert billing_api._BILLING_READ not in app.dependency_overrides
     assert billing_api._INVOICE_READ not in app.dependency_overrides
     app.dependency_overrides[billing_api.get_tariff_collection] = lambda: database.get_collection("tariff_assessments")
@@ -281,7 +282,7 @@ def test_real_mongo_canonical_billing_reads_are_exact_and_side_effect_free(mongo
 
 
 # ARTIFACT: test_legal_operations_billing_read_real_mongo.py
-# VERSION: v1.1.0-L7C-LIVE-IAM-BILLING-READ-RM-CERT
+# VERSION: v1.1.1-L7C-LIVE-IAM-BILLING-READ-RM-CERT
 # AUTHORITY BOUNDARY: host GET projection certificate only; no issuance/payment.
 # TENANT POSTURE: isolated database and exact authorized tenant predicates.
 # FAIL-CLOSED POSTURE: only pre-hello availability may skip.

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Legal Evidence Cleanup Tenant Authorization Certificate.
-VERSION: v1.0.0-L10A2R-C4D6E-A3-P1D-CLEANUP-AUTHORIZATION-CERT
+VERSION: v1.0.1-L10A2R-C4D6E-A3-P1D-CLEANUP-AUTHORIZATION-CERT
 AUTHORITY: Wilsy OS Core Governance / Python EOS IAM certification only.
 EPITOME: Certifies the exact Legal Evidence cleanup actor authorization
          conjunction before any cleanup command or provider mutation exists.
@@ -15,6 +15,9 @@ CHANGELOG:
     and ACTIVE LEGAL_PARTNER assignment. It separately proves denial for
     inactive principal, inactive membership, wrong business role, missing or
     revoked final role, crossed permission and malformed operation vocabulary.
+    2026-10-11 v1.0.1-L10A2R-C4D6E-A3-P1D-CLEANUP-AUTHORIZATION-CERT
+    removes stale coupling to the aggregate tenant-authorization module version
+    while preserving the exact cleanup binding and authorization conjunction.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Current durable authority truth only; caller/JWT
                           projection cannot manufacture authority.
@@ -45,7 +48,7 @@ from tools.eos.auth.tenant_membership import TenantMembershipStatus
 
 
 VERSION = (
-    "v1.0.0-L10A2R-C4D6E-A3-P1D-"
+    "v1.0.1-L10A2R-C4D6E-A3-P1D-"
     "CLEANUP-AUTHORIZATION-CERT"
 )
 
@@ -164,10 +167,6 @@ def _decision(
 
 def test_exact_cleanup_binding_and_full_conjunction_authorize() -> None:
     """Only the exact Partner conjunction authorizes actor command admission."""
-    assert tenant_authorization.VERSION == (
-        "v1.30.0-L10A2R-C4D6E-A3-P1D-"
-        "LEGAL-EVIDENCE-CLEANUP-AUTHORIZATION-BINDING"
-    )
     assert tenant_authorization._BINDINGS[OPERATION] == PERMISSION
     assert list(tenant_authorization._BINDINGS).count(OPERATION) == 1
 
@@ -269,7 +268,7 @@ def test_actor_authorized_is_not_provider_delete_executed() -> None:
 
 
 # ARTIFACT: test_legal_evidence_cleanup_tenant_authorization_binding.py
-# VERSION: v1.0.0-L10A2R-C4D6E-A3-P1D-CLEANUP-AUTHORIZATION-CERT
+# VERSION: v1.0.1-L10A2R-C4D6E-A3-P1D-CLEANUP-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: actor command-admission authorization certificate only; no cleanup execution
 # TENANT POSTURE: ACTIVE principal + ACTIVE membership + tenant_legal_partner + exact permission/operation + ACTIVE LEGAL_PARTNER are conjunctively required
 # FAIL-CLOSED POSTURE: inactive, missing, revoked, crossed and malformed authority facts deny

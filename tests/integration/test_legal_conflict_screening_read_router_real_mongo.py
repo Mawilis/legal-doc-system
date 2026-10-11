@@ -1,7 +1,7 @@
 """Host-backed real-Mongo certificate for the L8-8N screening read route.
 
 TITLE: WILSY OS Legal Conflict Screening Read Router Real-Mongo Certificate
-VERSION: v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT
+VERSION: v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT
 AUTHORITY: Host-backed authenticated read-projection certificate only.
 EPITOME: Prove physically that immutable tenant-scoped screening rows are
          discoverable through the authenticated bounded HTTP queue without
@@ -13,6 +13,9 @@ CERTIFICATION / UPDATE DATE: 2026-09-25
 CHANGELOG: 2026-09-25 v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT
            establishes real replica-set tenant isolation, deterministic queue
            ordering, empty state and zero-side-effect evidence.
+           2026-10-11 v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT
+           freezes the route-specific response version without coupling this
+           certificate to the aggregate legal-operations module version.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: UUID-isolated database and synthetic opaque values;
                              no production data, secrets or provider calls.
@@ -62,7 +65,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import CaseMat
 from tools.eos.legal_operations.registry import legal_conflict_screening_registry as registry
 
 
-VERSION = "v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT"
+VERSION = "v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -269,6 +272,7 @@ def test_real_mongo_route_is_tenant_scoped_ordered_bounded_and_read_only(
 
     assert response.status_code == 200
     body = response.json()
+    assert body["version"] == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
     assert body["tenant_id"] == tenant
     assert [row["screening_id"] for row in body["screenings"]] == [
         "screening-new"
@@ -316,13 +320,12 @@ def test_real_mongo_missing_authentication_is_denied(
 
 def test_real_mongo_certificate_surface_is_frozen() -> None:
     """Certificate binds the production route release and remains read-only."""
-    assert VERSION == "v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT"
-    assert legal_router.VERSION == "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
+    assert VERSION == "v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT"
 
 
 """
 ARTIFACT: test_legal_conflict_screening_read_router_real_mongo.py
-VERSION: v1.0.0-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT
+VERSION: v1.0.1-L8-8N-CONFLICT-SCREENING-READ-ROUTER-RM-CERT
 AUTHORITY BOUNDARY: real-Mongo screening read certificate only
 TENANT POSTURE: exact authorized tenant and UUID-isolated database
 FAIL-CLOSED POSTURE: host/transaction/projection/leakage/side-effect drift fails
