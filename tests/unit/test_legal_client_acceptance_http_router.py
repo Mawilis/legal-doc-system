@@ -18,6 +18,7 @@ FAIL-CLOSED DECLARATION: Caller authority injection, IAM denial, malformed inten
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any, Awaitable, Callable
 
 import pytest
@@ -80,6 +81,12 @@ def _client(
     app.dependency_overrides[http._WRITE] = (
         authorization or _authorization_context
     )
+    app.dependency_overrides[http._PROVISION] = (
+        authorization or _authorization_context
+    )
+    app.dependency_overrides[http._READ] = (
+        authorization or _authorization_context
+    )
     app.dependency_overrides[http.get_principal_authority_repository] = _repo
     app.dependency_overrides[http.get_tenant_membership_repository] = _repo
     app.dependency_overrides[http.get_role_assignment_repository] = _repo
@@ -109,6 +116,16 @@ def test_exact_router_and_request_authority_surface() -> None:
         [
             (
                 "/legal-operations/client/"
+                "matters/{case_matter_id}/acceptance-instruments",
+                ("POST",),
+            ),
+            (
+                "/legal-operations/client/"
+                "acceptance-contexts/{acceptance_context_id}/content",
+                ("GET",),
+            ),
+            (
+                "/legal-operations/client/"
                 "acceptance-contexts/{acceptance_context_id}/acceptances",
                 ("POST",),
             ),
@@ -125,6 +142,11 @@ def test_exact_router_and_request_authority_surface() -> None:
         "instrument_id",
     }
     assert set(http.AcceptanceCommand.model_fields) == {"confirmed"}
+    assert set(http.AcceptanceInstrumentProvisioningCommand.model_fields) == {
+        "instrument_id", "version", "instrument_kind", "title", "review_scope",
+        "content", "media_type", "effective_from", "approval_evidence_reference",
+        "approval_evidence_fingerprint", "supersedes_version_id",
+    }
 
 
 @pytest.mark.parametrize(
@@ -163,6 +185,66 @@ def test_acceptance_rejects_caller_asserted_tenant() -> None:
         headers={"Idempotency-Key": "intent-1"},
     )
     assert response.status_code == 422
+
+
+def test_provisioning_rejects_server_owned_fields() -> None:
+    body = {
+        "instrument_id": "instrument-1", "version": "1.0.0",
+        "instrument_kind": "MATTER_REVIEW", "title": "Review",
+        "review_scope": "client-information-review:v1", "content": "Terms",
+        "media_type": "text/plain", "effective_from": "2030-01-01T00:00:00Z",
+        "approval_evidence_reference": "authoring:one",
+        "approval_evidence_fingerprint": "a" * 128,
+        "tenant_id": "attacker", "content_reference": "evil://locator",
+        "lifecycle_status": "ACTIVE",
+    }
+    response = _client().post(
+        "/legal-operations/client/matters/matter-1/acceptance-instruments",
+        json=body,
+        headers={"Idempotency-Key": "idem-one"},
+    )
+    assert response.status_code == 422
+
+
+def test_provisioning_forwards_only_bounded_authoring_intent(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(http, "_transaction", lambda callback: callback(object(), _Database()))
+    monkeypatch.setattr(http, "_authorization_registry", lambda database, **kwargs: object())
+    def provision(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        item = _Value("durable")
+        return SimpleNamespace(content=item, instrument=item, lifecycle=item)
+    monkeypatch.setattr(http, "provision_legal_client_matter_acceptance_instrument", provision)
+    response = _client().post(
+        "/legal-operations/client/matters/matter-1/acceptance-instruments",
+        json={"instrument_id": "instrument-1", "version": "1.0.0", "instrument_kind": "MATTER_REVIEW", "title": "Review", "review_scope": "client-information-review:v1", "content": "Terms", "media_type": "text/plain", "effective_from": "2030-01-01T00:00:00Z", "approval_evidence_reference": "authoring:one", "approval_evidence_fingerprint": "a" * 128},
+        headers={"Idempotency-Key": "idem-one"},
+    )
+    assert response.status_code == 201
+    assert captured["identity"].tenant_id == TENANT
+    assert captured["case_matter_id"] == "matter-1"
+    assert captured["content"] == b"Terms"
+    assert captured["idempotency_key"] == "idem-one"
+    for forbidden in ("tenant_id", "principal_id", "content_reference", "content_fingerprint", "lifecycle_status"):
+        assert forbidden not in captured
+
+
+def test_content_get_delegates_only_authenticated_context_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(http, "_transaction", lambda callback: callback(object(), _Database()))
+    def deliver(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return SimpleNamespace(acceptance_context_id="context-1", instrument_id="instrument-1", instrument_version="1.0.0", title="Review", review_scope="Exact terms", media_type="text/plain", content="Terms", content_fingerprint="a" * 128, content_bytes=5)
+    monkeypatch.setattr(http, "deliver_legal_client_acceptance_context_content", deliver)
+    response = _client().get("/legal-operations/client/acceptance-contexts/context-1/content")
+    assert response.status_code == 200
+    assert response.text == "Terms"
+    assert response.headers["content-type"].startswith("text/plain")
+    assert response.headers["x-wilsy-content-fingerprint"] == "a" * 128
+    assert captured["identity"].tenant_id == TENANT
+    assert captured["acceptance_context_id"] == "context-1"
+    for forbidden in ("tenant_id", "principal_id", "content_reference", "content_fingerprint"):
+        assert forbidden not in captured
 
 
 def test_context_forwards_only_canonical_inputs(
