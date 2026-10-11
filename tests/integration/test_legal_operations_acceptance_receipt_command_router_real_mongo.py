@@ -1,7 +1,7 @@
 """Host-backed authenticated acceptance/receipt command certificate.
 
 TITLE: WILSY OS Legal Operations Acceptance Receipt Command Real-Mongo Certificate
-VERSION: v1.0.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT
+VERSION: v1.0.1-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT
 AUTHORITY: Host-backed certification of authenticated L8-3 acceptance/receipt transport.
 EPITOME: Prove live split-store IAM, actual FastAPI POST dispatch, sheriff-only
          own-tenant instruction acceptance plus office receipt, exact replay,
@@ -15,13 +15,15 @@ COLLABORATION / OWNERSHIP: Tenant authorization owns principal/membership/
                             canonical prerequisites; L8-3 owns acceptance and
                             physical office receipt; P1/P2/L8-0 own lifecycle,
                             persistence, custody history, and current projection.
-CERTIFICATION / UPDATE DATE: 2026-09-23
+CERTIFICATION / UPDATE DATE: 2026-10-11
 CHANGELOG: 2026-09-23 v1.0.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT
            establishes live legal_operations:receipt:write evidence proving
            SHERIFF-only admission, exact tenant scope, create/replay, deputy/
            legal-practice/revoked-sheriff denial, foreign request denial,
            caller tenant-field rejection, missing-office 404, partial-state
            422 with no healing, and non-financial durable evidence.
+           2026-10-11 v1.0.1 removes stale aggregate command-router version
+           coupling while retaining observable route and durable-row evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic principals, tenants, legal
                              identities, and evidence references only; no real
@@ -102,7 +104,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION = "v1.0.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT"
+VERSION = "v1.0.1-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -770,16 +772,13 @@ def test_real_mongo_receipt_rows_exclude_allocation_service_and_financial_author
     for row in rows:
         assert forbidden_keys.isdisjoint(_all_key_names(row))
 
-    assert command_api.VERSION == (
-        "v1.3.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-API"
-    )
     assert VERSION == (
-        "v1.0.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT"
+        "v1.0.1-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT"
     )
 
 
 # ARTIFACT: test_legal_operations_acceptance_receipt_command_router_real_mongo.py
-# VERSION: v1.0.0-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT
+# VERSION: v1.0.1-L8-3-LEGAL-OPERATIONS-RECEIPT-COMMAND-RM-CERT
 # AUTHORITY BOUNDARY: host-backed live-IAM L8-3 acceptance/receipt command certificate only
 # TENANT POSTURE: exact tenant with ACTIVE split-store sheriff IAM truth
 # FAIL-CLOSED POSTURE: runtime/IAM/scope/body/absence/partial-state failures deny

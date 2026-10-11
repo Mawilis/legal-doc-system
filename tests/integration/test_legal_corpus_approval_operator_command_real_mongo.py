@@ -1,9 +1,9 @@
 """R9B-P7-A3 real-Mongo certificate for the generalized approval command.
 
 TITLE: WILSY OS Reviewed Successor Approval Command Real-Mongo Certificate
-VERSION: v1.0.0-R1D-B0F-R9B-P7-A3-REVIEWED-SUCCESSOR-APPROVAL-COMMAND-REAL-MONGO-CERT
+VERSION: v1.0.1-R1D-B0F-R9B-P7-A3-REVIEWED-SUCCESSOR-APPROVAL-COMMAND-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Certifies the five reviewed-successor command artifacts through the
+EPITOME: Certifies every canonical reviewed-successor command artifact through the
          actual external-signature verifier, approval operator transaction,
          durable readback, and one exact replay against isolated local Mongo.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_corpus_approval_operator_command_real_mongo.py
@@ -12,10 +12,13 @@ COLLABORATION / OWNERSHIP: The command adapter owns phase boundaries; the
                             own transaction and persistence semantics. This
                             certificate owns only synthetic test evidence and
                             one run-scoped database.
-CERTIFICATION / UPDATE DATE: 2026-09-20
+CERTIFICATION / UPDATE DATE: 2026-10-11
 CHANGELOG: v1.0.0 certifies exactly five reviewed 1.1.0-DRAFT successors,
            synthetic Ed25519 verification, committed creation, exact replay,
            source immutability, and bounded selector rejection.
+           v1.0.1 derives cardinality from the canonical successor catalogue,
+           positively covers Institutional Charter, and rejects only legacy or
+           unknown document identities.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Loopback Mongo only. Synthetic private key bytes
                             exist only in memory; no production key, URI
@@ -162,7 +165,7 @@ def _synthetic_trust_root() -> tuple[Ed25519PrivateKey, LegalCorpusApprovalTrust
 
 
 def _prepare_indexes_and_sources(database: Any) -> None:
-    """Create test-owned indexes and insert only the five canonical drafts."""
+    """Create test-owned indexes and insert every canonical successor draft."""
     documents = database[DOCUMENT_COLLECTION]
     approvals = database[APPROVAL_COLLECTION]
     LegalDocumentRegistry.ensure_indexes(documents)
@@ -176,7 +179,7 @@ def test_reviewed_successors_commit_replay_and_reject_tampering(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """Certify all five real commits, one exact replay, and pre-write rejection."""
+    """Certify every canonical commit, one exact replay, and bounded rejection."""
     client, database = isolated_mongo_database
     private_key, trust_root = _synthetic_trust_root()
     monkeypatch.setattr(command, "PRODUCTION_APPROVAL_TRUST_ROOT", trust_root)
@@ -234,7 +237,7 @@ def test_reviewed_successors_commit_replay_and_reject_tampering(
     assert database[DOCUMENT_COLLECTION].count_documents({"document_id": replay_source.document_id, "version": "1.1.0-APPROVED"}) == 1
     assert database[APPROVAL_COLLECTION].count_documents({"authorization_id": replay_authorization.authorization_id}) == 1
 
-    for rejected_id in ("WILSY-OS-INSTITUTIONAL-CHARTER", "WILSY-OS-USER-TERMS-LEGACY", "UNKNOWN-DOCUMENT"):
+    for rejected_id in ("WILSY-OS-USER-TERMS-LEGACY", "UNKNOWN-DOCUMENT"):
         with pytest.raises(command.LegalCorpusApprovalOperatorCommandError):
             command.prepare_reviewed_successor(
                 document_id=rejected_id,
@@ -250,12 +253,15 @@ def test_reviewed_successors_commit_replay_and_reject_tampering(
     tampered.write_text(original_signed.replace("1.1.0-APPROVED", "1.1.0-TAMPERED", 1), encoding="utf-8")
     with pytest.raises(command.LegalCorpusApprovalOperatorCommandError):
         command.execute_authorization(tampered)
-    assert database[APPROVAL_COLLECTION].count_documents({}) == 5
-    assert database[DOCUMENT_COLLECTION].count_documents({"version": "1.1.0-APPROVED"}) == 5
+    expected_count = len(PLATFORM_LEGAL_CORPUS_REVIEWED_SUCCESSOR_DRAFTS)
+    assert database[APPROVAL_COLLECTION].count_documents({}) == expected_count
+    assert database[DOCUMENT_COLLECTION].count_documents(
+        {"version": "1.1.0-APPROVED"}
+    ) == expected_count
 
 
 # ARTIFACT: test_legal_corpus_approval_operator_command_real_mongo.py
-# VERSION: v1.0.0-R1D-B0F-R9B-P7-A3-REVIEWED-SUCCESSOR-APPROVAL-COMMAND-REAL-MONGO-CERT
+# VERSION: v1.0.1-R1D-B0F-R9B-P7-A3-REVIEWED-SUCCESSOR-APPROVAL-COMMAND-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: isolated real-Mongo evidence only; no production approval
 # TENANT POSTURE: run-scoped PLATFORM database; no tenant/principal authority
 # FAIL-CLOSED POSTURE: topology, source, target, signature, replay, and tamper checks reject
